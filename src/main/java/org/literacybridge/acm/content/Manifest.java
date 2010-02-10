@@ -12,6 +12,12 @@ public class Manifest {
 		// fallback file, e.g. there could be a mp3 file and an additional wav fallback file
 		// this is optional and can be null
 		ReferencedFile fallback;
+		
+		// length of this audio file in milliseconds
+		int lengthInMilliseconds;
+		
+		// size in bytes
+		long sizeInBytes;
 	}
 	
 	List<ReferencedFile> referencedFiles;
