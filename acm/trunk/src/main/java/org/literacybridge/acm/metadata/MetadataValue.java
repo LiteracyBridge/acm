@@ -1,7 +1,7 @@
 package main.java.org.literacybridge.acm.metadata;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 
@@ -17,7 +17,7 @@ public class MetadataValue<T> implements Serializable {
 	
 	public <A> void addAttribute(Attribute<A> attribute, A value) {
 		if (this.attributes == null) {
-			this.attributes = new HashMap<Attribute<?>, Object>();
+			this.attributes = new LinkedHashMap<Attribute<?>, Object>();
 		}
 		
 		this.attributes.put(attribute, value);
@@ -27,6 +27,7 @@ public class MetadataValue<T> implements Serializable {
 		return this.value;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public <A> A getAttribute(Attribute<A> attributeName) {
 		if (this.attributes == null) {
 			return null;
