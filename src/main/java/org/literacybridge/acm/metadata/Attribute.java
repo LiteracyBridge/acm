@@ -1,5 +1,5 @@
 package main.java.org.literacybridge.acm.metadata;
 
-public abstract class Attribute<T> {
+public class Attribute<T> {
 	Attribute() {}
 }

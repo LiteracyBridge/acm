@@ -1,7 +1,7 @@
 package main.java.org.literacybridge.acm.metadata;
 
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -17,9 +17,10 @@ public class MetadataSet {
 	private Map<MetadataField<?>, ListWrapper<?>> fields;
 	
 	public MetadataSet() {
-		this.fields = new HashMap<MetadataField<?>, ListWrapper<?>>();
+		this.fields = new LinkedHashMap<MetadataField<?>, ListWrapper<?>>();
 	}
 	
+	@SuppressWarnings("unchecked")
 	public <F> void addMetadataField(MetadataField<F> field, MetadataValue<F> value) {
 		ListWrapper<F> fieldValues;
 		if (this.fields.containsKey(field)) {
@@ -36,6 +37,7 @@ public class MetadataSet {
 		return this.fields.keySet().iterator();
 	}
 	
+	@SuppressWarnings("unchecked")
 	public <F> List<MetadataValue<F>> getMetadataValues(MetadataField<F> field) {
 		ListWrapper<F> list = (ListWrapper<F>) this.fields.get(field);
 		return list.list;
