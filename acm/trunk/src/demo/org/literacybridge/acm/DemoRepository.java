@@ -12,7 +12,7 @@ import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.core.DataRequestResult;
-import org.literacybridge.acm.metadata.MetadataSet;
+import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 
@@ -86,14 +86,14 @@ public class DemoRepository {
 		for (AudioItem item : items) {
 			LocalizedAudioItem germanItem = new LocalizedAudioItem(item.getAudioItemId() + "-de", Locale.GERMAN, null);
 			item.addLocalizedAudioItem(Locale.GERMAN, germanItem);
-			MetadataSet germanMetadata = germanItem.getMetadata();
+			Metadata germanMetadata = germanItem.getMetadata();
 			germanMetadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>("Deutscher Titel " + i));
 			germanMetadata.addMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>("Michael Busch"));
 			germanMetadata.addMetadataField(MetadataSpecification.DC_LANGUAGE, new MetadataValue<String>("de"));
 			
 			LocalizedAudioItem englishItem = new LocalizedAudioItem(item.getAudioItemId() + "-en", Locale.ENGLISH, null);
 			item.addLocalizedAudioItem(Locale.ENGLISH, englishItem);
-			MetadataSet englishMetadata = englishItem.getMetadata();
+			Metadata englishMetadata = englishItem.getMetadata();
 			englishMetadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>("English title " + i));
 			englishMetadata.addMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>("Cliff Schmidt"));
 			englishMetadata.addMetadataField(MetadataSpecification.DC_LANGUAGE, new MetadataValue<String>("en"));

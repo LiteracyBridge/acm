@@ -4,7 +4,7 @@ import java.util.List;
 
 public class Demo {
 	public static void main(String[] args) {
-		MetadataSet metadata = new MetadataSet();
+		Metadata metadata = new Metadata();
 		
 		MetadataValue<String> foo1 = new MetadataValue<String>("foo1");
 		foo1.addAttribute(MetadataSpecification.DC_CREATOR_ROLE, "bar1");

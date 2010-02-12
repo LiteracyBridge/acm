@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class MetadataSet {
+public class Metadata {
 	// java does runtime erasure of generic types - using this wrapper we can return List<MetadataValue<F>> in getMetadataValues()
 	private class ListWrapper<T> {
 		List<MetadataValue<T>> list;
@@ -16,7 +16,7 @@ public class MetadataSet {
 	
 	private Map<MetadataField<?>, ListWrapper<?>> fields;
 	
-	public MetadataSet() {
+	public Metadata() {
 		this.fields = new LinkedHashMap<MetadataField<?>, ListWrapper<?>>();
 	}
 	
