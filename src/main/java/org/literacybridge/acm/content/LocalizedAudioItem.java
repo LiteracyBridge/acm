@@ -3,7 +3,7 @@ package org.literacybridge.acm.content;
 import java.io.File;
 import java.util.Locale;
 
-import org.literacybridge.acm.metadata.MetadataSet;
+import org.literacybridge.acm.metadata.Metadata;
 
 public class LocalizedAudioItem {
 	/** This ID must be unique across all audio items */
@@ -13,7 +13,7 @@ public class LocalizedAudioItem {
 	private Locale locale;
 	
 	/** Metadata of this audio item */
-	private MetadataSet metadata;
+	private Metadata metadata;
 	
 	/** This should be the path to the DAISY package.xml file */
 	private File pathToItem;
@@ -25,7 +25,7 @@ public class LocalizedAudioItem {
 		this.uID = uID;
 		this.locale = locale;
 		this.pathToItem = pathToItem;
-		this.metadata = new MetadataSet();
+		this.metadata = new Metadata();
 		this.manifest = new Manifest();
 	}
 	
@@ -37,7 +37,7 @@ public class LocalizedAudioItem {
 		return this.pathToItem;
 	}
 	
-	public MetadataSet getMetadata() {
+	public Metadata getMetadata() {
 		return this.metadata;
 	}
 	

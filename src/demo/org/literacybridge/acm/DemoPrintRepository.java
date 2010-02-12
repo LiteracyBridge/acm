@@ -8,7 +8,7 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
-import org.literacybridge.acm.metadata.MetadataSet;
+import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 
 public class DemoPrintRepository {
@@ -44,7 +44,7 @@ public class DemoPrintRepository {
 			}
 			
 			LocalizedAudioItem localizedItem = item.getLocalizedAudioItem(locale);
-			MetadataSet metadata = localizedItem.getMetadata();
+			Metadata metadata = localizedItem.getMetadata();
 			System.out.println("title = " + metadata.getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue()
 					+ "\t\tcreator = " + metadata.getMetadataValues(MetadataSpecification.DC_CREATOR).get(0).getValue()
 					+ "\t\tlang = " + metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE).get(0).getValue()
