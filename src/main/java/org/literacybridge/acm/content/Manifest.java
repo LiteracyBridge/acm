@@ -1,4 +1,4 @@
-package main.java.org.literacybridge.acm.content;
+package org.literacybridge.acm.content;
 
 import java.io.File;
 import java.util.List;
