@@ -1,4 +1,4 @@
-package main.java.org.literacybridge.acm.metadata;
+package org.literacybridge.acm.metadata;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;

@@ -1,4 +1,4 @@
-package main.java.org.literacybridge.acm.metadata;
+package org.literacybridge.acm.metadata;
 
 public interface MetadataSpecification {
 	//============================================================================================================
