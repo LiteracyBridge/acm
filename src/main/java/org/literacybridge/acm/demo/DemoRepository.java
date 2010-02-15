@@ -1,4 +1,4 @@
-package org.literacybridge.acm;
+package org.literacybridge.acm.demo;
 
 import java.util.LinkedList;
 import java.util.List;
