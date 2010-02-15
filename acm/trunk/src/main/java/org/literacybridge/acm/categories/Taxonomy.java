@@ -23,6 +23,10 @@ public class Taxonomy {
 		return this.root;
 	}
 	
+	public boolean isRoot(Category category) {
+		return category == this.root;
+	}
+	
 	public int getMaxCategoryID() {
 		return this.maxCategoryID;
 	}
