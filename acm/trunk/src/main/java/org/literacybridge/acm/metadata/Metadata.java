@@ -30,6 +30,7 @@ public class Metadata {
 			this.fields.put(field, fieldValues);
 		}
 		
+		value.setAttributes(field.getAttributes());
 		fieldValues.list.add(value);
 	}
 	

@@ -63,7 +63,13 @@ public interface MetadataSpecification {
 			   		   Best practice is to use dtb:revision and dtb:revisionDate instead. 
 	*/
 	public final static Attribute<String> DC_DATE_EVENT = new Attribute<String>();
-	public final static MetadataField<String> DC_DATE = new MetadataField<String>(DC_DATE_EVENT);
+	public final static MetadataField<ISO8601Date> DC_DATE = new MetadataField<ISO8601Date>(DC_DATE_EVENT) {
+		@Override
+		boolean validateValue(ISO8601Date value) {
+			// TODO: implement
+			return true;
+		};
+	};
 
 	/** dc:Type 
 		Content: The nature of the content of the DTB (i.e., sound, text, image). Best practice is to draw from the Dublin Core's enumerated list [DC-Type].
@@ -96,7 +102,12 @@ public interface MetadataSpecification {
 		Content: Language of the content of the publication. An [RFC 3066] language code. For Sweden: "sv" or "sv-SE"; for UK: "en" or "en-GB"; for US: "en" or "en-US"; etc.
 		Occurrence: Required
 	 */ 
-	public final static MetadataField<String> DC_LANGUAGE = new MetadataField<String>();
+	public final static MetadataField<RFC3066LanguageCode> DC_LANGUAGE = new MetadataField<RFC3066LanguageCode>() {
+		@Override
+		boolean validateValue(RFC3066LanguageCode value) {
+			return RFC3066LanguageCode.validate(value); 
+		};
+	};
 
 	/** dc:Relation 
 		Content: A reference to a related resource.

@@ -15,6 +15,7 @@ import org.literacybridge.acm.core.DataRequestResult;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
+import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 
 public class DemoRepository {
 	private Taxonomy taxonomy;
@@ -89,14 +90,16 @@ public class DemoRepository {
 			Metadata germanMetadata = germanItem.getMetadata();
 			germanMetadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>("Deutscher Titel " + i));
 			germanMetadata.addMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>("Michael Busch"));
-			germanMetadata.addMetadataField(MetadataSpecification.DC_LANGUAGE, new MetadataValue<String>("de"));
+			germanMetadata.addMetadataField(MetadataSpecification.DC_LANGUAGE, 
+					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode("de")));
 			
 			LocalizedAudioItem englishItem = new LocalizedAudioItem(item.getAudioItemId() + "-en", Locale.ENGLISH, null);
 			item.addLocalizedAudioItem(Locale.ENGLISH, englishItem);
 			Metadata englishMetadata = englishItem.getMetadata();
 			englishMetadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>("English title " + i));
 			englishMetadata.addMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>("Cliff Schmidt"));
-			englishMetadata.addMetadataField(MetadataSpecification.DC_LANGUAGE, new MetadataValue<String>("en"));
+			englishMetadata.addMetadataField(MetadataSpecification.DC_LANGUAGE, 
+					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode("en")));
 			
 			int catID = 3 + rnd.nextInt(3);
 			item.addCategory(taxonomy.getCategory(catID));

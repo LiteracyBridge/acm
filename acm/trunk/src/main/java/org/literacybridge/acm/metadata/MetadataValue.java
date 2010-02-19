@@ -15,9 +15,9 @@ public class MetadataValue<T> implements Serializable {
 		this.value = value;
 	}
 	
-	public <A> void addAttribute(Attribute<A> attribute, A value) {
-		if (this.attributes == null) {
-			this.attributes = new LinkedHashMap<Attribute<?>, Object>();
+	public <A> void setAttributeValue(Attribute<A> attribute, A value) {
+		if (this.attributes == null || !this.attributes.containsKey(attribute)) {
+			throw new IllegalArgumentException("Attribute " + attribute + " not defined for this field.");
 		}
 		
 		this.attributes.put(attribute, value);
@@ -34,5 +34,16 @@ public class MetadataValue<T> implements Serializable {
 		}
 
 		return (A) this.attributes.get(attributeName);
+	}
+	
+	void setAttributes(Attribute<?>[] attributes) {
+		if (!(attributes == null || attributes.length == 0)) {
+			if (this.attributes == null) {
+				this.attributes = new LinkedHashMap<Attribute<?>, Object>();
+			}
+			for (Attribute<?> a : attributes) {
+				this.attributes.put(a, null);
+			}
+		}
 	}
 }

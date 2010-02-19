@@ -1,5 +1,17 @@
 package org.literacybridge.acm.metadata;
 
 public class Attribute<T> {
-	Attribute() {}
+	private boolean required;
+	
+	public Attribute() {
+		this(false);
+	}
+	
+	public Attribute(boolean required) {
+		this.required = required;
+	}
+	
+	public boolean isRequired() {
+		return this.required;
+	}
 }
