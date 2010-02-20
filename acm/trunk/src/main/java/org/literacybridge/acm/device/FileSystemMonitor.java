@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.literacybridge.acm.core.MessageBus;
+import org.literacybridge.acm.utils.OSChecker;
 
 public class FileSystemMonitor extends Thread {
 	private static final int DEFAULT_SLEEP_TIME = 5000; // 5 secs
@@ -37,7 +38,15 @@ public class FileSystemMonitor extends Thread {
 	
 	public void run() {
 		while (true) {
-			File[] roots = File.listRoots();
+			File[] roots;
+			if (OSChecker.WINDOWS) {
+				roots = File.listRoots();
+			} else if (OSChecker.MAC_OS) {
+				roots = new File("/Volumes").listFiles();
+			} else {
+				// TODO: support linux
+				roots = null;
+			}
 			Set<DeviceInfo> currentDevices = new HashSet<DeviceInfo>();
 			for (File root : roots) {
 				// check if this is a supported device
