@@ -1,7 +1,6 @@
 package org.literacybridge.acm.device;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -9,7 +8,7 @@ import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.utils.OSChecker;
 
 public class FileSystemMonitor extends Thread {
-	private static final int DEFAULT_SLEEP_TIME = 5000; // 5 secs
+	private static final int DEFAULT_SLEEP_TIME = 3000; // 3 secs
 	
 	private Set<DeviceInfo> connectedDevices;
 	private Set<DeviceRecognizer> deviceRecognizers;
@@ -18,9 +17,8 @@ public class FileSystemMonitor extends Thread {
 		this.connectedDevices = new HashSet<DeviceInfo>();
 		this.deviceRecognizers = new HashSet<DeviceRecognizer>();
 		setDaemon(true); // don't prevent JVM from exiting 
-		start();
 	}
-	
+
 	public void addDeviceRecognizer(DeviceRecognizer recognizer) {
 		this.deviceRecognizers.add(recognizer);
 	}
@@ -50,27 +48,32 @@ public class FileSystemMonitor extends Thread {
 			Set<DeviceInfo> currentDevices = new HashSet<DeviceInfo>();
 			for (File root : roots) {
 				// check if this is a supported device
-				DeviceInfo device = checkForDevice(root);
-				if (device != null) {
-					currentDevices.add(device);
+				if (root.isDirectory()) {
+					DeviceInfo device = checkForDevice(root);
+					if (device != null) {
+						currentDevices.add(device);
+					}
 				}
 			}
 			
-			boolean sendMessage = false;
+			int newDevices = 0;
 			for (DeviceInfo device : currentDevices) {
-				if (this.connectedDevices.contains(device)) {
-					sendMessage = true;
-					break;
+				if (!this.connectedDevices.contains(device)) {
+					MessageBus.getInstance().sendMessage(new DeviceConnectEvent.ConnectEvent(device));
+					newDevices++;
+				}
+			}
+
+			if (this.connectedDevices.size() != currentDevices.size() - newDevices) {
+				// we need to determine which devices were disconnected
+				for (DeviceInfo device : this.connectedDevices) {
+					if (!currentDevices.contains(device)) {
+						MessageBus.getInstance().sendMessage(new DeviceConnectEvent.DisconnectEvent(device));
+					}
 				}
 			}
 			
-			if (sendMessage || // new device connected? 
-					this.connectedDevices.size() != currentDevices.size()) // or device disconnected? 
-				{
-				// send message, because list of active devices changed
-				MessageBus.getInstance().sendMessage(new DeviceConnectEvent(Collections.unmodifiableSet(currentDevices)));
-				this.connectedDevices = currentDevices;
-			}
+			this.connectedDevices = currentDevices;
 			
 			try {
 				sleep(DEFAULT_SLEEP_TIME);

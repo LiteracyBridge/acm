@@ -59,8 +59,10 @@ public class MessageBus {
 		// now send message to all listeners
 		for (Class <? extends Message> m : listOfUniqueClasses) {
 			List<MessageListener> list = this.listeners.get(m);
-			for (MessageListener listener : list) {
-				listener.receiveMessage(message);
+			if (list != null) {
+				for (MessageListener listener : list) {
+					listener.receiveMessage(message);
+				}
 			}
 		}
 	}
