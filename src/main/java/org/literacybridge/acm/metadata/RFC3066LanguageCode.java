@@ -25,4 +25,14 @@ public class RFC3066LanguageCode {
 		// TODO: validate language and country codes
 		return true;
 	}
+	
+	public String toString() {
+		StringBuilder b = new StringBuilder();
+		b.append(codes[0]);
+		for (int i = 1; i < codes.length; i++) {
+			b.append("-");
+			b.append(codes[i]);
+		}
+		return b.toString();
+	}
 }

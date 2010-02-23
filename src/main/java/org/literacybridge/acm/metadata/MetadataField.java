@@ -7,8 +7,8 @@ public class MetadataField<T> {
 		this.attributes = attributes;
 	}
 	
-	boolean validateValue(T value) {
-		return true;
+	void validateValue(T value) throws InvalidMetadataException {
+		// do nothing by default
 	}
 	
 	public Attribute<?>[] getAttributes() {

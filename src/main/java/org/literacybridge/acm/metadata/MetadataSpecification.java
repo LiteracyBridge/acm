@@ -65,9 +65,8 @@ public interface MetadataSpecification {
 	public final static Attribute<String> DC_DATE_EVENT = new Attribute<String>();
 	public final static MetadataField<ISO8601Date> DC_DATE = new MetadataField<ISO8601Date>(DC_DATE_EVENT) {
 		@Override
-		boolean validateValue(ISO8601Date value) {
+	    void validateValue(ISO8601Date value) throws InvalidMetadataException {
 			// TODO: implement
-			return true;
 		};
 	};
 
@@ -104,8 +103,8 @@ public interface MetadataSpecification {
 	 */ 
 	public final static MetadataField<RFC3066LanguageCode> DC_LANGUAGE = new MetadataField<RFC3066LanguageCode>() {
 		@Override
-		boolean validateValue(RFC3066LanguageCode value) {
-			return RFC3066LanguageCode.validate(value); 
+		void validateValue(RFC3066LanguageCode value) throws InvalidMetadataException {
+			RFC3066LanguageCode.validate(value); 
 		};
 	};
 
