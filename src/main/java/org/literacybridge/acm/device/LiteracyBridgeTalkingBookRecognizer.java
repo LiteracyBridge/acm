@@ -14,8 +14,9 @@ public class LiteracyBridgeTalkingBookRecognizer extends DeviceRecognizer {
 			return null;
 		}
 		
+		BufferedReader reader = null;
 		try {
-			BufferedReader reader = new BufferedReader(new FileReader(configFile));
+			reader = new BufferedReader(new FileReader(configFile));
 			String line;
 			while( (line = reader.readLine()) != null) {
 				// TODO: read actual device ID
@@ -27,6 +28,14 @@ public class LiteracyBridgeTalkingBookRecognizer extends DeviceRecognizer {
 			
 		} catch (IOException e) {
 			return null;
+		} finally {
+			if (reader != null) {
+				try {
+					reader.close();
+				} catch (IOException e) {
+					// ignore
+				}
+			}
 		}
 		
 		return null;	
