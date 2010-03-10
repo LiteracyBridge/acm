@@ -17,8 +17,11 @@ import org.literacybridge.acm.categories.Taxonomy.Category;
  *  
  */
 public class AudioItem {
+        /** Database ID **/
+        private int mID;
+    
 	/** Multiple translations of the same content share this ID */
-	private final String audioItemID;
+	private final String mUUID;
 	
 	/** The categories this AudioItem belongs to */
 	private Set<Category> categories;
@@ -26,12 +29,12 @@ public class AudioItem {
 	/** All available localized versions of this audio item */
 	private Map<Locale, LocalizedAudioItem> localizedItems;
 	
-	public AudioItem(String id) {
-		this(id, (Category[]) null);
+	public AudioItem(String uuID) {
+		this(uuID, (Category[]) null);
 	}
 	
-	public AudioItem(String id, Category... categories) {
-		this.audioItemID = id;
+	public AudioItem(String uuId, Category... categories) {
+		this.mUUID = uuId;
 		this.categories = new HashSet<Category>();
 		this.localizedItems = new HashMap<Locale, LocalizedAudioItem>();
 		
@@ -42,6 +45,18 @@ public class AudioItem {
 		}
 	}
 	
+        public int getId() {
+            return mID;
+        }
+        
+        public void setId(int id) {
+            mID = id;
+        }
+        
+        public String getUUId() {
+            return mUUID;
+        }
+        
 	public void addCategory(Category category) {
 		this.categories.add(category);
 	}
@@ -56,9 +71,5 @@ public class AudioItem {
 	
 	public void addLocalizedAudioItem(Locale locale, LocalizedAudioItem localizedAudioItem) {
 		this.localizedItems.put(locale, localizedAudioItem);
-	}
-	
-	public String getAudioItemId() {
-		return this.audioItemID;
 	}
 }
