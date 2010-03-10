@@ -85,7 +85,7 @@ public class DemoRepository {
 		
 		int i = 1;
 		for (AudioItem item : items) {
-			LocalizedAudioItem germanItem = new LocalizedAudioItem(item.getAudioItemId() + "-de", Locale.GERMAN, null);
+			LocalizedAudioItem germanItem = new LocalizedAudioItem(item.getUUId() + "-de", Locale.GERMAN, null);
 			item.addLocalizedAudioItem(Locale.GERMAN, germanItem);
 			Metadata germanMetadata = germanItem.getMetadata();
 			germanMetadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>("Deutscher Titel " + i));
@@ -93,7 +93,7 @@ public class DemoRepository {
 			germanMetadata.addMetadataField(MetadataSpecification.DC_LANGUAGE, 
 					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode("de")));
 			
-			LocalizedAudioItem englishItem = new LocalizedAudioItem(item.getAudioItemId() + "-en", Locale.ENGLISH, null);
+			LocalizedAudioItem englishItem = new LocalizedAudioItem(item.getUUId() + "-en", Locale.ENGLISH, null);
 			item.addLocalizedAudioItem(Locale.ENGLISH, englishItem);
 			Metadata englishMetadata = englishItem.getMetadata();
 			englishMetadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>("English title " + i));
