@@ -98,7 +98,7 @@ class DatabaseAccess {
             StringBuffer sqlScript = new StringBuffer();
             try {
                 String scriptName = dbProperties.getProperty("db.script");
-                File scriptLocation = new File("resources" + File.separator + scriptName);
+                File scriptLocation = new File("src/main/resources" + File.separator + scriptName);
                 
                 BufferedReader sqlReader = new BufferedReader(new FileReader(scriptLocation)); 
                 String line = null;
