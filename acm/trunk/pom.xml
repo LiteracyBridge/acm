@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.literacybridge</groupId>
   <artifactId>acm</artifactId>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <version>1.0-SNAPSHOT</version>
   <name>Audio Content Management</name>
   
@@ -18,30 +18,16 @@
     <relativePath>../../literacybridge-parent/pom.xml</relativePath>
   </parent>
   <url>http://code.google.com/p/talkingbook/</url>
+  <modules>
+    <module>core</module>
+<!--    <module>ui/org.literacybridge.acm.rcp</module> -->
+  </modules>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>3.8.1</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-    	<groupId>org.apache.derby</groupId>
-    	<artifactId>derby</artifactId>
-    	<version>10.5.3.0_1</version>
-    	<type>jar</type>
-    	<scope>compile</scope>
-    </dependency>
-    <dependency>
-    	<groupId>org.literacybridge</groupId>
-    	<artifactId>audioconverter</artifactId>
-    	<version>1.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-    	<groupId>javax.media</groupId>
-    	<artifactId>jmf</artifactId>
-    	<version>2.1.1e</version>
-    	<scope>compile</scope>
     </dependency>
   </dependencies>
 </project>

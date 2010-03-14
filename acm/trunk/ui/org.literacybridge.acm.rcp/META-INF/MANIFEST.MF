@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Application Content Manager
+Bundle-SymbolicName: org.literacybridge.acm.rcp;singleton:=true
+Bundle-Version: 0.0.2.acm
+Bundle-Activator: org.literacybridge.acm.rcp.core.Activator
+Bundle-Vendor: Literacybridge
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.ui.forms
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: acmLib.jar,
+ .
