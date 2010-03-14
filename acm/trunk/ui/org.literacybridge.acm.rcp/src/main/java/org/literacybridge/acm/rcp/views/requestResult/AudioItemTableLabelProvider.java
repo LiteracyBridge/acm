@@ -35,7 +35,7 @@ public class AudioItemTableLabelProvider extends LabelProvider implements
 			case 2:
 				return metadata.getMetadataValues(MetadataSpecification.DC_CREATOR).get(0).getValue();
 			case 3:
-				return metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE).get(0).getValue();
+				return metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE).get(0).getValue().toString();
 			default:
 				return "<error>";
 		
