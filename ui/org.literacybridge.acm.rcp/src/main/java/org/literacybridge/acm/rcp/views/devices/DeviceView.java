@@ -1,25 +1,20 @@
 package org.literacybridge.acm.rcp.views.devices;
 
-import org.eclipse.jface.viewers.ListViewer;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.ui.forms.events.HyperlinkAdapter;
-import org.eclipse.ui.forms.events.HyperlinkEvent;
-import org.eclipse.ui.forms.widgets.ColumnLayout;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
-import org.eclipse.ui.forms.widgets.Hyperlink;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.eclipse.ui.part.ViewPart;
+import org.literacybridge.acm.core.MessageBus;
+import org.literacybridge.acm.core.MessageBus.Message;
+import org.literacybridge.acm.device.DeviceConnectEvent;
+import org.literacybridge.acm.device.FileSystemMonitor;
+import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 
 public class DeviceView extends ViewPart {
 
@@ -53,11 +48,13 @@ public class DeviceView extends ViewPart {
 
 		deviceListViewer.setContentProvider(new DeviceContentProvider());
 		deviceListViewer.setLabelProvider(new DeviceLabelProvider());
-		deviceListViewer.setInput(new Object());
+			
+		// start after table creation so that listener can be initialized
+//		registerAudioDeviceListener();
 	}
 
 	private void createColumn(TableViewer viewer) {
-		String[] titles = { "Name" };
+		String[] titles = { "Location:" };
 		int[] bounds = { 60 };
 
 		for (int i = 0; i < titles.length; i++) {
@@ -72,6 +69,23 @@ public class DeviceView extends ViewPart {
 		table.setLinesVisible(true);
 	}
 
+//	private void registerAudioDeviceListener() {
+//		FileSystemMonitor monitor = new FileSystemMonitor();
+//		monitor.addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());	
+//		monitor.start();
+//		
+//		MessageBus bus = MessageBus.getInstance();
+//		bus.addListener(DeviceConnectEvent.class, new MessageBus.MessageListener() {
+//			
+//			@Override
+//			public void receiveMessage(Message message) {
+//				if (deviceListViewer != null) {
+//					deviceListViewer.setInput(message);
+//				}
+//			}
+//		});
+//	}
+	
 	@Override
 	public void setFocus() {
 	}

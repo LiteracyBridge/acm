@@ -3,6 +3,7 @@ package org.literacybridge.acm.rcp.views.devices;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
+import org.literacybridge.acm.core.MessageBus.Message;
 
 public class DeviceLabelProvider extends LabelProvider implements
 		ITableLabelProvider {
@@ -14,11 +15,18 @@ public class DeviceLabelProvider extends LabelProvider implements
 
 	@Override
 	public String getColumnText(Object element, int columnIndex) {
-		switch (columnIndex) {
-		case 0:
-			return "test"; //element.toString();
-		default:
-			return "<error>";	
+		if (element instanceof Message) 
+		{
+			Message message = (Message) element;
+			switch (columnIndex) {
+			case 0:
+				return message.toString();
+			default:
+				return "<error>";	
+			}
+			
 		}
+		
+		return "<error";
 	}
 }

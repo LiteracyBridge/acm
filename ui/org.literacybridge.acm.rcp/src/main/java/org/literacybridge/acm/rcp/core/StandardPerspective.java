@@ -6,6 +6,6 @@ import org.eclipse.ui.IPerspectiveFactory;
 public class StandardPerspective implements IPerspectiveFactory {
 
 	public void createInitialLayout(IPageLayout layout) {
-		layout.setEditorAreaVisible(false);
+		layout.setEditorAreaVisible(true);
 	}
 }
