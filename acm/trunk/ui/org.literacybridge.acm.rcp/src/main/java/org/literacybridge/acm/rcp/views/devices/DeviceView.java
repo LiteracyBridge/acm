@@ -1,15 +1,19 @@
 package org.literacybridge.acm.rcp.views.devices;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.eclipse.ui.part.ViewPart;
+import org.eclipse.ui.progress.UIJob;
 import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.core.MessageBus.Message;
 import org.literacybridge.acm.device.DeviceConnectEvent;
@@ -50,7 +54,7 @@ public class DeviceView extends ViewPart {
 		deviceListViewer.setLabelProvider(new DeviceLabelProvider());
 			
 		// start after table creation so that listener can be initialized
-//		registerAudioDeviceListener();
+		registerAudioDeviceListener();
 	}
 
 	private void createColumn(TableViewer viewer) {
@@ -69,22 +73,32 @@ public class DeviceView extends ViewPart {
 		table.setLinesVisible(true);
 	}
 
-//	private void registerAudioDeviceListener() {
-//		FileSystemMonitor monitor = new FileSystemMonitor();
-//		monitor.addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());	
-//		monitor.start();
-//		
-//		MessageBus bus = MessageBus.getInstance();
-//		bus.addListener(DeviceConnectEvent.class, new MessageBus.MessageListener() {
-//			
-//			@Override
-//			public void receiveMessage(Message message) {
-//				if (deviceListViewer != null) {
-//					deviceListViewer.setInput(message);
-//				}
-//			}
-//		});
-//	}
+	private void registerAudioDeviceListener() {
+		FileSystemMonitor monitor = new FileSystemMonitor();
+		monitor.addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());	
+		monitor.start();
+		
+		MessageBus bus = MessageBus.getInstance();
+		bus.addListener(DeviceConnectEvent.class, new MessageBus.MessageListener() {
+			
+			@Override
+			public void receiveMessage(final Message message) {
+				UIJob newJob = new UIJob("Device Message Bus") {
+					
+					@Override
+					public IStatus runInUIThread(IProgressMonitor monitor) {
+						if (deviceListViewer != null) {
+							deviceListViewer.setInput(message);
+						}
+						
+						return null;
+					}
+				};
+				 
+				newJob.schedule();
+			}
+		});
+	}
 	
 	@Override
 	public void setFocus() {
