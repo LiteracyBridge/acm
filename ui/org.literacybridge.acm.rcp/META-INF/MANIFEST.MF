@@ -10,5 +10,5 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.ui.forms
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
-Bundle-ClassPath: acmLib.jar,
- .
+Bundle-ClassPath: .,
+ lib/acm-core-1.0-SNAPSHOT.jar
