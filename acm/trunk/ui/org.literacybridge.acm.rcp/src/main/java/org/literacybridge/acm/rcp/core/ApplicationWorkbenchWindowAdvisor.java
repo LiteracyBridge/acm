@@ -27,6 +27,8 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor {
         configurer.setShowCoolBar(true);
         configurer.setTitle("LiteracyBridge - Audio Content Manager");
         
+        
+        
         // init font registry for this workbench
         initFontRegistry();
     }

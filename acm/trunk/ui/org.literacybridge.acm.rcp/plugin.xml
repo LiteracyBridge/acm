@@ -104,12 +104,6 @@
             restorable="true">
       </view>
        <view
-            class="org.literacybridge.acm.rcp.views.audioItemProperties.AudioItemProperties"
-            id="org.literacybridge.acm.rcp.view.AudioItemPropertiesView"
-            name="Audio Item Properties View"
-            restorable="true">
-      </view>
-       <view
              class="org.literacybridge.acm.rcp.views.devices.DeviceView"
              id="org.literacybridge.acm.rcp.view.DeviceView"
              name="Devices"
@@ -177,6 +171,15 @@
                value="LiteracyBridge ACM">
          </property>
       </product>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors">
+      <editor
+            class="org.literacybridge.acm.rcp.editors.audioItem.AudioItemEditor"
+            default="false"
+            id="org.literacybridge.acm.rcp.editor.AudioItemEditor"
+            name="Audio Item Editor">
+      </editor>
    </extension>
 
 </plugin>
