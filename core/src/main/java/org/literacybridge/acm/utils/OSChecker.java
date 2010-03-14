@@ -9,6 +9,6 @@ public class OSChecker {
 	  public static final boolean WINDOWS = OS_NAME.startsWith("Windows");
 	  /** True iff running on SunOS. */
 	  public static final boolean SUN_OS = OS_NAME.startsWith("SunOS");
-	  /** True iff running on SunOS. */
+	  /** True iff running on MacOS. */
 	  public static final boolean MAC_OS = OS_NAME.startsWith("Mac OS");
 }
