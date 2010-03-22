@@ -69,6 +69,10 @@ public class AudioItem {
 		return this.localizedItems.get(locale);
 	}
 	
+	public Set<Locale> getAvailableLocalizations() {
+		return this.localizedItems.keySet();
+	}
+	
 	public void addLocalizedAudioItem(Locale locale, LocalizedAudioItem localizedAudioItem) {
 		this.localizedItems.put(locale, localizedAudioItem);
 	}
