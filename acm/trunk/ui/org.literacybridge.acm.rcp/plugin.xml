@@ -92,7 +92,7 @@
             restorable="true">
       </view>
       <view
-            class="org.literacybridge.acm.rcp.views.requestResult.RequestResultView"
+            class="org.literacybridge.acm.rcp.views.requestResult.AudioItemView"
             id="org.literacybridge.acm.rcp.view.RequestResultView"
             name="Request Result View"
             restorable="true">
