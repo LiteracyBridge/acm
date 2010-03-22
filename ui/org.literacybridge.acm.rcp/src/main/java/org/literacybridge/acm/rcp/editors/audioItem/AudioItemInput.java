@@ -36,7 +36,7 @@ public class AudioItemInput implements IEditorInput {
 	}
 
 	private Metadata getMetadata4DefaultLanguage() {
-		return audioItem.getLocalizedAudioItem(LanguageUtil.GetCurrentLanguage()).getMetadata();
+		return audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage()).getMetadata();
 	}
 	
 	@Override
