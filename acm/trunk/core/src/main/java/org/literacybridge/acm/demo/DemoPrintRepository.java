@@ -37,7 +37,7 @@ public class DemoPrintRepository {
 		List<AudioItem> audioItems = result.getAudioItems();
 		for (AudioItem item : audioItems) {
 			StringBuilder cats = new StringBuilder();
-			Set<Category> categories = item.getCategories();
+			List<Category> categories = item.getCategoryList();
 			for (Category c : categories) {
 				cats.append(c.getCategoryName(locale));
 				cats.append(", ");
