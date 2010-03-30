@@ -29,7 +29,7 @@ public class DataRequestResult implements IDataRequestResult {
 	 * @see main.java.org.literacybridge.acm.api.IDataRequestResult#getFacetCount(main.java.org.literacybridge.acm.categories.Taxonomy.Category)
 	 */
 	public int getFacetCount(Category category) {
-		return this.facetCountArray[category.getID()];
+                return category.getAudioItemList().size();
 	}
 	
 	/* (non-Javadoc)

@@ -2,11 +2,20 @@ package org.literacybridge.acm.content;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
+import java.util.LinkedList;
+
+import org.literacybridge.acm.db.PersistentCategory;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.db.Persistable;
+import org.literacybridge.acm.db.PersistentAudioItem;
+import org.literacybridge.acm.db.PersistentLocale;
+import org.literacybridge.acm.db.PersistentLocalizedAudioItem;
 
 /**
  * An AudioItem is a unique audio entity, identified by its audioItemID.
@@ -16,64 +25,101 @@ import org.literacybridge.acm.categories.Taxonomy.Category;
  * of {@link LocalizedAudioItem} per translation referenced by this AudioItem.
  *  
  */
-public class AudioItem {
-        /** Database ID **/
-        private int mID;
+public class AudioItem implements Persistable {
     
-	/** Multiple translations of the same content share this ID */
-	private final String mUUID;
+        private PersistentAudioItem mItem;
 	
-	/** The categories this AudioItem belongs to */
-	private Set<Category> categories;
+        public AudioItem() {
+            mItem = new PersistentAudioItem();
+        }
 	
-	/** All available localized versions of this audio item */
-	private Map<Locale, LocalizedAudioItem> localizedItems;
+        public AudioItem(PersistentAudioItem item) {
+            mItem = item;
+        }
 	
 	public AudioItem(String uuID) {
-		this(uuID, (Category[]) null);
+            this();
+            mItem.setUuid(uuID);
 	}
 	
 	public AudioItem(String uuId, Category... categories) {
-		this.mUUID = uuId;
-		this.categories = new HashSet<Category>();
-		this.localizedItems = new HashMap<Locale, LocalizedAudioItem>();
-		
-		if (categories != null) {
+            this(uuId);
 			for (Category c : categories) {
-				this.categories.add(c);
+                addCategory(c);
 			}
 		}
-	}
 	
-        public int getId() {
-            return mID;
+        public Integer getId() {
+            return mItem.getId();
         }
         
-        public void setId(int id) {
-            mID = id;
+        public String getUuid() {
+            return mItem.getUuid();
         }
         
-        public String getUUId() {
-            return mUUID;
+        public void setUuid(String uuid) {
+            mItem.setUuid(uuid);
         }
         
 	public void addCategory(Category category) {
-		this.categories.add(category);
+            mItem.addPersistentAudioItemCategory(category.getPersistentObject());
 	}
 	
-	public Set<Category> getCategories() {
-		return this.categories;
+	public List<Category> getCategoryList() {
+            List<Category> categories = new LinkedList<Category>();
+            for (PersistentCategory c : mItem.getPersistentCategoryList()) {
+                categories.add(new Category(c));
+	}
+            return categories;
 	}
 	
 	public LocalizedAudioItem getLocalizedAudioItem(Locale locale) {
-		return this.localizedItems.get(locale);
+            for (PersistentLocalizedAudioItem item : mItem.getPersistentLocalizedAudioItems()) {
+                PersistentLocale l = item.getPersistentLocale();
+                if ((locale.getCountry().equals(l.getCountry()) && 
+                    (locale.getLanguage().equals(l.getLanguage())))) {
+                    return new LocalizedAudioItem(item);         
+	}
+            }
+            return null;
 	}
 	
 	public Set<Locale> getAvailableLocalizations() {
-		return this.localizedItems.keySet();
+            Set<Locale> results = new LinkedHashSet<Locale>();
+            for (PersistentLocalizedAudioItem i : mItem.getPersistentLocalizedAudioItems()) {
+                PersistentLocale locale = i.getPersistentLocale();
+                results.add(new Locale(locale.getLanguage(),locale.getCountry()));
+            }
+            return results;
 	}
 	
-	public void addLocalizedAudioItem(Locale locale, LocalizedAudioItem localizedAudioItem) {
-		this.localizedItems.put(locale, localizedAudioItem);
+	public void addLocalizedAudioItem(LocalizedAudioItem localizedAudioItem) {
+            mItem.addPersistentLocalizedAudioItem(localizedAudioItem.getPersistentObject());
 	}
+
+        public void removeLocalizedAudioItem(LocalizedAudioItem localizedAudioItem) {
+            mItem.removePersistentLocalizedAudioItem(localizedAudioItem.getPersistentObject());            
+}
+
+        public AudioItem commit() {
+            mItem = mItem.<PersistentAudioItem>commit();
+            return this;
+        }
+
+        public void destroy() {
+            mItem.destroy();
+        }
+
+        public AudioItem refresh() {
+            mItem = mItem.<PersistentAudioItem>refresh();
+            return this;
+        }
+        
+        public static AudioItem getFromDatabase(String uuid) {      
+            PersistentAudioItem item = PersistentAudioItem.getFromDatabase(uuid);
+            if (item == null) {
+                return null;
+            }
+            return new AudioItem(item);
+        }
 }
