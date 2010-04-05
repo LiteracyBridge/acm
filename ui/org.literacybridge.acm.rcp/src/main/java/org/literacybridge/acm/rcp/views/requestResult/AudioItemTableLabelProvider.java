@@ -1,5 +1,6 @@
 package org.literacybridge.acm.rcp.views.requestResult;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -54,7 +55,7 @@ public class AudioItemTableLabelProvider extends ColumnLabelProvider implements
 		}
 			
 		if (metadata != null) {
-			Set<Category> categories = item.getCategories();
+			List<Category> categories = item.getCategoryList();
 			switch (columnIndex) {
 			case 0:
 				return metadata.getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue();
