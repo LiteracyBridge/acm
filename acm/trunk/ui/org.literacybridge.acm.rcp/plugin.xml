@@ -150,6 +150,18 @@
                standalone="true"
                visible="true">
          </view>
+         <view
+               closeable="false"
+               id="org.literacybridge.acm.rcp.view.ToolbarView"
+               minimized="false"
+               moveable="false"
+               ratio="0.2f"
+               relationship="top"
+               relative="org.eclipse.ui.editorss"
+               showTitle="false"
+               standalone="true"
+               visible="true">
+         </view>
       </perspectiveExtension>
    </extension>
    <extension

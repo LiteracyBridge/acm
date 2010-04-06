@@ -24,7 +24,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor {
         IWorkbenchWindowConfigurer configurer = getWindowConfigurer();
         configurer.setInitialSize(new Point(1000, 500));
         configurer.setShowStatusLine(false);
-        configurer.setShowCoolBar(true);
+        configurer.setShowCoolBar(false);
         configurer.setTitle("LiteracyBridge - Audio Content Manager");
         
         

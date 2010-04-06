@@ -40,16 +40,16 @@ public class CategoryView extends ViewPart {
 	public void createPartControl(Composite parent) {
 		createCheckboxTreeViewer(parent);
 
-		// init database
-		try {
-			Persistence.initialize();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		DemoRepository demo = new DemoRepository();
-		IDataRequestResult result = demo.getDataRequestResult();
-		
-		checkboxTreeViewer.setInput(result);
+//		// init database
+//		try {
+//			Persistence.initialize();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//		DemoRepository demo = new DemoRepository();
+//		IDataRequestResult result = demo.getDataRequestResult();
+//		
+//		checkboxTreeViewer.setInput(result);
 		
 		//getSite().setSelectionProvider(checkboxTreeViewer);	// provide selection
 		checkedTreeNodeProvider = new CheckedTreeNodeProvider();

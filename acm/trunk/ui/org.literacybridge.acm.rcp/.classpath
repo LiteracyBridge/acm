@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry exported="true" kind="lib" path="lib/derby-10.5.3.0_1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/org.eclipse.persistence.jpa-2.0.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/javax.persistence-2.0.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/acm-core"/>
+	<classpathentry kind="lib" path="lib/jmf-2.1.1e.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

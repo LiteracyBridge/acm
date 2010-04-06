@@ -61,9 +61,9 @@ public class AudioItemTableContentProvider implements ITreeContentProvider {
 	@Override
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {	
 		// Same demo data
-		DemoRepository demo = new DemoRepository();
-		IDataRequestResult result = demo.getDataRequestResult();
-		audioItemList = result.getAudioItems();		
+//		DemoRepository demo = new DemoRepository();
+//		IDataRequestResult result = demo.getDataRequestResult();
+//		audioItemList = result.getAudioItems();		
 	}
 	
 	private Set<IAudioItemTableRowAdapter> packageAudioItems() {

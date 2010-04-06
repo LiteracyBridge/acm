@@ -1,122 +1,214 @@
 package org.literacybridge.acm.rcp.views.toolbar;
 
+import java.io.File;
+import java.util.Observable;
+import java.util.Observer;
+
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Slider;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Scale;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.ISizeProvider;
+import org.eclipse.ui.forms.widgets.Form;
+import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.TableWrapData;
+import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.eclipse.ui.part.ViewPart;
+import org.eclipse.ui.progress.UIJob;
 import org.literacybridge.acm.rcp.core.Activator;
+import org.literacybridge.acm.rcp.sound.IPlayerStateListener;
+import org.literacybridge.acm.rcp.sound.SimpleSoundPlayer;
 
-public class ToolbarView extends ViewPart implements ISizeProvider {
+public class ToolbarView extends ViewPart implements ISizeProvider, IPlayerStateListener, Observer {
 
+	private FormToolkit toolkit;
+	private Form form;
+	
+	// player
+	private SimpleSoundPlayer player = new SimpleSoundPlayer();
+	private Button leftBtn = null;
+	private Button rightBtn = null;
+	private Button playBtn = null;
+	
+	Image imagePlay = Activator.getDefault().getImageDescriptor("icons/Player_Play_32.png").createImage();
+	Image imageLeft = Activator.getDefault().getImageDescriptor("icons/Player_Backward_32.png").createImage();
+	Image rightPlay = Activator.getDefault().getImageDescriptor("icons/Player_Forward_32.png").createImage();
+	Image imagePause = Activator.getDefault().getImageDescriptor("icons/Player_pause_32.png").createImage();
 
+	
 	
 	@Override
 	public void createPartControl(Composite parent) {
-
-//		Color color1 = new Color(Display.getCurrent(), new RGB(100,200,144));		
-//		parent.setBackground(color1);
+		addPlayerControls(parent);
+		player.addObserver(this);
 		
-		GridLayout gl = new GridLayout();
-		gl.numColumns = 3;
-		gl.marginTop = 1;
-		gl.marginBottom = 1;
-		gl.verticalSpacing = 1;
-		gl.marginHeight = 0;
-		
-		parent.setLayout(gl);
-		
-	    addChildControls(parent);
-
-
+		// testing
+		File audioFile = new File("/Volumes/MAC_HOME/USERS/coder/Projects/talkingbook/acm/TestData/testWav.wav");
+    	player.setClip(audioFile);
 	}
 
-	private void addChildControls(Composite parent) {
-		
-//		Color color2= new Color(Display.getCurrent(), new RGB(50,50,50));
-//		Color color3 = new Color(Display.getCurrent(), new RGB(22,200,100));
-//		Color color4 = new Color(Display.getCurrent(), new RGB(2,223,244));
 
-		GridData gd0 = new GridData();
-		gd0.verticalAlignment = GridData.CENTER;
-		gd0.horizontalAlignment = SWT.LEFT;
-		gd0.grabExcessHorizontalSpace = true;
-		gd0.grabExcessVerticalSpace = true;
+	private void addPlayerControls(Composite parent) {
+		toolkit = new FormToolkit(parent.getDisplay());
+		form = toolkit.createForm(parent);
+		TableWrapLayout layout = new TableWrapLayout();
+		layout.numColumns = 6;
+		form.getBody().setLayout(layout);
+		TableWrapData twd = null;
 		
-		GridData gd1 = new GridData();
-		gd1.verticalAlignment = SWT.CENTER;
-		gd1.horizontalAlignment = SWT.CENTER;
-		gd1.grabExcessHorizontalSpace = true;
-		gd1.grabExcessVerticalSpace = true;
-
-		GridData gd2 = new GridData();
-		gd2.verticalAlignment = SWT.CENTER;
-		gd2.horizontalAlignment = SWT.RIGHT;
-		gd2.grabExcessHorizontalSpace = true;
-		gd2.grabExcessVerticalSpace = true;
+		// Add player buttons
+		twd = new TableWrapData(TableWrapData.FILL);
+		twd.colspan = 1;
+		addPlayerButtons(form.getBody(), twd);
 		
-		Composite c1 = new Composite(parent, SWT.NULL);
-//		c1.setBackground(color2);
-		c1.setLayoutData(gd0);
-		Composite c2 = new Composite(parent, SWT.NULL);
-//		c2.setBackground(color3);
-		c2.setLayoutData(gd1);
-		Composite c3 = new Composite(parent, SWT.NULL);
-//		c3.setBackground(color4);
-		c3.setLayoutData(gd2);
+		// Add time, tile, ...
+		twd = new TableWrapData(TableWrapData.FILL_GRAB);
+		twd.colspan = 4;
+		addInfoControls(form.getBody(), twd);
 		
-		addButtonBox(c2);
+		// Search box
+		twd = new TableWrapData(TableWrapData.FILL);
+		twd.colspan = 1;
+		addSearchControls(form.getBody(), twd);
 		
 	}
+	
+	
+	/**
+	 * Add player buttons to parent.
+	 * @param parent Composite.
+	 */
+	private void addSearchControls(Composite parent, TableWrapData twd) {
+		// info
+		Form form = toolkit.createForm(parent);
+		TableWrapLayout layout = new TableWrapLayout();
+		layout.numColumns = 3;
+		form.getBody().setLayout(layout);	
+		form.setLayoutData(twd);
+		
+		twd = new TableWrapData(TableWrapData.FILL);
+		twd.colspan = 1;
+			
+		Label search = toolkit.createLabel(form.getBody(), "Search:");
+		search.setLayoutData(twd);
 
-	private void addButtonBox(Composite parent) {
-		GridLayout container = new GridLayout();
-		container.numColumns = 1;
-		container.marginHeight = 0;
-		container.marginWidth = 0;
-		container.verticalSpacing = 0;
-		container.horizontalSpacing = 0;
+		twd = new TableWrapData(TableWrapData.FILL_GRAB);
+		twd.colspan = 2;
+		Text searchStr = toolkit.createText(form.getBody(), "Hello World. Search me!", SWT.BORDER);
+		searchStr.setLayoutData(twd);	
+	}
+	
+	/**
+	 * Add player buttons to parent.
+	 * @param parent Composite.
+	 */
+	private void addInfoControls(Composite parent, TableWrapData twd) {
+		// info
+		Form form = toolkit.createForm(parent);
+		TableWrapLayout layout = new TableWrapLayout();
+		layout.numColumns = 3;
+		form.getBody().setLayout(layout);	
+		form.setLayoutData(twd);
 		
-		parent.setLayout(container);
+		// already played time
+		twd = new TableWrapData(TableWrapData.LEFT);
+		twd.colspan = 1;	
+		Label playedTime = toolkit.createLabel(form.getBody(), "00:00");
+		playedTime.setLayoutData(twd);
 		
-		Composite buttonComp = new Composite(parent,	SWT.NULL);
-		GridLayout gl = new GridLayout();
-		gl.numColumns = 4;
-		gl.marginHeight = 0;
-		gl.marginWidth = 0;
-		gl.verticalSpacing = 0;
-		gl.horizontalSpacing = 0;
-		buttonComp.setLayout(gl);
+		// Title
+		twd = new TableWrapData(TableWrapData.FILL_GRAB);
+		twd.colspan = 1;
+		Label audioTitle = toolkit.createLabel(form.getBody(), "---");
+		audioTitle.setLayoutData(twd);
 		
-		GridData gd = new GridData(GridData.FILL_BOTH);
-//		gd.grabExcessVerticalSpace = true;
-//		gd.grabExcessHorizontalSpace = true;
-//		gd.heightHint = 40;
-//		gd.widthHint = 40;
+		// remaining time
+		twd = new TableWrapData(TableWrapData.RIGHT);
+		twd.colspan = 1;	
+		Label remainingTime = toolkit.createLabel(form.getBody(), "04:14");
+		remainingTime.setLayoutData(twd);
 		
-		Button leftButton = new Button(buttonComp, SWT.PUSH);
-		Image imageLeft = Activator.getDefault().getImageDescriptor("icons/arrow_left.png").createImage();
-		leftButton.setImage(imageLeft);
-		leftButton.setLayoutData(gd);
+		twd = new TableWrapData(TableWrapData.FILL_GRAB);
+		twd.colspan = 3;
+			
+		Scale positionSlider = new Scale(form.getBody(), SWT.CENTER);
+		positionSlider.setMaximum(100);
+		positionSlider.setLayoutData(twd);		
+	}
+	
 
-		Button playButton = new Button(buttonComp, SWT.PUSH);
-		Image imagePlay = Activator.getDefault().getImageDescriptor("icons/arrow_play.png").createImage();
-		playButton.setImage(imagePlay);
-		playButton.setLayoutData(gd);	
+	/**
+	 * Add player buttons to parent.
+	 * @param parent Composite.
+	 */
+	private void addPlayerButtons(Composite parent, TableWrapData twd) {
+		// info
+		Form form = toolkit.createForm(parent);
+		TableWrapLayout layout = new TableWrapLayout();
+		layout.numColumns = 4;
+		form.getBody().setLayout(layout);	
+		form.setLayoutData(twd);
 		
-		Button rightButton = new Button(buttonComp, SWT.PUSH);
-		Image imageRight = Activator.getDefault().getImageDescriptor("icons/arrow_right.png").createImage();
-		rightButton.setImage(imageRight);
-		rightButton.setLayoutData(gd);		
+		twd = new TableWrapData(TableWrapData.FILL_GRAB);
+		twd.colspan = 1;
+			
+		leftBtn = toolkit.createButton(form.getBody(), "", SWT.PUSH);
+		leftBtn.setImage(imageLeft);
+		leftBtn.setLayoutData(twd);
+
+		twd = new TableWrapData(TableWrapData.FILL_GRAB);
+		twd.colspan = 2;
 		
-		//Composite progressBarComp = new Composite(parent, SWT.NULL);
-		Slider slider = new Slider(buttonComp, SWT.HORIZONTAL);
-		slider.setMaximum(100);
-		//slider.setBounds(0, 0, 50, 16);
+		playBtn = toolkit.createButton(form.getBody(), "", SWT.PUSH);
+		playBtn.setImage(imagePlay);
+		playBtn.setLayoutData(twd);
+
+		twd = new TableWrapData(TableWrapData.FILL_GRAB);
+		twd.colspan = 1;
+		
+		rightBtn = toolkit.createButton(form.getBody(), "", SWT.PUSH);
+		rightBtn.setImage(rightPlay);
+		rightBtn.setLayoutData(twd);
+		
+		twd = new TableWrapData(TableWrapData.FILL);
+		twd.colspan = 1;
+		Label dummyLabel = toolkit.createLabel(form.getBody(), "");
+		dummyLabel.setLayoutData(twd);
+		
+//		twd = new TableWrapData(TableWrapData.FILL);
+//		twd.colspan = 2;
+//			
+//		Scale positionSlider = new Scale(form.getBody(), SWT.CENTER);
+//		positionSlider.setMaximum(100);
+//		positionSlider.setLayoutData(twd);	
+//		
+//		twd = new TableWrapData(TableWrapData.FILL);
+//		twd.colspan = 1;
+//		Label dummyLabel2 = toolkit.createLabel(form.getBody(), "");
+//		dummyLabel2.setLayoutData(twd);
+		
+		Listener listener = new Listener() {
+			public void handleEvent(Event event) {
+				if (event.widget == playBtn) {
+					PlayerState state = player.getPlayerState();
+					if (state == PlayerState.STOPPED) {
+						player.play();		
+					} else if (state == PlayerState.RUNNING) {
+						player.stop();
+					}
+				}
+			}
+		};
+
+		playBtn.addListener(SWT.Selection, listener);
+		   
 	}
 	
 	
@@ -129,7 +221,7 @@ public class ToolbarView extends ViewPart implements ISizeProvider {
 	public int computePreferredSize(boolean width, int availableParallel,
 			int availablePerpendicular, int preferredResult) {
 		if (width == false) {
-			return 50;
+			return 70;
 		}
 		
 		return computePreferredSize(width, availableParallel, availablePerpendicular, preferredResult);
@@ -138,5 +230,32 @@ public class ToolbarView extends ViewPart implements ISizeProvider {
 	@Override
 	public int getSizeFlags(boolean width) {
 		return SWT.MIN | SWT.MAX;
+	}
+
+	
+	private void mirrorPlayerState(PlayerState newState) {
+		if (newState == PlayerState.STOPPED | newState == PlayerState.STOPPED) {
+			playBtn.setImage(imagePause);
+		} else if (newState == PlayerState.RUNNING) {
+			playBtn.setImage(imagePlay);
+		}
+	}
+
+
+	@Override
+	public void update(Observable o, Object arg) {
+		if (arg instanceof PlayerState) {
+			final PlayerState playerState = (PlayerState) arg;
+			UIJob newJob = new UIJob("Device Message Bus") {
+				
+				@Override
+				public IStatus runInUIThread(IProgressMonitor monitor) {
+					mirrorPlayerState(playerState);
+					return null;
+				}
+			};
+			 
+			newJob.schedule();
+		}		
 	}
 }
