@@ -2,42 +2,25 @@ package org.literacybridge.acm.db;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-
-import java.io.FileReader;
 import java.io.IOException;
-
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
 import java.sql.Statement;
-
 import java.util.Collection;
-
-import java.util.Locale;
-
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityManager;
 import java.util.Properties;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.persistence.EntityNotFoundException;
-import javax.persistence.EntityTransaction;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 
 import org.eclipse.persistence.jpa.JpaHelper;
-
-import org.literacybridge.acm.demo.DemoRepository;
 import org.literacybridge.acm.categories.Taxonomy;
-import org.literacybridge.acm.content.LocalizedAudioItem;
-import org.literacybridge.acm.metadata.Metadata;
-import org.literacybridge.acm.metadata.MetadataSpecification;
-import org.literacybridge.acm.metadata.MetadataValue;
-import org.literacybridge.acm.metadata.RFC3066LanguageCode;
+import org.literacybridge.acm.demo.DemoRepository;
 
 public class Persistence {
     
@@ -72,7 +55,7 @@ public class Persistence {
     private static final String DEFAULT_CACHE_TYPE_SHARED_DEFAULT = "false";
     private static final String DEFAULT_URL = "jdbc:derby:";
 
-    private static final String DB_CONNECTION_PROPS_FILE = "src/main/resources/configuration.properties";
+    private static final String DB_CONNECTION_PROPS_FILE = File.separator + "configuration.properties";
 
     
     private Persistence() {}
@@ -109,8 +92,7 @@ public class Persistence {
             sConnectionProperties.setProperty(READ_CONNECTIONS_MIN, DEFAULT_READ_CONNECTIONS_MIN);
             sConnectionProperties.setProperty(CACHE_TYPE_DEFAULT, DEFAULT_CACHE_TYPE_DEFAULT);
             sConnectionProperties.setProperty(CACHE_TYPE_SHARED_DEFAULT, DEFAULT_CACHE_TYPE_SHARED_DEFAULT);
-            
-            sConnectionProperties.load(new FileInputStream(DB_CONNECTION_PROPS_FILE));
+            sConnectionProperties.load(Persistence.class.getResourceAsStream(DB_CONNECTION_PROPS_FILE));
 
         } catch (Exception exception) {
             sLogger.fine("Error reading database connection parameter file (" + DB_CONNECTION_PROPS_FILE + ")");
@@ -188,9 +170,8 @@ public class Persistence {
             StringBuffer sqlScript = new StringBuffer();
             try {
                 String scriptName = "db_schema.sql";
-                File scriptLocation = new File("src/main/resources" + File.separator + scriptName);
                 
-                BufferedReader sqlReader = new BufferedReader(new FileReader(scriptLocation)); 
+                BufferedReader sqlReader = new BufferedReader(new InputStreamReader(Persistence.class.getResourceAsStream(File.separator + scriptName))); 
                 String line = null;
                 while ((line = sqlReader.readLine()) != null) {
                     sqlScript.append(line.replace(';', ' ') + "\n");
