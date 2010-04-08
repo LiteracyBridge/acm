@@ -8,11 +8,13 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 
 public class DemoPrintRepository {
 	public static void main(String args[]) throws Exception {
+		Persistence.initialize();
 		DemoRepository demo = new DemoRepository();
 		IDataRequestResult result = demo.getDataRequestResult();
 		
