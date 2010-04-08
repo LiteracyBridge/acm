@@ -14,6 +14,29 @@
     <relativePath>../acm-parent/pom.xml</relativePath>
   </parent>
   <url>http://code.google.com/p/talkingbook/</url>
+  
+  <build>
+  	<plugins>
+	  <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+          <executions>
+            <execution>
+              <phase>package</phase>
+              <goals>
+                <goal>run</goal>
+              </goals>
+              <configuration>
+              <tasks>
+                <copy todir="../ui/org.literacybridge.acm.rcp/lib" preservelastmodified="true">
+                  <fileset file="target/acm-core-1.0-SNAPSHOT.jar"/>
+                </copy>
+              </tasks>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins> 
+  </build>
   <dependencies>
     <dependency>
     	<groupId>org.apache.derby</groupId>
