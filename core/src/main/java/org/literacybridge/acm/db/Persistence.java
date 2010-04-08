@@ -72,7 +72,7 @@ public class Persistence {
     private static final String DEFAULT_CACHE_TYPE_SHARED_DEFAULT = "false";
     private static final String DEFAULT_URL = "jdbc:derby:";
 
-    private static final String DB_CONNECTION_PROPS_FILE = "core/src/main/resources/configuration.properties";
+    private static final String DB_CONNECTION_PROPS_FILE = "src/main/resources/configuration.properties";
 
     
     private Persistence() {}
@@ -188,7 +188,7 @@ public class Persistence {
             StringBuffer sqlScript = new StringBuffer();
             try {
                 String scriptName = "db_schema.sql";
-                File scriptLocation = new File("core/src/main/resources" + File.separator + scriptName);
+                File scriptLocation = new File("src/main/resources" + File.separator + scriptName);
                 
                 BufferedReader sqlReader = new BufferedReader(new FileReader(scriptLocation)); 
                 String line = null;
