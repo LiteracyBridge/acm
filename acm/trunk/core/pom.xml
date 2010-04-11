@@ -16,8 +16,23 @@
   <url>http://code.google.com/p/talkingbook/</url>
   
   <build>
-  	<plugins>
-	  <plugin>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>attached</goal>
+            </goals>
+            <phase>package</phase>
+            <configuration>
+              <descriptor>src/main/assembly/src.xml</descriptor>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
           <executions>
             <execution>
@@ -28,7 +43,7 @@
               <configuration>
               <tasks>
                 <copy todir="../ui/org.literacybridge.acm.rcp/lib" preservelastmodified="true">
-                  <fileset file="target/acm-core-1.0-SNAPSHOT.jar"/>
+                  <fileset file="target/acm-core-${project.version}-jar-with-dependencies.jar"/>
                 </copy>
               </tasks>
             </configuration>
