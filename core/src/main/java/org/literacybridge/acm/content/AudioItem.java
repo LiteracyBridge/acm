@@ -9,13 +9,19 @@ import java.util.Set;
 import java.util.List;
 import java.util.LinkedList;
 
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
+
 import org.literacybridge.acm.db.PersistentCategory;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.db.Persistable;
+import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentLocalizedAudioItem;
+import org.literacybridge.acm.db.PersistentQueries;
 
 /**
  * An AudioItem is a unique audio entity, identified by its audioItemID.
@@ -97,29 +103,46 @@ public class AudioItem implements Persistable {
             mItem.addPersistentLocalizedAudioItem(localizedAudioItem.getPersistentObject());
 	}
 
-        public void removeLocalizedAudioItem(LocalizedAudioItem localizedAudioItem) {
-            mItem.removePersistentLocalizedAudioItem(localizedAudioItem.getPersistentObject());            
-}
+    public void removeLocalizedAudioItem(LocalizedAudioItem localizedAudioItem) {
+        mItem.removePersistentLocalizedAudioItem(localizedAudioItem.getPersistentObject());            
+    }
 
-        public AudioItem commit() {
-            mItem = mItem.<PersistentAudioItem>commit();
-            return this;
-        }
+    public AudioItem commit() {
+        mItem = mItem.<PersistentAudioItem>commit();
+        return this;
+    }
 
-        public void destroy() {
-            mItem.destroy();
-        }
+    public void destroy() {
+        mItem.destroy();
+    }
 
-        public AudioItem refresh() {
-            mItem = mItem.<PersistentAudioItem>refresh();
-            return this;
+    public AudioItem refresh() {
+        mItem = mItem.<PersistentAudioItem>refresh();
+        return this;
+    }
+    
+    public static AudioItem getFromDatabase(String uuid) {      
+        PersistentAudioItem item = PersistentAudioItem.getFromDatabase(uuid);
+        if (item == null) {
+            return null;
         }
+        return new AudioItem(item);
+    }
+    
+    public static AudioItem getFromDatabase(int id) {
+        PersistentAudioItem item = PersistentAudioItem.getFromDatabase(id);
+        if (item == null) {
+            return null;
+        }
+        return new AudioItem(item);
+    }    
         
-        public static AudioItem getFromDatabase(String uuid) {      
-            PersistentAudioItem item = PersistentAudioItem.getFromDatabase(uuid);
-            if (item == null) {
-                return null;
-            }
-            return new AudioItem(item);
+    public static List<AudioItem> getFromDatabaseBySearch(String searchFilter) {
+        List<AudioItem> results = new LinkedList<AudioItem>();
+    	List<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(searchFilter);
+        for (PersistentAudioItem item : items) {
+        	results.add(new AudioItem(item));
         }
+        return results;
+    }
 }

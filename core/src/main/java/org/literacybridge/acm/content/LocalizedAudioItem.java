@@ -15,9 +15,7 @@ import org.literacybridge.acm.metadata.Metadata;
 public class LocalizedAudioItem implements Persistable {
 
         private PersistentLocalizedAudioItem mItem;
-        	
-        private Metadata mMetadata;        
-                
+        	                
         public LocalizedAudioItem() {
             mItem = new PersistentLocalizedAudioItem();
         }
@@ -37,12 +35,10 @@ public class LocalizedAudioItem implements Persistable {
 	}
 	
         private void setLocale(Locale locale) {
-            PersistentLocale persistentLocale = mItem.getPersistentLocale();
-            if (persistentLocale == null) {
-                persistentLocale = new PersistentLocale();
-            }
+        	PersistentLocale persistentLocale = new PersistentLocale();
             persistentLocale.setCountry(locale.getCountry());
             persistentLocale.setLanguage(locale.getLanguage());
+            mItem.setPersistentLocale(persistentLocale);
         }
         
         public Locale getLocale() {
@@ -66,12 +62,11 @@ public class LocalizedAudioItem implements Persistable {
         }        
                 
 	public Metadata getMetadata() {
-            if (mMetadata == null) {
-                mMetadata = new Metadata((mItem.getPersistentMetadata() == null) 
-                                         ? new PersistentMetadata() 
-                                         : mItem.getPersistentMetadata());
-            }
-            return mMetadata;
+		if (mItem.getPersistentMetadata() == null) {
+			PersistentMetadata m = new PersistentMetadata();
+            mItem.setPersistentMetadata(m);
+        }            
+        return new Metadata(mItem.getPersistentMetadata()); 
 	}
 	
 	public Manifest getManifest() {

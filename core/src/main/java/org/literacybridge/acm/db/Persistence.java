@@ -9,6 +9,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,7 +22,13 @@ import javax.persistence.Query;
 
 import org.eclipse.persistence.jpa.JpaHelper;
 import org.literacybridge.acm.categories.Taxonomy;
+import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.demo.DemoRepository;
+import org.literacybridge.acm.metadata.Metadata;
+import org.literacybridge.acm.metadata.MetadataSpecification;
+import org.literacybridge.acm.metadata.MetadataValue;
+import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 
 public class Persistence {
     
@@ -221,14 +229,20 @@ public class Persistence {
     public static void main(String[] args) throws Exception {
         Persistence.initialize();
         
-        
         new DemoRepository();
 
         Taxonomy taxonomy = new Taxonomy();
         
         sLogger.info("Category List Size: " + taxonomy.getCategoryList().size());
         
-
+        List<AudioItem> items = AudioItem.getFromDatabaseBySearch("Titel Busch");
+  
+        sLogger.info("Found items: " + items.size());
+        
+        for (AudioItem item : items) {
+        	sLogger.info("LocalizedAudioItems: " + item.getLocalizedAudioItem(Locale.ENGLISH).getId()); 
+        }
+        
         Persistence.uninitialize();
     }
     
