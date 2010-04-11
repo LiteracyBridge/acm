@@ -24,7 +24,8 @@ public abstract class PersistentObject implements Serializable {
     
     public abstract Integer getId();
     
-    public synchronized <T> T commit() {
+    @SuppressWarnings("unchecked")
+	public synchronized <T> T commit() {
         mLogger.finest("Committing object " + toString());
         
         T persistentObj = null;
@@ -80,7 +81,8 @@ public abstract class PersistentObject implements Serializable {
     }
     
     
-    public <T> T refresh() {
+    @SuppressWarnings("unchecked")
+	public <T> T refresh() {
         if (getId() == null) {
             throw new IllegalStateException("Illegal to call refresh on an uncommitted instance.");
         }

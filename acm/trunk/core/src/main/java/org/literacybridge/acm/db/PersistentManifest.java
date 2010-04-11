@@ -1,7 +1,5 @@
 package org.literacybridge.acm.db;
 
-import java.io.Serializable;
-
 import java.util.LinkedList;
 import java.util.List;
 
@@ -22,9 +20,11 @@ import javax.persistence.TableGenerator;
   @NamedQuery(name = "PersistentManifest.findAll", query = "select o from PersistentManifest o")
 })
 @Table(name = "t_manifest")
-public class PersistentManifest extends PersistentObject implements Serializable {
+public class PersistentManifest extends PersistentObject {
 
-    private static final String COLUMN_VALUE = "gen_manifest";
+	private static final long serialVersionUID = -3571849650554199446L;
+
+	private static final String COLUMN_VALUE = "gen_manifest";
 
     @TableGenerator(name = COLUMN_VALUE,
     table = PersistentObject.SEQUENCE_TABLE_NAME,
@@ -53,10 +53,6 @@ public class PersistentManifest extends PersistentObject implements Serializable
         return persistentReferencedFileList;
     }
 
-    private void setPersistentReferencedFileList(List<PersistentReferencedFile> persistentReferencedFileList) {
-        this.persistentReferencedFileList = persistentReferencedFileList;
-    }
-
     public PersistentReferencedFile addPersistentReferencedFile(PersistentReferencedFile persistentReferencedFile) {
         getPersistentReferencedFileList().add(persistentReferencedFile);
         persistentReferencedFile.setPersistentManifest(this);
@@ -73,8 +69,8 @@ public class PersistentManifest extends PersistentObject implements Serializable
     public PersistentLocalizedAudioItem getPersistentLocalizedAudioItem() {
         return persistentLocalizedAudioItem;
     }
-
-    private void setPersistentLocalizedAudioItem(PersistentLocalizedAudioItem persistentLocalizedAudioItem) {
-        this.persistentLocalizedAudioItem = persistentLocalizedAudioItem;
-    }
+    
+    public static PersistentManifest getFromDatabase(int id) {
+        return Persistence.getPersistentObject(PersistentManifest.class, id);
+    }     
 }

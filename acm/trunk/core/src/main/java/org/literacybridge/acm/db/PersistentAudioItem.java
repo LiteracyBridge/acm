@@ -1,7 +1,5 @@
 package org.literacybridge.acm.db;
 
-import java.io.Serializable;
-
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,9 +25,11 @@ import javax.persistence.TableGenerator;
   @NamedQuery(name = "PersistentAudioItem.findAll", query = "select o from PersistentAudioItem o")
 })
 @Table(name = "t_audioitem")
-public class PersistentAudioItem extends PersistentObject implements Serializable {
+public class PersistentAudioItem extends PersistentObject {
     
-    private static final String COLUMN_VALUE = "gen_audioitem";
+	private static final long serialVersionUID = 6523719801839346881L;
+
+	private static final String COLUMN_VALUE = "gen_audioitem";
 
     @TableGenerator(name = COLUMN_VALUE,
     table = PersistentObject.SEQUENCE_TABLE_NAME,
@@ -94,10 +94,6 @@ public class PersistentAudioItem extends PersistentObject implements Serializabl
 
     public List<PersistentLocalizedAudioItem> getPersistentLocalizedAudioItems() {
         return persistentLocalizedAudioItemList;
-    }
-
-    private void setPersistentLocalizedAudioItems(List<PersistentLocalizedAudioItem> persistentLocalizedAudioItemList) {
-        this.persistentLocalizedAudioItemList = persistentLocalizedAudioItemList;
     }
 
     public PersistentLocalizedAudioItem addPersistentLocalizedAudioItem(PersistentLocalizedAudioItem persistentLocalizedAudioItem) {

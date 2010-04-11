@@ -1,20 +1,16 @@
 package org.literacybridge.acm.db;
 
 import java.io.Serializable;
-
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
@@ -25,7 +21,9 @@ import javax.persistence.TableGenerator;
 @Table(name = "t_locale")
 public class PersistentLocale extends PersistentObject implements Serializable {
 
-    private static final String COLUMN_VALUE = "gen_locale";
+	private static final long serialVersionUID = 196741399223820451L;
+
+	private static final String COLUMN_VALUE = "gen_locale";
 
     @TableGenerator(name = COLUMN_VALUE,
     table = PersistentObject.SEQUENCE_TABLE_NAME,
@@ -90,23 +88,15 @@ public class PersistentLocale extends PersistentObject implements Serializable {
         return persistentMetadataList;
     }
 
-    private void setPersistentMetadataList(List<PersistentMetadata> persistentMetadataList) {
-        this.persistentMetadataList = persistentMetadataList;
-    }
-
     public List<PersistentLocalizedAudioItem> getPersistentLocalizedAudioItemList() {
         return persistentLocalizedAudioItemList;
-    }
-
-    private void setPersistentLocalizedAudioItemList(List<PersistentLocalizedAudioItem> persistentLocalizedAudioItemList) {
-        this.persistentLocalizedAudioItemList = persistentLocalizedAudioItemList;
     }
     
     public List<PersistentLocalizedString> getPersistentLanguageStringList() {
         return persistentLanguageStringList;
+    }  
+    
+    public static PersistentLocale getFromDatabase(int id) {
+        return Persistence.getPersistentObject(PersistentLocale.class, id);
     }
-
-    private void setPersistentLanguageStringList(List<PersistentLocalizedString> persistentLanguageStringList) {
-        this.persistentLanguageStringList = persistentLanguageStringList;
-    }    
 }

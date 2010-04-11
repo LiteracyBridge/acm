@@ -32,7 +32,7 @@ public class Persistence {
     
     private static String DBNAME = "literacybridge";
     
-    private static final String PASSWORD = "eclipselink.jdbc.password";
+    //private static final String PASSWORD = "eclipselink.jdbc.password";
     private static final String DRIVER = "eclipselink.jdbc.driver";
     private static final String LOG_LEVEL = "eclipselink.logging.level";
     private static final String TARGET_DB = "eclipselink.target-database";
@@ -77,7 +77,7 @@ public class Persistence {
     }    
     
     public static synchronized EntityManager getEntityManager() {            
-        return sEmf.createEntityManager();
+        return getEntityManagerFactory().createEntityManager();
     }    
     
     private static EntityManagerFactory createEntityManagerFactory() throws Exception {        
@@ -204,7 +204,8 @@ public class Persistence {
         return persistentObject;
     }
     
-    static <T> Collection<T> getPersistentObjects(Class objectClass) {
+    @SuppressWarnings("unchecked")
+	static <T> Collection<T> getPersistentObjects(Class objectClass) {
         EntityManager em = getEntityManager();
         Collection<T> results = null;
         try {
