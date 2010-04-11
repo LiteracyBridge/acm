@@ -1,8 +1,5 @@
 package org.literacybridge.acm.db;
 
-import java.io.Serializable;
-
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,9 +25,11 @@ import javax.persistence.TableGenerator;
   @NamedQuery(name = "PersistentCategory.findAll", query = "select o from PersistentCategory o")
 })
 @Table(name = "t_category")
-public class PersistentCategory extends PersistentObject implements Serializable {
+public class PersistentCategory extends PersistentObject {
    
-    private static final String COLUMN_VALUE = "gen_category";
+	private static final long serialVersionUID = -126026515543050565L;
+
+	private static final String COLUMN_VALUE = "gen_category";
 
     @TableGenerator(name = COLUMN_VALUE,
     table = PersistentObject.SEQUENCE_TABLE_NAME,

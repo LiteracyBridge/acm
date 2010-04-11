@@ -1,7 +1,5 @@
 package org.literacybridge.acm.db;
 
-import java.io.Serializable;
-
 import java.sql.Timestamp;
 
 import javax.persistence.Column;
@@ -9,10 +7,10 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
+import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
@@ -21,9 +19,11 @@ import javax.persistence.TableGenerator;
   @NamedQuery(name = "PersistentMetadata.findAll", query = "select o from PersistentMetadata o")
 })
 @Table(name = "t_metadata")
-public class PersistentMetadata extends PersistentObject implements Serializable {
+public class PersistentMetadata extends PersistentObject {
  
-    private static final String COLUMN_VALUE = "gen_metadata";
+	private static final long serialVersionUID = -4128827355718501175L;
+
+	private static final String COLUMN_VALUE = "gen_metadata";
 
     @TableGenerator(name = COLUMN_VALUE,
     table = PersistentObject.SEQUENCE_TABLE_NAME,
@@ -111,11 +111,7 @@ public class PersistentMetadata extends PersistentObject implements Serializable
     
     public PersistentLocalizedAudioItem getPersistentLocalizedAudioItem() {
         return persistentLocalizedAudioItem;
-    }
-
-    private void setPersistentLocalizedAudioItem(PersistentLocalizedAudioItem persistentLocalizedAudioItem) {
-        this.persistentLocalizedAudioItem = persistentLocalizedAudioItem;
-    }    
+    }   
 
     public String getDc_contributor() {
         return dc_contributor;
@@ -285,5 +281,9 @@ public class PersistentMetadata extends PersistentObject implements Serializable
     protected void setPersistentLocale(PersistentLocale persistentLocale) {
         this.persistentLocale = persistentLocale;
     }
+    
+    public static PersistentMetadata getFromDatabase(int id) {
+        return Persistence.getPersistentObject(PersistentMetadata.class, id);
+    }      
     
 }

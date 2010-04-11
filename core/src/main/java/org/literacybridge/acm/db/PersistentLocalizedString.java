@@ -1,10 +1,5 @@
 package org.literacybridge.acm.db;
 
-import java.io.Serializable;
-
-import java.util.LinkedList;
-import java.util.List;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -13,8 +8,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
@@ -23,9 +16,11 @@ import javax.persistence.TableGenerator;
   @NamedQuery(name = "PersistentLocalizedString.findAll", query = "select o from PersistentLocalizedString o")
 })
 @Table(name = "t_localized_string")
-public class PersistentLocalizedString extends PersistentObject implements Serializable {
+public class PersistentLocalizedString extends PersistentObject {
 
-    private static final String COLUMN_VALUE = "gen_localized_string";
+	private static final long serialVersionUID = -6293178189550152630L;
+
+	private static final String COLUMN_VALUE = "gen_localized_string";
 
     @TableGenerator(name = COLUMN_VALUE,
     table = PersistentObject.SEQUENCE_TABLE_NAME,
@@ -67,10 +62,6 @@ public class PersistentLocalizedString extends PersistentObject implements Seria
     public PersistentLocale getPersistentLocale() {
         return persistentLocale;
     }
-
-    private void setPersistentLocale(PersistentLocale locale) {
-        this.persistentLocale = locale;
-    }
     
     public PersistentString getPersistentString() {
         return persistentString;
@@ -84,4 +75,8 @@ public class PersistentLocalizedString extends PersistentObject implements Seria
     public String toString() {
             return getTranslation();
     }
+    
+    public static PersistentLocalizedString getFromDatabase(int id) {
+        return Persistence.getPersistentObject(PersistentLocalizedString.class, id);
+    }   
 }

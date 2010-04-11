@@ -1,7 +1,5 @@
 package org.literacybridge.acm.db;
 
-import java.io.Serializable;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -18,9 +16,11 @@ import javax.persistence.TableGenerator;
   @NamedQuery(name = "PersistentReferencedFile.findAll", query = "select o from PersistentReferencedFile o")
 })
 @Table(name = "t_referenced_file")
-public class PersistentReferencedFile extends PersistentObject implements Serializable {
+public class PersistentReferencedFile extends PersistentObject {
 
-    private static final String COLUMN_VALUE = "gen_referenced_file";
+	private static final long serialVersionUID = 2256652930931429681L;
+
+	private static final String COLUMN_VALUE = "gen_referenced_file";
 
     @TableGenerator(name = COLUMN_VALUE,
     table = PersistentObject.SEQUENCE_TABLE_NAME,
@@ -61,4 +61,8 @@ public class PersistentReferencedFile extends PersistentObject implements Serial
     void setPersistentManifest(PersistentManifest persistentManifest) {
         this.persistentManifest = persistentManifest;
     }
+    
+    public static PersistentReferencedFile getFromDatabase(int id) {
+        return Persistence.getPersistentObject(PersistentReferencedFile.class, id);
+    }  
 }

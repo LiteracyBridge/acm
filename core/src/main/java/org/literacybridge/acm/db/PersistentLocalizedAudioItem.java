@@ -1,17 +1,18 @@
 package org.literacybridge.acm.db;
 
-import java.io.Serializable;
-
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EntityManager;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.NoResultException;
 import javax.persistence.OneToOne;
+import javax.persistence.Query;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
@@ -20,9 +21,11 @@ import javax.persistence.TableGenerator;
   @NamedQuery(name = "PersistentLocalizedAudioItem.findAll", query = "select o from PersistentLocalizedAudioItem o")
 })
 @Table(name = "t_localized_audioitem")
-public class PersistentLocalizedAudioItem extends PersistentObject implements Serializable {
+public class PersistentLocalizedAudioItem extends PersistentObject {
 
-    private static final String COLUMN_VALUE = "gen_localized_audioitem";
+	private static final long serialVersionUID = -976609359839768497L;
+
+	private static final String COLUMN_VALUE = "gen_localized_audioitem";
 
     @TableGenerator(name = COLUMN_VALUE,
     table = PersistentObject.SEQUENCE_TABLE_NAME,
@@ -111,5 +114,24 @@ public class PersistentLocalizedAudioItem extends PersistentObject implements Se
     public void setPersistentLocale(PersistentLocale persistentLocale) {
         this.persistentLocale = persistentLocale;
     }
+    
+    
+    public static PersistentLocalizedAudioItem getFromDatabase(int id) {
+        return Persistence.getPersistentObject(PersistentLocalizedAudioItem.class, id);
+    }
+    
+    public static PersistentLocalizedAudioItem getFromDatabase(String uuid) {
+        EntityManager em = Persistence.getEntityManager();
+        PersistentLocalizedAudioItem result = null;
+        try {
+            Query findObject = em.createQuery("SELECT o FROM PersistentLocalizedAudioItem o WHERE o.uuid = '" + uuid + "'");
+            result = (PersistentLocalizedAudioItem) findObject.getSingleResult();
+        } catch (NoResultException e) {
+            // do nothing
+        } finally {
+            em.close();
+        }
+        return result;
+    }     
     
 }
