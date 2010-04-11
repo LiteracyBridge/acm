@@ -37,10 +37,10 @@ public class ToolbarView extends ViewPart implements ISizeProvider, IPlayerState
 	private Button rightBtn = null;
 	private Button playBtn = null;
 	
-	Image imagePlay = Activator.getDefault().getImageDescriptor("icons/Player_Play_32.png").createImage();
-	Image imageLeft = Activator.getDefault().getImageDescriptor("icons/Player_Backward_32.png").createImage();
-	Image rightPlay = Activator.getDefault().getImageDescriptor("icons/Player_Forward_32.png").createImage();
-	Image imagePause = Activator.getDefault().getImageDescriptor("icons/Player_pause_32.png").createImage();
+	Image imagePlay = Activator.getDefault().getImageDescriptor("icons/play-24px.png").createImage();
+	Image imageLeft = Activator.getDefault().getImageDescriptor("icons/back-24px.png").createImage();
+	Image rightPlay = Activator.getDefault().getImageDescriptor("icons/forward-24px.png").createImage();
+	Image imagePause = Activator.getDefault().getImageDescriptor("icons/pause-24px.png").createImage();
 
 	
 	
