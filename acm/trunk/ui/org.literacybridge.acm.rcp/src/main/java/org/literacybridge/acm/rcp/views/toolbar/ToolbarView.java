@@ -143,7 +143,7 @@ public class ToolbarView extends ViewPart implements ISizeProvider, Observer {
 		// remaining time
 		twd = new TableWrapData(TableWrapData.RIGHT);
 		twd.colspan = 1;	
-		remainingTime = toolkit.createLabel(form.getBody(), "04:14");
+		remainingTime = toolkit.createLabel(form.getBody(), "00:00");
 		remainingTime.setLayoutData(twd);
 		
 		twd = new TableWrapData(TableWrapData.FILL_GRAB);
