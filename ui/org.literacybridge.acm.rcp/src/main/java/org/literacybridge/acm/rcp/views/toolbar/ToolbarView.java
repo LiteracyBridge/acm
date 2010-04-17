@@ -43,6 +43,7 @@ public class ToolbarView extends ViewPart implements ISizeProvider, Observer {
 	private Label audioTitle = null;
 	private Label playedTime = null;
 	private Label remainingTime = null;
+	private boolean scaleGrapped = false;
 	
 	Image imagePlay = Activator.getImageDescriptor("icons/play-24px.png").createImage();
 	Image imageLeft = Activator.getImageDescriptor("icons/back-24px.png").createImage();
@@ -150,6 +151,7 @@ public class ToolbarView extends ViewPart implements ISizeProvider, Observer {
 			
 		positionSlider = new Scale(form.getBody(), SWT.CENTER);
 		positionSlider.setLayoutData(twd);		
+		addSliderMovedListener(positionSlider);
 	}
 	
 
@@ -208,14 +210,45 @@ public class ToolbarView extends ViewPart implements ISizeProvider, Observer {
 				}
 			}
 		};
-
 		playBtn.addListener(SWT.Selection, listener);	
+	}
+	
+	private void addSliderMovedListener(Scale slider) {
+		slider.addListener(SWT.MouseUp, new Listener() {
+			@Override
+			public void handleEvent(Event event) {
+				PlayerStateDetails psd = player.getPlayerStateDetails();
+				// handle only if player is running
+				if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
+					int value = positionSlider.getSelection();
+					player.play(value);
+				}
+				scaleGrapped = false;
+			}			
+		});
+		
+		slider.addListener(SWT.MouseDown, new Listener() {
+			@Override
+			public void handleEvent(Event event) {
+				scaleGrapped = true;				
+			}			
+		});
+		
+		slider.addListener(SWT.MouseMove, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				if (player.getPlayerStateDetails().getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
+					int value = positionSlider.getSelection();
+					updatePlayerTimes(value);		
+				}	    	
+			}			
+		});
 	}
 	
 	
 	@Override
 	public void setFocus() {
-
 	}
 	
 	@Override
@@ -233,7 +266,6 @@ public class ToolbarView extends ViewPart implements ISizeProvider, Observer {
 		return SWT.MIN | SWT.MAX;
 	}
 
-	
 	private void mirrorPlayerState(PlayerStateDetails newState) {
 		currPlayerDetails = newState;
 		if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
@@ -241,20 +273,30 @@ public class ToolbarView extends ViewPart implements ISizeProvider, Observer {
 		} else if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
 			playBtn.setImage(imagePause);
 	    	durtation = player.getDurationInSecs();
-			positionSlider.setMaximum((int) durtation);
-			positionSlider.setSelection((int) currPlayerDetails.getCurrentPoitionInSecs());
-			
-			// Update label controls
-			audioTitle.setText("Some Title");
-			int playedTimeInSecs = (int) currPlayerDetails.getCurrentPoitionInSecs();
-			playedTime.setText(secondsToTimeString(playedTimeInSecs));
-			remainingTime.setText(secondsToTimeString((int) (durtation - playedTimeInSecs)));
+	    	
+	    	// update only if scale is not moved by user
+	    	if (!scaleGrapped) {
+				positionSlider.setMaximum((int) durtation);
+				positionSlider.setSelection((int) currPlayerDetails.getCurrentPoitionInSecs());	    		
+	    	
+				// Update label controls
+				audioTitle.setText("Some Title");
+				int playedTimeInSecs = (int) currPlayerDetails.getCurrentPoitionInSecs();
+				playedTime.setText(secondsToTimeString(playedTimeInSecs));
+				remainingTime.setText(secondsToTimeString((int) (durtation - playedTimeInSecs)));
+	    	}
 		}
+	}
+	
+	private void updatePlayerTimes(int currPosInSecs) {
+		playedTime.setText(secondsToTimeString(currPosInSecs));
+		remainingTime.setText(secondsToTimeString((int) (durtation - currPosInSecs)));
 	}
 
 	private void ResetPlayerControls() {
 		playedTime.setText(secondsToTimeString(0));
 		remainingTime.setText(secondsToTimeString(0));
+		scaleGrapped = false;
 	}
 	
 	private String secondsToTimeString(int seconds) {
@@ -263,8 +305,6 @@ public class ToolbarView extends ViewPart implements ISizeProvider, Observer {
 				  seconds / SECONDS_PER_MINUTE, 
 				  seconds % SECONDS_PER_MINUTE);
 	}
-
-	
 
 	@Override
 	public void update(Observable o, Object arg) {
