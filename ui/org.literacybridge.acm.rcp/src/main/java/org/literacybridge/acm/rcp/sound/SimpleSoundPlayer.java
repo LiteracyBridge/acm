@@ -15,24 +15,36 @@ import javax.media.Player;
 import javax.media.PrefetchCompleteEvent;
 import javax.media.RealizeCompleteEvent;
 import javax.media.Time;
-
-import org.literacybridge.acm.rcp.sound.IPlayerStateListener.PlayerState;
+import javax.media.TimeBase;
 
 public class SimpleSoundPlayer extends Observable
              implements ISoundPlayer,
                         ControllerListener,
                         Runnable {
-    private Player player = null;
+	
+    private static final int LISTENER_UPDATE_TIME_PERIOD = 500;
+	private Player player = null;
     private Thread playThread = null;
     private File currentClip;
-    private PlayerState playerState = PlayerState.STOPPED;
     
+    // details about player
+	public static enum PlayerState { RUNNING, PAUSED };
+    private PlayerState playerState = PlayerState.PAUSED;
+    private double durationInSecs = 0;
+    
+    /**
+     * Constructor.
+     */
     public SimpleSoundPlayer() {
+    	resetPlayer();
     }
-    
-    
+     
+    /**
+     * Initialize with an audio file.
+     */
     public void setClip(File file) {
-        currentClip = file;
+        currentClip = file;      
+    	resetPlayer();
     }
     
     public void play() {
@@ -42,7 +54,6 @@ public class SimpleSoundPlayer extends Observable
                 player = Manager.createPlayer(mediaLocator);
                 player.addControllerListener(this);
                 player.realize();
-                internalPlayerStateChanged(playerState.RUNNING);
             }
             catch(MalformedURLException ex) {
                 ex.printStackTrace();
@@ -56,50 +67,71 @@ public class SimpleSoundPlayer extends Observable
         }
         else {
             player.start();
-            internalPlayerStateChanged(PlayerState.RUNNING);
+        }
+        
+        playerState = PlayerState.RUNNING;
+        
+        if (playThread == null) {
+        	playThread = new Thread(this);           
+        	playThread.start();
         }
     }
     
     public void pause() {
         if(player != null) {
             player.stop();
-            internalPlayerStateChanged(PlayerState.PAUSED);
         }
     }
     public void stop() {
         if(player != null) {
-            player.removeControllerListener(this);
             player.stop();
-            player.close();
-            player = null;
-        }
-        
-        internalPlayerStateChanged(PlayerState.STOPPED);
+            player.removeControllerListener(this);
+
+        	// Update listeners
+            playThread = null;
+        	playerState = PlayerState.PAUSED;
+            updatePlayerListeners(); // call explicit as player thread already interrupt
+        }    
     }
     
     public void controllerUpdate(ControllerEvent ev) {
         if(ev instanceof RealizeCompleteEvent) {
             player.prefetch();
         }
+        
         if(ev instanceof PrefetchCompleteEvent) {
-            playThread = new Thread(this);
+            durationInSecs = player.getDuration().getSeconds();
+        	playThread = new Thread(this);
             playThread.start();
             player.getGainControl().setLevel(1);
             player.start();
+ 
+            playerState = PlayerState.RUNNING;
+            updatePlayerListeners(); // call explicit to inform listeners immediately
         }
+        
         if(ev instanceof EndOfMediaEvent) {
             player.removeControllerListener(this);
             player.stop();
             player.close();
             player = null;
-            if(playThread != null) {
-                playThread = null;
-            }
-            internalPlayerStateChanged(PlayerState.STOPPED);
+            playThread.interrupt();
+            
+            resetPlayer();
+            updatePlayerListeners(); // call explicit as player thread already interrupt
         }
     }
     
-    public double getCurrentTime() {
+    private void resetPlayer() {
+        playerState = PlayerState.PAUSED;  	
+        durationInSecs = 0.0;
+        if (player != null) {
+            player.close();
+            player = null;       	
+        }
+    }
+    
+    private double getCurrentTime() {
     	if (player != null) {
     		Time time = player.getMediaTime();
     	    return time.getSeconds();
@@ -109,25 +141,33 @@ public class SimpleSoundPlayer extends Observable
     }
     
     public void run() {
-        while(playThread != null) {
-            if(player != null) {
+    	// update listeners within defined time period
+        while (playThread != null && !playThread.isInterrupted()) {
+            updatePlayerListeners();
 
-                try {
-                    playThread.sleep(10);
-                }
-                catch(InterruptedException ex) {}
+        	try {
+                Thread.sleep(LISTENER_UPDATE_TIME_PERIOD);
+            }
+            catch(InterruptedException ex) {
+            	break;
             }
        }
+        
+        updatePlayerListeners(); // JTBD
     }
     
-    private void internalPlayerStateChanged(PlayerState newState) {
-    	playerState = newState;
+    private void updatePlayerListeners() {
+    	PlayerStateDetails currentDetails = getPlayerStateDetails();
+       	System.out.println("PlayerListners update: " + currentDetails);
     	setChanged();
-    	System.out.println("Current State: " + newState.toString());
-    	notifyObservers(newState);
+    	notifyObservers(currentDetails);
     }
-    
-	public PlayerState getPlayerState() {
-		return playerState;
+
+	public PlayerStateDetails getPlayerStateDetails() {
+		return new PlayerStateDetails(playerState, getCurrentTime());
+	}
+
+	public double getDurationInSecs() {
+		return durationInSecs;
 	}
 }
