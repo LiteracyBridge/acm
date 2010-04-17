@@ -8,6 +8,5 @@ public interface ISoundPlayer {
     public void setClip(File file);
     
     public void play();    
-    public void pause();
     public void stop(); 
 }

@@ -15,14 +15,13 @@ import javax.media.Player;
 import javax.media.PrefetchCompleteEvent;
 import javax.media.RealizeCompleteEvent;
 import javax.media.Time;
-import javax.media.TimeBase;
 
 public class SimpleSoundPlayer extends Observable
              implements ISoundPlayer,
                         ControllerListener,
                         Runnable {
 	
-    private static final int LISTENER_UPDATE_TIME_PERIOD = 500;
+    private static final int LISTENER_UPDATE_TIME_PERIOD = 100;
 	private Player player = null;
     private Thread playThread = null;
     private File currentClip;
@@ -30,7 +29,8 @@ public class SimpleSoundPlayer extends Observable
     // details about player
 	public static enum PlayerState { RUNNING, PAUSED };
     private PlayerState playerState = PlayerState.PAUSED;
-    private double durationInSecs = 0;
+    private double durationInSecs = 0.0;
+     private double playFromSec = 0.0;
     
     /**
      * Constructor.
@@ -66,6 +66,8 @@ public class SimpleSoundPlayer extends Observable
             }
         }
         else {
+            player.setMediaTime(new Time(playFromSec)); // set player position
+            player.addControllerListener(this);
             player.start();
         }
         
@@ -77,16 +79,23 @@ public class SimpleSoundPlayer extends Observable
         }
     }
     
-    public void pause() {
-        if(player != null) {
-            player.stop();
-        }
+    public void play(double playFromSecond) {
+    	stop(true);
+    	playFromSec = playFromSecond;
+    	play();
     }
+    
     public void stop() {
-        if(player != null) {
+    	stop(false);   
+    }
+    
+    private void stop(boolean reposition) {
+        if (player != null) {
             player.stop();
             player.removeControllerListener(this);
-
+            if (!reposition) {
+            	playFromSec = player.getMediaTime().getSeconds(); // save current player position
+            }
         	// Update listeners
             playThread = null;
         	playerState = PlayerState.PAUSED;
@@ -94,28 +103,27 @@ public class SimpleSoundPlayer extends Observable
         }    
     }
     
-    public void controllerUpdate(ControllerEvent ev) {
-        if(ev instanceof RealizeCompleteEvent) {
+    public void controllerUpdate(ControllerEvent ev) { 	
+        if (ev instanceof RealizeCompleteEvent) {
             player.prefetch();
         }
         
-        if(ev instanceof PrefetchCompleteEvent) {
+        if (ev instanceof PrefetchCompleteEvent) {
             durationInSecs = player.getDuration().getSeconds();
         	playThread = new Thread(this);
             playThread.start();
-            player.getGainControl().setLevel(1);
-            player.start();
- 
+            player.getGainControl().setLevel(1);           
+            player.start();          
             playerState = PlayerState.RUNNING;
             updatePlayerListeners(); // call explicit to inform listeners immediately
         }
         
-        if(ev instanceof EndOfMediaEvent) {
+        if (ev instanceof EndOfMediaEvent) {
             player.removeControllerListener(this);
             player.stop();
             player.close();
             player = null;
-            playThread.interrupt();
+            playThread = null;
             
             resetPlayer();
             updatePlayerListeners(); // call explicit as player thread already interrupt
@@ -125,6 +133,7 @@ public class SimpleSoundPlayer extends Observable
     private void resetPlayer() {
         playerState = PlayerState.PAUSED;  	
         durationInSecs = 0.0;
+        playFromSec = 0.0;
         if (player != null) {
             player.close();
             player = null;       	
@@ -158,7 +167,6 @@ public class SimpleSoundPlayer extends Observable
     
     private void updatePlayerListeners() {
     	PlayerStateDetails currentDetails = getPlayerStateDetails();
-       	System.out.println("PlayerListners update: " + currentDetails);
     	setChanged();
     	notifyObservers(currentDetails);
     }
