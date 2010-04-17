@@ -23,26 +23,31 @@ import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.progress.UIJob;
 import org.literacybridge.acm.rcp.core.Activator;
-import org.literacybridge.acm.rcp.sound.IPlayerStateListener;
+
+import org.literacybridge.acm.rcp.sound.PlayerStateDetails;
 import org.literacybridge.acm.rcp.sound.SimpleSoundPlayer;
 
-public class ToolbarView extends ViewPart implements ISizeProvider, IPlayerStateListener, Observer {
+public class ToolbarView extends ViewPart implements ISizeProvider, Observer {
 
 	private FormToolkit toolkit;
 	private Form form;
 	
-	// player
+	// Player
 	private SimpleSoundPlayer player = new SimpleSoundPlayer();
 	private Button leftBtn = null;
 	private Button rightBtn = null;
 	private Button playBtn = null;
+	private Scale positionSlider = null;
+	private PlayerStateDetails currPlayerDetails = null;	
+	private double durtation = 0.0;
+	private Label audioTitle = null;
+	private Label playedTime = null;
+	private Label remainingTime = null;
 	
-	Image imagePlay = Activator.getDefault().getImageDescriptor("icons/play-24px.png").createImage();
-	Image imageLeft = Activator.getDefault().getImageDescriptor("icons/back-24px.png").createImage();
-	Image rightPlay = Activator.getDefault().getImageDescriptor("icons/forward-24px.png").createImage();
-	Image imagePause = Activator.getDefault().getImageDescriptor("icons/pause-24px.png").createImage();
-
-	
+	Image imagePlay = Activator.getImageDescriptor("icons/play-24px.png").createImage();
+	Image imageLeft = Activator.getImageDescriptor("icons/back-24px.png").createImage();
+	Image rightPlay = Activator.getImageDescriptor("icons/forward-24px.png").createImage();
+	Image imagePause = Activator.getImageDescriptor("icons/pause-24px.png").createImage();
 	
 	@Override
 	public void createPartControl(Composite parent) {
@@ -50,10 +55,15 @@ public class ToolbarView extends ViewPart implements ISizeProvider, IPlayerState
 		player.addObserver(this);
 		
 		// testing
-		File audioFile = new File("/Volumes/MAC_HOME/USERS/coder/Projects/talkingbook/acm/TestData/testWav.wav");
-    	player.setClip(audioFile);
+		String audioFile = "/Volumes/MAC_HOME/USERS/coder/Projects/talkingbook/acm/TestData/testWav.wav";
+		initPlayer(audioFile);
 	}
 
+	private boolean initPlayer(String audioFilePath) {
+		File audioFile = new File(audioFilePath);
+    	player.setClip(audioFile);		
+		return true;
+	}
 
 	private void addPlayerControls(Composite parent) {
 		toolkit = new FormToolkit(parent.getDisplay());
@@ -120,26 +130,25 @@ public class ToolbarView extends ViewPart implements ISizeProvider, IPlayerState
 		// already played time
 		twd = new TableWrapData(TableWrapData.LEFT);
 		twd.colspan = 1;	
-		Label playedTime = toolkit.createLabel(form.getBody(), "00:00");
+		playedTime = toolkit.createLabel(form.getBody(), "00:00");
 		playedTime.setLayoutData(twd);
 		
 		// Title
 		twd = new TableWrapData(TableWrapData.FILL_GRAB);
 		twd.colspan = 1;
-		Label audioTitle = toolkit.createLabel(form.getBody(), "---");
+		audioTitle = toolkit.createLabel(form.getBody(), "---");
 		audioTitle.setLayoutData(twd);
 		
 		// remaining time
 		twd = new TableWrapData(TableWrapData.RIGHT);
 		twd.colspan = 1;	
-		Label remainingTime = toolkit.createLabel(form.getBody(), "04:14");
+		remainingTime = toolkit.createLabel(form.getBody(), "04:14");
 		remainingTime.setLayoutData(twd);
 		
 		twd = new TableWrapData(TableWrapData.FILL_GRAB);
 		twd.colspan = 3;
 			
-		Scale positionSlider = new Scale(form.getBody(), SWT.CENTER);
-		positionSlider.setMaximum(100);
+		positionSlider = new Scale(form.getBody(), SWT.CENTER);
 		positionSlider.setLayoutData(twd);		
 	}
 	
@@ -169,7 +178,7 @@ public class ToolbarView extends ViewPart implements ISizeProvider, IPlayerState
 		playBtn = toolkit.createButton(form.getBody(), "", SWT.PUSH);
 		playBtn.setImage(imagePlay);
 		playBtn.setLayoutData(twd);
-
+		
 		twd = new TableWrapData(TableWrapData.FILL_GRAB);
 		twd.colspan = 1;
 		
@@ -182,33 +191,25 @@ public class ToolbarView extends ViewPart implements ISizeProvider, IPlayerState
 		Label dummyLabel = toolkit.createLabel(form.getBody(), "");
 		dummyLabel.setLayoutData(twd);
 		
-//		twd = new TableWrapData(TableWrapData.FILL);
-//		twd.colspan = 2;
-//			
-//		Scale positionSlider = new Scale(form.getBody(), SWT.CENTER);
-//		positionSlider.setMaximum(100);
-//		positionSlider.setLayoutData(twd);	
-//		
-//		twd = new TableWrapData(TableWrapData.FILL);
-//		twd.colspan = 1;
-//		Label dummyLabel2 = toolkit.createLabel(form.getBody(), "");
-//		dummyLabel2.setLayoutData(twd);
-		
+		// add listeners
+		addPlayBtnListener();		   
+	}
+	
+	private void addPlayBtnListener() {
 		Listener listener = new Listener() {
 			public void handleEvent(Event event) {
 				if (event.widget == playBtn) {
-					PlayerState state = player.getPlayerState();
-					if (state == PlayerState.STOPPED) {
-						player.play();		
-					} else if (state == PlayerState.RUNNING) {
+					PlayerStateDetails psd = player.getPlayerStateDetails();
+					if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
+						player.play();
+					} else if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
 						player.stop();
 					}
 				}
 			}
 		};
 
-		playBtn.addListener(SWT.Selection, listener);
-		   
+		playBtn.addListener(SWT.Selection, listener);	
 	}
 	
 	
@@ -233,21 +234,43 @@ public class ToolbarView extends ViewPart implements ISizeProvider, IPlayerState
 	}
 
 	
-	private void mirrorPlayerState(PlayerState newState) {
-		if (newState == PlayerState.STOPPED | newState == PlayerState.STOPPED) {
-			playBtn.setImage(imagePause);
-		} else if (newState == PlayerState.RUNNING) {
+	private void mirrorPlayerState(PlayerStateDetails newState) {
+		currPlayerDetails = newState;
+		if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
 			playBtn.setImage(imagePlay);
+		} else if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
+			playBtn.setImage(imagePause);
+	    	durtation = player.getDurationInSecs();
+			positionSlider.setMaximum((int) durtation);
+			positionSlider.setSelection((int) currPlayerDetails.getCurrentPoitionInSecs());
+			
+			// Update label controls
+			audioTitle.setText("Some Title");
+			int playedTimeInSecs = (int) currPlayerDetails.getCurrentPoitionInSecs();
+			playedTime.setText(secondsToTimeString(playedTimeInSecs));
+			remainingTime.setText(secondsToTimeString((int) (durtation - playedTimeInSecs)));
 		}
 	}
 
+	private void ResetPlayerControls() {
+		playedTime.setText(secondsToTimeString(0));
+		remainingTime.setText(secondsToTimeString(0));
+	}
+	
+	private String secondsToTimeString(int seconds) {
+		final int SECONDS_PER_MINUTE = 60;
+		return String.format("%d:%02d", 
+				  seconds / SECONDS_PER_MINUTE, 
+				  seconds % SECONDS_PER_MINUTE);
+	}
+
+	
 
 	@Override
 	public void update(Observable o, Object arg) {
-		if (arg instanceof PlayerState) {
-			final PlayerState playerState = (PlayerState) arg;
-			UIJob newJob = new UIJob("Device Message Bus") {
-				
+		if (arg instanceof PlayerStateDetails) {
+			final PlayerStateDetails playerState = (PlayerStateDetails) arg;
+			UIJob newJob = new UIJob("Player State") {			
 				@Override
 				public IStatus runInUIThread(IProgressMonitor monitor) {
 					mirrorPlayerState(playerState);
