@@ -56,7 +56,7 @@ public class DemoPrintRepository {
 			Metadata metadata = localizedItem.getMetadata();
 			System.out.println("title = " + metadata.getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue()
 					+ "\t\tcreator = " + metadata.getMetadataValues(MetadataSpecification.DC_CREATOR).get(0).getValue()
-					+ "\t\tlang = " + metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE).get(0).getValue()
+//					+ "\t\tlang = " + metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE).get(0).getValue()
 					+ "\t\tcategories = " + cats.toString());
 		}
 		
