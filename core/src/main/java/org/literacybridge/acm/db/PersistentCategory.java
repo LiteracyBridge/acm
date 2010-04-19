@@ -148,4 +148,8 @@ public class PersistentCategory extends PersistentObject {
         }
         return result;
     }
+    
+    public String toString() {
+    	return uuid;
+    }
 }
