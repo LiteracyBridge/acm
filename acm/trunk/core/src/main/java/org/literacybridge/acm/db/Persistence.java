@@ -21,6 +21,7 @@ import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 
 import org.eclipse.persistence.jpa.JpaHelper;
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.categories.Taxonomy;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
@@ -128,13 +129,10 @@ public class Persistence {
     
     private static void setDBSystemDir() {
         // decide on the db system directory
-        String userHomeDir = System.getProperty("user.home", ".");
-        String systemDir = userHomeDir + "/.literacybridge";
-        System.setProperty("derby.system.home", systemDir);
+        System.setProperty("derby.system.home", Constants.DATABASE_DIR.getAbsolutePath());
         
         // create the db system directory
-        File fileSystemDir = new File(systemDir);
-        fileSystemDir.mkdir();
+        Constants.DATABASE_DIR.mkdir();
     }    
     
     private static String getDBSystemDir() {
@@ -231,7 +229,7 @@ public class Persistence {
         
         new DemoRepository();
 
-        Taxonomy taxonomy = new Taxonomy();
+        Taxonomy taxonomy = Taxonomy.getTaxonomy();
         
         sLogger.info("Category List Size: " + taxonomy.getCategoryList().size());
         

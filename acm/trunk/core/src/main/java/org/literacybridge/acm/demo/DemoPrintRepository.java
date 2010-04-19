@@ -17,13 +17,20 @@ public class DemoPrintRepository {
 		Persistence.initialize();
 		DemoRepository demo = new DemoRepository();
 		IDataRequestResult result = demo.getDataRequestResult();
+
+		System.out.println("================================================================");
+		System.out.println("Taxonomy:");
+		System.out.println("================================================================");
+		System.out.println();
+		printTaxonomy(Locale.ENGLISH, result);
+		
 		
 		System.out.println("================================================================");
 		System.out.println("Output in GERMAN locale:");
 		System.out.println("================================================================");
 		System.out.println();
 		print(Locale.GERMAN, result);
-		printFacetCounts(Locale.GERMAN, result);
+		//printFacetCounts(Locale.GERMAN, result);
 		
 		System.out.println();
 		System.out.println();
@@ -32,7 +39,7 @@ public class DemoPrintRepository {
 		System.out.println("================================================================");
 		System.out.println();
 		print(Locale.ENGLISH, result);
-		printFacetCounts(Locale.ENGLISH, result);
+		//printFacetCounts(Locale.ENGLISH, result);
 	}
 	
 	private static void print(Locale locale, IDataRequestResult result) throws Exception {
@@ -58,22 +65,34 @@ public class DemoPrintRepository {
 	public static void printFacetCounts(Locale locale, IDataRequestResult result) {
 		Category cat = result.getRootCategory();
 		if (cat.hasChildren()) {
-			printChildren(result, cat, locale, 0);
+			printChildren(result, cat, locale, 0, true);
 		}
 		System.out.println();
 	}
 	
-	private static void printChildren(IDataRequestResult result, Category cat, Locale locale, int depth) {
+	private static void printChildren(IDataRequestResult result, Category cat, Locale locale, int depth, boolean printCount) {
 		for (Category child : cat.getChildren()) {
 			for (int i = 0; i < depth; i++) {
 				System.out.print('\t');
 			}
-			System.out.println(child.getCategoryName(locale) + " (" + result.getFacetCount(child) + ")");
+			System.out.print(child.getCategoryName(locale));
+			if (printCount) {
+				System.out.println(" (" + result.getFacetCount(child) + ")");
+			} else {
+				System.out.println();	
+			}
 			if (child.hasChildren()) {
-				printChildren(result, child, locale, depth+1);
+				printChildren(result, child, locale, depth+1, printCount);
 			}
 		}
 		
 	}
 
+	public static void printTaxonomy(Locale locale, IDataRequestResult result) {
+		Category cat = result.getRootCategory();
+		if (cat.hasChildren()) {
+			printChildren(result, cat, locale, 0, false);
+		}
+		System.out.println();
+	}
 }

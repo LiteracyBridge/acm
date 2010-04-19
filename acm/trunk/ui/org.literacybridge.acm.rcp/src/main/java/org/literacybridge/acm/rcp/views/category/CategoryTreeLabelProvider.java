@@ -22,8 +22,8 @@ public class CategoryTreeLabelProvider implements ILabelProvider {
 			
 			ICategoryResultContainer tna = (ICategoryResultContainer) element;
 			Category c = tna.getCategory();
-			return c.getCategoryName(Locale.GERMAN) 
-						+ "(" 
+			return c.getCategoryName(Locale.ENGLISH) 
+						+ " (" 
 						+ (tna.GetDataRequestResult().getFacetCount(c)) 
 						+ ")";
 		}

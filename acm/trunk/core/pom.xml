@@ -52,4 +52,15 @@
       </plugin>
     </plugins> 
   </build>
+  
+  <dependencies>
+      <dependency>
+      <groupId>org.cmc.music</groupId>
+      <artifactId>myid3</artifactId>
+      <version>0.83</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../lib/myid3-0.83.jar</systemPath>
+    </dependency>
+ 
+  </dependencies>
 </project>
