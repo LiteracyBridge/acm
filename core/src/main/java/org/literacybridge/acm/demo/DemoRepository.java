@@ -26,7 +26,7 @@ public class DemoRepository {
 	
 	public DemoRepository() {
 		createSampleTaxonomy();
-//		createSampleAudioItems();
+		createSampleAudioItems();
 //		createFacetCounts();
 	}
 	
@@ -75,9 +75,9 @@ public class DemoRepository {
 	}
 	
 	private void createSampleAudioItems() {
-                if (AudioItem.getFromDatabase("1-1") != null) {
-                    return;
-                }
+//                if (AudioItem.getFromDatabase("1-1") != null) {
+//                    return;
+//                }
 
                 Random rnd = new Random(1);
 		AudioItem[] items = new AudioItem[] {
@@ -113,7 +113,7 @@ public class DemoRepository {
                         int catID = rnd.nextInt(3);
 			item.addCategory(categoryList.get(catID));
 			
-                        item.commit();
+                        //item.commit();
                         
 			this.audioItems.add(item);
 			i++;
