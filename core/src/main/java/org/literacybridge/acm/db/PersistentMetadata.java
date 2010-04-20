@@ -2,7 +2,6 @@ package org.literacybridge.acm.db;
 
 import java.sql.Timestamp;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -284,7 +283,7 @@ public class PersistentMetadata extends PersistentObject {
     }
     
     public static PersistentMetadata getFromDatabase(int id) {
-        return Persistence.getPersistentObject(PersistentMetadata.class, id);
+        return PersistentQueries.getPersistentObject(PersistentMetadata.class, id);
     }      
     
 }

@@ -87,7 +87,7 @@ public abstract class PersistentObject implements Serializable {
             throw new IllegalStateException("Illegal to call refresh on an uncommitted instance.");
         }
         mLogger.finest("Refreshing object " + toString());
-        T newInstance = (T) Persistence.getPersistentObject(this.getClass(), getId());
+        T newInstance = (T) PersistentQueries.getPersistentObject(this.getClass(), getId());
         return newInstance;
     }
     

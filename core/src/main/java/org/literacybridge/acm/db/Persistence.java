@@ -8,9 +8,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,18 +15,9 @@ import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceException;
-import javax.persistence.Query;
 
 import org.eclipse.persistence.jpa.JpaHelper;
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.categories.Taxonomy;
-import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioItem;
-import org.literacybridge.acm.demo.DemoRepository;
-import org.literacybridge.acm.metadata.Metadata;
-import org.literacybridge.acm.metadata.MetadataSpecification;
-import org.literacybridge.acm.metadata.MetadataValue;
-import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 
 public class Persistence {
     
@@ -91,6 +79,8 @@ public class Persistence {
     
     private static EntityManagerFactory createEntityManagerFactory() throws Exception {        
         try {
+        	sLogger.log(Level.INFO, "Connect to database: " + DEFAULT_URL + getDBSystemDir() + File.separator + DBNAME);
+        	
             sConnectionProperties.setProperty(DRIVER, DEFAULT_DRIVER);            
             sConnectionProperties.setProperty(URL, DEFAULT_URL + getDBSystemDir() + File.separator + DBNAME);
             sConnectionProperties.setProperty(LOG_LEVEL, DEFAULT_LOG_LEVEL);
@@ -197,51 +187,5 @@ public class Persistence {
         }
         
         return bCreatedTables;
-    }    
-    
-    static <T> T getPersistentObject(Class<T> objectClass, int id) {
-        EntityManager em = getEntityManager();
-        T persistentObject = null;
-        try {
-            persistentObject = em.find(objectClass, id);
-        } finally {
-            em.close();        
-        }
-        return persistentObject;
-    }
-    
-    @SuppressWarnings("unchecked")
-	static <T> Collection<T> getPersistentObjects(Class objectClass) {
-        EntityManager em = getEntityManager();
-        Collection<T> results = null;
-        try {
-            Query findObjects = em.createQuery("SELECT o FROM " + objectClass.getSimpleName() + " o");
-            results = findObjects.getResultList();
-            results.size();
-        } finally {
-            em.close();
-        }
-        return results;
-    }
-    
-    public static void main(String[] args) throws Exception {
-        Persistence.initialize();
-        
-        new DemoRepository();
-
-        Taxonomy taxonomy = Taxonomy.getTaxonomy();
-        
-        sLogger.info("Category List Size: " + taxonomy.getCategoryList().size());
-        
-        List<AudioItem> items = AudioItem.getFromDatabaseBySearch("Titel Busch");
-  
-        sLogger.info("Found items: " + items.size());
-        
-        for (AudioItem item : items) {
-        	sLogger.info("LocalizedAudioItems: " + item.getLocalizedAudioItem(Locale.ENGLISH).getId()); 
-        }
-        
-        Persistence.uninitialize();
-    }
-    
+    }        
 }

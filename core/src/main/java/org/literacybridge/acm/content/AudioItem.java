@@ -1,27 +1,17 @@
 package org.literacybridge.acm.content;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
 import java.util.LinkedList;
-
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.Query;
-
-import org.literacybridge.acm.db.PersistentCategory;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.db.Persistable;
-import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.PersistentAudioItem;
+import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentLocalizedAudioItem;
-import org.literacybridge.acm.db.PersistentQueries;
 
 /**
  * An AudioItem is a unique audio entity, identified by its audioItemID.
@@ -107,7 +97,8 @@ public class AudioItem implements Persistable {
         mItem.removePersistentLocalizedAudioItem(localizedAudioItem.getPersistentObject());            
     }
 
-    public AudioItem commit() {
+    @SuppressWarnings("unchecked")
+	public AudioItem commit() {
         mItem = mItem.<PersistentAudioItem>commit();
         return this;
     }
@@ -116,7 +107,8 @@ public class AudioItem implements Persistable {
         mItem.destroy();
     }
 
-    public AudioItem refresh() {
+    @SuppressWarnings("unchecked")
+	public AudioItem refresh() {
         mItem = mItem.<PersistentAudioItem>refresh();
         return this;
     }
@@ -145,4 +137,17 @@ public class AudioItem implements Persistable {
         }
         return results;
     }
+    
+    public static List<AudioItem> getFromDatabaseByCategory(List<Category> categories) {
+    	List<PersistentCategory> pCategories = new LinkedList<PersistentCategory>();
+    	for (Category category : categories) {
+    		pCategories.add(category.getPersistentObject());
+    	}
+    	List<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseByCategory(pCategories);
+        List<AudioItem> results = new LinkedList<AudioItem>();    	
+        for (PersistentAudioItem item : items) {
+        	results.add(new AudioItem(item));
+        }
+        return results;
+    }    
 }

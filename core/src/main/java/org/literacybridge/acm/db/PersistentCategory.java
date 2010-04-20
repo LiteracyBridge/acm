@@ -132,7 +132,7 @@ public class PersistentCategory extends PersistentObject {
     }
     
     public static PersistentCategory getFromDatabase(int id) {
-        return Persistence.getPersistentObject(PersistentCategory.class, id);
+        return PersistentQueries.getPersistentObject(PersistentCategory.class, id);
     }
     
     public static PersistentCategory getFromDatabase(String uuid) {

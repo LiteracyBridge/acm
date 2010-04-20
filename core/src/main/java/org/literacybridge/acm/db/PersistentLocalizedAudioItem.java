@@ -117,7 +117,7 @@ public class PersistentLocalizedAudioItem extends PersistentObject {
     
     
     public static PersistentLocalizedAudioItem getFromDatabase(int id) {
-        return Persistence.getPersistentObject(PersistentLocalizedAudioItem.class, id);
+        return PersistentQueries.getPersistentObject(PersistentLocalizedAudioItem.class, id);
     }
     
     public static PersistentLocalizedAudioItem getFromDatabase(String uuid) {

@@ -71,6 +71,6 @@ public class PersistentManifest extends PersistentObject {
     }
     
     public static PersistentManifest getFromDatabase(int id) {
-        return Persistence.getPersistentObject(PersistentManifest.class, id);
+        return PersistentQueries.getPersistentObject(PersistentManifest.class, id);
     }     
 }
