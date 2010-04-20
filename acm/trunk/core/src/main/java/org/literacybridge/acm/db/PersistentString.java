@@ -87,7 +87,7 @@ public class PersistentString extends PersistentObject {
     }
     
     public static PersistentString getFromDatabase(int id) {
-        return Persistence.getPersistentObject(PersistentString.class, id);
+        return PersistentQueries.getPersistentObject(PersistentString.class, id);
     }  
     
     @Override

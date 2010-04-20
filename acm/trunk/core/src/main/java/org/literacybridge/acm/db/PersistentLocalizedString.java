@@ -77,6 +77,6 @@ public class PersistentLocalizedString extends PersistentObject {
     }
     
     public static PersistentLocalizedString getFromDatabase(int id) {
-        return Persistence.getPersistentObject(PersistentLocalizedString.class, id);
+        return PersistentQueries.getPersistentObject(PersistentLocalizedString.class, id);
     }   
 }

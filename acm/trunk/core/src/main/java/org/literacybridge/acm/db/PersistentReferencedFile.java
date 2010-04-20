@@ -63,6 +63,6 @@ public class PersistentReferencedFile extends PersistentObject {
     }
     
     public static PersistentReferencedFile getFromDatabase(int id) {
-        return Persistence.getPersistentObject(PersistentReferencedFile.class, id);
+        return PersistentQueries.getPersistentObject(PersistentReferencedFile.class, id);
     }  
 }

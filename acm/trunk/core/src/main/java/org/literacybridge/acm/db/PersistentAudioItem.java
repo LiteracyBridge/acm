@@ -109,7 +109,7 @@ public class PersistentAudioItem extends PersistentObject {
     }
     
     public static PersistentAudioItem getFromDatabase(int id) {
-        return Persistence.getPersistentObject(PersistentAudioItem.class, id);
+        return PersistentQueries.getPersistentObject(PersistentAudioItem.class, id);
     }
     
     public static PersistentAudioItem getFromDatabase(String uuid) {
@@ -129,4 +129,8 @@ public class PersistentAudioItem extends PersistentObject {
     public static List<PersistentAudioItem> getFromDatabaseBySearch(String searchFilter) {
     	return PersistentQueries.searchForAudioItems(searchFilter);
     }
+    
+    public static List<PersistentAudioItem> getFromDatabaseByCategory(List<PersistentCategory> categories) {
+    	return PersistentQueries.searchForAudioItems(categories);
+    }   
 }

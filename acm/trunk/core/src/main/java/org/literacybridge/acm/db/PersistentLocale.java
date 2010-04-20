@@ -97,6 +97,6 @@ public class PersistentLocale extends PersistentObject implements Serializable {
     }  
     
     public static PersistentLocale getFromDatabase(int id) {
-        return Persistence.getPersistentObject(PersistentLocale.class, id);
+        return PersistentQueries.getPersistentObject(PersistentLocale.class, id);
     }
 }
