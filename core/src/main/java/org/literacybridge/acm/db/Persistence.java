@@ -64,7 +64,7 @@ public class Persistence {
     private static final String DEFAULT_CACHE_TYPE_SHARED_DEFAULT = "false";
     private static final String DEFAULT_URL = "jdbc:derby:";
 
-    private static final String DB_CONNECTION_PROPS_FILE = File.separator + "configuration.properties";
+    private static final String DB_CONNECTION_PROPS_FILE = "configuration.properties";
 
     
     private Persistence() {}
@@ -101,7 +101,7 @@ public class Persistence {
             sConnectionProperties.setProperty(READ_CONNECTIONS_MIN, DEFAULT_READ_CONNECTIONS_MIN);
             sConnectionProperties.setProperty(CACHE_TYPE_DEFAULT, DEFAULT_CACHE_TYPE_DEFAULT);
             sConnectionProperties.setProperty(CACHE_TYPE_SHARED_DEFAULT, DEFAULT_CACHE_TYPE_SHARED_DEFAULT);
-            sConnectionProperties.load(Persistence.class.getResourceAsStream(DB_CONNECTION_PROPS_FILE));
+            sConnectionProperties.load(Persistence.class.getResourceAsStream("/" + DB_CONNECTION_PROPS_FILE));
 
         } catch (Exception exception) {
             sLogger.fine("Error reading database connection parameter file (" + DB_CONNECTION_PROPS_FILE + ")");
@@ -177,7 +177,7 @@ public class Persistence {
             try {
                 String scriptName = "db_schema.sql";
                 
-                BufferedReader sqlReader = new BufferedReader(new InputStreamReader(Persistence.class.getResourceAsStream(File.separator + scriptName))); 
+                BufferedReader sqlReader = new BufferedReader(new InputStreamReader(Persistence.class.getResourceAsStream("/" + scriptName))); 
                 String line = null;
                 while ((line = sqlReader.readLine()) != null) {
                     sqlScript.append(line.replace(';', ' ') + "\n");
