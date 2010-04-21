@@ -28,10 +28,10 @@ public class PlayerUI extends Container {
 	private JLabel playerTimeLbl = null;
 	private JLabel remainingTimeLbl = null;
 	
-	ImageIcon imagePlay = new ImageIcon("icons/play-24px.png");
-	ImageIcon imageRight = new ImageIcon("icons/back-24px.png");
-	ImageIcon imageLeft = new ImageIcon("icons/forward-24px.png");
-	ImageIcon imagePause = new ImageIcon("icons/pause-24px.png");
+	ImageIcon imagePlay = new ImageIcon(getClass().getResource("/play-24px.png"));
+	ImageIcon imageRight = new ImageIcon(getClass().getResource("/back-24px.png"));
+	ImageIcon imageLeft = new ImageIcon(getClass().getResource("/forward-24px.png"));
+	ImageIcon imagePause = new ImageIcon(getClass().getResource("/pause-24px.png"));
 	
 	public PlayerUI() {
 		createPlayerUI();	
