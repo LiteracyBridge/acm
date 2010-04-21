@@ -1,4 +1,4 @@
-package ui.ResourceView;
+package org.literacybridge.acm.ui.ResourceView;
 
 import java.util.List;
 
@@ -9,7 +9,7 @@ import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 
-import util.LanguageUtil;
+import org.literacybridge.acm.util.LanguageUtil;
 
 public class AudioItemTableModel extends AbstractTableModel {
 

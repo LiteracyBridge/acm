@@ -1,4 +1,4 @@
-package ui.ResourceView;
+package org.literacybridge.acm.ui.ResourceView;
 
 import java.awt.BorderLayout;
 import java.awt.Container;

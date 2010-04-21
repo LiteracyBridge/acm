@@ -1,6 +1,6 @@
-package player;
+package org.literacybridge.acm.player;
 
-import player.SimpleSoundPlayer.PlayerState;
+import org.literacybridge.acm.player.SimpleSoundPlayer.PlayerState;
 
 public class PlayerStateDetails {
 
