@@ -1,17 +1,15 @@
-package org.literacybridge.acm.ui.player;
+package org.literacybridge.acm.ui.ResourceView;
 
-import java.awt.BorderLayout;
 import java.awt.Container;
 import java.io.File;
 
 import javax.swing.ImageIcon;
-import javax.swing.JFrame;
 
 import org.jdesktop.layout.GroupLayout;
 import org.jdesktop.layout.LayoutStyle;
 import org.literacybridge.acm.player.SimpleSoundPlayer;
 
-public class PlayerUI extends Container {
+public class ToolbarView extends Container {
 
 	private static final long serialVersionUID = -1827563460140622507L;
 
@@ -19,10 +17,10 @@ public class PlayerUI extends Container {
 	private SimpleSoundPlayer player = new SimpleSoundPlayer();
 	
 	// resources
-	ImageIcon imagePlay = new ImageIcon(getClass().getResource("/play-24px.png"));
-	ImageIcon imageRight = new ImageIcon(getClass().getResource("/back-24px.png"));
-	ImageIcon imageLeft = new ImageIcon(getClass().getResource("/forward-24px.png"));
-	ImageIcon imagePause = new ImageIcon(getClass().getResource("/pause-24px.png"));
+	ImageIcon imagePlay = new ImageIcon("/play-24px.png");
+	ImageIcon imageRight = new ImageIcon("/back-24px.png");
+	ImageIcon imageLeft = new ImageIcon("/forward-24px.png");
+	ImageIcon imagePause = new ImageIcon("/pause-24px.png");
 	
     // Variables declaration - do not modify
     private javax.swing.JButton backwardBtn;
@@ -38,7 +36,7 @@ public class PlayerUI extends Container {
     // End of variables declaration
 	
 	
-	public PlayerUI() {
+	public ToolbarView() {
 
 		initComponents();
 		// testing
@@ -178,16 +176,4 @@ public class PlayerUI extends Container {
     }// </editor-fold>
 
 	
-	
-	/*
-	 * Testing only
-	 */	
-	public static void main(String[] args) {
-		JFrame frame = new JFrame("TestPlayer");
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.getContentPane().add(new PlayerUI(), BorderLayout.CENTER);
-		frame.setLocation(300, 300);
-		frame.pack();
-		frame.setVisible(true);
-	}
 }

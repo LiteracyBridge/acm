@@ -7,6 +7,7 @@ import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 
 import org.literacybridge.acm.ui.ResourceView.ResourceView;
+import org.literacybridge.acm.ui.ResourceView.ToolbarView;
 import org.literacybridge.acm.ui.player.PlayerUI;
 import org.literacybridge.acm.util.SimpleMessageService;
 
@@ -36,7 +37,7 @@ public class Application {
 	    desktop.add(test);
 
 	    
-	    PlayerUI playerUI = new PlayerUI();
+	    ToolbarView playerUI = new ToolbarView();
 	    JInternalFrame playerIFrame = new JInternalFrame("Player", true, true, true, true);
 	    playerIFrame.add(playerUI);
 	    playerIFrame.setBounds(450, 25, 350, 130);
