@@ -1,0 +1,36 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.literacybridge</groupId>
+  <artifactId>acm-gui</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>Audio Content Management - GUI</name>
+ 
+  <parent>
+    <groupId>org.literacybridge</groupId>
+    <artifactId>acm</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <relativePath>../acm-parent/pom.xml</relativePath>
+  </parent>
+  <url>http://code.google.com/p/talkingbook/</url>
+  <dependencies>
+    <dependency>
+      <groupId>org.literacybridge</groupId>
+      <artifactId>acm-core</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>it.cnr.imaa.essi</groupId>
+      <artifactId>lablib-checkboxtree</artifactId>
+      <version>3.1.1</version>
+    </dependency>
+  </dependencies>
+  <repositories>
+    <repository>
+      <id>ESSI-Lab repository</id>
+      <url>http://ulisse.pin.unifi.it:8081/nexus/content/groups/open.repos</url>
+    </repository>
+  </repositories>
+</project>

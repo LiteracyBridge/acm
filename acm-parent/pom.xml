@@ -20,7 +20,7 @@
   <url>http://code.google.com/p/talkingbook/</url>
   <modules>
     <module>../core</module>
-    <!-- <module>../ui/org.literacybridge.acm.rcp</module>  --> 
+    <module>../gui</module>
   </modules>
   <dependencies>
     <dependency>
