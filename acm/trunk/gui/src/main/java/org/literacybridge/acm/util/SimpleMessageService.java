@@ -1,4 +1,4 @@
-package util;
+package org.literacybridge.acm.util;
 
 import java.util.Observable;
 

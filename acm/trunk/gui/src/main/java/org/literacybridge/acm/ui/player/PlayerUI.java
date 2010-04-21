@@ -1,4 +1,4 @@
-package ui.player;
+package org.literacybridge.acm.ui.player;
 
 import java.awt.Container;
 import java.awt.GridBagConstraints;
@@ -12,7 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 
-import player.SimpleSoundPlayer;
+import org.literacybridge.acm.player.SimpleSoundPlayer;
 
 public class PlayerUI extends Container {
 

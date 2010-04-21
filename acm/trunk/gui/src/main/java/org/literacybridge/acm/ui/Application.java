@@ -1,4 +1,4 @@
-package ui;
+package org.literacybridge.acm.ui;
 
 import java.awt.BorderLayout;
 
@@ -6,9 +6,9 @@ import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 
-import ui.ResourceView.ResourceView;
-import ui.player.PlayerUI;
-import util.SimpleMessageService;
+import org.literacybridge.acm.ui.ResourceView.ResourceView;
+import org.literacybridge.acm.ui.player.PlayerUI;
+import org.literacybridge.acm.util.SimpleMessageService;
 
 public class Application {
 

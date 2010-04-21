@@ -1,4 +1,4 @@
-package ui.ResourceView;
+package org.literacybridge.acm.ui.ResourceView;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -10,7 +10,7 @@ import javax.swing.JTable;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 
-import ui.Application;
+import org.literacybridge.acm.ui.Application;
 
 public class AudioItemView extends Container implements Observer {
 

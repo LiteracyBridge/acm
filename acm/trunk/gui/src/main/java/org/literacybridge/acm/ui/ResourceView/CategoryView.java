@@ -1,4 +1,4 @@
-package ui.ResourceView;
+package org.literacybridge.acm.ui.ResourceView;
 
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingEvent;
@@ -14,8 +14,8 @@ import javax.swing.tree.TreePath;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 
-import ui.Application;
-import util.LanguageUtil;
+import org.literacybridge.acm.ui.Application;
+import org.literacybridge.acm.util.LanguageUtil;
 
 public class CategoryView extends Container {
 
