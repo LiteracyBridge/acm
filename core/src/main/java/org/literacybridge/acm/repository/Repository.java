@@ -54,6 +54,10 @@ public class Repository {
 		StringBuilder builder = new StringBuilder();
 		builder.append(baseDir.getAbsolutePath());
 		builder.append(File.separator);
+		builder.append("org");
+		builder.append(File.separator);
+		builder.append("literacybridge");
+		builder.append(File.separator);
 		builder.append(localizedAudioItem.getParentAudioItem().getUuid());
 		builder.append(File.separator);
 		Locale locale = localizedAudioItem.getLocale();
