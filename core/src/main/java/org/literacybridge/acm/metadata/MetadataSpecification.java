@@ -3,9 +3,14 @@ package org.literacybridge.acm.metadata;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Collection;
 
 import org.literacybridge.acm.metadata.types.MetadataIntegerField;
 import org.literacybridge.acm.metadata.types.MetadataStringField;
+
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableSet;
 
 public interface MetadataSpecification {
 	//============================================================================================================
@@ -93,7 +98,7 @@ public interface MetadataSpecification {
 		Content: The nature of the content of the DTB (i.e., sound, text, image). Best practice is to draw from the Dublin Core's enumerated list [DC-Type].
 		Occurrence: Optional
 	 */ 
-	public final static MetadataField<String> DC_Type = new MetadataStringField();
+	public final static MetadataField<String> DC_TYPE = new MetadataStringField();
 
 	/** dc:Format 
 		Content: The standard or specification to which the DTB was produced. Values of dc:Format in a DTB conforming to this standard are valid only if they read "ANSI/NISO Z39.86-2005".
@@ -189,4 +194,33 @@ public interface MetadataSpecification {
 	public final static MetadataField<Integer> LB_PLAY_COUNT = new MetadataIntegerField();
 	
 	public final static MetadataField<Integer> LB_RATING = new MetadataIntegerField();
+
+
+	//============================================================================================================
+	
+	/** Convenience collection to iterate over all metadata fields */
+	// TODO: reflection?
+	public Collection<MetadataField<?>> ALL_METADATA_FIELDS = new ImmutableSet.Builder<MetadataField<?>>()
+																		.add(DC_TITLE)
+																		.add(DC_CREATOR)
+																		.add(DC_SUBJECT)
+																		.add(DC_DESCRIPTION)
+																		.add(DC_PUBLISHER)
+																		.add(DC_CONTRIBUTOR)
+																		.add(DC_DATE)
+																		.add(DC_TYPE)
+																		.add(DC_FORMAT)
+																		.add(DC_IDENTIFIER)
+																		.add(DC_SOURCE)
+																		.add(DC_LANGUAGE)
+																		.add(DC_RELATION)
+																		.add(DC_COVERAGE)
+																		.add(DC_RIGHTS)
+																		.add(DTB_REVISION)
+																		.add(DTB_REVISION_DATE)
+																		.add(DTB_REVISION_DESCRIPTION)
+																		.add(LB_COPY_COUNT)
+																		.add(LB_PLAY_COUNT)
+																		.add(LB_RATING)
+																		.build();
 }
