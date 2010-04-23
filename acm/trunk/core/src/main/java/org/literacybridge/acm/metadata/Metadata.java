@@ -146,7 +146,7 @@ public class Metadata implements Persistable {
 			mMetadata.setDc_subject(value.getValue().toString());
 		} else if (field == MetadataSpecification.DC_TITLE) {
 			mMetadata.setDc_title(value.getValue().toString());
-		} else if (field == MetadataSpecification.DC_Type) {
+		} else if (field == MetadataSpecification.DC_TYPE) {
 			mMetadata.setDc_type(value.getValue().toString());
 		} else if (field == MetadataSpecification.DTB_REVISION) {
 			mMetadata.setDtb_revision(value.getValue().toString());
@@ -195,7 +195,7 @@ public class Metadata implements Persistable {
 					new MetadataValue<String>(mMetadata.getDc_subject()));
 			addMetadataField(MetadataSpecification.DC_TITLE,
 					new MetadataValue<String>(mMetadata.getDc_title()));
-			addMetadataField(MetadataSpecification.DC_Type,
+			addMetadataField(MetadataSpecification.DC_TYPE,
 					new MetadataValue<String>(mMetadata.getDc_type()));
 			addMetadataField(MetadataSpecification.DTB_REVISION,
 					new MetadataValue<String>(mMetadata.getDtb_revision()));
