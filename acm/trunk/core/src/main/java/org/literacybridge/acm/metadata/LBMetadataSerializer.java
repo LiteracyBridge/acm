@@ -1,7 +1,9 @@
 package org.literacybridge.acm.metadata;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -17,10 +19,10 @@ import org.literacybridge.acm.metadata.LBMetadataEncodingVersions.Version;
  * {@link MetadataField} subclasses use efficient serialization encodings.
  * 
  * The backwards-compatibility is achieved by storing a Metadata revision in the
- * Header. A Decoder must read this revision first and evaluate if it"knows" the revision,
+ * Header. A Decoder must read this revision first and evaluate if it "knows" the revision,
  * i.e. if decoder_version >= encoder_version. If it does, then it knows the exact format
- * and can skip the remainder of the header by making use the the numberOfFields value, and
- * decode the data portion directly.
+ * and can skip the remainder of the header by making use of the the numberOfFields value, 
+ * and decode the data portion directly.
  * 
  * If the revision is not known by the decoder, then it was written by a newer version of
  * the software than the one that is decoding. In that case the decoding is done in forwards-
@@ -37,9 +39,9 @@ public class LBMetadataSerializer extends MetadataSerializer {
 	
 	public static final int METADATA_VERSION_CURRENT = METADATA_VERSION_1;
 	
-	
 	private static final int NUM_BYTES_PER_FIELD_INFO = 6;
 
+	
 	@Override
 	public Metadata deserialize(DataInput in) throws IOException {
 		// first read the metadata version and number of field infos in the header
@@ -53,7 +55,7 @@ public class LBMetadataSerializer extends MetadataSerializer {
 			int bytesToSkip = NUM_BYTES_PER_FIELD_INFO * numberOfFields;
 			int actuallySkipped = in.skipBytes(bytesToSkip);
 			if (actuallySkipped != bytesToSkip) {
-				throw new IOException("Unable to data section. Metadata corrupt.");
+				throw new IOException("Unable to seek to data section. Metadata corrupt.");
 			}
 			
 			// lookup which fields need to be decoded for the known format
@@ -94,16 +96,57 @@ public class LBMetadataSerializer extends MetadataSerializer {
 		
 		Metadata metadata = new Metadata();
 		
-		// no deserialize the metadata fields
-		// TODO: implement
+		// now deserialize the metadata fields
+		while (fieldsToDecode.hasNext()) {
+			FieldInfo fieldInfo = fieldsToDecode.next();
+			MetadataField<?> field = LBMetadataIDs.FieldToIDMap.inverse().get(fieldInfo.fieldID);
+			if (field == null) {
+				// unknown field - for forward-compatibility we must skip it
+				in.skipBytes(fieldInfo.fieldLength);
+			} else {
+				deserializeField(metadata, field, in);
+			}
+		}
 		
 		return metadata;
 	}
 
+	private final <T> void deserializeField(Metadata metadata, MetadataField<T> field, DataInput in) throws IOException {
+		MetadataValue<T> value = field.deserialize(in);
+		metadata.addMetadataField(field, value);
+	}
+	
 	@Override
 	public void serialize(Metadata metadata, DataOutput out) throws IOException {
-		// TODO Auto-generated method stub
+		out.writeInt(METADATA_VERSION_CURRENT);
+		out.writeInt(metadata.getNumberOfValues());
 		
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		DataOutputStream serializedDataPortion = new DataOutputStream(baos);
+		Iterator<MetadataField<?>> it = metadata.getFieldsIterator();
+		int lastSize = 0;
+		while (it.hasNext()) {
+			MetadataField<?> field = it.next();
+			serializeField(metadata, field, serializedDataPortion);
+			int size = baos.size();
+			// encode field id
+			out.writeShort(LBMetadataIDs.FieldToIDMap.get(field));
+			// encode field length
+			out.writeInt(size - lastSize);
+			lastSize = size;
+		}
+		
+		// now the header is complete - copy over the data portion now
+		serializedDataPortion.flush();
+		out.write(baos.toByteArray());
+		serializedDataPortion.close();
+	}
+	
+	private final <T> void serializeField(Metadata metadata, MetadataField<T> field, DataOutput out) throws IOException {
+		List<MetadataValue<T>> values = metadata.getMetadataValues(field);
+		for (MetadataValue<T> value : values) {
+			field.serialize(out, value);
+		}
 	}
 	
 	private static final class FieldInfo {

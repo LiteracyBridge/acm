@@ -1,5 +1,8 @@
 package org.literacybridge.acm.metadata;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.StringTokenizer;
 
 public class RFC3066LanguageCode {
@@ -35,4 +38,14 @@ public class RFC3066LanguageCode {
 		}
 		return b.toString();
 	}
+	
+	public static MetadataValue<RFC3066LanguageCode> deserialize(DataInput in) throws IOException {
+		String value = in.readUTF();
+		return new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(value));
+	}
+	
+	public static void serialize(DataOutput out, MetadataValue<RFC3066LanguageCode> value) throws IOException {
+		out.writeUTF(value.toString());
+	}
+
 }

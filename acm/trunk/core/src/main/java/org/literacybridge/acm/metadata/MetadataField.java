@@ -1,9 +1,13 @@
 package org.literacybridge.acm.metadata;
 
-public class MetadataField<T> {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+public abstract class MetadataField<T> {
 	private Attribute<?>[] attributes;
 	
-	MetadataField(Attribute<?>... attributes) {
+	protected MetadataField(Attribute<?>... attributes) {
 		this.attributes = attributes;
 	}
 	
@@ -14,4 +18,7 @@ public class MetadataField<T> {
 	public Attribute<?>[] getAttributes() {
 		return this.attributes;
 	}
+	
+	protected abstract MetadataValue<T> deserialize(DataInput in) throws IOException; 
+	protected abstract void serialize(DataOutput out, MetadataValue<T> value) throws IOException; 
 }
