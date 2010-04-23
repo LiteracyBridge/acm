@@ -1,4 +1,4 @@
-package org.literacybridge.acm.player;
+package org.literacybridge.acm.playerAPI;
 
 import java.io.File;
 import java.io.IOException;
