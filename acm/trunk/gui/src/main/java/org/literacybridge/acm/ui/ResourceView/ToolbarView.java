@@ -30,11 +30,10 @@ public class ToolbarView extends JToolBar implements ActionListener {
 	private double durtation = 0.0;
 	private Timer updatePlayerStateTimer = new Timer(100, this);
 	
-	private final String imageDir = "/Volumes/MAC_HOME/USERS/coder/Projects/talkingbook/acm/Sources/workspace/maven.1271873307554/acm/trunk/gui/target/classes/";
-	private ImageIcon backwardImageIcon = new ImageIcon(imageDir + "back-24px.png");
-	private ImageIcon playImageIcon = new ImageIcon(imageDir + "play-24px.png");
-	private ImageIcon pauseImageIcon = new ImageIcon(imageDir + "pause-24px.png");
-	private ImageIcon forwardImageIcon = new ImageIcon(imageDir + "forward-24px.png");
+	private ImageIcon backwardImageIcon = new ImageIcon(getClass().getResource("/back-24px.png"));
+	private ImageIcon playImageIcon = new ImageIcon(getClass().getResource("/play-24px.png"));
+	private ImageIcon pauseImageIcon = new ImageIcon(getClass().getResource("/pause-24px.png"));
+	private ImageIcon forwardImageIcon = new ImageIcon(getClass().getResource("/forward-24px.png"));
 
     private JButton backwardBtn;
     private JButton forwardBtn;
@@ -45,7 +44,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
     private JButton playBtn;
     private JLabel playedTimeLbl;
     private JLabel remainingTimeLbl;
-    private JTextField seachTF;
+    private JTextField searchTF;
     private JLabel titleInfoLbl;
 
 
@@ -86,7 +85,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
         backwardBtn = new javax.swing.JButton();
         playBtn = new javax.swing.JButton();
         forwardBtn = new javax.swing.JButton();
-        seachTF = new javax.swing.JTextField();
+        searchTF = new javax.swing.JTextField();
         jLabel1 = new javax.swing.JLabel();
         jPanel1 = new javax.swing.JPanel();
         positionSlider = new javax.swing.JSlider();
@@ -104,7 +103,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
         forwardBtn.setIcon(forwardImageIcon); // NOI18N
         forwardBtn.setMargin(new java.awt.Insets(0, 0, 0, 0));
 
-        seachTF.setText("Search");
+        searchTF.setText("Search");
 
         jLabel1.setIcon(new javax.swing.ImageIcon("/Volumes/MAC_HOME/USERS/coder/Projects/talkingbook/acm/Sources/workspace/maven.1271873307554/acm/trunk/gui/target/classes/back-24px.png")); // NOI18N
 
@@ -163,7 +162,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(jLabel1)
                 .add(2, 2, 2)
-                .add(seachTF, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 151, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(searchTF, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 151, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -176,7 +175,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
                             .add(forwardBtn, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .add(playBtn, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .add(backwardBtn, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .add(seachTF, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 44, Short.MAX_VALUE)
+                            .add(searchTF, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 44, Short.MAX_VALUE)
                             .add(jLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .add(layout.createSequentialGroup()
                         .addContainerGap()
@@ -184,7 +183,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        layout.linkSize(new java.awt.Component[] {forwardBtn, jLabel1, seachTF}, org.jdesktop.layout.GroupLayout.VERTICAL);
+        layout.linkSize(new java.awt.Component[] {forwardBtn, jLabel1, searchTF}, org.jdesktop.layout.GroupLayout.VERTICAL);
 
         playBtn.getAccessibleContext().setAccessibleName("Play");
     }// </editor-fold>     
