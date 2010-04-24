@@ -3,6 +3,7 @@ package org.literacybridge.acm.categories;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioLabel;
@@ -80,6 +81,19 @@ public class Taxonomy implements Persistable {
 		return true;
 	}
 
+	/**
+	 * Returns the facet count for all categories that are stored
+	 * in the database.
+	 * 
+	 * Key: database id (getId())
+	 * Value: count value
+	 * 
+	 * Note: Returns '0' for unassigned categories.
+	 */
+	public static Map<Integer, Integer> getFacetCount() {
+		return PersistentCategory.getFacetCount();
+	}
+	
 	public Integer getId() {
 		return mRootCategory.getId();
 	}
