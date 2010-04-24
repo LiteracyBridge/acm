@@ -1,8 +1,10 @@
 package org.literacybridge.acm.db;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.persistence.EntityManager;
@@ -93,4 +95,26 @@ class PersistentQueries {
         }
         return searchResults;	
     }    
+    
+    @SuppressWarnings("unchecked")
+	static Map<Integer, Integer> getFacetCount() {
+        EntityManager em = Persistence.getEntityManager();
+        Map<Integer, Integer> results = new HashMap<Integer, Integer>();
+        try {
+        	String query = "SELECT t1.id AS \"id\", COUNT(t0.category) AS \"count\" " 
+        			     + "FROM t_audioitem_has_category t0 RIGHT OUTER JOIN t_category t1 " 
+        			     + "ON t0.category=t1.id GROUP BY t1.id, t0.category";
+            Query facetCount = em.createNativeQuery(query);
+            List<Object[]> counts = facetCount.getResultList();
+            for (Object[] count : counts) {
+            	results.put(Integer.parseInt(count[0].toString()), 
+            			Integer.parseInt(count[1].toString()));
+            }
+        } catch (NoResultException e) {
+            // do nothing
+        } finally {
+            em.close();
+        }
+        return results;	    	
+    }
 }
