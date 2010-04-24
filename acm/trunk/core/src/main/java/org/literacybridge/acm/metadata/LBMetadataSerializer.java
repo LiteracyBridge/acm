@@ -112,14 +112,17 @@ public class LBMetadataSerializer extends MetadataSerializer {
 	}
 
 	private final <T> void deserializeField(Metadata metadata, MetadataField<T> field, DataInput in) throws IOException {
-		MetadataValue<T> value = field.deserialize(in);
-		metadata.addMetadataField(field, value);
+		int numValues = (in.readByte() & 0xff);
+		for (int i = 0; i < numValues; i++) {
+			MetadataValue<T> value = field.deserialize(in);
+			metadata.addMetadataField(field, value);
+		}
 	}
 	
 	@Override
-	public void serialize(Metadata metadata, DataOutput out) throws IOException {
-		out.writeInt(METADATA_VERSION_CURRENT);
-		out.writeInt(metadata.getNumberOfValues());
+	public void serialize(Metadata metadata, DataOutput headerOut) throws IOException {
+		headerOut.writeInt(METADATA_VERSION_CURRENT);
+		headerOut.writeInt(metadata.getNumberOfValues());
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream serializedDataPortion = new DataOutputStream(baos);
@@ -130,20 +133,21 @@ public class LBMetadataSerializer extends MetadataSerializer {
 			serializeField(metadata, field, serializedDataPortion);
 			int size = baos.size();
 			// encode field id
-			out.writeShort(LBMetadataIDs.FieldToIDMap.get(field));
+			headerOut.writeShort(LBMetadataIDs.FieldToIDMap.get(field));
 			// encode field length
-			out.writeInt(size - lastSize);
+			headerOut.writeInt(size - lastSize);
 			lastSize = size;
 		}
 		
 		// now the header is complete - copy over the data portion now
 		serializedDataPortion.flush();
-		out.write(baos.toByteArray());
+		headerOut.write(baos.toByteArray());
 		serializedDataPortion.close();
 	}
 	
 	private final <T> void serializeField(Metadata metadata, MetadataField<T> field, DataOutput out) throws IOException {
 		List<MetadataValue<T>> values = metadata.getMetadataValues(field);
+		out.writeByte((byte) values.size());
 		for (MetadataValue<T> value : values) {
 			field.serialize(out, value);
 		}
