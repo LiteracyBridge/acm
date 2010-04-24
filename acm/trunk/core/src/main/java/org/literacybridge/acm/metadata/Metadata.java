@@ -108,7 +108,7 @@ public class Metadata implements Persistable {
 	@SuppressWarnings("unchecked")
 	public <F> List<MetadataValue<F>> getMetadataValues(MetadataField<F> field) {
 		ListWrapper<F> list = (ListWrapper<F>) this.fields.get(field);
-		return list.list;
+		return list != null ? list.list : null;
 	}
 
 	//

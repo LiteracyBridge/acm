@@ -1,8 +1,8 @@
 package org.literacybridge.acm.demo;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
@@ -10,7 +10,10 @@ import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.metadata.Metadata;
-import org.literacybridge.acm.metadata.MetadataSpecification;
+import org.literacybridge.acm.metadata.MetadataField;
+import org.literacybridge.acm.metadata.MetadataValue;
+import org.literacybridge.acm.resourcebundle.LabelProvider;
+import org.literacybridge.acm.resourcebundle.LabelProvider.KeyValuePair;
 
 public class DemoPrintRepository {
 	public static void main(String args[]) throws Exception {
@@ -54,12 +57,39 @@ public class DemoPrintRepository {
 			
 			LocalizedAudioItem localizedItem = item.getLocalizedAudioItem(locale);
 			Metadata metadata = localizedItem.getMetadata();
-			System.out.println("title = " + metadata.getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue()
-					+ "\t\tcreator = " + metadata.getMetadataValues(MetadataSpecification.DC_CREATOR).get(0).getValue()
+			
+			Iterator<KeyValuePair<MetadataField<?>, String>> fieldsIterator = LabelProvider.getMetaFieldLabelsIterator(locale);
+			while (fieldsIterator.hasNext()) {
+				KeyValuePair<MetadataField<?>, String> field = fieldsIterator.next();
+				String valueList = getCommaSeparatedList(metadata, field.getKey());
+				if (valueList != null) {
+					System.out.print(field.getValue() + " = " + valueList + "  \t");
+				}
+			}
+			
+			System.out.println();
+//			System.out.println("title = " + metadata.getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue()
+//					+ "\t\tcreator = " + metadata.getMetadataValues(MetadataSpecification.DC_CREATOR).get(0).getValue()
 //					+ "\t\tlang = " + metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE).get(0).getValue()
-					+ "\t\tcategories = " + cats.toString());
+//					+ "\t\tcategories = " + cats.toString());
 		}
 		
+	}
+	
+	private static <T> String getCommaSeparatedList(Metadata metadata, MetadataField<T> field) {
+		StringBuilder builder = new StringBuilder();
+		List<MetadataValue<T>> fieldValues = metadata.getMetadataValues(field);
+		if (fieldValues != null) {
+			for (int i = 0; i < fieldValues.size(); i++) {
+				builder.append(fieldValues.get(i).getValue());
+				if (i != fieldValues.size() - 1) {
+					builder.append(", ");
+				}
+			}
+			return builder.toString();
+		} else {
+			return null;
+		}
 	}
 	
 	public static void printFacetCounts(Locale locale, IDataRequestResult result) {
