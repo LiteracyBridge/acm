@@ -66,6 +66,10 @@ public class LabelProvider {
 		};
 	}
 	
+	public static String getLabel(String propertyName, Locale locale) {
+		return getResourceBundle(locale).getString(propertyName);
+	}
+	
 	public static void main(String[] args) {
 		Iterator<KeyValuePair<MetadataField<?>, String>> it = getMetaFieldLabelsIterator(Locale.ENGLISH);
 		while (it.hasNext()) {
