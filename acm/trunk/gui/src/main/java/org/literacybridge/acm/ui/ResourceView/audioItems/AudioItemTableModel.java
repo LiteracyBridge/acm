@@ -1,4 +1,4 @@
-package org.literacybridge.acm.ui.ResourceView;
+package org.literacybridge.acm.ui.ResourceView.audioItems;
 
 import java.util.List;
 

@@ -8,6 +8,7 @@ import javax.swing.JSplitPane;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.demo.DemoRepository;
+import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
 
 public class ResourceView extends Container {
 
