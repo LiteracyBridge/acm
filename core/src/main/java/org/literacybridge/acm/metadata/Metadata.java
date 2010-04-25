@@ -221,5 +221,35 @@ public class Metadata implements Persistable {
 			isRefreshing = false;
 		}
 	}
+	
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		Iterator<MetadataField<?>> fieldsIterator = LBMetadataIDs.FieldToIDMap.keySet().iterator();
+		while (fieldsIterator.hasNext()) {
+			MetadataField<?> field = fieldsIterator.next();
+			String valueList = getCommaSeparatedList(this, field);
+			if (valueList != null) {
+				builder.append(field + " = " + valueList + "\n");
+			}
+		}
+		return builder.toString();
+	}
 
+	public static <T> String getCommaSeparatedList(Metadata metadata, MetadataField<T> field) {
+		StringBuilder builder = new StringBuilder();
+		List<MetadataValue<T>> fieldValues = metadata.getMetadataValues(field);
+		if (fieldValues != null) {
+			for (int i = 0; i < fieldValues.size(); i++) {
+				builder.append(fieldValues.get(i).getValue());
+				if (i != fieldValues.size() - 1) {
+					builder.append(", ");
+				}
+			}
+			return builder.toString();
+		} else {
+			return null;
+		}
+	}
+
+	
 }

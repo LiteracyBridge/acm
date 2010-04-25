@@ -35,8 +35,8 @@ public class ResourceView extends Container {
 		
 
 		// Table with audio items
-		AudioItemView audioItemView = new AudioItemView();
-
+		AudioItemView audioItemView = new AudioItemView(result);
+		
 		//  Tree with categories 
 		//  Create at the end, because this is the main selection provider
 		CategoryView categoryView = new CategoryView(result);

@@ -58,4 +58,17 @@ public abstract class FileImporter {
 			}
 		}
 	}
+	
+	public static FileFilter getFileExtensionFilter(final String extension) {
+		return new FileFilter() {
+			@Override
+			public boolean accept(File pathname) {
+				if (pathname.isDirectory()) {
+					return false;
+				}
+				String name = pathname.getName();
+				return name.substring(name.length() - 4, name.length()).equalsIgnoreCase(extension);
+			}
+		};
+	}
 }
