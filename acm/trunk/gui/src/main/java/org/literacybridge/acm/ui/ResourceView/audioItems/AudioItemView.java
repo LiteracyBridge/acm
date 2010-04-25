@@ -31,12 +31,13 @@ public class AudioItemView extends Container implements Observer {
 	private JTable audioItemTable = null;
 	private JPopupMenu audioItemTablePopupMenu = null;
 
-	public AudioItemView() {
+	public AudioItemView(IDataRequestResult result) {
 		setLayout(new BorderLayout());
 		createTable();
 		createPopupMenu();
 		addHandlers();
 		Application.getMessageService().addObserver(this);
+		this.currResult = result;
 	}
 
 	private void createTable() {

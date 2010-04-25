@@ -61,7 +61,7 @@ public class DemoPrintRepository {
 			Iterator<KeyValuePair<MetadataField<?>, String>> fieldsIterator = LabelProvider.getMetaFieldLabelsIterator(locale);
 			while (fieldsIterator.hasNext()) {
 				KeyValuePair<MetadataField<?>, String> field = fieldsIterator.next();
-				String valueList = getCommaSeparatedList(metadata, field.getKey());
+				String valueList = Metadata.getCommaSeparatedList(metadata, field.getKey());
 				if (valueList != null) {
 					System.out.print(field.getValue() + " = " + valueList + "  \t");
 				}
@@ -74,22 +74,6 @@ public class DemoPrintRepository {
 //					+ "\t\tcategories = " + cats.toString());
 		}
 		
-	}
-	
-	private static <T> String getCommaSeparatedList(Metadata metadata, MetadataField<T> field) {
-		StringBuilder builder = new StringBuilder();
-		List<MetadataValue<T>> fieldValues = metadata.getMetadataValues(field);
-		if (fieldValues != null) {
-			for (int i = 0; i < fieldValues.size(); i++) {
-				builder.append(fieldValues.get(i).getValue());
-				if (i != fieldValues.size() - 1) {
-					builder.append(", ");
-				}
-			}
-			return builder.toString();
-		} else {
-			return null;
-		}
 	}
 	
 	public static void printFacetCounts(Locale locale, IDataRequestResult result) {

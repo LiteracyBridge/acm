@@ -21,16 +21,7 @@ import org.literacybridge.acm.repository.Repository;
 public class MP3Importer extends FileImporter {
 
 	public MP3Importer() {
-		super(new FileFilter() {
-			@Override
-			public boolean accept(File pathname) {
-				if (pathname.isDirectory()) {
-					return false;
-				}
-				String name = pathname.getName();
-				return name.substring(name.length() - 4, name.length()).equalsIgnoreCase(".mp3");
-			}
-		});
+		super(FileImporter.getFileExtensionFilter(".mp3"));
 	}
 
 	@Override
