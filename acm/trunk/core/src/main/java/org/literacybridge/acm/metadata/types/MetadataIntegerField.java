@@ -9,8 +9,8 @@ import org.literacybridge.acm.metadata.MetadataField;
 import org.literacybridge.acm.metadata.MetadataValue;
 
 public class MetadataIntegerField extends MetadataField<Integer> {
-	public MetadataIntegerField(Attribute<?>... attributes) {
-		super(attributes);
+	public MetadataIntegerField(String name, Attribute<?>... attributes) {
+		super(name, attributes);
 	}
 	
 	@Override

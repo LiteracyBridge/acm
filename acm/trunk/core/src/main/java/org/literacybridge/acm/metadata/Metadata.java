@@ -228,9 +228,10 @@ public class Metadata implements Persistable {
 		while (fieldsIterator.hasNext()) {
 			MetadataField<?> field = fieldsIterator.next();
 			String valueList = getCommaSeparatedList(this, field);
-			if (valueList != null) {
-				builder.append(field + " = " + valueList + "\n");
+			if (valueList == null) {
+				valueList = "<undefined>";
 			}
+			builder.append(field.getName() + " = " + valueList + "\n");
 		}
 		return builder.toString();
 	}

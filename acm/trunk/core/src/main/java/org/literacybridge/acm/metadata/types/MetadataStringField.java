@@ -10,9 +10,8 @@ import org.literacybridge.acm.metadata.MetadataValue;
 
 
 public class MetadataStringField extends MetadataField<String> {
-
-	public MetadataStringField(Attribute<?>... attributes) {
-		super(attributes);
+	public MetadataStringField(String name, Attribute<?>... attributes) {
+		super(name, attributes);
 	}
 
 	@Override

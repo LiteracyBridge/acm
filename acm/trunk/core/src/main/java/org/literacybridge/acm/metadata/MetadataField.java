@@ -5,10 +5,12 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public abstract class MetadataField<T> {
+	private final String name;
 	private Attribute<?>[] attributes;
 	
-	protected MetadataField(Attribute<?>... attributes) {
+	protected MetadataField(String name, Attribute<?>... attributes) {
 		this.attributes = attributes;
+		this.name = name;
 	}
 	
 	void validateValue(T value) throws InvalidMetadataException {
@@ -17,6 +19,10 @@ public abstract class MetadataField<T> {
 	
 	public Attribute<?>[] getAttributes() {
 		return this.attributes;
+	}
+	
+	public String getName() {
+		return this.name;
 	}
 	
 	protected abstract MetadataValue<T> deserialize(DataInput in) throws IOException; 
