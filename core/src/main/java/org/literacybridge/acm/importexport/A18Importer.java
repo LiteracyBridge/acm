@@ -22,7 +22,7 @@ public class A18Importer extends FileImporter {
 	protected void importSingleFile(Category category, File file)
 			throws IOException {
 		DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
-		int bytesToSkip = IOUtils.readLittleEndianInt(in);
+		int bytesToSkip = IOUtils.readLittleEndian32(in);
 		final Metadata metadata;
 		if (bytesToSkip + 4 < file.length()) { 
 			in.skipBytes(bytesToSkip);
