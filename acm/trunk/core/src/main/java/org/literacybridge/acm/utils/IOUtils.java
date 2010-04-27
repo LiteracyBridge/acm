@@ -124,6 +124,7 @@ public class IOUtils {
 		while (upto < length) {
 
 			final int b = in.readByte() & 0xff;
+			upto++;
 			final int ch;
 
 			if (b < 0xc0) {
@@ -131,14 +132,17 @@ public class IOUtils {
 				ch = b;
 			} else if (b < 0xe0) {
 				ch = ((b & 0x1f) << 6) + (in.readByte() & 0x3f);
+				upto++;
 			} else if (b < 0xf0) {
 				ch = ((b & 0xf) << 12) + ((in.readByte() & 0x3f) << 6)
 						+ (in.readByte() & 0x3f);
+				upto+=2;
 			} else {
 				assert b < 0xf8;
 				ch = ((b & 0x7) << 18) + ((in.readByte() & 0x3f) << 12)
 						+ ((in.readByte() & 0x3f) << 6)
 						+ (in.readByte() & 0x3f);
+				upto+=3;
 			}
 
 			if (ch <= UNI_MAX_BMP) {
