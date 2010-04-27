@@ -10,6 +10,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.literacybridge.acm.metadata.LBMetadataEncodingVersions.Version;
+import org.literacybridge.acm.utils.IOUtils;
 
 /**
  * Literacy bridge uses a backwards- and forwards-compatible metadata serialization
@@ -45,8 +46,8 @@ public class LBMetadataSerializer extends MetadataSerializer {
 	@Override
 	public Metadata deserialize(DataInput in) throws IOException {
 		// first read the metadata version and number of field infos in the header
-		int serializedVersion = in.readInt();
-		int numberOfFields = in.readInt();
+		int serializedVersion = IOUtils.readLittleEndian32(in);
+		int numberOfFields = IOUtils.readLittleEndian32(in);
 		
 		Iterator<FieldInfo> fieldsToDecode;
 		
@@ -85,8 +86,8 @@ public class LBMetadataSerializer extends MetadataSerializer {
 			List<FieldInfo> fields = new LinkedList<FieldInfo>();
 			
 			for (int i = 0; i < numberOfFields; i++) {
-				int fieldID = in.readShort();
-				int fieldLength = in.readInt();
+				int fieldID = IOUtils.readLittleEndian16(in);
+				int fieldLength = IOUtils.readLittleEndian32(in);
 				
 				fields.add(new FieldInfo(fieldID, fieldLength));
 			}
@@ -121,8 +122,8 @@ public class LBMetadataSerializer extends MetadataSerializer {
 	
 	@Override
 	public void serialize(Metadata metadata, DataOutput headerOut) throws IOException {
-		headerOut.writeInt(METADATA_VERSION_CURRENT);
-		headerOut.writeInt(metadata.getNumberOfValues());
+		IOUtils.writeLittleEndian32(headerOut, METADATA_VERSION_CURRENT);
+		IOUtils.writeLittleEndian32(headerOut, metadata.getNumberOfValues());
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream serializedDataPortion = new DataOutputStream(baos);
@@ -133,9 +134,9 @@ public class LBMetadataSerializer extends MetadataSerializer {
 			serializeField(metadata, field, serializedDataPortion);
 			int size = baos.size();
 			// encode field id
-			headerOut.writeShort(LBMetadataIDs.FieldToIDMap.get(field));
+			IOUtils.writeLittleEndian16(headerOut, LBMetadataIDs.FieldToIDMap.get(field));
 			// encode field length
-			headerOut.writeInt(size - lastSize);
+			IOUtils.writeLittleEndian32(headerOut, size - lastSize);
 			lastSize = size;
 		}
 		

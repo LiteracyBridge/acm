@@ -7,6 +7,7 @@ import java.io.IOException;
 import org.literacybridge.acm.metadata.Attribute;
 import org.literacybridge.acm.metadata.MetadataField;
 import org.literacybridge.acm.metadata.MetadataValue;
+import org.literacybridge.acm.utils.IOUtils;
 
 
 public class MetadataStringField extends MetadataField<String> {
@@ -16,12 +17,12 @@ public class MetadataStringField extends MetadataField<String> {
 
 	@Override
 	public MetadataValue<String> deserialize(DataInput in) throws IOException {
-		String value = in.readUTF();
+		String value = IOUtils.readUTF8(in);
 		return new MetadataValue<String>(value);
 	}
 
 	@Override
 	public void serialize(DataOutput out, MetadataValue<String> value) throws IOException {
-		out.writeUTF(value.getValue());
+		IOUtils.writeAsUTF8(out, value.getValue());
 	}
 }

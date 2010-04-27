@@ -4,6 +4,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.literacybridge.acm.utils.IOUtils;
+
 public class ISO8601Date {
 	private long date;
 
@@ -13,12 +15,12 @@ public class ISO8601Date {
 	}
 	
 	public static MetadataValue<ISO8601Date> deserialize(DataInput in) throws IOException {
-		long value = in.readLong();
+		long value = IOUtils.readLittleEndian64(in);
 		return new MetadataValue<ISO8601Date>(new ISO8601Date(value));
 	}
 	
 	public static void serialize(DataOutput out, MetadataValue<ISO8601Date> value) throws IOException {
-		out.writeLong(value.getValue().date);
+		IOUtils.writeLittleEndian64(out, value.getValue().date);
 	}
 
 }
