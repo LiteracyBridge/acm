@@ -61,7 +61,7 @@ public class LBMetadataSerializer extends MetadataSerializer {
 			
 			// lookup which fields need to be decoded for the known format
 			Version version = LBMetadataEncodingVersions.getVersion(serializedVersion);
-			final Iterator<Integer> fieldIDsIterator = version.getFieldIDs().iterator();
+			final Iterator<MetadataField<?>> fieldIDsIterator = version.getFields().iterator();
 			
 			fieldsToDecode = new Iterator<FieldInfo>() {
 
@@ -72,7 +72,7 @@ public class LBMetadataSerializer extends MetadataSerializer {
 
 				@Override
 				public FieldInfo next() {
-					return new FieldInfo(fieldIDsIterator.next(), -1);
+					return new FieldInfo(LBMetadataIDs.FieldToIDMap.get(fieldIDsIterator.next()), -1);
 				}
 
 				@Override
@@ -123,11 +123,12 @@ public class LBMetadataSerializer extends MetadataSerializer {
 	@Override
 	public void serialize(Metadata metadata, DataOutput headerOut) throws IOException {
 		IOUtils.writeLittleEndian32(headerOut, METADATA_VERSION_CURRENT);
-		IOUtils.writeLittleEndian32(headerOut, metadata.getNumberOfValues());
+		IOUtils.writeLittleEndian32(headerOut, LBMetadataEncodingVersions.CURRENT_VERSION.getFields().size());
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream serializedDataPortion = new DataOutputStream(baos);
-		Iterator<MetadataField<?>> it = metadata.getFieldsIterator();
+
+		final Iterator<MetadataField<?>> it = LBMetadataEncodingVersions.CURRENT_VERSION.getFields().iterator();
 		int lastSize = 0;
 		while (it.hasNext()) {
 			MetadataField<?> field = it.next();
@@ -148,10 +149,15 @@ public class LBMetadataSerializer extends MetadataSerializer {
 	
 	private final <T> void serializeField(Metadata metadata, MetadataField<T> field, DataOutput out) throws IOException {
 		List<MetadataValue<T>> values = metadata.getMetadataValues(field);
-		out.writeByte((byte) values.size());
-		for (MetadataValue<T> value : values) {
-			field.serialize(out, value);
+		if (values != null) {
+			out.writeByte((byte) values.size());
+			for (MetadataValue<T> value : values) {
+				field.serialize(out, value);
+			}
+		} else {
+			out.write((byte) 0);
 		}
+			
 	}
 	
 	private static final class FieldInfo {

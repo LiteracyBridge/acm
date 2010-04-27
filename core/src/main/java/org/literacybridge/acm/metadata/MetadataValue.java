@@ -46,4 +46,18 @@ public class MetadataValue<T> implements Serializable {
 			}
 		}
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof MetadataValue<?>)) {
+			return false;
+		}
+		
+		return value.equals(((MetadataValue<?>) o).value);
+	}
+	
+	@Override
+	public int hashCode() {
+		return value.hashCode();
+	}
 }
