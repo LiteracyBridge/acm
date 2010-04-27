@@ -14,6 +14,7 @@ import javax.swing.tree.TreePath;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 
+import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.util.LanguageUtil;
 
@@ -40,9 +41,17 @@ public class CategoryView extends Container {
 	}
 
 	private void createTree() {
-		DefaultMutableTreeNode root = new DefaultMutableTreeNode("Root Node");
-		addChildNodes(root, result.getRootCategory());
-		categoryTree = new CheckboxTree(root);	
+		DefaultMutableTreeNode root = new DefaultMutableTreeNode(
+				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
+		
+		Category rootCategory = result.getRootCategory();
+		if (rootCategory.hasChildren()) {
+			for (Category c : rootCategory.getChildren()) {
+				addChildNodes(root, c);
+			}
+		}
+		categoryTree = new CheckboxTree(root);
+		
 		addListeners();
 	}
 

@@ -105,7 +105,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
 
         searchTF.setText("Search");
 
-        jLabel1.setIcon(new javax.swing.ImageIcon("/Volumes/MAC_HOME/USERS/coder/Projects/talkingbook/acm/Sources/workspace/maven.1271873307554/acm/trunk/gui/target/classes/back-24px.png")); // NOI18N
+        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/back-24px.png")));
 
         jPanel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         jPanel1.setMinimumSize(new java.awt.Dimension(300, 100));
