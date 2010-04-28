@@ -1,6 +1,7 @@
 package org.literacybridge.acm.ui.ResourceView;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 
 import javax.swing.JSplitPane;
@@ -40,7 +41,6 @@ public class ResourceView extends Container {
 		//  Tree with categories 
 		//  Create at the end, because this is the main selection provider
 		CategoryView categoryView = new CategoryView(result);
-				
 		
 		JSplitPane sp = new JSplitPane();
 		// left-side
@@ -50,7 +50,7 @@ public class ResourceView extends Container {
 		
 		sp.setOneTouchExpandable(true);
 	    sp.setContinuousLayout(true);
-	    sp.setDividerLocation(200);
+	    sp.setDividerLocation(300);
 		
 	     add(BorderLayout.CENTER, sp);
 	}	

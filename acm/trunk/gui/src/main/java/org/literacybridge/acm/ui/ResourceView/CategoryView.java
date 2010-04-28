@@ -6,15 +6,20 @@ import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingListener;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.swing.ImageIcon;
 import javax.swing.JScrollPane;
+import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
+import org.jdesktop.swingx.JXTaskPane;
+import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.core.MessageBus;
@@ -33,10 +38,15 @@ public class CategoryView extends Container {
 	private IDataRequestResult result = null;
 	// tree
 	private CheckboxTree categoryTree = null;
+	
+	private JTree deviceTree = null;
 	// root nodes
-	private DefaultMutableTreeNode rootNode = null;
-	private DefaultMutableTreeNode categoryRootNode = null;
-	private DefaultMutableTreeNode deviceRootNode = null;
+	private final DefaultMutableTreeNode categoryRootNode;
+	private final DefaultMutableTreeNode deviceRootNode;
+	private final DefaultTreeModel deviceTreeModel;
+
+	
+	private JXTaskPaneContainer taskPaneContainer;
 	
 	// list of available devices
 	private Map<String, DefaultMutableTreeNode> deviceUidtoTreeNodeMap = new HashMap<String, DefaultMutableTreeNode>();
@@ -44,6 +54,12 @@ public class CategoryView extends Container {
 	
 	public CategoryView(IDataRequestResult result) {
 		this.result = result;
+		categoryRootNode = new DefaultMutableTreeNode(
+				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
+		deviceRootNode = new DefaultMutableTreeNode(
+				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
+
+		deviceTreeModel = new DefaultTreeModel(deviceRootNode);
 		createControls();
 	}
 
@@ -51,16 +67,11 @@ public class CategoryView extends Container {
 		setLayout(new BorderLayout());
 
 		createTree();	
-		JScrollPane sp = new JScrollPane(categoryTree);
-		add(BorderLayout.CENTER, sp);
+		
+		add(BorderLayout.CENTER, taskPaneContainer);
 	}
 
 	private void createTree() {
-		rootNode = new DefaultMutableTreeNode("Root node");
-		categoryRootNode = new DefaultMutableTreeNode(
-				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
-		rootNode.add(categoryRootNode);
-		
 		// add all categories
 		Category rootCategory = result.getRootCategory();
 		if (rootCategory.hasChildren()) {
@@ -69,12 +80,32 @@ public class CategoryView extends Container {
 			}
 		}
 		
-		deviceRootNode = new DefaultMutableTreeNode("Devices");
-		rootNode.add(deviceRootNode);
-		
-		categoryTree = new CheckboxTree(rootNode);
+		categoryTree = new CheckboxTree(categoryRootNode);
 		categoryTree.setRootVisible(false);
+		categoryTree.expandPath(new TreePath(categoryRootNode.getPath()));
+
+		deviceTree = new JTree(deviceTreeModel);
+		deviceTree.setRootVisible(false);
 		
+	    taskPaneContainer = new JXTaskPaneContainer();
+		JXTaskPane categoryPane = new JXTaskPane();
+		categoryPane.setTitle(LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
+		JScrollPane categoryScrollPane = new JScrollPane(categoryTree);
+		categoryPane.add(categoryScrollPane);		
+
+		JXTaskPane devicePane = new JXTaskPane();
+		devicePane.setTitle(LabelProvider.getLabel(LabelProvider.DEVICES_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
+		JScrollPane deviceScrollPane = new JScrollPane(deviceTree);
+		devicePane.add(deviceScrollPane);
+		devicePane.setIcon(new ImageIcon(getClass().getResource("/315_three-shot.png")));
+
+		taskPaneContainer.add(categoryPane);
+		taskPaneContainer.add(devicePane);
+		
+		categoryScrollPane.setPreferredSize(new Dimension(150, 250));
+		deviceScrollPane.setPreferredSize(new Dimension(150, 90));
+		
+		categoryTree.expandPath(new TreePath(deviceRootNode.getPath()));
 		addListeners(); // at last
 	}
 
@@ -115,15 +146,17 @@ public class CategoryView extends Container {
 			String deviceID = deviceInfo.getDeviceUID();
 			if (deviceUidtoTreeNodeMap.containsKey(deviceID)) {
 				// already existing, assume device was unplugged
-				DefaultTreeModel model = (DefaultTreeModel) categoryTree.getModel();
 				DefaultMutableTreeNode node = deviceUidtoTreeNodeMap.get(deviceID);
-				model.removeNodeFromParent(node);
+				deviceTreeModel.removeNodeFromParent(node);
 				deviceUidtoTreeNodeMap.remove(deviceID);
 			} else {
 				// new device found
 				DefaultMutableTreeNode child = new DefaultMutableTreeNode(deviceInfo.getPathToDevice());
-				parent.add(child);
-				categoryTree.setSelectionPath(new TreePath(child.getPath()));	
+				deviceTreeModel.insertNodeInto(child, parent, 
+						parent.getChildCount());
+				deviceTree.expandPath(new TreePath(deviceRootNode.getPath()));
+				TreePath path = new TreePath(child.getPath());
+				deviceTree.setSelectionPath(path);	
 				deviceUidtoTreeNodeMap.put(deviceID, child);
 			}
 		}

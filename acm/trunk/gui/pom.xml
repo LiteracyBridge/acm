@@ -31,6 +31,16 @@
       <artifactId>swing-layout-1.0.4</artifactId>
       <version>RELEASE68</version>
     </dependency>
+    <dependency>
+        <groupId>com.seaglasslookandfeel</groupId>
+        <artifactId>seaglasslookandfeel</artifactId>
+        <version>0.1.7.2.2</version>
+    </dependency>
+    <dependency>
+       <groupId>org.swinglabs</groupId>
+       <artifactId>swingx</artifactId>
+       <version>1.6</version>
+    </dependency>
   </dependencies>
   <repositories>
     <repository>
