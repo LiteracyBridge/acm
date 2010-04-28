@@ -114,7 +114,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
 
         searchTF.setText("Search");
 
-        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/back-24px.png")));
+        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/search-glass-24px.png")));
 
         
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
