@@ -13,7 +13,8 @@ import com.google.common.collect.UnmodifiableIterator;
 
 public class LabelProvider {
 	public static final String CATEGORY_ROOT_LABEL = "CATEGORY_ROOT_LABEL";
-	
+	public static final String DEVICES_ROOT_LABEL = "DEVICES_ROOT_LABEL";
+
 	public static final class KeyValuePair<K, V> {
 		private final K key;
 		private final V value;
