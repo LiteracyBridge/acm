@@ -1,6 +1,9 @@
 package org.literacybridge.acm.ui.ResourceView;
 
 
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -82,12 +85,18 @@ public class ToolbarView extends JToolBar implements ActionListener {
 	// Created with NetBeans 6.8
 	private void initComponents() {
   	
+		setPreferredSize(new Dimension(300, 80));
+		setBorder(javax.swing.BorderFactory.createEtchedBorder());
+		
         backwardBtn = new javax.swing.JButton();
         playBtn = new javax.swing.JButton();
         forwardBtn = new javax.swing.JButton();
         searchTF = new javax.swing.JTextField();
+        searchTF.setPreferredSize(new Dimension(100, 30));
         jLabel1 = new javax.swing.JLabel();
+        jLabel1.setPreferredSize(new Dimension(200, 30));
         jPanel1 = new javax.swing.JPanel();
+        jPanel1.setPreferredSize(new Dimension(100, 30));
         positionSlider = new javax.swing.JSlider();
         playedTimeLbl = new javax.swing.JLabel();
         remainingTimeLbl = new javax.swing.JLabel();
@@ -107,8 +116,9 @@ public class ToolbarView extends JToolBar implements ActionListener {
 
         jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/back-24px.png")));
 
-        jPanel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        jPanel1.setMinimumSize(new java.awt.Dimension(300, 100));
+        
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
+        jPanel1.setMinimumSize(new java.awt.Dimension(300, 65));
 
         positionSlider.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
 
@@ -117,7 +127,11 @@ public class ToolbarView extends JToolBar implements ActionListener {
 
         remainingTimeLbl.setText("00:00:00");
 
-        titleInfoLbl.setText("jLabel1");
+        titleInfoLbl.setText("Titel 1");
+        titleInfoLbl.setHorizontalAlignment(CENTER);
+        Font f = titleInfoLbl.getFont();
+        titleInfoLbl.setFont(f.deriveFont(f.getStyle() ^ Font.BOLD));
+
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -170,7 +184,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
             .add(layout.createSequentialGroup()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(layout.createSequentialGroup()
-                        .add(42, 42, 42)
+                        .add(18, 18, 18)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
                             .add(forwardBtn, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .add(playBtn, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -179,7 +193,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
                             .add(jLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .add(layout.createSequentialGroup()
                         .addContainerGap()
-                        .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 88, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                        .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 65, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 

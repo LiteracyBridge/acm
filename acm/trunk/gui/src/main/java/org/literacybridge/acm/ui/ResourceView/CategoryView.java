@@ -102,7 +102,7 @@ public class CategoryView extends Container {
 		taskPaneContainer.add(categoryPane);
 		taskPaneContainer.add(devicePane);
 		
-		categoryScrollPane.setPreferredSize(new Dimension(150, 250));
+		categoryScrollPane.setPreferredSize(new Dimension(150, 280));
 		deviceScrollPane.setPreferredSize(new Dimension(150, 90));
 		
 		categoryTree.expandPath(new TreePath(deviceRootNode.getPath()));
