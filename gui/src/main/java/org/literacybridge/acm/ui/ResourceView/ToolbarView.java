@@ -6,6 +6,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -50,8 +52,11 @@ public class ToolbarView extends JToolBar implements ActionListener {
     private JTextField searchTF;
     private JLabel titleInfoLbl;
 
-
-	
+    // Textfield Search
+    private final String SEARCH_FIELD_DUMMY = "Search";
+    private Font watermarkTextfieldFont = new Font("Verdana", Font.ITALIC, 16);
+    private Font defaultTextfieldFont = null;
+    
 	public ToolbarView() {
 
 		
@@ -59,6 +64,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
 		initComponents();
 		addEventHandler();
 		addPositionSliderHandler();
+		addSearchTFListener();
 		// testing
 		String audioFile = "/Volumes/MAC_HOME/USERS/coder/Projects/talkingbook/acm/TestData/testWav.wav";
 		initPlayer(audioFile);
@@ -112,8 +118,11 @@ public class ToolbarView extends JToolBar implements ActionListener {
         forwardBtn.setIcon(forwardImageIcon); // NOI18N
         forwardBtn.setMargin(new java.awt.Insets(0, 0, 0, 0));
 
-        searchTF.setText("Search");
-
+        defaultTextfieldFont = searchTF.getFont();
+        searchTF.setFont(watermarkTextfieldFont);
+        searchTF.setText(SEARCH_FIELD_DUMMY);
+        searchTF.setForeground(Color.GRAY);
+        
         jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/search-glass-24px.png")));
 
         
@@ -289,4 +298,29 @@ public class ToolbarView extends JToolBar implements ActionListener {
 		PlayerStateDetails details = player.getPlayerStateDetails();
 		mirrorPlayerState(details);		
 	}    
+	
+	private void addSearchTFListener() {
+		searchTF.addFocusListener(new FocusListener() {
+			
+			@Override
+			public void focusLost(FocusEvent e) {
+				String currText = searchTF.getText();
+				if (currText.equals("") ) {
+					searchTF.setForeground(Color.GRAY);
+					searchTF.setFont(watermarkTextfieldFont);
+					searchTF.setText(SEARCH_FIELD_DUMMY);
+				}
+			}
+			
+			@Override
+			public void focusGained(FocusEvent e) {
+				String currText = searchTF.getText();
+				if (currText.equals(SEARCH_FIELD_DUMMY) ) {
+					searchTF.setFont(defaultTextfieldFont);
+				    searchTF.setForeground(Color.BLACK);
+					searchTF.setText("");
+				}
+			}
+		});
+	}
 }

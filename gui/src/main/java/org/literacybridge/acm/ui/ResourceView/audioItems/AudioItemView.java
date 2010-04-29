@@ -13,10 +13,9 @@ import java.util.Observer;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
 
+import org.jdesktop.swingx.JXTable;
 import org.literacybridge.acm.api.IDataRequestResult;
-
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.dialogs.AudioItemPropertiesDialog;
 
@@ -28,7 +27,7 @@ public class AudioItemView extends Container implements Observer {
 	private IDataRequestResult currResult = null;
 
 	// table
-	private JTable audioItemTable = null;
+	private JXTable audioItemTable = null;
 	private JPopupMenu audioItemTablePopupMenu = null;
 
 	public AudioItemView(IDataRequestResult result) {
@@ -41,7 +40,7 @@ public class AudioItemView extends Container implements Observer {
 	}
 
 	private void createTable() {
-		audioItemTable = new JTable();
+		audioItemTable = new JXTable();
 		updateTable(); // init empty
 
 		JScrollPane scrollPane = new JScrollPane(audioItemTable);
