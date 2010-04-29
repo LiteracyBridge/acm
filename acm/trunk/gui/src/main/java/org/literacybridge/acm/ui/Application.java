@@ -5,6 +5,7 @@ import java.awt.BorderLayout;
 import javax.swing.JFrame;
 import javax.swing.UIManager;
 
+import org.jdesktop.swingx.JXRootPane;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.ui.ResourceView.ResourceView;
@@ -40,19 +41,18 @@ public class Application extends JFrame {
 	}
 	
 	private Application() {
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	    
 		// set look & feel
-		try {
-		    UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
-		} catch (Exception e) {
-		    e.printStackTrace();
-		}
+//		try {
+//		    UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
+//		} catch (Exception e) {
+//		    e.printStackTrace();
+//		}
+		
 		
 		// toolbar view on top
 	    ToolbarView toolbarView = new ToolbarView();
 	    getContentPane().add(toolbarView, BorderLayout.PAGE_START);
-	    
 	    // Resource view
 	    ResourceView resourceView = new ResourceView();	    
 	    add(resourceView, BorderLayout.CENTER);
