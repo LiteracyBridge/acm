@@ -35,6 +35,11 @@ public class AudioItemTableModel extends AbstractTableModel {
 	}
 
 	@Override
+	public String getColumnName(int column) {
+		return columns[column];
+	}
+
+	@Override
 	public int getRowCount() {
 		return (audioItemList != null) ? audioItemList.size() : 0;
 	}
