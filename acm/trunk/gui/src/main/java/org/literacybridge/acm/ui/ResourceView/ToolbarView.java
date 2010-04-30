@@ -93,6 +93,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
   	
 		setPreferredSize(new Dimension(300, 80));
 		setBorder(javax.swing.BorderFactory.createEtchedBorder());
+		setFloatable(false);
 		
         backwardBtn = new javax.swing.JButton();
         playBtn = new javax.swing.JButton();

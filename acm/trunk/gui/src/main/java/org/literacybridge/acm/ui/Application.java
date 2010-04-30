@@ -43,11 +43,11 @@ public class Application extends JFrame {
 	private Application() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	    
 		// set look & feel
-//		try {
-//		    UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
-//		} catch (Exception e) {
-//		    e.printStackTrace();
-//		}
+		try {
+		    UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
+		} catch (Exception e) {
+		    e.printStackTrace();
+		}
 		
 		
 		// toolbar view on top
