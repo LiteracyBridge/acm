@@ -7,7 +7,6 @@ import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingListener;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +29,6 @@ import org.literacybridge.acm.device.DeviceConnectEvent;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
-import org.literacybridge.acm.util.FileDrop;
 import org.literacybridge.acm.util.LanguageUtil;
 
 public class CategoryView extends Container {
@@ -187,20 +185,9 @@ public class CategoryView extends Container {
 		});
 	}
 	
-	
 	private void addDragAndDropForTree() {
-		
-		new FileDrop(categoryTree, new FileDrop.Listener() {
-			
-			@Override
-			public void filesDropped(File[] files) {
-				
-				for (int i = 0; i < files.length; i++) {
-					System.out.println("File Path: " + files[i].getPath());
-				}
-			}
-		});
-		
-		categoryTree.setDropMode(DropMode.USE_SELECTION);
+		categoryTree.setDropMode(DropMode.ON);
+		categoryTree.setTransferHandler(new TreeTransferHandler());
 	}
+	
 }
