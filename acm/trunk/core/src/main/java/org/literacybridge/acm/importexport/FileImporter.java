@@ -4,19 +4,46 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
 
-public abstract class FileImporter {
-	private FileFilter filter;
-	
-	public FileImporter(FileFilter fileFilter) {
-		this.filter = fileFilter;
+public class FileImporter {
+	public static abstract class Importer {
+		protected abstract void importSingleFile(Category category, File file) throws IOException;
+		protected abstract String[] getSupportedFileExtensions();
 	}
 	
-	protected abstract void importSingleFile(Category category, File file) throws IOException;
+	private FileFilter filter;
+	private Map<String, Importer> map;
+	
+	private static FileImporter instance = new FileImporter(new Importer[] {
+			new A18Importer(), new MP3Importer()
+	});
+	
+	public static FileImporter getInstance() {
+		return instance;
+	}
+	
+	private FileImporter(Importer... importers) {
+		Set<String> extensions = new HashSet<String>();
+		map = new HashMap<String, Importer>();
+		
+		for (Importer imp : importers) {
+			for (String extension : imp.getSupportedFileExtensions()) {
+				extensions.add(extension);
+				map.put(extension, imp);
+			}
+		}
+		
+		filter = getFileExtensionFilter(extensions);
+	}
+	
 	
 	public void importFile(Category category, File file) throws IOException {
 		if (!file.exists()) {
@@ -26,7 +53,12 @@ public abstract class FileImporter {
 		if (file.isDirectory()) {
 			throw new IllegalArgumentException(file.toString() + " is a directory.");
 		} else {
-			importSingleFile(category, file);
+			String ext = getFileExtension(file);
+			Importer imp = map.get(ext);
+			if (imp == null) {
+				throw new UnsupportedOperationException(ext + " not supported.");
+			}
+			imp.importSingleFile(category, file);
 		}
 	}
 	
@@ -35,7 +67,7 @@ public abstract class FileImporter {
 		gatherFiles(dir, recursive, filesToImport);
 		
 		for (File f : filesToImport) {
-			importSingleFile(category, f);
+			importFile(category, f);
 		}
 	}
 	
@@ -59,15 +91,21 @@ public abstract class FileImporter {
 		}
 	}
 	
-	public static FileFilter getFileExtensionFilter(final String extension) {
+	public static String getFileExtension(File file) {
+		String name = file.getName();
+		return name.substring(name.length() - 4, name.length()).toLowerCase();
+	}
+
+	
+	public static FileFilter getFileExtensionFilter(final Set<String> extensions) {
 		return new FileFilter() {
 			@Override
 			public boolean accept(File pathname) {
 				if (pathname.isDirectory()) {
 					return false;
 				}
-				String name = pathname.getName();
-				return name.substring(name.length() - 4, name.length()).equalsIgnoreCase(extension);
+				
+				return extensions.contains(getFileExtension(pathname));
 			}
 		};
 	}

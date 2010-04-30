@@ -42,7 +42,7 @@ public class CategoryView extends Container {
 	
 	private JTree deviceTree = null;
 	// root nodes
-	private final DefaultMutableTreeNode categoryRootNode;
+	private final CategoryTreeNode categoryRootNode;
 	private final DefaultMutableTreeNode deviceRootNode;
 	private final DefaultTreeModel deviceTreeModel;
 
@@ -55,7 +55,7 @@ public class CategoryView extends Container {
 	
 	public CategoryView(IDataRequestResult result) {
 		this.result = result;
-		categoryRootNode = new DefaultMutableTreeNode(
+		categoryRootNode = new CategoryTreeNode(null, 
 				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
 		deviceRootNode = new DefaultMutableTreeNode(
 				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
@@ -132,8 +132,8 @@ public class CategoryView extends Container {
 	}
 
 	private void addChildNodes(DefaultMutableTreeNode parent, Category category) {
-		String categoryName = category.getCategoryName(LanguageUtil.getUserChoosenLanguage()).getLabel();
-		DefaultMutableTreeNode child = new DefaultMutableTreeNode(categoryName);
+		String categoryLabel = category.getCategoryName(LanguageUtil.getUserChoosenLanguage()).getLabel();
+		CategoryTreeNode child = new CategoryTreeNode(category, categoryLabel);
 		parent.add(child);
 		if (category.hasChildren()) {
 			for (Category c : category.getChildren()) {
@@ -188,6 +188,19 @@ public class CategoryView extends Container {
 	private void addDragAndDropForTree() {
 		categoryTree.setDropMode(DropMode.ON);
 		categoryTree.setTransferHandler(new TreeTransferHandler());
+	}
+	
+	public static class CategoryTreeNode extends DefaultMutableTreeNode {
+		final Category category;
+		final String displayLabel;
+		CategoryTreeNode(Category category, String displayLabel) {
+			this.displayLabel = displayLabel;
+			this.category = category;
+		}
+		
+		@Override public String toString() {
+			return displayLabel;
+		}
 	}
 	
 }

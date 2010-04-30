@@ -9,8 +9,10 @@ import java.util.List;
 
 import javax.swing.JTree;
 import javax.swing.TransferHandler;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
+
+import org.literacybridge.acm.importexport.FileImporter;
+import org.literacybridge.acm.ui.ResourceView.CategoryView.CategoryTreeNode;
 
 public class TreeTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = 1L;
@@ -52,12 +54,19 @@ public class TreeTransferHandler extends TransferHandler {
 		// Get drop location info.
 		JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
 		TreePath dest = dl.getPath();
-		DefaultMutableTreeNode parent = (DefaultMutableTreeNode) dest
+		CategoryTreeNode parent = (CategoryTreeNode) dest
 				.getLastPathComponent();
 
-		System.out.println("Importing into node: " + parent);
-		for (File f : files) {
-			System.out.println("\t" + f);
+		try {
+			for (File f : files) {
+				if (f.isDirectory()) {
+					FileImporter.getInstance().importDirectory(parent.category, f, false);
+				} else {
+					FileImporter.getInstance().importFile(parent.category, f);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		
 		return true;

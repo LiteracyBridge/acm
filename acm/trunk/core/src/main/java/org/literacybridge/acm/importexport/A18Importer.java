@@ -7,17 +7,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.importexport.FileImporter.Importer;
 import org.literacybridge.acm.metadata.LBMetadataSerializer;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.utils.IOUtils;
 
-public class A18Importer extends FileImporter {
+public class A18Importer extends Importer {
 
-	public A18Importer() {
-		super(FileImporter.getFileExtensionFilter(".a18"));	
-	}
-
-	
 	@Override
 	protected void importSingleFile(Category category, File file)
 			throws IOException {
@@ -38,5 +34,10 @@ public class A18Importer extends FileImporter {
 	public static void main(String[] args) throws Exception {
 		A18Importer importer = new A18Importer();
 		importer.importSingleFile(null, new File("/Users/michael/lb-workspace/maven.1271816866778/audioconverter/trunk/src/test/resources/source_a18.a18"));
+	}
+
+	@Override
+	protected String[] getSupportedFileExtensions() {
+		return new String[] {".a18"};
 	}
 }
