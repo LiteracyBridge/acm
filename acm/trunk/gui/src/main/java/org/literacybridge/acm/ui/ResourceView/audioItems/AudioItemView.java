@@ -7,15 +7,21 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
 
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
 
 import org.jdesktop.swingx.JXTable;
+import org.jdesktop.swingx.JXTreeTable;
 import org.literacybridge.acm.api.IDataRequestResult;
+import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.dialogs.AudioItemPropertiesDialog;
 
@@ -27,7 +33,7 @@ public class AudioItemView extends Container implements Observer {
 	private IDataRequestResult currResult = null;
 
 	// table
-	private JXTable audioItemTable = null;
+	private JXTreeTable audioItemTable = null;
 	private JPopupMenu audioItemTablePopupMenu = null;
 
 	public AudioItemView(IDataRequestResult result) {
@@ -40,7 +46,7 @@ public class AudioItemView extends Container implements Observer {
 	}
 
 	private void createTable() {
-		audioItemTable = new JXTable();
+		audioItemTable = new JXTreeTable();
 		updateTable(); // init empty
 
 		JScrollPane scrollPane = new JScrollPane(audioItemTable);
@@ -48,7 +54,7 @@ public class AudioItemView extends Container implements Observer {
 	}
 
 	private void updateTable() {
-		audioItemTable.setModel(new AudioItemTableModel(currResult));
+		audioItemTable.setTreeTableModel(new AudioItemTableModel(currResult));
 	}
 
 	private void addHandlers() {
@@ -102,10 +108,30 @@ public class AudioItemView extends Container implements Observer {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			int index = adaptee.audioItemTable.getSelectedRow();
+			AudioItem audioItem = getValueAt(index, 0);
+			System.out.println("UUID: " + audioItem.getUuid());
+			
 			AudioItemPropertiesDialog dlg = new AudioItemPropertiesDialog(
 					Application.getApplication(), currResult.getAudioItems(),
-					index);
+					audioItem);
 			dlg.setVisible(true);
 		}
 	}
+	
+    public AudioItem getValueAt(int row, int col) {
+        TreePath tPath = audioItemTable.getPathForRow(row);
+        Object[] oPath = tPath.getPath();
+        int len = oPath.length;
+        Object o = oPath[len - 1]; // get leaf
+        
+        AudioItem item = null;
+        if (o instanceof AudioItem) {
+        	item = (AudioItem) o;
+        } else if (o instanceof LocalizedAudioItem) {
+        	LocalizedAudioItem lItem = (LocalizedAudioItem) o;
+        	item = lItem.getParentAudioItem();
+        }
+ 
+        return item;
+    }
 }

@@ -5,6 +5,7 @@ import java.awt.BorderLayout;
 import javax.swing.JFrame;
 import javax.swing.UIManager;
 
+import org.jdesktop.swingx.JXFrame;
 import org.jdesktop.swingx.JXRootPane;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
@@ -12,7 +13,7 @@ import org.literacybridge.acm.ui.ResourceView.ResourceView;
 import org.literacybridge.acm.ui.ResourceView.ToolbarView;
 import org.literacybridge.acm.util.SimpleMessageService;
 
-public class Application extends JFrame {
+public class Application extends JXFrame {
 
 
 	
