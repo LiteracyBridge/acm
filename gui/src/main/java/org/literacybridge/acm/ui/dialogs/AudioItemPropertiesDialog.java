@@ -6,9 +6,8 @@ import java.awt.GridLayout;
 import java.awt.Label;
 import java.awt.ScrollPane;
 import java.awt.TextField;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.lang.reflect.Field;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -23,7 +22,6 @@ import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.metadata.LBMetadataIDs;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataField;
-import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.resourcebundle.LabelProvider.KeyValuePair;
 import org.literacybridge.acm.util.ClosingDialogAdapter;
@@ -31,17 +29,32 @@ import org.literacybridge.acm.util.LanguageUtil;
 
 public class AudioItemPropertiesDialog extends JDialog {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3854016276035587383L;
 	private List<AudioItem> audioItemList = null;
 	private int currIndex = 0;
 	
-	public AudioItemPropertiesDialog(JFrame parent, List<AudioItem> audioItemList, int index) {
+	public AudioItemPropertiesDialog(JFrame parent, List<AudioItem> audioItemList, AudioItem showItem) {
 		super(parent, "AudioItem Properties", true);
 		this.audioItemList = audioItemList;
-		currIndex = index;
+		currIndex = getIndexOfAudioItem(showItem);
 		
 		createControlsForAvailableProperties();
 		pack();
 		setSize(500, 500);
+	}
+	
+	private int getIndexOfAudioItem(AudioItem item) {
+		for(int i=0; i<audioItemList.size(); ++i) {
+			AudioItem audioItem = audioItemList.get(i);
+			if (audioItem.equals(item)) {
+				return i;
+			}
+		}
+		
+		return 0;
 	}
 	
 	private void createControlsForAvailableProperties() {
@@ -50,6 +63,12 @@ public class AudioItemPropertiesDialog extends JDialog {
 			// add navigation buttons
 			JPanel p = new JPanel();
 			JButton backBtn = new JButton("Goto previous AudioItem");
+			backBtn.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					
+				}
+			});
 			p.add(backBtn);
 			JButton nextBtn = new JButton("Goto next AudioItem");
 			p.add(nextBtn);
@@ -57,16 +76,13 @@ public class AudioItemPropertiesDialog extends JDialog {
 			p.setBorder(new TitledBorder("Navigate to"));
 			
 			
-			AudioItem audioItem = audioItemList.get(0);
+			AudioItem audioItem = audioItemList.get(currIndex);
 			Metadata metadata = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage()).getMetadata();
-
-			// TODOs
-			Locale locale = Locale.ENGLISH;
 
 			Container c = new Container();
 			c.setLayout(new GridLayout(LBMetadataIDs.FieldToIDMap.size(), 2));
 			
-			Iterator<KeyValuePair<MetadataField<?>, String>> fieldsIterator = LabelProvider.getMetaFieldLabelsIterator(locale);
+			Iterator<KeyValuePair<MetadataField<?>, String>> fieldsIterator = LabelProvider.getMetaFieldLabelsIterator(LanguageUtil.getUserChoosenLanguage());
 			while (fieldsIterator.hasNext()) {
 				KeyValuePair<MetadataField<?>, String> field = fieldsIterator.next();
 				String valueList = Metadata.getCommaSeparatedList(metadata, field.getKey());
