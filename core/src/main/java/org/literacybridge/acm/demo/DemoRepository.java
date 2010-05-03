@@ -32,7 +32,7 @@ public class DemoRepository {
 	
 	public IDataRequestResult getDataRequestResult() {
 		
-		IDataRequestResult result = new DataRequestResult(taxonomy, facetCountArray, audioItems);
+		IDataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCountArray, audioItems);
 		return result;
 	}
 	
@@ -88,34 +88,81 @@ public class DemoRepository {
 				new AudioItem("4-5"),  
 				new AudioItem("8-1"),  
 				new AudioItem("8-7"),
-				new AudioItem("8-9")
+				new AudioItem("8-9"),
+				new AudioItem("9-1"),  
+				new AudioItem("9-7"),
+				new AudioItem("9-9")
 		};
 		
-		int i = 1;
+		String[] titles_en = new String[] {
+				"Improving maize using manure for fertilizer",
+				"Preparing to sow groundnuts before the rainy season",
+				"Vaccinate poultry to prevent disease", 
+				"Why you should not burn your fields",
+				"Picking the right time to sow beans",
+				"The importance of colostrum to new born babies",
+				"Recognizing symptoms of Malaria",
+				"Using bed nets to prevent Malaria",
+				"Myths about HIV/AIDS",
+				"Understanding the national health insurance program",
+				"Family member authority to send sick children to the hospital"	
+		};
+
+		String[] titles_de = new String[] {
+				"Verbesserter Maisanbau mit Guelle als Duenger",
+				"Vorbereitungen zum Erdnussanbau vor Beginn der Regenzeit",
+				"Gefluegelimpfungen zur Krankheitsvorbeugung", 
+				"Warum man die Felder nicht abbrennen sollte",
+				"Die richtige Zeit um Bohnensamen zu saehen",
+				"Die Bedeutung von Vormilch fuer Neugeborene",
+				"Malaria-Symptome erkennnen",
+				"Bettnetze zur Malariavorbeugung",
+				"Geruechte ueber HIV/AIDS",
+				"Das nationale Krankenversicherungprogramm verstehen",
+				"Welche Rechte haben Familienmitglieder um Kinder in Krankenhaeuser zu bringen?"	
+		};
+
+		
+		String[] authors = new String[] {
+				"Zambo Kamingnyelle",
+				"Zambo Kamingnyelle",
+				"Bampuo Pogdaa",
+				"Da-ure Fidelis Awonodomo",
+				"Hamidu Lare",
+				"Dery Anthony",
+				"Irenaeus Suglo",
+				"Kuubataanono Gervaise",
+				"Dakurah Nuokye",
+				"Dakurah Nuokye",
+				"Dakurah Nuokye"
+		};
+		
+		
+		
+		int i = 0;
 		for (AudioItem item : items) {
 			LocalizedAudioItem germanItem = new LocalizedAudioItem(item.getUuid() + "-de", Locale.GERMAN);
 			item.addLocalizedAudioItem(germanItem);
 			Metadata germanMetadata = germanItem.getMetadata();
-			germanMetadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>("Deutscher Titel " + i));
-			germanMetadata.addMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>("Michael Busch"));
-			germanMetadata.addMetadataField(MetadataSpecification.DC_LANGUAGE, 
-					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode("de")));
+			germanMetadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(titles_de[i]));
+			germanMetadata.addMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>(authors[i]));
+			germanMetadata.addMetadataField(MetadataSpecification.LB_PLAY_COUNT, new MetadataValue<Integer>(1 + rnd.nextInt(50)));
 			
 			LocalizedAudioItem englishItem = new LocalizedAudioItem(item.getUuid() + "-en", Locale.ENGLISH);
 			item.addLocalizedAudioItem(englishItem);
 			Metadata englishMetadata = englishItem.getMetadata();
-			englishMetadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>("English title " + i));
-			englishMetadata.addMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>("Cliff Schmidt"));
-			englishMetadata.addMetadataField(MetadataSpecification.DC_LANGUAGE, 
-					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode("en")));
+			englishMetadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(titles_en[i]));
+			englishMetadata.addMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>(authors[i]));
+			englishMetadata.addMetadataField(MetadataSpecification.LB_PLAY_COUNT, new MetadataValue<Integer>(1 + rnd.nextInt(50)));
+
 			
                         List<Category> categoryList = taxonomy.getCategoryList();
                         int catID = rnd.nextInt(3);
 			item.addCategory(categoryList.get(catID));
 			
-                        //item.commit();
+             //           item.commit();
                         
-			this.audioItems.add(item);
+			//this.audioItems.add(item);
 			i++;
 		}
 		
