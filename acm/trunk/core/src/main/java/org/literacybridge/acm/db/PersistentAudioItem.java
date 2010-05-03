@@ -1,5 +1,6 @@
 package org.literacybridge.acm.db;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -107,6 +108,10 @@ public class PersistentAudioItem extends PersistentObject {
         persistentLocalizedAudioItem.setPersistentAudioItem(null);
         return persistentLocalizedAudioItem;
     }
+
+    public static Collection<PersistentAudioItem> getFromDatabase() {
+        return PersistentQueries.getPersistentObjects(PersistentAudioItem.class);
+    }
     
     public static PersistentAudioItem getFromDatabase(int id) {
         return PersistentQueries.getPersistentObject(PersistentAudioItem.class, id);
@@ -126,8 +131,8 @@ public class PersistentAudioItem extends PersistentObject {
         return result;
     }    
     
-    public static List<PersistentAudioItem> getFromDatabaseBySearch(String searchFilter) {
-    	return PersistentQueries.searchForAudioItems(searchFilter);
+    public static List<PersistentAudioItem> getFromDatabaseBySearch(String searchFilter, List<PersistentCategory> categories) {
+    	return PersistentQueries.searchForAudioItems(searchFilter, categories);
     }
     
     public static List<PersistentAudioItem> getFromDatabaseByCategory(List<PersistentCategory> categories) {

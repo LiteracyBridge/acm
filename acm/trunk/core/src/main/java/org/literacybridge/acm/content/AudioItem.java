@@ -129,9 +129,9 @@ public class AudioItem implements Persistable {
         return new AudioItem(item);
     }    
         
-    public static List<AudioItem> getFromDatabaseBySearch(String searchFilter) {
+    public static List<AudioItem> getFromDatabaseBySearch(String searchFilter, List<PersistentCategory> categories) {
         List<AudioItem> results = new LinkedList<AudioItem>();
-    	List<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(searchFilter);
+    	List<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(searchFilter, categories);
         for (PersistentAudioItem item : items) {
         	results.add(new AudioItem(item));
         }

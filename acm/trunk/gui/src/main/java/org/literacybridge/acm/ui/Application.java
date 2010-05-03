@@ -1,23 +1,24 @@
 package org.literacybridge.acm.ui;
 
 import java.awt.BorderLayout;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.UIManager;
 
 import org.jdesktop.swingx.JXFrame;
 import org.jdesktop.swingx.JXRootPane;
+import org.literacybridge.acm.api.IDataRequestResult;
+import org.literacybridge.acm.core.DataRequestService;
+import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.ui.ResourceView.ResourceView;
 import org.literacybridge.acm.ui.ResourceView.ToolbarView;
+import org.literacybridge.acm.util.LanguageUtil;
 import org.literacybridge.acm.util.SimpleMessageService;
 
 public class Application extends JXFrame {
-
-
-	
-	
 	// message pump
 	private static SimpleMessageService simpleMessageService = new SimpleMessageService();
 	
@@ -33,6 +34,11 @@ public class Application extends JXFrame {
 		return fileSystemMonitor;
 	}
 	
+	private static FilterState filterState = new FilterState();
+	
+	public static FilterState getFilterState() {
+		return filterState;
+	}
 	
 	// application instance
 	public static Application application = new Application();
@@ -51,6 +57,7 @@ public class Application extends JXFrame {
 		}
 		
 		
+		setTitle("Literacy Bridge - Talking Book Management");
 		// toolbar view on top
 	    ToolbarView toolbarView = new ToolbarView();
 	    getContentPane().add(toolbarView, BorderLayout.PAGE_START);
@@ -69,4 +76,32 @@ public class Application extends JXFrame {
 		app.setSize(1000, 600);
 		app.setVisible(true);
 	}	
+	
+	public static class FilterState {
+		private String filterString;
+		private List<PersistentCategory> filterCategories;
+		
+		public synchronized String getFilterString() {
+			return filterString;
+		}
+		public synchronized void setFilterString(String filterString) {
+			this.filterString = filterString;
+			updateResult();
+		}
+		public synchronized List<PersistentCategory> getFilterCategories() {
+			return filterCategories;
+		}
+		public synchronized void setFilterCategories(
+				List<PersistentCategory> filterCategories) {
+			this.filterCategories = filterCategories;
+			updateResult();
+		}
+		
+		private void updateResult() {
+			IDataRequestResult result = DataRequestService.getInstance().getData(
+					LanguageUtil.getUserChoosenLanguage(), 
+					filterString, filterCategories);
+			Application.getMessageService().pumpMessage(result);	
+		}
+	}
 }

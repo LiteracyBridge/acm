@@ -3,17 +3,16 @@ package org.literacybridge.acm.core;
 import java.util.List;
 
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.categories.Taxonomy;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 
 public class DataRequestResult implements IDataRequestResult {
-	private Taxonomy taxonomy;
+	private Category rootCategory;
 	private int[] facetCountArray;
 	private List<AudioItem> audioItems;
 	
-	public DataRequestResult(Taxonomy taxonomy, int[] facetCountArray, List<AudioItem> audioItems) {
-		this.taxonomy = taxonomy;
+	public DataRequestResult(Category rootCategory, int[] facetCountArray, List<AudioItem> audioItems) {
+		this.rootCategory = rootCategory;
 		this.facetCountArray = facetCountArray;
 		this.audioItems = audioItems;
 	}
@@ -22,7 +21,7 @@ public class DataRequestResult implements IDataRequestResult {
 	 * @see main.java.org.literacybridge.acm.api.IDataRequestResult#getRootCategory()
 	 */
 	public Category getRootCategory() {
-		return this.taxonomy.getRootCategory();
+		return this.rootCategory;
 	}
 	
 	/* (non-Javadoc)

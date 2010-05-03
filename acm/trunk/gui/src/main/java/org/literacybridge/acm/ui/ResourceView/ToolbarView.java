@@ -8,6 +8,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -23,6 +25,7 @@ import javax.swing.Timer;
 
 import org.literacybridge.acm.playerAPI.PlayerStateDetails;
 import org.literacybridge.acm.playerAPI.SimpleSoundPlayer;
+import org.literacybridge.acm.ui.Application;
 
 
 public class ToolbarView extends JToolBar implements ActionListener {
@@ -135,9 +138,9 @@ public class ToolbarView extends JToolBar implements ActionListener {
         playedTimeLbl.setText("00:00:00");
         playedTimeLbl.setName("null"); // NOI18N
 
-        remainingTimeLbl.setText("00:00:00");
+        remainingTimeLbl.setText("00:18:21");
 
-        titleInfoLbl.setText("Titel 1");
+        titleInfoLbl.setText("Vaccinate poultry to prevent disease");
         titleInfoLbl.setHorizontalAlignment(CENTER);
         Font f = titleInfoLbl.getFont();
         titleInfoLbl.setFont(f.deriveFont(f.getStyle() ^ Font.BOLD));
@@ -321,6 +324,14 @@ public class ToolbarView extends JToolBar implements ActionListener {
 				    searchTF.setForeground(Color.BLACK);
 					searchTF.setText("");
 				}
+			}
+		});
+		
+		searchTF.addKeyListener(new KeyAdapter() {
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				Application.getFilterState().setFilterString(searchTF.getText());
 			}
 		});
 	}

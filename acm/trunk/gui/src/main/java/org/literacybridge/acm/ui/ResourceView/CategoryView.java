@@ -7,7 +7,9 @@ import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingListener;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.DropMode;
@@ -25,10 +27,12 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.core.MessageBus.Message;
+import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.device.DeviceConnectEvent;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
+import org.literacybridge.acm.ui.Application.FilterState;
 import org.literacybridge.acm.util.LanguageUtil;
 
 public class CategoryView extends Container {
@@ -114,17 +118,13 @@ public class CategoryView extends Container {
 		categoryTree.addTreeCheckingListener(new TreeCheckingListener() {
 			public void valueChanged(TreeCheckingEvent e) {
 				TreePath[] tp = categoryTree.getCheckingPaths();
-//				for (int i = 0; i < tp.length; i++) {
-//					System.out.println("Checked paths changed: user clicked on " + tp[i]);					
-//				}
-
-				/*
-				 * ADD CODE THAT GETS AUDIO ITEMS FROM BACKEND FOR SELECTED CATEGORIES ....
-				 */
+				List<PersistentCategory> filterCategories = new ArrayList<PersistentCategory>(tp.length);
+				for (int i = 0; i < tp.length; i++) {
+					Category cat = ((CategoryTreeNode) tp[i].getLastPathComponent()).category;
+					filterCategories.add(cat.getPersistentObject());
+				}
 				
-				
-				// testing only...
-				Application.getMessageService().pumpMessage(result);	
+				Application.getFilterState().setFilterCategories(filterCategories);
 			}
 		});
 		

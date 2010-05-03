@@ -117,7 +117,7 @@ public class AudioItemTableModel  extends AbstractTreeTableModel {
 						.toString();
 				break;
 			default:
-				cellText = "<error occurred>";
+				cellText = "";
 				break;
 			}
 		} catch (Exception e) {
