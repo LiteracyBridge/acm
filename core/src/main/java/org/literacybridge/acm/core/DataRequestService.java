@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.api.IDataRequestService;
@@ -27,8 +28,7 @@ public class DataRequestService implements IDataRequestService {
 	 * @see main.java.org.literacybridge.acm.api.IDataRequestService#getData()
 	 */
 	public IDataRequestResult getData(Locale locale) {
-		Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabase();
-		return toResult(items);
+		return getData(locale, null, null);
 	}
 
 	/* (non-Javadoc)
@@ -36,24 +36,20 @@ public class DataRequestService implements IDataRequestService {
 	 */
 	public IDataRequestResult getData(Locale locale, String filterString, List<PersistentCategory> categories) {
 		Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(filterString, categories);
-		return toResult(items);
-	}
-
-	@Override
-	public IDataRequestResult getData(Locale locale,
-			List<PersistentCategory> filterCategories) {
-		Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseByCategory(filterCategories);
-		return toResult(items);
-	}
-	
-	private IDataRequestResult toResult(Collection<PersistentAudioItem> items) {
+		Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, categories);
 		List<AudioItem> audioItems = new ArrayList<AudioItem>(items.size());
 		for (PersistentAudioItem item : items) {
 			audioItems.add(new AudioItem(item));
 		}
 		
 		Taxonomy taxonomy = Taxonomy.getTaxonomy();
-		DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), null, audioItems);
+		DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, audioItems);
 		return result;
+	}
+
+	@Override
+	public IDataRequestResult getData(Locale locale,
+			List<PersistentCategory> filterCategories) {
+		return getData(locale, null, filterCategories);
 	}
 }

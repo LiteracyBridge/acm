@@ -144,8 +144,23 @@ class PersistentQueries {
         return searchResults;	
     }    
     
+    static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories) {
+    	if (filter == null || filter.isEmpty()) {
+    		if (categories == null || categories.isEmpty()) {
+    			return getFacetCounts();
+    		} else {
+    			return getFacetCounts(/*categories*/);
+    		}
+    	} else if (categories == null || categories.isEmpty()) {
+    		return getFacetCounts(/*filter*/);
+    	}
+    	
+    	return getFacetCounts();
+
+    }
+    
     @SuppressWarnings("unchecked")
-	static Map<Integer, Integer> getFacetCount() {
+	static Map<Integer, Integer> getFacetCounts() {
         EntityManager em = Persistence.getEntityManager();
         Map<Integer, Integer> results = new HashMap<Integer, Integer>();
         try {
@@ -155,8 +170,43 @@ class PersistentQueries {
             Query facetCount = em.createNativeQuery(query);
             List<Object[]> counts = facetCount.getResultList();
             for (Object[] count : counts) {
-            	results.put(Integer.parseInt(count[0].toString()), 
-            			Integer.parseInt(count[1].toString()));
+            	results.put((Integer) count[0], 
+            			(Integer) count[1]);
+            }
+        } catch (NoResultException e) {
+            // do nothing
+        } finally {
+            em.close();
+        }
+        return results;	    	
+    }
+
+    @SuppressWarnings("unchecked")
+	static Map<Integer, Integer> getFacetCounts(String filter) {
+        EntityManager em = Persistence.getEntityManager();
+        Map<Integer, Integer> results = new HashMap<Integer, Integer>();
+        try {
+        	StringBuilder query = new StringBuilder("SELECT t1.id AS \"id\", COUNT(t0.category) AS \"count\" " 
+        			     + "FROM t_localized_audioitem t6, t_metadata t7, t_locale t8, "
+        			     + "(t_audioitem_has_category t0 RIGHT OUTER JOIN t_category t1 " 
+        			     + "ON t0.category=t1.id) "
+        			     + "WHERE t0.audioitem=t6.audioitem AND t6.metadata=t7.id AND t6.language=t8.id ");
+        	String[] tokens = filter.split(" ");
+        	for (int i=0; i < tokens.length; i++) {
+	    		query.append(" AND (lower(t7.dc_creator) LIKE lower('%" + tokens[i] + "%')" 
+	                             + "  OR lower(t7.dc_title) LIKE lower('%" + tokens[i] + "%')" 
+	                             + "  OR lower(t8.language) LIKE lower('%" + tokens[i] + "%'))");
+        	}
+        	
+        	query.append(" GROUP BY t1.id, t0.category, t6.audioitem");
+
+        	System.out.println(query.toString());
+        	Query facetCount = em.createNativeQuery(query.toString());
+            List<Object[]> counts = facetCount.getResultList();
+            for (Object[] count : counts) {
+            	System.out.println(count[0] + " -> " + count[1]);
+            	results.put((Integer) count[0], 
+            			(Integer) count[1]);
             }
         } catch (NoResultException e) {
             // do nothing

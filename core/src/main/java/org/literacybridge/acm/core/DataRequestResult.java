@@ -1,6 +1,7 @@
 package org.literacybridge.acm.core;
 
 import java.util.List;
+import java.util.Map;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
@@ -8,12 +9,12 @@ import org.literacybridge.acm.content.AudioItem;
 
 public class DataRequestResult implements IDataRequestResult {
 	private Category rootCategory;
-	private int[] facetCountArray;
+	private Map<Integer, Integer> facetCounts;
 	private List<AudioItem> audioItems;
 	
-	public DataRequestResult(Category rootCategory, int[] facetCountArray, List<AudioItem> audioItems) {
+	public DataRequestResult(Category rootCategory, Map<Integer, Integer> facetCounts, List<AudioItem> audioItems) {
 		this.rootCategory = rootCategory;
-		this.facetCountArray = facetCountArray;
+		this.facetCounts = facetCounts;
 		this.audioItems = audioItems;
 	}
 	
@@ -28,7 +29,15 @@ public class DataRequestResult implements IDataRequestResult {
 	 * @see main.java.org.literacybridge.acm.api.IDataRequestResult#getFacetCount(main.java.org.literacybridge.acm.categories.Taxonomy.Category)
 	 */
 	public int getFacetCount(Category category) {
-                return category.getAudioItemList().size();
+		if (category == null) {
+			return 0;
+		}
+		Integer count = facetCounts.get(category.getId());
+		if (count == null) {
+			return 0;
+		} else {
+			return count;
+		}
 	}
 	
 	/* (non-Javadoc)
