@@ -11,7 +11,7 @@ import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
-import org.literacybridge.acm.util.LanguageUtil;
+import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class ResourceView extends Container {
 
@@ -53,8 +53,8 @@ public class ResourceView extends Container {
 	    sp.setContinuousLayout(true);
 	    sp.setDividerLocation(300);
 		
-	     add(BorderLayout.CENTER, sp);
+	    add(BorderLayout.CENTER, sp);
 	     
-			Application.getMessageService().pumpMessage(result);
+		Application.getMessageService().pumpMessage(result);
 	}	
 }

@@ -1,12 +1,8 @@
 package org.literacybridge.acm.ui.ResourceView.audioItems;
 
-import java.io.File;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-
-import javax.swing.table.AbstractTableModel;
 
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 import org.literacybridge.acm.api.IDataRequestResult;
@@ -14,34 +10,41 @@ import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
-
-import org.literacybridge.acm.util.LanguageUtil;
+import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class AudioItemTableModel  extends AbstractTreeTableModel {
 
 	private static final long serialVersionUID = -2998511081572936717L;
 
-	private final int TITLE 	= 0;
-	private final int CREATOR 	= 1;
-	private final int LANGUAGE 	= 2;
-	private String[] columns = { "Title", "Creator", "Language" };
+	// positions of the table columns
+	public static final int TITLE 	= 0;
+	public static final int CREATOR 	= 1;
+	public static final int LANGUAGE 	= 2;
+	private static String[] columns = null;
 	
 	private IDataRequestResult result = null;
-	private List<AudioItem> audioItemList = null;
 	
-	public AudioItemTableModel(IDataRequestResult result) {
+	
+	public AudioItemTableModel(IDataRequestResult result, String[] initalColumnNames) {
 		this.result = result;
-		audioItemList = null;
 		if (result != null) {
-			audioItemList = result.getAudioItems();			
+			result.getAudioItems();			
+		}
+		
+		if (initalColumnNames != null) {
+			columns = initalColumnNames;	
 		}
 	}
 	
+	public AudioItemTableModel(IDataRequestResult result) {
+		this(result, null);
+	}
+		
 	@Override
 	public int getColumnCount() {
 		return columns.length;
 	}
-
+	
 	@Override
 	public String getColumnName(int column) {
 		return columns[column];

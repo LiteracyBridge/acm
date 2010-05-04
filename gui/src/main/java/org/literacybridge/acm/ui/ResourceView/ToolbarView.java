@@ -13,6 +13,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.util.Locale;
+import java.util.Observable;
+import java.util.Observer;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -25,10 +28,14 @@ import javax.swing.Timer;
 
 import org.literacybridge.acm.playerAPI.PlayerStateDetails;
 import org.literacybridge.acm.playerAPI.SimpleSoundPlayer;
+import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
+import org.literacybridge.acm.util.language.LanguageUtil;
+import org.literacybridge.acm.util.language.UILanguageChanged;
 
 
-public class ToolbarView extends JToolBar implements ActionListener {
+public class ToolbarView extends JToolBar implements ActionListener 
+													, Observer {
 
 	private static final long serialVersionUID = -1827563460140622507L;
 
@@ -56,14 +63,11 @@ public class ToolbarView extends JToolBar implements ActionListener {
     private JLabel titleInfoLbl;
 
     // Textfield Search
-    private final String SEARCH_FIELD_DUMMY = "Search";
+    private String searchFieldWatermarkText = LabelProvider.getLabel(LabelProvider.WATERMARK_SEARCH, LanguageUtil.getUILanguage());
     private Font watermarkTextfieldFont = new Font("Verdana", Font.ITALIC, 16);
     private Font defaultTextfieldFont = null;
     
 	public ToolbarView() {
-
-		
-		
 		initComponents();
 		addEventHandler();
 		addPositionSliderHandler();
@@ -71,16 +75,15 @@ public class ToolbarView extends JToolBar implements ActionListener {
 		// testing
 		String audioFile = "/Volumes/MAC_HOME/USERS/coder/Projects/talkingbook/acm/TestData/testWav.wav";
 		initPlayer(audioFile);
+		
+		Application.getMessageService().addObserver(this);
 	}
 	
-	
-
 	private boolean initPlayer(String audioFilePath) {
 		File audioFile = new File(audioFilePath);
 		player.setClip(audioFile);		
 		return true;
 	}
-	
 	
 	private String secondsToTimeString(int seconds) {
 		final int SECONDS_PER_MINUTE = 60;
@@ -88,8 +91,6 @@ public class ToolbarView extends JToolBar implements ActionListener {
 				  seconds / SECONDS_PER_MINUTE, 
 				  seconds % SECONDS_PER_MINUTE);
 	}
-	
-
 	
 	// Created with NetBeans 6.8
 	private void initComponents() {
@@ -124,7 +125,7 @@ public class ToolbarView extends JToolBar implements ActionListener {
 
         defaultTextfieldFont = searchTF.getFont();
         searchTF.setFont(watermarkTextfieldFont);
-        searchTF.setText(SEARCH_FIELD_DUMMY);
+        searchTF.setText(searchFieldWatermarkText);
         searchTF.setForeground(Color.GRAY);
         
         jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/search-glass-24px.png")));
@@ -268,7 +269,6 @@ public class ToolbarView extends JToolBar implements ActionListener {
 		});
 	}
 	
-	
 	private void mirrorPlayerState(PlayerStateDetails newState) {
 		currPlayerDetails = newState;
 		if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
@@ -312,14 +312,14 @@ public class ToolbarView extends JToolBar implements ActionListener {
 				if (currText.equals("") ) {
 					searchTF.setForeground(Color.GRAY);
 					searchTF.setFont(watermarkTextfieldFont);
-					searchTF.setText(SEARCH_FIELD_DUMMY);
+					searchTF.setText(searchFieldWatermarkText);
 				}
 			}
 			
 			@Override
 			public void focusGained(FocusEvent e) {
 				String currText = searchTF.getText();
-				if (currText.equals(SEARCH_FIELD_DUMMY) ) {
+				if (currText.equals(searchFieldWatermarkText) ) {
 					searchTF.setFont(defaultTextfieldFont);
 				    searchTF.setForeground(Color.BLACK);
 					searchTF.setText("");
@@ -334,5 +334,23 @@ public class ToolbarView extends JToolBar implements ActionListener {
 				Application.getFilterState().setFilterString(searchTF.getText());
 			}
 		});
+	}
+
+	private void updateControlsLanguage(Locale newLocale) {
+		String currText = searchTF.getText();
+		if (currText.equals(searchFieldWatermarkText) ) {
+			searchFieldWatermarkText = LabelProvider.getLabel(LabelProvider.WATERMARK_SEARCH, newLocale);
+			searchTF.setText(searchFieldWatermarkText);
+		} else {
+			searchFieldWatermarkText = LabelProvider.getLabel(LabelProvider.WATERMARK_SEARCH, newLocale);
+		}
+	}
+	
+	@Override
+	public void update(Observable o, Object arg) {
+		if (arg instanceof UILanguageChanged) {
+			UILanguageChanged newLocale = (UILanguageChanged) arg;
+			updateControlsLanguage(newLocale.getNewLocale());
+		}		
 	}
 }
