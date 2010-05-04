@@ -1,16 +1,21 @@
 package org.literacybridge.acm.ui.ResourceView;
 
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
+import it.cnr.imaa.essi.lablib.gui.checkboxtree.DefaultCheckboxTreeCellRenderer;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingEvent;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingListener;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
@@ -35,7 +40,7 @@ import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.Application.FilterState;
 import org.literacybridge.acm.util.LanguageUtil;
 
-public class CategoryView extends Container {
+public class CategoryView extends Container implements Observer {
 
 	private static final long serialVersionUID = 5551716856269051991L;
 
@@ -59,13 +64,14 @@ public class CategoryView extends Container {
 	
 	public CategoryView(IDataRequestResult result) {
 		this.result = result;
-		categoryRootNode = new CategoryTreeNode(null, 
+		categoryRootNode = new CategoryTreeNode(null,  
 				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
 		deviceRootNode = new DefaultMutableTreeNode(
 				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
 
 		deviceTreeModel = new DefaultTreeModel(deviceRootNode);
 		createControls();
+		Application.getMessageService().addObserver(this);
 	}
 
 	private void createControls() {
@@ -86,6 +92,7 @@ public class CategoryView extends Container {
 		}
 		
 		categoryTree = new CheckboxTree(categoryRootNode);
+		categoryTree.setCellRenderer(new FacetCountCellRenderer());
 		categoryTree.setRootVisible(false);
 		categoryTree.expandPath(new TreePath(categoryRootNode.getPath()));
 
@@ -114,20 +121,21 @@ public class CategoryView extends Container {
 		addListeners(); // at last
 	}
 
-	private void addListeners() {
-		categoryTree.addTreeCheckingListener(new TreeCheckingListener() {
-			public void valueChanged(TreeCheckingEvent e) {
-				TreePath[] tp = categoryTree.getCheckingPaths();
-				List<PersistentCategory> filterCategories = new ArrayList<PersistentCategory>(tp.length);
-				for (int i = 0; i < tp.length; i++) {
-					Category cat = ((CategoryTreeNode) tp[i].getLastPathComponent()).category;
-					filterCategories.add(cat.getPersistentObject());
-				}
-				
-				Application.getFilterState().setFilterCategories(filterCategories);
+	TreeCheckingListener treeCheckingListener = new TreeCheckingListener() {
+		public void valueChanged(TreeCheckingEvent e) {
+			TreePath[] tp = categoryTree.getCheckingPaths();
+			List<PersistentCategory> filterCategories = new ArrayList<PersistentCategory>(tp.length);
+			for (int i = 0; i < tp.length; i++) {
+				Category cat = ((CategoryTreeNode) tp[i].getLastPathComponent()).category;
+				filterCategories.add(cat.getPersistentObject());
 			}
-		});
-		
+			
+			Application.getFilterState().setFilterCategories(filterCategories);
+		}
+	};
+	
+	private void addListeners() {
+		categoryTree.addTreeCheckingListener(treeCheckingListener);
 		addAudioDeviceListener();
 	}
 
@@ -190,17 +198,47 @@ public class CategoryView extends Container {
 		categoryTree.setTransferHandler(new TreeTransferHandler());
 	}
 	
-	public static class CategoryTreeNode extends DefaultMutableTreeNode {
+	public class CategoryTreeNode extends DefaultMutableTreeNode {
 		final Category category;
 		final String displayLabel;
+		
 		CategoryTreeNode(Category category, String displayLabel) {
 			this.displayLabel = displayLabel;
 			this.category = category;
 		}
 		
-		@Override public String toString() {
-			return displayLabel;
+		int getFacetCount() {
+			int count = result.getFacetCount(category);
+			return count;
 		}
+		
+		@Override public String toString() {
+			return displayLabel + " (" + getFacetCount() + ")";
+		}
+	}
+	
+	private static class FacetCountCellRenderer extends DefaultCheckboxTreeCellRenderer {
+	    public Component getTreeCellRendererComponent(JTree tree, Object object, boolean selected, boolean expanded, boolean leaf, int row,
+	    	    boolean hasFocus) {
+	    	CategoryTreeNode cat = (CategoryTreeNode) object;
+	    	
+	    	// make label bold
+	    	DefaultCheckboxTreeCellRenderer cell = (DefaultCheckboxTreeCellRenderer) super.getTreeCellRendererComponent(tree, object, selected, expanded, leaf, row, hasFocus);
+	        Font f = super.label.getFont();
+	    	if (cat.getFacetCount() > 0) {
+	    		super.label.setFont(f.deriveFont(f.getStyle() | Font.BOLD));
+	    	} else {
+	    		super.label.setFont(f.deriveFont(f.getStyle() & ~Font.BOLD));
+	    	}
+	    	return cell;
+	    }
+	}
+
+	@Override
+	public void update(Observable o, Object arg) {
+		result = (IDataRequestResult) arg;
+		// TODO: how can we update the tree, so that it doesn't collapse all nodes?
+//		((DefaultTreeModel) categoryTree.getModel()).reload();
 	}
 	
 }

@@ -154,7 +154,7 @@ public class PersistentCategory extends PersistentObject {
     	return uuid;
     }
     
-    public static Map<Integer, Integer> getFacetCount() {
-        return PersistentQueries.getFacetCount();
+    public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories) {
+        return PersistentQueries.getFacetCounts(filter, categories);
     }    
 }

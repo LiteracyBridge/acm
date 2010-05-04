@@ -32,7 +32,7 @@ public class DemoRepository {
 	
 	public IDataRequestResult getDataRequestResult() {
 		
-		IDataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCountArray, audioItems);
+		IDataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), null, audioItems);
 		return result;
 	}
 	
