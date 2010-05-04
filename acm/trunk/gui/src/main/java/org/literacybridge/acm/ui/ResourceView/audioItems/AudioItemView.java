@@ -7,8 +7,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Vector;
 
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -19,8 +21,11 @@ import org.jdesktop.swingx.JXTreeTable;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.dialogs.AudioItemPropertiesDialog;
+import org.literacybridge.acm.util.language.LanguageUtil;
+import org.literacybridge.acm.util.language.UILanguageChanged;
 
 public class AudioItemView extends Container implements Observer {
 
@@ -44,7 +49,7 @@ public class AudioItemView extends Container implements Observer {
 
 	private void createTable() {
 		audioItemTable = new JXTreeTable();
-		updateTable(); // init empty
+		audioItemTable.setTreeTableModel(new AudioItemTableModel(currResult, getColumnTitles(LanguageUtil.getUILanguage())));
 
 		JScrollPane scrollPane = new JScrollPane(audioItemTable);
 		add(BorderLayout.CENTER, scrollPane);
@@ -74,8 +79,32 @@ public class AudioItemView extends Container implements Observer {
 			currResult = (IDataRequestResult) arg;
 			updateTable();
 		}
+		
+		if (arg instanceof UILanguageChanged) {
+			UILanguageChanged newLocale = (UILanguageChanged) arg;
+			updateControlLanguage(newLocale.getNewLocale());
+		}
 	}
 
+	private void updateControlLanguage(Locale newLocale) {
+		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.TITLE)
+										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , newLocale));
+		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.CREATOR)
+										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CREATOR , newLocale));
+		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.LANGUAGE)
+										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , newLocale));
+	}
+	
+	private String[] getColumnTitles(Locale locale) {
+		// order MUST fit match to table titles
+		String[] columnTitleArray = new String[3];
+		columnTitleArray[AudioItemTableModel.TITLE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , locale);
+		columnTitleArray[AudioItemTableModel.CREATOR] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CREATOR , locale);
+		columnTitleArray[AudioItemTableModel.LANGUAGE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , locale);
+			
+		return columnTitleArray;
+	}
+	
 	private class PopupListener extends MouseAdapter {
 		public void mousePressed(MouseEvent e) {
 			showPopup(e);
@@ -132,3 +161,4 @@ public class AudioItemView extends Container implements Observer {
         return item;
     }
 }
+

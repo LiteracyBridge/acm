@@ -43,7 +43,7 @@ import org.literacybridge.acm.metadata.LBMetadataIDs;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.util.ClosingDialogAdapter;
-import org.literacybridge.acm.util.LanguageUtil;
+import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class AudioItemPropertiesDialog extends JDialog {
 

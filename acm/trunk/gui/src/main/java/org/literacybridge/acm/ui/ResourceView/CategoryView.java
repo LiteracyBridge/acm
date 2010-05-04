@@ -1,24 +1,28 @@
 package org.literacybridge.acm.ui.ResourceView;
 
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
-import it.cnr.imaa.essi.lablib.gui.checkboxtree.DefaultCheckboxTreeCellRenderer;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingEvent;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingListener;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
@@ -37,8 +41,8 @@ import org.literacybridge.acm.device.DeviceConnectEvent;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
-import org.literacybridge.acm.ui.Application.FilterState;
-import org.literacybridge.acm.util.LanguageUtil;
+import org.literacybridge.acm.util.language.LanguageUtil;
+import org.literacybridge.acm.util.language.UILanguageChanged;
 
 public class CategoryView extends Container implements Observer {
 
@@ -57,6 +61,12 @@ public class CategoryView extends Container implements Observer {
 
 	
 	private JXTaskPaneContainer taskPaneContainer;
+	private JXTaskPane categoryPane;
+	private JXTaskPane devicePane;
+	private JXTaskPane optionsPane;
+	
+	private JLabel uiLangugeLb;
+	private Locale currLocale = null;
 	
 	// list of available devices
 	private Map<String, DefaultMutableTreeNode> deviceUidtoTreeNodeMap = new HashMap<String, DefaultMutableTreeNode>();
@@ -64,22 +74,29 @@ public class CategoryView extends Container implements Observer {
 	
 	public CategoryView(IDataRequestResult result) {
 		this.result = result;
-		categoryRootNode = new CategoryTreeNode(null,  
-				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
+		categoryRootNode = new CategoryTreeNode(null, 
+				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUILanguage()));
 		deviceRootNode = new DefaultMutableTreeNode(
-				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
+				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUILanguage()));
 
 		deviceTreeModel = new DefaultTreeModel(deviceRootNode);
 		createControls();
-		Application.getMessageService().addObserver(this);
 	}
-
+	
 	private void createControls() {
 		setLayout(new BorderLayout());
 
+		// parent
+	    taskPaneContainer = new JXTaskPaneContainer();
+
 		createTree();	
+		addOptionList();
 		addDragAndDropForTree();
 		add(BorderLayout.CENTER, taskPaneContainer);
+		
+		// init controls with default language
+		updateControlLanguage(LanguageUtil.getUILanguage());
+		Application.getMessageService().addObserver(this);
 	}
 
 	private void createTree() {
@@ -92,21 +109,17 @@ public class CategoryView extends Container implements Observer {
 		}
 		
 		categoryTree = new CheckboxTree(categoryRootNode);
-		categoryTree.setCellRenderer(new FacetCountCellRenderer());
 		categoryTree.setRootVisible(false);
 		categoryTree.expandPath(new TreePath(categoryRootNode.getPath()));
 
 		deviceTree = new JTree(deviceTreeModel);
 		deviceTree.setRootVisible(false);
 		
-	    taskPaneContainer = new JXTaskPaneContainer();
-		JXTaskPane categoryPane = new JXTaskPane();
-		categoryPane.setTitle(LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
+		categoryPane = new JXTaskPane();
 		JScrollPane categoryScrollPane = new JScrollPane(categoryTree);
 		categoryPane.add(categoryScrollPane);		
 
-		JXTaskPane devicePane = new JXTaskPane();
-		devicePane.setTitle(LabelProvider.getLabel(LabelProvider.DEVICES_ROOT_LABEL, LanguageUtil.getUserChoosenLanguage()));
+		devicePane = new JXTaskPane();
 		JScrollPane deviceScrollPane = new JScrollPane(deviceTree);
 		devicePane.add(deviceScrollPane);
 		devicePane.setIcon(new ImageIcon(getClass().getResource("/315_three-shot.png")));
@@ -120,22 +133,62 @@ public class CategoryView extends Container implements Observer {
 		categoryTree.expandPath(new TreePath(deviceRootNode.getPath()));
 		addListeners(); // at last
 	}
-
-	TreeCheckingListener treeCheckingListener = new TreeCheckingListener() {
-		public void valueChanged(TreeCheckingEvent e) {
-			TreePath[] tp = categoryTree.getCheckingPaths();
-			List<PersistentCategory> filterCategories = new ArrayList<PersistentCategory>(tp.length);
-			for (int i = 0; i < tp.length; i++) {
-				Category cat = ((CategoryTreeNode) tp[i].getLastPathComponent()).category;
-				filterCategories.add(cat.getPersistentObject());
-			}
-			
-			Application.getFilterState().setFilterCategories(filterCategories);
-		}
-	};
 	
+	private void addOptionList() {
+		final int NUM_OPTIONS = 2;
+		optionsPane = new JXTaskPane();
+		JPanel optionComponent = new JPanel();
+
+		// user language
+		optionComponent.setLayout(new GridLayout(NUM_OPTIONS, 2));
+		uiLangugeLb = new JLabel();
+		optionComponent.add(uiLangugeLb);		
+		String[] langs = {"English", "German", "Dagaare"};
+		JComboBox userLanguages = new JComboBox(langs);
+		userLanguages.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				 JComboBox cb = (JComboBox) e.getSource();
+				 Locale newLocale = null;
+				 int index = cb.getSelectedIndex();
+				 switch (index) {
+				 case 0:
+					 newLocale = Locale.ENGLISH;
+					 break;
+				 case 1:
+					 newLocale = Locale.GERMAN;
+					 break;
+				 case 2:
+					 newLocale = LanguageUtil.DAGAARE;
+					 break;
+				default:
+					newLocale = Locale.ENGLISH;
+				 }
+				 Application.getMessageService().pumpMessage(new UILanguageChanged(newLocale, currLocale));
+				 currLocale = newLocale;
+			}
+		});
+		optionComponent.add(userLanguages);
+		
+		JScrollPane optionsScrollPane = new JScrollPane(optionComponent);
+		optionsPane.add(optionsScrollPane);
+		taskPaneContainer.add(optionsPane);
+	}
+
 	private void addListeners() {
-		categoryTree.addTreeCheckingListener(treeCheckingListener);
+		categoryTree.addTreeCheckingListener(new TreeCheckingListener() {
+			public void valueChanged(TreeCheckingEvent e) {
+				TreePath[] tp = categoryTree.getCheckingPaths();
+				List<PersistentCategory> filterCategories = new ArrayList<PersistentCategory>(tp.length);
+				for (int i = 0; i < tp.length; i++) {
+					Category cat = ((CategoryTreeNode) tp[i].getLastPathComponent()).category;
+					filterCategories.add(cat.getPersistentObject());
+				}
+				
+				Application.getFilterState().setFilterCategories(filterCategories);
+			}
+		});
+		
 		addAudioDeviceListener();
 	}
 
@@ -198,47 +251,31 @@ public class CategoryView extends Container implements Observer {
 		categoryTree.setTransferHandler(new TreeTransferHandler());
 	}
 	
-	public class CategoryTreeNode extends DefaultMutableTreeNode {
+	public static class CategoryTreeNode extends DefaultMutableTreeNode {
 		final Category category;
 		final String displayLabel;
-		
 		CategoryTreeNode(Category category, String displayLabel) {
 			this.displayLabel = displayLabel;
 			this.category = category;
 		}
 		
-		int getFacetCount() {
-			int count = result.getFacetCount(category);
-			return count;
-		}
-		
 		@Override public String toString() {
-			return displayLabel + " (" + getFacetCount() + ")";
+			return displayLabel;
 		}
 	}
 	
-	private static class FacetCountCellRenderer extends DefaultCheckboxTreeCellRenderer {
-	    public Component getTreeCellRendererComponent(JTree tree, Object object, boolean selected, boolean expanded, boolean leaf, int row,
-	    	    boolean hasFocus) {
-	    	CategoryTreeNode cat = (CategoryTreeNode) object;
-	    	
-	    	// make label bold
-	    	DefaultCheckboxTreeCellRenderer cell = (DefaultCheckboxTreeCellRenderer) super.getTreeCellRendererComponent(tree, object, selected, expanded, leaf, row, hasFocus);
-	        Font f = super.label.getFont();
-	    	if (cat.getFacetCount() > 0) {
-	    		super.label.setFont(f.deriveFont(f.getStyle() | Font.BOLD));
-	    	} else {
-	    		super.label.setFont(f.deriveFont(f.getStyle() & ~Font.BOLD));
-	    	}
-	    	return cell;
-	    }
+	private void updateControlLanguage(Locale locale) {
+		categoryPane.setTitle(LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, locale));
+		devicePane.setTitle(LabelProvider.getLabel(LabelProvider.DEVICES_ROOT_LABEL, locale));
+		optionsPane.setTitle(LabelProvider.getLabel(LabelProvider.OPTIONS_ROOT_LABEL, locale));
+		uiLangugeLb.setText(LabelProvider.getLabel(LabelProvider.OPTIONS_USER_LANGUAGE, locale));
 	}
 
 	@Override
 	public void update(Observable o, Object arg) {
-		result = (IDataRequestResult) arg;
-		// TODO: how can we update the tree, so that it doesn't collapse all nodes?
-//		((DefaultTreeModel) categoryTree.getModel()).reload();
-	}
-	
+		if (arg instanceof UILanguageChanged) {
+			UILanguageChanged newLocale = (UILanguageChanged) arg;
+			updateControlLanguage(newLocale.getNewLocale());
+		}
+	}	
 }

@@ -7,7 +7,6 @@ import javax.swing.JFrame;
 import javax.swing.UIManager;
 
 import org.jdesktop.swingx.JXFrame;
-import org.jdesktop.swingx.JXRootPane;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.PersistentCategory;
@@ -15,10 +14,13 @@ import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.ui.ResourceView.ResourceView;
 import org.literacybridge.acm.ui.ResourceView.ToolbarView;
-import org.literacybridge.acm.util.LanguageUtil;
 import org.literacybridge.acm.util.SimpleMessageService;
+import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class Application extends JXFrame {
+
+	private static final long serialVersionUID = -7011153239978361786L;
+
 	// message pump
 	private static SimpleMessageService simpleMessageService = new SimpleMessageService();
 	

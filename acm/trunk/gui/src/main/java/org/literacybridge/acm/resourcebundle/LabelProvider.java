@@ -12,9 +12,17 @@ import org.literacybridge.acm.metadata.MetadataField;
 import com.google.common.collect.UnmodifiableIterator;
 
 public class LabelProvider {
+		
 	public static final String CATEGORY_ROOT_LABEL = "CATEGORY_ROOT_LABEL";
 	public static final String DEVICES_ROOT_LABEL = "DEVICES_ROOT_LABEL";
-
+	public static final String OPTIONS_ROOT_LABEL = "OPTIONS_ROOT_LABEL";
+	public static final String OPTIONS_USER_LANGUAGE = "OPTIONS_USER_LANGUAGE";
+	public static final String WATERMARK_SEARCH = "WATERMARK_SEARCH";
+	
+	public static final String AUDIO_ITEM_TABLE_COLUMN_TITLE = "AUDIO_ITEM_TABLE_COLUMN_TITLE";
+	public static final String AUDIO_ITEM_TABLE_COLUMN_CREATOR = "AUDIO_ITEM_TABLE_COLUMN_CREATOR";
+	public static final String AUDIO_ITEM_TABLE_COLUMN_LANGUAGE = "AUDIO_ITEM_TABLE_COLUMN_LANGUAGE";
+	
 	public static final class KeyValuePair<K, V> {
 		private final K key;
 		private final V value;
