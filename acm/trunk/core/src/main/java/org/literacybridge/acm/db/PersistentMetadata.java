@@ -1,7 +1,10 @@
 package org.literacybridge.acm.db;
 
 import java.sql.Timestamp;
+import java.util.LinkedList;
+import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -10,6 +13,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
@@ -37,6 +41,9 @@ public class PersistentMetadata extends PersistentObject {
     
     @OneToOne(mappedBy = "persistentMetadata")
     private PersistentLocalizedAudioItem persistentLocalizedAudioItem;
+    
+    @OneToMany(mappedBy = "persistentMetadata", cascade = {CascadeType.ALL})
+    private List<PersistentAudioItemStatistic> persistentAudioItemStatisticList = new LinkedList<PersistentAudioItemStatistic>();    
     
     @Column(name="dc_contributor")
     private String dc_contributor;
@@ -88,13 +95,7 @@ public class PersistentMetadata extends PersistentObject {
     
     @Column(name="dtb_revision_description")
     private String dtb_revision_description;
-    
-    @Column(name="lb_copy_count")
-    private Integer lb_copy_count;
-    
-    @Column(name="lb_play_count")
-    private Integer lb_play_count;
-    
+        
     @Column(name="lb_rating")
     private Short lb_rating;
     
@@ -113,6 +114,22 @@ public class PersistentMetadata extends PersistentObject {
         return persistentLocalizedAudioItem;
     }   
 
+    protected List<PersistentAudioItemStatistic> getPersistentAudioItemStatistics() {
+        return persistentAudioItemStatisticList;
+    }
+
+    protected PersistentAudioItemStatistic addPersistentAudioItemStatistic(PersistentAudioItemStatistic persistentAudioItemStatistic) {
+        getPersistentAudioItemStatistics().add(persistentAudioItemStatistic);
+        persistentAudioItemStatistic.setPersistentMetadata(this);
+        return persistentAudioItemStatistic;
+    }
+
+    protected PersistentAudioItemStatistic removePersistentAudioItemStatistic(PersistentAudioItemStatistic persistentAudioItemStatistic) {
+        getPersistentAudioItemStatistics().remove(persistentAudioItemStatistic);
+        persistentAudioItemStatistic.setPersistentMetadata(null);
+        return persistentAudioItemStatistic;
+    }    
+    
     public String getDc_contributor() {
         return dc_contributor;
     }
@@ -251,21 +268,63 @@ public class PersistentMetadata extends PersistentObject {
     }
 
     public Integer getLb_copy_count() {
-        return lb_copy_count;
+        Integer sum = 0;
+        for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
+        	sum += statistic.getCopyCount();
+        }
+        return sum;
     }
 
-    public void setLb_copy_count(Integer lb_copy_count) {
-        this.lb_copy_count = lb_copy_count;
+    public void setLb_copy_count(String deviceId, Integer copyCount) {
+        // look for existing statistics
+    	for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
+        	if (statistic.getDeviceID().equals(deviceId)) {
+        		statistic.setCopyCount(copyCount);
+        		return;
+        	}
+        }
+        // otherwise create a new one
+    	addPersistentAudioItemStatistic(new PersistentAudioItemStatistic(deviceId, copyCount, 0));
     }
 
+    public void removeLb_copy_count(String deviceId) {
+    	for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
+        	if (statistic.getDeviceID().equals(deviceId)) {
+        		statistic.setCopyCount(0);
+        		return;
+        	}
+        }
+    }    
+    
     public Integer getLb_play_count() {
-        return lb_play_count;
+        Integer sum = 0;
+        for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
+        	sum += statistic.getPlayCount();
+        }
+        return sum;
     }
 
-    public void setLb_play_count(Integer lb_play_count) {
-        this.lb_play_count = lb_play_count;
+    public void setLb_play_count(String deviceId, Integer playCount) {
+        // look for existing statistics
+    	for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
+        	if (statistic.getDeviceID().equals(deviceId)) {
+        		statistic.setPlayCount(playCount);
+        		return;
+        	}
+        }
+        // otherwise create a new one
+    	addPersistentAudioItemStatistic(new PersistentAudioItemStatistic(deviceId, 0, playCount));    	
     }
-
+    
+    public void removeLb_play_count(String deviceId) {
+    	for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
+        	if (statistic.getDeviceID().equals(deviceId)) {
+        		statistic.setPlayCount(0);
+        		return;
+        	}
+        }
+    }     
+    
     public Short getLb_rating() {
         return lb_rating;
     }

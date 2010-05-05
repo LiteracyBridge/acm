@@ -47,9 +47,7 @@ CREATE TABLE t_metadata (
   dc_type VARCHAR(50), 
   dtb_revision VARCHAR(50), 
   dtb_revision_date DATE, 
-  dtb_revision_description VARCHAR(2048), 
-  lb_copy_count INT, 
-  lb_play_count INT, 
+  dtb_revision_description VARCHAR(2048),
   lb_rating SMALLINT );
 
 CREATE TABLE t_audioitem ( 
@@ -75,6 +73,12 @@ CREATE TABLE t_locale (
   country VARCHAR(100), 
   description VARCHAR(2048) );
   
+CREATE TABLE t_audioitem_statistic ( 
+  id INT PRIMARY KEY, 
+  metadata INT,  
+  device_id VARCHAR(255), 
+  lb_copy_count INT, 
+  lb_play_count INT);  
   
 INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_audioitem',0);
 INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_localized_audioitem',0);
@@ -84,4 +88,5 @@ INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_locale',0);
 INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_manifest',0);
 INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_metadata',0);
 INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_referenced_file',0);
-INSERT InTO t_sequence(seq_name,seq_count) VALUES('gen_string',0);
+INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_string',0);
+INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_audioitem_statistic',0);

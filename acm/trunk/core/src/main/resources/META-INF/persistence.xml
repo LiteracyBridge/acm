@@ -15,5 +15,6 @@
     <class>org.literacybridge.acm.db.PersistentObject</class>
     <class>org.literacybridge.acm.db.PersistentLocalizedString</class>
     <class>org.literacybridge.acm.db.PersistentString</class>
+    <class>org.literacybridge.acm.db.PersistentAudioItemStatistic</class>
   </persistence-unit>
 </persistence>
