@@ -46,6 +46,10 @@ public class Metadata implements Persistable {
 	public int getNumberOfValues() {
 		return numValues;
 	}
+	
+	public int getNumberOfFields() {
+		return this.fields.size();
+	}
 
 	public Metadata(PersistentMetadata metadata) {
 		this.fields = new LinkedHashMap<MetadataField<?>, ListWrapper<?>>();
@@ -228,10 +232,9 @@ public class Metadata implements Persistable {
 		while (fieldsIterator.hasNext()) {
 			MetadataField<?> field = fieldsIterator.next();
 			String valueList = getCommaSeparatedList(this, field);
-			if (valueList == null) {
-				valueList = "<undefined>";
+			if (valueList != null) {
+				builder.append(field.getName() + " = " + valueList + "\n");
 			}
-			builder.append(field.getName() + " = " + valueList + "\n");
 		}
 		return builder.toString();
 	}

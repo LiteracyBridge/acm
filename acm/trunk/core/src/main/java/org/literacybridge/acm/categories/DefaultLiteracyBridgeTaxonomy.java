@@ -74,72 +74,74 @@ public class DefaultLiteracyBridgeTaxonomy {
 		Category root = taxonomy.getRootCategory();
 		
 		// top level categories
-		Category agriculture = addCategory(taxonomy, root, "lb.agr", "Agriculture", "");
-		Category health = addCategory(taxonomy, root, "lb.hea", "Health", "");
-		Category stories = addCategory(taxonomy, root, "lb.sto", "Stories", "");
-		Category education = addCategory(taxonomy, root, "lb.edu", "Education", "");
-		Category business = addCategory(taxonomy, root, "lb.bus", "Business", "");
-		Category governance = addCategory(taxonomy, root, "lb.gov", "Governance", "");
-		Category music = addCategory(taxonomy, root, "lb.mus", "Music", "");
-		Category diary = addCategory(taxonomy, root, "lb.dia", "Diary", "");
-		Category other = addCategory(taxonomy, root, "lb.oth", "Other Messages", "");
+		Category other = addCategory(taxonomy, root, "0", "Other Messages", "");
+		Category agriculture = addCategory(taxonomy, root, "1", "Agriculture", "");
+		Category health = addCategory(taxonomy, root, "2", "Health", "");
+		Category education = addCategory(taxonomy, root, "3", "Education", "");
+		Category stories = addCategory(taxonomy, root, "4", "Stories", "");
+		Category business = addCategory(taxonomy, root, "5", "Business", "");
+		Category governance = addCategory(taxonomy, root, "6", "Governance", "");
+		Category music = addCategory(taxonomy, root, "7", "Music", "");
+		Category diary = addCategory(taxonomy, root, "8", "Diary", "");
+		
 
 		// agriculture
-		Category crops = addCategory(taxonomy, agriculture, "lb.agr.cro", "Crops", "");
-			Category maize = addCategory(taxonomy, crops, "lb.agr.cro.mai", "Maize", "");
-			Category millet = addCategory(taxonomy, crops, "lb.agr.cro.mil", "Millet", "");
-			Category beans = addCategory(taxonomy, crops, "lb.agr.cro.bea", "Beans", "");
-			Category groundnuts = addCategory(taxonomy, crops, "lb.agr.cro.gro", "Groundnuts", "");
-			Category rice = addCategory(taxonomy, crops, "lb.agr.cro.ric", "Rice", "");
+		Category crops = addCategory(taxonomy, agriculture, "1-1", "Crops", "");
+			Category maize = addCategory(taxonomy, crops, "1-1-1", "Maize", "");
+			Category millet = addCategory(taxonomy, crops, "1-1-2", "Millet", "");
+			Category beans = addCategory(taxonomy, crops, "1-1-3", "Beans", "");
+			Category groundnuts = addCategory(taxonomy, crops, "1-1-4", "Groundnuts", "");
+			Category rice = addCategory(taxonomy, crops, "1-1-5", "Rice", "");
 			
-		Category livestock = addCategory(taxonomy, agriculture, "lb.agr.liv", "Livestock", "");
-			Category chickens = addCategory(taxonomy, livestock, "lb.agr.liv.chi", "Chickens/Fowl", "");
-			Category sheep = addCategory(taxonomy, livestock, "lb.agr.liv.she", "Sheep", "");
-			Category goats = addCategory(taxonomy, livestock, "lb.agr.liv.goa", "Goats", "");
-			Category cows = addCategory(taxonomy, livestock, "lb.agr.liv.cow", "Cows", "");
-			Category donkeys = addCategory(taxonomy, livestock, "lb.agr.liv.don", "Donkeys", "");
+		Category livestock = addCategory(taxonomy, agriculture, "1-2", "Livestock", "");
+			Category chickens = addCategory(taxonomy, livestock, "1-2-1", "Chickens/Fowl", "");
+			Category sheep = addCategory(taxonomy, livestock, "1-2-2", "Sheep", "");
+			Category goats = addCategory(taxonomy, livestock, "1-2-3", "Goats", "");
+			Category cows = addCategory(taxonomy, livestock, "1-2-4", "Cows", "");
+			Category donkeys = addCategory(taxonomy, livestock, "1-2-5", "Donkeys", "");
 		
 		// health
-		Category hiv = addCategory(taxonomy, health, "lb.hea.hiv", "HIV/Aids", "");
-		Category malaria = addCategory(taxonomy, health, "lb.hea.mal", "Malaria", "");
-		Category tuberculosis = addCategory(taxonomy, health, "lb.hea.tub", "Tuberculosis", "");			
-		Category other_infectious = addCategory(taxonomy, health, "lb.hea.oth", "Other infectious diseases", "");
-		Category antenatal = addCategory(taxonomy, health, "lb.hea.ant", "Antenatal care", "");
-		Category neonatal = addCategory(taxonomy, health, "lb.hea.neo", "Neonatal care", "");
-		Category hygiene = addCategory(taxonomy, health, "lb.hea.hyg", "Hygiene and sanitation", "");
-		Category family = addCategory(taxonomy, health, "lb.hea.fam", "Family planning", "");
+		Category hiv = addCategory(taxonomy, health, "2-1", "HIV/Aids", "");
+		Category malaria = addCategory(taxonomy, health, "2-2", "Malaria", "");
+		Category tuberculosis = addCategory(taxonomy, health, "2-3", "Tuberculosis", "");			
+		Category other_infectious = addCategory(taxonomy, health, "2-4", "Other infectious diseases", "");
+		Category antenatal = addCategory(taxonomy, health, "2-5", "Antenatal care", "");
+		Category neonatal = addCategory(taxonomy, health, "2-6", "Neonatal care", "");
+		Category hygiene = addCategory(taxonomy, health, "2-7", "Hygiene and sanitation", "");
+		Category family = addCategory(taxonomy, health, "2-8", "Family planning", "");
 		
-		// stories
-		Category spoken = addCategory(taxonomy, stories, "lb.sto.spo", "Spoken books", "");
-		Category oral = addCategory(taxonomy, stories, "lb.sto.ora", "Oral stories", "");
 
 		// education
-		Category adult = addCategory(taxonomy, education, "lb.edu.adu", "Adult literacy", "");
-		Category school = addCategory(taxonomy, education, "lb.edu.sch", "School Lessons", "");
-			Category preKindergarten = addCategory(taxonomy, school, "lb.edu.sch.pre", "Pre-Kindergarten", "");
-			Category kindergarten = addCategory(taxonomy, school, "lb.edu.sch.kin", "Kindergarten", "");
-			addCategory(taxonomy, school, "lb.edu.sch.y01", "1st year", "");
-			addCategory(taxonomy, school, "lb.edu.sch.y02", "2nd year", "");
-			addCategory(taxonomy, school, "lb.edu.sch.y03", "3rd year", "");
+		Category adult = addCategory(taxonomy, education, "3-1", "Adult literacy", "");
+		Category school = addCategory(taxonomy, education, "3-2", "School Lessons", "");
+			Category preKindergarten = addCategory(taxonomy, school, "3-2-1", "Pre-Kindergarten", "");
+			Category kindergarten = addCategory(taxonomy, school, "3-2-2", "Kindergarten", "");
+			addCategory(taxonomy, school, "3-2-3", "1st year", "");
+			addCategory(taxonomy, school, "3-2-4", "2nd year", "");
+			addCategory(taxonomy, school, "3-2-5", "3rd year", "");
 			for (int i = 4; i <= 13; i++) {
-				String id = "y" + (i < 10 ? "0" + i : "" + i); 
-				addCategory(taxonomy, school, "lb.edu.sch." + id, i + "th year", "");
+				addCategory(taxonomy, school, "3-2-" + (i + 2), i + "th year", "");
 			}
-		Category science = addCategory(taxonomy, education, "lb.edu.sci", "Science", "");
-		Category math = addCategory(taxonomy, education, "lb.edu.mat", "Math", "");
-		Category scienceBusiness = addCategory(taxonomy, education, "lb.edu.bus", "Business", "");
-		Category environmental = addCategory(taxonomy, education, "lb.edu.env", "Environmental studies", "");
-		Category social = addCategory(taxonomy, education, "lb.edu.soc", "social studies", "");
-		Category languages = addCategory(taxonomy, education, "lb.edu.lan", "Languages", "");
-			Category english = addCategory(taxonomy, languages, "lb.edu.lan.eng", "English", "");
-			Category dagaare = addCategory(taxonomy, languages, "lb.edu.lan.dag", "Dagaare", "");
-			Category sisaala = addCategory(taxonomy, languages, "lb.edu.lan.sis", "Sisaala", "");
+		Category science = addCategory(taxonomy, education, "3-3", "Science", "");
+		Category math = addCategory(taxonomy, education, "3-4", "Math", "");
+		Category scienceBusiness = addCategory(taxonomy, education, "3-5", "Business", "");
+		Category environmental = addCategory(taxonomy, education, "3-6", "Environmental studies", "");
+		Category social = addCategory(taxonomy, education, "3-7", "Social studies", "");
+		Category languages = addCategory(taxonomy, education, "3-8", "Languages", "");
+			Category english = addCategory(taxonomy, languages, "3-8-1", "English", "");
+			Category dagaare = addCategory(taxonomy, languages, "3-8-2", "Dagaare", "");
+			Category sisaala = addCategory(taxonomy, languages, "3-8-3", "Sisaala", "");
 
+		// stories
+		Category spoken = addCategory(taxonomy, stories, "4-1", "Spoken books", "");
+		Category oral = addCategory(taxonomy, stories, "4-2", "Oral stories", "");
+
+			
 		// business
-		Category accounting = addCategory(taxonomy, business, "lb.bus.acc", "accounting", "");
-		Category marketing = addCategory(taxonomy, business, "lb.bus.mar", "marketing", "");
-		Category entrepreneurship = addCategory(taxonomy, business, "lb.bus.ent", "entrepreneurship", "");			
-		Category finance = addCategory(taxonomy, business, "lb.bus.fin", "finance", "");
+		Category accounting = addCategory(taxonomy, business, "5-1", "Accounting", "");
+		Category marketing = addCategory(taxonomy, business, "5-2", "Marketing", "");
+		Category entrepreneurship = addCategory(taxonomy, business, "5-3", "Entrepreneurship", "");			
+		Category finance = addCategory(taxonomy, business, "5-4", "Finance", "");
 	}
 	
 	private static Category addCategory(Taxonomy taxonomy, Category parent, String id, String name, String desc) {

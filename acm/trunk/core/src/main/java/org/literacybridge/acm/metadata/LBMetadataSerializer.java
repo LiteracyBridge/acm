@@ -1,14 +1,22 @@
 package org.literacybridge.acm.metadata;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
+import org.literacybridge.acm.categories.Taxonomy;
+import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.metadata.LBMetadataEncodingVersions.Version;
 import org.literacybridge.acm.utils.IOUtils;
 
@@ -40,75 +48,31 @@ public class LBMetadataSerializer extends MetadataSerializer {
 	
 	public static final int METADATA_VERSION_CURRENT = METADATA_VERSION_1;
 	
-	private static final int NUM_BYTES_PER_FIELD_INFO = 6;
-
-	
 	@Override
-	public Metadata deserialize(DataInput in) throws IOException {
+	public Metadata deserialize(Set<Category> categories, DataInput in) throws IOException {
+		Metadata metadata = new Metadata();
+
 		// first read the metadata version and number of field infos in the header
 		int serializedVersion = IOUtils.readLittleEndian32(in);
 		int numberOfFields = IOUtils.readLittleEndian32(in);
 		
-		Iterator<FieldInfo> fieldsToDecode;
-		
-		if (serializedVersion <= METADATA_VERSION_CURRENT) {
-			// decode efficiently by skipping the remainder of the header
-			int bytesToSkip = NUM_BYTES_PER_FIELD_INFO * numberOfFields;
-			int actuallySkipped = in.skipBytes(bytesToSkip);
-			if (actuallySkipped != bytesToSkip) {
-				throw new IOException("Unable to seek to data section. Metadata corrupt.");
-			}
-			
-			// lookup which fields need to be decoded for the known format
-			Version version = LBMetadataEncodingVersions.getVersion(serializedVersion);
-			final Iterator<MetadataField<?>> fieldIDsIterator = version.getFields().iterator();
-			
-			fieldsToDecode = new Iterator<FieldInfo>() {
+		for (int i = 0; i < numberOfFields; i++) {
+			int fieldID = IOUtils.readLittleEndian16(in);
+			int fieldLength = IOUtils.readLittleEndian32(in);
 
-				@Override
-				public boolean hasNext() {
-					return fieldIDsIterator.hasNext();
-				}
-
-				@Override
-				public FieldInfo next() {
-					return new FieldInfo(LBMetadataIDs.FieldToIDMap.get(fieldIDsIterator.next()), -1);
-				}
-
-				@Override
-				public void remove() {
-					throw new UnsupportedOperationException("remove not supported.");
-				}
-			};
-			
-		} else {
-			// decode header to build up list of fields to read
-			List<FieldInfo> fields = new LinkedList<FieldInfo>();
-			
-			for (int i = 0; i < numberOfFields; i++) {
-				int fieldID = IOUtils.readLittleEndian16(in);
-				int fieldLength = IOUtils.readLittleEndian32(in);
-				
-				fields.add(new FieldInfo(fieldID, fieldLength));
-			}
-			
-			fieldsToDecode = fields.iterator();
-		}
-		
-		Metadata metadata = new Metadata();
-		
-		// now deserialize the metadata fields
-		while (fieldsToDecode.hasNext()) {
-			FieldInfo fieldInfo = fieldsToDecode.next();
-			MetadataField<?> field = LBMetadataIDs.FieldToIDMap.inverse().get(fieldInfo.fieldID);
-			if (field == null) {
-				// unknown field - for forward-compatibility we must skip it
-				in.skipBytes(fieldInfo.fieldLength);
+			if (fieldID == LBMetadataIDs.CATEGORY_FIELD_ID) {
+				deserializeCategories(categories, in);
 			} else {
-				deserializeField(metadata, field, in);
+				MetadataField<?> field = LBMetadataIDs.FieldToIDMap.inverse().get(fieldID);
+				if (field == null) {
+					// unknown field - for forward-compatibility we must skip it
+					in.skipBytes(fieldLength);
+				} else {
+					deserializeField(metadata, field, in);
+				}
 			}
 		}
-		
+
 		return metadata;
 	}
 
@@ -121,30 +85,36 @@ public class LBMetadataSerializer extends MetadataSerializer {
 	}
 	
 	@Override
-	public void serialize(Metadata metadata, DataOutput headerOut) throws IOException {
+	public void serialize(Set<Category> categories, Metadata metadata, DataOutput headerOut) throws IOException {
 		IOUtils.writeLittleEndian32(headerOut, METADATA_VERSION_CURRENT);
-		IOUtils.writeLittleEndian32(headerOut, LBMetadataEncodingVersions.CURRENT_VERSION.getFields().size());
+		IOUtils.writeLittleEndian32(headerOut, 1 + metadata.getNumberOfFields());
 		
+		// first encode categories
+		IOUtils.writeLittleEndian16(headerOut, LBMetadataIDs.CATEGORY_FIELD_ID);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream serializedDataPortion = new DataOutputStream(baos);
-
-		final Iterator<MetadataField<?>> it = LBMetadataEncodingVersions.CURRENT_VERSION.getFields().iterator();
-		int lastSize = 0;
-		while (it.hasNext()) {
-			MetadataField<?> field = it.next();
-			serializeField(metadata, field, serializedDataPortion);
-			int size = baos.size();
-			// encode field id
-			IOUtils.writeLittleEndian16(headerOut, LBMetadataIDs.FieldToIDMap.get(field));
-			// encode field length
-			IOUtils.writeLittleEndian32(headerOut, size - lastSize);
-			lastSize = size;
-		}
-		
-		// now the header is complete - copy over the data portion now
+		serializeCategories(categories, serializedDataPortion);
+		IOUtils.writeLittleEndian32(headerOut, baos.size());
 		serializedDataPortion.flush();
 		headerOut.write(baos.toByteArray());
 		serializedDataPortion.close();
+		
+		final Iterator<MetadataField<?>> it = metadata.getFieldsIterator();
+		while (it.hasNext()) {
+			baos = new ByteArrayOutputStream();
+			serializedDataPortion = new DataOutputStream(baos);
+
+			MetadataField<?> field = it.next();
+			serializeField(metadata, field, serializedDataPortion);
+			// encode field id
+			IOUtils.writeLittleEndian16(headerOut, LBMetadataIDs.FieldToIDMap.get(field));
+			// encode field length
+			IOUtils.writeLittleEndian32(headerOut, baos.size());
+			serializedDataPortion.flush();
+			headerOut.write(baos.toByteArray());
+			serializedDataPortion.close();
+		}
+		
 	}
 	
 	private final <T> void serializeField(Metadata metadata, MetadataField<T> field, DataOutput out) throws IOException {
@@ -159,15 +129,20 @@ public class LBMetadataSerializer extends MetadataSerializer {
 		}
 			
 	}
-	
-	private static final class FieldInfo {
-		int fieldID;
-		int fieldLength;
-		
-		public FieldInfo(int fieldID, int fieldLength) {
-			this.fieldID = fieldID;
-			this.fieldLength = fieldLength;
+
+	private final void serializeCategories(Set<Category> categories, DataOutput out) throws IOException {
+		out.writeByte((byte) categories.size());
+		for (Category c : categories) {
+			IOUtils.writeAsUTF8(out, c.getUuid());
 		}
 	}
 	
+	private final void deserializeCategories(Set<Category> categories, DataInput in) throws IOException {
+		int numValues = (in.readByte() & 0xff);
+		for (int i = 0; i < numValues; i++) {
+			String catID = IOUtils.readUTF8(in);
+			Category cat = new Category(PersistentCategory.getFromDatabase(catID));
+			categories.add(cat);
+		}
+	}
 }

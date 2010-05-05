@@ -7,7 +7,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Locale;
-import java.util.UUID;
 
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.Metadata;
@@ -17,6 +16,8 @@ public class Repository {
 	private final File baseDir = REPOSITORY_DIR;
 	
 	private final static Repository instance = new Repository();
+	// TODO: move to repo settings file
+	static int counter = 0;
 	
 	private Repository() {
 		// singleton
@@ -33,8 +34,7 @@ public class Repository {
 	}
 
 	public static String getNewUUID() {
-		UUID uuid = UUID.randomUUID();
-		return uuid.toString();
+		return "LB-2_0_" + counter++;
 	}
 	
 	/**

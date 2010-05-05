@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableBiMap;
 import static org.literacybridge.acm.metadata.MetadataSpecification.*;
 
 public class LBMetadataIDs {
+	public static final int CATEGORY_FIELD_ID = 0;
+	
 	// TODO: this should be defined in a separate (online, xml?) spec
 	public static final ImmutableBiMap<MetadataField<?>, Integer> FieldToIDMap =
 	       new ImmutableBiMap.Builder<MetadataField<?>, Integer>()
