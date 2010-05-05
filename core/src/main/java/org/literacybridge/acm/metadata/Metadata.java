@@ -159,11 +159,11 @@ public class Metadata implements Persistable {
 		} else if (field == MetadataSpecification.DTB_REVISION_DESCRIPTION) {
 			mMetadata.setDtb_revision_description(value.getValue().toString());
 		} else if (field == MetadataSpecification.LB_COPY_COUNT) {
-			mMetadata.setLb_copy_count(Integer.parseInt(value.getValue()
-					.toString()));
+			mMetadata.setLb_copy_count("default", 
+					Integer.parseInt(value.getValue().toString()));
 		} else if (field == MetadataSpecification.LB_PLAY_COUNT) {
-			mMetadata.setLb_play_count(Integer.parseInt(value.getValue()
-					.toString()));
+			mMetadata.setLb_play_count("default", 
+					Integer.parseInt(value.getValue().toString()));
 		} else if (field == MetadataSpecification.LB_RATING) {
 			mMetadata.setLb_rating(Short.valueOf(value.getValue().toString()));
 		}
