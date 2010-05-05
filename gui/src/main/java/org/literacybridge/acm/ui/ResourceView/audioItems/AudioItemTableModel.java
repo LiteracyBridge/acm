@@ -103,7 +103,7 @@ public class AudioItemTableModel  extends AbstractTreeTableModel {
 			metadata = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage()).getMetadata();	
 		}	
 		
-		String cellText = "<error occurred>";
+		String cellText = "";
 		try {
 			switch (column) {
 			case TITLE:
