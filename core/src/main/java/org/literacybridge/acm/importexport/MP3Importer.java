@@ -17,6 +17,10 @@ import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 import org.literacybridge.acm.repository.Repository;
+import org.literacybridge.acm.utils.OSChecker;
+import org.literacybridge.audioconverter.api.ExternalConverter;
+import org.literacybridge.audioconverter.api.WAVFormat;
+import org.literacybridge.audioconverter.converters.BaseAudioConverter.ConversionException;
 
 public class MP3Importer extends Importer {
 
@@ -47,16 +51,17 @@ public class MP3Importer extends Importer {
 			Repository repository = Repository.getRepository();
 			repository.store(file, file.getName(), localizedAudioItem);
 			
-			// TODO: convert to WAV
-//			ExternalConverter audioConverter = new ExternalConverter();
-//			File itemDir = repository.resolveName(localizedAudioItem);
-//			File sourceFile = new File(itemDir, file.getName());
-//			File targetFile = new File(itemDir, file.getName().replace(".mp3", ".wav"));
-//			audioConverter.convert(sourceFile, targetFile, new WAVFormat(16, 128, 2));
+			if (OSChecker.WINDOWS) {
+				ExternalConverter audioConverter = new ExternalConverter();
+				File itemDir = repository.resolveName(localizedAudioItem);
+				File sourceFile = new File(itemDir, file.getName());
+				File targetFile = new File(itemDir, file.getName().replace(".mp3", ".wav"));
+				audioConverter.convert(sourceFile, new File(sourceFile.getParent()), new WAVFormat(16, 128, 1));
+			}
 		} catch (ID3ReadException e) {
 			throw new IOException(e);
-//		} catch (ConversionException e) {
-//			throw new IOException(e);
+		} catch (ConversionException e) {
+			throw new IOException(e);
 		}
 	}
 
