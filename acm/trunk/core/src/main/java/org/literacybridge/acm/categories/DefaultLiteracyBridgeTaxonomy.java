@@ -1,6 +1,10 @@
 package org.literacybridge.acm.categories;
 
+import java.util.List;
+import java.util.Locale;
+
 import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.db.Persistence;
 
 public class DefaultLiteracyBridgeTaxonomy {
 /*
@@ -149,6 +153,24 @@ public class DefaultLiteracyBridgeTaxonomy {
         cat.setDefaultCategoryDescription(name, desc);
         taxonomy.addChild(parent, cat);
         return cat;
+	}
+	
+	public static void main(String[] args) throws Exception {
+		Persistence.initialize();
+		Taxonomy tax = Taxonomy.getTaxonomy();
+		Category root = tax.getRootCategory();
+		print(root);
+		
+	}
+	
+	private static void print(Category cat) {
+		System.out.println(cat.getUuid() + " : " + cat.getCategoryName(Locale.ENGLISH));
+		List<Category> children = cat.getChildren();
+		if (children != null) {
+			for (Category c : children) {
+				print(c);
+			}
+		}
 	}
 	
 }
