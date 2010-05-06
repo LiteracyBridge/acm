@@ -1,6 +1,7 @@
 package org.literacybridge.acm.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.util.List;
 
 import javax.swing.JFrame;
@@ -14,6 +15,7 @@ import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.ui.ResourceView.ResourceView;
 import org.literacybridge.acm.ui.ResourceView.ToolbarView;
+import org.literacybridge.acm.ui.dialogs.BusyDialog;
 import org.literacybridge.acm.util.SimpleMessageService;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
@@ -99,7 +101,7 @@ public class Application extends JXFrame {
 			updateResult();
 		}
 		
-		private void updateResult() {
+		public void updateResult() {
 			IDataRequestResult result = DataRequestService.getInstance().getData(
 					LanguageUtil.getUserChoosenLanguage(), 
 					filterString, filterCategories);
