@@ -1,17 +1,19 @@
 package org.literacybridge.acm.ui.ResourceView;
 
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
+import it.cnr.imaa.essi.lablib.gui.checkboxtree.DefaultCheckboxTreeCellRenderer;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingEvent;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingListener;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -31,7 +33,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
-import org.apache.derby.iapi.sql.dictionary.CatalogRowFactory;
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.literacybridge.acm.api.IDataRequestResult;
@@ -111,6 +112,7 @@ public class CategoryView extends Container implements Observer {
 		
 		categoryTree = new CheckboxTree(categoryRootNode);
 		categoryTree.setRootVisible(false);
+		categoryTree.setCellRenderer(new FacetCountCellRenderer());
 		categoryTree.expandPath(new TreePath(categoryRootNode.getPath()));
 
 		deviceTree = new JTree(deviceTreeModel);
@@ -264,17 +266,48 @@ public class CategoryView extends Container implements Observer {
 			return category;
 		}
 
+		public int getFacetCount() {
+			return result.getFacetCount(category);
+		}
+		
 		@Override 
 		public String toString() {
 			String displayLabel = null;
 			if (category != null) {
 				displayLabel = category.getCategoryName(LanguageUtil.getUserChoosenLanguage()).getLabel();
+				int count = category.getAudioItemList().size();
+				if (count > 0) {
+					displayLabel += " ["+count+"]";
+				}
 			} else {
 				displayLabel = "error";
 			}
 			
 			return displayLabel;
 		}
+	}
+	
+	
+	private static class FacetCountCellRenderer extends DefaultCheckboxTreeCellRenderer {
+	    public Component getTreeCellRendererComponent(JTree tree, Object object, boolean selected, boolean expanded, boolean leaf, int row,
+	    	    boolean hasFocus) {
+	    	DefaultMutableTreeNode cat = (DefaultMutableTreeNode) object;
+	    	DefaultCheckboxTreeCellRenderer cell = (DefaultCheckboxTreeCellRenderer) super.getTreeCellRendererComponent(tree, object, selected, expanded, leaf, row, hasFocus);
+	    	
+	    	if (cat.getUserObject() != null && cat.getUserObject() instanceof CategoryTreeNodeObject) {
+	    		CategoryTreeNodeObject node = (CategoryTreeNodeObject) cat.getUserObject();
+		    	// make label bold
+		        Font f = super.label.getFont();
+		    	if (node.getFacetCount() > 0) {
+		    		super.label.setFont(f.deriveFont(f.getStyle() | Font.BOLD));
+		    	} else {
+		    		super.label.setFont(f.deriveFont(f.getStyle() & ~Font.BOLD));
+		    	}
+		    		    		
+	    	}
+
+	    	return cell;
+	    }
 	}
 	
 	private void updateControlLanguage(Locale locale) {
