@@ -1,6 +1,5 @@
 package org.literacybridge.acm.ui.ResourceView.audioItems;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 

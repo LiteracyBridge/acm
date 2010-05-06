@@ -212,12 +212,12 @@ public class Metadata implements Persistable {
 					new MetadataValue<String>(mMetadata
 							.getDtb_revision_description()));
 			addMetadataField(MetadataSpecification.LB_COPY_COUNT,
-					new MetadataValue<Integer>(mMetadata.getLb_copy_count()));
+					mMetadata.getLb_copy_count() == 0 ? null : new MetadataValue<Integer>(mMetadata.getLb_copy_count()));
 			addMetadataField(MetadataSpecification.LB_PLAY_COUNT,
-					new MetadataValue<Integer>(mMetadata.getLb_play_count()));
+					mMetadata.getLb_play_count() == 0 ? null : new MetadataValue<Integer>(mMetadata.getLb_play_count()));
 			addMetadataField(MetadataSpecification.LB_RATING,
 					new MetadataValue<Integer>(
-							(mMetadata.getLb_rating() == null) ? null
+							(mMetadata.getLb_rating() == null || mMetadata.getLb_rating().intValue() == 0) ? null
 									: mMetadata.getLb_rating().intValue()));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
