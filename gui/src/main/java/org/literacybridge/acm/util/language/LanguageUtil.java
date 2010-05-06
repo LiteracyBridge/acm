@@ -2,6 +2,9 @@ package org.literacybridge.acm.util.language;
 
 import java.util.Locale;
 
+import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.content.LocalizedAudioItem;
+
 public class LanguageUtil {
 
 	// additional languages
@@ -33,6 +36,10 @@ public class LanguageUtil {
 		fallbackLanguage = newFallbackLanguage;
 	}
 	
+	public static String getBestMatchingLocalizedLabel(Category category, Locale wish) {
+		// here we must check first if the default language is available !!	
+		return category.getCategoryName(wish).getLabel();
+	}
 	
 	public static Locale getUILanguage() {
 		return uiLanguage;

@@ -10,11 +10,12 @@ import java.util.List;
 import javax.swing.JDialog;
 import javax.swing.JTree;
 import javax.swing.TransferHandler;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import org.literacybridge.acm.importexport.FileImporter;
 import org.literacybridge.acm.ui.Application;
-import org.literacybridge.acm.ui.ResourceView.CategoryView.CategoryTreeNode;
+import org.literacybridge.acm.ui.ResourceView.CategoryView.CategoryTreeNodeObject;
 import org.literacybridge.acm.ui.dialogs.BusyDialog;
 
 public class TreeTransferHandler extends TransferHandler {
@@ -57,9 +58,9 @@ public class TreeTransferHandler extends TransferHandler {
 		// Get drop location info.
 		JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
 		TreePath dest = dl.getPath();
-		final CategoryTreeNode parent = (CategoryTreeNode) dest
-				.getLastPathComponent();
-
+		DefaultMutableTreeNode parent = (DefaultMutableTreeNode) dest.getLastPathComponent();
+		final CategoryTreeNodeObject obj = (CategoryTreeNodeObject) parent.getUserObject();
+		
 		// don't piggyback on the drag&drop thread
 		Runnable job = new Runnable() {
 
@@ -69,9 +70,9 @@ public class TreeTransferHandler extends TransferHandler {
 				try {
 					for (File f : files) {
 						if (f.isDirectory()) {
-							FileImporter.getInstance().importDirectory(parent.category, f, false);
+							FileImporter.getInstance().importDirectory(obj.getCategory(), f, false);
 						} else {
-							FileImporter.getInstance().importFile(parent.category, f);
+							FileImporter.getInstance().importFile(obj.getCategory(), f);
 						}
 					}
 					
