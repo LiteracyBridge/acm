@@ -7,12 +7,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import javax.swing.JDialog;
 import javax.swing.JTree;
 import javax.swing.TransferHandler;
 import javax.swing.tree.TreePath;
 
 import org.literacybridge.acm.importexport.FileImporter;
+import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.ResourceView.CategoryView.CategoryTreeNode;
+import org.literacybridge.acm.ui.dialogs.BusyDialog;
 
 public class TreeTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = 1L;
@@ -42,7 +45,7 @@ public class TreeTransferHandler extends TransferHandler {
 			return false;
 		}
 		// Extract transfer data.
-		List<File> files = null;
+		final List<File> files;
 		try {
 			Transferable t = support.getTransferable();
 			files = (List<File>) t.getTransferData(fileFlavor);
@@ -54,20 +57,35 @@ public class TreeTransferHandler extends TransferHandler {
 		// Get drop location info.
 		JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
 		TreePath dest = dl.getPath();
-		CategoryTreeNode parent = (CategoryTreeNode) dest
+		final CategoryTreeNode parent = (CategoryTreeNode) dest
 				.getLastPathComponent();
 
-		try {
-			for (File f : files) {
-				if (f.isDirectory()) {
-					FileImporter.getInstance().importDirectory(parent.category, f, false);
-				} else {
-					FileImporter.getInstance().importFile(parent.category, f);
+		// don't piggyback on the drag&drop thread
+		Runnable job = new Runnable() {
+
+			@Override
+			public void run() {
+				JDialog busy = BusyDialog.show("Importing files...");
+				try {
+					for (File f : files) {
+						if (f.isDirectory()) {
+							FileImporter.getInstance().importDirectory(parent.category, f, false);
+						} else {
+							FileImporter.getInstance().importFile(parent.category, f);
+						}
+					}
+					
+				} catch (IOException e) {
+					// TODO: error handling
+					e.printStackTrace();
+				} finally {
+					busy.setVisible(false);
+					Application.getFilterState().updateResult();
 				}
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		};
+		
+		new Thread(job).start();
 		
 		return true;
 	}
