@@ -24,7 +24,7 @@ public class LanguageUtil {
 		return defaultLanguage;
 	}
 	
-	public static void setCurrentLanguage(Locale newDefaultLanguage) {
+	public static void setUserChoosenLanguage(Locale newDefaultLanguage) {
 		defaultLanguage = newDefaultLanguage;
 	}
 

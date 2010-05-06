@@ -14,6 +14,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -167,6 +168,7 @@ public class CategoryView extends Container implements Observer {
 				default:
 					newLocale = Locale.ENGLISH;
 				 }
+				 LanguageUtil.setUserChoosenLanguage(newLocale);
 				 Application.getMessageService().pumpMessage(new UILanguageChanged(newLocale, currLocale));
 				 currLocale = newLocale;
 			}
@@ -315,13 +317,30 @@ public class CategoryView extends Container implements Observer {
 		devicePane.setTitle(LabelProvider.getLabel(LabelProvider.DEVICES_ROOT_LABEL, locale));
 		optionsPane.setTitle(LabelProvider.getLabel(LabelProvider.OPTIONS_ROOT_LABEL, locale));
 		uiLangugeLb.setText(LabelProvider.getLabel(LabelProvider.OPTIONS_USER_LANGUAGE, locale));
+		
+		updateTreeNodes();
 	}
 
+	
+	private void updateTreeNodes() {
+		for (Enumeration e = categoryRootNode.breadthFirstEnumeration(); e.hasMoreElements(); ) {
+	        DefaultMutableTreeNode current = (DefaultMutableTreeNode)e.nextElement();
+	        CategoryTreeNodeObject obj = (CategoryTreeNodeObject) current.getUserObject();
+	        categoryTree.getModel().valueForPathChanged(new TreePath(current.getPath()), obj);
+		}
+	}
+	
+	
 	@Override
 	public void update(Observable o, Object arg) {
 		if (arg instanceof UILanguageChanged) {
 			UILanguageChanged newLocale = (UILanguageChanged) arg;
 			updateControlLanguage(newLocale.getNewLocale());
+		}
+		
+		if (arg instanceof IDataRequestResult) {
+			IDataRequestResult result = (IDataRequestResult) arg;
+			updateTreeNodes();
 		}
 	}	
 }
