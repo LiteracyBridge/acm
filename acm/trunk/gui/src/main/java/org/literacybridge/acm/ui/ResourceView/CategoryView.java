@@ -11,6 +11,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +31,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
+import org.apache.derby.iapi.sql.dictionary.CatalogRowFactory;
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.literacybridge.acm.api.IDataRequestResult;
@@ -55,7 +57,7 @@ public class CategoryView extends Container implements Observer {
 	
 	private JTree deviceTree = null;
 	// root nodes
-	private final CategoryTreeNode categoryRootNode;
+	private final DefaultMutableTreeNode categoryRootNode;
 	private final DefaultMutableTreeNode deviceRootNode;
 	private final DefaultTreeModel deviceTreeModel;
 
@@ -74,8 +76,7 @@ public class CategoryView extends Container implements Observer {
 	
 	public CategoryView(IDataRequestResult result) {
 		this.result = result;
-		categoryRootNode = new CategoryTreeNode(null, 
-				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUILanguage()));
+		categoryRootNode = new DefaultMutableTreeNode();
 		deviceRootNode = new DefaultMutableTreeNode(
 				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUILanguage()));
 
@@ -181,8 +182,9 @@ public class CategoryView extends Container implements Observer {
 				TreePath[] tp = categoryTree.getCheckingPaths();
 				List<PersistentCategory> filterCategories = new ArrayList<PersistentCategory>(tp.length);
 				for (int i = 0; i < tp.length; i++) {
-					Category cat = ((CategoryTreeNode) tp[i].getLastPathComponent()).category;
-					filterCategories.add(cat.getPersistentObject());
+					DefaultMutableTreeNode node = (DefaultMutableTreeNode) tp[i].getLastPathComponent();
+					CategoryTreeNodeObject obj = (CategoryTreeNodeObject) node.getUserObject();
+					filterCategories.add(obj.getCategory().getPersistentObject());
 				}
 				
 				Application.getFilterState().setFilterCategories(filterCategories);
@@ -193,8 +195,7 @@ public class CategoryView extends Container implements Observer {
 	}
 
 	private void addChildNodes(DefaultMutableTreeNode parent, Category category) {
-		String categoryLabel = category.getCategoryName(LanguageUtil.getUserChoosenLanguage()).getLabel();
-		CategoryTreeNode child = new CategoryTreeNode(category, categoryLabel);
+		DefaultMutableTreeNode child = new DefaultMutableTreeNode(new CategoryTreeNodeObject(category));
 		parent.add(child);
 		if (category.hasChildren()) {
 			for (Category c : category.getChildren()) {
@@ -251,15 +252,27 @@ public class CategoryView extends Container implements Observer {
 		categoryTree.setTransferHandler(new TreeTransferHandler());
 	}
 	
-	public static class CategoryTreeNode extends DefaultMutableTreeNode {
-		final Category category;
-		final String displayLabel;
-		CategoryTreeNode(Category category, String displayLabel) {
-			this.displayLabel = displayLabel;
+	// Helper class for tree nodes
+	public class CategoryTreeNodeObject {
+		private Category category;
+		
+		public CategoryTreeNodeObject(Category category) {
 			this.category = category;
 		}
-		
-		@Override public String toString() {
+	
+		public Category getCategory() {
+			return category;
+		}
+
+		@Override 
+		public String toString() {
+			String displayLabel = null;
+			if (category != null) {
+				displayLabel = category.getCategoryName(LanguageUtil.getUserChoosenLanguage()).getLabel();
+			} else {
+				displayLabel = "error";
+			}
+			
 			return displayLabel;
 		}
 	}
