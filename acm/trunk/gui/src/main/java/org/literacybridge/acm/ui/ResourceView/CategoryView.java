@@ -300,7 +300,9 @@ public class CategoryView extends Container implements Observer {
 	    		CategoryTreeNodeObject node = (CategoryTreeNodeObject) cat.getUserObject();
 		    	// make label bold
 		        Font f = super.label.getFont();
-		    	if (node.getFacetCount() > 0) {
+		    	int count = node.getFacetCount();
+		    	System.out.println("Node: " + node.toString() + " - Count= " + count);
+		        if (count > 0) {
 		    		super.label.setFont(f.deriveFont(f.getStyle() | Font.BOLD));
 		    	} else {
 		    		super.label.setFont(f.deriveFont(f.getStyle() & ~Font.BOLD));
