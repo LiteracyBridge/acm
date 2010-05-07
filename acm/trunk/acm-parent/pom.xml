@@ -72,5 +72,12 @@
         <artifactId>google-collections</artifactId>
         <version>1.0-rc5</version>
     </dependency> 
- </dependencies>
+        <dependency>
+        	<groupId>org.yaml</groupId>
+        	<artifactId>snakeyaml</artifactId>
+        	<version>1.6</version>
+        	<type>jar</type>
+        	<scope>compile</scope>
+        </dependency>
+  </dependencies>
 </project>

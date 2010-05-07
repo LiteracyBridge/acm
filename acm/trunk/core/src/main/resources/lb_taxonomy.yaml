@@ -1,11 +1,10 @@
--
+{
   '0' : {
     name: Other Messages
-  }
--
+  },
   '1' : {
     name: Agriculture,
-    chilren: {
+    children: {
       '1-1' : {
         name: Crops,
         children : {
@@ -45,10 +44,41 @@
             name: Donkeys
           }
         }
+      },
+      '1-3' : {
+        name: Process,
+        description: not crop/animal specific,
+        children: {
+          '1-3-1' : {
+            name: Preparing land for the growing season
+          },
+          '1-3-2' : {
+            name: Planting / Sowing
+          },
+          '1-3-3' : {
+            name: Maintaining crops (e.g. weeding)
+          },
+          '1-3-4' : {
+            name: Harvesting
+          },
+          '1-3-5' : {
+            name: Storing
+          }
+        }
+      },
+      '1-4' : {
+        name: Business,
+        children: {
+          '1-4-1' : {
+            name: Marketing
+          },
+          '1-4-2' : {
+            name: Selling
+          }
+        }
       }
     }
-  }
--
+  },
   '2' : {
     name: Health,
     children: {
@@ -76,8 +106,8 @@
       '2-8' : {
         name: Family planning
       }
-  }
--
+    }
+  },
   '3' : {
     name: Education,
     children: {
@@ -85,7 +115,7 @@
         name: Adult literacy
       },
       '3-2' : {
-        name: School Lessons
+        name: School Lessons,
         children: {
           '3-2-1' : {
             name: Pre-Kindergarten
@@ -150,7 +180,7 @@
         name: Social studies
       },
       '3-8' : {
-        name: Languages
+        name: Languages,
         children: {
           '3-8-1' : {
             name: English
@@ -164,8 +194,7 @@
         }
       }
     }
-  }
--
+  },
   '4' : {
     name: Stories,
     children: {
@@ -176,8 +205,7 @@
         name: Spoken books
       }
     }
-  }
--
+  },
   '5' : {
     name: Business,
     children: {
@@ -194,16 +222,25 @@
         name: Finance
       }
     }
-  }
--
+  },
   '6' : {
     name: Governance
-  }
--
+  },
   '7' : {
     name: Music
-  }
--
+  },
   '8' : {
     name: Diary
+  },
+  '9' : {
+    name: Feedback from Users,
+    children: {
+      '9-1': {
+        name: Problems with the device
+      },
+      '9-2': {
+        name: Testimonials on successes
+      }
+    }
   }
+}

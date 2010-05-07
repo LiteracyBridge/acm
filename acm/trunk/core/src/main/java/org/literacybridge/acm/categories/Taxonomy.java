@@ -22,7 +22,11 @@ public class Taxonomy implements Persistable {
 
 	private static Taxonomy taxonomy;
 	
-	private Taxonomy() {
+	public Taxonomy() {
+		PersistentString title = new PersistentString("root");
+		PersistentString desc = new PersistentString("root node");
+		PersistentCategory root = new PersistentCategory(title, desc, rootUUID);
+		mRootCategory = new Category(root);
 	}
 
 	public Taxonomy(String uuid) {
@@ -30,11 +34,9 @@ public class Taxonomy implements Persistable {
 		if (root == null) {
 			PersistentString title = new PersistentString("root");
 			PersistentString desc = new PersistentString("root node");
-			root = new PersistentCategory(title, desc, rootUUID);
+			root = new PersistentCategory(title, desc, uuid);
 			mRootCategory = new Category(root);
-			
 		}
-		
 	}
 	
 	public static Taxonomy getTaxonomy() {
