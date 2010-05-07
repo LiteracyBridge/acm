@@ -31,6 +31,7 @@ public class RFC3066LanguageCode {
 		return true;
 	}
 	
+	@Override
 	public String toString() {
 		StringBuilder b = new StringBuilder();
 		b.append(codes[0]);
