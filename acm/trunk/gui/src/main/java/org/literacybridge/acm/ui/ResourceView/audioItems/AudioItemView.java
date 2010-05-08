@@ -63,7 +63,6 @@ public class AudioItemView extends Container implements Observer {
 		// use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
 		audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
 				Color.white, new Color(237, 243, 254)));
-		audioItemTable.setCellSelectionEnabled(false);
 		
 		JScrollPane scrollPane = new JScrollPane(audioItemTable);
 		add(BorderLayout.CENTER, scrollPane);
