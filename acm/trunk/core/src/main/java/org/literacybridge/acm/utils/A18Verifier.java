@@ -43,6 +43,8 @@ public class A18Verifier {
 		
 		if (f.isDirectory()) {
 			processDir(f, verbose);
+		} else {
+			processFile(f, verbose);
 		}
 	}
 	

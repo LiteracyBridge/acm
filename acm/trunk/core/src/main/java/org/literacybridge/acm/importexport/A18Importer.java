@@ -71,6 +71,7 @@ public class A18Importer extends Importer {
 				audioItem = new AudioItem(Repository.getNewUUID());
 				String fileName = file.getName();
 				metadata.addMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
+				metadata.addMetadataField(MetadataSpecification.DC_IDENTIFIER, new MetadataValue<String>(audioItem.getUuid()));
 				metadata.addMetadataField(MetadataSpecification.DC_LANGUAGE, 
 						new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode("en")));
 
@@ -91,7 +92,7 @@ public class A18Importer extends Importer {
 			}
 						
 			// add the category that was selected during drag&drop
-			audioItem.addCategory(category);
+			//audioItem.addCategory(category);
 	
 			// add categories the file had already, if any
 			for (Category cat : categories) {

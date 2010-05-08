@@ -48,6 +48,11 @@ public class MetadataValue<T> implements Serializable {
 	}
 	
 	@Override
+	public String toString() {
+		return value.toString();
+	}
+	
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof MetadataValue<?>)) {
 			return false;
