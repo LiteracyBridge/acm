@@ -1,7 +1,10 @@
 package org.literacybridge.acm.ui.ResourceView.audioItems;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
+import java.awt.SystemColor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -15,9 +18,14 @@ import java.util.Vector;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.UIManager;
+import javax.swing.event.ChangeListener;
 import javax.swing.tree.TreePath;
 
 import org.jdesktop.swingx.JXTreeTable;
+import org.jdesktop.swingx.decorator.ComponentAdapter;
+import org.jdesktop.swingx.decorator.Highlighter;
+import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
@@ -50,7 +58,13 @@ public class AudioItemView extends Container implements Observer {
 	private void createTable() {
 		audioItemTable = new JXTreeTable();
 		audioItemTable.setTreeTableModel(new AudioItemTableModel(currResult, getColumnTitles(LanguageUtil.getUILanguage())));
-
+		audioItemTable.setShowGrid(false, false); 
+		
+		// use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
+		audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
+				Color.white, new Color(237, 243, 254)));
+		audioItemTable.setCellSelectionEnabled(false);
+		
 		JScrollPane scrollPane = new JScrollPane(audioItemTable);
 		add(BorderLayout.CENTER, scrollPane);
 	}
