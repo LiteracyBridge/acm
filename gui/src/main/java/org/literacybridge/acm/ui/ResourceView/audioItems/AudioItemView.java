@@ -2,29 +2,18 @@ package org.literacybridge.acm.ui.ResourceView.audioItems;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Container;
-import java.awt.SystemColor;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.Vector;
 
-import javax.swing.JMenuItem;
-import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.UIManager;
-import javax.swing.event.ChangeListener;
 import javax.swing.tree.TreePath;
 
 import org.jdesktop.swingx.JXTreeTable;
-import org.jdesktop.swingx.decorator.ComponentAdapter;
-import org.jdesktop.swingx.decorator.Highlighter;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.content.AudioItem;
@@ -44,12 +33,10 @@ public class AudioItemView extends Container implements Observer {
 
 	// table
 	private JXTreeTable audioItemTable = null;
-	private JPopupMenu audioItemTablePopupMenu = null;
-
+	
 	public AudioItemView(IDataRequestResult result) {
 		setLayout(new BorderLayout());
 		createTable();
-		createPopupMenu();
 		addHandlers();
 		Application.getMessageService().addObserver(this);
 		this.currResult = result;
@@ -73,18 +60,12 @@ public class AudioItemView extends Container implements Observer {
 	}
 
 	private void addHandlers() {
-	    MouseListener popupListener = new PopupListener();
-	    audioItemTable.addMouseListener(popupListener);
-	    audioItemTable.getTableHeader().addMouseListener(popupListener);
+	    MouseListener mouseListener = new PopupListener(this);
+	    audioItemTable.addMouseListener(mouseListener);
+	    audioItemTable.getTableHeader().addMouseListener(mouseListener);
 	}
 
-	private void createPopupMenu() {
-		audioItemTablePopupMenu = new JPopupMenu();
-		JMenuItem showPropertiesMenuItem = new JMenuItem("Properties...");
-		showPropertiesMenuItem
-				.addActionListener(new PopupMenuItemClicked(this));
-		audioItemTablePopupMenu.add(showPropertiesMenuItem);
-	}
+
 
 	@Override
 	public void update(Observable o, Object arg) {
@@ -119,33 +100,19 @@ public class AudioItemView extends Container implements Observer {
 	}
 	
 	private class PopupListener extends MouseAdapter {
-		public void mousePressed(MouseEvent e) {
-			showPopup(e);
-		}
-
-		public void mouseReleased(MouseEvent e) {
-			showPopup(e);
-		}
-
-		private void showPopup(MouseEvent e) {
-			if (e.isPopupTrigger()) {
-				audioItemTablePopupMenu.show(e.getComponent(), e.getX(), e
-						.getY());
-			}
-		}
-	}
-
-	// Handler our popup action
-	private class PopupMenuItemClicked implements ActionListener {
-
 		private AudioItemView adaptee = null;
 
-		public PopupMenuItemClicked(AudioItemView adaptee) {
+		public PopupListener(AudioItemView adaptee) {
 			this.adaptee = adaptee;
 		}
+		
+		public void mouseReleased(MouseEvent e) {
+			if (e.getClickCount() == 2) {
+				showAudioItemDlg(e);				
+			}
+		}
 
-		@Override
-		public void actionPerformed(ActionEvent e) {
+		private void showAudioItemDlg(MouseEvent e) {
 			int index = adaptee.audioItemTable.getSelectedRow();
 			AudioItem audioItem = getValueAt(index, 0);
 			System.out.println("UUID: " + audioItem.getUuid());
@@ -156,7 +123,7 @@ public class AudioItemView extends Container implements Observer {
 			dlg.setVisible(true);
 		}
 	}
-	
+
     public AudioItem getValueAt(int row, int col) {
         TreePath tPath = audioItemTable.getPathForRow(row);
         Object[] oPath = tPath.getPath();
