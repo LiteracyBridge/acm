@@ -280,7 +280,7 @@ public class CategoryView extends Container implements Observer {
 			String displayLabel = null;
 			if (category != null) {
 				displayLabel = category.getCategoryName(LanguageUtil.getUserChoosenLanguage()).getLabel();
-				int count = category.getAudioItemList().size();
+				int count = result.getFacetCount(category);
 				if (count > 0) {
 					displayLabel += " ["+count+"]";
 				}
@@ -344,7 +344,7 @@ public class CategoryView extends Container implements Observer {
 		}
 		
 		if (arg instanceof IDataRequestResult) {
-			IDataRequestResult result = (IDataRequestResult) arg;
+			result = (IDataRequestResult) arg;
 			updateTreeNodes();
 		}
 	}	
