@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Locale;
 
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
@@ -16,8 +17,6 @@ public class Repository {
 	private final File baseDir = REPOSITORY_DIR;
 	
 	private final static Repository instance = new Repository();
-	// TODO: move to repo settings file
-	static int counter = 0;
 	
 	private Repository() {
 		// singleton
@@ -33,8 +32,19 @@ public class Repository {
 		}
 	}
 
-	public static String getNewUUID() {
-		return "LB-2_0_" + counter++;
+	public static String getNewUUID() throws IOException {
+		Configuration config = Configuration.getConfiguration();
+		String value = config.getRecordingCounter();
+		int counter = (value == null) ? 0 : Integer.parseInt(value, Character.MAX_RADIX);
+		counter++;
+		value = Integer.toString(counter, Character.MAX_RADIX);
+		String uuid = "LB-2" + "_"  + config.getDeviceID() + "_" + value;
+		
+		// make sure we remember that this uuid was already used
+		config.setRecordingCounter(value);
+		config.writeProps();
+		
+		return uuid;
 	}
 	
 	/**

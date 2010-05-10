@@ -1,5 +1,6 @@
 package org.literacybridge.acm.ui.ResourceView;
 
+import java.awt.Dialog;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -8,7 +9,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
-import javax.swing.JDialog;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
@@ -19,6 +19,7 @@ import org.literacybridge.acm.importexport.FileImporter;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.ResourceView.CategoryView.CategoryTreeNodeObject;
 import org.literacybridge.acm.ui.dialogs.BusyDialog;
+import org.literacybridge.acm.util.UIUtils;
 
 public class TreeTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = 1L;
@@ -68,7 +69,8 @@ public class TreeTransferHandler extends TransferHandler {
 
 			@Override
 			public void run() {
-				JDialog busy = BusyDialog.show("Importing files...");
+				Application parent = Application.getApplication();
+				Dialog busy = UIUtils.showDialog(parent, new BusyDialog("Importing files...", parent));
 				try {
 					for (File f : files) {
 						if (f.isDirectory()) {
