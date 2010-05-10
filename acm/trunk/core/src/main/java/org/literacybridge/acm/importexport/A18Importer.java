@@ -121,7 +121,7 @@ public class A18Importer extends Importer {
 				ExternalConverter audioConverter = new ExternalConverter();
 				File itemDir = repository.resolveName(localizedAudioItem);
 				File sourceFile = new File(itemDir, file.getName());
-				audioConverter.convert(sourceFile, new File(sourceFile.getParent()), new WAVFormat(16, 128, 1));
+				audioConverter.convert(sourceFile, new File(sourceFile.getParent()), new WAVFormat(128, 16000, 1));
 			}
 	
 			System.out.println(metadata.toString());
