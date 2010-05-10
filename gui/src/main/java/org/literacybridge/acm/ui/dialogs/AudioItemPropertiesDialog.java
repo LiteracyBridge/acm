@@ -41,7 +41,7 @@ import javax.swing.border.TitledBorder;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.metadata.LBMetadataIDs;
 import org.literacybridge.acm.metadata.Metadata;
-import org.literacybridge.acm.resourcebundle.LabelProvider;
+import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.util.ClosingDialogAdapter;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
@@ -53,6 +53,7 @@ public class AudioItemPropertiesDialog extends JDialog {
 	private static final long serialVersionUID = -3854016276035587383L;
 	private List<AudioItem> audioItemList = null;
 	private int currIndex = 0;
+	private AudioItemView audioItemView = null;
 	
 
 	private Label DC_TITLE_L = new Label();
@@ -102,10 +103,11 @@ public class AudioItemPropertiesDialog extends JDialog {
 	private JButton backBtn = null;
 	private JButton nextBtn = null;
 	
-	public AudioItemPropertiesDialog(JFrame parent, List<AudioItem> audioItemList, AudioItem showItem) {
+	public AudioItemPropertiesDialog(JFrame parent, AudioItemView view, List<AudioItem> audioItemList, AudioItem showItem) {
 		super(parent, "AudioItem Properties", true);
 		this.audioItemList = audioItemList;
 		currIndex = getIndexOfAudioItem(showItem);
+		this.audioItemView = view;
 		
 		createControlsForAvailableProperties();
 		pack();
@@ -113,6 +115,7 @@ public class AudioItemPropertiesDialog extends JDialog {
 		
 		AudioItem audioItem = audioItemList.get(currIndex);
 		showAudioItem(audioItem);
+		enableControls();
 	}
 	
 	private int getIndexOfAudioItem(AudioItem item) {
@@ -130,6 +133,11 @@ public class AudioItemPropertiesDialog extends JDialog {
 		if (item == null) return; // JTBD
 		Metadata metadata = item.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage()).getMetadata();
 		showMetadata(metadata);
+		
+		// select it in underlying view if available
+		if (audioItemView != null) {
+			audioItemView.selectAudioItem(item);
+		}
 	}
 	
 	private AudioItem getNextItem() {
