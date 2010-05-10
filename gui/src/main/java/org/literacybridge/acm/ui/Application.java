@@ -1,7 +1,7 @@
 package org.literacybridge.acm.ui;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
+import java.io.IOException;
 import java.util.List;
 
 import javax.swing.JFrame;
@@ -9,16 +9,14 @@ import javax.swing.UIManager;
 
 import org.jdesktop.swingx.JXFrame;
 import org.literacybridge.acm.api.IDataRequestResult;
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.ui.ResourceView.ResourceView;
 import org.literacybridge.acm.ui.ResourceView.ToolbarView;
-import org.literacybridge.acm.ui.dialogs.BusyDialog;
-import org.literacybridge.acm.ui.dialogs.DeviceSyncDialog;
 import org.literacybridge.acm.util.SimpleMessageService;
-import org.literacybridge.acm.util.UIUtils;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class Application extends JXFrame {
@@ -47,13 +45,13 @@ public class Application extends JXFrame {
 	}
 	
 	// application instance
-	public static Application application = new Application();
+	private static Application application;
 	
 	public static Application getApplication() {
 		return application;
 	}
 	
-	private Application() {
+	private Application() throws IOException {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	    
 		// set look & feel
 		try {
@@ -61,7 +59,6 @@ public class Application extends JXFrame {
 		} catch (Exception e) {
 		    e.printStackTrace();
 		}
-		
 		
 		setTitle("Literacy Bridge - Talking Book Management");
 		// toolbar view on top
@@ -77,11 +74,15 @@ public class Application extends JXFrame {
 	}
 	
 	
-	public static void main(String[] args) {
-		Application app = Application.getApplication();
-		app.setSize(1000, 600);
-		app.setVisible(true);
-		UIUtils.showDialog(app, new DeviceSyncDialog(app));
+	public static void main(String[] args) throws IOException {
+		application = new Application();
+		
+		// initialize config and generate random ID for this acm instance
+		Configuration.getConfiguration();
+		
+		application.setSize(1000, 600);
+		application.setVisible(true);
+		//UIUtils.showDialog(app, new DeviceSyncDialog(app));
 	}	
 	
 	public static class FilterState {
