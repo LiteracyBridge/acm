@@ -112,7 +112,7 @@ public class SimpleSoundPlayer extends Observable
             durationInSecs = player.getDuration().getSeconds();
         	playThread = new Thread(this);
             playThread.start();
-            player.getGainControl().setLevel(1);           
+            //player.getGainControl().setLevel(1);           
             player.start();          
             playerState = PlayerState.RUNNING;
             updatePlayerListeners(); // call explicit to inform listeners immediately

@@ -120,12 +120,16 @@ public class Application extends JXFrame {
 				}
 			};
 			
-			try {
-				SwingUtilities.invokeAndWait(updateUI);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} catch (InvocationTargetException e) {
-				e.printStackTrace();
+			if (SwingUtilities.isEventDispatchThread()) {
+				updateUI.run();
+			} else {
+				try {
+					SwingUtilities.invokeAndWait(updateUI);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}
