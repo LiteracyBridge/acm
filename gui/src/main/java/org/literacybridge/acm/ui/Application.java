@@ -16,7 +16,9 @@ import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.ui.ResourceView.ResourceView;
 import org.literacybridge.acm.ui.ResourceView.ToolbarView;
 import org.literacybridge.acm.ui.dialogs.BusyDialog;
+import org.literacybridge.acm.ui.dialogs.DeviceSyncDialog;
 import org.literacybridge.acm.util.SimpleMessageService;
+import org.literacybridge.acm.util.UIUtils;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class Application extends JXFrame {
@@ -79,6 +81,7 @@ public class Application extends JXFrame {
 		Application app = Application.getApplication();
 		app.setSize(1000, 600);
 		app.setVisible(true);
+		UIUtils.showDialog(app, new DeviceSyncDialog(app));
 	}	
 	
 	public static class FilterState {
