@@ -36,6 +36,7 @@ public class LocalizedAudioItem implements Persistable {
 	}
 
 	private void setLocale(Locale locale) {
+		//TODO prevent multiple locale entries with the same value
 		PersistentLocale persistentLocale = new PersistentLocale();
 		persistentLocale.setCountry(locale.getCountry());
 		persistentLocale.setLanguage(locale.getLanguage());
@@ -66,6 +67,7 @@ public class LocalizedAudioItem implements Persistable {
 	public Metadata getMetadata() {
 		if (mItem.getPersistentMetadata() == null) {
 			PersistentMetadata m = new PersistentMetadata();
+			m.setPersistentLocalizedAudioItem(mItem);
 			mItem.setPersistentMetadata(m);
 		}
 		return new Metadata(mItem.getPersistentMetadata());

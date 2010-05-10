@@ -99,7 +99,7 @@ public class PersistentMetadata extends PersistentObject {
     @Column(name="lb_rating")
     private Short lb_rating;
     
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "dc_language")
     private PersistentLocale persistentLocale;
 
@@ -114,6 +114,10 @@ public class PersistentMetadata extends PersistentObject {
         return persistentLocalizedAudioItem;
     }   
 
+    public void setPersistentLocalizedAudioItem(PersistentLocalizedAudioItem item) {
+        persistentLocalizedAudioItem = item;
+    }       
+    
     protected List<PersistentAudioItemStatistic> getPersistentAudioItemStatistics() {
         return persistentAudioItemStatisticList;
     }
@@ -337,7 +341,7 @@ public class PersistentMetadata extends PersistentObject {
         return persistentLocale;
     }
 
-    protected void setPersistentLocale(PersistentLocale persistentLocale) {
+    public void setPersistentLocale(PersistentLocale persistentLocale) {
         this.persistentLocale = persistentLocale;
     }
     
