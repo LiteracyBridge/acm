@@ -6,11 +6,9 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import javax.swing.JTree;
-import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
@@ -35,10 +33,12 @@ public class TreeTransferHandler extends TransferHandler {
 		if (!support.isDrop()) {
 			return false;
 		}
-		support.setShowDropLocation(true);
+
 		if (!support.isDataFlavorSupported(fileFlavor)) {
 			return false;
 		}
+
+		support.setShowDropLocation(true);
 
 		return true;
 	}
@@ -83,22 +83,7 @@ public class TreeTransferHandler extends TransferHandler {
 					e.printStackTrace();
 				} finally {
 					busy.setVisible(false);
-
-					// call UI back
-					Runnable updateUI = new Runnable() {
-						@Override
-						public void run() {
-							Application.getFilterState().updateResult();
-						}
-					};
-					
-					try {
-						SwingUtilities.invokeAndWait(updateUI);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					} catch (InvocationTargetException e) {
-						e.printStackTrace();
-					}
+					Application.getFilterState().updateResult();
 				}
 			}
 		};

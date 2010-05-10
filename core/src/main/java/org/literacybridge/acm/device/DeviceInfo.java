@@ -20,6 +20,11 @@ public class DeviceInfo {
 	}
 	
 	@Override
+	public String toString() {
+		return this.pathToDevice.toString();
+	}
+	
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof DeviceInfo)) {
 			return false;

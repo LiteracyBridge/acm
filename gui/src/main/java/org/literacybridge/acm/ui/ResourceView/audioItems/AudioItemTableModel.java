@@ -7,7 +7,6 @@ import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
-import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
@@ -90,31 +89,30 @@ public class AudioItemTableModel  extends AbstractTreeTableModel {
 		
 	@Override
 	public Object getValueAt(Object node, int column) { 
-		Metadata metadata = null;
+		 LocalizedAudioItem localizedAudioItem = null;
 		
 		if (node instanceof LocalizedAudioItem) {
-			LocalizedAudioItem lItem = (LocalizedAudioItem) node;
-			metadata = lItem.getMetadata();
+			localizedAudioItem = (LocalizedAudioItem) node;
 		}
 		
 		if (node instanceof AudioItem) {
 			AudioItem audioItem = (AudioItem) node;
-			metadata = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage()).getMetadata();	
+			localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());	
 		}	
 		
 		String cellText = "";
 		try {
 			switch (column) {
 			case TITLE:
-				cellText = metadata.getMetadataValues(
+				cellText = localizedAudioItem.getMetadata().getMetadataValues(
 						MetadataSpecification.DC_TITLE).get(0).getValue();
 				break;
 			case CREATOR:
-				cellText = metadata.getMetadataValues(
+				cellText = localizedAudioItem.getMetadata().getMetadataValues(
 						MetadataSpecification.DC_CREATOR).get(0).getValue();
 				break;
 			case LANGUAGE:
-				cellText = metadata.getMetadataValues(
+				cellText = localizedAudioItem.getMetadata().getMetadataValues(
 						MetadataSpecification.DC_LANGUAGE).get(0).getValue()
 						.toString();
 				break;
@@ -126,7 +124,7 @@ public class AudioItemTableModel  extends AbstractTreeTableModel {
 			// e.printStackTrace();
 		}
 
-		return cellText;
+		return new LocalizedAudioItemNode(localizedAudioItem, cellText);
 	}
 		
     @Override
@@ -160,6 +158,20 @@ public class AudioItemTableModel  extends AbstractTreeTableModel {
 		}
 		
 		return 0;
+	}
+	
+	public static final class LocalizedAudioItemNode {
+		public final LocalizedAudioItem localizedAudioItem;
+		private final String label;
+		
+		LocalizedAudioItemNode(LocalizedAudioItem localizedAudioItem, String label) {
+			this.label = label;
+			this.localizedAudioItem = localizedAudioItem;
+		}
+		
+		@Override public String toString() {
+			return label;
+		}
 	}
 	
 	
