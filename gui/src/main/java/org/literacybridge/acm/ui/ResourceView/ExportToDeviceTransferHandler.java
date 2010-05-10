@@ -2,6 +2,7 @@ package org.literacybridge.acm.ui.ResourceView;
 
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.File;
 import java.io.IOException;
 
 import javax.swing.JTree;
@@ -12,6 +13,8 @@ import javax.swing.tree.TreePath;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.device.DeviceInfo;
+import org.literacybridge.acm.importexport.A18DeviceExporter;
+import org.literacybridge.acm.repository.Repository;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
 
 public class ExportToDeviceTransferHandler extends TransferHandler {
@@ -51,6 +54,9 @@ public class ExportToDeviceTransferHandler extends TransferHandler {
 		try {
 			LocalizedAudioItem item =  (LocalizedAudioItem) transferable.getTransferData(AudioItemView.AudioItemDataFlavor);
 			System.out.println("Exporting to + " + device.getPathToDevice() + ":\n" + item.getMetadata().toString());
+			File itemFile = Repository.getRepository().resolveName(item).listFiles()[0];
+			
+			A18DeviceExporter.exportToDevice(new File[] {itemFile}, device);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;

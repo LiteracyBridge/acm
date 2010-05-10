@@ -73,7 +73,7 @@ public class ToolbarView extends JToolBar implements ActionListener
 		addPositionSliderHandler();
 		addSearchTFListener();
 		// testing
-		String audioFile = "/Volumes/MAC_HOME/USERS/coder/Projects/talkingbook/acm/TestData/testWav.wav";
+		String audioFile = "C:\\Users\\Tanya\\.literacybridge\\content\\org\\literacybridge\\LB-2_6181ejh6w4_4\\eng-\\1\\(Schlager) Es ist noch Suppe da!.wav";
 		initPlayer(audioFile);
 		
 		Application.getMessageService().addObserver(this);
