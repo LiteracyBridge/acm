@@ -301,7 +301,7 @@ public class CategoryView extends Container implements Observer {
 		    	// make label bold
 		        Font f = super.label.getFont();
 		    	int count = node.getFacetCount();
-		    	System.out.println("Node: " + node.toString() + " - Count= " + count);
+		    	//System.out.println("Node: " + node.toString() + " - Count= " + count);
 		        if (count > 0) {
 		    		super.label.setFont(f.deriveFont(f.getStyle() | Font.BOLD));
 		    	} else {

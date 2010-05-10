@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
 
+import org.literacybridge.acm.categories.Taxonomy;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.metadata.LBMetadataSerializer;
@@ -19,6 +20,7 @@ import org.literacybridge.acm.metadata.Metadata;
 public class A18Verifier {
 	public static void main(String[] args) throws Exception {
 		Persistence.initialize();
+		Taxonomy.getTaxonomy();
 		boolean verbose = false;
 		if (args.length == 0) {
 			printUsage();

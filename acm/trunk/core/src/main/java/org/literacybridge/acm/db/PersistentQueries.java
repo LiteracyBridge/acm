@@ -191,7 +191,7 @@ class PersistentQueries {
         	Query facetCount = em.createNativeQuery(query.toString());
             List<Object[]> counts = facetCount.getResultList();
             for (Object[] count : counts) {
-            	System.out.println(count[0] + " -> " + count[1]);
+            	//System.out.println(count[0] + " -> " + count[1]);
             	results.put((Integer) count[0], 
             			(Integer) count[1]);
             }
