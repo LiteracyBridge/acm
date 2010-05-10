@@ -4,9 +4,11 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.literacybridge.acm.db.Persistable;
+import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentMetadata;
 
 public class Metadata implements Persistable {
@@ -166,6 +168,10 @@ public class Metadata implements Persistable {
 					Integer.parseInt(value.getValue().toString()));
 		} else if (field == MetadataSpecification.LB_RATING) {
 			mMetadata.setLb_rating(Short.valueOf(value.getValue().toString()));
+		} else if (field == MetadataSpecification.DC_LANGUAGE) {
+			// TODO ugly, needs to be implemented properly
+			mMetadata.setPersistentLocale(mMetadata
+					.getPersistentLocalizedAudioItem().getPersistentLocale());
 		}
 	}
 
@@ -219,6 +225,10 @@ public class Metadata implements Persistable {
 					new MetadataValue<Integer>(
 							(mMetadata.getLb_rating() == null || mMetadata.getLb_rating().intValue() == 0) ? null
 									: mMetadata.getLb_rating().intValue()));
+			addMetadataField(MetadataSpecification.DC_LANGUAGE,
+					new MetadataValue<RFC3066LanguageCode>(
+							(mMetadata.getPersistentLocale() == null || mMetadata.getPersistentLocale().getLanguage() == null) 
+							? null : new RFC3066LanguageCode(mMetadata.getPersistentLocale().getLanguage())));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
