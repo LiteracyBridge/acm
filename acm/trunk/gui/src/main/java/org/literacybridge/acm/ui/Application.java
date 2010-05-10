@@ -2,9 +2,11 @@ package org.literacybridge.acm.ui;
 
 import java.awt.BorderLayout;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import org.jdesktop.swingx.JXFrame;
@@ -106,10 +108,25 @@ public class Application extends JXFrame {
 		}
 		
 		public void updateResult() {
-			IDataRequestResult result = DataRequestService.getInstance().getData(
+			final IDataRequestResult result = DataRequestService.getInstance().getData(
 					LanguageUtil.getUserChoosenLanguage(), 
 					filterString, filterCategories);
-			Application.getMessageService().pumpMessage(result);	
+
+			// call UI back
+			Runnable updateUI = new Runnable() {
+				@Override
+				public void run() {
+					Application.getMessageService().pumpMessage(result);
+				}
+			};
+			
+			try {
+				SwingUtilities.invokeAndWait(updateUI);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }

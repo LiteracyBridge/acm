@@ -18,6 +18,8 @@ import java.util.Set;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.content.Manifest;
+import org.literacybridge.acm.content.Manifest.ReferencedFile;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
 import org.literacybridge.acm.metadata.LBMetadataSerializer;
@@ -105,8 +107,6 @@ public class A18Importer extends Importer {
 			localizedAudioItem.setUuid(audioItem.getUuid() + "-en");
 			audioItem.addLocalizedAudioItem(localizedAudioItem);
 			
-			audioItem.commit();
-			
 			Repository repository = Repository.getRepository();
 			repository.store(file, file.getName(), localizedAudioItem);
 			
@@ -116,6 +116,15 @@ public class A18Importer extends Importer {
 			LBMetadataSerializer serializer = new LBMetadataSerializer();
 			serializer.serialize(categories, metadata, out);
 			out.close();
+
+			Manifest manifest = localizedAudioItem.getManifest();
+			ReferencedFile ref = new ReferencedFile();
+			
+			manifest.addReferencedFile(ref);
+			
+			
+			audioItem.commit();
+
 			
 			if (OSChecker.WINDOWS) {
 				ExternalConverter audioConverter = new ExternalConverter();
@@ -124,7 +133,6 @@ public class A18Importer extends Importer {
 				audioConverter.convert(sourceFile, new File(sourceFile.getParent()), new WAVFormat(128, 16000, 1));
 			}
 	
-			System.out.println(metadata.toString());
 			in.close();
 		} catch (ConversionException e) {
 			throw new IOException(e);

@@ -3,14 +3,20 @@ package org.literacybridge.acm.ui.ResourceView.audioItems;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.IOException;
 import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
 
+import javax.swing.JComponent;
 import javax.swing.JScrollPane;
+import javax.swing.TransferHandler;
 import javax.swing.tree.TreePath;
 
 import org.jdesktop.swingx.JXTreeTable;
@@ -28,6 +34,8 @@ public class AudioItemView extends Container implements Observer {
 
 	private static final long serialVersionUID = -2886958461177831842L;
 
+	public final static DataFlavor AudioItemDataFlavor = new DataFlavor(LocalizedAudioItem.class, "LocalizedAudioItem");
+	
 	// model
 	private IDataRequestResult currResult = null;
 
@@ -46,7 +54,47 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable = new JXTreeTable();
 		audioItemTable.setTreeTableModel(new AudioItemTableModel(currResult, getColumnTitles(LanguageUtil.getUILanguage())));
 		audioItemTable.setShowGrid(false, false); 
-		
+		audioItemTable.setDragEnabled(true);
+		audioItemTable.setTransferHandler(new TransferHandler() {
+			
+			@Override
+            public int getSourceActions(JComponent c) {
+                return COPY;
+            }
+            
+			@Override
+			protected Transferable createTransferable(final JComponent c) {
+				final DataFlavor[] flavors = new DataFlavor[] {AudioItemDataFlavor};
+				
+				return new Transferable() {
+					@Override
+					public Object getTransferData(DataFlavor flavor)
+							throws UnsupportedFlavorException, IOException {
+						JXTreeTable table = (JXTreeTable)c;
+		                int row = table.getSelectedRow();
+		                AudioItemTableModel.LocalizedAudioItemNode item = 
+		                	(AudioItemTableModel.LocalizedAudioItemNode) table.getModel().getValueAt(row, 0);
+		                return item.localizedAudioItem;
+					}
+
+					@Override
+					public DataFlavor[] getTransferDataFlavors() {
+						return (DataFlavor[]) flavors.clone();
+					}
+
+					@Override
+					public boolean isDataFlavorSupported(DataFlavor flavor) {
+				        for (int i = 0; i < flavors.length; i++) {
+				    	    if (flavor.equals(flavors[i])) {
+				    	        return true;
+				    	    }
+				    	}
+				    	return false;
+					}
+				};
+			}
+		});
+
 		// use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
 		audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
 				Color.white, new Color(237, 243, 254)));

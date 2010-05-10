@@ -218,7 +218,7 @@ public class CategoryView extends Container implements Observer {
 				deviceUidtoTreeNodeMap.remove(deviceID);
 			} else {
 				// new device found
-				DefaultMutableTreeNode child = new DefaultMutableTreeNode(deviceInfo.getPathToDevice());
+				DefaultMutableTreeNode child = new DefaultMutableTreeNode(deviceInfo);
 				deviceTreeModel.insertNodeInto(child, parent, 
 						parent.getChildCount());
 				deviceTree.expandPath(new TreePath(deviceRootNode.getPath()));
@@ -254,6 +254,9 @@ public class CategoryView extends Container implements Observer {
 	private void addDragAndDropForTree() {
 		categoryTree.setDropMode(DropMode.ON);
 		categoryTree.setTransferHandler(new TreeTransferHandler());
+		
+		deviceTree.setDropMode(DropMode.ON);
+		deviceTree.setTransferHandler(new ExportToDeviceTransferHandler());
 	}
 	
 	// Helper class for tree nodes
