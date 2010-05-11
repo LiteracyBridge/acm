@@ -33,7 +33,7 @@ import org.literacybridge.acm.repository.Repository;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel.LocalizedAudioItemNode;
-import org.literacybridge.acm.ui.dialogs.AudioItemPropertiesDialog;
+import org.literacybridge.acm.ui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
 import org.literacybridge.acm.util.language.LanguageUtil;
 import org.literacybridge.acm.util.language.UILanguageChanged;
 
