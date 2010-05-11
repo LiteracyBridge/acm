@@ -11,6 +11,8 @@ import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel.Loc
 
 public class AudioItemCellRenderer extends DefaultTableCellRenderer {
 	
+	int highlightedRow = -1;
+	
 	@Override
 	public Component getTableCellRendererComponent(JTable table,
 													Object value, 
@@ -19,19 +21,18 @@ public class AudioItemCellRenderer extends DefaultTableCellRenderer {
 													int row,
 													int column) {
 		
-	        JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+	    JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
 		LocalizedAudioItemNode status = (LocalizedAudioItemNode) value;
 
-        if (AudioItemTableModel.INFO_ICON == column) {
-        	label.setIcon(createImageIcon("/info.gif", ""));
+        if (AudioItemTableModel.INFO_ICON == column && highlightedRow == row) {
+        	label.setIcon(createImageIcon("/pencil-yellow.png", ""));
         } else {
         	label.setIcon(null);
         }
 
         label.setText(status.toString());
         
-	
 		return label;
 	}
 	

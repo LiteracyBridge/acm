@@ -17,7 +17,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 	public static final int INFO_ICON = 0;
 	public static final int TITLE 	= 1;
 	public static final int CREATOR 	= 2;
-	public static final int LANGUAGE 	= 3;
+	public static final int PLAY_COUNT 	= 3;
 	private static String[] columns = null;
 	
 	private IDataRequestResult result = null;
@@ -80,9 +80,9 @@ public class AudioItemTableModel  extends AbstractTableModel {
 				cellText = localizedAudioItem.getMetadata().getMetadataValues(
 						MetadataSpecification.DC_CREATOR).get(0).getValue();
 				break;
-			case LANGUAGE:
+			case PLAY_COUNT:
 				cellText = localizedAudioItem.getMetadata().getMetadataValues(
-						MetadataSpecification.DC_LANGUAGE).get(0).getValue()
+						MetadataSpecification.LB_PLAY_COUNT).get(0).getValue()
 						.toString();
 				break;
 			default:
