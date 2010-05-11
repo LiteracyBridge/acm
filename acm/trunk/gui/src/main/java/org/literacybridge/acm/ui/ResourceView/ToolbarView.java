@@ -26,10 +26,15 @@ import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.Timer;
 
+import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.playerAPI.PlayerStateDetails;
 import org.literacybridge.acm.playerAPI.SimpleSoundPlayer;
+import org.literacybridge.acm.repository.Repository;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
+import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel;
+import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.util.language.LanguageUtil;
 import org.literacybridge.acm.util.language.UILanguageChanged;
 
@@ -40,7 +45,7 @@ public class ToolbarView extends JToolBar implements ActionListener
 	private static final long serialVersionUID = -1827563460140622507L;
 
 	// Player (will run in a different thread!)
-	private SimpleSoundPlayer player = new SimpleSoundPlayer();
+	private SimpleSoundPlayer player;
 	private PlayerStateDetails currPlayerDetails = null;
 	private double durtation = 0.0;
 	private Timer updatePlayerStateTimer = new Timer(100, this);
@@ -61,26 +66,28 @@ public class ToolbarView extends JToolBar implements ActionListener
     private JLabel remainingTimeLbl;
     private JTextField searchTF;
     private JLabel titleInfoLbl;
+    
+    private final AudioItemView audioItemView;
 
     // Textfield Search
     private String searchFieldWatermarkText = LabelProvider.getLabel(LabelProvider.WATERMARK_SEARCH, LanguageUtil.getUILanguage());
     private Font watermarkTextfieldFont = new Font("Verdana", Font.ITALIC, 16);
     private Font defaultTextfieldFont = null;
     
-	public ToolbarView() {
+	public ToolbarView(AudioItemView audioItemView) {
+		this.audioItemView = audioItemView;
 		initComponents();
 		addEventHandler();
 		addPositionSliderHandler();
 		addSearchTFListener();
-		// testing
-		String audioFile = "C:\\Users\\Tanya\\.literacybridge\\content\\org\\literacybridge\\LB-2_6181ejh6w4_4\\eng-\\1\\(Schlager) Es ist noch Suppe da!.wav";
-		initPlayer(audioFile);
 		
 		Application.getMessageService().addObserver(this);
 	}
 	
-	private boolean initPlayer(String audioFilePath) {
-		File audioFile = new File(audioFilePath);
+	private boolean initPlayer(File audioFile) {
+		if (player == null) {
+			this.player = Application.getApplication().getSoundPlayer();
+		}
 		player.setClip(audioFile);		
 		return true;
 	}
@@ -139,9 +146,9 @@ public class ToolbarView extends JToolBar implements ActionListener
         playedTimeLbl.setText("00:00:00");
         playedTimeLbl.setName("null"); // NOI18N
 
-        remainingTimeLbl.setText("00:18:21");
+        remainingTimeLbl.setText("00:00:00");
 
-        titleInfoLbl.setText("Vaccinate poultry to prevent disease");
+        titleInfoLbl.setText(" ");
         titleInfoLbl.setHorizontalAlignment(CENTER);
         Font f = titleInfoLbl.getFont();
         titleInfoLbl.setFont(f.deriveFont(f.getStyle() ^ Font.BOLD));
@@ -225,17 +232,70 @@ public class ToolbarView extends JToolBar implements ActionListener
 
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				PlayerStateDetails psd = player.getPlayerStateDetails();
-				if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
-					player.play();
-					updatePlayerStateTimer.start();
-				} else if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
-					player.stop();
-					updatePlayerStateTimer.stop();
-					playBtn.setIcon(playImageIcon); // call explicit to avoid missing updates
+				if (player == null) {
+					int row = audioItemView.audioItemTable.getSelectedRow();
+					if (row != -1) {
+						AudioItemTableModel.LocalizedAudioItemNode item = 
+		                	(AudioItemTableModel.LocalizedAudioItemNode) audioItemView.audioItemTable.getModel().getValueAt(row, 0);
+						play(item.getLocalizedAudioItem());
+					}
+				} else {
+					PlayerStateDetails psd = player.getPlayerStateDetails();
+					if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
+						player.play();
+						updatePlayerStateTimer.start();
+					} else if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
+						player.stop();
+						updatePlayerStateTimer.stop();
+						playBtn.setIcon(playImageIcon); // call explicit to avoid missing updates
+					}
 				}
 			}			
 		});	
+		
+		forwardBtn.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (player != null) {
+					int row = audioItemView.audioItemTable.getSelectedRow();
+					if (row != -1 && audioItemView.audioItemTable.getRowCount() > 0) {
+						player.stop();
+						updatePlayerStateTimer.stop();
+
+						row = (row + 1) % audioItemView.audioItemTable.getRowCount();
+						AudioItemTableModel.LocalizedAudioItemNode item = 
+		                	(AudioItemTableModel.LocalizedAudioItemNode) audioItemView.audioItemTable.getModel().getValueAt(row, 0);
+						audioItemView.audioItemTable.changeSelection(row, 0, false, false);
+						play(item.getLocalizedAudioItem());
+					}
+	
+				}
+			}			
+		});
+
+		backwardBtn.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (player != null) {
+					
+					int row = audioItemView.audioItemTable.getSelectedRow();
+					if (row != -1 && audioItemView.audioItemTable.getRowCount() > 0) {
+						player.stop();
+						updatePlayerStateTimer.stop();
+
+						row--;
+						if (row <= 0) {
+							row = audioItemView.audioItemTable.getRowCount() - 1;
+						}
+						AudioItemTableModel.LocalizedAudioItemNode item = 
+		                	(AudioItemTableModel.LocalizedAudioItemNode) audioItemView.audioItemTable.getModel().getValueAt(row, 0);
+						audioItemView.audioItemTable.changeSelection(row, 0, false, false);
+						play(item.getLocalizedAudioItem());
+					}
+	
+				}
+			}			
+		});
 	}
 
 	private void addPositionSliderHandler() {
@@ -282,8 +342,6 @@ public class ToolbarView extends JToolBar implements ActionListener
 	    		positionSlider.setMaximum((int) durtation);
 	    		positionSlider.setValue((int) currPlayerDetails.getCurrentPoitionInSecs());	    		
 	    			
-				// Update label controls
-	    		titleInfoLbl.setText("Some Title");
 				int playedTimeInSecs = (int) currPlayerDetails.getCurrentPoitionInSecs();
 				playedTimeLbl.setText(secondsToTimeString(playedTimeInSecs));
 				remainingTimeLbl.setText(secondsToTimeString((int) (durtation - playedTimeInSecs)));
@@ -345,6 +403,15 @@ public class ToolbarView extends JToolBar implements ActionListener
 			searchFieldWatermarkText = LabelProvider.getLabel(LabelProvider.WATERMARK_SEARCH, newLocale);
 		}
 	}
+
+	private void play(LocalizedAudioItem item) {
+		File f = Repository.getRepository().getWAVFile(item);
+		initPlayer(f);
+		player.play();
+		updatePlayerStateTimer.start();
+		titleInfoLbl.setText(item.getMetadata().getMetadataValues(
+				MetadataSpecification.DC_TITLE).get(0).getValue());
+	}
 	
 	@Override
 	public void update(Observable o, Object arg) {
@@ -352,5 +419,10 @@ public class ToolbarView extends JToolBar implements ActionListener
 			UILanguageChanged newLocale = (UILanguageChanged) arg;
 			updateControlsLanguage(newLocale.getNewLocale());
 		}		
+		
+		if (arg instanceof LocalizedAudioItem) {
+			LocalizedAudioItem item = (LocalizedAudioItem) arg;
+			play(item);
+		}
 	}
 }

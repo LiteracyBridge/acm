@@ -20,6 +20,8 @@ public class ResourceView extends Container {
 	 */
 	private static final long serialVersionUID = 1464102221036629153L;
 
+	public AudioItemView audioItemView;
+	
 	public ResourceView() {
 		createViewComponents();
 	}
@@ -37,7 +39,7 @@ public class ResourceView extends Container {
 		IDataRequestResult result = dataService.getData(LanguageUtil.getUserChoosenLanguage());
 
 		// Table with audio items
-		AudioItemView audioItemView = new AudioItemView(result);
+		audioItemView = new AudioItemView(result);
 		
 		//  Tree with categories 
 		//  Create at the end, because this is the main selection provider

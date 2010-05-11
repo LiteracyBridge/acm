@@ -5,11 +5,13 @@ import static org.literacybridge.acm.Constants.REPOSITORY_DIR;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Locale;
 
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.importexport.FileImporter;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 
@@ -54,6 +56,22 @@ public class Repository {
 		File dir = resolveName(localizedAudioItem);
 		File toFile = new File(dir, targetFileName);
 		copy(file, toFile);
+	}
+	
+	public File getWAVFile(LocalizedAudioItem localizedAudioItem) {
+		File path = resolveName(localizedAudioItem);
+		File[] files = path.listFiles(new FilenameFilter() {
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.toLowerCase().endsWith(".wav");
+			}
+		});
+		
+		if (files == null || files.length == 0) {
+			return null;
+		}
+		
+		return files[0];
 	}
 	
 	// Returns the path of this audioitem in the repository

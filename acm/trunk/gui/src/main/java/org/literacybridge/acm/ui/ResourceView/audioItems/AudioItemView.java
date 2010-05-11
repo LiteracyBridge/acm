@@ -11,6 +11,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Observable;
@@ -27,6 +28,8 @@ import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.playerAPI.SimpleSoundPlayer;
+import org.literacybridge.acm.repository.Repository;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel.LocalizedAudioItemNode;
@@ -43,8 +46,8 @@ public class AudioItemView extends Container implements Observer {
 	// model
 	private IDataRequestResult currResult = null;
 
-	// table
-	private JXTable audioItemTable = null;
+	// table - TODO this should not be public
+	public JXTable audioItemTable = null;
 	
 	public AudioItemView(IDataRequestResult result) {
 		setLayout(new BorderLayout());
@@ -241,17 +244,8 @@ public class AudioItemView extends Container implements Observer {
 		
 		private void startPlayer(AudioItem audioItem) {
 			if (audioItem != null) {
-				System.out.println("Play me");
-				
-				/**
-				 * 
-				 * 
-				 * Call player here
-				 * 
-				 * 
-				 * 
-				 */
-				
+				LocalizedAudioItem lai = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
+				Application.getMessageService().pumpMessage(lai);
 			}
 		}		
 	}
