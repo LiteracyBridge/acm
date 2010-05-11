@@ -16,6 +16,7 @@ import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
+import org.literacybridge.acm.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.ui.ResourceView.ResourceView;
 import org.literacybridge.acm.ui.ResourceView.ToolbarView;
 import org.literacybridge.acm.util.SimpleMessageService;
@@ -53,6 +54,8 @@ public class Application extends JXFrame {
 		return application;
 	}
 	
+	private SimpleSoundPlayer player = new SimpleSoundPlayer();
+	
 	private Application() throws IOException {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	    
 		// set look & feel
@@ -62,12 +65,11 @@ public class Application extends JXFrame {
 		    e.printStackTrace();
 		}
 		
-		setTitle("Literacy Bridge - Talking Book Management");
+		setTitle("Literacy Bridge - Talking Book Manager");
 		// toolbar view on top
-	    ToolbarView toolbarView = new ToolbarView();
-	    getContentPane().add(toolbarView, BorderLayout.PAGE_START);
-	    // Resource view
 	    ResourceView resourceView = new ResourceView();	    
+	    ToolbarView toolbarView = new ToolbarView(resourceView.audioItemView);
+	    getContentPane().add(toolbarView, BorderLayout.PAGE_START);
 	    add(resourceView, BorderLayout.CENTER);
 	    
 	    // starts file system monitor after UI has been initialized
@@ -75,6 +77,9 @@ public class Application extends JXFrame {
 		fileSystemMonitor.start();
 	}
 	
+	public SimpleSoundPlayer getSoundPlayer() {
+		return this.player;
+	}
 	
 	public static void main(String[] args) throws IOException {
 		application = new Application();
@@ -133,4 +138,5 @@ public class Application extends JXFrame {
 			}
 		}
 	}
+	
 }
