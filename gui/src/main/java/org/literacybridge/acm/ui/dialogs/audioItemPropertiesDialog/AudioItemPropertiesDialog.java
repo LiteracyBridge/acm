@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -47,6 +48,7 @@ import org.jdesktop.swingx.JXLabel;
 import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.JXTableHeader;
+import org.jdesktop.swingx.decorator.HighlighterFactory;
 
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.metadata.LBMetadataIDs;
@@ -163,12 +165,17 @@ public class AudioItemPropertiesDialog extends JDialog {
 			});
 			p.add(nextBtn);
 			add(p, BorderLayout.NORTH);
-			p.setBorder(new TitledBorder("Navigate to"));
+			p.setBorder(BorderFactory.createEmptyBorder());
 
 			
 			// Show properties table
 			JScrollPane theScrollPane = new JScrollPane();			
 			propertiesTable = new JXTable();
+			propertiesTable.setShowGrid(false, false);
+			// use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
+			propertiesTable.addHighlighter(HighlighterFactory.createAlternateStriping(
+					Color.white, new Color(237, 243, 254)));
+
 			theScrollPane.getViewport().add(propertiesTable, null);
 			add(theScrollPane);
 		}
