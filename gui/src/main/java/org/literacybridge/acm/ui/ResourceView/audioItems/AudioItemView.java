@@ -3,12 +3,14 @@ package org.literacybridge.acm.ui.ResourceView.audioItems;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Observable;
@@ -59,6 +61,38 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.setModel(new AudioItemTableModel(currResult, getColumnTitles(LanguageUtil.getUILanguage())));
 		audioItemTable.setShowGrid(false, false); 
 		audioItemTable.setDragEnabled(true);
+		
+		final AudioItemCellRenderer renderer = new AudioItemCellRenderer();
+		audioItemTable.setDefaultRenderer(Object.class, renderer);
+		
+		audioItemTable.addMouseMotionListener(new MouseMotionListener() {
+			
+			@Override
+			public void mouseMoved(MouseEvent e) {
+	           JTable table =  (JTable)e.getSource();
+	           renderer.highlightedRow = table.rowAtPoint(e.getPoint());
+	           table.repaint();
+			}
+			
+			@Override
+			public void mouseDragged(MouseEvent e) {
+			}
+		});
+		
+		audioItemTable.addMouseListener(new MouseListener() {
+			@Override
+			public void mouseExited(MouseEvent e) {
+	           JTable table =  (JTable)e.getSource();
+	           renderer.highlightedRow = -1;
+	           table.repaint();
+			}
+			
+			@Override public void mouseReleased(MouseEvent e) {}
+			@Override public void mousePressed(MouseEvent e)  {}
+			@Override public void mouseEntered(MouseEvent e)  {}
+			@Override public void mouseClicked(MouseEvent e)  {}
+		});
+		
 		audioItemTable.setTransferHandler(new TransferHandler() {
 			
 			@Override
@@ -104,7 +138,7 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
 				Color.white, new Color(237, 243, 254)));
 		
-		audioItemTable.setDefaultRenderer(Object.class,new AudioItemCellRenderer());
+		audioItemTable.setPreferredSize(new Dimension(800, 500));
 		
 		JScrollPane scrollPane = new JScrollPane(audioItemTable);
 		add(BorderLayout.CENTER, scrollPane);
@@ -140,8 +174,8 @@ public class AudioItemView extends Container implements Observer {
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , newLocale));
 		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.CREATOR)
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CREATOR , newLocale));
-		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.LANGUAGE)
-										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , newLocale));
+		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.PLAY_COUNT)
+										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAY_COUNT , newLocale));
 	}
 
 	
@@ -151,20 +185,20 @@ public class AudioItemView extends Container implements Observer {
 		columnTitleArray[AudioItemTableModel.INFO_ICON] = "";
 		columnTitleArray[AudioItemTableModel.TITLE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , locale);
 		columnTitleArray[AudioItemTableModel.CREATOR] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CREATOR , locale);
-		columnTitleArray[AudioItemTableModel.LANGUAGE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , locale);
+		columnTitleArray[AudioItemTableModel.PLAY_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAY_COUNT , locale);
 			
 		return columnTitleArray;
 	}
 
 
 	private void initColumnSize() {
-		audioItemTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		audioItemTable.setAutoCreateColumnsFromModel( false );
 
-		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.INFO_ICON).setPreferredWidth(25);
-		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.TITLE).setPreferredWidth(150);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.INFO_ICON).setMinWidth(25);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.INFO_ICON).setMaxWidth(25);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.TITLE).setPreferredWidth(250);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CREATOR).setPreferredWidth(150);
-		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.LANGUAGE).setPreferredWidth(150);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAY_COUNT).setPreferredWidth(150);
 	}
 	
 	private class AudioItemMouseListener extends MouseAdapter {

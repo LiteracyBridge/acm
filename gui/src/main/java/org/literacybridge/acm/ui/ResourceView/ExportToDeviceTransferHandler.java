@@ -49,14 +49,11 @@ public class ExportToDeviceTransferHandler extends TransferHandler {
 		DeviceInfo device = (DeviceInfo) parent.getUserObject();
 		
 		Transferable transferable = support.getTransferable();
-		final AudioItem audioItem;
 		
 		try {
 			LocalizedAudioItem item =  (LocalizedAudioItem) transferable.getTransferData(AudioItemView.AudioItemDataFlavor);
-			System.out.println("Exporting to + " + device.getPathToDevice() + ":\n" + item.getMetadata().toString());
-			File itemFile = Repository.getRepository().resolveName(item).listFiles()[0];
 			
-			A18DeviceExporter.exportToDevice(new File[] {itemFile}, device);
+			A18DeviceExporter.exportToDevice(item, device);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;

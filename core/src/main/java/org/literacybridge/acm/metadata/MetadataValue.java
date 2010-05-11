@@ -27,6 +27,10 @@ public class MetadataValue<T> implements Serializable {
 		return this.value;
 	}
 	
+	public void setValue(T value) {
+		this.value = value;
+	}
+	
 	@SuppressWarnings("unchecked")
 	public <A> A getAttribute(Attribute<A> attributeName) {
 		if (this.attributes == null) {
