@@ -1,12 +1,27 @@
 package org.literacybridge.acm.importexport;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FilenameFilter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.device.DeviceInfo;
+import org.literacybridge.acm.metadata.LBMetadataSerializer;
+import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.repository.Repository;
+import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.acm.utils.OSChecker;
 import org.literacybridge.audioconverter.api.A18Format;
 import org.literacybridge.audioconverter.api.ExternalConverter;
@@ -57,19 +72,67 @@ public class A18DeviceExporter {
 					String fileName = audioFile.getName();
 					
 					File fileToCopy = new File(audioFile.getParent(), fileName.substring(0, fileName.length() - 4)+ ".a18");
-					// TODO: generate old-style a18 file name (with 
-
-					File target = new File(deviceLocation, fileName.substring(0, fileName.length() - 4)+ "#OTHER.a18");
-					Repository.copy(fileToCopy, target);
+					appendMetadataToA18(item, fileToCopy);
+					
+					List<File> targetFiles = appendCategoryStringToFileName(fileToCopy, item);
+					
+					for (File target : targetFiles) {
+						Repository.copy(fileToCopy, target);
+					}
 				} catch (ConversionException e) {
 					throw new IOException(e);
 				}
 			}
 		}
-			
-			
 		
 		// success
 		return true;
+	}
+	
+	private static void appendMetadataToA18(LocalizedAudioItem item, File a18File) throws IOException {
+		DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(a18File)));
+		int bytesToSkip = IOUtils.readLittleEndian32(in);
+		in.close();
+		
+		Metadata metadata = item.getMetadata();
+		
+		Set<Category> categories = new HashSet<Category>();
+		if (bytesToSkip + 4 == a18File.length()) {
+			// append
+			DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(a18File, true)));
+			try {
+				LBMetadataSerializer serializer = new LBMetadataSerializer();
+				serializer.serialize(categories, metadata, out);
+			} finally {
+				out.close();
+			}
+		}
+	}
+
+	private final static Map<String, String> oldStyleCatStrings = new HashMap<String, String>();
+	static {
+		oldStyleCatStrings.put("0", "OTHER");
+		oldStyleCatStrings.put("1", "AGRIC");
+		oldStyleCatStrings.put("2", "HEALTH");	
+		oldStyleCatStrings.put("3", "EDU");
+		oldStyleCatStrings.put("4", "STORY");
+	}
+	
+	private static List<File> appendCategoryStringToFileName(File a18File, LocalizedAudioItem item) {
+		List<Category> cats = item.getParentAudioItem().getCategoryList();
+		List<File> result = new LinkedList<File>();
+
+		// while the device only supports single categories
+		for (Category cat : cats) {
+			String catString = oldStyleCatStrings.get(cat.getUuid());
+			if (catString != null) {
+				String path = a18File.getAbsolutePath();
+				path = path.substring(0, path.length() - 4) + "#" + cat + ".a18";
+				File target = new File(path);
+				result.add(target);
+			}
+		}
+		
+		return result;
 	}
 }

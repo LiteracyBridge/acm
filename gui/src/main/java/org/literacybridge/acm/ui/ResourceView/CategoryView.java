@@ -48,6 +48,7 @@ import org.literacybridge.acm.core.MessageBus.Message;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.device.DeviceConnectEvent;
 import org.literacybridge.acm.device.DeviceInfo;
+import org.literacybridge.acm.importexport.DeviceSynchronizer;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.util.language.LanguageUtil;
@@ -151,7 +152,16 @@ public class CategoryView extends Container implements Observer {
 			@Override public void mouseReleased(MouseEvent e) {}
 			@Override public void mousePressed(MouseEvent e)  {}
 			@Override public void mouseEntered(MouseEvent e)  {}
-			@Override public void mouseClicked(MouseEvent e)  {}
+			@Override public void mouseClicked(MouseEvent e)  {
+				TreePath path = deviceTree.getPathForLocation(e.getX(), e.getY());
+				if (path != null) {
+					DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+					Object deviceInfo = node.getUserObject();
+					if (deviceInfo instanceof DeviceInfo) {
+						DeviceSynchronizer.getInstance().sync((DeviceInfo) deviceInfo);
+					}
+				}
+			}
 		});
 		
 
