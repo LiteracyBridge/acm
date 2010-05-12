@@ -65,7 +65,7 @@ public class Application extends JXFrame {
 		    e.printStackTrace();
 		}
 		
-		setTitle("Literacy Bridge - Talking Book Manager");
+		setTitle("Literacy Bridge - Audio Content Manager");
 		// toolbar view on top
 	    ResourceView resourceView = new ResourceView();	    
 	    ToolbarView toolbarView = new ToolbarView(resourceView.audioItemView);
