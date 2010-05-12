@@ -77,11 +77,14 @@ public class A18Importer extends Importer {
 				if (index >= 0) {
 					metadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(fileName.substring(0, index)));
 					// only parse categories from filename if no particular target category is selected
-					if (category == null) {
-						String catString = fileName.substring(index + 1, fileName.length() - 4);
-						String catID = LegacyCategoryStrings.get(catString);
-						if (catID != null) {
-							categories.add(new Category(PersistentCategory.getFromDatabase(catID)));
+					String catString = fileName.substring(index + 1, fileName.length() - 4);
+					String catID = LegacyCategoryStrings.get(catString);
+					if (catID != null) {
+						categories.add(new Category(PersistentCategory.getFromDatabase(catID)));
+					} else {
+						// add the category that was selected during drag&drop
+						if (category != null) {
+							categories.add(category);
 						}
 					}
 				} else {
@@ -90,11 +93,12 @@ public class A18Importer extends Importer {
 				
 			} else {
 				audioItem = new AudioItem(metadata.getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue());
+				// add the category that was selected during drag&drop
+				if (category != null) {
+					categories.add(category);
+				}
 			}
 						
-			// add the category that was selected during drag&drop
-			audioItem.addCategory(category);
-	
 			// add categories the file had already, if any
 			for (Category cat : categories) {
 				audioItem.addCategory(cat);
