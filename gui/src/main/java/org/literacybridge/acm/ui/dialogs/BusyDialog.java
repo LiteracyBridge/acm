@@ -28,7 +28,7 @@ public class BusyDialog extends JDialog {
 		add(this.description, BorderLayout.NORTH);
 		add(this.busyLabel, BorderLayout.CENTER);
 		
-		setSize(new Dimension(200, 50));
+		setSize(new Dimension(200, 80));
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE); 
 
 		
