@@ -133,6 +133,10 @@ public class A18DeviceExporter {
 			}
 		}
 		
+		if (result.isEmpty()) {
+			result.add(a18File);
+		}
+		
 		return result;
 	}
 }
