@@ -37,7 +37,11 @@ public class MP3Importer extends Importer {
 			audioItem.addLocalizedAudioItem(localizedAudioItem);
 			
 			Metadata metadata = localizedAudioItem.getMetadata();
-			metadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(musicMetadata.getSongTitle()));
+			String title = musicMetadata.getSongTitle();
+			if (title == null || title.trim().isEmpty()) {
+				title = file.getName().substring(0, file.getName().length() - 4);
+			}
+			metadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(title));
 			metadata.addMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>(musicMetadata.getArtist()));
 			metadata.addMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
 			Number year = musicMetadata.getYear();
