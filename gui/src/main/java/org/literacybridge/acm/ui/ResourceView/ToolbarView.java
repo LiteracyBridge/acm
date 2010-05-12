@@ -284,7 +284,7 @@ public class ToolbarView extends JToolBar implements ActionListener
 						updatePlayerStateTimer.stop();
 
 						row--;
-						if (row <= 0) {
+						if (row < 0) {
 							row = audioItemView.audioItemTable.getRowCount() - 1;
 						}
 						AudioItemTableModel.LocalizedAudioItemNode item = 

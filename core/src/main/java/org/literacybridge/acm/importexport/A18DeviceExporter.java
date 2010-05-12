@@ -77,7 +77,7 @@ public class A18DeviceExporter {
 					List<File> targetFiles = appendCategoryStringToFileName(fileToCopy, item);
 					
 					for (File target : targetFiles) {
-						Repository.copy(fileToCopy, target);
+						Repository.copy(fileToCopy, new File(deviceLocation, target.getName()));
 					}
 				} catch (ConversionException e) {
 					throw new IOException(e);
@@ -127,7 +127,7 @@ public class A18DeviceExporter {
 			String catString = oldStyleCatStrings.get(cat.getUuid());
 			if (catString != null) {
 				String path = a18File.getAbsolutePath();
-				path = path.substring(0, path.length() - 4) + "#" + cat + ".a18";
+				path = path.substring(0, path.length() - 4) + "#" + catString + ".a18";
 				File target = new File(path);
 				result.add(target);
 			}

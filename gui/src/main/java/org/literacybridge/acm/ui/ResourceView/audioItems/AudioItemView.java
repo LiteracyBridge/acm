@@ -177,8 +177,8 @@ public class AudioItemView extends Container implements Observer {
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , newLocale));
 		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.CREATOR)
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CREATOR , newLocale));
-		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.PLAY_COUNT)
-										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAY_COUNT , newLocale));
+		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.CATEGORIES)
+										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , newLocale));
 	}
 
 	
@@ -188,7 +188,7 @@ public class AudioItemView extends Container implements Observer {
 		columnTitleArray[AudioItemTableModel.INFO_ICON] = "";
 		columnTitleArray[AudioItemTableModel.TITLE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , locale);
 		columnTitleArray[AudioItemTableModel.CREATOR] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CREATOR , locale);
-		columnTitleArray[AudioItemTableModel.PLAY_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAY_COUNT , locale);
+		columnTitleArray[AudioItemTableModel.CATEGORIES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , locale);
 			
 		return columnTitleArray;
 	}
@@ -201,7 +201,7 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.INFO_ICON).setMaxWidth(25);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.TITLE).setPreferredWidth(250);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CREATOR).setPreferredWidth(150);
-		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAY_COUNT).setPreferredWidth(150);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CATEGORIES).setPreferredWidth(150);
 	}
 	
 	private class AudioItemMouseListener extends MouseAdapter {

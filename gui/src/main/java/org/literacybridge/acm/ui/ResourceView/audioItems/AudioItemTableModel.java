@@ -1,8 +1,11 @@
 package org.literacybridge.acm.ui.ResourceView.audioItems;
 
+import java.util.List;
+
 import javax.swing.table.AbstractTableModel;
 
 import org.literacybridge.acm.api.IDataRequestResult;
+import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.MetadataSpecification;
@@ -17,7 +20,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 	public static final int INFO_ICON = 0;
 	public static final int TITLE 	= 1;
 	public static final int CREATOR 	= 2;
-	public static final int PLAY_COUNT 	= 3;
+	public static final int CATEGORIES 	= 3;
 	private static String[] columns = null;
 	
 	private IDataRequestResult result = null;
@@ -80,10 +83,19 @@ public class AudioItemTableModel  extends AbstractTableModel {
 				cellText = localizedAudioItem.getMetadata().getMetadataValues(
 						MetadataSpecification.DC_CREATOR).get(0).getValue();
 				break;
-			case PLAY_COUNT:
-				cellText = localizedAudioItem.getMetadata().getMetadataValues(
-						MetadataSpecification.LB_PLAY_COUNT).get(0).getValue()
-						.toString();
+			case CATEGORIES:
+				List<Category> categories = localizedAudioItem.getParentAudioItem().getCategoryList();
+				StringBuilder builder = new StringBuilder();
+				
+				for (int i = 0; i < categories.size(); i++) {
+					Category cat = categories.get(i);
+					builder.append(cat.getCategoryName(LanguageUtil.getUserChoosenLanguage()));
+					if (i != categories.size() - 1) {
+						builder.append(", ");
+					}
+				}
+				
+				cellText = builder.toString();
 				break;
 			default:
 				cellText = "";
