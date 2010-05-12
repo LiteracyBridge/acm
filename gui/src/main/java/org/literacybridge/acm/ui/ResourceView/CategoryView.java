@@ -13,6 +13,9 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -29,8 +32,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
@@ -118,6 +123,38 @@ public class CategoryView extends Container implements Observer {
 
 		deviceTree = new JTree(deviceTreeModel);
 		deviceTree.setRootVisible(false);
+		final DeviceTreeCellRenderer renderer = new DeviceTreeCellRenderer();
+		deviceTree.setCellRenderer(renderer);
+		
+		deviceTree.addMouseMotionListener(new MouseMotionListener() {
+			
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				TreePath path = deviceTree.getPathForLocation(e.getX(), e.getY());
+				renderer.highlight = (path == null) ? null : path.getLastPathComponent();
+	           
+				deviceTree.repaint();
+			}
+			
+			@Override
+			public void mouseDragged(MouseEvent e) {
+			}
+		});
+		
+		deviceTree.addMouseListener(new MouseListener() {
+			@Override
+			public void mouseExited(MouseEvent e) {
+	           renderer.highlight = null;
+	           deviceTree.repaint();
+			}
+			
+			@Override public void mouseReleased(MouseEvent e) {}
+			@Override public void mousePressed(MouseEvent e)  {}
+			@Override public void mouseEntered(MouseEvent e)  {}
+			@Override public void mouseClicked(MouseEvent e)  {}
+		});
+		
+
 		
 		categoryPane = new JXTaskPane();
 		JScrollPane categoryScrollPane = new JScrollPane(categoryTree);
@@ -348,4 +385,25 @@ public class CategoryView extends Container implements Observer {
 			updateTreeNodes();
 		}
 	}	
+	
+	private static class DeviceTreeCellRenderer extends DefaultTreeCellRenderer {
+		Object highlight;
+		ImageIcon icon = new ImageIcon(getClass().getResource("/sync-green-16.png"));
+		
+		@Override
+	    public Component getTreeCellRendererComponent(JTree tree, Object value,
+				  boolean sel,
+				  boolean expanded,
+				  boolean leaf, int row,
+				  boolean hasFocus) {
+			JLabel cell = (JLabel) super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+			if (highlight != null && value.equals(highlight)) {
+				cell.setIcon(icon);
+			}
+			cell.setHorizontalTextPosition(SwingConstants.LEFT);
+			Dimension d = cell.getPreferredSize();
+			cell.setPreferredSize(new Dimension((int) d.getWidth() + icon.getIconWidth() + 15, (int) d.getHeight()));
+			return cell;
+		}
+	}
 }
