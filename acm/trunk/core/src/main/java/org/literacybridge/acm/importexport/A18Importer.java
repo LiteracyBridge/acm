@@ -117,12 +117,6 @@ public class A18Importer extends Importer {
 			serializer.serialize(categories, metadata, out);
 			out.close();
 
-			Manifest manifest = localizedAudioItem.getManifest();
-			ReferencedFile ref = new ReferencedFile();
-			
-			manifest.addReferencedFile(ref);
-			
-			
 			audioItem.commit();
 
 			
