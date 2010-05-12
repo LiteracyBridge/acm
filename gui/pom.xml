@@ -14,7 +14,29 @@
     <relativePath>../acm-parent/pom.xml</relativePath>
   </parent>
   <url>http://code.google.com/p/talkingbook/</url>
-  <dependencies>
+ 
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>attached</goal>
+            </goals>
+            <phase>package</phase>
+            <configuration>
+              <descriptor>src/main/assembly/src.xml</descriptor>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+ <dependencies>
     <dependency>
       <groupId>org.literacybridge</groupId>
       <artifactId>acm-core</artifactId>
