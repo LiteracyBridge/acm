@@ -21,6 +21,7 @@
   <modules>
     <module>../core</module>
     <module>../gui</module>
+    <module>../audioconverter</module>
   </modules>
   <dependencies>
     <dependency>
