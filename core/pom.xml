@@ -36,5 +36,10 @@
   </build>
   
   <dependencies>
+      <dependency>
+    	<groupId>org.literacybridge</groupId>
+    	<artifactId>audioconverter</artifactId>
+    	<version>1.0-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 </project>

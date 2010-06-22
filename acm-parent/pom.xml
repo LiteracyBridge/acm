@@ -11,19 +11,153 @@
     This application allows management of Literacy Bridge and DAISY  audio content.
   </description>
   
-  <parent>
-    <groupId>org.literacybridge</groupId>
-    <artifactId>literacybridge-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <relativePath>../../../literacybridge-parent/pom.xml</relativePath>
-  </parent>
   <url>http://code.google.com/p/talkingbook/</url>
   <modules>
+    <module>../audioconverter</module>
     <module>../core</module>
     <module>../gui</module>
-    <module>../audioconverter</module>
   </modules>
+  
+  <organization>
+    <name>Literacy Bridge</name>
+    <url>http://www.literacybridge.org</url>
+  </organization>
+  
+  <ciManagement>
+    <system>Hudson</system>
+    <url>http://literacybridge.dyndns.org</url>
+  </ciManagement>
+  
+  <issueManagement>
+    <system>Google Code</system>
+    <url>http://code.google.com/p/talkingbook/issues/list</url>
+  </issueManagement>
+  
+  <licenses>
+    <license>
+      <name>Apache 2</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+  
+  <repositories>
+    <repository>
+      <id>java</id>
+      <name>Java Maven Repository</name>
+      <layout>default</layout>
+      <url>http://download.java.net/maven/2/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>eclipselink</id>
+      <url>http://mirrors.ibiblio.org/pub/mirrors/eclipse/rt/eclipselink/maven.repo/</url>
+    </repository> 
+ </repositories>
+  
+  <scm>
+    <url>http://talkingbook.googlecode.com/svn/</url>
+    <connection>
+      scm:svn:http://talkingbook.googlecode.com/svn
+    </connection>
+    <developerConnection>
+      scm:svn:https://talkingbook.googlecode.com/svn
+    </developerConnection>
+  </scm>
+  
+  <mailingLists>
+    <mailingList>
+      <name>Talking Book Project Software Work</name>
+      <post>tbp-software@googlegroups.com</post>
+      <subscribe>
+        http://groups.google.com/group/tbp-software?msg=subscribe
+      </subscribe>
+      <unsubscribe>
+        http://groups.google.com/group/tbp-software?msg=unsubscribe
+      </unsubscribe>
+      <archive>
+        http://groups.google.com/group/tbp-software
+      </archive>
+    </mailingList>
+    <mailingList>
+      <name>Talking Book Project Commits</name>
+      <post>tbp-commits@googlegroups.com</post>
+      <subscribe>
+        http://groups.google.com/group/tbp-commits?msg=subscribe
+      </subscribe>
+      <unsubscribe>
+        http://groups.google.com/group/tbp-commits?msg=unsubscribe
+      </unsubscribe>
+      <archive>
+        http://groups.google.com/group/tbp-commits
+      </archive>
+    </mailingList>
+    <mailingList>
+      <name>Talking Book Project Issue Tracking</name>
+      <post>tbp-issues@googlegroups.com</post>
+      <subscribe>
+        http://groups.google.com/group/tbp-issues?msg=subscribe
+      </subscribe>
+      <unsubscribe>
+        http://groups.google.com/group/tbp-issues?msg=unsubscribe
+      </unsubscribe>
+      <archive>
+        http://groups.google.com/group/tbp-issues
+      </archive>
+    </mailingList>
+  </mailingLists>
+  
+  <developers>
+    <developer>
+      <name>Sven Schade</name>
+      <email>sven [at] literacybridge.org</email>
+      <timezone>+1</timezone>
+    </developer>
+    <developer>
+      <name>Mathias Koehnke</name>
+      <email>mathias [at] literacybridge.org</email>
+      <timezone>+1</timezone>
+    </developer>
+    <developer>
+      <name>Chris Schmid</name>
+      <email>schmid.chris [at] gmail.com</email>
+      <timezone>+1</timezone>
+    </developer>
+    <developer>
+      <name>Cliff Schmidt</name>
+      <email>cliff [at] literacybridge.org</email>
+      <timezone>-8</timezone>
+    </developer>
+    <developer>
+      <name>Michael Busch</name>
+      <email>michael [at] literacybridge.org</email>
+      <timezone>-8</timezone>
+    </developer>
+  </developers>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  
+  
   <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.8.1</version>
+      <scope>test</scope>
+    </dependency>
+  
     <dependency>
     	<groupId>org.apache.derby</groupId>
     	<artifactId>derby</artifactId>
@@ -55,11 +189,6 @@
     	<version>1.4</version>
     	<type>jar</type>
     	<scope>compile</scope>
-    </dependency>
-    <dependency>
-    	<groupId>org.literacybridge</groupId>
-    	<artifactId>audioconverter</artifactId>
-    	<version>1.0-SNAPSHOT</version>
     </dependency>
     <dependency>
         <groupId>org.cmc.music</groupId>
