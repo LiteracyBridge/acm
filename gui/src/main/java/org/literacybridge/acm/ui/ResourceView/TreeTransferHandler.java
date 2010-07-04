@@ -14,10 +14,12 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import org.literacybridge.acm.importexport.FileImporter;
+import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.ResourceView.CategoryView.CategoryTreeNodeObject;
 import org.literacybridge.acm.ui.dialogs.BusyDialog;
 import org.literacybridge.acm.util.UIUtils;
+import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class TreeTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = 1L;
@@ -70,7 +72,7 @@ public class TreeTransferHandler extends TransferHandler {
 			@Override
 			public void run() {
 				Application parent = Application.getApplication();
-				Dialog busy = UIUtils.showDialog(parent, new BusyDialog("Importing files...", parent));
+				Dialog busy = UIUtils.showDialog(parent, new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES", LanguageUtil.getUserChoosenLanguage()), parent));
 				try {
 					for (File f : files) {
 						if (f.isDirectory()) {
