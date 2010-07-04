@@ -17,6 +17,7 @@ import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.playerAPI.SimpleSoundPlayer;
+import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.ResourceView.ResourceView;
 import org.literacybridge.acm.ui.ResourceView.ToolbarView;
 import org.literacybridge.acm.util.SimpleMessageService;
@@ -65,7 +66,7 @@ public class Application extends JXFrame {
 		    e.printStackTrace();
 		}
 		
-		setTitle("Literacy Bridge - Audio Content Manager");
+		setTitle(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUserChoosenLanguage()));
 		// toolbar view on top
 	    ResourceView resourceView = new ResourceView();	    
 	    ToolbarView toolbarView = new ToolbarView(resourceView.audioItemView);

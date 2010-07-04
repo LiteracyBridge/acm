@@ -3,14 +3,9 @@ package org.literacybridge.acm.util.language;
 import java.util.Locale;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
-import org.literacybridge.acm.content.LocalizedAudioItem;
 
 public class LanguageUtil {
 
-	// additional languages
-	public static final Locale DAGAARE = new Locale("dga", "gh");
-
-	
 	// current default language for items shown in the UI
 	private static Locale defaultLanguage = Locale.ENGLISH;
 	
@@ -47,7 +42,7 @@ public class LanguageUtil {
 	/**
 	 * Get 'ISO 3166-1 alpha-2' country codes for a language.
 	 * 
-	 * This is only a simple mapping!! ex. Return 'US' flag for a english languahe
+	 * This is only a simple mapping!! example: Return 'US' flag for a English language
 	 * 
 	 * @param local
 	 * @return
@@ -58,10 +53,8 @@ public class LanguageUtil {
 		if (Locale.GERMAN == local) {
 			return "de";
 		} else if (Locale.ENGLISH == local) {
-			return "gb";
+			return "en";
 		}
-		
-		
 		
 		return str;
 	}

@@ -71,7 +71,6 @@ public class AudioItemPropertiesDialog extends JDialog {
 	private int currIndex = 0;
 	private AudioItemView audioItemView = null;
 
-
 	private JXTable propertiesTable = null;
 
 	private JButton backBtn = null;
@@ -79,7 +78,8 @@ public class AudioItemPropertiesDialog extends JDialog {
 
 	public AudioItemPropertiesDialog(JFrame parent, AudioItemView view,
 			List<AudioItem> audioItemList, AudioItem showItem) {
-		super(parent, "AudioItem Properties", true);
+		super(parent, LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES",
+				LanguageUtil.getUserChoosenLanguage()), true);
 		this.audioItemList = audioItemList;
 		currIndex = getIndexOfAudioItem(showItem);
 		this.audioItemView = view;
@@ -146,7 +146,7 @@ public class AudioItemPropertiesDialog extends JDialog {
 		if (audioItemList != null && audioItemList.size() > 0) {
 			// add navigation buttons
 			JPanel p = new JPanel();
-			backBtn = new JButton("Goto previous AudioItem");
+			backBtn = new JButton(LabelProvider.getLabel("GOTO_PREV_AUDIO_ITEM", LanguageUtil.getUserChoosenLanguage()));
 			backBtn.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
@@ -155,7 +155,7 @@ public class AudioItemPropertiesDialog extends JDialog {
 				}
 			});
 			p.add(backBtn);
-			nextBtn = new JButton("Goto next AudioItem");
+			nextBtn = new JButton(LabelProvider.getLabel("GOTO_NEXT_AUDIO_ITEM", LanguageUtil.getUserChoosenLanguage()));
 			nextBtn.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
@@ -167,21 +167,22 @@ public class AudioItemPropertiesDialog extends JDialog {
 			add(p, BorderLayout.NORTH);
 			p.setBorder(BorderFactory.createEmptyBorder());
 
-			
 			// Show properties table
-			JScrollPane theScrollPane = new JScrollPane();			
+			JScrollPane theScrollPane = new JScrollPane();
 			propertiesTable = new JXTable();
 			propertiesTable.setShowGrid(false, false);
-			// use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
-			propertiesTable.addHighlighter(HighlighterFactory.createAlternateStriping(
-					Color.white, new Color(237, 243, 254)));
+			// use fixed color; there seems to be a bug in some plaf
+			// implementations that cause strange rendering
+			propertiesTable.addHighlighter(HighlighterFactory
+					.createAlternateStriping(Color.white, new Color(237, 243,
+							254)));
 
 			theScrollPane.getViewport().add(propertiesTable, null);
 			add(theScrollPane);
 		}
 
 		// add bottom buttons
-		JButton okBtn = new JButton("Close");
+		JButton okBtn = new JButton(LabelProvider.getLabel("CLOSE", LanguageUtil.getUserChoosenLanguage()));
 		okBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -190,7 +191,6 @@ public class AudioItemPropertiesDialog extends JDialog {
 		});
 		add(okBtn, BorderLayout.SOUTH);
 	}
-
 
 	private void showMetadata(Metadata metadata) {
 		propertiesTable.setModel(new AudioItemPropertiesModel(metadata));
