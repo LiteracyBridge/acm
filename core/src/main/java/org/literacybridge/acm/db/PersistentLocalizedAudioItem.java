@@ -55,7 +55,7 @@ public class PersistentLocalizedAudioItem extends PersistentObject {
     @JoinColumn(name = "metadata")
     private PersistentMetadata persistentMetadata;
 
-    @OneToOne(cascade = {CascadeType.ALL})
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
     @JoinColumn(name = "language")
     private PersistentLocale persistentLocale;
 
