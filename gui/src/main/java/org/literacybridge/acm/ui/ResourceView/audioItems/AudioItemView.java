@@ -146,22 +146,8 @@ public class AudioItemView extends Container implements Observer {
 		
 		audioItemTable.setPreferredSize(new Dimension(800, 500));
 		
-		JToolBar buttonsPanel = new JToolBar();
-		buttonsPanel.setFloatable(false);
-
-		JXButton b = new JXButton("Select All");
-		b.setBorderPainted(true);
-		b.setBorder(BorderFactory.createEtchedBorder());
-		b.setContentAreaFilled(true);
-		buttonsPanel.add(b);
-		
-		buttonsPanel.add(new JButton("None"));
-		buttonsPanel.add(new JButton("Export..."));
-		buttonsPanel.add(new JButton("Delete..."));
-		
-//		add(BorderLayout.SOUTH, buttonsPanel);
-		
 		JScrollPane scrollPane = new JScrollPane(audioItemTable);
+
 		add(BorderLayout.CENTER, scrollPane);
 	}
 
