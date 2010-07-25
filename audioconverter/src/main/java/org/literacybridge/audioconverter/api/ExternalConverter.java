@@ -4,15 +4,13 @@ import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import javax.sound.sampled.AudioFormat;
-
 import org.literacybridge.audioconverter.converters.A18ToMP3Converter;
 import org.literacybridge.audioconverter.converters.A18ToWavConverter;
 import org.literacybridge.audioconverter.converters.AnyToA18Converter;
 import org.literacybridge.audioconverter.converters.BaseAudioConverter;
-import org.literacybridge.audioconverter.converters.FFMpegConverter;
 import org.literacybridge.audioconverter.converters.BaseAudioConverter.AudioConverterInitializationException;
 import org.literacybridge.audioconverter.converters.BaseAudioConverter.ConversionException;
+import org.literacybridge.audioconverter.converters.FFMpegConverter;
 
 public class ExternalConverter {
 

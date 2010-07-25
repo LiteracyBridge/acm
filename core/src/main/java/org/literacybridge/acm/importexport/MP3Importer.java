@@ -59,7 +59,6 @@ public class MP3Importer extends Importer {
 				ExternalConverter audioConverter = new ExternalConverter();
 				File itemDir = repository.resolveName(localizedAudioItem);
 				File sourceFile = new File(itemDir, file.getName());
-				File targetFile = new File(itemDir, file.getName().replace(".mp3", ".wav"));
 				audioConverter.convert(sourceFile, new File(sourceFile.getParent()), new WAVFormat(16000, 128, 1));
 			}
 		} catch (ID3ReadException e) {
