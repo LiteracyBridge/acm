@@ -11,9 +11,7 @@ import static org.literacybridge.acm.metadata.MetadataSpecification.DC_RIGHTS;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SOURCE;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SUBJECT;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_TITLE;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_TYPE;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -23,7 +21,6 @@ import javax.swing.table.AbstractTableModel;
 
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataField;
-import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.util.language.LanguageUtil;

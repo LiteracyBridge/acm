@@ -23,7 +23,7 @@ public class FileImporter {
 	private Map<String, Importer> map;
 	
 	private static FileImporter instance = new FileImporter(new Importer[] {
-			new A18Importer(), new MP3Importer()
+			new A18Importer(), new MP3Importer(), new WAVImporter()
 	});
 	
 	public static FileImporter getInstance() {

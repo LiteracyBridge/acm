@@ -1,64 +1,24 @@
 package org.literacybridge.acm.ui.dialogs.audioItemPropertiesDialog;
 
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_CONTRIBUTOR;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_COVERAGE;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_CREATOR;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_DESCRIPTION;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_FORMAT;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_PUBLISHER;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_RELATION;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_RIGHTS;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SOURCE;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SUBJECT;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_TITLE;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_TYPE;
-
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.GridLayout;
-import java.awt.Label;
-import java.awt.ScrollPane;
-import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
-import java.util.StringTokenizer;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
-import javax.swing.border.TitledBorder;
-import javax.swing.event.TableColumnModelListener;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
 
-import org.jdesktop.swingx.JXLabel;
-import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTable;
-import org.jdesktop.swingx.JXTableHeader;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
-
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.metadata.LBMetadataIDs;
 import org.literacybridge.acm.metadata.Metadata;
-import org.literacybridge.acm.metadata.MetadataField;
-import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
-import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
-import org.literacybridge.acm.util.ClosingDialogAdapter;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class AudioItemPropertiesDialog extends JDialog {
