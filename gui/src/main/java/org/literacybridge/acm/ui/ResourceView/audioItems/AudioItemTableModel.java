@@ -57,7 +57,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 	@Override
 	public int getRowCount() {
 		if (result != null) {
-			return result.getAudioItems().size();			
+			return result.getAudioItems().size();	
 		}
 		
 		return 0;

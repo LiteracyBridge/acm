@@ -144,9 +144,8 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
 				Color.white, new Color(237, 243, 254)));
 		
-		audioItemTable.setPreferredSize(new Dimension(800, 500));
-		
 		JScrollPane scrollPane = new JScrollPane(audioItemTable);
+		scrollPane.setPreferredSize(new Dimension(800, 500));
 
 		add(BorderLayout.CENTER, scrollPane);
 	}
