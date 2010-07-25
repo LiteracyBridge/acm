@@ -33,6 +33,7 @@ import org.literacybridge.acm.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.repository.Repository;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
+import org.literacybridge.acm.ui.UIConstants;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.util.language.LanguageUtil;
@@ -50,10 +51,10 @@ public class ToolbarView extends JToolBar implements ActionListener
 	private double durtation = 0.0;
 	private Timer updatePlayerStateTimer = new Timer(100, this);
 	
-	private ImageIcon backwardImageIcon = new ImageIcon(getClass().getResource("/back-24px.png"));
-	private ImageIcon playImageIcon = new ImageIcon(getClass().getResource("/play-24px.png"));
-	private ImageIcon pauseImageIcon = new ImageIcon(getClass().getResource("/pause-24px.png"));
-	private ImageIcon forwardImageIcon = new ImageIcon(getClass().getResource("/forward-24px.png"));
+	private ImageIcon backwardImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_BACKWARD_24_PX));
+	private ImageIcon playImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_PLAY_24_PX));
+	private ImageIcon pauseImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_PAUSE_24_PX));
+	private ImageIcon forwardImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_FORWARD_24_PX));
 
     private JButton backwardBtn;
     private JButton forwardBtn;
