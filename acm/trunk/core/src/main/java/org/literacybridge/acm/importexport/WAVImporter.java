@@ -4,10 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.cmc.music.common.ID3ReadException;
-import org.cmc.music.metadata.IMusicMetadata;
-import org.cmc.music.metadata.MusicMetadataSet;
-import org.cmc.music.myid3.MyID3;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;

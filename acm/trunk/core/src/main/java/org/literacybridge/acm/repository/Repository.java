@@ -11,7 +11,6 @@ import java.util.Locale;
 
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.LocalizedAudioItem;
-import org.literacybridge.acm.importexport.FileImporter;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 
