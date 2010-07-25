@@ -6,6 +6,7 @@ public class Utils {
 
 	public final static String a18 = "a18";
 	public final static String wav = "wav";
+	public final static String mp3 = "mp3";
 	
 	/*
 	 * Get the extension of a file.

@@ -11,29 +11,32 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
 
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.TransferHandler;
 
+import org.jdesktop.swingx.JXButton;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
-import org.literacybridge.acm.playerAPI.SimpleSoundPlayer;
-import org.literacybridge.acm.repository.Repository;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel.LocalizedAudioItemNode;
+import org.literacybridge.acm.ui.dialogs.AudioItemContextMenuDialog;
 import org.literacybridge.acm.ui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
+import org.literacybridge.acm.util.UIUtils;
 import org.literacybridge.acm.util.language.LanguageUtil;
 import org.literacybridge.acm.util.language.UILanguageChanged;
 
@@ -143,6 +146,21 @@ public class AudioItemView extends Container implements Observer {
 		
 		audioItemTable.setPreferredSize(new Dimension(800, 500));
 		
+		JToolBar buttonsPanel = new JToolBar();
+		buttonsPanel.setFloatable(false);
+
+		JXButton b = new JXButton("Select All");
+		b.setBorderPainted(true);
+		b.setBorder(BorderFactory.createEtchedBorder());
+		b.setContentAreaFilled(true);
+		buttonsPanel.add(b);
+		
+		buttonsPanel.add(new JButton("None"));
+		buttonsPanel.add(new JButton("Export..."));
+		buttonsPanel.add(new JButton("Delete..."));
+		
+//		add(BorderLayout.SOUTH, buttonsPanel);
+		
 		JScrollPane scrollPane = new JScrollPane(audioItemTable);
 		add(BorderLayout.CENTER, scrollPane);
 	}
@@ -231,14 +249,16 @@ public class AudioItemView extends Container implements Observer {
 			int col = adaptee.audioItemTable.columnAtPoint(e.getPoint());
 			
 			if (col == AudioItemTableModel.INFO_ICON) {
-				AudioItem audioItem = getValueAt(row, 0);
-				System.out.println("UUID: " + audioItem.getUuid());
+				AudioItem clickedAudioItem = getValueAt(row, 0);
+
+				int[] selectedRows = audioItemTable.getSelectedRows();
+				AudioItem[] selectedAudioItems = new AudioItem[selectedRows.length];
+				for (int i = 0; i < selectedRows.length; i++) {
+					selectedAudioItems[i] = getValueAt(selectedRows[i], 0);
+				}
 				
-				AudioItemPropertiesDialog dlg = new AudioItemPropertiesDialog(Application.getApplication()
-																		, adaptee
-																		, currResult.getAudioItems()
-																		, audioItem);
-				dlg.setVisible(true);				
+				UIUtils.showDialog(Application.getApplication(), new AudioItemContextMenuDialog(Application.getApplication(), 
+						clickedAudioItem, selectedAudioItems, adaptee, currResult), e.getXOnScreen() + 2, e.getYOnScreen());
 			}
 		}
 		
