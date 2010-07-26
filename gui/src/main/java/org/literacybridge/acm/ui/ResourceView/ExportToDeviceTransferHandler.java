@@ -3,7 +3,6 @@ package org.literacybridge.acm.ui.ResourceView;
 import java.awt.Dialog;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.io.File;
 import java.io.IOException;
 
 import javax.swing.JTree;
@@ -11,11 +10,9 @@ import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
-import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.importexport.A18DeviceExporter;
-import org.literacybridge.acm.repository.Repository;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;

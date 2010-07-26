@@ -1,5 +1,6 @@
 package org.literacybridge.acm.content;
 
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -58,7 +59,15 @@ public class AudioItem implements Persistable {
         }
         
 	public void addCategory(Category category) {
-            mItem.addPersistentAudioItemCategory(category.getPersistentObject());
+        mItem.addPersistentAudioItemCategory(category.getPersistentObject());
+	}
+	
+	public void removeCategory(Category category) {
+		mItem.removePersistentCategory(category.getPersistentObject());
+	}
+	
+	public void removeAllCategories() {
+		mItem.removeAllPersistentCategories();
 	}
 	
 	public List<Category> getCategoryList() {
