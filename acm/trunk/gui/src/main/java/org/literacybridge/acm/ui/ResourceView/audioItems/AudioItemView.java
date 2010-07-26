@@ -12,6 +12,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
@@ -103,7 +105,7 @@ public class AudioItemView extends Container implements Observer {
 			
 			@Override
             public int getSourceActions(JComponent c) {
-                return COPY;
+                return MOVE;
             }
             
 			@Override
@@ -115,10 +117,16 @@ public class AudioItemView extends Container implements Observer {
 					public Object getTransferData(DataFlavor flavor)
 							throws UnsupportedFlavorException, IOException {
 						JTable table = (JTable) c;
-		                int row = table.getSelectedRow();
-		                AudioItemTableModel.LocalizedAudioItemNode item = 
-		                	(AudioItemTableModel.LocalizedAudioItemNode) table.getModel().getValueAt(row, 0);
-		                return item.getLocalizedAudioItem();
+						int[] rows = table.getSelectedRows();
+
+						AudioItem[] audioItems = new AudioItem[rows.length];
+						for (int i = 0; i < rows.length; i++) {
+							AudioItemTableModel.LocalizedAudioItemNode item = 
+			                	(AudioItemTableModel.LocalizedAudioItemNode) table.getModel().getValueAt(rows[i], 0);
+							audioItems[i] = item.getLocalizedAudioItem().getParentAudioItem();
+						}
+						
+		                return audioItems; 
 					}
 
 					@Override

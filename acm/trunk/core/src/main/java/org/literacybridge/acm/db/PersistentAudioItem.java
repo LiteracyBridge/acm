@@ -89,10 +89,17 @@ public class PersistentAudioItem extends PersistentObject {
 
     public PersistentCategory removePersistentCategory(PersistentCategory persistentCategory) {
         getPersistentCategoryList().remove(persistentCategory);
-        persistentCategory.getPersistentAudioItemList().add(this);
+        persistentCategory.getPersistentAudioItemList().remove(this);
         return persistentCategory;
     }
 
+    public void removeAllPersistentCategories() {
+    	for (PersistentCategory category : getPersistentCategoryList()) {
+    		category.getPersistentAudioItemList().remove(this);
+    	}
+        getPersistentCategoryList().clear();
+    }
+    
     public List<PersistentLocalizedAudioItem> getPersistentLocalizedAudioItems() {
         return persistentLocalizedAudioItemList;
     }
