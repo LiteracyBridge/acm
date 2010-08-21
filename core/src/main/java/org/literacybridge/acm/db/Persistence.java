@@ -29,7 +29,6 @@ public class Persistence {
     
     private static String DBNAME = "literacybridge";
     
-    //private static final String PASSWORD = "eclipselink.jdbc.password";
     private static final String DRIVER = "eclipselink.jdbc.driver";
     private static final String LOG_LEVEL = "eclipselink.logging.level";
     private static final String TARGET_DB = "eclipselink.target-database";
@@ -40,8 +39,11 @@ public class Persistence {
     private static final String CACHE_TYPE_DEFAULT = "eclipselink.cache.type.default";
     private static final String CACHE_TYPE_SHARED_DEFAULT = "eclipselink.cache.shared.default";
     private static final String URL = "eclipselink.jdbc.url";
+    private static final String PROTOCOL="db.protocol";
+    private static final String PASSWORD = "eclipselink.jdbc.password";
     
     private static final String DEFAULT_DRIVER = "org.apache.derby.jdbc.EmbeddedDriver";
+    private static final String DEFAULT_PROTOCOL = "";
     private static final String DEFAULT_LOG_LEVEL = "OFF";
     private static final String DEFAULT_TARGET_DB = "Derby";
     private static final String DEFAULT_WRITE_CONNECTIONS_MAX = "1";
@@ -51,7 +53,8 @@ public class Persistence {
     private static final String DEFAULT_CACHE_TYPE_DEFAULT = "SoftWeak";
     private static final String DEFAULT_CACHE_TYPE_SHARED_DEFAULT = "false";
     private static final String DEFAULT_URL = "jdbc:derby:";
-
+    private static final String DEFAULT_PASSWORD = "";
+    
     private static final String DB_CONNECTION_PROPS_FILE = "configuration.properties";
 
     
@@ -78,11 +81,9 @@ public class Persistence {
     }    
     
     private static EntityManagerFactory createEntityManagerFactory() throws Exception {        
-        try {
-        	sLogger.log(Level.INFO, "Connect to database: " + DEFAULT_URL + getDBSystemDir() + File.separator + DBNAME);
-        	
+        try {      	
             sConnectionProperties.setProperty(DRIVER, DEFAULT_DRIVER);            
-            sConnectionProperties.setProperty(URL, DEFAULT_URL + getDBSystemDir() + File.separator + DBNAME);
+
             sConnectionProperties.setProperty(LOG_LEVEL, DEFAULT_LOG_LEVEL);
             sConnectionProperties.setProperty(TARGET_DB, DEFAULT_TARGET_DB);
             sConnectionProperties.setProperty(WRITE_CONNECTIONS_MAX, DEFAULT_WRITE_CONNECTIONS_MAX);
@@ -90,9 +91,22 @@ public class Persistence {
             sConnectionProperties.setProperty(READ_CONNECTIONS_MAX, DEFAULT_READ_CONNECTIONS_MAX);
             sConnectionProperties.setProperty(READ_CONNECTIONS_MIN, DEFAULT_READ_CONNECTIONS_MIN);
             sConnectionProperties.setProperty(CACHE_TYPE_DEFAULT, DEFAULT_CACHE_TYPE_DEFAULT);
-            sConnectionProperties.setProperty(CACHE_TYPE_SHARED_DEFAULT, DEFAULT_CACHE_TYPE_SHARED_DEFAULT);
+            sConnectionProperties.setProperty(CACHE_TYPE_SHARED_DEFAULT, DEFAULT_CACHE_TYPE_SHARED_DEFAULT);  
+            sConnectionProperties.setProperty(PROTOCOL, DEFAULT_PROTOCOL);
+            sConnectionProperties.setProperty(PASSWORD, DEFAULT_PASSWORD);
+            
+            // Load settings from file. Overrides existing once!
             sConnectionProperties.load(Persistence.class.getResourceAsStream("/" + DB_CONNECTION_PROPS_FILE));
 
+            // Create the connection url
+        	String url = DEFAULT_URL 
+        				+ sConnectionProperties.getProperty(PROTOCOL) 
+        				+ getDBSystemDir() 
+        				+ File.separator 
+        				+ DBNAME;
+            sConnectionProperties.setProperty(URL, url);
+     
+        	sLogger.log(Level.INFO, "Connect to database: " + url);      
         } catch (Exception exception) {
             sLogger.fine("Error reading database connection parameter file (" + DB_CONNECTION_PROPS_FILE + ")");
             // There is no purpose in trying to continue as the basic connection
@@ -148,7 +162,7 @@ public class Persistence {
         dbUrl+=";create=true";
         
         try {
-            Class.forName(DEFAULT_DRIVER);
+            Class.forName(sConnectionProperties.getProperty(DRIVER));
             dbConnection = DriverManager.getConnection(dbUrl);
             bCreated = createTables(dbConnection);
         } catch (Exception ex) {
