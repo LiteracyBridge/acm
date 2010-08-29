@@ -62,9 +62,11 @@ public class Persistence {
     
     public static synchronized void initialize() throws Exception {
         setDBSystemDir();
+
+    	// load configuration before calling database
+    	LoadAndInitializeSettings();        	
+
         if(!dbExists()) {
-        	// load configuration before calling database
-        	LoadAndInitializeSettings();        	
             createDatabase();
         }        
         sEmf = createEntityManagerFactory();
@@ -111,7 +113,7 @@ public class Persistence {
 	        				+ DBNAME;
 	            sConnectionProperties.setProperty(URL, url);
 	     
-	        	sLogger.log(Level.INFO, "Connect to database: " + url);      
+	        	sLogger.log(Level.INFO, "Connect to database: " + sConnectionProperties.getProperty(URL));      
 		 	} catch (Exception exception) {
 	            sLogger.fine("Error reading database connection parameter file (" + DB_CONNECTION_PROPS_FILE + ")");
 	            // There is no purpose in trying to continue as the basic connection
