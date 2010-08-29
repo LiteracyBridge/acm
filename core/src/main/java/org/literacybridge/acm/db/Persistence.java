@@ -24,7 +24,7 @@ public class Persistence {
     private static Logger sLogger = Logger.getLogger(Persistence.class.getName());
     
     private static EntityManagerFactory sEmf;
-    private static Properties sConnectionProperties = new Properties();
+    private static Properties sConnectionProperties;
     private static String sPersistenceUnit = "lbPersistenceUnit";
     
     private static String DBNAME = "literacybridge";
@@ -63,6 +63,8 @@ public class Persistence {
     public static synchronized void initialize() throws Exception {
         setDBSystemDir();
         if(!dbExists()) {
+        	// load configuration before calling database
+        	LoadAndInitializeSettings();        	
             createDatabase();
         }        
         sEmf = createEntityManagerFactory();
@@ -80,40 +82,46 @@ public class Persistence {
         return getEntityManagerFactory().createEntityManager();
     }    
     
+    public static void LoadAndInitializeSettings() throws Exception {
+    	if (sConnectionProperties == null) {
+    		sConnectionProperties = new Properties();
+    		
+    		try {      	
+    			sConnectionProperties.setProperty(DRIVER, DEFAULT_DRIVER);            
+
+	            sConnectionProperties.setProperty(LOG_LEVEL, DEFAULT_LOG_LEVEL);
+	            sConnectionProperties.setProperty(TARGET_DB, DEFAULT_TARGET_DB);
+	            sConnectionProperties.setProperty(WRITE_CONNECTIONS_MAX, DEFAULT_WRITE_CONNECTIONS_MAX);
+	            sConnectionProperties.setProperty(WRITE_CONNECTIONS_MIN, DEFAULT_WRITE_CONNECTIONS_MIN);
+	            sConnectionProperties.setProperty(READ_CONNECTIONS_MAX, DEFAULT_READ_CONNECTIONS_MAX);
+	            sConnectionProperties.setProperty(READ_CONNECTIONS_MIN, DEFAULT_READ_CONNECTIONS_MIN);
+	            sConnectionProperties.setProperty(CACHE_TYPE_DEFAULT, DEFAULT_CACHE_TYPE_DEFAULT);
+	            sConnectionProperties.setProperty(CACHE_TYPE_SHARED_DEFAULT, DEFAULT_CACHE_TYPE_SHARED_DEFAULT);  
+	            sConnectionProperties.setProperty(PROTOCOL, DEFAULT_PROTOCOL);
+	            sConnectionProperties.setProperty(PASSWORD, DEFAULT_PASSWORD);
+	            
+	            // Load settings from file. Overrides existing once!
+	            sConnectionProperties.load(Persistence.class.getResourceAsStream("/" + DB_CONNECTION_PROPS_FILE));
+	
+	            // Create the connection url
+	        	String url = DEFAULT_URL 
+	        				+ sConnectionProperties.getProperty(PROTOCOL) 
+	        				+ getDBSystemDir() 
+	        				+ File.separator 
+	        				+ DBNAME;
+	            sConnectionProperties.setProperty(URL, url);
+	     
+	        	sLogger.log(Level.INFO, "Connect to database: " + url);      
+		 	} catch (Exception exception) {
+	            sLogger.fine("Error reading database connection parameter file (" + DB_CONNECTION_PROPS_FILE + ")");
+	            // There is no purpose in trying to continue as the basic connection
+	            // parameter are missing or incomplete so rethrow the exception
+	            throw exception;
+	        }
+    	}       
+    }
+    
     private static EntityManagerFactory createEntityManagerFactory() throws Exception {        
-        try {      	
-            sConnectionProperties.setProperty(DRIVER, DEFAULT_DRIVER);            
-
-            sConnectionProperties.setProperty(LOG_LEVEL, DEFAULT_LOG_LEVEL);
-            sConnectionProperties.setProperty(TARGET_DB, DEFAULT_TARGET_DB);
-            sConnectionProperties.setProperty(WRITE_CONNECTIONS_MAX, DEFAULT_WRITE_CONNECTIONS_MAX);
-            sConnectionProperties.setProperty(WRITE_CONNECTIONS_MIN, DEFAULT_WRITE_CONNECTIONS_MIN);
-            sConnectionProperties.setProperty(READ_CONNECTIONS_MAX, DEFAULT_READ_CONNECTIONS_MAX);
-            sConnectionProperties.setProperty(READ_CONNECTIONS_MIN, DEFAULT_READ_CONNECTIONS_MIN);
-            sConnectionProperties.setProperty(CACHE_TYPE_DEFAULT, DEFAULT_CACHE_TYPE_DEFAULT);
-            sConnectionProperties.setProperty(CACHE_TYPE_SHARED_DEFAULT, DEFAULT_CACHE_TYPE_SHARED_DEFAULT);  
-            sConnectionProperties.setProperty(PROTOCOL, DEFAULT_PROTOCOL);
-            sConnectionProperties.setProperty(PASSWORD, DEFAULT_PASSWORD);
-            
-            // Load settings from file. Overrides existing once!
-            sConnectionProperties.load(Persistence.class.getResourceAsStream("/" + DB_CONNECTION_PROPS_FILE));
-
-            // Create the connection url
-        	String url = DEFAULT_URL 
-        				+ sConnectionProperties.getProperty(PROTOCOL) 
-        				+ getDBSystemDir() 
-        				+ File.separator 
-        				+ DBNAME;
-            sConnectionProperties.setProperty(URL, url);
-     
-        	sLogger.log(Level.INFO, "Connect to database: " + url);      
-        } catch (Exception exception) {
-            sLogger.fine("Error reading database connection parameter file (" + DB_CONNECTION_PROPS_FILE + ")");
-            // There is no purpose in trying to continue as the basic connection
-            // parameter are missing or incomplete so rethrow the exception
-            throw exception;
-        }
-        
         EntityManagerFactory emf = 
             javax.persistence.Persistence.createEntityManagerFactory(sPersistenceUnit, sConnectionProperties);
         try {
@@ -154,7 +162,9 @@ public class Persistence {
     }    
     
     /** Create database if necessary **/
-    private static boolean createDatabase() {
+    private static boolean createDatabase() throws Exception {
+    	LoadAndInitializeSettings(); // JTBD
+    	
         boolean bCreated = false;
         Connection dbConnection = null;
         
@@ -162,7 +172,8 @@ public class Persistence {
         dbUrl+=";create=true";
         
         try {
-            Class.forName(sConnectionProperties.getProperty(DRIVER));
+        	String driverName = sConnectionProperties.getProperty(DRIVER);
+            Class.forName(driverName);
             dbConnection = DriverManager.getConnection(dbUrl);
             bCreated = createTables(dbConnection);
         } catch (Exception ex) {
