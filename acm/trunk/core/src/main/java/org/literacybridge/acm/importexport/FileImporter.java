@@ -92,8 +92,11 @@ public class FileImporter {
 	}
 	
 	public static String getFileExtension(File file) {
-		String name = file.getName();
-		return name.substring(name.length() - 4, name.length()).toLowerCase();
+		return getFileExtension(file.getName());
+	}
+	
+	public static String getFileExtension(String fileName) {
+		return fileName.substring(fileName.length() - 4, fileName.length()).toLowerCase();
 	}
 
 	

@@ -67,7 +67,7 @@ public class ExportToDeviceTransferHandler extends TransferHandler {
 					} catch (IOException e) {
 						e.printStackTrace();
 					} finally {
-						dialog.setVisible(false);
+						UIUtils.hideDialog(dialog);
 					}
 				}
 			};

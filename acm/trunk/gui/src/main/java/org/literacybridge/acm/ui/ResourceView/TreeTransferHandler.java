@@ -98,7 +98,7 @@ public class TreeTransferHandler extends TransferHandler {
 				} catch (IOException e) {
 					e.printStackTrace();
 				} finally {
-					busy.setVisible(false);
+					UIUtils.hideDialog(busy);
 					Application.getFilterState().updateResult();
 				}
 			}

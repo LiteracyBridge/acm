@@ -19,6 +19,7 @@ import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.UIConstants;
@@ -26,6 +27,7 @@ import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.ui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
+// TODO: deal with localized audio items when languages are fully implemented
 public class AudioItemContextMenuDialog extends JDialog implements WindowListener {
 	public AudioItemContextMenuDialog(final JFrame parent, final AudioItem clickedAudioItem, final AudioItem[] selectedAudioItems, 
 			final AudioItemView audioItemView, final IDataRequestResult data) {
@@ -98,9 +100,14 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 		FlatButton exportButton = new FlatButton("Export " + labelPostfix, exportImageIcon, backgroundColor, highlightedColor) {
 			@Override
 			public void click() {
-//				AudioItemContextMenuDialog.this.setVisible(false);
-//				ExportDialog export = new ExportDialog();
-//				export.setVisible(true);
+				AudioItemContextMenuDialog.this.setVisible(false);
+				LocalizedAudioItem[] localizedItems = new LocalizedAudioItem[selectedAudioItems.length];
+				for (int i = 0; i < selectedAudioItems.length; i++) {
+					localizedItems[i] = selectedAudioItems[i].getLocalizedAudioItem(
+							LanguageUtil.getUserChoosenLanguage());
+				}
+				ExportDialog export = new ExportDialog(localizedItems);
+				export.setVisible(true);
 			}
 		};
 		
@@ -111,8 +118,6 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 		exportButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		add(editButton);
 		add(exportButton);
-		// TODO: implement export and remove this line
-		exportButton.setEnabled(false);
 		add(deleteButton);
 		
 		addWindowListener(this);

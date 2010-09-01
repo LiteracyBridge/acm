@@ -230,8 +230,6 @@ public class AudioItemView extends Container implements Observer {
 			}
 		}
 
-		
-		
 		@Override
 		public void mouseClicked(MouseEvent e) {
 			showAudioItemDlg(e);
@@ -241,7 +239,9 @@ public class AudioItemView extends Container implements Observer {
 			int row = adaptee.audioItemTable.rowAtPoint(e.getPoint());
 			int col = adaptee.audioItemTable.columnAtPoint(e.getPoint());
 			
-			if (col == AudioItemTableModel.INFO_ICON) {
+			// trigger if right button was clicked, or if the settings icon
+			// was clicked with the left mouse button
+			if (col == AudioItemTableModel.INFO_ICON || e.getButton() != MouseEvent.BUTTON1) {
 				AudioItem clickedAudioItem = getValueAt(row, 0);
 
 				int[] selectedRows = audioItemTable.getSelectedRows();
@@ -250,7 +250,7 @@ public class AudioItemView extends Container implements Observer {
 					selectedAudioItems[i] = getValueAt(selectedRows[i], 0);
 				}
 				
-				UIUtils.showDialog(Application.getApplication(), new AudioItemContextMenuDialog(Application.getApplication(), 
+				UIUtils.showDialog(new AudioItemContextMenuDialog(Application.getApplication(), 
 						clickedAudioItem, selectedAudioItems, adaptee, currResult), e.getXOnScreen() + 2, e.getYOnScreen());
 			}
 		}
