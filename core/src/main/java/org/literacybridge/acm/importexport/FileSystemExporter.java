@@ -64,8 +64,17 @@ public class FileSystemExporter {
 				// third: copy to external folder
 				if (fileToCopy != null) {
 					File sourceFile = new File(itemDir, fileToCopy);
-					File targetFile = new File(targetDir, localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue()
-														  + targetFormatExtension);
+					String title = localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue();
+					File targetFile;
+					int counter = 0;
+					do {
+						if (counter == 0) {
+							targetFile = new File(targetDir, title + targetFormatExtension);
+						} else {
+							targetFile = new File(targetDir, title + "-" + counter + targetFormatExtension);
+						}
+						counter++;
+					} while (targetFile.exists());
 					Repository.copy(sourceFile, targetFile);
 				}
 			}
