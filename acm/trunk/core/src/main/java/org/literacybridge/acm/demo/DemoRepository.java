@@ -144,16 +144,16 @@ public class DemoRepository {
 			LocalizedAudioItem germanItem = new LocalizedAudioItem(item.getUuid() + "-de", Locale.GERMAN);
 			item.addLocalizedAudioItem(germanItem);
 			Metadata germanMetadata = germanItem.getMetadata();
-			germanMetadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(titles_de[i]));
-			germanMetadata.addMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>(authors[i]));
-			germanMetadata.addMetadataField(MetadataSpecification.LB_PLAY_COUNT, new MetadataValue<Integer>(1 + rnd.nextInt(50)));
+			germanMetadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(titles_de[i]));
+			germanMetadata.setMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>(authors[i]));
+		    germanMetadata.setMetadataField(MetadataSpecification.LB_PLAY_COUNT, new MetadataValue<Integer>(1 + rnd.nextInt(50)));
 			
 			LocalizedAudioItem englishItem = new LocalizedAudioItem(item.getUuid() + "-en", Locale.ENGLISH);
 			item.addLocalizedAudioItem(englishItem);
 			Metadata englishMetadata = englishItem.getMetadata();
-			englishMetadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(titles_en[i]));
-			englishMetadata.addMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>(authors[i]));
-			englishMetadata.addMetadataField(MetadataSpecification.LB_PLAY_COUNT, new MetadataValue<Integer>(1 + rnd.nextInt(50)));
+			englishMetadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(titles_en[i]));
+			englishMetadata.setMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>(authors[i]));
+			englishMetadata.setMetadataField(MetadataSpecification.LB_PLAY_COUNT, new MetadataValue<Integer>(1 + rnd.nextInt(50)));
 
 			
                         List<Category> categoryList = taxonomy.getCategoryList();

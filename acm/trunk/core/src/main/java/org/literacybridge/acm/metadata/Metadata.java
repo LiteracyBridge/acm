@@ -79,28 +79,21 @@ public class Metadata implements Persistable {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <F> void addMetadataField(MetadataField<F> field,
+	public <F> void setMetadataField(MetadataField<F> field,
 			MetadataValue<F> value) {
 		if ((value == null) || (value.getValue() == null)) {
 			return;
 		}
-		ListWrapper<F> fieldValues;
-		if (this.fields.containsKey(field)) {
-			fieldValues = (ListWrapper<F>) this.fields.get(field);
-		} else {
-			fieldValues = new ListWrapper<F>(field,
-					new LinkedList<MetadataValue<F>>());
-			this.fields.put(field, fieldValues);
-		}
-
-		value.setAttributes(field.getAttributes());
-
-		fieldValues.list.add(value);
-
-		numValues++;
+		ListWrapper<F> fieldValues = new ListWrapper<F>(field,
+				new LinkedList<MetadataValue<F>>());
+		this.fields.put(field, fieldValues);
+		
+		value.setAttributes(field.getAttributes());		
+		fieldValues.list.add(value);		
+		
 		addMetadataToPersistenceObject(field, value);
 	}
-
+	
 	public void validate() throws InvalidMetadataException {
 		for (ListWrapper<?> entry : fields.values()) {
 			entry.validateValues();
@@ -179,53 +172,53 @@ public class Metadata implements Persistable {
 		try {
 			isRefreshing = true;
 			this.fields.clear();
-			addMetadataField(MetadataSpecification.DC_CONTRIBUTOR,
+			setMetadataField(MetadataSpecification.DC_CONTRIBUTOR,
 					new MetadataValue<String>(mMetadata.getDc_contributor()));
-			addMetadataField(MetadataSpecification.DC_COVERAGE,
+			setMetadataField(MetadataSpecification.DC_COVERAGE,
 					new MetadataValue<String>(mMetadata.getDc_coverage()));
-			addMetadataField(MetadataSpecification.DC_CREATOR,
+			setMetadataField(MetadataSpecification.DC_CREATOR,
 					new MetadataValue<String>(mMetadata.getDc_creator()));
 			// addMetadataField(MetadataSpecification.DC_DATE, new
 			// MetadataValue<String>(mMetadata.getDc_date().toString()));
-			addMetadataField(MetadataSpecification.DC_DESCRIPTION,
+			setMetadataField(MetadataSpecification.DC_DESCRIPTION,
 					new MetadataValue<String>(mMetadata.getDc_description()));
-			addMetadataField(MetadataSpecification.DC_FORMAT,
+			setMetadataField(MetadataSpecification.DC_FORMAT,
 					new MetadataValue<String>(mMetadata.getDc_format()));
-			addMetadataField(MetadataSpecification.DC_IDENTIFIER,
+			setMetadataField(MetadataSpecification.DC_IDENTIFIER,
 					new MetadataValue<String>(mMetadata.getDc_identifier()));
-			addMetadataField(MetadataSpecification.DC_PUBLISHER,
+			setMetadataField(MetadataSpecification.DC_PUBLISHER,
 					new MetadataValue<String>(mMetadata.getDc_publisher()));
-			addMetadataField(MetadataSpecification.DC_RELATION,
+			setMetadataField(MetadataSpecification.DC_RELATION,
 					new MetadataValue<String>(mMetadata.getDc_relation()));
-			addMetadataField(MetadataSpecification.DC_RIGHTS,
+			setMetadataField(MetadataSpecification.DC_RIGHTS,
 					new MetadataValue<String>(mMetadata.getDc_rights()));
-			addMetadataField(MetadataSpecification.DC_SOURCE,
+			setMetadataField(MetadataSpecification.DC_SOURCE,
 					new MetadataValue<String>(mMetadata.getDc_source()));
-			addMetadataField(MetadataSpecification.DC_SUBJECT,
+			setMetadataField(MetadataSpecification.DC_SUBJECT,
 					new MetadataValue<String>(mMetadata.getDc_subject()));
-			addMetadataField(MetadataSpecification.DC_TITLE,
+			setMetadataField(MetadataSpecification.DC_TITLE,
 					new MetadataValue<String>(mMetadata.getDc_title()));
-			addMetadataField(MetadataSpecification.DC_TYPE,
+			setMetadataField(MetadataSpecification.DC_TYPE,
 					new MetadataValue<String>(mMetadata.getDc_type()));
-			addMetadataField(MetadataSpecification.DTB_REVISION,
+			setMetadataField(MetadataSpecification.DTB_REVISION,
 					new MetadataValue<String>(mMetadata.getDtb_revision()));
-			addMetadataField(MetadataSpecification.DTB_REVISION_DATE,
+			setMetadataField(MetadataSpecification.DTB_REVISION_DATE,
 					new MetadataValue<String>(
 							(mMetadata.getDtb_revision_date() == null) ? null
 									: mMetadata.getDtb_revision_date()
 											.toString()));
-			addMetadataField(MetadataSpecification.DTB_REVISION_DESCRIPTION,
+			setMetadataField(MetadataSpecification.DTB_REVISION_DESCRIPTION,
 					new MetadataValue<String>(mMetadata
 							.getDtb_revision_description()));
-			addMetadataField(MetadataSpecification.LB_COPY_COUNT,
+			setMetadataField(MetadataSpecification.LB_COPY_COUNT,
 					mMetadata.getLb_copy_count() == 0 ? null : new MetadataValue<Integer>(mMetadata.getLb_copy_count()));
-			addMetadataField(MetadataSpecification.LB_PLAY_COUNT,
+			setMetadataField(MetadataSpecification.LB_PLAY_COUNT,
 					mMetadata.getLb_play_count() == 0 ? null : new MetadataValue<Integer>(mMetadata.getLb_play_count()));
-			addMetadataField(MetadataSpecification.LB_RATING,
+			setMetadataField(MetadataSpecification.LB_RATING,
 					new MetadataValue<Integer>(
 							(mMetadata.getLb_rating() == null || mMetadata.getLb_rating().intValue() == 0) ? null
 									: mMetadata.getLb_rating().intValue()));
-			addMetadataField(MetadataSpecification.DC_LANGUAGE,
+			setMetadataField(MetadataSpecification.DC_LANGUAGE,
 					new MetadataValue<RFC3066LanguageCode>(
 							(mMetadata.getPersistentLocale() == null || mMetadata.getPersistentLocale().getLanguage() == null) 
 							? null : new RFC3066LanguageCode(mMetadata.getPersistentLocale().getLanguage())));

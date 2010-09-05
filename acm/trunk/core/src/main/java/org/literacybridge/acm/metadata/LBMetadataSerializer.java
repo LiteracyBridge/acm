@@ -80,7 +80,7 @@ public class LBMetadataSerializer extends MetadataSerializer {
 		int numValues = (in.readByte() & 0xff);
 		for (int i = 0; i < numValues; i++) {
 			MetadataValue<T> value = field.deserialize(in);
-			metadata.addMetadataField(field, value);
+			metadata.setMetadataField(field, value);
 		}
 	}
 	
