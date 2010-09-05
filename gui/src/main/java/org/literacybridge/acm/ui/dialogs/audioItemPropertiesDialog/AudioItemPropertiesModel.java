@@ -91,30 +91,36 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	public void setValueAt(Object aValue, int row, int col) {
 		String newValue = aValue.toString();
 		AudioItemPropertiesObject obj = audioItemPropertiesObject.get(row);
-		setValues(obj.getFieldID(), metadata, newValue);
+		setValue(obj.getFieldID(), metadata, newValue);
 		metadata.commit();
 	}
 
-	private void setValues(MetadataField<String> field, Metadata metadata,
-			String commaSeparatedListValue) {
-		StringTokenizer t = new StringTokenizer(commaSeparatedListValue, ",");
-
-		List<MetadataValue<String>> existingValues = metadata
-				.getMetadataValues(field);
-		Iterator<MetadataValue<String>> it = null;
-
-		if (existingValues != null) {
-			it = existingValues.iterator();
-		}
-
-		while (t.hasMoreTokens()) {
-			String value = t.nextToken().trim();
-			if (it != null && it.hasNext()) {
-				it.next().setValue(value);
-			} else {
-				metadata.addMetadataField(field, new MetadataValue<String>(
-						value));
-			}
-		}
-	}
+	private void setValue(MetadataField<String> field, Metadata metadata, String value) {
+		metadata.setMetadataField(field, new MetadataValue<String>(value));
+	}	
+	
+	
+	// TODO Ask Michael: What is that csv list for a single metadata field all about?
+//	private void setValues(MetadataField<String> field, Metadata metadata,
+//			String commaSeparatedListValue) {
+//		StringTokenizer t = new StringTokenizer(commaSeparatedListValue, ",");
+//
+//		List<MetadataValue<String>> existingValues = metadata
+//				.getMetadataValues(field);
+//		Iterator<MetadataValue<String>> it = null;
+//
+//		if (existingValues != null) {
+//			it = existingValues.iterator();
+//		}
+//
+//		while (t.hasMoreTokens()) {
+//			String value = t.nextToken().trim();
+//			if (it != null && it.hasNext()) {
+//				it.next().setValue(value);
+//			} else {
+//				metadata.addMetadataField(field, new MetadataValue<String>(
+//						value));
+//			}
+//		}
+//	}
 }
