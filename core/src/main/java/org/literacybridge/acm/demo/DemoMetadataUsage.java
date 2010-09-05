@@ -11,7 +11,7 @@ public class DemoMetadataUsage {
 		Metadata metadata = new Metadata();
 		
 		MetadataValue<String> foo1 = new MetadataValue<String>("foo1");
-		metadata.addMetadataField(MetadataSpecification.DC_TITLE, foo1);
+		metadata.setMetadataField(MetadataSpecification.DC_TITLE, foo1);
 		try {
 			foo1.setAttributeValue(MetadataSpecification.DC_CREATOR_ROLE, "bar1");
 		} catch (IllegalArgumentException e) {
@@ -20,7 +20,7 @@ public class DemoMetadataUsage {
 
 		
 		MetadataValue<String> foo2 = new MetadataValue<String>("foo2");
-		metadata.addMetadataField(MetadataSpecification.DC_CREATOR, foo2);
+		metadata.setMetadataField(MetadataSpecification.DC_CREATOR, foo2);
 		foo2.setAttributeValue(MetadataSpecification.DC_CREATOR_ROLE, "bar2");
 		
 		List<MetadataValue<String>> titles = metadata.getMetadataValues(MetadataSpecification.DC_TITLE);

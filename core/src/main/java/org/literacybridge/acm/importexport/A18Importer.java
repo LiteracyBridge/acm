@@ -68,14 +68,14 @@ public class A18Importer extends Importer {
 				// legacy mode
 				audioItem = new AudioItem(Repository.getNewUUID());
 				String fileName = file.getName();
-				metadata.addMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
-				metadata.addMetadataField(MetadataSpecification.DC_IDENTIFIER, new MetadataValue<String>(audioItem.getUuid()));
-				metadata.addMetadataField(MetadataSpecification.DC_LANGUAGE, 
+				metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
+				metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER, new MetadataValue<String>(audioItem.getUuid()));
+				metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE, 
 						new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode("en")));
 
 				int index = fileName.indexOf('#');
 				if (index >= 0) {
-					metadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(fileName.substring(0, index)));
+					metadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(fileName.substring(0, index)));
 					// only parse categories from filename if no particular target category is selected
 					String catString = fileName.substring(index + 1, fileName.length() - 4);
 					String catID = LegacyCategoryStrings.get(catString);
@@ -88,7 +88,7 @@ public class A18Importer extends Importer {
 						}
 					}
 				} else {
-					metadata.addMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(fileName.substring(0, fileName.length() - 4)));
+					metadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(fileName.substring(0, fileName.length() - 4)));
 				}
 				
 			} else {
