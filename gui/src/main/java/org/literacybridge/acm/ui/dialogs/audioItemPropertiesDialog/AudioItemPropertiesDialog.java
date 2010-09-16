@@ -18,6 +18,7 @@ import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
+import org.literacybridge.acm.ui.ResourceView.ResourceView;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
@@ -146,6 +147,8 @@ public class AudioItemPropertiesDialog extends JDialog {
 		okBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				// update IRequestResult
+				ResourceView.updateDataRequestResult();
 				setVisible(false);
 			}
 		});
