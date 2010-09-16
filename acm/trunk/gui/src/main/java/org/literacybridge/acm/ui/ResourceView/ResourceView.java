@@ -59,4 +59,10 @@ public class ResourceView extends Container {
 	     
 		Application.getMessageService().pumpMessage(result);
 	}	
+	
+	public static void updateDataRequestResult() {
+		IDataRequestService dataService = DataRequestService.getInstance();
+		IDataRequestResult result = dataService.getData(LanguageUtil.getUserChoosenLanguage());
+		Application.getMessageService().pumpMessage(result);
+	}
 }
