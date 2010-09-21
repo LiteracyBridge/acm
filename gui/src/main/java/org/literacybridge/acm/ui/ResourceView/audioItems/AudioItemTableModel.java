@@ -26,20 +26,15 @@ public class AudioItemTableModel  extends AbstractTableModel {
 	private IDataRequestResult result = null;
 	
 	
-	public AudioItemTableModel(IDataRequestResult result, String[] initalColumnNames) {
+	public static void initializeTableColumns( String[] initalColumnNames) {
+		columns = initalColumnNames;	
+	}
+	
+	public AudioItemTableModel(IDataRequestResult result) {
 		this.result = result;
 		if (result != null) {
 			result.getAudioItems();			
 		}
-		
-		if (initalColumnNames != null) {
-			columns = initalColumnNames;	
-		}
-		
-	}
-	
-	public AudioItemTableModel(IDataRequestResult result) {
-		this(result, null);
 	}
 		
 	@Override

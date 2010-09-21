@@ -39,7 +39,8 @@ public class ResourceView extends Container {
 		IDataRequestResult result = dataService.getData(LanguageUtil.getUserChoosenLanguage());
 
 		// Table with audio items
-		audioItemView = new AudioItemView(result);
+		audioItemView = new AudioItemView();
+		audioItemView.setData(result);
 		
 		//  Tree with categories 
 		//  Create at the end, because this is the main selection provider
