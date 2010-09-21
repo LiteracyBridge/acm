@@ -7,27 +7,20 @@ import java.awt.Dimension;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.TransferHandler;
 
-import org.jdesktop.swingx.JXButton;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
@@ -36,9 +29,6 @@ import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel.LocalizedAudioItemNode;
-import org.literacybridge.acm.ui.dialogs.AudioItemContextMenuDialog;
-import org.literacybridge.acm.ui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
-import org.literacybridge.acm.util.UIUtils;
 import org.literacybridge.acm.util.language.LanguageUtil;
 import org.literacybridge.acm.util.language.UILanguageChanged;
 
@@ -55,11 +45,12 @@ public class AudioItemView extends Container implements Observer {
 	public JXTable audioItemTable = null;
 	
 	public AudioItemView(IDataRequestResult result) {
-		setLayout(new BorderLayout());
-		createTable();
-		addHandlers();
-		Application.getMessageService().addObserver(this);
+		// Set add the beginning as the result is already used in latter handlers
 		this.currResult = result;
+		
+		setLayout(new BorderLayout());
+		createTable();;
+		Application.getMessageService().addObserver(this);
 	
 		initColumnSize();
 	}
@@ -70,6 +61,21 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.setShowGrid(false, false); 
 		audioItemTable.setDragEnabled(true);
 		
+		// add handler
+		addAudioItemTableHandler();
+		
+		// use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
+		audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
+				Color.white, new Color(237, 243, 254)));
+		
+		JScrollPane scrollPane = new JScrollPane(audioItemTable);
+		scrollPane.setPreferredSize(new Dimension(800, 500));
+
+		add(BorderLayout.CENTER, scrollPane);
+	}
+
+	// Special handlers
+	protected void addAudioItemTableHandler() {
 		final AudioItemCellRenderer renderer = new AudioItemCellRenderer();
 		audioItemTable.setDefaultRenderer(Object.class, renderer);
 		
@@ -146,27 +152,15 @@ public class AudioItemView extends Container implements Observer {
 				};
 			}
 		});
-
 		
-		// use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
-		audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
-				Color.white, new Color(237, 243, 254)));
-		
-		JScrollPane scrollPane = new JScrollPane(audioItemTable);
-		scrollPane.setPreferredSize(new Dimension(800, 500));
-
-		add(BorderLayout.CENTER, scrollPane);
+	    MouseListener mouseListener = new AudioItemViewMouseListener(this, currResult);
+	    audioItemTable.addMouseListener(mouseListener);
+	    audioItemTable.getTableHeader().addMouseListener(mouseListener);
 	}
 
 
 	private void updateTable() {
 		audioItemTable.setModel(new AudioItemTableModel(currResult));
-	}
-
-	private void addHandlers() {
-	    MouseListener mouseListener = new AudioItemMouseListener(this);
-	    audioItemTable.addMouseListener(mouseListener);
-	    audioItemTable.getTableHeader().addMouseListener(mouseListener);
 	}
 
 
@@ -215,55 +209,9 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CATEGORIES).setPreferredWidth(150);
 	}
 	
-	private class AudioItemMouseListener extends MouseAdapter {
-		private AudioItemView adaptee = null;
-
-		public AudioItemMouseListener(AudioItemView adaptee) {
-			this.adaptee = adaptee;
-		}
-		
-		public void mouseReleased(MouseEvent e) {
-			int row = adaptee.audioItemTable.rowAtPoint(e.getPoint());
-		
-			if (e.getClickCount() == 2) {
-				startPlayer(getValueAt(row, 0));				
-			}
-		}
-
-		@Override
-		public void mouseClicked(MouseEvent e) {
-			showAudioItemDlg(e);
-		}
-
-		private void showAudioItemDlg(MouseEvent e) {
-			int row = adaptee.audioItemTable.rowAtPoint(e.getPoint());
-			int col = adaptee.audioItemTable.columnAtPoint(e.getPoint());
-			
-			// trigger if right button was clicked, or if the settings icon
-			// was clicked with the left mouse button
-			if (col == AudioItemTableModel.INFO_ICON || e.getButton() != MouseEvent.BUTTON1) {
-				AudioItem clickedAudioItem = getValueAt(row, 0);
-
-				int[] selectedRows = audioItemTable.getSelectedRows();
-				AudioItem[] selectedAudioItems = new AudioItem[selectedRows.length];
-				for (int i = 0; i < selectedRows.length; i++) {
-					selectedAudioItems[i] = getValueAt(selectedRows[i], 0);
-				}
-				
-				UIUtils.showDialog(new AudioItemContextMenuDialog(Application.getApplication(), 
-						clickedAudioItem, selectedAudioItems, adaptee, currResult), e.getXOnScreen() + 2, e.getYOnScreen());
-			}
-		}
-		
-		private void startPlayer(AudioItem audioItem) {
-			if (audioItem != null) {
-				LocalizedAudioItem lai = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
-				Application.getMessageService().pumpMessage(lai);
-			}
-		}		
-	}
-
-    public AudioItem getValueAt(int row, int col) {
+	
+	
+	public AudioItem getValueAt(int row, int col) {
     	Object o = audioItemTable.getModel().getValueAt(row, col);
         
         AudioItem item = null;
@@ -292,7 +240,7 @@ public class AudioItemView extends Container implements Observer {
     	}
     	
     	return false;
-    }
+    }	
 
-}
+} // class
 
