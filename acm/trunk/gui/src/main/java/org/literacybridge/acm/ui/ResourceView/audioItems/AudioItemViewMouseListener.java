@@ -18,9 +18,8 @@ public class AudioItemViewMouseListener extends MouseAdapter {
 	public AudioItemView adaptee;
 	public IDataRequestResult currentResult;
 	
-	public AudioItemViewMouseListener(AudioItemView adaptee, IDataRequestResult currentResult) {
+	public AudioItemViewMouseListener(AudioItemView adaptee) {
 		this.adaptee = adaptee;
-		this.currentResult = currentResult;
 	}
 	
 	public void mouseReleased(MouseEvent e) {
@@ -58,6 +57,10 @@ public class AudioItemViewMouseListener extends MouseAdapter {
 			UIUtils.showDialog(new AudioItemContextMenuDialog(Application.getApplication(), 
 					clickedAudioItem, selectedAudioItems, adaptee, currentResult), e.getXOnScreen() + 2, e.getYOnScreen());
 		}
+	}
+
+	public void setCurrentResult(IDataRequestResult currentResult) {
+		this.currentResult = currentResult;
 	}
 	
 
