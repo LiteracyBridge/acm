@@ -3,13 +3,10 @@ package org.literacybridge.acm.ui.ResourceView.audioItems;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-import javax.swing.ListSelectionModel;
-
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.ui.Application;
-import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel.LocalizedAudioItemNode;
 import org.literacybridge.acm.ui.dialogs.AudioItemContextMenuDialog;
 import org.literacybridge.acm.util.UIUtils;
 import org.literacybridge.acm.util.language.LanguageUtil;

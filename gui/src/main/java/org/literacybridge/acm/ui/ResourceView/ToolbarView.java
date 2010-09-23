@@ -36,6 +36,7 @@ import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.UIConstants;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
+import org.literacybridge.acm.util.LocalizedAudioItemNode;
 import org.literacybridge.acm.util.language.LanguageUtil;
 import org.literacybridge.acm.util.language.UILanguageChanged;
 
@@ -236,8 +237,8 @@ public class ToolbarView extends JToolBar implements ActionListener
 				if (player == null) {
 					int row = audioItemView.audioItemTable.getSelectedRow();
 					if (row != -1) {
-						AudioItemTableModel.LocalizedAudioItemNode item = 
-		                	(AudioItemTableModel.LocalizedAudioItemNode) audioItemView.audioItemTable.getModel().getValueAt(row, 0);
+						LocalizedAudioItemNode item = 
+		                	(LocalizedAudioItemNode) audioItemView.audioItemTable.getModel().getValueAt(row, 0);
 						play(item.getLocalizedAudioItem());
 					}
 				} else {
@@ -264,8 +265,8 @@ public class ToolbarView extends JToolBar implements ActionListener
 						updatePlayerStateTimer.stop();
 
 						row = (row + 1) % audioItemView.audioItemTable.getRowCount();
-						AudioItemTableModel.LocalizedAudioItemNode item = 
-		                	(AudioItemTableModel.LocalizedAudioItemNode) audioItemView.audioItemTable.getModel().getValueAt(row, 0);
+						LocalizedAudioItemNode item = 
+		                	(LocalizedAudioItemNode) audioItemView.audioItemTable.getModel().getValueAt(row, 0);
 						audioItemView.audioItemTable.changeSelection(row, 0, false, false);
 						play(item.getLocalizedAudioItem());
 					}
@@ -288,8 +289,8 @@ public class ToolbarView extends JToolBar implements ActionListener
 						if (row < 0) {
 							row = audioItemView.audioItemTable.getRowCount() - 1;
 						}
-						AudioItemTableModel.LocalizedAudioItemNode item = 
-		                	(AudioItemTableModel.LocalizedAudioItemNode) audioItemView.audioItemTable.getModel().getValueAt(row, 0);
+						LocalizedAudioItemNode item = 
+		                	(LocalizedAudioItemNode) audioItemView.audioItemTable.getModel().getValueAt(row, 0);
 						audioItemView.audioItemTable.changeSelection(row, 0, false, false);
 						play(item.getLocalizedAudioItem());
 					}

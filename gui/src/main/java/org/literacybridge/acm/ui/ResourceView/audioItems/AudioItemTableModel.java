@@ -4,11 +4,14 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
+
+
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.MetadataSpecification;
+import org.literacybridge.acm.util.LocalizedAudioItemNode;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class AudioItemTableModel  extends AbstractTableModel {
@@ -23,7 +26,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 	public static final int CATEGORIES 	= 3;
 	private static String[] columns = null;
 	
-	private IDataRequestResult result = null;
+	protected IDataRequestResult result = null;
 	
 	
 	public static void initializeTableColumns( String[] initalColumnNames) {
@@ -104,33 +107,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 	}
 	
 	
-	/**
-	 * Helper
-	 */
+
 	
-	
-	public class LocalizedAudioItemNode {
-		private final LocalizedAudioItem localizedAudioItem;
-		private final String label;
-		private final AudioItem parent;
-		
-		LocalizedAudioItemNode(LocalizedAudioItem localizedAudioItem, String label, AudioItem parent) {
-			this.label = label;
-			this.localizedAudioItem = localizedAudioItem;
-			this.parent = parent;
-		}
 
-		public AudioItem getParent() {
-			return parent;
-		}
-
-		@Override 
-		public String toString() {
-			return label;
-		}
-
-		public LocalizedAudioItem getLocalizedAudioItem() {
-			return localizedAudioItem;
-		}	
-	}
 }
