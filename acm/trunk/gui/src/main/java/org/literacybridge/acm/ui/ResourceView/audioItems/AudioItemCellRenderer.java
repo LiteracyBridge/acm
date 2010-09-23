@@ -8,13 +8,14 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
 import org.literacybridge.acm.ui.UIConstants;
-import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel.LocalizedAudioItemNode;
+import org.literacybridge.acm.util.LocalizedAudioItemNode;
 
+@SuppressWarnings("serial")
 public class AudioItemCellRenderer extends DefaultTableCellRenderer {
 	
 	private static ImageIcon settingsImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_SETTINGS_16_PX));
 	
-	int highlightedRow = -1;
+	public int highlightedRow = -1;
 	
 	@Override
 	public Component getTableCellRendererComponent(JTable table,
