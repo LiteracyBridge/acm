@@ -1,7 +1,6 @@
 package org.literacybridge.acm.ui.dialogs;
 
 import java.awt.Container;
-import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -22,11 +21,11 @@ import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.util.UIUtils;
 import org.literacybridge.acm.util.language.LanguageUtil;
 import org.literacybridge.audioconverter.api.A18Format;
-import org.literacybridge.audioconverter.api.A18Format.AlgorithmList;
-import org.literacybridge.audioconverter.api.A18Format.useHeaderChoice;
 import org.literacybridge.audioconverter.api.AudioConversionFormat;
 import org.literacybridge.audioconverter.api.MP3Format;
 import org.literacybridge.audioconverter.api.WAVFormat;
+import org.literacybridge.audioconverter.api.A18Format.AlgorithmList;
+import org.literacybridge.audioconverter.api.A18Format.useHeaderChoice;
 
 public class ExportDialog extends JDialog implements ActionListener {
 	private JFileChooser exportDirectoryChooser;
@@ -105,7 +104,7 @@ public class ExportDialog extends JDialog implements ActionListener {
 			public void run() {
 				Application app = Application.getApplication();
 				// TODO proper label
-				Dialog dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK",	LanguageUtil.getUserChoosenLanguage()), app));
+				Container dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK",	LanguageUtil.getUserChoosenLanguage()), app));
 				try {
 					FileSystemExporter.export(ExportDialog.this.selectedAudioItems, targetDir, targetFormat);
 				} catch (IOException e) {

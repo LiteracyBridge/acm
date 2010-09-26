@@ -1,6 +1,6 @@
 package org.literacybridge.acm.ui.ResourceView;
 
-import java.awt.Dialog;
+import java.awt.Container;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -86,7 +86,7 @@ public class TreeTransferHandler extends TransferHandler {
 			@Override
 			public void run() {
 				Application parent = Application.getApplication();
-				Dialog busy = UIUtils.showDialog(parent, new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES", LanguageUtil.getUserChoosenLanguage()), parent));
+				Container busy = UIUtils.showDialog(parent, new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES", LanguageUtil.getUserChoosenLanguage()), parent));
 				try {
 					for (File f : files) {
 						if (f.isDirectory()) {

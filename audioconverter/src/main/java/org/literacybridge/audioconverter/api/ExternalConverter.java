@@ -53,20 +53,15 @@ public class ExternalConverter {
 				SetParameters(targetFormat);
 				AnyToA18Conv.convertFile(sourceFile, targetFile, overwrite, this.parameters);
 		}
-		if (targetFormat.getFileEnding() == "WAV")
+		if (targetFormat.getFileEnding() == "WAV" || targetFormat.getFileEnding() == "MP3")
 		{
 			if (getFileExtension(sourceFile).equalsIgnoreCase(".a18")) {
 				SetParameters(targetFormat);
 				A18ToWAVConv.convertFile(sourceFile, targetFile, overwrite, this.parameters);
 			} else {
 				SetParameters(targetFormat);
-				FFMpegConv.convertFile(sourceFile, targetFile, overwrite, this.parameters);
+				FFMpegConv.convertFile(sourceFile, targetFile, overwrite, this.parameters, "." + targetFormat.getFileEnding());
 			}
-		}
-		if (targetFormat.getFileEnding() == "MP3")
-		{
-				SetParameters(targetFormat);
-				A18ToMP3Conv.convertFile(sourceFile, targetFile, overwrite, this.parameters);
 		}
 	}
 	

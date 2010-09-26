@@ -1,5 +1,6 @@
 package org.literacybridge.acm.ui.ResourceView;
 
+import java.awt.Container;
 import java.awt.Dialog;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -61,7 +62,7 @@ public class ExportToDeviceTransferHandler extends TransferHandler {
 				@Override
 				public void run() {
 					Application app = Application.getApplication();
-					Dialog dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK",	LanguageUtil.getUserChoosenLanguage()), app));
+					Container dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK",	LanguageUtil.getUserChoosenLanguage()), app));
 					try {
 						A18DeviceExporter.exportToDevice(item, device);
 					} catch (IOException e) {
