@@ -20,7 +20,11 @@ public abstract class BaseAudioConverter {
 	}
 	
 	public String convertFile(File inputFile, File targetDir, boolean overwrite, Map<String, String> parameters) throws ConversionException {
-		File outputFile = new File(targetDir, getFileNameWithoutExtension(inputFile.getName()) + targetFormatExtension);
+		return convertFile(inputFile, targetDir, overwrite, parameters, targetFormatExtension);
+	}
+	
+	public String convertFile(File inputFile, File targetDir, boolean overwrite, Map<String, String> parameters, String targetExtension) throws ConversionException {
+		File outputFile = new File(targetDir, getFileNameWithoutExtension(inputFile.getName()) + targetExtension);
 		if (outputFile.exists())
 			if (!overwrite) {
 				return null;

@@ -1,20 +1,20 @@
 package org.literacybridge.acm.util;
 
-import java.awt.Dialog;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Frame;
 
 import javax.swing.SwingUtilities;
 
 public class UIUtils {
-	public static Dialog showDialog(Frame parent, final Dialog dialog) {
+	public static Container showDialog(Frame parent, final Container dialog) {
 		final Dimension frameSize = parent.getSize();
 		final int x = (frameSize.width - dialog.getWidth()) / 2;
 		final int y = (frameSize.height - dialog.getHeight()) / 2;
 		return showDialog(dialog, x, y);
 	}
 
-	public static Dialog showDialog(final Dialog dialog, int x,
+	public static Container showDialog(final Container dialog, int x,
 			int y) {
 
 		dialog.setLocation(x, y);
@@ -22,12 +22,12 @@ public class UIUtils {
 		return dialog;
 	}
 	
-	public static void hideDialog(final Dialog dialog) {
+	public static void hideDialog(final Container dialog) {
 		setVisible(dialog, false);
 	}
 
 	
-	private static void setVisible(final Dialog dialog, final boolean visible) {
+	private static void setVisible(final Container dialog, final boolean visible) {
 		if (!SwingUtilities.isEventDispatchThread()) {
 			SwingUtilities.invokeLater(new Runnable() {
 				public void run() {

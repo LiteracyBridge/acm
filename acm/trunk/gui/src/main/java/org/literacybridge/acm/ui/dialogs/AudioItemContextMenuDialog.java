@@ -34,13 +34,13 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 		super(parent, "", false);
 		
 		setResizable(false);
-		setUndecorated(true);
+		setUndecorated(true);		
 		
 		ImageIcon editImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_EDIT_16_PX));
 		ImageIcon deleteImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_DELETE_16_PX));
 		ImageIcon exportImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_EXPORT_16_PX));
 		
-		Color backgroundColor = getBackground();
+		Color backgroundColor = parent.getBackground();
 		Color highlightedColor = SystemColor.textHighlight;
 		
 		GridLayout grid = new GridLayout(3, 1);
@@ -122,9 +122,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 		
 		addWindowListener(this);
 		setAlwaysOnTop(true);
-		setSize(new Dimension(300, 78));
-		
-		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+		setSize(new Dimension(300, 100));
 	}
 	
 	@Override

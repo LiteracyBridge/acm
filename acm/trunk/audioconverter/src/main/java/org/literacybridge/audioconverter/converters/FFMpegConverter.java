@@ -17,7 +17,7 @@ public class FFMpegConverter extends BaseAudioConverter {
 	public FFMpegConverter() {
 		super(TARGET_EXTENSION);
 	}
-	
+
 	@Override
 	public ConversionResult doConvertFile(File audioFile, File targetDir, File targetFile, Map<String, String> parameters)
 			throws ConversionException {
