@@ -88,7 +88,7 @@ public class Application extends JXFrame {
 		// initialize config and generate random ID for this acm instance
 		Configuration.getConfiguration();
 		
-		application.setSize(1000, 600);
+		application.setSize(1000, 750);
 		application.setVisible(true);
 		//UIUtils.showDialog(app, new DeviceSyncDialog(app));
 	}	
