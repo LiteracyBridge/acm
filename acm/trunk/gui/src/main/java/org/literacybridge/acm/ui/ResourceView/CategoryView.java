@@ -212,7 +212,7 @@ public class CategoryView extends Container implements Observer {
 				default:
 					newLocale = Locale.ENGLISH;
 				 }
-				 LanguageUtil.setUserChoosenLanguage(newLocale);
+
 				 Application.getMessageService().pumpMessage(new UILanguageChanged(newLocale, currLocale));
 				 currLocale = newLocale;
 			}
