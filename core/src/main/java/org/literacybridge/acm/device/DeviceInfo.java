@@ -1,10 +1,12 @@
 package org.literacybridge.acm.device;
 
 import java.io.File;
+import java.io.IOException;
 
 public class DeviceInfo {
 	private File pathToDevice;
 	private String deviceUID;
+	private DeviceContents deviceContents;
 	
 	public DeviceInfo(String uid, File path) {
 		this.deviceUID = uid;
@@ -17,6 +19,13 @@ public class DeviceInfo {
 	
 	public String getDeviceUID() {
 		return this.deviceUID;
+	}
+	
+	public DeviceContents getDeviceContents() throws IOException {
+		if (this.deviceContents == null) {
+			this.deviceContents = new DeviceContents(pathToDevice);
+		}
+		return this.deviceContents;
 	}
 	
 	@Override
