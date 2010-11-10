@@ -41,11 +41,15 @@ public class A18Importer extends Importer {
 		LegacyCategoryStrings.put("STORY", "4");
 	}
 	
-	@Override
-	protected void importSingleFile(Category category, File file)
-			throws IOException {
+	public static LocalizedAudioItem loadMetadata(File file) throws IOException {
+		return loadMetadata(null, file);
+	}
+	
+	public static LocalizedAudioItem loadMetadata(Category category, File file) throws IOException {
+		DataInputStream in = null;
+		
 		try {
-			DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
+			in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
 			int bytesToSkip = IOUtils.readLittleEndian32(in);
 			
 			LocalizedAudioItem localizedAudioItem = new LocalizedAudioItem("", Locale.ENGLISH);
@@ -72,7 +76,7 @@ public class A18Importer extends Importer {
 				metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER, new MetadataValue<String>(audioItem.getUuid()));
 				metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE, 
 						new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode("en")));
-
+	
 				int index = fileName.indexOf('#');
 				if (index >= 0) {
 					metadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(fileName.substring(0, index)));
@@ -106,6 +110,20 @@ public class A18Importer extends Importer {
 			
 			localizedAudioItem.setUuid(audioItem.getUuid() + "-en");
 			audioItem.addLocalizedAudioItem(localizedAudioItem);
+			return localizedAudioItem;
+		} finally {
+			if (in != null) {
+				in.close();
+			}
+		}
+	}
+
+	@Override
+	protected void importSingleFile(Category category, File file)
+			throws IOException {
+		try {
+			LocalizedAudioItem localizedAudioItem = loadMetadata(category, file);
+			AudioItem audioItem = localizedAudioItem.getParentAudioItem();
 			
 			Repository repository = Repository.getRepository();
 			repository.store(file, file.getName(), localizedAudioItem);
@@ -114,7 +132,7 @@ public class A18Importer extends Importer {
 			FileOutputStream fos = new FileOutputStream(newFile, true);
 			DataOutputStream out = new DataOutputStream(fos);
 			LBMetadataSerializer serializer = new LBMetadataSerializer();
-			serializer.serialize(categories, metadata, out);
+			serializer.serialize(audioItem.getCategoryList(), localizedAudioItem.getMetadata(), out);
 			out.close();
 
 			audioItem.commit();
@@ -127,7 +145,7 @@ public class A18Importer extends Importer {
 				audioConverter.convert(sourceFile, new File(sourceFile.getParent()), new WAVFormat(128, 16000, 1));
 			}
 	
-			in.close();
+
 		} catch (ConversionException e) {
 			throw new IOException(e);
 		}

@@ -1,16 +1,16 @@
 package org.literacybridge.acm.ui.dialogs.audioItemImportDialog;
 
-import java.util.HashMap;
-import java.util.Iterator;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.table.AbstractTableModel;
 
-import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.importexport.A18Importer;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.util.LocalizedAudioItemNode;
 import org.literacybridge.acm.util.language.LanguageUtil;
@@ -26,38 +26,38 @@ public class AudioItemImportModel extends AbstractTableModel {
 	public static final int CATEGORIES 	= 3;
 	private static String[] columns = null;
 	
-	protected IDataRequestResult result = null;
+	private final LocalizedAudioItemNode[] rowIndex2audioItem;
+	private final List<File> sourceFiles;
 	
-	private HashMap<Integer, LocalizedAudioItemNode> rowIndex2audioItem = new HashMap<Integer, LocalizedAudioItemNode>();
-	
-	public List<AudioItem> getEnabledAudioItems() {
-		Vector<AudioItem> list = new Vector<AudioItem>();
+	public List<File> getEnabledAudioItems() {
+		List<File> list = new ArrayList<File>();
 
-		Iterator<LocalizedAudioItemNode> iter = rowIndex2audioItem.values().iterator();
-		while(iter.hasNext()) {
-			LocalizedAudioItemNode node = iter.next();
-			if (node.isEnabled()) {
-				list.add(node.getParent());
+		for (int i = 0; i < rowIndex2audioItem.length; i++) {
+			if (rowIndex2audioItem[i].isEnabled()) {
+				list.add(sourceFiles.get(i));
 			}
 		}
 		
 		return list;
 	}
 	
-	public AudioItemImportModel(IDataRequestResult result) {
-		this.result = result;
-		initializeModel(result);
+	public AudioItemImportModel(List<File> filesToImport) throws IOException {
+		rowIndex2audioItem = new LocalizedAudioItemNode[filesToImport.size()];
+		this.sourceFiles = filesToImport;
+		initializeModel(filesToImport);
 	}
 	
 	public static void initializeTableColumns( String[] initalColumnNames) {
 		columns = initalColumnNames;	
 	}
 	
-	private void initializeModel(IDataRequestResult result) {
-		for(int i=0; i<result.getAudioItems().size(); ++i) {
-			AudioItem audioItem = result.getAudioItems().get(i);
+	private void initializeModel(List<File> filesToImport) throws IOException {
+		
+		for(int i=0; i<filesToImport.size(); ++i) {
+			File file = filesToImport.get(i);
+			AudioItem audioItem = A18Importer.loadMetadata(file).getParentAudioItem();
 			LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());	
-			rowIndex2audioItem.put(new Integer(i), new LocalizedAudioItemNode(localizedAudioItem, "", audioItem));
+			rowIndex2audioItem[i] = new LocalizedAudioItemNode(localizedAudioItem, "", audioItem);
 	
 		}		
 	}
@@ -74,13 +74,13 @@ public class AudioItemImportModel extends AbstractTableModel {
 
 	@Override
 	public int getRowCount() {
-		return rowIndex2audioItem.size();
+		return rowIndex2audioItem.length;
 	}
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
 	
-		LocalizedAudioItemNode item = rowIndex2audioItem.get(rowIndex);
+		LocalizedAudioItemNode item = rowIndex2audioItem[rowIndex];
 		AudioItem audioItem = item.getParent();
 		LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());	
 			
@@ -138,7 +138,7 @@ public class AudioItemImportModel extends AbstractTableModel {
 	@Override
 	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
 		if (columnIndex == INFO_ICON) {
-			LocalizedAudioItemNode node = rowIndex2audioItem.get(new Integer(rowIndex));
+			LocalizedAudioItemNode node = rowIndex2audioItem[rowIndex];
 			Boolean enable = (Boolean) aValue;
 			node.setEnabled(enable.booleanValue());
 			//fireTableCellUpdated(rowIndex, columnIndex);

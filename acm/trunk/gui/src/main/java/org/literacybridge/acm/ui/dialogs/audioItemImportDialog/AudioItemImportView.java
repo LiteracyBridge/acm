@@ -4,18 +4,17 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
 
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
-import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel;
 import org.literacybridge.acm.util.language.LanguageUtil;
@@ -32,12 +31,12 @@ public class AudioItemImportView extends Container implements Observer {
 		createTable();
 	}
 
-	public List<AudioItem> getAudioItemsForImport() {
+	public List<File> getAudioItemsForImport() {
 		return model.getEnabledAudioItems();
 	}
 	
-	public void setData(IDataRequestResult result) {
-		model = new AudioItemImportModel(result);
+	public void setData(List<File> filesToImport) throws IOException {
+		model = new AudioItemImportModel(filesToImport);
 		table.setModel(model);
 		initColumnSize();
 	}

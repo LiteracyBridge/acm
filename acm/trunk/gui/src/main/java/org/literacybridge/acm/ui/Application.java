@@ -1,11 +1,14 @@
 package org.literacybridge.acm.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
 import java.util.List;
 
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
@@ -70,7 +73,7 @@ public class Application extends JXFrame {
 		// toolbar view on top
 	    ResourceView resourceView = new ResourceView();	    
 	    ToolbarView toolbarView = new ToolbarView(resourceView.audioItemView);
-	    getContentPane().add(toolbarView, BorderLayout.PAGE_START);
+	    add(toolbarView, BorderLayout.PAGE_START);
 	    add(resourceView, BorderLayout.CENTER);
 	    
 	    // starts file system monitor after UI has been initialized

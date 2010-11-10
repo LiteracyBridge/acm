@@ -1,23 +1,16 @@
 package org.literacybridge.acm.metadata;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
-import org.literacybridge.acm.categories.Taxonomy;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.db.PersistentCategory;
-import org.literacybridge.acm.metadata.LBMetadataEncodingVersions.Version;
 import org.literacybridge.acm.utils.IOUtils;
 
 /**
@@ -49,7 +42,7 @@ public class LBMetadataSerializer extends MetadataSerializer {
 	public static final int METADATA_VERSION_CURRENT = METADATA_VERSION_1;
 	
 	@Override
-	public Metadata deserialize(Set<Category> categories, DataInput in) throws IOException {
+	public Metadata deserialize(Collection<Category> categories, DataInput in) throws IOException {
 		Metadata metadata = new Metadata();
 
 		// first read the metadata version and number of field infos in the header
@@ -85,7 +78,7 @@ public class LBMetadataSerializer extends MetadataSerializer {
 	}
 	
 	@Override
-	public void serialize(Set<Category> categories, Metadata metadata, DataOutput headerOut) throws IOException {
+	public void serialize(Collection<Category> categories, Metadata metadata, DataOutput headerOut) throws IOException {
 		IOUtils.writeLittleEndian32(headerOut, METADATA_VERSION_CURRENT);
 		IOUtils.writeLittleEndian32(headerOut, 1 + metadata.getNumberOfFields());
 		
@@ -130,14 +123,14 @@ public class LBMetadataSerializer extends MetadataSerializer {
 			
 	}
 
-	private final void serializeCategories(Set<Category> categories, DataOutput out) throws IOException {
+	private final void serializeCategories(Collection<Category> categories, DataOutput out) throws IOException {
 		out.writeByte((byte) categories.size());
 		for (Category c : categories) {
 			IOUtils.writeAsUTF8(out, c.getUuid());
 		}
 	}
 	
-	private final void deserializeCategories(Set<Category> categories, DataInput in) throws IOException {
+	private final void deserializeCategories(Collection<Category> categories, DataInput in) throws IOException {
 		int numValues = (in.readByte() & 0xff);
 		for (int i = 0; i < numValues; i++) {
 			String catID = IOUtils.readUTF8(in);

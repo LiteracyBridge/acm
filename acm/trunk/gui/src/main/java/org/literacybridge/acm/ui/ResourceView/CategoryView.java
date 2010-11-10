@@ -51,6 +51,8 @@ import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.importexport.DeviceSynchronizer;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
+import org.literacybridge.acm.ui.dialogs.audioItemImportDialog.AudioItemImportDialog;
+import org.literacybridge.acm.util.UIUtils;
 import org.literacybridge.acm.util.language.LanguageUtil;
 import org.literacybridge.acm.util.language.UILanguageChanged;
 
@@ -158,7 +160,7 @@ public class CategoryView extends Container implements Observer {
 					DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
 					Object deviceInfo = node.getUserObject();
 					if (deviceInfo instanceof DeviceInfo) {
-						DeviceSynchronizer.getInstance().sync((DeviceInfo) deviceInfo);
+						UIUtils.showDialog(Application.getApplication(), new AudioItemImportDialog((DeviceInfo) deviceInfo));
 					}
 				}
 			}
