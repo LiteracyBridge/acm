@@ -160,7 +160,7 @@ public class CategoryView extends Container implements Observer {
 					DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
 					Object deviceInfo = node.getUserObject();
 					if (deviceInfo instanceof DeviceInfo) {
-						UIUtils.showDialog(Application.getApplication(), new AudioItemImportDialog((DeviceInfo) deviceInfo));
+						UIUtils.showDialog(Application.getApplication(), new AudioItemImportDialog(Application.getApplication(), (DeviceInfo) deviceInfo));
 					}
 				}
 			}
