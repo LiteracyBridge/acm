@@ -11,7 +11,10 @@ import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 import org.literacybridge.acm.device.DeviceContents;
 import org.literacybridge.acm.device.DeviceInfo;
@@ -22,14 +25,13 @@ import org.literacybridge.acm.ui.dialogs.BusyDialog;
 import org.literacybridge.acm.util.UIUtils;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
+@SuppressWarnings("serial")
 public class AudioItemImportDialog extends JDialog {
 
 	private AudioItemImportView childDialog;
-	private JButton okBtn = new JButton("OK");
-	private JButton cancelBtn = new JButton("Cancel");
 	
-	public AudioItemImportDialog(DeviceInfo deviceInfo) {
-		setTitle("Import AudioItems from device");
+	public AudioItemImportDialog(JFrame parent, DeviceInfo deviceInfo) {
+		super(parent, "Import AudioItems from device", ModalityType.APPLICATION_MODAL);
 		createControls();
 		
 		setSize(800, 500);
@@ -50,9 +52,51 @@ public class AudioItemImportDialog extends JDialog {
 		add(childDialog, BorderLayout.CENTER);
 		
 		JPanel panel = new JPanel();
-		panel.setLayout(new GridLayout(1, 2));
-		okBtn = new JButton("Import");
-		okBtn.addActionListener(new ActionListener() {
+		panel.setLayout(new GridLayout(1, 5));
+		
+		JButton selectAllBtn = new JButton("Select All");
+		selectAllBtn.addActionListener(getSelectActionListener(true));
+		
+		JButton selectNoneBtn = new JButton("Select None");
+		selectNoneBtn.addActionListener(getSelectActionListener(false));
+		
+		
+		JButton okBtn = new JButton("Import");
+		okBtn.addActionListener(getImportActionListener());
+		
+		JButton cancelBtn = new JButton("Cancel");
+		cancelBtn.addActionListener(getCancelActionListener());
+		
+		panel.add(selectAllBtn);
+		panel.add(selectNoneBtn);
+		panel.add(new JLabel()); // dummy place holder
+		panel.add(okBtn);
+		panel.add(cancelBtn);
+		
+		add(panel, BorderLayout.SOUTH);
+	}
+
+	private ActionListener getSelectActionListener(final boolean selectAll) {
+		return new ActionListener() {			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				childDialog.setCheckSetForAllItems(selectAll);
+				
+			}
+		};
+	}
+	
+	private ActionListener getCancelActionListener() {
+		return new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				UIUtils.hideDialog(AudioItemImportDialog.this);
+			}
+		};
+	}
+	
+	private ActionListener getImportActionListener() {
+		return new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				UIUtils.hideDialog(AudioItemImportDialog.this);
@@ -65,7 +109,7 @@ public class AudioItemImportDialog extends JDialog {
 					@Override
 					public void run() {
 						Application parent = Application.getApplication();
-						Container busy = UIUtils.showDialog(parent, new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES", LanguageUtil.getUserChoosenLanguage()), parent));
+						final Container busy = UIUtils.showDialog(parent, new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES", LanguageUtil.getUserChoosenLanguage()), parent));
 						try {
 							for (File f : files) {
 								FileImporter.getInstance().importFile(null, f);
@@ -73,30 +117,25 @@ public class AudioItemImportDialog extends JDialog {
 						} catch (IOException e) {
 							e.printStackTrace();
 						} finally {
-							UIUtils.hideDialog(busy);
-							Application.getFilterState().updateResult();
+							if (!SwingUtilities.isEventDispatchThread()) {
+								SwingUtilities.invokeLater(new Runnable() {
+									
+									@Override
+									public void run() {
+										UIUtils.hideDialog(busy);
+										Application.getFilterState().updateResult();	
+									}
+								});
+							}
 						}
 					}
 				};
 				
 				new Thread(job).start();
-
 			}
-		});
-		
-		cancelBtn = new JButton("Cancel");
-		cancelBtn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				UIUtils.hideDialog(AudioItemImportDialog.this);
-			}
-		});
-		panel.add(okBtn);
-		panel.add(cancelBtn);
-		
-		add(panel, BorderLayout.SOUTH);
+		};
 	}
-
+	
 	public List<File> getAudioItemsForImport() {
 		return childDialog.getAudioItemsForImport();
 	}

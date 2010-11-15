@@ -41,6 +41,14 @@ public class AudioItemImportModel extends AbstractTableModel {
 		return list;
 	}
 	
+	public void setStateForAllItems(boolean enable) {
+		for (LocalizedAudioItemNode node : rowIndex2audioItem) {
+			node.setEnabled(enable);
+		}
+		
+		fireTableDataChanged();
+	}
+	
 	public AudioItemImportModel(List<File> filesToImport) throws IOException {
 		rowIndex2audioItem = new LocalizedAudioItemNode[filesToImport.size()];
 		this.sourceFiles = filesToImport;

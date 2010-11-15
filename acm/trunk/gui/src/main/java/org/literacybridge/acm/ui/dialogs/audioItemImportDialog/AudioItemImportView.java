@@ -41,6 +41,10 @@ public class AudioItemImportView extends Container implements Observer {
 		initColumnSize();
 	}
 	
+	public void setCheckSetForAllItems(boolean enable) {
+		model.setStateForAllItems(enable);
+	}
+	
 	private void createTable() {
 		AudioItemImportModel.initializeTableColumns(getColumnTitles(LanguageUtil.getUILanguage()));
 		
