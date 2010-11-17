@@ -36,12 +36,13 @@ public class ExportDialog extends JDialog implements ActionListener {
 	private final LocalizedAudioItem[] selectedAudioItems;
 	
 	public ExportDialog(LocalizedAudioItem[] selectedAudioItems) {
+		setTitle(LabelProvider.getLabel("EXPORT", LanguageUtil.getUILanguage()));
 		this.selectedAudioItems = selectedAudioItems;
 		
 		exportDirectoryChooser = new JFileChooser();
 		exportDirectoryChooser.setControlButtonsAreShown(true);
 		exportDirectoryChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		exportDirectoryChooser.setApproveButtonText("Export");
+		exportDirectoryChooser.setApproveButtonText(LabelProvider.getLabel("EXPORT", LanguageUtil.getUILanguage()));
 
 		// remove file type combo box
 		Container c1 = (Container) exportDirectoryChooser.getComponent(3); 
@@ -49,7 +50,7 @@ public class ExportDialog extends JDialog implements ActionListener {
 		c2.remove(0);
 		c2.remove(0);
 		
-		c2.add(new JLabel("Export format: "));
+		c2.add(new JLabel(LabelProvider.getLabel("EXPORT_FORMAT", LanguageUtil.getUILanguage())));
 		c2.add(new JSeparator());
 		
 		ButtonGroup formatGroup = new ButtonGroup();
@@ -104,7 +105,7 @@ public class ExportDialog extends JDialog implements ActionListener {
 			public void run() {
 				Application app = Application.getApplication();
 				// TODO proper label
-				Container dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK",	LanguageUtil.getUserChoosenLanguage()), app));
+				Container dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK", LanguageUtil.getUILanguage()), app));
 				try {
 					FileSystemExporter.export(ExportDialog.this.selectedAudioItems, targetDir, targetFormat);
 				} catch (IOException e) {

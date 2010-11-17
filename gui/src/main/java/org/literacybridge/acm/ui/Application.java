@@ -69,7 +69,7 @@ public class Application extends JXFrame {
 		    e.printStackTrace();
 		}
 		
-		setTitle(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUserChoosenLanguage()));
+		setTitle(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUILanguage()));
 		// toolbar view on top
 	    ResourceView resourceView = new ResourceView();	    
 	    ToolbarView toolbarView = new ToolbarView(resourceView.audioItemView);

@@ -86,7 +86,7 @@ public class TreeTransferHandler extends TransferHandler {
 			@Override
 			public void run() {
 				Application parent = Application.getApplication();
-				Container busy = UIUtils.showDialog(parent, new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES", LanguageUtil.getUserChoosenLanguage()), parent));
+				Container busy = UIUtils.showDialog(parent, new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES", LanguageUtil.getUILanguage()), parent));
 				try {
 					for (File f : files) {
 						if (f.isDirectory()) {
