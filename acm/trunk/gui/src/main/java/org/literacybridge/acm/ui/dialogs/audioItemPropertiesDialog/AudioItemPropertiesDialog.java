@@ -40,7 +40,7 @@ public class AudioItemPropertiesDialog extends JDialog {
 	public AudioItemPropertiesDialog(JFrame parent, AudioItemView view,
 			List<AudioItem> audioItemList, AudioItem showItem) {
 		super(parent, LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES",
-				LanguageUtil.getUserChoosenLanguage()), true);
+				LanguageUtil.getUILanguage()), true);
 		this.audioItemList = audioItemList;
 		currIndex = getIndexOfAudioItem(showItem);
 		this.audioItemView = view;
@@ -107,7 +107,7 @@ public class AudioItemPropertiesDialog extends JDialog {
 		if (audioItemList != null && audioItemList.size() > 0) {
 			// add navigation buttons
 			JPanel p = new JPanel();
-			backBtn = new JButton(LabelProvider.getLabel("GOTO_PREV_AUDIO_ITEM", LanguageUtil.getUserChoosenLanguage()));
+			backBtn = new JButton(LabelProvider.getLabel("GOTO_PREV_AUDIO_ITEM", LanguageUtil.getUILanguage()));
 			backBtn.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
@@ -116,7 +116,7 @@ public class AudioItemPropertiesDialog extends JDialog {
 				}
 			});
 			p.add(backBtn);
-			nextBtn = new JButton(LabelProvider.getLabel("GOTO_NEXT_AUDIO_ITEM", LanguageUtil.getUserChoosenLanguage()));
+			nextBtn = new JButton(LabelProvider.getLabel("GOTO_NEXT_AUDIO_ITEM", LanguageUtil.getUILanguage()));
 			nextBtn.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
@@ -143,7 +143,7 @@ public class AudioItemPropertiesDialog extends JDialog {
 		}
 
 		// add bottom buttons
-		JButton okBtn = new JButton(LabelProvider.getLabel("CLOSE", LanguageUtil.getUserChoosenLanguage()));
+		JButton okBtn = new JButton(LabelProvider.getLabel("CLOSE", LanguageUtil.getUILanguage()));
 		okBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {

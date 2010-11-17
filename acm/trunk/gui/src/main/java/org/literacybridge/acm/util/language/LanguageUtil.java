@@ -15,6 +15,8 @@ public class LanguageUtil {
 	// UI language
 	private static Locale uiLanguage = Locale.ENGLISH;
 	
+	// The language that the user has chosen to show the name of a !LocalizedAudioItems!
+	// DO NOT USE FOR UI CONTROLS
 	public static Locale getUserChoosenLanguage() {
 		return defaultLanguage;
 	}
@@ -38,6 +40,10 @@ public class LanguageUtil {
 	
 	public static Locale getUILanguage() {
 		return uiLanguage;
+	}
+	
+	public static void setUILanguage(Locale newUILocale) {
+		uiLanguage = newUILocale;
 	}
 	/**
 	 * Get 'ISO 3166-1 alpha-2' country codes for a language.

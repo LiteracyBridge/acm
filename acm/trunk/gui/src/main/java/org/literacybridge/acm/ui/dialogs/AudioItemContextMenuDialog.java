@@ -21,6 +21,7 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.MetadataSpecification;
+import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.UIConstants;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
@@ -51,23 +52,30 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 		String labelPostfix;
 		final String deleteMessage;
 		if (selectedAudioItems.length > 1) {
-			labelPostfix = selectedAudioItems.length + " audio items ...";
-			deleteMessage = "Delete " + selectedAudioItems.length + " selected audio items?";
+			labelPostfix = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_LABEL_POSTFIX", LanguageUtil.getUILanguage())
+											, selectedAudioItems.length);
+			deleteMessage = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_ITEMS", LanguageUtil.getUILanguage())
+											, selectedAudioItems.length);
 		} else {
-			labelPostfix = "'" + selectedTitle + "' ...";
-			deleteMessage = "Delete '" + selectedTitle + "'?";
+			labelPostfix = selectedTitle;
+			deleteMessage = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_TITLE", LanguageUtil.getUILanguage())
+											, selectedTitle);
 		}
 		
-		FlatButton deleteButton = new FlatButton("Delete " + labelPostfix, deleteImageIcon, backgroundColor, highlightedColor) {
+		FlatButton deleteButton = new FlatButton(String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE", LanguageUtil.getUILanguage())
+																	, labelPostfix)
+											, deleteImageIcon
+											, backgroundColor
+											, highlightedColor) {
 			@Override
 			public void click() {
 				AudioItemContextMenuDialog.this.setVisible(false);
 				
-				Object[] options = {"Cancel",
-				                    "Delete"};
+				Object[] options = {LabelProvider.getLabel("CANCEL", LanguageUtil.getUILanguage())
+									, LabelProvider.getLabel("DELETE", LanguageUtil.getUILanguage())};
 				int n = JOptionPane.showOptionDialog(Application.getApplication(),
 				    deleteMessage,
-				    "Confirm delete",
+				    LabelProvider.getLabel("CONFRIM_DELETE", LanguageUtil.getUILanguage()),
 				    JOptionPane.OK_CANCEL_OPTION,
 				    JOptionPane.QUESTION_MESSAGE,
 				    null,
@@ -85,7 +93,10 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 			
 		};
 
-		FlatButton editButton = new FlatButton("Edit '" + selectedTitle + "' ...", editImageIcon, backgroundColor, highlightedColor) {
+		FlatButton editButton = new FlatButton(String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_EDIT_TITLE", LanguageUtil.getUILanguage()), selectedTitle)
+									, editImageIcon
+									, backgroundColor
+									, highlightedColor) {
 			@Override
 			public void click() {
 				AudioItemContextMenuDialog.this.setVisible(false);
@@ -97,7 +108,10 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 			}
 		};
 
-		FlatButton exportButton = new FlatButton("Export " + labelPostfix, exportImageIcon, backgroundColor, highlightedColor) {
+		FlatButton exportButton = new FlatButton(String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_EXPORT_TITLE", LanguageUtil.getUILanguage()), labelPostfix)
+									, exportImageIcon
+									, backgroundColor
+									, highlightedColor) {
 			@Override
 			public void click() {
 				AudioItemContextMenuDialog.this.setVisible(false);

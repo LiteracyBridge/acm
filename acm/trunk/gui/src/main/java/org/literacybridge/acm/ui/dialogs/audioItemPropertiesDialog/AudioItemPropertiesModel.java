@@ -27,8 +27,8 @@ import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class AudioItemPropertiesModel extends AbstractTableModel {
 
-	private String[] columnNames = {LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_PROPERTY", LanguageUtil.getUserChoosenLanguage())
-								  , LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_VALUE", LanguageUtil.getUserChoosenLanguage())};
+	private String[] columnNames = {LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_PROPERTY", LanguageUtil.getUILanguage())
+								  , LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_VALUE", LanguageUtil.getUILanguage())};
 	
 	private final int TITLE_COL = 0;
 	private final int VALUE_COL = 1;
@@ -79,7 +79,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			break;
 		}
 			
-		return LabelProvider.getLabel("ERROR", LanguageUtil.getUserChoosenLanguage());
+		return LabelProvider.getLabel("ERROR", LanguageUtil.getUILanguage());
 	}
 	
 	@Override

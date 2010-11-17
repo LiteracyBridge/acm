@@ -62,7 +62,7 @@ public class ExportToDeviceTransferHandler extends TransferHandler {
 				@Override
 				public void run() {
 					Application app = Application.getApplication();
-					Container dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK",	LanguageUtil.getUserChoosenLanguage()), app));
+					Container dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK", LanguageUtil.getUILanguage()), app));
 					try {
 						A18DeviceExporter.exportToDevice(item, device);
 					} catch (IOException e) {

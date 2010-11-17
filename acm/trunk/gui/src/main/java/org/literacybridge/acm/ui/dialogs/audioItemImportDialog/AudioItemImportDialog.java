@@ -31,7 +31,9 @@ public class AudioItemImportDialog extends JDialog {
 	private AudioItemImportView childDialog;
 	
 	public AudioItemImportDialog(JFrame parent, DeviceInfo deviceInfo) {
-		super(parent, "Import AudioItems from device", ModalityType.APPLICATION_MODAL);
+		super(parent
+				, LabelProvider.getLabel("AUDIO_ITEM_IMPORT_DIALOG_TITLE",	LanguageUtil.getUILanguage())
+				, ModalityType.APPLICATION_MODAL);
 		createControls();
 		
 		setSize(800, 500);
@@ -54,17 +56,17 @@ public class AudioItemImportDialog extends JDialog {
 		JPanel panel = new JPanel();
 		panel.setLayout(new GridLayout(1, 5));
 		
-		JButton selectAllBtn = new JButton("Select All");
+		JButton selectAllBtn = new JButton(LabelProvider.getLabel("AUDIO_ITEM_IMPORT_DIALOG_SELECT_ALL", LanguageUtil.getUILanguage()));
 		selectAllBtn.addActionListener(getSelectActionListener(true));
 		
-		JButton selectNoneBtn = new JButton("Select None");
+		JButton selectNoneBtn = new JButton(LabelProvider.getLabel("AUDIO_ITEM_IMPORT_DIALOG_SELECT_NONE", LanguageUtil.getUILanguage()));
 		selectNoneBtn.addActionListener(getSelectActionListener(false));
 		
 		
-		JButton okBtn = new JButton("Import");
+		JButton okBtn = new JButton(LabelProvider.getLabel("IMPORT", LanguageUtil.getUILanguage()));
 		okBtn.addActionListener(getImportActionListener());
 		
-		JButton cancelBtn = new JButton("Cancel");
+		JButton cancelBtn = new JButton(LabelProvider.getLabel("CANCEL", LanguageUtil.getUILanguage()));
 		cancelBtn.addActionListener(getCancelActionListener());
 		
 		panel.add(selectAllBtn);
@@ -109,7 +111,7 @@ public class AudioItemImportDialog extends JDialog {
 					@Override
 					public void run() {
 						Application parent = Application.getApplication();
-						final Container busy = UIUtils.showDialog(parent, new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES", LanguageUtil.getUserChoosenLanguage()), parent));
+						final Container busy = UIUtils.showDialog(parent, new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES", LanguageUtil.getUILanguage()), parent));
 						try {
 							for (File f : files) {
 								FileImporter.getInstance().importFile(null, f);
