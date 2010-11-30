@@ -72,7 +72,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		
 		switch (col) {
 		case 0:
-			return LabelProvider.getLabel(obj.getFieldID(), LanguageUtil.getUserChoosenLanguage());
+			return LabelProvider.getLabel(obj.getFieldID(), LanguageUtil.getUILanguage());
 		case 1:
 			return Metadata.getCommaSeparatedList(metadata, obj.getFieldID());
 		default:

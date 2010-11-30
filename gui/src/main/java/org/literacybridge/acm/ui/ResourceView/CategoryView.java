@@ -48,7 +48,6 @@ import org.literacybridge.acm.core.MessageBus.Message;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.device.DeviceConnectEvent;
 import org.literacybridge.acm.device.DeviceInfo;
-import org.literacybridge.acm.importexport.DeviceSynchronizer;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.dialogs.audioItemImportDialog.AudioItemImportDialog;
@@ -187,6 +186,18 @@ public class CategoryView extends Container implements Observer {
 		addListeners(); // at last
 	}
 	
+	private static class LanguageLabel {
+		private final String labelName;
+		
+		public LanguageLabel(String labelName) {
+			this.labelName = labelName;
+		}
+		
+		@Override public String toString() {
+			return LabelProvider.getLabel(labelName, LanguageUtil.getUILanguage());
+		}
+	}
+	
 	private void addOptionList() {
 		final int NUM_OPTIONS = 2;
 		optionsPane = new JXTaskPane();
@@ -196,10 +207,13 @@ public class CategoryView extends Container implements Observer {
 		optionComponent.setLayout(new GridLayout(NUM_OPTIONS, 2));
 		uiLangugeLb = new JLabel();
 		optionComponent.add(uiLangugeLb);		
-		String[] langs = {LabelProvider.getLabel("ENGLISH", LanguageUtil.getUILanguage())
-							, LabelProvider.getLabel("GERMAN", LanguageUtil.getUILanguage())
-							, LabelProvider.getLabel("FRENCH", LanguageUtil.getUILanguage())};
-		JComboBox userLanguages = new JComboBox(langs);
+		LanguageLabel[] langs = {new LanguageLabel("ENGLISH"),
+								 new LanguageLabel("GERMAN"),
+								 new LanguageLabel("FRENCH")};
+		
+		
+		JComboBox userLanguages = new JComboBox(langs);		
+		
 		userLanguages.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -331,7 +345,7 @@ public class CategoryView extends Container implements Observer {
 		public String toString() {
 			String displayLabel = null;
 			if (category != null) {
-				displayLabel = category.getCategoryName(LanguageUtil.getUserChoosenLanguage()).getLabel();
+				displayLabel = category.getCategoryName(LanguageUtil.getUILanguage()).getLabel();
 				int count = result.getFacetCount(category);
 				if (count > 0) {
 					displayLabel += " ["+count+"]";
