@@ -1,9 +1,17 @@
 package org.literacybridge.acm.resourcebundle;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
 import org.literacybridge.acm.metadata.LBMetadataIDs;
@@ -46,7 +54,7 @@ public class LabelProvider {
 	private static final ResourceBundle getResourceBundle(Locale locale) {
 		ResourceBundle bundle = bundles.get(locale);
 		if (bundle == null) {
-			bundle = ResourceBundle.getBundle(BUNDLE_NAME, locale);
+			bundle = loadUTF8Bundle(BUNDLE_NAME, locale);
 			bundles.put(locale, bundle);
 		}
 		return bundle;
@@ -88,5 +96,55 @@ public class LabelProvider {
 		while (it.hasNext()) {
 			System.out.println(it.next().getValue());
 		}
+	}
+	
+	private static ResourceBundle loadUTF8Bundle(String bundleName, Locale locale) {
+		return ResourceBundle.getBundle(bundleName, locale, 
+			     new ResourceBundle.Control() {
+			         public List<String> getFormats(String baseName) {
+			             if (baseName == null)
+			                 throw new NullPointerException();
+			             return Arrays.asList("properties");
+			         }
+			         public ResourceBundle newBundle(String baseName,
+			                                         Locale locale,
+			                                         String format,
+			                                         ClassLoader loader,
+			                                         boolean reload)
+			                          throws IllegalAccessException,
+			                                 InstantiationException,
+			                                 IOException {
+			             if (baseName == null || locale == null
+			                   || format == null || loader == null)
+			                 throw new NullPointerException();
+			             ResourceBundle bundle = null;
+			             if (format.equals("properties")) {
+			                 String bundleName = toBundleName(baseName, locale);
+			                 String resourceName = toResourceName(bundleName, format);
+			                 InputStream stream = null;
+			                 if (reload) {
+			                     URL url = loader.getResource(resourceName);
+			                     if (url != null) {
+			                         URLConnection connection = url.openConnection();
+			                         if (connection != null) {
+			                             // Disable caches to get fresh data for
+			                             // reloading.
+			                             connection.setUseCaches(false);
+			                             stream = connection.getInputStream();
+			                         }
+			                     }
+			                 } else {
+			                     stream = loader.getResourceAsStream(resourceName);
+			                 }
+			                 if (stream != null) {
+			                	 InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
+			                     bundle = new PropertyResourceBundle(reader);
+			                     reader.close();
+			                 }
+			             }
+			             return bundle;
+			         }
+			     });
+
 	}
 }
