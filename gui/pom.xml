@@ -33,6 +33,24 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>appassembler-maven-plugin</artifactId>
+        <version>1.1</version>
+        <configuration>
+          <platforms>
+            <platform>windows</platform>
+          </platforms>
+          <repositoryLayout>flat</repositoryLayout>
+          <repositoryName>lib</repositoryName>
+          <programs>
+            <program>
+              <mainClass>org.literacybridge.acm.ui.Application</mainClass>
+              <name>acm</name>
+            </program>
+          </programs>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
