@@ -197,7 +197,8 @@ public class CategoryView extends Container implements Observer {
 		uiLangugeLb = new JLabel();
 		optionComponent.add(uiLangugeLb);		
 		String[] langs = {LabelProvider.getLabel("ENGLISH", LanguageUtil.getUILanguage())
-							, LabelProvider.getLabel("GERMAN", LanguageUtil.getUILanguage())};
+							, LabelProvider.getLabel("GERMAN", LanguageUtil.getUILanguage())
+							, LabelProvider.getLabel("FRENCH", LanguageUtil.getUILanguage())};
 		JComboBox userLanguages = new JComboBox(langs);
 		userLanguages.addActionListener(new ActionListener() {
 			@Override
@@ -211,6 +212,9 @@ public class CategoryView extends Container implements Observer {
 					 break;
 				 case 1:
 					 newLocale = Locale.GERMAN;
+					 break;
+				 case 2:
+					 newLocale = Locale.FRENCH;
 					 break;
 				default:
 					newLocale = Locale.ENGLISH;

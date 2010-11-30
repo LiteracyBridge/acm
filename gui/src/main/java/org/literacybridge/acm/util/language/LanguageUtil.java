@@ -60,6 +60,8 @@ public class LanguageUtil {
 			return "de";
 		} else if (Locale.ENGLISH == local) {
 			return "en";
+		} else if (Locale.FRENCH == local) {
+			return "fr";
 		}
 		
 		return str;
