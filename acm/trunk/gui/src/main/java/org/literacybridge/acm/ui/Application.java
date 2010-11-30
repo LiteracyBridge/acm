@@ -1,14 +1,11 @@
 package org.literacybridge.acm.ui;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
 import java.util.List;
 
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
@@ -93,7 +90,6 @@ public class Application extends JXFrame {
 		
 		application.setSize(1000, 750);
 		application.setVisible(true);
-		//UIUtils.showDialog(app, new DeviceSyncDialog(app));
 	}	
 	
 	public static class FilterState {
