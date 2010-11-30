@@ -87,7 +87,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 				
 				for (int i = 0; i < categories.size(); i++) {
 					Category cat = categories.get(i);
-					builder.append(cat.getCategoryName(LanguageUtil.getUserChoosenLanguage()));
+					builder.append(cat.getCategoryName(LanguageUtil.getUILanguage()));
 					if (i != categories.size() - 1) {
 						builder.append(", ");
 					}
