@@ -11,6 +11,7 @@ import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
+import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.importexport.A18DeviceExporter;
@@ -55,7 +56,7 @@ public class ExportToDeviceTransferHandler extends TransferHandler {
 		Transferable transferable = support.getTransferable();
 		
 		try {
-			final LocalizedAudioItem item =  (LocalizedAudioItem) transferable.getTransferData(AudioItemView.AudioItemDataFlavor);
+			final AudioItem[] audioItems =  (AudioItem[]) transferable.getTransferData(AudioItemView.AudioItemDataFlavor);
 			// don't piggyback on the drag&drop thread
 			Runnable job = new Runnable() {
 
@@ -64,7 +65,9 @@ public class ExportToDeviceTransferHandler extends TransferHandler {
 					Application app = Application.getApplication();
 					Container dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK", LanguageUtil.getUILanguage()), app));
 					try {
-						A18DeviceExporter.exportToDevice(item, device);
+						for (AudioItem item : audioItems) {
+							A18DeviceExporter.exportToDevice(item.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage()), device);
+						}
 					} catch (IOException e) {
 						e.printStackTrace();
 					} finally {
