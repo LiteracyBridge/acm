@@ -9,5 +9,5 @@ import org.literacybridge.acm.categories.Taxonomy.Category;
 
 public abstract class MetadataSerializer {
 	public abstract void serialize(Collection<Category> categories, Metadata metadata, DataOutput out) throws IOException;
-	public abstract Metadata deserialize(Collection<Category> categories, DataInput in) throws IOException;
+	public abstract void deserialize(Metadata metadata, Collection<Category> categories, DataInput in) throws IOException;
 }

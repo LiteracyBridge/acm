@@ -60,7 +60,7 @@ public class A18Importer extends Importer {
 				try {
 					in.skipBytes(bytesToSkip);
 					LBMetadataSerializer serializer = new LBMetadataSerializer();
-					metadata = serializer.deserialize(categories, in);
+					serializer.deserialize(metadata, categories, in);
 				} catch (IOException e) {
 					// do nothing
 				}

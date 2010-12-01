@@ -85,16 +85,15 @@ public class A18Verifier {
 			}
 			System.out.print(" ... ");
 			
-			final Metadata metadata;
+			final Metadata metadata = new Metadata();
 			final Set<Category> categories = new HashSet<Category>();
 			if (bytesToSkip + 4 < file.length()) { 
 				in.skipBytes(bytesToSkip);
 				LBMetadataSerializer serializer = new LBMetadataSerializer();
-				metadata = serializer.deserialize(categories, in);
+				serializer.deserialize(metadata, categories, in);
 				System.out.println("OK");
 			} else {
 				System.out.println("\tWARNING: No metadata section found.");
-				metadata = new Metadata();
 			}
 			if (verbose) {
 				System.out.println(metadata.toString());

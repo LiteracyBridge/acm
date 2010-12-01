@@ -42,9 +42,7 @@ public class LBMetadataSerializer extends MetadataSerializer {
 	public static final int METADATA_VERSION_CURRENT = METADATA_VERSION_1;
 	
 	@Override
-	public Metadata deserialize(Collection<Category> categories, DataInput in) throws IOException {
-		Metadata metadata = new Metadata();
-
+	public void deserialize(Metadata metadata, Collection<Category> categories, DataInput in) throws IOException {
 		// first read the metadata version and number of field infos in the header
 		int serializedVersion = IOUtils.readLittleEndian32(in);
 		int numberOfFields = IOUtils.readLittleEndian32(in);
@@ -65,8 +63,6 @@ public class LBMetadataSerializer extends MetadataSerializer {
 				}
 			}
 		}
-
-		return metadata;
 	}
 
 	private final <T> void deserializeField(Metadata metadata, MetadataField<T> field, DataInput in) throws IOException {
