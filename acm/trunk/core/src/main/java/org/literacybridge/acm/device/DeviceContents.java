@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -93,10 +94,11 @@ public class DeviceContents {
 	private void loadDeviceInfos() throws IOException {
 		// first load config file
 		deviceConfig = new Properties();
-		FileReader in = null;
+		BufferedReader in = null;
 		try {
-			in = new FileReader(new File(pathToDevice, CONFIG_FILE));
-			deviceConfig.load(in);
+			in = new BufferedReader(new FileReader(new File(pathToDevice, CONFIG_FILE)));
+			legacyParse(in, deviceConfig);
+			//deviceConfig.load(in);
 		} finally {
 			if (in != null) {
 				in.close();
@@ -105,6 +107,29 @@ public class DeviceContents {
 		
 		// now load lists
 		loadLists();
+	}
+	
+	private void legacyParse(BufferedReader in, Properties config) throws IOException {
+		while (in.ready()) {
+			String line = in.readLine().trim();
+			if (line.startsWith("//") || line.startsWith("#")) {
+				// skip comments
+				continue;
+			}
+			
+			int index = line.indexOf(":");
+			if (index == -1) {
+				continue;
+			}
+			
+			String key = line.substring(0, index);
+			String value = "";
+			if (index < line.length() - 1) {
+				value = line.substring(index + 1, line.length());
+			}
+			
+			config.put(key, value);
+		}
 	}
 	
 	private void loadLists() throws IOException { 
