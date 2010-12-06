@@ -1,0 +1,45 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.literacybridge</groupId>
+  <artifactId>acm-core</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>Audio Content Management - Backend</name>
+ 
+  <parent>
+    <groupId>org.literacybridge</groupId>
+    <artifactId>acm</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <relativePath>../acm-parent/pom.xml</relativePath>
+  </parent>
+  <url>http://code.google.com/p/talkingbook/</url>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>attached</goal>
+            </goals>
+            <phase>package</phase>
+            <configuration>
+              <descriptor>src/main/assembly/src.xml</descriptor>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins> 
+  </build>
+  
+  <dependencies>
+      <dependency>
+    	<groupId>org.literacybridge</groupId>
+    	<artifactId>audioconverter</artifactId>
+    	<version>1.0-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+</project>
