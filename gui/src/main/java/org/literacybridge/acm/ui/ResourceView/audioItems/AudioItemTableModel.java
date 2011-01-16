@@ -19,11 +19,12 @@ public class AudioItemTableModel  extends AbstractTableModel {
 	private static final long serialVersionUID = -2998511081572936717L;
 
 	// positions of the table columns
-	public static final int NUM_COLUMNS = 4; // keep in sync
-	public static final int INFO_ICON = 0;
-	public static final int TITLE 	= 1;
+	public static final int NUM_COLUMNS = 5; // keep in sync
+	public static final int INFO_ICON 	= 0;
+	public static final int TITLE 		= 1;
 	public static final int CREATOR 	= 2;
 	public static final int CATEGORIES 	= 3;
+	public static final int LANGUAGES 	= 4;
 	private static String[] columns = null;
 	
 	protected IDataRequestResult result = null;
@@ -94,6 +95,9 @@ public class AudioItemTableModel  extends AbstractTableModel {
 				}
 				
 				cellText = builder.toString();
+				break;
+			case LANGUAGES:
+				cellText = localizedAudioItem.getLocale().getDisplayLanguage();
 				break;
 			default:
 				cellText = "";

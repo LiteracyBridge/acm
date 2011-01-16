@@ -19,11 +19,12 @@ import org.literacybridge.acm.util.language.LanguageUtil;
 public class AudioItemImportModel extends AbstractTableModel {
 
 	// positions of the table columns
-	public static final int NUM_COLUMNS = 4; // keep in sync
-	public static final int INFO_ICON = 0;
-	public static final int TITLE 	= 1;
+	public static final int NUM_COLUMNS = 5; // keep in sync
+	public static final int INFO_ICON 	= 0;
+	public static final int TITLE 		= 1;
 	public static final int CREATOR 	= 2;
 	public static final int CATEGORIES 	= 3;
+	public static final int LANGUAGES	= 4;
 	private static String[] columns = null;
 	
 	private final LocalizedAudioItemNode[] rowIndex2audioItem;
@@ -115,6 +116,8 @@ public class AudioItemImportModel extends AbstractTableModel {
 				}
 				
 				return builder.toString();
+			case LANGUAGES:
+				return localizedAudioItem.getLocale().getDisplayLanguage();
 			default:
 				return "";
 			}

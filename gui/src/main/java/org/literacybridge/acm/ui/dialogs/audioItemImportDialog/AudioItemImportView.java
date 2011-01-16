@@ -70,6 +70,7 @@ public class AudioItemImportView extends Container implements Observer {
 		columnTitleArray[AudioItemTableModel.TITLE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , locale);
 		columnTitleArray[AudioItemTableModel.CREATOR] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CREATOR , locale);
 		columnTitleArray[AudioItemTableModel.CATEGORIES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , locale);
+		columnTitleArray[AudioItemTableModel.LANGUAGES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , locale);
 			
 		return columnTitleArray;
 	}
@@ -81,6 +82,7 @@ public class AudioItemImportView extends Container implements Observer {
 		table.getTableHeader().getColumnModel().getColumn(AudioItemImportModel.TITLE).setPreferredWidth(250);
 		table.getTableHeader().getColumnModel().getColumn(AudioItemImportModel.CREATOR).setPreferredWidth(150);
 		table.getTableHeader().getColumnModel().getColumn(AudioItemImportModel.CATEGORIES).setPreferredWidth(150);
+		table.getTableHeader().getColumnModel().getColumn(AudioItemImportModel.LANGUAGES).setPreferredWidth(25);
 	}
 
 	@Override
