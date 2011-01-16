@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -95,6 +96,7 @@ public class Application extends JXFrame {
 	public static class FilterState {
 		private String filterString;
 		private List<PersistentCategory> filterCategories;
+		private List<Locale> languages;
 		
 		public synchronized String getFilterString() {
 			return filterString;
@@ -112,7 +114,17 @@ public class Application extends JXFrame {
 			updateResult();
 		}
 		
+		public synchronized List<Locale> getFilterLanguages() {
+			return languages;
+		}
+		public synchronized void setFilterLanguages(List<Locale> filterLanguages) {
+			this.languages = filterLanguages;
+			updateResult();
+		}
+		
 		public void updateResult() {
+			
+			// TODO: Integrate languages in filter
 			final IDataRequestResult result = DataRequestService.getInstance().getData(
 					LanguageUtil.getUserChoosenLanguage(), 
 					filterString, filterCategories);

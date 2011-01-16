@@ -22,6 +22,7 @@ import com.google.common.collect.UnmodifiableIterator;
 public class LabelProvider {
 		
 	public static final String CATEGORY_ROOT_LABEL = "CATEGORY_ROOT_LABEL";
+	public static final String LANGUAGES_ROOT_LABEL = "LANGUAGES_ROOT_LABEL";
 	public static final String DEVICES_ROOT_LABEL = "DEVICES_ROOT_LABEL";
 	public static final String OPTIONS_ROOT_LABEL = "OPTIONS_ROOT_LABEL";
 	public static final String OPTIONS_USER_LANGUAGE = "OPTIONS_USER_LANGUAGE";
