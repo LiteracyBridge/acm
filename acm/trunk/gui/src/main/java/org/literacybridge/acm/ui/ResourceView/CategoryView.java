@@ -13,6 +13,7 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -63,16 +64,20 @@ public class CategoryView extends Container implements Observer {
 	private IDataRequestResult result = null;
 	// tree
 	private CheckboxTree categoryTree = null;
+	// Luanges
+	private CheckboxTree languageTree = null;
 	
 	private JTree deviceTree = null;
 	// root nodes
 	private final DefaultMutableTreeNode categoryRootNode;
+	private final DefaultMutableTreeNode languageRootNode;
 	private final DefaultMutableTreeNode deviceRootNode;
 	private final DefaultTreeModel deviceTreeModel;
 
 	
 	private JXTaskPaneContainer taskPaneContainer;
 	private JXTaskPane categoryPane;
+	private JXTaskPane languagePane;
 	private JXTaskPane devicePane;
 	private JXTaskPane optionsPane;
 	
@@ -81,14 +86,15 @@ public class CategoryView extends Container implements Observer {
 	
 	// list of available devices
 	private Map<String, DefaultMutableTreeNode> deviceUidtoTreeNodeMap = new HashMap<String, DefaultMutableTreeNode>();
-	
+	// list of available languages
+	private List<LanguageLabel> languagesList = new ArrayList<LanguageLabel>();
 	
 	public CategoryView(IDataRequestResult result) {
 		this.result = result;
 		categoryRootNode = new DefaultMutableTreeNode();
 		deviceRootNode = new DefaultMutableTreeNode(
 				LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUILanguage()));
-
+		languageRootNode = new DefaultMutableTreeNode();
 		deviceTreeModel = new DefaultTreeModel(deviceRootNode);
 		createControls();
 	}
@@ -99,17 +105,19 @@ public class CategoryView extends Container implements Observer {
 		// parent
 	    taskPaneContainer = new JXTaskPaneContainer();
 
-		createTree();	
+		createTasks();	
+		createLanguageList();
 		addOptionList();
 		addDragAndDropForTree();
-		add(BorderLayout.CENTER, taskPaneContainer);
+		JScrollPane taskPane = new JScrollPane(taskPaneContainer);
+		add(BorderLayout.CENTER, taskPane);
 		
 		// init controls with default language
 		updateControlLanguage(LanguageUtil.getUILanguage());
 		Application.getMessageService().addObserver(this);
 	}
-
-	private void createTree() {
+	
+	private void createTasks() {
 		// add all categories
 		Category rootCategory = result.getRootCategory();
 		if (rootCategory.hasChildren()) {
@@ -169,7 +177,13 @@ public class CategoryView extends Container implements Observer {
 		
 		categoryPane = new JXTaskPane();
 		JScrollPane categoryScrollPane = new JScrollPane(categoryTree);
-		categoryPane.add(categoryScrollPane);		
+		categoryPane.add(categoryScrollPane);	
+		
+		languagePane = new JXTaskPane();
+		languageTree = new CheckboxTree(languageRootNode);
+		JScrollPane languageScrollPane = new JScrollPane(languageTree);
+		languagePane.add(languageScrollPane);
+		
 
 		devicePane = new JXTaskPane();
 		JScrollPane deviceScrollPane = new JScrollPane(deviceTree);
@@ -177,9 +191,11 @@ public class CategoryView extends Container implements Observer {
 		devicePane.setIcon(new ImageIcon(getClass().getResource("/315_three-shot.png")));
 
 		taskPaneContainer.add(categoryPane);
+		taskPaneContainer.add(languagePane);
 		taskPaneContainer.add(devicePane);
 		
 		categoryScrollPane.setPreferredSize(new Dimension(150, 280));
+		languageScrollPane.setPreferredSize(new Dimension(150, 90));
 		deviceScrollPane.setPreferredSize(new Dimension(150, 90));
 		
 		categoryTree.expandPath(new TreePath(deviceRootNode.getPath()));
@@ -188,13 +204,18 @@ public class CategoryView extends Container implements Observer {
 	
 	private static class LanguageLabel {
 		private final String labelName;
-		
-		public LanguageLabel(String labelName) {
+		private Locale locale;
+		public LanguageLabel(String labelName, Locale locale) {
 			this.labelName = labelName;
+			this.locale = locale;
 		}
 		
 		@Override public String toString() {
 			return LabelProvider.getLabel(labelName, LanguageUtil.getUILanguage());
+		}
+
+		public Locale getLocale() {
+			return locale;
 		}
 	}
 	
@@ -207,9 +228,9 @@ public class CategoryView extends Container implements Observer {
 		optionComponent.setLayout(new GridLayout(NUM_OPTIONS, 2));
 		uiLangugeLb = new JLabel();
 		optionComponent.add(uiLangugeLb);		
-		LanguageLabel[] langs = {new LanguageLabel("ENGLISH"),
-								 new LanguageLabel("GERMAN"),
-								 new LanguageLabel("FRENCH")};
+		LanguageLabel[] langs = {new LanguageLabel("ENGLISH", Locale.ENGLISH),
+								 new LanguageLabel("GERMAN", Locale.GERMAN),
+								 new LanguageLabel("FRENCH", Locale.FRENCH)};
 		
 		
 		JComboBox userLanguages = new JComboBox(langs);		
@@ -246,6 +267,39 @@ public class CategoryView extends Container implements Observer {
 		taskPaneContainer.add(optionsPane);
 	}
 
+	private void createLanguageList() {
+		languagesList.add(new LanguageLabel("ENGLISH", Locale.ENGLISH));
+		languagesList.add(new LanguageLabel("FRENCH", Locale.FRENCH));
+		
+		for (LanguageLabel currLable : languagesList) {
+			languageRootNode.add(new DefaultMutableTreeNode(currLable));	
+		}		
+		
+		languageTree.setRootVisible(false);
+		languageTree.expandPath(new TreePath(languageRootNode.getPath()));
+		
+		languageTree.addMouseListener(new MouseAdapter() {
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				pumpLanguageFilter();
+			}
+		});
+	}
+	
+	private void pumpLanguageFilter() {
+		// map languages on 'Locales'
+		TreePath[] tp = languageTree.getCheckingPaths();
+		List<Locale> filterLocales = new ArrayList<Locale>(tp.length);
+		for (int i = 0; i < tp.length; i++) {
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) tp[i].getLastPathComponent();
+			LanguageLabel obj = (LanguageLabel) node.getUserObject();
+			filterLocales.add(obj.getLocale());
+		}
+		
+		Application.getFilterState().setFilterLanguages(filterLocales);	
+	}
+	
 	private void addListeners() {
 		categoryTree.addTreeCheckingListener(new TreeCheckingListener() {
 			public void valueChanged(TreeCheckingEvent e) {
@@ -387,6 +441,7 @@ public class CategoryView extends Container implements Observer {
 		categoryPane.setTitle(LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, locale));
 		devicePane.setTitle(LabelProvider.getLabel(LabelProvider.DEVICES_ROOT_LABEL, locale));
 		optionsPane.setTitle(LabelProvider.getLabel(LabelProvider.OPTIONS_ROOT_LABEL, locale));
+		languagePane.setTitle(LabelProvider.getLabel(LabelProvider.LANGUAGES_ROOT_LABEL, locale));
 		uiLangugeLb.setText(LabelProvider.getLabel(LabelProvider.OPTIONS_USER_LANGUAGE, locale));
 		
 		updateTreeNodes();
