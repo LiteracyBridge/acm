@@ -28,6 +28,11 @@ import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
+import org.literacybridge.acm.ui.messages.PlayLocalizedAudioItemMessage;
+import org.literacybridge.acm.ui.messages.RequestAndSelectAudioItemMessage;
+import org.literacybridge.acm.ui.messages.RequestAudioItemMessage;
+import org.literacybridge.acm.ui.messages.RequestAudioItemToPlayMessage;
+import org.literacybridge.acm.ui.messages.RequestedAudioItemMessage;
 import org.literacybridge.acm.util.LocalizedAudioItemNode;
 import org.literacybridge.acm.util.language.LanguageUtil;
 import org.literacybridge.acm.util.language.UILanguageChanged;
@@ -82,6 +87,9 @@ public class AudioItemView extends Container implements Observer {
 		}
 	}
 
+	/**
+	 * Central message handler for the audio item view
+	 */
 	@Override
 	public void update(Observable o, Object arg) {
 		if (arg instanceof IDataRequestResult) {
@@ -92,6 +100,36 @@ public class AudioItemView extends Container implements Observer {
 		if (arg instanceof UILanguageChanged) {
 			UILanguageChanged newLocale = (UILanguageChanged) arg;
 			updateControlLanguage(newLocale.getNewLocale());
+		}
+		
+		if (arg instanceof RequestAudioItemMessage) {
+			RequestAudioItemMessage requestAudioItemMessage = (RequestAudioItemMessage) arg;	
+			
+			AudioItem audioItem = null;
+			switch ( requestAudioItemMessage.getRequestType()) {
+			case Current:
+				audioItem = getCurrentAudioItem();
+				break;
+			case Next:
+				audioItem = getNextAudioItem();
+				break;
+			case Previews:
+				audioItem = getPreviousAudioItem();
+				break;
+			}
+			
+			if (audioItem != null) {
+				selectAudioItem(audioItem);
+				
+				if (arg instanceof RequestAndSelectAudioItemMessage) {
+					RequestedAudioItemMessage newMsg = new RequestedAudioItemMessage(audioItem);
+					Application.getMessageService().pumpMessage(newMsg);
+				} else if (arg instanceof RequestAudioItemToPlayMessage) {
+					LocalizedAudioItem lai = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
+					PlayLocalizedAudioItemMessage newMsg = new PlayLocalizedAudioItemMessage(lai);
+					Application.getMessageService().pumpMessage(newMsg);				
+				}	
+			}
 		}
 	}
 	
@@ -115,8 +153,7 @@ public class AudioItemView extends Container implements Observer {
 		columnTitleArray[AudioItemTableModel.CREATOR] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CREATOR , locale);
 		columnTitleArray[AudioItemTableModel.CATEGORIES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , locale);
 		columnTitleArray[AudioItemTableModel.LANGUAGES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , locale);
-			
-		
+				
 		return columnTitleArray;
 	}
 
@@ -127,6 +164,48 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.TITLE).setPreferredWidth(250);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CREATOR).setPreferredWidth(150);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CATEGORIES).setPreferredWidth(150);
+	}
+
+	boolean hasSelectedRows() {
+		return audioItemTable.getSelectedRow() != -1;
+	}
+	
+	AudioItem getCurrentAudioItem() {
+		int tableRow = audioItemTable.getSelectedRow();
+		if (tableRow == -1) {
+			// select first row if available
+			if (audioItemTable.getRowCount() > 0) {
+				tableRow = 0;
+				selectTableRow(tableRow);
+			}
+			else
+			{
+				return null;
+			}
+		}
+		int modelRow = audioItemTable.convertRowIndexToModel(tableRow);
+		
+		return getValueAt(modelRow, 0);
+	}
+	
+	AudioItem getNextAudioItem() {
+		int tableRow = audioItemTable.getSelectedRow();
+		if (tableRow < audioItemTable.getRowCount()-1) {
+			tableRow++;
+		}
+		
+		int modelRow = audioItemTable.convertRowIndexToModel(tableRow);
+		return getValueAt(modelRow, 0);
+	}	
+
+	AudioItem getPreviousAudioItem() {
+		int tableRow = audioItemTable.getSelectedRow();
+		if (tableRow > 0) {
+			tableRow--;
+		}
+		
+		int modelRow = audioItemTable.convertRowIndexToModel(tableRow);
+		return getValueAt(modelRow, 0);
 	}
 
 	public AudioItem getValueAt(int row, int col) {
@@ -145,19 +224,47 @@ public class AudioItemView extends Container implements Observer {
 
 	public boolean selectAudioItem(AudioItem audioItem) {
 		for (int i = 0; i < audioItemTable.getRowCount(); i++) {
-			AudioItem item = getValueAt(i, 0);
+			int modelIndex = audioItemTable.convertRowIndexToModel(i);
+			AudioItem item = getValueAt(modelIndex, 0);
 			if (item != null) {
 				if (item.equals(audioItem)) {
-					ListSelectionModel selectionModel = audioItemTable.getSelectionModel();
-					if (selectionModel != null) {
-	    				selectionModel.setSelectionInterval(i, i);	
-	    				return true;
-					}
+					return selectTableRow(i);
 				}
 			}
 		}
 		
 		return false;
+	}
+	
+	boolean selectTableRow(int rowStart, int rowEnd) {
+		ListSelectionModel selectionModel = audioItemTable.getSelectionModel();
+		if (selectionModel != null) {
+			selectionModel.setSelectionInterval(rowStart, rowEnd);	
+			return true;
+		}
+		
+		return false;
+	}
+	
+	
+	boolean selectTableRow(int row) {
+		return selectTableRow(row, row);
+	}
+	
+	int getCurrentSelectedRow() {
+		if (audioItemTable != null) {
+			return audioItemTable.getSelectedRow();
+		}
+		
+		return -1;
+	}
+	
+	int[] getCurrentSelectedRows() {
+		if (audioItemTable != null) {
+			return audioItemTable.getSelectedRows();
+		}
+		
+		return new int []{};
 	}
 	
 	// Special handlers

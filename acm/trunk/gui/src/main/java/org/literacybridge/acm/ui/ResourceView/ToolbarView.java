@@ -36,6 +36,9 @@ import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.UIConstants;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
+import org.literacybridge.acm.ui.messages.PlayLocalizedAudioItemMessage;
+import org.literacybridge.acm.ui.messages.RequestAudioItemMessage;
+import org.literacybridge.acm.ui.messages.RequestAudioItemToPlayMessage;
 import org.literacybridge.acm.util.LocalizedAudioItemNode;
 import org.literacybridge.acm.util.language.LanguageUtil;
 import org.literacybridge.acm.util.language.UILanguageChanged;
@@ -101,7 +104,190 @@ public class ToolbarView extends JToolBar implements ActionListener
 				  seconds % SECONDS_PER_MINUTE);
 	}
 	
+	
+    
+    private void addEventHandler() {
+    	addPlayBtnHandler();
+    }
+    
+	private void addPlayBtnHandler() {
+		playBtn.addMouseListener(new MouseAdapter() {
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (player == null) {
+					RequestAudioItemToPlayMessage msg = new RequestAudioItemToPlayMessage(RequestAudioItemMessage.RequestType.Current);
+					Application.getMessageService().pumpMessage(msg);
+				} else {
+					PlayerStateDetails psd = player.getPlayerStateDetails();
+					if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
+						player.play();
+						updatePlayerStateTimer.start();
+					} else if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
+						player.stop();
+						updatePlayerStateTimer.stop();
+						playBtn.setIcon(playImageIcon); // call explicit to avoid missing updates
+					}
+				}
+			}			
+		});	
+		
+		forwardBtn.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (player != null) {
+					RequestAudioItemToPlayMessage msg = new RequestAudioItemToPlayMessage(RequestAudioItemMessage.RequestType.Next);
+					Application.getMessageService().pumpMessage(msg);
+				}
+			}			
+		});
+
+		backwardBtn.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (player != null) {
+					RequestAudioItemToPlayMessage msg = new RequestAudioItemToPlayMessage(RequestAudioItemMessage.RequestType.Previews);
+					Application.getMessageService().pumpMessage(msg);
+				}
+			}			
+		});
+	}
+
+	private void addPositionSliderHandler() {
+		positionSlider.addMouseListener(new MouseAdapter() {
+
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				if (player.getPlayerStateDetails().getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
+					int value = positionSlider.getValue();
+					updatePlayerTimes(value);		
+				}
+			}
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				positionSliderGrapped = true;
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				PlayerStateDetails psd = player.getPlayerStateDetails();
+				// handle only if player is running
+				if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
+					int value = positionSlider.getValue();
+					player.play(value);
+				}
+				positionSliderGrapped = false;
+			}	
+		});
+	}
+	
+	private void mirrorPlayerState(PlayerStateDetails newState) {
+		currPlayerDetails = newState;
+		if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
+			playBtn.setIcon(playImageIcon);
+		} else if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
+			playBtn.setIcon(pauseImageIcon);
+	    	durtation = player.getDurationInSecs();
+	    	
+	    	// update only if slide is not moved by user
+	    	if (!positionSliderGrapped) {
+	    		positionSlider.setMaximum((int) durtation);
+	    		positionSlider.setValue((int) currPlayerDetails.getCurrentPoitionInSecs());	    		
+	    			
+				int playedTimeInSecs = (int) currPlayerDetails.getCurrentPoitionInSecs();
+				playedTimeLbl.setText(secondsToTimeString(playedTimeInSecs));
+				remainingTimeLbl.setText(secondsToTimeString((int) (durtation - playedTimeInSecs)));
+	    	}
+		}
+	}
+	
+	private void updatePlayerTimes(int currPosInSecs) {
+		playedTimeLbl.setText(secondsToTimeString(currPosInSecs));
+		remainingTimeLbl.setText(secondsToTimeString((int) (durtation - currPosInSecs)));
+	}
+
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		PlayerStateDetails details = player.getPlayerStateDetails();
+		mirrorPlayerState(details);		
+	}    
+	
+	private void addSearchTFListener() {
+		searchTF.addFocusListener(new FocusListener() {
+			
+			@Override
+			public void focusLost(FocusEvent e) {
+				String currText = searchTF.getText();
+				if (currText.equals("") ) {
+					searchTF.setForeground(Color.GRAY);
+					searchTF.setFont(watermarkTextfieldFont);
+					searchTF.setText(searchFieldWatermarkText);
+				}
+			}
+			
+			@Override
+			public void focusGained(FocusEvent e) {
+				String currText = searchTF.getText();
+				if (currText.equals(searchFieldWatermarkText) ) {
+					searchTF.setFont(defaultTextfieldFont);
+				    searchTF.setForeground(Color.BLACK);
+					searchTF.setText("");
+				}
+			}
+		});
+		
+		searchTF.addKeyListener(new KeyAdapter() {
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				Application.getFilterState().setFilterString(searchTF.getText());
+			}
+		});
+	}
+
+	private void updateControlsLanguage(Locale newLocale) {
+		String currText = searchTF.getText();
+		if (currText.equals(searchFieldWatermarkText) ) {
+			searchFieldWatermarkText = LabelProvider.getLabel(LabelProvider.WATERMARK_SEARCH, newLocale);
+			searchTF.setText(searchFieldWatermarkText);
+		} else {
+			searchFieldWatermarkText = LabelProvider.getLabel(LabelProvider.WATERMARK_SEARCH, newLocale);
+		}
+	}
+
+	private void play(LocalizedAudioItem item) {
+		if (player != null) {
+			player.stop();
+			updatePlayerStateTimer.stop();			
+		}
+		
+		File f = Repository.getRepository().getWAVFile(item);
+		initPlayer(f);
+		player.play();
+		updatePlayerStateTimer.start();
+		titleInfoLbl.setText(item.getMetadata().getMetadataValues(
+				MetadataSpecification.DC_TITLE).get(0).getValue());
+	}
+	
+	@Override
+	public void update(Observable o, Object arg) {
+		if (arg instanceof UILanguageChanged) {
+			UILanguageChanged newLocale = (UILanguageChanged) arg;
+			updateControlsLanguage(newLocale.getNewLocale());
+		}		
+		
+		if (arg instanceof PlayLocalizedAudioItemMessage) {
+			PlayLocalizedAudioItemMessage item = (PlayLocalizedAudioItemMessage) arg;
+			play(item.getLocalizedAudioItem());
+		}
+	}
+	
+	
+	// 
 	// Created with NetBeans 6.8
+	//
 	private void initComponents() {
   	
 		setPreferredSize(new Dimension(300, 80));
@@ -224,207 +410,6 @@ public class ToolbarView extends JToolBar implements ActionListener
 
         playBtn.getAccessibleContext().setAccessibleName("Play");
     }// </editor-fold>     
-    
-    private void addEventHandler() {
-    	addPlayBtnHandler();
-    }
-    
-	private void addPlayBtnHandler() {
-		playBtn.addMouseListener(new MouseAdapter() {
-
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				if (player == null) {
-					int row = audioItemView.audioItemTable.getSelectedRow();
-					if (row != -1) {
-						LocalizedAudioItemNode item = 
-		                	(LocalizedAudioItemNode) audioItemView.audioItemTable.getModel().getValueAt(row, 0);
-						play(item.getLocalizedAudioItem());
-					}
-				} else {
-					PlayerStateDetails psd = player.getPlayerStateDetails();
-					if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
-						player.play();
-						updatePlayerStateTimer.start();
-					} else if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
-						player.stop();
-						updatePlayerStateTimer.stop();
-						playBtn.setIcon(playImageIcon); // call explicit to avoid missing updates
-					}
-				}
-			}			
-		});	
-		
-		forwardBtn.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				if (player != null) {
-					int row = audioItemView.audioItemTable.getSelectedRow();
-					if (row != -1 && audioItemView.audioItemTable.getRowCount() > 0) {
-						player.stop();
-						updatePlayerStateTimer.stop();
-
-						row = (row + 1) % audioItemView.audioItemTable.getRowCount();
-						LocalizedAudioItemNode item = 
-		                	(LocalizedAudioItemNode) audioItemView.audioItemTable.getModel().getValueAt(row, 0);
-						audioItemView.audioItemTable.changeSelection(row, 0, false, false);
-						play(item.getLocalizedAudioItem());
-					}
 	
-				}
-			}			
-		});
-
-		backwardBtn.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				if (player != null) {
-					
-					int row = audioItemView.audioItemTable.getSelectedRow();
-					if (row != -1 && audioItemView.audioItemTable.getRowCount() > 0) {
-						player.stop();
-						updatePlayerStateTimer.stop();
-
-						row--;
-						if (row < 0) {
-							row = audioItemView.audioItemTable.getRowCount() - 1;
-						}
-						LocalizedAudioItemNode item = 
-		                	(LocalizedAudioItemNode) audioItemView.audioItemTable.getModel().getValueAt(row, 0);
-						audioItemView.audioItemTable.changeSelection(row, 0, false, false);
-						play(item.getLocalizedAudioItem());
-					}
 	
-				}
-			}			
-		});
-	}
-
-	private void addPositionSliderHandler() {
-		positionSlider.addMouseListener(new MouseAdapter() {
-
-			@Override
-			public void mouseMoved(MouseEvent e) {
-				if (player.getPlayerStateDetails().getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
-					int value = positionSlider.getValue();
-					updatePlayerTimes(value);		
-				}
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				positionSliderGrapped = true;
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				PlayerStateDetails psd = player.getPlayerStateDetails();
-				// handle only if player is running
-				if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
-					int value = positionSlider.getValue();
-					player.play(value);
-				}
-				positionSliderGrapped = false;
-			}
-			
-			
-		});
-	}
-	
-	private void mirrorPlayerState(PlayerStateDetails newState) {
-		currPlayerDetails = newState;
-		if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
-			playBtn.setIcon(playImageIcon);
-		} else if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
-			playBtn.setIcon(pauseImageIcon);
-	    	durtation = player.getDurationInSecs();
-	    	
-	    	// update only if slide is not moved by user
-	    	if (!positionSliderGrapped) {
-	    		positionSlider.setMaximum((int) durtation);
-	    		positionSlider.setValue((int) currPlayerDetails.getCurrentPoitionInSecs());	    		
-	    			
-				int playedTimeInSecs = (int) currPlayerDetails.getCurrentPoitionInSecs();
-				playedTimeLbl.setText(secondsToTimeString(playedTimeInSecs));
-				remainingTimeLbl.setText(secondsToTimeString((int) (durtation - playedTimeInSecs)));
-	    	}
-		}
-	}
-	
-	private void updatePlayerTimes(int currPosInSecs) {
-		playedTimeLbl.setText(secondsToTimeString(currPosInSecs));
-		remainingTimeLbl.setText(secondsToTimeString((int) (durtation - currPosInSecs)));
-	}
-
-
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		PlayerStateDetails details = player.getPlayerStateDetails();
-		mirrorPlayerState(details);		
-	}    
-	
-	private void addSearchTFListener() {
-		searchTF.addFocusListener(new FocusListener() {
-			
-			@Override
-			public void focusLost(FocusEvent e) {
-				String currText = searchTF.getText();
-				if (currText.equals("") ) {
-					searchTF.setForeground(Color.GRAY);
-					searchTF.setFont(watermarkTextfieldFont);
-					searchTF.setText(searchFieldWatermarkText);
-				}
-			}
-			
-			@Override
-			public void focusGained(FocusEvent e) {
-				String currText = searchTF.getText();
-				if (currText.equals(searchFieldWatermarkText) ) {
-					searchTF.setFont(defaultTextfieldFont);
-				    searchTF.setForeground(Color.BLACK);
-					searchTF.setText("");
-				}
-			}
-		});
-		
-		searchTF.addKeyListener(new KeyAdapter() {
-			
-			@Override
-			public void keyReleased(KeyEvent e) {
-				Application.getFilterState().setFilterString(searchTF.getText());
-			}
-		});
-	}
-
-	private void updateControlsLanguage(Locale newLocale) {
-		String currText = searchTF.getText();
-		if (currText.equals(searchFieldWatermarkText) ) {
-			searchFieldWatermarkText = LabelProvider.getLabel(LabelProvider.WATERMARK_SEARCH, newLocale);
-			searchTF.setText(searchFieldWatermarkText);
-		} else {
-			searchFieldWatermarkText = LabelProvider.getLabel(LabelProvider.WATERMARK_SEARCH, newLocale);
-		}
-	}
-
-	private void play(LocalizedAudioItem item) {
-		File f = Repository.getRepository().getWAVFile(item);
-		initPlayer(f);
-		player.play();
-		updatePlayerStateTimer.start();
-		titleInfoLbl.setText(item.getMetadata().getMetadataValues(
-				MetadataSpecification.DC_TITLE).get(0).getValue());
-	}
-	
-	@Override
-	public void update(Observable o, Object arg) {
-		if (arg instanceof UILanguageChanged) {
-			UILanguageChanged newLocale = (UILanguageChanged) arg;
-			updateControlsLanguage(newLocale.getNewLocale());
-		}		
-		
-		if (arg instanceof LocalizedAudioItem) {
-			LocalizedAudioItem item = (LocalizedAudioItem) arg;
-			play(item);
-		}
-	}
 }
