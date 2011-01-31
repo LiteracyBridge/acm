@@ -1,5 +1,6 @@
 package org.literacybridge.acm.ui.ResourceView.audioItems;
 
+import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -32,15 +33,40 @@ public class AudioItemViewMouseListener extends MouseAdapter {
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		selectRowIfNoneIs(e);
+		boolean leftButtonClicked = e.getButton() == MouseEvent.BUTTON1;
+		boolean rightButtonClicked = e.getButton() == MouseEvent.BUTTON3;
+		boolean shiftKeyPressed = e.isShiftDown();
+		
+		if (rightButtonClicked && !shiftKeyPressed) {
+			selectRowUnderCursor(e);
+		} else if (shiftKeyPressed && rightButtonClicked) {
+			int startRow = adaptee.audioItemTable.rowAtPoint(e.getPoint());
+			int[] selectedRows = adaptee.audioItemTable.getSelectedRows();
+			int endRow = startRow; // use as default
+			if (selectedRows.length > 0) {
+				endRow = selectedRows[selectedRows.length-1]; // value of last item
+			}
+			selectRange(startRow, endRow);
+		} else {		
+			selectRowIfNoneIs(e);			
+		}
 		showAudioItemDlg(e);
 	}
 
+	private void selectRange(int rowStart, int rowEnd) {
+		adaptee.selectTableRow(rowStart, rowEnd);
+	}
+	
 	private void selectRowIfNoneIs(MouseEvent e) {	
 		if (!adaptee.hasSelectedRows()) {
 			int row = adaptee.audioItemTable.rowAtPoint(e.getPoint());
 			adaptee.selectTableRow(row);
 		}
+	}
+	
+	private void selectRowUnderCursor(MouseEvent e) {
+		int row = adaptee.audioItemTable.rowAtPoint(e.getPoint());
+		adaptee.selectTableRow(row);	
 	}
 	
 	private void showAudioItemDlg(MouseEvent e) {
