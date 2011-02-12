@@ -38,36 +38,41 @@ class PersistentQueries {
     }    
     
     @SuppressWarnings("unchecked")
-	static List<PersistentAudioItem> searchForAudioItems(String filter, List<PersistentCategory> categories) {
-    	if (filter == null || filter.isEmpty()) {
-    		if (categories == null || categories.isEmpty()) {
-    			return getPersistentObjects(PersistentAudioItem.class);
-    		} else {
-    			return searchForAudioItems(categories);
-    		}
-    	} else if (categories == null || categories.isEmpty()) {
-    		return searchForAudioItems(filter);
-    	}
-    	
+	static List<PersistentAudioItem> searchForAudioItems(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {    	
         EntityManager em = Persistence.getEntityManager();
         List<PersistentAudioItem> searchResults = new LinkedList<PersistentAudioItem>();
         try {
+        	// queries all audioitems
         	StringBuilder query = 
         		new StringBuilder("SELECT DISTINCT t0.id AS \"id\", t0.uuid AS \"uuid\" " 
         				       + "FROM t_localized_audioitem t1, t_metadata t2, t_locale t3, (t_audioitem t0 LEFT OUTER JOIN t_audioitem_has_category tc " 
         				       + "ON t0.id=tc.audioitem) "
         				       + "WHERE t0.id=t1.audioitem AND t1.metadata=t2.id AND t1.language=t3.id ");
-        	String[] tokens = filter.split(" ");
-        	for (int i=0; i < tokens.length; i++) {
-	    		query.append(" AND (lower(t2.dc_creator) LIKE lower('%" + tokens[i] + "%')" 
-	                             + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
-	                             + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
+        	
+        	// queries all audioitems matching a certain string
+        	if (filter != null && !filter.isEmpty()) {
+	        	String[] tokens = filter.split(" ");
+	        	for (int i=0; i < tokens.length; i++) {
+		    		query.append(" AND (lower(t2.dc_creator) LIKE lower('%" + tokens[i] + "%')" 
+		                             + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
+		                             + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
+	        	}
         	}
+        	
+        	// queries all audioitems matching a certain category
         	if (categories != null && !categories.isEmpty()) {
         		query.append(" AND (");
         		appendCategoryClause(query, categories);
         		query.append(")");
         	}
+        	
+        	// queries all audioitems matching a certain language
+        	if (locales != null && !locales.isEmpty()) {
+        		query.append(" AND (");
+        		appendLocalesClause(query, locales);
+        		query.append(")");
+        	}
+        	
         	//System.out.println("Filter=" + filter + ", query=" + query.toString());
             Query foundAudioItems = em.createNativeQuery(query.toString(), PersistentAudioItem.class);
             searchResults = foundAudioItems.getResultList();
@@ -80,33 +85,6 @@ class PersistentQueries {
 
     }
     
-    @SuppressWarnings("unchecked")
-	static List<PersistentAudioItem> searchForAudioItems(String filter) {
-        EntityManager em = Persistence.getEntityManager();
-        List<PersistentAudioItem> searchResults = new LinkedList<PersistentAudioItem>();
-        try {
-        	StringBuilder query = 
-        		new StringBuilder("SELECT DISTINCT t0.id AS \"id\", t0.uuid AS \"uuid\" " 
-        				       + "FROM t_audioitem t0, t_localized_audioitem t1, t_metadata t2, t_locale t3 "
-        				       + "WHERE t0.id=t1.audioitem AND t1.metadata=t2.id AND t1.language=t3.id ");
-        	String[] tokens = filter.split(" ");
-        	for (int i=0; i < tokens.length; i++) {
-	    		query.append(" AND (lower(t2.dc_creator) LIKE lower('%" + tokens[i] + "%')" 
-	                             + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
-	                             + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
-        	}
-
-        	Query foundAudioItems = em.createNativeQuery(query.toString(), PersistentAudioItem.class);
-            searchResults = foundAudioItems.getResultList();
-        } catch (NoResultException e) {
-            // do nothing
-        } finally {
-            em.close();
-        }
-        return searchResults;	
-
-    }
-
     private static void appendCategoryClause(StringBuilder whereClause, List<PersistentCategory> categories) {
     	if (categories.isEmpty()) {
     		return;
@@ -123,29 +101,24 @@ class PersistentQueries {
     	}
     }
     
-    @SuppressWarnings("unchecked")
-	static List<PersistentAudioItem> searchForAudioItems(List<PersistentCategory> categories) {
-        EntityManager em = Persistence.getEntityManager();
-        List<PersistentAudioItem> searchResults = new LinkedList<PersistentAudioItem>();
-        try {
-        	StringBuilder query = 
-        		new StringBuilder("SELECT DISTINCT t0.id AS \"id\", t0.uuid AS \"uuid\" " 
-        				       + "FROM t_audioitem t0 LEFT OUTER JOIN t_audioitem_has_category tc " 
-        				       + "ON t0.id=tc.audioitem "
-        				       + "WHERE ");
-        	appendCategoryClause(query, categories);
-            Query foundAudioItems = em.createNativeQuery(query.toString(), PersistentAudioItem.class);
-            searchResults = foundAudioItems.getResultList();
-        } catch (NoResultException e) {
-            // do nothing
-        } finally {
-            em.close();
-        }
-        return searchResults;	
+    private static void appendLocalesClause(StringBuilder whereClause, List<PersistentLocale> locales) {
+    	if (locales.isEmpty()) {
+    		return;
+    	}
+    	
+    	Iterator<PersistentLocale> it = locales.iterator();
+    	PersistentLocale locale = it.next();
+    	whereClause.append("t3.language = '" + locale.getLanguage() + "'");
+    	
+    	while (it.hasNext()) {
+			locale = it.next();
+			whereClause.append(" OR ");
+			whereClause.append("t3.language = '" + locale.getLanguage() + "'");
+    	}
     }    
-        
+    
     @SuppressWarnings("unchecked")
-	static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories) {
+	static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
         EntityManager em = Persistence.getEntityManager();
         Map<Integer, Integer> results = new HashMap<Integer, Integer>();
         try {
@@ -169,6 +142,13 @@ class PersistentQueries {
 		                        + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
 		                        + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
 	        	}
+        	}
+        	
+        	// language filter
+        	if (locales != null && !locales.isEmpty()) {
+        		query.append(" AND (");
+        		appendLocalesClause(query, locales);
+        		query.append(")");
         	}
 
         	// grouping

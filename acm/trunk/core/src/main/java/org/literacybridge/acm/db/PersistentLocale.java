@@ -3,6 +3,7 @@ package org.literacybridge.acm.db;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -55,7 +56,7 @@ public class PersistentLocale extends PersistentObject implements Serializable {
 
     public PersistentLocale() {
     }
-
+    
     public Integer getId() {
         return id;
     }  

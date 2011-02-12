@@ -12,6 +12,7 @@ import org.literacybridge.acm.categories.Taxonomy;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
+import org.literacybridge.acm.db.PersistentLocale;
 
 public class DataRequestService implements IDataRequestService {
 	private static final IDataRequestService instance = new DataRequestService();
@@ -34,9 +35,9 @@ public class DataRequestService implements IDataRequestService {
 	/* (non-Javadoc)
 	 * @see main.java.org.literacybridge.acm.api.IDataRequestService#getData(java.lang.String)
 	 */
-	public IDataRequestResult getData(Locale locale, String filterString, List<PersistentCategory> categories) {
-		Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(filterString, categories);
-		Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, categories);
+	public IDataRequestResult getData(Locale locale, String filterString, List<PersistentCategory> categories, List<PersistentLocale> locales) {
+		Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(filterString, categories, locales);
+		Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, categories, locales);
 		List<AudioItem> audioItems = new ArrayList<AudioItem>(items.size());
 		for (PersistentAudioItem item : items) {
 			audioItems.add(new AudioItem(item));
@@ -49,7 +50,7 @@ public class DataRequestService implements IDataRequestService {
 
 	@Override
 	public IDataRequestResult getData(Locale locale,
-			List<PersistentCategory> filterCategories) {
-		return getData(locale, null, filterCategories);
+			List<PersistentCategory> filterCategories, List<PersistentLocale> locales) {
+		return getData(locale, null, filterCategories, locales);
 	}
 }

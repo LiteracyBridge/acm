@@ -138,11 +138,8 @@ public class PersistentAudioItem extends PersistentObject {
         return result;
     }    
     
-    public static List<PersistentAudioItem> getFromDatabaseBySearch(String searchFilter, List<PersistentCategory> categories) {
-    	return PersistentQueries.searchForAudioItems(searchFilter, categories);
-    }
-    
-    public static List<PersistentAudioItem> getFromDatabaseByCategory(List<PersistentCategory> categories) {
-    	return PersistentQueries.searchForAudioItems(categories);
-    }   
+    public static List<PersistentAudioItem> getFromDatabaseBySearch(String searchFilter, 
+    		List<PersistentCategory> categories, List<PersistentLocale> locales) {
+    	return PersistentQueries.searchForAudioItems(searchFilter, categories, locales);
+    }  
 }

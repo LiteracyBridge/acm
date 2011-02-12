@@ -15,6 +15,7 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.PersistentCategory;
+import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.playerAPI.SimpleSoundPlayer;
@@ -96,7 +97,7 @@ public class Application extends JXFrame {
 	public static class FilterState {
 		private String filterString;
 		private List<PersistentCategory> filterCategories;
-		private List<Locale> languages;
+		private List<PersistentLocale> filterLanguages;
 		
 		public synchronized String getFilterString() {
 			return filterString;
@@ -114,11 +115,11 @@ public class Application extends JXFrame {
 			updateResult();
 		}
 		
-		public synchronized List<Locale> getFilterLanguages() {
-			return languages;
+		public synchronized List<PersistentLocale> getFilterLanguages() {
+			return filterLanguages;
 		}
-		public synchronized void setFilterLanguages(List<Locale> filterLanguages) {
-			this.languages = filterLanguages;
+		public synchronized void setFilterLanguages(List<PersistentLocale> filterLanguages) {
+			this.filterLanguages = filterLanguages;
 			updateResult();
 		}
 		
@@ -127,7 +128,7 @@ public class Application extends JXFrame {
 			// TODO: Integrate languages in filter
 			final IDataRequestResult result = DataRequestService.getInstance().getData(
 					LanguageUtil.getUserChoosenLanguage(), 
-					filterString, filterCategories);
+					filterString, filterCategories, filterLanguages);
 
 			// call UI back
 			Runnable updateUI = new Runnable() {

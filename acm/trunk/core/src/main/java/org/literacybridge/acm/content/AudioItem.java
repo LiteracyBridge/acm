@@ -79,14 +79,23 @@ public class AudioItem implements Persistable {
 	}
 	
 	public LocalizedAudioItem getLocalizedAudioItem(Locale locale) {
-            for (PersistentLocalizedAudioItem item : mItem.getPersistentLocalizedAudioItems()) {
-                PersistentLocale l = item.getPersistentLocale();
-                if ((locale.getCountry().equals(l.getCountry()) && 
-                    (locale.getLanguage().equals(l.getLanguage())))) {
-                    return new LocalizedAudioItem(item);         
-	}
-            }
-            return null;
+		
+			// TODO local will be ignored for beta 2
+		
+//            for (PersistentLocalizedAudioItem item : mItem.getPersistentLocalizedAudioItems()) {
+//                PersistentLocale l = item.getPersistentLocale();
+//                if ((locale.getCountry().equals(l.getCountry()) && 
+//                    (locale.getLanguage().equals(l.getLanguage())))) {
+//                    return new LocalizedAudioItem(item);         
+//                }
+//            }
+//            return null;
+		
+			if (mItem.getPersistentLocalizedAudioItems() != null) {
+				PersistentLocalizedAudioItem localizedItem = mItem.getPersistentLocalizedAudioItems().iterator().next();
+				return new LocalizedAudioItem(localizedItem);
+			}
+			return null;
 	}
 	
 	public Set<Locale> getAvailableLocalizations() {
@@ -138,26 +147,13 @@ public class AudioItem implements Persistable {
         return new AudioItem(item);
     }    
         
-    public static List<AudioItem> getFromDatabaseBySearch(String searchFilter, List<PersistentCategory> categories) {
+    public static List<AudioItem> getFromDatabaseBySearch(String searchFilter, 
+    		List<PersistentCategory> categories, List<PersistentLocale> locales) {
         List<AudioItem> results = new LinkedList<AudioItem>();
-    	List<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(searchFilter, categories);
-        for (PersistentAudioItem item : items) {
-        	results.add(new AudioItem(item));
-        }
-        return results;
-    }
-    
-    public static List<AudioItem> getFromDatabaseByCategory(List<Category> categories) {
-    	List<PersistentCategory> pCategories = new LinkedList<PersistentCategory>();
-    	for (Category category : categories) {
-    		pCategories.add(category.getPersistentObject());
-    	}
-    	List<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseByCategory(pCategories);
-        List<AudioItem> results = new LinkedList<AudioItem>();    	
+    	List<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(searchFilter, categories, locales);
         for (PersistentAudioItem item : items) {
         	results.add(new AudioItem(item));
         }
         return results;
     }    
-    
 }
