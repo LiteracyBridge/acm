@@ -104,7 +104,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 				break;
 			}
 		} catch (Exception e) {
-			// e.printStackTrace();
+			 e.printStackTrace();
 		}
 	
 		return new LocalizedAudioItemNode(localizedAudioItem, cellText, audioItem);

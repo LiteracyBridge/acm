@@ -92,8 +92,8 @@ public class Taxonomy implements Persistable {
 	 * 
 	 * Note: Returns '0' for unassigned categories.
 	 */
-	public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories) {
-		return PersistentCategory.getFacetCounts(filter, categories);
+	public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
+		return PersistentCategory.getFacetCounts(filter, categories, locales);
 	}
 	
 	public Integer getId() {
