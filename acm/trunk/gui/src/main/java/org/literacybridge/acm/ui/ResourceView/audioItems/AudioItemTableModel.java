@@ -11,6 +11,7 @@ import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.MetadataSpecification;
+import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.util.LocalizedAudioItemNode;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
@@ -71,37 +72,49 @@ public class AudioItemTableModel  extends AbstractTableModel {
 		String cellText = "";
 		try {
 			switch (columnIndex) {
-			case INFO_ICON:
-				cellText = "";
-				break;
-			case TITLE:
-				cellText = localizedAudioItem.getMetadata().getMetadataValues(
-						MetadataSpecification.DC_TITLE).get(0).getValue();
-				break;
-			case CREATOR:
-				cellText = localizedAudioItem.getMetadata().getMetadataValues(
-						MetadataSpecification.DC_CREATOR).get(0).getValue();
-				break;
-			case CATEGORIES:
-				List<Category> categories = localizedAudioItem.getParentAudioItem().getCategoryList();
-				StringBuilder builder = new StringBuilder();
-				
-				for (int i = 0; i < categories.size(); i++) {
-					Category cat = categories.get(i);
-					builder.append(cat.getCategoryName(LanguageUtil.getUILanguage()));
-					if (i != categories.size() - 1) {
-						builder.append(", ");
-					}
+				case INFO_ICON: {
+					cellText = "";
+					break;
 				}
-				
-				cellText = builder.toString();
-				break;
-			case LANGUAGES:
-				cellText = localizedAudioItem.getLocale().getDisplayLanguage();
-				break;
-			default:
-				cellText = "";
-				break;
+				case TITLE: {
+					List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
+							MetadataSpecification.DC_TITLE);
+					if (values != null) {
+						cellText = values.get(0).getValue();
+					}
+					break;
+				}
+				case CREATOR: {
+					List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
+							MetadataSpecification.DC_CREATOR);
+					if (values != null) {
+						cellText = values.get(0).getValue();
+					}
+					break;
+				}
+				case CATEGORIES: {
+					List<Category> categories = localizedAudioItem.getParentAudioItem().getCategoryList();
+					StringBuilder builder = new StringBuilder();
+					
+					for (int i = 0; i < categories.size(); i++) {
+						Category cat = categories.get(i);
+						builder.append(cat.getCategoryName(LanguageUtil.getUILanguage()));
+						if (i != categories.size() - 1) {
+							builder.append(", ");
+						}
+					}
+					
+					cellText = builder.toString();
+					break;
+				}
+				case LANGUAGES: {
+					cellText = localizedAudioItem.getLocale().getDisplayLanguage();
+					break;
+				}
+				default: {
+					cellText = "";
+					break;
+				}
 			}
 		} catch (Exception e) {
 			 e.printStackTrace();
