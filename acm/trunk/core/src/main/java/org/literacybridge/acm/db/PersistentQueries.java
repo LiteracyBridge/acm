@@ -117,17 +117,18 @@ class PersistentQueries {
     	}
     }    
     
+    
     @SuppressWarnings("unchecked")
-	static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
+	static Map<Integer, Integer> getCategoryFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
         EntityManager em = Persistence.getEntityManager();
         Map<Integer, Integer> results = new HashMap<Integer, Integer>();
         try {
-        	StringBuilder query = new StringBuilder("SELECT DISTINCT t5.id AS \"id\", COUNT(t4.category) AS \"count\" " 
-        			                              + "FROM t_audioitem t0 JOIN t_localized_audioitem t1 ON t0.id=t1.audioitem " 
-        			                              + "JOIN t_metadata t2 ON t1.metadata=t2.id " 
-        			                              + "JOIN t_locale t3 ON t1.language=t3.id " 
-        			                              + "JOIN t_audioitem_has_category t4 ON t0.id=t4.audioitem " 
-        			                              + "RIGHT OUTER JOIN t_category t5 ON t4.category=t5.id "); 
+        	StringBuilder query = new StringBuilder("SELECT DISTINCT t5.id AS \"id\", COUNT(t4.category) AS \"count\" "
+							        		 	  + "FROM t_audioitem t0 JOIN t_localized_audioitem t1 ON t0.id=t1.audioitem " 
+							                      + "JOIN t_metadata t2 ON t1.metadata=t2.id " 
+							                      + "JOIN t_locale t3 ON t1.language=t3.id " 
+							                      + "JOIN t_audioitem_has_category t4 ON t0.id=t4.audioitem " 
+							                      + "RIGHT OUTER JOIN t_category t5 ON t4.category=t5.id "); 
         	
         	// search string conditions
         	if (filter != null && filter.length() > 0) {
@@ -182,4 +183,64 @@ class PersistentQueries {
         }
         return results;	    	
     }    
+    
+    
+    @SuppressWarnings("unchecked")
+	static Map<String, Integer> getLanguageFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
+        EntityManager em = Persistence.getEntityManager();
+        Map<String, Integer> results = new HashMap<String, Integer>();
+        try {
+        	StringBuilder query = new StringBuilder("SELECT DISTINCT t3.language AS \"id\", COUNT(t3.language) AS \"count\" "
+							        		 	  + "FROM t_audioitem t0 JOIN t_localized_audioitem t1 ON t0.id=t1.audioitem " 
+							                      + "JOIN t_metadata t2 ON t1.metadata=t2.id " 
+							                      + "JOIN t_locale t3 ON t1.language=t3.id " 
+							                      + "JOIN t_audioitem_has_category t4 ON t0.id=t4.audioitem " 
+							                      + "RIGHT OUTER JOIN t_category t5 ON t4.category=t5.id "); 
+        	
+        	// search string conditions
+        	if (filter != null && filter.length() > 0) {
+	        	String[] tokens = filter.split(" ");
+	        	for (int i=0; i < tokens.length; i++) {
+	        		if (i == 0) {
+	        			query.append(" WHERE ");
+	        		} else {
+	        			query.append(" AND ");
+	        		}
+		    		query.append("     (lower(t2.dc_creator) LIKE lower('%" + tokens[i] + "%')" 
+		                        + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
+		                        + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
+	        	}
+        	}
+        	
+        	// category filter
+        	if (categories != null && !categories.isEmpty()) {
+        		query.append(" AND (");
+        		appendCategoryClause(query, categories);
+        		query.append(")");
+        	}         	
+        	
+        	// language filter
+        	if (locales != null && !locales.isEmpty()) {
+        		query.append(" AND (");
+        		appendLocalesClause(query, locales);
+        		query.append(")");
+        	}       	
+        	
+        	// grouping
+        	query.append(" GROUP BY t3.language");
+
+        	Query facetCount = em.createNativeQuery(query.toString());
+            List<Object[]> counts = facetCount.getResultList();
+            for (Object[] count : counts) {
+            	results.put((String) count[0], 
+            			(Integer) count[1]);
+            }
+        } catch (NoResultException e) {
+            // do nothing
+        } finally {
+            em.close();
+        }
+        return results;	    	
+    }      
+    
 }
