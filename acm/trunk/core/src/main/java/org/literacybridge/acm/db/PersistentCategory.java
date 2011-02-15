@@ -155,6 +155,6 @@ public class PersistentCategory extends PersistentObject {
     }
     
     public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
-        return PersistentQueries.getFacetCounts(filter, categories, locales);
+        return PersistentQueries.getCategoryFacetCounts(filter, categories, locales);
     }    
 }
