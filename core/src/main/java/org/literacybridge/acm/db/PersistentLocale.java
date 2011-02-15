@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -100,4 +101,8 @@ public class PersistentLocale extends PersistentObject implements Serializable {
     public static PersistentLocale getFromDatabase(int id) {
         return PersistentQueries.getPersistentObject(PersistentLocale.class, id);
     }
+    
+    public static Map<String, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
+        return PersistentQueries.getLanguageFacetCounts(filter, categories, locales);
+    }        
 }
