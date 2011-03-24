@@ -3,20 +3,27 @@ package org.literacybridge.acm.device;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 public class DeviceContents {
 	public final static String CONFIG_FILE = "config.txt";
-	public final static String LIST_SUBFOLDER_PROPERTY_NAME = "LIST_PATH";
+	public final static String SYSTEM_SUBFOLDER = "system";
+	public final static String MESSAGES_SUBFOLDER = "messages";
+	public final static String LISTS_SUBFOLDER = "lists";
+	public final static String TOPICS_SUBFOLDER = "topics";
+	public final static String LANGUAGES_FILE = "languages.txt";
+	public final static String TOPICS_FILE = "topics.txt";
+	
+	public final static String LANGUAGES_SUBFOLDER_PROPERTY_NAME = "LANGUAGES_PATH";
 	public final static String USER_SUBFOLDER_PROPERTY_NAME = "USER_PATH";
 	public final static String LIST_TXT_FILE_SUFFIX = ".txt";
-	
-	public final static String MASTER_LIST_PROPERTY_NAME = "LIST_MASTER";
 	
 	public static class CategoryList {
 		public static class Item {
@@ -66,12 +73,11 @@ public class DeviceContents {
 	
 	private File pathToDevice;
 	private Properties deviceConfig;
-	private List<CategoryList> lists;
-	private CategoryList masterList;
+	private Map<String, List<CategoryList>> lists;
 	
 	public DeviceContents(File pathToDevice) throws IOException {
 		this.pathToDevice = pathToDevice;
-		lists = new ArrayList<DeviceContents.CategoryList>();
+		lists = new HashMap<String, List<CategoryList>>();
 		loadDeviceInfos();
 	}
 	
@@ -80,10 +86,12 @@ public class DeviceContents {
 		String userPath = cleanPath(deviceConfig.getProperty(USER_SUBFOLDER_PROPERTY_NAME));
 		File userFolder = new File(pathToDevice, userPath);
 		
-		for (CategoryList list : lists) {
-			for (CategoryList.Item item : list.audioItems) {
-				if (!item.isApplication) {
-					audioItems.add(new File(userFolder, item.audioItemName + ".a18"));
+		for (List<CategoryList> language : lists.values()) {
+			for (CategoryList list : language) {
+				for (CategoryList.Item item : list.audioItems) {
+					if (!item.isApplication) {
+						audioItems.add(new File(userFolder, item.audioItemName + ".a18"));
+					}
 				}
 			}
 		}
@@ -96,9 +104,10 @@ public class DeviceContents {
 		deviceConfig = new Properties();
 		BufferedReader in = null;
 		try {
-			in = new BufferedReader(new FileReader(new File(pathToDevice, CONFIG_FILE)));
-			legacyParse(in, deviceConfig);
-			//deviceConfig.load(in);
+			File systemPath = new File(pathToDevice, SYSTEM_SUBFOLDER);
+			in = new BufferedReader(new FileReader(new File(systemPath, CONFIG_FILE)));
+			//legacyParse(in, deviceConfig);
+			deviceConfig.load(in);
 		} finally {
 			if (in != null) {
 				in.close();
@@ -109,76 +118,51 @@ public class DeviceContents {
 		loadLists();
 	}
 	
-	private void legacyParse(BufferedReader in, Properties config) throws IOException {
-		while (in.ready()) {
-			String line = in.readLine().trim();
-			if (line.startsWith("//") || line.startsWith("#")) {
-				// skip comments
-				continue;
-			}
-			
-			int index = line.indexOf(":");
-			if (index == -1) {
-				continue;
-			}
-			
-			String key = line.substring(0, index);
-			String value = "";
-			if (index < line.length() - 1) {
-				value = line.substring(index + 1, line.length());
-			}
-			
-			config.put(key, value);
-		}
-	}
-	
 	private void loadLists() throws IOException { 
-		String listPath = cleanPath(deviceConfig.getProperty(LIST_SUBFOLDER_PROPERTY_NAME));
+		File languagesPath = new File(pathToDevice, cleanPath(deviceConfig.getProperty(LANGUAGES_SUBFOLDER_PROPERTY_NAME)));
+//		File languagesPath = new File(pathToDevice, "languages");
+		File messagesFolder = new File(pathToDevice, MESSAGES_SUBFOLDER);
+		File listsFolder = new File(messagesFolder, LISTS_SUBFOLDER);
 		
-		File listFolder = new File(pathToDevice, listPath);
-		File[] listTxtFiles = listFolder.listFiles(new FilenameFilter() {
-			@Override public boolean accept(File dir, String name) {
-				return name.endsWith(LIST_TXT_FILE_SUFFIX);
-			}
-		});
-		
-		File masterListTxtFile = new File(pathToDevice,
-				cleanPath(deviceConfig.getProperty(MASTER_LIST_PROPERTY_NAME)));
-		masterList = loadList(masterListTxtFile);
-		
-		for (File listTxtFile : listTxtFiles) {
-			CategoryList l = loadList(listTxtFile);
-			if (!l.name.equals(masterList.name)) {
-				lists.add(l);
+		List<String> languages = loadListFromFile(new File(languagesPath, LANGUAGES_FILE));
+		for (String language : languages) {
+			List<CategoryList> languageList = new LinkedList<DeviceContents.CategoryList>();
+			File langSubDir = new File(languagesPath, language);
+			File topicsSubDir = new File(langSubDir, TOPICS_SUBFOLDER);
+			List<String> topics = loadListFromFile(new File(topicsSubDir, TOPICS_FILE));
+			for (String topic : topics) {
+				File langList = new File(listsFolder, language);
+				CategoryList list = new CategoryList(topic);
+				for (String audioItemName : loadListFromFile(new File(langList, topic + LIST_TXT_FILE_SUFFIX))) {
+					list.audioItems.add(new CategoryList.Item(audioItemName));
+				}
+				languageList.add(list);
+				lists.put(language, languageList);
 			}
 		}
 	}
 	
-	private CategoryList loadList(File listTxtFile) throws IOException {
-		String fileName = listTxtFile.getName();
-		String listName = listTxtFile.getName().substring(
-				0, fileName.length() - LIST_TXT_FILE_SUFFIX.length());
-		
-		CategoryList list = new CategoryList(listName);
+	public String getConfigProperty(String propertyName) {
+		return deviceConfig.getProperty(propertyName);
+	}
+	
+	private static List<String> loadListFromFile(File f) throws IOException {
+		List<String> list = new ArrayList<String>();
 		
 		BufferedReader in = null;
 		try {
-			in = new BufferedReader(new FileReader(listTxtFile));
+			in = new BufferedReader(new FileReader(f));
 			while (in.ready()) {
-				String audioItemName = in.readLine();
-				list.audioItems.add(new CategoryList.Item(audioItemName));
+				String line = in.readLine();
+				list.add(line);
 			}
 		} finally {
 			if (in != null) {
 				in.close();
 			}
 		}
-		
+
 		return list;
-	}
-	
-	public String getConfigProperty(String propertyName) {
-		return deviceConfig.getProperty(propertyName);
 	}
 	
 	public static void main(String args[]) throws IOException {
@@ -187,19 +171,20 @@ public class DeviceContents {
 		System.out.println("Config\n=======================");
 		System.out.println(contents.deviceConfig);
 		System.out.println();
-		System.out.println("Master list\n=======================");
-		System.out.println(contents.masterList);
 		System.out.println();
 
 		System.out.println("Lists\n=======================");
-		for (CategoryList list : contents.lists) {
-			System.out.println(list);
-			System.out.println();
+		for (Entry<String, List<CategoryList>> entry : contents.lists.entrySet()) {
+			System.out.println(entry.getKey());
+			for (CategoryList list : entry.getValue()) {
+				System.out.println(list);
+				System.out.println();
+			}
 		}
 	}
 	
 	private static final String cleanPath(String path) {
-		if (path.startsWith("a:\\")) {
+		if (path.startsWith("a:/")) {
 			path = path.substring(3);
 		}
 		
