@@ -134,6 +134,7 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 			public void actionPerformed(ActionEvent e) {
 				// update IRequestResult
 				ResourceView.updateDataRequestResult();
+				Application.getFilterState().updateResult();
 				setVisible(false);
 			}
 		});
