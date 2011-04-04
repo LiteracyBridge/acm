@@ -79,13 +79,12 @@ public class Metadata implements Persistable {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <F> void setMetadataField(MetadataField<F> field,
-			MetadataValue<F> value) {
+	public <F> void setMetadataField(MetadataField<F> field, MetadataValue<F> value) {
 		if ((value == null) || (value.getValue() == null)) {
 			return;
 		}
-		ListWrapper<F> fieldValues = new ListWrapper<F>(field,
-				new LinkedList<MetadataValue<F>>());
+		
+		ListWrapper<F> fieldValues = new ListWrapper<F>(field, new LinkedList<MetadataValue<F>>());
 		this.fields.put(field, fieldValues);
 		
 		value.setAttributes(field.getAttributes());		

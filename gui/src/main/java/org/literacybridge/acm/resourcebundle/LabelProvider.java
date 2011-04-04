@@ -34,6 +34,10 @@ public class LabelProvider {
 	public static final String AUDIO_ITEM_TABLE_COLUMN_PLAY_COUNT = "AUDIO_ITEM_TABLE_COLUMN_PLAY_COUNT";
 	public static final String AUDIO_ITEM_TABLE_COLUMN_CATEGORIES = "AUDIO_ITEM_TABLE_COLUMN_CATEGORIES";
 	
+	public static final String LANGUAGES_GERMAN = "GERMAN";
+	public static final String LANGUAGES_ENGLISH = "ENGLISH";
+	public static final String LANGUAGES_FRENCH = "FRENCH";
+	
 	public static final class KeyValuePair<K, V> {
 		private final K key;
 		private final V value;

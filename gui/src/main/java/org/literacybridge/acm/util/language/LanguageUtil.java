@@ -1,8 +1,10 @@
 package org.literacybridge.acm.util.language;
 
+import java.util.List;
 import java.util.Locale;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.resourcebundle.LabelProvider;
 
 public class LanguageUtil {
 
@@ -45,25 +47,17 @@ public class LanguageUtil {
 	public static void setUILanguage(Locale newUILocale) {
 		uiLanguage = newUILocale;
 	}
-	/**
-	 * Get 'ISO 3166-1 alpha-2' country codes for a language.
-	 * 
-	 * This is only a simple mapping!! example: Return 'US' flag for a English language
-	 * 
-	 * @param local
-	 * @return
-	 */
-	public static String getCountryCodeForLanguage(Locale local) {
-		String str = null;
-		
-		if (Locale.GERMAN == local) {
-			return "de";
-		} else if (Locale.ENGLISH == local) {
-			return "en";
-		} else if (Locale.FRENCH == local) {
-			return "fr";
+	
+	public static String getLocalizedLanguageName(Locale locale) {
+		if (locale == Locale.FRENCH) {
+			return LabelProvider.getLabel(LabelProvider.LANGUAGES_FRENCH, getUILanguage());
+		} else if (locale == Locale.GERMAN) {
+			return LabelProvider.getLabel(LabelProvider.LANGUAGES_GERMAN, getUILanguage());			
+		} else if (locale == Locale.ENGLISH) {
+			return LabelProvider.getLabel(LabelProvider.LANGUAGES_ENGLISH, getUILanguage());
 		}
 		
-		return str;
+		return null;
 	}
+
 }

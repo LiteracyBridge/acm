@@ -34,7 +34,7 @@ public class WAVImporter extends Importer {
 			metadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(title));
 			metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
 			metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE, 
-					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode("en")));
+					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 			audioItem.commit();
 			
 			Repository repository = Repository.getRepository();
