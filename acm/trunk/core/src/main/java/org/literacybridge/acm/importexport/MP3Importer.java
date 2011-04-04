@@ -49,7 +49,7 @@ public class MP3Importer extends Importer {
 				metadata.setMetadataField(MetadataSpecification.DTB_REVISION_DATE, new MetadataValue<String>(year.toString()));
 			}
 			metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE, 
-					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode("en")));
+					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 			audioItem.commit();
 			
 			Repository repository = Repository.getRepository();

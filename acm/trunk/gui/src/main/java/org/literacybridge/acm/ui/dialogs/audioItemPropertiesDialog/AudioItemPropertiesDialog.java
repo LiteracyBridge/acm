@@ -32,7 +32,7 @@ import org.literacybridge.acm.util.SimpleMessageService;
 public class AudioItemPropertiesDialog extends JDialog implements Observer {
 
 	private static final long serialVersionUID = -3854016276035587383L;
-	private JXTable propertiesTable = null;
+	private AudioItemPropertiesTable propertiesTable = null;
 
 	private JButton backBtn = null;
 	private JButton nextBtn = null;
@@ -115,7 +115,7 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 	
 		// Show properties table
 		JScrollPane theScrollPane = new JScrollPane();
-		propertiesTable = new JXTable();
+		propertiesTable = new AudioItemPropertiesTable();
 		propertiesTable.setShowGrid(false, false);
 		// use fixed color; there seems to be a bug in some plaf
 		// implementations that cause strange rendering
