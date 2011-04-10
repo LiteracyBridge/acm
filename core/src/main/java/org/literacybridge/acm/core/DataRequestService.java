@@ -43,8 +43,10 @@ public class DataRequestService implements IDataRequestService {
 			audioItems.add(new AudioItem(item));
 		}
 		
+		Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, categories, locales);
+		
 		Taxonomy taxonomy = Taxonomy.getTaxonomy();
-		DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, audioItems);
+		DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems);
 		return result;
 	}
 
