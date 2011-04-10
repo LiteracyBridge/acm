@@ -4,7 +4,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
-import java.util.Set;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy;
@@ -15,7 +14,6 @@ import org.literacybridge.acm.core.DataRequestResult;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
-import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 
 public class DemoRepository {
 	private Taxonomy taxonomy;
@@ -32,7 +30,7 @@ public class DemoRepository {
 	
 	public IDataRequestResult getDataRequestResult() {
 		
-		IDataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), null, audioItems);
+		IDataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), null, null, audioItems);
 		return result;
 	}
 	

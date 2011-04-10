@@ -8,13 +8,15 @@ import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 
 public class DataRequestResult implements IDataRequestResult {
-	private Category rootCategory;
-	private Map<Integer, Integer> facetCounts;
-	private List<AudioItem> audioItems;
+	private final Category rootCategory;
+	private final Map<Integer, Integer> facetCounts;
+	private final Map<String, Integer> languageFacetCounts;
+	private final List<AudioItem> audioItems;
 	
-	public DataRequestResult(Category rootCategory, Map<Integer, Integer> facetCounts, List<AudioItem> audioItems) {
+	public DataRequestResult(Category rootCategory, Map<Integer, Integer> facetCounts, Map<String, Integer> languageFacetCounts, List<AudioItem> audioItems) {
 		this.rootCategory = rootCategory;
 		this.facetCounts = facetCounts;
+		this.languageFacetCounts = languageFacetCounts;
 		this.audioItems = audioItems;
 	}
 	
@@ -46,6 +48,17 @@ public class DataRequestResult implements IDataRequestResult {
 	public List<AudioItem> getAudioItems() {
 		return audioItems;
 	}
-	
-	
+
+	@Override
+	public int getLanguageFacetCount(String languageCode) {
+		if (languageCode == null) {
+			return 0;
+		}
+		Integer count = languageFacetCounts.get(languageCode);
+		if (count == null) {
+			return 0;
+		} else {
+			return count;
+		}
+	}
 }

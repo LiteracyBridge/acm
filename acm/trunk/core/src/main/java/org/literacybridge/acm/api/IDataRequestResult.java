@@ -24,6 +24,11 @@ public interface IDataRequestResult {
 	public abstract int getFacetCount(Category category);
 
 	/**
+	 * Returns the facet count for the passed-in language. 
+	 */
+	public abstract int getLanguageFacetCount(String languageCode);
+	
+	/**
 	 * Returns the list of AudioItems to be displayed. 
 	 */
 	public abstract List<AudioItem> getAudioItems();

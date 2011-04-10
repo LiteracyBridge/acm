@@ -182,6 +182,7 @@ public class CategoryView extends Container implements Observer {
 		
 		languagePane = new JXTaskPane();
 		languageTree = new CheckboxTree(languageRootNode);
+		languageTree.setCellRenderer(new FacetCountCellRenderer());
 		JScrollPane languageScrollPane = new JScrollPane(languageTree);
 		languagePane.add(languageScrollPane);
 		
@@ -203,7 +204,7 @@ public class CategoryView extends Container implements Observer {
 		addListeners(); // at last
 	}
 	
-	private static class LanguageLabel {
+	private class LanguageLabel implements FacetCountProvider {
 		private final String labelName;
 		private Locale locale;
 		public LanguageLabel(String labelName, Locale locale) {
@@ -212,11 +213,21 @@ public class CategoryView extends Container implements Observer {
 		}
 		
 		@Override public String toString() {
-			return LabelProvider.getLabel(labelName, LanguageUtil.getUILanguage());
+			String displayLabel = LabelProvider.getLabel(labelName, LanguageUtil.getUILanguage());
+			int count = result.getLanguageFacetCount(locale.getLanguage());
+			if (count > 0) {
+				displayLabel += " ["+count+"]";
+			}
+			return displayLabel;
 		}
 
 		public Locale getLocale() {
 			return locale;
+		}
+
+		@Override
+		public int getFacetCount() {
+			return result.getLanguageFacetCount(locale.getLanguage());
 		}
 	}
 	
@@ -279,12 +290,10 @@ public class CategoryView extends Container implements Observer {
 		languageTree.setRootVisible(false);
 		languageTree.expandPath(new TreePath(languageRootNode.getPath()));
 		
-		languageTree.addMouseListener(new MouseAdapter() {
-
-			@Override
-			public void mouseClicked(MouseEvent e) {
+		languageTree.addTreeCheckingListener(new TreeCheckingListener() {
+			@Override public void valueChanged(TreeCheckingEvent e) {
 				pumpLanguageFilter();
-			}
+			};
 		});
 	}
 	
@@ -385,8 +394,13 @@ public class CategoryView extends Container implements Observer {
 		deviceTree.setTransferHandler(new ExportToDeviceTransferHandler());
 	}
 	
+	
+	public static interface FacetCountProvider {
+		public int getFacetCount();	
+	}
+	
 	// Helper class for tree nodes
-	public class CategoryTreeNodeObject {
+	public class CategoryTreeNodeObject implements FacetCountProvider {
 		private Category category;
 		
 		public CategoryTreeNodeObject(Category category) {
@@ -397,6 +411,7 @@ public class CategoryView extends Container implements Observer {
 			return category;
 		}
 
+		@Override
 		public int getFacetCount() {
 			return result.getFacetCount(category);
 		}
@@ -425,8 +440,8 @@ public class CategoryView extends Container implements Observer {
 	    	DefaultMutableTreeNode cat = (DefaultMutableTreeNode) object;
 	    	DefaultCheckboxTreeCellRenderer cell = (DefaultCheckboxTreeCellRenderer) super.getTreeCellRendererComponent(tree, object, selected, expanded, leaf, row, hasFocus);
 	    	
-	    	if (cat.getUserObject() != null && cat.getUserObject() instanceof CategoryTreeNodeObject) {
-	    		CategoryTreeNodeObject node = (CategoryTreeNodeObject) cat.getUserObject();
+	    	if (cat.getUserObject() != null && cat.getUserObject() instanceof FacetCountProvider) {
+	    		FacetCountProvider node = (FacetCountProvider) cat.getUserObject();
 		    	// make label bold
 		        Font f = super.label.getFont();
 		    	int count = node.getFacetCount();
@@ -459,6 +474,11 @@ public class CategoryView extends Container implements Observer {
 	        DefaultMutableTreeNode current = (DefaultMutableTreeNode)e.nextElement();
 	        CategoryTreeNodeObject obj = (CategoryTreeNodeObject) current.getUserObject();
 	        categoryTree.getModel().valueForPathChanged(new TreePath(current.getPath()), obj);
+		}
+		for (Enumeration e = languageRootNode.breadthFirstEnumeration(); e.hasMoreElements(); ) {
+	        DefaultMutableTreeNode current = (DefaultMutableTreeNode)e.nextElement();
+	        LanguageLabel obj = (LanguageLabel) current.getUserObject();
+	        languageTree.getModel().valueForPathChanged(new TreePath(current.getPath()), obj);
 		}
 	}
 	
