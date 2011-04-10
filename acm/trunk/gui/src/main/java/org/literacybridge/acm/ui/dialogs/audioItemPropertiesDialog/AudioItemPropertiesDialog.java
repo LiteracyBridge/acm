@@ -15,7 +15,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.metadata.Metadata;
@@ -27,7 +26,6 @@ import org.literacybridge.acm.ui.messages.RequestAndSelectAudioItemMessage;
 import org.literacybridge.acm.ui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.ui.messages.RequestedAudioItemMessage;
 import org.literacybridge.acm.util.language.LanguageUtil;
-import org.literacybridge.acm.util.SimpleMessageService;
 
 public class AudioItemPropertiesDialog extends JDialog implements Observer {
 
@@ -63,7 +61,7 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 			return; // JTBD
 		Metadata metadata = item.getLocalizedAudioItem(
 				LanguageUtil.getUserChoosenLanguage()).getMetadata();
-		showMetadata(metadata);
+		showMetadata(item, metadata);
 
 
 	}
@@ -141,8 +139,8 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 		add(okBtn, BorderLayout.SOUTH);
 	}
 
-	private void showMetadata(Metadata metadata) {
-		propertiesTable.setModel(new AudioItemPropertiesModel(metadata));
+	private void showMetadata(AudioItem audioItem, Metadata metadata) {
+		propertiesTable.setModel(new AudioItemPropertiesModel(audioItem, metadata));
 	}
 
 	@Override

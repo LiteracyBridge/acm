@@ -35,7 +35,7 @@ public class LocalizedAudioItem implements Persistable {
 		setLocale(locale);
 	}
 
-	private void setLocale(Locale locale) {
+	public void setLocale(Locale locale) {
 		//TODO prevent multiple locale entries with the same value
 		PersistentLocale persistentLocale = new PersistentLocale();
 		persistentLocale.setCountry(locale.getCountry());

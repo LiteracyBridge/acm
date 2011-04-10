@@ -21,6 +21,8 @@ import java.util.Vector;
 
 import javax.swing.table.AbstractTableModel;
 
+import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataField;
 import org.literacybridge.acm.metadata.MetadataValue;
@@ -37,10 +39,12 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	private final int VALUE_COL = 1;
 	
 	private Metadata metadata = null;
+	private AudioItem audioItem = null;
 	private Vector<AudioItemPropertiesObject<?>> audioItemPropertiesObject = new Vector<AudioItemPropertiesObject<?>>();
 	
-	public AudioItemPropertiesModel(Metadata metadata) {
+	public AudioItemPropertiesModel(AudioItem audioItem, Metadata metadata) {
 		this.metadata = metadata;
+		this.audioItem = audioItem;
 		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_TITLE));
 		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_CREATOR));
 		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_SUBJECT));
@@ -114,7 +118,6 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		case TITLE_COL:
 			return LabelProvider.getLabel(obj.getFieldID(), LanguageUtil.getUILanguage());
 		case VALUE_COL:
-			String value = "";
 			if (obj instanceof AudioItemStringProperty) {
 				return Metadata.getCommaSeparatedList(metadata, obj.getFieldID());				
 			} else if (obj instanceof AudioItemRFC3066LanguageProperty) {
@@ -146,7 +149,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			setStringValue(((AudioItemStringProperty) obj).getFieldID(), metadata, newValue);
 		} else if (obj instanceof AudioItemRFC3066LanguageProperty) {
 			Locale newLocale = (Locale) aValue;
-			setLocaleValue(((AudioItemRFC3066LanguageProperty) obj).getFieldID(), metadata, newLocale.getLanguage());
+			setLocaleValue(((AudioItemRFC3066LanguageProperty) obj).getFieldID(), metadata, newLocale);
 		}
 		
 		metadata.commit();
@@ -157,11 +160,15 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		metadata.setMetadataField(field, new MetadataValue<String>(value));
 	}	
 	
-	private void setLocaleValue(MetadataField<RFC3066LanguageCode> field, Metadata metadata, String code) {
-		metadata.setMetadataField(field, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(code)));
+	private void setLocaleValue(MetadataField<RFC3066LanguageCode> field, Metadata metadata, Locale newLocale) {
+		Locale oldLocale = getMetadataLocale();
+		LocalizedAudioItem localizedItem = audioItem.getLocalizedAudioItem(oldLocale);
+		localizedItem.setLocale(newLocale);
+		localizedItem.commit();
+		audioItem.commit();
+		metadata.setMetadataField(field, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(newLocale.getLanguage())));
+		metadata.commit();
 	}
-	
-	
 	
 	
 	// TODO Ask Michael: What is that csv list for a single metadata field all about?
