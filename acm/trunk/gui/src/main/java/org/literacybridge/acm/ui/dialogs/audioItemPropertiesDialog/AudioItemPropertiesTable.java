@@ -1,9 +1,6 @@
 package org.literacybridge.acm.ui.dialogs.audioItemPropertiesDialog;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Locale;
-import java.util.Vector;
 
 import javax.swing.DefaultCellEditor;
 import javax.swing.JComboBox;
@@ -11,7 +8,6 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableModel;
 
 import org.jdesktop.swingx.JXTable;
-import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class AudioItemPropertiesTable extends JXTable {
 

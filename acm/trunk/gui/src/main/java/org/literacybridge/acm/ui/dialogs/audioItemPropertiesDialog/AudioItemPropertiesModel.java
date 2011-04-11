@@ -74,24 +74,11 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		return audioItemPropertiesObject.size();
 	}
 
-	private Locale getLocaleForLanguageCode(String code) {
-		if (Locale.ENGLISH.getLanguage().equals(code)) {
-			return Locale.ENGLISH;
-		} else if (Locale.GERMAN.getLanguage().equals(code)) {
-			return Locale.GERMAN;
-		} else if (Locale.FRENCH.getLanguage().equals(code)) {
-			return Locale.FRENCH;
-		}
-		
-		return Locale.ENGLISH;
-	}
-	
 	private Locale getLanguage(MetadataField<RFC3066LanguageCode> language) {
 		// only shows first language
 		for (MetadataValue<RFC3066LanguageCode> mv : metadata.getMetadataValues(language)) {
 			RFC3066LanguageCode code = mv.getValue();
-			String languageCode = code.toString();
-			return getLocaleForLanguageCode(languageCode); 		
+			return code.getLocale(); 		
 		}
 		
 		return null;

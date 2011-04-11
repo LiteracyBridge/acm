@@ -1,10 +1,9 @@
 package org.literacybridge.acm.util.language;
 
-import java.util.List;
 import java.util.Locale;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
-import org.literacybridge.acm.resourcebundle.LabelProvider;
+import org.literacybridge.acm.config.Configuration;
 
 public class LanguageUtil {
 
@@ -49,15 +48,11 @@ public class LanguageUtil {
 	}
 	
 	public static String getLocalizedLanguageName(Locale locale) {
-		if (locale == Locale.FRENCH) {
-			return LabelProvider.getLabel(LabelProvider.LANGUAGES_FRENCH, getUILanguage());
-		} else if (locale == Locale.GERMAN) {
-			return LabelProvider.getLabel(LabelProvider.LANGUAGES_GERMAN, getUILanguage());			
-		} else if (locale == Locale.ENGLISH) {
-			return LabelProvider.getLabel(LabelProvider.LANGUAGES_ENGLISH, getUILanguage());
+		String label = Configuration.getConfiguration().getLanguageLabel(locale);
+		if (label == null) {
+			label = locale.getDisplayLanguage(getUILanguage());
 		}
-		
-		return null;
+		return label;
 	}
 
 }

@@ -1,21 +1,19 @@
 package org.literacybridge.acm.ui.dialogs.audioItemPropertiesDialog;
 
+import java.util.List;
 import java.util.Locale;
-import java.util.Vector;
 
 import javax.swing.DefaultComboBoxModel;
 
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class LanguageComboBoxModel extends DefaultComboBoxModel {
-	private Vector<Locale> supportedLanguages;
+	private final List<Locale> supportedLanguages;
 	private Object selectedItem;
 	
 	public LanguageComboBoxModel() {
-		supportedLanguages = new Vector<Locale>();
-		supportedLanguages.add(Locale.ENGLISH);
-		supportedLanguages.add(Locale.GERMAN);
-		supportedLanguages.add(Locale.FRENCH);
+		supportedLanguages = Configuration.getConfiguration().getAudioLanguages();
 	}
 
 	@Override
@@ -27,8 +25,6 @@ public class LanguageComboBoxModel extends DefaultComboBoxModel {
 	public int getSize() {
 		return supportedLanguages.size();
 	}
-	
-	
 	
 	@Override
 	public Object getSelectedItem() {

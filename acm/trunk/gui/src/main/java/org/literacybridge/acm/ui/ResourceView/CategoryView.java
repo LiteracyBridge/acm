@@ -13,7 +13,6 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -44,6 +43,7 @@ import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.core.MessageBus.Message;
 import org.literacybridge.acm.db.PersistentCategory;
@@ -205,15 +205,13 @@ public class CategoryView extends Container implements Observer {
 	}
 	
 	private class LanguageLabel implements FacetCountProvider {
-		private final String labelName;
 		private Locale locale;
-		public LanguageLabel(String labelName, Locale locale) {
-			this.labelName = labelName;
+		public LanguageLabel(Locale locale) {
 			this.locale = locale;
 		}
 		
 		@Override public String toString() {
-			String displayLabel = LabelProvider.getLabel(labelName, LanguageUtil.getUILanguage());
+			String displayLabel = LanguageUtil.getLocalizedLanguageName(locale);
 			int count = result.getLanguageFacetCount(locale.getLanguage());
 			if (count > 0) {
 				displayLabel += " ["+count+"]";
@@ -231,6 +229,18 @@ public class CategoryView extends Container implements Observer {
 		}
 	}
 	
+	private static final class UILanguageLabel {
+		private final Locale locale;
+		
+		UILanguageLabel(Locale locale) {
+			this.locale = locale;
+		}
+		
+		@Override public String toString() {
+			return LanguageUtil.getLocalizedLanguageName(locale);
+		}
+	}
+	
 	private void addOptionList() {
 		final int NUM_OPTIONS = 2;
 		optionsPane = new JXTaskPane();
@@ -240,9 +250,9 @@ public class CategoryView extends Container implements Observer {
 		optionComponent.setLayout(new GridLayout(NUM_OPTIONS, 2));
 		uiLangugeLb = new JLabel();
 		optionComponent.add(uiLangugeLb);		
-		LanguageLabel[] langs = {new LanguageLabel("ENGLISH", Locale.ENGLISH),
-								 new LanguageLabel("GERMAN", Locale.GERMAN),
-								 new LanguageLabel("FRENCH", Locale.FRENCH)};
+		UILanguageLabel[] langs = {new UILanguageLabel(Locale.ENGLISH),
+								 new UILanguageLabel(Locale.GERMAN),
+								 new UILanguageLabel(Locale.FRENCH)};
 		
 		
 		JComboBox userLanguages = new JComboBox(langs);		
@@ -280,9 +290,11 @@ public class CategoryView extends Container implements Observer {
 	}
 
 	private void createLanguageList() {
-		languagesList.add(new LanguageLabel("ENGLISH", Locale.ENGLISH));
-		languagesList.add(new LanguageLabel("FRENCH", Locale.FRENCH));
-		
+		List<Locale> audioLanguages = Configuration.getConfiguration().getAudioLanguages();
+		for (Locale locale : audioLanguages) {
+			languagesList.add(new LanguageLabel(locale));			
+		}
+
 		for (LanguageLabel currLable : languagesList) {
 			languageRootNode.add(new DefaultMutableTreeNode(currLable));	
 		}		

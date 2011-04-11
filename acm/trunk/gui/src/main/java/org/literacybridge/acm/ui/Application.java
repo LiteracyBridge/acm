@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
-import java.util.Locale;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
