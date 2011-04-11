@@ -3,6 +3,7 @@ package org.literacybridge.acm.metadata;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.StringTokenizer;
 
 import org.literacybridge.acm.utils.IOUtils;
@@ -12,7 +13,7 @@ public class RFC3066LanguageCode {
 	
 	public RFC3066LanguageCode(String code) {
 		// parse the string
-		StringTokenizer tokenizer = new StringTokenizer(code, "-");
+		StringTokenizer tokenizer = new StringTokenizer(code, "-_");
 		int numTokens = tokenizer.countTokens();
 		codes = new String[numTokens];
 		
@@ -29,6 +30,15 @@ public class RFC3066LanguageCode {
 		
 		// TODO: validate language and country codes
 		return true;
+	}
+	
+	public Locale getLocale() {
+		switch (codes.length) {
+			case 0: return null;
+			case 1: return new Locale(codes[0]);
+			case 2: return new Locale(codes[0], codes[1]);
+			default: return new Locale(codes[0], codes[1], codes[2]);
+		}
 	}
 	
 	@Override

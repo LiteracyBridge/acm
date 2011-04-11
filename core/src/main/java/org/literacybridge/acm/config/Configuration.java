@@ -6,10 +6,20 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 
 public class Configuration extends Properties {
 	private static final File CONFIG_FILE = new File(Constants.LB_SYSTEM_DIR, "config.properties");
@@ -20,13 +30,22 @@ public class Configuration extends Properties {
 		// singleton
 	}
 	
-	public static Configuration getConfiguration() throws IOException {
+	public static Configuration getConfiguration() {
 		if (instance == null) {
 			instance = new Configuration();
 			
 			if (CONFIG_FILE.exists()) {
-				BufferedInputStream in = new BufferedInputStream(new FileInputStream(CONFIG_FILE));
-				instance.load(in);
+				try {
+					BufferedInputStream in = new BufferedInputStream(new FileInputStream(CONFIG_FILE));
+					instance.load(in);
+				} catch (IOException e) {
+					throw new RuntimeException("Unable to load configuration file: " + CONFIG_FILE, e);
+				}
+			}
+			
+			if (!instance.containsKey(AUDIO_LANGUAGES)) {
+				instance.put(AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),tw(\"Twi\"),sfw(\"Sehwi\")");
+				instance.writeProps();
 			}
 
 		}
@@ -34,11 +53,15 @@ public class Configuration extends Properties {
 		return instance;
 	}
 	
-	public void writeProps() throws IOException {
-		BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(CONFIG_FILE));
-		super.store(out, null);
-		out.flush();
-		out.close();
+	public void writeProps() {
+		try {
+			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(CONFIG_FILE));
+			super.store(out, null);
+			out.flush();
+			out.close();
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to write configuration file: " + CONFIG_FILE, e);
+		}
 	}
 	
 	
@@ -49,6 +72,10 @@ public class Configuration extends Properties {
 	
 	private final static String RECORDING_COUNTER_PROP = "RECORDING_COUNTER";
 	private final static String DEVICE_ID_PROP = "DEVICE_ID";
+	private final static String AUDIO_LANGUAGES = "AUDIO_LANGUAGES";
+	
+	private List<Locale> audioLanguages = null;
+	private Map<Locale,String> languageLables = new HashMap<Locale, String>();
 	
 	public String getRecordingCounter() {
 		return getProperty(RECORDING_COUNTER_PROP);
@@ -74,5 +101,43 @@ public class Configuration extends Properties {
 		}
 		
 		return value;
+	}
+	
+	private final static Pattern LANGUAGE_LABEL_PATTERN = Pattern.compile(".*\\(\"(.+)\"\\).*");
+	
+	public String getLanguageLabel(Locale locale) {
+		return languageLables.get(locale);
+	}
+	
+	public List<Locale> getAudioLanguages() {
+		if (audioLanguages == null) {
+			audioLanguages = new ArrayList<Locale>();
+			String languages = getProperty(AUDIO_LANGUAGES);
+			if (languages != null) {
+				StringTokenizer tokenizer = new StringTokenizer(languages, ", ");
+				while (tokenizer.hasMoreTokens()) {
+					String code = tokenizer.nextToken();
+					String label = null;
+					Matcher labelMatcher = LANGUAGE_LABEL_PATTERN.matcher(code);
+					if (labelMatcher.matches()) {
+						label = labelMatcher.group(1);
+						code = code.substring(0, code.indexOf("("));
+					}
+					RFC3066LanguageCode language = new RFC3066LanguageCode(code);
+					Locale locale = language.getLocale();
+					if (locale != null) {
+						if (label != null) {
+							languageLables.put(locale, label);
+						}
+						audioLanguages.add(locale);
+					}
+				}
+				if (audioLanguages.isEmpty()) {
+					audioLanguages.add(Locale.ENGLISH);
+				}
+			}
+		}
+		
+		return Collections.unmodifiableList(audioLanguages);
 	}
 }

@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
@@ -33,10 +34,6 @@ public class LabelProvider {
 	public static final String AUDIO_ITEM_TABLE_COLUMN_LANGUAGE = "AUDIO_ITEM_TABLE_COLUMN_LANGUAGE";
 	public static final String AUDIO_ITEM_TABLE_COLUMN_PLAY_COUNT = "AUDIO_ITEM_TABLE_COLUMN_PLAY_COUNT";
 	public static final String AUDIO_ITEM_TABLE_COLUMN_CATEGORIES = "AUDIO_ITEM_TABLE_COLUMN_CATEGORIES";
-	
-	public static final String LANGUAGES_GERMAN = "GERMAN";
-	public static final String LANGUAGES_ENGLISH = "ENGLISH";
-	public static final String LANGUAGES_FRENCH = "FRENCH";
 	
 	public static final class KeyValuePair<K, V> {
 		private final K key;
@@ -93,7 +90,15 @@ public class LabelProvider {
 	}
 	
 	public static String getLabel(String propertyName, Locale locale) {
-		return getResourceBundle(locale).getString(propertyName);
+		try {
+			return getResourceBundle(locale).getString(propertyName);
+		} catch (MissingResourceException e) {
+			try {
+				return getResourceBundle(Locale.ENGLISH).getString(propertyName);
+			} catch (MissingResourceException e1) {
+				return propertyName;
+			}
+		}
 	}
 	
 	public static void main(String[] args) {

@@ -108,7 +108,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 					break;
 				}
 				case LANGUAGES: {
-					cellText = localizedAudioItem.getLocale().getDisplayLanguage();
+					cellText = LanguageUtil.getLocalizedLanguageName(localizedAudioItem.getLocale());
 					break;
 				}
 				default: {

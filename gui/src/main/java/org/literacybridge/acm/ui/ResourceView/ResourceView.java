@@ -14,10 +14,6 @@ import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class ResourceView extends Container {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1464102221036629153L;
 
 	public AudioItemView audioItemView;
