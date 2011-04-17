@@ -17,11 +17,12 @@ public class DeviceContents {
 	public final static String SYSTEM_SUBFOLDER = "system";
 	public final static String MESSAGES_SUBFOLDER = "messages";
 	public final static String LISTS_SUBFOLDER = "lists";
-	public final static String TOPICS_SUBFOLDER = "topics";
 	public final static String LANGUAGES_FILE = "languages.txt";
 	public final static String TOPICS_FILE = "topics.txt";
 	
 	public final static String LANGUAGES_SUBFOLDER_PROPERTY_NAME = "LANGUAGES_PATH";
+	public final static String LIST_MASTER_PROPERTY_NAME = "LIST_MASTER";
+	public final static String LISTS_SUBFOLDER_PROPERTY_NAME = "LISTS_PATH";
 	public final static String USER_SUBFOLDER_PROPERTY_NAME = "USER_PATH";
 	public final static String LIST_TXT_FILE_SUFFIX = ".txt";
 	
@@ -120,16 +121,15 @@ public class DeviceContents {
 	
 	private void loadLists() throws IOException { 
 		File languagesPath = new File(pathToDevice, cleanPath(deviceConfig.getProperty(LANGUAGES_SUBFOLDER_PROPERTY_NAME)));
-//		File languagesPath = new File(pathToDevice, "languages");
 		File messagesFolder = new File(pathToDevice, MESSAGES_SUBFOLDER);
 		File listsFolder = new File(messagesFolder, LISTS_SUBFOLDER);
 		
 		List<String> languages = loadListFromFile(new File(languagesPath, LANGUAGES_FILE));
 		for (String language : languages) {
 			List<CategoryList> languageList = new LinkedList<DeviceContents.CategoryList>();
-			File langSubDir = new File(languagesPath, language);
-			File topicsSubDir = new File(langSubDir, TOPICS_SUBFOLDER);
-			List<String> topics = loadListFromFile(new File(topicsSubDir, TOPICS_FILE));
+			File languagePath = new File(new File(pathToDevice, cleanPath(deviceConfig.getProperty(LISTS_SUBFOLDER_PROPERTY_NAME))),
+																language);
+			List<String> topics = loadListFromFile(new File(languagePath, deviceConfig.getProperty(LIST_MASTER_PROPERTY_NAME) + LIST_TXT_FILE_SUFFIX));
 			for (String topic : topics) {
 				File langList = new File(listsFolder, language);
 				CategoryList list = new CategoryList(topic);
