@@ -30,7 +30,7 @@ import org.literacybridge.audioconverter.api.A18Format.useHeaderChoice;
 import org.literacybridge.audioconverter.converters.BaseAudioConverter.ConversionException;
 
 public class A18DeviceExporter {
-	private static final String INBOX_SUB_DIR = "inbox/new-pkgs";
+	private static final String INBOX_SUB_DIR = "inbox/messages";
 	
 	public static boolean exportToDevice(LocalizedAudioItem item, DeviceInfo device) throws IOException {
 		File deviceLocation = device.getPathToDevice();
