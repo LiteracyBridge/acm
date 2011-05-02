@@ -27,8 +27,5 @@ public class LBMetadataIDs {
 				.put(DTB_REVISION, 16)
 				.put(DTB_REVISION_DATE, 17)
 				.put(DTB_REVISION_DESCRIPTION, 18)
-				.put(LB_COPY_COUNT, 19)
-				.put(LB_PLAY_COUNT, 20)
-				.put(LB_RATING, 21)
 				.build();
 }

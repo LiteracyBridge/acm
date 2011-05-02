@@ -4,12 +4,11 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.literacybridge.acm.db.Persistable;
-import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentMetadata;
+import org.literacybridge.acm.metadata.types.MetadataStatisticsField;
 
 public class Metadata implements Persistable {
 
@@ -152,12 +151,6 @@ public class Metadata implements Persistable {
 			// mMetadata.setDtb_revision_date(value.getValue());
 		} else if (field == MetadataSpecification.DTB_REVISION_DESCRIPTION) {
 			mMetadata.setDtb_revision_description(value.getValue().toString());
-		} else if (field == MetadataSpecification.LB_COPY_COUNT) {
-			mMetadata.setLb_copy_count("default", 
-					Integer.parseInt(value.getValue().toString()));
-		} else if (field == MetadataSpecification.LB_PLAY_COUNT) {
-			mMetadata.setLb_play_count("default", 
-					Integer.parseInt(value.getValue().toString()));
 		} else if (field == MetadataSpecification.LB_RATING) {
 			mMetadata.setLb_rating(Short.valueOf(value.getValue().toString()));
 		} else if (field == MetadataSpecification.DC_LANGUAGE) {
@@ -208,11 +201,13 @@ public class Metadata implements Persistable {
 											.toString()));
 			setMetadataField(MetadataSpecification.DTB_REVISION_DESCRIPTION,
 					new MetadataValue<String>(mMetadata
-							.getDtb_revision_description()));
-			setMetadataField(MetadataSpecification.LB_COPY_COUNT,
-					mMetadata.getLb_copy_count() == 0 ? null : new MetadataValue<Integer>(mMetadata.getLb_copy_count()));
-			setMetadataField(MetadataSpecification.LB_PLAY_COUNT,
-					mMetadata.getLb_play_count() == 0 ? null : new MetadataValue<Integer>(mMetadata.getLb_play_count()));
+							.getDtb_revision_description()));	
+			setStatisticsField(MetadataSpecification.LB_APPLY_COUNT);
+			setStatisticsField(MetadataSpecification.LB_COMPLETION_COUNT);
+			setStatisticsField(MetadataSpecification.LB_COPY_COUNT);
+			setStatisticsField(MetadataSpecification.LB_OPEN_COUNT);
+			setStatisticsField(MetadataSpecification.LB_SURVEY1_COUNT);
+			setStatisticsField(MetadataSpecification.LB_USELESS_COUNT);
 			setMetadataField(MetadataSpecification.LB_RATING,
 					new MetadataValue<Integer>(
 							(mMetadata.getLb_rating() == null || mMetadata.getLb_rating().intValue() == 0) ? null
@@ -226,6 +221,11 @@ public class Metadata implements Persistable {
 		} finally {
 			isRefreshing = false;
 		}
+	}
+	
+	private final void setStatisticsField(MetadataStatisticsField statisticsField) {
+		int count = mMetadata.getStatistic(statisticsField);
+		setMetadataField(statisticsField, count == 0 ? null : new MetadataValue<Integer>(count));
 	}
 	
 	public String toString() {

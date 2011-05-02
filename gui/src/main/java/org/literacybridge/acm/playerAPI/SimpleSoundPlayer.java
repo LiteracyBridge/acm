@@ -50,10 +50,12 @@ public class SimpleSoundPlayer extends Observable
     public void play() {
         if(player == null) {
             try {
-                MediaLocator mediaLocator = new MediaLocator(currentClip.toURI().toURL());
-                player = Manager.createPlayer(mediaLocator);
-                player.addControllerListener(this);
-                player.realize();
+            	if (currentClip != null) {
+	                MediaLocator mediaLocator = new MediaLocator(currentClip.toURI().toURL());
+	                player = Manager.createPlayer(mediaLocator);
+	                player.addControllerListener(this);
+	                player.realize();
+            	}
             }
             catch(MalformedURLException ex) {
                 ex.printStackTrace();

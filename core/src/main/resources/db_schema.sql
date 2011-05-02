@@ -77,8 +77,13 @@ CREATE TABLE t_audioitem_statistic (
   id INT PRIMARY KEY, 
   metadata INT,  
   device_id VARCHAR(255), 
+  boot_cycle_number INT,
   lb_copy_count INT, 
-  lb_play_count INT);  
+  lb_open_count INT,
+  lb_completion_count INT,
+  lb_survey1_count INT,
+  lb_apply_count INT,
+  lb_useless_count INT);  
   
 INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_audioitem',0);
 INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_localized_audioitem',0);

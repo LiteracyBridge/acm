@@ -1,20 +1,15 @@
 package org.literacybridge.acm.ui.ResourceView.audioItems;
 
-import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.ui.Application;
 import org.literacybridge.acm.ui.dialogs.AudioItemContextMenuDialog;
 import org.literacybridge.acm.ui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.ui.messages.RequestAudioItemToPlayMessage;
 import org.literacybridge.acm.util.UIUtils;
-import org.literacybridge.acm.util.language.LanguageUtil;
-
-import com.sun.media.rtsp.protocol.RequestMessage;
 
 public class AudioItemViewMouseListener extends MouseAdapter {
 	public AudioItemView adaptee;
@@ -77,20 +72,22 @@ public class AudioItemViewMouseListener extends MouseAdapter {
 		if (col == AudioItemTableModel.INFO_ICON || e.getButton() != MouseEvent.BUTTON1) {
 			
 			AudioItem clickedAudioItem = adaptee.getCurrentAudioItem(); // always the fist item of a selection!!
-
-			int[] selectedRows = adaptee.audioItemTable.getSelectedRows();
-			AudioItem[] selectedAudioItems = new AudioItem[selectedRows.length];
-			for (int i = 0; i < selectedRows.length; i++) {
-				selectedAudioItems[i] = adaptee.getValueAt(selectedRows[i], 0);
-			}
+			if (clickedAudioItem != null) {
 			
-			UIUtils.showDialog(	new AudioItemContextMenuDialog(Application.getApplication()
-									, clickedAudioItem
-									, selectedAudioItems
-									, adaptee
-									, currentResult)
-							, e.getXOnScreen() + 2
-							, e.getYOnScreen());
+				int[] selectedRows = adaptee.audioItemTable.getSelectedRows();
+				AudioItem[] selectedAudioItems = new AudioItem[selectedRows.length];
+				for (int i = 0; i < selectedRows.length; i++) {
+					selectedAudioItems[i] = adaptee.getValueAt(selectedRows[i], 0);
+				}
+				
+				UIUtils.showDialog(	new AudioItemContextMenuDialog(Application.getApplication()
+										, clickedAudioItem
+										, selectedAudioItems
+										, adaptee
+										, currentResult)
+								, e.getXOnScreen() + 2
+								, e.getYOnScreen());
+			}
 		}
 	}
 

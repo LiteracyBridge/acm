@@ -25,6 +25,18 @@ public abstract class MetadataField<T> {
 		return this.name;
 	}
 	
+	@Override public int hashCode() {
+		return name.hashCode();
+	}
+	
+	@Override public boolean equals(Object other) {
+		if (!(other instanceof MetadataField)) {
+			return false;
+		}
+		
+		return ((MetadataField<?>) other).name.equals(name);
+	}
+	
 	protected abstract MetadataValue<T> deserialize(DataInput in) throws IOException; 
 	protected abstract void serialize(DataOutput out, MetadataValue<T> value) throws IOException; 
 }
