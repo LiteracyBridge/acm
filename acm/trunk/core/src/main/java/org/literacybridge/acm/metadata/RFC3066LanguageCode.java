@@ -46,7 +46,7 @@ public class RFC3066LanguageCode {
 		StringBuilder b = new StringBuilder();
 		b.append(codes[0]);
 		for (int i = 1; i < codes.length; i++) {
-			b.append("-");
+			b.append("_");
 			b.append(codes[i]);
 		}
 		return b.toString();

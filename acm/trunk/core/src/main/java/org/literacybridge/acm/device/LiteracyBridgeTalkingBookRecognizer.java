@@ -9,7 +9,11 @@ public class LiteracyBridgeTalkingBookRecognizer extends DeviceRecognizer {
 
 	@Override
 	public DeviceInfo identifyDevice(File pathToDevice) {
-		File configFile = new File(pathToDevice, DeviceContents.CONFIG_FILE);
+		File systemPath = new File(pathToDevice, DeviceContents.SYSTEM_SUBFOLDER);
+		if (!systemPath.exists()) {
+			return null;
+		}
+		File configFile = new File(systemPath, DeviceContents.CONFIG_FILE);
 		if (!configFile.exists()) {
 			return null;
 		}
