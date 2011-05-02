@@ -18,6 +18,8 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
+import org.literacybridge.acm.metadata.types.MetadataStatisticsField;
+
 @Entity
 @NamedQueries({
   @NamedQuery(name = "PersistentMetadata.findAll", query = "select o from PersistentMetadata o")
@@ -271,64 +273,43 @@ public class PersistentMetadata extends PersistentObject {
         this.dtb_revision_description = dtb_revision_description;
     }
 
-    public Integer getLb_copy_count() {
-        Integer sum = 0;
-        for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
-        	sum += statistic.getCopyCount();
-        }
-        return sum;
-    }
-
-    public void setLb_copy_count(String deviceId, Integer copyCount) {
+    public void setStatistic(MetadataStatisticsField statisticsField, String deviceId, int bootCycleNumber, Integer count) {
         // look for existing statistics
+    	boolean found = false;
     	for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
         	if (statistic.getDeviceID().equals(deviceId)) {
-        		statistic.setCopyCount(copyCount);
-        		return;
+        		// only update if the new bootCycleNumber is higher
+        		if (bootCycleNumber > statistic.getBootCycleNumber()) {
+        			statistic.setStatistic(statisticsField, count);
+        			statistic.setBootCycleNumber(bootCycleNumber);
+        		}
+        		found = true;
+        		break;
         	}
         }
-        // otherwise create a new one
-    	addPersistentAudioItemStatistic(new PersistentAudioItemStatistic(deviceId, copyCount, 0));
+    	if (!found) {
+    		PersistentAudioItemStatistic statistic = new PersistentAudioItemStatistic(deviceId, bootCycleNumber);
+			statistic.setStatistic(statisticsField, count);
+    	}
     }
 
-    public void removeLb_copy_count(String deviceId) {
+    public Integer getStatistic(MetadataStatisticsField statisticsField) {
+        Integer sum = 0;
+        for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
+        	sum += statistic.getStatistic(statisticsField);
+        }
+        return sum;    	
+    }
+        
+    public void removeStatistic(MetadataStatisticsField statisticsField, String deviceId) {
     	for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
         	if (statistic.getDeviceID().equals(deviceId)) {
-        		statistic.setCopyCount(0);
+        		statistic.setStatistic(statisticsField, 0);
         		return;
         	}
         }
     }    
-    
-    public Integer getLb_play_count() {
-        Integer sum = 0;
-        for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
-        	sum += statistic.getPlayCount();
-        }
-        return sum;
-    }
-
-    public void setLb_play_count(String deviceId, Integer playCount) {
-        // look for existing statistics
-    	for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
-        	if (statistic.getDeviceID().equals(deviceId)) {
-        		statistic.setPlayCount(playCount);
-        		return;
-        	}
-        }
-        // otherwise create a new one
-    	addPersistentAudioItemStatistic(new PersistentAudioItemStatistic(deviceId, 0, playCount));    	
-    }
-    
-    public void removeLb_play_count(String deviceId) {
-    	for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
-        	if (statistic.getDeviceID().equals(deviceId)) {
-        		statistic.setPlayCount(0);
-        		return;
-        	}
-        }
-    }     
-    
+            
     public Short getLb_rating() {
         return lb_rating;
     }

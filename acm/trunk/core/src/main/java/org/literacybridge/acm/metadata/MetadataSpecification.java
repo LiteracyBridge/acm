@@ -4,14 +4,11 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
 
 import org.literacybridge.acm.metadata.types.MetadataIntegerField;
+import org.literacybridge.acm.metadata.types.MetadataStatisticsField;
 import org.literacybridge.acm.metadata.types.MetadataStringField;
 
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 public interface MetadataSpecification {
@@ -191,10 +188,18 @@ public interface MetadataSpecification {
 	// Additional Literacy Bridge fields
 	//============================================================================================================
 	
-	public final static MetadataField<Integer> LB_COPY_COUNT = new MetadataIntegerField("LB_COPY_COUNT");
+	public final static MetadataStatisticsField LB_COPY_COUNT = new MetadataStatisticsField("LB_COPY_COUNT");
 	
-	public final static MetadataField<Integer> LB_PLAY_COUNT = new MetadataIntegerField("LB_PLAY_COUNT");
+	public final static MetadataStatisticsField LB_OPEN_COUNT = new MetadataStatisticsField("LB_OPEN_COUNT");
 	
+	public final static MetadataStatisticsField LB_COMPLETION_COUNT = new MetadataStatisticsField("LB_COMPLETION_COUNT");
+	
+	// survey feature statistics - survey question 1 is if the audio item is useless or knowledge could be applied 
+	public final static MetadataStatisticsField LB_SURVEY1_COUNT = new MetadataStatisticsField("LB_SURVEY1_COUNT");
+	public final static MetadataStatisticsField LB_APPLY_COUNT = new MetadataStatisticsField("LB_APPLY_COUNT");
+	public final static MetadataStatisticsField LB_USELESS_COUNT = new MetadataStatisticsField("LB_USELESS_COUNT");
+	
+	// currently unused
 	public final static MetadataField<Integer> LB_RATING = new MetadataIntegerField("LB_RATING");
 
 
@@ -222,7 +227,11 @@ public interface MetadataSpecification {
 																		.add(DTB_REVISION_DATE)
 																		.add(DTB_REVISION_DESCRIPTION)
 																		.add(LB_COPY_COUNT)
-																		.add(LB_PLAY_COUNT)
+																		.add(LB_OPEN_COUNT)
+																		.add(LB_COMPLETION_COUNT)
+																		.add(LB_SURVEY1_COUNT)
+																		.add(LB_APPLY_COUNT)
+																		.add(LB_USELESS_COUNT)
 																		.add(LB_RATING)
 																		.build();
 }

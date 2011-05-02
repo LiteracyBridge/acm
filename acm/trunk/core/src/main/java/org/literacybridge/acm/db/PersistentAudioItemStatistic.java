@@ -14,6 +14,9 @@ import javax.persistence.Query;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
+import org.literacybridge.acm.metadata.MetadataSpecification;
+import org.literacybridge.acm.metadata.types.MetadataStatisticsField;
+
 @Entity
 @NamedQueries({
   @NamedQuery(name = "PersistentAudioItemStatistic.findAll", query = "select o from PersistentAudioItemStatistic o")
@@ -38,11 +41,26 @@ public class PersistentAudioItemStatistic extends PersistentObject {
     @Column(name="device_id")
     private String device_id;    
     
+    @Column(name="boot_cycle_number")
+    private int boot_cycle_number;
+    
 	@Column(name="lb_copy_count")
     private int lb_copy_count = 0;
     
-    @Column(name="lb_play_count")
-    private int lb_play_count = 0;    
+    @Column(name="lb_open_count")
+    private int lb_open_count = 0;    
+
+    @Column(name="lb_completion_count")
+    private int lb_completion_count = 0;    
+
+    @Column(name="lb_survey1_count")
+    private int lb_survey1_count = 0;    
+
+    @Column(name="lb_apply_count")
+    private int lb_apply_count = 0;    
+
+    @Column(name="lb_useless_count")
+    private int lb_useless_count = 0;    
     
     @ManyToOne
     @JoinColumn(name = "metadata")
@@ -50,11 +68,10 @@ public class PersistentAudioItemStatistic extends PersistentObject {
     
     public PersistentAudioItemStatistic() { }
     
-    protected PersistentAudioItemStatistic(String deviceId, int copyCount, int playCount) {
+    protected PersistentAudioItemStatistic(String deviceId, int bootCycleNumber) {
     	this();
     	this.setDeviceID(deviceId);
-    	this.setCopyCount(copyCount);
-    	this.setPlayCount(playCount);
+    	this.setBootCycleNumber(bootCycleNumber);    	
     }
 
     public Integer getId() {
@@ -68,23 +85,52 @@ public class PersistentAudioItemStatistic extends PersistentObject {
 	public void setDeviceID(String deviceId) {
 		device_id = deviceId;
 	}
-
-	public int getCopyCount() {
-		return lb_copy_count;
+	
+	public void setBootCycleNumber(int bootCycleNumber) {
+		this.boot_cycle_number = bootCycleNumber;
+	}
+	
+	public int getBootCycleNumber() {
+		return boot_cycle_number;
 	}
 
-	public void setCopyCount(int lbCopyCount) {
-		lb_copy_count = lbCopyCount;
+	public int getStatistic(MetadataStatisticsField statisticsField) {
+		if (statisticsField.equals(MetadataSpecification.LB_APPLY_COUNT)) {
+			return lb_apply_count;
+		} else if (statisticsField.equals(MetadataSpecification.LB_COMPLETION_COUNT)) {
+			return lb_completion_count;
+		} else if (statisticsField.equals(MetadataSpecification.LB_COPY_COUNT)) {
+			return lb_copy_count;
+		} else if (statisticsField.equals(MetadataSpecification.LB_OPEN_COUNT)) {
+			return lb_open_count;
+		} else if (statisticsField.equals(MetadataSpecification.LB_SURVEY1_COUNT)) {
+			return lb_survey1_count;
+		} else if (statisticsField.equals(MetadataSpecification.LB_USELESS_COUNT)) {
+			return lb_useless_count;
+		}		
+		
+		throw new IllegalArgumentException("Unknown statistics field: " + statisticsField.getName());
 	}
 
-	public int getPlayCount() {
-		return lb_play_count;
+	public void setStatistic(MetadataStatisticsField statisticsField, int count) {
+		if (statisticsField.equals(MetadataSpecification.LB_APPLY_COUNT)) {
+			lb_apply_count = count;
+		} else if (statisticsField.equals(MetadataSpecification.LB_COMPLETION_COUNT)) {
+			lb_completion_count = count;
+		} else if (statisticsField.equals(MetadataSpecification.LB_COPY_COUNT)) {
+			lb_copy_count = count;
+		} else if (statisticsField.equals(MetadataSpecification.LB_OPEN_COUNT)) {
+			lb_open_count = count;
+		} else if (statisticsField.equals(MetadataSpecification.LB_SURVEY1_COUNT)) {
+			lb_survey1_count = count;
+		} else if (statisticsField.equals(MetadataSpecification.LB_USELESS_COUNT)) {
+			lb_useless_count = count;
+		}		
+		
+		throw new IllegalArgumentException("Unknown statistics field: " + statisticsField.getName());
 	}
 
-	public void setPlayCount(int lbPlayCount) {
-		lb_play_count = lbPlayCount;
-	}    
-    
+	
     public PersistentMetadata getPersistentMetadata() {
         return persistentMetadata;
     }
