@@ -42,8 +42,11 @@ public class PersistentCategory extends PersistentObject {
     @Id @GeneratedValue(generator = COLUMN_VALUE)
     private Integer id;    
     
-    @Column(name="uuid")
+    @Column(name="uuid", nullable = false)
     private String uuid;    
+
+    @Column(name="revision")
+    private Integer revision;    
     
     @ManyToOne
     @JoinColumn(name = "lang_desc")
@@ -76,6 +79,14 @@ public class PersistentCategory extends PersistentObject {
         return id;
     }  
 
+    public Integer getRevision() {
+    	return revision;
+    }
+    
+    public void setRevision(Integer revision) {
+    	this.revision = revision;
+    }
+    
     public String getUuid() {
         return uuid;
     }

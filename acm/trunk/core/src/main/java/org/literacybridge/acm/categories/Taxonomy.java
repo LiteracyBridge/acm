@@ -1,5 +1,6 @@
 package org.literacybridge.acm.categories;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -51,19 +52,72 @@ public class Taxonomy implements Persistable {
 		taxonomy = new Taxonomy();
 		
 		PersistentCategory root = PersistentCategory.getFromDatabase(uuid);
-		if (root == null) {
-			PersistentString title = new PersistentString("root");
-			PersistentString desc = new PersistentString("root node");
-			root = new PersistentCategory(title, desc, rootUUID);
-			taxonomy.mRootCategory = new Category(root);
-			
-			DefaultLiteracyBridgeTaxonomy.createTaxonomy(taxonomy);
+		DefaultLiteracyBridgeTaxonomy.TaxonomyRevision latestRevision = DefaultLiteracyBridgeTaxonomy.loadLatestTaxonomy();
+
+		if (root == null) {	
+			taxonomy = createNewTaxonomy(latestRevision);
 			taxonomy.commit();
+		} else if (root.getRevision() < latestRevision.revision) {
+			updateTaxonomy(root, latestRevision);
+			taxonomy.mRootCategory = new Category(root);
+			taxonomy.commit();
+			DefaultLiteracyBridgeTaxonomy.print(taxonomy.mRootCategory);
 		} else {
 			taxonomy.mRootCategory = new Category(root);
 		}
-		
+
 		return taxonomy;
+	}
+	
+	private static Taxonomy createNewTaxonomy(DefaultLiteracyBridgeTaxonomy.TaxonomyRevision revision) {
+		Taxonomy taxonomy = new Taxonomy();
+		PersistentString title = new PersistentString("root");
+		PersistentString desc = new PersistentString("root node");
+		PersistentCategory root = new PersistentCategory(title, desc, rootUUID);
+		root.setRevision(revision.revision);
+		taxonomy.mRootCategory = new Category(root);
+		
+		revision.createTaxonomy(taxonomy);
+		return taxonomy;
+	}
+	
+	private static void updateTaxonomy(PersistentCategory existingRoot, DefaultLiteracyBridgeTaxonomy.TaxonomyRevision latestRevision) {
+		final Map<String, PersistentCategory> existingCategories = new HashMap<String, PersistentCategory>();
+		traverse(null, existingRoot, new Function() {
+			@Override public void apply(PersistentCategory parent, PersistentCategory root) {
+				existingCategories.put(root.getUuid(), root);
+			}			
+		});
+		
+		Taxonomy update = createNewTaxonomy(latestRevision);
+		
+		traverse(null, update.getRootCategory().getPersistentObject(), new Function() {
+			@Override public void apply(PersistentCategory parent, PersistentCategory updatedCategory) {
+				PersistentCategory existingCategory = existingCategories.get(updatedCategory.getUuid());
+				if (existingCategory != null) {
+					existingCategory.setTitle(updatedCategory.getTitle());
+					existingCategory.setDescription(updatedCategory.getDescription());
+				} else {
+					existingCategories.get(parent.getUuid()).addPersistentChildCategory(updatedCategory);
+					traverse(null, updatedCategory, new Function() {
+						@Override public void apply(PersistentCategory parent, PersistentCategory root) {
+							existingCategories.put(root.getUuid(), root);
+						}			
+					});
+				}
+			}			
+		});
+	}
+	
+	private static interface Function {
+		public void apply(PersistentCategory parent, PersistentCategory root);
+	}
+	
+	private static void traverse(PersistentCategory parent, PersistentCategory root, Function function) {
+		function.apply(parent, root);
+		for (PersistentCategory child : root.getPersistentChildCategoryList()) {
+			traverse(root, child, function);
+		}
 	}
 
 	public Category getRootCategory() {
