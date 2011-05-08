@@ -105,7 +105,7 @@ public class PersistentAudioItemStatistic extends PersistentObject {
 			return lb_open_count;
 		} else if (statisticsField.equals(MetadataSpecification.LB_SURVEY1_COUNT)) {
 			return lb_survey1_count;
-		} else if (statisticsField.equals(MetadataSpecification.LB_USELESS_COUNT)) {
+		} else if (statisticsField.equals(MetadataSpecification.LB_NOHELP_COUNT)) {
 			return lb_useless_count;
 		}		
 		
@@ -123,7 +123,7 @@ public class PersistentAudioItemStatistic extends PersistentObject {
 			lb_open_count = count;
 		} else if (statisticsField.equals(MetadataSpecification.LB_SURVEY1_COUNT)) {
 			lb_survey1_count = count;
-		} else if (statisticsField.equals(MetadataSpecification.LB_USELESS_COUNT)) {
+		} else if (statisticsField.equals(MetadataSpecification.LB_NOHELP_COUNT)) {
 			lb_useless_count = count;
 		}		
 		

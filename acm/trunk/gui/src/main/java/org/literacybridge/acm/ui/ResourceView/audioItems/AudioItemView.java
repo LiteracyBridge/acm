@@ -137,8 +137,6 @@ public class AudioItemView extends Container implements Observer {
 	private void updateControlLanguage(Locale newLocale) {
 		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.TITLE)
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , newLocale));
-		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.CREATOR)
-										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CREATOR , newLocale));
 		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.CATEGORIES)
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , newLocale));
 		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.LANGUAGES)
@@ -150,7 +148,12 @@ public class AudioItemView extends Container implements Observer {
 		String[] columnTitleArray = new String[AudioItemTableModel.NUM_COLUMNS]; // SET
 		columnTitleArray[AudioItemTableModel.INFO_ICON] = "";
 		columnTitleArray[AudioItemTableModel.TITLE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , locale);
-		columnTitleArray[AudioItemTableModel.CREATOR] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CREATOR , locale);
+		columnTitleArray[AudioItemTableModel.COPY_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_COPY_COUNT, locale);
+		columnTitleArray[AudioItemTableModel.OPEN_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_OPEN_COUNT, locale);
+		columnTitleArray[AudioItemTableModel.COMPLETION_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_COMPLETION_COUNT, locale);
+		columnTitleArray[AudioItemTableModel.SURVEY1_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SURVEY1_COUNT, locale);
+		columnTitleArray[AudioItemTableModel.APPLY_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_APPLY_COUNT, locale);
+		columnTitleArray[AudioItemTableModel.NOHELP_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_NOHELP_COUNT, locale);
 		columnTitleArray[AudioItemTableModel.CATEGORIES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , locale);
 		columnTitleArray[AudioItemTableModel.LANGUAGES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , locale);
 				
@@ -162,7 +165,12 @@ public class AudioItemView extends Container implements Observer {
 	
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.INFO_ICON).setMaxWidth(25);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.TITLE).setPreferredWidth(250);
-		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CREATOR).setPreferredWidth(150);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.COPY_COUNT).setPreferredWidth(50);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.OPEN_COUNT).setPreferredWidth(45);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.COMPLETION_COUNT).setPreferredWidth(45);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.SURVEY1_COUNT).setPreferredWidth(55);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.APPLY_COUNT).setPreferredWidth(50);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.NOHELP_COUNT).setPreferredWidth(60);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CATEGORIES).setPreferredWidth(150);
 	}
 

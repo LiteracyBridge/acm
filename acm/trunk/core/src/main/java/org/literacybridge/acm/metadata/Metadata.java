@@ -207,7 +207,7 @@ public class Metadata implements Persistable {
 			setStatisticsField(MetadataSpecification.LB_COPY_COUNT);
 			setStatisticsField(MetadataSpecification.LB_OPEN_COUNT);
 			setStatisticsField(MetadataSpecification.LB_SURVEY1_COUNT);
-			setStatisticsField(MetadataSpecification.LB_USELESS_COUNT);
+			setStatisticsField(MetadataSpecification.LB_NOHELP_COUNT);
 			setMetadataField(MetadataSpecification.LB_RATING,
 					new MetadataValue<Integer>(
 							(mMetadata.getLb_rating() == null || mMetadata.getLb_rating().intValue() == 0) ? null
