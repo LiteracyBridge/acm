@@ -282,6 +282,7 @@ public class PersistentMetadata extends PersistentObject {
         		if (bootCycleNumber > statistic.getBootCycleNumber()) {
         			statistic.setStatistic(statisticsField, count);
         			statistic.setBootCycleNumber(bootCycleNumber);
+        			statistic.commit();
         		}
         		found = true;
         		break;
@@ -290,6 +291,7 @@ public class PersistentMetadata extends PersistentObject {
     	if (!found) {
     		PersistentAudioItemStatistic statistic = new PersistentAudioItemStatistic(deviceId, bootCycleNumber);
 			statistic.setStatistic(statisticsField, count);
+			statistic.commit();
     	}
     }
 
@@ -305,6 +307,7 @@ public class PersistentMetadata extends PersistentObject {
     	for (PersistentAudioItemStatistic statistic : getPersistentAudioItemStatistics()) {
         	if (statistic.getDeviceID().equals(deviceId)) {
         		statistic.setStatistic(statisticsField, 0);
+        		statistic.commit();
         		return;
         	}
         }

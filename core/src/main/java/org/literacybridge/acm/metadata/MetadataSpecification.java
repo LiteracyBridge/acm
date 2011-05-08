@@ -197,7 +197,7 @@ public interface MetadataSpecification {
 	// survey feature statistics - survey question 1 is if the audio item is useless or knowledge could be applied 
 	public final static MetadataStatisticsField LB_SURVEY1_COUNT = new MetadataStatisticsField("LB_SURVEY1_COUNT");
 	public final static MetadataStatisticsField LB_APPLY_COUNT = new MetadataStatisticsField("LB_APPLY_COUNT");
-	public final static MetadataStatisticsField LB_USELESS_COUNT = new MetadataStatisticsField("LB_USELESS_COUNT");
+	public final static MetadataStatisticsField LB_NOHELP_COUNT = new MetadataStatisticsField("LB_USELESS_COUNT");
 	
 	// currently unused
 	public final static MetadataField<Integer> LB_RATING = new MetadataIntegerField("LB_RATING");
@@ -231,7 +231,7 @@ public interface MetadataSpecification {
 																		.add(LB_COMPLETION_COUNT)
 																		.add(LB_SURVEY1_COUNT)
 																		.add(LB_APPLY_COUNT)
-																		.add(LB_USELESS_COUNT)
+																		.add(LB_NOHELP_COUNT)
 																		.add(LB_RATING)
 																		.build();
 }

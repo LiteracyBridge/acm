@@ -29,6 +29,7 @@ import org.literacybridge.acm.util.language.LanguageUtil;
 public class AudioItemImportDialog extends JDialog {
 
 	private AudioItemImportView childDialog;
+	private DeviceContents device;
 	
 	public AudioItemImportDialog(JFrame parent, DeviceInfo deviceInfo) {
 		super(parent
@@ -39,13 +40,48 @@ public class AudioItemImportDialog extends JDialog {
 		setSize(800, 500);
 		
 		try {
-			final DeviceContents device = deviceInfo.getDeviceContents();
-			final List<File> audioItems = device.loadAudioItems();
+			device = deviceInfo.getDeviceContents();
 			
-			childDialog.setData(audioItems);
+			initialize();
 		} catch (IOException e) {
+			// TODO: show error message
 			e.printStackTrace();
 		}
+	}
+	
+	private void initialize() {
+		// don't piggyback on the UI thread
+		Runnable job = new Runnable() {
+
+			@Override
+			public void run() {
+				Application parent = Application.getApplication();
+				// TODO: show "Import statistics" instead of "Import files" in busy dialog
+				final Container busy = UIUtils.showDialog(parent, new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES", LanguageUtil.getUILanguage()), parent));
+				try {
+					final List<File> audioItems = device.loadAudioItems();
+					// load statistics
+					device.importStats();
+					device.importOtherDeviceStats();
+					childDialog.setData(audioItems);
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
+					if (!SwingUtilities.isEventDispatchThread()) {
+						SwingUtilities.invokeLater(new Runnable() {
+							
+							@Override
+							public void run() {
+								UIUtils.hideDialog(busy);
+							}
+						});
+					}
+				}
+			}
+		};
+		
+		new Thread(job).start();
+
 	}
 	
 	private void createControls() {
@@ -116,6 +152,9 @@ public class AudioItemImportDialog extends JDialog {
 							for (File f : files) {
 								FileImporter.getInstance().importFile(null, f);
 							}
+							// also refresh all statistics
+							device.importStats();
+							device.importOtherDeviceStats();
 						} catch (IOException e) {
 							e.printStackTrace();
 						} finally {

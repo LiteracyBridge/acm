@@ -66,7 +66,7 @@ public class Application extends JXFrame {
 		} catch (Exception e) {
 		    e.printStackTrace();
 		}
-		
+				
 		setTitle(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUILanguage()));
 		// toolbar view on top
 	    ResourceView resourceView = new ResourceView();	    
@@ -90,7 +90,9 @@ public class Application extends JXFrame {
 		Configuration.getConfiguration();
 		
 		application.setSize(1000, 750);
+		
 		application.setVisible(true);
+		application.toFront();
 	}	
 	
 	public static class FilterState {
