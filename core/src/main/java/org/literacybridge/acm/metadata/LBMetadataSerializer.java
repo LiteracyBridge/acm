@@ -90,18 +90,20 @@ public class LBMetadataSerializer extends MetadataSerializer {
 		
 		final Iterator<MetadataField<?>> it = metadata.getFieldsIterator();
 		while (it.hasNext()) {
-			baos = new ByteArrayOutputStream();
-			serializedDataPortion = new DataOutputStream(baos);
-
 			MetadataField<?> field = it.next();
-			serializeField(metadata, field, serializedDataPortion);
-			// encode field id
-			IOUtils.writeLittleEndian16(headerOut, LBMetadataIDs.FieldToIDMap.get(field));
-			// encode field length
-			IOUtils.writeLittleEndian32(headerOut, baos.size());
-			serializedDataPortion.flush();
-			headerOut.write(baos.toByteArray());
-			serializedDataPortion.close();
+			if (LBMetadataIDs.FieldToIDMap.containsKey(field)) {
+				baos = new ByteArrayOutputStream();
+				serializedDataPortion = new DataOutputStream(baos);
+	
+				serializeField(metadata, field, serializedDataPortion);
+				// encode field id
+				IOUtils.writeLittleEndian16(headerOut, LBMetadataIDs.FieldToIDMap.get(field));
+				// encode field length
+				IOUtils.writeLittleEndian32(headerOut, baos.size());
+				serializedDataPortion.flush();
+				headerOut.write(baos.toByteArray());
+				serializedDataPortion.close();
+			}
 		}
 		
 	}
@@ -120,9 +122,13 @@ public class LBMetadataSerializer extends MetadataSerializer {
 	}
 
 	private final void serializeCategories(Collection<Category> categories, DataOutput out) throws IOException {
-		out.writeByte((byte) categories.size());
-		for (Category c : categories) {
-			IOUtils.writeAsUTF8(out, c.getUuid());
+		if (categories == null) {
+			out.writeByte((byte) 0);
+		} else {
+			out.writeByte((byte) categories.size());
+			for (Category c : categories) {
+				IOUtils.writeAsUTF8(out, c.getUuid());
+			}
 		}
 	}
 	

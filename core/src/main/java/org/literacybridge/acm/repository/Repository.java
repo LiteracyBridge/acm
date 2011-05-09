@@ -87,14 +87,6 @@ public class Repository {
 		builder.append(File.separator);
 		builder.append(localizedAudioItem.getParentAudioItem().getUuid());
 		builder.append(File.separator);
-		Locale locale = localizedAudioItem.getLocale();
-		builder.append(File.separator);
-		builder.append(locale.getLanguage());
-		String country = locale.getCountry();
-		if (country != null && !country.isEmpty()) {
-			builder.append('_');
-			builder.append(country);
-		}
 		Metadata metadata = localizedAudioItem.getMetadata();
 		String revision = metadata.getMetadataValues(MetadataSpecification.DTB_REVISION).get(0).getValue();
 		builder.append(File.separator);
