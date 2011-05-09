@@ -110,16 +110,29 @@ public class Repository {
 	}
 	
 	public static void copy(File fromFile, File toFile) throws IOException {
+		copy(fromFile, toFile, fromFile.length());
+	}
+	
+	public static void copy(File fromFile, File toFile, long numBytes) throws IOException {
 	    FileInputStream from = null;
 	    FileOutputStream to = null;
 	    try {
 	      from = new FileInputStream(fromFile);
 	      to = new FileOutputStream(toFile);
 	      byte[] buffer = new byte[4096];
-	      int bytesRead;
 	
-	      while ((bytesRead = from.read(buffer)) != -1)
-	        to.write(buffer, 0, bytesRead); // write
+	      while (true) {
+		      int numToRead = buffer.length;
+		      if (numToRead > numBytes) {
+		    	  numToRead = (int) numBytes;
+		      }
+		      from.read(buffer, 0, numToRead);
+		      to.write(buffer, 0, numToRead); // write
+		      numBytes -= numToRead;
+		      if (numBytes <= 0) {
+		    	  break;
+		      }
+	      }
 	    } finally {
 	      if (from != null)
 	        try {

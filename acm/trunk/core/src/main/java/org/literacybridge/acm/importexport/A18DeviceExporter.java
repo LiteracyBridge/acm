@@ -72,12 +72,16 @@ public class A18DeviceExporter {
 					String fileName = audioFile.getName();
 					
 					File fileToCopy = new File(audioFile.getParent(), fileName.substring(0, fileName.length() - 4)+ ".a18");
-					appendMetadataToA18(item, fileToCopy);
+					DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(fileToCopy)));
+					int bytesToSkip = IOUtils.readLittleEndian32(in);
+					in.close();
 					
 					List<File> targetFiles = appendCategoryStringToFileName(fileToCopy, item);
 					
 					for (File target : targetFiles) {
-						Repository.copy(fileToCopy, new File(deviceLocation, target.getName()));
+						File to = new File(deviceLocation, target.getName());
+						Repository.copy(fileToCopy, to, bytesToSkip + 4);
+						appendMetadataToA18(item, to);
 					}
 				} catch (ConversionException e) {
 					throw new IOException(e);
@@ -90,22 +94,17 @@ public class A18DeviceExporter {
 	}
 	
 	private static void appendMetadataToA18(LocalizedAudioItem item, File a18File) throws IOException {
-		DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(a18File)));
-		int bytesToSkip = IOUtils.readLittleEndian32(in);
-		in.close();
 		
 		Metadata metadata = item.getMetadata();
 		
 		Set<Category> categories = new HashSet<Category>();
-		if (bytesToSkip + 4 == a18File.length()) {
-			// append
-			DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(a18File, true)));
-			try {
-				LBMetadataSerializer serializer = new LBMetadataSerializer();
-				serializer.serialize(categories, metadata, out);
-			} finally {
-				out.close();
-			}
+		// append
+		DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(a18File, true)));
+		try {
+			LBMetadataSerializer serializer = new LBMetadataSerializer();
+			serializer.serialize(categories, metadata, out);
+		} finally {
+			out.close();
 		}
 	}
 
