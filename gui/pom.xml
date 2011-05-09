@@ -20,7 +20,28 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <SplashScreen-Image>splash-screen.jpg</SplashScreen-Image>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <archive> 
+              <manifestEntries>
+                <SplashScreen-Image>splash-screen.jpg</SplashScreen-Image>
+              </manifestEntries>
+              <manifest>
+                  <mainClass>org.literacybridge.acm.ui.Application</mainClass>
+              </manifest>
+          </archive>
+        </configuration>
         <executions>
           <execution>
             <goals>

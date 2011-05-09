@@ -1,6 +1,7 @@
 package org.literacybridge.acm.ui;
 
 import java.awt.BorderLayout;
+import java.awt.SplashScreen;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -84,6 +85,7 @@ public class Application extends JXFrame {
 	}
 	
 	public static void main(String[] args) throws IOException {
+		final SplashScreen splash = SplashScreen.getSplashScreen();
 		application = new Application();
 		
 		// initialize config and generate random ID for this acm instance
@@ -91,6 +93,9 @@ public class Application extends JXFrame {
 		
 		application.setSize(1000, 750);
 		
+		if (splash != null) {
+			splash.close();
+		}
 		application.setVisible(true);
 		application.toFront();
 	}	
