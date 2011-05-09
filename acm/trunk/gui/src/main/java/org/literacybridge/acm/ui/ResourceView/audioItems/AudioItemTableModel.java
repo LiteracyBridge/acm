@@ -111,49 +111,37 @@ public class AudioItemTableModel  extends AbstractTableModel {
 				case COPY_COUNT: {
 					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
 							MetadataSpecification.LB_COPY_COUNT);
-					if (values != null) {
-						cellText = "" + values.get(0).getValue();
-					}
+					cellText = values != null ? "" + values.get(0).getValue() : "0"; 
 					break;
 				}
 				case OPEN_COUNT: {
 					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
 							MetadataSpecification.LB_OPEN_COUNT);
-					if (values != null) {
-						cellText = "" + values.get(0).getValue();
-					}
+					cellText = values != null ? "" + values.get(0).getValue() : "0";
 					break;
 				}
 				case COMPLETION_COUNT: {
 					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
 							MetadataSpecification.LB_COMPLETION_COUNT);
-					if (values != null) {
-						cellText = "" + values.get(0).getValue();
-					}
+					cellText = values != null ? "" + values.get(0).getValue() : "0";
 					break;
 				}
 				case SURVEY1_COUNT: {
 					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
 							MetadataSpecification.LB_SURVEY1_COUNT);
-					if (values != null) {
-						cellText = "" + values.get(0).getValue();
-					}
+					cellText = values != null ? "" + values.get(0).getValue() : "0";
 					break;
 				}
 				case APPLY_COUNT: {
 					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
 							MetadataSpecification.LB_APPLY_COUNT);
-					if (values != null) {
-						cellText = "" + values.get(0).getValue();
-					}
+					cellText = values != null ? "" + values.get(0).getValue() : "0";
 					break;
 				}
 				case NOHELP_COUNT: {
 					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
 							MetadataSpecification.LB_NOHELP_COUNT);
-					if (values != null) {
-						cellText = "" + values.get(0).getValue();
-					}
+					cellText = values != null ? "" + values.get(0).getValue() : "0";
 					break;
 				}
 
