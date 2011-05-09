@@ -19,12 +19,11 @@ import org.literacybridge.acm.util.language.LanguageUtil;
 public class AudioItemImportModel extends AbstractTableModel {
 
 	// positions of the table columns
-	public static final int NUM_COLUMNS = 5; // keep in sync
+	public static final int NUM_COLUMNS = 4; // keep in sync
 	public static final int INFO_ICON 	= 0;
 	public static final int TITLE 		= 1;
-	public static final int CREATOR 	= 2;
-	public static final int CATEGORIES 	= 3;
-	public static final int LANGUAGES	= 4;
+	public static final int CATEGORIES 	= 2;
+	public static final int LANGUAGES	= 3;
 	private static String[] columns = null;
 	
 	private final LocalizedAudioItemNode[] rowIndex2audioItem;
@@ -100,9 +99,6 @@ public class AudioItemImportModel extends AbstractTableModel {
 			case TITLE:
 				return localizedAudioItem.getMetadata().getMetadataValues(
 						MetadataSpecification.DC_TITLE).get(0).getValue();
-			case CREATOR:
-				return localizedAudioItem.getMetadata().getMetadataValues(
-						MetadataSpecification.DC_CREATOR).get(0).getValue();
 			case CATEGORIES:
 				List<Category> categories = localizedAudioItem.getParentAudioItem().getCategoryList();
 				StringBuilder builder = new StringBuilder();
