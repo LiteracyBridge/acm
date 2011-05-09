@@ -24,10 +24,10 @@ public class AudioItemTableModel  extends AbstractTableModel {
 	public static final int INFO_ICON 		 = 0;
 	public static final int TITLE 			 = 1;
 	public static final int CATEGORIES 		 = 2;
-	public static final int LANGUAGES 		 = 3;
-	public static final int COPY_COUNT 		 = 4;
-	public static final int OPEN_COUNT 		 = 5;
-	public static final int COMPLETION_COUNT = 6;
+	public static final int LANGUAGES 		 = 3;	
+	public static final int OPEN_COUNT 		 = 4;
+	public static final int COMPLETION_COUNT = 5;
+	public static final int COPY_COUNT 		 = 6;
 	public static final int SURVEY1_COUNT 	 = 7;
 	public static final int APPLY_COUNT 	 = 8;
 	public static final int NOHELP_COUNT 	 = 9;

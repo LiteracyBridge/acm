@@ -41,23 +41,25 @@ public class StatisticsImporter {
 			tokens = tokenizeCSV(reader.readLine());
 			String audioItemID = tokens.get(0); 
 			PersistentAudioItem audioItem = PersistentAudioItem.getFromDatabase(audioItemID);
-			PersistentLocalizedAudioItem localizedAudioItem = audioItem.getPersistentLocalizedAudioItems().get(0);
-			PersistentMetadata metadata = localizedAudioItem.getPersistentMetadata();
-			
-			metadata.setStatistic(MetadataSpecification.LB_OPEN_COUNT, deviceId, 
-					bootCycleNumber, Integer.parseInt(tokens.get(1)));
-			metadata.setStatistic(MetadataSpecification.LB_COMPLETION_COUNT, deviceId, 
-					bootCycleNumber, Integer.parseInt(tokens.get(2)));
-			metadata.setStatistic(MetadataSpecification.LB_COPY_COUNT, deviceId, 
-					bootCycleNumber, Integer.parseInt(tokens.get(3)));
-			metadata.setStatistic(MetadataSpecification.LB_SURVEY1_COUNT, deviceId, 
-					bootCycleNumber, Integer.parseInt(tokens.get(4)));
-			metadata.setStatistic(MetadataSpecification.LB_APPLY_COUNT, deviceId, 
-					bootCycleNumber, Integer.parseInt(tokens.get(5)));
-			metadata.setStatistic(MetadataSpecification.LB_NOHELP_COUNT, deviceId, 
-					bootCycleNumber, Integer.parseInt(tokens.get(6)));
-			
-			metadata.commit();
+			if (audioItem != null) {
+				PersistentLocalizedAudioItem localizedAudioItem = audioItem.getPersistentLocalizedAudioItems().get(0);
+				PersistentMetadata metadata = localizedAudioItem.getPersistentMetadata();
+				
+				metadata.setStatistic(MetadataSpecification.LB_OPEN_COUNT, deviceId, 
+						bootCycleNumber, Integer.parseInt(tokens.get(1)));
+				metadata.setStatistic(MetadataSpecification.LB_COMPLETION_COUNT, deviceId, 
+						bootCycleNumber, Integer.parseInt(tokens.get(2)));
+				metadata.setStatistic(MetadataSpecification.LB_COPY_COUNT, deviceId, 
+						bootCycleNumber, Integer.parseInt(tokens.get(3)));
+				metadata.setStatistic(MetadataSpecification.LB_SURVEY1_COUNT, deviceId, 
+						bootCycleNumber, Integer.parseInt(tokens.get(4)));
+				metadata.setStatistic(MetadataSpecification.LB_APPLY_COUNT, deviceId, 
+						bootCycleNumber, Integer.parseInt(tokens.get(5)));
+				metadata.setStatistic(MetadataSpecification.LB_NOHELP_COUNT, deviceId, 
+						bootCycleNumber, Integer.parseInt(tokens.get(6)));
+				
+				metadata.commit();
+			}
 		}		
 	}
 	

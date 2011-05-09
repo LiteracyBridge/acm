@@ -125,9 +125,9 @@ public class PersistentAudioItemStatistic extends PersistentObject {
 			lb_survey1_count = count;
 		} else if (statisticsField.equals(MetadataSpecification.LB_NOHELP_COUNT)) {
 			lb_useless_count = count;
-		}		
-		
-		throw new IllegalArgumentException("Unknown statistics field: " + statisticsField.getName());
+		} else {
+			throw new IllegalArgumentException("Unknown statistics field: " + statisticsField.getName());
+		}
 	}
 
 	

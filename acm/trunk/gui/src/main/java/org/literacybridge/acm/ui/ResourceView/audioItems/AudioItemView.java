@@ -11,6 +11,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.io.IOException;
+import java.text.Collator;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
@@ -164,14 +166,33 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.setAutoCreateColumnsFromModel( false );
 	
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.INFO_ICON).setMaxWidth(25);
-		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.TITLE).setPreferredWidth(250);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.TITLE).setPreferredWidth(240);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.COPY_COUNT).setPreferredWidth(50);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.OPEN_COUNT).setPreferredWidth(45);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.COMPLETION_COUNT).setPreferredWidth(45);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.SURVEY1_COUNT).setPreferredWidth(55);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.APPLY_COUNT).setPreferredWidth(50);
-		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.NOHELP_COUNT).setPreferredWidth(60);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.NOHELP_COUNT).setPreferredWidth(65);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CATEGORIES).setPreferredWidth(150);
+		
+		Comparator<Object> comparator = new Comparator<Object>() {
+			@Override public int compare(Object o1, Object o2) {
+				try {
+					Integer i1 = new Integer(o1.toString());
+					Integer i2 = new Integer(o2.toString());
+					return i1.compareTo(i2);
+				} catch (NumberFormatException e) {
+					return Collator.getInstance().compare(o1.toString(), o2.toString());
+				}
+			}
+		};
+		
+		audioItemTable.getColumnExt(AudioItemTableModel.COPY_COUNT).setComparator(comparator);
+		audioItemTable.getColumnExt(AudioItemTableModel.OPEN_COUNT).setComparator(comparator);
+		audioItemTable.getColumnExt(AudioItemTableModel.COMPLETION_COUNT).setComparator(comparator);
+		audioItemTable.getColumnExt(AudioItemTableModel.SURVEY1_COUNT).setComparator(comparator);
+		audioItemTable.getColumnExt(AudioItemTableModel.APPLY_COUNT).setComparator(comparator);
+		audioItemTable.getColumnExt(AudioItemTableModel.NOHELP_COUNT).setComparator(comparator);
 	}
 
 	boolean hasSelectedRows() {
@@ -226,7 +247,7 @@ public class AudioItemView extends Container implements Observer {
 	    	LocalizedAudioItem lItem = (LocalizedAudioItem) o;
 	    	item = lItem.getParentAudioItem();
 	    }
-	
+	   	
 	    return item;
 	}
 

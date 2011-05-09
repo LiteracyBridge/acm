@@ -1,11 +1,13 @@
 package org.literacybridge.acm.core;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.metadata.MetadataSpecification;
 
 public class DataRequestResult implements IDataRequestResult {
 	private final Category rootCategory;
