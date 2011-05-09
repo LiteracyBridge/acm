@@ -16,7 +16,6 @@ import javax.swing.JScrollPane;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
-import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemTableModel;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class AudioItemImportView extends Container implements Observer {
@@ -65,11 +64,11 @@ public class AudioItemImportView extends Container implements Observer {
 	
 	private String[] getColumnTitles(Locale locale) {
 		// order MUST fit match to table titles
-		String[] columnTitleArray = new String[AudioItemTableModel.NUM_COLUMNS]; // SET
-		columnTitleArray[AudioItemTableModel.INFO_ICON] = "";
-		columnTitleArray[AudioItemTableModel.TITLE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , locale);
-		columnTitleArray[AudioItemTableModel.CATEGORIES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , locale);
-		columnTitleArray[AudioItemTableModel.LANGUAGES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , locale);
+		String[] columnTitleArray = new String[AudioItemImportModel.NUM_COLUMNS]; // SET
+		columnTitleArray[AudioItemImportModel.INFO_ICON] = "";
+		columnTitleArray[AudioItemImportModel.TITLE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , locale);
+		columnTitleArray[AudioItemImportModel.CATEGORIES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , locale);
+		columnTitleArray[AudioItemImportModel.LANGUAGES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , locale);
 			
 		return columnTitleArray;
 	}
