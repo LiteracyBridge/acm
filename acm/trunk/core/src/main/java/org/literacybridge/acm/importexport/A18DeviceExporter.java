@@ -60,13 +60,19 @@ public class A18DeviceExporter {
 			// TODO: check if this file already exists on device, and update if revision higher
 			
 		if (FileImporter.getFileExtension(audioFile).equalsIgnoreCase(".a18")) {
-			// already a18 file - just copy
+			DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(audioFile)));
+			int bytesToSkip = IOUtils.readLittleEndian32(in);
+			in.close();
+			
+			// already a18 file - just copy and append metadata
 			File target = new File(deviceLocation, audioFile.getName());
-			Repository.copy(audioFile, target);
+			Repository.copy(audioFile, target, bytesToSkip + 4);
+			appendMetadataToA18(item, target);
 		} else {
 			// convert first
 			if (OSChecker.WINDOWS) {
 				try {
+					
 					ExternalConverter audioConverter = new ExternalConverter();
 					audioConverter.convert(audioFile, new File(audioFile.getParent()), new A18Format(128, 16000, 1, AlgorithmList.A1800, useHeaderChoice.No));
 					String fileName = audioFile.getName();
@@ -93,16 +99,13 @@ public class A18DeviceExporter {
 		return true;
 	}
 	
-	private static void appendMetadataToA18(LocalizedAudioItem item, File a18File) throws IOException {
-		
+	private static void appendMetadataToA18(LocalizedAudioItem item, File a18File) throws IOException {		
 		Metadata metadata = item.getMetadata();
-		
-		Set<Category> categories = new HashSet<Category>();
 		// append
 		DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(a18File, true)));
 		try {
 			LBMetadataSerializer serializer = new LBMetadataSerializer();
-			serializer.serialize(categories, metadata, out);
+			serializer.serialize(item.getParentAudioItem().getCategoryList(), metadata, out);
 		} finally {
 			out.close();
 		}

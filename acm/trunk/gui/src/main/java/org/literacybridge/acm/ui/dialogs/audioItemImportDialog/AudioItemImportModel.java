@@ -113,7 +113,7 @@ public class AudioItemImportModel extends AbstractTableModel {
 				
 				return builder.toString();
 			case LANGUAGES:
-				return localizedAudioItem.getLocale().getDisplayLanguage();
+				return LanguageUtil.getLocalizedLanguageName(localizedAudioItem.getLocale());
 			default:
 				return "";
 			}
