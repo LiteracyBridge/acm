@@ -77,6 +77,13 @@ taxonomy:
       children:
         '3-1' :
           name: Adult literacy
+          children:
+            '3-1-1' :
+              name: Adult literacy Phase I
+            '3-1-2' :
+              name: Adult literacy Phase II
+            '3-1-3' :
+              name: Out-of-School-Teens Literacy
         '3-2' :
           name: School Lessons
           children:
@@ -144,7 +151,7 @@ taxonomy:
         '5-2':
           name: Marketing
         '5-3':
-          name: Entrepreneurship
+          name: Business and Entrepreneurship
         '5-4':
           name: Finance
     '6' :
@@ -160,3 +167,9 @@ taxonomy:
           name: Problems with the device
         '9-2':
           name: Testimonials on successes
+    '10':
+       name: Society and Culture
+      children:
+        '10-1':
+          name: Social Issues
+	
