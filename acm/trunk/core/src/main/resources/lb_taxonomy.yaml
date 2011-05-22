@@ -1,8 +1,13 @@
 taxonomy:
-  revision: 3
+  revision: 4
   categories:
     '0' : 
       name: Other Messages
+      children: 
+        '0-1' : 
+          name: Talking Book
+        '0-2' : 
+          name: Favorites
     '1' : 
       name: Agriculture
       children: 
@@ -53,6 +58,8 @@ taxonomy:
               name: Marketing
             '1-4-2' :
               name: Selling
+        '1-5' :
+          name: Fish
     '2' : 
       name: Health
       children:
