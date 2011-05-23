@@ -4,7 +4,7 @@ taxonomy:
     '0' : 
       name: Other Messages
       children: 
-        '0-1' : 
+        '0-1' :
           name: Talking Book
         '0-2' : 
           name: Favorites
@@ -158,7 +158,7 @@ taxonomy:
         '5-2':
           name: Marketing
         '5-3':
-          name: Business and Entrepreneurship
+          name: Entrepreneurship
         '5-4':
           name: Finance
     '6' :
@@ -175,8 +175,7 @@ taxonomy:
         '9-2':
           name: Testimonials on successes
     '10':
-       name: Society and Culture
+      name: Society and Culture
       children:
         '10-1':
           name: Social Issues
-	
