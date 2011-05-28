@@ -98,6 +98,11 @@ public class A18Importer extends Importer {
 				
 			} else {
 				localizedAudioItem.setLocale(metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE).get(0).getValue().getLocale());
+				// set metadata language to localizedAudioItem language
+				localizedAudioItem.getMetadata().setMetadataField(MetadataSpecification.DC_LANGUAGE
+							, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(localizedAudioItem.getLocale().getLanguage())));
+				
+				
 				audioItem = new AudioItem(metadata.getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue());
 				// add the category that was selected during drag&drop
 				if (category != null) {
