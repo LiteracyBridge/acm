@@ -151,6 +151,11 @@ public class DeviceContents {
 																language);
 			List<String> topics = loadListFromFile(new File(languagePath, deviceConfig.getProperty(LIST_MASTER_PROPERTY_NAME) + LIST_TXT_FILE_SUFFIX));
 			for (String topic : topics) {
+				if (topic.startsWith("$")) {
+					// Categories that start with '$' are system categories and are stored with the system language 
+					// in its directory, rather than with the other messages. 
+					continue;
+				}
 				File langList = new File(listsFolder, language);
 				CategoryList list = new CategoryList(topic);
 				for (String audioItemName : loadListFromFile(new File(langList, topic + LIST_TXT_FILE_SUFFIX))) {
