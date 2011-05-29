@@ -1,22 +1,18 @@
 package org.literacybridge.acm.ui.dialogs.audioItemPropertiesDialog;
 
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_CONTRIBUTOR;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_COVERAGE;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_CREATOR;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_DESCRIPTION;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_FORMAT;
+import static org.literacybridge.acm.metadata.MetadataSpecification.DC_LANGUAGE;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_PUBLISHER;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_RELATION;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_RIGHTS;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SOURCE;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SUBJECT;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_TITLE;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_LANGUAGE;
+import static org.literacybridge.acm.metadata.MetadataSpecification.DC_IDENTIFIER;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.StringTokenizer;
 import java.util.Vector;
 
 import javax.swing.table.AbstractTableModel;
@@ -25,6 +21,7 @@ import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataField;
+import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
@@ -45,18 +42,22 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	public AudioItemPropertiesModel(AudioItem audioItem, Metadata metadata) {
 		this.metadata = metadata;
 		this.audioItem = audioItem;
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_TITLE));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_CREATOR));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_SUBJECT));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_DESCRIPTION));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_PUBLISHER));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_CONTRIBUTOR));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_FORMAT));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_RELATION));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_SOURCE));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_COVERAGE));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_RIGHTS));		
-		audioItemPropertiesObject.add(new AudioItemRFC3066LanguageProperty(DC_LANGUAGE));				
+		
+		// TODO: make this list configurable
+		// for now just remove some unneeded ones
+		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_TITLE, true));
+		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_CREATOR, true));
+		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_SUBJECT, true));
+		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_DESCRIPTION, true));
+		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_PUBLISHER, true));
+		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_CONTRIBUTOR, true));
+		// audioItemPropertiesObject.add(new AudioItemStringProperty(DC_FORMAT));
+		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_IDENTIFIER, false));
+		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_RELATION, false));
+		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_SOURCE, false));
+		// audioItemPropertiesObject.add(new AudioItemStringProperty(DC_COVERAGE));
+		// audioItemPropertiesObject.add(new AudioItemStringProperty(DC_RIGHTS));		
+		audioItemPropertiesObject.add(new AudioItemRFC3066LanguageProperty(DC_LANGUAGE, true));				
 	}
 	
 	@Override
@@ -122,7 +123,12 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	
 	@Override
 	public boolean isCellEditable(int rowIndex, int columnIndex) {
-		return (columnIndex == VALUE_COL);
+		if (columnIndex != VALUE_COL) {
+			return false;
+		}
+		
+		AudioItemPropertiesObject<?> obj = audioItemPropertiesObject.get(rowIndex);
+		return obj.isEditable();
 	}
 
 	@Override
@@ -139,6 +145,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			setLocaleValue(((AudioItemRFC3066LanguageProperty) obj).getFieldID(), metadata, newLocale);
 		}
 		
+		incrementRevision(metadata);
 		metadata.commit();
 	}
 
@@ -154,7 +161,26 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		localizedItem.commit();
 		audioItem.commit();
 		metadata.setMetadataField(field, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(newLocale.getLanguage())));
+		incrementRevision(metadata);
 		metadata.commit();
+	}
+	
+	private void incrementRevision(Metadata metadata) {
+		List<MetadataValue<String>> revisions = metadata.getMetadataValues(MetadataSpecification.DTB_REVISION);
+		if (revisions != null) {
+			String revision = revisions.get(0).getValue();
+			long rev = 0;
+			if (revision != null && !revision.isEmpty()) {
+				try {
+					rev = Long.parseLong(revision);
+				} catch (NumberFormatException e) {
+					// use 0
+				}
+			}
+			
+			rev++;
+			setStringValue(MetadataSpecification.DTB_REVISION, metadata, Long.toString(rev));
+		}
 	}
 	
 	

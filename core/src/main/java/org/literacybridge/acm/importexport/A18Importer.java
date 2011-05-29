@@ -20,7 +20,6 @@ import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
 import org.literacybridge.acm.metadata.LBMetadataSerializer;
 import org.literacybridge.acm.metadata.Metadata;
-import org.literacybridge.acm.metadata.MetadataSerializer;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
@@ -104,6 +103,9 @@ public class A18Importer extends Importer {
 				
 				
 				audioItem = new AudioItem(metadata.getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue());
+				if (metadata.getMetadataValues(MetadataSpecification.DTB_REVISION) == null) {
+					metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("0"));
+				}
 				// add the category that was selected during drag&drop
 				if (category != null) {
 					categories.add(category);
@@ -131,6 +133,12 @@ public class A18Importer extends Importer {
 		try {
 			LocalizedAudioItem localizedAudioItem = loadMetadata(category, file);
 			AudioItem audioItem = localizedAudioItem.getParentAudioItem();
+			
+			// TODO: handle updating the file by making use of revisions
+			if (AudioItem.getFromDatabase(audioItem.getUuid()) != null) {
+				// just skip for now if we have an item with the same id already
+				return;
+			}
 			
 			Repository repository = Repository.getRepository();
 			repository.store(file, file.getName(), localizedAudioItem);
