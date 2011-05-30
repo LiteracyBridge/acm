@@ -57,7 +57,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_SOURCE, false));
 		// audioItemPropertiesObject.add(new AudioItemStringProperty(DC_COVERAGE));
 		// audioItemPropertiesObject.add(new AudioItemStringProperty(DC_RIGHTS));		
-		audioItemPropertiesObject.add(new AudioItemRFC3066LanguageProperty(DC_LANGUAGE, true));				
+		audioItemPropertiesObject.add(new AudioItemRFC3066LanguageProperty(DC_LANGUAGE, true));
 	}
 	
 	@Override

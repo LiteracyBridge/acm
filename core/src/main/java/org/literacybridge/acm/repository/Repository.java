@@ -7,12 +7,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.Locale;
 
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.LocalizedAudioItem;
-import org.literacybridge.acm.metadata.Metadata;
-import org.literacybridge.acm.metadata.MetadataSpecification;
 
 public class Repository {
 	private final File baseDir = REPOSITORY_DIR;
@@ -86,11 +83,6 @@ public class Repository {
 		builder.append("literacybridge");
 		builder.append(File.separator);
 		builder.append(localizedAudioItem.getParentAudioItem().getUuid());
-		builder.append(File.separator);
-		Metadata metadata = localizedAudioItem.getMetadata();
-		String revision = metadata.getMetadataValues(MetadataSpecification.DTB_REVISION).get(0).getValue();
-		builder.append(File.separator);
-		builder.append(revision);
 		
 		String path = builder.toString();
 		File dir = new File(path);
