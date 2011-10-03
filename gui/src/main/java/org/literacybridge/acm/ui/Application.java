@@ -61,12 +61,6 @@ public class Application extends JXFrame {
 	
 	private Application() throws IOException {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	    
-		// set look & feel
-		try {
-		    UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
-		} catch (Exception e) {
-		    e.printStackTrace();
-		}
 				
 		setTitle(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUILanguage()));
 		// toolbar view on top
@@ -85,6 +79,14 @@ public class Application extends JXFrame {
 	}
 	
 	public static void main(String[] args) throws IOException {
+		
+		// set look & feel
+		try {
+		    UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
+		} catch (Exception e) {
+		    e.printStackTrace();
+		}
+		
 		final SplashScreen splash = SplashScreen.getSplashScreen();
 		application = new Application();
 		
