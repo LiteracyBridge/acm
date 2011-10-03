@@ -2,6 +2,7 @@ package org.literacybridge.acm.ui.dialogs.audioItemPropertiesDialog;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
@@ -26,14 +27,19 @@ import org.literacybridge.acm.ui.messages.RequestAndSelectAudioItemMessage;
 import org.literacybridge.acm.ui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.ui.messages.RequestedAudioItemMessage;
 import org.literacybridge.acm.util.language.LanguageUtil;
+import javax.swing.BoxLayout;
+import java.awt.Component;
+import javax.swing.Box;
+import org.eclipse.wb.swing.FocusTraversalOnArray;
 
 public class AudioItemPropertiesDialog extends JDialog implements Observer {
 
 	private static final long serialVersionUID = -3854016276035587383L;
 	private AudioItemPropertiesTable propertiesTable = null;
 
-	private JButton backBtn = null;
-	private JButton nextBtn = null;
+	private JButton backBtn;
+	private JButton nextBtn;
+	private JButton btnClose;
 
 	public AudioItemPropertiesDialog(JFrame parent, AudioItemView view,
 			List<AudioItem> audioItemList, AudioItem showItem) {
@@ -41,9 +47,10 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 				LanguageUtil.getUILanguage()), true);
 		addToMessageService();
 		createControlsForAvailableProperties();
-
+		setMinimumSize(new Dimension(500, 500));
 		setSize(500, 500);
 		pack();
+		setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{backBtn, nextBtn, btnClose}));
 
 		// show current item first
 		RequestAndSelectAudioItemMessage msg = new RequestAndSelectAudioItemMessage(RequestAudioItemMessage.RequestType.Current);
@@ -107,7 +114,7 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 		});
 		p.add(nextBtn);
 		
-		add(p, BorderLayout.NORTH);
+		getContentPane().add(p, BorderLayout.NORTH);
 		
 		p.setBorder(BorderFactory.createEmptyBorder());
 	
@@ -120,23 +127,27 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 		propertiesTable.addHighlighter(HighlighterFactory
 				.createAlternateStriping(Color.white, new Color(237, 243,
 						254)));
-	
-		theScrollPane.getViewport().add(propertiesTable, null);
-		add(theScrollPane);
-
-
-		// add bottom buttons
-		JButton okBtn = new JButton(LabelProvider.getLabel("CLOSE", LanguageUtil.getUILanguage()));
-		okBtn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
+		theScrollPane.setViewportView(propertiesTable);
+		getContentPane().add(theScrollPane);
+		
+		JPanel panel = new JPanel();
+		getContentPane().add(panel, BorderLayout.SOUTH);
+		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+		
+		Component horizontalGlue = Box.createHorizontalGlue();
+		panel.add(horizontalGlue);
+		
+		btnClose = new JButton(LabelProvider.getLabel("CLOSE", LanguageUtil.getUILanguage()));
+		btnClose.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
 				// update IRequestResult
 				ResourceView.updateDataRequestResult();
 				Application.getFilterState().updateResult();
 				setVisible(false);
 			}
 		});
-		add(okBtn, BorderLayout.SOUTH);
+		panel.add(btnClose);
+		getContentPane().setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{backBtn, nextBtn, btnClose}));
 	}
 
 	private void showMetadata(AudioItem audioItem, Metadata metadata) {
