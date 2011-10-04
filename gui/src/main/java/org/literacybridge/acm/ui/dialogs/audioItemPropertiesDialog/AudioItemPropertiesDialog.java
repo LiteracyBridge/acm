@@ -26,11 +26,11 @@ import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.ui.messages.RequestAndSelectAudioItemMessage;
 import org.literacybridge.acm.ui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.ui.messages.RequestedAudioItemMessage;
+import org.literacybridge.acm.util.FocusTraversalOnArray;
 import org.literacybridge.acm.util.language.LanguageUtil;
 import javax.swing.BoxLayout;
 import java.awt.Component;
 import javax.swing.Box;
-import org.eclipse.wb.swing.FocusTraversalOnArray;
 
 public class AudioItemPropertiesDialog extends JDialog implements Observer {
 
@@ -147,7 +147,6 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 			}
 		});
 		panel.add(btnClose);
-		getContentPane().setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{backBtn, nextBtn, btnClose}));
 	}
 
 	private void showMetadata(AudioItem audioItem, Metadata metadata) {
