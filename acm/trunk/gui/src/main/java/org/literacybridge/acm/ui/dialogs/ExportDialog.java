@@ -1,5 +1,8 @@
 package org.literacybridge.acm.ui.dialogs;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -18,6 +21,7 @@ import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.importexport.FileSystemExporter;
 import org.literacybridge.acm.resourcebundle.LabelProvider;
 import org.literacybridge.acm.ui.Application;
+import org.literacybridge.acm.ui.ResourceView.ExportToDeviceTransferHandler;
 import org.literacybridge.acm.util.UIUtils;
 import org.literacybridge.acm.util.language.LanguageUtil;
 import org.literacybridge.audioconverter.api.A18Format;
@@ -28,6 +32,8 @@ import org.literacybridge.audioconverter.api.A18Format.AlgorithmList;
 import org.literacybridge.audioconverter.api.A18Format.useHeaderChoice;
 
 public class ExportDialog extends JDialog implements ActionListener {
+	private static final Logger LOG = Logger.getLogger(ExportDialog.class.getName());
+	
 	private JFileChooser exportDirectoryChooser;
 	private JRadioButton mp3Button;
 	private JRadioButton wavButton;
@@ -109,7 +115,7 @@ public class ExportDialog extends JDialog implements ActionListener {
 				try {
 					FileSystemExporter.export(ExportDialog.this.selectedAudioItems, targetDir, targetFormat);
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOG.log(Level.WARNING, "Exporting audio items failed", e);
 				} finally {
 					UIUtils.hideDialog(dialog);
 				}
