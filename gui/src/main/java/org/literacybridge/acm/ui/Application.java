@@ -1,5 +1,8 @@
 package org.literacybridge.acm.ui;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import java.awt.BorderLayout;
 import java.awt.SplashScreen;
 import java.io.IOException;
@@ -26,7 +29,8 @@ import org.literacybridge.acm.util.SimpleMessageService;
 import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class Application extends JXFrame {
-
+	private static final Logger LOG = Logger.getLogger(Application.class.getName());
+	
 	private static final long serialVersionUID = -7011153239978361786L;
 
 	// message pump
@@ -84,7 +88,7 @@ public class Application extends JXFrame {
 		try {
 		    UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
 		} catch (Exception e) {
-		    e.printStackTrace();
+			LOG.log(Level.WARNING, "Unable to set look and feel.", e);
 		}
 		
 		final SplashScreen splash = SplashScreen.getSplashScreen();
@@ -100,6 +104,8 @@ public class Application extends JXFrame {
 		}
 		application.setVisible(true);
 		application.toFront();
+		
+		LOG.log(Level.INFO, "ACM successfully started.");
 	}	
 	
 	public static class FilterState {
