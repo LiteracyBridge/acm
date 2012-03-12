@@ -1,5 +1,8 @@
 package org.literacybridge.acm.ui.ResourceView;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import java.awt.Container;
 import java.awt.Dialog;
 import java.awt.datatransfer.Transferable;
@@ -24,7 +27,7 @@ import org.literacybridge.acm.util.language.LanguageUtil;
 
 public class ExportToDeviceTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = 1L;
-
+	private static final Logger LOG = Logger.getLogger(ExportToDeviceTransferHandler.class.getName());
 
 	@Override
 	public boolean canImport(TransferHandler.TransferSupport support) {
@@ -66,10 +69,12 @@ public class ExportToDeviceTransferHandler extends TransferHandler {
 					Container dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK", LanguageUtil.getUILanguage()), app));
 					try {
 						for (AudioItem item : audioItems) {
-							A18DeviceExporter.exportToDevice(item.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage()), device);
+							try {
+								A18DeviceExporter.exportToDevice(item.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage()), device);
+							} catch (Exception e) {
+								LOG.log(Level.WARNING, "Unable to export AudioItem with id=" + item.getUuid(), e);
+							}
 						}
-					} catch (IOException e) {
-						e.printStackTrace();
 					} finally {
 						UIUtils.hideDialog(dialog);
 					}
@@ -79,7 +84,7 @@ public class ExportToDeviceTransferHandler extends TransferHandler {
 			new Thread(job).start();
 			
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOG.log(Level.WARNING, "Exporting audioitems failed.", e);
 			return false;
 		} catch (UnsupportedFlavorException e) {
 			return false;

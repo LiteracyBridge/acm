@@ -1,5 +1,8 @@
 package org.literacybridge.acm.ui.dialogs.audioItemImportDialog;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.GridLayout;
@@ -27,6 +30,7 @@ import org.literacybridge.acm.util.language.LanguageUtil;
 
 @SuppressWarnings("serial")
 public class AudioItemImportDialog extends JDialog {
+	private static final Logger LOG = Logger.getLogger(AudioItemImportDialog.class.getName());
 
 	private AudioItemImportView childDialog;
 	private DeviceContents device;
@@ -44,8 +48,7 @@ public class AudioItemImportDialog extends JDialog {
 			
 			initialize();
 		} catch (IOException e) {
-			// TODO: show error message
-			e.printStackTrace();
+			LOG.log(Level.WARNING, "Loading from device failed.", e);
 		}
 	}
 	
@@ -65,7 +68,7 @@ public class AudioItemImportDialog extends JDialog {
 					device.importOtherDeviceStats();
 					childDialog.setData(audioItems);
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOG.log(Level.WARNING, "Importing stats from device failed.", e);
 				} finally {
 					if (!SwingUtilities.isEventDispatchThread()) {
 						SwingUtilities.invokeLater(new Runnable() {
@@ -151,13 +154,17 @@ public class AudioItemImportDialog extends JDialog {
 						final Container busy = UIUtils.showDialog(parent, new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES", LanguageUtil.getUILanguage()), parent));
 						try {
 							for (File f : files) {
-								FileImporter.getInstance().importFile(null, f);
+								try {
+									FileImporter.getInstance().importFile(null, f);
+								} catch (Exception e) {
+									LOG.log(Level.WARNING, "Importing file '" + f + "' failed.", e);
+								}
 							}
 							// also refresh all statistics
 							device.importStats();
 							device.importOtherDeviceStats();
-						} catch (IOException e) {
-							e.printStackTrace();
+						} catch (Exception e) {
+							LOG.log(Level.WARNING, "Importing stats from device failed.", e);
 						} finally {
 							if (!SwingUtilities.isEventDispatchThread()) {
 								SwingUtilities.invokeLater(new Runnable() {
