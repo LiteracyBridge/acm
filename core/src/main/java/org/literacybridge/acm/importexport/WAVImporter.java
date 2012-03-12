@@ -31,6 +31,7 @@ public class WAVImporter extends Importer {
 			
 			Metadata metadata = localizedAudioItem.getMetadata();
 			String title = file.getName().substring(0, file.getName().length() - 4);
+			metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER, new MetadataValue<String>(audioItem.getUuid()));
 			metadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(title));
 			metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
 			metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE, 
