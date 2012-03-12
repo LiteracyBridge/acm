@@ -237,8 +237,13 @@ public class AudioItemView extends Container implements Observer {
 		return getValueAt(modelRow, 0);
 	}
 
-	public AudioItem getValueAt(int row, int col) {
-		Object o = audioItemTable.getModel().getValueAt(row, col);
+	public AudioItem getAudioItemAtTableRow(int row) {
+		int modelRow = audioItemTable.convertRowIndexToModel(row);
+		return getValueAt(modelRow, 0);
+	}
+	
+	private AudioItem getValueAt(int modelRow, int col) {
+		Object o = audioItemTable.getModel().getValueAt(modelRow, col);
 	    
 	    AudioItem item = null;
 	    if (o instanceof LocalizedAudioItemNode) {

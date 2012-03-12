@@ -71,13 +71,13 @@ public class AudioItemViewMouseListener extends MouseAdapter {
 		// was clicked with the left mouse button
 		if (col == AudioItemTableModel.INFO_ICON || e.getButton() != MouseEvent.BUTTON1) {
 			
-			AudioItem clickedAudioItem = adaptee.getCurrentAudioItem(); // always the fist item of a selection!!
+			AudioItem clickedAudioItem = adaptee.getCurrentAudioItem(); // always the first item of a selection!!
 			if (clickedAudioItem != null) {
 			
 				int[] selectedRows = adaptee.audioItemTable.getSelectedRows();
 				AudioItem[] selectedAudioItems = new AudioItem[selectedRows.length];
 				for (int i = 0; i < selectedRows.length; i++) {
-					selectedAudioItems[i] = adaptee.getValueAt(selectedRows[i], 0);
+					selectedAudioItems[i] = adaptee.getAudioItemAtTableRow(selectedRows[i]);
 				}
 				
 				UIUtils.showDialog(	new AudioItemContextMenuDialog(Application.getApplication()
