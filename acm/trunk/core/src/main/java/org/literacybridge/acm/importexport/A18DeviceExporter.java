@@ -81,14 +81,10 @@ public class A18DeviceExporter {
 					DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(fileToCopy)));
 					int bytesToSkip = IOUtils.readLittleEndian32(in);
 					in.close();
-					
-					List<File> targetFiles = appendCategoryStringToFileName(fileToCopy, item);
-					
-					for (File target : targetFiles) {
-						File to = new File(deviceLocation, target.getName());
-						Repository.copy(fileToCopy, to, bytesToSkip + 4);
-						appendMetadataToA18(item, to);
-					}
+										
+					File to = new File(deviceLocation, fileToCopy.getName());
+					Repository.copy(fileToCopy, to, bytesToSkip + 4);
+					appendMetadataToA18(item, to);
 				} catch (ConversionException e) {
 					throw new IOException(e);
 				}
@@ -109,36 +105,5 @@ public class A18DeviceExporter {
 		} finally {
 			out.close();
 		}
-	}
-
-	private final static Map<String, String> oldStyleCatStrings = new HashMap<String, String>();
-	static {
-		oldStyleCatStrings.put("0", "OTHER");
-		oldStyleCatStrings.put("1", "AGRIC");
-		oldStyleCatStrings.put("2", "HEALTH");	
-		oldStyleCatStrings.put("3", "EDU");
-		oldStyleCatStrings.put("4", "STORY");
-	}
-	
-	private static List<File> appendCategoryStringToFileName(File a18File, LocalizedAudioItem item) {
-		List<Category> cats = item.getParentAudioItem().getCategoryList();
-		List<File> result = new LinkedList<File>();
-
-		// while the device only supports single categories
-		for (Category cat : cats) {
-			String catString = oldStyleCatStrings.get(cat.getUuid());
-			if (catString != null) {
-				String path = a18File.getAbsolutePath();
-				path = path.substring(0, path.length() - 4) + "#" + catString + ".a18";
-				File target = new File(path);
-				result.add(target);
-			}
-		}
-		
-		if (result.isEmpty()) {
-			result.add(a18File);
-		}
-		
-		return result;
 	}
 }
