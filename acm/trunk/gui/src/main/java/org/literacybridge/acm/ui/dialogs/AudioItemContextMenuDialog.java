@@ -8,6 +8,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -27,9 +29,12 @@ import org.literacybridge.acm.ui.UIConstants;
 import org.literacybridge.acm.ui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.ui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
 import org.literacybridge.acm.util.language.LanguageUtil;
+import org.literacybridge.acm.repository.Repository;
 
 // TODO: deal with localized audio items when languages are fully implemented
 public class AudioItemContextMenuDialog extends JDialog implements WindowListener {
+	private static final Logger LOG = Logger.getLogger(AudioItemContextMenuDialog.class.getName());
+	
 	public AudioItemContextMenuDialog(final JFrame parent, final AudioItem clickedAudioItem, final AudioItem[] selectedAudioItems, 
 			final AudioItemView audioItemView, final IDataRequestResult data) {
 		super(parent, "", false);
@@ -84,7 +89,13 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 
 				if (n == 1) {
 					for (AudioItem a : selectedAudioItems) {
-						a.destroy();
+						try {
+							a.destroy();
+							Repository.getRepository().delete(a.getLocalizedAudioItem(
+									LanguageUtil.getUserChoosenLanguage()));
+						} catch (Exception e) {
+							LOG.log(Level.WARNING, "Unable to delete audioitem id=" + a.getUuid(), e);
+						}
 					}
 					Application.getFilterState().updateResult();
 				}

@@ -70,6 +70,15 @@ public class Repository {
 		return files[0];
 	}
 	
+	public void delete(LocalizedAudioItem localizedAudioItem) {
+		File dir = resolveName(localizedAudioItem);
+		File[] files = dir.listFiles();
+		for (File f : files) {
+			f.delete();
+		}
+		dir.delete();
+	}
+	
 	// Returns the path of this audioitem in the repository
 	public File resolveName(LocalizedAudioItem localizedAudioItem) {
 		// TODO: For now we just use the unique ID of the audio item; in the future, we might want to use
