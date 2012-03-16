@@ -166,14 +166,14 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.setAutoCreateColumnsFromModel( false );
 	
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.INFO_ICON).setMaxWidth(25);
-		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.TITLE).setPreferredWidth(240);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.TITLE).setPreferredWidth(230);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.COPY_COUNT).setPreferredWidth(50);
-		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.OPEN_COUNT).setPreferredWidth(45);
-		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.COMPLETION_COUNT).setPreferredWidth(45);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.OPEN_COUNT).setPreferredWidth(55);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.COMPLETION_COUNT).setPreferredWidth(55);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.SURVEY1_COUNT).setPreferredWidth(55);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.APPLY_COUNT).setPreferredWidth(50);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.NOHELP_COUNT).setPreferredWidth(65);
-		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CATEGORIES).setPreferredWidth(150);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CATEGORIES).setPreferredWidth(140);
 		
 		Comparator<Object> comparator = new Comparator<Object>() {
 			@Override public int compare(Object o1, Object o2) {
