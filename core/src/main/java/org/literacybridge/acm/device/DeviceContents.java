@@ -2,6 +2,7 @@ package org.literacybridge.acm.device;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import org.literacybridge.acm.importexport.StatisticsImporter;
 public class DeviceContents {
 	public final static String CONFIG_FILE = "config.txt";
 	public final static String SYSTEM_SUBFOLDER = "system";
+	public final static String STATISTICS_SUBFOLDER = "statistics";
 	public final static String MESSAGES_SUBFOLDER = "messages";
 	public final static String LISTS_SUBFOLDER = "lists";
 	public final static String LANGUAGES_FILE = "languages.txt";
@@ -79,11 +81,9 @@ public class DeviceContents {
 	
 	private File pathToDevice;
 	private Properties deviceConfig;
-	private Map<String, List<CategoryList>> lists;
 	
 	public DeviceContents(File pathToDevice) throws IOException {
 		this.pathToDevice = pathToDevice;
-		lists = new HashMap<String, List<CategoryList>>();
 		loadDeviceInfos();
 	}
 	
@@ -97,7 +97,7 @@ public class DeviceContents {
 	
 	private void internalImportStats(String subFolder) throws IOException  {
 		StatisticsImporter importer = new StatisticsImporter();
-		File systemPath = new File(pathToDevice, SYSTEM_SUBFOLDER);
+		File systemPath = new File(pathToDevice, STATISTICS_SUBFOLDER);
 		File statsPath = new File(systemPath, subFolder);
 		importer.importStatsFolder(statsPath);		
 	}
@@ -107,14 +107,12 @@ public class DeviceContents {
 		String userPath = cleanPath(deviceConfig.getProperty(USER_SUBFOLDER_PROPERTY_NAME));
 		File userFolder = new File(pathToDevice, userPath);
 		
-		for (List<CategoryList> language : lists.values()) {
-			for (CategoryList list : language) {
-				for (CategoryList.Item item : list.audioItems) {
-					if (!item.isApplication) {
-						audioItems.add(new File(userFolder, item.audioItemName + ".a18"));
-					}
-				}
+		for (File f : userFolder.listFiles(new FileFilter() {			
+			@Override public boolean accept(File file) {
+				return file.getName().toLowerCase().endsWith(".a18");
 			}
+		})) {
+			audioItems.add(f);
 		}
 		
 		return audioItems;
@@ -134,39 +132,8 @@ public class DeviceContents {
 				in.close();
 			}
 		}
-		
-		// now load lists
-		loadLists();
 	}
-	
-	private void loadLists() throws IOException { 
-		File languagesPath = new File(pathToDevice, cleanPath(deviceConfig.getProperty(LANGUAGES_SUBFOLDER_PROPERTY_NAME)));
-		File messagesFolder = new File(pathToDevice, MESSAGES_SUBFOLDER);
-		File listsFolder = new File(messagesFolder, LISTS_SUBFOLDER);
 		
-		List<String> languages = loadListFromFile(new File(languagesPath, LANGUAGES_FILE));
-		for (String language : languages) {
-			List<CategoryList> languageList = new LinkedList<DeviceContents.CategoryList>();
-			File languagePath = new File(new File(pathToDevice, cleanPath(deviceConfig.getProperty(LISTS_SUBFOLDER_PROPERTY_NAME))),
-																language);
-			List<String> topics = loadListFromFile(new File(languagePath, deviceConfig.getProperty(LIST_MASTER_PROPERTY_NAME) + LIST_TXT_FILE_SUFFIX));
-			for (String topic : topics) {
-				if (topic.startsWith("$")) {
-					// Categories that start with '$' are system categories and are stored with the system language 
-					// in its directory, rather than with the other messages. 
-					continue;
-				}
-				File langList = new File(listsFolder, language);
-				CategoryList list = new CategoryList(topic);
-				for (String audioItemName : loadListFromFile(new File(langList, topic + LIST_TXT_FILE_SUFFIX))) {
-					list.audioItems.add(new CategoryList.Item(audioItemName));
-				}
-				languageList.add(list);
-				lists.put(language, languageList);
-			}
-		}
-	}
-	
 	public String getConfigProperty(String propertyName) {
 		return deviceConfig.getProperty(propertyName);
 	}
@@ -197,15 +164,7 @@ public class DeviceContents {
 		System.out.println(contents.deviceConfig);
 		System.out.println();
 		System.out.println();
-
-		System.out.println("Lists\n=======================");
-		for (Entry<String, List<CategoryList>> entry : contents.lists.entrySet()) {
-			System.out.println(entry.getKey());
-			for (CategoryList list : entry.getValue()) {
-				System.out.println(list);
-				System.out.println();
-			}
-		}
+		System.out.println(contents.loadAudioItems());
 	}
 	
 	private static final String cleanPath(String path) {
