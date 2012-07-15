@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="11.3">
+  <zoom_level>10</zoom_level>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>30</x>
+      <y>50</y>
+      <w>230</w>
+      <h>170</h>
+    </coordinates>
+    <panel_attributes>
+
+-logger: Logger
+--
+/+getId(): Integer/
++commit(): &lt;T&gt;
++destroy(): void
++refresh(): &lt;T&gt;
++hashCode(): int
++equals(object:Object): boolean
++toString(): String</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
