@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="11.3">
+  <zoom_level>10</zoom_level>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>20</x>
+      <y>30</y>
+      <w>200</w>
+      <h>190</h>
+    </coordinates>
+    <panel_attributes>PersistentAudioItemStatistic
+--
+-id: String
+-device_id: int
+-boot_cycle_number: int
+-lb_copy_count: int
+-lb_open_count: int
+-lb_completion_count: int
+-lb_survey1_count: int
+-lb_apply_count: int
+-lb_useless_count: int</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>300</x>
+      <y>120</y>
+      <w>140</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>PersistentMetadata</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>190</x>
+      <y>110</y>
+      <w>130</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;-
+m1=1
+m2=*</panel_attributes>
+    <additional_attributes>110;30;30;30</additional_attributes>
+  </element>
+</diagram>
