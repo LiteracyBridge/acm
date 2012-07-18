@@ -16,8 +16,10 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceException;
 
+import org.eclipse.persistence.internal.jpa.deployment.DirectoryArchive;
 import org.eclipse.persistence.jpa.JpaHelper;
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.config.Configuration;
 
 public class Persistence {
     
@@ -60,8 +62,11 @@ public class Persistence {
     
     private Persistence() {}
     
+
+    
+    
     public static synchronized void initialize() throws Exception {
-        setDBSystemDir();
+        setDBSystemDir(Configuration.getDatabaseDirectory());
 
     	// load configuration before calling database
     	LoadAndInitializeSettings();        	
@@ -141,12 +146,13 @@ public class Persistence {
         }
     }  
     
-    private static void setDBSystemDir() {
+    private static void setDBSystemDir(File dbRootDir) {
         // decide on the db system directory
-        System.setProperty("derby.system.home", Constants.DATABASE_DIR.getAbsolutePath());
+        System.setProperty("derby.system.home", dbRootDir.getAbsolutePath());
         
         // create the db system directory
-        Constants.DATABASE_DIR.mkdir();
+        //Constants.DATABASE_DIR.mkdir();
+        dbRootDir.mkdir();
     }    
     
     private static String getDBSystemDir() {

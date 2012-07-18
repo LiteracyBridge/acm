@@ -1,7 +1,5 @@
 package org.literacybridge.acm.repository;
 
-import static org.literacybridge.acm.Constants.REPOSITORY_DIR;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -12,7 +10,7 @@ import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 
 public class Repository {
-	private final File baseDir = REPOSITORY_DIR;
+	private final File baseDir = Configuration.GetRepositoryDirectory();
 	
 	private final static Repository instance = new Repository();
 	

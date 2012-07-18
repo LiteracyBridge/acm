@@ -22,45 +22,112 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 
 public class Configuration extends Properties {
-	private static final File CONFIG_FILE = new File(Constants.LB_SYSTEM_DIR, "config.properties");
 
-	private static Configuration instance;
-	
-	private Configuration() {
-		// singleton
-	}
-	
-	public static Configuration getConfiguration() {
-		if (instance == null) {
-			instance = new Configuration();
-			
-			if (CONFIG_FILE.exists()) {
-				try {
-					BufferedInputStream in = new BufferedInputStream(new FileInputStream(CONFIG_FILE));
-					instance.load(in);
-				} catch (IOException e) {
-					throw new RuntimeException("Unable to load configuration file: " + CONFIG_FILE, e);
-				}
-			}
-			
-			if (!instance.containsKey(AUDIO_LANGUAGES)) {
-				instance.put(AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),tw(\"Twi\"),sfw(\"Sehwi\")");
-				instance.writeProps();
-			}
+	// This must be always the initial root directory, if ACM already exists on a machine
+    private final static File DEFAULT_LITERACYBRIDGE_SYSTEM_DIR = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
+    private static final File REDIRECT_TO_DATABASE_FILE = new File(DEFAULT_LITERACYBRIDGE_SYSTEM_DIR, "redirectToDatabase.txt");
 
+    // static constructor
+    static {
+    	init();
+    }
+	
+	// Call this methods to get the actual root directories paths...
+
+	public static String getLiteracyBridgeSystemDirectory() {
+		if (instance.containsKey(NEW_DATABASE_DIRECTORY)) {
+			return instance.getProperty(NEW_DATABASE_DIRECTORY);
 		}
 		
+		// default
+		return DEFAULT_LITERACYBRIDGE_SYSTEM_DIR.getAbsolutePath();
+	}
+	
+	public static File getDatabaseDirectory() {
+		return new File(getLiteracyBridgeSystemDirectory(), Constants.DerbyDBHomeDir);
+	}
+	
+	public static File GetConfigurationPropertiesFile() {
+		return new File(getLiteracyBridgeSystemDirectory(), Constants.CONFIG_PROPERTIES);
+	}
+
+	public static File GetRepositoryDirectory() {
+		return new File(getLiteracyBridgeSystemDirectory(), Constants.RepositoryHomeDirName);
+	}
+	
+	
+	
+	// Database source
+	// Default: internal used database directory
+	// Other: User can define a path to a different DB folder
+	public enum Source { Default, Other };
+
+	
+	private static Configuration instance;
+	
+	
+	private static void init() {
+		if (instance == null) {
+			instance = new Configuration();
+			InitializeConfiguration();
+		}
+	}
+	
+	
+	public static Configuration getConfiguration() {
 		return instance;
 	}
 	
+	private static void InitializeConfiguration() {
+		// check if a redirect to a different LB Root directory exits.
+		if (REDIRECT_TO_DATABASE_FILE.exists()) {
+			try {
+				BufferedInputStream in = new BufferedInputStream(new FileInputStream(REDIRECT_TO_DATABASE_FILE));
+				instance.load(in);
+			} catch (IOException e) {
+				throw new RuntimeException("Unable to load redirection file: " + REDIRECT_TO_DATABASE_FILE, e);
+			}
+			
+			File newLiteracyBridgeRootDirectory = null;
+			if (instance.containsKey(NEW_DATABASE_DIRECTORY)) { 
+				newLiteracyBridgeRootDirectory = new File(instance.getProperty(NEW_DATABASE_DIRECTORY));
+				
+			}
+			
+			// if a redirect file exits, the new path should be valid
+			if (newLiteracyBridgeRootDirectory == null || !newLiteracyBridgeRootDirectory.exists()) {
+				throw new RuntimeException("The redirection should contain the entry " + NEW_DATABASE_DIRECTORY + "=path");
+			}
+		}
+		
+		InitializeAcmConfiguration();
+	}
+	
+	private static void InitializeAcmConfiguration() {
+		if (GetConfigurationPropertiesFile().exists()) {
+			try {
+				BufferedInputStream in = new BufferedInputStream(new FileInputStream(GetConfigurationPropertiesFile()));
+				instance.load(in);
+			} catch (IOException e) {
+				throw new RuntimeException("Unable to load configuration file: " + GetConfigurationPropertiesFile(), e);
+			}
+		}
+		
+		if (!instance.containsKey(AUDIO_LANGUAGES)) {
+			instance.put(AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),tw(\"Twi\"),sfw(\"Sehwi\")");
+			instance.writeProps();
+		}
+	}
+	
+	
 	public void writeProps() {
 		try {
-			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(CONFIG_FILE));
+			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(GetConfigurationPropertiesFile()));
 			super.store(out, null);
 			out.flush();
 			out.close();
 		} catch (IOException e) {
-			throw new RuntimeException("Unable to write configuration file: " + CONFIG_FILE, e);
+			throw new RuntimeException("Unable to write configuration file: " + GetConfigurationPropertiesFile(), e);
 		}
 	}
 	
@@ -73,7 +140,9 @@ public class Configuration extends Properties {
 	private final static String RECORDING_COUNTER_PROP = "RECORDING_COUNTER";
 	private final static String DEVICE_ID_PROP = "DEVICE_ID";
 	private final static String AUDIO_LANGUAGES = "AUDIO_LANGUAGES";
+	private final static String NEW_DATABASE_DIRECTORY = "NEW_DATABASE_DIRECTORY";
 	
+
 	private List<Locale> audioLanguages = null;
 	private Map<Locale,String> languageLables = new HashMap<Locale, String>();
 	
