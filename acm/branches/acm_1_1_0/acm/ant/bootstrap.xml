@@ -14,8 +14,6 @@
   <property name="ivysvnresolver.install.version" value="2.2.0" />
   <property name="ivysvnresolver.tar.file" value="${ivy.jar.dir}/ivysvnresolver-${ivysvnresolver.install.version}.tgz" />
 
-  <property name="artifactory.host" value="artifactory.local.twitter.com"/>
-
   <target name="update-ivy">
     <sequential>
       <available file="${ivy.jar.file}" property="skip.download" />
@@ -29,14 +27,14 @@
     <condition property="ivy.url" value="file:${ivy.jar.file}">
       <available file="${ivy.jar.file}" />
     </condition>
-    <property name="ivy.url" value="http://${artifactory.host}/repo/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" />
+    <property name="ivy.url" value="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" />
     <get src="${ivy.url}" dest="${ivy.jar.file}.download" usetimestamp="true" />
     <move file="${ivy.jar.file}.download" tofile="${ivy.jar.file}" />
 
     <condition property="ivysvnresolver.url" value="file:${ivysvnresolver.tar.file}">
       <available file="${ivysvnresolver.tar.file}" />
     </condition>
-    <property name="ivysvnresolver.url" value="http://${artifactory.host}/repo/ivysvnresolver/ivysvnresolver/${ivysvnresolver.install.version}/ivysvnresolver-${ivysvnresolver.install.version}-bin.tgz" />
+    <property name="ivysvnresolver.url" value="http://ivysvn.googlecode.com/files/ivysvnresolver-${ivysvnresolver.install.version}-bin.tgz" />
     <get src="${ivysvnresolver.url}" dest="${ivysvnresolver.tar.file}.download" usetimestamp="true" />
     <move file="${ivysvnresolver.tar.file}.download" tofile="${ivysvnresolver.tar.file}" />
     <untar compression="gzip" src="${ivysvnresolver.tar.file}" dest="${ivy.jar.dir}">

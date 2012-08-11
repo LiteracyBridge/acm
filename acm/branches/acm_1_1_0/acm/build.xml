@@ -258,7 +258,7 @@
                   regexp="^(10\.[567]).*$"
                   select="${root.dir}/../thrift/bin/mac/\1/${thrift.version}/thrift"/>
         </case>
-        <case value="Windows">
+        <case value="Windows XP">
         <property name="thrift.bin"
                   value="${root.dir}/../thrift/bin/win/${thrift.version}/thrift-${thrift.version}.exe"/>
         </case>
