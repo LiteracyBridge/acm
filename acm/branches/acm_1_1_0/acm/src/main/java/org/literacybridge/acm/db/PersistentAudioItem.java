@@ -54,6 +54,17 @@ public class PersistentAudioItem extends PersistentObject {
             @JoinColumn(name = "category", referencedColumnName = "id")
     )
     private List<PersistentCategory> persistentCategoryList = new LinkedList<PersistentCategory>();    
+
+    @ManyToMany
+    @JoinTable(
+        name = "t_audioitem_has_tag",
+        joinColumns =
+            @JoinColumn(name = "audioitem", referencedColumnName = "id"),
+        inverseJoinColumns =
+            @JoinColumn(name = "tag", referencedColumnName = "id")
+    )
+    private List<PersistentTag> persistentTagList = new LinkedList<PersistentTag>();    
+
     
     @OneToMany(mappedBy = "persistentAudioItem", cascade = {CascadeType.ALL})
     private List<PersistentLocalizedAudioItem> persistentLocalizedAudioItemList = new LinkedList<PersistentLocalizedAudioItem>();
@@ -99,6 +110,35 @@ public class PersistentAudioItem extends PersistentObject {
     	}
         getPersistentCategoryList().clear();
     }
+
+    public List<PersistentTag> getPersistentTagList() {
+        return persistentTagList;
+    }
+
+    public void setPersistentTagList(List<PersistentTag> persistentTagList) {
+        this.persistentTagList = persistentTagList;
+    }
+
+    public PersistentTag addPersistentAudioItemTag(PersistentTag persistentTag) {
+    	if (!getPersistentTagList().contains(persistentTag)) {
+	        getPersistentTagList().add(persistentTag);
+	        persistentTag.getPersistentAudioItemList().add(this);
+    	}
+        return persistentTag;
+    }
+
+    public PersistentTag removePersistentTag(PersistentTag persistentTag) {
+        getPersistentTagList().remove(persistentTag);
+        persistentTag.getPersistentAudioItemList().remove(this);
+        return persistentTag;
+    }
+
+    public void removeAllPersistentTags() {
+    	for (PersistentTag tag : getPersistentTagList()) {
+    		tag.getPersistentAudioItemList().remove(this);
+    	}
+        getPersistentTagList().clear();
+    }
     
     public List<PersistentLocalizedAudioItem> getPersistentLocalizedAudioItems() {
         return persistentLocalizedAudioItemList;
@@ -141,5 +181,11 @@ public class PersistentAudioItem extends PersistentObject {
     public static List<PersistentAudioItem> getFromDatabaseBySearch(String searchFilter, 
     		List<PersistentCategory> categories, List<PersistentLocale> locales) {
     	return PersistentQueries.searchForAudioItems(searchFilter, categories, locales);
+    }
+    
+    public static List<PersistentAudioItem> getFromDatabaseBySearch(String searchFilter, 
+    		PersistentTag selectedTag) {
+    	return PersistentQueries.searchForAudioItems(searchFilter, selectedTag);
     }  
+
 }

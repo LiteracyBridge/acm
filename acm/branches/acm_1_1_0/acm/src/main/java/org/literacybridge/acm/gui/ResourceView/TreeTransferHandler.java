@@ -39,13 +39,12 @@ public class TreeTransferHandler extends TransferHandler {
 
 		for (DataFlavor flavor : supportedFlavors) {
 			if (support.isDataFlavorSupported(flavor)) {
+				support.setShowDropLocation(true);
 				return true;
 			}
 		}
 
-		support.setShowDropLocation(true);
-
-		return true;
+		return false;
 	}
 
 	@Override

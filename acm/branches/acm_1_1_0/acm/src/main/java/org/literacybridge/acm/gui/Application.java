@@ -19,6 +19,7 @@ import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
+import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
@@ -109,9 +110,12 @@ public class Application extends JXFrame {
 	}	
 	
 	public static class FilterState {
+		private String previousFilterState = null;
+		
 		private String filterString;
 		private List<PersistentCategory> filterCategories;
 		private List<PersistentLocale> filterLanguages;
+		private PersistentTag selectedTag;
 		
 		public synchronized String getFilterString() {
 			return filterString;
@@ -137,12 +141,37 @@ public class Application extends JXFrame {
 			updateResult();
 		}
 		
+		public synchronized void setSelectedTag(PersistentTag selectedTag) {
+			this.selectedTag = selectedTag;
+			updateResult();
+		}
+		
+		public synchronized PersistentTag getSelectedTag() {
+			return selectedTag;
+		}
+		
 		public void updateResult() {
+			updateResult(false);
+		}
+		
+		public void updateResult(boolean force) {
+			if (!force && previousFilterState != null && previousFilterState.equals(this.toString())) {
+				return;
+			}
 			
-			// TODO: Integrate languages in filter
-			final IDataRequestResult result = DataRequestService.getInstance().getData(
-					LanguageUtil.getUserChoosenLanguage(), 
-					filterString, filterCategories, filterLanguages);
+			previousFilterState = this.toString();
+			
+			final IDataRequestResult result;
+			
+			if (selectedTag == null) {
+				result = DataRequestService.getInstance().getData(
+						LanguageUtil.getUserChoosenLanguage(), 
+						filterString, filterCategories, filterLanguages);
+			} else {
+				result = DataRequestService.getInstance().getData(
+						LanguageUtil.getUserChoosenLanguage(), 
+						filterString, selectedTag);				
+			}
 
 			// call UI back
 			Runnable updateUI = new Runnable() {
@@ -162,7 +191,32 @@ public class Application extends JXFrame {
 				} catch (InvocationTargetException e) {
 					e.printStackTrace();
 				}
+			}			
+		}
+		
+		@Override public String toString() {
+			StringBuilder builder = new StringBuilder();
+			if (filterString != null) {
+				builder.append("FS:").append(filterString);
+				builder.append(",");
 			}
+			if (filterCategories != null && !filterCategories.isEmpty()) {
+				for (PersistentCategory cat : filterCategories) {
+					builder.append("FC:").append(cat.getUuid());
+					builder.append(",");					
+				}
+			}
+			if (filterLanguages != null && !filterLanguages.isEmpty()) {
+				for (PersistentLocale lang : filterLanguages) {
+					builder.append("FL:").append(lang.getLanguage()).append("-").append(lang.getCountry());
+					builder.append(",");					
+				}
+			}
+			if (selectedTag != null) {
+				builder.append("ST:").append(selectedTag.getName());
+				builder.append(",");
+			}			
+			return builder.toString();
 		}
 	}
 	

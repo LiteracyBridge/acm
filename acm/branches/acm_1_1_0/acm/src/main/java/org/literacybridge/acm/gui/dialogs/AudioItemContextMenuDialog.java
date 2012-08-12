@@ -8,8 +8,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -22,13 +22,14 @@ import javax.swing.JOptionPane;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
-import org.literacybridge.acm.metadata.MetadataSpecification;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.repository.Repository;
 
 // TODO: deal with localized audio items when languages are fully implemented
@@ -54,55 +55,90 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 		final String selectedTitle = clickedAudioItem.getLocalizedAudioItem(
 				LanguageUtil.getUserChoosenLanguage()).getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).toString();
 		
-		String labelPostfix;
-		final String deleteMessage;
-		if (selectedAudioItems.length > 1) {
-			labelPostfix = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_LABEL_POSTFIX", LanguageUtil.getUILanguage())
-											, selectedAudioItems.length);
-			deleteMessage = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_ITEMS", LanguageUtil.getUILanguage())
-											, selectedAudioItems.length);
-		} else {
-			labelPostfix = selectedTitle;
-			deleteMessage = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_TITLE", LanguageUtil.getUILanguage())
-											, selectedTitle);
-		}
+		final PersistentTag selectedTag = Application.getFilterState().getSelectedTag();
 		
-		FlatButton deleteButton = new FlatButton(String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE", LanguageUtil.getUILanguage())
-																	, labelPostfix)
-											, deleteImageIcon
-											, backgroundColor
-											, highlightedColor) {
-			@Override
-			public void click() {
-				AudioItemContextMenuDialog.this.setVisible(false);
-				
-				Object[] options = {LabelProvider.getLabel("CANCEL", LanguageUtil.getUILanguage())
-									, LabelProvider.getLabel("DELETE", LanguageUtil.getUILanguage())};
-				int n = JOptionPane.showOptionDialog(Application.getApplication(),
-				    deleteMessage,
-				    LabelProvider.getLabel("CONFRIM_DELETE", LanguageUtil.getUILanguage()),
-				    JOptionPane.OK_CANCEL_OPTION,
-				    JOptionPane.QUESTION_MESSAGE,
-				    null,
-				    options,
-				    options[0]);
-
-				if (n == 1) {
-					for (AudioItem a : selectedAudioItems) {
-						try {
-							a.destroy();
-							Repository.getRepository().delete(a.getLocalizedAudioItem(
-									LanguageUtil.getUserChoosenLanguage()));
-						} catch (Exception e) {
-							LOG.log(Level.WARNING, "Unable to delete audioitem id=" + a.getUuid(), e);
-						}
-					}
-					Application.getFilterState().updateResult();
-				}
-
+		String labelPostfix;	    
+	    final FlatButton deleteButton;
+		
+		if (selectedTag == null) {
+			final String deleteMessage;
+			
+			if (selectedAudioItems.length > 1) {
+				labelPostfix = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_LABEL_POSTFIX", LanguageUtil.getUILanguage())
+												, selectedAudioItems.length);
+				deleteMessage = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_ITEMS", LanguageUtil.getUILanguage())
+												, selectedAudioItems.length);
+			} else {
+				labelPostfix = selectedTitle;
+				deleteMessage = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_TITLE", LanguageUtil.getUILanguage())
+												, selectedTitle);
 			}
 			
-		};
+			deleteButton = new FlatButton(String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE", LanguageUtil.getUILanguage())
+					, labelPostfix)
+					, deleteImageIcon
+					, backgroundColor
+					, highlightedColor) {
+				@Override public void click() {
+					AudioItemContextMenuDialog.this.setVisible(false);
+					
+					Object[] options = {LabelProvider.getLabel("CANCEL", LanguageUtil.getUILanguage())
+										, LabelProvider.getLabel("DELETE", LanguageUtil.getUILanguage())};
+					int n = JOptionPane.showOptionDialog(Application.getApplication(),
+					    deleteMessage,
+					    LabelProvider.getLabel("CONFRIM_DELETE", LanguageUtil.getUILanguage()),
+					    JOptionPane.OK_CANCEL_OPTION,
+					    JOptionPane.QUESTION_MESSAGE,
+					    null,
+					    options,
+					    options[0]);
+
+					if (n == 1) {
+						for (AudioItem a : selectedAudioItems) {
+							try {
+								a.destroy();
+								Repository.getRepository().delete(a.getLocalizedAudioItem(
+										LanguageUtil.getUserChoosenLanguage()));
+							} catch (Exception e) {
+								LOG.log(Level.WARNING, "Unable to delete audioitem id=" + a.getUuid(), e);
+							}
+						}
+						Application.getFilterState().updateResult(true);
+					}
+
+				}				
+			};
+		} else {
+			if (selectedAudioItems.length > 1) {
+				labelPostfix = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_LABEL_POSTFIX", LanguageUtil.getUILanguage())
+												, selectedAudioItems.length);
+			} else {
+				labelPostfix = selectedTitle;
+			}			
+			
+			deleteButton = new FlatButton(String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_REMOVE_TAG", LanguageUtil.getUILanguage())
+					, labelPostfix, selectedTag.getName())
+					, deleteImageIcon
+					, backgroundColor
+					, highlightedColor) {
+				@Override public void click() {
+					AudioItemContextMenuDialog.this.setVisible(false);
+					
+					for (AudioItem a : selectedAudioItems) {
+						try {
+							a.removeTag(selectedTag);
+							a.commit();
+						} catch (Exception e) {
+							LOG.log(Level.WARNING, "Unable to remove audioitem id=" + a.getUuid() + " from tag " + selectedTag.getName(), e);
+						}
+					}
+					Application.getFilterState().updateResult(true);
+
+				}				
+			};
+
+		}
+		
 
 		FlatButton editButton = new FlatButton(String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_EDIT_TITLE", LanguageUtil.getUILanguage()), selectedTitle)
 									, editImageIcon
@@ -147,7 +183,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 		
 		addWindowListener(this);
 		setAlwaysOnTop(true);
-		setSize(new Dimension(300, 100));
+		setSize(new Dimension(450, 100));
 	}
 	
 	@Override

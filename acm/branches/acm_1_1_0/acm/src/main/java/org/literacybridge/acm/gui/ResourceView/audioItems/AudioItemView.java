@@ -17,6 +17,7 @@ import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
 
+import javax.swing.DropMode;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -68,6 +69,8 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable = new JXTable();
 		audioItemTable.setShowGrid(false, false); 
 		audioItemTable.setDragEnabled(true);
+		audioItemTable.setDropMode(DropMode.INSERT);
+		audioItemTable.setTransferHandler(new AudioItemTransferHandler());
 		
 		// use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
 		audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
@@ -311,7 +314,6 @@ public class AudioItemView extends Container implements Observer {
 		
 		final AudioItemCellRenderer renderer = new AudioItemCellRenderer();
 		audioItemTable.setDefaultRenderer(Object.class, renderer);
-		
 		audioItemTable.addMouseMotionListener(new MouseMotionListener() {
 			
 			@Override
@@ -340,54 +342,7 @@ public class AudioItemView extends Container implements Observer {
 			@Override public void mouseClicked(MouseEvent e)  {}
 		});
 		
-		
-		audioItemTable.setTransferHandler(new TransferHandler() {
-			
-			@Override
-            public int getSourceActions(JComponent c) {
-                return MOVE;
-            }
-            
-			@Override
-			protected Transferable createTransferable(final JComponent c) {
-				final DataFlavor[] flavors = new DataFlavor[] {AudioItemDataFlavor};
-				
-				return new Transferable() {
-					@Override
-					public Object getTransferData(DataFlavor flavor)
-							throws UnsupportedFlavorException, IOException {
-						JTable table = (JTable) c;
-						int[] rows = table.getSelectedRows();
-
-						AudioItem[] audioItems = new AudioItem[rows.length];
-						for (int i = 0; i < rows.length; i++) {
-							LocalizedAudioItemNode item = 
-			                	(LocalizedAudioItemNode) table.getModel().getValueAt(rows[i], 0);
-							audioItems[i] = item.getLocalizedAudioItem().getParentAudioItem();
-						}
-						
-		                return audioItems; 
-					}
-
-					@Override
-					public DataFlavor[] getTransferDataFlavors() {
-						return (DataFlavor[]) flavors.clone();
-					}
-
-					@Override
-					public boolean isDataFlavorSupported(DataFlavor flavor) {
-				        for (int i = 0; i < flavors.length; i++) {
-				    	    if (flavor.equals(flavors[i])) {
-				    	        return true;
-				    	    }
-				    	}
-				    	return false;
-					}
-				};
-			}
-		});
-		
-	    mouseListener = new AudioItemViewMouseListener(this);
+		mouseListener = new AudioItemViewMouseListener(this);
 	    audioItemTable.addMouseListener(mouseListener);
 	    audioItemTable.getTableHeader().addMouseListener(mouseListener);
 	}

@@ -53,7 +53,6 @@ public abstract class PersistentObject implements Serializable {
         return persistentObj;
     }
     
-    
     public synchronized void destroy() {
         mLogger.finest("Destroying object " + toString());
         

@@ -13,6 +13,12 @@ CREATE TABLE t_audioitem_has_category (
   category INT,
   PRIMARY KEY(audioitem,category));
 
+CREATE TABLE t_audioitem_has_tag ( 
+  audioitem INT, 
+  tag INT,
+  ordering INT,
+  PRIMARY KEY(audioitem,tag) );
+
 CREATE TABLE t_referenced_file ( 
   id INT PRIMARY KEY, 
   location VARCHAR(2048), 
@@ -28,6 +34,11 @@ CREATE TABLE t_category (
   lang_title INT, 
   lang_desc INT, 
   parent INT );
+
+CREATE TABLE t_tag ( 
+  id INT PRIMARY KEY, 
+  uuid VARCHAR(255), 
+  name VARCHAR(255) );
 
 CREATE TABLE t_metadata ( 
   id INT PRIMARY KEY, 
@@ -96,3 +107,4 @@ INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_metadata',0);
 INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_referenced_file',0);
 INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_string',0);
 INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_audioitem_statistic',0);
+INSERT INTO t_sequence(seq_name,seq_count) VALUES('gen_tag',0);

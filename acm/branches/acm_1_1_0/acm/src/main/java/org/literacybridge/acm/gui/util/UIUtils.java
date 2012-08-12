@@ -3,6 +3,7 @@ package org.literacybridge.acm.gui.util;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Frame;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.SwingUtilities;
 
@@ -39,4 +40,17 @@ public class UIUtils {
 		}
 	}
 
+	public static void invokeAndWait(final Runnable runnable) {
+		try {
+			if (SwingUtilities.isEventDispatchThread()) {
+				runnable.run();
+			} else {
+				SwingUtilities.invokeAndWait(runnable);
+			}
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException(e);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }

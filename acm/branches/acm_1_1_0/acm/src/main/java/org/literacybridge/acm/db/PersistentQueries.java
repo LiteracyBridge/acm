@@ -84,6 +84,48 @@ class PersistentQueries {
         return searchResults;	
 
     }
+
+    @SuppressWarnings("unchecked")
+	static List<PersistentAudioItem> searchForAudioItems(String filter, PersistentTag selectedTag) {    	
+        EntityManager em = Persistence.getEntityManager();
+        List<PersistentAudioItem> searchResults = new LinkedList<PersistentAudioItem>();
+        try {
+        	// queries all audioitems
+        	StringBuilder query = 
+        		new StringBuilder("SELECT DISTINCT t0.id AS \"id\", t0.uuid AS \"uuid\" " 
+        				       + "FROM t_localized_audioitem t1, t_metadata t2, t_locale t3, (t_audioitem t0 LEFT OUTER JOIN t_audioitem_has_tag tc " 
+        				       + "ON t0.id=tc.audioitem) "
+        				       + "WHERE t0.id=t1.audioitem AND t1.metadata=t2.id AND t1.language=t3.id ");
+        	
+        	// queries all audioitems matching a certain string
+        	if (filter != null && !filter.isEmpty()) {
+	        	String[] tokens = filter.split(" ");
+	        	for (int i=0; i < tokens.length; i++) {
+		    		query.append(" AND (lower(t2.dc_creator) LIKE lower('%" + tokens[i] + "%')" 
+		                             + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
+		                             + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
+	        	}
+        	}
+        	
+        	// queries all audioitems matching a certain category
+        	if (selectedTag != null) {
+        		query.append(" AND (");
+        		appendTagClause(query, selectedTag);
+        		query.append(")");
+        	}
+        	
+        	//System.out.println("Filter=" + filter + ", query=" + query.toString());
+            Query foundAudioItems = em.createNativeQuery(query.toString(), PersistentAudioItem.class);
+            searchResults = foundAudioItems.getResultList();
+        } catch (NoResultException e) {
+            // do nothing
+        } finally {
+            em.close();
+        }
+        return searchResults;	
+
+    }
+
     
     private static void appendCategoryClause(StringBuilder whereClause, List<PersistentCategory> categories) {
     	if (categories.isEmpty()) {
@@ -99,6 +141,14 @@ class PersistentQueries {
 			whereClause.append(" OR ");
 			whereClause.append("tc.category = " + category.getId());
     	}
+    }
+
+    private static void appendTagClause(StringBuilder whereClause, PersistentTag selectedTag) {
+    	if (selectedTag == null) {
+    		return;
+    	}
+    	
+    	whereClause.append("tc.tag = " + selectedTag.getId());
     }
     
     private static void appendLocalesClause(StringBuilder whereClause, List<PersistentLocale> locales) {

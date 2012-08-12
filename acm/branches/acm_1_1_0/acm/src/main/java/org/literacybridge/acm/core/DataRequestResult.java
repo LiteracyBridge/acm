@@ -1,25 +1,28 @@
 package org.literacybridge.acm.core;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.metadata.MetadataSpecification;
+import org.literacybridge.acm.db.PersistentTag;
 
 public class DataRequestResult implements IDataRequestResult {
 	private final Category rootCategory;
 	private final Map<Integer, Integer> facetCounts;
 	private final Map<String, Integer> languageFacetCounts;
 	private final List<AudioItem> audioItems;
+	private final List<PersistentTag> tags;
 	
-	public DataRequestResult(Category rootCategory, Map<Integer, Integer> facetCounts, Map<String, Integer> languageFacetCounts, List<AudioItem> audioItems) {
+	public DataRequestResult(Category rootCategory, Map<Integer, Integer> facetCounts, 
+						     Map<String, Integer> languageFacetCounts, List<AudioItem> audioItems,
+						     List<PersistentTag> tags) {
 		this.rootCategory = rootCategory;
 		this.facetCounts = facetCounts;
 		this.languageFacetCounts = languageFacetCounts;
 		this.audioItems = audioItems;
+		this.tags = tags;
 	}
 	
 	/* (non-Javadoc)
@@ -62,5 +65,10 @@ public class DataRequestResult implements IDataRequestResult {
 		} else {
 			return count;
 		}
+	}
+
+	@Override
+	public List<PersistentTag> getTags() {
+		return tags;
 	}
 }

@@ -16,6 +16,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.beans.PropertyChangeListener;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -25,20 +27,31 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 
+import javax.swing.DefaultListSelectionModel;
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.DefaultTreeSelectionModel;
+import javax.swing.tree.RowMapper;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
+import org.apache.commons.lang.StringUtils;
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.literacybridge.acm.api.IDataRequestResult;
@@ -48,11 +61,13 @@ import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.core.MessageBus.Message;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
+import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.device.DeviceConnectEvent;
 import org.literacybridge.acm.device.DeviceInfo;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
 import org.literacybridge.acm.gui.dialogs.audioItemImportDialog.AudioItemImportDialog;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
@@ -63,9 +78,12 @@ public class CategoryView extends Container implements Observer {
 
 	// model
 	private IDataRequestResult result = null;
-	// tree
+	// categories
 	private CheckboxTree categoryTree = null;
-	// Luanges
+	// tags
+	private JList tagsList = null;
+	private JButton addTagButton = null;
+	// Languages
 	private CheckboxTree languageTree = null;
 	
 	private JTree deviceTree = null;
@@ -78,6 +96,7 @@ public class CategoryView extends Container implements Observer {
 	
 	private JXTaskPaneContainer taskPaneContainer;
 	private JXTaskPane categoryPane;
+	private JXTaskPane tagsPane;
 	private JXTaskPane languagePane;
 	private JXTaskPane devicePane;
 	private JXTaskPane optionsPane;
@@ -109,12 +128,13 @@ public class CategoryView extends Container implements Observer {
 		createTasks();	
 		createLanguageList();
 		addOptionList();
-		addDragAndDropForTree();
+		addDragAndDrop();
 		JScrollPane taskPane = new JScrollPane(taskPaneContainer);
 		add(BorderLayout.CENTER, taskPane);
 		
 		// init controls with default language
 		updateControlLanguage(LanguageUtil.getUILanguage());
+		updateTagsTable(PersistentTag.getFromDatabase());
 		Application.getMessageService().addObserver(this);
 	}
 	
@@ -131,6 +151,7 @@ public class CategoryView extends Container implements Observer {
 		categoryTree.setRootVisible(false);
 		categoryTree.setCellRenderer(new FacetCountCellRenderer());
 		categoryTree.expandPath(new TreePath(categoryRootNode.getPath()));
+		categoryTree.setSelectionModel(NO_SELECTION_MODEL);
 
 		deviceTree = new JTree(deviceTreeModel);
 		deviceTree.setRootVisible(false);
@@ -174,18 +195,40 @@ public class CategoryView extends Container implements Observer {
 			}
 		});
 		
-
-		
 		categoryPane = new JXTaskPane();
 		JScrollPane categoryScrollPane = new JScrollPane(categoryTree);
 		categoryPane.add(categoryScrollPane);	
 		
 		languagePane = new JXTaskPane();
 		languageTree = new CheckboxTree(languageRootNode);
+		languageTree.setSelectionModel(NO_SELECTION_MODEL);
 		languageTree.setCellRenderer(new FacetCountCellRenderer());
 		JScrollPane languageScrollPane = new JScrollPane(languageTree);
 		languagePane.add(languageScrollPane);
-		
+
+		tagsPane = new JXTaskPane();
+		tagsList = new JList();
+		tagsList.setSelectionModel(new DefaultListSelectionModel() {
+			@Override public void setSelectionInterval(int index0, int index1) {
+				if (isSelectedIndex(index0)) {
+				    super.removeSelectionInterval(index0, index1);
+				    Application.getFilterState().setSelectedTag(null);
+				}
+				else {
+				    super.setSelectionInterval(index0, index1);
+				    Application.getFilterState().setSelectedTag(((TagLabel) tagsList.getModel().getElementAt(index0)).getTag());
+				}
+			}
+		});
+		JScrollPane tagsScrollPane = new JScrollPane(tagsList);
+		tagsPane.add(tagsScrollPane);
+		addTagButton = new JButton(LabelProvider.getLabel(LabelProvider.NEW_TAG_LABEL, LanguageUtil.getUILanguage()));
+		addTagButton.addActionListener(new ActionListener() {			
+			@Override public void actionPerformed(ActionEvent action) {
+				addNewTag();
+			}
+		});
+		tagsPane.add(addTagButton);
 
 		devicePane = new JXTaskPane();
 		JScrollPane deviceScrollPane = new JScrollPane(deviceTree);
@@ -194,11 +237,13 @@ public class CategoryView extends Container implements Observer {
 
 		taskPaneContainer.add(categoryPane);
 		taskPaneContainer.add(languagePane);
+		taskPaneContainer.add(tagsPane);
 		taskPaneContainer.add(devicePane);
 		
-		categoryScrollPane.setPreferredSize(new Dimension(150, 280));
+		categoryScrollPane.setPreferredSize(new Dimension(150, 250));
 		languageScrollPane.setPreferredSize(new Dimension(150, 90));
-		deviceScrollPane.setPreferredSize(new Dimension(150, 90));
+		deviceScrollPane.setPreferredSize(new Dimension(150, 50));
+		tagsScrollPane.setPreferredSize(new Dimension(150, 90));
 		
 		categoryTree.expandPath(new TreePath(deviceRootNode.getPath()));
 		addListeners(); // at last
@@ -304,6 +349,7 @@ public class CategoryView extends Container implements Observer {
 		
 		languageTree.addTreeCheckingListener(new TreeCheckingListener() {
 			@Override public void valueChanged(TreeCheckingEvent e) {
+				clearTagSelection();
 				pumpLanguageFilter();
 			};
 		});
@@ -330,6 +376,8 @@ public class CategoryView extends Container implements Observer {
 	private void addListeners() {
 		categoryTree.addTreeCheckingListener(new TreeCheckingListener() {
 			public void valueChanged(TreeCheckingEvent e) {
+				clearTagSelection();
+				
 				TreePath[] tp = categoryTree.getCheckingPaths();
 				List<PersistentCategory> filterCategories = new ArrayList<PersistentCategory>(tp.length);
 				for (int i = 0; i < tp.length; i++) {
@@ -342,6 +390,11 @@ public class CategoryView extends Container implements Observer {
 			}
 		});
 		
+		tagsList.addListSelectionListener(new ListSelectionListener() {
+			@Override public void valueChanged(ListSelectionEvent e) {
+				clearTreeSelections();			
+			}
+		});
 		addAudioDeviceListener();
 	}
 
@@ -398,12 +451,15 @@ public class CategoryView extends Container implements Observer {
 		});
 	}
 	
-	private void addDragAndDropForTree() {
+	private void addDragAndDrop() {
 		categoryTree.setDropMode(DropMode.ON);
 		categoryTree.setTransferHandler(new TreeTransferHandler());
 		
 		deviceTree.setDropMode(DropMode.ON);
 		deviceTree.setTransferHandler(new ExportToDeviceTransferHandler());
+		
+		tagsList.setDropMode(DropMode.ON);
+		tagsList.setTransferHandler(new TagsTransferHandler());
 	}
 	
 	
@@ -470,8 +526,31 @@ public class CategoryView extends Container implements Observer {
 	    }
 	}
 	
+	public void updateTagsTable(List<PersistentTag> tags) {
+		if (!clearingSelections) {
+			tagsList.setModel(new TagsListModel(tags));
+		}
+	}
+
+	public void addNewTag() {
+		String tagName = (String)JOptionPane.showInputDialog(
+                this,
+                "Enter playlist name:",
+                "Add new playlist",
+                JOptionPane.PLAIN_MESSAGE,
+                null, null, "");
+		if (!StringUtils.isEmpty(tagName)) {
+			PersistentTag tag = new PersistentTag();
+			tag.setTitle(tagName);
+			tag.commit();
+			
+			Application.getMessageService().pumpMessage(new TagsListChanged(PersistentTag.getFromDatabase()));
+		}
+	}
+	
 	private void updateControlLanguage(Locale locale) {
 		categoryPane.setTitle(LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, locale));
+		tagsPane.setTitle(LabelProvider.getLabel(LabelProvider.TAGS_ROOT_LABEL, locale));
 		devicePane.setTitle(LabelProvider.getLabel(LabelProvider.DEVICES_ROOT_LABEL, locale));
 		optionsPane.setTitle(LabelProvider.getLabel(LabelProvider.OPTIONS_ROOT_LABEL, locale));
 		languagePane.setTitle(LabelProvider.getLabel(LabelProvider.LANGUAGES_ROOT_LABEL, locale));
@@ -506,7 +585,46 @@ public class CategoryView extends Container implements Observer {
 			result = (IDataRequestResult) arg;
 			updateTreeNodes();
 		}
+		
+		if (arg instanceof TagsListChanged) {
+			updateTagsTable(((TagsListChanged) arg).tags);
+		}
 	}	
+	
+	private boolean clearingSelections = false;
+	
+	private void clearTagSelection() {
+		if (!clearingSelections) {
+			clearingSelections = true;
+			try {
+				Application.getFilterState().setSelectedTag(null);
+				UIUtils.invokeAndWait(new Runnable() {
+					@Override public void run() {
+						tagsList.clearSelection();
+					}
+				});
+			} finally {
+				clearingSelections = false;
+			}
+		}
+	}
+	
+	private void clearTreeSelections() {
+		if (!clearingSelections) {
+			clearingSelections = true;
+
+			try {
+				UIUtils.invokeAndWait(new Runnable() {
+					@Override public void run() {
+						categoryTree.clearChecking();
+						languageTree.clearChecking();
+					}
+				});
+			} finally {
+				clearingSelections = false;
+			}
+		}
+	}
 	
 	private static class DeviceTreeCellRenderer extends DefaultTreeCellRenderer {
 		Object highlight;
@@ -526,6 +644,21 @@ public class CategoryView extends Container implements Observer {
 			Dimension d = cell.getPreferredSize();
 			cell.setPreferredSize(new Dimension((int) d.getWidth() + icon.getIconWidth() + 15, (int) d.getHeight()));
 			return cell;
+		}
+	}
+	
+	private static final TreeSelectionModel NO_SELECTION_MODEL = new DefaultTreeSelectionModel() {
+		@Override public void addSelectionPath(TreePath path) {}
+		@Override public void addSelectionPaths(TreePath[] paths) {}
+		@Override public void setSelectionPath(TreePath path) {}
+		@Override public void setSelectionPaths(TreePath[] paths) {}			
+	};
+	
+	public static class TagsListChanged {
+		private final List<PersistentTag> tags;
+		
+		TagsListChanged(List<PersistentTag> tags) {
+			this.tags = tags;
 		}
 	}
 }

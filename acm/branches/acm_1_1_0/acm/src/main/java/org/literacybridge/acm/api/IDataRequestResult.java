@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.PersistentTag;
 
 /**
  * This is the result object returned by {@link IDataRequestService} containing all necessary
@@ -32,5 +33,9 @@ public interface IDataRequestResult {
 	 * Returns the list of AudioItems to be displayed. 
 	 */
 	public abstract List<AudioItem> getAudioItems();
-
+	
+	/**
+	 * Returns the list of audio tags to be displayed.
+	 */
+	public abstract List<PersistentTag> getTags();
 }

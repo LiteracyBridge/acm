@@ -13,6 +13,7 @@ import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
+import org.literacybridge.acm.db.PersistentTag;
 
 public class DataRequestService implements IDataRequestService {
 	private static final IDataRequestService instance = new DataRequestService();
@@ -29,7 +30,7 @@ public class DataRequestService implements IDataRequestService {
 	 * @see main.java.org.literacybridge.acm.api.IDataRequestService#getData()
 	 */
 	public IDataRequestResult getData(Locale locale) {
-		return getData(locale, null, null);
+		return getData(locale, "", null);
 	}
 
 	/* (non-Javadoc)
@@ -46,7 +47,8 @@ public class DataRequestService implements IDataRequestService {
 		Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, categories, locales);
 		
 		Taxonomy taxonomy = Taxonomy.getTaxonomy();
-		DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems);
+		DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
+				PersistentTag.getFromDatabase());
 		return result;
 	}
 
@@ -54,5 +56,28 @@ public class DataRequestService implements IDataRequestService {
 	public IDataRequestResult getData(Locale locale,
 			List<PersistentCategory> filterCategories, List<PersistentLocale> locales) {
 		return getData(locale, null, filterCategories, locales);
+	}
+
+	@Override
+	public IDataRequestResult getData(Locale locale, PersistentTag selectedTag) {
+		return getData(locale, "", selectedTag);
+	}
+
+	@Override
+	public IDataRequestResult getData(Locale locale, String filterString,
+			PersistentTag selectedTag) {
+		Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(filterString, selectedTag);
+		Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, null, null);
+		List<AudioItem> audioItems = new ArrayList<AudioItem>(items.size());
+		for (PersistentAudioItem item : items) {
+			audioItems.add(new AudioItem(item));
+		}
+		
+		Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, null, null);
+		
+		Taxonomy taxonomy = Taxonomy.getTaxonomy();
+		DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
+				PersistentTag.getFromDatabase());
+		return result;
 	}
 }
