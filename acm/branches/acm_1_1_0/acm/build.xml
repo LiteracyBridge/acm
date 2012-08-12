@@ -1,12 +1,33 @@
-<project name="all" default="dist" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="acm" default="dist" xmlns:ivy="antlib:org.apache.ivy.ant">
   <property name="root.dir" value="${basedir}" />
+
   <import file="${basedir}/ant/bootstrap.xml" />
 
   <taskdef resource="net/sf/antcontrib/antlib.xml"
            classpath="${basedir}/ant/ant-contrib-1.0b3.jar"/>
 
-  <target name="dist" depends="install-ivy" description="build, test, and package the project">
+  <target name="dist" depends="clean, jar" description="build, test, and package the project">
+	<mkdir dir="${package.dir}"/>
+	<mkdir dir="${package.dir}/lib"/>
+	<mkdir dir="${package.dir}/resources"/>
+	
+	<copy todir="${package.dir}/lib">
+	    <fileset dir="${basedir}/lib"/>
+	</copy>
+	<copy todir="${package.dir}">
+	    <fileset dir="${basedir}/scripts"/>
+	</copy>
+	<copy todir="${package.dir}/resources">
+	    <fileset dir="${resources.dir}"/>
+	</copy>
+	
+	<copy todir="${package.dir}" file="${jar.file}"/>	
   </target>
+
+  <target name="zip" depends="dist" description="zips the project">
+	<zip destfile="${basedir}/${ant.project.name}.zip"
+	     basedir="${package.dir}"/>
+  </target>	
 
   <path id="lib.path.id">
     <fileset dir="${lib.dir}"/>
@@ -87,49 +108,13 @@
     <property name="ivy.new.revision" value="${module.version.target}-local-${now}"/>
   </target>
 
-  <target name="find-git-revision" unless="no.git">
-    <!-- ask git for the current "head" commit-id, for memoizing inside the built jar -->
-    <exec outputproperty="git.revision" executable="git" failifexecutionfails="false">
-      <arg value="rev-parse" />
-      <arg value="HEAD" />
-    </exec>
-    <echo message="git.revision (commit id) = ${git.revision}"/>
-
-    <exec executable="git" failifexecutionfails="false">
-      <arg value="rev-parse" />
-      <arg value="HEAD" />
-      <redirector outputproperty="git.revision-short">
-        <outputfilterchain>
-          <tokenfilter>
-            <filetokenizer />
-            <replaceregex pattern="(.{8}).*" replace="\1"/>
-          </tokenfilter>
-        </outputfilterchain>
-      </redirector>
-    </exec>
-    <echo message="git.revision-short = ${git.revision-short}"/>
-  </target>
-
-  <target name="write-build-info" depends="ivy-new-version,find-git-revision">
-    <tstamp>
-      <format property="build.timestamp.time" pattern="yyyyMMdd-HHmmss" />
-    </tstamp>
-    <echo message="build.timestamp.time = ${build.timestamp.time}"/>
-    <propertyfile file="build.properties">
-      <entry key="build_time" value="${build.timestamp.time}" />
-      <entry key="build_version" value="${ivy.new.revision}" />
-      <entry key="build_revision" value="${git.revision}" />
-      <entry key="build_revision_short" value="${git.revision-short}" />
-    </propertyfile>
-  </target>
-
-
   <!-- =================================
        target: jar
        ================================= -->
-  <target name="jar" depends="ivy-new-version, compile, compile-tests, write-build-info" description="--> make a jar file for this project">
+  <target name="jar" depends="ivy-new-version, compile, compile-tests" description="--> make a jar file for this project">
     <jar destfile="${jar.file}">
       <fileset dir="${classes.dir}"/>
+      <fileset dir="${resources.dir}"/>
       <fileset dir="." includes="**/*.yml"/>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
@@ -151,17 +136,18 @@
     <delete includeemptydirs="true" dir="${src.dir}/main/gen-rb"/>
   </target>
 
-  <target name="clean-package" description="--> clean packaged zip files">
+  <target name="clean-dist" description="--> clean packaged zip files">
     <delete>
       <fileset dir="${basedir}" includes="*.zip"/>
     </delete>
+    <delete includeemptydirs="true" dir="${package.dir}"/>
   </target>
 
   <target name="clean-repo-cache" description="--> remove the repo cache dir">
     <delete includeemptydirs="true" dir="${ivy.repo.cache.dir}"/>
   </target>
 
-  <target name="clean" depends="clean-build, clean-gen, clean-package, clean-repo-cache"/>
+  <target name="clean" depends="clean-build, clean-gen, clean-dist, clean-repo-cache"/>
 
   <!-- =================================
        target: test
