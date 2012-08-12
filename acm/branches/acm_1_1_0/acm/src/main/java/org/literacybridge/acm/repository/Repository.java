@@ -67,6 +67,22 @@ public class Repository {
 		
 		return files[0];
 	}
+
+	public File getA18File(String uid) {
+		File path = resolveName(uid);
+		File[] files = path.listFiles(new FilenameFilter() {
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.toLowerCase().endsWith(".a18");
+			}
+		});
+		
+		if (files == null || files.length == 0) {
+			return null;
+		}
+		
+		return files[0];
+	}
 	
 	public void delete(LocalizedAudioItem localizedAudioItem) {
 		File dir = resolveName(localizedAudioItem);
@@ -79,6 +95,11 @@ public class Repository {
 	
 	// Returns the path of this audioitem in the repository
 	public File resolveName(LocalizedAudioItem localizedAudioItem) {
+		return resolveName(localizedAudioItem.getParentAudioItem().getUuid());
+	}
+
+	// Returns the path of this audioitem in the repository
+	public File resolveName(String uid) {
 		// TODO: For now we just use the unique ID of the audio item; in the future, we might want to use
 		// a different way to construct the path
 		
@@ -89,7 +110,7 @@ public class Repository {
 		builder.append(File.separator);
 		builder.append("literacybridge");
 		builder.append(File.separator);
-		builder.append(localizedAudioItem.getParentAudioItem().getUuid());
+		builder.append(uid);
 		
 		String path = builder.toString();
 		File dir = new File(path);
