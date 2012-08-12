@@ -20,6 +20,8 @@
 	<copy todir="${package.dir}/resources">
 	    <fileset dir="${resources.dir}"/>
 	</copy>
+	<chmod dir="${package.dir}" perm="ugo+rx" 
+	       includes="**/*.sh"/>
 	
 	<copy todir="${package.dir}" file="${jar.file}"/>	
   </target>
