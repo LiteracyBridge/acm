@@ -262,6 +262,14 @@
         <property name="thrift.bin"
                   value="${root.dir}/../thrift/bin/win/${thrift.version}/thrift-${thrift.version}.exe"/>
         </case>
+        <case value="Windows Vista">
+        <property name="thrift.bin"
+                  value="${root.dir}/../thrift/bin/win/${thrift.version}/thrift-${thrift.version}.exe"/>
+        </case>
+        <case value="Windows 7">
+        <property name="thrift.bin"
+                  value="${root.dir}/../thrift/bin/win/${thrift.version}/thrift-${thrift.version}.exe"/>
+        </case>
         <case value="Linux">
         <switch value="${os.arch}">
           <case value="amd64">
