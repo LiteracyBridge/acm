@@ -31,21 +31,11 @@ import org.literacybridge.acm.audioconverter.api.WAVFormat;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 
 public class A18Importer extends Importer {
-
-	private static final Map<String, String> LegacyCategoryStrings = new HashMap<String, String>();
-	static {
-		LegacyCategoryStrings.put("OTHER", "0");
-		LegacyCategoryStrings.put("AGRIC", "1");
-		LegacyCategoryStrings.put("HEALTH", "2");
-		LegacyCategoryStrings.put("EDU", "3");
-		LegacyCategoryStrings.put("STORY", "4");
-	}
-	
 	public static LocalizedAudioItem loadMetadata(File file) throws IOException {
 		return loadMetadata(null, file);
 	}
 	
-	public static LocalizedAudioItem loadMetadata(Category category, File file) throws IOException {
+	public static LocalizedAudioItem loadMetadata(Category importCategory, File file) throws IOException {
 		DataInputStream in = null;
 		
 		try {
@@ -77,22 +67,10 @@ public class A18Importer extends Importer {
 				metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE, 
 						new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 	
-				int index = fileName.indexOf('#');
-				if (index >= 0) {
-					metadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(fileName.substring(0, index)));
-					// only parse categories from filename if no particular target category is selected
-					String catString = fileName.substring(index + 1, fileName.length() - 4);
-					String catID = LegacyCategoryStrings.get(catString);
-					if (catID != null) {
-						categories.add(new Category(PersistentCategory.getFromDatabase(catID)));
-					} else {
-						// add the category that was selected during drag&drop
-						if (category != null) {
-							categories.add(category);
-						}
-					}
-				} else {
-					metadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(fileName.substring(0, fileName.length() - 4)));
+				metadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(fileName.substring(0, fileName.length() - 4)));
+				// add the category that was selected during drag&drop
+				if (importCategory != null) {
+					categories.add(importCategory);
 				}
 				
 			} else {
@@ -105,10 +83,6 @@ public class A18Importer extends Importer {
 				audioItem = new AudioItem(metadata.getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue());
 				if (metadata.getMetadataValues(MetadataSpecification.DTB_REVISION) == null) {
 					metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("0"));
-				}
-				// add the category that was selected during drag&drop
-				if (category != null) {
-					categories.add(category);
 				}
 			}
 						
