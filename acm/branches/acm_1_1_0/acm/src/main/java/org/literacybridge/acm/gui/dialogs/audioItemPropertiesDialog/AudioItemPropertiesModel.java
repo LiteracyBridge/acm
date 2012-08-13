@@ -11,9 +11,9 @@ import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SOURCE;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SUBJECT;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_TITLE;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Vector;
 
 import javax.swing.table.AbstractTableModel;
 
@@ -26,9 +26,9 @@ import org.literacybridge.acm.metadata.MetadataField;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
+import org.literacybridge.acm.repository.Repository;
 
 public class AudioItemPropertiesModel extends AbstractTableModel {
-
 	private String[] columnNames = {LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_PROPERTY", LanguageUtil.getUILanguage())
 								  , LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_VALUE", LanguageUtil.getUILanguage())};
 	
@@ -37,7 +37,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	
 	private Metadata metadata = null;
 	private AudioItem audioItem = null;
-	private Vector<AudioItemPropertiesObject<?>> audioItemPropertiesObject = new Vector<AudioItemPropertiesObject<?>>();
+	private List<AudioItemProperty> audioItemPropertiesObject = new ArrayList<AudioItemProperty>();
 	
 	public AudioItemPropertiesModel(AudioItem audioItem, Metadata metadata) {
 		this.metadata = metadata;
@@ -45,19 +45,34 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		
 		// TODO: make this list configurable
 		// for now just remove some unneeded ones
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_TITLE, true));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_CREATOR, true));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_SUBJECT, true));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_DESCRIPTION, true));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_PUBLISHER, true));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_CONTRIBUTOR, true));
-		// audioItemPropertiesObject.add(new AudioItemStringProperty(DC_FORMAT));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_IDENTIFIER, false));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_RELATION, false));
-		audioItemPropertiesObject.add(new AudioItemStringProperty(DC_SOURCE, false));
-		// audioItemPropertiesObject.add(new AudioItemStringProperty(DC_COVERAGE));
-		// audioItemPropertiesObject.add(new AudioItemStringProperty(DC_RIGHTS));		
-		audioItemPropertiesObject.add(new AudioItemRFC3066LanguageProperty(DC_LANGUAGE, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_TITLE, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_CREATOR, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_SUBJECT, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_DESCRIPTION, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_PUBLISHER, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_CONTRIBUTOR, true));
+		// audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_FORMAT));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_IDENTIFIER, false));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_RELATION, false));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_SOURCE, false));
+		// audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_COVERAGE));
+		// audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_RIGHTS));		
+		audioItemPropertiesObject.add(new AudioItemProperty.LanguageProperty(DC_LANGUAGE, true));
+		audioItemPropertiesObject.add(new AudioItemProperty(false) {
+			@Override public String getName() { 
+				return "File name";
+			}
+
+			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
+				return Repository.getRepository().getA18File(audioItem.getUuid()).getName();
+			}
+
+			@Override
+			public void setValue(AudioItem audioItem, Metadata metadata,
+					Object newValue) {
+				// not supported
+			}			
+		});
 	}
 	
 	@Override
@@ -74,8 +89,12 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	public int getRowCount() {
 		return audioItemPropertiesObject.size();
 	}
+	
+	public Locale getMetadataLocale() {
+		return getLanguage(metadata, DC_LANGUAGE);
+	}
 
-	private Locale getLanguage(MetadataField<RFC3066LanguageCode> language) {
+	protected static Locale getLanguage(Metadata metadata, MetadataField<RFC3066LanguageCode> language) {
 		// only shows first language
 		for (MetadataValue<RFC3066LanguageCode> mv : metadata.getMetadataValues(language)) {
 			RFC3066LanguageCode code = mv.getValue();
@@ -86,34 +105,23 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	}
 	
 	boolean isLanguageRow(int row) {
-		AudioItemPropertiesObject<?> obj = audioItemPropertiesObject.get(row);
-		if (obj instanceof AudioItemRFC3066LanguageProperty) {
+		AudioItemProperty obj = audioItemPropertiesObject.get(row);
+		if (obj instanceof AudioItemProperty.LanguageProperty) {
 			return true;
 		}
 		
 		return false;
 	}
 	
-	public Locale getMetadataLocale() {
-		return getLanguage(DC_LANGUAGE);
-	}
-	
 	@Override
 	public Object getValueAt(int row, int col) {
-		AudioItemPropertiesObject<?> obj = audioItemPropertiesObject.get(row);
+		AudioItemProperty obj = audioItemPropertiesObject.get(row);
 		
 		switch (col) {
 		case TITLE_COL:
-			return LabelProvider.getLabel(obj.getFieldID(), LanguageUtil.getUILanguage());
+			return obj.getName();
 		case VALUE_COL:
-			if (obj instanceof AudioItemStringProperty) {
-				return Metadata.getCommaSeparatedList(metadata, obj.getFieldID());				
-			} else if (obj instanceof AudioItemRFC3066LanguageProperty) {
-				MetadataField<RFC3066LanguageCode> currentLanguage = ((AudioItemRFC3066LanguageProperty) obj).getFieldID();
-				return LanguageUtil.getLocalizedLanguageName(getLanguage(currentLanguage));
-			}
-			
-			return "";
+			return obj.getValue(audioItem, metadata);
 		default:
 			break;
 		}
@@ -127,7 +135,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			return false;
 		}
 		
-		AudioItemPropertiesObject<?> obj = audioItemPropertiesObject.get(rowIndex);
+		AudioItemProperty obj = audioItemPropertiesObject.get(rowIndex);
 		return obj.isEditable();
 	}
 
@@ -136,26 +144,26 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		if (aValue == null) return;
 		
 		String newValue = aValue.toString();
-		AudioItemPropertiesObject<?> obj = audioItemPropertiesObject.get(row);
+		AudioItemProperty<?> obj = audioItemPropertiesObject.get(row);
 		
-		if (obj instanceof AudioItemStringProperty) {
-			setStringValue(((AudioItemStringProperty) obj).getFieldID(), metadata, newValue);
-		} else if (obj instanceof AudioItemRFC3066LanguageProperty) {
+		if (obj instanceof AudioItemProperty.MetadataProperty) {
+			((AudioItemProperty.MetadataProperty) obj).setValue(audioItem, metadata, newValue);
+		} else if (obj instanceof AudioItemProperty.LanguageProperty) {
 			Locale newLocale = (Locale) aValue;
-			setLocaleValue(((AudioItemRFC3066LanguageProperty) obj).getFieldID(), metadata, newLocale);
+			((AudioItemProperty.LanguageProperty) obj).setValue(audioItem, metadata, newLocale);
 		}
 		
 		incrementRevision(metadata);
 		metadata.commit();
 	}
+	
+	protected static void setStringValue(MetadataField<String> field, Metadata metadata, String value) {
+		metadata.setMetadataField(field, new MetadataValue<String>(value));
+	}
 
 	
-	private void setStringValue(MetadataField<String> field, Metadata metadata, String value) {
-		metadata.setMetadataField(field, new MetadataValue<String>(value));
-	}	
-	
-	private void setLocaleValue(MetadataField<RFC3066LanguageCode> field, Metadata metadata, Locale newLocale) {
-		Locale oldLocale = getMetadataLocale();
+	protected static void setLocaleValue(MetadataField<RFC3066LanguageCode> field, AudioItem audioItem, Metadata metadata, Locale newLocale) {
+		Locale oldLocale = getLanguage(metadata, DC_LANGUAGE);
 		LocalizedAudioItem localizedItem = audioItem.getLocalizedAudioItem(oldLocale);
 		localizedItem.setLocale(newLocale);
 		localizedItem.commit();
@@ -165,7 +173,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		metadata.commit();
 	}
 	
-	private void incrementRevision(Metadata metadata) {
+	private static void incrementRevision(Metadata metadata) {
 		List<MetadataValue<String>> revisions = metadata.getMetadataValues(MetadataSpecification.DTB_REVISION);
 		if (revisions != null) {
 			String revision = revisions.get(0).getValue();
