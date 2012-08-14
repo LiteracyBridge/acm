@@ -266,6 +266,9 @@
           <case value="x86_64">
             <property name="thrift.bin" location="${root.dir}/../thrift/bin/linux/x86_64/${thrift.version}/thrift"/>
           </case>
+          <case value="i386">
+            <property name="thrift.bin" location="/usr/local/bin/thrift"/>
+          </case>
         </switch>
         </case>
       </switch>
