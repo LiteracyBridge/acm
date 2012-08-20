@@ -10,7 +10,7 @@ import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 
 public class Repository {
-	private final File baseDir = Configuration.GetRepositoryDirectory();
+	private final File baseDir = Configuration.getRepositoryDirectory();
 	
 	private final static Repository instance = new Repository();
 	

@@ -66,8 +66,12 @@ public class Application extends JXFrame {
 	
 	private Application() throws IOException {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	    
-				
-		setTitle(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUILanguage()));
+		
+		String title = new String(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUILanguage())); 
+		if (Configuration.getConfiguration().isACMReadOnly())
+			title += " * READ ONLY *";
+
+		setTitle(title);
 		// toolbar view on top
 	    ResourceView resourceView = new ResourceView();	    
 	    ToolbarView toolbarView = new ToolbarView(resourceView.audioItemView);
@@ -85,6 +89,18 @@ public class Application extends JXFrame {
 	
 	public static void main(String[] args) throws IOException {
 		
+		String dbDirName = null, repositoryDirName= null;
+		System.out.println("starting main()");
+		if (args.length == 2) {
+			System.out.println("db path = " + args[0]);
+			System.out.println("repository path = " + args[1]);
+			dbDirName = args[0];
+			repositoryDirName = args[1];
+		} else if (args.length == 0) {
+			System.out.println("To override config.properties, give add argument with db path followed by argument for repository path.");
+		}
+		// initialize config and generate random ID for this acm instance
+		Configuration.init(dbDirName, repositoryDirName);
 		// set look & feel
 		try {
 		    UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
@@ -94,9 +110,6 @@ public class Application extends JXFrame {
 		
 		final SplashScreen splash = SplashScreen.getSplashScreen();
 		application = new Application();
-		
-		// initialize config and generate random ID for this acm instance
-		Configuration.getConfiguration();
 		
 		application.setSize(1000, 750);
 		
