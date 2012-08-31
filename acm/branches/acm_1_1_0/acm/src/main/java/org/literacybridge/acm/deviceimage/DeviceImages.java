@@ -12,7 +12,6 @@ import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.transport.TIOStreamTransport;
-import org.literacybridge.acm.repository.Repository;
 import org.literacybridge.acm.thrift.ThriftDeviceImage;
 import org.literacybridge.acm.thrift.ThriftDeviceProfile;
 import org.literacybridge.acm.thrift.ThriftPlaylistMapping;
@@ -78,7 +77,7 @@ public class DeviceImages {
 		
 		ThriftPlaylistMapping mapping = new ThriftPlaylistMapping();
 		for (String uid : mapping.getAudioItemUIDs()) {
-			File audioFile = Repository.getRepository().getA18File(uid);
+			//File audioFile = Repository.getRepository().getA18File(uid);
 //			File toFile = null;
 //			Repository.copy(audioFile, toFile);
 		}

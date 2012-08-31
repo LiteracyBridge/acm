@@ -16,18 +16,13 @@ import javax.swing.JLabel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 
-import org.literacybridge.acm.audioconverter.api.A18Format;
-import org.literacybridge.acm.audioconverter.api.A18Format.AlgorithmList;
-import org.literacybridge.acm.audioconverter.api.A18Format.useHeaderChoice;
-import org.literacybridge.acm.audioconverter.api.AudioConversionFormat;
-import org.literacybridge.acm.audioconverter.api.MP3Format;
-import org.literacybridge.acm.audioconverter.api.WAVFormat;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.FileSystemExporter;
+import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 
 public class ExportDialog extends JDialog implements ActionListener {
 	private static final Logger LOG = Logger.getLogger(ExportDialog.class.getName());
@@ -93,14 +88,14 @@ public class ExportDialog extends JDialog implements ActionListener {
 	}
 	
 	private void export(final File targetDir) {
-		final AudioConversionFormat targetFormat;
-		// TODO export dialog that let's you modify these default settings
+		final AudioFormat targetFormat;
+		// TODO export dialog that let's you modify audio settings
 		if (mp3Button.isSelected()) {
-			targetFormat = new MP3Format(128, 16000, 1);
+			targetFormat = AudioFormat.MP3;
 		} else if (wavButton.isSelected()) {
-			targetFormat = new WAVFormat(128, 16000, 1);
+			targetFormat = AudioFormat.WAV;
 		} else {
-			targetFormat = new A18Format(128, 16000, 1, AlgorithmList.A1800, useHeaderChoice.No);
+			targetFormat = AudioFormat.A18;
 		}
 		
 		// don't piggyback on the UI thread

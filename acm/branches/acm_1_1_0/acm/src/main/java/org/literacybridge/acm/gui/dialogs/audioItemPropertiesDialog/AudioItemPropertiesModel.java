@@ -17,6 +17,7 @@ import java.util.Locale;
 
 import javax.swing.table.AbstractTableModel;
 
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
@@ -26,7 +27,7 @@ import org.literacybridge.acm.metadata.MetadataField;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
-import org.literacybridge.acm.repository.Repository;
+import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 
 public class AudioItemPropertiesModel extends AbstractTableModel {
 	private String[] columnNames = {LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_PROPERTY", LanguageUtil.getUILanguage())
@@ -64,7 +65,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			}
 
 			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
-				return Repository.getRepository().getA18File(audioItem.getUuid()).getName();
+				return Configuration.getConfiguration().getRepository().getAudioFile(audioItem, AudioFormat.A18).getName();
 			}
 
 			@Override

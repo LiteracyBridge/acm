@@ -2,7 +2,14 @@ package org.literacybridge.acm.utils;
 
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
+
+import com.google.common.base.Predicate;
 
 public class IOUtils {
 	public static final int UNI_SUR_HIGH_START = 0xD800;
@@ -159,4 +166,79 @@ public class IOUtils {
 		return new String(out, 0, outUpto);
 	}
 
+	public static String getFileExtension(File file) {
+		String name = file.getName();
+		int extensionStart = name.lastIndexOf(".") + 1;
+		return extensionStart < name.length() 
+				? name.substring(extensionStart, name.length())
+				: "";
+	}
+	
+	public static void copy(File fromFile, File toFile) throws IOException {
+		copy(fromFile, toFile, fromFile.length());
+	}
+	
+	public static void copy(File fromFile, File toFile, long numBytes) throws IOException {
+	    FileInputStream from = null;
+	    FileOutputStream to = null;
+	    try {
+	      from = new FileInputStream(fromFile);
+	      to = new FileOutputStream(toFile);
+	      byte[] buffer = new byte[4096];
+	
+	      while (true) {
+		      int numToRead = buffer.length;
+		      if (numToRead > numBytes) {
+		    	  numToRead = (int) numBytes;
+		      }
+		      from.read(buffer, 0, numToRead);
+		      to.write(buffer, 0, numToRead); // write
+		      numBytes -= numToRead;
+		      if (numBytes <= 0) {
+		    	  break;
+		      }
+	      }
+	    } finally {
+	      if (from != null)
+	        try {
+	          from.close();
+	        } catch (IOException e) {
+	          // ignore
+	        } finally {
+		      if (to != null)
+		        try {
+		          to.close();
+		        } catch (IOException e) {
+		          // ignore
+		        }
+	        }
+	    }
+	}
+	
+	public static void visitFiles(final File root, final FilenameFilter fileNameFilter, 
+			                      final Predicate<File> predicate) {
+		File[] files = root.listFiles(new FileFilter() {
+			@Override public boolean accept(File pathname) {
+				return pathname.isDirectory() || fileNameFilter.accept(root, pathname.getName());
+			}
+		});
+		
+		for (File file : files) {
+			if (file.isDirectory()) {
+				visitFiles(file, fileNameFilter, predicate);
+			} else {
+				predicate.apply(file);
+			}
+		}
+	}
+	
+	public static void deleteRecursive(File path) {
+		if (path.isDirectory()) {
+			File[] files = path.listFiles();
+			for (File f : files) {
+				deleteRecursive(f);
+			}
+		}
+		path.delete();
+	}
 }

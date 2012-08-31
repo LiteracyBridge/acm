@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -31,13 +32,19 @@ import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
+import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
+import org.literacybridge.acm.repository.CachingRepository;
+import org.literacybridge.acm.repository.FileSystemRepository;
 
 public class Configuration extends Properties {
 
 	private static Configuration instance;
 	// This must be always the initial root directory, if ACM already exists on a machine
     private final static File DEFAULT_LITERACYBRIDGE_SYSTEM_DIR = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
+    
     private static File repositoryDirectory;
+    private static File cacheDirectory;
     private static File dbDirectory;
     private boolean readOnly = true;
     private boolean pathsOverridden = false;
@@ -52,9 +59,14 @@ public class Configuration extends Properties {
 	private List<Locale> audioLanguages = null;
 	private Map<Locale,String> languageLables = new HashMap<Locale, String>();
     
-
+	private AudioItemRepository repository;
+	
 	public static Configuration getConfiguration() {
 		return instance;
+	}
+	
+	public AudioItemRepository getRepository() {
+		return repository;
 	}
 	
 	public boolean isACMReadOnly() {
@@ -80,6 +92,10 @@ public class Configuration extends Properties {
 		return repositoryDirectory;
 	}
 
+	public static File getCacheDirectory() {
+		return cacheDirectory;
+	}
+	
 	public static File getTBBuildsDirectory() {
 		return new File(getLiteracyBridgeSystemDirectory(), Constants.TBBuildsHomeDirName);
 	}
@@ -142,6 +158,21 @@ public class Configuration extends Properties {
 		
 		return value;
 	}
+	
+	public String getNewAudioItemUID() throws IOException {
+		String value = getRecordingCounter();
+		int counter = (value == null) ? 0 : Integer.parseInt(value, Character.MAX_RADIX);
+		counter++;
+		value = Integer.toString(counter, Character.MAX_RADIX);
+		String uuid = "LB-2" + "_"  + getDeviceID() + "_" + value;
+		
+		// make sure we remember that this uuid was already used
+		setRecordingCounter(value);
+		writeProps();
+		
+		return uuid;
+	}
+
 	
 	private final static Pattern LANGUAGE_LABEL_PATTERN = Pattern.compile(".*\\(\"(.+)\"\\).*");
 	
@@ -233,6 +264,21 @@ public class Configuration extends Properties {
 		} else
 			System.out.println("RW");
 */
+		cacheDirectory = new File(DEFAULT_LITERACYBRIDGE_SYSTEM_DIR, Constants.CACHE_DIR_NAME);
+		
+		if (!cacheDirectory.exists()) {
+			cacheDirectory.mkdirs();
+		}
+		
+		instance.repository = new CachingRepository(
+				new FileSystemRepository(cacheDirectory, 
+						new FileSystemRepository.FileSystemGarbageCollector(2 * 1024 * 1024 * 1024, // 2GB cache
+							new FilenameFilter() {
+								@Override public boolean accept(File file, String name) {
+									return name.toLowerCase().endsWith("." + AudioFormat.WAV.getFileExtension());
+								}
+							})),
+				new FileSystemRepository(getRepositoryDirectory()));
 	}
 
 	private static File getGlobalShareDirectory() {

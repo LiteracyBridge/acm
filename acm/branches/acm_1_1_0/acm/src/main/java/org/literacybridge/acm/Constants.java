@@ -15,6 +15,7 @@ public class Constants {
 	public final static String CONFIG_PROPERTIES 			= "config.properties";
 	public final static String USER_WRITE_LOCK_FILENAME		= "locked.txt";
 	public final static String DB_ACCESS_FILENAME			= "accessList.txt";
+	public final static String CACHE_DIR_NAME			    = "cache";
 	
     public final static File USER_HOME_DIR = new File(System.getProperty("user.home", "."));
    

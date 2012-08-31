@@ -21,7 +21,7 @@ public class ExternalConverter {
 	
 	Map<String, String> parameters = new LinkedHashMap<String, String>();
 	
-	public ExternalConverter() throws ConversionException 
+	public ExternalConverter()  
 	{
 		try {
 			A18ToMP3Conv = new A18ToMP3Converter();

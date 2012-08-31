@@ -3,79 +3,42 @@ package org.literacybridge.acm.importexport;
 import java.io.File;
 import java.io.IOException;
 
+import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.MetadataSpecification;
-import org.literacybridge.acm.repository.Repository;
-import org.literacybridge.acm.utils.OSChecker;
-import org.literacybridge.acm.audioconverter.api.AudioConversionFormat;
-import org.literacybridge.acm.audioconverter.api.ExternalConverter;
-import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
+import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
+import org.literacybridge.acm.utils.IOUtils;
 
 public class FileSystemExporter {
-	public static void export(LocalizedAudioItem[] selectedAudioItems, File targetDir, AudioConversionFormat targetFormat) 
+	public static void export(LocalizedAudioItem[] selectedAudioItems, File targetDir, AudioFormat targetFormat) 
 		throws IOException {
-		String targetFormatExtension = "." + targetFormat.getFileEnding();
 		
 		try {
-			ExternalConverter audioConverter = new ExternalConverter();
-			Repository repository = Repository.getRepository();
+			AudioItemRepository repository = Configuration.getConfiguration().getRepository();
 			
-			for (LocalizedAudioItem localizedAudioItem : selectedAudioItems) {
-				File itemDir = repository.resolveName(localizedAudioItem);
-				String[] files = itemDir.list();
-				
+			for (LocalizedAudioItem localizedAudioItem : selectedAudioItems) {				
 				// first: check which formats we have
-				String fileToCopy = null;
-				boolean needToConvert = true;
+				File sourceFile = repository.convert(localizedAudioItem.getParentAudioItem(), targetFormat);
 				
-				for (String file : files) {
-					if (FileImporter.getFileExtension(file).equalsIgnoreCase(targetFormatExtension)) {
-						fileToCopy = file;
-						needToConvert = false;
-						break;
-					}
-	
-					if (fileToCopy == null) {
-						fileToCopy = file;
-					} else {
-						if (FileImporter.getFileExtension(file).equalsIgnoreCase(".wav")) {
-							// prefer wav over mp3 and a18
-							fileToCopy = file;
-						} else if (FileImporter.getFileExtension(file).equalsIgnoreCase(".mp3")
-								&& !FileImporter.getFileExtension(fileToCopy).equalsIgnoreCase(".wav")) {
-							// prefer mp3 over a18
-							fileToCopy = file;
-						}
-					}
-				}
-				
-				// second: convert if necessary
-				if (needToConvert && fileToCopy != null) {
-					// convert first
-					if (OSChecker.WINDOWS) {
-						File sourceFile = new File(itemDir, fileToCopy);
-						audioConverter.convert(sourceFile, new File(sourceFile.getParent()), targetFormat);
-						fileToCopy = fileToCopy.substring(0, fileToCopy.length() - 4) + targetFormatExtension;
-					} else {
-						fileToCopy = null;
-					}
-				}
-				
-				// third: copy to external folder
-				if (fileToCopy != null) {
-					File sourceFile = new File(itemDir, fileToCopy);
+				if (sourceFile != null) {
 					String title = localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue();
 					File targetFile;
 					int counter = 0;
 					do {
 						if (counter == 0) {
-							targetFile = new File(targetDir, title + targetFormatExtension);
+							targetFile = new File(targetDir, title + targetFormat.getFileExtension());
 						} else {
-							targetFile = new File(targetDir, title + "-" + counter + targetFormatExtension);
+							targetFile = new File(targetDir, title + "-" + counter + targetFormat.getFileExtension());
 						}
 						counter++;
 					} while (targetFile.exists());
-					Repository.copy(sourceFile, targetFile);
+					if (targetFormat == AudioFormat.A18) {
+						repository.exportA18WithMetadataToFile(localizedAudioItem.getParentAudioItem(), targetFile);
+					} else {
+						IOUtils.copy(sourceFile, targetFile);
+					}
 				}
 			}
 		} catch (ConversionException e) {

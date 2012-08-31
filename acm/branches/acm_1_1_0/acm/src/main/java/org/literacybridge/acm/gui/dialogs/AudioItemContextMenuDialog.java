@@ -20,6 +20,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.api.IDataRequestResult;
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
@@ -30,7 +31,6 @@ import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPro
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.MetadataSpecification;
-import org.literacybridge.acm.repository.Repository;
 
 // TODO: deal with localized audio items when languages are fully implemented
 public class AudioItemContextMenuDialog extends JDialog implements WindowListener {
@@ -97,8 +97,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 						for (AudioItem a : selectedAudioItems) {
 							try {
 								a.destroy();
-								Repository.getRepository().delete(a.getLocalizedAudioItem(
-										LanguageUtil.getUserChoosenLanguage()));
+								Configuration.getConfiguration().getRepository().delete(a);
 							} catch (Exception e) {
 								LOG.log(Level.WARNING, "Unable to delete audioitem id=" + a.getUuid(), e);
 							}

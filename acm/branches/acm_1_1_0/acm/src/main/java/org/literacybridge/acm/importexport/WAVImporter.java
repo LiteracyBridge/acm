@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Locale;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
@@ -12,18 +13,16 @@ import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
-import org.literacybridge.acm.repository.Repository;
-import org.literacybridge.acm.utils.OSChecker;
-import org.literacybridge.acm.audioconverter.api.ExternalConverter;
-import org.literacybridge.acm.audioconverter.api.WAVFormat;
-import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
+import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.repository.AudioItemRepository.DuplicateItemException;
+import org.literacybridge.acm.repository.AudioItemRepository.UnsupportedFormatException;
 
 public class WAVImporter extends Importer {
 
 	@Override
 	protected void importSingleFile(Category category, File file) throws IOException {
 		try {
-			AudioItem audioItem = new AudioItem(Repository.getNewUUID());
+			AudioItem audioItem = new AudioItem(Configuration.getConfiguration().getNewAudioItemUID());
 			audioItem.addCategory(category);
 
 			LocalizedAudioItem localizedAudioItem = new LocalizedAudioItem(audioItem.getUuid() + "-en", Locale.ENGLISH);
@@ -36,16 +35,14 @@ public class WAVImporter extends Importer {
 			metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
 			metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE, 
 					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
-			audioItem.commit();
 			
-			Repository repository = Repository.getRepository();
-			
-			if (OSChecker.WINDOWS) {
-				ExternalConverter audioConverter = new ExternalConverter();
-				File itemDir = repository.resolveName(localizedAudioItem);
-				audioConverter.convert(file, itemDir, new WAVFormat(16000, 128, 1));
-			}
-		} catch (ConversionException e) {
+			AudioItemRepository repository = Configuration.getConfiguration().getRepository();
+			repository.storeAudioFile(audioItem, file);			
+
+			audioItem.commit();			
+		} catch (UnsupportedFormatException e) {
+			throw new IOException(e);
+		} catch (DuplicateItemException e) {
 			throw new IOException(e);
 		}
 	}

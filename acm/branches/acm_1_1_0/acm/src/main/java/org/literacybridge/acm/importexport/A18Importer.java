@@ -2,33 +2,27 @@ package org.literacybridge.acm.importexport;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
-import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
 import org.literacybridge.acm.metadata.LBMetadataSerializer;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
-import org.literacybridge.acm.repository.Repository;
+import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.repository.AudioItemRepository.DuplicateItemException;
+import org.literacybridge.acm.repository.AudioItemRepository.UnsupportedFormatException;
 import org.literacybridge.acm.utils.IOUtils;
-import org.literacybridge.acm.utils.OSChecker;
-import org.literacybridge.acm.audioconverter.api.ExternalConverter;
-import org.literacybridge.acm.audioconverter.api.WAVFormat;
-import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 
 public class A18Importer extends Importer {
 	public static LocalizedAudioItem loadMetadata(File file) throws IOException {
@@ -60,7 +54,7 @@ public class A18Importer extends Importer {
 			
 			if (metadata.getNumberOfFields() == 0) {
 				// legacy mode
-				audioItem = new AudioItem(Repository.getNewUUID());
+				audioItem = new AudioItem(Configuration.getConfiguration().getNewAudioItemUID());
 				String fileName = file.getName();
 				metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
 				metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER, new MetadataValue<String>(audioItem.getUuid()));
@@ -114,28 +108,14 @@ public class A18Importer extends Importer {
 				return;
 			}
 			
-			Repository repository = Repository.getRepository();
-			repository.store(file, file.getName(), localizedAudioItem);
+			AudioItemRepository repository = Configuration.getConfiguration().getRepository();
+			repository.storeAudioFile(audioItem, file);
 			
-			File newFile = new File(repository.resolveName(localizedAudioItem), file.getName());
-			FileOutputStream fos = new FileOutputStream(newFile, true);
-			DataOutputStream out = new DataOutputStream(fos);
-			LBMetadataSerializer serializer = new LBMetadataSerializer();
-			serializer.serialize(audioItem.getCategoryList(), localizedAudioItem.getMetadata(), out);
-			out.close();
-
 			audioItem.commit();
 
-			
-			if (OSChecker.WINDOWS) {
-				ExternalConverter audioConverter = new ExternalConverter();
-				File itemDir = repository.resolveName(localizedAudioItem);
-				File sourceFile = new File(itemDir, file.getName());
-				audioConverter.convert(sourceFile, new File(sourceFile.getParent()), new WAVFormat(128, 16000, 1));
-			}
-	
-
-		} catch (ConversionException e) {
+		} catch (UnsupportedFormatException e) {
+			throw new IOException(e);
+		} catch (DuplicateItemException e) {
 			throw new IOException(e);
 		}
 	}

@@ -13,6 +13,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.IOException;
 import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
@@ -26,20 +27,22 @@ import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.Timer;
 
+import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.LocalizedAudioItem;
-import org.literacybridge.acm.metadata.MetadataSpecification;
-import org.literacybridge.acm.gui.playerAPI.PlayerStateDetails;
-import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
-import org.literacybridge.acm.repository.Repository;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.messages.PlayLocalizedAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemToPlayMessage;
+import org.literacybridge.acm.gui.playerAPI.PlayerStateDetails;
+import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
+import org.literacybridge.acm.metadata.MetadataSpecification;
+import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 
 
 public class ToolbarView extends JToolBar implements ActionListener 
@@ -261,12 +264,20 @@ public class ToolbarView extends JToolBar implements ActionListener
 			updatePlayerStateTimer.stop();			
 		}
 		
-		File f = Repository.getRepository().getWAVFile(item);
-		initPlayer(f);
-		player.play();
-		updatePlayerStateTimer.start();
-		titleInfoLbl.setText(item.getMetadata().getMetadataValues(
-				MetadataSpecification.DC_TITLE).get(0).getValue());
+		try {
+			// convert on the fly if necessary
+			File f = Configuration.getConfiguration().getRepository()
+							.convert(item.getParentAudioItem(), AudioFormat.WAV);
+			initPlayer(f);
+			player.play();
+			updatePlayerStateTimer.start();
+			titleInfoLbl.setText(item.getMetadata().getMetadataValues(
+					MetadataSpecification.DC_TITLE).get(0).getValue());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} catch (ConversionException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	@Override
