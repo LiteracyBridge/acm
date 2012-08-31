@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 4
+  revision: 5
   categories:
     '0' : 
       name: Other Messages
@@ -171,9 +171,23 @@ taxonomy:
       name: Feedback from Users
       children:
         '9-1':
-          name: Problems with the device
+          name: Needs review
         '9-2':
-          name: Testimonials on successes
+          name: Useless
+        '9-3':
+          name: Health Questions
+        '9-4':
+          name: Agric Questions
+        '9-5':
+          name: Ideas, Concerns, Questions
+        '9-6':
+          name: Endorsements of TBs
+        '9-7':
+          name: Other
+        '9-8':
+          name: Potential Future Content
+        '9-9':
+          name: Nice Singing
     '10':
       name: Society and Culture
       children:
