@@ -10,8 +10,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import javax.swing.JFrame;
+import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
 
 import org.jdesktop.swingx.JXFrame;
 import org.literacybridge.acm.api.IDataRequestResult;
@@ -102,10 +104,19 @@ public class Application extends JXFrame {
 		// initialize config and generate random ID for this acm instance
 		Configuration.init(dbDirName, repositoryDirName);
 		// set look & feel
+		
+		// Not sure why, but making this call before setting the seaglass look and feel
+		// prevents an UnsatisfiedLinkError to be thrown
+		final LookAndFeel defaultLAF = UIManager.getLookAndFeel();
 		try {
 		    UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
 		} catch (Exception e) {
-			LOG.log(Level.WARNING, "Unable to set look and feel.", e);
+			try {
+				LOG.log(Level.WARNING, "Unable to set look and feel.", e);
+				UIManager.setLookAndFeel(defaultLAF);
+			} catch (Exception e1) {
+				LOG.log(Level.WARNING, "Unable to set look and feel.", e1);
+			}
 		}
 		
 		final SplashScreen splash = SplashScreen.getSplashScreen();
