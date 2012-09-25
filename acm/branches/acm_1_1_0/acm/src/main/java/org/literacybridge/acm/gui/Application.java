@@ -99,7 +99,7 @@ public class Application extends JXFrame {
 			dbDirName = args[0];
 			repositoryDirName = args[1];
 		} else if (args.length == 0) {
-			System.out.println("To override config.properties, give add argument with db path followed by argument for repository path.");
+			System.out.println("To override config.properties, add argument with db path followed by argument for repository path.");
 		}
 		// initialize config and generate random ID for this acm instance
 		Configuration.init(dbDirName, repositoryDirName);
@@ -242,6 +242,6 @@ public class Application extends JXFrame {
 			}			
 			return builder.toString();
 		}
-	}
+	}	
 	
 }
