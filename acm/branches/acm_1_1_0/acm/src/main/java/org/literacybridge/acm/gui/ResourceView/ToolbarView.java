@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.ResourceView;
 
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -263,11 +264,16 @@ public class ToolbarView extends JToolBar implements ActionListener
 			player.stop();
 			updatePlayerStateTimer.stop();			
 		}
-		
+		System.out.println("LocalizedAudioItem:"+item.getUuid());
+		System.out.println("Its parent:"+item.getParentAudioItem().getUuid());
 		try {
 			// convert on the fly if necessary
+			Application parent = Application.getApplication();
+			parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));				
 			File f = Configuration.getConfiguration().getRepository()
 							.convert(item.getParentAudioItem(), AudioFormat.WAV);
+			parent.setCursor(Cursor.getDefaultCursor());
+			Application.getFilterState().updateResult();	
 			initPlayer(f);
 			player.play();
 			updatePlayerStateTimer.start();
