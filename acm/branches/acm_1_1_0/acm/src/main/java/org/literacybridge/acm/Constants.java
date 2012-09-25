@@ -18,5 +18,5 @@ public class Constants {
 	public final static String CACHE_DIR_NAME			    = "cache";
 	
     public final static File USER_HOME_DIR = new File(System.getProperty("user.home", "."));
-   
+    public final static long CACHE_SIZE_IN_BYTES			= 2L * 1024L * 1024L * 1024L; // 2GB
  }
