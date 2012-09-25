@@ -132,7 +132,7 @@ public abstract class AudioItemRepository {
 			DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(externalFile)));
 			int numBytes = IOUtils.readLittleEndian32(in);
 			in.close();			
-			IOUtils.copy(externalFile, toFile, numBytes);
+			IOUtils.copy(externalFile, toFile, numBytes+4);
 		} else {
 			IOUtils.copy(externalFile, toFile);
 		}
