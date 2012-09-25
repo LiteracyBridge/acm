@@ -45,24 +45,26 @@ public class ExternalConverter {
 	}
 	
 	
-	public void convert(File sourceFile, File targetFile, AudioConversionFormat targetFormat, boolean overwrite) 
+	public String convert(File sourceFile, File targetFile, AudioConversionFormat targetFormat, boolean overwrite) 
 		throws ConversionException {
+		String result = null;
 		
 		if (targetFormat.getFileEnding()== "A18")
 		{
 				SetParameters(targetFormat);
-				AnyToA18Conv.convertFile(sourceFile, targetFile, overwrite, this.parameters);
+				result = AnyToA18Conv.convertFile(sourceFile, targetFile, overwrite, this.parameters);
 		}
 		if (targetFormat.getFileEnding() == "WAV" || targetFormat.getFileEnding() == "MP3")
 		{
 			if (getFileExtension(sourceFile).equalsIgnoreCase(".a18")) {
 				SetParameters(targetFormat);
-				A18ToWAVConv.convertFile(sourceFile, targetFile, overwrite, this.parameters);
+				result = A18ToWAVConv.convertFile(sourceFile, targetFile, overwrite, this.parameters);
 			} else {
 				SetParameters(targetFormat);
-				FFMpegConv.convertFile(sourceFile, targetFile, overwrite, this.parameters, "." + targetFormat.getFileEnding());
+				result = FFMpegConv.convertFile(sourceFile, targetFile, overwrite, this.parameters, "." + targetFormat.getFileEnding());
 			}
 		}
+		return result;
 	}
 	
 	public static String getFileExtension(File file) {

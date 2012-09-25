@@ -26,7 +26,7 @@ public class WavToA18Converter extends A18BaseConverter {
 			//	command.append(" -s " + parameters.get(key));
 			//}
 		}		
-		command.append(" -b 32000 -o \"" + targetFile.getAbsolutePath()+ "\"");
+		command.append(" -b 16000 -o \"" + targetFile.getAbsolutePath()+ "\"");
 		command.append(" \"" + audioFile.getAbsolutePath() + "\"");
 
 		return command.toString();
