@@ -131,6 +131,7 @@ public class Application extends JXFrame {
 		application.toFront();
 		
 		LOG.log(Level.INFO, "ACM successfully started.");
+		Configuration.cacheNewA18Files();
 	}	
 	
 	public static class FilterState {

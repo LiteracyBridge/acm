@@ -203,6 +203,19 @@ public class Configuration extends Properties {
 		return uuid;
 	}
 
+	public static void cacheNewA18Files() {
+		findUncachedWaveFiles();
+		if (uncachedFiles.size() > 0) {
+			javax.swing.SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					int s = uncachedFiles.size();
+					System.out.println("Setting progress bar max to: " + Integer.toString(s) );
+					ConvertNewA18Files p = new ConvertNewA18Files(s);
+					p.createAndShowGUI();
+				}
+			});
+		}		
+	}
 	
 	private final static Pattern LANGUAGE_LABEL_PATTERN = Pattern.compile(".*\\(\"(.+)\"\\).*");
 	
@@ -284,16 +297,6 @@ public class Configuration extends Properties {
 			
 	private static void InitializeConfiguration() {
 		InitializeAcmConfiguration();
-		findUncachedWaveFiles();
-		javax.swing.SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				int s = uncachedFiles.size();
-				System.out.println("Setting progress bar max to: " + Integer.toString(s) );
-				ConvertNewA18Files p = new ConvertNewA18Files(s);
-				p.createAndShowGUI();
-			}
-		});
-		
 /*		System.out.println("  UserRWAccess:" + instance.userHasWriteAccess());
 		System.out.println("  online:" + isOnline());
 		System.out.println("  isAnotherUserWriting:" + instance.isAnotherUserWriting());
@@ -313,9 +316,9 @@ public class Configuration extends Properties {
 								}
 							})),
 				new FileSystemRepository(getRepositoryDirectory()));
-//		instance.repository.convert(audioItem, targetFormat);
+//		instance.repository.convert(audioItem, targetFormat);		
 	}
-
+	
 	private static File getGlobalShareDirectory() {
 		// This function returns a File to the user's Dropbox directory 
 		// if Dropbox was installed in the default location.
@@ -533,21 +536,23 @@ public class Configuration extends Properties {
 	private static void findUncachedWaveFiles () {
 	    String audioItemName;
 		File repository = new File(Configuration.getRepositoryDirectory(),"org\\literacybridge");
-	    for (File audioItem : repository.listFiles()) {
-		    if (".".equals(audioItem.getName()) || "..".equals(audioItem.getName()) || audioItem.isFile()) {
-			      continue;  // Ignore the self and parent aliases.
+		if (repository.listFiles() != null) {
+		    for (File audioItem : repository.listFiles()) {
+			    if (".".equals(audioItem.getName()) || "..".equals(audioItem.getName()) || audioItem.isFile()) {
+				      continue;  // Ignore the self and parent aliases.
+				    }
+			    audioItemName = audioItem.getName();
+			    File cachedItem = new File(Configuration.getCacheDirectory(),"org\\literacybridge\\"+audioItemName+"\\"+audioItemName+".wav");
+			    
+			    if (cachedItem.exists()) 
+			    	System.out.print("found:");
+			    else {
+			    	System.out.print("not found:");
+			    	uncachedFiles.add(audioItemName);
 			    }
-		    audioItemName = audioItem.getName();
-		    File cachedItem = new File(Configuration.getCacheDirectory(),"org\\literacybridge\\"+audioItemName+"\\"+audioItemName+".wav");
-		    
-		    if (cachedItem.exists()) 
-		    	System.out.print("found:");
-		    else {
-		    	System.out.print("not found:");
-		    	uncachedFiles.add(audioItemName);
+			    System.out.println(cachedItem.getAbsolutePath());
 		    }
-		    System.out.println(cachedItem.getAbsolutePath());
-	    }
+		}
 	}
 	
 	public static class ConvertNewA18Files extends JPanel implements ActionListener, PropertyChangeListener {
@@ -606,6 +611,7 @@ public class Configuration extends Properties {
 			cancelButton.setEnabled(true);
 			setCursor(null); //turn off the wait cursor
 //			taskOutput.append("Done!\n");
+			
 		}
 	
 	}
@@ -662,9 +668,8 @@ public class Configuration extends Properties {
 		*/
 		public void createAndShowGUI() {
 			//Create and set up the window.
-			JFrame frame = new JFrame("Converting New A18 Files to WAV");
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			
+			JFrame frame = new JFrame("Converting New Files");
+			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			//Create and set up the content pane.
 			JComponent newContentPane = this;
 			newContentPane.setOpaque(true); //content panes must be opaque
