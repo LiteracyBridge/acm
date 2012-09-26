@@ -177,7 +177,7 @@ public abstract class AudioItemRepository {
 		}
 		
 		if (OSChecker.WINDOWS) {
-			audioConverter.convert(sourceFile, null, targetFormat.getAudioConversionFormat());
+			audioConverter.convert(sourceFile, audioFile.getParentFile(), targetFormat.getAudioConversionFormat());
 		}
 		
 		// optional garbage collection
