@@ -2,7 +2,6 @@ package org.literacybridge.acm.config;
 
 import java.awt.BorderLayout;
 import java.awt.Cursor;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -32,9 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
-import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,18 +43,11 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
 
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.audioconverter.api.WAVFormat;
-import org.literacybridge.acm.audioconverter.converters.A18ToWavConverter;
-import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.AudioConverterInitializationException;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.db.Persistence;
-import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
