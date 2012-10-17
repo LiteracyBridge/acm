@@ -40,13 +40,17 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 	private JButton backBtn;
 	private JButton nextBtn;
 	private JButton btnClose;
+	
+	private final boolean readOnly;
 
 	public AudioItemPropertiesDialog(JFrame parent, AudioItemView view,
-			List<AudioItem> audioItemList, AudioItem showItem) {
+			List<AudioItem> audioItemList, AudioItem showItem,
+			final boolean readOnly) {
 		super(parent, LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES",
 				LanguageUtil.getUILanguage()), true);
+		this.readOnly = readOnly;
 		addToMessageService();
-		createControlsForAvailableProperties();
+		createControlsForAvailableProperties(readOnly);
 		setMinimumSize(new Dimension(500, 500));
 		setSize(500, 500);
 		pack();
@@ -90,7 +94,7 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 		backBtn.setEnabled(true);
 	}
 
-	private void createControlsForAvailableProperties() {
+	private void createControlsForAvailableProperties(final boolean readOnly) {
 		// add navigation buttons
 		JPanel p = new JPanel();
 		
@@ -150,7 +154,7 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 	}
 
 	private void showMetadata(AudioItem audioItem, Metadata metadata) {
-		propertiesTable.setModel(new AudioItemPropertiesModel(audioItem, metadata));
+		propertiesTable.setModel(new AudioItemPropertiesModel(audioItem, metadata, this.readOnly));
 	}
 
 	@Override

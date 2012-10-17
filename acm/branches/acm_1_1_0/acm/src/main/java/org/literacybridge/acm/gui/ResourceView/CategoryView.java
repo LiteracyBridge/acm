@@ -16,8 +16,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.beans.PropertyChangeListener;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -42,12 +40,10 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultTreeSelectionModel;
-import javax.swing.tree.RowMapper;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -128,7 +124,9 @@ public class CategoryView extends Container implements Observer {
 		createTasks();	
 		createLanguageList();
 		addOptionList();
-		addDragAndDrop();
+		if (!Configuration.getConfiguration().isACMReadOnly()) {
+			addDragAndDrop();
+		}
 		JScrollPane taskPane = new JScrollPane(taskPaneContainer);
 		add(BorderLayout.CENTER, taskPane);
 		

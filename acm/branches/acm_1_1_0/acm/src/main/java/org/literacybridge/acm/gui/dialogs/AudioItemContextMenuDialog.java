@@ -40,6 +40,8 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 			final AudioItemView audioItemView, final IDataRequestResult data) {
 		super(parent, "", false);
 		
+		final boolean readOnly = Configuration.getConfiguration().isACMReadOnly();
+		
 		setResizable(false);
 		setUndecorated(true);		
 		
@@ -138,8 +140,12 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 
 		}
 		
+		final String editButtonLabel = readOnly
+						? LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_VIEW_PROPS_TITLE", LanguageUtil.getUILanguage())
+						: LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_EDIT_TITLE", LanguageUtil.getUILanguage());
 
-		FlatButton editButton = new FlatButton(String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_EDIT_TITLE", LanguageUtil.getUILanguage()), selectedTitle)
+
+		FlatButton editButton = new FlatButton(String.format(editButtonLabel, selectedTitle)
 									, editImageIcon
 									, backgroundColor
 									, highlightedColor) {
@@ -149,7 +155,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 				AudioItemPropertiesDialog dlg = new AudioItemPropertiesDialog(Application.getApplication()
 					, audioItemView
 					, data.getAudioItems()
-					, clickedAudioItem);
+					, clickedAudioItem, readOnly);
 				dlg.setVisible(true);				
 			}
 		};
@@ -170,6 +176,10 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 				export.setVisible(true);
 			}
 		};
+		
+		if (Configuration.getConfiguration().isACMReadOnly()) {
+			deleteButton.setEnabled(false);
+		}
 		
 		setLayout(grid);
 		
@@ -215,17 +225,23 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 		
 		@Override
 		public void mouseClicked(MouseEvent e) {
-			click();
+			if (isEnabled()) {
+				click();
+			}
 		}
 
 		@Override
 		public void mouseExited(MouseEvent e) {
-			setBackground(backgroundColor);
+			if (isEnabled()) {
+				setBackground(backgroundColor);
+			}
 		}
 		
 		@Override
 		public void mouseEntered(MouseEvent e) {
-			setBackground(highlightedColor);
+			if (isEnabled()) {
+				setBackground(highlightedColor);
+			}
 		}
 
 		@Override

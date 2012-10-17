@@ -27,6 +27,7 @@ import javax.swing.TransferHandler;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
@@ -67,10 +68,12 @@ public class AudioItemView extends Container implements Observer {
 
 	private void createTable() {
 		audioItemTable = new JXTable();
-		audioItemTable.setShowGrid(false, false); 
-		audioItemTable.setDragEnabled(true);
-		audioItemTable.setDropMode(DropMode.INSERT);
-		audioItemTable.setTransferHandler(new AudioItemTransferHandler());
+		audioItemTable.setShowGrid(false, false);
+		if (!Configuration.getConfiguration().isACMReadOnly()) {
+			audioItemTable.setDragEnabled(true);
+			audioItemTable.setDropMode(DropMode.INSERT);
+			audioItemTable.setTransferHandler(new AudioItemTransferHandler());
+		}
 		
 		// use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
 		audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(

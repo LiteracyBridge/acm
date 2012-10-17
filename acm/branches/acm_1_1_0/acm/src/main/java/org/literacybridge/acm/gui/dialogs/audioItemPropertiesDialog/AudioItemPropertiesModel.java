@@ -39,10 +39,12 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	private Metadata metadata = null;
 	private AudioItem audioItem = null;
 	private List<AudioItemProperty> audioItemPropertiesObject = new ArrayList<AudioItemProperty>();
+	private final boolean readOnly;
 	
-	public AudioItemPropertiesModel(AudioItem audioItem, Metadata metadata) {
+	public AudioItemPropertiesModel(AudioItem audioItem, Metadata metadata, boolean readOnly) {
 		this.metadata = metadata;
 		this.audioItem = audioItem;
+		this.readOnly = readOnly;
 		
 		// TODO: make this list configurable
 		// for now just remove some unneeded ones
@@ -132,6 +134,9 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	
 	@Override
 	public boolean isCellEditable(int rowIndex, int columnIndex) {
+		if (readOnly) {
+			return false;
+		}
 		if (columnIndex != VALUE_COL) {
 			return false;
 		}
@@ -142,7 +147,9 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
 	@Override
 	public void setValueAt(Object aValue, int row, int col) {
-		if (aValue == null) return;
+		if (readOnly || aValue == null) {
+			return;
+		}
 		
 		String newValue = aValue.toString();
 		AudioItemProperty<?> obj = audioItemPropertiesObject.get(row);
