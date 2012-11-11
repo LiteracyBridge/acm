@@ -28,9 +28,9 @@ public class FileSystemExporter {
 					int counter = 0;
 					do {
 						if (counter == 0) {
-							targetFile = new File(targetDir, title + targetFormat.getFileExtension());
+							targetFile = new File(targetDir, title + "." + targetFormat.getFileExtension());
 						} else {
-							targetFile = new File(targetDir, title + "-" + counter + targetFormat.getFileExtension());
+							targetFile = new File(targetDir, title + "-" + counter + "." + targetFormat.getFileExtension());
 						}
 						counter++;
 					} while (targetFile.exists());
