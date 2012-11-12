@@ -258,6 +258,8 @@ public class AudioItemView extends Container implements Observer {
 	    	LocalizedAudioItem lItem = (LocalizedAudioItem) o;
 	    	item = lItem.getParentAudioItem();
 	    }
+	    
+	    item.refresh();
 	   	
 	    return item;
 	}

@@ -11,6 +11,7 @@ import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SOURCE;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SUBJECT;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_TITLE;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -67,7 +68,8 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			}
 
 			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
-				return Configuration.getConfiguration().getRepository().getAudioFile(audioItem, AudioFormat.A18).getName();
+				File file = Configuration.getConfiguration().getRepository().getAudioFile(audioItem, AudioFormat.A18);
+				return file != null ? file.getName() : null;
 			}
 
 			@Override

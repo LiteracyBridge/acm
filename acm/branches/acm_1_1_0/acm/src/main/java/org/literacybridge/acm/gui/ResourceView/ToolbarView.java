@@ -44,6 +44,7 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
+import org.literacybridge.acm.utils.OSChecker;
 
 
 public class ToolbarView extends JToolBar implements ActionListener 
@@ -293,7 +294,7 @@ public class ToolbarView extends JToolBar implements ActionListener
 			updateControlsLanguage(newLocale.getNewLocale());
 		}		
 		
-		if (arg instanceof PlayLocalizedAudioItemMessage) {
+		if (arg instanceof PlayLocalizedAudioItemMessage && OSChecker.WINDOWS) {
 			PlayLocalizedAudioItemMessage item = (PlayLocalizedAudioItemMessage) arg;
 			play(item.getLocalizedAudioItem());
 		}

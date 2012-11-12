@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,29 +11,28 @@ import java.util.Observable;
 import java.util.Observer;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.metadata.Metadata;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.ResourceView;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.messages.RequestAndSelectAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestedAudioItemMessage;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.FocusTraversalOnArray;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
-import javax.swing.BoxLayout;
-import java.awt.Component;
-import javax.swing.Box;
+import org.literacybridge.acm.metadata.Metadata;
+import org.literacybridge.acm.tools.ACMDialog;
 
-public class AudioItemPropertiesDialog extends JDialog implements Observer {
+public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 
 	private static final long serialVersionUID = -3854016276035587383L;
 	private AudioItemPropertiesTable propertiesTable = null;
@@ -53,6 +53,7 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 		createControlsForAvailableProperties(readOnly);
 		setMinimumSize(new Dimension(500, 500));
 		setSize(500, 500);
+		setUndecorated(true);
 		pack();
 		setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{backBtn, nextBtn, btnClose}));
 
@@ -62,7 +63,7 @@ public class AudioItemPropertiesDialog extends JDialog implements Observer {
 		
 		enableControls();
 	}
-
+	
 	protected void addToMessageService() {
 		Application.getMessageService().addObserver(this);
 	}

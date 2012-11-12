@@ -24,39 +24,32 @@ import org.literacybridge.acm.db.PersistentTag;
  */
 public class AudioItem implements Persistable {
     
-        private PersistentAudioItem mItem;
-	
-        public AudioItem() {
-            mItem = new PersistentAudioItem();
-        }
-	
-        public AudioItem(PersistentAudioItem item) {
-            mItem = item;
-        }
+    private PersistentAudioItem mItem;
+
+    public AudioItem() {
+        mItem = new PersistentAudioItem();
+    }
+
+    public AudioItem(PersistentAudioItem item) {
+        mItem = item;
+    }
 	
 	public AudioItem(String uuID) {
-            this();
-            mItem.setUuid(uuID);
+        this();
+        mItem.setUuid(uuID);
 	}
 	
-	public AudioItem(String uuId, Category... categories) {
-            this(uuId);
-			for (Category c : categories) {
-                addCategory(c);
-			}
-		}
-	
-        public Integer getId() {
-            return mItem.getId();
-        }
-        
-        public String getUuid() {
-            return mItem.getUuid();
-        }
-        
-        public void setUuid(String uuid) {
-            mItem.setUuid(uuid);
-        }
+    public Integer getId() {
+        return mItem.getId();
+    }
+    
+    public String getUuid() {
+        return mItem.getUuid();
+    }
+    
+    public void setUuid(String uuid) {
+        mItem.setUuid(uuid);
+    }
         
 	public void addCategory(Category category) {
         mItem.addPersistentAudioItemCategory(category.getPersistentObject());
@@ -79,11 +72,11 @@ public class AudioItem implements Persistable {
 	}
 	
 	public List<Category> getCategoryList() {
-            List<Category> categories = new LinkedList<Category>();
-            for (PersistentCategory c : mItem.getPersistentCategoryList()) {
-                categories.add(new Category(c));
-	}
-            return categories;
+        List<Category> categories = new LinkedList<Category>();
+        for (PersistentCategory c : mItem.getPersistentCategoryList()) {
+            categories.add(new Category(c));
+        }
+        return categories;
 	}
 	
 	public LocalizedAudioItem getLocalizedAudioItem(Locale locale) {
@@ -107,12 +100,12 @@ public class AudioItem implements Persistable {
 	}
 	
 	public Set<Locale> getAvailableLocalizations() {
-            Set<Locale> results = new LinkedHashSet<Locale>();
-            for (PersistentLocalizedAudioItem i : mItem.getPersistentLocalizedAudioItems()) {
-                PersistentLocale locale = i.getPersistentLocale();
-                results.add(new Locale(locale.getLanguage(),locale.getCountry()));
-            }
-            return results;
+        Set<Locale> results = new LinkedHashSet<Locale>();
+        for (PersistentLocalizedAudioItem i : mItem.getPersistentLocalizedAudioItems()) {
+            PersistentLocale locale = i.getPersistentLocale();
+            results.add(new Locale(locale.getLanguage(),locale.getCountry()));
+        }
+        return results;
 	}
 	
 	public void addLocalizedAudioItem(LocalizedAudioItem localizedAudioItem) {
@@ -156,7 +149,7 @@ public class AudioItem implements Persistable {
     }    
         
     public static List<AudioItem> getFromDatabaseBySearch(String searchFilter, 
-    		List<PersistentCategory> categories, List<PersistentLocale> locales) {
+		List<PersistentCategory> categories, List<PersistentLocale> locales) {
         List<AudioItem> results = new LinkedList<AudioItem>();
     	List<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(searchFilter, categories, locales);
         for (PersistentAudioItem item : items) {
