@@ -98,7 +98,7 @@ public class TreeTransferHandler extends TransferHandler {
 					e.printStackTrace();
 				} finally {
 					UIUtils.hideDialog(busy);
-					Application.getFilterState().updateResult();
+					Application.getFilterState().updateResult(true);
 				}
 			}
 		};
@@ -119,6 +119,6 @@ public class TreeTransferHandler extends TransferHandler {
 			item.addCategory(target.getCategory());
 			item.commit();
 		}
-		Application.getFilterState().updateResult();
+		Application.getFilterState().updateResult(true);
 	}
 }
