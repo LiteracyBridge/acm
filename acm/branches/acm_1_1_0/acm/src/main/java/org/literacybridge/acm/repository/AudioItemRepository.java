@@ -135,6 +135,12 @@ public abstract class AudioItemRepository {
 			IOUtils.copy(externalFile, toFile, numBytes+4);
 		} else {
 			IOUtils.copy(externalFile, toFile);
+			try {
+				// convert file to A18 format right away
+				convert(audioItem, AudioFormat.A18);
+			} catch (ConversionException e) {
+				throw new IOException(e);
+			}
 		}
 		
 		// optional garbage collection
