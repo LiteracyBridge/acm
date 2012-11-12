@@ -147,7 +147,24 @@ public class Taxonomy implements Persistable {
 	 * Note: Returns '0' for unassigned categories.
 	 */
 	public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
-		return PersistentCategory.getFacetCounts(filter, categories, locales);
+		Map<Integer, Integer> counts = PersistentCategory.getFacetCounts(filter, categories, locales);
+		countChildren(getTaxonomy().getRootCategory(), counts);
+		return counts;
+	}
+	
+	private static int countChildren(Category parent, Map<Integer, Integer> counts) {
+		Integer count = counts.get(parent.getId());
+		int totalCount = count != null ? count : 0;
+		if (parent.hasChildren()) {
+			for (Category child : parent.getChildren()) {
+				totalCount += countChildren(child, counts);
+			}
+		}
+		if (totalCount > 0) {
+			counts.put(parent.getId(), totalCount);
+		}
+		
+		return totalCount;
 	}
 	
 	public Integer getId() {
