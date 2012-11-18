@@ -13,6 +13,7 @@ import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
+import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 
 public class AudioItemTableModel  extends AbstractTableModel {
@@ -90,18 +91,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 					break;
 				}
 				case CATEGORIES: {
-					List<Category> categories = localizedAudioItem.getParentAudioItem().getCategoryList();
-					StringBuilder builder = new StringBuilder();
-					
-					for (int i = 0; i < categories.size(); i++) {
-						Category cat = categories.get(i);
-						builder.append(cat.getCategoryName(LanguageUtil.getUILanguage()));
-						if (i != categories.size() - 1) {
-							builder.append(", ");
-						}
-					}
-					
-					cellText = builder.toString();
+					cellText = UIUtils.getCategoryListAsString(localizedAudioItem.getParentAudioItem());
 					break;
 				}
 				case LANGUAGES: {

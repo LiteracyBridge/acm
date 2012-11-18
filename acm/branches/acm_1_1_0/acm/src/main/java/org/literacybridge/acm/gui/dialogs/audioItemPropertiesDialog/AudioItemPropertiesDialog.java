@@ -156,6 +156,7 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 
 	private void showMetadata(AudioItem audioItem, Metadata metadata) {
 		propertiesTable.setModel(new AudioItemPropertiesModel(audioItem, metadata, this.readOnly));
+		propertiesTable.getTableHeader().getColumnModel().getColumn(AudioItemPropertiesModel.EDIT_COL).setMaxWidth(25);
 	}
 
 	@Override

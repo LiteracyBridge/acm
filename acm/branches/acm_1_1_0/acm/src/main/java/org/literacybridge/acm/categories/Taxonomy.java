@@ -14,6 +14,7 @@ import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentLocalizedString;
 import org.literacybridge.acm.db.PersistentString;
+import org.literacybridge.acm.gui.util.language.LanguageUtil;
 
 public class Taxonomy implements Persistable {
 
@@ -340,6 +341,10 @@ public class Taxonomy implements Persistable {
 				return null;
 			}
 			return new Category(category);
+		}
+		
+		@Override public String toString() {
+			return getCategoryName(LanguageUtil.getUILanguage()).toString();
 		}
 	}
 
