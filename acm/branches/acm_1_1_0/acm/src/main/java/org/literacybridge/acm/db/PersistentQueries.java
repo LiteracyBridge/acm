@@ -53,7 +53,7 @@ class PersistentQueries {
         	if (filter != null && !filter.isEmpty()) {
 	        	String[] tokens = filter.split(" ");
 	        	for (int i=0; i < tokens.length; i++) {
-		    		query.append(" AND (lower(t2.dc_creator) LIKE lower('%" + tokens[i] + "%')" 
+		    		query.append(" AND (lower(t2.keywords) LIKE lower('%" + tokens[i] + "%')" 
 		                             + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
 		                             + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
 	        	}
@@ -101,7 +101,7 @@ class PersistentQueries {
         	if (filter != null && !filter.isEmpty()) {
 	        	String[] tokens = filter.split(" ");
 	        	for (int i=0; i < tokens.length; i++) {
-		    		query.append(" AND (lower(t2.dc_creator) LIKE lower('%" + tokens[i] + "%')" 
+		    		query.append(" AND (lower(t2.keywords) LIKE lower('%" + tokens[i] + "%')" 
 		                             + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
 		                             + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
 	        	}
@@ -189,7 +189,7 @@ class PersistentQueries {
 	        		} else {
 	        			query.append(" AND ");
 	        		}
-		    		query.append("     (lower(t2.dc_creator) LIKE lower('%" + tokens[i] + "%')" 
+		    		query.append("     (lower(t2.keywords) LIKE lower('%" + tokens[i] + "%')" 
 		                        + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
 		                        + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
 	        	}
@@ -256,7 +256,7 @@ class PersistentQueries {
 	        		} else {
 	        			query.append(" AND ");
 	        		}
-		    		query.append("     (lower(t2.dc_creator) LIKE lower('%" + tokens[i] + "%')" 
+		    		query.append("     (lower(t2.keywords) LIKE lower('%" + tokens[i] + "%')" 
 		                        + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
 		                        + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
 	        	}
