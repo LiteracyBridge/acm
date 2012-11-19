@@ -6,6 +6,7 @@ import java.awt.event.MouseEvent;
 import java.util.Locale;
 
 import javax.swing.DefaultCellEditor;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -18,13 +19,17 @@ import org.jdesktop.swingx.JXTable;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.util.UIUtils;
+import org.literacybridge.acm.metadata.MetadataSpecification;
 
 public class AudioItemPropertiesTable extends JXTable {
 
 	private static final long serialVersionUID = 8525763640242614093L;
 	private static ImageIcon editImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_EDIT_16_PX));
 	
-	private JComboBox cb = new JComboBox();
+	private JComboBox languageBox = new JComboBox();
+	private JComboBox messageFormatBox = new JComboBox(new DefaultComboBoxModel(new String[] {"Drama", "Interview", "Lecture", "Song", "Story"}));
+	private JComboBox targetAudienceBox = new JComboBox(new DefaultComboBoxModel(new String[] {"All", "Boys", "Girls", "Children", "Farmers",
+																							   "Fathers", "Mothers", "Parents", "Pregnant women"}));
 	private LanguageComboBoxModel languageComboBoxModel = new LanguageComboBoxModel();
 	
 	public AudioItemPropertiesTable() {
@@ -70,6 +75,18 @@ public class AudioItemPropertiesTable extends JXTable {
 		if (isLanguageRow(row)) {
 			return getLanguageEditor();
 		}
+
+		// TODO: refactor this and make combo boxes more generic
+		AudioItemProperty property = getAudioItemPropertiesModel().getAudioItemProperty(row);
+		if (property instanceof AudioItemProperty.MetadataProperty) {
+			if (((AudioItemProperty.MetadataProperty) property).getMetadataField() == MetadataSpecification.LB_MESSAGE_FORMAT) {
+				return new DefaultCellEditor(messageFormatBox);	
+			}
+			if (((AudioItemProperty.MetadataProperty) property).getMetadataField() == MetadataSpecification.LB_TARGET_AUDIENCE) {
+				return new DefaultCellEditor(targetAudienceBox);	
+			}
+		}
+		
 		return super.getCellEditor(row, column);
 	}
 
@@ -92,14 +109,14 @@ public class AudioItemPropertiesTable extends JXTable {
 	}
 	
 	private TableCellEditor getLanguageEditor() {		
-		cb.setModel(new LanguageComboBoxModel());   
-		return new DefaultCellEditor(cb);
+		languageBox.setModel(new LanguageComboBoxModel());   
+		return new DefaultCellEditor(languageBox);
 	}
 
 	@Override
 	public void setValueAt(Object aValue, int row, int column) {
 		if (isLanguageRow(row)) {
-			int index = cb.getSelectedIndex();
+			int index = languageBox.getSelectedIndex();
 			Locale l = languageComboBoxModel.getLocalForIndex(index);
 			super.setValueAt(l, row, column);
 			return;
