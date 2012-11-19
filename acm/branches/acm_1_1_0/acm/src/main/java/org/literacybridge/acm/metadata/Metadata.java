@@ -117,105 +117,91 @@ public class Metadata implements Persistable {
 		if (isRefreshing == true) {
 			return;
 		}
-		if (field == MetadataSpecification.DC_CONTRIBUTOR) {
-			mMetadata.setDc_contributor(value.getValue().toString());
-		} else if (field == MetadataSpecification.DC_COVERAGE) {
-			mMetadata.setDc_coverage(value.getValue().toString());
-		} else if (field == MetadataSpecification.DC_CREATOR) {
-			mMetadata.setDc_creator(value.getValue().toString());
-		} else if (field == MetadataSpecification.DC_DATE) {
-			// mMetadata.setDc_date(value.getValue());
-		} else if (field == MetadataSpecification.DC_DESCRIPTION) {
-			mMetadata.setDc_description(value.getValue().toString());
-		} else if (field == MetadataSpecification.DC_FORMAT) {
-			mMetadata.setDc_format(value.getValue().toString());
-		} else if (field == MetadataSpecification.DC_IDENTIFIER) {
+		if (field == MetadataSpecification.DC_IDENTIFIER) {
 			mMetadata.setDc_identifier(value.getValue().toString());
 		} else if (field == MetadataSpecification.DC_PUBLISHER) {
 			mMetadata.setDc_publisher(value.getValue().toString());
 		} else if (field == MetadataSpecification.DC_RELATION) {
 			mMetadata.setDc_relation(value.getValue().toString());
-		} else if (field == MetadataSpecification.DC_RIGHTS) {
-			mMetadata.setDc_rights(value.getValue().toString());
 		} else if (field == MetadataSpecification.DC_SOURCE) {
 			mMetadata.setDc_source(value.getValue().toString());
-		} else if (field == MetadataSpecification.DC_SUBJECT) {
-			mMetadata.setDc_subject(value.getValue().toString());
 		} else if (field == MetadataSpecification.DC_TITLE) {
 			mMetadata.setDc_title(value.getValue().toString());
-		} else if (field == MetadataSpecification.DC_TYPE) {
-			mMetadata.setDc_type(value.getValue().toString());
 		} else if (field == MetadataSpecification.DTB_REVISION) {
 			mMetadata.setDtb_revision(value.getValue().toString());
-		} else if (field == MetadataSpecification.DTB_REVISION_DATE) {
-			// mMetadata.setDtb_revision_date(value.getValue());
-		} else if (field == MetadataSpecification.DTB_REVISION_DESCRIPTION) {
-			mMetadata.setDtb_revision_description(value.getValue().toString());
-		} else if (field == MetadataSpecification.LB_RATING) {
-			mMetadata.setLb_rating(Short.valueOf(value.getValue().toString()));
 		} else if (field == MetadataSpecification.DC_LANGUAGE) {
 			// TODO ugly, needs to be implemented properly
 			mMetadata.setPersistentLocale(mMetadata
 					.getPersistentLocalizedAudioItem().getPersistentLocale());
-		}
+		} else if (field == MetadataSpecification.LB_DURATION) {
+			mMetadata.setDuration(value.getValue().toString());
+		} else if (field == MetadataSpecification.LB_MESSAGE_FORMAT) {
+			mMetadata.setMessage_format(value.getValue().toString());
+		} else if (field == MetadataSpecification.LB_TARGET_AUDIENCE) {
+			mMetadata.setTarget_audience(value.getValue().toString());
+		} else if (field == MetadataSpecification.LB_DATE_RECORDED) {
+			mMetadata.setDate_recorded(value.getValue().toString());		
+		} else if (field == MetadataSpecification.LB_KEYWORDS) {
+			mMetadata.setKeywords(value.getValue().toString());
+		} else if (field == MetadataSpecification.LB_TIMING) {
+			mMetadata.setTiming(value.getValue().toString());
+		} else if (field == MetadataSpecification.LB_PRIMARY_SPEAKER) {
+			mMetadata.setPrimary_speaker(value.getValue().toString());
+		} else if (field == MetadataSpecification.LB_GOAL) {
+			mMetadata.setGoal(value.getValue().toString());
+		} else if (field == MetadataSpecification.LB_ENGLISH_TRANSCRIPTION) {
+			mMetadata.setEnglish_transcription(value.getValue().toString());
+		} else if (field == MetadataSpecification.LB_NOTES) {
+			mMetadata.setNotes(value.getValue().toString());
+		}		
 	}
 
 	private void refreshFieldsFromPersistenceObject() {
 		try {
 			isRefreshing = true;
 			this.fields.clear();
-			setMetadataField(MetadataSpecification.DC_CONTRIBUTOR,
-					new MetadataValue<String>(mMetadata.getDc_contributor()));
-			setMetadataField(MetadataSpecification.DC_COVERAGE,
-					new MetadataValue<String>(mMetadata.getDc_coverage()));
-			setMetadataField(MetadataSpecification.DC_CREATOR,
-					new MetadataValue<String>(mMetadata.getDc_creator()));
-			// addMetadataField(MetadataSpecification.DC_DATE, new
-			// MetadataValue<String>(mMetadata.getDc_date().toString()));
-			setMetadataField(MetadataSpecification.DC_DESCRIPTION,
-					new MetadataValue<String>(mMetadata.getDc_description()));
-			setMetadataField(MetadataSpecification.DC_FORMAT,
-					new MetadataValue<String>(mMetadata.getDc_format()));
 			setMetadataField(MetadataSpecification.DC_IDENTIFIER,
 					new MetadataValue<String>(mMetadata.getDc_identifier()));
 			setMetadataField(MetadataSpecification.DC_PUBLISHER,
 					new MetadataValue<String>(mMetadata.getDc_publisher()));
 			setMetadataField(MetadataSpecification.DC_RELATION,
 					new MetadataValue<String>(mMetadata.getDc_relation()));
-			setMetadataField(MetadataSpecification.DC_RIGHTS,
-					new MetadataValue<String>(mMetadata.getDc_rights()));
 			setMetadataField(MetadataSpecification.DC_SOURCE,
 					new MetadataValue<String>(mMetadata.getDc_source()));
-			setMetadataField(MetadataSpecification.DC_SUBJECT,
-					new MetadataValue<String>(mMetadata.getDc_subject()));
 			setMetadataField(MetadataSpecification.DC_TITLE,
 					new MetadataValue<String>(mMetadata.getDc_title()));
-			setMetadataField(MetadataSpecification.DC_TYPE,
-					new MetadataValue<String>(mMetadata.getDc_type()));
 			setMetadataField(MetadataSpecification.DTB_REVISION,
 					new MetadataValue<String>(mMetadata.getDtb_revision()));
-			setMetadataField(MetadataSpecification.DTB_REVISION_DATE,
-					new MetadataValue<String>(
-							(mMetadata.getDtb_revision_date() == null) ? null
-									: mMetadata.getDtb_revision_date()
-											.toString()));
-			setMetadataField(MetadataSpecification.DTB_REVISION_DESCRIPTION,
-					new MetadataValue<String>(mMetadata
-							.getDtb_revision_description()));	
+			setMetadataField(MetadataSpecification.LB_DATE_RECORDED,
+					new MetadataValue<String>(mMetadata.getDate_recorded()));
 			setStatisticsField(MetadataSpecification.LB_APPLY_COUNT);
 			setStatisticsField(MetadataSpecification.LB_COMPLETION_COUNT);
 			setStatisticsField(MetadataSpecification.LB_COPY_COUNT);
 			setStatisticsField(MetadataSpecification.LB_OPEN_COUNT);
 			setStatisticsField(MetadataSpecification.LB_SURVEY1_COUNT);
 			setStatisticsField(MetadataSpecification.LB_NOHELP_COUNT);
-			setMetadataField(MetadataSpecification.LB_RATING,
-					new MetadataValue<Integer>(
-							(mMetadata.getLb_rating() == null || mMetadata.getLb_rating().intValue() == 0) ? null
-									: mMetadata.getLb_rating().intValue()));
 			setMetadataField(MetadataSpecification.DC_LANGUAGE,
 					new MetadataValue<RFC3066LanguageCode>(
 							(mMetadata.getPersistentLocale() == null || mMetadata.getPersistentLocale().getLanguage() == null) 
 							? null : new RFC3066LanguageCode(mMetadata.getPersistentLocale().getLanguage())));
+			setMetadataField(MetadataSpecification.LB_DURATION,
+					new MetadataValue<String>(mMetadata.getDuration()));
+			setMetadataField(MetadataSpecification.LB_MESSAGE_FORMAT,
+					new MetadataValue<String>(mMetadata.getMessage_format()));
+			setMetadataField(MetadataSpecification.LB_TARGET_AUDIENCE,
+					new MetadataValue<String>(mMetadata.getTarget_audience()));
+			setMetadataField(MetadataSpecification.LB_KEYWORDS,
+					new MetadataValue<String>(mMetadata.getKeywords()));
+			setMetadataField(MetadataSpecification.LB_TIMING,
+					new MetadataValue<String>(mMetadata.getTiming()));
+			setMetadataField(MetadataSpecification.LB_PRIMARY_SPEAKER,
+					new MetadataValue<String>(mMetadata.getPrimary_speaker()));
+			setMetadataField(MetadataSpecification.LB_GOAL,
+					new MetadataValue<String>(mMetadata.getGoal()));
+			setMetadataField(MetadataSpecification.LB_ENGLISH_TRANSCRIPTION,
+					new MetadataValue<String>(mMetadata.getEnglish_transcription()));
+			setMetadataField(MetadataSpecification.LB_NOTES,
+					new MetadataValue<String>(mMetadata.getNotes()));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {

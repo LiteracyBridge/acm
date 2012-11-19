@@ -42,25 +42,25 @@ CREATE TABLE t_tag (
 
 CREATE TABLE t_metadata ( 
   id INT PRIMARY KEY, 
-  dc_contributor VARCHAR(255), 
-  dc_coverage VARCHAR(255), 
-  dc_creator VARCHAR(100), 
-  dc_date DATE, 
-  dc_description VARCHAR(2048), 
-  dc_format VARCHAR(50), 
-  dc_identifier VARCHAR(50), 
-  dc_language INT, 
-  dc_publisher VARCHAR(100), 
-  dc_relation VARCHAR(255), 
-  dc_rights VARCHAR(255), 
-  dc_source VARCHAR(255), 
-  dc_subject VARCHAR(255), 
   dc_title VARCHAR(255), 
-  dc_type VARCHAR(50), 
-  dtb_revision VARCHAR(50), 
-  dtb_revision_date DATE, 
-  dtb_revision_description VARCHAR(2048),
-  lb_rating SMALLINT );
+  dc_language INT,
+  dc_source VARCHAR(255), 
+  dc_publisher VARCHAR(100), 
+  dc_identifier VARCHAR(50), 
+  dc_relation VARCHAR(255), 
+  dtb_revision VARCHAR(50),
+
+  duration VARCHAR(255),
+  message_format VARCHAR(255),
+  target_audience VARCHAR(255),
+  date_recorded VARCHAR(255),
+  keywords VARCHAR(255),
+  timing VARCHAR(255),
+  primary_speaker VARCHAR(255),
+  goal VARCHAR(255),
+  english_transcription VARCHAR(32000),
+  notes VARCHAR(32000));
+
 
 CREATE TABLE t_audioitem ( 
   id INT PRIMARY KEY, 

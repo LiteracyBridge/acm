@@ -78,6 +78,11 @@ public class AudioItem implements Persistable {
         }
         return categories;
 	}
+
+	public List<PersistentTag> getPlaylists() {
+		return mItem.getPersistentTagList();
+	}
+
 	
 	public LocalizedAudioItem getLocalizedAudioItem(Locale locale) {
 		

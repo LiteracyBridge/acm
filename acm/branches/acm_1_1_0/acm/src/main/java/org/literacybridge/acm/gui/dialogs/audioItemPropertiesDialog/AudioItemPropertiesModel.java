@@ -1,15 +1,21 @@
 package org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog;
 
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_CONTRIBUTOR;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_CREATOR;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_DESCRIPTION;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_IDENTIFIER;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_LANGUAGE;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_PUBLISHER;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_RELATION;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SOURCE;
-import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SUBJECT;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_TITLE;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_DATE_RECORDED;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_DURATION;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_ENGLISH_TRANSCRIPTION;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_GOAL;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_KEYWORDS;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_MESSAGE_FORMAT;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_NOTES;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_PRIMARY_SPEAKER;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_TARGET_AUDIENCE;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_TIMING;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -54,18 +60,54 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		// TODO: make this list configurable
 		// for now just remove some unneeded ones
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_TITLE, true));
-		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_CREATOR, true));
-		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_SUBJECT, true));
-		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_DESCRIPTION, true));
-		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_PUBLISHER, true));
-		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_CONTRIBUTOR, true));
-		// audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_FORMAT));
+		// TODO: calculate duration of audio item
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_DURATION, false));
+		audioItemPropertiesObject.add(new AudioItemProperty(false, true) {
+			@Override public String getName() { 
+				return "Categories";
+			}
+
+			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
+				return UIUtils.getCategoryListAsString(audioItem);
+			}
+
+			@Override
+			public void setValue(AudioItem audioItem, Metadata metadata,
+					Object newValue) {
+				// not supported
+			}			
+		});
+		audioItemPropertiesObject.add(new AudioItemProperty(false, false) {
+			@Override public String getName() { 
+				return "Playlists";
+			}
+
+			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
+				return UIUtils.getPlaylistAsString(audioItem);
+			}
+
+			@Override
+			public void setValue(AudioItem audioItem, Metadata metadata,
+					Object newValue) {
+				// not supported
+			}			
+		});
+		
+		audioItemPropertiesObject.add(new AudioItemProperty.LanguageProperty(DC_LANGUAGE, true));
+
+		// TODO: add combo boxes
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_MESSAGE_FORMAT, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_TARGET_AUDIENCE, true));
+		// TODO: add calendar picker
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_DATE_RECORDED, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_KEYWORDS, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_TIMING, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_SOURCE, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_PRIMARY_SPEAKER, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_GOAL, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_PUBLISHER, false));
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_IDENTIFIER, false));
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_RELATION, false));
-		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_SOURCE, false));
-		// audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_COVERAGE));
-		// audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_RIGHTS));		
-		audioItemPropertiesObject.add(new AudioItemProperty.LanguageProperty(DC_LANGUAGE, true));
 		audioItemPropertiesObject.add(new AudioItemProperty(false) {
 			@Override public String getName() { 
 				return "File name";
@@ -82,21 +124,11 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 				// not supported
 			}			
 		});
-		audioItemPropertiesObject.add(new AudioItemProperty(false, true) {
-			@Override public String getName() { 
-				return "Categories";
-			}
-
-			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
-				return UIUtils.getCategoryListAsString(audioItem);
-			}
-
-			@Override
-			public void setValue(AudioItem audioItem, Metadata metadata,
-					Object newValue) {
-				// not supported
-			}			
-		});
+		
+		// TOOD: long text fields
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_ENGLISH_TRANSCRIPTION, true));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_NOTES, true));
+		
 	}
 	
 	@Override

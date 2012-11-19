@@ -10,6 +10,7 @@ import javax.swing.SwingUtilities;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 
 public class UIUtils {
@@ -72,4 +73,19 @@ public class UIUtils {
 		}
 		return builder.toString();
 	}
+	
+	public static String getPlaylistAsString(AudioItem audioItem) {
+		List<PersistentTag> playlists = audioItem.getPlaylists();
+		StringBuilder builder = new StringBuilder();
+		
+		for (int i = 0; i < playlists.size(); i++) {
+			PersistentTag playlist = playlists.get(i);
+			builder.append(playlist.getName());
+			if (i != playlists.size() - 1) {
+				builder.append(", ");
+			}
+		}
+		return builder.toString();
+	}
+
 }

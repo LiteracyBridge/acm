@@ -42,11 +42,11 @@ public class MP3Importer extends Importer {
 			}
 			metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER, new MetadataValue<String>(audioItem.getUuid()));
 			metadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(title));
-			metadata.setMetadataField(MetadataSpecification.DC_CREATOR, new MetadataValue<String>(musicMetadata.getArtist()));
+			metadata.setMetadataField(MetadataSpecification.LB_PRIMARY_SPEAKER, new MetadataValue<String>(musicMetadata.getArtist()));
 			metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
 			Number year = musicMetadata.getYear();
 			if (year != null) {
-				metadata.setMetadataField(MetadataSpecification.DTB_REVISION_DATE, new MetadataValue<String>(year.toString()));
+				metadata.setMetadataField(MetadataSpecification.LB_DATE_RECORDED, new MetadataValue<String>(year.toString()));
 			}
 			metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE, 
 					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));

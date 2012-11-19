@@ -70,7 +70,6 @@ public class AudioItemPropertiesTable extends JXTable {
 		if (isLanguageRow(row)) {
 			return getLanguageEditor();
 		}
-		
 		return super.getCellEditor(row, column);
 	}
 
