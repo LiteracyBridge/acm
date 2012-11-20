@@ -48,6 +48,7 @@ import javax.swing.SwingWorker;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
@@ -58,15 +59,16 @@ public class Configuration extends Properties {
 
 	private static Configuration instance;
 	// This must be always the initial root directory, if ACM already exists on a machine
-    private final static File DEFAULT_LITERACYBRIDGE_SYSTEM_DIR = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
     private static HashSet<String> uncachedFiles = new HashSet<String>();
 
     JProgressBar progressBar;	
     
+    private static String title;
     private static File repositoryDirectory;
     private static File cacheDirectory;
     private static File dbDirectory;
-    private boolean readOnly = true;
+	private static String sharedACM = null;
+    private boolean readOnly = false;
     private boolean pathsOverridden = false;
 	private final static String USER_NAME = "USER_NAME";
 	private final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";
@@ -94,13 +96,12 @@ public class Configuration extends Properties {
 	}
 	
 	// Call this methods to get the non-shared directory root for config, content cache, builds, etc...
-	public static String getLiteracyBridgeSystemDirectory() {
-		String dir = null;
-		dir = DEFAULT_LITERACYBRIDGE_SYSTEM_DIR.getAbsolutePath();
-		File f = new File (dir);
-		if (!f.exists())
-			f.mkdir();
-		return dir;
+	public static String getACMDirectory() {
+	    final File DEFAULT_LITERACYBRIDGE_SYSTEM_DIR = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
+		File acm = new File (DEFAULT_LITERACYBRIDGE_SYSTEM_DIR,Constants.ACM_DIR_NAME);
+		if (!acm.exists())
+			acm.mkdirs();
+		return acm.getAbsolutePath();
 	}
 
 	public static File getDatabaseDirectory() {
@@ -117,7 +118,7 @@ public class Configuration extends Properties {
 	}
 	
 	public static File getTBBuildsDirectory() {
-		return new File(getLiteracyBridgeSystemDirectory(), Constants.TBBuildsHomeDirName);
+		return new File(getACMDirectory(), Constants.TBBuildsHomeDirName);
 	}
 
 /*	
@@ -136,21 +137,47 @@ public class Configuration extends Properties {
 		}
 	}
 
-	public static void init(String overrideDBDirectory, String overrideRepositoryDirectory) {
+	public static void init(CommandLineParams args) {
+		File dbPath, repPath;
 		if (instance == null) {
 			instance = new Configuration();
-			if (overrideDBDirectory != null) {
-				File dbPath = new File(overrideDBDirectory);
-				File repPath = new File (overrideRepositoryDirectory);
-				if (dbPath.exists() && repPath.exists()) {
-					instance.pathsOverridden = true;
-					setDatabaseDirectory(dbPath);
-					setRepositoryDirectory(repPath);
-				} else
-					System.out.println("DB or Repository Path does not exist.  Ignoring override.");
+			if (args.readonly)
+				instance.setReadOnly(true); 
+			if (args.titleACM != null)
+				setACMtitle(args.titleACM);
+			if (args.pathDB != null) {
+				dbPath = new File(args.pathDB);
+				if (args.pathRepository != null) {
+					repPath = new File (args.pathRepository);
+					if (dbPath.exists() && repPath.exists()) {
+							instance.pathsOverridden = true;
+							setDatabaseDirectory(dbPath);
+							setRepositoryDirectory(repPath);
+					} else
+						System.out.println("DB or Repository Path does not exist.  Ignoring override.");
+					}
+			} else if (args.sharedACM != null) {
+				instance.pathsOverridden = true;
+				setSharedACMname(args.sharedACM);
 			}
 			InitializeConfiguration();
 		}
+	}
+	
+	private static void setSharedACMname(String newName) {
+		sharedACM = newName;
+	}
+
+	public static String getSharedACMname() {
+		return sharedACM;
+	}
+	
+	private static void setACMtitle(String newName) {
+		title = newName;
+	}
+	
+	public static String getACMname() {
+		return title;
 	}
 
 	public String getRecordingCounter() {
@@ -253,7 +280,7 @@ public class Configuration extends Properties {
     }
     
 	private static File getConfigurationPropertiesFile() {
-		return new File(getLiteracyBridgeSystemDirectory(), Constants.CONFIG_PROPERTIES);
+		return new File(getACMDirectory(), Constants.CONFIG_PROPERTIES);
 	}
 
 	private static File getLockFile() {
@@ -287,16 +314,16 @@ public class Configuration extends Properties {
 			
 	private static void InitializeConfiguration() {
 		InitializeAcmConfiguration();
-/*		System.out.println("  UserRWAccess:" + instance.userHasWriteAccess());
+		System.out.println("  Database:" + getDatabaseDirectory());
+		System.out.println("  Repository:" + getRepositoryDirectory());
+		System.out.println("  UserRWAccess:" + instance.userHasWriteAccess());
 		System.out.println("  online:" + isOnline());
 		System.out.println("  isAnotherUserWriting:" + instance.isAnotherUserWriting());
-*/
-		determineRWStatus();
-/*		if (instance.isReadOnly()) {
-			System.out.println("Read Only");
-		} else
-			System.out.println("RW");
-*/
+
+		if (!instance.isACMReadOnly())
+			determineRWStatus();
+		else 
+			System.out.println("Command-line forced read-only mode.");
 		instance.repository = new CachingRepository(
 				new FileSystemRepository(cacheDirectory, 
 						new FileSystemRepository.FileSystemGarbageCollector(Constants.CACHE_SIZE_IN_BYTES,
@@ -307,20 +334,6 @@ public class Configuration extends Properties {
 							})),
 				new FileSystemRepository(getRepositoryDirectory()));
 //		instance.repository.convert(audioItem, targetFormat);		
-	}
-	
-	private static File getGlobalShareDirectory() {
-		// This function returns a File to the user's Dropbox directory 
-		// if Dropbox was installed in the default location.
-		// Otherwise, it returns null.
-		File file = new File(Constants.USER_HOME_DIR,Constants.DefaultSharedDirName1);
-		if (!file.exists()) {
-			file = new File(Constants.USER_HOME_DIR,Constants.DefaultSharedDirName1);
-		}
-		if (file.exists())
-			return file;
-		else
-			return null;
 	}
 	
 	private static void determineRWStatus() {
@@ -394,11 +407,10 @@ public class Configuration extends Properties {
 	private static void InitializeAcmConfiguration() {
 		File globalShare = null;
 
-		cacheDirectory = new File(DEFAULT_LITERACYBRIDGE_SYSTEM_DIR, Constants.CACHE_DIR_NAME);		
+		cacheDirectory = new File(getACMDirectory(), Constants.CACHE_DIR_NAME);		
 		if (!cacheDirectory.exists()) {
 			cacheDirectory.mkdirs();
 		}
-
 		if (getConfigurationPropertiesFile().exists()) {
 			try {
 				BufferedInputStream in = new BufferedInputStream(new FileInputStream(getConfigurationPropertiesFile()));
@@ -408,6 +420,52 @@ public class Configuration extends Properties {
 			}
 		}
 
+		String globalSharePath = instance.getProperty(GLOBAL_SHARE_PATH);
+		if (globalSharePath != null) {
+			globalShare = new File (globalSharePath);
+		} 
+		if (globalSharePath == null || globalShare == null || !globalShare.exists()) {
+			//try default dropbox installation
+			globalShare = new File (Constants.USER_HOME_DIR,Constants.DefaultSharedDirName1);
+			if (!globalShare.exists())
+				globalShare = new File (Constants.USER_HOME_DIR,Constants.DefaultSharedDirName2);
+				
+		}
+		if (!globalShare.exists()) {
+			JFileChooser fc = new JFileChooser();
+			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			fc.setDialogTitle("Select Dropbox directory.");
+			int returnVal = fc.showOpenDialog(null);
+			if (returnVal == JFileChooser.APPROVE_OPTION) {
+				globalShare = fc.getSelectedFile();
+			} else if(getDatabaseDirectory() == null || getRepositoryDirectory() == null) {
+				JOptionPane.showMessageDialog(null,"Dropbox directory has not been identified. Shutting down.");
+				System.exit(0);								
+			}
+		}
+		instance.put(GLOBAL_SHARE_PATH, globalShare.getAbsolutePath());
+
+		if (getSharedACMname() != null && (getDatabaseDirectory() == null || getRepositoryDirectory() == null)) {
+			File fACM = new File(globalShare,getSharedACMname());
+			if (fACM.exists()) {
+				File fDB = new File(fACM,Constants.DBHomeDir);
+//				if (!fDB.exists()) 
+//					fDB.mkdir();
+				setDatabaseDirectory(fDB);
+				instance.put(DEFAULT_DB,getDatabaseDirectory().getAbsolutePath());
+				File fRepo = new File(fACM,Constants.RepositoryHomeDir);
+				if (!fRepo.exists()) 
+					fRepo.mkdir();
+				setRepositoryDirectory(fRepo);			
+				instance.put(DEFAULT_REPOSITORY,getRepositoryDirectory().getAbsolutePath());
+			} else {
+				JOptionPane.showMessageDialog(null,"ACM database " + getSharedACMname() + 
+				" is not found within Dropbox.\n\nBe sure that you have accepted the Dropbox invitation\nto share the folder" +
+				" by logging into your account at\nhttp://dropbox.com and click on the 'Sharing' link.\n\nShutting down.");
+				System.exit(0);				
+			}
+		}
+		
 		if (!instance.containsKey(USER_NAME)) {
 			String username = (String)JOptionPane.showInputDialog(null, "Enter Username:", "Missing Username", JOptionPane.PLAIN_MESSAGE);
 			instance.put(USER_NAME, username);
@@ -427,19 +485,7 @@ public class Configuration extends Properties {
 			if (repositoryDirectory == null && instance.containsKey(DEFAULT_REPOSITORY)) {
 				setRepositoryDirectory(new File(instance.getProperty(DEFAULT_REPOSITORY)));
 			}
-			String globalSharePath = instance.getProperty(GLOBAL_SHARE_PATH);
-			if (globalSharePath != null) {
-				globalShare = new File (globalSharePath);
-			} 
-			if (globalSharePath == null || globalShare == null || !globalShare.exists()) {
-				//try default dropbox installation
-				globalShare = new File (Constants.USER_HOME_DIR,Constants.DefaultSharedDirName1);
-				if (!globalShare.exists())
-					globalShare = new File (Constants.USER_HOME_DIR,Constants.DefaultSharedDirName2);
-					
-			}
-			if (globalShare.exists())
-				instance.put(GLOBAL_SHARE_PATH, globalShare.getAbsolutePath());
+
 			if (dbDirectory == null || !dbDirectory.exists()) {
 				setDatabaseDirectory(new File (globalShare,Constants.DefaultSharedDB));
 				if (dbDirectory.exists()) {
@@ -480,8 +526,8 @@ public class Configuration extends Properties {
 					}
 				}
 			}					
-			instance.writeProps();
 		}
+		instance.writeProps();
 	}
 		
 	//====================================================================================================================

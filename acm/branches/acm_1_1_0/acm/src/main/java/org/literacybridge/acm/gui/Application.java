@@ -15,15 +15,19 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+
 import org.jdesktop.swingx.JXFrame;
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentTag;
-import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
+import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.ResourceView.ResourceView;
@@ -70,6 +74,11 @@ public class Application extends JXFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	    
 		
 		String title = new String(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUILanguage())); 
+		title += " (" + Constants.ACM_VERSION + ")";
+		if (Configuration.getACMname() != null)
+			title += " - " + Configuration.getACMname();
+		else if (Configuration.getSharedACMname() != null)
+			title += " - " + Configuration.getSharedACMname();			
 		if (Configuration.getConfiguration().isACMReadOnly())
 			title += " * READ ONLY *";
 
@@ -91,18 +100,20 @@ public class Application extends JXFrame {
 	
 	public static void main(String[] args) throws IOException {
 		
-		String dbDirName = null, repositoryDirName= null;
+//		String dbDirName = null, repositoryDirName= null;
 		System.out.println("starting main()");
-		if (args.length == 2) {
-			System.out.println("db path = " + args[0]);
-			System.out.println("repository path = " + args[1]);
-			dbDirName = args[0];
-			repositoryDirName = args[1];
-		} else if (args.length == 0) {
-			System.out.println("To override config.properties, add argument with db path followed by argument for repository path.");
+		CommandLineParams params = new CommandLineParams();
+		CmdLineParser parser = new CmdLineParser(params);
+		try {
+			parser.parseArgument(args);
+		} catch (CmdLineException e) {
+		    System.err.println(e.getMessage());
+		    System.err.println("java -cp acm.jar;lib/*;resources/ org.literacybridge.acm.gui.Application [options...]");
+		    parser.printUsage(System.err);
+		    return;
 		}
 		// initialize config and generate random ID for this acm instance
-		Configuration.init(dbDirName, repositoryDirName);
+		Configuration.init(params);
 		// set look & feel
 		
 		// Not sure why, but making this call before setting the seaglass look and feel

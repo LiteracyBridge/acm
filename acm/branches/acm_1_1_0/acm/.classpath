@@ -8,6 +8,7 @@
 	<classpathentry kind="lib" path="lib/org.apache.thrift-libthrift.jar"/>
 	<classpathentry kind="lib" path="lib/org.slf4j-slf4j-api.jar"/>
 	<classpathentry kind="lib" path="lib/com.google.collections-google-collections.jar"/>
+	<classpathentry kind="lib" path="lib/args4j-args4j.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/jakarta-regexp-jakarta-regexp.jar"/>
 	<classpathentry kind="lib" path="lib/javax.media-jmf.jar"/>
