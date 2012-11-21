@@ -17,6 +17,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -54,6 +55,7 @@ import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.repository.CachingRepository;
 import org.literacybridge.acm.repository.FileSystemRepository;
+import org.literacybridge.acm.tbloader.TBLoader.Logger;
 
 public class Configuration extends Properties {
 
@@ -314,16 +316,21 @@ public class Configuration extends Properties {
 			
 	private static void InitializeConfiguration() {
 		InitializeAcmConfiguration();
+		if (!instance.isACMReadOnly())
+			determineRWStatus();
+		else 
+			System.out.println("Command-line forced read-only mode.");
+		if (instance.isACMReadOnly()) {
+			// ACM should be read-only -- change db pointer
+			createDBMirror();
+			File fDB = new File(getACMDirectory(),Constants.DBHomeDir);
+			setDatabaseDirectory(fDB);
+		}
 		System.out.println("  Database:" + getDatabaseDirectory());
 		System.out.println("  Repository:" + getRepositoryDirectory());
 		System.out.println("  UserRWAccess:" + instance.userHasWriteAccess());
 		System.out.println("  online:" + isOnline());
 		System.out.println("  isAnotherUserWriting:" + instance.isAnotherUserWriting());
-
-		if (!instance.isACMReadOnly())
-			determineRWStatus();
-		else 
-			System.out.println("Command-line forced read-only mode.");
 		instance.repository = new CachingRepository(
 				new FileSystemRepository(cacheDirectory, 
 						new FileSystemRepository.FileSystemGarbageCollector(Constants.CACHE_SIZE_IN_BYTES,
@@ -335,7 +342,29 @@ public class Configuration extends Properties {
 				new FileSystemRepository(getRepositoryDirectory()));
 //		instance.repository.convert(audioItem, targetFormat);		
 	}
-	
+
+	private static void createDBMirror() {
+		String line;
+		try {
+			Process proc = Runtime.getRuntime().exec("robocopy.exe " + getDatabaseDirectory().getAbsolutePath() + " " +getACMDirectory()+"\\"+Constants.DBHomeDir + " /MIR");
+			BufferedReader br1 = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+			BufferedReader br2 = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+			do {
+				line = br1.readLine();
+				System.out.println(line);
+			} while (line != null);
+			
+			
+			do {
+				line = br2.readLine();
+				System.out.println(line);
+			} while (line != null);			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+
 	private static void determineRWStatus() {
 		boolean readOnlyStatus = false;
 
