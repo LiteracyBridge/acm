@@ -17,11 +17,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -46,6 +46,8 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
+import org.apache.commons.io.FileUtils;
+
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.content.AudioItem;
@@ -55,7 +57,6 @@ import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.repository.CachingRepository;
 import org.literacybridge.acm.repository.FileSystemRepository;
-import org.literacybridge.acm.tbloader.TBLoader.Logger;
 
 public class Configuration extends Properties {
 
@@ -344,9 +345,18 @@ public class Configuration extends Properties {
 	}
 
 	private static void createDBMirror() {
-		String line;
+		// String line;
+		String fromDirname = getDatabaseDirectory().getAbsolutePath();
+		String toDirname = getACMDirectory();
+		File fromDir = new File(fromDirname);
+		File toDir = new File(toDirname);
 		try {
-			Process proc = Runtime.getRuntime().exec("robocopy.exe " + getDatabaseDirectory().getAbsolutePath() + " " +getACMDirectory()+"\\"+Constants.DBHomeDir + " /MIR");
+			System.out.println("Started DB Mirror for read-only access:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
+			FileUtils.copyDirectoryToDirectory(fromDir, toDir);
+/*
+			toDirname += "\\" + Constants.DBHomeDir;
+
+  			Process proc = Runtime.getRuntime().exec("robocopy.exe " + fromDirName + " " + toDirName + " /MIR");
 			BufferedReader br1 = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			BufferedReader br2 = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
 			do {
@@ -359,6 +369,8 @@ public class Configuration extends Properties {
 				line = br2.readLine();
 				System.out.println(line);
 			} while (line != null);			
+*/
+			System.out.println("Completed DB Mirror for read-only access:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -632,7 +644,6 @@ public class Configuration extends Properties {
 		/*
 	* Main task. Executed in background thread.
 	*/
-		private int max;
 		
 		public Task (int max) {
 			this.max = max;
