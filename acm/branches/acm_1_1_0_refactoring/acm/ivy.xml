@@ -1,0 +1,32 @@
+<ivy-module version="2.2" xmlns:e="http://ant.apache.org/ivy/extra">
+  <info organisation="org.literacybridge"
+        module="acm"
+        branch="trunk"
+        status="release"
+        revision="1.0.0"/>
+
+  <publications>
+    <artifact name="acm" type="jar" conf="*"/>
+  </publications>
+
+  <dependencies defaultconfmapping="*->default(compile),runtime()">
+    <dependency org="org.apache.lucene" name="lucene-core" rev="4.0.0-ALPHA"/>
+    <dependency org="org.apache.thrift" name="libthrift" rev="0.8.0"/>
+    <dependency org="commons-lang" name="commons-lang" rev="2.4"/> 
+    <dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" force="true"/>
+    <dependency org="junit" name="junit" rev="4.8.1"/>
+    <dependency	org="org.apache.derby" name="derby" rev="10.5.3.0_1"/>
+    <dependency	org="javax.media" name="jmf" rev="2.1.1e"/>
+    <dependency org="org.eclipse.persistence" name="org.eclipse.persistence.jpa" rev="2.0.1"/>
+    <dependency org="org.eclipse.persistence" name="javax.persistence" rev="2.0.0"/>
+    <dependency org="jakarta-regexp" name="jakarta-regexp" rev="1.4"/>
+    <dependency org="org.cmc.music" name="myid3" rev="0.83"/>
+    <dependency org="com.google.collections" name="google-collections" rev="1.0-rc5"/>
+    <dependency org="org.yaml" name="snakeyaml" rev="1.6"/>
+    <dependency org="org.apache.derby" name="derbyclient" rev="10.5.3.0_1"/>
+    <dependency org="it.cnr.imaa.essi" name="lablib-checkboxtree" rev="3.1.1"/>
+    <dependency org="org.netbeans.external" name="swing-layout-1.0.4" rev="RELEASE68"/>
+    <dependency org="com.seaglasslookandfeel" name="seaglasslookandfeel" rev="0.2"/>
+    <dependency org="org.swinglabs" name="swingx" rev="1.6.1"/>
+  </dependencies>
+</ivy-module>
