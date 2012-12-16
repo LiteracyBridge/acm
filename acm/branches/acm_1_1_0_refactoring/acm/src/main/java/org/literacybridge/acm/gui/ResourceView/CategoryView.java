@@ -226,6 +226,9 @@ public class CategoryView extends Container implements Observer {
 				addNewTag();
 			}
 		});
+		if (Configuration.getConfiguration().isACMReadOnly()) {
+		    addTagButton.setEnabled(false);
+		}
 		tagsPane.add(addTagButton);
 
 		devicePane = new JXTaskPane();
