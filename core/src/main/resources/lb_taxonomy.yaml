@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 5
+  revision: 6
   categories:
     '0' : 
       name: Other Messages
@@ -11,9 +11,13 @@ taxonomy:
     '1' : 
       name: Agriculture
       children: 
+        '1-0' : 
+          name: General Agriculture
         '1-1' : 
           name: Crops
           children : 
+            '1-1-0' :
+              name: General Crops
             '1-1-1' :
               name: Maize
             '1-1-2' :
@@ -27,6 +31,8 @@ taxonomy:
         '1-2' :
           name: Livestock
           children:
+            '1-2-0' :
+              name: General Livestock
             '1-2-1' :
               name: Chickens/Fowl
             '1-2-2' : 
@@ -38,9 +44,11 @@ taxonomy:
             '1-2-5' : 
               name: Donkeys
         '1-3' : 
-          name: Process
+          name: Agric Process
           description: not crop/animal specific
           children: 
+            '1-3-0' : 
+              name: General Agric Process
             '1-3-1' : 
               name: Preparing land for the growing season
             '1-3-2' : 
@@ -52,8 +60,10 @@ taxonomy:
             '1-3-5' :
               name: Storing
         '1-4' :
-          name: Business
+          name: Agric Business
           children:
+            '1-4-0' :
+              name: General Agric Business
             '1-4-1' :
               name: Marketing
             '1-4-2' :
@@ -63,6 +73,8 @@ taxonomy:
     '2' : 
       name: Health
       children:
+        '2-0' :
+          name: General Health
         '2-1' :
           name: HIV/Aids
         '2-2' :
@@ -82,9 +94,13 @@ taxonomy:
     '3' :
       name: Education
       children:
+        '3-0' :
+          name: General Education
         '3-1' :
           name: Adult literacy
           children:
+            '3-1-0' :
+              name: General Adult Literacy
             '3-1-1' :
               name: Adult literacy Phase I
             '3-1-2' :
@@ -94,6 +110,8 @@ taxonomy:
         '3-2' :
           name: School Lessons
           children:
+            '3-2-0' : 
+              name: General School Lessons
             '3-2-1' : 
               name: Pre-Kindergarten
             '3-2-2' :
@@ -137,6 +155,8 @@ taxonomy:
         '3-8' : 
           name: Languages
           children:
+            '3-8-0' : 
+              name: General Language Education
             '3-8-1' : 
               name: English
             '3-8-2' :
@@ -146,6 +166,8 @@ taxonomy:
     '4' :
       name: Stories
       children:
+        '4-0' :
+          name: General stories
         '4-1' :
           name: Oral stories
         '4-2' :
@@ -153,6 +175,8 @@ taxonomy:
     '5' :
       name: Business
       children:
+        '5-0': 
+          name: General Business
         '5-1': 
           name: Accounting
         '5-2':
@@ -170,6 +194,8 @@ taxonomy:
     '9' :
       name: Feedback from Users
       children:
+        '9-0':
+          name: General Feedback
         '9-1':
           name: Needs review
         '9-2':
@@ -183,7 +209,7 @@ taxonomy:
         '9-6':
           name: Endorsements of TBs
         '9-7':
-          name: Other
+          name: No longer used
         '9-8':
           name: Potential Future Content
         '9-9':
@@ -191,5 +217,7 @@ taxonomy:
     '10':
       name: Society and Culture
       children:
+        '10-0':
+          name: General Society and Culture
         '10-1':
           name: Social Issues
