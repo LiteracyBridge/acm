@@ -146,8 +146,7 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 		btnClose.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				// update IRequestResult
-				ResourceView.updateDataRequestResult();
-				Application.getFilterState().updateResult();
+				Application.getFilterState().updateResult(true);
 				setVisible(false);
 			}
 		});
