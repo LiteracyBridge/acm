@@ -6,8 +6,13 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Toolkit;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 import javax.swing.SwingUtilities;
+
+import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.gui.util.language.LanguageUtil;
 
 public class UIUtils {
 	
@@ -69,5 +74,19 @@ public class UIUtils {
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public static String getCategoryListAsString(AudioItem audioItem) {
+		List<Category> categories = audioItem.getCategoryList();
+		StringBuilder builder = new StringBuilder();
+		
+		for (int i = 0; i < categories.size(); i++) {
+			Category cat = categories.get(i);
+			builder.append(cat.getCategoryName(LanguageUtil.getUILanguage()));
+			if (i != categories.size() - 1) {
+				builder.append(", ");
+			}
+		}
+		return builder.toString();
 	}
 }

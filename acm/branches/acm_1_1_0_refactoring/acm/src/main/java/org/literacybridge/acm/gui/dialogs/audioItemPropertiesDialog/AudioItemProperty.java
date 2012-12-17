@@ -10,18 +10,28 @@ import org.literacybridge.acm.metadata.MetadataField;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 
 public abstract class AudioItemProperty<V> {
-	private final boolean editable;
+	private final boolean isCellEditable;
+	private final boolean showEditIcon;
 	
 	public AudioItemProperty(boolean editable) {
-		this.editable = editable;
+		this(editable, false);
+	}
+
+	public AudioItemProperty(boolean isCellEditable, boolean showEditIcon) {
+		this.isCellEditable = isCellEditable;
+		this.showEditIcon = showEditIcon;
 	}
 	
 	public abstract String getName();
 	public abstract String getValue(AudioItem audioItem, Metadata metadata);
 	public abstract void setValue(AudioItem audioItem, Metadata metadata, V newValue);
 	
-	public boolean isEditable() {
-		return editable;
+	public boolean isCellEditable() {
+		return isCellEditable;
+	}
+	
+	public boolean showEditIcon() {
+		return showEditIcon;
 	}
 	
 	public static class MetadataProperty extends AudioItemProperty<String> {

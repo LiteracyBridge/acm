@@ -22,6 +22,7 @@ import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataField;
@@ -32,10 +33,13 @@ import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 
 public class AudioItemPropertiesModel extends AbstractTableModel {
 	private String[] columnNames = {LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_PROPERTY", LanguageUtil.getUILanguage())
-								  , LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_VALUE", LanguageUtil.getUILanguage())};
+								  , LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_VALUE", LanguageUtil.getUILanguage()),
+								  "" // edit column doesn't have a title
+								  };
 	
-	private final int TITLE_COL = 0;
-	private final int VALUE_COL = 1;
+	static final int TITLE_COL = 0;
+	static final int VALUE_COL = 1;
+	static final int EDIT_COL = 2;
 	
 	private Metadata metadata = null;
 	private AudioItem audioItem = null;
@@ -78,6 +82,21 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 				// not supported
 			}			
 		});
+		audioItemPropertiesObject.add(new AudioItemProperty(false, true) {
+			@Override public String getName() { 
+				return "Categories";
+	}
+
+			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
+				return UIUtils.getCategoryListAsString(audioItem);
+			}
+
+			@Override
+			public void setValue(AudioItem audioItem, Metadata metadata,
+					Object newValue) {
+				// not supported
+			}			
+		});
 	}
 	
 	@Override
@@ -93,6 +112,14 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	@Override
 	public int getRowCount() {
 		return audioItemPropertiesObject.size();
+	}
+	
+	public AudioItem getSelectedAudioItem() {
+		return audioItem;
+	}
+	
+	public boolean showEditIcon(int row) {
+		return audioItemPropertiesObject.get(row).showEditIcon();
 	}
 	
 	public Locale getMetadataLocale() {
@@ -127,6 +154,8 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			return obj.getName();
 		case VALUE_COL:
 			return obj.getValue(audioItem, metadata);
+		case EDIT_COL:
+			return "";
 		default:
 			break;
 		}
@@ -144,7 +173,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		}
 		
 		AudioItemProperty obj = audioItemPropertiesObject.get(rowIndex);
-		return obj.isEditable();
+		return obj.isCellEditable();
 	}
 
 	@Override
