@@ -47,63 +47,57 @@ public class PersistentMetadata extends PersistentObject {
     @OneToMany(mappedBy = "persistentMetadata", cascade = {CascadeType.ALL})
     private List<PersistentAudioItemStatistic> persistentAudioItemStatisticList = new LinkedList<PersistentAudioItemStatistic>();    
     
-    @Column(name="dc_contributor")
-    private String dc_contributor;
-    
-    @Column(name="dc_coverage")
-    private String dc_coverage;
-    
-    @Column(name="dc_creator")
-    private String dc_creator;
-    
-    @Column(name="dc_date")
-    private Timestamp dc_date;
-    
-    @Column(name="dc_description")
-    private String dc_description;
-    
-    @Column(name="dc_format")
-    private String dc_format;
-    
-    @Column(name="dc_identifier")
-    private String dc_identifier;
-    
-    @Column(name="dc_publisher")
-    private String dc_publisher;
-    
-    @Column(name="dc_relation")
-    private String dc_relation;
-    
-    @Column(name="dc_rights")
-    private String dc_rights;
-    
-    @Column(name="dc_source")
-    private String dc_source;
-    
-    @Column(name="dc_subject")
-    private String dc_subject;
-    
     @Column(name="dc_title")
     private String dc_title;
-    
-    @Column(name="dc_type")
-    private String dc_type;
-    
-    @Column(name="dtb_revision")
-    private String dtb_revision;
-    
-    @Column(name="dtb_revision_date")
-    private Timestamp dtb_revision_date;
-    
-    @Column(name="dtb_revision_description")
-    private String dtb_revision_description;
-        
-    @Column(name="lb_rating")
-    private Short lb_rating;
-    
+
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "dc_language")
     private PersistentLocale persistentLocale;
+
+    @Column(name="dc_source")
+    private String dc_source;
+
+    @Column(name="dc_publisher")
+    private String dc_publisher;
+
+    @Column(name="dc_identifier")
+    private String dc_identifier;
+    
+    @Column(name="dc_relation")
+    private String dc_relation;
+
+    @Column(name="dtb_revision")
+    private String dtb_revision;
+    
+	@Column(name="duration")
+    private String duration;
+    
+    @Column(name="message_format")
+    private String message_format;
+
+    @Column(name="target_audience")
+    private String target_audience;
+
+    @Column(name="date_recorded")
+    private String date_recorded;
+
+    @Column(name="keywords")
+    private String keywords;
+
+    @Column(name="timing")
+    private String timing;
+
+    @Column(name="primary_speaker")
+    private String primary_speaker;
+
+    @Column(name="goal")
+    private String goal;
+        
+    @Column(name="english_transcription")
+    private String english_transcription;
+
+    @Column(name="notes")
+    private String notes;
 
     public PersistentMetadata() {
     }
@@ -136,54 +130,6 @@ public class PersistentMetadata extends PersistentObject {
         return persistentAudioItemStatistic;
     }    
     
-    public String getDc_contributor() {
-        return dc_contributor;
-    }
-
-    public void setDc_contributor(String dc_contributor) {
-        this.dc_contributor = dc_contributor;
-    }
-
-    public String getDc_coverage() {
-        return dc_coverage;
-    }
-
-    public void setDc_coverage(String dc_coverage) {
-        this.dc_coverage = dc_coverage;
-    }
-
-    public String getDc_creator() {
-        return dc_creator;
-    }
-
-    public void setDc_creator(String dc_creator) {
-        this.dc_creator = dc_creator;
-    }
-
-    public Timestamp getDc_date() {
-        return dc_date;
-    }
-
-    public void setDc_date(Timestamp dc_date) {
-        this.dc_date = dc_date;
-    }
-
-    public String getDc_description() {
-        return dc_description;
-    }
-
-    public void setDc_description(String dc_description) {
-        this.dc_description = dc_description;
-    }
-
-    public String getDc_format() {
-        return dc_format;
-    }
-
-    public void setDc_format(String dc_format) {
-        this.dc_format = dc_format;
-    }
-
     public String getDc_identifier() {
         return dc_identifier;
     }
@@ -209,28 +155,12 @@ public class PersistentMetadata extends PersistentObject {
         this.dc_relation = dc_relation;
     }
 
-    public String getDc_rights() {
-        return dc_rights;
-    }
-
-    public void setDc_rights(String dc_rights) {
-        this.dc_rights = dc_rights;
-    }
-
     public String getDc_source() {
         return dc_source;
     }
 
     public void setDc_source(String dc_source) {
         this.dc_source = dc_source;
-    }
-
-    public String getDc_subject() {
-        return dc_subject;
-    }
-
-    public void setDc_subject(String dc_subject) {
-        this.dc_subject = dc_subject;
     }
 
     public String getDc_title() {
@@ -241,14 +171,6 @@ public class PersistentMetadata extends PersistentObject {
         this.dc_title = dc_title;
     }
 
-    public String getDc_type() {
-        return dc_type;
-    }
-
-    public void setDc_type(String dc_type) {
-        this.dc_type = dc_type;
-    }
-
     public String getDtb_revision() {
         return dtb_revision;
     }
@@ -256,23 +178,87 @@ public class PersistentMetadata extends PersistentObject {
     public void setDtb_revision(String dtb_revision) {
         this.dtb_revision = dtb_revision;
     }
-
-    public Timestamp getDtb_revision_date() {
-        return dtb_revision_date;
+    
+    public String getDuration() {
+		return duration;
     }
 
-    public void setDtb_revision_date(Timestamp dtb_revision_date) {
-        this.dtb_revision_date = dtb_revision_date;
+	public void setDuration(String duration) {
+		this.duration = duration;
     }
 
-    public String getDtb_revision_description() {
-        return dtb_revision_description;
+	public String getMessage_format() {
+		return message_format;
     }
 
-    public void setDtb_revision_description(String dtb_revision_description) {
-        this.dtb_revision_description = dtb_revision_description;
+	public void setMessage_format(String message_format) {
+		this.message_format = message_format;
     }
 
+	public String getTarget_audience() {
+		return target_audience;
+    }
+
+	public void setTarget_audience(String target_audience) {
+		this.target_audience = target_audience;
+    }
+
+	public String getDate_recorded() {
+		return date_recorded;
+    }
+
+	public void setDate_recorded(String date_recorded) {
+		this.date_recorded = date_recorded;
+    }
+
+	public String getKeywords() {
+		return keywords;
+    }
+
+	public void setKeywords(String keywords) {
+		this.keywords = keywords;
+    }
+
+	public String getTiming() {
+		return timing;
+    }
+
+	public void setTiming(String timing) {
+		this.timing = timing;
+    }
+
+	public String getPrimary_speaker() {
+		return primary_speaker;
+    }
+
+	public void setPrimary_speaker(String primary_speaker) {
+		this.primary_speaker = primary_speaker;
+    }
+
+	public String getGoal() {
+		return goal;
+    }
+
+	public void setGoal(String goal) {
+		this.goal = goal;
+    }
+
+	public String getEnglish_transcription() {
+		return english_transcription;
+    }
+
+	public void setEnglish_transcription(String english_transcription) {
+		this.english_transcription = english_transcription;
+    }
+
+	public String getNotes() {
+		return notes;
+    }
+
+	public void setNotes(String notes) {
+		this.notes = notes;
+    }
+    
     public void setStatistic(MetadataStatisticsField statisticsField, String deviceId, int bootCycleNumber, Integer count) {
         // look for existing statistics
     	boolean found = false;
@@ -312,14 +298,6 @@ public class PersistentMetadata extends PersistentObject {
         }
     }    
             
-    public Short getLb_rating() {
-        return lb_rating;
-    }
-
-    public void setLb_rating(Short lb_rating) {
-        this.lb_rating = lb_rating;
-    }
-
     public PersistentLocale getPersistentLocale() {
         return persistentLocale;
     }
