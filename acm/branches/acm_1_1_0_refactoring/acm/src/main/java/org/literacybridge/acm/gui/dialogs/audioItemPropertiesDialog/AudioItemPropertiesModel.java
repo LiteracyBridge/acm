@@ -168,6 +168,10 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		return null;
 	}
 	
+	public AudioItemProperty getAudioItemProperty(int row) {
+		return audioItemPropertiesObject.get(row);
+	}
+	
 	boolean isLanguageRow(int row) {
 		AudioItemProperty obj = audioItemPropertiesObject.get(row);
 		if (obj instanceof AudioItemProperty.LanguageProperty) {

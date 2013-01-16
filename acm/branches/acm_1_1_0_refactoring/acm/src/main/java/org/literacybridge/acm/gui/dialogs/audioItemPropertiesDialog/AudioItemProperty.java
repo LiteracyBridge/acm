@@ -43,6 +43,10 @@ public abstract class AudioItemProperty<V> {
 			this.field = field;
 		}
 		
+		public MetadataField<String> getMetadataField() {
+			return field;
+		}
+		
 		public String getName() {
 			return LabelProvider.getLabel(field, LanguageUtil.getUILanguage());
 		}
