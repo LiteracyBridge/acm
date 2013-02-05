@@ -78,7 +78,7 @@ public class FileSystemRepository extends AudioItemRepository {
 	}
 	
 	@Override
-	protected File resolveFile(AudioItem audioItem, AudioFormat format) {
+	protected File resolveFile(AudioItem audioItem, AudioFormat format, boolean writeAccess) {
 		return new File(resolveDirectory(audioItem, format), audioItem.getUuid() + "." + format.getFileExtension());
 	}
 

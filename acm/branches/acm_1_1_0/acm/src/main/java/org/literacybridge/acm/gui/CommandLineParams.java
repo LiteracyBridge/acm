@@ -7,6 +7,9 @@ public class CommandLineParams {
 	@Option(name="-r",usage="to force read-only")
 	public boolean readonly;
 
+	@Option(name="-s",usage="to enter sandbox mode")
+	public boolean sandbox;
+
 	@Option(name="-db",usage="to set path to database")
 	public String pathDB;
 

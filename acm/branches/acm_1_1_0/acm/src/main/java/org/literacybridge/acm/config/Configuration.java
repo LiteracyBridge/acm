@@ -69,9 +69,11 @@ public class Configuration extends Properties {
     private static String title;
     private static File repositoryDirectory;
     private static File cacheDirectory;
+    private static File sandboxDirectory = null;
     private static File dbDirectory;
 	private static String sharedACM = null;
     private boolean readOnly = false;
+    private boolean sandbox = false;
     private boolean pathsOverridden = false;
 	private final static String USER_NAME = "USER_NAME";
 	private final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";
@@ -98,6 +100,10 @@ public class Configuration extends Properties {
 		return readOnly;
 	}
 	
+	public boolean isSandbox() {
+		return sandbox;
+	}
+	
 	// Call this methods to get the non-shared directory root for config, content cache, builds, etc...
 	public static String getACMDirectory() {
 	    final File DEFAULT_LITERACYBRIDGE_SYSTEM_DIR = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
@@ -120,6 +126,10 @@ public class Configuration extends Properties {
 		return cacheDirectory;
 	}
 	
+	public static File getSandboxDirectory() {
+		return sandboxDirectory;
+	}
+
 	public static File getTBBuildsDirectory() {
 		return new File(getACMDirectory(), Constants.TBBuildsHomeDirName);
 	}
@@ -146,6 +156,8 @@ public class Configuration extends Properties {
 			instance = new Configuration();
 			if (args.readonly)
 				instance.setReadOnly(true); 
+			if (args.sandbox)
+				instance.setSandbox(true); 
 			if (args.titleACM != null)
 				setACMtitle(args.titleACM);
 			if (args.pathDB != null) {
@@ -282,6 +294,10 @@ public class Configuration extends Properties {
     	repositoryDirectory = f; //new File(f,Constants.RepositoryHomeDirName);
     }
     
+    private static void setSandboxDirectory(File f) {
+    	sandboxDirectory = f; 
+    }
+    
 	private static File getConfigurationPropertiesFile() {
 		return new File(getACMDirectory(), Constants.CONFIG_PROPERTIES);
 	}
@@ -296,6 +312,10 @@ public class Configuration extends Properties {
 
 	private void setReadOnly(boolean isRW) {
 		readOnly = isRW;
+	}
+
+	private void setSandbox(boolean isSandbox) {
+		sandbox = isSandbox;
 	}
 	
 	private static boolean isOnline() {
@@ -317,18 +337,26 @@ public class Configuration extends Properties {
 			
 	private static void InitializeConfiguration() {
 		InitializeAcmConfiguration();
-		if (!instance.isACMReadOnly())
+		if (!instance.isACMReadOnly() || !instance.isSandbox())
 			determineRWStatus();
 		else 
-			System.out.println("Command-line forced read-only mode.");
-		if (instance.isACMReadOnly()) {
+			System.out.println("Command-line forced read-only or sandbox mode.");
+		if (instance.isACMReadOnly() || instance.isSandbox()) {
 			// ACM should be read-only -- change db pointer
 			createDBMirror();
 			File fDB = new File(getACMDirectory(),Constants.DBHomeDir);
 			setDatabaseDirectory(fDB);
+			if (instance.isSandbox()) {
+				File fSandbox = new File(getACMDirectory(),Constants.RepositoryHomeDir);
+				setSandboxDirectory(fSandbox);				
+			} else 
+				setSandboxDirectory(null);
 		}
 		System.out.println("  Database:" + getDatabaseDirectory());
 		System.out.println("  Repository:" + getRepositoryDirectory());
+		if (instance.isSandbox()) {
+			System.out.println("  Sandbox:" + getSandboxDirectory());
+		}
 		System.out.println("  UserRWAccess:" + instance.userHasWriteAccess());
 		System.out.println("  online:" + isOnline());
 		System.out.println("  isAnotherUserWriting:" + instance.isAnotherUserWriting());
@@ -340,7 +368,8 @@ public class Configuration extends Properties {
 									return name.toLowerCase().endsWith("." + AudioFormat.WAV.getFileExtension());
 								}
 							})),
-				new FileSystemRepository(getRepositoryDirectory()));
+				new FileSystemRepository(getRepositoryDirectory()),
+				getSandboxDirectory()==null?null:new FileSystemRepository(getSandboxDirectory()));
 //		instance.repository.convert(audioItem, targetFormat);		
 	}
 
@@ -351,7 +380,7 @@ public class Configuration extends Properties {
 		File fromDir = new File(fromDirname);
 		File toDir = new File(toDirname);
 		try {
-			System.out.println("Started DB Mirror for read-only access:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
+			System.out.println("Started DB Mirror:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
 			FileUtils.copyDirectoryToDirectory(fromDir, toDir);
 /*
 			toDirname += "\\" + Constants.DBHomeDir;
@@ -370,7 +399,7 @@ public class Configuration extends Properties {
 				System.out.println(line);
 			} while (line != null);			
 */
-			System.out.println("Completed DB Mirror for read-only access:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
+			System.out.println("Completed DB Mirror:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -378,18 +407,18 @@ public class Configuration extends Properties {
 	}
 
 	private static void determineRWStatus() {
-		boolean readOnlyStatus = false;
+		boolean sandboxMode = false;
 
 		if (!instance.userHasWriteAccess()) {
-			readOnlyStatus = true; 
+			sandboxMode = true; 
 		} else {
 			String dialogMessage = new String();
-			Object[] options = {"Use Read-Only Mode", "Shutdown", "Force Write Mode"};
+			Object[] options = {"Use Demo Mode", "Shutdown", "Force Write Mode"};
 			if (!isOnline()) {
-				readOnlyStatus = true;
+				sandboxMode = true;
 				dialogMessage = "Cannot connect to dropbox.com.";
 			} else if (instance.isAnotherUserWriting()) {
-				readOnlyStatus = true;
+				sandboxMode = true;
 				dialogMessage = "Another user currently has write access to the ACM.\n";
 				String line;
 				File f = getLockFile();
@@ -405,11 +434,11 @@ public class Configuration extends Properties {
 					}
 				}
 			} 
-			if (readOnlyStatus) {
+			if (sandboxMode) {
 				int n = JOptionPane.showOptionDialog(null, dialogMessage,"Cannot Get Write Access",JOptionPane.YES_NO_CANCEL_OPTION,
 						JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
 				if (n==0)
-					JOptionPane.showMessageDialog(null,"You now have read-only access.");
+					JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.");
 				else if (n==1) {
 					JOptionPane.showMessageDialog(null,"Shutting down.");
 					System.exit(0);
@@ -418,18 +447,26 @@ public class Configuration extends Properties {
 							"If you are sure you want to force write access,\ntype the word 'force' below.";
 					String confirmation = (String)JOptionPane.showInputDialog(null,dialogMessage);
 					if (confirmation != null && confirmation.equalsIgnoreCase("force")) {
-						readOnlyStatus = false;
+						sandboxMode = false;
 						JOptionPane.showMessageDialog(null,"You now have write access, but database corruption may occur\nif another user is also currently writing to the ACM.");
 					}
 					else {
-						readOnlyStatus = true;
-						JOptionPane.showMessageDialog(null,"You now have read-only access.");
+						sandboxMode = true;
 					}
 				}
-			}
+ 			}
 		}
-		instance.setReadOnly(readOnlyStatus);
-		if (!readOnlyStatus) {
+		if (!sandboxMode) {
+			Object[] options = {"Update Shared Database", "Use Demo Mode"};
+			int n = JOptionPane.showOptionDialog(null, "Do you want to update the shared database?","Update or Demo Mode?",JOptionPane.YES_NO_OPTION,
+					JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+			if (n==1)
+				sandboxMode = true;		
+		}
+		instance.setSandbox(sandboxMode);
+		if (sandboxMode)
+			JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.");
+		else {
 		    // ACM is now read-write, so need to lock other users
 			try {
 				File lockFile = getLockFile();
@@ -645,8 +682,8 @@ public class Configuration extends Properties {
 	* Main task. Executed in background thread.
 	*/
 		
-		public Task (int max) {
-			this.max = max;
+		public Task () {
+			//this.max = max;
 		}
 		@Override
 		public Void doInBackground() {
@@ -751,10 +788,10 @@ public class Configuration extends Properties {
 			newContentPane.setOpaque(true); //content panes must be opaque
 			frame.setContentPane(newContentPane);
 			
+			task = new Task();
 			frame.pack();
 			frame.setVisible(true);
 			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			task = new Task(this.max);
 			task.addPropertyChangeListener(this);
 			task.execute();	
 		}

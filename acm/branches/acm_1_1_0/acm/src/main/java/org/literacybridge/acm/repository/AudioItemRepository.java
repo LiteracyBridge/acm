@@ -113,10 +113,12 @@ public abstract class AudioItemRepository {
 	 */
 	public File storeAudioFile(AudioItem audioItem, File externalFile)
 				throws DuplicateItemException, UnsupportedFormatException, IOException {
-		if (hasAudioItem(audioItem)) {
-			throw new DuplicateItemException(
-					"Audio item with uid=" + audioItem.getUuid() + " already exists in this repository.");
-		}
+
+//		Commenting out these four lines below so that an existing cached .wav file doesn't stop an .a18 import
+//		if (hasAudioItem(audioItem)) {
+//			throw new DuplicateItemException(
+//					"Audio item with uid=" + audioItem.getUuid() + " already exists in this repository.");
+//		}
 		
 		AudioFormat format = determineFormat(externalFile);
 		if (format == null) {
@@ -124,11 +126,11 @@ public abstract class AudioItemRepository {
 					"Unsupported or unrecognized audio format for file: " + externalFile); 
 		}
 		
-		File toFile = resolveFile(audioItem, format);
+		File toFile = resolveFile(audioItem, format, true);
 		
 		if (format == AudioFormat.A18) {
 			// we only store the audio itself in the repo, as we keep the metadata separately in the database;
-			// therefore strip metadata section here
+			// therefore strip metadata section herea
 			DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(externalFile)));
 			int numBytes = IOUtils.readLittleEndian32(in);
 			in.close();			
@@ -155,7 +157,7 @@ public abstract class AudioItemRepository {
 	 * in this repository;
 	 */
 	public File getAudioFile(AudioItem audioItem, AudioFormat format) {
-		File file = resolveFile(audioItem, format);
+		File file = resolveFile(audioItem, format, false);
 		return file.exists() ? file : null;
 	}
 	
@@ -170,7 +172,7 @@ public abstract class AudioItemRepository {
 			return audioFile;
 		}
 		
-		audioFile = resolveFile(audioItem, targetFormat);
+		audioFile = resolveFile(audioItem, targetFormat, true);
 		
 		// we prefer to convert from WAV if possible
 		File sourceFile = getAudioFile(audioItem, AudioFormat.WAV);
@@ -228,7 +230,7 @@ public abstract class AudioItemRepository {
 	/**
 	 * Returns a handle to the audio file in the given format. Does not guarantee that the file exists. 
 	 */
-	protected abstract File resolveFile(AudioItem audioItem, AudioFormat format);
+	protected abstract File resolveFile(AudioItem audioItem, AudioFormat format, boolean writeAccess);
 
 	/**
 	 * Can optionally be overwritten by subclasses to performs a garbage collection 
