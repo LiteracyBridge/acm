@@ -37,13 +37,15 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileSystemView;
-
-import org.literacybridge.acm.utils.OSChecker;
+// commenting out import below so that TBLoader can stand-alone as .class 
+// until new ACM is running on Fidelis's laptop
+//import org.literacybridge.acm.utils.OSChecker;
 
 //import org.jdesktop.swingx.JXDatePicker;
 
+@SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.02";
+	private static final String VERSION = "v1.03";
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -451,9 +453,11 @@ public class TBLoader extends JFrame implements ActionListener {
 
 	private synchronized File[] getRoots() {
 		File[] roots = null;
-		if (OSChecker.WINDOWS) {
+		// changing line below to allow TBLoader to run as a single .class file 
+		// (until new ACM version is running on Fidelis's laptop)
+		if (System.getProperty("os.name").startsWith("Windows")) { // (OSChecker.WINDOWS) {
 			roots = File.listRoots();
-		} else if (OSChecker.MAC_OS) {
+		} else if (System.getProperty("os.name").startsWith("Mac OS")) { //(OSChecker.MAC_OS) {
 			roots = new File("/Volumes").listFiles();
 		}
 		return roots;
