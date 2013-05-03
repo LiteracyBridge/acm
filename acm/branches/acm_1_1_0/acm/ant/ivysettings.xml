@@ -17,7 +17,7 @@
       <ibiblio name="public" m2compatible="true"/>
       <ibiblio name="eclipselink" m2compatible="true" root="http://download.eclipse.org/rt/eclipselink/maven.repo"/>
       <ibiblio name="java.net" m2compatible="true" root="http://download.java.net/maven/2/"/>
-      <ibiblio name="ESSI-Lab repository" m2compatible="true" root="http://ulisse.pin.unifi.it:8081/nexus/content/groups/open.repos"/>
+      <ibiblio name="ESSI-Lab repository" m2compatible="true" root="http://essi-lab.eu/nexus/content/groups/open.repos"/>
       <ibiblio name="netbeans-external" m2compatible="true" root="http://bits.netbeans.org/maven2"/>
       <filesystem name="shared" cache="repo_cache">
 	<ivy pattern="${ivy.shared.default.root}/${ivy.shared.default.ivy.pattern}" />
