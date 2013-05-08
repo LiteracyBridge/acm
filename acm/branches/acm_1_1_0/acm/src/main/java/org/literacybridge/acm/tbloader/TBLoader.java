@@ -21,9 +21,11 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 
 import javax.swing.GroupLayout;
@@ -34,6 +36,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileSystemView;
@@ -62,7 +65,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	private JTextField id;
 	private JTextField revisionText;
 	private static JTextField status;
-	private static JTextField status2;
+	private static JTextArea status2;
 	private static String homepath;
 	private static JButton update;
 //	private static JButton reformat;
@@ -157,7 +160,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		JLabel revisionLabel = new JLabel("Revision:");
 		status = new JTextField("STATUS: Ready");
 		status.setEditable(false);
-		status2 = new JTextField("");
+		status2 = new JTextArea(2,40);
 		status2.setEditable(false);
 		id = new JTextField();
 		id.setEditable(false);
@@ -266,6 +269,8 @@ public class TBLoader extends JFrame implements ActionListener {
 		deviceMonitorThread.setDaemon(true);
 		deviceMonitorThread.start();
 		startUpDone = true;
+		JOptionPane.showMessageDialog(null, "Remember to power Talking Book with batteries before connecting with USB.",
+                "Use Batteries!", JOptionPane.DEFAULT_OPTION);
 	}
 	
 	public static boolean startUpDone = false;
@@ -598,11 +603,23 @@ public class TBLoader extends JFrame implements ActionListener {
 		}
 	};
 
-	private void setCommunity(String path, String community, String dateTime) {
+	public static void setCommunity(String path, String community, String dateTime) {
 		String locFilename = path + community + ".loc";
 		String rtcFilename = path + dateTime + ".rtc";
 		
 		try {
+/*			goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+			if (!goodCard) {
+				return;
+			}
+			TBLoader.status2.setText("Checking Memory Card");
+			hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
+			if (hasCorruption) {
+				TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted...Getting Stats");
+			} else {
+				TBLoader.status2.setText(TBLoader.status2.getText() + "...Good Card...Getting Stats");
+			}
+*/			
 			execute("cmd /C del \"" + path + "*.loc\" \"" + path + "system\\*.loc\" \"" + path + "*.rtc\"");
 
 			File locFile = new File(locFilename);
@@ -617,7 +634,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			e.printStackTrace();
 		}
 		Logger.LogString("Commmunity set to " + community + ".");
-		JOptionPane.showMessageDialog(this, "Commmunity set to " + community + ".",
+		JOptionPane.showMessageDialog(null, "Commmunity set to " + community + ".",
                 "Success", JOptionPane.DEFAULT_OPTION);
 	}
 
@@ -783,8 +800,12 @@ public class TBLoader extends JFrame implements ActionListener {
 					CopyThread t = new CopyThread(this, devicePath, community, di.serialNumber, dateTime, handIcons.isSelected(), revision,di.revision,"compare-basic");//"reformat");
 					t.start();
 			} 
-*/			else if (b == setCommunity)
-					setCommunity(devicePath, community, dateTime);
+*/			else if (b == setCommunity) {
+				//setCommunity(devicePath, community, dateTime);
+				CopyThread t;
+				t = new CopyThread(this, devicePath, community, di.serialNumber, dateTime, handIcons.isSelected(), revision,di.revision,"setCommunity");
+				t.start();
+			}
 			refreshUI();
 			Logger.init();
 			return;
@@ -914,34 +935,31 @@ public class TBLoader extends JFrame implements ActionListener {
 	
 	void finishCopy(boolean success, final String idString, final String mode) {
 		final TBLoader parent = this;
-		try {
-			final Runnable runnable;
+//		try {
+//			final Runnable runnable;
+			updatingTB = false;
+			parent.refreshUI();
+			Logger.init();
 			if (success) {
-				runnable = new Runnable() {
+/*				runnable = new Runnable() {
 					@Override
 					public void run() {
 						JOptionPane.showMessageDialog(parent, "Success!",
 				                "Success", JOptionPane.DEFAULT_OPTION);
 						Logger.LogString("Success");
-						status2.setText("");
-						status.setText("");
-						update.setEnabled(true);
-						updatingTB = false;
-						
-						resetUI(false);
 					}
 				};
-			} else {
-				runnable = new Runnable() {
+*/			} else {
+/*				runnable = new Runnable() {
 					@Override
 					public void run() {
-						JOptionPane.showMessageDialog(parent, "An error occured while copying files to the Talking Book.",
+						JOptionPane.showMessageDialog(parent, "An error occurred while copying files to the Talking Book.",
 				                "Error", JOptionPane.ERROR_MESSAGE);
 						Logger.LogString("ERROR!");
 					}
 				};
-			}
-			SwingUtilities.invokeAndWait(runnable);
+*/			}
+/*			SwingUtilities.invokeAndWait(runnable);
 		} catch (InterruptedException e) {
 			Logger.LogString(e.toString());
 			Logger.init();
@@ -958,7 +976,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			parent.refreshUI();
 			Logger.init();
 		}
-	}
+*/	}
 
 	public static class Logger {
 		private static BufferedWriter bw;
@@ -1025,6 +1043,27 @@ public class TBLoader extends JFrame implements ActionListener {
 		boolean criticalError = false;
 		boolean alert = false;
 		boolean success = false;
+		long startTime;
+		
+
+		private void setStartTime() {
+			startTime = System.nanoTime();
+		}
+		
+		private String getDuration() {
+			String elapsedTime;
+			double durationSeconds;
+			int durationMinutes;
+			long durationNanoseconds = System.nanoTime() - startTime;
+			durationSeconds = (double)durationNanoseconds  / 1000000000.0;
+			if (durationSeconds > 60) {
+				durationMinutes = (int)durationSeconds / 60;
+				durationSeconds -= durationMinutes *60;
+				elapsedTime = new String(Integer.toString(durationMinutes) + " minutes " + Integer.toString((int) durationSeconds) + " seconds");
+			} else
+				elapsedTime = new String(Integer.toString((int) durationSeconds) + " seconds");
+			return elapsedTime;
+		}
 		
 		private boolean executeFile(File file) { //,String devicePath, String community, String id, String datetime, boolean useHandIcons, String sourceRevision, String targetRevision) {
 			boolean success = true;
@@ -1087,26 +1126,41 @@ public class TBLoader extends JFrame implements ActionListener {
 			this.sourceRevision = sourceRevision;
 			this.targetRevision = targetRevision;
 		}		
-		@Override public void run() {
+
+		private void update() {
 			try {
 				boolean gotStats,hasCorruption,verified, goodCard;
-				gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
-				if (gotStats)
-					TBLoader.status2.setText("Got Stats");
-				else 
-					TBLoader.status2.setText("No Stats!");
+				setStartTime();
+				success = false;
+				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				if (!goodCard) {
+					return;
+				}
+				TBLoader.status2.setText("Checking Memory Card");
 				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
 				if (hasCorruption) {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted...Getting Stats");
+					executeFile(new File(SCRIPT_SUBDIR + "chkdsk-save.txt"));
+				} else {
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Good Card...Getting Stats");
+
+				}
+				gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				if (gotStats)
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Got Stats\n");
+				else 
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...No Stats!\n");
+				if (hasCorruption) {
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Reformatting");
 					goodCard = executeFile(new File(SCRIPT_SUBDIR + "reformat.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 					if (!goodCard) {
-						JOptionPane.showMessageDialog(null, "Could not reformat memory card.  Make sure you have a good USB connection and that the Talking Book is powered with batteries and then try again.  If you still cannot reformat, replace the memory card.",
+						TBLoader.status2.setText(TBLoader.status2.getText() + "...Reformat Failed");
+						JOptionPane.showMessageDialog(null, "Could not reformat memory card.\nMake sure you have a good USB connection\nand that the Talking Book is powered with batteries, then try again.\n\nIf you still cannot reformat, replace the memory card.",
 				                "Failure!", JOptionPane.ERROR_MESSAGE);
 						return;
 					} else 
 						TBLoader.status2.setText(TBLoader.status2.getText() + "...Format was good");						
 				} else {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Good Card");
 					executeFile(new File(SCRIPT_SUBDIR + "relabel.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 				}
 				// now that any possible reformatting is complete, copy over the new serial number 
@@ -1116,16 +1170,63 @@ public class TBLoader extends JFrame implements ActionListener {
 					f = new File(devicePath + "inspect");
 					f.createNewFile();
 				} 
+				TBLoader.status2.setText(TBLoader.status2.getText() + "...Updating TB Files");
 				executeFile(new File(SCRIPT_SUBDIR + "update.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 				TBLoader.status2.setText(TBLoader.status2.getText() + "...Updated");
 				verified = executeFile(new File(SCRIPT_SUBDIR + "verify.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 				if (verified) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Verified");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Disconnecting TB");
 					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Complete");
 					success = true;
-				} else
+					JOptionPane.showMessageDialog(null, "Talking Book has been updated and verified\nin "+getDuration() + ".",
+			                "Success", JOptionPane.DEFAULT_OPTION);
+					Logger.LogString("Success");
+				} else {
+					success = false;
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Failed Verification");
+					JOptionPane.showMessageDialog(null, "Update failed verification.  Try again or replace memory card.",
+			                "Failure", JOptionPane.DEFAULT_OPTION);
+					Logger.LogString("Failure");
+				}
+				for (int i=1;i<=(success?3:6);i++)
+					Toolkit.getDefaultToolkit().beep();
+			} catch (Exception e) {
+				if (alert) {
+					JOptionPane.showMessageDialog(null, e.getMessage(),
+		                "Error", JOptionPane.ERROR_MESSAGE);
+					criticalError = true;
+				}
+				Logger.LogString(e.toString());
+				Logger.init();
+				e.printStackTrace();
+			} finally {
+				callback.finishCopy(success, id, this.mode);
+			}
+			
+		}
+		
+		private void setCommunity() {
+			try {
+				boolean hasCorruption,goodCard;
 				success = false;
+				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				if (!goodCard) {
+					return;
+				}
+				TBLoader.status2.setText("Checking Memory Card");
+				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
+				if (hasCorruption) {
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted");
+					JOptionPane.showMessageDialog(null, "Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.",
+			                "Failure", JOptionPane.DEFAULT_OPTION);
+					return;
+				}
+				TBLoader.status2.setText(TBLoader.status2.getText() + "...Memory Card Good...Setting Community");
+				TBLoader.setCommunity(devicePath, community, this.datetime);
+				TBLoader.status2.setText(TBLoader.status2.getText() + "...Community Set");
+				success = true;
 				for (int i=1;i<=3;i++)
 					Toolkit.getDefaultToolkit().beep();
 			} catch (Exception e) {
@@ -1140,6 +1241,13 @@ public class TBLoader extends JFrame implements ActionListener {
 			} finally {
 				callback.finishCopy(success, id, this.mode);
 			}
+		}
+		
+		@Override public void run() {
+			if (this.mode == "update")
+				update();
+			else if (this.mode == "setCommunity")
+				setCommunity();			
 		}
 	}
 
@@ -1197,6 +1305,27 @@ public class TBLoader extends JFrame implements ActionListener {
 		proc.waitFor();
 		return goodDisk;
 	}	
+
+	private static String dosErrorCheck(String line) {
+		String errorMsg = null;
+		
+		if (line.contains("New")) {
+			//  file copy validation failed (some files missing on target) 
+			errorMsg = line.substring(line.length()-30);
+		} else if (line.contains("Invalid media or Track 0 bad - disk unusable")) {
+			// formatting error
+			errorMsg = "Bad memory card.  Please discard and replace it.";
+		} else if (line.contains("Specified drive does not exist.")) {
+			errorMsg = "Either bad memory card or USB connection problem.  Try again.";
+		} else if (line.contains("Windows found problems with the file system") || line.startsWith("File Not Found") || line.startsWith("The system cannot find the file")) {
+			// checkdisk shows corruption
+			errorMsg = "File system corrupted";
+		} else if (line.startsWith("The system cannot find the path specified.")) {
+			errorMsg = "TB not found.  Unplug/replug USB and try again.";
+		}
+		return errorMsg;
+	}
+	
 	static String execute(String cmd) throws Exception {
 		String line;
 		String errorLine = null;
@@ -1209,29 +1338,16 @@ public class TBLoader extends JFrame implements ActionListener {
 		do {
 			line = br1.readLine();
 			Logger.LogString(line);
-			if (line!=null && errorLine == null) {
-				if (line.contains("New")) {
-					//  file copy validation failed (some files missing on target) 
-					errorLine = line.substring(line.length()-30);
-				} else if (line.contains("Invalid media or Track 0 bad - disk unusable")) {
-					// formatting error
-					errorLine = line;
-				} else if (line.contains("Windows found problems with the file system")) {
-					// checkdisk shows corrution
-					errorLine = "File system corrupted";
-				} else if (line.startsWith("The system cannot find the")) {
-					errorLine = "TB not found.  Unplug/replug USB and try again.";
-				} else if (line.startsWith("File Not Found")) {
-					errorLine = "TB missing files";
-				}
-			}
-				
+			if (line!=null && errorLine == null)
+				errorLine = dosErrorCheck(line);				
 		} while (line != null);
 		
 		
 		do {
 			line = br2.readLine();
 			Logger.LogString(line);
+			if (line!=null && errorLine == null)
+				errorLine = dosErrorCheck(line);
 		} while (line != null);
 		
 		proc.waitFor();
