@@ -62,10 +62,11 @@ public class TBLoader extends JFrame implements ActionListener {
 	private JTextField id;
 	private JTextField revisionText;
 	private static JTextField status;
+	private static JTextField status2;
 	private static String homepath;
 	private static JButton update;
-	private static JButton reformat;
-	private static JButton backup;
+//	private static JButton reformat;
+//	private static JButton backup;
 	private static JButton xfer;
 	private static JButton setCommunity;
 	private static String copyTo;
@@ -156,6 +157,8 @@ public class TBLoader extends JFrame implements ActionListener {
 		JLabel revisionLabel = new JLabel("Revision:");
 		status = new JTextField("STATUS: Ready");
 		status.setEditable(false);
+		status2 = new JTextField("");
+		status2.setEditable(false);
 		id = new JTextField();
 		id.setEditable(false);
 		revisionText = new JTextField();
@@ -174,13 +177,13 @@ public class TBLoader extends JFrame implements ActionListener {
 		fetchIDFromServer.setSelected(false);
 		handIcons = new JCheckBox("Use hand icon msgs");
 		handIcons.setSelected(false);
-		update = new JButton("Update");
+		update = new JButton("Update TB");
 		update.addActionListener(this);
-		reformat = new JButton("Reformat");
-		reformat.addActionListener(this);
-		backup = new JButton("Backup");
-		backup.addActionListener(this);
-		xfer = new JButton("Upload Files");
+//		reformat = new JButton("Reformat");
+//		reformat.addActionListener(this);
+//		backup = new JButton("Backup");
+//		backup.addActionListener(this);
+		xfer = new JButton("Upload Audio");
 		xfer.addActionListener(this);
 		setCommunity = new JButton("Set Community");
 		setCommunity.addActionListener(this);
@@ -198,9 +201,8 @@ public class TBLoader extends JFrame implements ActionListener {
 	        				.addComponent(communityLabel)
 	        				.addComponent(idLabel)
 	                		.addComponent(revisionLabel)
-             				.addComponent(xfer)
-	        				.addComponent(setCommunity))
-	                .addGroup(layout.createParallelGroup(LEADING)
+	        				)
+ 					.addGroup(layout.createParallelGroup(LEADING)
 	                		.addComponent(driveList)
 	                		.addComponent(communityList)
 	                		.addComponent(id)
@@ -210,10 +212,15 @@ public class TBLoader extends JFrame implements ActionListener {
 	                				.addComponent(handIcons))
 	    	                .addGroup(layout.createSequentialGroup()
 	                				.addComponent(update)
-	                				.addComponent(backup)
-	                				.addComponent(reformat))
-	                		.addComponent(status))
-            );
+	    	        				.addComponent(setCommunity)
+	                 				.addComponent(xfer)
+//	                				.addComponent(backup)
+//	                				.addComponent(reformat)
+	                				)
+	    	                .addComponent(status)
+	    	               	.addComponent(status2)
+	                  	)
+	               	);
         
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(BASELINE)
@@ -230,18 +237,20 @@ public class TBLoader extends JFrame implements ActionListener {
 		            .addComponent(revisionLabel)
 		            .addComponent(revisionText))
 		        .addGroup(layout.createParallelGroup(BASELINE)
-		        	.addComponent(xfer)
 		        	.addComponent(fetchIDFromServer)
     				.addComponent(handIcons))
     		    .addGroup(layout.createParallelGroup(BASELINE)
-    		    	.addComponent(setCommunity)
     		    	.addComponent(update)
-    	    		.addComponent(backup)
-    	    		.addComponent(reformat))
+    		    	.addComponent(setCommunity)
+		        	.addComponent(xfer)
+//    	    		.addComponent(backup)
+//    	    		.addComponent(reformat)
+    	    		)
     	    	.addComponent(status)
+    	    	.addComponent(status2)
             );
         
-        setSize(500,285);
+        setSize(550,285);
         add(panel, BorderLayout.CENTER);
 //      add(status, BorderLayout.SOUTH);
 //      add(xfer, BorderLayout.EAST);
@@ -261,6 +270,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	
 	public static boolean startUpDone = false;
 	public static boolean monitoringDrive = false;
+	public static boolean updatingTB = false;
 	
 	public static void main(String[] args) throws Exception {
 /*		if (args.length == 0) {
@@ -544,7 +554,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		@Override public void run() {
 			Set<String> oldList = new HashSet<String>();
 			
-			while (true) {
+			while (!updatingTB) { // don't do this during a TB update
 				File[] roots = getRoots();
 				
 				boolean refresh = oldList.size() != roots.length;
@@ -698,7 +708,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			String devicePath = drive.getAbsolutePath();
 			String community = communityList.getSelectedItem().toString();
 			Logger.LogString("Community: " + community);
-			if ((b == reformat || b == update) && fetchIDFromServer.isSelected()) {
+			if ((/*b == reformat || */  b == update) && fetchIDFromServer.isSelected()) {
 				di.serialNumber = fetchNextDeviceID();
 				this.id.setText(di.serialNumber);
 				Logger.LogString("SN: " + di.serialNumber);
@@ -714,17 +724,17 @@ public class TBLoader extends JFrame implements ActionListener {
 					Logger.LogString("No community selected. Are you sure? YES");
 			} else
 				prevSelectedCommunity = communityList.getSelectedIndex();
-			if ((b == reformat) && (communityList.getSelectedIndex() == 4 ||communityList.getSelectedIndex() == 6) && !handIcons.isSelected()) {
+			if ( /*(b == reformat) && */ (communityList.getSelectedIndex() == 6 ||communityList.getSelectedIndex() == 8) && !handIcons.isSelected()) {
 				// warn if reformatting for Jonga or Gyanvuuri but not adding hand icon messages
-				int response = JOptionPane.showConfirmDialog(this, "Reformatting, but hand icons not selected for " + community + ". \nAre you sure?",
+				int response = JOptionPane.showConfirmDialog(this, "Hand icons not selected for " + community + ". \nAre you sure?",
 	                "Confirm", JOptionPane.YES_NO_OPTION);
 				if (response != JOptionPane.YES_OPTION) {
-					Logger.LogString("Hand icons not selected for reformatting of " + community + ". Are you sure? NO");
+					Logger.LogString("Hand icons not selected for " + community + ". Are you sure? NO");
 					refreshUI();
 					return;
 				} else
-					Logger.LogString("Hand icons not selected for reformatting of " + community + ". Are you sure? YES");
-			} else if ((b == reformat || b == update) && (communityList.getSelectedIndex() != 4 && communityList.getSelectedIndex() != 6) && handIcons.isSelected()){
+					Logger.LogString("Hand icons not selected for " + community + ". Are you sure? YES");
+			} else if ((/*b == reformat || */  b == update) && (communityList.getSelectedIndex() != 6 && communityList.getSelectedIndex() != 8) && handIcons.isSelected()){
 				// warn if adding hand icon messages to arrow communities when either updating or reformatting 
 				int response = JOptionPane.showConfirmDialog(this, "Hand icons are selected for " + community + ". \nAre you sure?",
 		                "Confirm", JOptionPane.YES_NO_OPTION);
@@ -737,13 +747,16 @@ public class TBLoader extends JFrame implements ActionListener {
 			} else
 				prevSelectedCommunity = communityList.getSelectedIndex();
 			if (b == update) {
-				boolean goodDisk = chkDsk(di);
+				updatingTB = true;
+				disableAll();
+				boolean goodDisk = true;//chkDsk(di);
 				if (goodDisk) {
-					Logger.LogString("chkdsk was good.");
+					//Logger.LogString("chkdsk was good.");
 					CopyThread t;
 					t = new CopyThread(this, devicePath, community, di.serialNumber, dateTime, handIcons.isSelected(), revision,di.revision,"update");
 					t.start();
-				} else {
+				} 
+/*				else {
 					Logger.LogString("chkdsk was bad for " + di.label.toString());
 					int response = JOptionPane.showConfirmDialog(null, "TB is corrupted.\nBackup takes 6-8 minutes.\nBegin?",
 			              "Confirm", JOptionPane.OK_CANCEL_OPTION);
@@ -756,7 +769,8 @@ public class TBLoader extends JFrame implements ActionListener {
 						Logger.LogString("TB is corrupted.  Backup takes 6-8 minutes. Begin?  NO");
 					}
 				}
-			} else if (b == backup) {
+*/			} 
+/*			else if (b == backup) {
 				int response = JOptionPane.showConfirmDialog(null, "Backup takes 6-8 minutes.\nBegin?",
 			              "Confirm", JOptionPane.OK_CANCEL_OPTION);
 				if (response == JOptionPane.OK_OPTION) {
@@ -768,7 +782,8 @@ public class TBLoader extends JFrame implements ActionListener {
 					Logger.LogString("REFORMATTING");
 					CopyThread t = new CopyThread(this, devicePath, community, di.serialNumber, dateTime, handIcons.isSelected(), revision,di.revision,"compare-basic");//"reformat");
 					t.start();
-			} else if (b == setCommunity)
+			} 
+*/			else if (b == setCommunity)
 					setCommunity(devicePath, community, dateTime);
 			refreshUI();
 			Logger.init();
@@ -781,7 +796,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			resetUI(false);
 		} 
 	}
-
+/*
 	private void backup(String devicePath, String community, String serialNumber, String dateTime) {
 		String imagePathForMkDir, imagePathForCmdLine, imageFile;
 		try {
@@ -807,7 +822,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		}
 		refreshUI();
 	}
-
+*/
 	private void resetUI(boolean resetDrives) {
 		Logger.LogString("Resetting UI");
 		Logger.LogString(" -clearing id text");
@@ -851,43 +866,50 @@ public class TBLoader extends JFrame implements ActionListener {
 	}
 	
 	private void refreshUI() {
-
+		boolean connected;
 		disableAll();
 		checkDirUpdate();
 		
-		update.setText("Update");
-		reformat.setText("Reformat");
-		backup.setText("Backup");
+		update.setText("Update TB");
+//		reformat.setText("Reformat");
+//		backup.setText("Backup");
 		setCommunity.setText("Set Community");
-		xfer.setEnabled((new File(TEMP_COLLECTION_DIR)).exists());			
 		handIcons.setEnabled(true);
 		fetchIDFromServer.setEnabled(true);
-		if (driveConnected()) {
+		connected = driveConnected();
+		if (connected && !updatingTB) {
 			update.setEnabled(true);
-			reformat.setEnabled(true);
-			backup.setEnabled(true);
+//			reformat.setEnabled(true);
+//			backup.setEnabled(true);
+			xfer.setEnabled(true);
 			setCommunity.setEnabled(true);
+			xfer.setEnabled((new File(TEMP_COLLECTION_DIR)).exists());			
 			status.setText("STATUS: Ready");
+			status2.setText("");
 			Logger.LogString("STATUS: Ready");
 		} else {
 			update.setEnabled(false);
-			reformat.setEnabled(false);
-			backup.setEnabled(false);
 			setCommunity.setEnabled(false);
-			Logger.LogString("STATUS: " + NO_DRIVE);
-			status.setText("STATUS: " + NO_DRIVE);
+			xfer.setEnabled(false);
+			if (!connected) {
+				Logger.LogString("STATUS: " + NO_DRIVE);
+				status.setText("STATUS: " + NO_DRIVE);
+			}
+//			reformat.setEnabled(false);
+//			backup.setEnabled(false);
 		}
 	}
 
 	private void disableAll() {
 		// This is used after startup and when there have been no changes to the drives 
 		update.setEnabled(false);
-		reformat.setEnabled(false);
-		backup.setEnabled(false);
+//		reformat.setEnabled(false);
+//		backup.setEnabled(false);
 		xfer.setEnabled(false);	
 		setCommunity.setEnabled(false);
 		handIcons.setEnabled(false);
 		fetchIDFromServer.setEnabled(false);
+		
 	}
 	
 	void finishCopy(boolean success, final String idString, final String mode) {
@@ -901,6 +923,12 @@ public class TBLoader extends JFrame implements ActionListener {
 						JOptionPane.showMessageDialog(parent, "Success!",
 				                "Success", JOptionPane.DEFAULT_OPTION);
 						Logger.LogString("Success");
+						status2.setText("");
+						status.setText("");
+						update.setEnabled(true);
+						updatingTB = false;
+						
+						resetUI(false);
 					}
 				};
 			} else {
@@ -913,8 +941,6 @@ public class TBLoader extends JFrame implements ActionListener {
 					}
 				};
 			}
-			parent.refreshUI();
-			Logger.init();
 			SwingUtilities.invokeAndWait(runnable);
 		} catch (InterruptedException e) {
 			Logger.LogString(e.toString());
@@ -928,6 +954,9 @@ public class TBLoader extends JFrame implements ActionListener {
 			Logger.LogString(e.toString());
 			Logger.init();
 			e.printStackTrace();
+		} finally {
+			parent.refreshUI();
+			Logger.init();
 		}
 	}
 
@@ -984,30 +1013,23 @@ public class TBLoader extends JFrame implements ActionListener {
 	}
 	
 	public static class CopyThread extends Thread {
-		private final String devicePath;
-		private final String community;
-		private final String id;
-		private final String datetime;
-		private final TBLoader callback;
-		private final boolean useHandIcons;
-		private final String sourceRevision;
-		private final String targetRevision;
-		private final String mode;
+		final String devicePath;
+		final String community;
+		final String id;
+		final String datetime;
+		final TBLoader callback;
+		final boolean useHandIcons;
+		final String sourceRevision;
+		final String targetRevision;
+		final String mode;
 		boolean criticalError = false;
 		boolean alert = false;
 		boolean success = false;
-		public CopyThread(TBLoader callback, String devicePath, String community, String id, String datetime, boolean useHandIcons, String sourceRevision, String targetRevision,String mode) {
-			this.callback = callback;
-			this.community 	= community;
-			this.devicePath = devicePath;
-			this.id = id;
-			this.datetime = datetime;
-			this.useHandIcons = useHandIcons;
-			this.mode = mode;
-			this.sourceRevision = sourceRevision;
-			this.targetRevision = targetRevision;
-		}		
-		@Override public void run() {
+		
+		private boolean executeFile(File file) { //,String devicePath, String community, String id, String datetime, boolean useHandIcons, String sourceRevision, String targetRevision) {
+			boolean success = true;
+			String errorLine = "";
+			criticalError = false;
 			try {
 				BufferedReader reader;
 				String handValue;
@@ -1015,7 +1037,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					handValue = "1";
 				else
 					handValue = "0";
-				reader = new BufferedReader(new FileReader(new File(SCRIPT_SUBDIR + mode +".txt")));
+				reader = new BufferedReader(new FileReader(file));
 				Logger.LogString("ID="+id);
 				while (reader.ready() && !criticalError) {
 					String cmd = reader.readLine();
@@ -1036,21 +1058,57 @@ public class TBLoader extends JFrame implements ActionListener {
 					alert = cmd.startsWith("!");
 					if (alert)
 						cmd = cmd.substring(1);
-					/*
-					if (cmd.startsWith("format")) {
-						int response = JOptionPane.showConfirmDialog(null, "Talking Book will now be ERASED.\nAre you sure?",
-			                "Confirm", JOptionPane.YES_NO_OPTION);
-						if (response != JOptionPane.YES_OPTION) {
-							return;
-						}
-					}
-					*/					
-					if (!execute("cmd /C " + cmd) && alert) {
-						Logger.LogString("command returned false");
-						return;
+					errorLine = execute("cmd /C " + cmd);
+					if (errorLine != null && alert) {
+						JOptionPane.showMessageDialog(null, errorLine,
+								"Error", JOptionPane.ERROR_MESSAGE);
+						criticalError = true;
+						success = false;
+						break;
 					}
 				}
 				reader.close();
+			} catch (Exception e) {
+				Logger.LogString(e.toString());
+				Logger.init();
+				e.printStackTrace();
+			}
+			return success;
+		}
+		
+		public CopyThread(TBLoader callback, String devicePath, String community, String id, String datetime, boolean useHandIcons, String sourceRevision, String targetRevision,String mode) {
+			this.callback = callback;
+			this.community 	= community;
+			this.devicePath = devicePath;
+			this.id = id;
+			this.datetime = datetime;
+			this.useHandIcons = useHandIcons;
+			this.mode = mode;
+			this.sourceRevision = sourceRevision;
+			this.targetRevision = targetRevision;
+		}		
+		@Override public void run() {
+			try {
+				boolean gotStats,hasCorruption,verified, goodCard;
+				gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				if (gotStats)
+					TBLoader.status2.setText("Got Stats");
+				else 
+					TBLoader.status2.setText("No Stats!");
+				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
+				if (hasCorruption) {
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted");
+					goodCard = executeFile(new File(SCRIPT_SUBDIR + "reformat.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+					if (!goodCard) {
+						JOptionPane.showMessageDialog(null, "Could not reformat memory card.  Make sure you have a good USB connection and that the Talking Book is powered with batteries and then try again.  If you still cannot reformat, replace the memory card.",
+				                "Failure!", JOptionPane.ERROR_MESSAGE);
+						return;
+					} else 
+						TBLoader.status2.setText(TBLoader.status2.getText() + "...Format was good");						
+				} else {
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Good Card");
+					executeFile(new File(SCRIPT_SUBDIR + "relabel.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				}
 				// now that any possible reformatting is complete, copy over the new serial number 
 				if (callback.fetchIDFromServer.isSelected()) {
 					File f = new File(devicePath + "-erase-srn." + id + ".srn");
@@ -1058,9 +1116,18 @@ public class TBLoader extends JFrame implements ActionListener {
 					f = new File(devicePath + "inspect");
 					f.createNewFile();
 				} 
-
-				success = true;
-				Toolkit.getDefaultToolkit().beep();
+				executeFile(new File(SCRIPT_SUBDIR + "update.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				TBLoader.status2.setText(TBLoader.status2.getText() + "...Updated");
+				verified = executeFile(new File(SCRIPT_SUBDIR + "verify.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				if (verified) {
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Verified");
+					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Complete");
+					success = true;
+				} else
+				success = false;
+				for (int i=1;i<=3;i++)
+					Toolkit.getDefaultToolkit().beep();
 			} catch (Exception e) {
 				if (alert) {
 					JOptionPane.showMessageDialog(null, e.getMessage(),
@@ -1080,9 +1147,7 @@ public class TBLoader extends JFrame implements ActionListener {
 
 	static boolean chkDsk(DriveInfo di) throws Exception {
 		String line;
-		String foldersIssue1[]={"system","languages","messages","messages/lists","messages/audio","languages/dga","system/stats","system/ostats"};
-		String foldersIssue2[]={"system","languages","messages","statistics","log-archive","messages/lists","messages/audio","languages/dga","statistics/stats","statistics/ostats"};
-		String folders[];
+		String folders[] = {"system","languages","messages","statistics","log-archive","messages/lists","messages/audio","languages/dga","statistics/stats","statistics/ostats"};
 		boolean goodDisk = true;
 		
 		Logger.LogString("cmd /C echo n|chkdsk " + di.drive.toString());
@@ -1110,12 +1175,6 @@ public class TBLoader extends JFrame implements ActionListener {
 				Logger.LogString("***LABEL:" + line.substring(7, line.indexOf(' ', 7)));
 			}
 		} 
-
-		// check for existence of the most important folders, depending on Issue #
-		if (di.lastIssue == 1)
-			folders = foldersIssue1;
-		else
-			folders = foldersIssue2;
 		
 		for (int i = 0; i < folders.length; i++) {
 			String folderName = new String(di.drive.toString() + folders[i]);
@@ -1138,14 +1197,10 @@ public class TBLoader extends JFrame implements ActionListener {
 		proc.waitFor();
 		return goodDisk;
 	}	
-	static boolean execute(String cmd) throws Exception {
+	static String execute(String cmd) throws Exception {
 		String line;
-		String throwExceptionLine = null;
+		String errorLine = null;
 		Logger.LogString("Executing:" + cmd);
-		if (debug) {
-			return true;
-		}
-
 		Process proc = Runtime.getRuntime().exec(cmd);
 
 		BufferedReader br1 = new BufferedReader(new InputStreamReader(proc.getInputStream()));
@@ -1154,11 +1209,20 @@ public class TBLoader extends JFrame implements ActionListener {
 		do {
 			line = br1.readLine();
 			Logger.LogString(line);
-			if (line!=null && throwExceptionLine == null) {
+			if (line!=null && errorLine == null) {
 				if (line.contains("New")) {
-					throwExceptionLine = line.substring(line.length()-30);
+					//  file copy validation failed (some files missing on target) 
+					errorLine = line.substring(line.length()-30);
 				} else if (line.contains("Invalid media or Track 0 bad - disk unusable")) {
-					throwExceptionLine = line;
+					// formatting error
+					errorLine = line;
+				} else if (line.contains("Windows found problems with the file system")) {
+					// checkdisk shows corrution
+					errorLine = "File system corrupted";
+				} else if (line.startsWith("The system cannot find the")) {
+					errorLine = "TB not found.  Unplug/replug USB and try again.";
+				} else if (line.startsWith("File Not Found")) {
+					errorLine = "TB missing files";
 				}
 			}
 				
@@ -1169,12 +1233,9 @@ public class TBLoader extends JFrame implements ActionListener {
 			line = br2.readLine();
 			Logger.LogString(line);
 		} while (line != null);
-
-		if (throwExceptionLine != null)
-			throw new Exception("Files do not match:\n" + throwExceptionLine);
-
+		
 		proc.waitFor();
-		return true;
+		return errorLine;
 	}
 	
 	private static class DriveInfo {
