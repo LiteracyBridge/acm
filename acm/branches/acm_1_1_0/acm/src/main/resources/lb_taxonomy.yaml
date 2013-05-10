@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 5
+  revision: 6
   categories:
     '0' : 
       name: Other Messages
@@ -8,6 +8,8 @@ taxonomy:
           name: Talking Book
         '0-2' : 
           name: Favorites
+        '0-3' :
+          name: Communities
     '1' : 
       name: Agriculture
       children: 
@@ -193,3 +195,5 @@ taxonomy:
       children:
         '10-1':
           name: Social Issues
+    '11':
+      name: Environment
