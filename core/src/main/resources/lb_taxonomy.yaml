@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 6
+  revision: 7
   categories:
     '0' : 
       name: Other Messages
@@ -8,10 +8,12 @@ taxonomy:
           name: Talking Book
         '0-2' : 
           name: Favorites
+        '0-3' :
+          name: Communities
     '1' : 
       name: Agriculture
       children: 
-        '1-0' : 
+        '1-0' :
           name: General Agriculture
         '1-1' : 
           name: Crops
@@ -47,7 +49,7 @@ taxonomy:
           name: Agric Process
           description: not crop/animal specific
           children: 
-            '1-3-0' : 
+            '1-3-0' :
               name: General Agric Process
             '1-3-1' : 
               name: Preparing land for the growing season
@@ -97,7 +99,7 @@ taxonomy:
         '3-0' :
           name: General Education
         '3-1' :
-          name: Adult literacy
+          name: Adult Literacy
           children:
             '3-1-0' :
               name: General Adult Literacy
@@ -110,7 +112,7 @@ taxonomy:
         '3-2' :
           name: School Lessons
           children:
-            '3-2-0' : 
+            '3-2-0' :
               name: General School Lessons
             '3-2-1' : 
               name: Pre-Kindergarten
@@ -155,7 +157,7 @@ taxonomy:
         '3-8' : 
           name: Languages
           children:
-            '3-8-0' : 
+            '3-8-0' :
               name: General Language Education
             '3-8-1' : 
               name: English
@@ -167,7 +169,7 @@ taxonomy:
       name: Stories
       children:
         '4-0' :
-          name: General stories
+          name: General Stories
         '4-1' :
           name: Oral stories
         '4-2' :
@@ -175,7 +177,7 @@ taxonomy:
     '5' :
       name: Business
       children:
-        '5-0': 
+        '5-0':
           name: General Business
         '5-1': 
           name: Accounting
@@ -221,3 +223,5 @@ taxonomy:
           name: General Society and Culture
         '10-1':
           name: Social Issues
+    '11':
+      name: Environment
