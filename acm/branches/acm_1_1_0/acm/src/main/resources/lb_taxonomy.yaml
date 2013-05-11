@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 7
+  revision: 8
   categories:
     '0' : 
       name: Other Messages
@@ -46,7 +46,7 @@ taxonomy:
             '1-2-5' : 
               name: Donkeys
         '1-3' : 
-          name: Process
+          name: Agric Process
           description: not crop/animal specific
           children: 
             '1-3-0' :
@@ -62,7 +62,7 @@ taxonomy:
             '1-3-5' :
               name: Storing
         '1-4' :
-          name: Business
+          name: Agric Business
           children:
             '1-4-0' :
               name: General Agric Business
@@ -211,7 +211,7 @@ taxonomy:
         '9-6':
           name: Endorsements of TBs
         '9-7':
-          name: Other
+          name: No longer used
         '9-8':
           name: Potential Future Content
         '9-9':
