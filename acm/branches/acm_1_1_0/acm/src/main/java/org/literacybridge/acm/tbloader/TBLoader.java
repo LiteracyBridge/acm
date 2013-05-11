@@ -367,6 +367,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				return "TB-" + idCounter++;
 			}
 		} catch (Exception ex){
+			Logger.LogString("An error occured while fetching a new device ID from the Literacy Bridge server. Make sure you have a working internet connection.");
 			Logger.LogString(ex.toString());
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(this, "An error occured while fetching a new device ID from the Literacy Bridge server. Make sure you have a working internet connection.",
@@ -499,6 +500,8 @@ public class TBLoader extends JFrame implements ActionListener {
 						break;
 					} 
 				}
+				if (rev.length() == 0)
+					rev = "unknown";  // eliminate problem of zero length filenames being inserted into batch statements
 			}
 		} catch (Exception ignore) {
 			Logger.LogString("exception - ignore and keep going with empty string");
@@ -633,9 +636,6 @@ public class TBLoader extends JFrame implements ActionListener {
 			Logger.init();
 			e.printStackTrace();
 		}
-		Logger.LogString("Commmunity set to " + community + ".");
-		JOptionPane.showMessageDialog(null, "Commmunity set to " + community + ".",
-                "Success", JOptionPane.DEFAULT_OPTION);
 	}
 
 	private void xferFiles() {
@@ -648,6 +648,8 @@ public class TBLoader extends JFrame implements ActionListener {
 			return;
 		xfer.setEnabled(false);
 		update.setEnabled(false);
+		setCommunity.setEnabled(false);
+		Logger.LogString("Transfering audio files to dropbox.");
 		try {
 			execute("cmd /C " + SW_SUBDIR + "robocopy \"" + TEMP_COLLECTION_DIR + "\" \"" + copyTo +"\" /MOVE /E");
 		} catch (Exception e) {
@@ -1155,6 +1157,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					goodCard = executeFile(new File(SCRIPT_SUBDIR + "reformat.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 					if (!goodCard) {
 						TBLoader.status2.setText(TBLoader.status2.getText() + "...Reformat Failed");
+						Logger.LogString("Could not reformat memory card.\nMake sure you have a good USB connection\nand that the Talking Book is powered with batteries, then try again.\n\nIf you still cannot reformat, replace the memory card.");
 						JOptionPane.showMessageDialog(null, "Could not reformat memory card.\nMake sure you have a good USB connection\nand that the Talking Book is powered with batteries, then try again.\n\nIf you still cannot reformat, replace the memory card.",
 				                "Failure!", JOptionPane.ERROR_MESSAGE);
 						return;
@@ -1175,20 +1178,25 @@ public class TBLoader extends JFrame implements ActionListener {
 				TBLoader.status2.setText(TBLoader.status2.getText() + "...Updated");
 				verified = executeFile(new File(SCRIPT_SUBDIR + "verify.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 				if (verified) {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Verified");
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Disconnecting TB");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Verified Basic...Adding Any Custom Community Content");
+					verified = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);					
+				}
+				if (verified) {
+					String duration;
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Updated & Verified...Disconnecting TB");
 					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Complete");
 					success = true;
-					JOptionPane.showMessageDialog(null, "Talking Book has been updated and verified\nin "+getDuration() + ".",
+					duration = getDuration();
+					Logger.LogString("Talking Book has been updated and verified\nin "+ duration + ".");
+					JOptionPane.showMessageDialog(null, "Talking Book has been updated and verified\nin " + duration + ".",
 			                "Success", JOptionPane.DEFAULT_OPTION);
-					Logger.LogString("Success");
 				} else {
 					success = false;
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Failed Verification");
 					JOptionPane.showMessageDialog(null, "Update failed verification.  Try again or replace memory card.",
 			                "Failure", JOptionPane.DEFAULT_OPTION);
-					Logger.LogString("Failure");
+					Logger.LogString("Update failed verification.  Try again or replace memory card.");
 				}
 				for (int i=1;i<=(success?3:6);i++)
 					Toolkit.getDefaultToolkit().beep();
@@ -1211,6 +1219,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			try {
 				boolean hasCorruption,goodCard;
 				success = false;
+				Logger.LogString("Setting Community -- first checking connectin and memory card.");
 				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 				if (!goodCard) {
 					return;
@@ -1218,6 +1227,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				TBLoader.status2.setText("Checking Memory Card");
 				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
 				if (hasCorruption) {
+					Logger.LogString("Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.");
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted");
 					JOptionPane.showMessageDialog(null, "Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.",
 			                "Failure", JOptionPane.DEFAULT_OPTION);
@@ -1226,8 +1236,16 @@ public class TBLoader extends JFrame implements ActionListener {
 				TBLoader.status2.setText(TBLoader.status2.getText() + "...Memory Card Good...Setting Community");
 				TBLoader.setCommunity(devicePath, community, this.datetime);
 				TBLoader.status2.setText(TBLoader.status2.getText() + "...Community Set");
-				success = true;
-				for (int i=1;i<=3;i++)
+				success = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));
+				if (success) {
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Custom Files Applied");
+					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Complete");
+					Logger.LogString("Commmunity set to " + community + " and custom files applied.");
+					JOptionPane.showMessageDialog(null, "Commmunity set to " + community + ".",
+			                "Success", JOptionPane.DEFAULT_OPTION);
+				}
+			for (int i=1;i<=3;i++)
 					Toolkit.getDefaultToolkit().beep();
 			} catch (Exception e) {
 				if (alert) {
@@ -1315,7 +1333,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		} else if (line.contains("Invalid media or Track 0 bad - disk unusable")) {
 			// formatting error
 			errorMsg = "Bad memory card.  Please discard and replace it.";
-		} else if (line.contains("Specified drive does not exist.")) {
+		} else if (line.contains("Specified drive does not exist.") || line.startsWith("The volume does not contain a recognized file system.")) {
 			errorMsg = "Either bad memory card or USB connection problem.  Try again.";
 		} else if (line.contains("Windows found problems with the file system") || line.startsWith("File Not Found") || line.startsWith("The system cannot find the file")) {
 			// checkdisk shows corruption
