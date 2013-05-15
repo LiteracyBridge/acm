@@ -48,10 +48,11 @@ import javax.swing.filechooser.FileSystemView;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.05";
+	private static final String VERSION = "v1.06";
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
+	private static String TEMP_COLLECTION_DIR2 = "";
 	private static final String SW_SUBDIR = ".\\software\\";
 	private static final String CONTENT_SUBDIR = ".\\content\\";
 	private static final String CONTENT_BASIC = CONTENT_SUBDIR + "basic\\";
@@ -74,6 +75,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	private static JButton setCommunity;
 	private static String copyTo;
 	private static String revision;
+	public static String packageName;
 	private JCheckBox fetchIDFromServer;
 	private JCheckBox handIcons;
 	
@@ -107,11 +109,13 @@ public class TBLoader extends JFrame implements ActionListener {
 	};
 
 	public TBLoader() throws Exception {
-		String packageName;
-		packageName= "(No Pkg)";
+		String tblRevision;
+		packageName= "unknown";
 		revision = "(No firmware)";
+		tblRevision="(no rev)";
 		
 		File basicContentPath = new File(CONTENT_BASIC );
+		File swPath = new File(SW_SUBDIR);
 		try {
 			File[] files;
 			if (basicContentPath.exists()) {
@@ -143,6 +147,19 @@ public class TBLoader extends JFrame implements ActionListener {
 					packageName = files[0].getName();
 					packageName = packageName.substring(0, packageName.length() - 4);
 				}
+				// get TBLoader revision
+				files = swPath.listFiles(new FilenameFilter() {
+					@Override public boolean accept(File dir, String name) {
+						String lowercase = name.toLowerCase();
+						return lowercase.endsWith(".rev");
+					}
+				});				
+				if (files.length > 1)
+					packageName = "(Multiple TBL Revisions!)";
+				else if (files.length == 1) {
+					tblRevision = files[0].getName();
+					tblRevision = tblRevision.substring(0, tblRevision.length() - 4);
+				}
 			}
 		} catch (Exception ignore) {
 			Logger.LogString("exception - ignore and keep going with default string");
@@ -150,7 +167,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.addWindowListener(new WindowEventHandler());
-		setTitle("TB-Loader " + VERSION + "   Update:" + packageName + "   Revision:" + revision);
+		setTitle("TB-Loader " + VERSION + "/" + tblRevision + "   Update:" + packageName + "   Firmware:" + revision);
 		
 		JPanel panel = new JPanel();
 		
@@ -302,8 +319,13 @@ public class TBLoader extends JFrame implements ActionListener {
 	
 	private static String getLogFileName() {
 		String filename;
+		File f;
 		
-		filename = copyTo + "\\log-" + getDateTime()+".txt";
+		filename = copyTo + "\\logs";
+		f = new File(filename);
+		if (!f.exists())
+			f.mkdirs();
+		filename += "\\log-" + getDateTime()+".txt";
 		return filename;
 	}
 	private void setCopyToPath() {
@@ -316,13 +338,15 @@ public class TBLoader extends JFrame implements ActionListener {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			homepath = new String(reader.readLine());
 			reader.close();
-			TEMP_COLLECTION_DIR = new String(homepath + "\\TB-Loader");
+			TEMP_COLLECTION_DIR = new String(homepath + "\\LiteracyBridge");
+			TEMP_COLLECTION_DIR2 = new String(homepath + "\\TB-Loader");
 			Logger.LogString("Temp Collection Dir: " + TEMP_COLLECTION_DIR);
 			File f = new File(TEMP_COLLECTION_DIR);
 			f.mkdirs();
 			// now that local path is established, the 'collected-data' subdir is what should 
 			// only be present when there is local storage (the xfer button is only enabled if it's there
 			TEMP_COLLECTION_DIR += COLLECTION_SUBDIR; 
+			TEMP_COLLECTION_DIR2 += COLLECTION_SUBDIR; 
 			reader = new BufferedReader(new FileReader(new File(SW_SUBDIR + "paths.txt")));
 			copyTo = "";
 			while (reader.ready() && i < MAX_PATHS) {
@@ -652,6 +676,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		Logger.LogString("Transfering audio files to dropbox.");
 		try {
 			execute("cmd /C " + SW_SUBDIR + "robocopy \"" + TEMP_COLLECTION_DIR + "\" \"" + copyTo +"\" /MOVE /E");
+			execute("cmd /C " + SW_SUBDIR + "robocopy \"" + TEMP_COLLECTION_DIR2 + "\" \"" + copyTo +"\" /MOVE /E");
 		} catch (Exception e) {
 			Logger.LogString(e.toString());
 			Logger.init();
@@ -1096,6 +1121,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					cmd = cmd.replaceAll("\\$\\{hand\\}", handValue);
 					cmd = cmd.replaceAll("\\$\\{source_revision\\}", sourceRevision);
 					cmd = cmd.replaceAll("\\$\\{target_revision\\}", targetRevision);
+					cmd = cmd.replaceAll("\\$\\{package\\}", packageName);
 					alert = cmd.startsWith("!");
 					if (alert)
 						cmd = cmd.substring(1);
@@ -1273,7 +1299,7 @@ public class TBLoader extends JFrame implements ActionListener {
 
 	static boolean chkDsk(DriveInfo di) throws Exception {
 		String line;
-		String folders[] = {"system","languages","messages","statistics","log-archive","messages/lists","messages/audio","languages/dga","statistics/stats","statistics/ostats"};
+		String folders[] = {"system","languages","messages","statistics","log","log-archive","messages/lists","messages/audio","languages/dga","statistics/stats","statistics/ostats"};
 		boolean goodDisk = true;
 		
 		Logger.LogString("cmd /C echo n|chkdsk " + di.drive.toString());
