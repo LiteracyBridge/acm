@@ -45,9 +45,6 @@ public class AudioItemTransferHandler extends TransferHandler {
 			// we only support ordering of audio items within tags
 			return false;
 		}
-
-		support.setDropAction(MOVE);
-		support.setShowDropLocation(true);
 		
 		return true;
 	}
@@ -68,7 +65,7 @@ public class AudioItemTransferHandler extends TransferHandler {
 	
 	@Override
     public int getSourceActions(JComponent c) {
-        return MOVE;
+        return TransferHandler.COPY_OR_MOVE;
     }
     
 	@Override
