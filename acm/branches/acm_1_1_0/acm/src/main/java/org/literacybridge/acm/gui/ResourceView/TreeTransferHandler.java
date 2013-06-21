@@ -108,10 +108,14 @@ public class TreeTransferHandler extends TransferHandler {
 	
 	private void assignCategory(TransferHandler.TransferSupport support, final CategoryTreeNodeObject target) throws IOException, UnsupportedFlavorException {
 		Transferable t = support.getTransferable();
+		boolean move = support.getSourceDropActions() == TransferHandler.MOVE;
 		
 		final AudioItem[] audioItems = (AudioItem[]) t.getTransferData(AudioItemView.AudioItemDataFlavor);
 
 		for (AudioItem item : audioItems) {
+			if (move) {
+				item.removeAllCategories();
+			}
 			item.addCategory(target.getCategory());
 			item.commit();
 		}
