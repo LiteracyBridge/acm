@@ -32,6 +32,7 @@ public class LabelProvider {
 	public static final String WATERMARK_SEARCH = "WATERMARK_SEARCH";
 	
 	public static final String AUDIO_ITEM_TABLE_COLUMN_TITLE = "AUDIO_ITEM_TABLE_COLUMN_TITLE";
+	public static final String AUDIO_ITEM_TABLE_COLUMN_DURATION = "AUDIO_ITEM_TABLE_COLUMN_DURATION";
 	public static final String AUDIO_ITEM_TABLE_COLUMN_CREATOR = "AUDIO_ITEM_TABLE_COLUMN_CREATOR";
 	public static final String AUDIO_ITEM_TABLE_COLUMN_LANGUAGE = "AUDIO_ITEM_TABLE_COLUMN_LANGUAGE";
 	public static final String AUDIO_ITEM_TABLE_COLUMN_COPY_COUNT = "AUDIO_ITEM_TABLE_COLUMN_COPY_COUNT";
@@ -41,6 +42,7 @@ public class LabelProvider {
 	public static final String AUDIO_ITEM_TABLE_COLUMN_APPLY_COUNT = "AUDIO_ITEM_TABLE_COLUMN_APPLY_COUNT";
 	public static final String AUDIO_ITEM_TABLE_COLUMN_NOHELP_COUNT = "AUDIO_ITEM_TABLE_COLUMN_NOHELP_COUNT";
 	public static final String AUDIO_ITEM_TABLE_COLUMN_CATEGORIES = "AUDIO_ITEM_TABLE_COLUMN_CATEGORIES";
+	public static final String AUDIO_ITEM_TABLE_COLUMN_SOURCE = "AUDIO_ITEM_TABLE_COLUMN_SOURCE";
 	
 	public static final class KeyValuePair<K, V> {
 		private final K key;
