@@ -33,9 +33,7 @@ public class Configuration extends Properties {
     private static File cacheDirectory;
     private static File dbDirectory;
 	private static String sharedACM = null;
-    private boolean readOnly = false;
-    private boolean sandbox = false;
-    private boolean pathsOverridden = false;
+    private static boolean pathsOverridden = false;
 	private final static String USER_NAME = "USER_NAME";
 	private final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";
 	private final static String DEFAULT_REPOSITORY = "DEFAULT_REPOSITORY";
@@ -44,25 +42,21 @@ public class Configuration extends Properties {
 	private final static String RECORDING_COUNTER_PROP = "RECORDING_COUNTER";
 	private final static String DEVICE_ID_PROP = "DEVICE_ID";
 	private final static String AUDIO_LANGUAGES = "AUDIO_LANGUAGES";	
-	private List<Locale> audioLanguages = null;
-	private Map<Locale,String> languageLables = new HashMap<Locale, String>();
+	private static List<Locale> audioLanguages = null;
+	private static Map<Locale,String> languageLables = new HashMap<Locale, String>();
     
-	private AudioItemRepository repository;
+	private static AudioItemRepository repository;
 
 	public static Configuration getConfiguration() {
 		return instance;
 	}
 	
-	public AudioItemRepository getRepository() {
+	public static AudioItemRepository getRepository() {
 		return repository;
 	}
 	
-	public boolean isACMReadOnly() {
-		return readOnly;
-	}
-	
-	public boolean isSandbox() {
-		return sandbox;
+	static void setRepository(AudioItemRepository newRepository) {
+		repository = newRepository;
 	}
 	
 	// Call this methods to get the non-shared directory root for config, content cache, builds, etc...
@@ -91,11 +85,6 @@ public class Configuration extends Properties {
 		return new File(getACMDirectory(), Constants.TBBuildsHomeDirName);
 	}
 
-/*	
-//	public static File getTBDefinitionsDirectory() {
-//		return new File(getSharedACMDirectory(), Constants.TBDefinitionsHomeDirName);
-//	}
-*/	
 	public void writeProps() {
 		try {
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(getConfigurationPropertiesFile()));
@@ -120,14 +109,14 @@ public class Configuration extends Properties {
 				if (args.pathRepository != null) {
 					repPath = new File (args.pathRepository);
 					if (dbPath.exists() && repPath.exists()) {
-							instance.pathsOverridden = true;
+							pathsOverridden = true;
 							setDatabaseDirectory(dbPath);
 							setRepositoryDirectory(repPath);
 					} else
 						System.out.println("DB or Repository Path does not exist.  Ignoring override.");
 					}
 			} else if (args.sharedACM != null) {
-				instance.pathsOverridden = true;
+				pathsOverridden = true;
 				setSharedACMname(args.sharedACM);
 			}
 			InitializeAcmConfiguration();
@@ -151,16 +140,24 @@ public class Configuration extends Properties {
 		return title;
 	}
 
-	public String getRecordingCounter() {
-		return getProperty(RECORDING_COUNTER_PROP);
+	public static String getUserName() {
+		return instance.getProperty("USER_NAME");
+	}
+
+	public static String getUserContact() {
+		return instance.getProperty(USER_CONTACT_INFO);
 	}
 	
-	public void setRecordingCounter(String counter) {
-		setProperty(RECORDING_COUNTER_PROP, counter);
+	public static String getRecordingCounter() {
+		return instance.getProperty(RECORDING_COUNTER_PROP);
 	}
 	
-	public String getDeviceID() throws IOException {
-		String value = getProperty(DEVICE_ID_PROP);
+	public static void setRecordingCounter(String counter) {
+		instance.setProperty(RECORDING_COUNTER_PROP, counter);
+	}
+	
+	public static String getDeviceID() throws IOException {
+		String value = instance.getProperty(DEVICE_ID_PROP);
 		if (value == null) {
 			final int n = 10;
 			Random rnd = new Random();
@@ -170,14 +167,14 @@ public class Configuration extends Properties {
 				builder.append(Character.forDigit(rnd.nextInt(Character.MAX_RADIX), Character.MAX_RADIX));
 			}
 			value = builder.toString();
-			setProperty(DEVICE_ID_PROP, value);
-			writeProps();
+			instance.setProperty(DEVICE_ID_PROP, value);
+			instance.writeProps();
 		}
 		
 		return value;
 	}
 	
-	public String getNewAudioItemUID() throws IOException {
+	public static String getNewAudioItemUID() throws IOException {
 		String value = getRecordingCounter();
 		int counter = (value == null) ? 0 : Integer.parseInt(value, Character.MAX_RADIX);
 		counter++;
@@ -186,21 +183,21 @@ public class Configuration extends Properties {
 		
 		// make sure we remember that this uuid was already used
 		setRecordingCounter(value);
-		writeProps();
+		instance.writeProps();
 		
 		return uuid;
 	}
 
 	private final static Pattern LANGUAGE_LABEL_PATTERN = Pattern.compile(".*\\(\"(.+)\"\\).*");
 	
-	public String getLanguageLabel(Locale locale) {
+	public static String getLanguageLabel(Locale locale) {
 		return languageLables.get(locale);
 	}
 	
-	public List<Locale> getAudioLanguages() {
+	public static List<Locale> getAudioLanguages() {
 		if (audioLanguages == null) {
 			audioLanguages = new ArrayList<Locale>();
-			String languages = getProperty(AUDIO_LANGUAGES);
+			String languages = instance.getProperty(AUDIO_LANGUAGES);
 			if (languages != null) {
 				StringTokenizer tokenizer = new StringTokenizer(languages, ", ");
 				while (tokenizer.hasMoreTokens()) {
@@ -228,7 +225,7 @@ public class Configuration extends Properties {
 		return Collections.unmodifiableList(audioLanguages);
 	}
 
-	private static void setDatabaseDirectory(File f) {
+	static void setDatabaseDirectory(File f) {
     	dbDirectory = f; // new File(f,Constants.DerbyDBHomeDir);
     }
 
@@ -312,7 +309,7 @@ public class Configuration extends Properties {
 			instance.put(AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),tw(\"Twi\"),sfw(\"Sehwi\")");
 			instance.writeProps();
 		}
-		if (!instance.pathsOverridden) {
+		if (!pathsOverridden) {
 			if (dbDirectory == null && instance.containsKey(DEFAULT_DB)) {
 				setDatabaseDirectory(new File(instance.getProperty(DEFAULT_DB)));
 			}

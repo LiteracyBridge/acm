@@ -106,7 +106,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 					if (values != null) {
 						cellText = values.get(0).getValue();
 					} else {
-						AudioItemRepository repository = Configuration.getConfiguration().getRepository();
+						AudioItemRepository repository = Configuration.getRepository();
 						File f = repository.getAudioFile(audioItem, AudioFormat.A18);
 						DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(f)));
 						in.skipBytes(4);

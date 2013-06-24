@@ -22,7 +22,7 @@ public class WAVImporter extends Importer {
 	@Override
 	protected void importSingleFile(Category category, File file) throws IOException {
 		try {
-			AudioItem audioItem = new AudioItem(Configuration.getConfiguration().getNewAudioItemUID());
+			AudioItem audioItem = new AudioItem(Configuration.getNewAudioItemUID());
 			audioItem.addCategory(category);
 
 			LocalizedAudioItem localizedAudioItem = new LocalizedAudioItem(audioItem.getUuid() + "-en", Locale.ENGLISH);
@@ -36,7 +36,7 @@ public class WAVImporter extends Importer {
 			metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE, 
 					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 			
-			AudioItemRepository repository = Configuration.getConfiguration().getRepository();
+			AudioItemRepository repository = Configuration.getRepository();
 			repository.storeAudioFile(audioItem, file);			
 
 			audioItem.commit();			

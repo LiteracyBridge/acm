@@ -21,6 +21,7 @@ import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ControlAccess;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
@@ -40,7 +41,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 			final AudioItemView audioItemView, final IDataRequestResult data) {
 		super(parent, "", false);
 		
-		final boolean readOnly = Configuration.getConfiguration().isACMReadOnly();
+		final boolean readOnly = ControlAccess.isACMReadOnly();
 		
 		setResizable(false);
 		setUndecorated(true);		
@@ -99,7 +100,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 						for (AudioItem a : selectedAudioItems) {
 							try {
 								a.destroy();
-								Configuration.getConfiguration().getRepository().delete(a);
+								Configuration.getRepository().delete(a);
 							} catch (Exception e) {
 								LOG.log(Level.WARNING, "Unable to delete audioitem id=" + a.getUuid(), e);
 							}
@@ -177,7 +178,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 			}
 		};
 		
-		if (Configuration.getConfiguration().isACMReadOnly()) {
+		if (ControlAccess.isACMReadOnly()) {
 			deleteButton.setEnabled(false);
 		}
 		

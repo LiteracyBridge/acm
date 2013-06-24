@@ -19,6 +19,7 @@ import org.jdesktop.swingx.JXFrame;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ControlAccess;
 import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
@@ -77,7 +78,7 @@ public class Application extends JXFrame {
 			title += " - " + Configuration.getACMname();
 		else if (Configuration.getSharedACMname() != null)
 			title += " - " + Configuration.getSharedACMname();			
-		if (Configuration.getConfiguration().isACMReadOnly())
+		if (ControlAccess.isACMReadOnly())
 			title += " * READ ONLY *";
 
 		setTitle(title);

@@ -24,7 +24,7 @@ public class A18DeviceExporter {
 			return false;
 		}
 
-		AudioItemRepository repository = Configuration.getConfiguration().getRepository();
+		AudioItemRepository repository = Configuration.getRepository();
 		try {
 			repository.exportA18WithMetadata(item.getParentAudioItem(), deviceLocation);
 		} catch (ConversionException e) {

@@ -92,7 +92,7 @@ public class WavCaching {
 				if (item != null) {
 					System.out.println("Converting " + audioItemName);
 					try {
-						Configuration.getConfiguration().getRepository().convert(item, AudioFormat.WAV);
+						Configuration.getRepository().convert(item, AudioFormat.WAV);
 					} catch (ConversionException e) {
 						e.printStackTrace();
 					} catch (IOException e) {

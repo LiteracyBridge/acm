@@ -271,7 +271,7 @@ public class ToolbarView extends JToolBar implements ActionListener
 			// convert on the fly if necessary
 			Application parent = Application.getApplication();
 			parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));				
-			File f = Configuration.getConfiguration().getRepository()
+			File f = Configuration.getRepository()
 							.convert(item.getParentAudioItem(), AudioFormat.WAV);
 			parent.setCursor(Cursor.getDefaultCursor());
 			Application.getFilterState().updateResult();	

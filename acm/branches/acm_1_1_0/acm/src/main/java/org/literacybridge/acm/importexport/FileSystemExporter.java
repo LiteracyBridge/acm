@@ -16,7 +16,7 @@ public class FileSystemExporter {
 		throws IOException {
 		
 		try {
-			AudioItemRepository repository = Configuration.getConfiguration().getRepository();
+			AudioItemRepository repository = Configuration.getRepository();
 			
 			for (LocalizedAudioItem localizedAudioItem : selectedAudioItems) {				
 				// first: check which formats we have

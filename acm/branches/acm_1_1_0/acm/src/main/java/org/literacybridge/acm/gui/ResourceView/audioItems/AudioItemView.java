@@ -22,7 +22,7 @@ import javax.swing.ListSelectionModel;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ControlAccess;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.Application;
@@ -64,7 +64,7 @@ public class AudioItemView extends Container implements Observer {
 	private void createTable() {
 		audioItemTable = new JXTable();
 		audioItemTable.setShowGrid(false, false);
-		if (!Configuration.getConfiguration().isACMReadOnly()) {
+		if (!ControlAccess.isACMReadOnly()) {
 			audioItemTable.setDragEnabled(true);
 			audioItemTable.setDropMode(DropMode.INSERT);
 			audioItemTable.setTransferHandler(new AudioItemTransferHandler());
