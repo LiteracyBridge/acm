@@ -13,11 +13,8 @@ import javax.swing.JFrame;
 import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
-
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
-
 import org.jdesktop.swingx.JXFrame;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.api.IDataRequestResult;
@@ -34,6 +31,7 @@ import org.literacybridge.acm.gui.ResourceView.ResourceView;
 import org.literacybridge.acm.gui.ResourceView.ToolbarView;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.repository.WavCaching;
 
 public class Application extends JXFrame {
 	private static final Logger LOG = Logger.getLogger(Application.class.getName());
@@ -142,7 +140,7 @@ public class Application extends JXFrame {
 		application.toFront();
 		
 		LOG.log(Level.INFO, "ACM successfully started.");
-		Configuration.cacheNewA18Files();
+		WavCaching.cacheNewA18Files();
 	}	
 	
 	public static class FilterState {
