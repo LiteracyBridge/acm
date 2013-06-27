@@ -21,6 +21,7 @@ import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ControlAccess;
 //import org.literacybridge.acm.content.AudioItem;
 //import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
@@ -39,7 +40,7 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 			final IDataRequestResult data) {
 		super(parent, "", false);
 		
-		final boolean readOnly = Configuration.getConfiguration().isACMReadOnly();
+		final boolean readOnly = ControlAccess.isACMReadOnly();
 		
 		setResizable(false);
 		setUndecorated(true);		
@@ -62,16 +63,9 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 		if (selectedTag == null) {
 			final String deleteMessage;
 			
-			if (selectedAudioItems.length > 1) {
-				labelPostfix = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_LABEL_POSTFIX", LanguageUtil.getUILanguage())
-												, selectedAudioItems.length);
-				deleteMessage = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_ITEMS", LanguageUtil.getUILanguage())
-												, selectedAudioItems.length);
-			} else {
-				labelPostfix = selectedTitle;
-				deleteMessage = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_TITLE", LanguageUtil.getUILanguage())
+			labelPostfix = selectedTitle;
+			deleteMessage = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_TITLE", LanguageUtil.getUILanguage())
 												, selectedTitle);
-			}
 			
 			deleteButton = new FlatButton(String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE", LanguageUtil.getUILanguage())
 					, labelPostfix)
@@ -93,26 +87,18 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 					    options[0]);
 
 					if (n == 1) {
-						for (AudioItem a : selectedAudioItems) {
 							try {
-								a.destroy();
-								Configuration.getConfiguration().getRepository().delete(a);
+								//a.destroy();
+								//Configuration.getRepository().delete(a);
 							} catch (Exception e) {
-								LOG.log(Level.WARNING, "Unable to delete audioitem id=" + a.getUuid(), e);
+//								LOG.log(Level.WARNING, "Unable to delete audioitem id=" + a.getUuid(), e);
 							}
-						}
 						Application.getFilterState().updateResult(true);
 					}
-
 				}				
 			};
 		} else {
-			if (selectedAudioItems.length > 1) {
-				labelPostfix = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_LABEL_POSTFIX", LanguageUtil.getUILanguage())
-												, selectedAudioItems.length);
-			} else {
-				labelPostfix = selectedTitle;
-			}			
+			labelPostfix = selectedTitle;
 			
 			deleteButton = new FlatButton(String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_REMOVE_TAG", LanguageUtil.getUILanguage())
 					, labelPostfix, selectedTag.getName())
@@ -122,14 +108,12 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 				@Override public void click() {
 					TagContextMenuDialog.this.setVisible(false);
 					
-					for (AudioItem a : selectedAudioItems) {
 						try {
-							a.removeTag(selectedTag);
-							a.commit();
+//							a.removeTag(selectedTag);
+//							a.commit();
 						} catch (Exception e) {
-							LOG.log(Level.WARNING, "Unable to remove audioitem id=" + a.getUuid() + " from tag " + selectedTag.getName(), e);
+//							LOG.log(Level.WARNING, "Unable to remove audioitem id=" + a.getUuid() + " from tag " + selectedTag.getName(), e);
 						}
-					}
 					Application.getFilterState().updateResult(true);
 
 				}				
@@ -154,7 +138,7 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 			}
 		};
 		
-		if (Configuration.getConfiguration().isACMReadOnly()) {
+		if (ControlAccess.isACMReadOnly()) {
 			deleteButton.setEnabled(false);
 		}
 		
