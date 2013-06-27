@@ -55,6 +55,8 @@ class PersistentQueries {
 	        	for (int i=0; i < tokens.length; i++) {
 		    		query.append(" AND (lower(t2.keywords) LIKE lower('%" + tokens[i] + "%')" 
 		                             + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
+		                             + "  OR lower(t2.dc_identifier) LIKE lower('%" + tokens[i] + "%')" 
+		                             + "  OR lower(t2.dc_source) LIKE lower('%" + tokens[i] + "%')" 
 		                             + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
 	        	}
         	}
@@ -103,6 +105,8 @@ class PersistentQueries {
 	        	for (int i=0; i < tokens.length; i++) {
 		    		query.append(" AND (lower(t2.keywords) LIKE lower('%" + tokens[i] + "%')" 
 		                             + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
+		                             + "  OR lower(t2.dc_identifier) LIKE lower('%" + tokens[i] + "%')" 
+		                             + "  OR lower(t2.dc_source) LIKE lower('%" + tokens[i] + "%')" 
 		                             + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
 	        	}
         	}
@@ -191,6 +195,8 @@ class PersistentQueries {
 	        		}
 		    		query.append("     (lower(t2.keywords) LIKE lower('%" + tokens[i] + "%')" 
 		                        + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
+                                + "  OR lower(t2.dc_identifier) LIKE lower('%" + tokens[i] + "%')" 
+                                + "  OR lower(t2.dc_source) LIKE lower('%" + tokens[i] + "%')" 
 		                        + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
 	        	}
         	}
@@ -258,6 +264,8 @@ class PersistentQueries {
 	        		}
 		    		query.append("     (lower(t2.keywords) LIKE lower('%" + tokens[i] + "%')" 
 		                        + "  OR lower(t2.dc_title) LIKE lower('%" + tokens[i] + "%')" 
+                                + "  OR lower(t2.dc_identifier) LIKE lower('%" + tokens[i] + "%')" 
+                                + "  OR lower(t2.dc_source) LIKE lower('%" + tokens[i] + "%')" 
 		                        + "  OR lower(t3.language) LIKE lower('%" + tokens[i] + "%'))");
 	        	}
         	}
