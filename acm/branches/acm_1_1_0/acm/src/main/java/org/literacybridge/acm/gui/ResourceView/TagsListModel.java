@@ -2,35 +2,17 @@ package org.literacybridge.acm.gui.ResourceView;
 
 import java.util.List;
 
-import javax.swing.AbstractListModel;
-
 import org.literacybridge.acm.db.PersistentTag;
+import org.literacybridge.acm.gui.util.SortedListModel;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-
-public class TagsListModel extends AbstractListModel {
-	private final List<TagLabel> tags;
-	
+public class TagsListModel extends SortedListModel<TagsListModel.TagLabel> {
 	public TagsListModel(List<PersistentTag> allTags) {
-		tags = Lists.transform(allTags, new Function<PersistentTag, TagLabel>() {
-			@Override public TagLabel apply(PersistentTag tag) {
-				return new TagLabel(tag);
-			}
-		});
+		for (PersistentTag tag : allTags) {
+			add(new TagLabel(tag));
+		}
 	}
 
-	@Override
-	public Object getElementAt(int i) {
-		return tags.get(i); 
-	}
-
-	@Override
-	public int getSize() {
-		return tags.size();
-	}
-	
-	public static final class TagLabel {
+	public static final class TagLabel implements Comparable<TagLabel> {
 		private PersistentTag tag;
 		
 		private TagLabel(PersistentTag tag) {
@@ -43,6 +25,11 @@ public class TagsListModel extends AbstractListModel {
 		
 		@Override public String toString() {
 			return tag.getName();
+		}
+
+		@Override public int compareTo(TagLabel other) {
+			// display the tags in reverse sort order
+			return -tag.getName().compareToIgnoreCase(other.getTag().getName());
 		}
 	}
 }

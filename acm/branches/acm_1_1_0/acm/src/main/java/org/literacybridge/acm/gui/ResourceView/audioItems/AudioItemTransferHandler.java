@@ -1,31 +1,18 @@
 package org.literacybridge.acm.gui.ResourceView.audioItems;
 
-import java.awt.Container;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.JComponent;
 import javax.swing.JTable;
-import javax.swing.JTree;
 import javax.swing.TransferHandler;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreePath;
 
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.ExportToDeviceTransferHandler;
-import org.literacybridge.acm.gui.dialogs.BusyDialog;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
-import org.literacybridge.acm.gui.util.UIUtils;
-import org.literacybridge.acm.gui.util.language.LanguageUtil;
-import org.literacybridge.acm.importexport.A18DeviceExporter;
 
 public class AudioItemTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = 1L;
@@ -78,7 +65,7 @@ public class AudioItemTransferHandler extends TransferHandler {
 					throws UnsupportedFlavorException, IOException {
 				JTable table = (JTable) c;
 				int[] rows = table.getSelectedRows();
-
+				
 				AudioItem[] audioItems = new AudioItem[rows.length];
 				for (int i = 0; i < rows.length; i++) {
 					LocalizedAudioItemNode item = 
