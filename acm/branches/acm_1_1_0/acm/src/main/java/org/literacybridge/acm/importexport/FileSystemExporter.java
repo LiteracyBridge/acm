@@ -23,7 +23,7 @@ public class FileSystemExporter {
 				File sourceFile = repository.convert(localizedAudioItem.getParentAudioItem(), targetFormat);
 				
 				if (sourceFile != null) {
-					String title = localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue();
+					String title = localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue();
 					File targetFile;
 					int counter = 0;
 					do {
