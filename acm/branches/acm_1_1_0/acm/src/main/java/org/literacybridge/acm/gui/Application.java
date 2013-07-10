@@ -4,6 +4,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.SplashScreen;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -42,6 +43,8 @@ public class Application extends JXFrame {
 	// message pump
 	private static SimpleMessageService simpleMessageService = new SimpleMessageService();
 	
+	private Color backgroundColor;
+	
 	public static SimpleMessageService getMessageService() {
 		return simpleMessageService;
 	};
@@ -70,6 +73,8 @@ public class Application extends JXFrame {
 	private SimpleSoundPlayer player = new SimpleSoundPlayer();
 	
 	private Application() throws IOException {
+		super();
+		this.backgroundColor = getBackground();
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	    
 		
 		String title = new String(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUILanguage())); 
@@ -91,6 +96,19 @@ public class Application extends JXFrame {
 	    // starts file system monitor after UI has been initialized
 		fileSystemMonitor.addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());	
 		fileSystemMonitor.start();
+	}
+	
+	@Override
+	public void setBackground(Color bgColor) {
+		// Workaround for weird bug in seaglass look&feel that causes a
+		// java.awt.IllegalComponentStateException when e.g. a combo box
+		// in this dialog is clicked on
+		if (bgColor.getAlpha() == 0) {
+			super.setBackground(backgroundColor);
+		} else {
+			super.setBackground(bgColor);
+			backgroundColor = bgColor;
+		}
 	}
 	
 	public SimpleSoundPlayer getSoundPlayer() {

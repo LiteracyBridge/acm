@@ -1,4 +1,4 @@
-package org.literacybridge.acm.tools;
+package org.literacybridge.acm.gui.util;
 
 import java.awt.Color;
 import java.awt.Frame;

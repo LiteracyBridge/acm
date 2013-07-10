@@ -7,7 +7,6 @@ import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingListener;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -65,11 +64,12 @@ import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
 import org.literacybridge.acm.gui.dialogs.audioItemImportDialog.AudioItemImportDialog;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+import org.literacybridge.acm.gui.util.ACMContainer;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
 
-public class CategoryView extends Container implements Observer {
+public class CategoryView extends ACMContainer implements Observer {
 
 	private static final long serialVersionUID = 5551716856269051991L;
 
@@ -217,6 +217,38 @@ public class CategoryView extends Container implements Observer {
 				    super.setSelectionInterval(index0, index1);
 				    Application.getFilterState().setSelectedTag(((TagLabel) tagsList.getModel().getElementAt(index0)).getTag());
 				}
+			}
+		});
+		tagsList.addMouseListener(new MouseListener() {
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {}
+			
+			@Override
+			public void mousePressed(MouseEvent e) {}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				boolean rightButtonClicked = e.getButton() == MouseEvent.BUTTON3;
+				
+				if (rightButtonClicked) {
+					int index = tagsList.locationToIndex(e.getPoint());
+					if (tagsList.getSelectedIndex() != index) {
+						tagsList.setSelectedIndex(index);
+					}
+					TagLabel label = (TagLabel) tagsList.getSelectedValue();
+					if (label != null) {
+						TagsListPopupMenu menu = new TagsListPopupMenu(label);
+				        menu.show(e.getComponent(), e.getX(), e.getY());
+					}
+				}
+				
 			}
 		});
 		JScrollPane tagsScrollPane = new JScrollPane(tagsList);

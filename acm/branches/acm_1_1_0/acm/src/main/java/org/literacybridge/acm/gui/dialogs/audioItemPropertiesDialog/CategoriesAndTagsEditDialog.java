@@ -18,8 +18,8 @@ import javax.swing.event.ListSelectionListener;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.gui.util.ACMDialog;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
-import org.literacybridge.acm.tools.ACMDialog;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;

@@ -27,10 +27,10 @@ import org.literacybridge.acm.gui.messages.RequestAndSelectAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestedAudioItemMessage;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+import org.literacybridge.acm.gui.util.ACMDialog;
 import org.literacybridge.acm.gui.util.FocusTraversalOnArray;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.Metadata;
-import org.literacybridge.acm.tools.ACMDialog;
 
 public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 
