@@ -69,7 +69,7 @@ public class AudioItemTransferHandler extends TransferHandler {
 				AudioItem[] audioItems = new AudioItem[rows.length];
 				for (int i = 0; i < rows.length; i++) {
 					LocalizedAudioItemNode item = 
-	                	(LocalizedAudioItemNode) table.getModel().getValueAt(rows[i], 0);
+	                	(LocalizedAudioItemNode) table.getModel().getValueAt(table.convertRowIndexToModel(rows[i]), 0);
 					audioItems[i] = item.getLocalizedAudioItem().getParentAudioItem();
 				}
 				
