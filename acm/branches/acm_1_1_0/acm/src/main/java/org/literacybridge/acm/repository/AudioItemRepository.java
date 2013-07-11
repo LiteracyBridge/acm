@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.literacybridge.acm.audioconverter.api.A18Format;
 import org.literacybridge.acm.audioconverter.api.A18Format.AlgorithmList;
@@ -26,6 +27,7 @@ import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.acm.utils.OSChecker;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 /**
  * This repository manages all audio files associated with the audio items
@@ -195,11 +197,51 @@ public abstract class AudioItemRepository {
 	}
 	
 	/**
+	 * Updates all stores audio files associated with the given AudioItem.
+	 * 
+	 * First the file in the given format is imported and the old version of that format is, if it exists, overwritten.
+	 * Then this new version is converted into all formats that were previously stored for that audio item.
+	 */
+	public void updateAudioItem(AudioItem audioItem, File externalFile) throws ConversionException, IOException, 
+	                                                                           UnsupportedFormatException {
+		if (determineFormat(externalFile) == null) {
+			throw new UnsupportedFormatException(
+					"Unsupported or unrecognized audio format for file: " + externalFile); 
+		}
+		
+		// first determine in which formats the item is currently stored
+		Set<AudioFormat> existingFormats = Sets.newHashSet();
+		
+		for (AudioFormat format : AudioFormat.values()) {
+			if (hasAudioItemFormat(audioItem, format)) {
+				existingFormats.add(format);
+			}
+		}
+		
+		// now delete the old files
+		delete(audioItem);
+		
+		// store the new sourceFile
+		try {
+			storeAudioFile(audioItem, externalFile);
+		} catch (UnsupportedFormatException e) {
+			// can't happen - we determined already that we can handle the format
+		} catch (DuplicateItemException e) {
+			// can't happen - we deleted all files for this audio item
+		}
+		
+		// convert to all previously stored formats
+		for (AudioFormat format : existingFormats) {
+			convert(audioItem, format);
+		}
+	}
+	
+	/**
 	 * Deletes all files associated with an audioitem from the repository.
 	 */
 	public void delete(AudioItem audioItem) {
 		// we need to loop over all formats, because the different formats
-		// could we stored in different directories (e.g. local cache)
+		// could be stored in different directories (e.g. local cache)
 		for (AudioFormat format : AudioFormat.values()) {
 			File file = getAudioFile(audioItem, format);
 			if (file != null) {

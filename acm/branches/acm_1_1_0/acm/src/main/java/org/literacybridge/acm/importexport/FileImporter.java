@@ -10,10 +10,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.content.AudioItem;
 
 public class FileImporter {
+	private static final Logger LOG = Logger.getLogger(FileImporter.class.getName());
+	
 	public static abstract class Importer {
 		protected abstract void importSingleFile(Category category, File file) throws IOException;
 		protected abstract String[] getSupportedFileExtensions();
@@ -52,13 +58,27 @@ public class FileImporter {
 		
 		if (file.isDirectory()) {
 			throw new IllegalArgumentException(file.toString() + " is a directory.");
-		} else {
+		} else {			
 			String ext = getFileExtension(file);
 			Importer imp = map.get(ext);
 			if (imp == null) {
 				throw new UnsupportedOperationException(ext + " not supported.");
 			}
-			imp.importSingleFile(category, file);
+			
+			String title = stripFileExtension(file);
+			// check if file name matches an existing audio item id
+			
+			AudioItem item = AudioItem.getFromDatabase(title);
+			if (item != null) {
+				try {
+					Configuration.getRepository().updateAudioItem(item, file);
+				} catch (Exception e) {
+					LOG.log(Level.WARNING, "Unable to update files for audioitem with id=" + title, e);
+				}
+			} else {
+				// new audio item - import
+				imp.importSingleFile(category, file);
+			}
 		}
 	}
 	
@@ -99,6 +119,13 @@ public class FileImporter {
 		return fileName.substring(fileName.length() - 4, fileName.length()).toLowerCase();
 	}
 
+	public static String stripFileExtension(File file) {
+		return stripFileExtension(file.getName());
+	}
+	
+	public static String stripFileExtension(String fileName) {
+		return fileName.substring(0, fileName.length() - 4);
+	}
 	
 	public static FileFilter getFileExtensionFilter(final Set<String> extensions) {
 		return new FileFilter() {
