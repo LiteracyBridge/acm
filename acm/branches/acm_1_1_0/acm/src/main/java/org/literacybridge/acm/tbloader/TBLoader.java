@@ -12,12 +12,14 @@ import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.Calendar;
@@ -1381,7 +1383,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			errorMsg = "Bad memory card.  Please discard and replace it.";
 		} else if (line.contains("Specified drive does not exist.") || line.startsWith("The volume does not contain a recognized file system.")) {
 			errorMsg = "Either bad memory card or USB connection problem.  Try again.";
-		} else if (line.contains("Windows found problems with the file system") || line.startsWith("File Not Found") || line.startsWith("The system cannot find the file")) {
+		} else if (line.contains("Windows found problems with the file system") /* || line.startsWith("File Not Found") */ || line.startsWith("The system cannot find the file")) {
 			// checkdisk shows corruption
 			errorMsg = "File system corrupted";
 		} else if (line.startsWith("The system cannot find the path specified.")) {
@@ -1389,7 +1391,17 @@ public class TBLoader extends JFrame implements ActionListener {
 		}
 		return errorMsg;
 	}
+	//Log:ID=TB000336
+	//Log:REFORMAT
+	//Log:Formatting Talking Book
+	//Log:Executing:cmd /C format F: /FS:FAT32 /v:TB000336 /Y /Q
+	//Log:Cannot open volume for direct access.
 	
+	//Log:  Options : *.* /S /E /COPY:DAT /PURGE /MIR /NP /R:1000000 /W:30 
+	//Log:------------------------------------------------------------------------------
+	//Log:2013/07/11 23:40:38 ERROR 2 (0x00000002) Creating Destination Directory F:\
+	//Log:The system cannot find the file specified.
+
 	static String execute(String cmd) throws Exception {
 		String line;
 		String errorLine = null;
