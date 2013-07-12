@@ -32,6 +32,7 @@ public class Configuration extends Properties {
     private static File repositoryDirectory;
     private static File cacheDirectory;
     private static File dbDirectory;
+    private static File tbLoadersDirectory;
 	private static String sharedACM = null;
     private static boolean pathsOverridden = false;
 	private final static String USER_NAME = "USER_NAME";
@@ -79,6 +80,10 @@ public class Configuration extends Properties {
 
 	public static File getCacheDirectory() {
 		return cacheDirectory;
+	}
+
+	public static File getTBLoadersDirectory() {
+		return tbLoadersDirectory;
 	}
 	
 	public static File getTBBuildsDirectory() {
@@ -358,6 +363,8 @@ public class Configuration extends Properties {
 				}
 			}					
 		}
+		
+		tbLoadersDirectory = new File(new File(globalShare, getSharedACMname()), Constants.TBLoadersHomeDir);
 		instance.writeProps();
 	}	
 }

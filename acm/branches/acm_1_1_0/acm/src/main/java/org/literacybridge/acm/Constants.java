@@ -11,6 +11,7 @@ public class Constants {
 	public final static String DefaultSharedDirName2		= "My Documents/Dropbox";
 	public final static String DBHomeDir 					= "db";
 	public final static String RepositoryHomeDir 			= "content";
+	public final static String TBLoadersHomeDir 			= "TB-Loaders";
 	public final static String DefaultSharedDB				= "ACM-test/" + DBHomeDir;
 	public final static String DefaultSharedRepository		= "ACM-test/" + RepositoryHomeDir;	
 	public final static String TBBuildsHomeDirName			= "TB-builds";

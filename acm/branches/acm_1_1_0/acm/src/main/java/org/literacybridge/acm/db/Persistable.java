@@ -7,7 +7,7 @@ public interface Persistable {
 	 *
 	 * @return database id
 	 */
-    Integer getId();
+    Object getId();
     
     /**
      * Saves the current state of the runtime object to the database.

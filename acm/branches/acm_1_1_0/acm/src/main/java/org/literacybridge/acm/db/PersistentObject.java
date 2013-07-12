@@ -11,7 +11,7 @@ import javax.persistence.Transient;
 
 
 @MappedSuperclass
-public abstract class PersistentObject implements Serializable {
+public abstract class PersistentObject implements Serializable, Persistable {
     @Transient
     private Logger mLogger = Logger.getLogger(getClass().getName());
     

@@ -1,15 +1,11 @@
 package org.literacybridge.acm.content;
 
-import java.io.File;
 import java.util.Locale;
 
 import org.literacybridge.acm.db.Persistable;
-import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentLocalizedAudioItem;
-import org.literacybridge.acm.db.PersistentManifest;
 import org.literacybridge.acm.db.PersistentMetadata;
-import org.literacybridge.acm.db.PersistentReferencedFile;
 import org.literacybridge.acm.metadata.Metadata;
 
 public class LocalizedAudioItem implements Persistable {
