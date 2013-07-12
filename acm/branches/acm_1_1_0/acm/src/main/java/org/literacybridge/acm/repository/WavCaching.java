@@ -86,7 +86,7 @@ public class WavCaching {
 			setProgress(0);
 			System.out.println("total:"+uncachedFiles.size());
 			Iterator<String> i = uncachedFiles.iterator();
-		    while (i.hasNext()) {
+		    while (i.hasNext() && !isCancelled()) {
 				String audioItemName = i.next();
 				AudioItem item = AudioItem.getFromDatabase(audioItemName);
 				if (item != null) {
@@ -103,7 +103,7 @@ public class WavCaching {
 					// not sure why this would happen, but for now - don't convert to wav.
 					System.out.println("Will not convert " + audioItemName + "; not in DB.");
 				}
-		        setProgress(++progress);
+		        setProgress(++progress);		        
 			}
 			return null;
 		}
@@ -149,7 +149,7 @@ public class WavCaching {
 		}
 		
 		/**
-		* Invoked when the user presses the start button.
+		* Invoked when the user presses the cancel button.
 		*/
 		public void actionPerformed(ActionEvent evt) {
 			cancelButton.setEnabled(false);
