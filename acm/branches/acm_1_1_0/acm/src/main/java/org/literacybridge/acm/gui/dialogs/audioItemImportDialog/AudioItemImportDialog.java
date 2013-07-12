@@ -65,8 +65,8 @@ public class AudioItemImportDialog extends JDialog {
 				try {
 					final List<File> audioItems = device.loadAudioItems();
 					// load statistics
-					device.importStats();
-					device.importOtherDeviceStats();
+					//device.importStats();
+					//device.importOtherDeviceStats();
 					childDialog.setData(audioItems);
 				} catch (IOException e) {
 					LOG.log(Level.WARNING, "Importing stats from device failed.", e);
@@ -167,8 +167,8 @@ public class AudioItemImportDialog extends JDialog {
 								}
 							}
 							// also refresh all statistics
-							device.importStats();
-							device.importOtherDeviceStats();
+							// device.importStats();
+							// device.importOtherDeviceStats();
 						} catch (Exception e) {
 							LOG.log(Level.WARNING, "Importing stats from device failed.", e);
 						} finally {
