@@ -33,6 +33,8 @@ public class AudioItemTransferHandler extends TransferHandler {
 			return false;
 		}
 		
+		support.setShowDropLocation(true);
+		
 		return true;
 	}
 

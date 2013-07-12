@@ -24,7 +24,9 @@ import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.config.ControlAccess;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
+import org.literacybridge.acm.db.PersistentTagOrdering;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
@@ -128,8 +130,16 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 					
 					for (AudioItem a : selectedAudioItems) {
 						try {
+							int position = PersistentTagOrdering.getFromDatabase(a.getPersistentAudioItem(), selectedTag).getPosition();
 							a.removeTag(selectedTag);
 							a.commit();
+							for (PersistentAudioItem item : selectedTag.getPersistentAudioItemList()) {
+								PersistentTagOrdering ordering = PersistentTagOrdering.getFromDatabase(item, selectedTag);
+								if (ordering.getPosition() > position) {
+									ordering.setPosition(ordering.getPosition() - 1);
+									ordering.commit();
+								}
+							}
 						} catch (Exception e) {
 							LOG.log(Level.WARNING, "Unable to remove audioitem id=" + a.getUuid() + " from tag " + selectedTag.getName(), e);
 						}

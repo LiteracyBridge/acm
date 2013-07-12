@@ -14,8 +14,6 @@ import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.NoResultException;
-import javax.persistence.OrderBy;
-import javax.persistence.OrderColumn;
 import javax.persistence.Query;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
@@ -44,7 +42,6 @@ public class PersistentTag extends PersistentObject {
     @Column(name="name")
     private String name;    
     
-    //@ManyToMany(mappedBy = "persistentTagList")
     @ManyToMany
     @JoinTable(
         name = "t_audioitem_has_tag",
@@ -54,7 +51,6 @@ public class PersistentTag extends PersistentObject {
         joinColumns =
             @JoinColumn(name = "tag", referencedColumnName = "id")
     )
-    @OrderColumn(name="ordering")
     private List<PersistentAudioItem> persistentAudioItemList = new LinkedList<PersistentAudioItem>();
     
     public PersistentTag() {
@@ -86,7 +82,7 @@ public class PersistentTag extends PersistentObject {
     }
 
     public List<PersistentAudioItem> getPersistentAudioItemList() {
-        return persistentAudioItemList;
+    	return persistentAudioItemList;
     }
     
     public static PersistentTag getFromDatabase(int id) {
@@ -114,9 +110,4 @@ public class PersistentTag extends PersistentObject {
     public String toString() {
     	return uuid;
     }
-//    
-//    public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
-//        return PersistentQueries.getCategoryFacetCounts(filter, categories, locales);
-//    }    
-//
 }

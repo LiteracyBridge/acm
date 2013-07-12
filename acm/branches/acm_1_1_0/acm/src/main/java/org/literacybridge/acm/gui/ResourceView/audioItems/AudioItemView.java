@@ -18,6 +18,7 @@ import javax.swing.DropMode;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.table.TableColumn;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
@@ -46,6 +47,7 @@ public class AudioItemView extends Container implements Observer {
 
 	private AudioItemViewMouseListener mouseListener;
 	
+	private TableColumn orderingColumn;
 	protected boolean firstDataSet = false;
 	
 	public AudioItemView() {
@@ -66,7 +68,7 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.setShowGrid(false, false);
 		if (!ControlAccess.isACMReadOnly()) {
 			audioItemTable.setDragEnabled(true);
-			audioItemTable.setDropMode(DropMode.INSERT);
+			audioItemTable.setDropMode(DropMode.INSERT_ROWS);
 			audioItemTable.setTransferHandler(new AudioItemTransferHandler());
 		}
 		
@@ -82,11 +84,17 @@ public class AudioItemView extends Container implements Observer {
 		add(BorderLayout.CENTER, scrollPane);
 	}
 	
-	public void updateTable(AudioItemTableModel model) {
+	private void updateTable(AudioItemTableModel model) {
 		audioItemTable.setModel(model);
 		if (!firstDataSet) {
 			initColumnSize();
+			orderingColumn = audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER);
 			firstDataSet = true;
+		}
+		if (Application.getFilterState().getSelectedTag() == null && audioItemTable.getColumnCount() == audioItemTable.getModel().getColumnCount()) {
+			audioItemTable.removeColumn(orderingColumn);
+		} else if (Application.getFilterState().getSelectedTag() != null && audioItemTable.getColumnCount() < audioItemTable.getModel().getColumnCount()) {
+			audioItemTable.addColumn(orderingColumn);
 		}
 	}
 
@@ -148,6 +156,8 @@ public class AudioItemView extends Container implements Observer {
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SOURCE , newLocale));
 		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.LANGUAGES)
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , newLocale));
+		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER)
+										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER , newLocale));
 	}
 
 	private String[] getColumnTitles(Locale locale) {
@@ -165,6 +175,7 @@ public class AudioItemView extends Container implements Observer {
 		columnTitleArray[AudioItemTableModel.CATEGORIES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , locale);
 		columnTitleArray[AudioItemTableModel.LANGUAGES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , locale);
 		columnTitleArray[AudioItemTableModel.SOURCE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SOURCE , locale);
+		columnTitleArray[AudioItemTableModel.PLAYLIST_ORDER] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER , locale);
 				
 		return columnTitleArray;
 	}
@@ -183,6 +194,7 @@ public class AudioItemView extends Container implements Observer {
 //		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.NOHELP_COUNT).setPreferredWidth(65);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CATEGORIES).setPreferredWidth(140);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.SOURCE).setPreferredWidth(140);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER).setPreferredWidth(60);
 		
 		Comparator<Object> comparator = new Comparator<Object>() {
 			@Override public int compare(Object o1, Object o2) {

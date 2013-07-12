@@ -22,6 +22,7 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.config.ControlAccess;
 import org.literacybridge.acm.core.DataRequestService;
+import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentTag;
@@ -131,6 +132,17 @@ public class Application extends JXFrame {
 		}
 		// initialize config and generate random ID for this acm instance
 		Configuration.init(params);
+		
+		// init database
+		try {
+			Persistence.initialize();
+			// DB migration if necessary
+			Persistence.maybeRunMigration();
+			System.out.println("Database migration finished");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 		// set look & feel
 		
 		// Not sure why, but making this call before setting the seaglass look and feel

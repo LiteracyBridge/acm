@@ -10,6 +10,7 @@ import javax.swing.TransferHandler;
 
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.db.PersistentTag;
+import org.literacybridge.acm.db.PersistentTagOrdering;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
@@ -65,11 +66,16 @@ public class TagsTransferHandler extends TransferHandler {
 		final AudioItem[] audioItems = (AudioItem[]) t.getTransferData(AudioItemView.AudioItemDataFlavor);
 
 		for (AudioItem item : audioItems) {
-			item.addTag(tag);
-			try {
-				item.commit();
-			} catch (Exception e) {
-				e.printStackTrace();
+			if (!item.hasTag(tag)) {
+				try {
+					item.addTag(tag);
+					item.commit();
+					PersistentTagOrdering ordering = PersistentTagOrdering.getFromDatabase(item.getPersistentAudioItem(), tag);
+					ordering.setPosition(tag.getPersistentAudioItemList().size());
+					ordering.commit();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		Application.getFilterState().updateResult();

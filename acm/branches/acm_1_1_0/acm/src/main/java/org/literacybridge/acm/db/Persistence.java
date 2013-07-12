@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,9 +17,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceException;
 
-import org.eclipse.persistence.internal.jpa.deployment.DirectoryArchive;
 import org.eclipse.persistence.jpa.JpaHelper;
-import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.Configuration;
 
 public class Persistence {
@@ -76,6 +75,24 @@ public class Persistence {
         }        
         sEmf = createEntityManagerFactory();
     }    
+    
+    public static synchronized void maybeRunMigration() throws Exception {
+    	// set playlist ordering if not set before
+    	List<PersistentTag> allTags = PersistentTag.getFromDatabase();
+    	for (PersistentTag tag : allTags) {
+    		List<PersistentAudioItem> audioItems = tag.getPersistentAudioItemList();
+    		int pos = 1;
+    		for (PersistentAudioItem audioItem : audioItems) {
+    			PersistentTagOrdering ordering = PersistentTagOrdering.getFromDatabase(audioItem, tag);
+    			if (ordering.getPosition() == null) {
+    				// this simple approach works, since all entries in the corresponding table will either be null or set 
+    				ordering.setPosition(pos++);
+    				ordering.commit();
+    			}
+    			
+    		}
+    	}
+    }
     
     public static synchronized void uninitialize() {
         closeEntityManagerFactory();

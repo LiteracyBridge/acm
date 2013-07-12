@@ -22,7 +22,7 @@ public abstract class PersistentObject implements Serializable {
     protected static final String SEQUENCE_KEY = "seq_name";
     protected static final String SEQUENCE_VALUE = "seq_count";
     
-    public abstract Integer getId();
+    public abstract Object getId();
     
     @SuppressWarnings("unchecked")
 	public synchronized <T> T commit() {

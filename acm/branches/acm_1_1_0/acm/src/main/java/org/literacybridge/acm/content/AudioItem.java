@@ -13,6 +13,7 @@ import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentLocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
+import org.literacybridge.acm.db.PersistentTagOrdering;
 
 /**
  * An AudioItem is a unique audio entity, identified by its audioItemID.
@@ -59,6 +60,10 @@ public class AudioItem implements Persistable {
 		mItem.addPersistentAudioItemTag(tag);
 	}
 	
+	public boolean hasTag(PersistentTag tag) {
+		return mItem.hasPersistentAudioItemTag(tag);
+	}
+	
 	public void removeTag(PersistentTag tag) {
 		mItem.removePersistentTag(tag);
 	}
@@ -79,6 +84,10 @@ public class AudioItem implements Persistable {
         return categories;
 	}
 
+	public PersistentAudioItem getPersistentAudioItem() {
+		return mItem;
+	}
+	
 	public List<PersistentTag> getPlaylists() {
 		return mItem.getPersistentTagList();
 	}

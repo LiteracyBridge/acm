@@ -126,6 +126,10 @@ public class PersistentAudioItem extends PersistentObject {
     	}
         return persistentTag;
     }
+    
+    public boolean hasPersistentAudioItemTag(PersistentTag persistentTag) {
+    	return getPersistentTagList().contains(persistentTag);
+    }
 
     public PersistentTag removePersistentTag(PersistentTag persistentTag) {
         getPersistentTagList().remove(persistentTag);

@@ -26,12 +26,6 @@ public class ResourceView extends ACMContainer {
 	private void createViewComponents() {
 		setLayout(new BorderLayout());
 		
-		// init database
-		try {
-			Persistence.initialize();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 		IDataRequestService dataService = DataRequestService.getInstance();
 		IDataRequestResult result = dataService.getData(LanguageUtil.getUserChoosenLanguage());
 

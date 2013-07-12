@@ -8,34 +8,35 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
-
-
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.db.PersistentTag;
+import org.literacybridge.acm.db.PersistentTagOrdering;
+import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
+import org.literacybridge.acm.gui.util.UIUtils;
+import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.utils.IOUtils;
-import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
-import org.literacybridge.acm.gui.util.UIUtils;
-import org.literacybridge.acm.gui.util.language.LanguageUtil;
 
 public class AudioItemTableModel  extends AbstractTableModel {
 
 	private static final long serialVersionUID = -2998511081572936717L;
 
 	// positions of the table columns
-	public static final int NUM_COLUMNS 	 = 6; // keep in sync
+	public static final int NUM_COLUMNS 	 = 7; // keep in sync
 	public static final int INFO_ICON 		 = 0;
 	public static final int TITLE 			 = 1;
 	public static final int DURATION 		 = 2;
 	public static final int CATEGORIES 		 = 3;
 	public static final int SOURCE			 = 4;
 	public static final int LANGUAGES 		 = 5;
+	public static final int PLAYLIST_ORDER	 = 6;
 //	public static final int OPEN_COUNT 		 = 4;
 //	public static final int COMPLETION_COUNT = 5;
 //	public static final int COPY_COUNT 		 = 6;
@@ -147,6 +148,16 @@ public class AudioItemTableModel  extends AbstractTableModel {
 				}
 				case LANGUAGES: {
 					cellText = LanguageUtil.getLocalizedLanguageName(localizedAudioItem.getLocale());
+					break;
+				}
+				case PLAYLIST_ORDER: {
+					PersistentTag tag = Application.getFilterState().getSelectedTag();
+					if (tag == null) {
+						cellText = "";
+					} else {
+						PersistentTagOrdering ordering = PersistentTagOrdering.getFromDatabase(audioItem.getPersistentAudioItem(), tag);
+						cellText = ordering.getPosition().toString();
+					}
 					break;
 				}
 //				case COPY_COUNT: {

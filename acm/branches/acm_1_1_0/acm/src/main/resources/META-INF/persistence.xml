@@ -8,6 +8,7 @@
     <class>org.literacybridge.acm.db.PersistentAudioItem</class>
     <class>org.literacybridge.acm.db.PersistentCategory</class>
     <class>org.literacybridge.acm.db.PersistentTag</class>
+    <class>org.literacybridge.acm.db.PersistentTagOrdering</class>
     <class>org.literacybridge.acm.db.PersistentLocale</class>
     <class>org.literacybridge.acm.db.PersistentLocalizedAudioItem</class>
     <class>org.literacybridge.acm.db.PersistentManifest</class>

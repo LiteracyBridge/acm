@@ -12,7 +12,7 @@ import javax.persistence.Query;
 
 class PersistentQueries {
     
-	static <T> T getPersistentObject(Class<T> objectClass, int id) {
+	static <T> T getPersistentObject(Class<T> objectClass, Object id) {
         EntityManager em = Persistence.getEntityManager();
         T persistentObject = null;
         try {
