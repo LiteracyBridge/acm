@@ -115,6 +115,7 @@ public class WavCaching {
 		public void done() {
 			cancelButton.setEnabled(true);
 			setCursor(null); //turn off the wait cursor
+			frame.setVisible(false);
 //			taskOutput.append("Done!\n");
 			
 		}
@@ -167,13 +168,14 @@ public class WavCaching {
 		}
 		
 		
+		JFrame frame = new JFrame("Converting New Files");
+		
 		/**
 		* Create the GUI and show it. As with all GUI code, this must run
 		* on the event-dispatching thread.
 		*/
 		public void createAndShowGUI() {
 			//Create and set up the window.
-			JFrame frame = new JFrame("Converting New Files");
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			//Create and set up the content pane.
 			JComponent newContentPane = this;
