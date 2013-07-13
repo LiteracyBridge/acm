@@ -91,7 +91,11 @@ public class FileImporter {
 		gatherFiles(dir, recursive, filesToImport);
 		
 		for (File f : filesToImport) {
-			importFile(category, f);
+			try {
+				importFile(category, f);
+			} catch (Exception e) {
+				LOG.log(Level.WARNING, "Failed to import file " + f, e);
+			}
 		}
 	}
 	
