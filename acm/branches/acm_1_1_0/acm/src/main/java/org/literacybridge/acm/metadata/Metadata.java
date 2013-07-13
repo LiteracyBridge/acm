@@ -91,7 +91,7 @@ public class Metadata implements Persistable {
 		
 		addMetadataToPersistenceObject(field, value);
 	}
-	
+
 	public void validate() throws InvalidMetadataException {
 		for (ListWrapper<?> entry : fields.values()) {
 			entry.validateValues();

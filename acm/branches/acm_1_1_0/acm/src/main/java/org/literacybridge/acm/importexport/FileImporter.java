@@ -16,6 +16,8 @@ import java.util.logging.Logger;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.metadata.MetadataSpecification;
+import org.literacybridge.acm.metadata.MetadataValue;
 
 public class FileImporter {
 	private static final Logger LOG = Logger.getLogger(FileImporter.class.getName());
@@ -72,6 +74,8 @@ public class FileImporter {
 			if (item != null) {
 				try {
 					Configuration.getRepository().updateAudioItem(item, file);
+					item.getLocalizedAudioItem(null).getMetadata().setMetadataField(MetadataSpecification.LB_DURATION, new MetadataValue<String>(""));
+					item.commit();
 				} catch (Exception e) {
 					LOG.log(Level.WARNING, "Unable to update files for audioitem with id=" + title, e);
 				}

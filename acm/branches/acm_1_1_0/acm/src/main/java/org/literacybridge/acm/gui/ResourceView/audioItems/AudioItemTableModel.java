@@ -8,6 +8,7 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
+import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
@@ -104,7 +105,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 				case DURATION: {
 					List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
 							MetadataSpecification.LB_DURATION);
-					if (values != null) {
+					if (values != null && !StringUtils.isEmpty(values.get(0).getValue())) {
 						cellText = values.get(0).getValue();
 					} else {
 						AudioItemRepository repository = Configuration.getRepository();
