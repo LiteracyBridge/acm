@@ -154,7 +154,7 @@ public class WavCaching {
 		public void actionPerformed(ActionEvent evt) {
 			cancelButton.setEnabled(false);
 			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			task.cancel(true);
+			task.cancel(false);
 		}
 		
 		/**
