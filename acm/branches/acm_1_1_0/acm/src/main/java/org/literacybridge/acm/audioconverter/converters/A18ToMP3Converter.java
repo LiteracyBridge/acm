@@ -15,12 +15,12 @@ public class A18ToMP3Converter extends BaseAudioConverter {
 
 	@Override
 	public ConversionResult doConvertFile(File inputFile, File targetDir,
-			File targetFile, Map<String, String> parameters) throws ConversionException {
+			File targetFile, File tmpDir, Map<String, String> parameters) throws ConversionException {
 		File tmp = null;
 		try {
-			ConversionResult r1 = a18ToWavConverter.doConvertFile(inputFile, targetDir, targetFile, parameters);
+			ConversionResult r1 = a18ToWavConverter.doConvertFile(inputFile, tmpDir, targetFile, tmpDir, parameters);
 			tmp = r1.outputFile;
-			ConversionResult r2 = ffmpegConverter.doConvertFile(r1.outputFile, targetDir, targetFile, parameters);
+			ConversionResult r2 = ffmpegConverter.doConvertFile(r1.outputFile, targetDir, targetFile, tmpDir, parameters);
 			
 			r2.response = r1.response + "\n" + r2.response;
 			return r2;

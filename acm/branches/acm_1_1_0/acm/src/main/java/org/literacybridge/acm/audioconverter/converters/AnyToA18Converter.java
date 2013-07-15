@@ -18,14 +18,14 @@ public class AnyToA18Converter extends BaseAudioConverter {
 	private WavToA18Converter wavToA18Converter = new WavToA18Converter();
 	
 	@Override
-	public ConversionResult doConvertFile(File audioFile, File targetDir, File targetFile, Map<String, String> parameters)
+	public ConversionResult doConvertFile(File audioFile, File targetDir, File targetFile, File tmpDir, Map<String, String> parameters)
 			throws ConversionException {
 		File tmp = null;
 		try {
-			tmp = File.createTempFile(audioFile.getName() + "_tmp_", ".wav", targetDir);
-			ConversionResult r1 = ffmpegConverter.doConvertFile(audioFile, targetDir, tmp, parameters);
+			tmp = File.createTempFile(audioFile.getName() + "_tmp_", ".wav", tmpDir);
+			ConversionResult r1 = ffmpegConverter.doConvertFile(audioFile, tmpDir, tmp, tmpDir, parameters);
 			tmp = r1.outputFile;
-			ConversionResult r2 = wavToA18Converter.doConvertFile(tmp, targetDir, targetFile, parameters);
+			ConversionResult r2 = wavToA18Converter.doConvertFile(tmp, targetDir, targetFile, tmpDir, parameters);
 			
 			r2.response = r1.response + "\n" + r2.response;
 			return r2;

@@ -44,24 +44,29 @@ public class ExternalConverter {
 		
 	}
 	
+	public String convert(File sourceFile, File targetFile, AudioConversionFormat targetFormat, boolean overwrite)
+			throws ConversionException {
+		return this.convert(sourceFile, targetFile, targetFile.getParentFile(), targetFormat, false);
+	}
 	
-	public String convert(File sourceFile, File targetFile, AudioConversionFormat targetFormat, boolean overwrite) 
+	
+	public String convert(File sourceFile, File targetFile, File tmpDir, AudioConversionFormat targetFormat, boolean overwrite) 
 		throws ConversionException {
 		String result = null;
 		
 		if (targetFormat.getFileEnding()== "A18")
 		{
 				SetParameters(targetFormat);
-				result = AnyToA18Conv.convertFile(sourceFile, targetFile, overwrite, this.parameters);
+				result = AnyToA18Conv.convertFile(sourceFile, targetFile, tmpDir, overwrite, this.parameters);
 		}
 		if (targetFormat.getFileEnding() == "WAV" || targetFormat.getFileEnding() == "MP3")
 		{
 			if (getFileExtension(sourceFile).equalsIgnoreCase(".a18")) {
 				SetParameters(targetFormat);
-				result = A18ToWAVConv.convertFile(sourceFile, targetFile, overwrite, this.parameters);
+				result = A18ToWAVConv.convertFile(sourceFile, targetFile, tmpDir, overwrite, this.parameters);
 			} else {
 				SetParameters(targetFormat);
-				result = FFMpegConv.convertFile(sourceFile, targetFile, overwrite, this.parameters, "." + targetFormat.getFileEnding());
+				result = FFMpegConv.convertFile(sourceFile, targetFile, tmpDir, overwrite, this.parameters, "." + targetFormat.getFileEnding());
 			}
 		}
 		return result;

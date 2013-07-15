@@ -48,5 +48,4 @@ public class CachingRepository extends AudioItemRepository {
 		// only perform garbage collection on local cache, not on shared repo
 		localCacheRepository.gc();
 	}
-	
 }

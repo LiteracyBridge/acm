@@ -35,6 +35,8 @@ import com.google.common.collect.Sets;
  * not in this repository.
  */
 public abstract class AudioItemRepository {
+	private final static File TMP_DIR = new File(System.getProperty("java.io.tmpdir"));
+	
 	public static final class DuplicateItemException extends Exception {
 		public DuplicateItemException(String msg) {
 			super(msg);
@@ -187,7 +189,8 @@ public abstract class AudioItemRepository {
 		}
 		
 		if (OSChecker.WINDOWS) {
-			audioConverter.convert(sourceFile, audioFile.getParentFile(), targetFormat.getAudioConversionFormat());
+			audioConverter.convert(sourceFile, audioFile.getParentFile(), TMP_DIR, 
+					targetFormat.getAudioConversionFormat(), false);
 		}
 		
 		// optional garbage collection

@@ -19,7 +19,7 @@ public class FFMpegConverter extends BaseAudioConverter {
 	}
 
 	@Override
-	public ConversionResult doConvertFile(File audioFile, File targetDir, File targetFile, Map<String, String> parameters)
+	public ConversionResult doConvertFile(File audioFile, File targetDir, File targetFile, File tmpDir, Map<String, String> parameters)
 			throws ConversionException {
 		String cmd = getConverterEXEPath()
 						+ " -i \"" + audioFile.getAbsolutePath() + "\""

@@ -31,7 +31,7 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
 	protected abstract String getCommand(File audioFile, File targetFile, Map<String, String> parameters);
 	
 	@Override
-	public ConversionResult doConvertFile(File audioFile, File targetDir, File targetFile, Map<String, String> parameters) throws ConversionException {
+	public ConversionResult doConvertFile(File audioFile, File targetDir, File targetFile, File tmpDir, Map<String, String> parameters) throws ConversionException {
 	
 		String cmd = getCommand(audioFile, targetDir, parameters);
 		ConversionResult result = new ConversionResult();

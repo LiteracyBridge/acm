@@ -605,7 +605,7 @@ public class AudioConverter extends JFrame implements ActionListener,
 							File currFile = fileInfo.getFileRef();
 							try {
 								try {
-									currentConverter.convertFile(currFile, targetDirPath, 
+									currentConverter.convertFile(currFile, targetDirPath, targetDirPath,
 											overwriteCheckBox.isSelected(), getOptionsDialog().getParameterList());
 									if (detailsVisible) {
 										okFilesTF.append(currFile.getName() + "\n");
