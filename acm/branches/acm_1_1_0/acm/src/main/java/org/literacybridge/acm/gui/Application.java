@@ -45,7 +45,8 @@ public class Application extends JXFrame {
 	private static SimpleMessageService simpleMessageService = new SimpleMessageService();
 	
 	private Color backgroundColor;
-	private ACMStatusBar statusBar;
+	private final ACMStatusBar statusBar;
+	private final BackgroundTaskManager taskManager;
 	
 	public static SimpleMessageService getMessageService() {
 		return simpleMessageService;
@@ -72,7 +73,7 @@ public class Application extends JXFrame {
 		return application;
 	}
 	
-	private SimpleSoundPlayer player = new SimpleSoundPlayer();
+	private SimpleSoundPlayer player = new SimpleSoundPlayer(); 
 	
 	private Application() throws IOException {
 		super();
@@ -97,6 +98,7 @@ public class Application extends JXFrame {
 	    	    
 	    statusBar = new ACMStatusBar();
 	    setStatusBar(statusBar);
+	    taskManager = new BackgroundTaskManager(statusBar);
 	    
 	    // starts file system monitor after UI has been initialized
 		fileSystemMonitor.addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());	
@@ -118,6 +120,10 @@ public class Application extends JXFrame {
 	
 	public void setStatusMessage(String message) {
 		statusBar.setStatusMessage(message);
+	}
+	
+	public BackgroundTaskManager getTaskManager() {
+		return taskManager;
 	}
 	
 	public SimpleSoundPlayer getSoundPlayer() {
@@ -180,7 +186,7 @@ public class Application extends JXFrame {
 		application.toFront();
 		
 		LOG.log(Level.INFO, "ACM successfully started.");
-		WavCaching.cacheNewA18Files();
+		new WavCaching().cacheNewA18Files();
 	}	
 	
 	public static class FilterState {
