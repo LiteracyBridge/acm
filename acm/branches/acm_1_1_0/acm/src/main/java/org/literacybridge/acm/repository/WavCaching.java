@@ -41,11 +41,9 @@ public class WavCaching {
 			int progress = 0;
 			//Initialize progress property.
 			setProgress(0);
-			System.out.println("total:"+uncachedAudioItems.size());
 			Iterator<AudioItem> it = uncachedAudioItems.iterator();
 		    while (it.hasNext() && !isCancelled()) {
 		    	AudioItem item = it.next();
-				System.out.println("Converting " + item.getUuid());
 				try {
 					Configuration.getRepository().convert(item, AudioFormat.WAV);
 				} catch (ConversionException e) {
