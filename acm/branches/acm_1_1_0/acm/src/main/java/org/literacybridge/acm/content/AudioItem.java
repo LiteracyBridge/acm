@@ -13,7 +13,9 @@ import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentLocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
-import org.literacybridge.acm.db.PersistentTagOrdering;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 
 /**
  * An AudioItem is a unique audio entity, identified by its audioItemID.
@@ -144,6 +146,14 @@ public class AudioItem implements Persistable {
 	public AudioItem refresh() {
         mItem = mItem.<PersistentAudioItem>refresh();
         return this;
+    }
+    
+    public static List<AudioItem> getFromDatabase() {
+    	return Lists.transform(PersistentAudioItem.getFromDatabase(), new Function<PersistentAudioItem, AudioItem>() {
+    		@Override public AudioItem apply(PersistentAudioItem item) {
+    			return new AudioItem(item);
+    		}
+		});
     }
     
     public static AudioItem getFromDatabase(String uuid) {      

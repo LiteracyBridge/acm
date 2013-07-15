@@ -160,7 +160,7 @@ public class PersistentAudioItem extends PersistentObject {
         return persistentLocalizedAudioItem;
     }
 
-    public static Collection<PersistentAudioItem> getFromDatabase() {
+    public static List<PersistentAudioItem> getFromDatabase() {
         return PersistentQueries.getPersistentObjects(PersistentAudioItem.class);
     }
     

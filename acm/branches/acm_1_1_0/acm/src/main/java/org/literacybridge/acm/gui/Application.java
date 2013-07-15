@@ -145,8 +145,9 @@ public class Application extends JXFrame {
 		try {
 			Persistence.initialize();
 			// DB migration if necessary
+			System.out.print("Updating database... ");
 			Persistence.maybeRunMigration();
-			System.out.println("Database migration finished");
+			System.out.println("done.");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
