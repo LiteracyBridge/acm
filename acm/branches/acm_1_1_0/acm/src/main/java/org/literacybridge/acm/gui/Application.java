@@ -1,22 +1,22 @@
 package org.literacybridge.acm.gui;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.SplashScreen;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.JFrame;
 import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+
+import org.jdesktop.swingx.JXFrame;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
-import org.jdesktop.swingx.JXFrame;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.Configuration;
@@ -26,12 +26,12 @@ import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentTag;
-import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.device.FileSystemMonitor;
-import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.ResourceView.ResourceView;
 import org.literacybridge.acm.gui.ResourceView.ToolbarView;
+import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.WavCaching;
@@ -45,6 +45,7 @@ public class Application extends JXFrame {
 	private static SimpleMessageService simpleMessageService = new SimpleMessageService();
 	
 	private Color backgroundColor;
+	private ACMStatusBar statusBar;
 	
 	public static SimpleMessageService getMessageService() {
 		return simpleMessageService;
@@ -63,7 +64,7 @@ public class Application extends JXFrame {
 	public static FilterState getFilterState() {
 		return filterState;
 	}
-	
+		
 	// application instance
 	private static Application application;
 	
@@ -93,6 +94,9 @@ public class Application extends JXFrame {
 	    ToolbarView toolbarView = new ToolbarView(resourceView.audioItemView);
 	    add(toolbarView, BorderLayout.PAGE_START);
 	    add(resourceView, BorderLayout.CENTER);
+	    	    
+	    statusBar = new ACMStatusBar();
+	    setStatusBar(statusBar);
 	    
 	    // starts file system monitor after UI has been initialized
 		fileSystemMonitor.addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());	
@@ -110,6 +114,10 @@ public class Application extends JXFrame {
 			super.setBackground(bgColor);
 			backgroundColor = bgColor;
 		}
+	}
+	
+	public void setStatusMessage(String message) {
+		statusBar.setStatusMessage(message);
 	}
 	
 	public SimpleSoundPlayer getSoundPlayer() {

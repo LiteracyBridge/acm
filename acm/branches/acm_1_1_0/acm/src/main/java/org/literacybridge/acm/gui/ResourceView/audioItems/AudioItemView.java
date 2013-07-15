@@ -9,6 +9,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.text.Collator;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Observable;
@@ -18,6 +20,8 @@ import javax.swing.DropMode;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumn;
 
 import org.jdesktop.swingx.JXTable;
@@ -36,6 +40,7 @@ import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
+import org.literacybridge.acm.metadata.MetadataSpecification;
 
 public class AudioItemView extends Container implements Observer {
 
@@ -360,6 +365,36 @@ public class AudioItemView extends Container implements Observer {
 			@Override public void mousePressed(MouseEvent e)  {}
 			@Override public void mouseEntered(MouseEvent e)  {}
 			@Override public void mouseClicked(MouseEvent e)  {}
+		});
+		
+		audioItemTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+			@Override public void valueChanged(ListSelectionEvent e) {
+				String message;
+				switch (audioItemTable.getSelectedRowCount()) {
+					case 0: message = ""; break;
+					case 1: message ="1 audio item selected."; break;
+					default: {
+						Calendar cal = Calendar.getInstance();
+						cal.set(0, 0, 0, 0, 0, 0);
+
+						for (int row : getCurrentSelectedRows()) {
+							AudioItem audioItem = getAudioItemAtTableRow(row);
+							LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
+							String duration = localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.LB_DURATION).get(0).getValue();
+							
+							cal.add(Calendar.MINUTE, Integer.parseInt(duration.substring(0, 2)));
+							cal.add(Calendar.SECOND, Integer.parseInt(duration.substring(3, 5)));
+						}
+						
+						Calendar cal1 = Calendar.getInstance();
+						cal1.set(0, 0, 1, 0, 0, 0);
+						SimpleDateFormat format = cal.before(cal1) ? new SimpleDateFormat("HH:mm:ss") : new SimpleDateFormat("D 'd' HH:mm:ss");
+						message = audioItemTable.getSelectedRowCount() + " audio items selected. Total duration: " + format.format(cal.getTime());
+					}
+				}
+				
+				Application.getApplication().setStatusMessage(message);
+			}
 		});
 		
 		mouseListener = new AudioItemViewMouseListener(this);
