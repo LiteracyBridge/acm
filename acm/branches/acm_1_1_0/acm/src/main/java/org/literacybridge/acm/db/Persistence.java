@@ -28,6 +28,7 @@ import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
+import org.literacybridge.acm.repository.A18DurationUtil;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.utils.IOUtils;
@@ -114,25 +115,7 @@ public class Persistence {
     		List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
 					MetadataSpecification.LB_DURATION);
 			if (values == null || StringUtils.isEmpty(values.get(0).getValue())) {
-		    	File f = repository.getAudioFile(audioItem, AudioFormat.A18);
-		    	DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(f)));
-		    	in.skipBytes(4);
-		    	int bps = IOUtils.readLittleEndian16(in);
-		    	in.close();
-		    	long sec = (f.length() * 8 + bps/2) / bps;
-		    	int min = (int)(sec / 60L);
-		    	//String test = String.valueOf(sec) + "/" + String.valueOf(bps) + "/" + String.valueOf(f.length());
-		    	sec -= min * 60;
-		    	String sMin = String.valueOf(min);
-		    	String sSec = String.valueOf(sec);
-		    	if (sMin.length()==1)
-		    		sMin = "0" + sMin;
-		    	if (sSec.length()==1)
-		    		sSec = "0" + sSec;
-		    	String duration = sMin + ":" + sSec + ((bps==16000)?"  l":"  h");
-		    	//duration += test;
-		    	audioItem.getLocalizedAudioItem(null).getMetadata().setMetadataField(MetadataSpecification.LB_DURATION, new MetadataValue<String>(duration));
-		    	audioItem.commit();
+				A18DurationUtil.updateDuration(audioItem);
 			}
     	}
 	}

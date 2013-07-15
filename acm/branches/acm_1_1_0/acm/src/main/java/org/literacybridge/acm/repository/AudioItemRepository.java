@@ -149,6 +149,9 @@ public abstract class AudioItemRepository {
 			}
 		}
 		
+		// update the duration in the audioitem's metadata section
+		A18DurationUtil.updateDuration(audioItem);
+		
 		// optional garbage collection
 		gc();
 		
