@@ -12,6 +12,7 @@ import java.text.Collator;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
@@ -41,6 +42,7 @@ import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
 import org.literacybridge.acm.metadata.MetadataSpecification;
+import org.literacybridge.acm.metadata.MetadataValue;
 
 public class AudioItemView extends Container implements Observer {
 
@@ -380,10 +382,18 @@ public class AudioItemView extends Container implements Observer {
 						for (int row : getCurrentSelectedRows()) {
 							AudioItem audioItem = getAudioItemAtTableRow(row);
 							LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
-							String duration = localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.LB_DURATION).get(0).getValue();
-							
-							cal.add(Calendar.MINUTE, Integer.parseInt(duration.substring(0, 2)));
-							cal.add(Calendar.SECOND, Integer.parseInt(duration.substring(3, 5)));
+							if (localizedAudioItem != null) {
+								List<MetadataValue<String>> metadata = localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.LB_DURATION);
+								if (metadata != null && !metadata.isEmpty()) {
+									String duration = localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.LB_DURATION).get(0).getValue();
+									try {
+										cal.add(Calendar.MINUTE, Integer.parseInt(duration.substring(0, 2)));
+										cal.add(Calendar.SECOND, Integer.parseInt(duration.substring(3, 5)));
+									} catch (NumberFormatException ex) {
+										// ignore this audio item
+									}
+								}
+							}
 						}
 						
 						Calendar cal1 = Calendar.getInstance();
