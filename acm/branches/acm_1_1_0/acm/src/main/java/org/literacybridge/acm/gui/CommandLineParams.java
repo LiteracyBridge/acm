@@ -19,7 +19,9 @@ public class CommandLineParams {
 	@Option(name="-title",usage="to set name of ACM to be displayed in title bar")
 	public String titleACM;
 
-	@Argument
-	public String sharedACM;
+	@Option(name="-no_ui",usage="start the system without showing the UI")
+	public boolean disableUI;
 	
+	@Argument
+	public String sharedACM;	
 }

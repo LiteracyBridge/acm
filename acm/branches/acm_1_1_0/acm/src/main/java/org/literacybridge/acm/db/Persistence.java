@@ -1,10 +1,7 @@
 package org.literacybridge.acm.db;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.Connection;
@@ -29,9 +26,6 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.repository.A18DurationUtil;
-import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
-import org.literacybridge.acm.utils.IOUtils;
 
 public class Persistence {
     
@@ -107,8 +101,6 @@ public class Persistence {
     	}
     	
     	// calculate duration of audio items
-    	AudioItemRepository repository = Configuration.getRepository();
-    	
     	for (AudioItem audioItem : AudioItem.getFromDatabase()) {
     		LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
     		

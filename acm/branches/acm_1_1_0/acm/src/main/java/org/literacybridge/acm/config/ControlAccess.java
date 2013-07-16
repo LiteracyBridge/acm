@@ -161,9 +161,11 @@ public class ControlAccess {
 			if (sandboxMode) {
 				int n = JOptionPane.showOptionDialog(null, dialogMessage,"Cannot Get Write Access",JOptionPane.YES_NO_CANCEL_OPTION,
 						JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-				if (n==0)
-					JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.");
-				else if (n==1) {
+				if (n==0) {
+					if (!Configuration.isDisableUI()) {
+						JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.");
+					}
+				} else if (n==1) {
 					JOptionPane.showMessageDialog(null,"Shutting down.");
 					System.exit(0);
 				} else if (n==2) {
@@ -188,9 +190,11 @@ public class ControlAccess {
 				sandboxMode = true;		
 		}
 		setSandbox(sandboxMode);
-		if (sandboxMode)
-			JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.");
-		else {
+		if (sandboxMode) {
+			if (!Configuration.isDisableUI()) {
+				JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.");
+			}
+		} else {
 		    // ACM is now read-write, so need to lock other users
 			try {
 				File lockFile = getLockFile();

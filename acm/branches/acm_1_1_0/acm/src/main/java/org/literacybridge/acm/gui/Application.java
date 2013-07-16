@@ -131,8 +131,6 @@ public class Application extends JXFrame {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		
-//		String dbDirName = null, repositoryDirName= null;
 		System.out.println("starting main()");
 		CommandLineParams params = new CommandLineParams();
 		CmdLineParser parser = new CmdLineParser(params);
@@ -144,8 +142,15 @@ public class Application extends JXFrame {
 		    parser.printUsage(System.err);
 		    return;
 		}
+		startUp(params);
+	}
+	
+	public static void startUp(CommandLineParams params) throws IOException {
+//		String dbDirName = null, repositoryDirName= null;
 		// initialize config and generate random ID for this acm instance
 		Configuration.init(params);
+		
+		boolean showUI = !params.disableUI;
 		
 		// init database
 		try {
@@ -158,35 +163,43 @@ public class Application extends JXFrame {
 			e.printStackTrace();
 		}
 		
-		// set look & feel
+		SplashScreen splash = null;
 		
-		// Not sure why, but making this call before setting the seaglass look and feel
-		// prevents an UnsatisfiedLinkError to be thrown
-		final LookAndFeel defaultLAF = UIManager.getLookAndFeel();
-		try {
-		    UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
-		} catch (Exception e) {
+		if (showUI) {
+			// set look & feel
+			
+			// Not sure why, but making this call before setting the seaglass look and feel
+			// prevents an UnsatisfiedLinkError to be thrown
+			final LookAndFeel defaultLAF = UIManager.getLookAndFeel();
 			try {
-				LOG.log(Level.WARNING, "Unable to set look and feel.", e);
-				UIManager.setLookAndFeel(defaultLAF);
-			} catch (Exception e1) {
-				LOG.log(Level.WARNING, "Unable to set look and feel.", e1);
+			    UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
+			} catch (Exception e) {
+				try {
+					LOG.log(Level.WARNING, "Unable to set look and feel.", e);
+					UIManager.setLookAndFeel(defaultLAF);
+				} catch (Exception e1) {
+					LOG.log(Level.WARNING, "Unable to set look and feel.", e1);
+				}
 			}
+			
+			splash = SplashScreen.getSplashScreen();
 		}
+
 		
-		final SplashScreen splash = SplashScreen.getSplashScreen();
 		application = new Application();
 		
-		application.setSize(1000, 750);
-		
-		if (splash != null) {
-			splash.close();
+		if (showUI) {
+			application.setSize(1000, 750);
+			
+			if (splash != null) {
+				splash.close();
+			}
+			application.setVisible(true);
+			application.toFront();
+			
+			LOG.log(Level.INFO, "ACM successfully started.");
+			new WavCaching().cacheNewA18Files();
 		}
-		application.setVisible(true);
-		application.toFront();
-		
-		LOG.log(Level.INFO, "ACM successfully started.");
-		new WavCaching().cacheNewA18Files();
 	}	
 	
 	public static class FilterState {

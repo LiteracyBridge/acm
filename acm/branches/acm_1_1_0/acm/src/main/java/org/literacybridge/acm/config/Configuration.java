@@ -27,7 +27,9 @@ import org.literacybridge.acm.repository.AudioItemRepository;
 @SuppressWarnings("serial")
 public class Configuration extends Properties {
 
-	private static Configuration instance;    
+	private static final File LB_HOME_DIR = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
+	
+	private static Configuration instance;
     private static String title;
     private static File repositoryDirectory;
     private static File cacheDirectory;
@@ -35,6 +37,7 @@ public class Configuration extends Properties {
     private static File tbLoadersDirectory;
 	private static String sharedACM = null;
     private static boolean pathsOverridden = false;
+    private static boolean disableUI = false;
 	private final static String USER_NAME = "USER_NAME";
 	private final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";
 	private final static String DEFAULT_REPOSITORY = "DEFAULT_REPOSITORY";
@@ -62,11 +65,14 @@ public class Configuration extends Properties {
 	
 	// Call this methods to get the non-shared directory root for config, content cache, builds, etc...
 	public static String getACMDirectory() {
-	    final File DEFAULT_LITERACYBRIDGE_SYSTEM_DIR = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
-		File acm = new File (DEFAULT_LITERACYBRIDGE_SYSTEM_DIR,Constants.ACM_DIR_NAME);
+		File acm = new File (getLiteracyBridgeHomeDir(), Constants.ACM_DIR_NAME);
 		if (!acm.exists())
 			acm.mkdirs();
 		return acm.getAbsolutePath();
+	}
+	
+	public static File getLiteracyBridgeHomeDir() {
+		return LB_HOME_DIR;
 	}
 
 	public static File getDatabaseDirectory() {
@@ -105,6 +111,7 @@ public class Configuration extends Properties {
 		File dbPath, repPath;
 		if (instance == null) {
 			instance = new Configuration();
+			disableUI = args.disableUI;
 //			if (args.readonly)
 //				instance.setReadOnly(true); 
 			if (args.titleACM != null)
@@ -135,6 +142,10 @@ public class Configuration extends Properties {
 
 	public static String getSharedACMname() {
 		return sharedACM;
+	}
+	
+	public static boolean isDisableUI() {
+		return disableUI;
 	}
 	
 	private static void setACMtitle(String newName) {
