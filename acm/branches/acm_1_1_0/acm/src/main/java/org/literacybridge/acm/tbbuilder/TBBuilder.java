@@ -3,12 +3,14 @@ package org.literacybridge.acm.tbbuilder;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.List;
 
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.CommandLineParams;
+import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.utils.IOUtils;
 
@@ -48,6 +50,7 @@ public class TBBuilder {
 		File packageDir = new File(tbLoadersDir, packageName);
 		File audioTargetDir = new File(packageDir, "basic/messages/audio");
 		File listsTargetDir = new File(packageDir, "basic/messages/lists");
+		File welcomeMessageTargetDir = new File(packageDir, "basic/languages/dga");
 
 		if (!audioTargetDir.exists() && !audioTargetDir.mkdirs()) {
 			System.err.println("Unable to create directory: " + audioTargetDir);
@@ -58,17 +61,37 @@ public class TBBuilder {
 			System.err.println("Unable to create directory: " + listsTargetDir);
 			System.exit(1);			
 		}
+
+		if (!welcomeMessageTargetDir.exists() && !welcomeMessageTargetDir.mkdirs()) {
+			System.err.println("Unable to create directory: " + welcomeMessageTargetDir);
+			System.exit(1);			
+		}
 		
 		for (File list : lists) {
-			exportList(list, audioTargetDir);
 			IOUtils.copy(list, new File(listsTargetDir, list.getName()));
+			if (!list.getName().equalsIgnoreCase("_activeLists.txt")) {
+				exportList(list, audioTargetDir);				
+			}
+		}
+		
+		/*
+		 * TERRIBLE HACK EXPLICITLY REQUESTED BY CLIFF:
+		 * Full text search for the first audio item whose title matches the package name.  
+		 */
+		List<AudioItem> items = AudioItem.getFromDatabaseBySearch(packageName, null, null);
+		for (AudioItem item : items) {
+			String title = item.getLocalizedAudioItem(null).getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue();
+			if (title.trim().equals(packageName.trim())) {
+				System.out.println("\nExporting audioitem " + item.getUuid() + " (" + title + ") to " + welcomeMessageTargetDir);
+				Configuration.getRepository().exportA18WithMetadata(item, welcomeMessageTargetDir);
+			}
 		}
 		
 		System.out.println("\nDone.");
 	}
 	
 	private static void printUsage() {
-		
+		System.out.println("Usage: java -cp acm.jar:lib/* org.literacybridge.acm.tbbuilder.TBBuilder <acm_name> <package_name>");
 	}
 	
 	private static void exportList(File list, File targetDirectory) throws Exception {

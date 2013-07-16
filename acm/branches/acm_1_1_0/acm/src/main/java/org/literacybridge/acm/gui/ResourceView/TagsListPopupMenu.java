@@ -30,6 +30,7 @@ import org.literacybridge.acm.gui.ResourceView.CategoryView.TagsListChanged;
 import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.utils.IOUtils;
 
 import com.google.common.collect.Maps;
 
@@ -163,8 +164,16 @@ public class TagsListPopupMenu extends JPopupMenu {
 
 						if (!StringUtils.isEmpty(categoryName)) {
 							previousUpdateName = updateName;
+							File dir = new File(Configuration.getTBLoadersDirectory(), "active/"
+									+ updateName);
+							
+							if (!dir.exists()) {
+								dir.mkdirs();
+								IOUtils.copy(activeListsFile, new File(dir, activeListsFile.getName()));
+							}
+							
 							export(selectedTag.getTag(), updateName,
-									categories.get(categoryName));
+									categories.get(categoryName), dir);
 						}
 					}
 
@@ -176,12 +185,7 @@ public class TagsListPopupMenu extends JPopupMenu {
 	}
 
 	private final void export(final PersistentTag tag, String updateName,
-			PersistentCategory category) throws IOException {
-		File dir = new File(Configuration.getTBLoadersDirectory(), "active/"
-				+ updateName);
-		if (!dir.exists()) {
-			dir.mkdirs();
-		}
+			PersistentCategory category, File dir) throws IOException {
 
 		BufferedWriter writer = new BufferedWriter(new FileWriter(new File(dir,
 				category.getUuid() + ".txt"), false));
