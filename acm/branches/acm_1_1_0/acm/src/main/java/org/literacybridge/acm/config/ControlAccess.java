@@ -217,7 +217,7 @@ public class ControlAccess {
 		return result;
 	}
 
-	private static boolean userHasWriteAccess() {
+	public static boolean userHasWriteAccess() {
 		String writeUser, thisUser;
 		boolean userHasWriteAccess = false;
 		
