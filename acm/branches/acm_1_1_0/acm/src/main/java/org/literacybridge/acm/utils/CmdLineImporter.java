@@ -44,6 +44,7 @@ public class CmdLineImporter {
 				System.err.println("Directory does not exist: " + dirName);
 				System.exit(1);
 			}
+			inputDirs.add(dir);
 		}
 		
 		Set<File> filesToImport = Sets.newHashSet();
@@ -63,7 +64,7 @@ public class CmdLineImporter {
 			System.exit(2);			
 		}
 		
-		if (ControlAccess.userHasWriteAccess()) {
+		if (!ControlAccess.userHasWriteAccess()) {
 			System.err.println("Unable to acquire writer access.");
 			System.exit(3);
 		}
@@ -104,7 +105,7 @@ public class CmdLineImporter {
 			
 			File[] a18Files = dir.listFiles(new FilenameFilter() {
 				@Override public boolean accept(File file, String fileName) {
-					return fileName.toLowerCase().endsWith("a.18");
+					return fileName.toLowerCase().endsWith("a18");
 				}
 			});
 			
@@ -121,6 +122,7 @@ public class CmdLineImporter {
 		for (File file : filesToImport) {
 			try {
 				importer.importFile(null, file);
+				System.out.println("Importing file " + file);
 			} catch (Exception e) {
 				success = false;
 				logError(file, e);

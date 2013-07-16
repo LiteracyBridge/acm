@@ -17,9 +17,9 @@ import javax.swing.JOptionPane;
 
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.repository.CachingRepository;
 import org.literacybridge.acm.repository.FileSystemRepository;
-import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 
 public class ControlAccess {
 
@@ -182,7 +182,7 @@ public class ControlAccess {
 				}
  			}
 		}
-		if (!sandboxMode) {
+		if (!sandboxMode && !Configuration.isDisableUI()) {
 			Object[] options = {"Update Shared Database", "Use Demo Mode"};
 			int n = JOptionPane.showOptionDialog(null, "Do you want to update the shared database?","Update or Demo Mode?",JOptionPane.YES_NO_OPTION,
 					JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
