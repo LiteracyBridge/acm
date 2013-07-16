@@ -1,8 +1,10 @@
 package org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog;
 
 import java.awt.Component;
+import java.awt.Desktop;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.net.URI;
 import java.util.Locale;
 
 import javax.swing.DefaultCellEditor;
@@ -59,6 +61,19 @@ public class AudioItemPropertiesTable extends JXTable {
 			public void mouseClicked(MouseEvent e) {
 				int row = rowAtPoint(e.getPoint());
 				int col = columnAtPoint(e.getPoint());
+
+				if (e.getClickCount() == 2) {
+					String text = getValueAt(row, AudioItemPropertiesModel.VALUE_COL).toString();
+					try {
+						if (text.startsWith("www.")) {
+							text = "http://" + text;
+						}
+						URI uri = new URI(text);
+						Desktop.getDesktop().browse(uri);
+					} catch (Exception ex) {
+						// ignore - this may not be a uri
+					}
+				}
 				
 				if (col == AudioItemPropertiesModel.EDIT_COL && getAudioItemPropertiesModel().showEditIcon(row)) {
 					UIUtils.showDialog(Application.getApplication(), 
