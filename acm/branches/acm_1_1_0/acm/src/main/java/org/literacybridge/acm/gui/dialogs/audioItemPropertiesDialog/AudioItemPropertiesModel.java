@@ -229,7 +229,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		}
 		
 		incrementRevision(metadata);
-		metadata.commit();
+		audioItem.commit();
 	}
 	
 	protected static void setStringValue(MetadataField<String> field, Metadata metadata, String value) {
@@ -244,7 +244,6 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		localizedItem.commit();
 		audioItem.commit();
 		metadata.setMetadataField(field, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(newLocale.getLanguage())));
-		incrementRevision(metadata);
 		metadata.commit();
 	}
 	
