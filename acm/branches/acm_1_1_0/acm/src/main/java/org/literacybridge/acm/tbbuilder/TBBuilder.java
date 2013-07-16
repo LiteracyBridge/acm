@@ -75,7 +75,16 @@ public class TBBuilder {
 		}
 		
 		/*
-		 * TERRIBLE HACK EXPLICITLY REQUESTED BY CLIFF:
+          _______________________________________ 
+          / TERRIBLE HACK EXPLICITLY REQUESTED BY \
+          \ CLIFF:                                /
+           --------------------------------------- 
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+                          
 		 * Full text search for the first audio item whose title matches the package name.  
 		 */
 		List<AudioItem> items = AudioItem.getFromDatabaseBySearch(packageName, null, null);
