@@ -17,6 +17,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableModel;
 
+import org.apache.commons.lang.StringUtils;
 import org.jdesktop.swingx.JXTable;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
@@ -70,26 +71,30 @@ public class AudioItemPropertiesTable extends JXTable {
 					Object value = getValueAt(row, AudioItemPropertiesModel.VALUE_COL);
 					if (value != null) {
 						String text = value.toString();
-						try {
-							if (text.startsWith("www.")) {
-								text = "http://" + text;
-							}
-							URI uri = new URI(text);
-							Desktop.getDesktop().browse(uri);
-							return;
-						} catch (Exception ex) {
-							// ignore - this may not be a uri
-						}
-						
-						AudioItemProperty<?> property = getAudioItemPropertiesModel().getAudioItemProperty(row);
-						if (property instanceof AudioItemProperty.MetadataProperty) {
-							if (((AudioItemProperty.MetadataProperty) property).getMetadataField() == MetadataSpecification.DC_RELATION) {
-								Application.getFilterState().setFilterCategories(null);
-								Application.getFilterState().setFilterLanguages(null);
-								Application.getFilterState().setFilterString(text);
-								Application.getMessageService().pumpMessage(new SearchRequestMessage(text));
-								dialog.setVisible(false);
+						if (!StringUtils.isEmpty(text)) {
+							try {
+								if (text.startsWith("www.")) {
+									text = "http://" + text;
+								}
+								URI uri = new URI(text);
+								Desktop.getDesktop().browse(uri);
 								return;
+							} catch (Exception ex) {
+								// ignore - this may not be a uri
+							}
+							
+							AudioItemProperty<?> property = getAudioItemPropertiesModel().getAudioItemProperty(row);
+							if (property instanceof AudioItemProperty.MetadataProperty) {
+								if (((AudioItemProperty.MetadataProperty) property).getMetadataField() == MetadataSpecification.DC_RELATION) {
+									searchRequest(text);
+									dialog.setVisible(false);
+									return;
+								}
+							}
+							if (property.getName().equals("Related Message Title")) {
+								searchRequest(text);
+								dialog.setVisible(false);
+								return;							
 							}
 						}
 					}
@@ -103,6 +108,13 @@ public class AudioItemPropertiesTable extends JXTable {
 				
 			}
 		});
+	}
+
+	private void searchRequest(String query) {
+		Application.getFilterState().setFilterCategories(null);
+		Application.getFilterState().setFilterLanguages(null);
+		Application.getFilterState().setFilterString(query);
+		Application.getMessageService().pumpMessage(new SearchRequestMessage(query));
 	}
 	
 	@Override
