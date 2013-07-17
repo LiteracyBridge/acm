@@ -37,14 +37,26 @@ public class TreeTransferHandler extends TransferHandler {
 			return false;
 		}
 
+		boolean supported = false;
 		for (DataFlavor flavor : supportedFlavors) {
 			if (support.isDataFlavorSupported(flavor)) {
-				support.setShowDropLocation(true);
-				return true;
+				supported = true;
+				break;
 			}
 		}
 
-		return false;
+		if (!supported) {
+			return false;
+		}
+		
+		// Get drop location info.
+		JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
+		TreePath dest = dl.getPath();
+		DefaultMutableTreeNode parent = (DefaultMutableTreeNode) dest.getLastPathComponent();
+		final CategoryTreeNodeObject target = (CategoryTreeNodeObject) parent.getUserObject();
+		
+		// only allow dropping on leaves
+		return !target.getCategory().hasChildren();
 	}
 
 	@Override
