@@ -249,9 +249,11 @@ class PersistentQueries {
         	StringBuilder query = new StringBuilder("SELECT DISTINCT t3.language AS \"id\", COUNT(t3.language) AS \"count\" "
 							        		 	  + "FROM t_audioitem t0 JOIN t_localized_audioitem t1 ON t0.id=t1.audioitem " 
 							                      + "JOIN t_metadata t2 ON t1.metadata=t2.id " 
-							                      + "JOIN t_locale t3 ON t1.language=t3.id " 
-							                      + "JOIN t_audioitem_has_category tc ON t0.id=tc.audioitem " 
-							                      + "RIGHT OUTER JOIN t_category t5 ON tc.category=t5.id "); 
+							                      + "JOIN t_locale t3 ON t1.language=t3.id ");
+        	if (categories != null && !categories.isEmpty()) {
+        		query.append("JOIN t_audioitem_has_category tc ON t0.id=tc.audioitem " 
+	                         + "RIGHT OUTER JOIN t_category t5 ON tc.category=t5.id ");
+        	}
         	
         	// search string conditions
         	if (filter != null && filter.length() > 0) {
