@@ -50,7 +50,7 @@ import javax.swing.filechooser.FileSystemView;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.08r1037";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.08r1041";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -67,6 +67,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	private JComboBox driveList;
 	private JTextField id;
 	private JTextField revisionText;
+	private JTextField oldCommunityValue;
 	private static JTextField status;
 	private static JTextArea status2;
 	private static String homepath;
@@ -174,7 +175,10 @@ public class TBLoader extends JFrame implements ActionListener {
 		
 		JPanel panel = new JPanel();
 		
-		JLabel communityLabel = new JLabel("Community:");
+		JLabel communityLabel = new JLabel("Set Community:");
+		JLabel oldCommunityLabel = new JLabel("Prev Community:");
+		oldCommunityValue = new JTextField();
+		oldCommunityValue.setEditable(false);
 		JLabel deviceLabel = new JLabel("Talking Book Device:");
 		JLabel idLabel = new JLabel("Serial number:");
 		JLabel revisionLabel = new JLabel("Revision:");
@@ -224,12 +228,14 @@ public class TBLoader extends JFrame implements ActionListener {
 //	        				.addComponent(datePicker)
 	        				.addComponent(deviceLabel)
 	        				.addComponent(communityLabel)
+	        				.addComponent(oldCommunityLabel)
 	        				.addComponent(idLabel)
 	                		.addComponent(revisionLabel)
 	        				)
  					.addGroup(layout.createParallelGroup(LEADING)
 	                		.addComponent(driveList)
 	                		.addComponent(communityList)
+	                		.addComponent(oldCommunityValue)
 	                		.addComponent(id)
 	                		.addComponent(revisionText)
 	                		.addGroup(layout.createSequentialGroup()
@@ -257,6 +263,10 @@ public class TBLoader extends JFrame implements ActionListener {
                 		.addComponent(communityLabel)
                         .addComponent(communityList))
                 .addGroup(layout.createParallelGroup(BASELINE)
+//                		.addComponent(datePicker)
+                		.addComponent(oldCommunityLabel)
+                        .addComponent(oldCommunityValue))
+                .addGroup(layout.createParallelGroup(BASELINE)
 		            .addComponent(idLabel)
 		            .addComponent(id))
                 .addGroup(layout.createParallelGroup(BASELINE)
@@ -277,7 +287,7 @@ public class TBLoader extends JFrame implements ActionListener {
     	    	.addComponent(status2)
             );
         
-        setSize(600,285);
+        setSize(600,320);
         add(panel, BorderLayout.CENTER);
 //      add(status, BorderLayout.SOUTH);
 //      add(xfer, BorderLayout.EAST);
@@ -473,8 +483,6 @@ public class TBLoader extends JFrame implements ActionListener {
 		for (int i=0; i < communityNames.length; i++) {
 			communityList.addItem(communityNames[i]);
 		}
-		if (prevSelectedCommunity != -1)
-			communityList.setSelectedIndex(prevSelectedCommunity);
 		setCommunityList();
 	}
 
@@ -483,14 +491,20 @@ public class TBLoader extends JFrame implements ActionListener {
 		int communityMatchIndex = -1;
 
 		driveCommunity = getCommunityFromCurrentDrive();
+		oldCommunityValue.setText(driveCommunity);
+
 		getStatsFromCurrentDrive();
 		
-		for (int i=0; i < communityNames.length; i++) {
-			if (communityNames[i].equalsIgnoreCase(driveCommunity))
-				communityMatchIndex = i;
-		}
-		if (communityMatchIndex == -1 && prevSelectedCommunity != -1)
+		if (prevSelectedCommunity != -1)
 			communityMatchIndex = prevSelectedCommunity;
+		else {
+			communityList.removeAllItems();
+			for (int i=0; i < communityNames.length; i++) {
+				communityList.addItem(communityNames[i]);
+				if (communityNames[i].equalsIgnoreCase(driveCommunity))
+					communityMatchIndex = i;
+			}
+		}
 		communityList.setSelectedIndex(communityMatchIndex);
 	}
 
