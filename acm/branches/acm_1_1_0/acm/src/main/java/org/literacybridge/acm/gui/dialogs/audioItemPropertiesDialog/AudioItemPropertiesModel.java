@@ -24,6 +24,7 @@ import java.util.Locale;
 
 import javax.swing.table.AbstractTableModel;
 
+import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
@@ -108,6 +109,34 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_PUBLISHER, false));
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_IDENTIFIER, false));
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_RELATION, true));
+		audioItemPropertiesObject.add(new AudioItemProperty(false) {
+			@Override public String getName() { 
+				return "Related Message Title";
+			}
+
+			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
+				List<MetadataValue<String>> values = metadata.getMetadataValues(DC_RELATION);
+				if (values != null && !values.isEmpty()) {
+					String id = values.get(0).getValue();
+					if (!StringUtils.isEmpty(id)) {
+						AudioItem item = AudioItem.getFromDatabase(id);
+						List<MetadataValue<String>> values1 = item.getLocalizedAudioItem(null).getMetadata().getMetadataValues(DC_TITLE);
+						if (values1 != null && !values1.isEmpty()) {
+							return values1.get(0).getValue();
+						}
+					}
+				}
+				
+				return null;
+			}
+
+			@Override
+			public void setValue(AudioItem audioItem, Metadata metadata,
+					Object newValue) {
+				// not supported
+			}			
+		});
+
 		audioItemPropertiesObject.add(new AudioItemProperty(false) {
 			@Override public String getName() { 
 				return "File name";
