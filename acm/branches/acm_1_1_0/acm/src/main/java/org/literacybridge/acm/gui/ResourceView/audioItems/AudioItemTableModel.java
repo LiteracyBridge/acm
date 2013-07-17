@@ -1,11 +1,15 @@
 package org.literacybridge.acm.gui.ResourceView.audioItems;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.api.IDataRequestResult;
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
@@ -16,26 +20,30 @@ import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
+import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 
 public class AudioItemTableModel  extends AbstractTableModel {
 
 	private static final long serialVersionUID = -2998511081572936717L;
 
+	private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	
 	// positions of the table columns
-	public static final int NUM_COLUMNS 	 = 7; // keep in sync
-	public static final int INFO_ICON 		 = 0;
-	public static final int TITLE 			 = 1;
-	public static final int DURATION 		 = 2;
-	public static final int CATEGORIES 		 = 3;
-	public static final int SOURCE			 = 4;
-	public static final int LANGUAGES 		 = 5;
-	public static final int PLAYLIST_ORDER	 = 6;
-//	public static final int OPEN_COUNT 		 = 4;
-//	public static final int COMPLETION_COUNT = 5;
-//	public static final int COPY_COUNT 		 = 6;
-//	public static final int SURVEY1_COUNT 	 = 7;
-//	public static final int APPLY_COUNT 	 = 8;
-//	public static final int NOHELP_COUNT 	 = 9;
+	public static final int NUM_COLUMNS 	   = 8; // keep in sync
+	public static final int INFO_ICON 		   = 0;
+	public static final int TITLE 			   = 1;
+	public static final int DURATION 		   = 2;
+	public static final int CATEGORIES 		   = 3;
+	public static final int SOURCE			   = 4;
+	public static final int DATE_FILE_MODIFIED = 5;
+	public static final int LANGUAGES 		   = 6;
+	public static final int PLAYLIST_ORDER	   = 7;
+//	public static final int OPEN_COUNT 		   = 4;
+//	public static final int COMPLETION_COUNT   = 5;
+//	public static final int COPY_COUNT 		   = 6;
+//	public static final int SURVEY1_COUNT 	   = 7;
+//	public static final int APPLY_COUNT 	   = 8;
+//	public static final int NOHELP_COUNT 	   = 9;
 	private static String[] columns = null;
 	
 	protected IDataRequestResult result = null;
@@ -116,6 +124,14 @@ public class AudioItemTableModel  extends AbstractTableModel {
 				}
 				case LANGUAGES: {
 					cellText = LanguageUtil.getLocalizedLanguageName(localizedAudioItem.getLocale());
+					break;
+				}
+				case DATE_FILE_MODIFIED: {
+					File file = Configuration.getRepository().getAudioFile(audioItem, AudioFormat.A18);
+					if (file != null) {
+						Date date = new Date(file.lastModified());
+						cellText = dateFormat.format(date);
+					}					
 					break;
 				}
 				case PLAYLIST_ORDER: {

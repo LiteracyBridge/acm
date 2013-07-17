@@ -163,6 +163,8 @@ public class AudioItemView extends Container implements Observer {
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SOURCE , newLocale));
 		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.LANGUAGES)
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , newLocale));
+		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.DATE_FILE_MODIFIED)
+										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED , newLocale));
 		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER)
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER , newLocale));
 	}
@@ -182,6 +184,7 @@ public class AudioItemView extends Container implements Observer {
 		columnTitleArray[AudioItemTableModel.CATEGORIES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , locale);
 		columnTitleArray[AudioItemTableModel.LANGUAGES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , locale);
 		columnTitleArray[AudioItemTableModel.SOURCE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SOURCE , locale);
+		columnTitleArray[AudioItemTableModel.DATE_FILE_MODIFIED] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED , locale);
 		columnTitleArray[AudioItemTableModel.PLAYLIST_ORDER] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER , locale);
 				
 		return columnTitleArray;
@@ -201,6 +204,7 @@ public class AudioItemView extends Container implements Observer {
 //		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.NOHELP_COUNT).setPreferredWidth(65);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CATEGORIES).setPreferredWidth(140);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.SOURCE).setPreferredWidth(140);
+		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.DATE_FILE_MODIFIED).setPreferredWidth(140);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER).setPreferredWidth(60);
 		
 		Comparator<Object> comparator = new Comparator<Object>() {

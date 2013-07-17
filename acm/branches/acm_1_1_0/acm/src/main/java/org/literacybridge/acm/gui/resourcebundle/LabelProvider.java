@@ -44,6 +44,7 @@ public class LabelProvider {
 	public static final String AUDIO_ITEM_TABLE_COLUMN_NOHELP_COUNT = "AUDIO_ITEM_TABLE_COLUMN_NOHELP_COUNT";
 	public static final String AUDIO_ITEM_TABLE_COLUMN_CATEGORIES = "AUDIO_ITEM_TABLE_COLUMN_CATEGORIES";
 	public static final String AUDIO_ITEM_TABLE_COLUMN_SOURCE = "AUDIO_ITEM_TABLE_COLUMN_SOURCE";
+	public static final String AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED = "AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED";
 	
 	public static final class KeyValuePair<K, V> {
 		private final K key;
