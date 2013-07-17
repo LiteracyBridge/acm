@@ -30,9 +30,10 @@ public class AudioItemPropertiesTable extends JXTable {
 	private static ImageIcon editImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_EDIT_16_PX));
 	
 	private JComboBox languageBox = new JComboBox();
-	private JComboBox messageFormatBox = new JComboBox(new DefaultComboBoxModel(new String[] {"Drama", "Interview", "Lecture", "Song", "Story"}));
+	private JComboBox messageFormatBox = new JComboBox(new DefaultComboBoxModel(new String[] {"Drama", "Interview", "Lecture", "Song", "Story",
+			 																				  "User feedback", "Success story", "Endorsement"}));
 	private JComboBox targetAudienceBox = new JComboBox(new DefaultComboBoxModel(new String[] {"All", "Boys", "Girls", "Children", "Farmers",
-																							   "Fathers", "Mothers", "Parents", "Pregnant women"}));
+																							   "Fathers", "Mothers", "Parents", "Pregnant women", "Livestock rearer"}));
 	private LanguageComboBoxModel languageComboBoxModel = new LanguageComboBoxModel();
 	
 	public AudioItemPropertiesTable(final AudioItemPropertiesDialog dialog) {
