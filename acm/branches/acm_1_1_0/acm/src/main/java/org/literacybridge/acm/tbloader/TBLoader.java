@@ -50,7 +50,7 @@ import javax.swing.filechooser.FileSystemView;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.08";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.08r1037";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -602,43 +602,45 @@ public class TBLoader extends JFrame implements ActionListener {
 		@Override public void run() {
 			Set<String> oldList = new HashSet<String>();
 			
-			while (!updatingTB) { // don't do this during a TB update
-				File[] roots = getRoots();
-				
-				boolean refresh = oldList.size() != roots.length;
-				if (!refresh) {
-					for (File root : roots) {
-						if (!oldList.contains(root.getAbsolutePath())) {
-							refresh = true;
-							break;
+			while (true) { // don't do this during a TB update
+
+				if (!updatingTB) {
+					File[] roots = getRoots();
+					
+					boolean refresh = oldList.size() != roots.length;
+					if (!refresh) {
+						for (File root : roots) {
+							if (!oldList.contains(root.getAbsolutePath())) {
+								refresh = true;
+								break;
+							}
 						}
 					}
-				}
 				
-				if (refresh) {
-					monitoringDrive = true;
-					Logger.LogString("deviceMonitor sees new drive");
-					fillList(roots);
-//					Logger.LogString("monitor filled drive list");
-					try {
-						fillCommunityList();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					if (refresh) {
+						monitoringDrive = true;
+						Logger.LogString("deviceMonitor sees new drive");
+						fillList(roots);
+	//					Logger.LogString("monitor filled drive list");
+						try {
+							fillCommunityList();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+	//					Logger.LogString("monitor filled community list");
+						setSNandRevFromCurrentDrive();
+	//					Logger.LogString("monitor got SN");
+						refreshUI();
+	//					Logger.LogString("monitor refreshed UI");
+						oldList.clear();
+						for (File root : roots) {
+							oldList.add(root.getAbsolutePath());
+						}
+						monitoringDrive = false;
+	//					Logger.LogString("monitor updates complete");
 					}
-//					Logger.LogString("monitor filled community list");
-					setSNandRevFromCurrentDrive();
-//					Logger.LogString("monitor got SN");
-					refreshUI();
-//					Logger.LogString("monitor refreshed UI");
-					oldList.clear();
-					for (File root : roots) {
-						oldList.add(root.getAbsolutePath());
-					}
-					monitoringDrive = false;
-//					Logger.LogString("monitor updates complete");
 				}
-				
 				try {
 					sleep(2000);
 				} catch (InterruptedException e) {
@@ -1003,48 +1005,10 @@ public class TBLoader extends JFrame implements ActionListener {
 	
 	void finishCopy(boolean success, final String idString, final String mode) {
 		final TBLoader parent = this;
-//		try {
-//			final Runnable runnable;
-			updatingTB = false;
-			parent.refreshUI();
-			Logger.init();
-			if (success) {
-/*				runnable = new Runnable() {
-					@Override
-					public void run() {
-						JOptionPane.showMessageDialog(parent, "Success!",
-				                "Success", JOptionPane.DEFAULT_OPTION);
-						Logger.LogString("Success");
-					}
-				};
-*/			} else {
-/*				runnable = new Runnable() {
-					@Override
-					public void run() {
-						JOptionPane.showMessageDialog(parent, "An error occurred while copying files to the Talking Book.",
-				                "Error", JOptionPane.ERROR_MESSAGE);
-						Logger.LogString("ERROR!");
-					}
-				};
-*/			}
-/*			SwingUtilities.invokeAndWait(runnable);
-		} catch (InterruptedException e) {
-			Logger.LogString(e.toString());
-			Logger.init();
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
-			Logger.LogString(e.toString());
-			Logger.init();
-			e.printStackTrace();
-		} catch (Exception e){
-			Logger.LogString(e.toString());
-			Logger.init();
-			e.printStackTrace();
-		} finally {
-			parent.refreshUI();
-			Logger.init();
-		}
-*/	}
+		updatingTB = false;
+		parent.refreshUI();
+		Logger.init();
+	}
 
 	public static class Logger {
 		private static BufferedWriter bw;
@@ -1061,9 +1025,14 @@ public class TBLoader extends JFrame implements ActionListener {
 					bw.write(getDateTime() + ": " + s+"\r\n");
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
 				close();
 				open();
+				try {
+					bw.write(getDateTime() + ": " + s+"\r\n");
+				} catch (IOException ee) {
+					e.printStackTrace();
+					ee.printStackTrace();					
+				}
 			}
 		}
 
@@ -1210,23 +1179,26 @@ public class TBLoader extends JFrame implements ActionListener {
 					return;
 				}
 				TBLoader.status2.setText("Checking Memory Card");
+				Logger.LogString("STATUS:Checking Memory Card");
 				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
 				if (hasCorruption) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted...Getting Stats");
+					Logger.LogString("STATUS:Corrupted...Getting Stats");
 					executeFile(new File(SCRIPT_SUBDIR + "chkdsk-save.txt"));
 				} else {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Good Card...Getting Stats");
-
+					Logger.LogString("STATUS:Good Card...Getting Stats");
 				}
 				gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 				if (gotStats) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Got Stats\n");
-					Logger.LogString("Got stats!");
+					Logger.LogString("STATUS: Got stats!");
 					JOptionPane.showMessageDialog(null, "Got Stats!",
 			                "Success", JOptionPane.DEFAULT_OPTION);
 				}
 				else {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...No Stats!\n");
+					Logger.LogString("STATUS:No Stats!");
 					JOptionPane.showMessageDialog(null, "Could not get stats for some reason.",
 			                "Failure", JOptionPane.DEFAULT_OPTION);					
 				}
@@ -1245,53 +1217,63 @@ public class TBLoader extends JFrame implements ActionListener {
 					return;
 				}
 				TBLoader.status2.setText("Checking Memory Card");
+				Logger.LogString("STATUS:Checking Memory Card");
 				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
 				if (hasCorruption) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted...Getting Stats");
+					Logger.LogString("STATUS:Corrupted...Getting Stats");
 					executeFile(new File(SCRIPT_SUBDIR + "chkdsk-save.txt"));
 				} else {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Good Card...Getting Stats");
-
+					Logger.LogString("STATUS:Good Card...Getting Stats");
 				}
 				gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
-				if (gotStats)
+				if (gotStats) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Got Stats\n");
-				else 
+					Logger.LogString("STATUS:Got Stats");
+				}
+				else {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...No Stats!\n");
+					Logger.LogString("STATUS:No Stats!");
+				}
 				if (hasCorruption) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Reformatting");
+					Logger.LogString("STATUS:Reformatting");
 					goodCard = executeFile(new File(SCRIPT_SUBDIR + "reformat.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 					if (!goodCard) {
 						TBLoader.status2.setText(TBLoader.status2.getText() + "...Reformat Failed");
+						Logger.LogString("STATUS:Reformat Failed");
 						Logger.LogString("Could not reformat memory card.\nMake sure you have a good USB connection\nand that the Talking Book is powered with batteries, then try again.\n\nIf you still cannot reformat, replace the memory card.");
 						JOptionPane.showMessageDialog(null, "Could not reformat memory card.\nMake sure you have a good USB connection\nand that the Talking Book is powered with batteries, then try again.\n\nIf you still cannot reformat, replace the memory card.",
 				                "Failure!", JOptionPane.ERROR_MESSAGE);
 						return;
-					} else 
-						TBLoader.status2.setText(TBLoader.status2.getText() + "...Format was good");						
+					} else { 
+						TBLoader.status2.setText(TBLoader.status2.getText() + "...Format was good");
+						Logger.LogString("STATUS:Format was good");
+					}
 				} else {
+					Logger.LogString("STATUS:Relabeling volume");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Relabeling");
 					executeFile(new File(SCRIPT_SUBDIR + "relabel.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 				}
-				// now that any possible reformatting is complete, copy over the new serial number 
-/*				if (callback.fetchIDFromServer.isSelected()) {
-					File f = new File(devicePath + "-erase-srn." + id + ".srn");
-					f.createNewFile();
-					f = new File(devicePath + "inspect");
-					f.createNewFile();
-				} 
-*/				TBLoader.status2.setText(TBLoader.status2.getText() + "...Updating TB Files");
+				TBLoader.status2.setText(TBLoader.status2.getText() + "...Updating TB Files");
+				Logger.LogString("STATUS:Updating TB Files");
 				executeFile(new File(SCRIPT_SUBDIR + "update.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 				TBLoader.status2.setText(TBLoader.status2.getText() + "...Updated");
+				Logger.LogString("STATUS:Updated");
 				verified = executeFile(new File(SCRIPT_SUBDIR + "verify.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 				if (verified) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Verified Basic...Adding Any Custom Community Content");
+					Logger.LogString("STATUS:Verified Basic...Adding Any Custom Community Content");
 					verified = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);					
 				}
 				if (verified) {
 					String duration;
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Updated & Verified...Disconnecting TB");
+					Logger.LogString("STATUS:Updated & Verified...Disconnecting TB");
 					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Complete");
+					Logger.LogString("STATUS:Complete");
 					success = true;
 					duration = getDuration();
 					Logger.LogString("Talking Book has been updated and verified\nin "+ duration + ".");
@@ -1300,6 +1282,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				} else {
 					success = false;
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Failed Verification");
+					Logger.LogString("STATUS:Failed Verification");
 					JOptionPane.showMessageDialog(null, "Update failed verification.  Try again or replace memory card.",
 			                "Failure", JOptionPane.DEFAULT_OPTION);
 					Logger.LogString("Update failed verification.  Try again or replace memory card.");
@@ -1311,8 +1294,9 @@ public class TBLoader extends JFrame implements ActionListener {
 					JOptionPane.showMessageDialog(null, e.getMessage(),
 		                "Error", JOptionPane.ERROR_MESSAGE);
 					criticalError = true;
-				}
-				Logger.LogString(e.toString());
+					Logger.LogString("CRITICAL ERROR:" + e.getMessage());
+				} else
+					Logger.LogString("NON-CRITICAL ERROR:" + e.getMessage());
 				Logger.init();
 				e.printStackTrace();
 			} finally {
@@ -1331,22 +1315,28 @@ public class TBLoader extends JFrame implements ActionListener {
 					return;
 				}
 				TBLoader.status2.setText("Checking Memory Card");
+				Logger.LogString("STATUS:Checking Memory Card");
 				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
 				if (hasCorruption) {
 					Logger.LogString("Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.");
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted");
+					Logger.LogString("STATUS:Corrupted");
 					JOptionPane.showMessageDialog(null, "Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.",
 			                "Failure", JOptionPane.DEFAULT_OPTION);
 					return;
 				}
 				TBLoader.status2.setText(TBLoader.status2.getText() + "...Memory Card Good...Setting Community");
+				Logger.LogString("STATUS:Memory Card Good...Setting Community");
 				TBLoader.setCommunity(devicePath, community, this.datetime);
 				TBLoader.status2.setText(TBLoader.status2.getText() + "...Community Set");
+				Logger.LogString("STATUS:Community Set");
 				success = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));
 				if (success) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Custom Files Applied");
+					Logger.LogString("STATUS:Custom Files Applied");
 					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Complete");
+					Logger.LogString("STATUS:Complete");
 					Logger.LogString("Commmunity set to " + community + " and custom files applied.");
 					JOptionPane.showMessageDialog(null, "Commmunity set to " + community + ".",
 			                "Success", JOptionPane.DEFAULT_OPTION);
@@ -1357,6 +1347,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				if (alert) {
 					JOptionPane.showMessageDialog(null, e.getMessage(),
 		                "Error", JOptionPane.ERROR_MESSAGE);
+					Logger.LogString("CRITICAL ERROR:" + e.getMessage());
 					criticalError = true;
 				}
 				Logger.LogString(e.toString());
