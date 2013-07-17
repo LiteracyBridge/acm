@@ -63,15 +63,18 @@ public class AudioItemPropertiesTable extends JXTable {
 				int col = columnAtPoint(e.getPoint());
 
 				if (e.getClickCount() == 2) {
-					String text = getValueAt(row, AudioItemPropertiesModel.VALUE_COL).toString();
-					try {
-						if (text.startsWith("www.")) {
-							text = "http://" + text;
+					Object value = getValueAt(row, AudioItemPropertiesModel.VALUE_COL);
+					if (value != null) {
+						String text = value.toString();
+						try {
+							if (text.startsWith("www.")) {
+								text = "http://" + text;
+							}
+							URI uri = new URI(text);
+							Desktop.getDesktop().browse(uri);
+						} catch (Exception ex) {
+							// ignore - this may not be a uri
 						}
-						URI uri = new URI(text);
-						Desktop.getDesktop().browse(uri);
-					} catch (Exception ex) {
-						// ignore - this may not be a uri
 					}
 				}
 				
