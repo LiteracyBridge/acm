@@ -37,6 +37,7 @@ import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.messages.PlayLocalizedAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemToPlayMessage;
+import org.literacybridge.acm.gui.messages.SearchRequestMessage;
 import org.literacybridge.acm.gui.playerAPI.PlayerStateDetails;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
@@ -297,6 +298,10 @@ public class ToolbarView extends JToolBar implements ActionListener
 		if (arg instanceof PlayLocalizedAudioItemMessage && OSChecker.WINDOWS) {
 			PlayLocalizedAudioItemMessage item = (PlayLocalizedAudioItemMessage) arg;
 			play(item.getLocalizedAudioItem());
+		}
+		
+		if (arg instanceof SearchRequestMessage) {
+			searchTF.setText(((SearchRequestMessage) arg).getSearchString());
 		}
 	}
 	

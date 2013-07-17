@@ -107,7 +107,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_GOAL, true));
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_PUBLISHER, false));
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_IDENTIFIER, false));
-		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_RELATION, false));
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_RELATION, true));
 		audioItemPropertiesObject.add(new AudioItemProperty(false) {
 			@Override public String getName() { 
 				return "File name";

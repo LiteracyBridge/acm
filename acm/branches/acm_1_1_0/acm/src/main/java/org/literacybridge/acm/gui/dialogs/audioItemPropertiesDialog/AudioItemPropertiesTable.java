@@ -20,6 +20,7 @@ import javax.swing.table.TableModel;
 import org.jdesktop.swingx.JXTable;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
+import org.literacybridge.acm.gui.messages.SearchRequestMessage;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 
@@ -34,7 +35,7 @@ public class AudioItemPropertiesTable extends JXTable {
 																							   "Fathers", "Mothers", "Parents", "Pregnant women"}));
 	private LanguageComboBoxModel languageComboBoxModel = new LanguageComboBoxModel();
 	
-	public AudioItemPropertiesTable() {
+	public AudioItemPropertiesTable(final AudioItemPropertiesDialog dialog) {
 		setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
 			@Override public Component getTableCellRendererComponent(JTable table,
 																	 Object value, 
@@ -72,8 +73,21 @@ public class AudioItemPropertiesTable extends JXTable {
 							}
 							URI uri = new URI(text);
 							Desktop.getDesktop().browse(uri);
+							return;
 						} catch (Exception ex) {
 							// ignore - this may not be a uri
+						}
+						
+						AudioItemProperty<?> property = getAudioItemPropertiesModel().getAudioItemProperty(row);
+						if (property instanceof AudioItemProperty.MetadataProperty) {
+							if (((AudioItemProperty.MetadataProperty) property).getMetadataField() == MetadataSpecification.DC_RELATION) {
+								Application.getFilterState().setFilterCategories(null);
+								Application.getFilterState().setFilterLanguages(null);
+								Application.getFilterState().setFilterString(text);
+								Application.getMessageService().pumpMessage(new SearchRequestMessage(text));
+								dialog.setVisible(false);
+								return;
+							}
 						}
 					}
 				}

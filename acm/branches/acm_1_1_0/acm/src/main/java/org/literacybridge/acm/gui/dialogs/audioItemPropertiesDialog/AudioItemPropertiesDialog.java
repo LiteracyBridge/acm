@@ -125,7 +125,7 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 	
 		// Show properties table
 		JScrollPane theScrollPane = new JScrollPane();
-		propertiesTable = new AudioItemPropertiesTable();
+		propertiesTable = new AudioItemPropertiesTable(this);
 		propertiesTable.setShowGrid(false, false);
 		// use fixed color; there seems to be a bug in some plaf
 		// implementations that cause strange rendering
