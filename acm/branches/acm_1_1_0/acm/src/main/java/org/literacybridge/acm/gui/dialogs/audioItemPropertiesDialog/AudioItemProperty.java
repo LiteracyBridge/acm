@@ -44,7 +44,7 @@ public abstract class AudioItemProperty<V> {
 			this.field = field;
 		}
 		
-		public MetadataField<String> getMetadataField() {
+		public MetadataField<?> getMetadataField() {
 			return field;
 		}
 		
@@ -62,7 +62,7 @@ public abstract class AudioItemProperty<V> {
 			AudioItemPropertiesModel.setStringValue(field, metadata, newValue);
 		}
 	}
-	
+
 	public static class LanguageProperty extends AudioItemProperty<Locale> {
 		private final MetadataField<RFC3066LanguageCode> field;
 		

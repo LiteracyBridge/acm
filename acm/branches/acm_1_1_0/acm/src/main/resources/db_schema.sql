@@ -59,7 +59,9 @@ CREATE TABLE t_metadata (
   primary_speaker VARCHAR(255),
   goal VARCHAR(255),
   english_transcription VARCHAR(32000),
-  notes VARCHAR(32000));
+  notes VARCHAR(32000),
+  beneficiary VARCHAR(255),
+  no_longer_used INT);
 
 
 CREATE TABLE t_audioitem ( 

@@ -1,6 +1,5 @@
 package org.literacybridge.acm.db;
 
-import java.sql.Timestamp;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -99,6 +98,12 @@ public class PersistentMetadata extends PersistentObject {
     @Column(name="notes")
     private String notes;
 
+    @Column(name="beneficiary")
+    private String beneficiary;
+    
+    @Column(name="no_longer_used")
+    private Integer no_longer_used;
+    
     public PersistentMetadata() {
     }
 
@@ -257,6 +262,22 @@ public class PersistentMetadata extends PersistentObject {
 
 	public void setNotes(String notes) {
 		this.notes = notes;
+	}
+	
+	public void setBeneficiary(String beneficiary) {
+		this.beneficiary = beneficiary;
+	}
+	
+	public String getBeneficiary() {
+		return this.beneficiary;
+	}
+	
+	public void setNoLongerUsed(int noLongerUsed) {
+		this.no_longer_used = noLongerUsed;
+	}
+	
+	public Integer getNoLongerUsed() {
+		return no_longer_used;
 	}
     
     public void setStatistic(MetadataStatisticsField statisticsField, String deviceId, int bootCycleNumber, Integer count) {

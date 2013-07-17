@@ -34,6 +34,8 @@ public class AudioItemPropertiesTable extends JXTable {
 			 																				  "User feedback", "Success story", "Endorsement"}));
 	private JComboBox targetAudienceBox = new JComboBox(new DefaultComboBoxModel(new String[] {"All", "Boys", "Girls", "Children", "Farmers",
 																							   "Fathers", "Mothers", "Parents", "Pregnant women", "Livestock rearer"}));
+	
+	private JComboBox noLongerUsedBox = new JComboBox(new DefaultComboBoxModel(new String[] {"true", "false"}));
 	private LanguageComboBoxModel languageComboBoxModel = new LanguageComboBoxModel();
 	
 	public AudioItemPropertiesTable(final AudioItemPropertiesDialog dialog) {
@@ -118,6 +120,10 @@ public class AudioItemPropertiesTable extends JXTable {
 			if (((AudioItemProperty.MetadataProperty) property).getMetadataField() == MetadataSpecification.LB_TARGET_AUDIENCE) {
 				return new DefaultCellEditor(targetAudienceBox);	
 			}
+		}
+		
+		if (property.getName().equals(AudioItemPropertiesModel.NO_LONGER_USED_NAME)) {
+			return new DefaultCellEditor(noLongerUsedBox);			
 		}
 		
 		return super.getCellEditor(row, column);

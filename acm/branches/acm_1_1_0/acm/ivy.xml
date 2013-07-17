@@ -24,6 +24,7 @@
     <dependency org="com.google.collections" name="google-collections" rev="1.0-rc5"/>
     <dependency org="org.yaml" name="snakeyaml" rev="1.6"/>
     <dependency org="org.apache.derby" name="derbyclient" rev="10.5.3.0_1"/>
+    <dependency org="org.apache.derby" name="derbytools" rev="10.5.3.0_1"/>
     <dependency org="it.cnr.imaa.essi" name="lablib-checkboxtree" rev="3.1.1"/>
     <dependency org="org.netbeans.external" name="swing-layout-1.0.4" rev="RELEASE68"/>
     <dependency org="com.seaglasslookandfeel" name="seaglasslookandfeel" rev="0.2"/>

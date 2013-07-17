@@ -153,7 +153,11 @@ public class Metadata implements Persistable {
 			mMetadata.setEnglish_transcription(value.getValue().toString());
 		} else if (field == MetadataSpecification.LB_NOTES) {
 			mMetadata.setNotes(value.getValue().toString());
-		}		
+		} else if (field == MetadataSpecification.LB_BENEFICIARY) {
+			mMetadata.setBeneficiary(value.getValue().toString());
+		} else if (field == MetadataSpecification.LB_NO_LONGER_USED) {
+			mMetadata.setNoLongerUsed((Integer) value.getValue());
+		}
 	}
 
 	private void refreshFieldsFromPersistenceObject() {
@@ -202,6 +206,10 @@ public class Metadata implements Persistable {
 					new MetadataValue<String>(mMetadata.getEnglish_transcription()));
 			setMetadataField(MetadataSpecification.LB_NOTES,
 					new MetadataValue<String>(mMetadata.getNotes()));
+			setMetadataField(MetadataSpecification.LB_BENEFICIARY,
+					new MetadataValue<String>(mMetadata.getBeneficiary()));
+			setMetadataField(MetadataSpecification.LB_NO_LONGER_USED,
+					new MetadataValue<Integer>(mMetadata.getNoLongerUsed()));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {

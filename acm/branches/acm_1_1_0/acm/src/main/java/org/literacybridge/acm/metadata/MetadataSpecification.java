@@ -5,6 +5,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.literacybridge.acm.metadata.types.MetadataIntegerField;
 import org.literacybridge.acm.metadata.types.MetadataStatisticsField;
 import org.literacybridge.acm.metadata.types.MetadataStringField;
 
@@ -109,6 +110,8 @@ public interface MetadataSpecification {
 	public final static MetadataField<String> LB_GOAL = new MetadataStringField("LB_GOAL");
 	public final static MetadataField<String> LB_ENGLISH_TRANSCRIPTION = new MetadataStringField("LB_ENGLISH_TRANSCRIPTION");
 	public final static MetadataField<String> LB_NOTES = new MetadataStringField("LB_NOTES");
+	public final static MetadataField<String> LB_BENEFICIARY = new MetadataStringField("LB_BENEFICIARY");
+	public final static MetadataField<Integer> LB_NO_LONGER_USED = new MetadataIntegerField("LB_NO_LONGER_USED");
 
 	
 	//============================================================================================================
@@ -139,6 +142,8 @@ public interface MetadataSpecification {
 																		.add(LB_GOAL)
 																		.add(LB_ENGLISH_TRANSCRIPTION)
 																		.add(LB_NOTES)
+																		.add(LB_BENEFICIARY)
+																		.add(LB_NO_LONGER_USED)
 																		.build();
 }
 	

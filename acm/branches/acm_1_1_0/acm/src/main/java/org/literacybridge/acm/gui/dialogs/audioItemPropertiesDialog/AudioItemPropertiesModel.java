@@ -6,6 +6,7 @@ import static org.literacybridge.acm.metadata.MetadataSpecification.DC_PUBLISHER
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_RELATION;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_SOURCE;
 import static org.literacybridge.acm.metadata.MetadataSpecification.DC_TITLE;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_BENEFICIARY;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_DATE_RECORDED;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_DURATION;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_ENGLISH_TRANSCRIPTION;
@@ -13,6 +14,7 @@ import static org.literacybridge.acm.metadata.MetadataSpecification.LB_GOAL;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_KEYWORDS;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_MESSAGE_FORMAT;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_NOTES;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_NO_LONGER_USED;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_PRIMARY_SPEAKER;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_TARGET_AUDIENCE;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_TIMING;
@@ -39,6 +41,8 @@ import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 
 public class AudioItemPropertiesModel extends AbstractTableModel {
+	static final String NO_LONGER_USED_NAME = "No longer used";
+	
 	private String[] columnNames = {LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_PROPERTY", LanguageUtil.getUILanguage())
 								  , LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_VALUE", LanguageUtil.getUILanguage()),
 								  "" // edit column doesn't have a title
@@ -157,7 +161,28 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		// TOOD: long text fields
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_ENGLISH_TRANSCRIPTION, true));
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_NOTES, true));
-		
+		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_BENEFICIARY, true));
+		audioItemPropertiesObject.add(new AudioItemProperty(true) {
+			@Override public String getName() { 
+				return NO_LONGER_USED_NAME;
+			}
+
+			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
+				List<MetadataValue<Integer>> values = metadata.getMetadataValues(LB_NO_LONGER_USED);
+				if (values == null || values.isEmpty()) {
+					return "false";
+				}
+				
+				return values.get(0).getValue() == 0 ? "false" : "true";
+			}
+
+			@Override
+			public void setValue(AudioItem audioItem, Metadata metadata,
+					Object newValue) {
+				metadata.setMetadataField(MetadataSpecification.LB_NO_LONGER_USED, 
+						new MetadataValue<Integer>(newValue.toString().equals("false") ? 0 : 1));
+			}			
+		});	
 	}
 	
 	@Override
@@ -250,11 +275,12 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		String newValue = aValue.toString();
 		AudioItemProperty<?> obj = audioItemPropertiesObject.get(row);
 		
-		if (obj instanceof AudioItemProperty.MetadataProperty) {
-			((AudioItemProperty.MetadataProperty) obj).setValue(audioItem, metadata, newValue);
-		} else if (obj instanceof AudioItemProperty.LanguageProperty) {
+		
+		if (obj instanceof AudioItemProperty.LanguageProperty) {
 			Locale newLocale = (Locale) aValue;
 			((AudioItemProperty.LanguageProperty) obj).setValue(audioItem, metadata, newLocale);
+		} else if (obj instanceof AudioItemProperty) {
+			((AudioItemProperty) obj).setValue(audioItem, metadata, newValue);
 		}
 		
 		incrementRevision(metadata);
