@@ -50,7 +50,7 @@ import javax.swing.filechooser.FileSystemView;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.08r1041";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.08r1044";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -841,7 +841,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				if (goodDisk) {
 					//Logger.LogString("chkdsk was good.");
 					CopyThread t;
-					t = new CopyThread(this, devicePath, community, di.serialNumber, di.isNewSerialNumber,  dateTime, handIcons.isSelected(), revision,di.revision,"grabStatsOnly");
+					t = new CopyThread(this, devicePath, community, this.oldCommunityValue.getText(), di.serialNumber, di.isNewSerialNumber,  dateTime, handIcons.isSelected(), revision,di.revision,"grabStatsOnly");
 					t.start();
 				} 				
 			}
@@ -852,7 +852,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				if (goodDisk) {
 					//Logger.LogString("chkdsk was good.");
 					CopyThread t;
-					t = new CopyThread(this, devicePath, community, di.serialNumber, di.isNewSerialNumber,  dateTime, handIcons.isSelected(), revision,di.revision,"update");
+					t = new CopyThread(this, devicePath, community, this.oldCommunityValue.getText(), di.serialNumber, di.isNewSerialNumber,  dateTime, handIcons.isSelected(), revision,di.revision,"update");
 					t.start();
 				} 
 /*				else {
@@ -885,7 +885,7 @@ public class TBLoader extends JFrame implements ActionListener {
 */			else if (b == setCommunity) {
 				//setCommunity(devicePath, community, dateTime);
 				CopyThread t;
-				t = new CopyThread(this, devicePath, community, di.serialNumber, di.isNewSerialNumber, dateTime, handIcons.isSelected(), revision,di.revision,"setCommunity");
+				t = new CopyThread(this, devicePath, community, this.oldCommunityValue.getText(), di.serialNumber, di.isNewSerialNumber, dateTime, handIcons.isSelected(), revision,di.revision,"setCommunity");
 				t.start();
 			}
 			refreshUI();
@@ -1084,6 +1084,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	public static class CopyThread extends Thread {
 		final String devicePath;
 		final String community;
+		final String sourceCommunity;
 		final String id;
 		final boolean isNewSerialNumber;
 		final String datetime;
@@ -1139,6 +1140,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					}
 					cmd = cmd.replaceAll("\\$\\{device_drive\\}", devicePath.substring(0, 2));
 					cmd = cmd.replaceAll("\\$\\{community\\}", community);
+					cmd = cmd.replaceAll("\\$\\{source_community\\}", sourceCommunity);
 					cmd = cmd.replaceAll("\\$\\{srn\\}", id);
 					cmd = cmd.replaceAll("\\$\\{device_id\\}", id);  //backward compat with label command in one of the scripts
 					cmd = cmd.replaceAll("\\$\\{datetime\\}", datetime);
@@ -1170,9 +1172,10 @@ public class TBLoader extends JFrame implements ActionListener {
 			return success;
 		}
 		
-		public CopyThread(TBLoader callback, String devicePath, String community, String id, boolean isNewSerialNumber, String datetime, boolean useHandIcons, String sourceRevision, String targetRevision,String mode) {
+		public CopyThread(TBLoader callback, String devicePath, String community, String sourceCommunity, String id, boolean isNewSerialNumber, String datetime, boolean useHandIcons, String sourceRevision, String targetRevision,String mode) {
 			this.callback = callback;
 			this.community 	= community;
+			this.sourceCommunity = sourceCommunity;
 			this.devicePath = devicePath;
 			this.id = id;
 			this.isNewSerialNumber = isNewSerialNumber;
