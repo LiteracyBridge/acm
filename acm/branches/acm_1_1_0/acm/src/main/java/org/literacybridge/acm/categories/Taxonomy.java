@@ -83,10 +83,12 @@ public class Taxonomy implements Persistable {
 	}
 	
 	private static void updateTaxonomy(PersistentCategory existingRoot, DefaultLiteracyBridgeTaxonomy.TaxonomyRevision latestRevision) {
+		System.out.println("Updating taxonomy");
 		final Map<String, PersistentCategory> existingCategories = new HashMap<String, PersistentCategory>();
 		traverse(null, existingRoot, new Function() {
 			@Override public void apply(PersistentCategory parent, PersistentCategory root) {
 				existingCategories.put(root.getUuid(), root);
+				root.clearPersistentChildCategories();
 			}			
 		});
 		
@@ -98,6 +100,7 @@ public class Taxonomy implements Persistable {
 				if (existingCategory != null) {
 					existingCategory.setTitle(updatedCategory.getTitle());
 					existingCategory.setDescription(updatedCategory.getDescription());
+					existingCategory.setOrder(updatedCategory.getOrder());					
 				} else {
 					existingCategories.get(parent.getUuid()).addPersistentChildCategory(updatedCategory);
 					traverse(null, updatedCategory, new Function() {
@@ -204,6 +207,14 @@ public class Taxonomy implements Persistable {
 
 		public PersistentCategory getPersistentObject() {
 			return mCategory;
+		}
+		
+		public int getOrder() {
+			return mCategory.getOrder();
+		}
+		
+		public void setOrder(int order) {
+			mCategory.setOrder(order);
 		}
 
 		public void setLocalizedCategoryDescription(Locale locale, String name,

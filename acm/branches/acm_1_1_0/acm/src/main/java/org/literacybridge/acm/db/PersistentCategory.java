@@ -47,6 +47,9 @@ public class PersistentCategory extends PersistentObject {
 
     @Column(name="revision")
     private Integer revision;    
+
+    @Column(name="ordering")
+    private Integer order;    
     
     @ManyToOne
     @JoinColumn(name = "lang_desc")
@@ -85,6 +88,14 @@ public class PersistentCategory extends PersistentObject {
     
     public void setRevision(Integer revision) {
     	this.revision = revision;
+    }
+
+    public Integer getOrder() {
+    	return order;
+    }
+    
+    public void setOrder(Integer order) {
+    	this.order = order;
     }
     
     public String getUuid() {
@@ -137,6 +148,13 @@ public class PersistentCategory extends PersistentObject {
         getPersistentChildCategoryList().remove(persistentCategory);
         persistentCategory.setPersistentParentCategory(null);
         return persistentCategory;
+    }
+    
+    public void clearPersistentChildCategories() {
+    	for (PersistentCategory child : getPersistentChildCategoryList()) {
+    		child.setPersistentParentCategory(null);
+    	}
+    	getPersistentChildCategoryList().clear();
     }
 
     public List<PersistentAudioItem> getPersistentAudioItemList() {

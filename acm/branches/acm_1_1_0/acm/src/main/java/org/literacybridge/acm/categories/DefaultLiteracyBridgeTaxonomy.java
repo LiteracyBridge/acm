@@ -6,11 +6,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.Configuration;
 import org.yaml.snakeyaml.Yaml;
@@ -23,6 +21,7 @@ public class DefaultLiteracyBridgeTaxonomy {
 	public final static String YAML_CATEGORIES_FIELD = "categories";
 	public final static String YAML_TAXONOMY_FIELD = "taxonomy";
 	public final static String YAML_CAT_NAME_FIELD = "name";
+	public final static String YAML_CAT_ORDER_FIELD = "order";
 	public final static String YAML_CAT_DESC_FIELD = "description";
 	public final static String YAML_CAT_CHILDREN_FIELD = "children";
 
@@ -40,9 +39,10 @@ public class DefaultLiteracyBridgeTaxonomy {
 		}
 	}
 	
-	private static Category addCategory(Taxonomy taxonomy, Category parent, String id, String name, String desc) {
+	private static Category addCategory(Taxonomy taxonomy, Category parent, String id, String name, String desc, int order) {
         Category cat = new Category(id);
         cat.setDefaultCategoryDescription(name, desc);
+        cat.setOrder(order);
         taxonomy.addChild(parent, cat);
         return cat;
 	}
@@ -117,10 +117,11 @@ public class DefaultLiteracyBridgeTaxonomy {
 	    	Map<String, Object> catData = (Map<String, Object>) entry.getValue();
 	    	String catName = (String) catData.get(YAML_CAT_NAME_FIELD);
 	    	String catDesc = (String) catData.get(YAML_CAT_DESC_FIELD);
+	    	Integer order = (Integer) catData.get(YAML_CAT_ORDER_FIELD);
 	    	if (catDesc == null) {
 	    		catDesc = "";
 	    	}
-	    	Category cat = addCategory(taxonomy, parent, catID, catName, catDesc);
+	    	Category cat = addCategory(taxonomy, parent, catID, catName, catDesc, order);
 	    	Object children = catData.get(YAML_CAT_CHILDREN_FIELD);
 	    	if (children != null) {
 	    		loadYaml(taxonomy, (Map<String, Object>) children, cat);

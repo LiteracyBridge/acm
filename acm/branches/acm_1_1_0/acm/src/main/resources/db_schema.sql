@@ -31,6 +31,7 @@ CREATE TABLE t_category (
   id INT PRIMARY KEY, 
   uuid VARCHAR(255), 
   revision INT,
+  ordering INT,
   lang_title INT, 
   lang_desc INT, 
   parent INT );
