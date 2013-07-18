@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.db.PersistentCategory;
 import org.yaml.snakeyaml.Yaml;
 
 public class DefaultLiteracyBridgeTaxonomy {
@@ -34,13 +35,13 @@ public class DefaultLiteracyBridgeTaxonomy {
 			this.categories = categories;
 		}
 		
-		public void createTaxonomy(Taxonomy taxonomy) {
-			DefaultLiteracyBridgeTaxonomy.loadYaml(taxonomy, categories, taxonomy.getRootCategory());
+		public void createTaxonomy(Taxonomy taxonomy, final Map<String, PersistentCategory> existingCategories) {
+			DefaultLiteracyBridgeTaxonomy.loadYaml(taxonomy, categories, taxonomy.getRootCategory(), existingCategories);
 		}
 	}
 	
-	private static Category addCategory(Taxonomy taxonomy, Category parent, String id, String name, String desc, int order) {
-        Category cat = new Category(id);
+	private static Category addCategory(Taxonomy taxonomy, Category parent, PersistentCategory existingCategory, String id, String name, String desc, int order) {
+        Category cat = existingCategory == null ? new Category(id) : new Category(existingCategory);
         cat.setDefaultCategoryDescription(name, desc);
         cat.setOrder(order);
         taxonomy.addChild(parent, cat);
@@ -49,7 +50,7 @@ public class DefaultLiteracyBridgeTaxonomy {
 	
 	public static void main(String[] args) throws Exception {
 		Taxonomy taxonomy = new Taxonomy();
-		loadLatestTaxonomy().createTaxonomy(taxonomy);
+		loadLatestTaxonomy().createTaxonomy(taxonomy, null);
 		Category root = taxonomy.getRootCategory();
 		print(root);
 	}
@@ -111,9 +112,14 @@ public class DefaultLiteracyBridgeTaxonomy {
 		}
 	}
 	
-	private static void loadYaml(Taxonomy taxonomy, Map<String, Object> categories, Category parent) {
+	private static void loadYaml(Taxonomy taxonomy, Map<String, Object> categories, Category parent, final Map<String, PersistentCategory> existingCategories) {
 	    for (Entry<String, Object> entry : categories.entrySet()) {
 	    	String catID = entry.getKey();
+	    	
+	    	PersistentCategory existingCategory = null;
+	    	if (existingCategories != null) {
+	    		existingCategory =  existingCategories.get(catID);
+	    	}
 	    	Map<String, Object> catData = (Map<String, Object>) entry.getValue();
 	    	String catName = (String) catData.get(YAML_CAT_NAME_FIELD);
 	    	String catDesc = (String) catData.get(YAML_CAT_DESC_FIELD);
@@ -121,10 +127,10 @@ public class DefaultLiteracyBridgeTaxonomy {
 	    	if (catDesc == null) {
 	    		catDesc = "";
 	    	}
-	    	Category cat = addCategory(taxonomy, parent, catID, catName, catDesc, order);
+	    	Category cat = addCategory(taxonomy, parent, existingCategory, catID, catName, catDesc, order);
 	    	Object children = catData.get(YAML_CAT_CHILDREN_FIELD);
 	    	if (children != null) {
-	    		loadYaml(taxonomy, (Map<String, Object>) children, cat);
+	    		loadYaml(taxonomy, (Map<String, Object>) children, cat, existingCategories);
 	    	}
 	    }
 	}

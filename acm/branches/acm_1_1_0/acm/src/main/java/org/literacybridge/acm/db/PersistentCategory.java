@@ -91,7 +91,7 @@ public class PersistentCategory extends PersistentObject {
     }
 
     public Integer getOrder() {
-    	return order;
+    	return order == null ? 0 : order.intValue();
     }
     
     public void setOrder(Integer order) {
@@ -126,7 +126,7 @@ public class PersistentCategory extends PersistentObject {
         return persistentParentCategory;
     }
 
-    private void setPersistentParentCategory(PersistentCategory persistentParentCategory) {
+    public void setPersistentParentCategory(PersistentCategory persistentParentCategory) {
         this.persistentParentCategory = persistentParentCategory;
     }
 

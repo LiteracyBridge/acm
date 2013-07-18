@@ -56,11 +56,13 @@ public class Taxonomy implements Persistable {
 		DefaultLiteracyBridgeTaxonomy.TaxonomyRevision latestRevision = DefaultLiteracyBridgeTaxonomy.loadLatestTaxonomy();
 
 		if (root == null) {	
-			taxonomy = createNewTaxonomy(latestRevision);
+			PersistentString title = new PersistentString("root");
+			PersistentString desc = new PersistentString("root node");
+			root = new PersistentCategory(title, desc, rootUUID);
+			taxonomy = createNewTaxonomy(latestRevision, root, null);
 			taxonomy.commit();
 		} else if (root.getRevision() < latestRevision.revision) {
 			updateTaxonomy(root, latestRevision);
-			taxonomy.mRootCategory = new Category(root);
 			taxonomy.commit();
 			DefaultLiteracyBridgeTaxonomy.print(taxonomy.mRootCategory);
 		} else {
@@ -70,47 +72,34 @@ public class Taxonomy implements Persistable {
 		return taxonomy;
 	}
 	
-	private static Taxonomy createNewTaxonomy(DefaultLiteracyBridgeTaxonomy.TaxonomyRevision revision) {
+	private static Taxonomy createNewTaxonomy(DefaultLiteracyBridgeTaxonomy.TaxonomyRevision revision, PersistentCategory existingRoot, final Map<String, PersistentCategory> existingCategories) {
 		Taxonomy taxonomy = new Taxonomy();
-		PersistentString title = new PersistentString("root");
-		PersistentString desc = new PersistentString("root node");
-		PersistentCategory root = new PersistentCategory(title, desc, rootUUID);
-		root.setRevision(revision.revision);
-		taxonomy.mRootCategory = new Category(root);
+		existingRoot.setRevision(revision.revision);
+		existingRoot.setOrder(0);
+		taxonomy.mRootCategory = new Category(existingRoot);
 		
-		revision.createTaxonomy(taxonomy);
+		revision.createTaxonomy(taxonomy, existingCategories);
 		return taxonomy;
 	}
 	
 	private static void updateTaxonomy(PersistentCategory existingRoot, DefaultLiteracyBridgeTaxonomy.TaxonomyRevision latestRevision) {
 		System.out.println("Updating taxonomy");
+		
 		final Map<String, PersistentCategory> existingCategories = new HashMap<String, PersistentCategory>();
 		traverse(null, existingRoot, new Function() {
 			@Override public void apply(PersistentCategory parent, PersistentCategory root) {
 				existingCategories.put(root.getUuid(), root);
-				root.clearPersistentChildCategories();
 			}			
 		});
 		
-		Taxonomy update = createNewTaxonomy(latestRevision);
+		existingRoot.clearPersistentChildCategories();
+		for (PersistentCategory cat : existingCategories.values()) {
+			cat.clearPersistentChildCategories();
+			cat.setPersistentParentCategory(null);
+			cat.commit();
+		}
 		
-		traverse(null, update.getRootCategory().getPersistentObject(), new Function() {
-			@Override public void apply(PersistentCategory parent, PersistentCategory updatedCategory) {
-				PersistentCategory existingCategory = existingCategories.get(updatedCategory.getUuid());
-				if (existingCategory != null) {
-					existingCategory.setTitle(updatedCategory.getTitle());
-					existingCategory.setDescription(updatedCategory.getDescription());
-					existingCategory.setOrder(updatedCategory.getOrder());					
-				} else {
-					existingCategories.get(parent.getUuid()).addPersistentChildCategory(updatedCategory);
-					traverse(null, updatedCategory, new Function() {
-						@Override public void apply(PersistentCategory parent, PersistentCategory root) {
-							existingCategories.put(root.getUuid(), root);
-						}			
-					});
-				}
-			}			
-		});
+		taxonomy = createNewTaxonomy(latestRevision, existingRoot, existingCategories);		
 	}
 	
 	private static interface Function {
