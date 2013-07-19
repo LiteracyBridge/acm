@@ -50,7 +50,7 @@ import javax.swing.filechooser.FileSystemView;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.09r1061";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.09r1062";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -408,10 +408,10 @@ public class TBLoader extends JFrame implements ActionListener {
 				return "TB-" + idCounter++;
 			}
 		} catch (Exception ex){
-			Logger.LogString("An error occured while fetching a new device ID from the Literacy Bridge server. Make sure you have a working internet connection.");
+			Logger.LogString("Tried to get a new serial number, but the Internet does not seem to be available.\nPlease check your internet connection if you need to get a new serial number for this device.");
 			Logger.LogString(ex.toString());
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(this, "An error occured while fetching a new device ID from the Literacy Bridge server. Make sure you have a working internet connection.",
+			JOptionPane.showMessageDialog(this, "Tried to get a new serial number, but the Internet does not seem to be available.\nPlease check your internet connection if you need to get a new serial number for this device.",
 	                "Error", JOptionPane.ERROR_MESSAGE);
 			throw ex;
 		}
