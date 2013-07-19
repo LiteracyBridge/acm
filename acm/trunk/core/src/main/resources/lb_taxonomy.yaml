@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 9
+  revision: 10
   categories:
     '0' : 
       name: Other Messages
@@ -138,6 +138,9 @@ taxonomy:
         '2-8' :
           name: Family planning
           order: 35
+        '2-9' :
+          name: Nutrition
+          order: 25
     '3' :
       name: Education
       order: 30
