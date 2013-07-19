@@ -50,7 +50,7 @@ import javax.swing.filechooser.FileSystemView;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.08r1044";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.09r1061";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -198,6 +198,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		});
 */		 	
 		communityList = new JComboBox();
+		communityList.addActionListener(this);
 		driveList = new JComboBox();
 		driveList.addActionListener(this);
 		fetchIDFromServer = new JCheckBox("Get new serial number");
@@ -484,6 +485,10 @@ public class TBLoader extends JFrame implements ActionListener {
 			communityList.addItem(communityNames[i]);
 		}
 		setCommunityList();
+		if (communityList.getSelectedIndex() == 6 ||communityList.getSelectedIndex() == 8) 
+			this.handIcons.setSelected(true);
+		else
+			this.handIcons.setSelected(false);
 	}
 
 	private synchronized void setCommunityList() throws IOException {
@@ -567,6 +572,9 @@ public class TBLoader extends JFrame implements ActionListener {
 		di.serialNumber = sn;
 		di.revision = rev;
 		revisionText.setText(rev);
+		if (di.serialNumber.equals("UNKNOWN") || di.serialNumber.equals(NO_SERIAL_NUMBER)) {
+			this.fetchIDFromServer.setSelected(true);			
+		}
 	}	
 
 	private synchronized void fillList(File[] roots) {
@@ -742,17 +750,25 @@ public class TBLoader extends JFrame implements ActionListener {
 		if (o instanceof JButton)
 			b = (JButton)e.getSource();
 		else if (o instanceof JComboBox) {
-			di = (DriveInfo)((JComboBox)e.getSource()).getSelectedItem();
-			Logger.LogString("Drive changed: " + di.drive + di.label);
-			// JComboBox cb = (JComboBox)evt.getSource();
-			id.setText("");
-			try {
-				fillCommunityList();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			if (o == driveList) {
+				di = (DriveInfo)((JComboBox)e.getSource()).getSelectedItem();
+				Logger.LogString("Drive changed: " + di.drive + di.label);
+				// JComboBox cb = (JComboBox)evt.getSource();
+				id.setText("");
+				try {
+					fillCommunityList();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				setSNandRevFromCurrentDrive();
+			} else if (o == communityList) {
+				JComboBox cl = (JComboBox)o;
+				if (cl.getSelectedIndex() == 6 ||cl.getSelectedIndex() == 8) 
+					this.handIcons.setSelected(true);
+				else
+					this.handIcons.setSelected(false);
 			}
-			setSNandRevFromCurrentDrive();
 			return;
 		} else
 			return;
@@ -1122,6 +1138,11 @@ public class TBLoader extends JFrame implements ActionListener {
 			boolean success = true;
 			String errorLine = "";
 			criticalError = false;
+			Calendar cal = Calendar.getInstance();
+			String month = String.valueOf(cal.get(Calendar.MONTH) + 1);
+			String dateInMonth = String.valueOf(cal.get(Calendar.DAY_OF_MONTH));
+			String year = String.valueOf(cal.get(Calendar.YEAR));
+			
 			try {
 				BufferedReader reader;
 				String handValue;
@@ -1144,6 +1165,9 @@ public class TBLoader extends JFrame implements ActionListener {
 					cmd = cmd.replaceAll("\\$\\{srn\\}", id);
 					cmd = cmd.replaceAll("\\$\\{device_id\\}", id);  //backward compat with label command in one of the scripts
 					cmd = cmd.replaceAll("\\$\\{datetime\\}", datetime);
+					cmd = cmd.replaceAll("\\$\\{dateInMonth\\}", dateInMonth);
+					cmd = cmd.replaceAll("\\$\\{month\\}", month);					
+					cmd = cmd.replaceAll("\\$\\{year\\}", year);					
 					cmd = cmd.replaceAll("\\$\\{send_now_dir\\}", Matcher.quoteReplacement(copyTo));
 					cmd = cmd.replaceAll("\\$\\{holding_dir\\}", Matcher.quoteReplacement(TEMP_COLLECTION_DIR));
 					cmd = cmd.replaceAll("\\$\\{hand\\}", handValue);
@@ -1701,6 +1725,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					this.stats[m][r] = new NORmsgStats();
 				}
 			}
+			f.close();
 			System.out.print(this.toString());
 		}
 
@@ -1797,7 +1822,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			
 			for (int r=0; r<(this.totalRotations<5?this.totalRotations:5); r++) {
 				s.append("  Rotation:" + r + "     " + totalPlayedSecondsPerRotation(r)/60 + "min " + totalPlayedSecondsPerRotation(r)%60 + "sec    Starting Period:"
-						+ this.rotations[r].startingPeriod + "   Days After Update:" + 
+						+ this.rotations[r].startingPeriod + "   Hours After Update:" + 
 						this.rotations[r].hoursAfterLastUpdate + "   Init Voltage:" + this.rotations[r].initVoltage + NEW_LINE);
 			}
 			s.append(NEW_LINE);
