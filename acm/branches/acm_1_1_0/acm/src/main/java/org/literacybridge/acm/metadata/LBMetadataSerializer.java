@@ -136,8 +136,11 @@ public class LBMetadataSerializer extends MetadataSerializer {
 		int numValues = (in.readByte() & 0xff);
 		for (int i = 0; i < numValues; i++) {
 			String catID = IOUtils.readUTF8(in);
-			Category cat = new Category(PersistentCategory.getFromDatabase(catID));
-			categories.add(cat);
+			PersistentCategory mCat = PersistentCategory.getFromDatabase(catID);
+			if (mCat != null) {
+				Category cat = new Category(mCat);
+				categories.add(cat);
+			}
 		}
 	}
 }

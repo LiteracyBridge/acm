@@ -105,6 +105,7 @@ public class A18Importer extends Importer {
 			// TODO: handle updating the file by making use of revisions
 			if (AudioItem.getFromDatabase(audioItem.getUuid()) != null) {
 				// just skip for now if we have an item with the same id already
+				System.out.println("  *already in database; skipping*");
 				return;
 			}
 			
