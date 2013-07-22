@@ -88,6 +88,8 @@ public class Application extends JXFrame {
 			title += " - " + Configuration.getSharedACMname();			
 		if (ControlAccess.isACMReadOnly())
 			title += " * READ ONLY *";
+		if (ControlAccess.isSandbox())
+			title += "  LOCAL DB: WILL *NOT* UPDATE SHARED DB";
 
 		setTitle(title);
 		// toolbar view on top
@@ -197,7 +199,7 @@ public class Application extends JXFrame {
 			application.setVisible(true);
 			application.toFront();
 			
-			LOG.log(Level.INFO, "ACM successfully started.");
+            LOG.log(Level.INFO, "ACM successfully started.");
 			new WavCaching().cacheNewA18Files();
 		}
 	}	
