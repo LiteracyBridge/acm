@@ -172,7 +172,15 @@ public class PersistentCategory extends PersistentObject {
             Query findObject = em.createQuery("SELECT o FROM PersistentCategory o WHERE o.uuid = '" + uuid + "'");
             result = (PersistentCategory) findObject.getSingleResult();
         } catch (NoResultException e) {
+            try {
+            	// cannot find category id; use the Other Messages Category as backup
+                Query findObject = em.createQuery("SELECT o FROM PersistentCategory o WHERE o.uuid = '0-0'");
+                result = (PersistentCategory) findObject.getSingleResult();
+                System.out.println("  assigning Other category to this audioItem due to nonexistent category id ('" + uuid + "')");
+            } catch (NoResultException nre) {
+            	nre.printStackTrace();
             // do nothing
+            }
         } finally {
             em.close();
         }
