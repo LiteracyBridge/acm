@@ -3,6 +3,9 @@ package org.literacybridge.acm.gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.SplashScreen;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -79,7 +82,22 @@ public class Application extends JXFrame {
 		super();
 		this.backgroundColor = getBackground();
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	    
-		
+
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				File f;
+				f = new File ("test.txt");
+			
+				try {
+					f.createNewFile();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});
+
 		String title = new String(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUILanguage())); 
 		title += " (" + Constants.ACM_VERSION + ")";
 		if (Configuration.getACMname() != null)
