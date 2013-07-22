@@ -83,13 +83,13 @@ public class Application extends JXFrame {
 		String title = new String(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUILanguage())); 
 		title += " (" + Constants.ACM_VERSION + ")";
 		if (Configuration.getACMname() != null)
-			title += " - " + Configuration.getACMname();
+			title += "                   " + Configuration.getACMname();
 		else if (Configuration.getSharedACMname() != null)
-			title += " - " + Configuration.getSharedACMname();			
+			title += "                   " + Configuration.getSharedACMname();			
 		if (ControlAccess.isACMReadOnly())
-			title += " * READ ONLY *";
+			title += "                   * READ ONLY *";
 		if (ControlAccess.isSandbox())
-			title += "  LOCAL DB: WILL *NOT* UPDATE SHARED DB";
+			title += "                   CHANGES WILL *NOT* BE SAVED!   ";
 
 		setTitle(title);
 		// toolbar view on top

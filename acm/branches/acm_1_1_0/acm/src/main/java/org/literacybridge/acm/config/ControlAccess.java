@@ -132,6 +132,7 @@ public class ControlAccess {
 
 	private static void determineRWStatus() {
 		boolean sandboxMode = false;
+		boolean forced = false;
 
 		if (!userHasWriteAccess()) {
 			sandboxMode = true; 
@@ -161,11 +162,9 @@ public class ControlAccess {
 			if (sandboxMode) {
 				int n = JOptionPane.showOptionDialog(null, dialogMessage,"Cannot Get Write Access",JOptionPane.YES_NO_CANCEL_OPTION,
 						JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-				if (n==0) {
-					if (!Configuration.isDisableUI()) {
-						JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.");
-					}
-				} else if (n==1) {
+				if (n == -1) // user closed option pane
+					System.exit(0);
+				else if (n==1) {
 					JOptionPane.showMessageDialog(null,"Shutting down.");
 					System.exit(0);
 				} else if (n==2) {
@@ -174,6 +173,7 @@ public class ControlAccess {
 					String confirmation = (String)JOptionPane.showInputDialog(null,dialogMessage);
 					if (confirmation != null && confirmation.equalsIgnoreCase("force")) {
 						sandboxMode = false;
+						forced = true;
 						JOptionPane.showMessageDialog(null,"You now have write access, but database corruption may occur\nif another user is also currently writing to the ACM.");
 					}
 					else {
@@ -182,17 +182,19 @@ public class ControlAccess {
 				}
  			}
 		}
-		if (!sandboxMode && !Configuration.isDisableUI()) {
+		if (!forced && !sandboxMode && !Configuration.isDisableUI()) {
 			Object[] options = {"Update Shared Database", "Use Demo Mode"};
 			int n = JOptionPane.showOptionDialog(null, "Do you want to update the shared database?","Update or Demo Mode?",JOptionPane.YES_NO_OPTION,
 					JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-			if (n==1)
-				sandboxMode = true;		
+			if (n == -1) // user closed option pane
+				System.exit(0);
+			else if (n==1)
+				sandboxMode = true;
 		}
 		setSandbox(sandboxMode);
 		if (sandboxMode) {
 			if (!Configuration.isDisableUI()) {
-				JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.");
+				JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.\nPlease remeber that your changes will not be saved.");
 			}
 		} else {
 		    // ACM is now read-write, so need to lock other users
