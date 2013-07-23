@@ -35,6 +35,7 @@ public class Configuration extends Properties {
     private static File cacheDirectory;
     private static File dbDirectory;
     private static File tbLoadersDirectory;
+    private static File sharedACMDirectory;
 	private static String sharedACM = null;
     private static boolean pathsOverridden = false;
     private static boolean disableUI = false;
@@ -142,6 +143,10 @@ public class Configuration extends Properties {
 
 	public static String getSharedACMname() {
 		return sharedACM;
+	}
+	
+	public static File getSharedACMDirectory() {
+		return sharedACMDirectory;		
 	}
 	
 	public static boolean isDisableUI() {
@@ -374,8 +379,8 @@ public class Configuration extends Properties {
 				}
 			}					
 		}
-		
-		tbLoadersDirectory = new File(new File(globalShare, getSharedACMname()), Constants.TBLoadersHomeDir);
+		sharedACMDirectory = new File(globalShare, getSharedACMname());
+		tbLoadersDirectory = new File(sharedACMDirectory, Constants.TBLoadersHomeDir);
 		instance.writeProps();
 	}	
 }

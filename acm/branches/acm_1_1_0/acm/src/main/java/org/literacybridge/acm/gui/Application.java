@@ -5,13 +5,17 @@ import java.awt.Color;
 import java.awt.SplashScreen;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import java.util.zip.*;
 import javax.swing.JFrame;
 import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
@@ -38,6 +42,7 @@ import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.WavCaching;
+import org.literacybridge.acm.utils.ZipUnzip;
 
 public class Application extends JXFrame {
 	private static final Logger LOG = Logger.getLogger(Application.class.getName());
@@ -86,15 +91,15 @@ public class Application extends JXFrame {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				File f;
-				f = new File ("test.txt");
-			
 				try {
-					f.createNewFile();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+					File inFolder= Configuration.getDatabaseDirectory();
+					File outFile= new File (Configuration.getSharedACMDirectory(), "db.zip"); 
+					ZipUnzip.zip(inFolder, outFile);
+					ZipUnzip.unzip(outFile, new File("C:/test/"));
 				}
+			    catch(Exception e1) {
+			    	e1.printStackTrace();
+			    } 
 			}
 		});
 
