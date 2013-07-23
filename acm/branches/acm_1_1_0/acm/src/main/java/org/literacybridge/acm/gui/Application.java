@@ -92,10 +92,8 @@ public class Application extends JXFrame {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				try {
-					File inFolder= Configuration.getDatabaseDirectory();
-					File outFile= new File (Configuration.getSharedACMDirectory(), "db.zip"); 
-					ZipUnzip.zip(inFolder, outFile);
-					ZipUnzip.unzip(outFile, new File("C:/test/"));
+					if (!ControlAccess.isSandbox())
+						ControlAccess.updateDB();
 				}
 			    catch(Exception e1) {
 			    	e1.printStackTrace();

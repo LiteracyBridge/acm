@@ -54,9 +54,15 @@ public class ZipUnzip {
 		System.out.println("Zip file has been created!");		
 	}
 
-	public static void unzip (File inFile, File outDir) throws IOException {
-		String parentDirName = inFile.getName().substring(0,inFile.getName().lastIndexOf(".zip"));
-		File parentDir = new File(outDir, parentDirName);
+	public static void unzip (File inFile, File outDir, String altParentDirName) throws IOException {
+		File parentDir;
+		
+		if (altParentDirName == null) {
+			String parentDirName = inFile.getName().substring(0,inFile.getName().lastIndexOf(".zip"));
+			parentDir = new File(outDir, parentDirName);
+		} else {
+			parentDir = new File(outDir,altParentDirName);
+		}
 		ZipFile zfile = new ZipFile(inFile);
 		Enumeration <? extends ZipEntry> entries = zfile.entries();
 	    while (entries.hasMoreElements()) {

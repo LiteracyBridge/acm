@@ -22,10 +22,11 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.repository.CachingRepository;
 import org.literacybridge.acm.repository.FileSystemRepository;
+import org.literacybridge.acm.utils.ZipUnzip;
 
 public class ControlAccess {
 
-	private static String DB_ZIP_FILENAME_PREFIX = "db";
+	private static String DB_ZIP_FILENAME_PREFIX = Constants.DBHomeDir;
     private static File sandboxDirectory = null;
     static boolean readOnly = false;
     private static boolean sandbox = false;
@@ -67,7 +68,7 @@ public class ControlAccess {
     	nextZipFilename = filename;
     }
 
-    private static String getNextZipFilename() {
+    public static String getNextZipFilename() {
     	return nextZipFilename;
     }
     
@@ -117,26 +118,26 @@ public class ControlAccess {
 	}
 
 	public static void determineAccess() {
-		if (!ControlAccess.isACMReadOnly() || !isSandbox())
+//		if (!ControlAccess.isACMReadOnly() || !isSandbox())
 			determineRWStatus();
-		else 
-			System.out.println("Command-line forced read-only or sandbox mode.");
-		if (ControlAccess.isACMReadOnly() || isSandbox()) {
+//		else 
+//			System.out.println("Command-line forced read-only or sandbox mode.");
+//		if (ControlAccess.isACMReadOnly() || isSandbox()) {
 			// ACM should be read-only -- change db pointer
 			createDBMirror();
 			File fDB = new File(Configuration.getACMDirectory(),Constants.DBHomeDir);
 			Configuration.setDatabaseDirectory(fDB);
-			if (isSandbox()) {
+//			if (isSandbox()) {
 				File fSandbox = new File(Configuration.getACMDirectory(),Constants.RepositoryHomeDir);
 				setSandboxDirectory(fSandbox);				
-			} else 
-				setSandboxDirectory(null);
-		}
+//			} else 
+//				setSandboxDirectory(null);
+	//	}
 		System.out.println("  Database:" + Configuration.getDatabaseDirectory());
 		System.out.println("  Repository:" + Configuration.getRepositoryDirectory());
-		if (isSandbox()) {
+//		if (isSandbox()) {
 			System.out.println("  Sandbox:" + getSandboxDirectory());
-		}
+//		}
 		System.out.println("  UserRWAccess:" + userHasWriteAccess());
 		System.out.println("  online:" + isOnline());
 
@@ -149,19 +150,19 @@ public class ControlAccess {
 								}
 							})),
 				new FileSystemRepository(Configuration.getRepositoryDirectory()),
-				getSandboxDirectory()==null?null:new FileSystemRepository(getSandboxDirectory())));
+				new FileSystemRepository(getSandboxDirectory())));
 //		instance.repository.convert(audioItem, targetFormat);				
 	}
 
 	private static void createDBMirror() {
 		// String line;
-		String fromDirname = Configuration.getDatabaseDirectory().getAbsolutePath();
-		String toDirname = Configuration.getACMDirectory();
-		File fromDir = new File(fromDirname);
-		File toDir = new File(toDirname);
+		File dbZip = new File(Configuration.getSharedACMDirectory(),ControlAccess.getCurrentZipFilename());
+		File toDir = new File(Configuration.getACMDirectory());
 		try {
+			//Do we need to delete the old sandbox? if so, we get it from this: File oldDB = new File (toDir,Constants.DBHomeDir);
 			System.out.println("Started DB Mirror:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
-			FileUtils.copyDirectoryToDirectory(fromDir, toDir);
+			ZipUnzip.unzip(dbZip, toDir, Constants.DBHomeDir);
+			//FileUtils.copyDirectoryToDirectory(fromDir, toDir);
 			System.out.println("Completed DB Mirror:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -294,13 +295,59 @@ public class ControlAccess {
 			e.printStackTrace();
 		}
 
+	    if (filename != null)
+	    	setCurrentZipFilename(filename);
  	    if (status) {
  	    	if (key != null) 
  	    		setDBKey(key);
- 	    	setCurrentZipFilename(filename);
  	    } else if (possessor != null) {
  	    	setPossessor(possessor);
  	    }
 	    return status;
 	}
+
+	private static boolean checkInDB(String db, String key, String filename) {
+		boolean status = true;
+		final String END_OF_INPUT = "\\Z";
+		String s = null;
+		
+		URL url;
+		try {
+			url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&key=" + key + "&filename=" + filename);
+			InputStream in;
+			in = url.openStream();
+			Scanner scanner = new Scanner(in);
+		    scanner.useDelimiter(END_OF_INPUT);
+	 	    s = scanner.next();
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (s == null)
+			status = false;
+		else
+			status = s.trim().equals("ok"); 
+ 	    return status;
+	}
+
+	public static void updateDB() {
+		File inFolder= Configuration.getDatabaseDirectory();
+		File outFile= new File (Configuration.getSharedACMDirectory(), ControlAccess.getNextZipFilename()); 
+		try {
+			ZipUnzip.zip(inFolder, outFile);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		boolean status = checkInDB(Configuration.getSharedACMname(), ControlAccess.getDBKey(), ControlAccess.getNextZipFilename()); 
+		if (status) {
+			File oldDB = new File (Configuration.getSharedACMDirectory(),ControlAccess.getCurrentZipFilename());
+			oldDB.delete();
+		}
+	}
 }
+
