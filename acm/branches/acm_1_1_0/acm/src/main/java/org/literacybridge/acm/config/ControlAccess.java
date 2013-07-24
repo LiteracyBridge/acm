@@ -159,7 +159,8 @@ public class ControlAccess {
 		File dbZip = new File(Configuration.getSharedACMDirectory(),ControlAccess.getCurrentZipFilename());
 		File toDir = new File(Configuration.getACMDirectory());
 		try {
-			//Do we need to delete the old sandbox? if so, we get it from this: File oldDB = new File (toDir,Constants.DBHomeDir);
+			File oldDB = new File (toDir,Constants.DBHomeDir);
+			FileUtils.deleteDirectory(oldDB);
 			System.out.println("Started DB Mirror:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
 			ZipUnzip.unzip(dbZip, toDir, Constants.DBHomeDir);
 			//FileUtils.copyDirectoryToDirectory(fromDir, toDir);
