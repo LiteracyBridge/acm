@@ -272,9 +272,9 @@ public class CategoryView extends ACMContainer implements Observer {
 		devicePane.setIcon(new ImageIcon(getClass().getResource("/315_three-shot.png")));
 
 		taskPaneContainer.add(categoryPane);
-		taskPaneContainer.add(languagePane);
 		taskPaneContainer.add(tagsPane);
 		taskPaneContainer.add(devicePane);
+		taskPaneContainer.add(languagePane);
 		
 		categoryScrollPane.setPreferredSize(new Dimension(150, 250));
 		languageScrollPane.setPreferredSize(new Dimension(150, 90));
