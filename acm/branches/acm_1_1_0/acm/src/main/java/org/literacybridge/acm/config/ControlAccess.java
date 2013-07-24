@@ -89,7 +89,7 @@ public class ControlAccess {
 	}
 
 	private static File getDBAccessFile() {
-		return new File(Configuration.getDatabaseDirectory(), Constants.DB_ACCESS_FILENAME);
+		return new File(Configuration.getSharedACMDirectory(), Constants.DB_ACCESS_FILENAME);
 	}
 
 	public static boolean isSandbox() {
