@@ -190,7 +190,7 @@ public class ControlAccess {
 			dialogMessage = "Another user currently has write access to the ACM.\n";
 			dialogMessage += getPosessor() + "\n";
 		} 
-		if (sandboxMode) {
+		if (sandboxMode && userHasWriteAccess()) {
 			Object[] options = {"Use Demo Mode", "Shutdown", "Force Write Mode"};
 			int n = JOptionPane.showOptionDialog(null, dialogMessage,"Cannot Get Write Access",JOptionPane.YES_NO_CANCEL_OPTION,
 					JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
