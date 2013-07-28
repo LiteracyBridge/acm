@@ -32,6 +32,7 @@ import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.utils.IOUtils;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class TagsListPopupMenu extends JPopupMenu {
@@ -68,8 +69,8 @@ public class TagsListPopupMenu extends JPopupMenu {
 
 				if (n == 1) {
 					try {
-						List<PersistentAudioItem> audioItems = selectedTag
-								.getTag().getPersistentAudioItemList();
+						List<PersistentAudioItem> audioItems = Lists.newLinkedList(selectedTag
+								.getTag().getPersistentAudioItemList());
 						for (PersistentAudioItem audioItem : audioItems) {
 							audioItem.removePersistentTag(selectedTag.getTag());
 							audioItem.commit();
