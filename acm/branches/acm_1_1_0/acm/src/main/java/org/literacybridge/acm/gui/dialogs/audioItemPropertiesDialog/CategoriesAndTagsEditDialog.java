@@ -40,11 +40,11 @@ public class CategoriesAndTagsEditDialog extends ACMDialog {
 		
 		categories = new JList(new AbstractListModel() {
 			@Override public int getSize() {
-				return audioItem.getCategoryList().size();
+				return audioItem.getCategoryLeavesList().size();
 			}
 
 			@Override public Object getElementAt(int index) {
-				return audioItem.getCategoryList().get(index);
+				return audioItem.getCategoryLeavesList().get(index);
 			}
 			
 		});
