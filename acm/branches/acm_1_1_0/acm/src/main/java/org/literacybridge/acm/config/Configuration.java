@@ -15,6 +15,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.StringTokenizer;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JFileChooser;
@@ -133,6 +139,7 @@ public class Configuration extends Properties {
 				setSharedACMname(args.sharedACM);
 			}
 			InitializeAcmConfiguration();
+			initializeLogger();
 			ControlAccess.determineAccess();
 		}
 	}
@@ -383,4 +390,21 @@ public class Configuration extends Properties {
 		tbLoadersDirectory = new File(sharedACMDirectory, Constants.TBLoadersHomeDir);
 		instance.writeProps();
 	}	
+	
+	private static void initializeLogger() {
+		try {
+			// Get the global logger to configure it
+		    Logger logger = Logger.getLogger("");
+	
+		    logger.setLevel(Level.INFO);
+		    String fileNamePattern = getACMDirectory() + File.separator + "acm.log.%g.%u.txt";
+		    FileHandler fileTxt = new FileHandler(fileNamePattern);
+	
+		    Formatter formatterTxt = new SimpleFormatter();
+		    fileTxt.setFormatter(formatterTxt);
+		    logger.addHandler(fileTxt);
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to initialize logging framework", e);
+		}
+	}
 }

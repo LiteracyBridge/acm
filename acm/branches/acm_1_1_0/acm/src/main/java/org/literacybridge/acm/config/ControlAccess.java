@@ -1,10 +1,8 @@
 package org.literacybridge.acm.config;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,7 +10,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Scanner;
 
 import javax.swing.JOptionPane;
@@ -228,7 +225,7 @@ public class ControlAccess {
 		setSandbox(sandboxMode);
 		if (sandboxMode) {
 			if (!Configuration.isDisableUI()) {
-				JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.\nPlease remeber that your changes will not be saved.");
+				JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.\nPlease remember that your changes will not be saved.");
 			}
 		} else {
 		    // ACM is now read-write, so need to lock other users
