@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.db.Persistable;
@@ -16,6 +17,7 @@ import org.literacybridge.acm.db.PersistentTag;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 /**
  * An AudioItem is a unique audio entity, identified by its audioItemID.
@@ -26,7 +28,8 @@ import com.google.common.collect.Lists;
  *  
  */
 public class AudioItem implements Persistable {
-    
+	private static final Logger LOG = Logger.getLogger(AudioItem.class.getName());
+	
     private PersistentAudioItem mItem;
 
     public AudioItem() {
@@ -55,7 +58,27 @@ public class AudioItem implements Persistable {
     }
         
 	public void addCategory(Category category) {
-        mItem.addPersistentAudioItemCategory(category.getPersistentObject());
+		// first we check if a leaf category is added (which should always be the case),
+		// otherwise we find an appropriate leaf
+		if (category.hasChildren()) {
+			LOG.warning("Adding non-leaf category " + category.getUuid() + " to audioitem " + getUuid());
+			do {
+				// always pick the first child, which usually is the 'general' child category
+				category = category.getSortedChildren().get(0);
+			} while (category.hasChildren());
+		}
+
+        // make sure all parents up to the root are added as well
+		do {
+			if (!mItem.hasPersistentAudioItemCategory(category.getPersistentObject())) {
+				mItem.addPersistentAudioItemCategory(category.getPersistentObject());
+			}
+			category = category.getParent();
+		} while (category != null);        
+	}
+	
+	public boolean hasCategory(Category category) {
+		return mItem.hasPersistentAudioItemCategory(category.getPersistentObject());
 	}
 	
 	public void addTag(PersistentTag tag) {
@@ -72,6 +95,34 @@ public class AudioItem implements Persistable {
 	
 	public void removeCategory(Category category) {
 		mItem.removePersistentCategory(category.getPersistentObject());
+		
+		// remove orphaned non-leaves
+		while (removeOrphanedNonLeafCategories());
+	}
+	
+	// returns true, if any categories were removed
+	private boolean removeOrphanedNonLeafCategories() {
+		Set<Category> toRemove = Sets.newHashSet();
+		for (Category cat : getCategoryList()) {
+			if (cat.hasChildren()) {
+				toRemove.add(cat);
+			}
+		}
+		// now 'toRemove' contains all non-leaf categories that this audioitem contains
+		
+		
+		for (Category cat : getCategoryList()) {
+			if (cat.getParent() != null) {
+				toRemove.remove(cat.getParent());
+			}
+		}
+		// now 'toRemove' only contains categories for which this audioitem has at least one child
+		
+		for (Category cat : toRemove) {
+			mItem.removePersistentCategory(cat.getPersistentObject());
+		}
+		
+		return !toRemove.isEmpty();
 	}
 	
 	public void removeAllCategories() {
@@ -86,6 +137,17 @@ public class AudioItem implements Persistable {
         return categories;
 	}
 
+	public List<Category> getCategoryLeavesList() {
+        List<Category> categories = new LinkedList<Category>();
+        for (PersistentCategory c : mItem.getPersistentCategoryList()) {
+        	Category cat = new Category(c);
+        	if (!cat.hasChildren()) {
+        		categories.add(cat);
+        	}
+        }
+        return categories;
+	}
+	
 	public PersistentAudioItem getPersistentAudioItem() {
 		return mItem;
 	}

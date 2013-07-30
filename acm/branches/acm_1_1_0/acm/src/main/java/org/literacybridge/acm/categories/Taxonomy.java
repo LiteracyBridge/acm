@@ -1,5 +1,7 @@
 package org.literacybridge.acm.categories;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -140,24 +142,7 @@ public class Taxonomy implements Persistable {
 	 * Note: Returns '0' for unassigned categories.
 	 */
 	public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
-		Map<Integer, Integer> counts = PersistentCategory.getFacetCounts(filter, categories, locales);
-		countChildren(getTaxonomy().getRootCategory(), counts);
-		return counts;
-	}
-	
-	private static int countChildren(Category parent, Map<Integer, Integer> counts) {
-		Integer count = counts.get(parent.getId());
-		int totalCount = count != null ? count : 0;
-		if (parent.hasChildren()) {
-			for (Category child : parent.getChildren()) {
-				totalCount += countChildren(child, counts);
-			}
-		}
-		if (totalCount > 0) {
-			counts.put(parent.getId(), totalCount);
-		}
-		
-		return totalCount;
+		return PersistentCategory.getFacetCounts(filter, categories, locales);
 	}
 	
 	public Integer getId() {
@@ -192,6 +177,19 @@ public class Taxonomy implements Persistable {
 
 		public Category(PersistentCategory category) {
 			mCategory = category;
+		}
+		
+		@Override public int hashCode() {
+			return mCategory.getUuid().hashCode();
+		}
+		
+		@Override public boolean equals(Object o) {
+			if (o == null || !(o instanceof Category)) {
+				return false;
+			}
+			
+			Category other = (Category) o;
+			return other.getUuid().equals(getUuid());
 		}
 
 		public PersistentCategory getPersistentObject() {
@@ -277,6 +275,17 @@ public class Taxonomy implements Persistable {
 					.getPersistentChildCategoryList()) {
 				children.add(new Category(child));
 			}
+			return children;
+		}
+		
+		public List<Category> getSortedChildren() {
+			List<Category> children = getChildren();
+			Collections.sort(children, new Comparator<Category>() {
+				@Override public int compare(Category c1, Category c2) {
+					return c1.getOrder() - c2.getOrder();
+				}
+			});
+			
 			return children;
 		}
 

@@ -16,8 +16,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -143,7 +141,7 @@ public class CategoryView extends ACMContainer implements Observer {
 		// add all categories
 		Category rootCategory = result.getRootCategory();
 		if (rootCategory.hasChildren()) {
-			for (Category c : getSortedChildren(rootCategory)) {
+			for (Category c : rootCategory.getSortedChildren()) {
 				addChildNodes(categoryRootNode, c);
 			}
 		}
@@ -438,21 +436,10 @@ public class CategoryView extends ACMContainer implements Observer {
 		DefaultMutableTreeNode child = new DefaultMutableTreeNode(new CategoryTreeNodeObject(category));
 		parent.add(child);
 		if (category.hasChildren()) {
-			for (Category c : getSortedChildren(category)) {
+			for (Category c : category.getSortedChildren()) {
 				addChildNodes(child, c);
 			}
 		}
-	}
-
-	private List<Category> getSortedChildren(Category category) {
-		List<Category> children = category.getChildren();
-		Collections.sort(children, new Comparator<Category>() {
-			@Override public int compare(Category c1, Category c2) {
-				return c1.getOrder() - c2.getOrder();
-			}
-		});
-		
-		return children;
 	}
 	
 	private void addDeviceNode(DefaultMutableTreeNode parent, final DeviceInfo deviceInfo) {

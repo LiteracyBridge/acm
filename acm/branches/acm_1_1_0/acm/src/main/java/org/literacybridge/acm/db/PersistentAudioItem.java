@@ -97,6 +97,10 @@ public class PersistentAudioItem extends PersistentObject {
         persistentCategory.getPersistentAudioItemList().add(this);
         return persistentCategory;
     }
+    
+    public boolean hasPersistentAudioItemCategory(PersistentCategory persistentCategory) {
+    	return getPersistentCategoryList().contains(persistentCategory);
+    }
 
     public PersistentCategory removePersistentCategory(PersistentCategory persistentCategory) {
         getPersistentCategoryList().remove(persistentCategory);

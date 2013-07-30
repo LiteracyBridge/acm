@@ -19,6 +19,8 @@ import javax.persistence.PersistenceException;
 
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.persistence.jpa.JpaHelper;
+import org.literacybridge.acm.categories.Taxonomy;
+import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
@@ -27,9 +29,11 @@ import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.repository.A18DurationUtil;
 
+import com.google.common.collect.Lists;
+
 public class Persistence {
     
-    private static Logger sLogger = Logger.getLogger(Persistence.class.getName());
+    private static Logger LOG = Logger.getLogger(Persistence.class.getName());
     
     private static EntityManagerFactory sEmf;
     private static Properties sConnectionProperties;
@@ -100,14 +104,31 @@ public class Persistence {
     		}
     	}
     	
-    	// calculate duration of audio items
     	for (AudioItem audioItem : AudioItem.getFromDatabase()) {
+        	// =================================================================
+    		// 1) calculate duration of audio items
     		LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
     		
     		List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
 					MetadataSpecification.LB_DURATION);
 			if (values == null || StringUtils.isEmpty(values.get(0).getValue())) {
 				A18DurationUtil.updateDuration(audioItem);
+			}
+			
+	    	// =================================================================
+	    	// 2) make sure categories are stored correctly, i.e. an audioitem's category list should contain
+	    	// all parents of the leaf categories
+			if (!audioItem.hasCategory(Taxonomy.getTaxonomy().getRootCategory())) {
+				List<Category> categories = Lists.newLinkedList(audioItem.getCategoryLeavesList());
+				if (categories.isEmpty()) {
+					LOG.log(Level.WARNING, "Audioitem " + audioItem.getUuid() + " does not contain any leaf categories. Assigning new general leaf category.");
+					categories = Lists.newLinkedList(audioItem.getCategoryList());
+				}
+				audioItem.removeAllCategories();
+				for (Category category : categories) {
+					audioItem.addCategory(category);
+				}
+				audioItem.commit();
 			}
     	}
 	}
@@ -153,9 +174,9 @@ public class Persistence {
 	        				+ DBNAME;
 	            sConnectionProperties.setProperty(URL, url);
 	     
-	        	sLogger.log(Level.INFO, "Connect to database: " + sConnectionProperties.getProperty(URL));      
+	            LOG.log(Level.INFO, "Connect to database: " + sConnectionProperties.getProperty(URL));      
 		 	} catch (Exception exception) {
-	            sLogger.fine("Error reading database connection parameter file (" + DB_CONNECTION_PROPS_FILE + ")");
+		 		LOG.fine("Error reading database connection parameter file (" + DB_CONNECTION_PROPS_FILE + ")");
 	            // There is no purpose in trying to continue as the basic connection
 	            // parameter are missing or incomplete so rethrow the exception
 	            throw exception;
@@ -220,7 +241,7 @@ public class Persistence {
             dbConnection = DriverManager.getConnection(dbUrl);
             bCreated = createTables(dbConnection);
         } catch (Exception ex) {
-            sLogger.log(Level.WARNING, "Creating database failed.", ex);
+        	LOG.log(Level.WARNING, "Creating database failed.", ex);
         }
         return bCreated;
     }    
