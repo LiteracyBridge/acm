@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -64,14 +65,20 @@ public class CmdLineImporter {
 			System.exit(2);			
 		}
 		
-		if (!ControlAccess.userHasWriteAccess()) {
+		if (ControlAccess.isSandbox()) {
 			System.err.println("Unable to acquire writer access.");
 			System.exit(3);
 		}
 
 		
 		boolean success = importFiles(filesToImport);
+		if (success) {
+			System.out.println("All files imported without an exception.");
+		} else {
+			System.out.println("At least one file could not be imported.");
+		}
 		
+		ControlAccess.updateDB();
 		System.exit(success ? 0 : 4);
 	}
 	
@@ -118,11 +125,16 @@ public class CmdLineImporter {
 	private static boolean importFiles(Set<File> filesToImport) throws Exception {
 		boolean success = true;
 		FileImporter importer = FileImporter.getInstance();
-		
+		long count = 0; 
+		String total = String.valueOf(filesToImport.size());
+		File successDir = new File( ((File)filesToImport.iterator()).getParentFile(),"success"); 
+		successDir.mkdir();
+
 		for (File file : filesToImport) {
 			try {
+				System.out.println("Importing file " + String.valueOf(++count) + " of " + total + ": " + file);
 				importer.importFile(null, file);
-				System.out.println("Importing file " + file);
+				FileUtils.moveToDirectory(file, successDir, false);
 			} catch (Exception e) {
 				success = false;
 				logError(file, e);
@@ -133,7 +145,7 @@ public class CmdLineImporter {
 	}
 	
 	private static void logError(File a18File, Exception exception) {
-		File errorFile = new File(a18File.getParentFile(), a18File.getName() + ".error");
+		File errorFile = new File(a18File.getParentFile(), a18File.getName() + ".error.txt");
 		PrintStream out = null;
 		try {
 			out = new PrintStream(errorFile);

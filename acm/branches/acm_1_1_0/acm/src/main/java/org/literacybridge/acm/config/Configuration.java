@@ -313,8 +313,8 @@ public class Configuration extends Properties {
 				setDatabaseDirectory(fDB);
 				instance.put(DEFAULT_DB,getDatabaseDirectory().getAbsolutePath());
 				File fRepo = new File(fACM,Constants.RepositoryHomeDir);
-				if (!fRepo.exists()) 
-					fRepo.mkdir();
+				//if (!fRepo.exists()) 
+				//	fRepo.mkdir();
 				setRepositoryDirectory(fRepo);			
 				instance.put(DEFAULT_REPOSITORY,getRepositoryDirectory().getAbsolutePath());
 			} else {

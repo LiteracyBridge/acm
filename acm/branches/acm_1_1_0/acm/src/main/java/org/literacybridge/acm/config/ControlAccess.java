@@ -1,8 +1,12 @@
 package org.literacybridge.acm.config;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,8 +27,11 @@ import org.literacybridge.acm.utils.ZipUnzip;
 
 public class ControlAccess {
 
-	private static String DB_ZIP_FILENAME_PREFIX = Constants.DBHomeDir;
-    private static File sandboxDirectory = null;
+	private final static String DB_ZIP_FILENAME_PREFIX = Constants.DBHomeDir;
+	private final static String DB_ZIP_FILENAME_INITIAL = new String (DB_ZIP_FILENAME_PREFIX + "1.zip");
+	private final static String DB_DOES_NOT_EXIST = "NULL"; // PHP returns this if no checkin file found
+	private final static String DB_KEY_OVERRIDE = new String("force");
+	private static File sandboxDirectory = null;
     static boolean readOnly = false;
     private static boolean sandbox = false;
     private static String dbKey;
@@ -50,10 +57,18 @@ public class ControlAccess {
 
     private static void setCurrentZipFilename(String filename) {
     	currentZipFilename = filename;
-
-    	String baseFilename = filename.substring(DB_ZIP_FILENAME_PREFIX.length(), filename.lastIndexOf('.'));
-    	int count = Integer.parseInt(baseFilename) + 1;
-    	String newFilename = new String (DB_ZIP_FILENAME_PREFIX + String.valueOf(count) + filename.substring(filename.lastIndexOf('.')));
+    	String newFilename;
+    	
+    	if (filename == null) // no db zip exists in dropbox but the db has been checked in; no need for setNextZipFilename, because time to shutdown
+    		return;
+    	if (filename.equalsIgnoreCase(DB_DOES_NOT_EXIST)) {
+    		// ACM does not yet exist, so create name for newly created zip to use on updateDB()
+    		newFilename = new String(DB_ZIP_FILENAME_INITIAL);
+    	} else {
+	    	String baseFilename = filename.substring(DB_ZIP_FILENAME_PREFIX.length(), filename.lastIndexOf('.'));
+	    	int count = Integer.parseInt(baseFilename) + 1;
+	    	newFilename = new String (DB_ZIP_FILENAME_PREFIX + String.valueOf(count) + filename.substring(filename.lastIndexOf('.')));
+    	}
     	setNextZipFilename(newFilename);
     }
 
@@ -124,11 +139,11 @@ public class ControlAccess {
 			createDBMirror();
 			File fDB = new File(Configuration.getACMDirectory(),Constants.DBHomeDir);
 			Configuration.setDatabaseDirectory(fDB);
-//			if (isSandbox()) {
-				File fSandbox = new File(Configuration.getACMDirectory(),Constants.RepositoryHomeDir);
-				setSandboxDirectory(fSandbox);				
-//			} else 
-//				setSandboxDirectory(null);
+			File fSandbox = null; 
+			if (isSandbox()) {
+				fSandbox = new File(Configuration.getACMDirectory(),Constants.RepositoryHomeDir);
+			} 
+			setSandboxDirectory(fSandbox);				
 	//	}
 		System.out.println("  Database:" + Configuration.getDatabaseDirectory());
 		System.out.println("  Repository:" + Configuration.getRepositoryDirectory());
@@ -147,62 +162,112 @@ public class ControlAccess {
 								}
 							})),
 				new FileSystemRepository(Configuration.getRepositoryDirectory()),
-				new FileSystemRepository(getSandboxDirectory())));
+				isSandbox()?new FileSystemRepository(getSandboxDirectory()):null));
 //		instance.repository.convert(audioItem, targetFormat);				
 	}
 
 	private static void createDBMirror() {
 		// String line;
-		File dbZip = new File(Configuration.getSharedACMDirectory(),ControlAccess.getCurrentZipFilename());
 		File toDir = new File(Configuration.getACMDirectory());
+		String dbFilename = getCurrentZipFilename();
 		try {
 			File oldDB = new File (toDir,Constants.DBHomeDir);
 			FileUtils.deleteDirectory(oldDB);
-			System.out.println("Started DB Mirror:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
-			ZipUnzip.unzip(dbZip, toDir, Constants.DBHomeDir);
-			//FileUtils.copyDirectoryToDirectory(fromDir, toDir);
-			System.out.println("Completed DB Mirror:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
+			if (dbFilename.equalsIgnoreCase(ControlAccess.DB_DOES_NOT_EXIST)) {
+				oldDB.mkdir(); // recreate db directory that was just deleted
+				System.out.println("Created new empty DB dir");
+			} else {
+				File dbZip = new File(Configuration.getSharedACMDirectory(),dbFilename);
+				System.out.println("Started DB Mirror:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
+				ZipUnzip.unzip(dbZip, toDir, Constants.DBHomeDir);
+				//FileUtils.copyDirectoryToDirectory(fromDir, toDir);
+				System.out.println("Completed DB Mirror:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
+			} 
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-		
+		}		
 	}
 
+	private static boolean haveLatestDB() {
+		String filenameShouldHave = getCurrentZipFilename();
+		File fileShouldHave = new File(Configuration.getSharedACMDirectory(),filenameShouldHave);
+		String filenameFallback = null;
+		File[] files;
+		boolean status;
+		long lastModified = 0;
+		if (fileShouldHave.exists()) {
+			status = true;
+		} else {
+			// latest db zip to be checked in is not yet in dropbox, so find most recent zip and force sandbox mode
+			status = false;
+		
+			files = Configuration.getSharedACMDirectory().listFiles(new FilenameFilter() {
+				@Override public boolean accept(File dir, String name) {
+					String lowercase = name.toLowerCase();
+					return lowercase.endsWith(".zip");
+				}			
+			});
+			for (File file : files) {
+				if (file.lastModified() > lastModified) {
+					lastModified = file.lastModified();
+					filenameFallback = file.getName();
+				}
+			}
+			setCurrentZipFilename(filenameFallback);
+		}
+		return status;
+	}
+	
 	private static void determineRWStatus() {
 		boolean sandboxMode = false;
 		boolean forced = false;
 		String dialogMessage = new String();
 		boolean dbAvailable = false;
+		boolean outdatedDB = false;
 		
 		if (!isOnline()) {
 			sandboxMode = true;
 			dialogMessage = "Cannot connect to dropbox.com.";
 		} else {
-			dbAvailable = checkOutDB(Configuration.getSharedACMname(), new String("statusCheck"), new String ("v1"));
+			dbAvailable = checkOutDB(Configuration.getSharedACMname(), new String("statusCheck"));
+			if (dbAvailable && !haveLatestDB()) {
+				if (getCurrentZipFilename() == null) {
+					// no zip exists at all -- must shut down
+					if (!Configuration.isDisableUI()) {
+						JOptionPane.showMessageDialog(null,"There is no copy of this ACM database on this computer.\nIt may be that the database has not been uploaded and downloaded yet.\nShutting down.");
+					}
+					System.exit(0);					
+				} else {
+					outdatedDB = true;
+				}
+			}
 		}
-		if (!userHasWriteAccess()) {
+		if (!userHasWriteAccess() || !dbAvailable || outdatedDB) {
 			sandboxMode = true; 
+		} 
+		if (outdatedDB) {
+			dialogMessage = "The latest version of the ACM database has not yet downloaded to this computer.\nYou may shutdown and wait or begin demonstration mode with the previous version.";
 		} else if (!dbAvailable) {
-			sandboxMode = true;
 			dialogMessage = "Another user currently has write access to the ACM.\n";
 			dialogMessage += getPosessor() + "\n";
 		} 
-		if (sandboxMode && userHasWriteAccess()) {
-			Object[] options = {"Use Demo Mode", "Shutdown", "Force Write Mode"};
+
+		if (sandboxMode && userHasWriteAccess() && !Configuration.isDisableUI()) {
+			Object[] optionsNoForce = {"Use Demo Mode", "Shutdown"};
+			Object[] optionsForce = {"Use Demo Mode", "Shutdown", "Force Write Mode"};
+
 			int n = JOptionPane.showOptionDialog(null, dialogMessage,"Cannot Get Write Access",JOptionPane.YES_NO_CANCEL_OPTION,
-					JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-			if (n == -1) // user closed option pane
-				System.exit(0);
-			else if (n==1) {
+					JOptionPane.QUESTION_MESSAGE, null, (outdatedDB?optionsNoForce:optionsForce), optionsForce[0]);
+			if (n == -1 || n == 1) { // user closed option pane or selected Shutdown
 				JOptionPane.showMessageDialog(null,"Shutting down.");
 				System.exit(0);
 			} else if (n==2) {
-				dialogMessage = "Forcing write mode will cause another user\nto lose their work!\n\n" +
+				dialogMessage = "Forcing write mode will cause " + getPosessor() + "\nto lose their work!\n\n" +
 						"If you are sure you want to force write access,\ntype the word 'force' below.";
 				String confirmation = (String)JOptionPane.showInputDialog(null,dialogMessage);
 				if (confirmation != null && confirmation.equalsIgnoreCase("force")) {
 					sandboxMode = false;
-					forced = dbAvailable = checkOutDB(Configuration.getSharedACMname(), new String("force"), new String ("v1"));
+					forced = dbAvailable = checkOutDB(Configuration.getSharedACMname(), DB_KEY_OVERRIDE);
 					if (forced)
 						JOptionPane.showMessageDialog(null,"You now have write access.");
 					else
@@ -213,24 +278,39 @@ public class ControlAccess {
 				}
 			}
 		}
-		if (!forced && !sandboxMode && !Configuration.isDisableUI()) {
-			Object[] options = {"Update Shared Database", "Use Demo Mode"};
-			int n = JOptionPane.showOptionDialog(null, "Do you want to update the shared database?","Update or Demo Mode?",JOptionPane.YES_NO_OPTION,
-					JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+		if (!forced && !sandboxMode) {
+			int n = 0;
+			if (!Configuration.isDisableUI()) {
+				if (getCurrentZipFilename().equalsIgnoreCase(DB_DOES_NOT_EXIST)) {
+					JOptionPane.showMessageDialog(null,"ACM does not exist yet. Creating a new ACM and giving you write access.");					
+				} else {
+					Object[] options = {"Update Shared Database", "Use Demo Mode"};
+					n = JOptionPane.showOptionDialog(null, "Do you want to update the shared database?","Update or Demo Mode?",JOptionPane.YES_NO_OPTION,
+							JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+				}
+			}
 			if (n == -1) // user closed option pane
 				System.exit(0);
 			else if (n==1)
 				sandboxMode = true;
+			else {
+				dbAvailable = checkOutDB(Configuration.getSharedACMname(),"checkout");
+				if (!dbAvailable) {
+					JOptionPane.showMessageDialog(null,"Sorry, but another user must have just checked out this ACM a moment ago!\nTry contacting " + getPosessor() + "\nAfter clicking OK, the ACM will shutdown.");
+					System.exit(0);
+				} else  {
+					if (getCurrentZipFilename().equalsIgnoreCase(DB_DOES_NOT_EXIST)) {
+						setDBKey(DB_KEY_OVERRIDE);
+					}
+				}
+			}
 		}
 		setSandbox(sandboxMode);
 		if (sandboxMode) {
 			if (!Configuration.isDisableUI()) {
 				JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.\nPlease remember that your changes will not be saved.");
 			}
-		} else {
-		    // ACM is now read-write, so need to lock other users
-			dbAvailable = checkOutDB(Configuration.getSharedACMname(), Configuration.getUserName() + ":" + Configuration.getUserContact(), new String ("v1"));
-		}
+		} 
 	}
 	
 	public static boolean userHasWriteAccess() {
@@ -255,6 +335,19 @@ public class ControlAccess {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		} else if (Configuration.getSharedACMDirectory().list().length == 0) {
+			// empty directory -- which means that a new directory was created to start an ACM in
+			// Since the directory already exists, it is not the case that the user just hasn't accepted the dropbox invitaiton yet.
+			// So, give this user write access to the newly created ACM
+			userHasWriteAccess = true;
+			try {
+				BufferedWriter out = new BufferedWriter(new FileWriter(f));
+				out.write(thisUser + "\n");
+				out.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} else {
 			// Cannot find database access list. Forcing Read-Only mode. 
 			return false;
@@ -262,13 +355,13 @@ public class ControlAccess {
 		return userHasWriteAccess;
 	}
 
-	private static boolean checkOutDB(String db, String contact, String version) {
+	private static boolean checkOutDB(String db, String action) {
 		boolean status = true;
 		String filename = null, key = null, possessor = null;
-		
+
 		URL url;
 		try {
-			url = new URL("http://literacybridge.org/checkout.php?db=" + db + "&contact=" + contact + "&version=" + version);
+			url = new URL("http://literacybridge.org/checkout.php?db=" + db + "&action=" + action + "&name=" + Configuration.getUserName() + "&contact=" + Configuration.getUserContact()+ "&version=" + Constants.ACM_VERSION);
 			InputStream in;
 			in = url.openStream();
 			Scanner scanner = new Scanner(in);
@@ -282,7 +375,7 @@ public class ControlAccess {
 	 	    	else if (s.startsWith("possessor=")) {
 	 	    		possessor = s.substring(s.indexOf('=')+1);
 	 	    		status = false;
-	 	    	}
+	 	    	} 	 	    	
 	 	    }
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
@@ -311,7 +404,7 @@ public class ControlAccess {
 		
 		URL url;
 		try {
-			url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&key=" + key + "&filename=" + filename);
+			url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&key=" + key + "&filename=" + filename + "&name=" + Configuration.getUserName() + "&contact=" + Configuration.getUserContact()+ "&version=" + Constants.ACM_VERSION);
 			InputStream in;
 			in = url.openStream();
 			Scanner scanner = new Scanner(in);
