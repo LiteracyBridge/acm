@@ -178,7 +178,7 @@ public class AudioItemImportDialog extends JDialog {
 									@Override
 									public void run() {
 										UIUtils.hideDialog(busy);
-										Application.getFilterState().updateResult();	
+										Application.getFilterState().updateResult(true);	
 									}
 								});
 							}
