@@ -19,7 +19,6 @@ import javax.persistence.PersistenceException;
 
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.persistence.jpa.JpaHelper;
-import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
@@ -27,8 +26,6 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.repository.A18DurationUtil;
-
-import com.google.common.collect.Lists;
 
 public class Persistence {
     
@@ -103,9 +100,8 @@ public class Persistence {
     		}
     	}
     	
+    	// calculate duration of audio items
     	for (AudioItem audioItem : AudioItem.getFromDatabase()) {
-        	// =================================================================
-    		// 1) calculate duration of audio items
     		LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
     		
     		List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
@@ -113,16 +109,6 @@ public class Persistence {
 			if (values == null || StringUtils.isEmpty(values.get(0).getValue())) {
 				A18DurationUtil.updateDuration(audioItem);
 			}
-			
-	    	// =================================================================
-	    	// 2) make sure categories are stored correctly, i.e. an audioitem's category list should contain
-	    	// all parents of the leaf categories
-			List<Category> categories = Lists.newLinkedList(audioItem.getCategoryList());
-			audioItem.removeAllCategories();
-			for (Category category : categories) {
-				audioItem.addCategory(category);
-			}
-			audioItem.commit();
     	}
 	}
     

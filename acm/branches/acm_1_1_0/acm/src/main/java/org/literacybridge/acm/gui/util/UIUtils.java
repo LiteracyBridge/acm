@@ -66,11 +66,9 @@ public class UIUtils {
 		
 		for (int i = 0; i < categories.size(); i++) {
 			Category cat = categories.get(i);
-			if (!cat.hasChildren()) {
-				if (builder.length() > 0) {
-					builder.append(", ");
-				}
-				builder.append(cat.getCategoryName(LanguageUtil.getUILanguage()));
+			builder.append(cat.getCategoryName(LanguageUtil.getUILanguage()));
+			if (i != categories.size() - 1) {
+				builder.append(", ");
 			}
 		}
 		return builder.toString();

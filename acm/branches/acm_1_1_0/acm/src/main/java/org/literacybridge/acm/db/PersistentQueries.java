@@ -246,13 +246,14 @@ class PersistentQueries {
         EntityManager em = Persistence.getEntityManager();
         Map<String, Integer> results = new HashMap<String, Integer>();
         try {
-        	StringBuilder query = new StringBuilder("SELECT a.\"lang_id\" AS \"id\", COUNT(a.\"lang_id\") AS \"count\" FROM ("
-        										  + "SELECT DISTINCT t3.language AS \"lang_id\", t0.id AS \"audioitem_id\" "
+        	StringBuilder query = new StringBuilder("SELECT DISTINCT t3.language AS \"id\", COUNT(t3.language) AS \"count\" "
 							        		 	  + "FROM t_audioitem t0 JOIN t_localized_audioitem t1 ON t0.id=t1.audioitem " 
 							                      + "JOIN t_metadata t2 ON t1.metadata=t2.id " 
-							                      + "JOIN t_locale t3 ON t1.language=t3.id "
-							                      + "JOIN t_audioitem_has_category tc ON t0.id=tc.audioitem " 
-	                                              + "JOIN t_category t5 ON tc.category=t5.id ");
+							                      + "JOIN t_locale t3 ON t1.language=t3.id ");
+        	if (categories != null && !categories.isEmpty()) {
+        		query.append("JOIN t_audioitem_has_category tc ON t0.id=tc.audioitem " 
+	                         + "RIGHT OUTER JOIN t_category t5 ON tc.category=t5.id ");
+        	}
         	
         	// search string conditions
         	if (filter != null && filter.length() > 0) {
@@ -286,8 +287,8 @@ class PersistentQueries {
         	}       	
         	
         	// grouping
-        	query.append(") a GROUP BY a.\"lang_id\"");
-        	
+        	query.append(" GROUP BY t3.language");
+
         	Query facetCount = em.createNativeQuery(query.toString());
             List<Object[]> counts = facetCount.getResultList();
             for (Object[] count : counts) {

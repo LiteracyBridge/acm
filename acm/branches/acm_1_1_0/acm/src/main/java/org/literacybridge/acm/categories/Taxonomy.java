@@ -140,7 +140,24 @@ public class Taxonomy implements Persistable {
 	 * Note: Returns '0' for unassigned categories.
 	 */
 	public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
-		return PersistentCategory.getFacetCounts(filter, categories, locales);
+		Map<Integer, Integer> counts = PersistentCategory.getFacetCounts(filter, categories, locales);
+		countChildren(getTaxonomy().getRootCategory(), counts);
+		return counts;
+	}
+	
+	private static int countChildren(Category parent, Map<Integer, Integer> counts) {
+		Integer count = counts.get(parent.getId());
+		int totalCount = count != null ? count : 0;
+		if (parent.hasChildren()) {
+			for (Category child : parent.getChildren()) {
+				totalCount += countChildren(child, counts);
+			}
+		}
+		if (totalCount > 0) {
+			counts.put(parent.getId(), totalCount);
+		}
+		
+		return totalCount;
 	}
 	
 	public Integer getId() {
@@ -175,19 +192,6 @@ public class Taxonomy implements Persistable {
 
 		public Category(PersistentCategory category) {
 			mCategory = category;
-		}
-		
-		@Override public int hashCode() {
-			return mCategory.getUuid().hashCode();
-		}
-		
-		@Override public boolean equals(Object o) {
-			if (o == null || !(o instanceof Category)) {
-				return false;
-			}
-			
-			Category other = (Category) o;
-			return other.getUuid().equals(getUuid());
 		}
 
 		public PersistentCategory getPersistentObject() {
