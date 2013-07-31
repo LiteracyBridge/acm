@@ -3,8 +3,6 @@ package org.literacybridge.acm.config;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
@@ -15,6 +13,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Calendar;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.JOptionPane;
 
@@ -26,7 +26,8 @@ import org.literacybridge.acm.repository.FileSystemRepository;
 import org.literacybridge.acm.utils.ZipUnzip;
 
 public class ControlAccess {
-
+	private static final Logger LOG = Logger.getLogger(ControlAccess.class.getName());
+	
 	private final static String DB_ZIP_FILENAME_PREFIX = Constants.DBHomeDir;
 	private final static String DB_ZIP_FILENAME_INITIAL = new String (DB_ZIP_FILENAME_PREFIX + "1.zip");
 	private final static String DB_DOES_NOT_EXIST = "NULL"; // PHP returns this if no checkin file found
@@ -66,8 +67,13 @@ public class ControlAccess {
     		newFilename = new String(DB_ZIP_FILENAME_INITIAL);
     	} else {
 	    	String baseFilename = filename.substring(DB_ZIP_FILENAME_PREFIX.length(), filename.lastIndexOf('.'));
-	    	int count = Integer.parseInt(baseFilename) + 1;
-	    	newFilename = new String (DB_ZIP_FILENAME_PREFIX + String.valueOf(count) + filename.substring(filename.lastIndexOf('.')));
+	    	try {
+		    	int count = Integer.parseInt(baseFilename) + 1;
+		    	newFilename = new String (DB_ZIP_FILENAME_PREFIX + String.valueOf(count) + filename.substring(filename.lastIndexOf('.')));
+	    	} catch (NumberFormatException e) {
+	    		LOG.log(Level.WARNING, "Unable to parse filename " + filename);
+	    		return;
+	    	}
     	}
     	setNextZipFilename(newFilename);
     }
@@ -211,9 +217,9 @@ public class ControlAccess {
 				if (file.lastModified() > lastModified) {
 					lastModified = file.lastModified();
 					filenameFallback = file.getName();
+					setCurrentZipFilename(filenameFallback);
 				}
 			}
-			setCurrentZipFilename(filenameFallback);
 		}
 		return status;
 	}
