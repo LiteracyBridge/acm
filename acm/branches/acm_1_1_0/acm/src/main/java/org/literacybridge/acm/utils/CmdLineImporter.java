@@ -124,17 +124,16 @@ public class CmdLineImporter {
 	
 	private static boolean importFiles(Set<File> filesToImport) throws Exception {
 		boolean success = true;
+		boolean needSuccessFolder = true;
 		FileImporter importer = FileImporter.getInstance();
 		long count = 0; 
 		String total = String.valueOf(filesToImport.size());
-		File successDir = new File( ((File)filesToImport.iterator()).getParentFile(),"success"); 
-		successDir.mkdir();
-
+		
 		for (File file : filesToImport) {
 			try {
 				System.out.println("Importing file " + String.valueOf(++count) + " of " + total + ": " + file);
 				importer.importFile(null, file);
-				FileUtils.moveToDirectory(file, successDir, false);
+				FileUtils.moveToDirectory(file, new File(file.getParentFile(),"success"), true);
 			} catch (Exception e) {
 				success = false;
 				logError(file, e);
