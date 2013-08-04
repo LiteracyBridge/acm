@@ -74,7 +74,8 @@ public class FileImporter {
 			if (item != null) {
 				try {
 					Configuration.getRepository().updateAudioItem(item, file);
-					item.getLocalizedAudioItem(null).getMetadata().setMetadataField(MetadataSpecification.LB_DURATION, new MetadataValue<String>(""));
+					// Commenting line below since duration is set with updateDuration as called from storeAudioFile()
+					// item.getLocalizedAudioItem(null).getMetadata().setMetadataField(MetadataSpecification.LB_DURATION, new MetadataValue<String>(""));
 					item.commit();
 				} catch (Exception e) {
 					LOG.log(Level.WARNING, "Unable to update files for audioitem with id=" + title, e);

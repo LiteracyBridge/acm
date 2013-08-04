@@ -149,6 +149,13 @@ public class ControlAccess {
 	}
 
 	public static void init() {
+		try {
+			@SuppressWarnings("unused")
+			LockACM l = new LockACM();
+		} catch (RuntimeException e) {
+			JOptionPane.showMessageDialog(null, "This ACM is already opened.");
+			System.exit(0);
+		}
 		if (dbInfo == null)
 			dbInfo = new DBInfo();
 		if (dbInfo.isCheckedOut()) {
