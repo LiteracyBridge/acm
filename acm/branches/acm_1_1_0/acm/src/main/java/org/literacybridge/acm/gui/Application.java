@@ -155,7 +155,7 @@ public class Application extends JXFrame {
 			parser.parseArgument(args);
 		} catch (CmdLineException e) {
 		    System.err.println(e.getMessage());
-		    System.err.println("java -cp acm.jar;lib/*;resources/ org.literacybridge.acm.gui.Application [options...]");
+		    System.err.println("java -cp acm.jar;lib/* org.literacybridge.acm.gui.Application [options...]");
 		    parser.printUsage(System.err);
 		    return;
 		}

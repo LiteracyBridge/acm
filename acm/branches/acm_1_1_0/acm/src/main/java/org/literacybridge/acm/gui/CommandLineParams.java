@@ -7,6 +7,7 @@ public class CommandLineParams {
 	@Option(name="-r",usage="to force read-only")
 	public boolean readonly;
 
+	/*	NOT CURRENTLY USING THIS PARAMETER --  NEED TO RETHINK IT WHEN WE NEED IT
 	@Option(name="-s",usage="to enter sandbox mode")
 	public boolean sandbox;
 
@@ -15,7 +16,7 @@ public class CommandLineParams {
 
 	@Option(name="-repo",usage="to set path to repository of a18 files")
 	public String pathRepository;
-
+*/
 	@Option(name="-title",usage="to set name of ACM to be displayed in title bar")
 	public String titleACM;
 

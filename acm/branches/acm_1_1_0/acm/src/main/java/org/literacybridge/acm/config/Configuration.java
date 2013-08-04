@@ -43,12 +43,12 @@ public class Configuration extends Properties {
     private static File tbLoadersDirectory;
     private static File sharedACMDirectory;
 	private static String sharedACM = null;
-    private static boolean pathsOverridden = false;
+//  private static boolean pathsOverridden = false;
     private static boolean disableUI = false;
 	private final static String USER_NAME = "USER_NAME";
 	private final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";
-	private final static String DEFAULT_REPOSITORY = "DEFAULT_REPOSITORY";
-	private final static String DEFAULT_DB = "DEFAULT_DB";
+	//private final static String DEFAULT_REPOSITORY = "DEFAULT_REPOSITORY";
+	//private final static String DEFAULT_DB = "DEFAULT_DB";
 	private final static String GLOBAL_SHARE_PATH = "GLOBAL_SHARE_PATH";
 	private final static String RECORDING_COUNTER_PROP = "RECORDING_COUNTER";
 	private final static String DEVICE_ID_PROP = "DEVICE_ID";
@@ -77,12 +77,21 @@ public class Configuration extends Properties {
 			acm.mkdirs();
 		return acm.getAbsolutePath();
 	}
-	
+		
 	public static File getLiteracyBridgeHomeDir() {
 		return LB_HOME_DIR;
 	}
 
+	static String getTempACMsDirectory() {
+		File temp = new File (getACMDirectory(), Constants.TempDir);
+		if (!temp.exists())
+			temp.mkdirs();
+		return temp.getAbsolutePath();
+	}
+	
 	public static File getDatabaseDirectory() {
+		if (dbDirectory == null)
+			dbDirectory = new File(Configuration.getTempACMsDirectory(),Configuration.getSharedACMname() + "/" + Constants.DBHomeDir);
 		return dbDirectory;
 		//		return new File(getSharedACMDirectory(), Constants.DerbyDBHomeDir);
 	}
@@ -115,7 +124,7 @@ public class Configuration extends Properties {
 	}
 
 	public static void init(CommandLineParams args) {
-		File dbPath, repPath;
+//		File dbPath, repPath;
 		if (instance == null) {
 			instance = new Configuration();
 			disableUI = args.disableUI;
@@ -123,7 +132,8 @@ public class Configuration extends Properties {
 //				instance.setReadOnly(true); 
 			if (args.titleACM != null)
 				setACMtitle(args.titleACM);
-			if (args.pathDB != null) {
+/*			NOT CURRENTLY USING THIS PARAMETER --  NEED TO RETHINK IT WHEN WE NEED IT
+  			if (args.pathDB != null) {
 				dbPath = new File(args.pathDB);
 				if (args.pathRepository != null) {
 					repPath = new File (args.pathRepository);
@@ -134,13 +144,15 @@ public class Configuration extends Properties {
 					} else
 						System.out.println("DB or Repository Path does not exist.  Ignoring override.");
 					}
-			} else if (args.sharedACM != null) {
-				pathsOverridden = true;
+			} else 
+*/
+			if (args.sharedACM != null) {
+				//pathsOverridden = true;
 				setSharedACMname(args.sharedACM);
 			}
 			InitializeAcmConfiguration();
 			initializeLogger();
-			ControlAccess.determineAccess();
+			ControlAccess.init();
 		}
 	}
 	
@@ -253,9 +265,10 @@ public class Configuration extends Properties {
 		return Collections.unmodifiableList(audioLanguages);
 	}
 
-	static void setDatabaseDirectory(File f) {
-    	dbDirectory = f; // new File(f,Constants.DerbyDBHomeDir);
-    }
+//	Commenting out since getDatabaseDirectory uses Constants to calculate path from other roots
+//	static void setDatabaseDirectory(File f) {
+//    	dbDirectory = f; // new File(f,Constants.DerbyDBHomeDir);
+//    }
 
     private static void setRepositoryDirectory(File f) {
     	repositoryDirectory = f; //new File(f,Constants.RepositoryHomeDirName);
@@ -309,14 +322,12 @@ public class Configuration extends Properties {
 		if (getSharedACMname() != null && (getDatabaseDirectory() == null || getRepositoryDirectory() == null)) {
 			File fACM = new File(globalShare,getSharedACMname());
 			if (fACM.exists()) {
-				File fDB = new File(fACM,Constants.DBHomeDir);
+/*				File fDB = new File(fACM,Constants.DBHomeDir);
 				setDatabaseDirectory(fDB);
 				instance.put(DEFAULT_DB,getDatabaseDirectory().getAbsolutePath());
-				File fRepo = new File(fACM,Constants.RepositoryHomeDir);
-				//if (!fRepo.exists()) 
-				//	fRepo.mkdir();
+*/				File fRepo = new File(fACM,Constants.RepositoryHomeDir);
 				setRepositoryDirectory(fRepo);			
-				instance.put(DEFAULT_REPOSITORY,getRepositoryDirectory().getAbsolutePath());
+//				instance.put(DEFAULT_REPOSITORY,getRepositoryDirectory().getAbsolutePath());
 			} else {
 				JOptionPane.showMessageDialog(null,"ACM database " + getSharedACMname() + 
 				" is not found within Dropbox.\n\nBe sure that you have accepted the Dropbox invitation\nto share the folder" +
@@ -337,6 +348,7 @@ public class Configuration extends Properties {
 			instance.put(AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),tw(\"Twi\"),sfw(\"Sehwi\")");
 			instance.writeProps();
 		}
+/*		COMMENTING THIS OUT SINCE WE ALWAYS PASS NAME OF ACM NOW - NEED TO RETHINK WHEN WE WANT TO USE CODE LIKE THIS AGAIN
 		if (!pathsOverridden) {
 			if (dbDirectory == null && instance.containsKey(DEFAULT_DB)) {
 				setDatabaseDirectory(new File(instance.getProperty(DEFAULT_DB)));
@@ -386,6 +398,7 @@ public class Configuration extends Properties {
 				}
 			}					
 		}
+*/
 		sharedACMDirectory = new File(globalShare, getSharedACMname());
 		tbLoadersDirectory = new File(sharedACMDirectory, Constants.TBLoadersHomeDir);
 		instance.writeProps();

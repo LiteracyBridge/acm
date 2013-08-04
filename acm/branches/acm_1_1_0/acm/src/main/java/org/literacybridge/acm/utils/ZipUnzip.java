@@ -48,21 +48,17 @@ public class ZipUnzip {
 
 	public static void zip (File inDir, File outFile) throws IOException {
 		baseInDir = inDir;
+		outFile.delete();
 		ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(outFile));
 		addDirectory(zout,inDir);
 		zout.close();
 		System.out.println("Zip file has been created!");		
 	}
 
-	public static void unzip (File inFile, File outDir, String altParentDirName) throws IOException {
+	public static void unzip (File inFile, File outDir) throws IOException {
 		File parentDir;
 		
-		if (altParentDirName == null) {
-			String parentDirName = inFile.getName().substring(0,inFile.getName().lastIndexOf(".zip"));
-			parentDir = new File(outDir, parentDirName);
-		} else {
-			parentDir = new File(outDir,altParentDirName);
-		}
+		parentDir = outDir;
 		ZipFile zfile = new ZipFile(inFile);
 		Enumeration <? extends ZipEntry> entries = zfile.entries();
 	    while (entries.hasMoreElements()) {

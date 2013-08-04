@@ -56,8 +56,8 @@ public class CmdLineImporter {
 		try {
 			CommandLineParams acmParams = new CommandLineParams();
 			acmParams.disableUI = true;
-			acmParams.readonly = false;
-			acmParams.sandbox = false;
+			//acmParams.readonly = false;
+			//acmParams.sandbox = false;
 			acmParams.sharedACM = params.acmName;
 			Application.startUp(acmParams);	
 		} catch (Exception e) {
