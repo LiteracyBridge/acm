@@ -31,11 +31,11 @@ public class CachingRepository extends AudioItemRepository {
 			else if (writeAccess) {
 				f = sandboxRepository.resolveFile(audioItem, format, writeAccess);
 			} else {
-				// read-access: check shared repo first; if missing, check sandbox
-				f = sharedRepository.resolveFile(audioItem, format, writeAccess);
+				// read-access: check sandbox first; if missing, check shared repo 
+				f = sandboxRepository.resolveFile(audioItem, format, writeAccess);
 				if (!f.exists() || (f.isDirectory() && f.listFiles().length == 0)) {
 					// empty directory
-					f = sandboxRepository.resolveFile(audioItem, format, writeAccess);
+					f = sharedRepository.resolveFile(audioItem, format, writeAccess);
 				}
 			}
 			return f;

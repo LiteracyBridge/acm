@@ -173,13 +173,11 @@ public abstract class AudioItemRepository {
 	 * a handle to the newly created file. 
 	 */
 	public File convert(AudioItem audioItem, AudioFormat targetFormat) throws ConversionException, IOException {
-		File audioFile = getAudioFile(audioItem, targetFormat);
-		if (audioFile != null) {
+		File audioFile = resolveFile(audioItem, targetFormat, true);
+		if (audioFile.exists()) {
 			// conversion not necessary
 			return audioFile;
 		}
-		
-		audioFile = resolveFile(audioItem, targetFormat, true);
 		
 		// we prefer to convert from WAV if possible
 		File sourceFile = getAudioFile(audioItem, AudioFormat.WAV);
