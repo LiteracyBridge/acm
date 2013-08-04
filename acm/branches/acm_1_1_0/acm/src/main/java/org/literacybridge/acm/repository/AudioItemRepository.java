@@ -249,7 +249,7 @@ public abstract class AudioItemRepository {
 		// we need to loop over all formats, because the different formats
 		// could be stored in different directories (e.g. local cache)
 		for (AudioFormat format : AudioFormat.values()) {
-			File file = getAudioFile(audioItem, format);
+			File file = resolveFile(audioItem, format, true);
 			if (file != null) {
 				IOUtils.deleteRecursive(file.getParentFile());
 			}
