@@ -27,6 +27,6 @@ public class LBMetadataIDs {
 				.put(LB_ENGLISH_TRANSCRIPTION, 30)
 				.put(LB_NOTES, 31)
 				.put(LB_BENEFICIARY, 32)
-				.put(LB_NO_LONGER_USED, 33)
+				.put(LB_STATUS, 33)
 				.build();
 }

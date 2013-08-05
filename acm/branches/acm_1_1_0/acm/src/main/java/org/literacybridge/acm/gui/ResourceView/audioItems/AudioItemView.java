@@ -2,8 +2,10 @@ package org.literacybridge.acm.gui.ResourceView.audioItems;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -26,6 +28,9 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumn;
 
 import org.jdesktop.swingx.JXTable;
+import org.jdesktop.swingx.decorator.AbstractHighlighter;
+import org.jdesktop.swingx.decorator.ComponentAdapter;
+import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ControlAccess;
@@ -41,6 +46,7 @@ import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
+import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 
@@ -84,10 +90,9 @@ public class AudioItemView extends Container implements Observer {
 			audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
 					Color.LIGHT_GRAY, new Color(237, 243, 254)));			
 		} else  {
-		audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
-				Color.white, new Color(237, 243, 254)));
+			audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
+					Color.white, new Color(237, 243, 254)));
 		}
-		
 		
 		JScrollPane scrollPane = new JScrollPane(audioItemTable);
 		scrollPane.setPreferredSize(new Dimension(800, 500));

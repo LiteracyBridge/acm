@@ -14,7 +14,7 @@ import static org.literacybridge.acm.metadata.MetadataSpecification.LB_GOAL;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_KEYWORDS;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_MESSAGE_FORMAT;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_NOTES;
-import static org.literacybridge.acm.metadata.MetadataSpecification.LB_NO_LONGER_USED;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_STATUS;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_PRIMARY_SPEAKER;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_TARGET_AUDIENCE;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_TIMING;
@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.swing.table.AbstractTableModel;
 
@@ -40,8 +41,17 @@ import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 
+import com.google.common.collect.Maps;
+
 public class AudioItemPropertiesModel extends AbstractTableModel {
-	static final String NO_LONGER_USED_NAME = "No longer used";
+	static final String STATUS_NAME = "Status";
+	static final String[] STATUS_VALUES = {"Current", "NO LONGER_USED"};
+	static final Map<String, Integer> STATUS_VALUES_MAP = Maps.newHashMap();
+	static {
+		for (int i = 0; i < STATUS_VALUES.length; i++) {
+			STATUS_VALUES_MAP.put(STATUS_VALUES[i], i);
+		}
+	}
 	
 	private String[] columnNames = {LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_PROPERTY", LanguageUtil.getUILanguage())
 								  , LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_VALUE", LanguageUtil.getUILanguage()),
@@ -63,7 +73,27 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		this.readOnly = readOnly;
 		
 		// TODO: make this list configurable
-		// for now just remove some unneeded ones
+		audioItemPropertiesObject.add(new AudioItemProperty(true) {
+			@Override public String getName() { 
+				return STATUS_NAME;
+			}
+
+			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
+				List<MetadataValue<Integer>> values = metadata.getMetadataValues(LB_STATUS);
+				if (values == null || values.isEmpty()) {
+					return "Current";
+				}
+				
+				return STATUS_VALUES[values.get(0).getValue()];
+			}
+
+			@Override
+			public void setValue(AudioItem audioItem, Metadata metadata,
+					Object newValue) {
+				metadata.setMetadataField(MetadataSpecification.LB_STATUS, 
+						new MetadataValue<Integer>(STATUS_VALUES_MAP.get(newValue.toString())));
+			}			
+		});	
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_TITLE, true));
 		// TODO: calculate duration of audio item
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_DURATION, false));
@@ -162,27 +192,6 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_ENGLISH_TRANSCRIPTION, true));
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_NOTES, true));
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_BENEFICIARY, true));
-		audioItemPropertiesObject.add(new AudioItemProperty(true) {
-			@Override public String getName() { 
-				return NO_LONGER_USED_NAME;
-			}
-
-			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
-				List<MetadataValue<Integer>> values = metadata.getMetadataValues(LB_NO_LONGER_USED);
-				if (values == null || values.isEmpty()) {
-					return "false";
-				}
-				
-				return values.get(0).getValue() == 0 ? "false" : "true";
-			}
-
-			@Override
-			public void setValue(AudioItem audioItem, Metadata metadata,
-					Object newValue) {
-				metadata.setMetadataField(MetadataSpecification.LB_NO_LONGER_USED, 
-						new MetadataValue<Integer>(newValue.toString().equals("false") ? 0 : 1));
-			}			
-		});	
 	}
 	
 	@Override
@@ -224,6 +233,16 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	
 	public AudioItemProperty getAudioItemProperty(int row) {
 		return audioItemPropertiesObject.get(row);
+	}
+	
+	boolean highlightRow(int row) {
+		if (row == 0) {
+			AudioItemProperty obj = audioItemPropertiesObject.get(row);
+			String value = obj.getValue(audioItem, metadata);
+			return !value.equals(STATUS_VALUES[0]);
+		}
+		
+		return false;
 	}
 	
 	boolean isLanguageRow(int row) {

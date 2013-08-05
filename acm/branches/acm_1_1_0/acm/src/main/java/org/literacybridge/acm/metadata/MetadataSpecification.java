@@ -111,7 +111,7 @@ public interface MetadataSpecification {
 	public final static MetadataField<String> LB_ENGLISH_TRANSCRIPTION = new MetadataStringField("LB_ENGLISH_TRANSCRIPTION");
 	public final static MetadataField<String> LB_NOTES = new MetadataStringField("LB_NOTES");
 	public final static MetadataField<String> LB_BENEFICIARY = new MetadataStringField("LB_BENEFICIARY");
-	public final static MetadataField<Integer> LB_NO_LONGER_USED = new MetadataIntegerField("LB_NO_LONGER_USED");
+	public final static MetadataField<Integer> LB_STATUS = new MetadataIntegerField("LB_STATUS");
 
 	
 	//============================================================================================================
@@ -143,7 +143,7 @@ public interface MetadataSpecification {
 																		.add(LB_ENGLISH_TRANSCRIPTION)
 																		.add(LB_NOTES)
 																		.add(LB_BENEFICIARY)
-																		.add(LB_NO_LONGER_USED)
+																		.add(LB_STATUS)
 																		.build();
 }
 	

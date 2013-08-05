@@ -1,7 +1,9 @@
 package org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Desktop;
+import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
@@ -11,10 +13,12 @@ import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
 import org.apache.commons.lang.StringUtils;
@@ -36,7 +40,7 @@ public class AudioItemPropertiesTable extends JXTable {
 	private JComboBox targetAudienceBox = new JComboBox(new DefaultComboBoxModel(new String[] {"All", "Boys", "Girls", "Children", "Farmers",
 																							   "Fathers", "Mothers", "Parents", "Pregnant women", "Livestock rearer"}));
 	
-	private JComboBox noLongerUsedBox = new JComboBox(new DefaultComboBoxModel(new String[] {"true", "false"}));
+	private JComboBox noLongerUsedBox = new JComboBox(new DefaultComboBoxModel(AudioItemPropertiesModel.STATUS_VALUES));
 	private LanguageComboBoxModel languageComboBoxModel = new LanguageComboBoxModel();
 	
 	public AudioItemPropertiesTable(final AudioItemPropertiesDialog dialog) {
@@ -109,7 +113,7 @@ public class AudioItemPropertiesTable extends JXTable {
 			}
 		});
 	}
-
+	
 	private void searchRequest(String query) {
 		Application.getFilterState().setFilterCategories(null);
 		Application.getFilterState().setFilterLanguages(null);
@@ -118,7 +122,7 @@ public class AudioItemPropertiesTable extends JXTable {
 	}
 	
 	@Override
-	public TableCellEditor getCellEditor(int row, int column) {
+	public TableCellEditor getCellEditor(int row, int column) {		
 		if (isLanguageRow(row)) {
 			return getLanguageEditor();
 		}
@@ -134,7 +138,7 @@ public class AudioItemPropertiesTable extends JXTable {
 			}
 		}
 		
-		if (property.getName().equals(AudioItemPropertiesModel.NO_LONGER_USED_NAME)) {
+		if (property.getName().equals(AudioItemPropertiesModel.STATUS_NAME)) {
 			return new DefaultCellEditor(noLongerUsedBox);			
 		}
 		

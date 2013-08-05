@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
@@ -18,6 +19,10 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
+import org.jdesktop.swingx.decorator.AbstractHighlighter;
+import org.jdesktop.swingx.decorator.ColorHighlighter;
+import org.jdesktop.swingx.decorator.ComponentAdapter;
+import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.gui.Application;
@@ -132,6 +137,28 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 		propertiesTable.addHighlighter(HighlighterFactory
 				.createAlternateStriping(Color.white, new Color(237, 243,
 						254)));
+  
+		final HighlightPredicate predicate = new HighlightPredicate() {
+			@Override
+			public boolean isHighlighted(Component comnponent, ComponentAdapter adapter) {
+				return ((AudioItemPropertiesModel) propertiesTable.getModel()).highlightRow(adapter.row);
+			}
+		};
+		AbstractHighlighter highlighter = new AbstractHighlighter() {
+			@Override protected Component doHighlight(Component component,
+					ComponentAdapter adapter) {
+				if (predicate.isHighlighted(component, adapter)) {
+					component.setFont(component.getFont().deriveFont(Font.BOLD));
+					component.setForeground(Color.RED);
+				}
+				return component;
+			}
+			
+		};
+		
+		//ColorHighlighter highlighter = new ColorHighlighter(predicate, null, Color.RED, null, null); 
+		propertiesTable.addHighlighter(highlighter); 
+		
 		theScrollPane.setViewportView(propertiesTable);
 		getContentPane().add(theScrollPane);
 		
