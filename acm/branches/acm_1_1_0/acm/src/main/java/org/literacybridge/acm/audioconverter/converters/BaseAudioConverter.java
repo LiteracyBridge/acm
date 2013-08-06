@@ -40,7 +40,7 @@ public abstract class BaseAudioConverter {
 		ConversionResult result = doConvertFile(inputFile, targetDir, outputFile, tmpDir, parameters);
 		if (!result.outputFile.getAbsolutePath().equals(outputFile.getAbsolutePath())) {
 			// TODO: we should probably have some retry logic here, and fail after 5 attempts or so
-			if (!result.outputFile.renameTo(outputFile)) {
+			if (!result.outputFile.equals(outputFile) && !result.outputFile.renameTo(outputFile)) {
 				throw new ConversionException("Unable to rename output file.");
 			}
 		}

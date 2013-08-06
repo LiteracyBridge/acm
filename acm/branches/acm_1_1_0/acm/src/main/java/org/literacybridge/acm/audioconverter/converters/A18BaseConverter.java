@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Map;
 
+import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.utils.IOUtils;
 
@@ -37,6 +38,7 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
 	@Override
 	public ConversionResult doConvertFile(File audioFile, File targetDir, File targetFile, File tmpDir, Map<String, String> parameters) throws ConversionException {
 		File tmpSourceFile = null;
+		File ultimateDestDir = null;
 		
 		try {
 			if (tmpDir != null && !tmpDir.equals(audioFile.getParentFile())) {
@@ -51,13 +53,27 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
 				}
 			}
 			
+			if (tmpDir != null && !tmpDir.equals(targetDir) && targetDir.getAbsolutePath().startsWith(Configuration.getSharedACMDirectory().getAbsolutePath())) {
+				// targetDir should never be in Dropbox because of some strange interaction with Dropbox that has caused bad A18 output 
+				ultimateDestDir = targetDir;
+				targetDir = tmpDir;
+			}
+			
 			String cmd = getCommand(audioFile, targetDir, parameters);
 			ConversionResult result = new ConversionResult();
 			result.outputFile = new File(targetDir, audioFile.getName() + targetFormatExtension);
+			if (ultimateDestDir != null && result.outputFile.exists()) {
+				result.outputFile.delete(); 
+			}
 			result.response = BaseAudioConverter.executeConversionCommand(cmd,
 															  false,  // important! a18 converter prints to stdout, not stderr
 															  audioFile.getName());
-		
+			
+			if (ultimateDestDir != null) {
+				if (result.outputFile.renameTo(targetFile)) {
+					result.outputFile = targetFile;				
+				}
+			}
 			Matcher matcher = pattern.matcher(result.response);
 			if (matcher.matches()) {
 				if (!result.response.endsWith("Succeeded")) {
@@ -68,6 +84,12 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
 		} finally {
 			if (tmpSourceFile != null && tmpSourceFile.exists()) {
 				tmpSourceFile.delete();
+			}
+			if (ultimateDestDir != null) {
+				File tmpDest = new File (tmpDir,audioFile.getName() + targetFormatExtension);
+				if (tmpDest.exists()) {
+					tmpDest.delete();
+				}
 			}
 		}
 	}
