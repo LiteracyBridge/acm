@@ -35,8 +35,8 @@ public class AudioItemTableModel  extends AbstractTableModel {
 	public static final int DURATION 		   = 2;
 	public static final int CATEGORIES 		   = 3;
 	public static final int SOURCE			   = 4;
-	public static final int DATE_FILE_MODIFIED = 5;
-	public static final int LANGUAGES 		   = 6;
+	public static final int MESSAGE_FORMAT	   = 5;
+	public static final int DATE_FILE_MODIFIED = 6;
 	public static final int PLAYLIST_ORDER	   = 7;
 //	public static final int OPEN_COUNT 		   = 4;
 //	public static final int COMPLETION_COUNT   = 5;
@@ -122,8 +122,12 @@ public class AudioItemTableModel  extends AbstractTableModel {
 					}
 					break;
 				}
-				case LANGUAGES: {
-					cellText = LanguageUtil.getLocalizedLanguageName(localizedAudioItem.getLocale());
+				case MESSAGE_FORMAT: {
+					List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
+							MetadataSpecification.LB_MESSAGE_FORMAT);
+					if (values != null) {
+						cellText = values.get(0).getValue();
+					}
 					break;
 				}
 				case DATE_FILE_MODIFIED: {
