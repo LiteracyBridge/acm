@@ -44,8 +44,9 @@ import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import com.google.common.collect.Maps;
 
 public class AudioItemPropertiesModel extends AbstractTableModel {
+	public static final String NO_LONGER_USED = "NO LONGER USED";
 	static final String STATUS_NAME = "Status";
-	static final String[] STATUS_VALUES = {"Current", "NO LONGER_USED"};
+	public static final String[] STATUS_VALUES = {"Current", NO_LONGER_USED};
 	static final Map<String, Integer> STATUS_VALUES_MAP = Maps.newHashMap();
 	static {
 		for (int i = 0; i < STATUS_VALUES.length; i++) {
