@@ -497,6 +497,14 @@ public class ControlAccess {
 		String s = null;
 		String computerName;
 		URL url;
+		String action;
+		
+		if (filename == null) {
+			action = "discard";
+			filename = "";
+		} else {
+			action = "checkin";
+		}
 		
 		try {
 			computerName = InetAddress.getLocalHost().getHostName();
@@ -505,7 +513,7 @@ public class ControlAccess {
 		}
 		
 //		try {
-			url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&key=" + key + "&filename=" + filename + "&name=" + Configuration.getUserName() + "&contact=" + Configuration.getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
+			url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&action=" + action + "&key=" + key + "&filename=" + filename + "&name=" + Configuration.getUserName() + "&contact=" + Configuration.getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
 			InputStream in;
 			in = url.openStream();
 			Scanner scanner = new Scanner(in);
@@ -516,7 +524,9 @@ public class ControlAccess {
 			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //		}
-		if (s == null)
+		if (action.equals("discard"))
+			status = true;
+	 	else if (s == null)
 			status = false;
 		else
 			status = s.trim().equals("ok"); 
@@ -525,58 +535,86 @@ public class ControlAccess {
 
 	public static boolean updateDB() {
 		boolean status = false;
-		boolean saveWork = false;
+		boolean saveWork = true;
 		String key = ControlAccess.getDBKey();
+		String filename = ControlAccess.getNextZipFilename();
 		File inFolder= Configuration.getDatabaseDirectory();
 		File outFile= new File (Configuration.getSharedACMDirectory(), ControlAccess.getNextZipFilename()); 
 		int n;
-		try {
-			do {
-				n = 1;  // shutdown by default if no UI
+		if (!Configuration.isDisableUI()) {
+			Object[] optionsSaveWork = {"Save Work", "Throw Away Your Latest Changes"};
+			n = JOptionPane.showOptionDialog(null, "If you made a mistake you can throw away all your changes now.", "Save Work?",JOptionPane.YES_NO_CANCEL_OPTION,
+					JOptionPane.QUESTION_MESSAGE, null, optionsSaveWork, optionsSaveWork[0]);
+			if (n == 1) {
+				n = JOptionPane.showOptionDialog(null, "Are you sure you want to throw away all your work since opening the ACM?", "Are You Sure?",JOptionPane.OK_CANCEL_OPTION,
+						JOptionPane.WARNING_MESSAGE, null, null, JOptionPane.CANCEL_OPTION);
+				if (n == JOptionPane.OK_OPTION) {
+					saveWork = false;
+					filename = null;  // release checkout
+				}
+			}
+		}
+		n = 0; // we always want to start this loop.  Even if the user wants to discard changes, we need to try to release the checkout 
+		while (!status && n==0) { 
+			n = 1;  // shutdown by default if no UI
+			if (saveWork) {
 				try {
-					status = checkInDB(Configuration.getSharedACMname(), key, ControlAccess.getNextZipFilename()); 
-					if (!status && !Configuration.isDisableUI()) {
-						Object[] options = {"Force your version","Throw away your latest changes"};
-						n = JOptionPane.showOptionDialog(null, "Someone has forced control of this ACM.", "Cannot Checkin!",JOptionPane.YES_NO_CANCEL_OPTION,
-								JOptionPane.QUESTION_MESSAGE, null, options, options[1]);
-						if (n==0)
-							key = ControlAccess.DB_KEY_OVERRIDE;
-					}
+					ZipUnzip.zip(inFolder, outFile);
 				} catch (IOException e) {
 					status = false;
 					if (!Configuration.isDisableUI()) {
-						Object[] options = {"Try again", "Shutdown"};
-						n = JOptionPane.showOptionDialog(null, "Cannot reach Literacy Bridge web server.  Do you want to get online and try again or shutdown and try later?", "Cannot Connect to Server",JOptionPane.YES_NO_CANCEL_OPTION,
-								JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-						if (n==1)
-							saveWork = true;
+						Object[] options = {"Keep Your Changes", "Throw Away Your Latest Changes"};
+						n = JOptionPane.showOptionDialog(null, "There is a problem getting your changes into Dropbox.  Do you want to keep your changes and try to get this problem fixed or throw away your latest changes?", "Problem creating zip file on Dropbox",JOptionPane.YES_NO_CANCEL_OPTION,
+								JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+					}
+					if (n==1) {
+						saveWork = false; 
+						filename = null;  // release checkout
+					} else {
+						break; // keep changes - so don't try to check-in, which happens in the remainder of the while loop below
 					}
 				}
-			} while (!status && n==0);
-			
-			if (!Configuration.isDisableUI()) {
-				if (status)
-					JOptionPane.showMessageDialog(null,"Your changes have been checked in.");
-				else if (saveWork)
-					JOptionPane.showMessageDialog(null,"Your changes could not be checked in now, but you still have this ACM\nchecked out and can submit your changes later.");
-				else 
-					JOptionPane.showMessageDialog(null,"Your changes have been discarded.");
 			}
-			
-			if (status) {
-				ZipUnzip.zip(inFolder, outFile);
-				// deleting old zip since we just got confirmation that the new zip was checkedin
-				File oldzip = new File (Configuration.getSharedACMDirectory(),ControlAccess.getCurrentZipFilename());
-				oldzip.delete();
+			try {
+				status = checkInDB(Configuration.getSharedACMname(), key, filename); 
+				if (!status && saveWork && !Configuration.isDisableUI()) {
+					Object[] options = {"Force your version","Throw Away Your Latest Changes"};
+					n = JOptionPane.showOptionDialog(null, "Someone has forced control of this ACM.", "Cannot Checkin!",JOptionPane.YES_NO_CANCEL_OPTION,
+							JOptionPane.QUESTION_MESSAGE, null, options, options[1]);
+					if (n==0)
+						key = ControlAccess.DB_KEY_OVERRIDE;
+					else 
+						saveWork = false;
+				}
+			} catch (IOException e) {
+				status = false;
+				if (!Configuration.isDisableUI()) {
+					Object[] options = {"Try again", "Shutdown"};
+					n = JOptionPane.showOptionDialog(null, "Cannot reach Literacy Bridge web server.  Do you want to get online and try again or shutdown and try later?", "Cannot Connect to Server",JOptionPane.YES_NO_CANCEL_OPTION,
+							JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+				}
 			}
-			if (status || (!saveWork)) {
-				dbInfo.deleteCheckoutFile(); // do this first since it's most important to be deleted and the next line sometimes is unable to delete the entire directory
-				// deleteLocalDB();  -- this line always fails to delete some files, so we'll just delete on startup if there is no checkout file
-			}
-		} catch (IOException e) {
-			status = false;
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} 
+		
+		if (!Configuration.isDisableUI()) {
+			if (status && saveWork)
+				JOptionPane.showMessageDialog(null,"Your changes have been checked in.\n\nPlease stay online for a few minutes so your changes\ncan be uploaded (until Dropbox is 'Up to date').");
+			else if (saveWork && !status)
+				JOptionPane.showMessageDialog(null,"Your changes could not be checked in now, but you still have this ACM\nchecked out and can submit your changes later.");
+			else if (status && !saveWork)
+				JOptionPane.showMessageDialog(null,"Your changes have been discarded.");
+			else if (!status && !saveWork)
+				JOptionPane.showMessageDialog(null,"Could not release your checkout.  Please try again later so that others can checkout this ACM.");
+		}
+		
+		if (status && saveWork) {
+			// deleting old zip since we just got confirmation that the new zip was checkedin
+			File oldzip = new File (Configuration.getSharedACMDirectory(),ControlAccess.getCurrentZipFilename());
+			oldzip.delete();
+		}
+		if (status) {  // whether saving work or not, only delete checkout file if status==true, meaning checkIn was successful
+			dbInfo.deleteCheckoutFile(); // do this first since it's most important to be deleted and the next line sometimes is unable to delete the entire directory
+			// deleteLocalDB();  -- this line always fails to delete some files, so we'll just delete on startup if there is no checkout file
 		}
 		return status;
 	}
