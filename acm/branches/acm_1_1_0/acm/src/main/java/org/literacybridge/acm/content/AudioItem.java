@@ -1,5 +1,6 @@
 package org.literacybridge.acm.content;
 
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -154,14 +155,13 @@ public class AudioItem implements Persistable {
 		return mItem;
 	}
 	
-	public List<PersistentTag> getPlaylists() {
+	public Collection<PersistentTag> getPlaylists() {
 		return mItem.getPersistentTagList();
 	}
 
-	
 	public LocalizedAudioItem getLocalizedAudioItem(Locale locale) {
 		
-			// TODO local will be ignored for beta 2
+			// TODO local will be ignored for now
 		
 //            for (PersistentLocalizedAudioItem item : mItem.getPersistentLocalizedAudioItems()) {
 //                PersistentLocale l = item.getPersistentLocale();
@@ -172,11 +172,11 @@ public class AudioItem implements Persistable {
 //            }
 //            return null;
 		
-			if (mItem.getPersistentLocalizedAudioItems() != null) {
-				PersistentLocalizedAudioItem localizedItem = mItem.getPersistentLocalizedAudioItems().iterator().next();
-				return new LocalizedAudioItem(localizedItem);
-			}
-			return null;
+		if (mItem.getPersistentLocalizedAudioItems() != null) {
+			PersistentLocalizedAudioItem localizedItem = mItem.getPersistentLocalizedAudioItems().get(0);
+			return new LocalizedAudioItem(localizedItem);
+		}
+		return null;
 	}
 	
 	public Set<Locale> getAvailableLocalizations() {

@@ -16,8 +16,11 @@ import com.google.common.collect.Lists;
 
 public class FileSystemRepository extends AudioItemRepository {
 	public static class FileSystemGarbageCollector {
+		private final static long RUN_INTERVAL = 10 * 60 * 1000; // 10 minutes
+		
 		private final long maxSizeInBytes;
 		private final FilenameFilter filesToDelete;
+		private long lastTimeRun = 0;
 		
 		public FileSystemGarbageCollector(long maxSizeInBytes,
 				FilenameFilter filesToDelete) {
@@ -26,6 +29,13 @@ public class FileSystemRepository extends AudioItemRepository {
 		}
 		
 		public void gc(File repositoryRoot) throws IOException {
+			long time = System.currentTimeMillis();
+			if ((time - lastTimeRun) < RUN_INTERVAL) {
+				return;
+			}
+			
+			lastTimeRun = time;
+			
 			final MutableLong sizeInBytes = new MutableLong();
 			IOUtils.visitFiles(repositoryRoot, filesToDelete, new Predicate<File>() {
 				@Override public boolean apply(File file) {

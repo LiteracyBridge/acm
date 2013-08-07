@@ -4,6 +4,7 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.List;
 
 import javax.swing.SwingUtilities;
@@ -77,15 +78,16 @@ public class UIUtils {
 	}
 	
 	public static String getPlaylistAsString(AudioItem audioItem) {
-		List<PersistentTag> playlists = audioItem.getPlaylists();
+		Collection<PersistentTag> playlists = audioItem.getPlaylists();
 		StringBuilder builder = new StringBuilder();
 		
-		for (int i = 0; i < playlists.size(); i++) {
-			PersistentTag playlist = playlists.get(i);
+		int i = 0;
+		for (PersistentTag playlist : playlists) {
 			builder.append(playlist.getName());
 			if (i != playlists.size() - 1) {
 				builder.append(", ");
 			}
+			i++;
 		}
 		return builder.toString();
 	}

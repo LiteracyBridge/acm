@@ -1,7 +1,10 @@
 package org.literacybridge.acm.db;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -52,7 +55,7 @@ public class PersistentAudioItem extends PersistentObject {
         inverseJoinColumns =
             @JoinColumn(name = "category", referencedColumnName = "id")
     )
-    private List<PersistentCategory> persistentCategoryList = new LinkedList<PersistentCategory>();    
+    private Set<PersistentCategory> persistentCategoryList = new LinkedHashSet<PersistentCategory>();    
 
     @ManyToMany
     @JoinTable(
@@ -62,11 +65,11 @@ public class PersistentAudioItem extends PersistentObject {
         inverseJoinColumns =
             @JoinColumn(name = "tag", referencedColumnName = "id")
     )
-    private List<PersistentTag> persistentTagList = new LinkedList<PersistentTag>();    
+    private Set<PersistentTag> persistentTagList = new LinkedHashSet<PersistentTag>();    
 
     
     @OneToMany(mappedBy = "persistentAudioItem", cascade = {CascadeType.ALL})
-    private List<PersistentLocalizedAudioItem> persistentLocalizedAudioItemList = new LinkedList<PersistentLocalizedAudioItem>();
+    private List<PersistentLocalizedAudioItem> persistentLocalizedAudioItemList = new ArrayList<PersistentLocalizedAudioItem>();
 
     public PersistentAudioItem() {
     }
@@ -83,12 +86,8 @@ public class PersistentAudioItem extends PersistentObject {
         this.uuid = uuid;
     }
 
-    public List<PersistentCategory> getPersistentCategoryList() {
+    public Collection<PersistentCategory> getPersistentCategoryList() {
         return persistentCategoryList;
-    }
-
-    public void setPersistentCategoryList(List<PersistentCategory> persistentCategoryList) {
-        this.persistentCategoryList = persistentCategoryList;
     }
 
     public PersistentCategory addPersistentAudioItemCategory(PersistentCategory persistentCategory) {
@@ -109,12 +108,8 @@ public class PersistentAudioItem extends PersistentObject {
         getPersistentCategoryList().clear();
     }
 
-    public List<PersistentTag> getPersistentTagList() {
+    public Collection<PersistentTag> getPersistentTagList() {
         return persistentTagList;
-    }
-
-    public void setPersistentTagList(List<PersistentTag> persistentTagList) {
-        this.persistentTagList = persistentTagList;
     }
 
     public PersistentTag addPersistentAudioItemTag(PersistentTag persistentTag) {
