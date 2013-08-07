@@ -1,6 +1,5 @@
 package org.literacybridge.acm.db;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -94,7 +93,6 @@ public class PersistentAudioItem extends PersistentObject {
 
     public PersistentCategory addPersistentAudioItemCategory(PersistentCategory persistentCategory) {
         getPersistentCategoryList().add(persistentCategory);
-        persistentCategory.getPersistentAudioItemList().add(this);
         return persistentCategory;
     }
     
@@ -104,14 +102,10 @@ public class PersistentAudioItem extends PersistentObject {
 
     public PersistentCategory removePersistentCategory(PersistentCategory persistentCategory) {
         getPersistentCategoryList().remove(persistentCategory);
-        persistentCategory.getPersistentAudioItemList().remove(this);
         return persistentCategory;
     }
 
     public void removeAllPersistentCategories() {
-    	for (PersistentCategory category : getPersistentCategoryList()) {
-    		category.getPersistentAudioItemList().remove(this);
-    	}
         getPersistentCategoryList().clear();
     }
 

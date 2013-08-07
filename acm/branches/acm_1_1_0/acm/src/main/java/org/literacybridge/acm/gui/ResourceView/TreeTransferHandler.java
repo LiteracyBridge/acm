@@ -8,12 +8,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import javax.swing.JTree;
 import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.importexport.FileImporter;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.Application;
@@ -120,17 +123,44 @@ public class TreeTransferHandler extends TransferHandler {
 	
 	private void assignCategory(TransferHandler.TransferSupport support, final CategoryTreeNodeObject target) throws IOException, UnsupportedFlavorException {
 		Transferable t = support.getTransferable();
-		boolean move = support.getDropAction() == TransferHandler.MOVE;
+		final boolean move = support.getDropAction() == TransferHandler.MOVE;
 
 		final AudioItem[] audioItems = (AudioItem[]) t.getTransferData(AudioItemView.AudioItemDataFlavor);
+		// don't piggyback on the drag&drop thread
+		Runnable job = new Runnable() {
 
-		for (AudioItem item : audioItems) {
-			if (move) {
-				item.removeAllCategories();
+			@Override
+			public void run() {
+
+				EntityManager em = null;
+				try {
+					em = Persistence.getEntityManager();
+					EntityTransaction transaction = em.getTransaction();
+					transaction.begin();
+					try {
+						for (AudioItem item : audioItems) {
+							if (move) {
+								item.removeAllCategories();
+							}
+							item.addCategory(target.getCategory());
+							item.commit(em);
+						}
+						transaction.commit();
+					} finally {
+		                if (transaction.isActive()) {
+		                	transaction.rollback();
+		                }
+
+						Application.getFilterState().updateResult(true);
+					}
+				} finally {
+					if (em != null) {
+						em.close();
+					}
+				}
 			}
-			item.addCategory(target.getCategory());
-			item.commit();
-		}
-		Application.getFilterState().updateResult(true);
+		};
+		new Thread(job).start();
+		
 	}
 }

@@ -23,7 +23,7 @@ public abstract class PersistentObject implements Serializable, Persistable {
     protected static final String SEQUENCE_VALUE = "seq_count";
     
     public abstract Object getId();
-    
+
     @SuppressWarnings("unchecked")
 	public synchronized <T> T commit() {
         mLogger.finest("Committing object " + toString());
@@ -38,7 +38,7 @@ public abstract class PersistentObject implements Serializable, Persistable {
                 t = em.getTransaction();
                 t.begin();
                 
-                persistentObj = (T) em.merge(this);
+                persistentObj = commit(em);
                 
                 t.commit();
             } finally {
@@ -51,6 +51,12 @@ public abstract class PersistentObject implements Serializable, Persistable {
         }
         
         return persistentObj;
+
+    }
+    
+    @SuppressWarnings("unchecked")
+	public synchronized <T> T commit(EntityManager em) {
+    	return (T) (em != null ? em.merge(this) : commit());
     }
     
     public synchronized void destroy() {

@@ -11,7 +11,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -65,9 +64,6 @@ public class PersistentCategory extends PersistentObject {
     
     @OneToMany(mappedBy = "persistentParentCategory", cascade = CascadeType.ALL)
     private List<PersistentCategory> persistentChildCategoryList = new LinkedList<PersistentCategory>();
-
-    @ManyToMany(mappedBy = "persistentCategoryList")
-    private List<PersistentAudioItem> persistentAudioItemList = new LinkedList<PersistentAudioItem>();
 
     public PersistentCategory() {
     }
@@ -157,10 +153,6 @@ public class PersistentCategory extends PersistentObject {
     	getPersistentChildCategoryList().clear();
     }
 
-    public List<PersistentAudioItem> getPersistentAudioItemList() {
-        return persistentAudioItemList;
-    }
-    
     public static PersistentCategory getFromDatabase(int id) {
         return PersistentQueries.getPersistentObject(PersistentCategory.class, id);
     }

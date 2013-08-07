@@ -308,15 +308,6 @@ public class Taxonomy implements Persistable {
 			return children != null && !children.isEmpty();
 		}
 
-		public List<AudioItem> getAudioItemList() {
-			List<AudioItem> audioItems = new LinkedList<AudioItem>();
-			for (PersistentAudioItem item : mCategory
-					.getPersistentAudioItemList()) {
-				audioItems.add(new AudioItem(item));
-			}
-			return audioItems;
-		}
-
 		public Integer getId() {
 			return mCategory.getId();
 		}

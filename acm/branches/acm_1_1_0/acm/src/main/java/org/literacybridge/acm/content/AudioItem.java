@@ -7,6 +7,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import javax.persistence.EntityManager;
+
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.db.Persistable;
 import org.literacybridge.acm.db.PersistentAudioItem;
@@ -196,7 +198,12 @@ public class AudioItem implements Persistable {
 
     @SuppressWarnings("unchecked")
 	public AudioItem commit() {
-        mItem = mItem.<PersistentAudioItem>commit();
+    	return commit(null);
+    }
+    
+    @SuppressWarnings("unchecked")
+	public AudioItem commit(EntityManager em) {
+        mItem = mItem.<PersistentAudioItem>commit(em);
         return this;
     }
 
