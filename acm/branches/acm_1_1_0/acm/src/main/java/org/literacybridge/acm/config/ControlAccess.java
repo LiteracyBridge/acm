@@ -252,7 +252,6 @@ public class ControlAccess {
 	
 	private static void determineRWStatus() {
 		boolean sandboxMode = false;
-		boolean forced = false;
 		String dialogMessage = new String();
 		boolean dbAvailable = false;
 		boolean outdatedDB = false;
@@ -315,44 +314,46 @@ public class ControlAccess {
 				Object[] optionsForce = {"Use Demo Mode", "Shutdown", "Force Write Mode"};
 	
 				int n = JOptionPane.showOptionDialog(null, dialogMessage,"Cannot Get Write Access",JOptionPane.YES_NO_CANCEL_OPTION,
-						JOptionPane.QUESTION_MESSAGE, null, (outdatedDB?optionsNoForce:optionsForce), optionsForce[0]);
+						JOptionPane.QUESTION_MESSAGE, null, (optionsNoForce), optionsNoForce[0]);
 				if (n == -1 || n == 1) { // user closed option pane or selected Shutdown
 					JOptionPane.showMessageDialog(null,"Shutting down.");
 					System.exit(0);
-				} else if (n==2) {
-					dialogMessage = "Forcing write mode will cause " + getPosessor() + "\nto lose their work!\n\n" +
-							"If you are sure you want to force write access,\ntype the word 'force' below.";
-					String confirmation = (String)JOptionPane.showInputDialog(null,dialogMessage);
-					if (confirmation != null && confirmation.equalsIgnoreCase("force")) {
-						sandboxMode = false;
-						do {	
-							onlineChoice = 1; // don't repeat loop unless user chooses to
-							try {
-								forced = dbAvailable = checkOutDB(Configuration.getSharedACMname(), DB_KEY_OVERRIDE);				
-								sandboxMode = false;
-								break;
-							} catch (IOException e) {					
-								forced = dbAvailable = false;
-								sandboxMode = true;
-								Object[] options = {"Try again", "Use Demo Mode"};
-								onlineChoice = JOptionPane.showOptionDialog(null, "Cannot reach Literacy Bridge web server.  Do you want to get online now and try again or use Demo Mode?", "Cannot Connect to Server",JOptionPane.YES_NO_CANCEL_OPTION,
-										JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-								if (onlineChoice == -1)
-									System.exit(0);
-							}
-						} while (onlineChoice == 0);
-
-						if (forced)
-							JOptionPane.showMessageDialog(null,"You now have write access.");
-						else
-							JOptionPane.showMessageDialog(null,"Forcing did not work.");
-					}
-					else {
-						sandboxMode = true;
-					}
-				}
+				} 
+//				PEOPLE DON'T RESPECT THE FORCE WARNING, SO WE ARE TAKING AWAY THAT POWER
+//				else if (n==2) {
+//					dialogMessage = "Forcing write mode will cause " + getPosessor() + "\nto lose their work!\n\n" +
+//							"If you are sure you want to force write access,\ntype the word 'force' below.";
+//					String confirmation = (String)JOptionPane.showInputDialog(null,dialogMessage);
+//					if (confirmation != null && confirmation.equalsIgnoreCase("force")) {
+//						sandboxMode = false;
+//						do {	
+//							onlineChoice = 1; // don't repeat loop unless user chooses to
+//							try {
+//								forced = dbAvailable = checkOutDB(Configuration.getSharedACMname(), DB_KEY_OVERRIDE);				
+//								sandboxMode = false;
+//								break;
+//							} catch (IOException e) {					
+//								forced = dbAvailable = false;
+//								sandboxMode = true;
+//								Object[] options = {"Try again", "Use Demo Mode"};
+//								onlineChoice = JOptionPane.showOptionDialog(null, "Cannot reach Literacy Bridge web server.  Do you want to get online now and try again or use Demo Mode?", "Cannot Connect to Server",JOptionPane.YES_NO_CANCEL_OPTION,
+//										JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+//								if (onlineChoice == -1)
+//									System.exit(0);
+//							}
+//						} while (onlineChoice == 0);
+//
+//						if (forced)
+//							JOptionPane.showMessageDialog(null,"You now have write access.");
+//						else
+//							JOptionPane.showMessageDialog(null,"Forcing did not work.");
+//					}
+//					else {
+//						sandboxMode = true;
+//					}
+//				}
 			}
-			if (!forced && !sandboxMode) {
+			if (!sandboxMode) {
 				int n = 0;
 				if (!Configuration.isDisableUI()) {
 					if (getCurrentZipFilename().equalsIgnoreCase(DB_DOES_NOT_EXIST)) {
@@ -578,19 +579,19 @@ public class ControlAccess {
 			try {
 				status = checkInDB(Configuration.getSharedACMname(), key, filename); 
 				if (!status && saveWork && !Configuration.isDisableUI()) {
-					Object[] options = {"Force your version","Throw Away Your Latest Changes"};
-					n = JOptionPane.showOptionDialog(null, "Someone has forced control of this ACM.", "Cannot Checkin!",JOptionPane.YES_NO_CANCEL_OPTION,
-							JOptionPane.QUESTION_MESSAGE, null, options, options[1]);
-					if (n==0)
-						key = ControlAccess.DB_KEY_OVERRIDE;
-					else 
-						saveWork = false;
+					//Object[] options = {"Force your version","Throw Away Your Latest Changes"};
+					JOptionPane.showMessageDialog(null, "Someone has forced control of this ACM, so you cannot check-in your changes.\nIf you are worried about losing a lot of work, contact Cliff and he may be able to save you and your work.");
+					saveWork = false;  // zip is alredy written to dropbox an could be recovered.  !saveWork & status will delete checkoutfile marker but not any zips.
+					status = true; // to 
+					//if (n==0)
+					//	key = ControlAccess.DB_KEY_OVERRIDE;
+					//else 
 				}
 			} catch (IOException e) {
 				status = false;
 				if (!Configuration.isDisableUI()) {
 					Object[] options = {"Try again", "Shutdown"};
-					n = JOptionPane.showOptionDialog(null, "Cannot reach Literacy Bridge web server.  Do you want to get online and try again or shutdown and try later?", "Cannot Connect to Server",JOptionPane.YES_NO_CANCEL_OPTION,
+					n = JOptionPane.showOptionDialog(null, "Cannot reach Literacy Bridge web server.\nDo you want to get online and try again or shutdown and try later?", "Cannot Connect to Server",JOptionPane.YES_NO_CANCEL_OPTION,
 							JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
 				}
 			}
