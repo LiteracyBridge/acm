@@ -55,6 +55,10 @@ public class TreeTransferHandler extends TransferHandler {
 		// Get drop location info.
 		JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
 		TreePath dest = dl.getPath();
+		if (dest == null) {
+			return false;
+		}
+		
 		DefaultMutableTreeNode parent = (DefaultMutableTreeNode) dest.getLastPathComponent();
 		final CategoryTreeNodeObject target = (CategoryTreeNodeObject) parent.getUserObject();
 		
