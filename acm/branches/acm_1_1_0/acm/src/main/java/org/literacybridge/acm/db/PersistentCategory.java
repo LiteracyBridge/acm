@@ -179,6 +179,7 @@ public class PersistentCategory extends PersistentObject {
         return result;
     }
     
+    @Override
     public String toString() {
     	return uuid;
     }

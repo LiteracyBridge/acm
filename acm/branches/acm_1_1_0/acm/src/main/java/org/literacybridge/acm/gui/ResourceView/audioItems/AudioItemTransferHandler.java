@@ -4,6 +4,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.JComponent;
@@ -11,7 +12,7 @@ import javax.swing.JTable;
 import javax.swing.TransferHandler;
 
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.ResourceView.TreeTransferHandler;
 import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
 
 public class AudioItemTransferHandler extends TransferHandler {
@@ -24,12 +25,7 @@ public class AudioItemTransferHandler extends TransferHandler {
 			return false;
 		}
 
-		if (!support.isDataFlavorSupported(AudioItemView.AudioItemDataFlavor)) {
-			return false;
-		}
-		
-		if (Application.getFilterState().getSelectedTag() == null) {
-			// we only support ordering of audio items within tags
+		if (!support.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
 			return false;
 		}
 		
@@ -44,11 +40,16 @@ public class AudioItemTransferHandler extends TransferHandler {
 			return false;
 		}
 
-		// Get drop location info.
-		JTable.DropLocation dl = (JTable.DropLocation) support.getDropLocation();
-		int dropRow = dl.getRow();
-		// TODO: apply and persist sort order
-		return true;
+		try {
+			TreeTransferHandler.importExternalFiles(support, null);
+			return true;
+		} catch (UnsupportedFlavorException e) {
+			LOG.log(Level.WARNING, "Exception while importing files.", e);
+		} catch (IOException e) {
+			LOG.log(Level.WARNING, "Exception while importing files.", e);
+		}
+		
+		return false;
 	}
 
 	

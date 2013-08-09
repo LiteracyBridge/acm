@@ -81,7 +81,7 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.setShowGrid(false, false);
 		if (!ControlAccess.isACMReadOnly()) {
 			audioItemTable.setDragEnabled(true);
-			audioItemTable.setDropMode(DropMode.INSERT_ROWS);
+			audioItemTable.setDropMode(DropMode.ON);
 			audioItemTable.setTransferHandler(new AudioItemTransferHandler());
 		}
 		

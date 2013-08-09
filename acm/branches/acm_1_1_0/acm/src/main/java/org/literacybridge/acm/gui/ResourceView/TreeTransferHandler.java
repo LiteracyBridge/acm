@@ -7,6 +7,8 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
@@ -15,19 +17,21 @@ import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
+import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.db.Persistence;
-import org.literacybridge.acm.importexport.FileImporter;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.CategoryView.CategoryTreeNodeObject;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.BusyDialog;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.importexport.FileImporter;
 
 public class TreeTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = 1L;
+	private static final Logger LOG = Logger.getLogger(TreeTransferHandler.class.getName());
 
 	static DataFlavor[] supportedFlavors = new DataFlavor[] {
 		DataFlavor.javaFileListFlavor,
@@ -80,20 +84,22 @@ public class TreeTransferHandler extends TransferHandler {
 		// Extract transfer data.
 		try {
 			if (support.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-				importExternalFiles(support, target);
+				importExternalFiles(support, target.getCategory());
 				return true;
 			} else if (support.isDataFlavorSupported(AudioItemView.AudioItemDataFlavor)) {
 				assignCategory(support, target);
 				return true;
-			}
-			
+			}			
 		} catch (UnsupportedFlavorException e) {
-		} catch (IOException e) {}
+			LOG.log(Level.WARNING, "Exception while importing files.", e);
+		} catch (IOException e) {
+			LOG.log(Level.WARNING, "Exception while importing files.", e);
+		}
 		
 		return false;
 	}
 	
-	private void importExternalFiles(TransferHandler.TransferSupport support, final CategoryTreeNodeObject target) throws IOException, UnsupportedFlavorException {
+	public static void importExternalFiles(TransferHandler.TransferSupport support, final Category category) throws IOException, UnsupportedFlavorException {
 		Transferable t = support.getTransferable();
 		final List<File> files = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
 
@@ -108,9 +114,9 @@ public class TreeTransferHandler extends TransferHandler {
 				try {
 					for (File f : files) {
 						if (f.isDirectory()) {
-							FileImporter.getInstance().importDirectory(target.getCategory(), f, false);
+							FileImporter.getInstance().importDirectory(category, f, false);
 						} else {
-							FileImporter.getInstance().importFile(target.getCategory(), f);
+							FileImporter.getInstance().importFile(category, f);
 						}
 					}
 				} catch (IOException e) {

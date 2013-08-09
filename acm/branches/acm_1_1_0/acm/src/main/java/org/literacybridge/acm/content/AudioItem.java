@@ -61,6 +61,10 @@ public class AudioItem implements Persistable {
     }
         
 	public void addCategory(Category category) {
+		if (hasCategory(category)) {
+			return;
+		}
+		
 		// first we check if a leaf category is added (which should always be the case),
 		// otherwise we find an appropriate leaf
 		if (category.hasChildren()) {
@@ -73,7 +77,7 @@ public class AudioItem implements Persistable {
 
         // make sure all parents up to the root are added as well
 		do {
-			if (!mItem.hasPersistentAudioItemCategory(category.getPersistentObject())) {
+			if (!hasCategory(category)) {
 				mItem.addPersistentAudioItemCategory(category.getPersistentObject());
 			}
 			category = category.getParent();
