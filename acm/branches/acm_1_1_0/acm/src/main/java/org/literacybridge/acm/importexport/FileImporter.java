@@ -16,8 +16,6 @@ import java.util.logging.Logger;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.Configuration;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.metadata.MetadataSpecification;
-import org.literacybridge.acm.metadata.MetadataValue;
 
 public class FileImporter {
 	private static final Logger LOG = Logger.getLogger(FileImporter.class.getName());
@@ -71,6 +69,14 @@ public class FileImporter {
 			// check if file name matches an existing audio item id
 			
 			AudioItem item = AudioItem.getFromDatabase(title);
+			if (item == null) {
+				int pos = title.indexOf(FileSystemExporter.FILENAME_SEPARATOR);
+				if (pos != -1) {
+					String id = title.substring(pos + FileSystemExporter.FILENAME_SEPARATOR.length());
+					item = AudioItem.getFromDatabase(id);
+				}
+			}
+			
 			if (item != null) {
 				try {
 					Configuration.getRepository().updateAudioItem(item, file);
