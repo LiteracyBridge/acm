@@ -3,7 +3,7 @@ package org.literacybridge.acm;
 import java.io.File;
 
 public class Constants {
-	public final static String ACM_VERSION					= "v1.0r1097";
+	public final static String ACM_VERSION					= "v1.0r1104";
 	public final static String LiteracybridgeHomeDirName	= "LiteracyBridge";
 	public final static String ACM_DIR_NAME			    	= "ACM";
 	public final static String CACHE_DIR_NAME			    = "cache";
