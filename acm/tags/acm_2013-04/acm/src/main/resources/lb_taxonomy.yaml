@@ -1,0 +1,227 @@
+taxonomy:
+  revision: 8
+  categories:
+    '0' : 
+      name: Other Messages
+      children: 
+        '0-1' :
+          name: Talking Book
+        '0-2' : 
+          name: Favorites
+        '0-3' :
+          name: Communities
+    '1' : 
+      name: Agriculture
+      children: 
+        '1-0' :
+          name: General Agriculture
+        '1-1' : 
+          name: Crops
+          children : 
+            '1-1-0' :
+              name: General Crops
+            '1-1-1' :
+              name: Maize
+            '1-1-2' :
+              name: Millet
+            '1-1-3' :
+              name: Beans
+            '1-1-4' :
+              name: Groundnuts
+            '1-1-5' :
+              name: Rice
+        '1-2' :
+          name: Livestock
+          children:
+            '1-2-0' :
+              name: General Livestock
+            '1-2-1' :
+              name: Chickens/Fowl
+            '1-2-2' : 
+              name: Sheep
+            '1-2-3' : 
+              name: Goats
+            '1-2-4' : 
+              name: Cows
+            '1-2-5' : 
+              name: Donkeys
+        '1-3' : 
+          name: Agric Process
+          description: not crop/animal specific
+          children: 
+            '1-3-0' :
+              name: General Agric Process
+            '1-3-1' : 
+              name: Preparing land for the growing season
+            '1-3-2' : 
+              name: Planting / Sowing
+            '1-3-3' :
+              name: Maintaining crops (e.g. weeding)
+            '1-3-4' :
+              name: Harvesting
+            '1-3-5' :
+              name: Storing
+        '1-4' :
+          name: Agric Business
+          children:
+            '1-4-0' :
+              name: General Agric Business
+            '1-4-1' :
+              name: Marketing
+            '1-4-2' :
+              name: Selling
+        '1-5' :
+          name: Fish
+    '2' : 
+      name: Health
+      children:
+        '2-0' :
+          name: General Health
+        '2-1' :
+          name: HIV/Aids
+        '2-2' :
+          name: Malaria
+        '2-3' :
+          name: Tuberculosis
+        '2-4' :
+          name: Other infectious diseases
+        '2-5' :
+          name: Antenatal care
+        '2-6' :
+          name: Neonatal care
+        '2-7' :
+          name: Hygiene and sanitation
+        '2-8' :
+          name: Family planning
+    '3' :
+      name: Education
+      children:
+        '3-0' :
+          name: General Education
+        '3-1' :
+          name: Adult Literacy
+          children:
+            '3-1-0' :
+              name: General Adult Literacy
+            '3-1-1' :
+              name: Adult literacy Phase I
+            '3-1-2' :
+              name: Adult literacy Phase II
+            '3-1-3' :
+              name: Out-of-School-Teens Literacy
+        '3-2' :
+          name: School Lessons
+          children:
+            '3-2-0' :
+              name: General School Lessons
+            '3-2-1' : 
+              name: Pre-Kindergarten
+            '3-2-2' :
+              name: Kindergarten
+            '3-2-3' :
+              name: 1st year
+            '3-2-4' :
+              name: 2nd year
+            '3-2-5' :
+              name: 3rd year
+            '3-2-6' :
+              name: 4th year
+            '3-2-7' :
+              name: 5th year
+            '3-2-8' :
+              name: 6th year
+            '3-2-9' :
+              name: 7th year
+            '3-2-10' :
+              name: 8th year
+            '3-2-11' :
+              name: 9th year
+            '3-2-12' :
+              name: 10th year
+            '3-2-13' :
+              name: 11th year
+            '3-2-14' :
+              name: 12th year
+            '3-2-15' :
+              name: 13th year
+        '3-3' :
+          name: Science
+        '3-4' :
+          name: Math
+        '3-5' :
+          name: Business
+        '3-6' :
+          name: Environmental studies
+        '3-7' :
+          name: Social studies
+        '3-8' : 
+          name: Languages
+          children:
+            '3-8-0' :
+              name: General Languages
+            '3-8-1' : 
+              name: English
+            '3-8-2' :
+              name: Dagaare
+            '3-8-3' :
+              name: Sisaala
+    '4' :
+      name: Stories
+      children:
+        '4-0' :
+          name: General Stories
+        '4-1' :
+          name: Oral stories
+        '4-2' :
+          name: Spoken books
+    '5' :
+      name: Business
+      children:
+        '5-0' :
+          name: General Business
+        '5-1': 
+          name: Accounting
+        '5-2':
+          name: Marketing
+        '5-3':
+          name: Entrepreneurship
+        '5-4':
+          name: Finance
+    '6' :
+      name: Governance
+    '7' :
+      name: Music
+    '8' :
+      name: Diary
+    '9' :
+      name: Feedback from Users
+      children:
+        '9-0' :
+          name: General Feedback
+        '9-1':
+          name: Needs review
+        '9-2':
+          name: Useless
+        '9-3':
+          name: Health Questions
+        '9-4':
+          name: Agric Questions
+        '9-5':
+          name: Ideas, Concerns, Questions
+        '9-6':
+          name: Endorsements of TBs
+        '9-7':
+          name: No longer used
+        '9-8':
+          name: Potential Future Content
+        '9-9':
+          name: Nice Singing
+    '10':
+      name: Society and Culture
+      children:
+        '10-0':
+          name: General Society and Culture
+        '10-1':
+          name: Social Issues
+    '11':
+      name: Environment
