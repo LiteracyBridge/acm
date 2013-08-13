@@ -212,10 +212,10 @@ taxonomy:
           name: Agric Questions
           order: 30
         '9-5':
-          name: Ideas, Concerns, Questions
+          name: General Questions
           order: 50
         '9-6':
-          name: Endorsements of TBs
+          name: Endorsements
           order: 60
         '9-7':
           name: No longer used
@@ -226,6 +226,9 @@ taxonomy:
         '9-9':
           name: Nice Singing
           order: 80
+        '9-10':
+          name: Entertaining Messages
+          order: 90
     '10':
       name: Society and Culture
       order: 85
