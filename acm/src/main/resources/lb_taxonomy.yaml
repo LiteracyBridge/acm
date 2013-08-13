@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 11
+  revision: 12
   categories:
     '0' : 
       name: Other Messages
@@ -217,9 +217,6 @@ taxonomy:
         '9-6':
           name: Endorsements
           order: 60
-        '9-7':
-          name: No longer used
-          order: 99
         '9-8':
           name: Potential Future Content
           order: 70
