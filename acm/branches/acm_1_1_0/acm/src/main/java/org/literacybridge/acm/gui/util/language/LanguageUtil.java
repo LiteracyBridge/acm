@@ -3,7 +3,7 @@ package org.literacybridge.acm.gui.util.language;
 import java.util.Locale;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 
 public class LanguageUtil {
 
@@ -48,7 +48,7 @@ public class LanguageUtil {
 	}
 	
 	public static String getLocalizedLanguageName(Locale locale) {
-		String label = Configuration.getLanguageLabel(locale);
+		String label = ACMConfiguration.getCurrentDB().getLanguageLabel(locale);
 		if (label == null) {
 			label = locale.getDisplayLanguage(getUILanguage());
 		}

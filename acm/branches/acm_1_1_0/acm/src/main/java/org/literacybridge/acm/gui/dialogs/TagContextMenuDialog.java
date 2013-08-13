@@ -8,7 +8,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
@@ -20,18 +19,17 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.ControlAccess;
-//import org.literacybridge.acm.content.AudioItem;
-//import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
-//import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
-//import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
-import org.literacybridge.acm.metadata.MetadataSpecification;
+//import org.literacybridge.acm.content.AudioItem;
+//import org.literacybridge.acm.content.LocalizedAudioItem;
+//import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
+//import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
 
 public class TagContextMenuDialog extends JDialog implements WindowListener {
 	private static final Logger LOG = Logger.getLogger(TagContextMenuDialog.class.getName());
@@ -40,7 +38,7 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 			final IDataRequestResult data) {
 		super(parent, "", false);
 		
-		final boolean readOnly = ControlAccess.isACMReadOnly();
+		final boolean readOnly = ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly();
 		
 		setResizable(false);
 		setUndecorated(true);		
@@ -138,7 +136,7 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 			}
 		};
 		
-		if (ControlAccess.isACMReadOnly()) {
+		if (ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly()) {
 			deleteButton.setEnabled(false);
 		}
 		

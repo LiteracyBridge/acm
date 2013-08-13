@@ -19,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.ControlAccess;
 import org.literacybridge.acm.device.DeviceContents;
 import org.literacybridge.acm.device.DeviceInfo;
@@ -104,7 +105,7 @@ public class AudioItemImportDialog extends JDialog {
 		
 		
 		JButton okBtn = new JButton(LabelProvider.getLabel("IMPORT", LanguageUtil.getUILanguage()));
-		if (ControlAccess.isACMReadOnly()) {
+		if (ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly()) {
 			okBtn.setEnabled(false);
 			selectAllBtn.setEnabled(false);
 			selectNoneBtn.setEnabled(false);

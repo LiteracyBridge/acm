@@ -20,6 +20,8 @@ import javax.persistence.Query;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
+import org.literacybridge.acm.config.ACMConfiguration;
+
 @Entity
 @NamedQueries({
   @NamedQuery(name = "PersistentCategory.findAll", query = "select o from PersistentCategory o")
@@ -158,7 +160,7 @@ public class PersistentCategory extends PersistentObject {
     }
     
     public static PersistentCategory getFromDatabase(String uuid) {
-        EntityManager em = Persistence.getEntityManager();
+        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         PersistentCategory result = null;
         try {
             Query findObject = em.createQuery("SELECT o FROM PersistentCategory o WHERE o.uuid = '" + uuid + "'");

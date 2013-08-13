@@ -21,8 +21,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.config.Configuration;
-import org.literacybridge.acm.config.ControlAccess;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.PersistentCategory;
@@ -86,8 +85,8 @@ public class Application extends JXFrame {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				try {
-					if (!ControlAccess.isSandbox())
-						ControlAccess.updateDB();
+					if (!ACMConfiguration.getCurrentDB().getControlAccess().isSandbox())
+						ACMConfiguration.getCurrentDB().getControlAccess().updateDB();
 				}
 			    catch(Exception e1) {
 			    	e1.printStackTrace();
@@ -97,13 +96,13 @@ public class Application extends JXFrame {
 
 		String title = new String(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUILanguage())); 
 		title += " (" + Constants.ACM_VERSION + ")";
-		if (Configuration.getACMname() != null)
-			title += "                   " + Configuration.getACMname();
-		else if (Configuration.getSharedACMname() != null)
-			title += "                   " + Configuration.getSharedACMname();			
-		if (ControlAccess.isACMReadOnly())
+		if (ACMConfiguration.getACMname() != null)
+			title += "                   " + ACMConfiguration.getACMname();
+		else if (ACMConfiguration.getCurrentDB().getSharedACMname() != null)
+			title += "                   " + ACMConfiguration.getCurrentDB().getSharedACMname();			
+		if (ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly())
 			title += "                   * READ ONLY *";
-		if (ControlAccess.isSandbox())
+		if (ACMConfiguration.getCurrentDB().getControlAccess().isSandbox())
 			title += "                   CHANGES WILL *NOT* BE SAVED!   ";
 
 		setTitle(title);
@@ -147,7 +146,7 @@ public class Application extends JXFrame {
 		return this.player;
 	}
 	
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws Exception {
 		System.out.println("starting main()");
 		CommandLineParams params = new CommandLineParams();
 		CmdLineParser parser = new CmdLineParser(params);
@@ -162,16 +161,18 @@ public class Application extends JXFrame {
 		startUp(params);
 	}
 	
-	public static void startUp(CommandLineParams params) throws IOException {
+	public static void startUp(CommandLineParams params) throws Exception {
 //		String dbDirName = null, repositoryDirName= null;
 		// initialize config and generate random ID for this acm instance
-		Configuration.init(params);
+		ACMConfiguration.initialize(params);
+		
+		// TODO: when we have a homescreen this call will be delayed until the user selects a DB
+		ACMConfiguration.setCurrentDB(params.sharedACM);;
 		
 		boolean showUI = !params.disableUI;
 		
 		// init database
 		try {
-			Persistence.initialize();
 			// DB migration if necessary
 			System.out.print("Updating database... ");
 			Persistence.maybeRunMigration();

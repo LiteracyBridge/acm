@@ -16,6 +16,8 @@ import javax.persistence.Query;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
+import org.literacybridge.acm.config.ACMConfiguration;
+
 @Entity
 @NamedQueries({
   @NamedQuery(name = "PersistentLocalizedAudioItem.findAll", query = "select o from PersistentLocalizedAudioItem o")
@@ -121,7 +123,7 @@ public class PersistentLocalizedAudioItem extends PersistentObject {
     }
     
     public static PersistentLocalizedAudioItem getFromDatabase(String uuid) {
-        EntityManager em = Persistence.getEntityManager();
+        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         PersistentLocalizedAudioItem result = null;
         try {
             Query findObject = em.createQuery("SELECT o FROM PersistentLocalizedAudioItem o WHERE o.uuid = '" + uuid + "'");

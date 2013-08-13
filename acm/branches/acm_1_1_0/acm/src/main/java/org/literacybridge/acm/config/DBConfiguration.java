@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.StringTokenizer;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -23,55 +22,47 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.swing.JFileChooser;
+
+import javax.persistence.EntityManager;
 import javax.swing.JOptionPane;
+
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.gui.CommandLineParams;
+import org.literacybridge.acm.db.Persistence;
+import org.literacybridge.acm.db.Persistence.DatabaseConnection;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 import org.literacybridge.acm.repository.AudioItemRepository;
 
 @SuppressWarnings("serial")
-public class Configuration extends Properties {
-
-	private static final File LB_HOME_DIR = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
-	
-	private static Configuration instance;
-    private static String title;
-    private static File repositoryDirectory;
-    private static File cacheDirectory;
-    private static File dbDirectory;
-    private static File tbLoadersDirectory;
-    private static File sharedACMDirectory;
-	private static String sharedACM = null;
+public class DBConfiguration extends Properties {
+	private boolean initialized = false;
+    private File repositoryDirectory;
+    private File cacheDirectory;
+    private File dbDirectory;
+    private File tbLoadersDirectory;
+    private File sharedACMDirectory;
+	private String acmName = null;
 //  private static boolean pathsOverridden = false;
-    private static boolean disableUI = false;
-	private final static String USER_NAME = "USER_NAME";
-	private final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";
-	//private final static String DEFAULT_REPOSITORY = "DEFAULT_REPOSITORY";
-	//private final static String DEFAULT_DB = "DEFAULT_DB";
-	private final static String GLOBAL_SHARE_PATH = "GLOBAL_SHARE_PATH";
-	private final static String RECORDING_COUNTER_PROP = "RECORDING_COUNTER";
-	private final static String DEVICE_ID_PROP = "DEVICE_ID";
-	private final static String AUDIO_LANGUAGES = "AUDIO_LANGUAGES";	
-	private static List<Locale> audioLanguages = null;
-	private static Map<Locale,String> languageLables = new HashMap<Locale, String>();
+	private List<Locale> audioLanguages = null;
+	private Map<Locale,String> languageLables = new HashMap<Locale, String>();
     
-	private static AudioItemRepository repository;
+	private AudioItemRepository repository;
+	private ControlAccess controlAccess;
+	private DatabaseConnection dbConn;
 
-	public static Configuration getConfiguration() {
-		return instance;
+	public DBConfiguration(String acmName) {
+		this.acmName = acmName;
 	}
 	
-	public static AudioItemRepository getRepository() {
+	public AudioItemRepository getRepository() {
 		return repository;
 	}
 	
-	static void setRepository(AudioItemRepository newRepository) {
+    void setRepository(AudioItemRepository newRepository) {
 		repository = newRepository;
 	}
 	
 	// Call this methods to get the non-shared directory root for config, content cache, builds, etc...
-	public static String getACMDirectory() {
+	public String getACMDirectory() {
 		File acm = new File (getLiteracyBridgeHomeDir(), Constants.ACM_DIR_NAME);
 		if (!acm.exists())
 			acm.mkdirs();
@@ -79,36 +70,36 @@ public class Configuration extends Properties {
 	}
 		
 	public static File getLiteracyBridgeHomeDir() {
-		return LB_HOME_DIR;
+		return ACMConfiguration.LB_HOME_DIR;
 	}
 
-	static String getTempACMsDirectory() {
+	String getTempACMsDirectory() {
 		File temp = new File (getACMDirectory(), Constants.TempDir);
 		if (!temp.exists())
 			temp.mkdirs();
 		return temp.getAbsolutePath();
 	}
 	
-	public static File getDatabaseDirectory() {
+	public File getDatabaseDirectory() {
 		if (dbDirectory == null)
-			dbDirectory = new File(Configuration.getTempACMsDirectory(),Configuration.getSharedACMname() + "/" + Constants.DBHomeDir);
+			dbDirectory = new File(getTempACMsDirectory(), getSharedACMname() + "/" + Constants.DBHomeDir);
 		return dbDirectory;
 		//		return new File(getSharedACMDirectory(), Constants.DerbyDBHomeDir);
 	}
 	
-	public static File getRepositoryDirectory() {
+	public File getRepositoryDirectory() {
 		return repositoryDirectory;
 	}
 
-	public static File getCacheDirectory() {
+	public File getCacheDirectory() {
 		return cacheDirectory;
 	}
 
-	public static File getTBLoadersDirectory() {
+	public File getTBLoadersDirectory() {
 		return tbLoadersDirectory;
 	}
 	
-	public static File getTBBuildsDirectory() {
+	public File getTBBuildsDirectory() {
 		return new File(getACMDirectory(), Constants.TBBuildsHomeDirName);
 	}
 
@@ -123,15 +114,11 @@ public class Configuration extends Properties {
 		}
 	}
 
-	public static void init(CommandLineParams args) {
+	public void init() {
 //		File dbPath, repPath;
-		if (instance == null) {
-			instance = new Configuration();
-			disableUI = args.disableUI;
+		if (!initialized) {
 //			if (args.readonly)
 //				instance.setReadOnly(true); 
-			if (args.titleACM != null)
-				setACMtitle(args.titleACM);
 /*			NOT CURRENTLY USING THIS PARAMETER --  NEED TO RETHINK IT WHEN WE NEED IT
   			if (args.pathDB != null) {
 				dbPath = new File(args.pathDB);
@@ -146,58 +133,57 @@ public class Configuration extends Properties {
 					}
 			} else 
 */
-			if (args.sharedACM != null) {
-				//pathsOverridden = true;
-				setSharedACMname(args.sharedACM);
-			}
 			InitializeAcmConfiguration();
 			initializeLogger();
-			ControlAccess.init();
+			controlAccess = new ControlAccess(this);
+			controlAccess.init();
+			
+			initialized = true;
 		}
 	}
 	
-	private static void setSharedACMname(String newName) {
-		sharedACM = newName;
-	}
-
-	public static String getSharedACMname() {
-		return sharedACM;
+	public void connectDB() throws Exception {
+		this.dbConn = Persistence.initialize(this);
 	}
 	
-	public static File getSharedACMDirectory() {
+	public EntityManager getEntityManager() {
+		return dbConn.getEntityManager();
+	}
+	
+	public DatabaseConnection getDatabaseConnection() {
+		return dbConn;
+	}
+	
+	public ControlAccess getControlAccess() {
+		return controlAccess;
+	}
+	
+	public String getSharedACMname() {
+		return acmName;
+	}
+	
+	public File getSharedACMDirectory() {
 		return sharedACMDirectory;		
 	}
-	
-	public static boolean isDisableUI() {
-		return disableUI;
-	}
-	
-	private static void setACMtitle(String newName) {
-		title = newName;
-	}
-	
-	public static String getACMname() {
-		return title;
+		
+	public String getUserName() {
+		return getProperty("USER_NAME");
 	}
 
-	public static String getUserName() {
-		return instance.getProperty("USER_NAME");
-	}
-
-	public static String getUserContact() {
-		return instance.getProperty(USER_CONTACT_INFO);
+	public String getUserContact() {
+		return getProperty(Constants.USER_CONTACT_INFO);
 	}
 	
-	public static String getRecordingCounter() {
-		return instance.getProperty(RECORDING_COUNTER_PROP);
+	public String getRecordingCounter() {
+		return getProperty(Constants.RECORDING_COUNTER_PROP);
 	}
 	
-	public static void setRecordingCounter(String counter) {
-		instance.setProperty(RECORDING_COUNTER_PROP, counter);
+	public void setRecordingCounter(String counter) {
+		setProperty(Constants.RECORDING_COUNTER_PROP, counter);
 	}
 	
-	public static String getDeviceID() throws IOException {
-		String value = instance.getProperty(DEVICE_ID_PROP);
+	public String getDeviceID() throws IOException {
+		String value = getProperty(Constants.DEVICE_ID_PROP);
 		if (value == null) {
 			final int n = 10;
 			Random rnd = new Random();
@@ -207,14 +193,14 @@ public class Configuration extends Properties {
 				builder.append(Character.forDigit(rnd.nextInt(Character.MAX_RADIX), Character.MAX_RADIX));
 			}
 			value = builder.toString();
-			instance.setProperty(DEVICE_ID_PROP, value);
-			instance.writeProps();
+			setProperty(Constants.DEVICE_ID_PROP, value);
+			writeProps();
 		}
 		
 		return value;
 	}
 	
-	public static String getNewAudioItemUID() throws IOException {
+	public String getNewAudioItemUID() throws IOException {
 		String value = getRecordingCounter();
 		int counter = (value == null) ? 0 : Integer.parseInt(value, Character.MAX_RADIX);
 		counter++;
@@ -223,21 +209,21 @@ public class Configuration extends Properties {
 		
 		// make sure we remember that this uuid was already used
 		setRecordingCounter(value);
-		instance.writeProps();
+		writeProps();
 		
 		return uuid;
 	}
 
 	private final static Pattern LANGUAGE_LABEL_PATTERN = Pattern.compile(".*\\(\"(.+)\"\\).*");
 	
-	public static String getLanguageLabel(Locale locale) {
+	public String getLanguageLabel(Locale locale) {
 		return languageLables.get(locale);
 	}
 	
-	public static List<Locale> getAudioLanguages() {
+	public List<Locale> getAudioLanguages() {
 		if (audioLanguages == null) {
 			audioLanguages = new ArrayList<Locale>();
-			String languages = instance.getProperty(AUDIO_LANGUAGES);
+			String languages = getProperty(Constants.AUDIO_LANGUAGES);
 			if (languages != null) {
 				StringTokenizer tokenizer = new StringTokenizer(languages, ", ");
 				while (tokenizer.hasMoreTokens()) {
@@ -270,17 +256,15 @@ public class Configuration extends Properties {
 //    	dbDirectory = f; // new File(f,Constants.DerbyDBHomeDir);
 //    }
 
-    private static void setRepositoryDirectory(File f) {
+    private void setRepositoryDirectory(File f) {
     	repositoryDirectory = f; //new File(f,Constants.RepositoryHomeDirName);
     }
     
-	private static File getConfigurationPropertiesFile() {
+	private File getConfigurationPropertiesFile() {
 		return new File(getACMDirectory(), Constants.CONFIG_PROPERTIES);
 	}
 
-	private static void InitializeAcmConfiguration() {
-		File globalShare = null;
-
+	private void InitializeAcmConfiguration() {
 		cacheDirectory = new File(getACMDirectory(), Constants.CACHE_DIR_NAME);		
 		if (!cacheDirectory.exists()) {
 			cacheDirectory.mkdirs();
@@ -288,39 +272,15 @@ public class Configuration extends Properties {
 		if (getConfigurationPropertiesFile().exists()) {
 			try {
 				BufferedInputStream in = new BufferedInputStream(new FileInputStream(getConfigurationPropertiesFile()));
-				instance.load(in);
+				load(in);
 			} catch (IOException e) {
 				throw new RuntimeException("Unable to load configuration file: " + getConfigurationPropertiesFile(), e);
 			}
 		}
 
-		String globalSharePath = instance.getProperty(GLOBAL_SHARE_PATH);
-		if (globalSharePath != null) {
-			globalShare = new File (globalSharePath);
-		} 
-		if (globalSharePath == null || globalShare == null || !globalShare.exists()) {
-			//try default dropbox installation
-			globalShare = new File (Constants.USER_HOME_DIR,Constants.DefaultSharedDirName1);
-			if (!globalShare.exists())
-				globalShare = new File (Constants.USER_HOME_DIR,Constants.DefaultSharedDirName2);
-				
-		}
-		if (!globalShare.exists()) {
-			JFileChooser fc = new JFileChooser();
-			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-			fc.setDialogTitle("Select Dropbox directory.");
-			int returnVal = fc.showOpenDialog(null);
-			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				globalShare = fc.getSelectedFile();
-			} else if(getDatabaseDirectory() == null || getRepositoryDirectory() == null) {
-				JOptionPane.showMessageDialog(null,"Dropbox directory has not been identified. Shutting down.");
-				System.exit(0);								
-			}
-		}
-		instance.put(GLOBAL_SHARE_PATH, globalShare.getAbsolutePath());
 
 		if (getSharedACMname() != null && (getDatabaseDirectory() == null || getRepositoryDirectory() == null)) {
-			File fACM = new File(globalShare,getSharedACMname());
+			File fACM = new File(ACMConfiguration.getGlobalShareDir(), getSharedACMname());
 			if (fACM.exists()) {
 /*				File fDB = new File(fACM,Constants.DBHomeDir);
 				setDatabaseDirectory(fDB);
@@ -336,17 +296,17 @@ public class Configuration extends Properties {
 			}
 		}
 		
-		if (!instance.containsKey(USER_NAME)) {
+		if (!containsKey(Constants.USER_NAME)) {
 			String username = (String)JOptionPane.showInputDialog(null, "Enter Username:", "Missing Username", JOptionPane.PLAIN_MESSAGE);
-			instance.put(USER_NAME, username);
+			put(Constants.USER_NAME, username);
 		}
-		if (!instance.containsKey(USER_CONTACT_INFO)) {
+		if (!containsKey(Constants.USER_CONTACT_INFO)) {
 			String contactinfo = (String)JOptionPane.showInputDialog(null, "Enter Phone #:", "Missing Contact Info", JOptionPane.PLAIN_MESSAGE);
-			instance.put(USER_CONTACT_INFO, contactinfo);
+			put(Constants.USER_CONTACT_INFO, contactinfo);
 		}		
-		if (!instance.containsKey(AUDIO_LANGUAGES)) {
-			instance.put(AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),tw(\"Twi\"),sfw(\"Sehwi\")");
-			instance.writeProps();
+		if (!containsKey(Constants.AUDIO_LANGUAGES)) {
+			put(Constants.AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),tw(\"Twi\"),sfw(\"Sehwi\")");
+			writeProps();
 		}
 /*		COMMENTING THIS OUT SINCE WE ALWAYS PASS NAME OF ACM NOW - NEED TO RETHINK WHEN WE WANT TO USE CODE LIKE THIS AGAIN
 		if (!pathsOverridden) {
@@ -399,12 +359,12 @@ public class Configuration extends Properties {
 			}					
 		}
 */
-		sharedACMDirectory = new File(globalShare, getSharedACMname());
+		sharedACMDirectory = new File(ACMConfiguration.getGlobalShareDir(), getSharedACMname());
 		tbLoadersDirectory = new File(sharedACMDirectory, Constants.TBLoadersHomeDir);
-		instance.writeProps();
+		writeProps();
 	}	
 	
-	private static void initializeLogger() {
+	private void initializeLogger() {
 		try {
 			// Get the global logger to configure it
 		    Logger logger = Logger.getLogger("");

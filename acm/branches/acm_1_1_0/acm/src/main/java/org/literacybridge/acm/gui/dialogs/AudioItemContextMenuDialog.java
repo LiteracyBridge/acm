@@ -20,7 +20,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.ControlAccess;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
@@ -43,7 +43,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 			final AudioItemView audioItemView, final IDataRequestResult data) {
 		super(parent, "", false);
 		
-		final boolean readOnly = ControlAccess.isACMReadOnly();
+		final boolean readOnly = ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly();
 		
 		setResizable(false);
 		setUndecorated(true);		
@@ -103,8 +103,8 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 							try {
 								a.destroy();
 								// it's okay to delete from DB but cannot delete the .a18 file since that's in the shared (dropbox) repository
-								if (!ControlAccess.isACMReadOnly() && !ControlAccess.isSandbox())
-									Configuration.getRepository().delete(a);
+								if (!ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly() && !ACMConfiguration.getCurrentDB().getControlAccess().isSandbox())
+									ACMConfiguration.getCurrentDB().getRepository().delete(a);
 							} catch (Exception e) {
 								LOG.log(Level.WARNING, "Unable to delete audioitem id=" + a.getUuid(), e);
 							}
@@ -190,7 +190,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 			}
 		};
 		
-		if (ControlAccess.isACMReadOnly()) {
+		if (ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly()) {
 			deleteButton.setEnabled(false);
 		}
 		

@@ -18,6 +18,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.gui.Application;
@@ -144,7 +145,7 @@ public class TreeTransferHandler extends TransferHandler {
 
 				EntityManager em = null;
 				try {
-					em = Persistence.getEntityManager();
+					em = ACMConfiguration.getCurrentDB().getEntityManager();
 					EntityTransaction transaction = em.getTransaction();
 					transaction.begin();
 					try {

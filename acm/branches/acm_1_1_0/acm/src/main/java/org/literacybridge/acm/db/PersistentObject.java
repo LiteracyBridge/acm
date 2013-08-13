@@ -9,6 +9,8 @@ import javax.persistence.EntityTransaction;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 
+import org.literacybridge.acm.config.ACMConfiguration;
+
 
 @MappedSuperclass
 public abstract class PersistentObject implements Serializable, Persistable {
@@ -32,7 +34,7 @@ public abstract class PersistentObject implements Serializable, Persistable {
         EntityManager em = null;
         
         try {
-            em = Persistence.getEntityManager();
+            em = ACMConfiguration.getCurrentDB().getEntityManager();
             EntityTransaction t = null;
             try {
                 t = em.getTransaction();
@@ -65,7 +67,7 @@ public abstract class PersistentObject implements Serializable, Persistable {
         EntityManager em = null;
         
         try {
-            em = Persistence.getEntityManager();
+            em = ACMConfiguration.getCurrentDB().getEntityManager();
             EntityTransaction t = null;
             try {
                 t = em.getTransaction();

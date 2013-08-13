@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.repository.AudioItemRepository;
@@ -18,7 +18,7 @@ public class FileSystemExporter {
 		throws IOException {
 		
 		try {
-			AudioItemRepository repository = Configuration.getRepository();
+			AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
 			
 			for (LocalizedAudioItem localizedAudioItem : selectedAudioItems) {				
 				// first: check which formats we have

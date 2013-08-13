@@ -24,4 +24,13 @@ public class Constants {
 	
     public final static File USER_HOME_DIR = new File(System.getProperty("user.home", "."));
     public final static long CACHE_SIZE_IN_BYTES			= 2L * 1024L * 1024L * 1024L; // 2GB
+    
+	public final static String USER_NAME = "USER_NAME";
+	public final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";
+	//public final static String DEFAULT_REPOSITORY = "DEFAULT_REPOSITORY";
+	//public final static String DEFAULT_DB = "DEFAULT_DB";
+	public final static String GLOBAL_SHARE_PATH = "GLOBAL_SHARE_PATH";
+	public final static String RECORDING_COUNTER_PROP = "RECORDING_COUNTER";
+	public final static String DEVICE_ID_PROP = "DEVICE_ID";
+	public final static String AUDIO_LANGUAGES = "AUDIO_LANGUAGES";	
  }

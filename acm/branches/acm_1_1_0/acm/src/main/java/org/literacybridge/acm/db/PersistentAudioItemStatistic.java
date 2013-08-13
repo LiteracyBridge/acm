@@ -14,6 +14,7 @@ import javax.persistence.Query;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.types.MetadataStatisticsField;
 
@@ -144,7 +145,7 @@ public class PersistentAudioItemStatistic extends PersistentObject {
     }
     
     public static PersistentAudioItemStatistic getFromDatabase(String deviceId) {
-        EntityManager em = Persistence.getEntityManager();
+        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         PersistentAudioItemStatistic result = null;
         try {
             Query findObject = em.createQuery("SELECT o FROM PersistentAudioItemStatistic o WHERE o.device_id = '" + deviceId + "'");

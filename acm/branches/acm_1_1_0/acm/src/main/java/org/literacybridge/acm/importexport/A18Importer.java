@@ -10,7 +10,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
@@ -54,7 +54,7 @@ public class A18Importer extends Importer {
 			
 			if (metadata.getNumberOfFields() == 0) {
 				// legacy mode
-				audioItem = new AudioItem(Configuration.getNewAudioItemUID());
+				audioItem = new AudioItem(ACMConfiguration.getCurrentDB().getNewAudioItemUID());
 				String fileName = file.getName();
 				metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
 				metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER, new MetadataValue<String>(audioItem.getUuid()));
@@ -109,7 +109,7 @@ public class A18Importer extends Importer {
 				return;
 			}
 			
-			AudioItemRepository repository = Configuration.getRepository();
+			AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
 			repository.storeAudioFile(audioItem, file);
 			
 			audioItem.commit();

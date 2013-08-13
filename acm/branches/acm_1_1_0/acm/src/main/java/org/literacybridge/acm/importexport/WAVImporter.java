@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.Locale;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
@@ -22,7 +22,7 @@ public class WAVImporter extends Importer {
 	@Override
 	protected void importSingleFile(Category category, File file) throws IOException {
 		try {
-			AudioItem audioItem = new AudioItem(Configuration.getNewAudioItemUID());
+			AudioItem audioItem = new AudioItem(ACMConfiguration.getCurrentDB().getNewAudioItemUID());
 			audioItem.addCategory(category);
 
 			LocalizedAudioItem localizedAudioItem = new LocalizedAudioItem(audioItem.getUuid() + "-en", Locale.ENGLISH);
@@ -36,7 +36,7 @@ public class WAVImporter extends Importer {
 			metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE, 
 					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 			
-			AudioItemRepository repository = Configuration.getRepository();
+			AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
 			repository.storeAudioFile(audioItem, file);			
 
 			audioItem.commit();			

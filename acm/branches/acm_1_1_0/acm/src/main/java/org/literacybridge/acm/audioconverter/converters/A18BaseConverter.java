@@ -8,7 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Map;
 
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.utils.IOUtils;
 
@@ -53,7 +53,7 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
 				}
 			}
 			
-			if (tmpDir != null && !tmpDir.equals(targetDir) && targetDir.getAbsolutePath().startsWith(Configuration.getSharedACMDirectory().getAbsolutePath())) {
+			if (tmpDir != null && !tmpDir.equals(targetDir) && targetDir.getAbsolutePath().startsWith(ACMConfiguration.getCurrentDB().getSharedACMDirectory().getAbsolutePath())) {
 				// targetDir should never be in Dropbox because of some strange interaction with Dropbox that has caused bad A18 output 
 				ultimateDestDir = targetDir;
 				targetDir = tmpDir;

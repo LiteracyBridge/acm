@@ -18,6 +18,8 @@ import javax.persistence.Query;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
+import org.literacybridge.acm.config.ACMConfiguration;
+
 @Entity
 @NamedQueries({
   @NamedQuery(name = "PersistentTag.findAll", query = "select o from PersistentTag o")
@@ -90,7 +92,7 @@ public class PersistentTag extends PersistentObject {
     }
     
     public static PersistentTag getFromDatabase(String uuid) {
-        EntityManager em = Persistence.getEntityManager();
+        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         PersistentTag result = null;
         try {
             Query findObject = em.createQuery("SELECT o FROM PersistentTag o WHERE o.uuid = '" + uuid + "'");

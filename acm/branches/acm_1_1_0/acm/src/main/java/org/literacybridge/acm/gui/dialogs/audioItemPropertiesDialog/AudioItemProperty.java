@@ -2,7 +2,7 @@ package org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog;
 
 import java.util.Locale;
 
-import org.literacybridge.acm.config.ControlAccess;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
@@ -32,7 +32,7 @@ public abstract class AudioItemProperty<V> {
 	}
 	
 	public boolean showEditIcon() {
-		return !ControlAccess.isACMReadOnly() && showEditIcon;
+		return !ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly() && showEditIcon;
 	}
 	
 	public static class MetadataProperty extends AudioItemProperty<String> {

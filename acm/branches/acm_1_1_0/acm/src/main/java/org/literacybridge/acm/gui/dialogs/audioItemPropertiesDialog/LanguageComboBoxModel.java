@@ -5,7 +5,7 @@ import java.util.Locale;
 
 import javax.swing.DefaultComboBoxModel;
 
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 
 public class LanguageComboBoxModel extends DefaultComboBoxModel {
@@ -13,7 +13,7 @@ public class LanguageComboBoxModel extends DefaultComboBoxModel {
 	private Object selectedItem;
 	
 	public LanguageComboBoxModel() {
-		supportedLanguages = Configuration.getAudioLanguages();
+		supportedLanguages = ACMConfiguration.getCurrentDB().getAudioLanguages();
 	}
 
 	@Override

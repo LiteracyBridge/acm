@@ -51,8 +51,7 @@ import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
-import org.literacybridge.acm.config.Configuration;
-import org.literacybridge.acm.config.ControlAccess;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.core.MessageBus.Message;
 import org.literacybridge.acm.db.PersistentCategory;
@@ -125,7 +124,7 @@ public class CategoryView extends ACMContainer implements Observer {
 		createTasks();	
 		createLanguageList();
 		addOptionList();
-		if (!ControlAccess.isACMReadOnly()) {
+		if (!ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly()) {
 			addDragAndDrop();
 		}
 		JScrollPane taskPane = new JScrollPane(taskPaneContainer);
@@ -259,7 +258,7 @@ public class CategoryView extends ACMContainer implements Observer {
 				addNewTag();
 			}
 		});
-		if (ControlAccess.isACMReadOnly()) {
+		if (ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly()) {
 		    addTagButton.setEnabled(false);
 		}
 		tagsPane.add(addTagButton);
@@ -369,7 +368,7 @@ public class CategoryView extends ACMContainer implements Observer {
 	}
 
 	private void createLanguageList() {
-		List<Locale> audioLanguages = Configuration.getAudioLanguages();
+		List<Locale> audioLanguages = ACMConfiguration.getCurrentDB().getAudioLanguages();
 		for (Locale locale : audioLanguages) {
 			languagesList.add(new LanguageLabel(locale));			
 		}

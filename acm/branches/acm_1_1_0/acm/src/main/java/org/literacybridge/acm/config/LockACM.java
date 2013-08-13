@@ -11,9 +11,9 @@ public class LockACM {
     private static FileChannel channel;
     private static FileLock lock;
      
-    public LockACM() {
+    public LockACM(DBConfiguration config) {
         try {
-            f = new File(Configuration.getTempACMsDirectory() + "/" + Configuration.getSharedACMname() + ".lock");
+            f = new File(config.getTempACMsDirectory() + "/" +config.getSharedACMname() + ".lock");
             // Check if the lock exist
             if (f.exists()) // if exist try to delete it
                 f.delete();

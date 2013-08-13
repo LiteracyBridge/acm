@@ -17,7 +17,9 @@ import java.util.Calendar;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.JOptionPane;
+
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
@@ -31,28 +33,33 @@ public class ControlAccess {
 	private final static String DB_ZIP_FILENAME_INITIAL = new String (DB_ZIP_FILENAME_PREFIX + "1.zip");
 	private final static String DB_DOES_NOT_EXIST = "NULL"; // PHP returns this if no checkin file found
 	private final static String DB_KEY_OVERRIDE = new String("force");
-    static boolean readOnly = false;
-    private static boolean sandbox = false;
-    private static String possessor;
-    private static DBInfo dbInfo;
+    boolean readOnly = false;
+    private boolean sandbox = false;
+    private String possessor;
+    private DBInfo dbInfo;
+    private final DBConfiguration config;
     
-    private static void setDBKey(String key) {
+    public ControlAccess(DBConfiguration config) {
+    	this.config = config;
+    }
+    
+    private void setDBKey(String key) {
     	dbInfo.setDbKey(key);
     }
     
-    private static String getDBKey() {
+    private String getDBKey() {
     	return dbInfo.getDbKey();
     }
 
-    private static void setPossessor(String name) {
+    private void setPossessor(String name) {
     	possessor = name;
     }
     
-    private static String getPosessor() {
+    private String getPosessor() {
     	return possessor;
     }
 
-    private static boolean setZipFilenames(String currentFilename) {
+    private boolean setZipFilenames(String currentFilename) {
     	boolean goodName = false;
     	String nextFilename = null;
     	
@@ -80,18 +87,18 @@ public class ControlAccess {
     	return goodName;
     }
 
-    private static String getCurrentZipFilename() {
+    private String getCurrentZipFilename() {
     	return dbInfo.getCurrentFilename();
     }
     
-    public static String getNextZipFilename() {
+    public String getNextZipFilename() {
     	return dbInfo.getNextFilename();
     }
     
-	public static File getSandboxDirectory() {
+	public File getSandboxDirectory() {
 		File fSandbox = null; 
 		if (isSandbox()) {
-			fSandbox = new File(Configuration.getTempACMsDirectory(),Configuration.getSharedACMname() + "/" + Constants.RepositoryHomeDir);
+			fSandbox = new File(config.getTempACMsDirectory(),config.getSharedACMname() + "/" + Constants.RepositoryHomeDir);
 		}
 		return fSandbox;
 	}
@@ -101,7 +108,7 @@ public class ControlAccess {
 //   	sandboxDirectory = f; 
 //    }
     
-	public static boolean isACMReadOnly() {
+	public boolean isACMReadOnly() {
 		return readOnly;
 	}	
 
@@ -109,29 +116,29 @@ public class ControlAccess {
 		readOnly = isRW;
 	}
 
-	private static File getDBAccessFile() {
-		return new File(Configuration.getSharedACMDirectory(), Constants.DB_ACCESS_FILENAME);
+	private File getDBAccessFile() {
+		return new File(config.getSharedACMDirectory(), Constants.DB_ACCESS_FILENAME);
 	}
 
-	public static boolean isSandbox() {
+	public boolean isSandbox() {
 		return sandbox;
 	}
 	
-	private static void setSandbox(boolean isSandbox) {
+	private void setSandbox(boolean isSandbox) {
 		sandbox = isSandbox;
 	}
 
-	private static void deleteLocalDB() {
+	private void deleteLocalDB() {
 		try {
 			// deleting old local DB so that next startup knows everything shutdown normally
-			File oldDB = new File(Configuration.getTempACMsDirectory(),Configuration.getSharedACMname());
+			File oldDB = new File(config.getTempACMsDirectory(), config.getSharedACMname());
 			FileUtils.deleteDirectory(oldDB);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}		
 	}
 	
-	private static boolean isOnline() {
+	private boolean isOnline() {
 		boolean result = false;
 		URLConnection connection = null;
 		try {
@@ -148,19 +155,19 @@ public class ControlAccess {
 		return result;
 	}
 
-	public static void init() {
+	public void init() {
 		try {
 			@SuppressWarnings("unused")
-			LockACM l = new LockACM();
+			LockACM l = new LockACM(config);
 		} catch (RuntimeException e) {
 			JOptionPane.showMessageDialog(null, "This ACM is already opened.");
 			System.exit(0);
 		}
 		if (dbInfo == null)
-			dbInfo = new DBInfo();
+			dbInfo = new DBInfo(config);
 		if (dbInfo.isCheckedOut()) {
 			setSandbox(false);
-			if (!Configuration.isDisableUI()) {
+			if (!ACMConfiguration.isDisableUI()) {
 				JOptionPane.showMessageDialog(null,"You have already checked out this ACM.\nYou can now continue making changes to it.");
 			}				
 		} else {
@@ -168,28 +175,28 @@ public class ControlAccess {
 			determineRWStatus();
 			createDBMirror();				
 		}
-		System.out.println("  Repository:                     " + Configuration.getRepositoryDirectory());
-		System.out.println("  Temp Database:                  " + Configuration.getDatabaseDirectory());
+		System.out.println("  Repository:                     " + config.getRepositoryDirectory());
+		System.out.println("  Temp Database:                  " + config.getDatabaseDirectory());
 		System.out.println("  Temp Repository (sandbox mode): " + getSandboxDirectory());
 		System.out.println("  UserRWAccess:                   " + userHasWriteAccess());
 		System.out.println("  online:                         " + isOnline());
 
-		Configuration.setRepository(new CachingRepository(
-				new FileSystemRepository(Configuration.getCacheDirectory(), 
+		config.setRepository(new CachingRepository(
+				new FileSystemRepository(config.getCacheDirectory(), 
 						new FileSystemRepository.FileSystemGarbageCollector(Constants.CACHE_SIZE_IN_BYTES,
 							new FilenameFilter() {
 								@Override public boolean accept(File file, String name) {
 									return name.toLowerCase().endsWith("." + AudioFormat.WAV.getFileExtension());
 								}
 							})),
-				new FileSystemRepository(Configuration.getRepositoryDirectory()),
+				new FileSystemRepository(config.getRepositoryDirectory()),
 				isSandbox()?new FileSystemRepository(getSandboxDirectory()):null));
 //		instance.repository.convert(audioItem, targetFormat);				
 	}
 
-	private static void createDBMirror() {
+	private void createDBMirror() {
 		// String line;
-		File toDir = Configuration.getDatabaseDirectory();
+		File toDir = config.getDatabaseDirectory();
 		String dbFilename = getCurrentZipFilename();
 		try {
 			//File oldDB = new File (toDir,Configuration.getSharedACMname());
@@ -197,7 +204,7 @@ public class ControlAccess {
 			//	oldDB.mkdir(); // recreate db directory that was just deleted
 			//	System.out.println("Created new empty DB dir");
 			//} else {
-				File dbZip = new File(Configuration.getSharedACMDirectory(),dbFilename);
+				File dbZip = new File(config.getSharedACMDirectory(),dbFilename);
 				System.out.println("Started DB Mirror:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
 				ZipUnzip.unzip(dbZip, toDir);
 				//FileUtils.copyDirectoryToDirectory(fromDir, toDir);
@@ -208,13 +215,13 @@ public class ControlAccess {
 		}		
 	}
 
-	private static boolean setCurrentFileToLastModified() {
+	private boolean setCurrentFileToLastModified() {
 		String filenameFallback = null;
 		File[] files;
 		long lastModified = 0;
 		boolean foundOne = false;
 		
-		files = Configuration.getSharedACMDirectory().listFiles(new FilenameFilter() {
+		files = config.getSharedACMDirectory().listFiles(new FilenameFilter() {
 			@Override public boolean accept(File dir, String name) {
 				String lowercase = name.toLowerCase();
 				return lowercase.endsWith(".zip");
@@ -232,13 +239,13 @@ public class ControlAccess {
 		return foundOne;
 	}
 	
-	private static boolean haveLatestDB() {
+	private boolean haveLatestDB() {
 		String filenameShouldHave = getCurrentZipFilename();
 		
 		if (filenameShouldHave.equalsIgnoreCase(ControlAccess.DB_DOES_NOT_EXIST))
 			return true;  // if the ACM is new, you have the latest there is (nothing)
 		
-		File fileShouldHave = new File(Configuration.getSharedACMDirectory(),filenameShouldHave);
+		File fileShouldHave = new File(config.getSharedACMDirectory(),filenameShouldHave);
 		boolean status;
 		if (fileShouldHave.exists()) {
 			status = true;
@@ -250,7 +257,7 @@ public class ControlAccess {
 		return status;
 	}
 	
-	private static void determineRWStatus() {
+	private void determineRWStatus() {
 		boolean sandboxMode = false;
 		String dialogMessage = new String();
 		boolean dbAvailable = false;
@@ -261,11 +268,11 @@ public class ControlAccess {
 			online = false;
 			sandboxMode = true;
 			if (setCurrentFileToLastModified()) {	
-				if (!Configuration.isDisableUI()) {
+				if (!ACMConfiguration.isDisableUI()) {
 					JOptionPane.showMessageDialog(null,"Cannot connect to Literacy Bridge server.");
 				}
 			} else {
-				if (!Configuration.isDisableUI()) {
+				if (!ACMConfiguration.isDisableUI()) {
 					JOptionPane.showMessageDialog(null,"Cannot connect to Literacy Bridge server and no available database. Shutting down.");
 				}
 				System.exit(0);
@@ -276,12 +283,12 @@ public class ControlAccess {
 			do {
 				onlineChoice = 1; // don't repeat loop unless user chooses to
 				try {
-					dbAvailable = checkOutDB(Configuration.getSharedACMname(), new String("statusCheck"));
+					dbAvailable = checkOutDB(config.getSharedACMname(), new String("statusCheck"));
 					break;
 				} catch (IOException e) {					
 					dbAvailable = false;
 					Object[] options = {"Try again", "Use Demo Mode"};
-					if (!Configuration.isDisableUI()) {
+					if (!ACMConfiguration.isDisableUI()) {
 						onlineChoice = JOptionPane.showOptionDialog(null, "Cannot reach Literacy Bridge web server.  Do you want to get online now and try again or use Demo Mode?", "Cannot Connect to Server",JOptionPane.YES_NO_CANCEL_OPTION,
 								JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
 					}
@@ -292,7 +299,7 @@ public class ControlAccess {
 			if (dbAvailable && !haveLatestDB()) {
 				if (getCurrentZipFilename() == null) {
 					// no zip exists at all -- must shut down
-					if (!Configuration.isDisableUI()) {
+					if (!ACMConfiguration.isDisableUI()) {
 						JOptionPane.showMessageDialog(null,"There is no copy of this ACM database on this computer.\nIt may be that the database has not been uploaded and downloaded yet.\nShutting down.");
 					}
 					System.exit(0);					
@@ -309,7 +316,7 @@ public class ControlAccess {
 				dialogMessage = "Another user currently has write access to the ACM.\n";
 				dialogMessage += getPosessor() + "\n";
 			} 
-			if (online && sandboxMode && userHasWriteAccess() && !Configuration.isDisableUI()) {
+			if (online && sandboxMode && userHasWriteAccess() && !ACMConfiguration.isDisableUI()) {
 				Object[] optionsNoForce = {"Use Demo Mode", "Shutdown"};
 				Object[] optionsForce = {"Use Demo Mode", "Shutdown", "Force Write Mode"};
 	
@@ -355,7 +362,7 @@ public class ControlAccess {
 			}
 			if (!sandboxMode) {
 				int n = 0;
-				if (!Configuration.isDisableUI()) {
+				if (!ACMConfiguration.isDisableUI()) {
 					if (getCurrentZipFilename().equalsIgnoreCase(DB_DOES_NOT_EXIST)) {
 						JOptionPane.showMessageDialog(null,"ACM does not exist yet. Creating a new ACM and giving you write access.");					
 					} else {
@@ -372,13 +379,13 @@ public class ControlAccess {
 					do {	
 						onlineChoice = 1; // don't repeat loop unless user chooses to
 						try {
-							dbAvailable = checkOutDB(Configuration.getSharedACMname(),"checkout");
+							dbAvailable = checkOutDB(config.getSharedACMname(),"checkout");
 							sandboxMode = false;
 							break;
 						} catch (IOException e) {					
 							dbAvailable = false;
 							sandboxMode = true;
-							if (!Configuration.isDisableUI()) {
+							if (!ACMConfiguration.isDisableUI()) {
 								Object[] options = {"Try again", "Use Demo Mode"};
 								onlineChoice = JOptionPane.showOptionDialog(null, "Cannot reach Literacy Bridge web server.  Do you want to get online now and try again or use Demo Mode?", "Cannot Connect to Server",JOptionPane.YES_NO_CANCEL_OPTION,
 										JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
@@ -389,7 +396,7 @@ public class ControlAccess {
 					} while (onlineChoice == 0);
 
 
-					if (!dbAvailable && !sandboxMode && !Configuration.isDisableUI()) {
+					if (!dbAvailable && !sandboxMode && !ACMConfiguration.isDisableUI()) {
 						JOptionPane.showMessageDialog(null,"Sorry, but another user must have just checked out this ACM a moment ago!\nTry contacting " + getPosessor() + "\nAfter clicking OK, the ACM will shutdown.");
 						System.exit(0);
 					} else if (!sandboxMode) {
@@ -402,17 +409,17 @@ public class ControlAccess {
 		}
 		setSandbox(sandboxMode);
 		if (sandboxMode) {
-			if (!Configuration.isDisableUI()) {
+			if (!ACMConfiguration.isDisableUI()) {
 				JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.\nPlease remember that your changes will not be saved.");
 			}
 		} 
 	}
 	
-	public static boolean userHasWriteAccess() {
+	public boolean userHasWriteAccess() {
 		String writeUser, thisUser;
 		boolean userHasWriteAccess = false;
 		
-		thisUser = Configuration.getUserName();
+		thisUser = config.getUserName();
 		if (thisUser == null) {
 			// No User Name found in config.properties.  Forcing Read-Only mode.
 			return false;
@@ -430,7 +437,7 @@ public class ControlAccess {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		} else if (Configuration.getSharedACMDirectory().list().length == 0) {
+		} else if (config.getSharedACMDirectory().list().length == 0) {
 			// empty directory -- which means that a new directory was created to start an ACM in
 			// Since the directory already exists, it is not the case that the user just hasn't accepted the dropbox invitaiton yet.
 			// So, give this user write access to the newly created ACM
@@ -450,7 +457,7 @@ public class ControlAccess {
 		return userHasWriteAccess;
 	}
 
-	private static boolean checkOutDB(String db, String action) throws IOException {
+	private boolean checkOutDB(String db, String action) throws IOException {
 		boolean status = true;
 		String filename = null, key = null, possessor = null;
 		URL url;
@@ -463,7 +470,7 @@ public class ControlAccess {
 		}
 		
 
-		url = new URL("http://literacybridge.org/checkout.php?db=" + db + "&action=" + action + "&name=" + Configuration.getUserName() + "&contact=" + Configuration.getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
+		url = new URL("http://literacybridge.org/checkout.php?db=" + db + "&action=" + action + "&name=" + config.getUserName() + "&contact=" + config.getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
 		InputStream in;
 		in = url.openStream();
 		Scanner scanner = new Scanner(in);
@@ -492,7 +499,7 @@ public class ControlAccess {
 	    return status;
 	}
 
-	private static boolean checkInDB(String db, String key, String filename) throws IOException {
+	private boolean checkInDB(String db, String key, String filename) throws IOException {
 		boolean status = false;
 		final String END_OF_INPUT = "\\Z";
 		String s = null;
@@ -514,7 +521,7 @@ public class ControlAccess {
 		}
 		
 //		try {
-			url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&action=" + action + "&key=" + key + "&filename=" + filename + "&name=" + Configuration.getUserName() + "&contact=" + Configuration.getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
+			url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&action=" + action + "&key=" + key + "&filename=" + filename + "&name=" + config.getUserName() + "&contact=" + config.getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
 			InputStream in;
 			in = url.openStream();
 			Scanner scanner = new Scanner(in);
@@ -534,15 +541,15 @@ public class ControlAccess {
  	    return status;
 	}
 
-	public static boolean updateDB() {
+	public boolean updateDB() {
 		boolean status = false;
 		boolean saveWork = true;
-		String key = ControlAccess.getDBKey();
-		String filename = ControlAccess.getNextZipFilename();
-		File inFolder= Configuration.getDatabaseDirectory();
-		File outFile= new File (Configuration.getSharedACMDirectory(), ControlAccess.getNextZipFilename()); 
+		String key = getDBKey();
+		String filename = getNextZipFilename();
+		File inFolder= config.getDatabaseDirectory();
+		File outFile= new File (config.getSharedACMDirectory(), getNextZipFilename()); 
 		int n;
-		if (!Configuration.isDisableUI()) {
+		if (!ACMConfiguration.isDisableUI()) {
 			Object[] optionsSaveWork = {"Save Work", "Throw Away Your Latest Changes"};
 			n = JOptionPane.showOptionDialog(null, "If you made a mistake you can throw away all your changes now.", "Save Work?",JOptionPane.YES_NO_CANCEL_OPTION,
 					JOptionPane.QUESTION_MESSAGE, null, optionsSaveWork, optionsSaveWork[0]);
@@ -563,7 +570,7 @@ public class ControlAccess {
 					ZipUnzip.zip(inFolder, outFile);
 				} catch (IOException e) {
 					status = false;
-					if (!Configuration.isDisableUI()) {
+					if (!ACMConfiguration.isDisableUI()) {
 						Object[] options = {"Keep Your Changes", "Throw Away Your Latest Changes"};
 						n = JOptionPane.showOptionDialog(null, "There is a problem getting your changes into Dropbox.  Do you want to keep your changes and try to get this problem fixed or throw away your latest changes?", "Problem creating zip file on Dropbox",JOptionPane.YES_NO_CANCEL_OPTION,
 								JOptionPane.WARNING_MESSAGE, null, options, options[0]);
@@ -577,8 +584,8 @@ public class ControlAccess {
 				}
 			}
 			try {
-				status = checkInDB(Configuration.getSharedACMname(), key, filename); 
-				if (!status && saveWork && !Configuration.isDisableUI()) {
+				status = checkInDB(config.getSharedACMname(), key, filename); 
+				if (!status && saveWork && !ACMConfiguration.isDisableUI()) {
 					//Object[] options = {"Force your version","Throw Away Your Latest Changes"};
 					JOptionPane.showMessageDialog(null, "Someone has forced control of this ACM, so you cannot check-in your changes.\nIf you are worried about losing a lot of work, contact Cliff and he may be able to save you and your work.");
 					saveWork = false;  // zip is alredy written to dropbox an could be recovered.  !saveWork & status will delete checkoutfile marker but not any zips.
@@ -589,7 +596,7 @@ public class ControlAccess {
 				}
 			} catch (IOException e) {
 				status = false;
-				if (!Configuration.isDisableUI()) {
+				if (!ACMConfiguration.isDisableUI()) {
 					Object[] options = {"Try again", "Shutdown"};
 					n = JOptionPane.showOptionDialog(null, "Cannot reach Literacy Bridge web server.\nDo you want to get online and try again or shutdown and try later?", "Cannot Connect to Server",JOptionPane.YES_NO_CANCEL_OPTION,
 							JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
@@ -597,7 +604,7 @@ public class ControlAccess {
 			}
 		} 
 		
-		if (!Configuration.isDisableUI()) {
+		if (!ACMConfiguration.isDisableUI()) {
 			if (status && saveWork)
 				JOptionPane.showMessageDialog(null,"Your changes have been checked in.\n\nPlease stay online for a few minutes so your changes\ncan be uploaded (until Dropbox is 'Up to date').");
 			else if (saveWork && !status)
@@ -610,7 +617,7 @@ public class ControlAccess {
 		
 		if (status && saveWork) {
 			// deleting old zip since we just got confirmation that the new zip was checkedin
-			File oldzip = new File (Configuration.getSharedACMDirectory(),ControlAccess.getCurrentZipFilename());
+			File oldzip = new File (config.getSharedACMDirectory(), getCurrentZipFilename());
 			oldzip.delete();
 		}
 		if (status) {  // whether saving work or not, only delete checkout file if status==true, meaning checkIn was successful

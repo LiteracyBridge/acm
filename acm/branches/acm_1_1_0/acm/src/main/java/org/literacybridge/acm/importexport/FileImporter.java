@@ -14,7 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 
 public class FileImporter {
@@ -79,7 +79,7 @@ public class FileImporter {
 			
 			if (item != null) {
 				try {
-					Configuration.getRepository().updateAudioItem(item, file);
+					ACMConfiguration.getCurrentDB().getRepository().updateAudioItem(item, file);
 					// Commenting line below since duration is set with updateDuration as called from storeAudioFile()
 					// item.getLocalizedAudioItem(null).getMetadata().setMetadataField(MetadataSpecification.LB_DURATION, new MetadataValue<String>(""));
 					item.commit();

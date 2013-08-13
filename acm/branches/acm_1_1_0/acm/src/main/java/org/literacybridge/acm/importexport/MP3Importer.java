@@ -9,7 +9,7 @@ import org.cmc.music.metadata.IMusicMetadata;
 import org.cmc.music.metadata.MusicMetadataSet;
 import org.cmc.music.myid3.MyID3;
 import org.literacybridge.acm.categories.Taxonomy.Category;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
@@ -29,7 +29,7 @@ public class MP3Importer extends Importer {
 			MusicMetadataSet musicMetadataSet = new MyID3().read(file);
 			IMusicMetadata musicMetadata = musicMetadataSet.getSimplified();
 			
-			AudioItem audioItem = new AudioItem(Configuration.getNewAudioItemUID());
+			AudioItem audioItem = new AudioItem(ACMConfiguration.getCurrentDB().getNewAudioItemUID());
 			audioItem.addCategory(category);
 
 			LocalizedAudioItem localizedAudioItem = new LocalizedAudioItem(audioItem.getUuid() + "-en", Locale.ENGLISH);
@@ -51,7 +51,7 @@ public class MP3Importer extends Importer {
 			metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE, 
 					new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 			
-			AudioItemRepository repository = Configuration.getRepository();
+			AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
 			repository.storeAudioFile(audioItem, file);			
 			
 			audioItem.commit();

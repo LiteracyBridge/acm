@@ -7,7 +7,7 @@ import java.util.Set;
 import javax.swing.SwingWorker;
 
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
@@ -22,7 +22,7 @@ public class WavCaching {
 	}
 	
 	private void findUncachedWaveFiles () {
-		AudioItemRepository repository = Configuration.getRepository();
+		AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
 		
 		for (AudioItem audioItem : AudioItem.getFromDatabase()) {
 			if (!repository.hasAudioItemFormat(audioItem, AudioFormat.WAV)) {
@@ -45,7 +45,7 @@ public class WavCaching {
 		    while (it.hasNext() && !isCancelled()) {
 		    	AudioItem item = it.next();
 				try {
-					Configuration.getRepository().convert(item, AudioFormat.WAV);
+					ACMConfiguration.getCurrentDB().getRepository().convert(item, AudioFormat.WAV);
 				} catch (ConversionException e) {
 					e.printStackTrace();
 				} catch (Exception e) {

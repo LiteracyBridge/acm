@@ -6,7 +6,8 @@ import java.io.FileReader;
 import java.util.List;
 
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.CommandLineParams;
@@ -32,7 +33,7 @@ public class TBBuilder {
 		System.out.println("\n\nExporting package " + packageName);
 		
 		
-		File sourceDir = new File(Configuration.getTBLoadersDirectory(), "active/"
+		File sourceDir = new File(ACMConfiguration.getCurrentDB().getTBLoadersDirectory(), "active/"
 				+ packageName);
 
 		if (!sourceDir.exists()) {
@@ -46,7 +47,7 @@ public class TBBuilder {
 			System.exit(1);
 		}
 		
-		File tbLoadersDir = new File(Configuration.getLiteracyBridgeHomeDir(), Constants.TBLoadersHomeDir);
+		File tbLoadersDir = new File(DBConfiguration.getLiteracyBridgeHomeDir(), Constants.TBLoadersHomeDir);
 		File packageDir = new File(tbLoadersDir, packageName);
 		File audioTargetDir = new File(packageDir, "basic/messages/audio");
 		File listsTargetDir = new File(packageDir, "basic/messages/lists");
@@ -92,7 +93,7 @@ public class TBBuilder {
 			String title = item.getLocalizedAudioItem(null).getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue();
 			if (title.trim().equals(packageName.trim())) {
 				System.out.println("\nExporting audioitem " + item.getUuid() + " (" + title + ") to " + welcomeMessageTargetDir);
-				Configuration.getRepository().exportA18WithMetadata(item, welcomeMessageTargetDir);
+				ACMConfiguration.getCurrentDB().getRepository().exportA18WithMetadata(item, welcomeMessageTargetDir);
 			}
 		}
 		
@@ -105,7 +106,7 @@ public class TBBuilder {
 	
 	private static void exportList(File list, File targetDirectory) throws Exception {
 		System.out.println("  Exporting list " + list);
-		AudioItemRepository repository = Configuration.getRepository();
+		AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
 		BufferedReader reader = new BufferedReader(new FileReader(list));
 		
 		try {

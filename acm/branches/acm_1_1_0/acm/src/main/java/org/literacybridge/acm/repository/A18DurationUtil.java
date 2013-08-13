@@ -6,7 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
@@ -15,7 +15,7 @@ import org.literacybridge.acm.utils.IOUtils;
 
 public class A18DurationUtil {
 	public static void updateDuration(AudioItem audioItem) throws IOException {		
-    	File f = Configuration.getRepository().getAudioFile(audioItem, AudioFormat.A18);
+    	File f = ACMConfiguration.getCurrentDB().getRepository().getAudioFile(audioItem, AudioFormat.A18);
     	if (f != null) {
 	    	DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(f)));
 	    	in.skipBytes(4);

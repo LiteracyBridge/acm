@@ -14,7 +14,7 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
-import org.literacybridge.acm.config.ControlAccess;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.importexport.FileImporter;
@@ -65,7 +65,7 @@ public class CmdLineImporter {
 			System.exit(2);			
 		}
 		
-		if (ControlAccess.isSandbox()) {
+		if (ACMConfiguration.getCurrentDB().getControlAccess().isSandbox()) {
 			System.err.println("Unable to acquire writer access.");
 			System.exit(3);
 		}
@@ -78,7 +78,7 @@ public class CmdLineImporter {
 			System.out.println("At least one file could not be imported.");
 		}
 		
-		ControlAccess.updateDB();
+		ACMConfiguration.getCurrentDB().getControlAccess().updateDB();
 		System.exit(success ? 0 : 4);
 	}
 	

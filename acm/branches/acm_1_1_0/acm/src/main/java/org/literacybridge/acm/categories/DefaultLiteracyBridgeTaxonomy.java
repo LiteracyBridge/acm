@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.literacybridge.acm.categories.Taxonomy.Category;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.yaml.snakeyaml.Yaml;
 
@@ -59,7 +59,7 @@ public class DefaultLiteracyBridgeTaxonomy {
 		TaxonomyRevision taxonomy = loadTaxonomy(DefaultLiteracyBridgeTaxonomy.class.getResourceAsStream("/" + YAML_FILE_NAME));
 		
 		// check if there is a newer one in the 
-		File userFile = new File(Configuration.getACMDirectory(), YAML_FILE_NAME);
+		File userFile = new File(ACMConfiguration.getCurrentDB().getACMDirectory(), YAML_FILE_NAME);
 		if (userFile.exists()) {
 			FileInputStream in = null;
 			try {

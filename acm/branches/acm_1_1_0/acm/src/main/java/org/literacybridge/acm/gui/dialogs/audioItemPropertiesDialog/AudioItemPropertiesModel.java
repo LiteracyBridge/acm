@@ -28,7 +28,7 @@ import java.util.Map;
 import javax.swing.table.AbstractTableModel;
 
 import org.apache.commons.lang.StringUtils;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
@@ -178,7 +178,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			}
 
 			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
-				File file = Configuration.getRepository().getAudioFile(audioItem, AudioFormat.A18);
+				File file = ACMConfiguration.getCurrentDB().getRepository().getAudioFile(audioItem, AudioFormat.A18);
 				return file != null ? file.getName() : null;
 			}
 

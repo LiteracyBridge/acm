@@ -20,7 +20,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 
 import org.apache.commons.lang.StringUtils;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentTag;
@@ -117,7 +117,7 @@ public class TagsListPopupMenu extends JPopupMenu {
 		exportTag.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				File listDirectory = new File(Configuration
+				File listDirectory = new File(ACMConfiguration.getCurrentDB()
 						.getTBLoadersDirectory(),
 						"TBL-template/content/basic/messages/lists/hhr");
 				File activeListsFile = new File(listDirectory,
@@ -165,7 +165,7 @@ public class TagsListPopupMenu extends JPopupMenu {
 
 						if (!StringUtils.isEmpty(categoryName)) {
 							previousUpdateName = updateName;
-							File dir = new File(Configuration.getTBLoadersDirectory(), "active/"
+							File dir = new File(ACMConfiguration.getCurrentDB().getTBLoadersDirectory(), "active/"
 									+ updateName);
 							
 							if (!dir.exists()) {

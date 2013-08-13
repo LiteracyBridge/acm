@@ -2,10 +2,8 @@ package org.literacybridge.acm.gui.ResourceView.audioItems;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -28,12 +26,9 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumn;
 
 import org.jdesktop.swingx.JXTable;
-import org.jdesktop.swingx.decorator.AbstractHighlighter;
-import org.jdesktop.swingx.decorator.ComponentAdapter;
-import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.config.ControlAccess;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.Application;
@@ -46,7 +41,6 @@ import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
-import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 
@@ -79,14 +73,14 @@ public class AudioItemView extends Container implements Observer {
 	private void createTable() {
 		audioItemTable = new JXTable();
 		audioItemTable.setShowGrid(false, false);
-		if (!ControlAccess.isACMReadOnly()) {
+		if (!ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly()) {
 			audioItemTable.setDragEnabled(true);
 			audioItemTable.setDropMode(DropMode.ON);
 			audioItemTable.setTransferHandler(new AudioItemTransferHandler());
 		}
 		
 		// use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
-		if (ControlAccess.isACMReadOnly() || ControlAccess.isSandbox()) {
+		if (ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly() || ACMConfiguration.getCurrentDB().getControlAccess().isSandbox()) {
 			audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
 					Color.LIGHT_GRAY, new Color(237, 243, 254)));			
 		} else  {

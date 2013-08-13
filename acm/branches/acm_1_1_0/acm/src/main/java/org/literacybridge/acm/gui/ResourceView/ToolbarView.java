@@ -29,7 +29,7 @@ import javax.swing.JToolBar;
 import javax.swing.Timer;
 
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
@@ -272,7 +272,7 @@ public class ToolbarView extends JToolBar implements ActionListener
 			// convert on the fly if necessary
 			Application parent = Application.getApplication();
 			parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));				
-			File f = Configuration.getRepository()
+			File f = ACMConfiguration.getCurrentDB().getRepository()
 							.convert(item.getParentAudioItem(), AudioFormat.WAV);
 			parent.setCursor(Cursor.getDefaultCursor());
 			Application.getFilterState().updateResult();	

@@ -9,7 +9,7 @@ import javax.swing.table.AbstractTableModel;
 
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.config.Configuration;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
@@ -131,7 +131,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 					break;
 				}
 				case DATE_FILE_MODIFIED: {
-					File file = Configuration.getRepository().getAudioFile(audioItem, AudioFormat.A18);
+					File file = ACMConfiguration.getCurrentDB().getRepository().getAudioFile(audioItem, AudioFormat.A18);
 					if (file != null) {
 						Date date = new Date(file.lastModified());
 						cellText = dateFormat.format(date);

@@ -17,7 +17,7 @@ public class DBInfo extends Properties {
 	private final static String DB_KEY = "DB_KEY";
 	private final static String DB_CURRENT_FILENAME = "DB_CURRENT_FILENAME";
 	private final static String DB_NEXT_FILENAME = "DB_NEXT_FILENAME";
-	
+	private final DBConfiguration config;
     
 	public String getDbName() {
 		return getProperty(DBInfo.DB_NAME);
@@ -53,7 +53,7 @@ public class DBInfo extends Properties {
 	
 	public void writeProps() {
 		try {
-			File dbDir = Configuration.getDatabaseDirectory();
+			File dbDir = config.getDatabaseDirectory();
 			if (!dbDir.exists())
 				dbDir.mkdirs();
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(getCheckedOutPropertiesFile()));
@@ -71,11 +71,12 @@ public class DBInfo extends Properties {
 	}
 	
 	private File getCheckedOutPropertiesFile() {
-		File fDB = new File(Configuration.getTempACMsDirectory());
-		return new File(fDB, Configuration.getSharedACMname() + Constants.CHECKOUT_PROPERTIES_SUFFIX);
+		File fDB = new File(config.getTempACMsDirectory());
+		return new File(fDB, config.getSharedACMname() + Constants.CHECKOUT_PROPERTIES_SUFFIX);
 	}
 
-	public DBInfo() {
+	public DBInfo(DBConfiguration config) {
+		this.config = config;
 		File f = getCheckedOutPropertiesFile();
 		if (f.exists()) {
 			try {
