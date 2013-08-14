@@ -27,6 +27,9 @@ public class FileSystemExporter {
 				if (sourceFile != null) {
 					String title = localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue()
 							+ FILENAME_SEPARATOR + localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue();
+					
+					// replace invalid file name characters (windows) with an underscore ('_')
+					title = title.trim().replaceAll("[\\\\/:*?\"<>|]", "_");
 					File targetFile;
 					int counter = 0;
 					do {
