@@ -1,8 +1,0 @@
-http://instant.thrift-rpc.org/
-
-is where you can download these things.
-
-instructions:
-1. compile and put binaries in bin/ here.
-2. copy contents of lib/rb/lib to lib/rb/lib here.
-3. sit back & relax.
