@@ -300,8 +300,8 @@ public abstract class AudioItemRepository {
 				if (format == AudioFormat.A18) {
 					continue;
 				}
-				File file = getAudioFile(audioItem, format);
-				if (file.lastModified() < a18.lastModified()) {
+				File file = resolveFile(audioItem, format, false);
+				if (file.exists() && file.lastModified() < a18.lastModified()) {
 					// a18 file is newer - delete it, it will get recreated from the a18 in convert()
 					file.delete();
 				}
