@@ -294,13 +294,13 @@ public abstract class AudioItemRepository {
 	 * Checks if no file belonging to an audio item is older than its corresponding a18 file
 	 */
 	private void checkFilesUpToDate(AudioItem audioItem) {
-		File a18 = getAudioFile(audioItem, AudioFormat.A18);
-		if (a18 != null) {
+		File a18 = resolveFile(audioItem, AudioFormat.A18, false);
+		if (a18.exists()) {
 			for (AudioFormat format : AudioFormat.values()) {
 				if (format == AudioFormat.A18) {
 					continue;
 				}
-				File file = resolveFile(audioItem, format, false);
+				File file = resolveFile(audioItem, format, true);
 				if (file.exists() && file.lastModified() < a18.lastModified()) {
 					// a18 file is newer - delete it, it will get recreated from the a18 in convert()
 					file.delete();
