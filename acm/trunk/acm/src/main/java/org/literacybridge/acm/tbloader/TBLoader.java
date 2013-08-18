@@ -50,7 +50,7 @@ import javax.swing.filechooser.FileSystemView;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.10r1119";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.10r1120";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -565,6 +565,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	private synchronized void setSNandRevFromCurrentDrive() {
 		String sn="";
 		String rev="unknown";
+		String pkg="unknown";
 		DriveInfo di;
 		if (driveList == null)
 			return;
@@ -611,6 +612,18 @@ public class TBLoader extends JFrame implements ActionListener {
 				if (rev.length() == 0)
 					rev = "unknown";  // eliminate problem of zero length filenames being inserted into batch statements
 			}
+			// get packaage name from .pkg file
+			files = systemPath.listFiles(new FilenameFilter() {
+				@Override public boolean accept(File dir, String name) {
+					String lowercase = name.toLowerCase();
+					return lowercase.endsWith(".pkg");
+				}
+			});
+			if (files.length == 1) {
+				pkg = files[0].getName().substring(0, files[0].getName().length() - 4);
+			}
+			oldPackageValue.setText(pkg);
+			
 		} catch (Exception ignore) {
 			Logger.LogString("exception - ignore and keep going with empty string");
 		}
