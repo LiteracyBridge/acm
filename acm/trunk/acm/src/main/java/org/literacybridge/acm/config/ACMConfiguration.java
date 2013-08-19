@@ -1,7 +1,12 @@
 package org.literacybridge.acm.config;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -30,6 +35,8 @@ public class ACMConfiguration {
 	private static File globalShareDir;
 	
 	public synchronized static void initialize(CommandLineParams args) {
+		loadProps();
+		
 		if (args.titleACM != null) {
 			title = args.titleACM;
 		}
@@ -42,6 +49,8 @@ public class ACMConfiguration {
 			allDBs.put(config.getSharedACMname(), config);
 			System.out.println("Found DB " + config.getSharedACMname());
 		}
+		
+		writeProps();
 	}
 
 	// TODO: when we have a homescreen this method needs to be split up into different steps,
@@ -130,4 +139,31 @@ public class ACMConfiguration {
 	public static File getGlobalShareDir() {
 		return globalShareDir;
 	}
+	
+	private static File getConfigurationPropertiesFile() {
+		return new File(LB_HOME_DIR, Constants.GLOBAL_CONFIG_PROPERTIES);
+	}
+	
+	public static void loadProps() {
+		if (getConfigurationPropertiesFile().exists()) {
+			try {
+				BufferedInputStream in = new BufferedInputStream(new FileInputStream(getConfigurationPropertiesFile()));
+				ACMGlobalConfigProperties.load(in);
+			} catch (IOException e) {
+				throw new RuntimeException("Unable to load configuration file: " + getConfigurationPropertiesFile(), e);
+			}
+		}
+	}
+	
+	public static void writeProps() {
+		try {
+			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(getConfigurationPropertiesFile()));
+			ACMGlobalConfigProperties.store(out, null);
+			out.flush();
+			out.close();
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to write configuration file: " + getConfigurationPropertiesFile(), e);
+		}
+	}
+
 }
