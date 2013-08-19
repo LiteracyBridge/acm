@@ -11,7 +11,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -42,6 +44,8 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileSystemView;
+
+import org.jdesktop.swingx.JXDatePicker;
 // commenting out import below so that TBLoader can stand-alone as .class 
 // until new ACM is running on Fidelis's laptop
 //import org.literacybridge.acm.utils.OSChecker;
@@ -50,7 +54,7 @@ import javax.swing.filechooser.FileSystemView;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.10r1120";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.10r1122";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -64,8 +68,10 @@ public class TBLoader extends JFrame implements ActionListener {
 	private static final String NO_DRIVE = "(nothing connected)";
 	private static final String TRIGGER_FILE_CHECK = "checkdir";
 	private static String tblRevision = "(no rev)"; 
+	private static String dateRotation;
 	private JComboBox packageList;
 	private JComboBox communityList;
+	private JComboBox currentLocationList;
 	private JComboBox driveList;
 	private JTextField id;
 	private JTextField idnext;
@@ -73,6 +79,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	private JTextField newRevisionText;
 	private JTextField oldPackageValue;
 	private JTextField oldCommunityValue;
+	private JTextField lastUpdatedText;
 	private JLabel oldValue;
 	private JLabel newValue;
 	private static JTextArea status;
@@ -90,6 +97,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	public static String sourcePackage;
 	private JCheckBox fetchIDFromServer;
 	private JCheckBox handIcons;
+	TBInfo tbStats;
 	
 	class WindowEventHandler extends WindowAdapter {
 		public void windowClosing(WindowEvent evt) {
@@ -99,6 +107,14 @@ public class TBLoader extends JFrame implements ActionListener {
 		    System.exit(0);
 		}
 	}
+	
+	private String currentLocation[] = new String[] {
+			"Select location",
+			"Community",
+			"Jirapa office",
+			"Wa office",
+			"Other"
+	};
 	
 	private String communityNames[] = new String[] {
 			"Non-specific",
@@ -141,8 +157,9 @@ public class TBLoader extends JFrame implements ActionListener {
 					revision = files[0].getName();
 					revision = revision.substring(0, revision.length() - 4);
 				}
+				newRevisionText.setText(revision);
 
-				// get Package name
+/*				// get Package name
 				File contentSystem = new File(basicContentPath,"system");
 				files = contentSystem.listFiles(new FilenameFilter() {
 					@Override public boolean accept(File dir, String name) {
@@ -156,7 +173,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					sourcePackage = files[0].getName();
 					sourcePackage = sourcePackage.substring(0, sourcePackage.length() - 4);
 				}
-			}
+*/			}
 		} catch (Exception ignore) {
 			Logger.LogString("exception - ignore and keep going with default string");
 		}
@@ -187,10 +204,14 @@ public class TBLoader extends JFrame implements ActionListener {
 		
 		JLabel packageLabel = new JLabel("Update:");
 		JLabel communityLabel = new JLabel("Community:");
+		JLabel currentLocationLabel = new JLabel("Current Location:");
+		JLabel dateLabel = new JLabel("First Rotation Date:");
 		oldPackageValue = new JTextField();
 		oldPackageValue.setEditable(false);
 		oldValue = new JLabel("Previous");
 		newValue = new JLabel("Next");
+		lastUpdatedText = new JTextField();
+		lastUpdatedText.setEditable(false);
 		oldCommunityValue = new JTextField();
 		oldCommunityValue.setEditable(false);
 		JLabel deviceLabel = new JLabel("Talking Book Device:");
@@ -198,8 +219,10 @@ public class TBLoader extends JFrame implements ActionListener {
 		JLabel revisionLabel = new JLabel("Firmware:");
 		status = new JTextArea("STATUS: Ready");
 		status.setEditable(false);
+		status.setLineWrap(true);
 		status2 = new JTextArea(2,40);
 		status2.setEditable(false);
+		status2.setLineWrap(true);
 		id = new JTextField();
 		id.setEditable(false);
 		idnext = new JTextField();
@@ -208,19 +231,22 @@ public class TBLoader extends JFrame implements ActionListener {
 		oldRevisionText.setEditable(false);
 		newRevisionText = new JTextField();
 		newRevisionText.setEditable(false);
-/*		final JXDatePicker datePicker = new JXDatePicker();
+		final JXDatePicker datePicker = new JXDatePicker();
+		datePicker.getEditor().setEditable(false);
+		datePicker.setFormats(new String[] { "yyyy/MM/dd" }); //dd MMM yyyy
 		datePicker.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				id.setText(datePicker.getDate().toString());
+				dateRotation = datePicker.getDate().toString();
 			}	
 		});
-*/		 	
+		 	
 		packageList = new JComboBox();
 		packageList.addActionListener(this);
 		communityList = new JComboBox();
 		communityList.addActionListener(this);
 		driveList = new JComboBox();
 		driveList.addActionListener(this);
+		currentLocationList = new JComboBox(currentLocation);		
 		fetchIDFromServer = new JCheckBox("Get new serial number");
 		fetchIDFromServer.setSelected(false);
 		handIcons = new JCheckBox("Use hand icon msgs");
@@ -247,29 +273,33 @@ public class TBLoader extends JFrame implements ActionListener {
         layout.setHorizontalGroup(layout.createSequentialGroup()
 	        		.addGroup(layout.createParallelGroup(LEADING)
 	        				.addComponent(deviceLabel)
-//	        				.addComponent(datePicker)
+	        				.addComponent(currentLocationLabel)
 	        				.addComponent(packageLabel)
 	        				.addComponent(communityLabel)
+	        				.addComponent(dateLabel)
 	                		.addComponent(revisionLabel)
 	        				.addComponent(idLabel)
 	        				)
  					.addGroup(layout.createParallelGroup(LEADING)
 							.addComponent(driveList)
+							.addComponent(currentLocationList)
             				.addComponent(newValue)
             				.addComponent(packageList)
 	                		.addComponent(communityList)
+							.addComponent(datePicker)
 	                		.addComponent(newRevisionText)
 	                		.addComponent(id)
             				.addComponent(fetchIDFromServer)
 	    	                .addGroup(layout.createSequentialGroup()
 	                				.addComponent(update)
 	    	        				.addComponent(grabStatsOnly))
-	    	    		     .addComponent(status)
+	    	    		     .addComponent(status2)
 	    	        		)
  					.addGroup(layout.createParallelGroup(LEADING)
             				.addComponent(oldValue)
 	                		.addComponent(oldPackageValue)
 	                		.addComponent(oldCommunityValue)
+	                		.addComponent(lastUpdatedText)
 	                		.addComponent(oldRevisionText)
 	                		.addComponent(idnext)
 	                		.addComponent(handIcons)
@@ -277,7 +307,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	    	        				.addComponent(setCommunity)
 	                 				.addComponent(xfer)
               				)
-	    		    		.addComponent(status2)
+	    		    		.addComponent(status)
 	                  	)
 	               	);
         
@@ -285,6 +315,9 @@ public class TBLoader extends JFrame implements ActionListener {
                 .addGroup(layout.createParallelGroup(BASELINE)
         				.addComponent(deviceLabel)
                 		.addComponent(driveList))
+                .addGroup(layout.createParallelGroup(BASELINE)
+                		.addComponent(currentLocationLabel)
+                		.addComponent(currentLocationList))
                 .addGroup(layout.createParallelGroup(BASELINE)
         				.addComponent(newValue)
                 		.addComponent(oldValue))
@@ -296,6 +329,10 @@ public class TBLoader extends JFrame implements ActionListener {
                 		.addComponent(communityLabel)
                         .addComponent(communityList)
                 		.addComponent(oldCommunityValue))
+                .addGroup(layout.createParallelGroup(BASELINE)
+                		.addComponent(dateLabel)
+                        .addComponent(datePicker)
+                		.addComponent(lastUpdatedText))
                 .addGroup(layout.createParallelGroup(BASELINE)
                 		.addComponent(revisionLabel)
 	    	            .addComponent(newRevisionText)
@@ -316,11 +353,11 @@ public class TBLoader extends JFrame implements ActionListener {
 //    	    		.addComponent(reformat)
     	    		)
     		    .addGroup(layout.createParallelGroup(BASELINE)
-    		    		.addComponent(status)
-    		    		.addComponent(status2))
+    		    		.addComponent(status2)
+    		    		.addComponent(status))
             );
         
-        setSize(600,400);
+        setSize(600,500);
         add(panel, BorderLayout.CENTER);
 //      add(status, BorderLayout.SOUTH);
 //      add(xfer, BorderLayout.EAST);
@@ -458,8 +495,8 @@ public class TBLoader extends JFrame implements ActionListener {
 			return;
 		File rootPath = new File(di.drive.getAbsolutePath());
 		File statsPath = new File(rootPath,"statistics/stats/flashData.bin");
-		TBInfo tb = new TBInfo(statsPath.toString());
-		}
+		tbStats = new TBInfo(statsPath.toString());
+	}
 		
 	private String getCommunityFromCurrentDrive() {
 		String communityName = communityNames[0];
@@ -544,10 +581,12 @@ public class TBLoader extends JFrame implements ActionListener {
 		String driveCommunity;
 		int communityMatchIndex = -1;
 
-		driveCommunity = getCommunityFromCurrentDrive();
-		oldCommunityValue.setText(driveCommunity);
-
 		getStatsFromCurrentDrive();
+		driveCommunity = getCommunityFromCurrentDrive();
+		if (tbStats != null && tbStats.location != null && !tbStats.location.equals(""))
+			oldCommunityValue.setText(tbStats.location);
+		else
+			oldCommunityValue.setText(driveCommunity);
 		
 		if (prevSelectedCommunity != -1)
 			communityMatchIndex = prevSelectedCommunity;
@@ -577,19 +616,23 @@ public class TBLoader extends JFrame implements ActionListener {
 			File[] files;
 			if (systemPath.exists()) {
 				// get Serial Number file info
-				files = systemPath.listFiles(new FilenameFilter() {
-					@Override public boolean accept(File dir, String name) {
-						String lowercase = name.toLowerCase();
-						return lowercase.endsWith(".srn") && !lowercase.startsWith("-erase");
+				
+				if (tbStats != null && tbStats.serialNumber != null && !tbStats.serialNumber.equals(""))
+					sn = tbStats.serialNumber;
+				else {
+					files = systemPath.listFiles(new FilenameFilter() {
+						@Override public boolean accept(File dir, String name) {
+							String lowercase = name.toLowerCase();
+							return lowercase.endsWith(".srn") && !lowercase.startsWith("-erase");
+						}
+					});				
+					if (files.length > 0) {
+						String tsnFileName = files[0].getName();
+						sn = tsnFileName.substring(0, tsnFileName.length() - 4);
+		//				if (sn.startsWith("srn."))
+		//					sn = sn.substring(4);
 					}
-				});				
-				if (files.length > 0) {
-					String tsnFileName = files[0].getName();
-					sn = tsnFileName.substring(0, tsnFileName.length() - 4);
-	//				if (sn.startsWith("srn."))
-	//					sn = sn.substring(4);
-				}
-
+				}	
 				// get Revision number from .rev or .img file
 				files = systemPath.listFiles(new FilenameFilter() {
 					@Override public boolean accept(File dir, String name) {
@@ -612,18 +655,51 @@ public class TBLoader extends JFrame implements ActionListener {
 				if (rev.length() == 0)
 					rev = "unknown";  // eliminate problem of zero length filenames being inserted into batch statements
 			}
-			// get packaage name from .pkg file
-			files = systemPath.listFiles(new FilenameFilter() {
-				@Override public boolean accept(File dir, String name) {
-					String lowercase = name.toLowerCase();
-					return lowercase.endsWith(".pkg");
+			if (tbStats != null && tbStats.contentPackage != null && !tbStats.contentPackage.equals("")) 
+				pkg = tbStats.contentPackage;
+			else {
+				// get packaage name from .pkg file
+				files = systemPath.listFiles(new FilenameFilter() {
+					@Override public boolean accept(File dir, String name) {
+						String lowercase = name.toLowerCase();
+						return lowercase.endsWith(".pkg");
+					}
+				});
+				if (files.length == 1) {
+					pkg = files[0].getName().substring(0, files[0].getName().length() - 4);
 				}
-			});
-			if (files.length == 1) {
-				pkg = files[0].getName().substring(0, files[0].getName().length() - 4);
 			}
 			oldPackageValue.setText(pkg);
+
 			
+			// get last updated date from file
+			if (tbStats != null && tbStats.updateDate != -1) 
+				lastUpdatedText.setText(tbStats.updateYear + "/" + tbStats.updateMonth + "/" + tbStats.updateDate); 
+			else {
+				files = systemPath.listFiles(new FilenameFilter() {
+					@Override public boolean accept(File dir, String name) {
+						String lowercase = name.toLowerCase();
+						return lowercase.equals("last_updated.txt");
+					}
+				});
+				if (files.length == 1) {
+					try{
+					  FileInputStream fstream = new FileInputStream(files[0]);
+					  DataInputStream in = new DataInputStream(fstream);
+					  BufferedReader br = new BufferedReader(new InputStreamReader(in));
+					  String strLine;
+					  if ((strLine = br.readLine()) != null)   {
+						  int m = strLine.indexOf('m');
+						  int d = strLine.indexOf('d');
+						  lastUpdatedText.setText("2013/" + strLine.substring(1,m) + "/" + strLine.substring(m+1,d));
+					  }
+					  //Close the input stream
+					  in.close();
+					  } catch (Exception e){//Catch exception if any
+					  System.err.println("Error: " + e.getMessage());
+					}					 
+				}
+			}			
 		} catch (Exception ignore) {
 			Logger.LogString("exception - ignore and keep going with empty string");
 		}
@@ -635,7 +711,6 @@ public class TBLoader extends JFrame implements ActionListener {
 		di.serialNumber = sn;
 		di.revision = rev;
 		oldRevisionText.setText(rev);
-		newRevisionText.setText(tblRevision);
 		if (di.serialNumber.equals("UNKNOWN") || di.serialNumber.equals(NO_SERIAL_NUMBER)) {
 			this.fetchIDFromServer.setSelected(true);			
 		}
@@ -740,12 +815,85 @@ public class TBLoader extends JFrame implements ActionListener {
 		}
 	};
 
+	private void logTBData() {
+		BufferedWriter bw;
+		Date d = new Date();
+		Calendar cal = Calendar.getInstance();
+		int month = cal.get(Calendar.MONTH) + 1	;
+		int date = cal.get(Calendar.DAY_OF_MONTH);
+		int year = cal.get(Calendar.YEAR);
+		String filename = copyTo + "/tbData-" + year + "-" + month + "-" + date;
+		try {
+			bw = new BufferedWriter(new FileWriter(filename,true));
+			if (bw != null) {								
+				bw.write(getDateTime() + ",");
+				bw.write(currentLocationList.getSelectedItem().toString() + ",");
+				bw.write(id.getText() + ",");
+				bw.write(oldPackageValue.getText() + ",");
+				bw.write(oldCommunityValue.getText() + ",");
+				bw.write(lastUpdatedText.getText() + ",");
+				bw.write(oldRevisionText.getText() + ",");
+				bw.write(idnext.getText() + ",");
+				bw.write(packageList.getSelectedItem().toString() + ",");
+				bw.write(communityList.getSelectedItem().toString() + ",");
+				bw.write(dateRotation + ",");
+				bw.write(newRevisionText.getText() + ",");
+				bw.write(fetchIDFromServer.isSelected() + ",");
+				bw.write(handIcons.isSelected() + ",");
+				bw.write(tbStats.corrupted + ",");
+				bw.write(tbStats.corruptionDay + ",");
+				bw.write(tbStats.countReflashes + ",");
+				bw.write(tbStats.updateNumber + ",");
+				bw.write(tbStats.contentPackage + ",");
+				bw.write(tbStats.location + ",");
+				bw.write(tbStats.updateYear + "/" + tbStats.updateMonth + "/" + tbStats.updateDate + ",");
+				bw.write(tbStats.cumulativeDays + ",");
+				bw.write(tbStats.lastInitVoltage + ",");
+				bw.write(tbStats.powerups + ",");
+				bw.write(tbStats.periods + ",");
+				bw.write(tbStats.totalRotations + ",");
+				bw.write(tbStats.totalMessages + ",");
+				int totalSecondsPlayed=0, countStarted=0,countQuarter=0,countHalf=0,countThreequarters=0,countCompleted=0,countApplied=0,countUseless=0;
+				for (int m=0;m < tbStats.totalMessages; m++) {
+					for (int r=0;r < (tbStats.totalRotations<5?tbStats.totalRotations:5);r++) {
+						totalSecondsPlayed += tbStats.stats[m][r].totalSecondsPlayed;
+						countStarted += tbStats.stats[m][r].countStarted;
+						countQuarter += tbStats.stats[m][r].countQuarter;
+						countHalf += tbStats.stats[m][r].countHalf;
+						countThreequarters += tbStats.stats[m][r].countThreequarters;
+						countCompleted += tbStats.stats[m][r].countCompleted;
+						countApplied += tbStats.stats[m][r].countApplied;
+						countUseless += tbStats.stats[m][r].countUseless;
+						}
+				}
+				bw.write(totalSecondsPlayed/60 + ",");
+				bw.write(countStarted + ",");
+				bw.write(countQuarter + ",");
+				bw.write(countHalf + ",");
+				bw.write(countThreequarters + ",");
+				bw.write(countCompleted + ",");
+				bw.write(countApplied + ",");
+				bw.write(countUseless+ ",");
+				for (int r=0; r<(tbStats.totalRotations<5?tbStats.totalRotations:5); r++) {
+					bw.write(r + "," + tbStats.totalPlayedSecondsPerRotation(r)/60 + "," + tbStats.rotations[r].startingPeriod + ",");
+					bw.write(tbStats.rotations[r].hoursAfterLastUpdate + "," + tbStats.rotations[r].initVoltage);
+				}
+			}
+			bw.flush();
+			bw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+/*		s.append("Serial Number : " + this.serialNumber + NEW_LINE);
+		s.append(NEW_LINE);
+*/	}
+	
 	public static void setCommunity(String path, String community, String dateTime) {
 		String locFilename = path + community + ".loc";
 		String rtcFilename = path + dateTime + ".rtc";
 		
 		try {
-/*			goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+/*			goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));
 			if (!goodCard) {
 				return;
 			}
@@ -812,8 +960,14 @@ public class TBLoader extends JFrame implements ActionListener {
 		JButton b;
 		if (monitoringDrive || !startUpDone)
 			return;
-		if (o instanceof JButton)
-			b = (JButton)e.getSource();
+		if (o instanceof JButton) {
+				if (dateRotation == null || currentLocationList.getSelectedIndex()==0) {
+					JOptionPane.showMessageDialog(null, "You must first select a rotation date and a location.",
+			                "Need Date and Location!", JOptionPane.DEFAULT_OPTION);
+					return;
+				}
+				b = (JButton)e.getSource();
+			}
 		else if (o instanceof JComboBox) {
 			if (o == driveList) {
 				di = (DriveInfo)((JComboBox)e.getSource()).getSelectedItem();
@@ -864,7 +1018,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					di.serialNumber = "TBt" + milliseconds;
 				}
 			}
-			status.setText("STATUS: Starting ...");
+			status.setText("STATUS: Starting\n");
 			if (b == xfer) {
 				xferFiles();
 				Logger.init();
@@ -1082,6 +1236,12 @@ public class TBLoader extends JFrame implements ActionListener {
 			setCommunity.setEnabled(false);
 			xfer.setEnabled(false);
 			if (!connected) {
+        		oldPackageValue.setText("");
+        		oldCommunityValue.setText("");
+        		oldRevisionText.setText("");
+        		idnext.setText("");
+				id.setText("");
+				lastUpdatedText.setText("");
 				Logger.LogString("STATUS: " + NO_DRIVE);
 				status.setText("STATUS: " + NO_DRIVE);
 			}
@@ -1205,7 +1365,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			return elapsedTime;
 		}
 		
-		private boolean executeFile(File file) { //,String devicePath, String community, String id, String datetime, boolean useHandIcons, String sourceRevision, String targetRevision) {
+		private boolean executeFile(File file) { 
 			boolean success = true;
 			String errorLine = "";
 			criticalError = false;
@@ -1289,7 +1449,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				boolean gotStats,hasCorruption,verified, goodCard;
 				setStartTime();
 				success = false;
-				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));
 				if (!goodCard) {
 					return;
 				}
@@ -1297,17 +1457,24 @@ public class TBLoader extends JFrame implements ActionListener {
 				Logger.LogString("STATUS:Checking Memory Card");
 				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
 				if (hasCorruption) {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted...Getting Stats");
+					callback.tbStats.corrupted = true;
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted\nGetting Stats");
 					Logger.LogString("STATUS:Corrupted...Getting Stats");
 					executeFile(new File(SCRIPT_SUBDIR + "chkdsk-save.txt"));
 				} else {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Good Card...Getting Stats");
-					Logger.LogString("STATUS:Good Card...Getting Stats");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Good\nGetting Stats");
+					Logger.LogString("STATUS:Good Card\nGetting Stats");
 				}
-				gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));
+				callback.logTBData();
 				if (gotStats) {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Got Stats\n");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Got Stats\nDisconnecting");
 					Logger.LogString("STATUS: Got stats!");
+					Logger.LogString("STATUS: Disconnecting TB");
+					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Complete");
+					Logger.LogString("STATUS:Complete");
+					success = true;
 					JOptionPane.showMessageDialog(null, "Got Stats!",
 			                "Success", JOptionPane.DEFAULT_OPTION);
 				}
@@ -1327,7 +1494,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				boolean gotStats,hasCorruption,verified, goodCard;
 				setStartTime();
 				success = false;
-				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));
 				if (!goodCard) {
 					return;
 				}
@@ -1335,58 +1502,60 @@ public class TBLoader extends JFrame implements ActionListener {
 				Logger.LogString("STATUS:Checking Memory Card");
 				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
 				if (hasCorruption) {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted...Getting Stats");
-					Logger.LogString("STATUS:Corrupted...Getting Stats");
+					callback.tbStats.corrupted = true;
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted\nGetting Stats");
+					Logger.LogString("STATUS:Corrupted...Getting Stats\n");
 					executeFile(new File(SCRIPT_SUBDIR + "chkdsk-save.txt"));
 				} else {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Good Card...Getting Stats");
-					Logger.LogString("STATUS:Good Card...Getting Stats");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Good\nGetting Stats");
+					Logger.LogString("STATUS:Good Card...Getting Stats\n");
 				}
-				gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));
 				if (gotStats) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Got Stats\n");
-					Logger.LogString("STATUS:Got Stats");
+					Logger.LogString("STATUS:Got Stats\n");
 				}
 				else {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...No Stats!\n");
-					Logger.LogString("STATUS:No Stats!");
+					Logger.LogString("STATUS:No Stats!\n");
 				}
 				if (hasCorruption) {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Reformatting");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "Reformatting");
 					Logger.LogString("STATUS:Reformatting");
-					goodCard = executeFile(new File(SCRIPT_SUBDIR + "reformat.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+					goodCard = executeFile(new File(SCRIPT_SUBDIR + "reformat.txt"));
 					if (!goodCard) {
-						TBLoader.status2.setText(TBLoader.status2.getText() + "...Reformat Failed");
+						TBLoader.status2.setText(TBLoader.status2.getText() + "...Failed\n");
 						Logger.LogString("STATUS:Reformat Failed");
 						Logger.LogString("Could not reformat memory card.\nMake sure you have a good USB connection\nand that the Talking Book is powered with batteries, then try again.\n\nIf you still cannot reformat, replace the memory card.");
 						JOptionPane.showMessageDialog(null, "Could not reformat memory card.\nMake sure you have a good USB connection\nand that the Talking Book is powered with batteries, then try again.\n\nIf you still cannot reformat, replace the memory card.",
 				                "Failure!", JOptionPane.ERROR_MESSAGE);
 						return;
 					} else { 
-						TBLoader.status2.setText(TBLoader.status2.getText() + "...Format was good");
+						TBLoader.status2.setText(TBLoader.status2.getText() + "...Good\n");
 						Logger.LogString("STATUS:Format was good");
 					}
 				} else {
 					Logger.LogString("STATUS:Relabeling volume");
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Relabeling");
-					executeFile(new File(SCRIPT_SUBDIR + "relabel.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+					TBLoader.status2.setText(TBLoader.status2.getText() + "Relabeling\n");
+					executeFile(new File(SCRIPT_SUBDIR + "relabel.txt"));
 				}
-				TBLoader.status2.setText(TBLoader.status2.getText() + "...Updating TB Files");
+				TBLoader.status2.setText(TBLoader.status2.getText() + "Updating TB Files");
 				Logger.LogString("STATUS:Updating TB Files");
-				executeFile(new File(SCRIPT_SUBDIR + "update.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
-				TBLoader.status2.setText(TBLoader.status2.getText() + "...Updated");
+				executeFile(new File(SCRIPT_SUBDIR + "update.txt"));
+				TBLoader.status2.setText(TBLoader.status2.getText() + "...Updated\n");
 				Logger.LogString("STATUS:Updated");
-				verified = executeFile(new File(SCRIPT_SUBDIR + "verify.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				verified = executeFile(new File(SCRIPT_SUBDIR + "verify.txt"));
 				if (verified) {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Verified Basic...Adding Any Custom Community Content");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "Verified Basic\nAdding Community Content\n");
 					Logger.LogString("STATUS:Verified Basic...Adding Any Custom Community Content");
-					verified = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);					
+					verified = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));					
 				}
+				callback.logTBData();
 				if (verified) {
 					String duration;
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Updated & Verified...Disconnecting TB");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "Updated & Verified\nDisconnecting TB");
 					Logger.LogString("STATUS:Updated & Verified...Disconnecting TB");
-					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Complete");
 					Logger.LogString("STATUS:Complete");
 					success = true;
@@ -1396,7 +1565,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			                "Success", JOptionPane.DEFAULT_OPTION);
 				} else {
 					success = false;
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Failed Verification");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Failed Verification\n");
 					Logger.LogString("STATUS:Failed Verification");
 					JOptionPane.showMessageDialog(null, "Update failed verification.  Try again or replace memory card.",
 			                "Failure", JOptionPane.DEFAULT_OPTION);
@@ -1425,7 +1594,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				boolean hasCorruption,goodCard;
 				success = false;
 				Logger.LogString("Setting Community -- first checking connectin and memory card.");
-				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
+				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));
 				if (!goodCard) {
 					return;
 				}
@@ -1433,6 +1602,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				Logger.LogString("STATUS:Checking Memory Card");
 				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
 				if (hasCorruption) {
+					callback.tbStats.corrupted = true;
 					Logger.LogString("Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.");
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted");
 					Logger.LogString("STATUS:Corrupted");
@@ -1440,20 +1610,21 @@ public class TBLoader extends JFrame implements ActionListener {
 			                "Failure", JOptionPane.DEFAULT_OPTION);
 					return;
 				}
-				TBLoader.status2.setText(TBLoader.status2.getText() + "...Memory Card Good...Setting Community");
+				TBLoader.status2.setText(TBLoader.status2.getText() + "...Good\nSetting Community");
 				Logger.LogString("STATUS:Memory Card Good...Setting Community");
 				TBLoader.setCommunity(devicePath, community, this.datetime);
-				TBLoader.status2.setText(TBLoader.status2.getText() + "...Community Set");
+				TBLoader.status2.setText(TBLoader.status2.getText() + "...Set\n");
 				Logger.LogString("STATUS:Community Set");
 				success = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));
+				callback.logTBData();
 				if (success) {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Custom Files Applied");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "Custom Files Applied\n");
 					Logger.LogString("STATUS:Custom Files Applied");
-					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));//,devicePath, community, id, datetime, useHandIcons, sourceRevision, targetRevision);
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Complete");
+					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));
+					TBLoader.status2.setText(TBLoader.status2.getText() + "Complete\n");
 					Logger.LogString("STATUS:Complete");
-					Logger.LogString("Commmunity set to " + community + " and custom files applied.");
-					JOptionPane.showMessageDialog(null, "Commmunity set to " + community + ".",
+					Logger.LogString("Community set to " + community + " and custom files applied.");
+					JOptionPane.showMessageDialog(null, "Community set to " + community + ".",
 			                "Success", JOptionPane.DEFAULT_OPTION);
 				}
 			for (int i=1;i<=3;i++)
@@ -1485,7 +1656,7 @@ public class TBLoader extends JFrame implements ActionListener {
 
 	private static final boolean debug = false;
 
-	static boolean chkDsk(DriveInfo di) throws Exception {
+/*	static boolean chkDsk(DriveInfo di) throws Exception {
 		String line;
 		String folders[] = {"system","languages","messages","statistics","log","log-archive","messages/lists","messages/audio","languages/dga","statistics/stats","statistics/ostats"};
 		boolean goodDisk = true;
@@ -1537,7 +1708,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		proc.waitFor();
 		return goodDisk;
 	}	
-
+*/
 	private static String dosErrorCheck(String line) {
 		String errorMsg = null;
 		
@@ -1601,24 +1772,21 @@ public class TBLoader extends JFrame implements ActionListener {
 		String label;
 		String serialNumber;
 		boolean isNewSerialNumber;
-		int lastIssue;
 		String revision;
 		static final int MAX_CORRUPTIONS = 20;
-		String corruptions[] = new String [MAX_CORRUPTIONS];
-		int corruptionCount;
+		boolean corrupted;
 		
 		public DriveInfo(File drive, String label) {
 			this.drive = drive;
 			this.label = label.trim();
-			this.corruptionCount = 0;
+			this.corrupted = false;
 			this.serialNumber = "";
 			this.isNewSerialNumber = false;
 			this.revision = "";
-			this.lastIssue = 0; // 0 means no info
-			updateLastIssue();
+			//updateLastIssue();
 		}
 
-		public boolean updateLastIssue() {
+/*		public boolean updateLastIssue() {
 			boolean foundIssue = false;
 			int rev = 0;
 			int i;
@@ -1658,7 +1826,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			}
 			return foundIssue;
 		}
-		
+*/		
 		
 		@Override
 		public String toString() {
@@ -1672,15 +1840,16 @@ public class TBLoader extends JFrame implements ActionListener {
 	private static class TBInfo {
 		// struct SystemData
 		// int structType
+		boolean corrupted;
 		boolean debug = false;
 		String serialNumber;
 		String updateNumber;
 		short countReflashes;
 		String location;
 		String contentPackage;
-		short updateDate;
-		short updateMonth;
-		short updateYear;
+		short updateDate = -1;
+		short updateMonth = -1;
+		short updateYear = -1;
 		
 		// struct SystemCounts2
 		// short structType
@@ -1749,6 +1918,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		}
 
 		public TBInfo(String flashDataPath) throws IOException {
+			corrupted = false;
 			File file = new File(flashDataPath);
 			if (!file.exists()) {
 				System.out.print("No flash binary file to analyze.");
@@ -1837,7 +2007,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			}			
 			if (debug)
 				System.out.println("     string:" + String.valueOf(c) + " at " + start);
-			return new String(c);
+			return new String(c).trim();
 		}		
 		
 		public long totalPlayedSecondsPerMsg (int msg) {
