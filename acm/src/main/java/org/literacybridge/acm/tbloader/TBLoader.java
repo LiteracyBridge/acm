@@ -54,7 +54,7 @@ import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.10r1122";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.10r1123";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -815,20 +815,21 @@ public class TBLoader extends JFrame implements ActionListener {
 		}
 	};
 
-	private void logTBData() {
+	private void logTBData(String action) {
 		BufferedWriter bw;
 		Date d = new Date();
 		Calendar cal = Calendar.getInstance();
 		int month = cal.get(Calendar.MONTH) + 1	;
 		int date = cal.get(Calendar.DAY_OF_MONTH);
 		int year = cal.get(Calendar.YEAR);
-		String filename = copyTo + "/tbData-" + year + "-" + month + "-" + date;
+		String filename = copyTo + "/tbData-" + year + "-" + month + "-" + date + ".txt";
 		try {
 			bw = new BufferedWriter(new FileWriter(filename,true));
 			if (bw != null) {								
 				bw.write(getDateTime() + ",");
 				bw.write(currentLocationList.getSelectedItem().toString() + ",");
 				bw.write(id.getText() + ",");
+				bw.write(action + ",");
 				bw.write(oldPackageValue.getText() + ",");
 				bw.write(oldCommunityValue.getText() + ",");
 				bw.write(lastUpdatedText.getText() + ",");
@@ -1466,7 +1467,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					Logger.LogString("STATUS:Good Card\nGetting Stats");
 				}
 				gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));
-				callback.logTBData();
+				callback.logTBData("stats-only");
 				if (gotStats) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Got Stats\nDisconnecting");
 					Logger.LogString("STATUS: Got stats!");
@@ -1550,7 +1551,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					Logger.LogString("STATUS:Verified Basic...Adding Any Custom Community Content");
 					verified = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));					
 				}
-				callback.logTBData();
+				callback.logTBData("update");
 				if (verified) {
 					String duration;
 					TBLoader.status2.setText(TBLoader.status2.getText() + "Updated & Verified\nDisconnecting TB");
@@ -1616,7 +1617,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				TBLoader.status2.setText(TBLoader.status2.getText() + "...Set\n");
 				Logger.LogString("STATUS:Community Set");
 				success = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));
-				callback.logTBData();
+				callback.logTBData("set community");
 				if (success) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "Custom Files Applied\n");
 					Logger.LogString("STATUS:Custom Files Applied");
