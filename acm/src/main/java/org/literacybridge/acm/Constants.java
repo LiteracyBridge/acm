@@ -17,6 +17,7 @@ public class Constants {
 	public final static String DefaultSharedRepository		= "ACM-test/" + RepositoryHomeDir;	
 	public final static String TBBuildsHomeDirName			= "TB-builds";
 	public final static String TBDefinitionsHomeDirName		= "TB-definitions";
+	public final static String GLOBAL_CONFIG_PROPERTIES 	= "acm_config.properties";
 	public final static String CONFIG_PROPERTIES 			= "config.properties";
 	public final static String CHECKOUT_PROPERTIES_SUFFIX	= "-checkedOut.properties";
 	public final static String USER_WRITE_LOCK_FILENAME		= "locked.txt";
