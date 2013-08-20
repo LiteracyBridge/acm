@@ -874,14 +874,15 @@ public class TBLoader extends JFrame implements ActionListener {
 				bw.write(countThreequarters + ",");
 				bw.write(countCompleted + ",");
 				bw.write(countApplied + ",");
-				bw.write(countUseless+ ",");
+				bw.write(countUseless);
 				for (int r=0; r<(tbStats.totalRotations<5?tbStats.totalRotations:5); r++) {
-					bw.write(r + "," + tbStats.totalPlayedSecondsPerRotation(r)/60 + "," + tbStats.rotations[r].startingPeriod + ",");
+					bw.write(","+ r + "," + tbStats.totalPlayedSecondsPerRotation(r)/60 + "," + tbStats.rotations[r].startingPeriod + ",");
 					bw.write(tbStats.rotations[r].hoursAfterLastUpdate + "," + tbStats.rotations[r].initVoltage);
 				}
+				bw.write("\n");
+				bw.flush();
+				bw.close();
 			}
-			bw.flush();
-			bw.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -1226,7 +1227,7 @@ public class TBLoader extends JFrame implements ActionListener {
 //			reformat.setEnabled(true);
 //			backup.setEnabled(true);
 			xfer.setEnabled(true);
-			setCommunity.setEnabled(true);
+			//setCommunity.setEnabled(true);
 			xfer.setEnabled((new File(TEMP_COLLECTION_DIR)).exists());			
 			status.setText("STATUS: Ready");
 			status2.setText("");
@@ -1613,7 +1614,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				}
 				TBLoader.status2.setText(TBLoader.status2.getText() + "...Good\nSetting Community");
 				Logger.LogString("STATUS:Memory Card Good...Setting Community");
-				TBLoader.setCommunity(devicePath, community, this.datetime);
+				TBLoader.setCommunity(devicePath + "/system/", community, this.datetime);
 				TBLoader.status2.setText(TBLoader.status2.getText() + "...Set\n");
 				Logger.LogString("STATUS:Community Set");
 				success = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));
