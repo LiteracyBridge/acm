@@ -54,7 +54,7 @@ import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.10r1123";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.10r1124";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -577,11 +577,17 @@ public class TBLoader extends JFrame implements ActionListener {
 			this.handIcons.setSelected(false);
 	}
 
-	private synchronized void setCommunityList() throws IOException {
+	private synchronized void setCommunityList() {
 		String driveCommunity;
 		int communityMatchIndex = -1;
-
-		getStatsFromCurrentDrive();
+		try {
+			getStatsFromCurrentDrive();
+		} catch (IOException e) {
+			// could not find flashStats file -- but TB should save flashstats on normal shutdown and on *-startup.
+			JOptionPane.showMessageDialog(null, "The TB's statistics cannot be found. Please follow these steps:\n 1. Unplug the TB\n 2. Hold down the * while turning on the TB\n "
+			+ "3. Observe the solid red light.\n 4. Now plug the TB into the laptop.\n 5. If you see this message again, please continue with the loading -- you tried your best.",
+	                "Cannot find the statistics!", JOptionPane.DEFAULT_OPTION);			
+		}
 		driveCommunity = getCommunityFromCurrentDrive();
 		if (tbStats != null && tbStats.location != null && !tbStats.location.equals(""))
 			oldCommunityValue.setText(tbStats.location);
@@ -712,7 +718,9 @@ public class TBLoader extends JFrame implements ActionListener {
 		di.revision = rev;
 		oldRevisionText.setText(rev);
 		if (di.serialNumber.equals("UNKNOWN") || di.serialNumber.equals(NO_SERIAL_NUMBER)) {
-			this.fetchIDFromServer.setSelected(true);			
+			JOptionPane.showMessageDialog(null, "The serial number cannot be found.\nIf you have internet access, please check the box for 'get new serial number'.\nIf you do not have internet access, you may continue without checking the box.",
+	                "Need Date and Location!", JOptionPane.DEFAULT_OPTION);
+			//this.fetchIDFromServer.setSelected(true);			
 		}
 	}	
 
