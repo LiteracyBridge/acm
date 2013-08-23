@@ -1,0 +1,35 @@
+<ivysettings>
+  <settings defaultResolver="chain-repos" />
+
+  <!-- ivysvn libs for talking to the twitter maven repo -->
+  <classpath file="${ivy.jar.dir}/trilead.jar"/>
+  <classpath file="${ivy.jar.dir}/svnkit.jar"/>
+  <classpath file="${ivy.jar.dir}/ivysvnresolver.jar"/>
+  <typedef name="svn" classname="fm.last.ivy.plugins.svnresolver.SvnResolver"/>
+
+  <!-- The shared repo is where we publish jars locally so that projects can find each other's jar files -->
+  <property name="ivy.shared.default.root" value="${ivy.default.ivy.user.dir}/shared" override="false"/>
+  <property name="ivy.shared.default.ivy.pattern" value="[organisation]/[module]/[revision]/[type]s/[artifact].[ext]" override="false"/>
+  <property name="ivy.shared.default.artifact.pattern" value="[organisation]/[module]/[revision]/[type]s/[artifact].[ext]" override="false"/>
+
+  <resolvers>
+    <chain name="chain-repos" returnFirst="true">
+      <ibiblio name="public" m2compatible="true"/>
+      <ibiblio name="eclipselink" m2compatible="true" root="http://download.eclipse.org/rt/eclipselink/maven.repo"/>
+      <ibiblio name="java.net" m2compatible="true" root="http://download.java.net/maven/2/"/>
+      <ibiblio name="ESSI-Lab repository" m2compatible="true" root="http://essi-lab.eu/nexus/content/groups/open.repos"/>
+      <ibiblio name="netbeans-external" m2compatible="true" root="http://bits.netbeans.org/maven2"/>
+      <filesystem name="shared" cache="repo_cache">
+	<ivy pattern="${ivy.shared.default.root}/${ivy.shared.default.ivy.pattern}" />
+	<artifact pattern="${ivy.shared.default.root}/${ivy.shared.default.artifact.pattern}" />
+      </filesystem>
+
+      <filesystem name="local-libs" m2compatible="true" transactional="false" local="true" checkmodified="true">
+        <artifact pattern="${root.dir}/3rdparty/[artifact]-[revision].[ext]" />
+      </filesystem>
+    </chain>
+  </resolvers>
+  <caches useOrigin="true">
+    <cache name="repo_cache" basedir="${ivy.repo.cache.dir}" />
+  </caches>
+</ivysettings>
