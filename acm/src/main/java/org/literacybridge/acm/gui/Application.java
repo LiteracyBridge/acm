@@ -167,7 +167,8 @@ public class Application extends JXFrame {
 		ACMConfiguration.initialize(params);
 		
 		// TODO: when we have a homescreen this call will be delayed until the user selects a DB
-		ACMConfiguration.setCurrentDB(params.sharedACM);;
+		// TODO: createEmtpyDB should be factored out when the UI has a create DB button. 
+		ACMConfiguration.setCurrentDB(params.sharedACM, true);
 		
 		boolean showUI = !params.disableUI;
 		
