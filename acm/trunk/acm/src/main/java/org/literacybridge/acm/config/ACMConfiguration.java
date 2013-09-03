@@ -55,11 +55,16 @@ public class ACMConfiguration {
 
 	// TODO: when we have a homescreen this method needs to be split up into different steps,
 	// e.g. close DB, open new DB, etc.
-	public synchronized static void setCurrentDB(String dbName) throws Exception {
+	public synchronized static void setCurrentDB(String dbName, boolean createEmptyDB) throws Exception {
 		DBConfiguration config = allDBs.get(dbName);
 		
 		if (config == null) {
-			throw new IllegalArgumentException("DB '" + dbName + "' not known.");
+			if (!createEmptyDB) {
+				throw new IllegalArgumentException("DB '" + dbName + "' not known.");
+			} else {
+				config = new DBConfiguration(dbName);
+				allDBs.put(dbName, config);
+			}
 		}
 		
 		DBConfiguration oldDB = currentDB.get();
