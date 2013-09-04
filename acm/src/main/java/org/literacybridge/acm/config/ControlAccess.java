@@ -198,6 +198,8 @@ public class ControlAccess {
 		// String line;
 		File toDir = config.getDatabaseDirectory();
 		String dbFilename = getCurrentZipFilename();
+		if (dbFilename.equals(ControlAccess.DB_DOES_NOT_EXIST))
+			return;
 		try {
 			//File oldDB = new File (toDir,Configuration.getSharedACMname());
 			//if (dbFilename.equalsIgnoreCase(ControlAccess.DB_DOES_NOT_EXIST)) {
