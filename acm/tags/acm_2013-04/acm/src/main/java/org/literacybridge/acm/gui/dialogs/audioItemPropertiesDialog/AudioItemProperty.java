@@ -24,8 +24,8 @@ public abstract class AudioItemProperty<V> {
 	}
 	
 	public abstract String getName();
-	public abstract String getValue(AudioItem audioItem, Metadata metadata);
-	public abstract void setValue(AudioItem audioItem, Metadata metadata, V newValue);
+	public abstract String getValue(AudioItem audioItem);
+	public abstract void setValue(AudioItem audioItem, V newValue);
 	
 	public boolean isCellEditable() {
 		return isCellEditable;
@@ -52,14 +52,13 @@ public abstract class AudioItemProperty<V> {
 			return LabelProvider.getLabel(field, LanguageUtil.getUILanguage());
 		}
 		
-		public String getValue(AudioItem audioItem, Metadata metadata) {
-			return Metadata.getCommaSeparatedList(metadata, field);
+		public String getValue(AudioItem audioItem) {
+			return Metadata.getCommaSeparatedList(audioItem.getMetadata(), field);
 		}
 
 		@Override
-		public void setValue(AudioItem audioItem, Metadata metadata,
-							  String newValue) {
-			AudioItemPropertiesModel.setStringValue(field, metadata, newValue);
+		public void setValue(AudioItem audioItem, String newValue) {
+			AudioItemPropertiesModel.setStringValue(field, audioItem.getMetadata(), newValue);
 		}
 	}
 
@@ -76,13 +75,13 @@ public abstract class AudioItemProperty<V> {
 			return LabelProvider.getLabel(field, LanguageUtil.getUILanguage());
 		}
 		
-		public String getValue(AudioItem audioItem, Metadata metadata) {
-			return LanguageUtil.getLocalizedLanguageName(AudioItemPropertiesModel.getLanguage(metadata, field));
+		public String getValue(AudioItem audioItem) {
+			return LanguageUtil.getLocalizedLanguageName(AudioItemPropertiesModel.getLanguage(audioItem, field));
 		}
 
 		@Override
-		public void setValue(AudioItem audioItem, Metadata metadata, Locale newLocale) {
-			AudioItemPropertiesModel.setLocaleValue(field, audioItem, metadata, newLocale);
+		public void setValue(AudioItem audioItem, Locale newLocale) {
+			AudioItemPropertiesModel.setLocaleValue(field, audioItem, newLocale);
 		}
 	}
 
