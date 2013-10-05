@@ -14,8 +14,8 @@ import static org.literacybridge.acm.metadata.MetadataSpecification.LB_GOAL;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_KEYWORDS;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_MESSAGE_FORMAT;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_NOTES;
-import static org.literacybridge.acm.metadata.MetadataSpecification.LB_STATUS;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_PRIMARY_SPEAKER;
+import static org.literacybridge.acm.metadata.MetadataSpecification.LB_STATUS;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_TARGET_AUDIENCE;
 import static org.literacybridge.acm.metadata.MetadataSpecification.LB_TIMING;
 
@@ -63,13 +63,11 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	static final int VALUE_COL = 1;
 	static final int EDIT_COL = 2;
 	
-	private Metadata metadata = null;
 	private AudioItem audioItem = null;
 	private List<AudioItemProperty> audioItemPropertiesObject = new ArrayList<AudioItemProperty>();
 	private final boolean readOnly;
 	
-	public AudioItemPropertiesModel(AudioItem audioItem, Metadata metadata, boolean readOnly) {
-		this.metadata = metadata;
+	public AudioItemPropertiesModel(AudioItem audioItem, boolean readOnly) {
 		this.audioItem = audioItem;
 		this.readOnly = readOnly;
 		
@@ -79,8 +77,8 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 				return STATUS_NAME;
 			}
 
-			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
-				List<MetadataValue<Integer>> values = metadata.getMetadataValues(LB_STATUS);
+			@Override public String getValue(AudioItem audioItem) {
+				List<MetadataValue<Integer>> values = audioItem.getMetadata().getMetadataValues(LB_STATUS);
 				if (values == null || values.isEmpty()) {
 					return "Current";
 				}
@@ -89,9 +87,8 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			}
 
 			@Override
-			public void setValue(AudioItem audioItem, Metadata metadata,
-					Object newValue) {
-				metadata.setMetadataField(MetadataSpecification.LB_STATUS, 
+			public void setValue(AudioItem audioItem, Object newValue) {
+				audioItem.getMetadata().setMetadataField(MetadataSpecification.LB_STATUS, 
 						new MetadataValue<Integer>(STATUS_VALUES_MAP.get(newValue.toString())));
 			}			
 		});	
@@ -103,13 +100,12 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 				return "Categories";
 			}
 
-			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
+			@Override public String getValue(AudioItem audioItem) {
 				return UIUtils.getCategoryListAsString(audioItem);
 			}
 
 			@Override
-			public void setValue(AudioItem audioItem, Metadata metadata,
-					Object newValue) {
+			public void setValue(AudioItem audioItem, Object newValue) {
 				// not supported
 			}			
 		});
@@ -118,13 +114,12 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 				return "Playlists";
 			}
 
-			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
+			@Override public String getValue(AudioItem audioItem) {
 				return UIUtils.getPlaylistAsString(audioItem);
 			}
 
 			@Override
-			public void setValue(AudioItem audioItem, Metadata metadata,
-					Object newValue) {
+			public void setValue(AudioItem audioItem, Object newValue) {
 				// not supported
 			}			
 		});
@@ -149,8 +144,8 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 				return "Related Message Title";
 			}
 
-			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
-				List<MetadataValue<String>> values = metadata.getMetadataValues(DC_RELATION);
+			@Override public String getValue(AudioItem audioItem) {
+				List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(DC_RELATION);
 				if (values != null && !values.isEmpty()) {
 					String id = values.get(0).getValue();
 					if (!StringUtils.isEmpty(id)) {
@@ -166,8 +161,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			}
 
 			@Override
-			public void setValue(AudioItem audioItem, Metadata metadata,
-					Object newValue) {
+			public void setValue(AudioItem audioItem, Object newValue) {
 				// not supported
 			}			
 		});
@@ -177,14 +171,13 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 				return "File name";
 			}
 
-			@Override public String getValue(AudioItem audioItem, Metadata metadata) {
+			@Override public String getValue(AudioItem audioItem) {
 				File file = ACMConfiguration.getCurrentDB().getRepository().getAudioFile(audioItem, AudioFormat.A18);
 				return file != null ? file.getName() : null;
 			}
 
 			@Override
-			public void setValue(AudioItem audioItem, Metadata metadata,
-					Object newValue) {
+			public void setValue(AudioItem audioItem, Object newValue) {
 				// not supported
 			}			
 		});
@@ -219,12 +212,12 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	}
 	
 	public Locale getMetadataLocale() {
-		return getLanguage(metadata, DC_LANGUAGE);
+		return getLanguage(audioItem, DC_LANGUAGE);
 	}
 
-	protected static Locale getLanguage(Metadata metadata, MetadataField<RFC3066LanguageCode> language) {
+	protected static Locale getLanguage(AudioItem audioItem, MetadataField<RFC3066LanguageCode> language) {
 		// only shows first language
-		for (MetadataValue<RFC3066LanguageCode> mv : metadata.getMetadataValues(language)) {
+		for (MetadataValue<RFC3066LanguageCode> mv : audioItem.getMetadata().getMetadataValues(language)) {
 			RFC3066LanguageCode code = mv.getValue();
 			return code.getLocale(); 		
 		}
@@ -239,7 +232,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	boolean highlightRow(int row) {
 		if (row == 0) {
 			AudioItemProperty obj = audioItemPropertiesObject.get(row);
-			String value = obj.getValue(audioItem, metadata);
+			String value = obj.getValue(audioItem);
 			return !value.equals(STATUS_VALUES[0]);
 		}
 		
@@ -263,7 +256,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		case TITLE_COL:
 			return obj.getName();
 		case VALUE_COL:
-			return obj.getValue(audioItem, metadata);
+			return obj.getValue(audioItem);
 		case EDIT_COL:
 			return "";
 		default:
@@ -298,12 +291,15 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		
 		if (obj instanceof AudioItemProperty.LanguageProperty) {
 			Locale newLocale = (Locale) aValue;
-			((AudioItemProperty.LanguageProperty) obj).setValue(audioItem, metadata, newLocale);
+			((AudioItemProperty.LanguageProperty) obj).setValue(audioItem, newLocale);
 		} else if (obj instanceof AudioItemProperty) {
-			((AudioItemProperty) obj).setValue(audioItem, metadata, newValue);
+			((AudioItemProperty) obj).setValue(audioItem, newValue);
 		}
 		
+		Metadata metadata = audioItem.getMetadata();
 		incrementRevision(metadata);
+		metadata.commit();
+		audioItem.getLocalizedAudioItem(null).commit();
 		audioItem.commit();
 	}
 	
@@ -312,12 +308,13 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	}
 
 	
-	protected static void setLocaleValue(MetadataField<RFC3066LanguageCode> field, AudioItem audioItem, Metadata metadata, Locale newLocale) {
-		Locale oldLocale = getLanguage(metadata, DC_LANGUAGE);
+	protected static void setLocaleValue(MetadataField<RFC3066LanguageCode> field, AudioItem audioItem, Locale newLocale) {
+		Locale oldLocale = getLanguage(audioItem, DC_LANGUAGE);
 		LocalizedAudioItem localizedItem = audioItem.getLocalizedAudioItem(oldLocale);
 		localizedItem.setLocale(newLocale);
 		localizedItem.commit();
 		audioItem.commit();
+		Metadata metadata = audioItem.getMetadata();
 		metadata.setMetadataField(field, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(newLocale.getLanguage())));
 		metadata.commit();
 	}
