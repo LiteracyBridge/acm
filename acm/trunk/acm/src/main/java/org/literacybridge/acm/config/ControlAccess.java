@@ -183,7 +183,7 @@ public class ControlAccess {
 
 		config.setRepository(new CachingRepository(
 				new FileSystemRepository(config.getCacheDirectory(), 
-						new FileSystemRepository.FileSystemGarbageCollector(Constants.CACHE_SIZE_IN_BYTES,
+						new FileSystemRepository.FileSystemGarbageCollector(config.getCacheSizeInBytes(),
 							new FilenameFilter() {
 								@Override public boolean accept(File file, String name) {
 									return name.toLowerCase().endsWith("." + AudioFormat.WAV.getFileExtension());

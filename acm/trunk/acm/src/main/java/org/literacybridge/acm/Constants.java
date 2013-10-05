@@ -24,7 +24,7 @@ public class Constants {
 	public final static String DB_ACCESS_FILENAME			= "accessList.txt";
 	
     public final static File USER_HOME_DIR = new File(System.getProperty("user.home", "."));
-    public final static long CACHE_SIZE_IN_BYTES			= 2L * 1024L * 1024L * 1024L; // 2GB
+    public final static long DEFAULT_CACHE_SIZE_IN_BYTES	= 2L * 1024L * 1024L * 1024L; // 2GB
     
 	public final static String USER_NAME = "USER_NAME";
 	public final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";
@@ -34,4 +34,5 @@ public class Constants {
 	public final static String RECORDING_COUNTER_PROP = "RECORDING_COUNTER";
 	public final static String DEVICE_ID_PROP = "DEVICE_ID";
 	public final static String AUDIO_LANGUAGES = "AUDIO_LANGUAGES";	
+	public final static String CACHE_SIZE_PROP_NAME = "CACHE_SIZE_IN_BYTES";
  }

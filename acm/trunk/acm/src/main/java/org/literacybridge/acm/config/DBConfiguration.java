@@ -213,6 +213,20 @@ public class DBConfiguration extends Properties {
 		
 		return uuid;
 	}
+	
+	public long getCacheSizeInBytes() {
+		long size = Constants.DEFAULT_CACHE_SIZE_IN_BYTES;
+		String value = getProperty(Constants.CACHE_SIZE_PROP_NAME);
+		if (value != null) {
+			try {
+				size = Long.parseLong(value);
+			} catch (NumberFormatException e) {
+				// ignore and use default value
+			}
+		}
+		
+		return size;
+	}
 
 	private final static Pattern LANGUAGE_LABEL_PATTERN = Pattern.compile(".*\\(\"(.+)\"\\).*");
 	
@@ -265,6 +279,8 @@ public class DBConfiguration extends Properties {
 	}
 
 	private void InitializeAcmConfiguration() {
+		boolean propsChanged = false;
+		
 		cacheDirectory = new File(getACMDirectory(), Constants.CACHE_DIR_NAME);		
 		if (!cacheDirectory.exists()) {
 			cacheDirectory.mkdirs();
@@ -299,13 +315,23 @@ public class DBConfiguration extends Properties {
 		if (!containsKey(Constants.USER_NAME)) {
 			String username = (String)JOptionPane.showInputDialog(null, "Enter Username:", "Missing Username", JOptionPane.PLAIN_MESSAGE);
 			put(Constants.USER_NAME, username);
+			propsChanged = true;
 		}
 		if (!containsKey(Constants.USER_CONTACT_INFO)) {
 			String contactinfo = (String)JOptionPane.showInputDialog(null, "Enter Phone #:", "Missing Contact Info", JOptionPane.PLAIN_MESSAGE);
 			put(Constants.USER_CONTACT_INFO, contactinfo);
+			propsChanged = true;
 		}		
 		if (!containsKey(Constants.AUDIO_LANGUAGES)) {
 			put(Constants.AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),tw(\"Twi\"),sfw(\"Sehwi\")");
+			propsChanged = true;
+		}
+		if (!containsKey(Constants.CACHE_SIZE_PROP_NAME)) {
+			put(Constants.CACHE_SIZE_PROP_NAME, Long.toString(Constants.DEFAULT_CACHE_SIZE_IN_BYTES));
+			propsChanged = true;
+		}
+		
+		if (propsChanged) {
 			writeProps();
 		}
 /*		COMMENTING THIS OUT SINCE WE ALWAYS PASS NAME OF ACM NOW - NEED TO RETHINK WHEN WE WANT TO USE CODE LIKE THIS AGAIN
