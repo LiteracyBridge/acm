@@ -164,6 +164,8 @@ public abstract class AudioItemRepository {
 	 * in this repository;
 	 */
 	public File getAudioFile(AudioItem audioItem, AudioFormat format) {
+		checkFilesUpToDate(audioItem);
+		
 		File file = resolveFile(audioItem, format, false);
 		return file.exists() ? file : null;
 	}
@@ -173,6 +175,8 @@ public abstract class AudioItemRepository {
 	 * a handle to the newly created file. 
 	 */
 	public File convert(AudioItem audioItem, AudioFormat targetFormat) throws ConversionException, IOException {
+		checkFilesUpToDate(audioItem);
+		
 		File audioFile = resolveFile(audioItem, targetFormat, true);
 		if (audioFile.exists()) {
 			// conversion not necessary
@@ -284,6 +288,26 @@ public abstract class AudioItemRepository {
 	 */
 	protected void gc() throws IOException {
 		// nothing to do by default
+	}
+	
+	/**
+	 * Checks if no file belonging to an audio item is older than its corresponding a18 file
+	 */
+	private void checkFilesUpToDate(AudioItem audioItem) {
+		File a18 = resolveFile(audioItem, AudioFormat.A18, false);
+		if (a18.exists()) {
+			for (AudioFormat format : AudioFormat.values()) {
+				if (format == AudioFormat.A18) {
+					continue;
+				}
+				File file = resolveFile(audioItem, format, true);
+				if (file.exists() && file.lastModified() < a18.lastModified()) {
+					// a18 file is newer - delete it, it will get recreated from the a18 in convert()
+					file.delete();
+				}
+			}
+
+		}
 	}
 
 	private static void appendMetadataToA18(AudioItem audioItem, File a18File) throws IOException {
