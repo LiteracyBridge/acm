@@ -20,13 +20,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import org.jdesktop.swingx.decorator.AbstractHighlighter;
-import org.jdesktop.swingx.decorator.ColorHighlighter;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.ResourceView;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.messages.RequestAndSelectAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
@@ -35,7 +33,6 @@ import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.ACMDialog;
 import org.literacybridge.acm.gui.util.FocusTraversalOnArray;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
-import org.literacybridge.acm.metadata.Metadata;
 
 public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 
@@ -76,11 +73,7 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 	private void showAudioItem(AudioItem item) {
 		if (item == null)
 			return; // JTBD
-		Metadata metadata = item.getLocalizedAudioItem(
-				LanguageUtil.getUserChoosenLanguage()).getMetadata();
-		showMetadata(item, metadata);
-
-
+		showMetadata(item);
 	}
 
 	private void getNextItem() {
@@ -180,8 +173,8 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 		panel.add(btnClose);
 	}
 
-	private void showMetadata(AudioItem audioItem, Metadata metadata) {
-		propertiesTable.setModel(new AudioItemPropertiesModel(audioItem, metadata, this.readOnly));
+	private void showMetadata(AudioItem audioItem) {
+		propertiesTable.setModel(new AudioItemPropertiesModel(audioItem, this.readOnly));
 		propertiesTable.getTableHeader().getColumnModel().getColumn(AudioItemPropertiesModel.EDIT_COL).setMaxWidth(25);
 	}
 
