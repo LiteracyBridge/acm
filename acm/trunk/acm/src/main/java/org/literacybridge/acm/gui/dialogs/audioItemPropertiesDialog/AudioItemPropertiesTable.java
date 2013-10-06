@@ -1,9 +1,7 @@
 package org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Desktop;
-import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
@@ -13,12 +11,10 @@ import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
 import org.apache.commons.lang.StringUtils;
@@ -117,6 +113,7 @@ public class AudioItemPropertiesTable extends JXTable {
 	private void searchRequest(String query) {
 		Application.getFilterState().setFilterCategories(null);
 		Application.getFilterState().setFilterLanguages(null);
+		Application.getFilterState().setSelectedTag(null);
 		Application.getFilterState().setFilterString(query);
 		Application.getMessageService().pumpMessage(new SearchRequestMessage(query));
 	}
