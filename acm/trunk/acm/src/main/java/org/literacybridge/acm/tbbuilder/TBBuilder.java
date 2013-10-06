@@ -25,6 +25,7 @@ public class TBBuilder {
 		CommandLineParams params = new CommandLineParams();
 		params.disableUI = true;
 		params.readonly = true;
+		params.sandbox = true;
 		params.sharedACM = args[0];
 		Application.startUp(params);
 		
