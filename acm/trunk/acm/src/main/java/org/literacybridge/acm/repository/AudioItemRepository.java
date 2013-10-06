@@ -34,6 +34,8 @@ import com.google.common.collect.Sets;
  * that the ACM stores. Metadata of the audio items is stored separately,
  * not in this repository.
  */
+// TODO: We could improve multi-threading performance here if we lock
+// per audioitem, instead of using one lock across all items. 
 public abstract class AudioItemRepository {
 	private final static File TMP_DIR = new File(System.getProperty("java.io.tmpdir"));
 	
@@ -89,7 +91,7 @@ public abstract class AudioItemRepository {
 	 * Returns true, if this audio item is stored in any supported
 	 * format in this repository. 
 	 */
-	public boolean hasAudioItem(AudioItem audioItem) {
+	public synchronized boolean hasAudioItem(AudioItem audioItem) {
 		for (AudioFormat format : AudioFormat.values()) {
 			if (hasAudioItemFormat(audioItem, format)) {
 				return true;
@@ -103,7 +105,7 @@ public abstract class AudioItemRepository {
 	 * Returns true, if this audio item is stored in the given format
 	 * in the repository.
 	 */
-	public boolean hasAudioItemFormat(AudioItem audioItem, AudioFormat format) {
+	public synchronized boolean hasAudioItemFormat(AudioItem audioItem, AudioFormat format) {
 		File file = getAudioFile(audioItem, format);
 		return file != null && file.exists();
 	}
@@ -115,7 +117,7 @@ public abstract class AudioItemRepository {
 	 * For storing different audio formats of the same audio item in this repository
 	 * call convert() instead of calling this method multiple times.
 	 */
-	public File storeAudioFile(AudioItem audioItem, File externalFile)
+	public synchronized File storeAudioFile(AudioItem audioItem, File externalFile)
 				throws DuplicateItemException, UnsupportedFormatException, IOException {
 
 //		Commenting out these four lines below so that an existing cached .wav file doesn't stop an .a18 import
@@ -163,7 +165,7 @@ public abstract class AudioItemRepository {
 	 * Returns null, if the audio item is not stored with the given format
 	 * in this repository;
 	 */
-	public File getAudioFile(AudioItem audioItem, AudioFormat format) {
+	public synchronized File getAudioFile(AudioItem audioItem, AudioFormat format) {
 		checkFilesUpToDate(audioItem);
 		
 		File file = resolveFile(audioItem, format, false);
@@ -174,7 +176,7 @@ public abstract class AudioItemRepository {
 	 * Converts the audio item into the specified targetFormat and returns 
 	 * a handle to the newly created file. 
 	 */
-	public File convert(AudioItem audioItem, AudioFormat targetFormat) throws ConversionException, IOException {
+	public synchronized File convert(AudioItem audioItem, AudioFormat targetFormat) throws ConversionException, IOException {
 		checkFilesUpToDate(audioItem);
 		
 		File audioFile = resolveFile(audioItem, targetFormat, true);
@@ -210,7 +212,7 @@ public abstract class AudioItemRepository {
 	 * First the file in the given format is imported and the old version of that format is, if it exists, overwritten.
 	 * Then this new version is converted into all formats that were previously stored for that audio item.
 	 */
-	public void updateAudioItem(AudioItem audioItem, File externalFile) throws ConversionException, IOException, 
+	public synchronized void updateAudioItem(AudioItem audioItem, File externalFile) throws ConversionException, IOException, 
 	                                                                           UnsupportedFormatException {
 		if (determineFormat(externalFile) == null) {
 			throw new UnsupportedFormatException(
@@ -247,7 +249,7 @@ public abstract class AudioItemRepository {
 	/**
 	 * Deletes all files associated with an audioitem from the repository.
 	 */
-	public void delete(AudioItem audioItem) {
+	public synchronized void delete(AudioItem audioItem) {
 		// we need to loop over all formats, because the different formats
 		// could be stored in different directories (e.g. local cache)
 		for (AudioFormat format : AudioFormat.values()) {
@@ -258,7 +260,7 @@ public abstract class AudioItemRepository {
 		}
 	}
 	
-	public void exportA18WithMetadata(AudioItem audioItem, File targetDirectory) throws ConversionException, IOException {
+	public synchronized void exportA18WithMetadata(AudioItem audioItem, File targetDirectory) throws ConversionException, IOException {
 		File fromFile = convert(audioItem, AudioFormat.A18);
 		if (fromFile == null) {
 			throw new IOException("AudioItem " + audioItem.getUuid() + " not found in repository.");
@@ -267,7 +269,7 @@ public abstract class AudioItemRepository {
 		exportA18WithMetadataToFile(audioItem, new File(targetDirectory, fromFile.getName()));
 	}
 
-	public void exportA18WithMetadataToFile(AudioItem audioItem, File targetFile) throws ConversionException, IOException {
+	public synchronized void exportA18WithMetadataToFile(AudioItem audioItem, File targetFile) throws ConversionException, IOException {
 		File fromFile = convert(audioItem, AudioFormat.A18);
 		if (fromFile == null) {
 			throw new IOException("AudioItem " + audioItem.getUuid() + " not found in repository.");
