@@ -163,9 +163,14 @@ public class ControlAccess {
 			JOptionPane.showMessageDialog(null, "This ACM is already opened.");
 			System.exit(0);
 		}
-		if (dbInfo == null)
+		if (dbInfo == null) {
 			dbInfo = new DBInfo(config);
+		}
 		if (dbInfo.isCheckedOut()) {
+			if (ACMConfiguration.isForceSandbox()) {
+				System.out.println("Sandbox mode forced, but DB is currently checked out. Check DB in and restart with sandbox flag.");
+				System.exit(0);
+			}
 			setSandbox(false);
 			if (!ACMConfiguration.isDisableUI()) {
 				JOptionPane.showMessageDialog(null,"You have already checked out this ACM.\nYou can now continue making changes to it.");
@@ -309,7 +314,7 @@ public class ControlAccess {
 					outdatedDB = true;
 				}
 			}
-			if (!userHasWriteAccess() || !dbAvailable || outdatedDB) {
+			if (!userHasWriteAccess() || !dbAvailable || outdatedDB || ACMConfiguration.isForceSandbox()) {
 				sandboxMode = true; 
 			} 
 			if (outdatedDB) {

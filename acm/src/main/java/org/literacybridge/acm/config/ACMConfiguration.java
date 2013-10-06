@@ -31,6 +31,7 @@ public class ACMConfiguration {
 	
     private static String title;
     private static boolean disableUI = false;
+    private static boolean forceSandbox = false;
 	private static final Properties ACMGlobalConfigProperties = new Properties();
 	private static File globalShareDir;
 	
@@ -42,6 +43,7 @@ public class ACMConfiguration {
 		}
 		
 		disableUI = args.disableUI;
+		forceSandbox = args.sandbox;
 		
 		setupACMGlobalPaths();
 		
@@ -139,6 +141,10 @@ public class ACMConfiguration {
 	
 	public static boolean isDisableUI() {
 		return disableUI;
+	}
+
+	public static boolean isForceSandbox() {
+		return forceSandbox;
 	}
 	
 	public static File getGlobalShareDir() {

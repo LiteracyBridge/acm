@@ -7,10 +7,10 @@ public class CommandLineParams {
 	@Option(name="-r",usage="to force read-only")
 	public boolean readonly;
 
-	/*	NOT CURRENTLY USING THIS PARAMETER --  NEED TO RETHINK IT WHEN WE NEED IT
 	@Option(name="-s",usage="to enter sandbox mode")
 	public boolean sandbox;
 
+	/*	NOT CURRENTLY USING THIS PARAMETER --  NEED TO RETHINK IT WHEN WE NEED IT
 	@Option(name="-db",usage="to set path to database")
 	public String pathDB;
 
