@@ -10,6 +10,7 @@
 	<classpathentry kind="lib" path="lib/com.google.collections-google-collections.jar"/>
 	<classpathentry kind="lib" path="lib/args4j-args4j.jar"/>
 	<classpathentry kind="lib" path="lib/commons-io-commons-io.jar"/>
+	<classpathentry kind="lib" path="lib/net.sf.opencsv-opencsv.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/jakarta-regexp-jakarta-regexp.jar"/>
 	<classpathentry kind="lib" path="lib/javax.media-jmf.jar"/>
