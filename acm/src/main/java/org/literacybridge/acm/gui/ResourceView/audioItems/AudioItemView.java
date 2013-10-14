@@ -21,6 +21,7 @@ import javax.swing.DropMode;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.SortOrder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumn;
@@ -95,7 +96,15 @@ public class AudioItemView extends Container implements Observer {
 	}
 	
 	private void updateTable(AudioItemTableModel model) {
-		audioItemTable.setModel(model);
+		TableColumn column = audioItemTable.getSortedColumn();
+		if (column != null) {
+			SortOrder order = audioItemTable.getSortOrder(column.getIdentifier());
+			audioItemTable.setModel(model);
+			audioItemTable.setSortOrder(column.getIdentifier(), order);
+		} else {
+			audioItemTable.setModel(model);
+		}
+		
 		if (!firstDataSet) {
 			initColumnSize();
 			orderingColumn = audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER);
