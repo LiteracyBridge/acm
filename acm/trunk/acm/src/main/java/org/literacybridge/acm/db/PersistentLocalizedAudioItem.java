@@ -50,10 +50,6 @@ public class PersistentLocalizedAudioItem extends PersistentObject {
     private PersistentAudioItem persistentAudioItem;
     
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "manifest")
-    private PersistentManifest persistentManifest;
-
-    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "metadata")
     private PersistentMetadata persistentMetadata;
 
@@ -91,14 +87,6 @@ public class PersistentLocalizedAudioItem extends PersistentObject {
 
     void setPersistentAudioItem(PersistentAudioItem persistentAudioItem) {
         this.persistentAudioItem = persistentAudioItem;
-    }
-
-    public PersistentManifest getPersistentManifest() {
-        return persistentManifest;
-    }
-
-    public void setPersistentManifest(PersistentManifest persistentManifest) {
-        this.persistentManifest = persistentManifest;
     }
 
     public PersistentMetadata getPersistentMetadata() {
