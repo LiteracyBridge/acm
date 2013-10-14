@@ -69,13 +69,6 @@ public class LocalizedAudioItem implements Persistable {
 		return new Metadata(mItem.getPersistentMetadata());
 	}
 
-	public Manifest getManifest() {
-		if (mItem.getPersistentManifest() == null) {
-			return null;
-		}
-		return new Manifest(mItem.getPersistentManifest());
-	}
-	
 	public AudioItem getParentAudioItem() {
 		if (mItem.getPersistentAudioItem() == null) {
 			return null;
