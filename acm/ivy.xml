@@ -31,5 +31,6 @@
     <dependency org="org.swinglabs" name="swingx" rev="1.6.1"/>
     <dependency org="args4j" name="args4j" rev="2.0.16"/>
     <dependency org="commons-io" name="commons-io" rev="2.4"></dependency>
+    <dependency org="net.sf.opencsv" name="opencsv" rev="2.3"></dependency>
   </dependencies>
 </ivy-module>

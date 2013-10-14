@@ -21,6 +21,7 @@ import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.importexport.CSVExporter;
 import org.literacybridge.acm.importexport.FileSystemExporter;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 
@@ -31,6 +32,7 @@ public class ExportDialog extends JDialog implements ActionListener {
 	private JRadioButton mp3Button;
 	private JRadioButton wavButton;
 	private JRadioButton a18Button;
+	private JRadioButton csvButton;
 	
 	private final LocalizedAudioItem[] selectedAudioItems;
 	
@@ -57,19 +59,39 @@ public class ExportDialog extends JDialog implements ActionListener {
 		mp3Button = new JRadioButton("mp3");
 		wavButton = new JRadioButton("wav");
 		a18Button = new JRadioButton("a18");
+		csvButton = new JRadioButton("csv");
+		
 		formatGroup.add(mp3Button);
 		formatGroup.add(wavButton);
 		formatGroup.add(a18Button);
+		formatGroup.add(csvButton);
+		
+		ActionListener buttonListener = new ActionListener() {
+			@Override public void actionPerformed(ActionEvent e) {
+				if (csvButton.isSelected()) {
+					exportDirectoryChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+				} else {
+					exportDirectoryChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				}
+			}
+		};
+		
+		mp3Button.addActionListener(buttonListener);
+		wavButton.addActionListener(buttonListener);
+		a18Button.addActionListener(buttonListener);
+		csvButton.addActionListener(buttonListener);
 		
 		mp3Button.setPreferredSize(new Dimension(70,20));
 		wavButton.setPreferredSize(new Dimension(70,20));
 		a18Button.setPreferredSize(new Dimension(70,20));
+		csvButton.setPreferredSize(new Dimension(70,20));
 		c2.add(mp3Button);
 		c2.add(wavButton);
 		c2.add(a18Button);
+		c2.add(csvButton);
 		
-		// select mp3 by default
-		mp3Button.setSelected(true);
+		// select a18 by default
+		a18Button.setSelected(true);
 		
 		add(exportDirectoryChooser);
 		setSize(600, 400);
@@ -87,33 +109,46 @@ public class ExportDialog extends JDialog implements ActionListener {
 		}
 	}
 	
-	private void export(final File targetDir) {
-		final AudioFormat targetFormat;
-		// TODO export dialog that let's you modify audio settings
-		if (mp3Button.isSelected()) {
-			targetFormat = AudioFormat.MP3;
-		} else if (wavButton.isSelected()) {
-			targetFormat = AudioFormat.WAV;
-		} else {
-			targetFormat = AudioFormat.A18;
-		}
+	private void export(final File target) {
+		final Runnable job;
 		
-		// don't piggyback on the UI thread
-		Runnable job = new Runnable() {
-			@Override
-			public void run() {
-				Application app = Application.getApplication();
-				// TODO proper label
-				Container dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK", LanguageUtil.getUILanguage()), app));
-				try {
-					FileSystemExporter.export(ExportDialog.this.selectedAudioItems, targetDir, targetFormat);
-				} catch (IOException e) {
-					LOG.log(Level.WARNING, "Exporting audio items failed", e);
-				} finally {
-					UIUtils.hideDialog(dialog);
+		if (csvButton.isSelected()) {
+			job = new Runnable() {
+				@Override public void run() {
+					try {
+						CSVExporter.export(ExportDialog.this.selectedAudioItems, target);
+					} catch (IOException e) {
+						LOG.log(Level.WARNING, "Exporting audio items failed", e);
+					}
 				}
+			};
+		} else {			
+			final AudioFormat targetFormat;
+			// TODO export dialog that let's you modify audio settings
+			if (mp3Button.isSelected()) {
+				targetFormat = AudioFormat.MP3;
+			} else if (wavButton.isSelected()) {
+				targetFormat = AudioFormat.WAV;
+			} else {
+				targetFormat = AudioFormat.A18;
 			}
-		};
+			
+			// don't piggyback on the UI thread
+			job = new Runnable() {
+				@Override public void run() {
+					Application app = Application.getApplication();
+					// TODO proper label
+					Container dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK", LanguageUtil.getUILanguage()), app));
+					try {
+						FileSystemExporter.export(ExportDialog.this.selectedAudioItems, target, targetFormat);
+					} catch (IOException e) {
+						LOG.log(Level.WARNING, "Exporting audio items failed", e);
+					} finally {
+						UIUtils.hideDialog(dialog);
+					}
+				}
+			};
+		}
 		
 		new Thread(job).start();
 	}
