@@ -14,6 +14,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,8 +30,11 @@ import org.literacybridge.acm.repository.CachingRepository;
 import org.literacybridge.acm.repository.FileSystemRepository;
 import org.literacybridge.acm.utils.ZipUnzip;
 
+import com.google.common.collect.Lists;
+
 public class ControlAccess {
 	private static final Logger LOG = Logger.getLogger(ControlAccess.class.getName());
+	private static final int NUM_ZIP_FILES_TO_KEEP = 4;
 	private final static String DB_ZIP_FILENAME_PREFIX = Constants.DBHomeDir;
 	private final static String DB_ZIP_FILENAME_INITIAL = new String (DB_ZIP_FILENAME_PREFIX + "1.zip");
 	private final static String DB_DOES_NOT_EXIST = "NULL"; // PHP returns this if no checkin file found
@@ -220,6 +226,29 @@ public class ControlAccess {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}		
+	}
+	
+	private void deleteOldFiles(int numFilesToKeep) {
+		List<File> files = Lists.newArrayList(config.getSharedACMDirectory().listFiles(new FilenameFilter() {
+			@Override public boolean accept(File dir, String name) {
+				String lowercase = name.toLowerCase();
+				return lowercase.endsWith(".zip");
+			}			
+		}));
+		
+		// sort files from old to new
+		Collections.sort(files, new Comparator<File>() { 
+			@Override public int compare(File o1, File o2) {
+				return new Long(o1.lastModified()).compareTo(o2.lastModified());
+			}
+		});
+		
+		int numToDelete = files.size() - numFilesToKeep;
+		if (numToDelete > 0) {
+			for (int i = 0; i < numToDelete; i++) {
+				files.get(i).delete();
+			}
+		}
 	}
 
 	private boolean setCurrentFileToLastModified() {
@@ -624,8 +653,7 @@ public class ControlAccess {
 		
 		if (status && saveWork) {
 			// deleting old zip since we just got confirmation that the new zip was checkedin
-			File oldzip = new File (config.getSharedACMDirectory(), getCurrentZipFilename());
-			oldzip.delete();
+			deleteOldFiles(NUM_ZIP_FILES_TO_KEEP);
 		}
 		if (status) {  // whether saving work or not, only delete checkout file if status==true, meaning checkIn was successful
 			dbInfo.deleteCheckoutFile(); // do this first since it's most important to be deleted and the next line sometimes is unable to delete the entire directory
