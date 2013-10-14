@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry kind="src" path="src/main/resources"/>
+	<classpathentry kind="lib" path="ant/ant-contrib-1.0b3.jar"/>
+	<classpathentry kind="lib" path="lib/commons-lang-commons-lang.jar"/>
+	<classpathentry kind="lib" path="lib/org.apache.lucene-lucene-core.jar"/>
+	<classpathentry kind="lib" path="lib/org.apache.thrift-libthrift.jar"/>
+	<classpathentry kind="lib" path="lib/org.slf4j-slf4j-api.jar"/>
+	<classpathentry kind="lib" path="lib/com.google.collections-google-collections.jar"/>
+	<classpathentry kind="lib" path="lib/args4j-args4j.jar"/>
+	<classpathentry kind="lib" path="lib/commons-io-commons-io.jar"/>
+	<classpathentry kind="lib" path="lib/net.sf.opencsv-opencsv.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/jakarta-regexp-jakarta-regexp.jar"/>
+	<classpathentry kind="lib" path="lib/javax.media-jmf.jar"/>
+	<classpathentry kind="lib" path="lib/junit-junit.jar"/>
+	<classpathentry kind="lib" path="lib/org.apache.derby-derby.jar"/>
+	<classpathentry kind="lib" path="lib/org.apache.derby-derbyclient.jar"/>
+	<classpathentry kind="lib" path="lib/org.cmc.music-myid3.jar"/>
+	<classpathentry kind="lib" path="lib/org.eclipse.persistence-javax.persistence.jar"/>
+	<classpathentry kind="lib" path="lib/org.eclipse.persistence-org.eclipse.persistence.antlr.jar"/>
+	<classpathentry kind="lib" path="lib/org.eclipse.persistence-org.eclipse.persistence.asm.jar"/>
+	<classpathentry kind="lib" path="lib/org.eclipse.persistence-org.eclipse.persistence.core.jar"/>
+	<classpathentry kind="lib" path="lib/org.eclipse.persistence-org.eclipse.persistence.jpa.jar"/>
+	<classpathentry kind="lib" path="lib/org.yaml-snakeyaml.jar"/>
+	<classpathentry kind="lib" path="lib/com.jhlabs-filters.jar"/>
+	<classpathentry kind="lib" path="lib/com.seaglasslookandfeel-seaglasslookandfeel.jar"/>
+	<classpathentry kind="lib" path="lib/it.cnr.imaa.essi-lablib-checkboxtree.jar"/>
+	<classpathentry kind="lib" path="lib/org.netbeans.external-swing-layout-1.0.4.jar"/>
+	<classpathentry kind="lib" path="lib/org.swinglabs-swing-worker.jar"/>
+	<classpathentry kind="lib" path="lib/org.swinglabs-swingx.jar"/>
+	<classpathentry kind="output" path="build/classes"/>
+</classpath>
