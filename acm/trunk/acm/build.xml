@@ -247,7 +247,7 @@
         <case value="Mac OS X">
         <propertyregex property="thrift.bin"
                   input="${os.version}"
-                  regexp="^(10\.[5678]).*$"
+                  regexp="^(10\.[56789]).*$"
                   select="${root.dir}/../thrift/bin/mac/\1/${thrift.version}/thrift"/>
         </case>
         <case value="Windows XP">
