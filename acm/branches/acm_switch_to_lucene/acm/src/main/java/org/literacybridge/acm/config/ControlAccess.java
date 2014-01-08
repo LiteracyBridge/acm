@@ -219,7 +219,9 @@ public class ControlAccess {
 			//} else {
 				File dbZip = new File(config.getSharedACMDirectory(),dbFilename);
 				System.out.println("Started DB Mirror:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
-				ZipUnzip.unzip(dbZip, toDir);
+				// TODO: uncomment
+				//ZipUnzip.unzip(dbZip, toDir);
+				
 				//FileUtils.copyDirectoryToDirectory(fromDir, toDir);
 				System.out.println("Completed DB Mirror:"+ Calendar.getInstance().get(Calendar.MINUTE)+":"+Calendar.getInstance().get(Calendar.SECOND)+":"+Calendar.getInstance().get(Calendar.MILLISECOND));
 			//} 

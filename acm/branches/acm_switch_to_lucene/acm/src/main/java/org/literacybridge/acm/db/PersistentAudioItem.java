@@ -19,6 +19,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.NoResultException;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Query;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
@@ -69,10 +70,10 @@ public class PersistentAudioItem extends PersistentObject {
     )
     private Set<PersistentTag> persistentTagList = new LinkedHashSet<PersistentTag>();    
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "metadata")
+    private PersistentMetadata persistentMetadata;
     
-    @OneToMany(mappedBy = "persistentAudioItem", cascade = {CascadeType.ALL})
-    private List<PersistentLocalizedAudioItem> persistentLocalizedAudioItemList = new ArrayList<PersistentLocalizedAudioItem>();
-
     public PersistentAudioItem() {
     }
 
@@ -86,6 +87,14 @@ public class PersistentAudioItem extends PersistentObject {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+    
+    public PersistentMetadata getPersistentMetadata() {
+    	return this.persistentMetadata;
+    }
+    
+    public void setPersistentMetadata(PersistentMetadata metadata) {
+    	this.persistentMetadata = metadata;
     }
 
     public Collection<PersistentCategory> getPersistentCategoryList() {
@@ -139,22 +148,6 @@ public class PersistentAudioItem extends PersistentObject {
         getPersistentTagList().clear();
     }
     
-    public List<PersistentLocalizedAudioItem> getPersistentLocalizedAudioItems() {
-        return persistentLocalizedAudioItemList;
-    }
-
-    public PersistentLocalizedAudioItem addPersistentLocalizedAudioItem(PersistentLocalizedAudioItem persistentLocalizedAudioItem) {
-        getPersistentLocalizedAudioItems().add(persistentLocalizedAudioItem);
-        persistentLocalizedAudioItem.setPersistentAudioItem(this);
-        return persistentLocalizedAudioItem;
-    }
-
-    public PersistentLocalizedAudioItem removePersistentLocalizedAudioItem(PersistentLocalizedAudioItem persistentLocalizedAudioItem) {
-        getPersistentLocalizedAudioItems().remove(persistentLocalizedAudioItem);
-        persistentLocalizedAudioItem.setPersistentAudioItem(null);
-        return persistentLocalizedAudioItem;
-    }
-
     public static List<PersistentAudioItem> getFromDatabase() {
         return PersistentQueries.getPersistentObjects(PersistentAudioItem.class);
     }

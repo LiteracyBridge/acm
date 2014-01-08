@@ -7,7 +7,6 @@ import java.util.Locale;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
@@ -24,11 +23,8 @@ public class WAVImporter extends Importer {
 		try {
 			AudioItem audioItem = new AudioItem(ACMConfiguration.getCurrentDB().getNewAudioItemUID());
 			audioItem.addCategory(category);
-
-			LocalizedAudioItem localizedAudioItem = new LocalizedAudioItem(audioItem.getUuid() + "-en", Locale.ENGLISH);
-			audioItem.addLocalizedAudioItem(localizedAudioItem);
 			
-			Metadata metadata = localizedAudioItem.getMetadata();
+			Metadata metadata = audioItem.getMetadata();
 			String title = file.getName().substring(0, file.getName().length() - 4);
 			metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER, new MetadataValue<String>(audioItem.getUuid()));
 			metadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(title));

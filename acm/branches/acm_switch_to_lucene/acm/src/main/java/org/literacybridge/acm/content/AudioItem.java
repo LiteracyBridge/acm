@@ -1,10 +1,8 @@
 package org.literacybridge.acm.content;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -15,7 +13,7 @@ import org.literacybridge.acm.db.Persistable;
 import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
-import org.literacybridge.acm.db.PersistentLocalizedAudioItem;
+import org.literacybridge.acm.db.PersistentMetadata;
 import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.metadata.Metadata;
 
@@ -163,54 +161,20 @@ public class AudioItem implements Persistable {
 	public Collection<PersistentTag> getPlaylists() {
 		return mItem.getPersistentTagList();
 	}
-
-	public LocalizedAudioItem getLocalizedAudioItem(Locale locale) {
-		
-			// TODO local will be ignored for now
-		
-//            for (PersistentLocalizedAudioItem item : mItem.getPersistentLocalizedAudioItems()) {
-//                PersistentLocale l = item.getPersistentLocale();
-//                if ((locale.getCountry().equals(l.getCountry()) && 
-//                    (locale.getLanguage().equals(l.getLanguage())))) {
-//                    return new LocalizedAudioItem(item);         
-//                }
-//            }
-//            return null;
-		
-		if (mItem.getPersistentLocalizedAudioItems() != null) {
-			PersistentLocalizedAudioItem localizedItem = mItem.getPersistentLocalizedAudioItems().get(0);
-			return new LocalizedAudioItem(localizedItem);
-		}
-		return null;
-	}
 	
 	public Metadata getMetadata() {
-		return getLocalizedAudioItem(null).getMetadata();
+		if (mItem.getPersistentMetadata() == null) {
+			PersistentMetadata m = new PersistentMetadata();
+			mItem.setPersistentMetadata(m);
+		}
+		return new Metadata(mItem.getPersistentMetadata());
 	}
 	
-	public Set<Locale> getAvailableLocalizations() {
-        Set<Locale> results = new LinkedHashSet<Locale>();
-        for (PersistentLocalizedAudioItem i : mItem.getPersistentLocalizedAudioItems()) {
-            PersistentLocale locale = i.getPersistentLocale();
-            results.add(new Locale(locale.getLanguage(),locale.getCountry()));
-        }
-        return results;
-	}
-	
-	public void addLocalizedAudioItem(LocalizedAudioItem localizedAudioItem) {
-        mItem.addPersistentLocalizedAudioItem(localizedAudioItem.getPersistentObject());
-	}
-
-    public void removeLocalizedAudioItem(LocalizedAudioItem localizedAudioItem) {
-        mItem.removePersistentLocalizedAudioItem(localizedAudioItem.getPersistentObject());            
-    }
-
     @SuppressWarnings("unchecked")
 	public AudioItem commit() {
     	return commit(null);
     }
     
-    @SuppressWarnings("unchecked")
 	public AudioItem commit(EntityManager em) {
         mItem = mItem.<PersistentAudioItem>commit(em);
         return this;

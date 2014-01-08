@@ -1,13 +1,11 @@
 package org.literacybridge.acm.gui.ResourceView;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import java.awt.Container;
-import java.awt.Dialog;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.JTree;
 import javax.swing.TransferHandler;
@@ -15,15 +13,14 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.device.DeviceInfo;
-import org.literacybridge.acm.importexport.A18DeviceExporter;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.BusyDialog;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.importexport.A18DeviceExporter;
 
 public class ExportToDeviceTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = 1L;
@@ -70,7 +67,7 @@ public class ExportToDeviceTransferHandler extends TransferHandler {
 					try {
 						for (AudioItem item : audioItems) {
 							try {
-								A18DeviceExporter.exportToDevice(item.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage()), device);
+								A18DeviceExporter.exportToDevice(item, device);
 							} catch (Exception e) {
 								LOG.log(Level.WARNING, "Unable to export AudioItem with id=" + item.getUuid(), e);
 							}

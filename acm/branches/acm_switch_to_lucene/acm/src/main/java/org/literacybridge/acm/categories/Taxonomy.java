@@ -5,18 +5,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
-import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioLabel;
 import org.literacybridge.acm.db.Persistable;
-import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
-import org.literacybridge.acm.db.PersistentLocalizedString;
-import org.literacybridge.acm.db.PersistentString;
-import org.literacybridge.acm.gui.util.language.LanguageUtil;
 
 public class Taxonomy implements Persistable {
 
@@ -27,8 +20,8 @@ public class Taxonomy implements Persistable {
 	private static Taxonomy taxonomy;
 	
 	public Taxonomy() {
-		PersistentString title = new PersistentString("root");
-		PersistentString desc = new PersistentString("root node");
+		String title = "root";
+		String desc = "root node";
 		PersistentCategory root = new PersistentCategory(title, desc, rootUUID);
 		mRootCategory = new Category(root);
 	}
@@ -36,8 +29,8 @@ public class Taxonomy implements Persistable {
 	public Taxonomy(String uuid) {
 		PersistentCategory root = PersistentCategory.getFromDatabase(uuid);
 		if (root == null) {
-			PersistentString title = new PersistentString("root");
-			PersistentString desc = new PersistentString("root node");
+			String title = "root";
+			String desc = "root node";
 			root = new PersistentCategory(title, desc, uuid);
 			mRootCategory = new Category(root);
 		}
@@ -58,8 +51,8 @@ public class Taxonomy implements Persistable {
 		DefaultLiteracyBridgeTaxonomy.TaxonomyRevision latestRevision = DefaultLiteracyBridgeTaxonomy.loadLatestTaxonomy();
 
 		if (root == null) {	
-			PersistentString title = new PersistentString("root");
-			PersistentString desc = new PersistentString("root node");
+			String title = "root";
+			String desc = "root node";
 			root = new PersistentCategory(title, desc, rootUUID);
 			taxonomy = createNewTaxonomy(latestRevision, root, null);
 			taxonomy.commit();
@@ -204,56 +197,14 @@ public class Taxonomy implements Persistable {
 			mCategory.setOrder(order);
 		}
 
-		public void setLocalizedCategoryDescription(Locale locale, String name,
-				String description) {
-			if ((mCategory.getTitle() == null)
-					|| (mCategory.getDescription() == null)) {
-				throw new IllegalStateException(
-						"Could not add localized category title/description. There is no default title/description set yet.");
-			}
-			PersistentString title = mCategory.getTitle();
-			if (doesLocaleExists(locale, title
-					.getPersistentLocalizedStringList()) == -1) {
-				PersistentLocalizedString localizedTitle = new PersistentLocalizedString();
-				localizedTitle.setTranslation(name);
-				title.addPersistentLocalizedString(localizedTitle);
-			}
-			PersistentString desc = mCategory.getDescription();
-			if (doesLocaleExists(locale, desc
-					.getPersistentLocalizedStringList()) == -1) {
-				PersistentLocalizedString localizedDesc = new PersistentLocalizedString();
-				localizedDesc.setTranslation(description);
-				desc.addPersistentLocalizedString(localizedDesc);
-			}
-		}
-
-		private int doesLocaleExists(Locale locale,
-				List<PersistentLocalizedString> list) {
-			for (int i = 0; i <= list.size() - 1; i++) {
-				if (compareLocale(locale, list.get(i).getPersistentLocale())) {
-					return i;
-				}
-			}
-			return -1;
-		}
-
-		private boolean compareLocale(Locale l1, PersistentLocale l2) {
-			if ((l1.getCountry().equals(l2.getCountry()))
-					&& (l1.getLanguage().equals(l2.getLanguage()))) {
-				return true;
-			}
-			return false;
-		}
-
 		public void setDefaultCategoryDescription(String name,
 				String description) {
-			mCategory.setTitle(new PersistentString(name));
-			mCategory.setDescription(new PersistentString(description));
+			mCategory.setTitle(name);
+			mCategory.setDescription(description);
 		}
 
-		public LocalizedAudioLabel getCategoryName(Locale languageCode) {
-			return new LocalizedAudioLabel(mCategory.getTitle().toString(),
-					mCategory.getDescription().toString(), null);
+		public String getCategoryName() {
+			return mCategory.getTitle();
 		}
 
 		public Category getParent() {
@@ -344,7 +295,7 @@ public class Taxonomy implements Persistable {
 		}
 		
 		@Override public String toString() {
-			return getCategoryName(LanguageUtil.getUILanguage()).toString();
+			return getCategoryName();
 		}
 	}
 

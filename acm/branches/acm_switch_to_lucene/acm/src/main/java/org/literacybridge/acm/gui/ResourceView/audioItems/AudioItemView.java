@@ -31,15 +31,14 @@ import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.messages.PlayLocalizedAudioItemMessage;
+import org.literacybridge.acm.gui.messages.PlayAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAndSelectAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemToPlayMessage;
 import org.literacybridge.acm.gui.messages.RequestedAudioItemMessage;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
-import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
+import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
 import org.literacybridge.acm.metadata.MetadataSpecification;
@@ -49,7 +48,7 @@ public class AudioItemView extends Container implements Observer {
 
 	private static final long serialVersionUID = -2886958461177831842L;
 
-	public static final DataFlavor AudioItemDataFlavor = new DataFlavor(LocalizedAudioItem.class, "LocalizedAudioItem");
+	public static final DataFlavor AudioItemDataFlavor = new DataFlavor(AudioItem.class, "AudioItem");
 	protected IDataRequestResult currResult = null;
 	public JXTable audioItemTable = null;
 
@@ -155,8 +154,7 @@ public class AudioItemView extends Container implements Observer {
 					RequestedAudioItemMessage newMsg = new RequestedAudioItemMessage(audioItem);
 					Application.getMessageService().pumpMessage(newMsg);
 				} else if (arg instanceof RequestAudioItemToPlayMessage) {
-					LocalizedAudioItem lai = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
-					PlayLocalizedAudioItemMessage newMsg = new PlayLocalizedAudioItemMessage(lai);
+					PlayAudioItemMessage newMsg = new PlayAudioItemMessage(audioItem);
 					Application.getMessageService().pumpMessage(newMsg);				
 				}	
 			}
@@ -291,11 +289,10 @@ public class AudioItemView extends Container implements Observer {
 		Object o = audioItemTable.getModel().getValueAt(modelRow, col);
 	    
 	    AudioItem item = null;
-	    if (o instanceof LocalizedAudioItemNode) {
-	    	item = ((LocalizedAudioItemNode) o).getParent();
-	    } else if (o instanceof LocalizedAudioItem) {
-	    	LocalizedAudioItem lItem = (LocalizedAudioItem) o;
-	    	item = lItem.getParentAudioItem();
+	    if (o instanceof AudioItemNode) {
+	    	item = ((AudioItemNode) o).getAudioItem();
+	    } else if (o instanceof AudioItem) {
+	    	item = (AudioItem) o;
 	    }
 	    
 	    item.refresh();
@@ -398,11 +395,10 @@ public class AudioItemView extends Container implements Observer {
 
 						for (int row : getCurrentSelectedRows()) {
 							AudioItem audioItem = getAudioItemAtTableRow(row);
-							LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
-							if (localizedAudioItem != null) {
-								List<MetadataValue<String>> metadata = localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.LB_DURATION);
+							if (audioItem != null) {
+								List<MetadataValue<String>> metadata = audioItem.getMetadata().getMetadataValues(MetadataSpecification.LB_DURATION);
 								if (metadata != null && !metadata.isEmpty()) {
-									String duration = localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.LB_DURATION).get(0).getValue();
+									String duration = audioItem.getMetadata().getMetadataValues(MetadataSpecification.LB_DURATION).get(0).getValue();
 									try {
 										cal.add(Calendar.MINUTE, Integer.parseInt(duration.substring(0, 2)));
 										cal.add(Calendar.SECOND, Integer.parseInt(duration.substring(3, 5)));

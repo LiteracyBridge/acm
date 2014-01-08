@@ -21,9 +21,7 @@ import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.ControlAccess;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.db.PersistentTagOrdering;
@@ -57,8 +55,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 		
 		GridLayout grid = new GridLayout(3, 1);
 		
-		final String selectedTitle = clickedAudioItem.getLocalizedAudioItem(
-				LanguageUtil.getUserChoosenLanguage()).getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).toString();
+		final String selectedTitle = clickedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).toString();
 		
 		final PersistentTag selectedTag = Application.getFilterState().getSelectedTag();
 		
@@ -180,12 +177,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 			@Override
 			public void click() {
 				AudioItemContextMenuDialog.this.setVisible(false);
-				LocalizedAudioItem[] localizedItems = new LocalizedAudioItem[selectedAudioItems.length];
-				for (int i = 0; i < selectedAudioItems.length; i++) {
-					localizedItems[i] = selectedAudioItems[i].getLocalizedAudioItem(
-							LanguageUtil.getUserChoosenLanguage());
-				}
-				ExportDialog export = new ExportDialog(localizedItems);
+				ExportDialog export = new ExportDialog(selectedAudioItems);
 				export.setVisible(true);
 			}
 		};

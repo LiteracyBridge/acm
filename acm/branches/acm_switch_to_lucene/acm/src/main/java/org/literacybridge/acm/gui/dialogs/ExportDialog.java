@@ -16,7 +16,7 @@ import javax.swing.JLabel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 
-import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
@@ -34,9 +34,9 @@ public class ExportDialog extends JDialog implements ActionListener {
 	private JRadioButton a18Button;
 	private JRadioButton csvButton;
 	
-	private final LocalizedAudioItem[] selectedAudioItems;
+	private final AudioItem[] selectedAudioItems;
 	
-	public ExportDialog(LocalizedAudioItem[] selectedAudioItems) {
+	public ExportDialog(AudioItem[] selectedAudioItems) {
 		setTitle(LabelProvider.getLabel("EXPORT", LanguageUtil.getUILanguage()));
 		this.selectedAudioItems = selectedAudioItems;
 		

@@ -41,7 +41,7 @@ public class PersistentMetadata extends PersistentObject {
     private Integer id;    
     
     @OneToOne(mappedBy = "persistentMetadata")
-    private PersistentLocalizedAudioItem persistentLocalizedAudioItem;
+    private PersistentAudioItem persistentAudioItem;
     
     @OneToMany(mappedBy = "persistentMetadata", cascade = {CascadeType.ALL})
     private List<PersistentAudioItemStatistic> persistentAudioItemStatisticList = new LinkedList<PersistentAudioItemStatistic>();    
@@ -111,12 +111,12 @@ public class PersistentMetadata extends PersistentObject {
         return id;
     } 
     
-    public PersistentLocalizedAudioItem getPersistentLocalizedAudioItem() {
-        return persistentLocalizedAudioItem;
+    public PersistentAudioItem getPersistentAudioItem() {
+        return persistentAudioItem;
     }   
 
-    public void setPersistentLocalizedAudioItem(PersistentLocalizedAudioItem item) {
-        persistentLocalizedAudioItem = item;
+    public void setPersistentAudioItem(PersistentAudioItem item) {
+        persistentAudioItem = item;
     }       
     
     protected List<PersistentAudioItemStatistic> getPersistentAudioItemStatistics() {

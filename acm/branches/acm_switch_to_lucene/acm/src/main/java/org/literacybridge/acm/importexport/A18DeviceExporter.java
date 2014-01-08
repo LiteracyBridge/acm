@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.repository.AudioItemRepository;
 
@@ -16,7 +16,7 @@ public class A18DeviceExporter {
 	
 	private static final String INBOX_SUB_DIR = "inbox/messages";
 	
-	public static boolean exportToDevice(LocalizedAudioItem item, DeviceInfo device) throws IOException {
+	public static boolean exportToDevice(AudioItem item, DeviceInfo device) throws IOException {
 		File deviceLocation = device.getPathToDevice();
 		deviceLocation = new File(deviceLocation, INBOX_SUB_DIR);
 		
@@ -26,7 +26,7 @@ public class A18DeviceExporter {
 
 		AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
 		try {
-			repository.exportA18WithMetadata(item.getParentAudioItem(), deviceLocation);
+			repository.exportA18WithMetadata(item, deviceLocation);
 		} catch (ConversionException e) {
 			LOG.log(Level.WARNING, "Error converting audio file.", e);
 			return false;

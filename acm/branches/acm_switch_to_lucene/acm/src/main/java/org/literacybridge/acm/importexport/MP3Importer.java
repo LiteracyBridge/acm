@@ -11,7 +11,6 @@ import org.cmc.music.myid3.MyID3;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
@@ -31,11 +30,8 @@ public class MP3Importer extends Importer {
 			
 			AudioItem audioItem = new AudioItem(ACMConfiguration.getCurrentDB().getNewAudioItemUID());
 			audioItem.addCategory(category);
-
-			LocalizedAudioItem localizedAudioItem = new LocalizedAudioItem(audioItem.getUuid() + "-en", Locale.ENGLISH);
-			audioItem.addLocalizedAudioItem(localizedAudioItem);
 			
-			Metadata metadata = localizedAudioItem.getMetadata();
+			Metadata metadata = audioItem.getMetadata();
 			String title = musicMetadata.getSongTitle();
 			if (title == null || title.trim().isEmpty()) {
 				title = file.getName().substring(0, file.getName().length() - 4);

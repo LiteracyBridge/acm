@@ -141,7 +141,7 @@ public class TagsListPopupMenu extends JPopupMenu {
 						PersistentCategory category = PersistentCategory
 								.getFromDatabase(line);
 						if (category != null) {
-							categories.put(category.getTitle().getString(),
+							categories.put(category.getTitle(),
 									category);
 						}
 					}

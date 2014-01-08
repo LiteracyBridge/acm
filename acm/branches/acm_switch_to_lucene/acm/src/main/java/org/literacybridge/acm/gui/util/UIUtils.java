@@ -12,7 +12,6 @@ import javax.swing.SwingUtilities;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.db.PersistentTag;
-import org.literacybridge.acm.gui.util.language.LanguageUtil;
 
 public class UIUtils {
 	public static Container showDialog(Frame parent, final Container dialog) {
@@ -71,7 +70,7 @@ public class UIUtils {
 				if (builder.length() > 0) {
 					builder.append(", ");
 				}
-				builder.append(cat.getCategoryName(LanguageUtil.getUILanguage()));
+				builder.append(cat.getCategoryName());
 			}
 		}
 		return builder.toString();

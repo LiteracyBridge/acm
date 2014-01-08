@@ -12,7 +12,6 @@ import java.util.Set;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
 import org.literacybridge.acm.metadata.LBMetadataSerializer;
 import org.literacybridge.acm.metadata.Metadata;
@@ -25,19 +24,19 @@ import org.literacybridge.acm.repository.AudioItemRepository.UnsupportedFormatEx
 import org.literacybridge.acm.utils.IOUtils;
 
 public class A18Importer extends Importer {
-	public static LocalizedAudioItem loadMetadata(File file) throws IOException {
+	public static AudioItem loadMetadata(File file) throws IOException {
 		return loadMetadata(null, file);
 	}
 	
-	public static LocalizedAudioItem loadMetadata(Category importCategory, File file) throws IOException {
+	public static AudioItem loadMetadata(Category importCategory, File file) throws IOException {
 		DataInputStream in = null;
 		
 		try {
 			in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
 			int bytesToSkip = IOUtils.readLittleEndian32(in);
 			
-			LocalizedAudioItem localizedAudioItem = new LocalizedAudioItem("", Locale.ENGLISH);
-			Metadata metadata = localizedAudioItem.getMetadata();
+			AudioItem audioItem = new AudioItem();
+			Metadata metadata = audioItem.getMetadata();
 			
 			Set<Category> categories = new HashSet<Category>();
 			if (bytesToSkip + 4 < file.length()) {
@@ -49,9 +48,7 @@ public class A18Importer extends Importer {
 					// do nothing
 				}
 			} 
-			
-			AudioItem audioItem = null;
-			
+						
 			if (metadata.getNumberOfFields() == 0) {
 				// legacy mode
 				audioItem = new AudioItem(ACMConfiguration.getCurrentDB().getNewAudioItemUID());
@@ -68,13 +65,7 @@ public class A18Importer extends Importer {
 				}
 				
 			} else {
-				localizedAudioItem.setLocale(metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE).get(0).getValue().getLocale());
-				// set metadata language to localizedAudioItem language
-				localizedAudioItem.getMetadata().setMetadataField(MetadataSpecification.DC_LANGUAGE
-							, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(localizedAudioItem.getLocale().getLanguage())));
-				
-				
-				audioItem = new AudioItem(metadata.getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue());
+				audioItem.setUuid(metadata.getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue());
 				if (metadata.getMetadataValues(MetadataSpecification.DTB_REVISION) == null) {
 					metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("0"));
 				}
@@ -85,9 +76,7 @@ public class A18Importer extends Importer {
 				audioItem.addCategory(cat);
 			}
 			
-			localizedAudioItem.setUuid(audioItem.getUuid() + "-en");
-			audioItem.addLocalizedAudioItem(localizedAudioItem);
-			return localizedAudioItem;
+			return audioItem;
 		} finally {
 			if (in != null) {
 				in.close();
@@ -99,8 +88,7 @@ public class A18Importer extends Importer {
 	protected void importSingleFile(Category category, File file)
 			throws IOException {
 		try {
-			LocalizedAudioItem localizedAudioItem = loadMetadata(category, file);
-			AudioItem audioItem = localizedAudioItem.getParentAudioItem();
+			AudioItem audioItem = loadMetadata(category, file);
 			
 			// TODO: handle updating the file by making use of revisions
 			if (AudioItem.getFromDatabase(audioItem.getUuid()) != null) {

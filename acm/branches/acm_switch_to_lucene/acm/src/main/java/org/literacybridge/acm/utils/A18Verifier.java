@@ -8,7 +8,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Set;
 
 import org.literacybridge.acm.categories.Taxonomy;
@@ -100,7 +99,7 @@ public class A18Verifier {
 				System.out.print("Categories: ");
 				Iterator<Category> it = categories.iterator();
 				while (it.hasNext()) {
-					System.out.print(it.next().getCategoryName(Locale.ENGLISH));
+					System.out.print(it.next().getCategoryName());
 					if (it.hasNext()) {
 						System.out.print(", ");
 					} else {

@@ -10,13 +10,9 @@
     <class>org.literacybridge.acm.db.PersistentTag</class>
     <class>org.literacybridge.acm.db.PersistentTagOrdering</class>
     <class>org.literacybridge.acm.db.PersistentLocale</class>
-    <class>org.literacybridge.acm.db.PersistentLocalizedAudioItem</class>
     <class>org.literacybridge.acm.db.PersistentManifest</class>
     <class>org.literacybridge.acm.db.PersistentMetadata</class>
-    <class>org.literacybridge.acm.db.PersistentReferencedFile</class>
     <class>org.literacybridge.acm.db.PersistentObject</class>
-    <class>org.literacybridge.acm.db.PersistentLocalizedString</class>
-    <class>org.literacybridge.acm.db.PersistentString</class>
     <class>org.literacybridge.acm.db.PersistentAudioItemStatistic</class>
   </persistence-unit>
 </persistence>

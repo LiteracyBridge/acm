@@ -52,13 +52,11 @@ public class PersistentCategory extends PersistentObject {
     @Column(name="ordering")
     private Integer order;    
     
-    @ManyToOne
-    @JoinColumn(name = "lang_desc")
-    private PersistentString persistentDescriptionString;    
+    @Column(name = "lang_desc")
+    private String description;    
     
-    @ManyToOne
-    @JoinColumn(name = "lang_title")
-    private PersistentString persistentTitleString;
+    @Column(name = "lang_title", nullable = false)
+    private String title;
     
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "parent")
@@ -70,9 +68,9 @@ public class PersistentCategory extends PersistentObject {
     public PersistentCategory() {
     }
 
-    public PersistentCategory(PersistentString title, PersistentString desc, String uuid) {
-        this.persistentTitleString = title;
-        this.persistentDescriptionString = desc;
+    public PersistentCategory(String title, String desc, String uuid) {
+        this.title = title;
+        this.description = desc;
         this.uuid = uuid;
     }
 
@@ -104,20 +102,20 @@ public class PersistentCategory extends PersistentObject {
         this.uuid = uuid;
     }
 
-    public PersistentString getDescription() {
-        return persistentDescriptionString;
+    public String getDescription() {
+        return description;
     }
 
-    public void setDescription(PersistentString description) {
-        this.persistentDescriptionString = description;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public PersistentString getTitle() {
-        return persistentTitleString;
+    public String getTitle() {
+        return title;
     }
 
-    public void setTitle(PersistentString title) {
-        this.persistentTitleString = title;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public PersistentCategory getPersistentParentCategory() {
@@ -172,8 +170,7 @@ public class PersistentCategory extends PersistentObject {
                 result = (PersistentCategory) findObject.getSingleResult();
                 System.out.println("  assigning Other category to this audioItem due to nonexistent category id ('" + uuid + "')");
             } catch (NoResultException nre) {
-            	nre.printStackTrace();
-            // do nothing
+            	return null;
             }
         } finally {
             em.close();

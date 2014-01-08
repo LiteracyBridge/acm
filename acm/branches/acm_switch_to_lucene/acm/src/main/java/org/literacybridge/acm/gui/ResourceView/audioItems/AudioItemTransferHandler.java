@@ -13,7 +13,7 @@ import javax.swing.TransferHandler;
 
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.gui.ResourceView.TreeTransferHandler;
-import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
+import org.literacybridge.acm.gui.util.AudioItemNode;
 
 public class AudioItemTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = 1L;
@@ -71,9 +71,9 @@ public class AudioItemTransferHandler extends TransferHandler {
 				
 				AudioItem[] audioItems = new AudioItem[rows.length];
 				for (int i = 0; i < rows.length; i++) {
-					LocalizedAudioItemNode item = 
-	                	(LocalizedAudioItemNode) table.getModel().getValueAt(table.convertRowIndexToModel(rows[i]), 0);
-					audioItems[i] = item.getLocalizedAudioItem().getParentAudioItem();
+					AudioItemNode item = 
+	                	(AudioItemNode) table.getModel().getValueAt(table.convertRowIndexToModel(rows[i]), 0);
+					audioItems[i] = item.getAudioItem();
 				}
 				
                 return audioItems; 

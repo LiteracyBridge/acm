@@ -13,7 +13,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel;
-import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
+import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.metadata.MetadataValue;
 
 @SuppressWarnings("serial")
@@ -33,7 +33,7 @@ public class AudioItemCellRenderer extends DefaultTableCellRenderer {
 		
 	    JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
-		LocalizedAudioItemNode status = (LocalizedAudioItemNode) value;
+		AudioItemNode status = (AudioItemNode) value;
 
         if (AudioItemTableModel.INFO_ICON == column && highlightedRow == row) {
         	label.setIcon(settingsImageIcon);
@@ -43,7 +43,7 @@ public class AudioItemCellRenderer extends DefaultTableCellRenderer {
 
         label.setText(status.toString());
  
-        List<MetadataValue<Integer>> statuses = status.getLocalizedAudioItem().getMetadata().getMetadataValues(LB_STATUS);
+        List<MetadataValue<Integer>> statuses = status.getAudioItem().getMetadata().getMetadataValues(LB_STATUS);
 		if (statuses != null && !statuses.isEmpty() && AudioItemPropertiesModel.STATUS_VALUES[statuses.get(0).getValue()] == AudioItemPropertiesModel.NO_LONGER_USED) {
             Font italicsLabel =new Font(label.getFont().getName(),Font.ITALIC,label.getFont().getSize());
             label.setFont(italicsLabel);

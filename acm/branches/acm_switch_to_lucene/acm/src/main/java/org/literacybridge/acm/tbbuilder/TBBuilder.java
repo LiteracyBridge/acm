@@ -91,7 +91,7 @@ public class TBBuilder {
 		 */
 		List<AudioItem> items = AudioItem.getFromDatabaseBySearch(packageName, null, null);
 		for (AudioItem item : items) {
-			String title = item.getLocalizedAudioItem(null).getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue();
+			String title = item.getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue();
 			if (title.trim().equals(packageName.trim())) {
 				System.out.println("\nExporting audioitem " + item.getUuid() + " (" + title + ") to " + welcomeMessageTargetDir);
 				ACMConfiguration.getCurrentDB().getRepository().exportA18WithMetadata(item, welcomeMessageTargetDir);

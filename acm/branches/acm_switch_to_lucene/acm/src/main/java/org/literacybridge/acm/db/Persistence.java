@@ -23,8 +23,6 @@ import org.literacybridge.acm.categories.Taxonomy;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioItem;
-import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.repository.A18DurationUtil;
@@ -136,9 +134,7 @@ public class Persistence {
     	for (AudioItem audioItem : AudioItem.getFromDatabase()) {
         	// =================================================================
     		// 1) calculate duration of audio items
-    		LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
-    		
-    		List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
+    		List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(
 					MetadataSpecification.LB_DURATION);
 			if (values == null || StringUtils.isEmpty(values.get(0).getValue())) {
 				A18DurationUtil.updateDuration(audioItem);
@@ -272,7 +268,7 @@ public class Persistence {
                     sqlScript.append(line.replace(';', ' ') + "\n");
                     if (line.contains(";")) {
                         statement.addBatch(sqlScript.toString());
-                        sqlScript = new StringBuffer();
+                        sqlScript.setLength(0);
                     }
                 }
                 sqlReader.close();

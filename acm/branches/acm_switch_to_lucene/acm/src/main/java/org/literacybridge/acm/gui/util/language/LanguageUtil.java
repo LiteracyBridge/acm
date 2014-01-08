@@ -2,7 +2,6 @@ package org.literacybridge.acm.gui.util.language;
 
 import java.util.Locale;
 
-import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.ACMConfiguration;
 
 public class LanguageUtil {
@@ -32,11 +31,6 @@ public class LanguageUtil {
 	
 	public static void setFallbackLanguage(Locale newFallbackLanguage) {
 		fallbackLanguage = newFallbackLanguage;
-	}
-	
-	public static String getBestMatchingLocalizedLabel(Category category, Locale wish) {
-		// here we must check first if the default language is available !!	
-		return category.getCategoryName(wish).getLabel();
 	}
 	
 	public static Locale getUILanguage() {

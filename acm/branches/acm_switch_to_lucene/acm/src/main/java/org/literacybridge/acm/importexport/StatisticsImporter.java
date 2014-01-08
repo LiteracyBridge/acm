@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import org.literacybridge.acm.db.PersistentAudioItem;
-import org.literacybridge.acm.db.PersistentLocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentMetadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 
@@ -33,34 +32,37 @@ public class StatisticsImporter {
 	
 	public void importStatsFile(File file) throws IOException {
 		BufferedReader reader = new BufferedReader(new FileReader(file));
-		List<String> tokens = tokenizeCSV(reader.readLine());
-		String deviceId = tokens.get(0);
-		int bootCycleNumber = Integer.parseInt(tokens.get(1));
-		
-		while(reader.ready()) {
-			tokens = tokenizeCSV(reader.readLine());
-			String audioItemID = tokens.get(0); 
-			PersistentAudioItem audioItem = PersistentAudioItem.getFromDatabase(audioItemID);
-			if (audioItem != null) {
-				PersistentLocalizedAudioItem localizedAudioItem = audioItem.getPersistentLocalizedAudioItems().get(0);
-				PersistentMetadata metadata = localizedAudioItem.getPersistentMetadata();
-				
-				metadata.setStatistic(MetadataSpecification.LB_OPEN_COUNT, deviceId, 
-						bootCycleNumber, Integer.parseInt(tokens.get(1)));
-				metadata.setStatistic(MetadataSpecification.LB_COMPLETION_COUNT, deviceId, 
-						bootCycleNumber, Integer.parseInt(tokens.get(2)));
-				metadata.setStatistic(MetadataSpecification.LB_COPY_COUNT, deviceId, 
-						bootCycleNumber, Integer.parseInt(tokens.get(3)));
-				metadata.setStatistic(MetadataSpecification.LB_SURVEY1_COUNT, deviceId, 
-						bootCycleNumber, Integer.parseInt(tokens.get(4)));
-				metadata.setStatistic(MetadataSpecification.LB_APPLY_COUNT, deviceId, 
-						bootCycleNumber, Integer.parseInt(tokens.get(5)));
-				metadata.setStatistic(MetadataSpecification.LB_NOHELP_COUNT, deviceId, 
-						bootCycleNumber, Integer.parseInt(tokens.get(6)));
-				
-				metadata.commit();
+		try {
+			List<String> tokens = tokenizeCSV(reader.readLine());
+			String deviceId = tokens.get(0);
+			int bootCycleNumber = Integer.parseInt(tokens.get(1));
+			
+			while(reader.ready()) {
+				tokens = tokenizeCSV(reader.readLine());
+				String audioItemID = tokens.get(0); 
+				PersistentAudioItem audioItem = PersistentAudioItem.getFromDatabase(audioItemID);
+				if (audioItem != null) {
+					PersistentMetadata metadata = audioItem.getPersistentMetadata();
+					
+					metadata.setStatistic(MetadataSpecification.LB_OPEN_COUNT, deviceId, 
+							bootCycleNumber, Integer.parseInt(tokens.get(1)));
+					metadata.setStatistic(MetadataSpecification.LB_COMPLETION_COUNT, deviceId, 
+							bootCycleNumber, Integer.parseInt(tokens.get(2)));
+					metadata.setStatistic(MetadataSpecification.LB_COPY_COUNT, deviceId, 
+							bootCycleNumber, Integer.parseInt(tokens.get(3)));
+					metadata.setStatistic(MetadataSpecification.LB_SURVEY1_COUNT, deviceId, 
+							bootCycleNumber, Integer.parseInt(tokens.get(4)));
+					metadata.setStatistic(MetadataSpecification.LB_APPLY_COUNT, deviceId, 
+							bootCycleNumber, Integer.parseInt(tokens.get(5)));
+					metadata.setStatistic(MetadataSpecification.LB_NOHELP_COUNT, deviceId, 
+							bootCycleNumber, Integer.parseInt(tokens.get(6)));
+					
+					metadata.commit();
+				}
 			}
-		}		
+		} finally {
+			reader.close();
+		}
 	}
 	
 	private final List<String> tokenizeCSV(String line) {

@@ -11,13 +11,11 @@ import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.db.PersistentTagOrdering;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
+import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.UIUtils;
-import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
@@ -84,8 +82,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
 	
-		AudioItem audioItem = (AudioItem) result.getAudioItems().get(rowIndex);
-		LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());	
+		AudioItem audioItem = (AudioItem) result.getAudioItems().get(rowIndex);	
 			
 		String cellText = "";
 		try {
@@ -95,7 +92,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 					break;
 				}
 				case TITLE: {
-					List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
+					List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(
 							MetadataSpecification.DC_TITLE);
 					if (values != null) {
 						cellText = values.get(0).getValue();
@@ -103,7 +100,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 					break;
 				}
 				case DURATION: {
-					List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
+					List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(
 							MetadataSpecification.LB_DURATION);
 					if (values != null && !StringUtils.isEmpty(values.get(0).getValue())) {
 						cellText = values.get(0).getValue();
@@ -111,11 +108,11 @@ public class AudioItemTableModel  extends AbstractTableModel {
 					break;
 				}
 				case CATEGORIES: {
-					cellText = UIUtils.getCategoryListAsString(localizedAudioItem.getParentAudioItem());
+					cellText = UIUtils.getCategoryListAsString(audioItem);
 					break;
 				}
 				case SOURCE: {
-					List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
+					List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(
 							MetadataSpecification.DC_SOURCE);
 					if (values != null) {
 						cellText = values.get(0).getValue();
@@ -123,7 +120,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 					break;
 				}
 				case MESSAGE_FORMAT: {
-					List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
+					List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(
 							MetadataSpecification.LB_MESSAGE_FORMAT);
 					if (values != null) {
 						cellText = values.get(0).getValue();
@@ -195,7 +192,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 			 e.printStackTrace();
 		}
 	
-		return new LocalizedAudioItemNode(localizedAudioItem, cellText, audioItem);
+		return new AudioItemNode(cellText, audioItem);
 	}
 	
 	

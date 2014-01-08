@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -314,7 +313,7 @@ public abstract class AudioItemRepository {
 
 	private static void appendMetadataToA18(AudioItem audioItem, File a18File) throws IOException {
 		// remove locale hack once we get rid of localized audio items
-		Metadata metadata = audioItem.getLocalizedAudioItem(Locale.ENGLISH).getMetadata();
+		Metadata metadata = audioItem.getMetadata();
 		
 		DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(a18File, true)));
 		try {

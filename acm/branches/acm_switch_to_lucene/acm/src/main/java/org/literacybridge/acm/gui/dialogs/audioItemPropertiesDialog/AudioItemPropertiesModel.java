@@ -30,7 +30,6 @@ import javax.swing.table.AbstractTableModel;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
@@ -150,7 +149,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 					String id = values.get(0).getValue();
 					if (!StringUtils.isEmpty(id)) {
 						AudioItem item = AudioItem.getFromDatabase(id);
-						List<MetadataValue<String>> values1 = item.getLocalizedAudioItem(null).getMetadata().getMetadataValues(DC_TITLE);
+						List<MetadataValue<String>> values1 = item.getMetadata().getMetadataValues(DC_TITLE);
 						if (values1 != null && !values1.isEmpty()) {
 							return values1.get(0).getValue();
 						}
@@ -299,7 +298,6 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		Metadata metadata = audioItem.getMetadata();
 		incrementRevision(metadata);
 		metadata.commit();
-		audioItem.getLocalizedAudioItem(null).commit();
 		audioItem.commit();
 	}
 	
@@ -309,14 +307,10 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
 	
 	protected static void setLocaleValue(MetadataField<RFC3066LanguageCode> field, AudioItem audioItem, Locale newLocale) {
-		Locale oldLocale = getLanguage(audioItem, DC_LANGUAGE);
-		LocalizedAudioItem localizedItem = audioItem.getLocalizedAudioItem(oldLocale);
-		localizedItem.setLocale(newLocale);
-		localizedItem.commit();
-		audioItem.commit();
 		Metadata metadata = audioItem.getMetadata();
 		metadata.setMetadataField(field, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(newLocale.getLanguage())));
 		metadata.commit();
+		audioItem.commit();
 	}
 	
 	private static void incrementRevision(Metadata metadata) {

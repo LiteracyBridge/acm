@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.literacybridge.acm.db.Persistable;
+import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentMetadata;
 import org.literacybridge.acm.metadata.types.MetadataStatisticsField;
 
@@ -130,9 +131,11 @@ public class Metadata implements Persistable {
 		} else if (field == MetadataSpecification.DTB_REVISION) {
 			mMetadata.setDtb_revision(value.getValue().toString());
 		} else if (field == MetadataSpecification.DC_LANGUAGE) {
-			// TODO ugly, needs to be implemented properly
-			mMetadata.setPersistentLocale(mMetadata
-					.getPersistentLocalizedAudioItem().getPersistentLocale());
+			RFC3066LanguageCode language = (RFC3066LanguageCode) value.getValue();
+			PersistentLocale locale = new PersistentLocale();
+			locale.setCountry(language.getLocale().getCountry());
+			locale.setLanguage(language.getLocale().getLanguage());
+			mMetadata.setPersistentLocale(locale);
 		} else if (field == MetadataSpecification.LB_DURATION) {
 			mMetadata.setDuration(value.getValue().toString());
 		} else if (field == MetadataSpecification.LB_MESSAGE_FORMAT) {

@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.metadata.LBMetadataIDs;
 import org.literacybridge.acm.metadata.Metadata;
@@ -22,7 +22,7 @@ public class CSVExporter {
 	private final static String CATEGORY_COLUMN_NAME = "CATEGORIES";
 	private final static String PLAYLIST_COLUMN_NAME = "PLAYLISTS";
 	
-	public static void export(LocalizedAudioItem[] audioItems, File targetFile) throws IOException {
+	public static void export(AudioItem[] audioItems, File targetFile) throws IOException {
 		CSVWriter writer = new CSVWriter(new FileWriter(targetFile), ',');
 		
 		List<MetadataField<?>> columns = Lists.newArrayList(LBMetadataIDs.FieldToIDMap.keySet());
@@ -47,14 +47,14 @@ public class CSVExporter {
 		
 		writer.writeNext(values);
 		
-		for (LocalizedAudioItem audioItem : audioItems) {
+		for (AudioItem audioItem : audioItems) {
 			Metadata metadata = audioItem.getMetadata();
 			for (int i = 0; i < numColumns - 2; i++) {
 				MetadataField<?> field = columns.get(i);
 				values[i] = getStringValue(metadata, field);
 			}
-			values[numColumns - 2] = UIUtils.getCategoryListAsString(audioItem.getParentAudioItem());
-			values[numColumns - 1] = UIUtils.getPlaylistAsString(audioItem.getParentAudioItem());
+			values[numColumns - 2] = UIUtils.getCategoryListAsString(audioItem);
+			values[numColumns - 1] = UIUtils.getPlaylistAsString(audioItem);
 			writer.writeNext(values);
 		}
 		

@@ -46,10 +46,10 @@ class PersistentQueries {
         try {
         	// queries all audioitems
         	StringBuilder query = 
-        		new StringBuilder("SELECT DISTINCT t0.id AS \"id\", t0.uuid AS \"uuid\" " 
-        				       + "FROM t_localized_audioitem t1, t_metadata t2, t_locale t3, (t_audioitem t0 LEFT OUTER JOIN t_audioitem_has_category tc " 
-        				       + "ON t0.id=tc.audioitem) "
-        				       + "WHERE t0.id=t1.audioitem AND t1.metadata=t2.id AND t1.language=t3.id ");
+        		new StringBuilder("SELECT DISTINCT t1.id AS \"id\", t1.uuid AS \"uuid\" " 
+        				       + "FROM t_metadata t2, t_locale t3, (t_audioitem t1 LEFT OUTER JOIN t_audioitem_has_category tc " 
+        				       + "ON t1.id=tc.audioitem) "
+        				       + "WHERE t1.metadata=t2.id AND t2.dc_language=t3.id ");
         	
         	// queries all audioitems matching a certain string
         	if (filter != null && !filter.isEmpty()) {
@@ -96,10 +96,10 @@ class PersistentQueries {
         try {
         	// queries all audioitems
         	StringBuilder query = 
-        		new StringBuilder("SELECT DISTINCT t0.id AS \"id\", t0.uuid AS \"uuid\" " 
-        				       + "FROM t_localized_audioitem t1, t_metadata t2, t_locale t3, (t_audioitem t0 LEFT OUTER JOIN t_audioitem_has_tag tc " 
-        				       + "ON t0.id=tc.audioitem) "
-        				       + "WHERE t0.id=t1.audioitem AND t1.metadata=t2.id AND t1.language=t3.id ");
+        		new StringBuilder("SELECT DISTINCT t1.id AS \"id\", t1.uuid AS \"uuid\" " 
+        				       + "FROM t_metadata t2, t_locale t3, (t_audioitem t1 LEFT OUTER JOIN t_audioitem_has_tag tc " 
+        				       + "ON t1.id=tc.audioitem) "
+        				       + "WHERE t1.metadata=t2.id AND t2.dc_language=t3.id ");
         	
         	// queries all audioitems matching a certain string
         	if (filter != null && !filter.isEmpty()) {
@@ -180,10 +180,10 @@ class PersistentQueries {
         Map<Integer, Integer> results = new HashMap<Integer, Integer>();
         try {
         	StringBuilder query = new StringBuilder("SELECT DISTINCT t5.id AS \"id\", COUNT(t4.category) AS \"count\" "
-							        		 	  + "FROM t_audioitem t0 JOIN t_localized_audioitem t1 ON t0.id=t1.audioitem " 
+							        		 	  + "FROM t_audioitem t1 " 
 							                      + "JOIN t_metadata t2 ON t1.metadata=t2.id " 
-							                      + "JOIN t_locale t3 ON t1.language=t3.id " 
-							                      + "JOIN t_audioitem_has_category t4 ON t0.id=t4.audioitem " 
+							                      + "JOIN t_locale t3 ON t2.dc_language=t3.id " 
+							                      + "JOIN t_audioitem_has_category t4 ON t1.id=t4.audioitem " 
 							                      + "RIGHT OUTER JOIN t_category t5 ON t4.category=t5.id "); 
         	
         	// search string conditions
@@ -249,11 +249,11 @@ class PersistentQueries {
         Map<String, Integer> results = new HashMap<String, Integer>();
         try {
         	StringBuilder query = new StringBuilder("SELECT a.\"lang_id\" AS \"id\", COUNT(a.\"lang_id\") AS \"count\" FROM ("
-        										  + "SELECT DISTINCT t3.language AS \"lang_id\", t0.id AS \"audioitem_id\" "
-							        		 	  + "FROM t_audioitem t0 JOIN t_localized_audioitem t1 ON t0.id=t1.audioitem " 
+        										  + "SELECT DISTINCT t3.language AS \"lang_id\", t1.id AS \"audioitem_id\" "
+							        		 	  + "FROM t_audioitem t1  " 
 							                      + "JOIN t_metadata t2 ON t1.metadata=t2.id " 
-							                      + "JOIN t_locale t3 ON t1.language=t3.id "
-							                      + "JOIN t_audioitem_has_category tc ON t0.id=tc.audioitem " 
+							                      + "JOIN t_locale t3 ON t2.dc_language=t3.id "
+							                      + "JOIN t_audioitem_has_category tc ON t1.id=tc.audioitem " 
 	                                              + "JOIN t_category t5 ON tc.category=t5.id ");
         	
         	// search string conditions

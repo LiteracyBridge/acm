@@ -30,11 +30,11 @@ import javax.swing.Timer;
 
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
-import org.literacybridge.acm.gui.messages.PlayLocalizedAudioItemMessage;
+import org.literacybridge.acm.gui.messages.PlayAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemToPlayMessage;
 import org.literacybridge.acm.gui.messages.SearchRequestMessage;
@@ -261,19 +261,19 @@ public class ToolbarView extends JToolBar implements ActionListener
 		}
 	}
 
-	private void play(LocalizedAudioItem item) {
+	private void play(AudioItem item) {
 		if (player != null) {
 			player.stop();
 			updatePlayerStateTimer.stop();			
 		}
 		System.out.println("LocalizedAudioItem:"+item.getUuid());
-		System.out.println("Its parent:"+item.getParentAudioItem().getUuid());
+		System.out.println("Its parent:"+item.getUuid());
 		try {
 			// convert on the fly if necessary
 			Application parent = Application.getApplication();
 			parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));				
 			File f = ACMConfiguration.getCurrentDB().getRepository()
-							.convert(item.getParentAudioItem(), AudioFormat.WAV);
+							.convert(item, AudioFormat.WAV);
 			parent.setCursor(Cursor.getDefaultCursor());
 			Application.getFilterState().updateResult();	
 			initPlayer(f);
@@ -295,9 +295,9 @@ public class ToolbarView extends JToolBar implements ActionListener
 			updateControlsLanguage(newLocale.getNewLocale());
 		}		
 		
-		if (arg instanceof PlayLocalizedAudioItemMessage && OSChecker.WINDOWS) {
-			PlayLocalizedAudioItemMessage item = (PlayLocalizedAudioItemMessage) arg;
-			play(item.getLocalizedAudioItem());
+		if (arg instanceof PlayAudioItemMessage && OSChecker.WINDOWS) {
+			PlayAudioItemMessage item = (PlayAudioItemMessage) arg;
+			play(item.getAudioItem());
 		}
 		
 		if (arg instanceof SearchRequestMessage) {

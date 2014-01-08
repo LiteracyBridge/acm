@@ -521,7 +521,7 @@ public class CategoryView extends ACMContainer implements Observer {
 		public String toString() {
 			String displayLabel = null;
 			if (category != null) {
-				displayLabel = category.getCategoryName(LanguageUtil.getUILanguage()).getLabel();
+				displayLabel = category.getCategoryName();
 				int count = result.getFacetCount(category);
 				if (count > 0) {
 					displayLabel += " ["+count+"]";

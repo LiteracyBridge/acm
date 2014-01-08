@@ -3,7 +3,6 @@ package org.literacybridge.acm.db;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import javax.persistence.Column;
@@ -49,12 +48,6 @@ public class PersistentLocale extends PersistentObject implements Serializable {
     @OneToMany(mappedBy = "persistentLocale")
     private List<PersistentMetadata> persistentMetadataList = new LinkedList<PersistentMetadata>();
     
-    @OneToMany(mappedBy = "persistentLocale")
-    private List<PersistentLocalizedAudioItem> persistentLocalizedAudioItemList = new LinkedList<PersistentLocalizedAudioItem>();
-
-    @OneToMany(mappedBy = "persistentLocale")
-    private List<PersistentLocalizedString> persistentLanguageStringList = new LinkedList<PersistentLocalizedString>();
-
     public PersistentLocale() {
     }
     
@@ -90,14 +83,6 @@ public class PersistentLocale extends PersistentObject implements Serializable {
         return persistentMetadataList;
     }
 
-    public List<PersistentLocalizedAudioItem> getPersistentLocalizedAudioItemList() {
-        return persistentLocalizedAudioItemList;
-    }
-    
-    public List<PersistentLocalizedString> getPersistentLanguageStringList() {
-        return persistentLanguageStringList;
-    }  
-    
     public static PersistentLocale getFromDatabase(int id) {
         return PersistentQueries.getPersistentObject(PersistentLocale.class, id);
     }
