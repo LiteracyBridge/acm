@@ -1,27 +1,44 @@
 namespace java org.literacybridge.acm.thrift
 
-struct ThriftPlaylistMapping {
-  1: required string audioLabel
-  2: required list<string> audioItemUIDs
-
-  // a locked label doesn't allow a talking book user to add/remove recordings
-  3: optional bool locked=0
+enum ThriftAudioItemStatus {
+  CURRENT,
+  NO_LONGER_USED
 }
 
-struct ThriftDeviceProfile {
-  1: required string name
-  2: required list<ThriftPlaylistMapping> playlists
-
-  // whether or not to erase the "other" list when the image is applied to a talking book device
-  3: optional bool eraseOtherList=0
-
-  4: optional string language
-
-  // points to a file that defines mappings of user input to system audio prompts
-  5: optional string controlMapping
+struct ThriftCategory {
+  1: required i32 uid
 }
 
-struct ThriftDeviceImage {
-  1: required string name
-  2: required list<ThriftDeviceProfile> profiles
+struct ThriftPlaylist {
+  1: required i32 uid
+}
+
+struct ThriftLanguage {
+  1: required string languageCode
+  2: optional string countryCode
+}
+
+struct ThriftAudioItem {
+  1: required i32 uid
+  2: required ThriftAudioItemStatus status = ThriftAudioItemStatus.CURRENT
+  3: required i32 revision
+  4: optional string title
+  5: optional i32 duration
+  6: optional list<ThriftCategory> categories
+  7: optional list<ThriftPlaylist> playlists
+  8: optional ThriftLanguage language
+  9: optional string messageFormat
+ 10: optional string targetAudience
+ 11: optional i64 dateRecorded
+ 12: optional list<string> keywords
+ 13: optional string timing
+ 14: optional string source
+ 15: optional string primarySpeaker
+ 16: optional string goal
+ 17: optional string deviceId
+ 18: optional string messageId
+ 19: optional list<string> relatedMessageIds
+ 20: optional string englishTranscription
+ 21: optional string notes
+ 22: optional string beneficiary
 }
