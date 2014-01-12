@@ -23,7 +23,7 @@ struct ThriftAudioItem {
   2: required ThriftAudioItemStatus status = ThriftAudioItemStatus.CURRENT
   3: required i32 revision
   4: optional string title
-  5: optional i32 duration
+  5: optional string duration
   6: optional list<ThriftCategory> categories
   7: optional list<ThriftPlaylist> playlists
   8: optional ThriftLanguage language
