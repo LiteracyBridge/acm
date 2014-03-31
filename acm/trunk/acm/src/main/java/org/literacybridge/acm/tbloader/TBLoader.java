@@ -54,7 +54,7 @@ import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.10r1124";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.10r1158";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -1910,7 +1910,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			short countCompleted;
 			short countApplied;
 			short countUseless;
-			short totalSecondsPlayed;
+			int totalSecondsPlayed;
 			
 			public NORmsgStats() throws IOException {
 				f.skipBytes(2);
@@ -1923,7 +1923,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				this.countCompleted = readShort();
 				this.countApplied = readShort();
 				this.countUseless = readShort();
-				this.totalSecondsPlayed = readShort();
+				this.totalSecondsPlayed = readUnsignedShort();
 			}
 		}
 
@@ -2000,6 +2000,23 @@ public class TBLoader extends JFrame implements ActionListener {
 			 return ret;
 		}
 		
+		int readUnsignedShort() throws IOException {
+			 long sum = 0;
+			 int b, i;
+			 int ret;
+
+			 for (int l= 0; l<2; l++) {
+				 b = f.readByte() & 0xFF; // remove sign
+				 //System.out.print("          b:"+b);
+				 i = b << (8 * l);
+				 sum += (0xFFFF & i);
+			 }
+			 ret = (int) sum;
+			 if (debug)
+				 System.out.println("       readShort (" + sum + ") at " + f.getFilePointer() + ": "+ ret);
+			 return ret;
+		}
+
 		String readString(int maxChars) throws IOException {
 			char[] c = new char[maxChars];
 			char a;
