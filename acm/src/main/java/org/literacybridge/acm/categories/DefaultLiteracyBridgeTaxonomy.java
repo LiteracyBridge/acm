@@ -81,7 +81,7 @@ public class DefaultLiteracyBridgeTaxonomy {
 		
 		// check online for latest taxonomy
 		try {
-			URL url = new URL("http://literacybridge.googlecode.com/svn/acm/trunk/core/src/main/resources/lb_taxonomy.yaml");
+			URL url = new URL("http://literacybridge.googlecode.com/svn/acm/trunk/acm/src/main/resources/lb_taxonomy.yaml");
 			InputStream in = url.openStream();
 			TaxonomyRevision updatedTaxonomy = loadTaxonomy(in);
 			if (updatedTaxonomy.revision > taxonomy.revision) {
