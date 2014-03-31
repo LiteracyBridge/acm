@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 13
+  revision: 14
   categories:
     '0' : 
       name: Other Messages
@@ -11,6 +11,12 @@ taxonomy:
         '0-1' :
           name: Talking Book
           order: 20
+        '0-2' : 
+          name: Favorites
+          order: 30
+        '0-3' :
+          name: Communities
+          order: 10
         '0-4' :
           name: TB System and Categories
           order: 25
@@ -21,12 +27,6 @@ taxonomy:
             '0-4-2' :
               name: TB Categories
               order: 40
-        '0-2' : 
-          name: Favorites
-          order: 30
-        '0-3' :
-          name: Communities
-          order: 10
     '1' : 
       name: Agriculture
       order: 10
