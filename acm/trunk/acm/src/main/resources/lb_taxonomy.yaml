@@ -9,7 +9,7 @@ taxonomy:
           name: General Other
           order: 0
         '0-1' :
-          name: Talking Book
+          name: OLD Talking Book
           order: 20
         '0-2' : 
           name: Favorites
@@ -18,7 +18,7 @@ taxonomy:
           name: Communities
           order: 10
         '0-4' :
-          name: TB System and Categories
+          name: Talking Book
           order: 25
           children : 
             '0-4-1' :
@@ -27,6 +27,9 @@ taxonomy:
             '0-4-2' :
               name: TB Categories
               order: 40
+            '0-4-3' :
+              name: TB Update Intros
+              order: 60
     '1' : 
       name: Agriculture
       order: 10
