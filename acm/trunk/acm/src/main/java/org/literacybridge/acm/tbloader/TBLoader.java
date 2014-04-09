@@ -54,7 +54,7 @@ import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.10r1158";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.11r1172";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -98,6 +98,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	private JCheckBox fetchIDFromServer;
 	private JCheckBox handIcons;
 	TBInfo tbStats;
+	static String volumeSerialNumber = "";
 	
 	class WindowEventHandler extends WindowAdapter {
 		public void windowClosing(WindowEvent evt) {
@@ -140,7 +141,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		revision = "(No firmware)";
 
 		File basicContentPath = new File(CONTENT_SUBDIR + packageList.getSelectedItem().toString() + "\\" + CONTENT_BASIC_SUBDIR);
-
+		System.out.println("package="+packageList.getSelectedItem().toString());
 		try {
 			File[] files;
 			if (basicContentPath.exists()) {
@@ -394,12 +395,13 @@ public class TBLoader extends JFrame implements ActionListener {
 
 	private static String getDateTime() {
 		Calendar cal = Calendar.getInstance();
+		int year = cal.get(Calendar.YEAR);
 		int month = cal.get(Calendar.MONTH) + 1	;
 		int date = cal.get(Calendar.DAY_OF_MONTH);
 		int hour = cal.get(Calendar.HOUR_OF_DAY);
 		int min = cal.get(Calendar.MINUTE);
 		int sec = cal.get(Calendar.SECOND);
-		String dateTime = String.valueOf(month) + "m" + String.valueOf(date) + "d" + 
+		String dateTime = String.valueOf(year) + "y" + String.valueOf(month) + "m" + String.valueOf(date) + "d" + 
 				String.valueOf(hour) + "h" + String.valueOf(min) + "m" + String.valueOf(sec) + "s";
 		return dateTime;
 	}
@@ -412,7 +414,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		f = new File(filename);
 		if (!f.exists())
 			f.mkdirs();
-		filename += "\\log-" + getDateTime()+".txt";
+		filename += "\\log-" + DriveInfo.datetime +".txt";
 		return filename;
 	}
 	private void setCopyToPath() {
@@ -608,7 +610,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	}
 
 	private synchronized void setSNandRevFromCurrentDrive() {
-		String sn="";
+		String sn=NO_SERIAL_NUMBER;
 		String rev="unknown";
 		String pkg="unknown";
 		DriveInfo di;
@@ -623,7 +625,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			if (systemPath.exists()) {
 				// get Serial Number file info
 				
-				if (tbStats != null && tbStats.serialNumber != null && !tbStats.serialNumber.equals(""))
+				if (tbStats != null && isSerialNumberFormatGood(tbStats.serialNumber))
 					sn = tbStats.serialNumber;
 				else {
 					files = systemPath.listFiles(new FilenameFilter() {
@@ -635,6 +637,8 @@ public class TBLoader extends JFrame implements ActionListener {
 					if (files.length > 0) {
 						String tsnFileName = files[0].getName();
 						sn = tsnFileName.substring(0, tsnFileName.length() - 4);
+						if (!isSerialNumberFormatGood(sn))
+							sn=NO_SERIAL_NUMBER;
 		//				if (sn.startsWith("srn."))
 		//					sn = sn.substring(4);
 					}
@@ -661,8 +665,8 @@ public class TBLoader extends JFrame implements ActionListener {
 				if (rev.length() == 0)
 					rev = "unknown";  // eliminate problem of zero length filenames being inserted into batch statements
 			}
-			if (tbStats != null && tbStats.contentPackage != null && !tbStats.contentPackage.equals("")) 
-				pkg = tbStats.contentPackage;
+			if (tbStats != null && tbStats.imageName != null && !tbStats.imageName.equals("")) 
+				pkg = tbStats.imageName;
 			else {
 				// get packaage name from .pkg file
 				files = systemPath.listFiles(new FilenameFilter() {
@@ -717,11 +721,11 @@ public class TBLoader extends JFrame implements ActionListener {
 		di.serialNumber = sn;
 		di.revision = rev;
 		oldRevisionText.setText(rev);
-		if (di.serialNumber.equals("UNKNOWN") || di.serialNumber.equals(NO_SERIAL_NUMBER)) {
-			JOptionPane.showMessageDialog(null, "The serial number cannot be found.\nIf you have internet access, please check the box for 'get new serial number'.\nIf you do not have internet access, you may continue without checking the box.",
-	                "Need Date and Location!", JOptionPane.DEFAULT_OPTION);
+		//if (di.serialNumber.equals("UNKNOWN") || di.serialNumber.equals(NO_SERIAL_NUMBER)) {
+		//	JOptionPane.showMessageDialog(null, "The serial number cannot be found.\nIf you have internet access, please check the box for 'get new serial number'.\nIf you do not have internet access, you may continue without checking the box.",
+	    //            "Need Date and Location!", JOptionPane.DEFAULT_OPTION);
 			//this.fetchIDFromServer.setSelected(true);			
-		}
+		//}
 	}	
 
 	private synchronized void fillList(File[] roots) {
@@ -834,7 +838,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		try {
 			bw = new BufferedWriter(new FileWriter(filename,true));
 			if (bw != null) {								
-				bw.write(getDateTime() + ",");
+				bw.write(DriveInfo.datetime + ",");
 				bw.write(currentLocationList.getSelectedItem().toString() + ",");
 				bw.write(id.getText() + ",");
 				bw.write(action + ",");
@@ -852,19 +856,19 @@ public class TBLoader extends JFrame implements ActionListener {
 				bw.write(tbStats.corrupted + ",");
 				bw.write(tbStats.corruptionDay + ",");
 				bw.write(tbStats.countReflashes + ",");
-				bw.write(tbStats.updateNumber + ",");
-				bw.write(tbStats.contentPackage + ",");
+				bw.write(tbStats.deploymentNumber + ",");
+				bw.write(tbStats.imageName + ",");
 				bw.write(tbStats.location + ",");
 				bw.write(tbStats.updateYear + "/" + tbStats.updateMonth + "/" + tbStats.updateDate + ",");
 				bw.write(tbStats.cumulativeDays + ",");
 				bw.write(tbStats.lastInitVoltage + ",");
 				bw.write(tbStats.powerups + ",");
 				bw.write(tbStats.periods + ",");
-				bw.write(tbStats.totalRotations + ",");
+				bw.write(tbStats.profileTotalRotations + ",");
 				bw.write(tbStats.totalMessages + ",");
 				int totalSecondsPlayed=0, countStarted=0,countQuarter=0,countHalf=0,countThreequarters=0,countCompleted=0,countApplied=0,countUseless=0;
 				for (int m=0;m < tbStats.totalMessages; m++) {
-					for (int r=0;r < (tbStats.totalRotations<5?tbStats.totalRotations:5);r++) {
+					for (int r=0;r < (tbStats.profileTotalRotations<5?tbStats.profileTotalRotations:5);r++) {
 						totalSecondsPlayed += tbStats.stats[m][r].totalSecondsPlayed;
 						countStarted += tbStats.stats[m][r].countStarted;
 						countQuarter += tbStats.stats[m][r].countQuarter;
@@ -883,7 +887,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				bw.write(countCompleted + ",");
 				bw.write(countApplied + ",");
 				bw.write(countUseless);
-				for (int r=0; r<(tbStats.totalRotations<5?tbStats.totalRotations:5); r++) {
+				for (int r=0; r<(tbStats.profileTotalRotations<5?tbStats.profileTotalRotations:5); r++) {
 					bw.write(","+ r + "," + tbStats.totalPlayedSecondsPerRotation(r)/60 + "," + tbStats.rotations[r].startingPeriod + ",");
 					bw.write(tbStats.rotations[r].hoursAfterLastUpdate + "," + tbStats.rotations[r].initVoltage);
 				}
@@ -963,6 +967,15 @@ public class TBLoader extends JFrame implements ActionListener {
 		setCommunityList();
 	}
 */
+	public boolean isSerialNumberFormatGood (String srn) {
+		boolean isGood;
+		if ((srn.startsWith("a-") || srn.startsWith("b-")) && srn.length()==10)
+			isGood = true;
+		else 
+			isGood = false;
+		return isGood;
+	}
+	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		DriveInfo di;
@@ -999,6 +1012,9 @@ public class TBLoader extends JFrame implements ActionListener {
 					this.handIcons.setSelected(true);
 				else
 					this.handIcons.setSelected(false);
+			} else if (o == packageList) {
+				getRevisionNumbers();
+				refreshUI();
 			}
 			return;
 		} else
@@ -1016,16 +1032,17 @@ public class TBLoader extends JFrame implements ActionListener {
 			}
 			Logger.LogString("ID:"+((DriveInfo)driveList.getSelectedItem()).serialNumber);
 			setSNandRevFromCurrentDrive();
-			if (di.serialNumber == NO_SERIAL_NUMBER) {
-				// use drive label if exists
+			if (!isSerialNumberFormatGood(di.serialNumber)) {
+				// use drive label if good
 				int parens = di.label.indexOf(" (");
 				if (parens > 0)
 					di.serialNumber = di.label.substring(0, parens);			
-				if (di.serialNumber.startsWith("TBXXXX") || (!di.serialNumber.startsWith("ECH") && !di.serialNumber.startsWith("TB"))) {
-					Logger.LogString("No .srn found.  Disk label was " + di.serialNumber + ". Using temp id for now.");
-					String milliseconds = new String (String.valueOf((Calendar.getInstance().getTimeInMillis())));
-					milliseconds = milliseconds.substring(milliseconds.length()-5, milliseconds.length());
-					di.serialNumber = "TBt" + milliseconds;
+				if (!isSerialNumberFormatGood(di.serialNumber)) {
+					Logger.LogString("No .srn found.  Disk label was " + di.serialNumber + ". Using volume id for now.");
+					//String milliseconds = new String (String.valueOf((Calendar.getInstance().getTimeInMillis())));
+					//milliseconds = milliseconds.substring(milliseconds.length()-5, milliseconds.length());
+					//di.serialNumber = "TBt" + milliseconds;
+					di.serialNumber = NO_SERIAL_NUMBER;
 				}
 			}
 			status.setText("STATUS: Starting\n");
@@ -1034,7 +1051,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				Logger.init();
 				return;
 			} 
-			String dateTime = getDateTime();
+			String dateTime = DriveInfo.datetime;
 			if (item != null) {
 				prevSelected = drive;
 			}
@@ -1042,12 +1059,12 @@ public class TBLoader extends JFrame implements ActionListener {
 			String devicePath = drive.getAbsolutePath();
 			String community = communityList.getSelectedItem().toString();
 			Logger.LogString("Community: " + community);
-			if ((/*b == reformat || */  b == update) && fetchIDFromServer.isSelected()) {
-				di.serialNumber = fetchNextDeviceID();
-				di.isNewSerialNumber = true;
-				this.id.setText(di.serialNumber);
-				Logger.LogString("SN: " + di.serialNumber);
-			} 
+//			if (b == update && di.serialNumber==NO_SERIAL_NUMBER) { //fetchIDFromServer.isSelected()) {
+//				di.serialNumber = fetchNextDeviceID();
+//				di.isNewSerialNumber = true;
+//				this.id.setText(di.serialNumber);
+//				Logger.LogString("SN: " + di.serialNumber);
+//			} 
 			if ((b == update || b == setCommunity) && communityList.getSelectedIndex() == 0) {
 				int response = JOptionPane.showConfirmDialog(this, "No community selected.\nAre you sure?", 
 	                "Confirm", JOptionPane.YES_NO_OPTION);
@@ -1226,17 +1243,17 @@ public class TBLoader extends JFrame implements ActionListener {
 //		reformat.setText("Reformat");
 //		backup.setText("Backup");
 		setCommunity.setText("Set Community");
-		handIcons.setEnabled(true);
-		fetchIDFromServer.setEnabled(true);
+		handIcons.setEnabled(false);
+		fetchIDFromServer.setEnabled(false);
 		connected = driveConnected();
 		if (connected && !updatingTB) {
 			update.setEnabled(true);
 			grabStatsOnly.setEnabled(true);
 //			reformat.setEnabled(true);
 //			backup.setEnabled(true);
-			xfer.setEnabled(true);
+//			xfer.setEnabled(true);
 			//setCommunity.setEnabled(true);
-			xfer.setEnabled((new File(TEMP_COLLECTION_DIR)).exists());			
+//			xfer.setEnabled((new File(TEMP_COLLECTION_DIR)).exists());			
 			status.setText("STATUS: Ready");
 			status2.setText("");
 			Logger.LogString("STATUS: Ready");
@@ -1416,14 +1433,17 @@ public class TBLoader extends JFrame implements ActionListener {
 					cmd = cmd.replaceAll("\\$\\{target_revision\\}", targetRevision);
 					cmd = cmd.replaceAll("\\$\\{package\\}", packageName);
 					cmd = cmd.replaceAll("\\$\\{source_package\\}", sourcePackage);
-					cmd = cmd.replaceAll("\\$\\{newSRN\\}", isNewSerialNumber ? "1" : "0");
+					cmd = cmd.replaceAll("\\$\\{newSRN\\}", (id==NO_SERIAL_NUMBER)? "1" : "0");
+					cmd = cmd.replaceAll("\\$\\{volumeSRN\\}", volumeSerialNumber);
 					alert = cmd.startsWith("!");
 					if (alert)
 						cmd = cmd.substring(1);
 					errorLine = execute("cmd /C " + cmd);
 					if (errorLine != null && alert) {
-						JOptionPane.showMessageDialog(null, errorLine,
-								"Error", JOptionPane.ERROR_MESSAGE);
+						if (!errorLine.equalsIgnoreCase("File system corrupted")) {			
+							JOptionPane.showMessageDialog(null, errorLine,
+									"Error", JOptionPane.ERROR_MESSAGE);
+						}
 						criticalError = true;
 						success = false;
 						break;
@@ -1478,9 +1498,12 @@ public class TBLoader extends JFrame implements ActionListener {
 				gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));
 				callback.logTBData("stats-only");
 				if (gotStats) {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Got Stats\nDisconnecting");
-					Logger.LogString("STATUS: Got stats!");
-					Logger.LogString("STATUS: Disconnecting TB");
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Got Stats\nErasing Flash Stats");
+					Logger.LogString("STATUS:Got Stats!\nErasing Flash Stats");
+					executeFile(new File(SCRIPT_SUBDIR + "eraseFlashStats.txt"));
+					TBLoader.status2.setText(TBLoader.status2.getText() + "...Erased Flash Stats\nDisconnecting");
+					Logger.LogString("STATUS:Erased Flash Stats");
+					Logger.LogString("STATUS:Disconnecting TB");
 					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Complete");
 					Logger.LogString("STATUS:Complete");
@@ -1735,6 +1758,12 @@ public class TBLoader extends JFrame implements ActionListener {
 			errorMsg = "File system corrupted";
 		} else if (line.startsWith("The system cannot find the path specified.")) {
 			errorMsg = "TB not found.  Unplug/replug USB and try again.";
+		} else if (line.startsWith("Volume Serial Number is ", 0)) {
+			volumeSerialNumber = "a-" + line.substring(24,28) + line.substring(29,33);
+			System.out.println(volumeSerialNumber);
+		} else if (line.startsWith("Volume Serial Number is ", 1)) {
+			volumeSerialNumber = "a-" + line.substring(25,29) + line.substring(30,34);			
+			System.out.println(volumeSerialNumber);
 		}
 		return errorMsg;
 	}
@@ -1781,21 +1810,25 @@ public class TBLoader extends JFrame implements ActionListener {
 		final File drive;
 		String label;
 		String serialNumber;
+		//String volumeSerialNumber;
 		boolean isNewSerialNumber;
 		String revision;
 		static final int MAX_CORRUPTIONS = 20;
 		boolean corrupted;
+		static String datetime="";
 		
 		public DriveInfo(File drive, String label) {
 			this.drive = drive;
 			this.label = label.trim();
 			this.corrupted = false;
 			this.serialNumber = "";
+			//this.volumeSerialNumber =""; 
 			this.isNewSerialNumber = false;
 			this.revision = "";
+			datetime = getDateTime();
 			//updateLastIssue();
 		}
-
+		
 /*		public boolean updateLastIssue() {
 			boolean foundIssue = false;
 			int rev = 0;
@@ -1851,12 +1884,12 @@ public class TBLoader extends JFrame implements ActionListener {
 		// struct SystemData
 		// int structType
 		boolean corrupted;
-		boolean debug = false;
+		boolean debug = true;
 		String serialNumber;
-		String updateNumber;
+		String deploymentNumber;
 		short countReflashes;
 		String location;
-		String contentPackage;
+		String imageName;
 		short updateDate = -1;
 		short updateMonth = -1;
 		short updateYear = -1;
@@ -1876,8 +1909,10 @@ public class TBLoader extends JFrame implements ActionListener {
 		String[] msgIdMap = new String[20]; // 40 messages, 20 chars
 		
 		//struct NORallMsgStats
-		// short totalMessages
-		short totalRotations;
+		short profileOrder;
+		String profileName;
+		short profileTotalMessages;
+		short profileTotalRotations;
 		NORmsgStats[][] stats = new NORmsgStats[20][5];
 		NORmsgStats[] statsAllRotations = new NORmsgStats[20];
 		RandomAccessFile f;
@@ -1903,6 +1938,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			// short structType
 			short indexMsg;
 			short numberRotation;
+			short numberProfile;
 			short countStarted;
 			short countQuarter;
 			short countHalf;
@@ -1915,6 +1951,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			public NORmsgStats() throws IOException {
 				f.skipBytes(2);
 				this.indexMsg = readShort();
+				this.numberProfile = readShort();
 				this.numberRotation = readShort();
 				this.countStarted = readShort();
 				this.countQuarter = readShort();
@@ -1937,10 +1974,10 @@ public class TBLoader extends JFrame implements ActionListener {
 			f = new RandomAccessFile(flashDataPath,"r");
 			f.skipBytes(2);
 			this.countReflashes = readShort();
-			this.serialNumber = readString(10);
-			this.updateNumber = readString(10);
+			this.serialNumber = readString(12);
+			this.deploymentNumber = readString(20);
 			this.location = readString(40);
-			this.contentPackage = readString(10);
+			this.imageName = readString(20);
 			this.updateDate = readShort();
 			this.updateMonth = readShort();
 			this.updateYear = readShort();
@@ -1961,7 +1998,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			
 			f.skipBytes(2);
 			this.totalMessages = readShort();
-			for (int i=0; i < 20; i++) {
+			for (int i=0; i < 40; i++) {
 				if (i < this.totalMessages)
 					this.msgIdMap[i] = readString(20);
 				else
@@ -1969,9 +2006,12 @@ public class TBLoader extends JFrame implements ActionListener {
 			}
 			
 			f.skipBytes(2);
+			this.profileOrder = readShort();
+			this.profileName = readString(20);
+			this.profileTotalMessages = readShort();
 			if (debug)
 				System.out.print("About to read totalrotations:");
-			this.totalRotations = readShort();
+			this.profileTotalRotations = readShort();
 			for (int m=0; m < this.totalMessages; m++) {
 				for (int r=0; r < 5; r++) {
 					if (debug)
@@ -2059,8 +2099,9 @@ public class TBLoader extends JFrame implements ActionListener {
 			
 			s.append("Serial Number : " + this.serialNumber + NEW_LINE);
 			s.append("Reflashes     : " + this.countReflashes  + NEW_LINE);
-			s.append("Update Number : " + this.updateNumber + NEW_LINE);
-			s.append("Package       : " + this.contentPackage + NEW_LINE);
+			s.append("Deployment    : " + this.deploymentNumber + NEW_LINE);
+			s.append("Image         : " + this.imageName + NEW_LINE);
+			s.append("Profile       : " + this.profileName + NEW_LINE);
 			s.append("Location      : " + this.location + NEW_LINE);
 			s.append("Last Updated  : " + this.updateYear + "/" + this.updateMonth + "/" + this.updateDate + NEW_LINE);
 			s.append(NEW_LINE);
@@ -2069,12 +2110,12 @@ public class TBLoader extends JFrame implements ActionListener {
 			s.append("StartUps      : " + this.powerups + NEW_LINE);
 			s.append("Corruption Day: " + this.corruptionDay + NEW_LINE);
 			s.append("Periods       : " + this.periods + NEW_LINE);
-			s.append("Rotations     : " + this.totalRotations + NEW_LINE);
+			s.append("Rotations     : " + this.profileTotalRotations + NEW_LINE);
 			s.append(NEW_LINE);
 			s.append("TOTAL STATS (" + this.totalMessages + " messages)" + NEW_LINE);
 			int totalSecondsPlayed=0, countStarted=0,countQuarter=0,countHalf=0,countThreequarters=0,countCompleted=0,countApplied=0,countUseless=0;
 			for (int m=0;m < this.totalMessages; m++) {
-				for (int r=0;r < (this.totalRotations<5?this.totalRotations:5);r++) {
+				for (int r=0;r < (this.profileTotalRotations<5?this.profileTotalRotations:5);r++) {
 					totalSecondsPlayed += this.stats[m][r].totalSecondsPlayed;
 					countStarted += this.stats[m][r].countStarted;
 					countQuarter += this.stats[m][r].countQuarter;
@@ -2091,7 +2132,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			s.append("   A:" + countApplied + "   U:" + countUseless + NEW_LINE);
 			s.append(NEW_LINE);	
 			
-			for (int r=0; r<(this.totalRotations<5?this.totalRotations:5); r++) {
+			for (int r=0; r<(this.profileTotalRotations<5?this.profileTotalRotations:5); r++) {
 				s.append("  Rotation:" + r + "     " + totalPlayedSecondsPerRotation(r)/60 + "min " + totalPlayedSecondsPerRotation(r)%60 + "sec    Starting Period:"
 						+ this.rotations[r].startingPeriod + "   Hours After Update:" + 
 						this.rotations[r].hoursAfterLastUpdate + "   Init Voltage:" + this.rotations[r].initVoltage + NEW_LINE);
@@ -2100,7 +2141,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			s.append("Message Stats  (" + this.totalMessages + " messages)" + NEW_LINE);
 			for (int m=0;m < this.totalMessages; m++) {
 				s.append("  MESSAGE ID:" + this.msgIdMap[m] + " (" + totalPlayedSecondsPerMsg(m)/60 + "min "+ totalPlayedSecondsPerMsg(m)%60 + "sec)" + NEW_LINE);
-				for (int r=0;r<(this.totalRotations<5?this.totalRotations:5); r++) {
+				for (int r=0;r<(this.profileTotalRotations<5?this.profileTotalRotations:5); r++) {
 					s.append("     ROTATION: " + r);
 					s.append("       Time:" + this.stats[m][r].totalSecondsPlayed/60 + "min " + this.stats[m][r].totalSecondsPlayed%60 + "sec   Started:" + this.stats[m][r].countStarted + "   P:" + this.stats[m][r].countQuarter + 
 							 "   H:"  + this.stats[m][r].countHalf + "   M:" + this.stats[m][r].countThreequarters + 
