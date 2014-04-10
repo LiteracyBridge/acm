@@ -414,7 +414,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		f = new File(filename);
 		if (!f.exists())
 			f.mkdirs();
-		filename += "\\log-" + DriveInfo.datetime +".txt";
+		filename += "\\log-" + (DriveInfo.datetime.equals("")?getDateTime():DriveInfo.datetime) +".txt";
 		return filename;
 	}
 	private void setCopyToPath() {
@@ -853,43 +853,45 @@ public class TBLoader extends JFrame implements ActionListener {
 				bw.write(newRevisionText.getText() + ",");
 				bw.write(fetchIDFromServer.isSelected() + ",");
 				bw.write(handIcons.isSelected() + ",");
-				bw.write(tbStats.corrupted + ",");
-				bw.write(tbStats.corruptionDay + ",");
-				bw.write(tbStats.countReflashes + ",");
-				bw.write(tbStats.deploymentNumber + ",");
-				bw.write(tbStats.imageName + ",");
-				bw.write(tbStats.location + ",");
-				bw.write(tbStats.updateYear + "/" + tbStats.updateMonth + "/" + tbStats.updateDate + ",");
-				bw.write(tbStats.cumulativeDays + ",");
-				bw.write(tbStats.lastInitVoltage + ",");
-				bw.write(tbStats.powerups + ",");
-				bw.write(tbStats.periods + ",");
-				bw.write(tbStats.profileTotalRotations + ",");
-				bw.write(tbStats.totalMessages + ",");
-				int totalSecondsPlayed=0, countStarted=0,countQuarter=0,countHalf=0,countThreequarters=0,countCompleted=0,countApplied=0,countUseless=0;
-				for (int m=0;m < tbStats.totalMessages; m++) {
-					for (int r=0;r < (tbStats.profileTotalRotations<5?tbStats.profileTotalRotations:5);r++) {
-						totalSecondsPlayed += tbStats.stats[m][r].totalSecondsPlayed;
-						countStarted += tbStats.stats[m][r].countStarted;
-						countQuarter += tbStats.stats[m][r].countQuarter;
-						countHalf += tbStats.stats[m][r].countHalf;
-						countThreequarters += tbStats.stats[m][r].countThreequarters;
-						countCompleted += tbStats.stats[m][r].countCompleted;
-						countApplied += tbStats.stats[m][r].countApplied;
-						countUseless += tbStats.stats[m][r].countUseless;
-						}
-				}
-				bw.write(totalSecondsPlayed/60 + ",");
-				bw.write(countStarted + ",");
-				bw.write(countQuarter + ",");
-				bw.write(countHalf + ",");
-				bw.write(countThreequarters + ",");
-				bw.write(countCompleted + ",");
-				bw.write(countApplied + ",");
-				bw.write(countUseless);
-				for (int r=0; r<(tbStats.profileTotalRotations<5?tbStats.profileTotalRotations:5); r++) {
-					bw.write(","+ r + "," + tbStats.totalPlayedSecondsPerRotation(r)/60 + "," + tbStats.rotations[r].startingPeriod + ",");
-					bw.write(tbStats.rotations[r].hoursAfterLastUpdate + "," + tbStats.rotations[r].initVoltage);
+				if (tbStats != null) {
+					bw.write(tbStats.corrupted + ",");
+					bw.write(tbStats.corruptionDay + ",");
+					bw.write(tbStats.countReflashes + ",");
+					bw.write(tbStats.deploymentNumber + ",");
+					bw.write(tbStats.imageName + ",");
+					bw.write(tbStats.location + ",");
+					bw.write(tbStats.updateYear + "/" + tbStats.updateMonth + "/" + tbStats.updateDate + ",");
+					bw.write(tbStats.cumulativeDays + ",");
+					bw.write(tbStats.lastInitVoltage + ",");
+					bw.write(tbStats.powerups + ",");
+					bw.write(tbStats.periods + ",");
+					bw.write(tbStats.profileTotalRotations + ",");
+					bw.write(tbStats.totalMessages + ",");
+					int totalSecondsPlayed=0, countStarted=0,countQuarter=0,countHalf=0,countThreequarters=0,countCompleted=0,countApplied=0,countUseless=0;
+					for (int m=0;m < tbStats.totalMessages; m++) {
+						for (int r=0;r < (tbStats.profileTotalRotations<5?tbStats.profileTotalRotations:5);r++) {
+							totalSecondsPlayed += tbStats.stats[m][r].totalSecondsPlayed;
+							countStarted += tbStats.stats[m][r].countStarted;
+							countQuarter += tbStats.stats[m][r].countQuarter;
+							countHalf += tbStats.stats[m][r].countHalf;
+							countThreequarters += tbStats.stats[m][r].countThreequarters;
+							countCompleted += tbStats.stats[m][r].countCompleted;
+							countApplied += tbStats.stats[m][r].countApplied;
+							countUseless += tbStats.stats[m][r].countUseless;
+							}
+					}
+					bw.write(totalSecondsPlayed/60 + ",");
+					bw.write(countStarted + ",");
+					bw.write(countQuarter + ",");
+					bw.write(countHalf + ",");
+					bw.write(countThreequarters + ",");
+					bw.write(countCompleted + ",");
+					bw.write(countApplied + ",");
+					bw.write(countUseless);
+					for (int r=0; r<(tbStats.profileTotalRotations<5?tbStats.profileTotalRotations:5); r++) {
+						bw.write(","+ r + "," + tbStats.totalPlayedSecondsPerRotation(r)/60 + "," + tbStats.rotations[r].startingPeriod + ",");
+						bw.write(tbStats.rotations[r].hoursAfterLastUpdate + "," + tbStats.rotations[r].initVoltage);
+					}					
 				}
 				bw.write("\n");
 				bw.flush();
@@ -1881,6 +1883,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	}
 	
 	private static class TBInfo {
+		static final int MAX_MESSAGES=40;
 		// struct SystemData
 		// int structType
 		boolean corrupted;
@@ -1906,15 +1909,15 @@ public class TBLoader extends JFrame implements ActionListener {
 		// struct NORmsgMap
 		// short structType
 		short totalMessages;
-		String[] msgIdMap = new String[20]; // 40 messages, 20 chars
+		String[] msgIdMap = new String[MAX_MESSAGES]; // 40 messages, 20 chars
 		
 		//struct NORallMsgStats
 		short profileOrder;
 		String profileName;
 		short profileTotalMessages;
 		short profileTotalRotations;
-		NORmsgStats[][] stats = new NORmsgStats[20][5];
-		NORmsgStats[] statsAllRotations = new NORmsgStats[20];
+		NORmsgStats[][] stats = new NORmsgStats[MAX_MESSAGES][5];
+		NORmsgStats[] statsAllRotations = new NORmsgStats[MAX_MESSAGES];
 		RandomAccessFile f;
 		
 		private class RotationTiming {
