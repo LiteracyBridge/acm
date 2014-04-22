@@ -54,7 +54,7 @@ import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.11r1172";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.20r1182";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -62,21 +62,23 @@ public class TBLoader extends JFrame implements ActionListener {
 	private static final String SW_SUBDIR = ".\\software\\";
 	private static final String CONTENT_SUBDIR = ".\\content\\";
 	private static final String CONTENT_BASIC_SUBDIR = "basic\\";
-	private static final String COMMUNITIES_SUBDIR = "options\\communities\\";
+	private static final String COMMUNITIES_SUBDIR = "communities\\";
 	private static final String SCRIPT_SUBDIR = SW_SUBDIR + "scripts\\";
 	private static final String NO_SERIAL_NUMBER = "(not found)";
 	private static final String NO_DRIVE = "(nothing connected)";
 	private static final String TRIGGER_FILE_CHECK = "checkdir";
 	private static String tblRevision = "(no rev)"; 
 	private static String dateRotation;
-	private JComboBox packageList;
-	private JComboBox communityList;
-	private JComboBox currentLocationList;
+	private JComboBox<String> deploymentList;
+	private JComboBox<String> communityList;
+	private JComboBox<String> currentLocationList;
 	private JComboBox driveList;
 	private JTextField id;
 	private JTextField idnext;
 	private JTextField oldRevisionText;
 	private JTextField newRevisionText;
+	private JTextField oldImageText;
+	private JTextField newImageText;
 	private JTextField oldPackageValue;
 	private JTextField oldCommunityValue;
 	private JTextField lastUpdatedText;
@@ -93,10 +95,10 @@ public class TBLoader extends JFrame implements ActionListener {
 	private static JButton setCommunity;
 	private static String copyTo;
 	private static String revision;
-	public static String packageName;
+	public static String deploymentName;
 	public static String sourcePackage;
-	private JCheckBox fetchIDFromServer;
-	private JCheckBox handIcons;
+	//private JCheckBox fetchIDFromServer;
+	//private JCheckBox handIcons;
 	TBInfo tbStats;
 	static String volumeSerialNumber = "";
 	
@@ -117,31 +119,11 @@ public class TBLoader extends JFrame implements ActionListener {
 			"Other"
 	};
 	
-	private String communityNames[] = new String[] {
-			"Non-specific",
-			"Baazu-Jirapa",
-			"Behee-Wa Municipal",
-			"Die-Jirapa",
-			"Duori Degri-Jirapa",
-			"Gozu-Jirapa",
-			"Gyangvuuri-Jirapa",
-			"Jeffiri-Jirapa",
-			"Jonga-Wa Municipal",
-			"Nyeni-Jirapa",
-			"Saabaalong-Jirapa",
-			"Saawie-Jirapa",
-			"Tugo Yagra-Jirapa",
-			"Ul-Kpong-Jirapa",
-			"Ving-Ving-Jirapa",
-			"Yibile-Jirapa",
-			"Zengpeni-Jirapa"
-	};
-
 	void getRevisionNumbers() {
 		revision = "(No firmware)";
 
-		File basicContentPath = new File(CONTENT_SUBDIR + packageList.getSelectedItem().toString() + "\\" + CONTENT_BASIC_SUBDIR);
-		System.out.println("package="+packageList.getSelectedItem().toString());
+		File basicContentPath = new File(CONTENT_SUBDIR + deploymentList.getSelectedItem().toString() + "\\" + CONTENT_BASIC_SUBDIR);
+		System.out.println("deployment="+deploymentList.getSelectedItem().toString());
 		try {
 			File[] files;
 			if (basicContentPath.exists()) {
@@ -199,7 +181,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			tblRevision = tblRevision.substring(0, tblRevision.length() - 4);
 		}
 		setTitle("TB-Loader " + VERSION + "/" + tblRevision); 
-		//"   Update:" + packageName + "   Firmware:" + revision);
+		//"   Update:" + deploymentName + "   Firmware:" + revision);
 		
 		JPanel panel = new JPanel();
 		
@@ -218,6 +200,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		JLabel deviceLabel = new JLabel("Talking Book Device:");
 		JLabel idLabel = new JLabel("Serial number:");
 		JLabel revisionLabel = new JLabel("Firmware:");
+		JLabel imageLabel = new JLabel("Content:");
 		status = new JTextArea("STATUS: Ready");
 		status.setEditable(false);
 		status.setLineWrap(true);
@@ -232,6 +215,10 @@ public class TBLoader extends JFrame implements ActionListener {
 		oldRevisionText.setEditable(false);
 		newRevisionText = new JTextField();
 		newRevisionText.setEditable(false);
+		oldImageText = new JTextField();
+		oldImageText.setEditable(false);
+		newImageText = new JTextField();
+		newImageText.setEditable(false);
 		final JXDatePicker datePicker = new JXDatePicker();
 		datePicker.getEditor().setEditable(false);
 		datePicker.setFormats(new String[] { "yyyy/MM/dd" }); //dd MMM yyyy
@@ -241,17 +228,17 @@ public class TBLoader extends JFrame implements ActionListener {
 			}	
 		});
 		 	
-		packageList = new JComboBox();
-		packageList.addActionListener(this);
+		deploymentList = new JComboBox();
+		deploymentList.addActionListener(this);
 		communityList = new JComboBox();
 		communityList.addActionListener(this);
 		driveList = new JComboBox();
 		driveList.addActionListener(this);
 		currentLocationList = new JComboBox(currentLocation);		
-		fetchIDFromServer = new JCheckBox("Get new serial number");
-		fetchIDFromServer.setSelected(false);
-		handIcons = new JCheckBox("Use hand icon msgs");
-		handIcons.setSelected(false);
+		//fetchIDFromServer = new JCheckBox("Get new serial number");
+		//fetchIDFromServer.setSelected(false);
+		//handIcons = new JCheckBox("Use hand icon msgs");
+		//handIcons.setSelected(false);
 		update = new JButton("Update TB");
 		update.addActionListener(this);
 		grabStatsOnly = new JButton("Get Stats");
@@ -277,6 +264,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	        				.addComponent(currentLocationLabel)
 	        				.addComponent(packageLabel)
 	        				.addComponent(communityLabel)
+	                		.addComponent(imageLabel)
 	        				.addComponent(dateLabel)
 	                		.addComponent(revisionLabel)
 	        				.addComponent(idLabel)
@@ -285,12 +273,13 @@ public class TBLoader extends JFrame implements ActionListener {
 							.addComponent(driveList)
 							.addComponent(currentLocationList)
             				.addComponent(newValue)
-            				.addComponent(packageList)
+            				.addComponent(deploymentList)
 	                		.addComponent(communityList)
+	                		.addComponent(newImageText)
 							.addComponent(datePicker)
 	                		.addComponent(newRevisionText)
 	                		.addComponent(id)
-            				.addComponent(fetchIDFromServer)
+            				//.addComponent(fetchIDFromServer)
 	    	                .addGroup(layout.createSequentialGroup()
 	                				.addComponent(update)
 	    	        				.addComponent(grabStatsOnly))
@@ -300,10 +289,11 @@ public class TBLoader extends JFrame implements ActionListener {
             				.addComponent(oldValue)
 	                		.addComponent(oldPackageValue)
 	                		.addComponent(oldCommunityValue)
+	                		.addComponent(oldImageText)
 	                		.addComponent(lastUpdatedText)
 	                		.addComponent(oldRevisionText)
 	                		.addComponent(idnext)
-	                		.addComponent(handIcons)
+	                		//.addComponent(handIcons)
 	    	                .addGroup(layout.createSequentialGroup()
 	    	        				.addComponent(setCommunity)
 	                 				.addComponent(xfer)
@@ -324,12 +314,16 @@ public class TBLoader extends JFrame implements ActionListener {
                 		.addComponent(oldValue))
                 .addGroup(layout.createParallelGroup(BASELINE)
                         .addComponent(packageLabel)
-                        .addComponent(packageList)
+                        .addComponent(deploymentList)
 	    	            .addComponent(oldPackageValue))
                 .addGroup(layout.createParallelGroup(BASELINE)
                 		.addComponent(communityLabel)
                         .addComponent(communityList)
                 		.addComponent(oldCommunityValue))
+                .addGroup(layout.createParallelGroup(BASELINE)
+                		.addComponent(imageLabel)
+	    	            .addComponent(newImageText)
+	    	            .addComponent(oldImageText))
                 .addGroup(layout.createParallelGroup(BASELINE)
                 		.addComponent(dateLabel)
                         .addComponent(datePicker)
@@ -338,13 +332,13 @@ public class TBLoader extends JFrame implements ActionListener {
                 		.addComponent(revisionLabel)
 	    	            .addComponent(newRevisionText)
 	    	            .addComponent(oldRevisionText))
-                .addGroup(layout.createParallelGroup(BASELINE)
+	    	    .addGroup(layout.createParallelGroup(BASELINE)
                 		.addComponent(idLabel)
                 		.addComponent(id)
                 		.addComponent(idnext))
-		        .addGroup(layout.createParallelGroup(BASELINE)
-		        	.addComponent(fetchIDFromServer)
-    				.addComponent(handIcons))
+		        // .addGroup(layout.createParallelGroup(BASELINE)
+		        	//.addComponent(fetchIDFromServer)
+    				//.addComponent(handIcons))
     		    .addGroup(layout.createParallelGroup(BASELINE)
     		    	.addComponent(update)
     		    	.addComponent(grabStatsOnly)
@@ -466,7 +460,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	
 	int idCounter = 0;
 	
-	private String fetchNextDeviceID() throws Exception {
+/*	private String fetchNextDeviceID() throws Exception {
 		try {
 			if (!debug) {
 				URL url = new URL("http://literacybridge.org/TBsrns.php");
@@ -487,7 +481,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			throw ex;
 		}
 	}
-	
+*/	
 	private File prevSelected = null;
 	private int prevSelectedCommunity = -1;
 	
@@ -499,9 +493,9 @@ public class TBLoader extends JFrame implements ActionListener {
 		File statsPath = new File(rootPath,"statistics/stats/flashData.bin");
 		tbStats = new TBInfo(statsPath.toString());
 	}
-		
+	
 	private String getCommunityFromCurrentDrive() {
-		String communityName = communityNames[0];
+		String communityName = communityList.getItemAt(0);
 		DriveInfo di = (DriveInfo) driveList.getSelectedItem();
 		if (di.drive == null) {
 			return communityName;
@@ -549,39 +543,43 @@ public class TBLoader extends JFrame implements ActionListener {
 		return communityName;
 	}
 	
-	private synchronized void fillPackageList() {
+	private synchronized void filldeploymentList() {
 
 		int indexSelected = -1;
 		File contentPath = new File (CONTENT_SUBDIR);
-		packageList.removeAllItems();
+		deploymentList.removeAllItems();
 		File[] packageFolder = contentPath.listFiles();
 		for (int i = 0; i<packageFolder.length; i++) {
-			packageList.addItem(packageFolder[i].getName());
+			deploymentList.addItem(packageFolder[i].getName());
 			if (tblRevision.startsWith(packageFolder[i].getName())) {
 				indexSelected = i;
 			}
 		}
 		if (indexSelected != -1) {
-			packageList.setSelectedIndex(indexSelected);
+			deploymentList.setSelectedIndex(indexSelected);
 		}
 	}
 
-	private synchronized void fillCommunityList() throws IOException {
-		
+	private synchronized void fillCommunityList() throws IOException {		
 		communityList.removeAllItems();
-		for (int i=0; i < communityNames.length; i++) {
-			communityList.addItem(communityNames[i]);
+		File[] files;
+
+		File fCommunityDir = new File(CONTENT_SUBDIR + deploymentList.getSelectedItem().toString() + "\\" + COMMUNITIES_SUBDIR);
+		
+		files = fCommunityDir.listFiles(new FilenameFilter() {
+			@Override public boolean accept(File dir, String name) {
+				return dir.isDirectory();
+			}
+		});
+		communityList.addItem("Non-specific"); 	// This string must match firmware code to generate special dings on startup 
+												// as reminder that specific name has not been set.
+		for(File f:files) {
+			communityList.addItem(f.getName());
 		}
-		setCommunityList();
-		if (communityList.getSelectedIndex() == 6 ||communityList.getSelectedIndex() == 8) 
-			this.handIcons.setSelected(true);
-		else
-			this.handIcons.setSelected(false);
 	}
 
-	private synchronized void setCommunityList() {
+	private synchronized void setCommunityList() throws IOException {
 		String driveCommunity;
-		int communityMatchIndex = -1;
 		try {
 			getStatsFromCurrentDrive();
 		} catch (IOException e) {
@@ -597,16 +595,23 @@ public class TBLoader extends JFrame implements ActionListener {
 			oldCommunityValue.setText(driveCommunity);
 		
 		if (prevSelectedCommunity != -1)
-			communityMatchIndex = prevSelectedCommunity;
+			communityList.setSelectedIndex(prevSelectedCommunity);
 		else {
-			communityList.removeAllItems();
-			for (int i=0; i < communityNames.length; i++) {
-				communityList.addItem(communityNames[i]);
-				if (communityNames[i].equalsIgnoreCase(driveCommunity))
-					communityMatchIndex = i;
+			fillCommunityList(); 
+			int count = communityList.getItemCount();
+			for (int i =0; i<count; i++) {
+				if (communityList.getItemAt(i).toString().equalsIgnoreCase(driveCommunity)) {
+					communityList.setSelectedIndex(i);
+					break;
+				}
 			}
 		}
-		communityList.setSelectedIndex(communityMatchIndex);
+		try {
+			getImageFromCommunity(communityList.getSelectedItem().toString());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private synchronized void setSNandRevFromCurrentDrive() {
@@ -680,6 +685,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				}
 			}
 			oldPackageValue.setText(pkg);
+			oldImageText.setText(pkg);
 
 			
 			// get last updated date from file
@@ -847,12 +853,12 @@ public class TBLoader extends JFrame implements ActionListener {
 				bw.write(lastUpdatedText.getText() + ",");
 				bw.write(oldRevisionText.getText() + ",");
 				bw.write(idnext.getText() + ",");
-				bw.write(packageList.getSelectedItem().toString() + ",");
+				bw.write(deploymentList.getSelectedItem().toString() + ",");
 				bw.write(communityList.getSelectedItem().toString() + ",");
 				bw.write(dateRotation + ",");
 				bw.write(newRevisionText.getText() + ",");
-				bw.write(fetchIDFromServer.isSelected() + ",");
-				bw.write(handIcons.isSelected() + ",");
+				bw.write(",,");  // was fetchIDFromServer.isSelected()
+				bw.write(",,");  // was handIcons.isSelected() 
 				if (tbStats != null) {
 					bw.write(tbStats.corrupted + ",");
 					bw.write(tbStats.corruptionDay + ",");
@@ -969,6 +975,35 @@ public class TBLoader extends JFrame implements ActionListener {
 		setCommunityList();
 	}
 */
+	private String getImageFromCommunity(String community) throws Exception {
+		String imageName = "UNKNOWN";
+		try {
+			File[] files;
+			File fCommunityDir = new File(CONTENT_SUBDIR + deploymentList.getSelectedItem().toString() + "\\" + COMMUNITIES_SUBDIR + "\\" + community + "\\" + "system");
+			
+			if (fCommunityDir.exists()) {
+				// get Package
+				files = fCommunityDir.listFiles(new FilenameFilter() {
+					@Override public boolean accept(File dir, String name) {
+						String lowercase = name.toLowerCase();
+						return lowercase.endsWith(".pkg");
+					}
+				});				
+				if (files.length > 1)
+					throw new Exception();
+				else if (files.length == 1) {
+					imageName = files[0].getName();
+					imageName = imageName.substring(0, imageName.length() - 4);
+				}
+				newImageText.setText(imageName);
+			}
+		} catch (IOException ignore) {
+			Logger.LogString("exception - ignore and keep going with default string");
+		}
+		
+		return imageName;
+	}
+	
 	public boolean isSerialNumberFormatGood (String srn) {
 		boolean isGood;
 		if ((srn.startsWith("a-") || srn.startsWith("b-")) && srn.length()==10)
@@ -1010,11 +1045,13 @@ public class TBLoader extends JFrame implements ActionListener {
 				getRevisionNumbers();
 			} else if (o == communityList) {
 				JComboBox cl = (JComboBox)o;
-				if (cl.getSelectedIndex() == 6 ||cl.getSelectedIndex() == 8) 
-					this.handIcons.setSelected(true);
-				else
-					this.handIcons.setSelected(false);
-			} else if (o == packageList) {
+				try {
+					getImageFromCommunity(cl.getSelectedItem().toString());
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			} else if (o == deploymentList) {
 				getRevisionNumbers();
 				refreshUI();
 			}
@@ -1060,6 +1097,8 @@ public class TBLoader extends JFrame implements ActionListener {
 			
 			String devicePath = drive.getAbsolutePath();
 			String community = communityList.getSelectedItem().toString();
+			String imageName = getImageFromCommunity(community);
+			
 			Logger.LogString("Community: " + community);
 //			if (b == update && di.serialNumber==NO_SERIAL_NUMBER) { //fetchIDFromServer.isSelected()) {
 //				di.serialNumber = fetchNextDeviceID();
@@ -1078,28 +1117,28 @@ public class TBLoader extends JFrame implements ActionListener {
 					Logger.LogString("No community selected. Are you sure? YES");
 			} else
 				prevSelectedCommunity = communityList.getSelectedIndex();
-			if ( (b == update || b == setCommunity) && (communityList.getSelectedIndex() == 6 ||communityList.getSelectedIndex() == 8) && !handIcons.isSelected()) {
-				// warn if reformatting for Jonga or Gyanvuuri but not adding hand icon messages
-				int response = JOptionPane.showConfirmDialog(this, "Hand icons not selected for " + community + ". \nAre you sure?",
-	                "Confirm", JOptionPane.YES_NO_OPTION);
-				if (response != JOptionPane.YES_OPTION) {
-					Logger.LogString("Hand icons not selected for " + community + ". Are you sure? NO");
-					refreshUI();
-					return;
-				} else
-					Logger.LogString("Hand icons not selected for " + community + ". Are you sure? YES");
-			} else if ( (b == update || b == setCommunity) &&  (communityList.getSelectedIndex() != 6 && communityList.getSelectedIndex() != 8) && handIcons.isSelected()){
-				// warn if adding hand icon messages to arrow communities when either updating or reformatting 
-				int response = JOptionPane.showConfirmDialog(this, "Hand icons are selected for " + community + ". \nAre you sure?",
-		                "Confirm", JOptionPane.YES_NO_OPTION);
-				if (response != JOptionPane.YES_OPTION) {
-					Logger.LogString("Hand icons are selected for " + community + ". Are you sure? NO");
-					refreshUI();
-					return;
-				} else
-					Logger.LogString("Hand icons are selected for " + community + ". Are you sure? YES");
-			} else
-				prevSelectedCommunity = communityList.getSelectedIndex();
+//			if ( (b == update || b == setCommunity) && (communityList.getSelectedIndex() == 6 ||communityList.getSelectedIndex() == 8) && !handIcons.isSelected()) {
+//				// warn if reformatting for Jonga or Gyanvuuri but not adding hand icon messages
+//				int response = JOptionPane.showConfirmDialog(this, "Hand icons not selected for " + community + ". \nAre you sure?",
+//	                "Confirm", JOptionPane.YES_NO_OPTION);
+//				if (response != JOptionPane.YES_OPTION) {
+//					Logger.LogString("Hand icons not selected for " + community + ". Are you sure? NO");
+//					refreshUI();
+//					return;
+//				} else
+//					Logger.LogString("Hand icons not selected for " + community + ". Are you sure? YES");
+//			} else if ( (b == update || b == setCommunity) &&  (communityList.getSelectedIndex() != 6 && communityList.getSelectedIndex() != 8) && handIcons.isSelected()){
+//				// warn if adding hand icon messages to arrow communities when either updating or reformatting 
+//				int response = JOptionPane.showConfirmDialog(this, "Hand icons are selected for " + community + ". \nAre you sure?",
+//		                "Confirm", JOptionPane.YES_NO_OPTION);
+//				if (response != JOptionPane.YES_OPTION) {
+//					Logger.LogString("Hand icons are selected for " + community + ". Are you sure? NO");
+//					refreshUI();
+//					return;
+//				} else
+//					Logger.LogString("Hand icons are selected for " + community + ". Are you sure? YES");
+//			} else
+//				prevSelectedCommunity = communityList.getSelectedIndex();
 			if (b == grabStatsOnly) {
 				updatingTB = true;
 				disableAll();
@@ -1107,7 +1146,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				if (goodDisk) {
 					//Logger.LogString("chkdsk was good.");
 					CopyThread t;
-					t = new CopyThread(this, this.oldPackageValue.getText(), packageList.getSelectedItem().toString(), devicePath, community, this.oldCommunityValue.getText(), di.serialNumber, di.isNewSerialNumber,  dateTime, handIcons.isSelected(), revision,di.revision,"grabStatsOnly");
+					t = new CopyThread(this, this.oldPackageValue.getText(), deploymentList.getSelectedItem().toString(), imageName, devicePath, community, this.oldCommunityValue.getText(), di.serialNumber, di.isNewSerialNumber,  dateTime, revision,di.revision,"grabStatsOnly");
 					t.start();
 				} 				
 			}
@@ -1118,7 +1157,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				if (goodDisk) {
 					//Logger.LogString("chkdsk was good.");
 					CopyThread t;
-					t = new CopyThread(this, this.oldPackageValue.getText(), packageList.getSelectedItem().toString(), devicePath, community, this.oldCommunityValue.getText(), di.serialNumber, di.isNewSerialNumber,  dateTime, handIcons.isSelected(), revision,di.revision,"update");
+					t = new CopyThread(this, this.oldPackageValue.getText(), deploymentList.getSelectedItem().toString(), imageName, devicePath, community, this.oldCommunityValue.getText(), di.serialNumber, di.isNewSerialNumber,  dateTime, revision,di.revision,"update");
 					t.start();
 				} 
 /*				else {
@@ -1151,7 +1190,7 @@ public class TBLoader extends JFrame implements ActionListener {
 */			else if (b == setCommunity) {
 				//setCommunity(devicePath, community, dateTime);
 				CopyThread t;
-				t = new CopyThread(this, this.oldPackageValue.getText(), packageList.getSelectedItem().toString(), devicePath, community, this.oldCommunityValue.getText(), di.serialNumber, di.isNewSerialNumber, dateTime, handIcons.isSelected(), revision,di.revision,"setCommunity");
+				t = new CopyThread(this, this.oldPackageValue.getText(), deploymentList.getSelectedItem().toString(), imageName, devicePath, community, this.oldCommunityValue.getText(), di.serialNumber, di.isNewSerialNumber, dateTime, revision,di.revision,"setCommunity");
 				t.start();
 			}
 			refreshUI();
@@ -1194,7 +1233,7 @@ public class TBLoader extends JFrame implements ActionListener {
 */
 	private void resetUI(boolean resetDrives) {
 		Logger.LogString("Resetting UI");
-		fillPackageList();
+		filldeploymentList();
 		Logger.LogString(" -clearing id text");
 		id.setText("");
 		idnext.setText("");
@@ -1245,8 +1284,8 @@ public class TBLoader extends JFrame implements ActionListener {
 //		reformat.setText("Reformat");
 //		backup.setText("Backup");
 		setCommunity.setText("Set Community");
-		handIcons.setEnabled(false);
-		fetchIDFromServer.setEnabled(false);
+		//handIcons.setEnabled(false);
+		//fetchIDFromServer.setEnabled(false);
 		connected = driveConnected();
 		if (connected && !updatingTB) {
 			update.setEnabled(true);
@@ -1268,11 +1307,20 @@ public class TBLoader extends JFrame implements ActionListener {
         		oldPackageValue.setText("");
         		oldCommunityValue.setText("");
         		oldRevisionText.setText("");
+        		oldImageText.setText("");
         		idnext.setText("");
 				id.setText("");
 				lastUpdatedText.setText("");
 				Logger.LogString("STATUS: " + NO_DRIVE);
 				status.setText("STATUS: " + NO_DRIVE);
+			}
+			try {
+				if (communityList.getSelectedItem() != null) {
+					getImageFromCommunity(communityList.getSelectedItem().toString());
+				}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 //			reformat.setEnabled(false);
 //			backup.setEnabled(false);
@@ -1286,8 +1334,8 @@ public class TBLoader extends JFrame implements ActionListener {
 //		backup.setEnabled(false);
 		xfer.setEnabled(false);	
 		setCommunity.setEnabled(false);
-		handIcons.setEnabled(false);
-		fetchIDFromServer.setEnabled(false);
+		//handIcons.setEnabled(false);
+		//fetchIDFromServer.setEnabled(false);
 		
 	}
 	
@@ -1356,7 +1404,8 @@ public class TBLoader extends JFrame implements ActionListener {
 	}
 	
 	public static class CopyThread extends Thread {
-		final String packageName;
+		final String deploymentName;
+		final String imageName;
 		final String sourcePackage;
 		final String devicePath;
 		final String community;
@@ -1365,7 +1414,6 @@ public class TBLoader extends JFrame implements ActionListener {
 		final boolean isNewSerialNumber;
 		final String datetime;
 		final TBLoader callback;
-		final boolean useHandIcons;
 		final String sourceRevision;
 		final String targetRevision;
 		final String mode;
@@ -1406,10 +1454,10 @@ public class TBLoader extends JFrame implements ActionListener {
 			try {
 				BufferedReader reader;
 				String handValue;
-				if (this.useHandIcons)
-					handValue = "1";
-				else
-					handValue = "0";
+				//if (this.useHandIcons)
+				//	handValue = "1";
+				//else
+				//	handValue = "0";
 				reader = new BufferedReader(new FileReader(file));
 				Logger.LogString("ID="+id);
 				while (reader.ready() && !criticalError) {
@@ -1430,10 +1478,11 @@ public class TBLoader extends JFrame implements ActionListener {
 					cmd = cmd.replaceAll("\\$\\{year\\}", year);					
 					cmd = cmd.replaceAll("\\$\\{send_now_dir\\}", Matcher.quoteReplacement(copyTo));
 					cmd = cmd.replaceAll("\\$\\{holding_dir\\}", Matcher.quoteReplacement(TEMP_COLLECTION_DIR));
-					cmd = cmd.replaceAll("\\$\\{hand\\}", handValue);
+					//cmd = cmd.replaceAll("\\$\\{hand\\}", handValue);
 					cmd = cmd.replaceAll("\\$\\{source_revision\\}", sourceRevision);
 					cmd = cmd.replaceAll("\\$\\{target_revision\\}", targetRevision);
-					cmd = cmd.replaceAll("\\$\\{package\\}", packageName);
+					cmd = cmd.replaceAll("\\$\\{deployment\\}", deploymentName);
+					cmd = cmd.replaceAll("\\$\\{image\\}", imageName);
 					cmd = cmd.replaceAll("\\$\\{source_package\\}", sourcePackage);
 					cmd = cmd.replaceAll("\\$\\{newSRN\\}", (id==NO_SERIAL_NUMBER)? "1" : "0");
 					cmd = cmd.replaceAll("\\$\\{volumeSRN\\}", volumeSerialNumber);
@@ -1460,9 +1509,10 @@ public class TBLoader extends JFrame implements ActionListener {
 			return success;
 		}
 		
-		public CopyThread(TBLoader callback, String sourcePackage, String packageName, String devicePath, String community, String sourceCommunity, String id, boolean isNewSerialNumber, String datetime, boolean useHandIcons, String sourceRevision, String targetRevision,String mode) {
+		public CopyThread(TBLoader callback, String sourcePackage, String deploymentName, String imageName, String devicePath, String community, String sourceCommunity, String id, boolean isNewSerialNumber, String datetime, String sourceRevision, String targetRevision,String mode) {
 			this.callback = callback;
-			this.packageName = packageName;
+			this.deploymentName = deploymentName;
+			this.imageName = imageName;
 			this.sourcePackage = sourcePackage;
 			this.community 	= community;
 			this.sourceCommunity = sourceCommunity;
@@ -1470,7 +1520,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			this.id = id;
 			this.isNewSerialNumber = isNewSerialNumber;
 			this.datetime = datetime;
-			this.useHandIcons = useHandIcons;
+			// this.useHandIcons = useHandIcons;
 			this.mode = mode;
 			this.sourceRevision = sourceRevision;
 			this.targetRevision = targetRevision;
@@ -1761,10 +1811,10 @@ public class TBLoader extends JFrame implements ActionListener {
 		} else if (line.startsWith("The system cannot find the path specified.")) {
 			errorMsg = "TB not found.  Unplug/replug USB and try again.";
 		} else if (line.startsWith("Volume Serial Number is ", 0)) {
-			volumeSerialNumber = "a-" + line.substring(24,28) + line.substring(29,33);
+			volumeSerialNumber = "b-" + line.substring(24,28) + line.substring(29,33);
 			System.out.println(volumeSerialNumber);
 		} else if (line.startsWith("Volume Serial Number is ", 1)) {
-			volumeSerialNumber = "a-" + line.substring(25,29) + line.substring(30,34);			
+			volumeSerialNumber = "b-" + line.substring(25,29) + line.substring(30,34);			
 			System.out.println(volumeSerialNumber);
 		}
 		return errorMsg;
