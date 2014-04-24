@@ -1,0 +1,4 @@
+rem DISCONNECT
+rem Disconnecting and Shutting Down Talking Book
+software\RemoveDrive.exe ${device_drive}
+

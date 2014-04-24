@@ -1,0 +1,5 @@
+rem Running CheckDisk
+!echo n|chkdsk ${device_drive}
+rem Checking for Key Folders
+!dir . ${device_drive}\system ${device_drive}\languages ${device_drive}\messages\lists ${device_drive}\messages\audio
+rem rem use this line to fake corruption:!echo File Not Found

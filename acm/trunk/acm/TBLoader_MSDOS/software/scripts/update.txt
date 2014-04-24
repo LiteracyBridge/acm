@@ -1,0 +1,29 @@
+rem UPDATE
+rem Copying Basic Files to Talking Book
+del ${device_drive}\*.img
+del ${device_drive}\system\*.pkg
+del ${device_drive}\system\*.dep
+software\robocopy content\${new_deployment}\basic ${device_drive} /E /NP /XD .* /XA:H /XF *.srn *.rev
+!software\robocopy content\${new_deployment}\basic\ ${device_drive} /E /NJH /NJS /NP /NDL /L /XD .* /XA:H /XF *.rtc *.loc last_updated.txt
+rem removing binary config and control tracks
+del "${device_drive}\system\config.bin"
+del "${device_drive}\languages\control.bin"
+del "${device_drive}\languages\dga\control.bin"
+rem Setting Time and Location
+del "${device_drive}\system\*.loc"
+del "${device_drive}\*.loc"
+echo ${new_community}> "${device_drive}\system\${new_community}.loc"
+echo IMAGE:${new_profile}> "${device_drive}\sysdata.txt"
+echo UPDATE:${new_deployment}>> "${device_drive}\sysdata.txt"
+echo LOCATION:${new_community}>> "${device_drive}\sysdata.txt"
+echo YEAR:${year}>> "${device_drive}\sysdata.txt"
+echo MONTH:${month}>> "${device_drive}\sysdata.txt"
+echo DATE:${dateInMonth}>> "${device_drive}\sysdata.txt"
+if ${isNewSRN}==1 echo SRN:${volumeSRN}>> "${device_drive}\sysdata.txt"
+if ${isNewSRN}==1 del "${device_drive}\system\*.srn"
+echo . > ${device_drive}\system\${volumeSRN}.srn
+echo . > ${device_drive}\system\${new_deployment}.dep
+echo . > "${device_drive}\inspect"
+del "${device_drive}\*.rtc"
+echo . > "${device_drive}\0h1m0s.rtc"
+echo ${datetime}> "${device_drive}\system\last_updated.txt"
