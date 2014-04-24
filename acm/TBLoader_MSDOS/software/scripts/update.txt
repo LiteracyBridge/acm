@@ -13,7 +13,7 @@ rem Setting Time and Location
 del "${device_drive}\system\*.loc"
 del "${device_drive}\*.loc"
 echo ${new_community}> "${device_drive}\system\${new_community}.loc"
-echo IMAGE:${new_profile}> "${device_drive}\sysdata.txt"
+echo IMAGE:${new_image}> "${device_drive}\sysdata.txt"
 echo UPDATE:${new_deployment}>> "${device_drive}\sysdata.txt"
 echo LOCATION:${new_community}>> "${device_drive}\sysdata.txt"
 echo YEAR:${year}>> "${device_drive}\sysdata.txt"
