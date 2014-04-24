@@ -1,0 +1,3 @@
+rem Saving CheckDisk
+mkdir "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}"
+echo n|chkdsk ${device_drive} > "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}\chkdsk-reformat.txt"

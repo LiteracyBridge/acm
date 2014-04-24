@@ -1,0 +1,15 @@
+mkdir "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}"
+rem Collecting Usage Data
+software\robocopy ${device_drive} "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}" /E /NP /XD .* languages messages ostats Inbox /XA:H /XF *.img *.old
+!software\robocopy ${device_drive} "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}" /E /NP /XD .* languages messages ostats Inbox /XA:H /XF *.img *.old  /NJH /NJS /NDL /L
+rem Collecting User Recordings
+mkdir "${send_now_dir}\UserRecordings\${old_deployment}\${device_id}\${old_community}\"
+software\robocopy "${device_drive}\messages\audio" "${send_now_dir}\UserRecordings\${old_deployment}\${device_id}\${old_community}" "${srn}*.a18" *_9_*.a18 /NP 
+!software\robocopy "${device_drive}\messages\audio" "${send_now_dir}\UserRecordings\${old_deployment}\${device_id}\${old_community}" "${srn}*.a18" *_9_*.a18 /NP /NJH /NJS /NDL /L
+rem Deleting Usage Statistics
+del ${device_drive}\log\*.* /Q
+del  ${device_drive}\log-archive\*.* /S /Q
+del ${device_drive}\statistics\*.* /S /Q
+rem Deleting User Recordings
+del ${device_drive}\messages\audio\${srn}*.a18 /Q
+del ${device_drive}\messages\audio\*_9_*.a18 /Q
