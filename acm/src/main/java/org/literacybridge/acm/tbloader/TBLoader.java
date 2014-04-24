@@ -56,7 +56,7 @@ import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.20r1183";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.20r1184";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -901,11 +901,11 @@ public class TBLoader extends JFrame implements ActionListener {
 		File f = new File(tbDataPath);
 		if (!f.exists())
 			f.mkdirs();
-		String filename = tbDataPath + "/tbData-" + year + "-" + month + "-" + date + ".txt";
+		String dateTime = twoOrFourChar(year) + "y" + twoOrFourChar(month) + "m" + twoOrFourChar(date) + "d"; 
+		String filename = tbDataPath + "/tbData-" + dateTime + "-"+ TBLoader.deviceID + ".txt";
 		try {
 			bw = new BufferedWriter(new FileWriter(filename,true));
 			if (bw != null) {
-				bw.write(TBLoader.deviceID + ",");
 				bw.write(DriveInfo.datetime + ",");
 				bw.write(currentLocationList.getSelectedItem().toString() + ",");
 				bw.write(id.getText() + ",");
