@@ -56,7 +56,7 @@ import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.20r1184";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.20r1185";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -78,8 +78,8 @@ public class TBLoader extends JFrame implements ActionListener {
 	private static JTextField idnext;
 	private static JTextField oldRevisionText;
 	private static JTextField newRevisionText;
-	private static JTextField oldProfileText;
-	private static JTextField newProfileText;
+	private static JTextField oldImageText;
+	private static JTextField newImageText;
 	private static JTextField oldDeploymentText;
 	private static JTextField oldCommunityText;
 	private static JTextField lastUpdatedText;
@@ -207,7 +207,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		JLabel deviceLabel = new JLabel("Talking Book Device:");
 		JLabel idLabel = new JLabel("Serial number:");
 		JLabel revisionLabel = new JLabel("Firmware:");
-		JLabel profileLabel = new JLabel("Content:");
+		JLabel imageLabel = new JLabel("Content:");
 		status = new JTextArea("STATUS: Ready");
 		status.setEditable(false);
 		status.setLineWrap(true);
@@ -222,10 +222,10 @@ public class TBLoader extends JFrame implements ActionListener {
 		oldRevisionText.setEditable(false);
 		newRevisionText = new JTextField();
 		newRevisionText.setEditable(false);
-		oldProfileText = new JTextField();
-		oldProfileText.setEditable(false);
-		newProfileText = new JTextField();
-		newProfileText.setEditable(false);
+		oldImageText = new JTextField();
+		oldImageText.setEditable(false);
+		newImageText = new JTextField();
+		newImageText.setEditable(false);
 		final JXDatePicker datePicker = new JXDatePicker();
 		datePicker.getEditor().setEditable(false);
 		datePicker.setFormats(new String[] { "yyyy/MM/dd" }); //dd MMM yyyy
@@ -271,7 +271,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	        				.addComponent(currentLocationLabel)
 	        				.addComponent(packageLabel)
 	        				.addComponent(communityLabel)
-	                		.addComponent(profileLabel)
+	                		.addComponent(imageLabel)
 	        				.addComponent(dateLabel)
 	                		.addComponent(revisionLabel)
 	        				.addComponent(idLabel)
@@ -283,7 +283,7 @@ public class TBLoader extends JFrame implements ActionListener {
             				.addComponent(newValue)
             				.addComponent(newDeploymentList)
 	                		.addComponent(newCommunityList)
-	                		.addComponent(newProfileText)
+	                		.addComponent(newImageText)
 							.addComponent(datePicker)
 	                		.addComponent(newRevisionText)
 	                		.addComponent(id)
@@ -297,7 +297,7 @@ public class TBLoader extends JFrame implements ActionListener {
             				.addComponent(oldValue)
 	                		.addComponent(oldDeploymentText)
 	                		.addComponent(oldCommunityText)
-	                		.addComponent(oldProfileText)
+	                		.addComponent(oldImageText)
 	                		.addComponent(lastUpdatedText)
 	                		.addComponent(oldRevisionText)
 	                		.addComponent(idnext)
@@ -330,9 +330,9 @@ public class TBLoader extends JFrame implements ActionListener {
                         .addComponent(newCommunityList)
                 		.addComponent(oldCommunityText))
                 .addGroup(layout.createParallelGroup(BASELINE)
-                		.addComponent(profileLabel)
-	    	            .addComponent(newProfileText)
-	    	            .addComponent(oldProfileText))
+                		.addComponent(imageLabel)
+	    	            .addComponent(newImageText)
+	    	            .addComponent(oldImageText))
                 .addGroup(layout.createParallelGroup(BASELINE)
                 		.addComponent(dateLabel)
                         .addComponent(datePicker)
@@ -645,7 +645,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			}
 		}
 		try {
-			getProfileFromCommunity(newCommunityList.getSelectedItem().toString());
+			getImageFromCommunity(newCommunityList.getSelectedItem().toString());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -654,8 +654,8 @@ public class TBLoader extends JFrame implements ActionListener {
 
 	private synchronized void setSNandRevFromCurrentDrive() {
 		String sn=NO_SERIAL_NUMBER;
-		String rev="unknown";
-		String pkg="unknown";
+		String rev="UNKNOWN";
+		String pkg="UNKNOWN";
 		DriveInfo di;
 		if (driveList == null)
 			return;
@@ -694,7 +694,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					}
 				});
 				
-				rev = "unknown";
+				rev = "UNKNOWN";
 				for (int i= 0; i<files.length;i++) {
 					String revFileName = files[i].getName();
 					revFileName = revFileName.substring(0, revFileName.length() - 4);
@@ -706,10 +706,10 @@ public class TBLoader extends JFrame implements ActionListener {
 					} 
 				}
 				if (rev.length() == 0)
-					rev = "unknown";  // eliminate problem of zero length filenames being inserted into batch statements
+					rev = "UNKNOWN";  // eliminate problem of zero length filenames being inserted into batch statements
 			}
-			if (tbStats != null && tbStats.profileName != null && !tbStats.profileName.equals("")) 
-				pkg = tbStats.profileName;
+			if (tbStats != null && tbStats.imageName != null && !tbStats.imageName.equals("")) 
+				pkg = tbStats.imageName;
 			else {
 				// get packaage name from .pkg file
 				files = systemPath.listFiles(new FilenameFilter() {
@@ -722,11 +722,11 @@ public class TBLoader extends JFrame implements ActionListener {
 					pkg = files[0].getName().substring(0, files[0].getName().length() - 4);
 				}
 			}
-			oldProfileText.setText(pkg);
+			oldImageText.setText(pkg);
 			if (tbStats != null && tbStats.deploymentNumber != null && !tbStats.deploymentNumber.equals("")) 
 				oldDeploymentText.setText(tbStats.deploymentNumber);
 			else {
-				// get packaage name from .pkg file
+				// get package name from .pkg file
 				files = systemPath.listFiles(new FilenameFilter() {
 					@Override public boolean accept(File dir, String name) {
 						String lowercase = name.toLowerCase();
@@ -736,7 +736,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				if (files.length == 1) {
 					oldDeploymentText.setText(files[0].getName().substring(0, files[0].getName().length() - 4));
 				} else
-					oldDeploymentText.setText("(not found)");
+					oldDeploymentText.setText("UNKNOWN");
 			}
 			
 			// get last updated date from file
@@ -891,6 +891,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	};
 
 	private void logTBData(String action) {
+		final String VERSION_TBDATA = "v00";
 		BufferedWriter bw;
 		Date d = new Date();
 		Calendar cal = Calendar.getInstance();
@@ -902,8 +903,9 @@ public class TBLoader extends JFrame implements ActionListener {
 		if (!f.exists())
 			f.mkdirs();
 		String dateTime = twoOrFourChar(year) + "y" + twoOrFourChar(month) + "m" + twoOrFourChar(date) + "d"; 
-		String filename = tbDataPath + "/tbData-" + dateTime + "-"+ TBLoader.deviceID + ".txt";
+		String filename = tbDataPath + "/tbData-" + VERSION_TBDATA  + "-" + dateTime + "-"+ TBLoader.deviceID + ".txt";
 		try {
+			DriveInfo di = (DriveInfo)driveList.getSelectedItem();
 			bw = new BufferedWriter(new FileWriter(filename,true));
 			if (bw != null) {
 				bw.write(DriveInfo.datetime + ",");
@@ -914,15 +916,17 @@ public class TBLoader extends JFrame implements ActionListener {
 				bw.write(oldCommunityText.getText() + ",");
 				bw.write(lastUpdatedText.getText() + ",");
 				bw.write(oldRevisionText.getText() + ",");
-				bw.write(idnext.getText() + ",");
+				bw.write(di.serialNumber + ",");
 				bw.write(newDeploymentList.getSelectedItem().toString() + ",");
 				bw.write(newCommunityList.getSelectedItem().toString() + ",");
 				bw.write(dateRotation + ",");
 				bw.write(newRevisionText.getText() + ",");
-				bw.write(",,");  // was fetchIDFromServer.isSelected()
-				bw.write(",,");  // was handIcons.isSelected() 
+				bw.write(",");  // was fetchIDFromServer.isSelected()
+				bw.write(",");  // was handIcons.isSelected() 
+				bw.write(di.corrupted + ",");
+				bw.write(newDeploymentList.getSelectedItem().toString() + ",");
+				bw.write(oldDeploymentText.getText() + ",");
 				if (tbStats != null) {
-					bw.write(tbStats.corrupted + ",");
 					bw.write(tbStats.corruptionDay + ",");
 					bw.write(tbStats.countReflashes + ",");
 					bw.write(tbStats.deploymentNumber + ",");
@@ -1036,8 +1040,8 @@ public class TBLoader extends JFrame implements ActionListener {
 		setCommunityList();
 	}
 */
-	private String getProfileFromCommunity(String community) throws Exception {
-		String profileName = "UNKNOWN";
+	private String getImageFromCommunity(String community) throws Exception {
+		String imageName = "UNKNOWN";
 		try {
 			File[] files;
 			File fCommunityDir = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "\\" + COMMUNITIES_SUBDIR + "\\" + community + "\\" + "system");
@@ -1053,16 +1057,16 @@ public class TBLoader extends JFrame implements ActionListener {
 				if (files.length > 1)
 					throw new Exception();
 				else if (files.length == 1) {
-					profileName = files[0].getName();
-					profileName = profileName.substring(0, profileName.length() - 4);
+					imageName = files[0].getName();
+					imageName = imageName.substring(0, imageName.length() - 4);
 				}
-				newProfileText.setText(profileName);
+				newImageText.setText(imageName);
 			}
 		} catch (IOException ignore) {
 			Logger.LogString("exception - ignore and keep going with default string");
 		}
 		
-		return profileName;
+		return imageName;
 	}
 	
 	public boolean isSerialNumberFormatGood (String srn) {
@@ -1109,7 +1113,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			} else if (o == newCommunityList) {
 				JComboBox cl = (JComboBox)o;
 				try {
-					getProfileFromCommunity(cl.getSelectedItem().toString());
+					getImageFromCommunity(cl.getSelectedItem().toString());
 				} catch (Exception e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -1160,7 +1164,6 @@ public class TBLoader extends JFrame implements ActionListener {
 			
 			String devicePath = drive.getAbsolutePath();
 			String community = newCommunityList.getSelectedItem().toString();
-			String profileName = getProfileFromCommunity(community);
 			
 			Logger.LogString("Community: " + community);
 //			if (b == update && di.serialNumber==NO_SERIAL_NUMBER) { //fetchIDFromServer.isSelected()) {
@@ -1368,7 +1371,7 @@ public class TBLoader extends JFrame implements ActionListener {
         		oldDeploymentText.setText("");
         		oldCommunityText.setText("");
         		oldRevisionText.setText("");
-        		oldProfileText.setText("");
+        		oldImageText.setText("");
         		idnext.setText("");
 				id.setText("");
 				lastUpdatedText.setText("");
@@ -1377,7 +1380,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			}
 			try {
 				if (newCommunityList.getSelectedItem() != null) {
-					getProfileFromCommunity(newCommunityList.getSelectedItem().toString());
+					getImageFromCommunity(newCommunityList.getSelectedItem().toString());
 				}
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -1551,8 +1554,8 @@ public class TBLoader extends JFrame implements ActionListener {
 					cmd = cmd.replaceAll("\\$\\{old_deployment\\}", TBLoader.oldDeploymentText.getText());
 					cmd = cmd.replaceAll("\\$\\{new_community\\}", TBLoader.newCommunityList.getSelectedItem().toString());
 					cmd = cmd.replaceAll("\\$\\{old_community\\}", TBLoader.oldCommunityText.getText());
-					cmd = cmd.replaceAll("\\$\\{new_profile\\}", TBLoader.newProfileText.getText());
-					cmd = cmd.replaceAll("\\$\\{old_profile\\}", TBLoader.oldProfileText.getText());
+					cmd = cmd.replaceAll("\\$\\{new_image\\}", TBLoader.newImageText.getText());
+					cmd = cmd.replaceAll("\\$\\{old_image\\}", TBLoader.oldImageText.getText());
 					cmd = cmd.replaceAll("\\$\\{isNewSRN\\}", (id==NO_SERIAL_NUMBER)? "1" : "0");
 					cmd = cmd.replaceAll("\\$\\{volumeSRN\\}", volumeSerialNumber);
 					//cmd = cmd.replaceAll("\\$\\{holding_dir\\}", Matcher.quoteReplacement(TEMP_COLLECTION_DIR));
@@ -1603,7 +1606,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				Logger.LogString("STATUS:Checking Memory Card");
 				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
 				if (hasCorruption) {
-					callback.tbStats.corrupted = true;
+					((DriveInfo)driveList.getSelectedItem()).corrupted = true;
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted\nGetting Stats");
 					Logger.LogString("STATUS:Corrupted...Getting Stats");
 					executeFile(new File(SCRIPT_SUBDIR + "chkdsk-save.txt"));
@@ -1651,7 +1654,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				Logger.LogString("STATUS:Checking Memory Card");
 				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
 				if (hasCorruption) {
-					callback.tbStats.corrupted = true;
+					((DriveInfo)driveList.getSelectedItem()).corrupted = true;
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted\nGetting Stats");
 					Logger.LogString("STATUS:Corrupted...Getting Stats\n");
 					executeFile(new File(SCRIPT_SUBDIR + "chkdsk-save.txt"));
@@ -1756,7 +1759,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				Logger.LogString("STATUS:Checking Memory Card");
 				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
 				if (hasCorruption) {
-					callback.tbStats.corrupted = true;
+					((DriveInfo)driveList.getSelectedItem()).corrupted = true;
 					Logger.LogString("Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.");
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted");
 					Logger.LogString("STATUS:Corrupted");
@@ -2010,7 +2013,6 @@ public class TBLoader extends JFrame implements ActionListener {
 		static final int MAX_MESSAGES=40;
 		// struct SystemData
 		// int structType
-		boolean corrupted;
 		boolean debug = false;
 		String serialNumber;
 		String deploymentNumber;
@@ -2092,7 +2094,6 @@ public class TBLoader extends JFrame implements ActionListener {
 		}
 
 		public TBInfo(String flashDataPath) throws IOException {
-			corrupted = false;
 			File file = new File(flashDataPath);
 			if (!file.exists()) {
 				System.out.print("No flash binary file to analyze.");
