@@ -56,7 +56,7 @@ import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.20r1187";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.20r1188";   // inclusion of flash stats TBInfo class
 	private static final String END_OF_INPUT = "\\Z";
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -92,9 +92,9 @@ public class TBLoader extends JFrame implements ActionListener {
 	private static JButton update;
 //	private static JButton reformat;
 //	private static JButton backup;
-	private static JButton xfer;
+//	private static JButton xfer;
 	private static JButton grabStatsOnly;
-	private static JButton setCommunity;
+//	private static JButton setCommunity;
 	private static String copyTo;
 	private static String pathOperationalData;
 	private static String revision;
@@ -209,7 +209,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		JLabel idLabel = new JLabel("Serial number:");
 		JLabel revisionLabel = new JLabel("Firmware:");
 		JLabel imageLabel = new JLabel("Content:");
-		status = new JTextArea("STATUS: Ready");
+		status = new JTextArea(2,40);
 		status.setEditable(false);
 		status.setLineWrap(true);
 		status2 = new JTextArea(2,40);
@@ -255,10 +255,10 @@ public class TBLoader extends JFrame implements ActionListener {
 //		reformat.addActionListener(this);
 //		backup = new JButton("Backup");
 //		backup.addActionListener(this);
-		xfer = new JButton("Upload Audio");
-		xfer.addActionListener(this);
-		setCommunity = new JButton("Set Community");
-		setCommunity.addActionListener(this);
+//		xfer = new JButton("Upload Audio");
+//		xfer.addActionListener(this);
+//		setCommunity = new JButton("Set Community");
+//		setCommunity.addActionListener(this);
 		
 		
 		GroupLayout layout = new GroupLayout(panel);
@@ -289,9 +289,8 @@ public class TBLoader extends JFrame implements ActionListener {
 	                		.addComponent(newRevisionText)
 	                		.addComponent(newID)
             				//.addComponent(fetchIDFromServer)
-	    	                .addGroup(layout.createSequentialGroup()
+//	    	                .addGroup(layout.createSequentialGroup()
 	                				.addComponent(update)
-	    	        				.addComponent(grabStatsOnly))
 	    	    		     .addComponent(status2)
 	    	        		)
  					.addGroup(layout.createParallelGroup(LEADING)
@@ -302,11 +301,12 @@ public class TBLoader extends JFrame implements ActionListener {
 	                		.addComponent(lastUpdatedText)
 	                		.addComponent(oldRevisionText)
 	                		.addComponent(oldID)
+	    	        		.addComponent(grabStatsOnly)
 	                		//.addComponent(handIcons)
-	    	                .addGroup(layout.createSequentialGroup()
-	    	        				.addComponent(setCommunity)
-	                 				.addComponent(xfer)
-              				)
+//	    	                .addGroup(layout.createSequentialGroup()
+//	    	        				.addComponent(setCommunity)
+//	                 				.addComponent(xfer)
+//              				)
 	    		    		.addComponent(status)
 	                  	)
 	               	);
@@ -352,8 +352,8 @@ public class TBLoader extends JFrame implements ActionListener {
     		    .addGroup(layout.createParallelGroup(BASELINE)
     		    	.addComponent(update)
     		    	.addComponent(grabStatsOnly)
-    		    	.addComponent(setCommunity)
-		        	.addComponent(xfer)
+//    		    	.addComponent(setCommunity)
+//		        	.addComponent(xfer)
 //    	    		.addComponent(backup)
 //    	    		.addComponent(reformat)
     	    		)
@@ -1005,37 +1005,25 @@ public class TBLoader extends JFrame implements ActionListener {
 		s.append(NEW_LINE);
 */	}
 	
-	public static void setCommunity(String path, String community, String dateTime) {
-		String locFilename = path + community + ".loc";
-		String rtcFilename = path + dateTime + ".rtc";
-		
-		try {
-/*			goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));
-			if (!goodCard) {
-				return;
-			}
-			TBLoader.status2.setText("Checking Memory Card");
-			hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
-			if (hasCorruption) {
-				TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted...Getting Stats");
-			} else {
-				TBLoader.status2.setText(TBLoader.status2.getText() + "...Good Card...Getting Stats");
-			}
-*/			
-			execute("cmd /C del \"" + path + "*.loc\" \"" + path + "system\\*.loc\" \"" + path + "*.rtc\"");
-
-			File locFile = new File(locFilename);
-			File rtcFile = new File(rtcFilename);
-			File inspectFile = new File(path + "inspect");
-			locFile.createNewFile();
-			rtcFile.createNewFile();
-			inspectFile.createNewFile();
-		} catch (Exception e) {
-			Logger.LogString(e.toString());
-			Logger.flush();
-			e.printStackTrace();
-		}
-	}
+//	public static void setCommunity(String path, String community, String dateTime) {
+//		String locFilename = path + community + ".loc";
+//		String rtcFilename = path + dateTime + ".rtc";
+//		
+//		try {
+//			execute("cmd /C del \"" + path + "*.loc\" \"" + path + "system\\*.loc\" \"" + path + "*.rtc\"");
+//
+//			File locFile = new File(locFilename);
+//			File rtcFile = new File(rtcFilename);
+//			File inspectFile = new File(path + "inspect");
+//			locFile.createNewFile();
+//			rtcFile.createNewFile();
+//			inspectFile.createNewFile();
+//		} catch (Exception e) {
+//			Logger.LogString(e.toString());
+//			Logger.flush();
+//			e.printStackTrace();
+//		}
+//	}
 
 	private void xferFiles() {
 		int response = JOptionPane.showConfirmDialog(this, "Do you currently have a good\n" +
@@ -1045,10 +1033,10 @@ public class TBLoader extends JFrame implements ActionListener {
                 "Confirm", JOptionPane.YES_NO_OPTION);
 		if (response != JOptionPane.YES_OPTION)
 			return;
-		xfer.setEnabled(false);
+//		xfer.setEnabled(false);
 		update.setEnabled(false);
 		grabStatsOnly.setEnabled(false);
-		setCommunity.setEnabled(false);
+//		setCommunity.setEnabled(false);
 		Logger.LogString("Transfering audio files to dropbox.");
 		try {
 			execute("cmd /C " + SW_SUBDIR + "robocopy \"" + TEMP_COLLECTION_DIR + "\" \"" + copyTo +"\" /MOVE /E");
@@ -1181,11 +1169,11 @@ public class TBLoader extends JFrame implements ActionListener {
 			Logger.LogString("ID:"+((DriveInfo)driveList.getSelectedItem()).serialNumber);
 			setSNandRevFromCurrentDrive();
 			status.setText("STATUS: Starting\n");
-			if (b == xfer) {
-				xferFiles();
-				//Logger.init();
-				return;
-			} 
+//			if (b == xfer) {
+//				xferFiles();
+//				//Logger.init();
+//				return;
+//			} 
 			String dateTime = DriveInfo.datetime;
 			if (item != null) {
 				prevSelected = drive;
@@ -1201,7 +1189,7 @@ public class TBLoader extends JFrame implements ActionListener {
 //				this.id.setText(di.serialNumber);
 //				Logger.LogString("SN: " + di.serialNumber);
 //			} 
-			if ((b == update || b == setCommunity) && newCommunityList.getSelectedIndex() == 0) {
+			if ((b == update /*|| b == setCommunity*/) && newCommunityList.getSelectedIndex() == 0) {
 				int response = JOptionPane.showConfirmDialog(this, "No community selected.\nAre you sure?", 
 	                "Confirm", JOptionPane.YES_NO_OPTION);
 				if (response != JOptionPane.YES_OPTION) {
@@ -1282,12 +1270,13 @@ public class TBLoader extends JFrame implements ActionListener {
 					CopyThread t = new CopyThread(this, devicePath, community, di.serialNumber, dateTime, handIcons.isSelected(), revision,di.revision,"compare-basic");//"reformat");
 					t.start();
 			} 
-*/			else if (b == setCommunity) {
-				//setCommunity(devicePath, community, dateTime);
-				CopyThread t;
-				t = new CopyThread(this, devicePath, di.serialNumber, di.isNewSerialNumber, dateTime, "setCommunity");
-				t.start();
-			}
+*/
+//			else if (b == setCommunity) {
+//				//setCommunity(devicePath, community, dateTime);
+//				CopyThread t;
+//				t = new CopyThread(this, devicePath, di.serialNumber, di.isNewSerialNumber, dateTime, "setCommunity");
+//				t.start();
+//			}
 			refreshUI();
 			return;
 		} catch (Exception ex) {
@@ -1376,7 +1365,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		update.setText("Update TB");
 //		reformat.setText("Reformat");
 //		backup.setText("Backup");
-		setCommunity.setText("Set Community");
+//		setCommunity.setText("Set Community");
 		//handIcons.setEnabled(false);
 		//fetchIDFromServer.setEnabled(false);
 		connected = driveConnected();
@@ -1394,8 +1383,8 @@ public class TBLoader extends JFrame implements ActionListener {
 		} else {
 			update.setEnabled(false);
 			grabStatsOnly.setEnabled(false);
-			setCommunity.setEnabled(false);
-			xfer.setEnabled(false);
+//			setCommunity.setEnabled(false);
+//			xfer.setEnabled(false);
 			if (!connected) {
         		oldDeploymentText.setText("");
         		oldCommunityText.setText("");
@@ -1426,8 +1415,8 @@ public class TBLoader extends JFrame implements ActionListener {
 		update.setEnabled(false);
 //		reformat.setEnabled(false);
 //		backup.setEnabled(false);
-		xfer.setEnabled(false);	
-		setCommunity.setEnabled(false);
+//		xfer.setEnabled(false);	
+//		setCommunity.setEnabled(false);
 		//handIcons.setEnabled(false);
 		//fetchIDFromServer.setEnabled(false);
 		
@@ -1776,68 +1765,68 @@ public class TBLoader extends JFrame implements ActionListener {
 			
 		}
 		
-		private void setCommunity() {
-			try {
-				boolean hasCorruption,goodCard;
-				success = false;
-				Logger.LogString("Setting Community -- first checking connectin and memory card.");
-				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));
-				if (!goodCard) {
-					return;
-				}
-				TBLoader.status2.setText("Checking Memory Card");
-				Logger.LogString("STATUS:Checking Memory Card");
-				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
-				if (hasCorruption) {
-					((DriveInfo)driveList.getSelectedItem()).corrupted = true;
-					Logger.LogString("Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.");
-					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted");
-					Logger.LogString("STATUS:Corrupted");
-					JOptionPane.showMessageDialog(null, "Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.",
-			                "Failure", JOptionPane.DEFAULT_OPTION);
-					return;
-				}
-				TBLoader.status2.setText(TBLoader.status2.getText() + "...Good\nSetting Community");
-				Logger.LogString("STATUS:Memory Card Good...Setting Community");
-				TBLoader.setCommunity(devicePath + "/system/", TBLoader.newCommunityList.getSelectedItem().toString(), this.datetime);
-				TBLoader.status2.setText(TBLoader.status2.getText() + "...Set\n");
-				Logger.LogString("STATUS:Community Set");
-				success = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));
-				callback.logTBData("set community");
-				if (success) {
-					TBLoader.status2.setText(TBLoader.status2.getText() + "Custom Files Applied\n");
-					Logger.LogString("STATUS:Custom Files Applied");
-					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));
-					TBLoader.status2.setText(TBLoader.status2.getText() + "Complete\n");
-					Logger.LogString("STATUS:Complete");
-					Logger.LogString("Community set to " + TBLoader.newCommunityList.getSelectedItem().toString() + " and custom files applied.");
-					JOptionPane.showMessageDialog(null, "Community set to " + TBLoader.newCommunityList.getSelectedItem().toString() + ".",
-			                "Success", JOptionPane.DEFAULT_OPTION);
-				}
-			for (int i=1;i<=3;i++)
-					Toolkit.getDefaultToolkit().beep();
-			} catch (Exception e) {
-				if (alert) {
-					JOptionPane.showMessageDialog(null, e.getMessage(),
-		                "Error", JOptionPane.ERROR_MESSAGE);
-					Logger.LogString("CRITICAL ERROR:" + e.getMessage());
-					criticalError = true;
-				}
-				Logger.LogString(e.toString());
-				Logger.flush();
-				e.printStackTrace();
-			} finally {
-				callback.finishCopy(success, id, this.mode);
-			}
-		}
+//		private void setCommunity() {
+//			try {
+//				boolean hasCorruption,goodCard;
+//				success = false;
+//				Logger.LogString("Setting Community -- first checking connectin and memory card.");
+//				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));
+//				if (!goodCard) {
+//					return;
+//				}
+//				TBLoader.status2.setText("Checking Memory Card");
+//				Logger.LogString("STATUS:Checking Memory Card");
+//				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
+//				if (hasCorruption) {
+//					((DriveInfo)driveList.getSelectedItem()).corrupted = true;
+//					Logger.LogString("Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.");
+//					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted");
+//					Logger.LogString("STATUS:Corrupted");
+//					JOptionPane.showMessageDialog(null, "Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.",
+//			                "Failure", JOptionPane.DEFAULT_OPTION);
+//					return;
+//				}
+//				TBLoader.status2.setText(TBLoader.status2.getText() + "...Good\nSetting Community");
+//				Logger.LogString("STATUS:Memory Card Good...Setting Community");
+//				TBLoader.setCommunity(devicePath + "/system/", TBLoader.newCommunityList.getSelectedItem().toString(), this.datetime);
+//				TBLoader.status2.setText(TBLoader.status2.getText() + "...Set\n");
+//				Logger.LogString("STATUS:Community Set");
+//				success = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));
+//				callback.logTBData("set community");
+//				if (success) {
+//					TBLoader.status2.setText(TBLoader.status2.getText() + "Custom Files Applied\n");
+//					Logger.LogString("STATUS:Custom Files Applied");
+//					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));
+//					TBLoader.status2.setText(TBLoader.status2.getText() + "Complete\n");
+//					Logger.LogString("STATUS:Complete");
+//					Logger.LogString("Community set to " + TBLoader.newCommunityList.getSelectedItem().toString() + " and custom files applied.");
+//					JOptionPane.showMessageDialog(null, "Community set to " + TBLoader.newCommunityList.getSelectedItem().toString() + ".",
+//			                "Success", JOptionPane.DEFAULT_OPTION);
+//				}
+//			for (int i=1;i<=3;i++)
+//					Toolkit.getDefaultToolkit().beep();
+//			} catch (Exception e) {
+//				if (alert) {
+//					JOptionPane.showMessageDialog(null, e.getMessage(),
+//		                "Error", JOptionPane.ERROR_MESSAGE);
+//					Logger.LogString("CRITICAL ERROR:" + e.getMessage());
+//					criticalError = true;
+//				}
+//				Logger.LogString(e.toString());
+//				Logger.flush();
+//				e.printStackTrace();
+//			} finally {
+//				callback.finishCopy(success, id, this.mode);
+//			}
+//		}
 		
 		@Override public void run() {
 			if (this.mode == "update")
 				update();			
 			else if (this.mode == "grabStatsOnly")
 				grabStatsOnly();
-			else if (this.mode == "setCommunity")
-				setCommunity();			
+//			else if (this.mode == "setCommunity")
+//				setCommunity();			
 		}
 	}
 
