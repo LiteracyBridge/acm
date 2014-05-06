@@ -1,11 +1,11 @@
 mkdir "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}"
+rem Capturing Full Directory
+dir ${device_drive} /s > "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}\dir.txt"
 rem Collecting Usage Data
-software\robocopy ${device_drive} "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}" /E /NP /XD .* languages messages ostats Inbox /XA:H /XF *.img *.old
-!software\robocopy ${device_drive} "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}" /E /NP /XD .* languages messages ostats Inbox /XA:H /XF *.img *.old  /NJH /NJS /NDL /L
+xcopy ${device_drive} "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}" /E /Y /EXCLUDE:software\scripts\exclude.txt /C
 rem Collecting User Recordings
 mkdir "${send_now_dir}\UserRecordings\${old_deployment}\${device_id}\${old_community}\"
-software\robocopy "${device_drive}\messages\audio" "${send_now_dir}\UserRecordings\${old_deployment}\${device_id}\${old_community}" "${srn}*.a18" *_9_*.a18 /NP 
-!software\robocopy "${device_drive}\messages\audio" "${send_now_dir}\UserRecordings\${old_deployment}\${device_id}\${old_community}" "${srn}*.a18" *_9_*.a18 /NP /NJH /NJS /NDL /L
+xcopy "${device_drive}\messages\audio\${srn}*.a18" "${send_now_dir}\UserRecordings\${old_deployment}\${device_id}\${old_community}" /C
 copy "${device_drive}\languages\dga\10.a18" "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}" /Y
 rem Deleting Usage Statistics
 del ${device_drive}\log\*.* /Q

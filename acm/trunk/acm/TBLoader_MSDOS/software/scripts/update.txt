@@ -1,5 +1,6 @@
 rem UPDATE
 rem Copying Basic Files to Talking Book
+rmdir ${device_drive}\archive
 del ${device_drive}\*.img
 del ${device_drive}\system\*.pkg
 del ${device_drive}\system\*.dep
@@ -25,4 +26,4 @@ echo ${new_community}> "${device_drive}\system\${new_community}.loc"
 echo . > "${device_drive}\inspect"
 del "${device_drive}\*.rtc"
 echo . > "${device_drive}\0h1m0s.rtc"
-echo ${datetime}> "${device_drive}\system\last_updated.txt"
+echo ${syncdir}> "${device_drive}\system\last_updated.txt"
