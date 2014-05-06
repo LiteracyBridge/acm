@@ -56,8 +56,7 @@ import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.20r1193";   // inclusion of flash stats TBInfo class
-	private static final String END_OF_INPUT = "\\Z";
+	private static final String VERSION = "v1.20r1195";   // inclusion of flash stats TBInfo class
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
 	private static final String SW_SUBDIR = ".\\software\\";
@@ -102,6 +101,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	public static String sourcePackage;
 	public static int durationSeconds;
 	public static DriveInfo currentDrive;
+	private static String srnPrefix;
 	//private JCheckBox fetchIDFromServer;
 	//private JCheckBox handIcons;
 	TBInfo tbStats;
@@ -169,10 +169,15 @@ public class TBLoader extends JFrame implements ActionListener {
 
 	}
 
-	public TBLoader() throws Exception {
+	public TBLoader(String srnPrefix) throws Exception {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.addWindowListener(new WindowEventHandler());
 		setDeviceIDandPaths();
+		if (srnPrefix != null) {
+			TBLoader.srnPrefix = srnPrefix;
+		} else {
+			TBLoader.srnPrefix = "b-";
+		}
 		// get image revision
 		File swPath = new File(".");
 		File[] files = swPath.listFiles(new FilenameFilter() {
@@ -192,7 +197,15 @@ public class TBLoader extends JFrame implements ActionListener {
 		//"   Update:" + deploymentName + "   Firmware:" + revision);
 		
 		JPanel panel = new JPanel();
-		
+		JLabel warning;
+		if (TBLoader.srnPrefix.equals("a-")) {
+			panel.setBackground(Color.CYAN);
+			warning = new JLabel("Use with OLD TBS only");
+			warning.setForeground(Color.RED);
+		} else {
+			warning = new JLabel("Use with NEW TBS only");
+			warning.setForeground(Color.RED);
+		}
 		JLabel packageLabel = new JLabel("Update:");
 		JLabel communityLabel = new JLabel("Community:");
 		JLabel currentLocationLabel = new JLabel("Current Location:");
@@ -205,8 +218,6 @@ public class TBLoader extends JFrame implements ActionListener {
 		lastUpdatedText.setEditable(false);
 		oldCommunityText = new JTextField();
 		oldCommunityText.setEditable(false);
-		JLabel warning = new JLabel("USE WITH NEW TBS ONLY");
-		warning.setForeground(Color.RED);
 		JLabel deviceLabel = new JLabel("Talking Book Device:");
 		JLabel idLabel = new JLabel("Serial number:");
 		JLabel revisionLabel = new JLabel("Firmware:");
@@ -388,14 +399,11 @@ public class TBLoader extends JFrame implements ActionListener {
 	private static String lastSynchDir;
 	
 	public static void main(String[] args) throws Exception {
-/*		if (args.length == 0) {
-			System.out.println("Usage: java -jar device_registration.jar [window title]");
+		if (args.length == 1) {
+			new TBLoader(args[0]);
 		} else {
-			File f = new File(args[0]);
-			new TBLoader();
+			new TBLoader(null);
 		} 
-*/
-		new TBLoader();
 	}
 
 	private static String twoOrFourChar(int i) {
@@ -684,24 +692,25 @@ public class TBLoader extends JFrame implements ActionListener {
 					if (files.length > 0) {
 						String tsnFileName = files[0].getName();
 						sn = tsnFileName.substring(0, tsnFileName.length() - 4);
-						if (!isSerialNumberFormatGood(sn))
-							sn=NO_SERIAL_NUMBER;
-						else
-							Logger.LogString("No stats SRN. Using *.srn file, which was " + sn);
-					}
-					if (files.length==0 || sn==NO_SERIAL_NUMBER) {
-						// do not use drive label
-						//int parens = di.label.indexOf(" (");
-						//if (parens > 0) {
-						//	sn = di.label.substring(0, parens);			
-						//}
-						//if (!isSerialNumberFormatGood(sn)) {
-							Logger.LogString("No stats SRN and no good *.srn file found.  Disk label was " + sn + ". Using volume id for now.");
+						Logger.LogString("No stats SRN. Found *.srn file:" + sn);
+					} else {
+							Logger.LogString("No stats SRN and no good *.srn file found.");
 							sn = NO_SERIAL_NUMBER;					
-						//} else
-						//	Logger.LogString("No stats SRN and no good *.srn file found.  Using disk label, which is " + sn);
 					}
 				}	
+				if (!isSerialNumberFormatGood(sn)) {
+					if (sn.subSequence(1, 2).equals("-")) {
+						if (sn.compareToIgnoreCase(TBLoader.srnPrefix) < 0)
+							JOptionPane.showMessageDialog(null, "This appears to be an OLD TB.  If so, please close this program and open the TB Loader for old TBs.",
+					                "OLD TB!", JOptionPane.WARNING_MESSAGE);
+						else if (sn.compareToIgnoreCase(TBLoader.srnPrefix) > 0)
+							JOptionPane.showMessageDialog(null, "This appears to be a NEW TB.  If so, please close this program and open the TB Loader for new TBs.",
+					                "NEW TB!", JOptionPane.WARNING_MESSAGE);
+					}
+					sn=NO_SERIAL_NUMBER;
+				}
+				
+				
 				// get Revision number from .rev or .img file
 				files = systemPath.listFiles(new FilenameFilter() {
 					@Override public boolean accept(File dir, String name) {
@@ -800,7 +809,6 @@ public class TBLoader extends JFrame implements ActionListener {
 		oldID.setText(sn);
 		di.serialNumber = sn;
 		newID.setText(sn);
-		di.revision = rev;
 		oldRevisionText.setText(rev);
 		//if (di.serialNumber.equals("UNKNOWN") || di.serialNumber.equals(NO_SERIAL_NUMBER)) {
 		//	JOptionPane.showMessageDialog(null, "The serial number cannot be found.\nIf you have internet access, please check the box for 'get new serial number'.\nIf you do not have internet access, you may continue without checking the box.",
@@ -822,7 +830,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				driveList.addItem(new DriveInfo(root, label));
 				if (prevSelected != null && root.getAbsolutePath().equals(prevSelected.getAbsolutePath())) {
 					index = i;
-				} else if (label.startsWith("TB") || label.startsWith("a-") || label.startsWith("b-"))
+				} else if (label.startsWith("TB") || label.startsWith("a-") || label.substring(1, 2).equals("-"))
 					index = i;
 				i++;
 			}
@@ -917,7 +925,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	private void logTBData(String action) {
 		final String VERSION_TBDATA = "v01";
 		BufferedWriter bw;
-		Date d = new Date();
+		new Date();
 		Calendar cal = Calendar.getInstance();
 		int month = cal.get(Calendar.MONTH) + 1	;
 		int date = cal.get(Calendar.DAY_OF_MONTH);
@@ -1111,10 +1119,12 @@ public class TBLoader extends JFrame implements ActionListener {
 		boolean isGood;
 		if (srn == null)
 			isGood = false;
-		else if ((srn.toLowerCase().startsWith("a-") || srn.toLowerCase().startsWith("b-")) && srn.length()==10)
+		else if (srn.toLowerCase().startsWith(TBLoader.srnPrefix.toLowerCase()) && srn.length()==10)
 			isGood = true;
-		else 
+		else  {
 			isGood = false;
+			Logger.LogString("***Incorrect Serial Number Format:"+srn+"***");
+		}
 		return isGood;
 	}
 	
@@ -1191,7 +1201,6 @@ public class TBLoader extends JFrame implements ActionListener {
 //			} 
 			if (TBLoader.currentDrive != null) {
 				prevSelected = drive;
-				String dateTime = TBLoader.currentDrive.datetime;
 			}
 			
 			String devicePath = drive.getAbsolutePath();
@@ -1565,7 +1574,6 @@ public class TBLoader extends JFrame implements ActionListener {
 			
 			try {
 				BufferedReader reader;
-				String handValue;
 				//if (this.useHandIcons)
 				//	handValue = "1";
 				//else
@@ -1637,7 +1645,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			String endMsg ="";
 			String endTitle ="";
 			try {
-				boolean gotStats,hasCorruption,verified, goodCard;
+				boolean gotStats,hasCorruption,goodCard;
 				setStartTime();
 				success = false;
 				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));
@@ -1857,9 +1865,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		}
 	}
 
-	private static final boolean debug = false;
-
-/*	static boolean chkDsk(DriveInfo di) throws Exception {
+	/*	static boolean chkDsk(DriveInfo di) throws Exception {
 		String line;
 		String folders[] = {"system","languages","messages","statistics","log","log-archive","messages/lists","messages/audio","languages/dga","statistics/stats","statistics/ostats"};
 		boolean goodDisk = true;
@@ -1929,13 +1935,13 @@ public class TBLoader extends JFrame implements ActionListener {
 		} else if (line.startsWith("The system cannot find the path specified.")) {
 			errorMsg = "TB not found.  Unplug/replug USB and try again.";
 		} else if (line.startsWith("Volume Serial Number is ", 0)) {
-			volumeSerialNumber = "b-" + line.substring(24,28) + line.substring(29,33);
+			volumeSerialNumber = TBLoader.srnPrefix + line.substring(24,28) + line.substring(29,33);
 			if (newID.getText().equals(NO_SERIAL_NUMBER)) {
 				newID.setText(volumeSerialNumber);
 				Logger.LogString("TB Serial Number will be set to " + volumeSerialNumber);
 			}
 		} else if (line.startsWith("Volume Serial Number is ", 1)) {
-			volumeSerialNumber = "b-" + line.substring(25,29) + line.substring(30,34);			
+			volumeSerialNumber = TBLoader.srnPrefix + line.substring(25,29) + line.substring(30,34);			
 			if (newID.getText().equals(NO_SERIAL_NUMBER)) {
 				newID.setText(volumeSerialNumber);
 				Logger.LogString("TB Serial Number will be set to " + volumeSerialNumber);
@@ -1988,8 +1994,6 @@ public class TBLoader extends JFrame implements ActionListener {
 		String serialNumber;
 		//String volumeSerialNumber;
 		boolean isNewSerialNumber;
-		String revision;
-		static final int MAX_CORRUPTIONS = 20;
 		boolean corrupted;
 		String datetime="";
 		
@@ -2000,7 +2004,6 @@ public class TBLoader extends JFrame implements ActionListener {
 			this.serialNumber = "";
 			//this.volumeSerialNumber =""; 
 			this.isNewSerialNumber = false;
-			this.revision = "";
 			this.datetime = getDateTime();
 			//updateLastIssue();
 		}
@@ -2095,7 +2098,6 @@ public class TBLoader extends JFrame implements ActionListener {
 		short profileTotalMessages;
 		short profileTotalRotations;
 		NORmsgStats[][] stats = new NORmsgStats[MAX_MESSAGES][5];
-		NORmsgStats[] statsAllRotations = new NORmsgStats[MAX_MESSAGES];
 		RandomAccessFile f;
 		
 		private class RotationTiming {
@@ -2240,8 +2242,6 @@ public class TBLoader extends JFrame implements ActionListener {
 
 		String readString(int maxChars) throws IOException {
 			char[] c = new char[maxChars];
-			char a;
-			byte b;
 			boolean endString = false;
 			long start = f.getFilePointer();
 			for (int i=0; i < maxChars; i++) {
@@ -2250,8 +2250,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					c[i] = 0;
 				else if (c[i] == 0)
 					endString = true;
-				b = f.readByte();
-				//f.skipBytes(1);
+				f.readByte();
 			}			
 			if (debug)
 				System.out.println("     string:" + String.valueOf(c) + " at " + start);
