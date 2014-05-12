@@ -269,16 +269,22 @@ public class CategoryView extends ACMContainer implements Observer {
 		devicePane.setIcon(new ImageIcon(getClass().getResource("/315_three-shot.png")));
 
 		taskPaneContainer.add(categoryPane);
+		taskPaneContainer.add(languagePane);
 		taskPaneContainer.add(tagsPane);
 		taskPaneContainer.add(devicePane);
-		taskPaneContainer.add(languagePane);
 		
-		categoryScrollPane.setPreferredSize(new Dimension(150, 250));
+		categoryScrollPane.setPreferredSize(new Dimension(150, 240));
 		languageScrollPane.setPreferredSize(new Dimension(150, 90));
 		deviceScrollPane.setPreferredSize(new Dimension(150, 50));
 		tagsScrollPane.setPreferredSize(new Dimension(150, 90));
 		
 		categoryTree.expandPath(new TreePath(deviceRootNode.getPath()));
+
+		categoryPane.setCollapsed(false);
+		languagePane.setCollapsed(false);
+		tagsPane.setCollapsed(true);
+		devicePane.setCollapsed(true);
+		
 		addListeners(); // at last
 	}
 	
@@ -364,7 +370,8 @@ public class CategoryView extends ACMContainer implements Observer {
 		
 		JScrollPane optionsScrollPane = new JScrollPane(optionComponent);
 		optionsPane.add(optionsScrollPane);
-		taskPaneContainer.add(optionsPane);
+		//taskPaneContainer.add(optionsPane);
+		optionsPane.setCollapsed(true);
 	}
 
 	private void createLanguageList() {
@@ -588,7 +595,6 @@ public class CategoryView extends ACMContainer implements Observer {
 		optionsPane.setTitle(LabelProvider.getLabel(LabelProvider.OPTIONS_ROOT_LABEL, locale));
 		languagePane.setTitle(LabelProvider.getLabel(LabelProvider.LANGUAGES_ROOT_LABEL, locale));
 		uiLangugeLb.setText(LabelProvider.getLabel(LabelProvider.OPTIONS_USER_LANGUAGE, locale));
-		
 		updateTreeNodes();
 	}
 
