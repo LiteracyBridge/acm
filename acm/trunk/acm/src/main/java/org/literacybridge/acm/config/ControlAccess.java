@@ -93,7 +93,7 @@ public class ControlAccess {
     	return goodName;
     }
 
-    public String getCurrentZipFilename() {
+    private String getCurrentZipFilename() {
     	return dbInfo.getCurrentFilename();
     }
     
