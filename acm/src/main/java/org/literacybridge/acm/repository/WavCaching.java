@@ -1,5 +1,6 @@
 package org.literacybridge.acm.repository;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -22,6 +23,7 @@ public class WavCaching {
 	}
 	
 	private void findUncachedWaveFiles () {
+		System.out.print("Finding uncached wave files...");
 		AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
 		
 		for (AudioItem audioItem : AudioItem.getFromDatabase()) {
@@ -29,10 +31,12 @@ public class WavCaching {
 				uncachedAudioItems.add(audioItem);
 			}
 		}		
+		System.out.println("done");
 	}
 	
 	
 	class Task extends SwingWorker<Void, Void> {
+		String itemBeingProcessed;
 		/*
 	* Main task. Executed in background thread.
 	*/
@@ -45,7 +49,9 @@ public class WavCaching {
 		    while (it.hasNext() && !isCancelled()) {
 		    	AudioItem item = it.next();
 				try {
+					itemBeingProcessed = item.getUuid();
 					ACMConfiguration.getCurrentDB().getRepository().convert(item, AudioFormat.WAV);
+					Thread.sleep(100);
 				} catch (ConversionException e) {
 					e.printStackTrace();
 				} catch (Exception e) {
@@ -54,11 +60,16 @@ public class WavCaching {
 				progress++;
 		        setProgress((int) ((float) progress / uncachedAudioItems.size() * 100.0));		        
 			}
+			itemBeingProcessed = "done";
 			return null;
 		}
 		
 		@Override public String toString() {
-			return "Updating wave cache...";
+			String s = "Converting ";
+			if (itemBeingProcessed != null) {
+				s += itemBeingProcessed;
+			}
+			return s;
 		}
 	}
 }

@@ -49,6 +49,7 @@ public class BackgroundTaskManager {
 				while (!worker.isDone() && !worker.isCancelled()) {
 					try {
 						statusBar.getProgressBar().setValue(worker.getProgress());
+						statusBar.setProgressMessage(worker.toString());
 						Thread.sleep(100);
 					} catch (InterruptedException e) {
 						Thread.currentThread().interrupt();
