@@ -323,7 +323,7 @@ public class DBConfiguration extends Properties {
 			propsChanged = true;
 		}		
 		if (!containsKey(Constants.AUDIO_LANGUAGES)) {
-			put(Constants.AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),ssl(\"Sisaala\"),tw(\"Twi\"),");  //sfw(\"Sehwi\"),
+			put(Constants.AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),sfw(\"Sehwi\"),ssl(\"Sisaala\"),tw(\"Twi\"),");
 			propsChanged = true;
 		}
 		if (!containsKey(Constants.CACHE_SIZE_PROP_NAME)) {

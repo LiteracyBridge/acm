@@ -99,15 +99,11 @@ public class Application extends JXFrame {
 		if (ACMConfiguration.getACMname() != null)
 			title += "                   " + ACMConfiguration.getACMname();
 		else if (ACMConfiguration.getCurrentDB().getSharedACMname() != null)
-			title += "                   " + ACMConfiguration.getCurrentDB().getSharedACMname();
-		String dbVersion = ACMConfiguration.getCurrentDB().getControlAccess().getCurrentZipFilename();
-		dbVersion = dbVersion.replaceAll("db", "");
-		dbVersion = dbVersion.replaceAll(".zip", "");		
-		title += " (v" + dbVersion + ")";
+			title += "                   " + ACMConfiguration.getCurrentDB().getSharedACMname();			
 		if (ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly())
-			title += "               * READ ONLY *";
+			title += "                   * READ ONLY *";
 		if (ACMConfiguration.getCurrentDB().getControlAccess().isSandbox())
-			title += "               CHANGES WILL *NOT* BE SAVED!   ";
+			title += "                   CHANGES WILL *NOT* BE SAVED!   ";
 
 		setTitle(title);
 		// toolbar view on top
@@ -140,10 +136,6 @@ public class Application extends JXFrame {
 	
 	public void setStatusMessage(String message) {
 		statusBar.setStatusMessage(message);
-	}
-
-	public void setProgressMessage(String message) {
-		statusBar.setProgressMessage(message);;
 	}
 	
 	public BackgroundTaskManager getTaskManager() {
@@ -225,10 +217,7 @@ public class Application extends JXFrame {
 			application.toFront();
 			
             LOG.log(Level.INFO, "ACM successfully started.");
-            if (params.autocache) {
-            	application.setProgressMessage("Updating wav cache");
-            	new WavCaching().cacheNewA18Files();
-            }
+			new WavCaching().cacheNewA18Files();
 		}
 	}	
 	

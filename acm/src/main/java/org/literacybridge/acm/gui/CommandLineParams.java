@@ -10,9 +10,6 @@ public class CommandLineParams {
 	@Option(name="-s",usage="to enter sandbox mode")
 	public boolean sandbox;
 
-	@Option(name="-c",usage="to start auto wave caching upon startup")
-	public boolean autocache;
-
 	/*	NOT CURRENTLY USING THIS PARAMETER --  NEED TO RETHINK IT WHEN WE NEED IT
 	@Option(name="-db",usage="to set path to database")
 	public String pathDB;

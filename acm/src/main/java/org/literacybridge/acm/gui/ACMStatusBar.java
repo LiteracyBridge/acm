@@ -26,7 +26,7 @@ public class ACMStatusBar extends JXStatusBar {
 		
 		add(new JSeparator(JSeparator.VERTICAL));
 		
-		progressLabel = new JLabel("");
+		progressLabel = new JLabel("Updating wav cache");
 		add(progressLabel, new JXStatusBar.Constraint(300));
 		
 		progressBar = new JProgressBar();
@@ -34,18 +34,10 @@ public class ACMStatusBar extends JXStatusBar {
 		
 		cancelButton = new JButton("Cancel");
 		add(cancelButton);
-
-		progressBar.setVisible(false);
-		progressLabel.setVisible(false);
-		cancelButton.setVisible(false);		
 	}
 
 	public void setStatusMessage(String message) {
 		statusLabel.setText(message);
-	}
-	
-	public void setProgressMessage(String message) {
-		progressLabel.setText(message);
 	}
 	
 	public JButton getCancelButton() {
