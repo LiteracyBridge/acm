@@ -173,8 +173,10 @@ public class AudioItemView extends Container implements Observer {
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , newLocale));
 		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.SOURCE)
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SOURCE , newLocale));
-		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.MESSAGE_FORMAT)
-										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_MESSAGE_FORMAT , newLocale));
+		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.LANGUAGES)
+										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , newLocale));
+//		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.MESSAGE_FORMAT)
+//										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_MESSAGE_FORMAT , newLocale));
 		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.DATE_FILE_MODIFIED)
 										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED , newLocale));
 		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER)
@@ -194,9 +196,9 @@ public class AudioItemView extends Container implements Observer {
 //		columnTitleArray[AudioItemTableModel.APPLY_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_APPLY_COUNT, locale);
 //		columnTitleArray[AudioItemTableModel.NOHELP_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_NOHELP_COUNT, locale);
 		columnTitleArray[AudioItemTableModel.CATEGORIES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , locale);
-//		columnTitleArray[AudioItemTableModel.LANGUAGES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , locale);
+		columnTitleArray[AudioItemTableModel.LANGUAGES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , locale);
 		columnTitleArray[AudioItemTableModel.SOURCE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SOURCE , locale);
-		columnTitleArray[AudioItemTableModel.MESSAGE_FORMAT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_MESSAGE_FORMAT , locale);
+//		columnTitleArray[AudioItemTableModel.MESSAGE_FORMAT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_MESSAGE_FORMAT , locale);
 		columnTitleArray[AudioItemTableModel.DATE_FILE_MODIFIED] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED , locale);
 		columnTitleArray[AudioItemTableModel.PLAYLIST_ORDER] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER , locale);
 				
