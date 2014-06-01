@@ -14,3 +14,6 @@ del ${device_drive}\statistics\*.* /S /Q
 rem Deleting User Recordings
 del ${device_drive}\messages\audio\${srn}*.a18 /Q
 del ${device_drive}\messages\audio\*_9_*.a18 /Q
+del ${device_drive}\messages\audio\*_9-0_*.a18 /Q
+rem Deleting User Feedback Category
+for /f %f in ('dir ${device_drive}\messages\lists /b /AD') do del ${device_drive}\messages\lists\%f\9*.txt /Q

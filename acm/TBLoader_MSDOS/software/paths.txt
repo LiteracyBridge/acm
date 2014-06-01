@@ -3,6 +3,7 @@
 %HOMEPATH%\Dropbox\db-jirapa-02
 %HOMEPATH%\Dropbox\db-jirapa-03
 %HOMEPATH%\Dropbox\db-jirapa-04
+%HOMEPATH%\Dropbox\Fred
 %HOMEPATH%\Dropbox\Fidelis
 %HOMEPATH%\Dropbox\Fidelis-to-Cliff
 %HOMEPATH%\Dropbox\Andy

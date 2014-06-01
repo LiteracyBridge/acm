@@ -1,10 +1,10 @@
-rem Copying Community-Specific Files
-IF EXIST "content\${new_deployment}\communities\${new_community}" software\robocopy "content\${new_deployment}\communities\${new_community}" ${device_drive} /NP /XX /E
-!IF EXIST "content\${new_deployment}\communities\${new_community}" software\robocopy "content\${new_deployment}\communities\${new_community}" ${device_drive} /NP /XX /E /NJH /NJS /NDL /L 
-
 rem Copying Package-Specific Files
 IF EXIST "content\${new_deployment}\packages\${new_image}" software\robocopy "content\${new_deployment}\packages\${new_image}" ${device_drive} /NP /XX /E
 !IF EXIST "content\${new_deployment}\packages\${new_image}" software\robocopy "content\${new_deployment}\packages\${new_image}" ${device_drive} /NP /XX /E /NJH /NJS /NDL /L 
+
+rem Copying Community-Specific Files
+IF EXIST "content\${new_deployment}\communities\${new_community}" software\robocopy "content\${new_deployment}\communities\${new_community}" ${device_drive} /NP /XX /E
+!IF EXIST "content\${new_deployment}\communities\${new_community}" software\robocopy "content\${new_deployment}\communities\${new_community}" ${device_drive} /NP /XX /E /NJH /NJS /NDL /L 
 
 rem REVIEW TARGET
 type "${device_drive}\sysdata.txt"
