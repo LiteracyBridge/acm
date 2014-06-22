@@ -56,7 +56,7 @@ import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.20r1195";   // inclusion of flash stats TBInfo class
+	private static final String VERSION = "v1.21r1210";   // check new location of flash stats TBInfo class
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
 	private static final String SW_SUBDIR = ".\\software\\";
@@ -536,6 +536,9 @@ public class TBLoader extends JFrame implements ActionListener {
 			return;
 		File rootPath = new File(di.drive.getAbsolutePath());
 		File statsPath = new File(rootPath,"statistics/stats/flashData.bin");
+		if (!statsPath.exists()) {
+			statsPath = new File(rootPath,"statistics/flashData.bin");
+		}
 		tbStats = new TBInfo(statsPath.toString());
 		if (tbStats.countReflashes == -1)
 			tbStats = null;
