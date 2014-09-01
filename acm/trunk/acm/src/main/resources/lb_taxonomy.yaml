@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 17
+  revision: 18
   categories:
     '0' : 
       name: Other Messages
@@ -31,7 +31,7 @@ taxonomy:
               name: OLD-TB Update Intros
               order: 60
         '0-5' :
-          name: Intro Messages
+          name: Intro Message
           order: 15
     '1' : 
       name: Agriculture
