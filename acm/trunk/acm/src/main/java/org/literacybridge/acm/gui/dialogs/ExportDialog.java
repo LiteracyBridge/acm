@@ -33,6 +33,9 @@ public class ExportDialog extends JDialog implements ActionListener {
 	private JRadioButton wavButton;
 	private JRadioButton a18Button;
 	private JRadioButton csvButton;
+	private JRadioButton idOnlyButton;
+	private JRadioButton titleOnlyButton;
+	private JRadioButton title_idButton;
 	
 	private final LocalizedAudioItem[] selectedAudioItems;
 	
@@ -48,6 +51,7 @@ public class ExportDialog extends JDialog implements ActionListener {
 		// remove file type combo box
 		Container c1 = (Container) exportDirectoryChooser.getComponent(3); 
 		Container c2 = (Container) c1.getComponent(2); 
+		Container c3 = (Container) c1.getComponent(3); 
 		c2.remove(0);
 		c2.remove(0);
 		
@@ -65,6 +69,14 @@ public class ExportDialog extends JDialog implements ActionListener {
 		formatGroup.add(wavButton);
 		formatGroup.add(a18Button);
 		formatGroup.add(csvButton);
+
+		ButtonGroup filenameGroup = new ButtonGroup();
+		titleOnlyButton = new JRadioButton("title");
+		idOnlyButton = new JRadioButton("id");
+		title_idButton = new JRadioButton("title+id");
+		filenameGroup.add(idOnlyButton);
+		filenameGroup.add(titleOnlyButton);
+		filenameGroup.add(title_idButton);
 		
 		ActionListener buttonListener = new ActionListener() {
 			@Override public void actionPerformed(ActionEvent e) {
@@ -85,14 +97,26 @@ public class ExportDialog extends JDialog implements ActionListener {
 		wavButton.setPreferredSize(new Dimension(70,20));
 		a18Button.setPreferredSize(new Dimension(70,20));
 		csvButton.setPreferredSize(new Dimension(70,20));
+		
+		idOnlyButton.setPreferredSize(new Dimension(70,20));
+		titleOnlyButton.setPreferredSize(new Dimension(70,20));
+		title_idButton.setPreferredSize(new Dimension(70,20));
+
 		c2.add(mp3Button);
 		c2.add(wavButton);
 		c2.add(a18Button);
 		c2.add(csvButton);
+
+		c3.add(titleOnlyButton);
+		c3.add(idOnlyButton);
+		c3.add(title_idButton);
 		
 		// select a18 by default
 		a18Button.setSelected(true);
-		
+
+		// select filename=title__id by default
+		title_idButton.setSelected(true);
+
 		add(exportDirectoryChooser);
 		setSize(600, 400);
 		
@@ -124,6 +148,8 @@ public class ExportDialog extends JDialog implements ActionListener {
 			};
 		} else {			
 			final AudioFormat targetFormat;
+			final boolean idInFilename = idOnlyButton.isSelected() || title_idButton.isSelected();
+			final boolean titleInFilename = titleOnlyButton.isSelected() || title_idButton.isSelected();
 			// TODO export dialog that let's you modify audio settings
 			if (mp3Button.isSelected()) {
 				targetFormat = AudioFormat.MP3;
@@ -140,7 +166,7 @@ public class ExportDialog extends JDialog implements ActionListener {
 					// TODO proper label
 					Container dialog = UIUtils.showDialog(app, new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK", LanguageUtil.getUILanguage()), app));
 					try {
-						FileSystemExporter.export(ExportDialog.this.selectedAudioItems, target, targetFormat);
+						FileSystemExporter.export(ExportDialog.this.selectedAudioItems, target, targetFormat,titleInFilename,idInFilename);
 					} catch (IOException e) {
 						LOG.log(Level.WARNING, "Exporting audio items failed", e);
 					} finally {
