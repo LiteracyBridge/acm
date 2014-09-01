@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 16
+  revision: 17
   categories:
     '0' : 
       name: Other Messages
@@ -10,7 +10,7 @@ taxonomy:
           order: 0
         '0-1' :
           name: OLD Talking Book
-          order: 20
+          order: 50
         '0-2' : 
           name: Favorites
           order: 30
@@ -28,8 +28,11 @@ taxonomy:
               name: TB Categories
               order: 40
             '0-4-3' :
-              name: TB Update Intros
+              name: OLD-TB Update Intros
               order: 60
+        '0-5' :
+          name: Intro Messages
+          order: 15
     '1' : 
       name: Agriculture
       order: 10
