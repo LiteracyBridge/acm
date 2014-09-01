@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +40,7 @@ public class TagsListPopupMenu extends JPopupMenu {
 	private static final Logger LOG = Logger.getLogger(TagsListPopupMenu.class
 			.getName());
 
-	private static String previousUpdateName = "";
+	private static String previousPackageName = "";
 	
 	public TagsListPopupMenu(final TagLabel selectedTag) {
 		JMenuItem deleteTag = new JMenuItem("Delete '" + selectedTag + "' ...");
@@ -119,41 +120,81 @@ public class TagsListPopupMenu extends JPopupMenu {
 			public void actionPerformed(ActionEvent arg0) {
 				File listDirectory = new File(ACMConfiguration.getCurrentDB()
 						.getTBLoadersDirectory(),
-						"TBL-template/content/basic/messages/lists/hhr");
-				File activeListsFile = new File(listDirectory,
-						"_activeLists.txt");
-				Map<String, PersistentCategory> categories = Maps.newHashMap();
+						"activeLists");
+				LinkedHashMap<String, PersistentCategory> categories = new LinkedHashMap();
+				Map<String, File> listCollection = Maps.newHashMap();
 				try {
-					BufferedReader reader = new BufferedReader(new FileReader(
-							activeListsFile));
-					while (reader.ready()) {
-						String line = reader.readLine();
-						if (StringUtils.isEmpty(line)) {
-							break;
+					String packageName = (String) JOptionPane.showInputDialog(
+							Application.getApplication(), "Enter content package name:",
+							"Export playlist", JOptionPane.PLAIN_MESSAGE, null,
+							null, previousPackageName);
+
+					if (!StringUtils.isEmpty(packageName)) {
+						previousPackageName = packageName;
+						File dir = new File(ACMConfiguration.getCurrentDB().getTBLoadersDirectory(), "active/"
+								+ packageName);
+						
+						if (!dir.exists()) {
+							dir.mkdirs();
 						}
-						if (line.contains("$")) {
-							continue;
-						}
-						if (line.startsWith("!")) {
-							line = line.substring(1);
+						File targetActiveListsFile;
+						targetActiveListsFile = new File(dir, "_activeLists.txt");
+						if (!targetActiveListsFile.exists()) {
+							File sourceActiveListsFile;
+							if (listDirectory.listFiles().length > 1) {
+								for (File possibleActiveListFile : listDirectory.listFiles()) {
+									String possibleActiveListString = possibleActiveListFile.getName();
+									possibleActiveListString = possibleActiveListString.substring(0, possibleActiveListString.length()-4);
+									possibleActiveListString = possibleActiveListString.replace('_', ' ');
+									listCollection.put(possibleActiveListString, possibleActiveListFile);
+								}
+								String[] listNames = listCollection.keySet().toArray(
+										new String[listCollection.size()]);
+								String listName = (String) JOptionPane
+										.showInputDialog(Application.getApplication(),
+												"Choose categories & order:",
+												"Category Order",
+												JOptionPane.PLAIN_MESSAGE, null, listNames,
+												"");
+								if (!StringUtils.isEmpty(listName)) {
+									sourceActiveListsFile = listCollection.get(listName);
+								} else {									
+									sourceActiveListsFile = listDirectory.listFiles()[0];
+								}
+							} else {
+								sourceActiveListsFile = listDirectory.listFiles()[0];
+							}
+							IOUtils.copy(sourceActiveListsFile, targetActiveListsFile);							
 						}
 
 						PersistentCategory category = PersistentCategory
-								.getFromDatabase(line);
-						if (category != null) {
-							categories.put(category.getTitle().getString(),
-									category);
+								.getFromDatabase("0-5"); // Update Intro Message
+						categories.put(category.getTitle().getString(), category);
+						BufferedReader reader = new BufferedReader(new FileReader(
+								targetActiveListsFile));
+						while (reader.ready()) {
+							String line = reader.readLine();
+							if (StringUtils.isEmpty(line)) {
+								break;
+							}
+							if (line.contains("$")) {
+								continue;
+							}
+							if (line.startsWith("!")) {
+								line = line.substring(1);
+							}
+
+							category = PersistentCategory
+									.getFromDatabase(line);
+							if (category != null) {
+								categories.put(category.getTitle().getString(),
+										category);
+							}
 						}
-					}
-					
-					reader.close();
+						
+						reader.close();
+						
 
-					String updateName = (String) JOptionPane.showInputDialog(
-							Application.getApplication(), "Enter update name:",
-							"Export playlist", JOptionPane.PLAIN_MESSAGE, null,
-							null, previousUpdateName);
-
-					if (!StringUtils.isEmpty(updateName)) {
 						String[] names = categories.keySet().toArray(
 								new String[categories.size()]);
 						String categoryName = (String) JOptionPane
@@ -163,17 +204,8 @@ public class TagsListPopupMenu extends JPopupMenu {
 										JOptionPane.PLAIN_MESSAGE, null, names,
 										"");
 
-						if (!StringUtils.isEmpty(categoryName)) {
-							previousUpdateName = updateName;
-							File dir = new File(ACMConfiguration.getCurrentDB().getTBLoadersDirectory(), "active/"
-									+ updateName);
-							
-							if (!dir.exists()) {
-								dir.mkdirs();
-								IOUtils.copy(activeListsFile, new File(dir, activeListsFile.getName()));
-							}
-							
-							export(selectedTag.getTag(), updateName,
+						if (!StringUtils.isEmpty(categoryName)) {							
+							export(selectedTag.getTag(), packageName,
 									categories.get(categoryName), dir);
 						}
 					}
