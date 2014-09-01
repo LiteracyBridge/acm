@@ -14,7 +14,7 @@ import org.literacybridge.acm.utils.IOUtils;
 public class FileSystemExporter {
 	public static final String FILENAME_SEPARATOR = "___";
 	
-	public static void export(LocalizedAudioItem[] selectedAudioItems, File targetDir, AudioFormat targetFormat) 
+	public static void export(LocalizedAudioItem[] selectedAudioItems, File targetDir, AudioFormat targetFormat, boolean titleInFilename, boolean idInFilename) 
 		throws IOException {
 		
 		try {
@@ -25,8 +25,9 @@ public class FileSystemExporter {
 				File sourceFile = repository.convert(localizedAudioItem.getParentAudioItem(), targetFormat);
 				
 				if (sourceFile != null) {
-					String title = localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue()
-							+ FILENAME_SEPARATOR + localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue();
+					String title = (titleInFilename?localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue():"")
+							+ (idInFilename && titleInFilename?FILENAME_SEPARATOR:"")
+							+ (idInFilename?localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue():"");
 					
 					// replace invalid file name characters (windows) with an underscore ('_')
 					title = title.trim().replaceAll("[\\\\/:*?\"<>|]", "_");
