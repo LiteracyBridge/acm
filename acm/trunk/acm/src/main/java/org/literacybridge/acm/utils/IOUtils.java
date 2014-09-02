@@ -174,6 +174,13 @@ public class IOUtils {
 				: "";
 	}
 	
+	public static void copy(File fromFile, File toFile, boolean keepLastModified) throws IOException {
+		copy(fromFile, toFile, fromFile.length());
+		if (keepLastModified) {
+			toFile.setLastModified(fromFile.lastModified());
+		}
+	}
+	
 	public static void copy(File fromFile, File toFile) throws IOException {
 		copy(fromFile, toFile, fromFile.length());
 	}

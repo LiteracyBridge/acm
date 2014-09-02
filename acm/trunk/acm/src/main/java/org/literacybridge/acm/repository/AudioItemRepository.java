@@ -180,6 +180,14 @@ public abstract class AudioItemRepository {
 		checkFilesUpToDate(audioItem);
 		
 		File audioFile = resolveFile(audioItem, targetFormat, true);
+		if (!audioFile.exists() && targetFormat == AudioFormat.A18) {
+			// Before creating a new a18 in the temp folder from a cached wave file, 
+			// just copy over the a18 file in dropbox over there if it exists.
+			File audioFileShared = resolveFile(audioItem, targetFormat, false);
+			if (audioFileShared.exists()) {
+				IOUtils.copy(audioFileShared, audioFile, true);
+			}		
+		}
 		if (audioFile.exists()) {
 			// conversion not necessary
 			return audioFile;
@@ -261,7 +269,8 @@ public abstract class AudioItemRepository {
 	}
 	
 	public synchronized void exportA18WithMetadata(AudioItem audioItem, File targetDirectory) throws ConversionException, IOException {
-		File fromFile = convert(audioItem, AudioFormat.A18);
+		//File fromFile = convert(audioItem, AudioFormat.A18); // this will create a new a18 in the temp folder, which isn't necessary for export
+		File fromFile = resolveFile(audioItem, AudioFormat.A18, false); // this should just point to the Dropbox a18 file, which is fine for export to a18
 		if (fromFile == null) {
 			throw new IOException("AudioItem " + audioItem.getUuid() + " not found in repository.");
 		}
@@ -270,11 +279,14 @@ public abstract class AudioItemRepository {
 	}
 
 	public synchronized void exportA18WithMetadataToFile(AudioItem audioItem, File targetFile) throws ConversionException, IOException {
-		File fromFile = convert(audioItem, AudioFormat.A18);
+		//File fromFile = convert(audioItem, AudioFormat.A18); // this will create a new a18 in the temp folder, which isn't necessary for export
+		File fromFile = resolveFile(audioItem, AudioFormat.A18, false); // this should just point to the Dropbox a18 file, which is fine for export to a18
+		if (!fromFile.exists()) {
+			fromFile = convert(audioItem, AudioFormat.A18);
+		}
 		if (fromFile == null) {
 			throw new IOException("AudioItem " + audioItem.getUuid() + " not found in repository.");
 		}
-		
 		IOUtils.copy(fromFile, targetFile);
 		appendMetadataToA18(audioItem, targetFile);
 	}
