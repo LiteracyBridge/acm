@@ -89,14 +89,16 @@ public class TBBuilder {
                           
 		 * Full text search for the first audio item whose title matches the package name.  
 		 */
-		List<AudioItem> items = AudioItem.getFromDatabaseBySearch(packageName, null, null);
-		for (AudioItem item : items) {
-			String title = item.getLocalizedAudioItem(null).getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue();
-			if (title.trim().equals(packageName.trim())) {
-				System.out.println("\nExporting audioitem " + item.getUuid() + " (" + title + ") to " + welcomeMessageTargetDir);
-				ACMConfiguration.getCurrentDB().getRepository().exportA18WithMetadata(item, welcomeMessageTargetDir);
-			}
-		}
+
+		/* COMMENTING OUT THE TERRIBLE HACK: Instead, any playlist can be exported to the Intro Message Category */
+//		List<AudioItem> items = AudioItem.getFromDatabaseBySearch(packageName, null, null);
+//		for (AudioItem item : items) {
+//			String title = item.getLocalizedAudioItem(null).getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue();
+//			if (title.trim().equals(packageName.trim())) {
+//				System.out.println("\nExporting audioitem " + item.getUuid() + " (" + title + ") to " + welcomeMessageTargetDir);
+//				ACMConfiguration.getCurrentDB().getRepository().exportA18WithMetadata(item, welcomeMessageTargetDir);
+//			}
+//		}
 		
 		System.out.println("\nDone.");
 	}
