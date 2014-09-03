@@ -56,7 +56,7 @@ import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.21r1210";   // check new location of flash stats TBInfo class
+	private static final String VERSION = "v1.22r1220";   // check new location of flash stats TBInfo class
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
 	private static final String SW_SUBDIR = ".\\software\\";
@@ -739,7 +739,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			if (tbStats != null && tbStats.imageName != null && !tbStats.imageName.equals("")) 
 				pkg = tbStats.imageName;
 			else {
-				// get packaage name from .pkg file
+				// get package name from .pkg file
 				files = systemPath.listFiles(new FilenameFilter() {
 					@Override public boolean accept(File dir, String name) {
 						String lowercase = name.toLowerCase();
@@ -754,7 +754,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			if (tbStats != null && tbStats.deploymentNumber != null && !tbStats.deploymentNumber.equals("")) 
 				oldDeploymentText.setText(tbStats.deploymentNumber);
 			else {
-				// get package name from .pkg file
+				// get deployment name from .dep file
 				files = systemPath.listFiles(new FilenameFilter() {
 					@Override public boolean accept(File dir, String name) {
 						String lowercase = name.toLowerCase();
@@ -1081,38 +1081,73 @@ public class TBLoader extends JFrame implements ActionListener {
 	}
 */
 	private String getImageFromCommunity(String community) throws Exception {
-		String imageName = "UNKNOWN";
-		if (community.equalsIgnoreCase("Non-specific")) {
+		String imageName = "";
+		String groupName = "";
+		File[] images;
+		File imagedir = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "\\" + IMAGES_SUBDIR + "\\");
+		images = imagedir.listFiles(new FilenameFilter() {
+			@Override public boolean accept(File dir, String name) {
+				return dir.isDirectory();
+			}
+		});
+		if (images.length == 1 || community.equalsIgnoreCase("Non-specific")) {
 			// grab first image package
-			File imagedir = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "\\" + IMAGES_SUBDIR + "\\");
-			File[] images = imagedir.listFiles(new FilenameFilter() {
-				@Override public boolean accept(File dir, String name) {
-					return dir.isDirectory();
-				}
-			});
 			imageName = images[0].getName();
-		}		
-		try {
-			File[] files;
+	    } else {	
 			File fCommunityDir = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "\\" + COMMUNITIES_SUBDIR + "\\" + community + "\\" + "system");
 			
 			if (fCommunityDir.exists()) {
-				// get Package
-				files = fCommunityDir.listFiles(new FilenameFilter() {
+				// get groups
+				File[] groups = fCommunityDir.listFiles(new FilenameFilter() {
 					@Override public boolean accept(File dir, String name) {
 						String lowercase = name.toLowerCase();
-						return lowercase.endsWith(".pkg");
+						return lowercase.endsWith(".grp");
 					}
-				});				
-				if (files.length > 1)
-					throw new Exception();
-				else if (files.length == 1) {
-					imageName = files[0].getName();
-					imageName = imageName.substring(0, imageName.length() - 4);
+				});
+				for (File group:groups) {
+					// for every group that the community belongs to look for a match in each of images's group listing
+					groupName = group.getName();
+					groupName = groupName.substring(0, groupName.length() - 4);
+					for (File image:images) {
+						File imageSysFolder = new File(image,"system/");
+						File[] imageGroups = imageSysFolder.listFiles(new FilenameFilter() {
+							@Override public boolean accept(File dir, String name) {
+								String lowercase = name.toLowerCase();
+								return lowercase.endsWith(".grp");
+							}
+						});				
+						for (File imageGroup:imageGroups) {
+							String imageGroupName = imageGroup.getName();
+							imageGroupName = imageGroupName.substring(0, imageGroupName.length() - 4);
+							if (imageGroupName.equalsIgnoreCase(groupName)) {
+								imageName = image.getName();
+								break;
+							}
+						}
+						if (!imageName.equals(""))
+							break;
+					}
 				}
+				if (imageName.equals("")) {
+					// no match of groups between community and multiple packages
+					// Only hope is to find a default package
+					for (File image:images) {
+						File imageSysFolder = new File(image,"system/");
+						File[] imageDefaultGroup = imageSysFolder.listFiles(new FilenameFilter() {
+							@Override public boolean accept(File dir, String name) {
+								String lowercase = name.toLowerCase();
+								return lowercase.endsWith("default.grp");
+							}
+						});
+						if (imageDefaultGroup.length == 1) {
+							imageName = image.getName();
+						}
+					}
+				}				
 			}
-		} catch (IOException ignore) {
-			Logger.LogString("exception - ignore and keep going with default string");
+		}
+		if (imageName.equals("")) {
+			imageName = "ERROR!";
 		}
 		newImageText.setText(imageName);		
 		return imageName;
