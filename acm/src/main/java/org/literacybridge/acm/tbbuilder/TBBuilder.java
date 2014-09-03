@@ -34,7 +34,7 @@ public class TBBuilder {
 		System.out.println("\n\nExporting package " + packageName);
 		
 		
-		File sourceDir = new File(ACMConfiguration.getCurrentDB().getTBLoadersDirectory(), "active/"
+		File sourceDir = new File(ACMConfiguration.getCurrentDB().getTBLoadersDirectory(), "packages/"
 				+ packageName);
 
 		if (!sourceDir.exists()) {
