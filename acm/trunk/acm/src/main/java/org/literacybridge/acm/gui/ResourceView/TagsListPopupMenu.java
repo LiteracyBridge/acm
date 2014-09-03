@@ -120,7 +120,7 @@ public class TagsListPopupMenu extends JPopupMenu {
 			public void actionPerformed(ActionEvent arg0) {
 				File listDirectory = new File(ACMConfiguration.getCurrentDB()
 						.getTBLoadersDirectory(),
-						"activeLists");
+						"TB_Options/activeLists");
 				LinkedHashMap<String, PersistentCategory> categories = new LinkedHashMap();
 				Map<String, File> listCollection = Maps.newHashMap();
 				try {
@@ -131,7 +131,7 @@ public class TagsListPopupMenu extends JPopupMenu {
 
 					if (!StringUtils.isEmpty(packageName)) {
 						previousPackageName = packageName;
-						File dir = new File(ACMConfiguration.getCurrentDB().getTBLoadersDirectory(), "active/"
+						File dir = new File(ACMConfiguration.getCurrentDB().getTBLoadersDirectory(), "packages/"
 								+ packageName);
 						
 						if (!dir.exists()) {
