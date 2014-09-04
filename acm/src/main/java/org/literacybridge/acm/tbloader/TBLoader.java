@@ -56,14 +56,14 @@ import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.22r1220";   // check new location of flash stats TBInfo class
+	private static final String VERSION = "v1.22r1221";   // check new location of flash stats TBInfo class
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
 	private static final String SW_SUBDIR = ".\\software\\";
 	private static final String CONTENT_SUBDIR = ".\\content\\";
 	private static final String CONTENT_BASIC_SUBDIR = "basic\\";
 	private static final String COMMUNITIES_SUBDIR = "communities\\";
-	private static final String IMAGES_SUBDIR = "packages\\";
+	private static final String IMAGES_SUBDIR = "images\\";
 	private static final String SCRIPT_SUBDIR = SW_SUBDIR + "scripts\\";
 	private static final String NO_SERIAL_NUMBER = "UNKNOWN";
 	private static final String NO_DRIVE = "(nothing connected)";
@@ -1787,7 +1787,6 @@ public class TBLoader extends JFrame implements ActionListener {
 				TBLoader.status2.setText(TBLoader.status2.getText() + "Updating TB Files");
 				Logger.LogString("STATUS:Updating TB Files");
 				executeFile(new File(SCRIPT_SUBDIR + "update.txt"));
-				TBLoader.status2.setText(TBLoader.status2.getText() + "...Updated\n");
 				Logger.LogString("STATUS:Updated");
 				//verified = executeFile(new File(SCRIPT_SUBDIR + "verify.txt"));
 				//if (verified) {
@@ -1795,9 +1794,9 @@ public class TBLoader extends JFrame implements ActionListener {
 				//	Logger.LogString("STATUS:Verified Basic...Adding Any Custom Community Content");
 				//	verified = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));					
 				//}
-				TBLoader.status2.setText(TBLoader.status2.getText() + "\nAdding Community Content\n");
-				Logger.LogString("STATUS:Adding Any Custom Community Content");
+				Logger.LogString("STATUS:Adding Image Content");
 				verified = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));					
+				TBLoader.status2.setText(TBLoader.status2.getText() + "...Updated\n");
 				if (verified) {
 					String duration;
 					TBLoader.status2.setText(TBLoader.status2.getText() + "Updated & Verified\nDisconnecting TB");

@@ -31,6 +31,7 @@ import org.literacybridge.acm.gui.ResourceView.CategoryView.TagsListChanged;
 import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
 
 import com.google.common.collect.Lists;
@@ -131,9 +132,10 @@ public class TagsListPopupMenu extends JPopupMenu {
 
 					if (!StringUtils.isEmpty(packageName)) {
 						previousPackageName = packageName;
+						//TODO: need to accommodate multiple message lists (or profiles) in a single package/image
+						//TODO: each new message list would be numbered
 						File dir = new File(ACMConfiguration.getCurrentDB().getTBLoadersDirectory(), "packages/"
-								+ packageName);
-						
+								+ packageName + "/messages/lists/" + TBBuilder.firstMessageListName);
 						if (!dir.exists()) {
 							dir.mkdirs();
 						}
@@ -168,7 +170,7 @@ public class TagsListPopupMenu extends JPopupMenu {
 						}
 
 						PersistentCategory category = PersistentCategory
-								.getFromDatabase("0-5"); // Update Intro Message
+								.getFromDatabase(TBBuilder.IntroMessageID); // Update Intro Message
 						categories.put(category.getTitle().getString(), category);
 						BufferedReader reader = new BufferedReader(new FileReader(
 								targetActiveListsFile));

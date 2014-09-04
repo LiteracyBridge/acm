@@ -3,6 +3,7 @@ rem Capturing Full Directory
 dir ${device_drive} /s > "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}\dir.txt"
 rem Collecting Usage Data
 xcopy ${device_drive} "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}" /E /Y /EXCLUDE:software\scripts\exclude.txt /C
+xcopy "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}\statistics\*.*" "${send_now_dir}\TalkingBookData\${old_deployment}\${device_id}\${old_community}\${srn}\${syncdir}\statistics\stats" /I /Y
 rem Collecting User Recordings
 mkdir "${send_now_dir}\UserRecordings\${old_deployment}\${device_id}\${old_community}\"
 xcopy "${device_drive}\messages\audio\${srn}*.a18" "${send_now_dir}\UserRecordings\${old_deployment}\${device_id}\${old_community}" /C
@@ -11,6 +12,7 @@ rem Deleting Usage Statistics
 del ${device_drive}\log\*.* /Q
 del  ${device_drive}\log-archive\*.* /S /Q
 del ${device_drive}\statistics\*.* /S /Q
+del ${device_drive}\statistics\stats\*.* /S /Q
 rem Deleting User Recordings
 del ${device_drive}\messages\audio\${srn}*.a18 /Q
 del ${device_drive}\messages\audio\*_9_*.a18 /Q
