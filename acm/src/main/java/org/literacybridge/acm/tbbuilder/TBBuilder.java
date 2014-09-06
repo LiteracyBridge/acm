@@ -25,12 +25,7 @@ public class TBBuilder {
 	private static boolean hasIntro = false;
 	private static int groupCount = 0;
 	
-	public static void main(String[] args) throws Exception {
-		if (args.length < 4) {
-			printUsage();
-			System.exit(1);
-		}
-		
+	public TBBuilder (String[] args) throws Exception {
 		CommandLineParams params = new CommandLineParams();
 		params.disableUI = true;
 		params.readonly = true;
@@ -188,6 +183,16 @@ public class TBBuilder {
 		ZipUnzip.zip(new File(dropboxTbLoadersDir,"software"), new File(dropboxTbLoadersDir,"software-" + zipSuffix), true);
 
 		System.out.println("\nDone.");
+		
+	}
+
+	public static void main(String[] args) throws Exception {
+		if (args.length < 4) {
+			printUsage();
+			System.exit(1);
+		} else {
+			new TBBuilder(args);
+		}        
 	}
 	
 	private static void printUsage() {
