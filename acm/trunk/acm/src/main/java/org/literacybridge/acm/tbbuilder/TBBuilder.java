@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
+import java.io.IOException;
 
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
@@ -22,38 +23,21 @@ public class TBBuilder {
 	public static String firstMessageListName = "1";
 	public static String IntroMessageID = "0-5";
 	private static String IntroMessageListFilename = IntroMessageID + ".txt";
-	private static boolean hasIntro = false;
-	private static int groupCount = 0;
+	private final static int MAX_GROUPS = 5;
+	private File dropboxTbLoadersDir;
+	private File targetDeploymentDir;
+	private File sourceTbOptionsDir;
+	private File targetTempDir;
+	private String deploymentNumber;
 	
-	public TBBuilder (String[] args) throws Exception {
-		CommandLineParams params = new CommandLineParams();
-		params.disableUI = true;
-		params.readonly = true;
-		params.sandbox = true;
-		params.sharedACM = args[0];
-		String deploymentNumber = args[1];
-		final String packageName = args[2];
-		String languageCode = args[3];
-		String[] groups = new String[5];
-		groupCount = args.length - 4;
-		for (int i=0;i<groupCount && i<5;i++) {
-			groups[i]=args[i+4];
-		}
-				
-		Application.startUp(params);
-		
-		
+	public void addImage(String packageName, String languageCode, String[] groups) throws Exception {
+		boolean hasIntro = false;
+		int groupCount = groups.length;
 		System.out.println("\n\nExporting package " + packageName);
-		
-		File dropboxTbLoadersDir = ACMConfiguration.getCurrentDB().getTBLoadersDirectory();
-		File sourcePackageDir = new File(dropboxTbLoadersDir,"packages/" + packageName);
+
+		File sourcePackageDir = new File(dropboxTbLoadersDir,"packages/" + packageName);		
 		File sourceMessagesDir = new File(sourcePackageDir,"messages");
 		File sourceListsDir = new File(sourceMessagesDir,"lists/" + TBBuilder.firstMessageListName);
-		
-		// use LB Home Dir to create folder, then zip to Dropbox and delete the folder
-		File localTbLoadersDir = new File(DBConfiguration.getLiteracyBridgeHomeDir(), Constants.TBLoadersHomeDir);
-		File targetTempDir = new File(localTbLoadersDir,"temp");
-		File targetDeploymentDir = new File(targetTempDir, "content/" + deploymentNumber);
 		File targetImagesDir = new File(targetDeploymentDir,"images");
 		File targetImageDir = new File(targetImagesDir,packageName);
 
@@ -104,7 +88,6 @@ public class TBBuilder {
 			}
 		}
 
-		File sourceTbOptionsDir = new File(dropboxTbLoadersDir, "TB_Options");
 		File sourceBasic = new File(sourceTbOptionsDir,"basic");
 		FileUtils.copyDirectory(sourceBasic, targetImageDir);		
 		
@@ -123,18 +106,6 @@ public class TBBuilder {
 		}
 		FileUtils.copyFile(sourceControlFile, new File(targetLanguageDir,"control.txt"));
 	
-		File sourceFirmware = null;
-		File[] firmwareOptions = new File(sourceTbOptionsDir,"firmware").listFiles();
-		for (File f:firmwareOptions) {
-			if (sourceFirmware==null) {
-				sourceFirmware = f;
-			} else if (sourceFirmware.getName().compareToIgnoreCase(f.getName()) < 0) {
-				sourceFirmware = f;
-			}
-		}
-		File targetBasicDir = new File(targetDeploymentDir,"basic");
-		FileUtils.copyFileToDirectory(sourceFirmware, targetBasicDir);
-
 		//create profile.txt
 		String profileString = packageName + "," + languageCode + "," + TBBuilder.firstMessageListName + ",menu\n";		
 		File profileFile = new File(targetSystemDir,"profiles.txt");
@@ -150,48 +121,126 @@ public class TBBuilder {
 		File f = new File(targetSystemDir,packageName + ".pkg");
 		f.createNewFile();
 		
-		File sourceCommunitiesDir = new File(dropboxTbLoadersDir,"communities");
-		File targetCommunitiesDir = new File(targetDeploymentDir,"communities");
-		FileUtils.copyDirectory(sourceCommunitiesDir, targetCommunitiesDir);
 		
-		File[] files = dropboxTbLoadersDir.listFiles(new FilenameFilter() {
-			
-			@Override
-			public boolean accept(File dir, String name) {
-				return name.toLowerCase().endsWith(".rev") &&  name.toLowerCase().startsWith(packageName);
-			}
-		});
-		
-		
-		char version ='a';
-		if (files.length > 1)
-			throw new Exception("Too many *rev files.  There can only be one.");
-		else if (files.length > 0) {
-			version = files[0].getName().subSequence(packageName.length()+1,packageName.length()+2).charAt(0);
-			version++; 
-		}
-
-		files[0].delete();
-		File newRev = new File(dropboxTbLoadersDir,packageName + "-" + version + ".rev");
-		newRev.createNewFile();
-		
-		String zipSuffix = packageName + "-" + version + ".zip";
-		
-		ZipUnzip.zip(targetTempDir, new File(dropboxTbLoadersDir,"content-" + zipSuffix));
-		FileUtils.deleteDirectory(targetTempDir);	
-
-		ZipUnzip.zip(new File(dropboxTbLoadersDir,"software"), new File(dropboxTbLoadersDir,"software-" + zipSuffix), true);
-
-		System.out.println("\nDone.");
 		
 	}
 
+	public TBBuilder (String sharedACM, String deployment) throws Exception {
+		CommandLineParams params = new CommandLineParams();
+		params.disableUI = true;
+		params.readonly = true;
+		params.sandbox = true;
+		params.sharedACM = sharedACM;
+		Application.startUp(params);
+		
+		deploymentNumber = deployment;
+		dropboxTbLoadersDir = ACMConfiguration.getCurrentDB().getTBLoadersDirectory();
+		sourceTbOptionsDir = new File(dropboxTbLoadersDir, "TB_Options");
+		
+		// use LB Home Dir to create folder, then zip to Dropbox and delete the folder
+		File localTbLoadersDir = new File(DBConfiguration.getLiteracyBridgeHomeDir(), Constants.TBLoadersHomeDir);
+		final String ACM_PREFIX = "ACM-";
+		String ACMname = params.sharedACM.substring(ACM_PREFIX.length());
+		targetTempDir = new File(localTbLoadersDir,ACMname);
+		targetDeploymentDir = new File(targetTempDir, "content/" + deploymentNumber);
+		IOUtils.deleteRecursive(targetDeploymentDir);
+		targetDeploymentDir.mkdirs();
+		
+		File sourceFirmware = null;
+		File[] firmwareOptions = new File(sourceTbOptionsDir,"firmware").listFiles();
+		for (File f:firmwareOptions) {
+			if (sourceFirmware==null) {
+				sourceFirmware = f;
+			} else if (sourceFirmware.getName().compareToIgnoreCase(f.getName()) < 0) {
+				sourceFirmware = f;
+			}
+		}
+		File targetBasicDir = new File(targetDeploymentDir,"basic");
+		FileUtils.copyFileToDirectory(sourceFirmware, targetBasicDir);
+
+		File sourceCommunitiesDir = new File(dropboxTbLoadersDir,"communities");
+		File targetCommunitiesDir = new File(targetDeploymentDir,"communities");
+		FileUtils.copyDirectory(sourceCommunitiesDir, targetCommunitiesDir);
+
+		File localSoftware = new File(targetTempDir,"software");
+		FileUtils.deleteDirectory(localSoftware);
+		FileUtils.copyDirectory(new File(dropboxTbLoadersDir, "software"),localSoftware);
+		
+		File[] files = targetTempDir.listFiles(new FilenameFilter() {			
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.toLowerCase().endsWith(".rev") &&  name.toLowerCase().startsWith(deploymentNumber);
+			}
+		});
+		for (File revisionFile:files) {
+			revisionFile.delete();
+		}
+		char revision;
+		revision = getLatestDeploymentVersion(dropboxTbLoadersDir,deploymentNumber,false);
+		File newRev = new File(targetTempDir,deploymentNumber + "-" + revision + ".rev");
+		newRev.createNewFile();
+
+		System.out.println("\nDone.");		
+	}
+
+	private static char getLatestDeploymentVersion(File publishTbLoadersDir, final String deploymentNumber, boolean updateRevision) throws Exception{
+		char revision ='a';
+		File[] files = publishTbLoadersDir.listFiles(new FilenameFilter() {
+			
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.toLowerCase().endsWith(".rev") &&  name.toLowerCase().startsWith(deploymentNumber);
+			}
+		});
+		if (files.length > 1)
+			throw new Exception("Too many *rev files.  There can only be one.");
+		else if (files.length == 1) {
+			revision = files[0].getName().subSequence(deploymentNumber.length()+1,deploymentNumber.length()+2).charAt(0);
+			revision++; 
+		}
+		if (updateRevision) {
+			files[0].delete();
+			File newRev = new File(publishTbLoadersDir,deploymentNumber + "-" + revision + ".rev");
+			newRev.createNewFile();
+		}
+		return revision;
+	}
+
+	public void publish() throws Exception {
+		char revision;
+
+		revision = getLatestDeploymentVersion(dropboxTbLoadersDir,deploymentNumber,true);
+		String zipSuffix = deploymentNumber + "-" + revision + ".zip";		
+		File localContent = new File(targetTempDir,"content");
+		ZipUnzip.zip(localContent, new File(dropboxTbLoadersDir,"content-" + zipSuffix), true);
+		File[] files = targetTempDir.listFiles(new FilenameFilter() {			
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.toLowerCase().endsWith(".rev") &&  name.toLowerCase().startsWith(deploymentNumber);
+			}
+		});
+		files[0].delete();
+		ZipUnzip.zip(new File(dropboxTbLoadersDir,"software"), new File(dropboxTbLoadersDir,"software-" + zipSuffix), true);
+	}
+	
 	public static void main(String[] args) throws Exception {
+		TBBuilder tbb;
+		int groupCount = args.length - 4;
+		if (groupCount>MAX_GROUPS)
+			groupCount=MAX_GROUPS;
+		String[] groups = new String[groupCount];
+		for (int i=0;i<groupCount;i++) {
+			groups[i]=args[i+4];
+		}
 		if (args.length < 4) {
 			printUsage();
 			System.exit(1);
 		} else {
-			new TBBuilder(args);
+			tbb = new TBBuilder(args[0],args[1]);
+			tbb.addImage(args[2],args[3], groups);
+			String[] group2={"default"};
+			tbb.addImage("2014-4-noR","en",group2);
+			tbb.publish();
 		}        
 	}
 	
