@@ -87,6 +87,7 @@ public class Application extends JXFrame {
 				try {
 					if (!ACMConfiguration.getCurrentDB().getControlAccess().isSandbox())
 						ACMConfiguration.getCurrentDB().getControlAccess().updateDB();
+					ACMConfiguration.closeCurrentDB();
 				}
 			    catch(Exception e1) {
 			    	e1.printStackTrace();

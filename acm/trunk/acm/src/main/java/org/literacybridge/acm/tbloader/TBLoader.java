@@ -51,12 +51,13 @@ import org.jdesktop.swingx.JXDatePicker;
 // commenting out import below so that TBLoader can stand-alone as .class 
 // until new ACM is running on Fidelis's laptop
 //import org.literacybridge.acm.utils.OSChecker;
+import org.literacybridge.acm.utils.ZipUnzip;
 
 //import org.jdesktop.swingx.JXDatePicker;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "v1.22r1221";   // check new location of flash stats TBInfo class
+	private static final String VERSION = "v1.23r1224";   // check new location of flash stats TBInfo class
 	private static final String COLLECTION_SUBDIR = "\\collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
 	private static final String SW_SUBDIR = ".\\software\\";
@@ -102,6 +103,11 @@ public class TBLoader extends JFrame implements ActionListener {
 	public static int durationSeconds;
 	public static DriveInfo currentDrive;
 	private static String srnPrefix;
+	static String project;
+	static File tempCollectionFile;
+	static String syncSubPath;
+
+	
 	//private JCheckBox fetchIDFromServer;
 	//private JCheckBox handIcons;
 	TBInfo tbStats;
@@ -169,9 +175,10 @@ public class TBLoader extends JFrame implements ActionListener {
 
 	}
 
-	public TBLoader(String srnPrefix) throws Exception {
+	public TBLoader(String project, String srnPrefix) throws Exception {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.addWindowListener(new WindowEventHandler());
+		TBLoader.project = project;
 		setDeviceIDandPaths();
 		if (srnPrefix != null) {
 			TBLoader.srnPrefix = srnPrefix;
@@ -400,9 +407,9 @@ public class TBLoader extends JFrame implements ActionListener {
 	
 	public static void main(String[] args) throws Exception {
 		if (args.length == 1) {
-			new TBLoader(args[0]);
-		} else {
-			new TBLoader(null);
+			new TBLoader(args[0],null);
+		} else if (args.length == 2){
+			new TBLoader(args[0], args[1]);
 		} 
 	}
 
@@ -448,8 +455,8 @@ public class TBLoader extends JFrame implements ActionListener {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			homepath = new String(reader.readLine());
 			reader.close();
-			TEMP_COLLECTION_DIR = new String(homepath + "\\LiteracyBridge");
-			File f = new File(TEMP_COLLECTION_DIR);
+			String LB_DIR = new String(homepath + "\\LiteracyBridge");
+			File f = new File(LB_DIR);
 			f.mkdirs();
 
 			File[] files = f.listFiles(new FilenameFilter() {
@@ -471,10 +478,11 @@ public class TBLoader extends JFrame implements ActionListener {
 				File newFile = new File(f,TBLoader.deviceID + ".dev");
 				newFile.createNewFile();
 			}
-
-			// now that local path is established, the 'collected-data' subdir is what should 
-			// only be present when there is local storage (the xfer button is only enabled if it's there
-			TEMP_COLLECTION_DIR += COLLECTION_SUBDIR; 
+			TEMP_COLLECTION_DIR = LB_DIR + COLLECTION_SUBDIR + "\\" + TBLoader.project;
+			f = new File(TEMP_COLLECTION_DIR);
+			f.mkdirs();
+			TBLoader.tempCollectionFile = f;
+			
 			reader = new BufferedReader(new FileReader(new File(SW_SUBDIR + "paths.txt")));
 			copyTo = "";
 			while (reader.ready() && i < MAX_PATHS) {
@@ -496,8 +504,8 @@ public class TBLoader extends JFrame implements ActionListener {
 			copyTo = TEMP_COLLECTION_DIR;
 		}
 		else {
-			copyTo = copyTo += COLLECTION_SUBDIR;
-			new File(copyTo).mkdir();  // creates COLLECTION_SUBDIR if good path is found
+			copyTo = copyTo += COLLECTION_SUBDIR + "/"+ TBLoader.project;
+			new File(copyTo).mkdirs();  // creates COLLECTION_SUBDIR if good path is found
 		}
 		pathOperationalData = copyTo + "/OperationalData/" + TBLoader.deviceID;
 		Logger.LogString("copyTo:"+copyTo);
@@ -663,7 +671,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			}
 		}
 		try {
-			getImageFromCommunity(newCommunityList.getSelectedItem().toString());
+				getImageFromCommunity(newCommunityList.getSelectedItem().toString());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -926,7 +934,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	};
 
 	private void logTBData(String action) {
-		final String VERSION_TBDATA = "v01";
+		final String VERSION_TBDATA = "v02";
 		BufferedWriter bw;
 		new Date();
 		Calendar cal = Calendar.getInstance();
@@ -947,7 +955,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			bw = new BufferedWriter(new FileWriter(filename,true));
 			if (bw != null) {
 				if (isNewFile) {
-					bw.write("UPDATE_DATE_TIME,LOCATION,ACTION,DURATION_SEC,");
+					bw.write("PROJECT,UPDATE_DATE_TIME,LOCATION,ACTION,DURATION_SEC,");
 					bw.write("OUT-SN,OUT-DEPLOYMENT,OUT-IMAGE,OUT-FW-REV,OUT-COMMUNITY,OUT-ROTATION-DATE,");
 					bw.write("IN-SN,IN-DEPLOYMENT,IN-IMAGE,IN-FW-REV,IN-COMMUNITY,IN-LAST-UPDATED,IN-SYNCH-DIR,IN-DISK-LABEL,CHKDSK CORRUPTION?,");
 					bw.write("FLASH-SN,FLASH-REFLASHES,");
@@ -958,6 +966,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					}
 					bw.write("\n");
 				}
+				bw.write(TBLoader.project + ",");
 				bw.write(TBLoader.currentDrive.datetime + ",");
 				bw.write(currentLocationList.getSelectedItem().toString() + ",");
 				bw.write(action + ",");
@@ -1612,10 +1621,10 @@ public class TBLoader extends JFrame implements ActionListener {
 			
 			try {
 				BufferedReader reader;
-				//if (this.useHandIcons)
-				//	handValue = "1";
-				//else
-				//	handValue = "0";
+				String syncdirFullPath = TEMP_COLLECTION_DIR + TBLoader.syncSubPath;  // at the end, this gets zipped up into the copyTo (Dropbox dir)
+				String feedbackCommunityPath = copyTo + "/UserRecordings/" + TBLoader.oldDeploymentText.getText() + "/" + 
+						TBLoader.deviceID + "/" + TBLoader.oldCommunityText.getText();
+
 				reader = new BufferedReader(new FileReader(file));
 				while (reader.ready() && !criticalError) {
 					String cmd = reader.readLine();
@@ -1629,7 +1638,9 @@ public class TBLoader extends JFrame implements ActionListener {
 					cmd = cmd.replaceAll("\\$\\{new_srn\\}", newID.getText());
 					cmd = cmd.replaceAll("\\$\\{device_id\\}", TBLoader.deviceID);  // this is the computer/tablet/phone id
 					cmd = cmd.replaceAll("\\$\\{datetime\\}", TBLoader.currentDrive.datetime);
-					cmd = cmd.replaceAll("\\$\\{syncdir\\}", TBLoader.currentDrive.datetime + "-" + TBLoader.deviceID);
+					cmd = cmd.replaceAll("\\$\\{syncpath\\}", Matcher.quoteReplacement(syncdirFullPath));
+					cmd = cmd.replaceAll("\\$\\{syncdir\\}", TBLoader.currentDrive.syncdir);
+					cmd = cmd.replaceAll("\\$\\{recording_path\\}", Matcher.quoteReplacement(feedbackCommunityPath));
 					cmd = cmd.replaceAll("\\$\\{dateInMonth\\}", dateInMonth);
 					cmd = cmd.replaceAll("\\$\\{month\\}", month);					
 					cmd = cmd.replaceAll("\\$\\{year\\}", year);					
@@ -1762,6 +1773,14 @@ public class TBLoader extends JFrame implements ActionListener {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "...No Stats!\n");
 					Logger.LogString("STATUS:No Stats!\n");
 				}
+				// zip up stats
+				String sourceFullPath = TEMP_COLLECTION_DIR + TBLoader.syncSubPath;
+				String targetFullPath = copyTo + TBLoader.syncSubPath + ".zip";	
+				File sourceFile = new File(sourceFullPath);
+				sourceFile.getParentFile().mkdirs();
+				ZipUnzip.zip(sourceFile, new File(targetFullPath), true);
+				
+				
 				if (hasCorruption) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "Reformatting");
 					Logger.LogString("STATUS:Reformatting");
@@ -1893,6 +1912,8 @@ public class TBLoader extends JFrame implements ActionListener {
 //		}
 		
 		@Override public void run() {
+			TBLoader.syncSubPath = "/TalkingBookData/" + TBLoader.oldDeploymentText.getText() + "/" + 
+					TBLoader.deviceID + "/" + TBLoader.oldCommunityText.getText() + "/" + id + "/" + TBLoader.currentDrive.syncdir;
 			if (this.mode == "update")
 				update();			
 			else if (this.mode == "grabStatsOnly")
@@ -2033,6 +2054,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		boolean isNewSerialNumber;
 		boolean corrupted;
 		String datetime="";
+		String syncdir="";
 		
 		public DriveInfo(File drive, String label) {
 			this.drive = drive;
@@ -2042,7 +2064,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			//this.volumeSerialNumber =""; 
 			this.isNewSerialNumber = false;
 			this.datetime = getDateTime();
-			//updateLastIssue();
+			this.syncdir = this.datetime + "-" + TBLoader.deviceID;
 		}
 		
 		public String getLabelWithoutDriveLetter() {
@@ -2105,7 +2127,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		static final int MAX_MESSAGES=40;
 		// struct SystemData
 		// int structType
-		boolean debug = false;
+		boolean debug = true;
 		String serialNumber;
 		String deploymentNumber;
 		short countReflashes;
