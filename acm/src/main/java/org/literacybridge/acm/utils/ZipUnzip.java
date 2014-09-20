@@ -57,6 +57,7 @@ public class ZipUnzip {
 			baseInDir = inDir;
 		}
 		outFile.delete();
+		outFile.getParentFile().mkdirs();
 		ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(outFile));
 		addDirectory(zout,inDir, includeBaseDir);
 		zout.close();

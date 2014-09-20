@@ -82,6 +82,13 @@ public class ACMConfiguration {
 		currentDB.set(config);
 	}
 	
+	public synchronized static void closeCurrentDB() {
+		DBConfiguration oldDB = currentDB.get();
+		if (oldDB != null) {
+			oldDB.getDatabaseConnection().close();
+		}		
+	}
+	
 	public synchronized static DBConfiguration getCurrentDB() {
 		return currentDB.get();
 	}
