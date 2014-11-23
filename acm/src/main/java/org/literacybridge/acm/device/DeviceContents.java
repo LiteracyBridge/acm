@@ -30,8 +30,8 @@ public class DeviceContents {
 	public final static String USER_SUBFOLDER_PROPERTY_NAME = "USER_PATH";
 	public final static String LIST_TXT_FILE_SUFFIX = ".txt";
 	
-	public final static String STATS_SUB_DIR = "stats";
-	public final static String OTHER_DEVICE_STATS_SUB_DIR = "ostats";
+//	public final static String STATS_SUB_DIR = "stats";
+//	public final static String OTHER_DEVICE_STATS_SUB_DIR = "ostats";
 	
 	public static class CategoryList {
 		public static class Item {
@@ -88,17 +88,16 @@ public class DeviceContents {
 	}
 	
 	public void importStats() throws IOException {
-		internalImportStats(STATS_SUB_DIR);		
+		internalImportStats();		
 	}
 	
-	public void importOtherDeviceStats() throws IOException {
-		internalImportStats(OTHER_DEVICE_STATS_SUB_DIR);
-	}
+//	public void importOtherDeviceStats() throws IOException {
+//		internalImportStats(OTHER_DEVICE_STATS_SUB_DIR);
+//	}
 	
-	private void internalImportStats(String subFolder) throws IOException  {
+	private void internalImportStats() throws IOException  {
 		StatisticsImporter importer = new StatisticsImporter();
-		File systemPath = new File(pathToDevice, STATISTICS_SUBFOLDER);
-		File statsPath = new File(systemPath, subFolder);
+		File statsPath = new File(pathToDevice, STATISTICS_SUBFOLDER);
 		importer.importStatsFolder(statsPath);		
 	}
 	
