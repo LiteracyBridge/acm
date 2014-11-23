@@ -22,6 +22,8 @@ import org.literacybridge.acm.importexport.FileImporter;
 import com.google.common.collect.Sets;
 
 public class CmdLineImporter {
+	static String successDir = "success";
+
 	public static void main(String[] args) throws Exception {
 		Params params = new Params();
 		CmdLineParser parser = new CmdLineParser(params);
@@ -103,7 +105,7 @@ public class CmdLineImporter {
 			if (recursive) {
 				File[] subdirs = dir.listFiles(new FileFilter() {
 					@Override public boolean accept(File file) {
-						return file.isDirectory();
+						return file.isDirectory() && !file.getName().equals(successDir);
 					}
 				});
 				
@@ -133,7 +135,7 @@ public class CmdLineImporter {
 			try {
 				System.out.println("Importing file " + String.valueOf(++count) + " of " + total + ": " + file);
 				importer.importFile(null, file);
-				FileUtils.moveToDirectory(file, new File(file.getParentFile(),"success"), true);
+				FileUtils.moveToDirectory(file, new File(file.getParentFile(),successDir), true);
 			} catch (Exception e) {
 				success = false;
 				logError(file, e);
