@@ -54,10 +54,10 @@ public class AudioItemView extends Container implements Observer {
 	public JXTable audioItemTable = null;
 
 	private AudioItemViewMouseListener mouseListener;
-	
+
 	private TableColumn orderingColumn;
 	protected boolean firstDataSet = false;
-	
+
 	public AudioItemView() {
 		AudioItemTableModel.initializeTableColumns(getColumnTitles(LanguageUtil.getUILanguage()));
 
@@ -66,7 +66,7 @@ public class AudioItemView extends Container implements Observer {
 		addHandler();
 		addToMessageService();
 	}
-	
+
 	protected void addToMessageService() {
 		Application.getMessageService().addObserver(this);
 	}
@@ -74,27 +74,25 @@ public class AudioItemView extends Container implements Observer {
 	private void createTable() {
 		audioItemTable = new JXTable();
 		audioItemTable.setShowGrid(false, false);
-		if (!ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly()) {
-			audioItemTable.setDragEnabled(true);
-			audioItemTable.setDropMode(DropMode.ON);
-			audioItemTable.setTransferHandler(new AudioItemTransferHandler());
-		}
-		
+		audioItemTable.setDragEnabled(true);
+		audioItemTable.setDropMode(DropMode.ON);
+		audioItemTable.setTransferHandler(new AudioItemTransferHandler());
+
 		// use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
-		if (ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly() || ACMConfiguration.getCurrentDB().getControlAccess().isSandbox()) {
+		if (ACMConfiguration.getCurrentDB().getControlAccess().isSandbox()) {
 			audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
-					Color.LIGHT_GRAY, new Color(237, 243, 254)));			
+					Color.LIGHT_GRAY, new Color(237, 243, 254)));
 		} else  {
 			audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
 					Color.white, new Color(237, 243, 254)));
 		}
-		
+
 		JScrollPane scrollPane = new JScrollPane(audioItemTable);
 		scrollPane.setPreferredSize(new Dimension(800, 500));
-	
+
 		add(BorderLayout.CENTER, scrollPane);
 	}
-	
+
 	private void updateTable(AudioItemTableModel model) {
 		TableColumn column = audioItemTable.getSortedColumn();
 		if (column != null) {
@@ -104,7 +102,7 @@ public class AudioItemView extends Container implements Observer {
 		} else {
 			audioItemTable.setModel(model);
 		}
-		
+
 		if (!firstDataSet) {
 			initColumnSize();
 			orderingColumn = audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER);
@@ -126,15 +124,15 @@ public class AudioItemView extends Container implements Observer {
 			currResult = (IDataRequestResult) arg;
 			updateTable(new AudioItemTableModel(currResult));
 		}
-		
+
 		if (arg instanceof UILanguageChanged) {
 			UILanguageChanged newLocale = (UILanguageChanged) arg;
 			updateControlLanguage(newLocale.getNewLocale());
 		}
-		
+
 		if (arg instanceof RequestAudioItemMessage) {
-			RequestAudioItemMessage requestAudioItemMessage = (RequestAudioItemMessage) arg;	
-			
+			RequestAudioItemMessage requestAudioItemMessage = (RequestAudioItemMessage) arg;
+
 			AudioItem audioItem = null;
 			switch ( requestAudioItemMessage.getRequestType()) {
 			case Current:
@@ -147,22 +145,22 @@ public class AudioItemView extends Container implements Observer {
 				audioItem = getPreviousAudioItem();
 				break;
 			}
-			
+
 			if (audioItem != null) {
 				selectAudioItem(audioItem);
-				
+
 				if (arg instanceof RequestAndSelectAudioItemMessage) {
 					RequestedAudioItemMessage newMsg = new RequestedAudioItemMessage(audioItem);
 					Application.getMessageService().pumpMessage(newMsg);
 				} else if (arg instanceof RequestAudioItemToPlayMessage) {
 					LocalizedAudioItem lai = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
 					PlayLocalizedAudioItemMessage newMsg = new PlayLocalizedAudioItemMessage(lai);
-					Application.getMessageService().pumpMessage(newMsg);				
-				}	
+					Application.getMessageService().pumpMessage(newMsg);
+				}
 			}
 		}
 	}
-	
+
 
 	private void updateControlLanguage(Locale newLocale) {
 		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.TITLE)
@@ -201,13 +199,13 @@ public class AudioItemView extends Container implements Observer {
 //		columnTitleArray[AudioItemTableModel.MESSAGE_FORMAT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_MESSAGE_FORMAT , locale);
 		columnTitleArray[AudioItemTableModel.DATE_FILE_MODIFIED] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED , locale);
 		columnTitleArray[AudioItemTableModel.PLAYLIST_ORDER] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER , locale);
-				
+
 		return columnTitleArray;
 	}
 
 	private void initColumnSize() {
 		audioItemTable.setAutoCreateColumnsFromModel( false );
-	
+
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.INFO_ICON).setMaxWidth(25);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.TITLE).setPreferredWidth(230);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.DURATION).setPreferredWidth(65);
@@ -221,7 +219,7 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.SOURCE).setPreferredWidth(140);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.DATE_FILE_MODIFIED).setPreferredWidth(140);
 		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER).setPreferredWidth(60);
-		
+
 		Comparator<Object> comparator = new Comparator<Object>() {
 			@Override public int compare(Object o1, Object o2) {
 				try {
@@ -233,7 +231,7 @@ public class AudioItemView extends Container implements Observer {
 				}
 			}
 		};
-		
+
 //		audioItemTable.getColumnExt(AudioItemTableModel.COPY_COUNT).setComparator(comparator);
 //		audioItemTable.getColumnExt(AudioItemTableModel.OPEN_COUNT).setComparator(comparator);
 //		audioItemTable.getColumnExt(AudioItemTableModel.COMPLETION_COUNT).setComparator(comparator);
@@ -245,7 +243,7 @@ public class AudioItemView extends Container implements Observer {
 	boolean hasSelectedRows() {
 		return audioItemTable.getSelectedRow() != -1;
 	}
-	
+
 	AudioItem getCurrentAudioItem() {
 		int tableRow = audioItemTable.getSelectedRow();
 		if (tableRow == -1) {
@@ -260,26 +258,26 @@ public class AudioItemView extends Container implements Observer {
 			}
 		}
 		int modelRow = audioItemTable.convertRowIndexToModel(tableRow);
-		
+
 		return getValueAt(modelRow, 0);
 	}
-	
+
 	AudioItem getNextAudioItem() {
 		int tableRow = audioItemTable.getSelectedRow();
 		if (tableRow < audioItemTable.getRowCount()-1) {
 			tableRow++;
 		}
-		
+
 		int modelRow = audioItemTable.convertRowIndexToModel(tableRow);
 		return getValueAt(modelRow, 0);
-	}	
+	}
 
 	AudioItem getPreviousAudioItem() {
 		int tableRow = audioItemTable.getSelectedRow();
 		if (tableRow > 0) {
 			tableRow--;
 		}
-		
+
 		int modelRow = audioItemTable.convertRowIndexToModel(tableRow);
 		return getValueAt(modelRow, 0);
 	}
@@ -288,10 +286,10 @@ public class AudioItemView extends Container implements Observer {
 		int modelRow = audioItemTable.convertRowIndexToModel(row);
 		return getValueAt(modelRow, 0);
 	}
-	
+
 	private AudioItem getValueAt(int modelRow, int col) {
 		Object o = audioItemTable.getModel().getValueAt(modelRow, col);
-	    
+
 	    AudioItem item = null;
 	    if (o instanceof LocalizedAudioItemNode) {
 	    	item = ((LocalizedAudioItemNode) o).getParent();
@@ -299,9 +297,9 @@ public class AudioItemView extends Container implements Observer {
 	    	LocalizedAudioItem lItem = (LocalizedAudioItem) o;
 	    	item = lItem.getParentAudioItem();
 	    }
-	    
+
 	    item.refresh();
-	   	
+
 	    return item;
 	}
 
@@ -315,41 +313,41 @@ public class AudioItemView extends Container implements Observer {
 				}
 			}
 		}
-		
+
 		return false;
 	}
-	
+
 	boolean selectTableRow(int rowStart, int rowEnd) {
 		ListSelectionModel selectionModel = audioItemTable.getSelectionModel();
 		if (selectionModel != null) {
-			selectionModel.setSelectionInterval(rowStart, rowEnd);	
+			selectionModel.setSelectionInterval(rowStart, rowEnd);
 			return true;
 		}
-		
+
 		return false;
 	}
-	
-	
+
+
 	boolean selectTableRow(int row) {
 		return selectTableRow(row, row);
 	}
-	
+
 	int getCurrentSelectedRow() {
 		if (audioItemTable != null) {
 			return audioItemTable.getSelectedRow();
 		}
-		
+
 		return -1;
 	}
-	
+
 	int[] getCurrentSelectedRows() {
 		if (audioItemTable != null) {
 			return audioItemTable.getSelectedRows();
 		}
-		
+
 		return new int []{};
 	}
-	
+
 	// Special handlers
 	public void setData(IDataRequestResult result) {
 		updateTable(new AudioItemTableModel(result));
@@ -357,23 +355,23 @@ public class AudioItemView extends Container implements Observer {
 	}
 
 	public void addHandler() {
-		
+
 		final AudioItemCellRenderer renderer = new AudioItemCellRenderer();
 		audioItemTable.setDefaultRenderer(Object.class, renderer);
 		audioItemTable.addMouseMotionListener(new MouseMotionListener() {
-			
+
 			@Override
 			public void mouseMoved(MouseEvent e) {
 	           JTable table =  (JTable)e.getSource();
 	           renderer.highlightedRow = table.rowAtPoint(e.getPoint());
 	           table.repaint();
 			}
-			
+
 			@Override
 			public void mouseDragged(MouseEvent e) {
 			}
 		});
-		
+
 		audioItemTable.addMouseListener(new MouseListener() {
 			@Override
 			public void mouseExited(MouseEvent e) {
@@ -381,13 +379,13 @@ public class AudioItemView extends Container implements Observer {
 	           renderer.highlightedRow = -1;
 	           table.repaint();
 			}
-			
+
 			@Override public void mouseReleased(MouseEvent e) {}
 			@Override public void mousePressed(MouseEvent e)  {}
 			@Override public void mouseEntered(MouseEvent e)  {}
 			@Override public void mouseClicked(MouseEvent e)  {}
 		});
-		
+
 		audioItemTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			@Override public void valueChanged(ListSelectionEvent e) {
 				String message;
@@ -414,18 +412,18 @@ public class AudioItemView extends Container implements Observer {
 								}
 							}
 						}
-						
+
 						Calendar cal1 = Calendar.getInstance();
 						cal1.set(0, 0, 1, 0, 0, 0);
 						SimpleDateFormat format = cal.before(cal1) ? new SimpleDateFormat("HH:mm:ss") : new SimpleDateFormat("D 'd' HH:mm:ss");
 						message = audioItemTable.getSelectedRowCount() + " audio items selected. Total duration: " + format.format(cal.getTime());
 					}
 				}
-				
+
 				Application.getApplication().setStatusMessage(message);
 			}
 		});
-		
+
 		mouseListener = new AudioItemViewMouseListener(this);
 	    audioItemTable.addMouseListener(mouseListener);
 	    audioItemTable.getTableHeader().addMouseListener(mouseListener);

@@ -81,7 +81,7 @@ public class CategoryView extends ACMContainer implements Observer {
 	private JButton addTagButton = null;
 	// Languages
 	private CheckboxTree languageTree = null;
-	
+
 	private JTree deviceTree = null;
 	// root nodes
 	private final DefaultMutableTreeNode categoryRootNode;
@@ -89,22 +89,22 @@ public class CategoryView extends ACMContainer implements Observer {
 	private final DefaultMutableTreeNode deviceRootNode;
 	private final DefaultTreeModel deviceTreeModel;
 
-	
+
 	private JXTaskPaneContainer taskPaneContainer;
 	private JXTaskPane categoryPane;
 	private JXTaskPane tagsPane;
 	private JXTaskPane languagePane;
 	private JXTaskPane devicePane;
 	private JXTaskPane optionsPane;
-	
+
 	private JLabel uiLangugeLb;
 	private Locale currLocale = null;
-	
+
 	// list of available devices
 	private Map<String, DefaultMutableTreeNode> deviceUidtoTreeNodeMap = new HashMap<String, DefaultMutableTreeNode>();
 	// list of available languages
 	private List<LanguageLabel> languagesList = new ArrayList<LanguageLabel>();
-	
+
 	public CategoryView(IDataRequestResult result) {
 		this.result = result;
 		categoryRootNode = new DefaultMutableTreeNode();
@@ -114,28 +114,26 @@ public class CategoryView extends ACMContainer implements Observer {
 		deviceTreeModel = new DefaultTreeModel(deviceRootNode);
 		createControls();
 	}
-	
+
 	private void createControls() {
 		setLayout(new BorderLayout());
 
 		// parent
 	    taskPaneContainer = new JXTaskPaneContainer();
 
-		createTasks();	
+		createTasks();
 		createLanguageList();
 		addOptionList();
-		if (!ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly()) {
-			addDragAndDrop();
-		}
+		addDragAndDrop();
 		JScrollPane taskPane = new JScrollPane(taskPaneContainer);
 		add(BorderLayout.CENTER, taskPane);
-		
+
 		// init controls with default language
 		updateControlLanguage(LanguageUtil.getUILanguage());
 		updateTagsTable(PersistentTag.getFromDatabase());
 		Application.getMessageService().addObserver(this);
 	}
-	
+
 	private void createTasks() {
 		// add all categories
 		Category rootCategory = result.getRootCategory();
@@ -144,7 +142,7 @@ public class CategoryView extends ACMContainer implements Observer {
 				addChildNodes(categoryRootNode, c);
 			}
 		}
-		
+
 		categoryTree = new CheckboxTree(categoryRootNode);
 		categoryTree.setRootVisible(false);
 		categoryTree.setCellRenderer(new FacetCountCellRenderer());
@@ -155,29 +153,29 @@ public class CategoryView extends ACMContainer implements Observer {
 		deviceTree.setRootVisible(false);
 		final DeviceTreeCellRenderer renderer = new DeviceTreeCellRenderer();
 		deviceTree.setCellRenderer(renderer);
-		
+
 		deviceTree.addMouseMotionListener(new MouseMotionListener() {
-			
+
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				TreePath path = deviceTree.getPathForLocation(e.getX(), e.getY());
 				renderer.highlight = (path == null) ? null : path.getLastPathComponent();
-	           
+
 				deviceTree.repaint();
 			}
-			
+
 			@Override
 			public void mouseDragged(MouseEvent e) {
 			}
 		});
-		
+
 		deviceTree.addMouseListener(new MouseListener() {
 			@Override
 			public void mouseExited(MouseEvent e) {
 	           renderer.highlight = null;
 	           deviceTree.repaint();
 			}
-			
+
 			@Override public void mouseReleased(MouseEvent e) {}
 			@Override public void mousePressed(MouseEvent e)  {}
 			@Override public void mouseEntered(MouseEvent e)  {}
@@ -192,11 +190,11 @@ public class CategoryView extends ACMContainer implements Observer {
 				}
 			}
 		});
-		
+
 		categoryPane = new JXTaskPane();
 		JScrollPane categoryScrollPane = new JScrollPane(categoryTree);
-		categoryPane.add(categoryScrollPane);	
-		
+		categoryPane.add(categoryScrollPane);
+
 		languagePane = new JXTaskPane();
 		languageTree = new CheckboxTree(languageRootNode);
 		languageTree.setSelectionModel(NO_SELECTION_MODEL);
@@ -219,23 +217,23 @@ public class CategoryView extends ACMContainer implements Observer {
 			}
 		});
 		tagsList.addMouseListener(new MouseListener() {
-			
+
 			@Override
 			public void mouseReleased(MouseEvent e) {}
-			
+
 			@Override
 			public void mousePressed(MouseEvent e) {}
-			
+
 			@Override
 			public void mouseExited(MouseEvent e) {}
-			
+
 			@Override
 			public void mouseEntered(MouseEvent e) {}
-			
+
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				boolean rightButtonClicked = e.getButton() == MouseEvent.BUTTON3;
-				
+
 				if (rightButtonClicked) {
 					int index = tagsList.locationToIndex(e.getPoint());
 					if (tagsList.getSelectedIndex() != index) {
@@ -247,20 +245,17 @@ public class CategoryView extends ACMContainer implements Observer {
 				        menu.show(e.getComponent(), e.getX(), e.getY());
 					}
 				}
-				
+
 			}
 		});
 		JScrollPane tagsScrollPane = new JScrollPane(tagsList);
 		tagsPane.add(tagsScrollPane);
 		addTagButton = new JButton(LabelProvider.getLabel(LabelProvider.NEW_TAG_LABEL, LanguageUtil.getUILanguage()));
-		addTagButton.addActionListener(new ActionListener() {			
+		addTagButton.addActionListener(new ActionListener() {
 			@Override public void actionPerformed(ActionEvent action) {
 				addNewTag();
 			}
 		});
-		if (ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly()) {
-		    addTagButton.setEnabled(false);
-		}
 		tagsPane.add(addTagButton);
 
 		devicePane = new JXTaskPane();
@@ -272,28 +267,28 @@ public class CategoryView extends ACMContainer implements Observer {
 		taskPaneContainer.add(languagePane);
 		taskPaneContainer.add(tagsPane);
 		taskPaneContainer.add(devicePane);
-		
+
 		categoryScrollPane.setPreferredSize(new Dimension(150, 240));
 		languageScrollPane.setPreferredSize(new Dimension(150, 90));
 		deviceScrollPane.setPreferredSize(new Dimension(150, 50));
 		tagsScrollPane.setPreferredSize(new Dimension(150, 90));
-		
+
 		categoryTree.expandPath(new TreePath(deviceRootNode.getPath()));
 
 		categoryPane.setCollapsed(false);
 		languagePane.setCollapsed(false);
 		tagsPane.setCollapsed(true);
 		devicePane.setCollapsed(true);
-		
+
 		addListeners(); // at last
 	}
-	
+
 	private class LanguageLabel implements FacetCountProvider {
 		private Locale locale;
 		public LanguageLabel(Locale locale) {
 			this.locale = locale;
 		}
-		
+
 		@Override public String toString() {
 			String displayLabel = LanguageUtil.getLocalizedLanguageName(locale);
 			int count = result.getLanguageFacetCount(locale.getLanguage());
@@ -312,19 +307,19 @@ public class CategoryView extends ACMContainer implements Observer {
 			return result.getLanguageFacetCount(locale.getLanguage());
 		}
 	}
-	
+
 	private static final class UILanguageLabel {
 		private final Locale locale;
-		
+
 		UILanguageLabel(Locale locale) {
 			this.locale = locale;
 		}
-		
+
 		@Override public String toString() {
 			return LanguageUtil.getLocalizedLanguageName(locale);
 		}
 	}
-	
+
 	private void addOptionList() {
 		final int NUM_OPTIONS = 2;
 		optionsPane = new JXTaskPane();
@@ -333,14 +328,14 @@ public class CategoryView extends ACMContainer implements Observer {
 		// user language
 		optionComponent.setLayout(new GridLayout(NUM_OPTIONS, 2));
 		uiLangugeLb = new JLabel();
-		optionComponent.add(uiLangugeLb);		
+		optionComponent.add(uiLangugeLb);
 		UILanguageLabel[] langs = {new UILanguageLabel(Locale.ENGLISH),
 								 new UILanguageLabel(Locale.GERMAN),
 								 new UILanguageLabel(Locale.FRENCH)};
-		
-		
-		JComboBox userLanguages = new JComboBox(langs);		
-		
+
+
+		JComboBox userLanguages = new JComboBox(langs);
+
 		userLanguages.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -367,7 +362,7 @@ public class CategoryView extends ACMContainer implements Observer {
 			}
 		});
 		optionComponent.add(userLanguages);
-		
+
 		JScrollPane optionsScrollPane = new JScrollPane(optionComponent);
 		optionsPane.add(optionsScrollPane);
 		//taskPaneContainer.add(optionsPane);
@@ -377,16 +372,16 @@ public class CategoryView extends ACMContainer implements Observer {
 	private void createLanguageList() {
 		List<Locale> audioLanguages = ACMConfiguration.getCurrentDB().getAudioLanguages();
 		for (Locale locale : audioLanguages) {
-			languagesList.add(new LanguageLabel(locale));			
+			languagesList.add(new LanguageLabel(locale));
 		}
 
 		for (LanguageLabel currLable : languagesList) {
-			languageRootNode.add(new DefaultMutableTreeNode(currLable));	
-		}		
-		
+			languageRootNode.add(new DefaultMutableTreeNode(currLable));
+		}
+
 		languageTree.setRootVisible(false);
 		languageTree.expandPath(new TreePath(languageRootNode.getPath()));
-		
+
 		languageTree.addTreeCheckingListener(new TreeCheckingListener() {
 			@Override public void valueChanged(TreeCheckingEvent e) {
 				clearTagSelection();
@@ -394,7 +389,7 @@ public class CategoryView extends ACMContainer implements Observer {
 			};
 		});
 	}
-	
+
 	private void pumpLanguageFilter() {
 		// map languages on 'Locales'
 		TreePath[] tp = languageTree.getCheckingPaths();
@@ -402,22 +397,22 @@ public class CategoryView extends ACMContainer implements Observer {
 		for (int i = 0; i < tp.length; i++) {
 			DefaultMutableTreeNode node = (DefaultMutableTreeNode) tp[i].getLastPathComponent();
 			LanguageLabel obj = (LanguageLabel) node.getUserObject();
-			
+
 			//new PersistentLocale
 			PersistentLocale locale = new PersistentLocale();
 			locale.setCountry(obj.getLocale().getCountry());
 			locale.setLanguage(obj.getLocale().getLanguage());
 			filterLocales.add(locale);
 		}
-		
-		Application.getFilterState().setFilterLanguages(filterLocales);	
+
+		Application.getFilterState().setFilterLanguages(filterLocales);
 	}
-	
+
 	private void addListeners() {
 		categoryTree.addTreeCheckingListener(new TreeCheckingListener() {
 			public void valueChanged(TreeCheckingEvent e) {
 				clearTagSelection();
-				
+
 				TreePath[] tp = categoryTree.getCheckingPaths();
 				List<PersistentCategory> filterCategories = new ArrayList<PersistentCategory>(tp.length);
 				for (int i = 0; i < tp.length; i++) {
@@ -425,14 +420,14 @@ public class CategoryView extends ACMContainer implements Observer {
 					CategoryTreeNodeObject obj = (CategoryTreeNodeObject) node.getUserObject();
 					filterCategories.add(obj.getCategory().getPersistentObject());
 				}
-				
+
 				Application.getFilterState().setFilterCategories(filterCategories);
 			}
 		});
-		
+
 		tagsList.addListSelectionListener(new ListSelectionListener() {
 			@Override public void valueChanged(ListSelectionEvent e) {
-				clearTreeSelections();			
+				clearTreeSelections();
 			}
 		});
 		addAudioDeviceListener();
@@ -447,7 +442,7 @@ public class CategoryView extends ACMContainer implements Observer {
 			}
 		}
 	}
-	
+
 	private void addDeviceNode(DefaultMutableTreeNode parent, final DeviceInfo deviceInfo) {
 		if (parent != null) {
 			String deviceID = deviceInfo.getDeviceUID();
@@ -459,62 +454,62 @@ public class CategoryView extends ACMContainer implements Observer {
 			} else {
 				// new device found
 				DefaultMutableTreeNode child = new DefaultMutableTreeNode(deviceInfo);
-				deviceTreeModel.insertNodeInto(child, parent, 
+				deviceTreeModel.insertNodeInto(child, parent,
 						parent.getChildCount());
 				deviceTree.expandPath(new TreePath(deviceRootNode.getPath()));
 				TreePath path = new TreePath(child.getPath());
-				deviceTree.setSelectionPath(path);	
+				deviceTree.setSelectionPath(path);
 				deviceUidtoTreeNodeMap.put(deviceID, child);
 			}
 		}
 	}
-	
+
 	private void addAudioDeviceListener() {
 		MessageBus bus = MessageBus.getInstance();
 		bus.addListener(DeviceConnectEvent.class, new MessageBus.MessageListener() {
-			
+
 			@Override
 			public void receiveMessage(final Message message) {
-				
+
 				if (message instanceof DeviceConnectEvent) {
 					final DeviceConnectEvent dce = (DeviceConnectEvent) message;
-					Runnable addDeviceToList = new Runnable() {					
+					Runnable addDeviceToList = new Runnable() {
 						@Override
 						public void run() {
-							addDeviceNode(deviceRootNode, dce.getDeviceInfo());						
+							addDeviceNode(deviceRootNode, dce.getDeviceInfo());
 						}
 					};
-					
-					SwingUtilities.invokeLater(addDeviceToList);	
+
+					SwingUtilities.invokeLater(addDeviceToList);
 				}
 			}
 		});
 	}
-	
+
 	private void addDragAndDrop() {
 		categoryTree.setDropMode(DropMode.ON);
 		categoryTree.setTransferHandler(new TreeTransferHandler());
-		
+
 		deviceTree.setDropMode(DropMode.ON);
 		deviceTree.setTransferHandler(new ExportToDeviceTransferHandler());
-		
+
 		tagsList.setDropMode(DropMode.ON);
 		tagsList.setTransferHandler(new TagsTransferHandler());
 	}
-	
-	
+
+
 	public static interface FacetCountProvider {
-		public int getFacetCount();	
+		public int getFacetCount();
 	}
-	
+
 	// Helper class for tree nodes
 	public class CategoryTreeNodeObject implements FacetCountProvider {
 		private Category category;
-		
+
 		public CategoryTreeNodeObject(Category category) {
 			this.category = category;
 		}
-	
+
 		public Category getCategory() {
 			return category;
 		}
@@ -523,8 +518,8 @@ public class CategoryView extends ACMContainer implements Observer {
 		public int getFacetCount() {
 			return result.getFacetCount(category);
 		}
-		
-		@Override 
+
+		@Override
 		public String toString() {
 			String displayLabel = null;
 			if (category != null) {
@@ -536,18 +531,18 @@ public class CategoryView extends ACMContainer implements Observer {
 			} else {
 				displayLabel = LabelProvider.getLabel("ERROR", LanguageUtil.getUILanguage());
 			}
-			
+
 			return displayLabel;
 		}
 	}
-	
-	
+
+
 	private static class FacetCountCellRenderer extends DefaultCheckboxTreeCellRenderer {
 	    public Component getTreeCellRendererComponent(JTree tree, Object object, boolean selected, boolean expanded, boolean leaf, int row,
 	    	    boolean hasFocus) {
 	    	DefaultMutableTreeNode cat = (DefaultMutableTreeNode) object;
 	    	DefaultCheckboxTreeCellRenderer cell = (DefaultCheckboxTreeCellRenderer) super.getTreeCellRendererComponent(tree, object, selected, expanded, leaf, row, hasFocus);
-	    	
+
 	    	if (cat.getUserObject() != null && cat.getUserObject() instanceof FacetCountProvider) {
 	    		FacetCountProvider node = (FacetCountProvider) cat.getUserObject();
 		    	// make label bold
@@ -559,13 +554,13 @@ public class CategoryView extends ACMContainer implements Observer {
 		    	} else {
 		    		super.label.setFont(f.deriveFont(f.getStyle() & ~Font.BOLD));
 		    	}
-		    		    		
+
 	    	}
 
 	    	return cell;
 	    }
 	}
-	
+
 	public void updateTagsTable(List<PersistentTag> tags) {
 		if (!clearingSelections) {
 			tagsList.setModel(new TagsListModel(tags));
@@ -583,11 +578,11 @@ public class CategoryView extends ACMContainer implements Observer {
 			PersistentTag tag = new PersistentTag();
 			tag.setTitle(tagName);
 			tag.commit();
-			
+
 			Application.getMessageService().pumpMessage(new TagsListChanged(PersistentTag.getFromDatabase()));
 		}
 	}
-	
+
 	private void updateControlLanguage(Locale locale) {
 		categoryPane.setTitle(LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, locale));
 		tagsPane.setTitle(LabelProvider.getLabel(LabelProvider.TAGS_ROOT_LABEL, locale));
@@ -598,7 +593,7 @@ public class CategoryView extends ACMContainer implements Observer {
 		updateTreeNodes();
 	}
 
-	
+
 	private void updateTreeNodes() {
 		for (Enumeration e = categoryRootNode.breadthFirstEnumeration(); e.hasMoreElements(); ) {
 	        DefaultMutableTreeNode current = (DefaultMutableTreeNode)e.nextElement();
@@ -611,27 +606,27 @@ public class CategoryView extends ACMContainer implements Observer {
 	        languageTree.getModel().valueForPathChanged(new TreePath(current.getPath()), obj);
 		}
 	}
-	
-	
+
+
 	@Override
 	public void update(Observable o, Object arg) {
 		if (arg instanceof UILanguageChanged) {
 			UILanguageChanged newLocale = (UILanguageChanged) arg;
 			updateControlLanguage(newLocale.getNewLocale());
 		}
-		
+
 		if (arg instanceof IDataRequestResult) {
 			result = (IDataRequestResult) arg;
 			updateTreeNodes();
 		}
-		
+
 		if (arg instanceof TagsListChanged) {
 			updateTagsTable(((TagsListChanged) arg).tags);
 		}
-	}	
-	
+	}
+
 	private boolean clearingSelections = false;
-	
+
 	private void clearTagSelection() {
 		if (!clearingSelections) {
 			clearingSelections = true;
@@ -647,7 +642,7 @@ public class CategoryView extends ACMContainer implements Observer {
 			}
 		}
 	}
-	
+
 	private void clearTreeSelections() {
 		if (!clearingSelections) {
 			clearingSelections = true;
@@ -664,11 +659,11 @@ public class CategoryView extends ACMContainer implements Observer {
 			}
 		}
 	}
-	
+
 	private static class DeviceTreeCellRenderer extends DefaultTreeCellRenderer {
 		Object highlight;
 		ImageIcon icon = new ImageIcon(getClass().getResource("/sync-green-16.png"));
-		
+
 		@Override
 	    public Component getTreeCellRendererComponent(JTree tree, Object value,
 				  boolean sel,
@@ -685,17 +680,17 @@ public class CategoryView extends ACMContainer implements Observer {
 			return cell;
 		}
 	}
-	
+
 	private static final TreeSelectionModel NO_SELECTION_MODEL = new DefaultTreeSelectionModel() {
 		@Override public void addSelectionPath(TreePath path) {}
 		@Override public void addSelectionPaths(TreePath[] paths) {}
 		@Override public void setSelectionPath(TreePath path) {}
-		@Override public void setSelectionPaths(TreePath[] paths) {}			
+		@Override public void setSelectionPaths(TreePath[] paths) {}
 	};
-	
+
 	public static class TagsListChanged {
 		private final List<PersistentTag> tags;
-		
+
 		TagsListChanged(List<PersistentTag> tags) {
 			this.tags = tags;
 		}

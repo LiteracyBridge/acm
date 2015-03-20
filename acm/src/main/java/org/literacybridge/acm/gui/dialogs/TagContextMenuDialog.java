@@ -19,8 +19,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.ControlAccess;
 import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
@@ -33,38 +31,36 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 
 public class TagContextMenuDialog extends JDialog implements WindowListener {
 	private static final Logger LOG = Logger.getLogger(TagContextMenuDialog.class.getName());
-	
-	public TagContextMenuDialog(final JFrame parent, final PersistentTag clickedTag, 
+
+	public TagContextMenuDialog(final JFrame parent, final PersistentTag clickedTag,
 			final IDataRequestResult data) {
 		super(parent, "", false);
-		
-		final boolean readOnly = ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly();
-		
+
 		setResizable(false);
-		setUndecorated(true);		
-		
+		setUndecorated(true);
+
 		ImageIcon editImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_EDIT_16_PX));
 		ImageIcon deleteImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_DELETE_16_PX));
-		
+
 		Color backgroundColor = parent.getBackground();
 		Color highlightedColor = SystemColor.textHighlight;
-		
+
 		GridLayout grid = new GridLayout(3, 1);
-		
-		
+
+
 		final PersistentTag selectedTag = Application.getFilterState().getSelectedTag();
 		final String selectedTitle = selectedTag.getName();
-		
-		String labelPostfix;	    
+
+		String labelPostfix;
 	    final FlatButton deleteButton;
-		
+
 		if (selectedTag == null) {
 			final String deleteMessage;
-			
+
 			labelPostfix = selectedTitle;
 			deleteMessage = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_TITLE", LanguageUtil.getUILanguage())
 												, selectedTitle);
-			
+
 			deleteButton = new FlatButton(String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE", LanguageUtil.getUILanguage())
 					, labelPostfix)
 					, deleteImageIcon
@@ -72,7 +68,7 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 					, highlightedColor) {
 				@Override public void click() {
 					TagContextMenuDialog.this.setVisible(false);
-					
+
 					Object[] options = {LabelProvider.getLabel("CANCEL", LanguageUtil.getUILanguage())
 										, LabelProvider.getLabel("DELETE", LanguageUtil.getUILanguage())};
 					int n = JOptionPane.showOptionDialog(Application.getApplication(),
@@ -93,11 +89,11 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 							}
 						Application.getFilterState().updateResult(true);
 					}
-				}				
+				}
 			};
 		} else {
 			labelPostfix = selectedTitle;
-			
+
 			deleteButton = new FlatButton(String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_REMOVE_TAG", LanguageUtil.getUILanguage())
 					, labelPostfix, selectedTag.getName())
 					, deleteImageIcon
@@ -105,7 +101,7 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 					, highlightedColor) {
 				@Override public void click() {
 					TagContextMenuDialog.this.setVisible(false);
-					
+
 						try {
 //							a.removeTag(selectedTag);
 //							a.commit();
@@ -114,14 +110,12 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 						}
 					Application.getFilterState().updateResult(true);
 
-				}				
+				}
 			};
 
 		}
-		
-		final String editButtonLabel = readOnly
-						? LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_VIEW_PROPS_TITLE", LanguageUtil.getUILanguage())
-						: LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_EDIT_TITLE", LanguageUtil.getUILanguage());
+
+		final String editButtonLabel = LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_EDIT_TITLE", LanguageUtil.getUILanguage());
 
 
 		FlatButton editButton = new FlatButton(String.format(editButtonLabel, selectedTitle)
@@ -135,28 +129,24 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 				// Also populate the text field with current name
 			}
 		};
-		
-		if (ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly()) {
-			deleteButton.setEnabled(false);
-		}
-		
+
 		setLayout(grid);
-		
+
 		editButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		deleteButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		add(editButton);
 		add(deleteButton);
-		
+
 		addWindowListener(this);
 		setAlwaysOnTop(true);
 		setSize(new Dimension(450, 100));
 	}
-	
+
 	@Override
 	public void windowDeactivated(WindowEvent e) {
 		setVisible(false);
 	}
-	
+
 	public abstract static class FlatButton extends JLabel implements MouseListener {
 		private Color backgroundColor;
 		private Color highlightedColor;
@@ -165,7 +155,7 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 			super(label);
 			init(backgroundColor, highlightedColor);
 		}
-		
+
 		public FlatButton(String label, Icon icon, Color backgroundColor, Color highlightedColor) {
 			super(label, icon, JLabel.LEFT);
 			init(backgroundColor, highlightedColor);
@@ -177,9 +167,9 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 			setOpaque(true);
 			addMouseListener(this);
 		}
-		
+
 		public abstract void click();
-		
+
 		@Override
 		public void mouseClicked(MouseEvent e) {
 			if (isEnabled()) {
@@ -193,7 +183,7 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 				setBackground(backgroundColor);
 			}
 		}
-		
+
 		@Override
 		public void mouseEntered(MouseEvent e) {
 			if (isEnabled()) {
@@ -204,16 +194,16 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 		@Override
 		public void mousePressed(MouseEvent e) {
 			// TODO Auto-generated method stub
-			
+
 		}
 
 		@Override
 		public void mouseReleased(MouseEvent e) {
 			// TODO Auto-generated method stub
-			
+
 		}
-		
-		
+
+
 	}
 
 	@Override public void windowActivated(WindowEvent e) {}

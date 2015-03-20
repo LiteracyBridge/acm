@@ -105,11 +105,6 @@ public class AudioItemImportDialog extends JDialog {
 		
 		
 		JButton okBtn = new JButton(LabelProvider.getLabel("IMPORT", LanguageUtil.getUILanguage()));
-		if (ACMConfiguration.getCurrentDB().getControlAccess().isACMReadOnly()) {
-			okBtn.setEnabled(false);
-			selectAllBtn.setEnabled(false);
-			selectNoneBtn.setEnabled(false);
-		}
 		okBtn.addActionListener(getImportActionListener());
 		
 		JButton cancelBtn = new JButton(LabelProvider.getLabel("CANCEL", LanguageUtil.getUILanguage()));

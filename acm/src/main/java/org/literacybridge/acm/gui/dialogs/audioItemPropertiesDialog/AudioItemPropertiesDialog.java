@@ -42,17 +42,13 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 	private JButton backBtn;
 	private JButton nextBtn;
 	private JButton btnClose;
-	
-	private final boolean readOnly;
 
 	public AudioItemPropertiesDialog(JFrame parent, AudioItemView view,
-			List<AudioItem> audioItemList, AudioItem showItem,
-			final boolean readOnly) {
+			List<AudioItem> audioItemList, AudioItem showItem) {
 		super(parent, LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES",
 				LanguageUtil.getUILanguage()), true);
-		this.readOnly = readOnly;
 		addToMessageService();
-		createControlsForAvailableProperties(readOnly);
+		createControlsForAvailableProperties();
 		setMinimumSize(new Dimension(500, 500));
 		setSize(500, 500);
 		setUndecorated(true);
@@ -62,14 +58,14 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 		// show current item first
 		RequestAndSelectAudioItemMessage msg = new RequestAndSelectAudioItemMessage(RequestAudioItemMessage.RequestType.Current);
 		Application.getMessageService().pumpMessage(msg);
-		
+
 		enableControls();
 	}
-	
+
 	protected void addToMessageService() {
 		Application.getMessageService().addObserver(this);
 	}
-	
+
 	private void showAudioItem(AudioItem item) {
 		if (item == null)
 			return; // JTBD
@@ -93,10 +89,10 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 		backBtn.setEnabled(true);
 	}
 
-	private void createControlsForAvailableProperties(final boolean readOnly) {
+	private void createControlsForAvailableProperties() {
 		// add navigation buttons
 		JPanel p = new JPanel();
-		
+
 		backBtn = new JButton(LabelProvider.getLabel("GOTO_PREV_AUDIO_ITEM", LanguageUtil.getUILanguage()));
 		backBtn.addActionListener(new ActionListener() {
 			@Override
@@ -106,7 +102,7 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 			}
 		});
 		p.add(backBtn);
-		
+
 		nextBtn = new JButton(LabelProvider.getLabel("GOTO_NEXT_AUDIO_ITEM", LanguageUtil.getUILanguage()));
 		nextBtn.addActionListener(new ActionListener() {
 			@Override
@@ -116,11 +112,11 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 			}
 		});
 		p.add(nextBtn);
-		
+
 		getContentPane().add(p, BorderLayout.NORTH);
-		
+
 		p.setBorder(BorderFactory.createEmptyBorder());
-	
+
 		// Show properties table
 		JScrollPane theScrollPane = new JScrollPane();
 		propertiesTable = new AudioItemPropertiesTable(this);
@@ -130,7 +126,7 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 		propertiesTable.addHighlighter(HighlighterFactory
 				.createAlternateStriping(Color.white, new Color(237, 243,
 						254)));
-  
+
 		final HighlightPredicate predicate = new HighlightPredicate() {
 			@Override
 			public boolean isHighlighted(Component comnponent, ComponentAdapter adapter) {
@@ -146,22 +142,22 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 				}
 				return component;
 			}
-			
+
 		};
-		
-		//ColorHighlighter highlighter = new ColorHighlighter(predicate, null, Color.RED, null, null); 
-		propertiesTable.addHighlighter(highlighter); 
-		
+
+		//ColorHighlighter highlighter = new ColorHighlighter(predicate, null, Color.RED, null, null);
+		propertiesTable.addHighlighter(highlighter);
+
 		theScrollPane.setViewportView(propertiesTable);
 		getContentPane().add(theScrollPane);
-		
+
 		JPanel panel = new JPanel();
 		getContentPane().add(panel, BorderLayout.SOUTH);
 		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-		
+
 		Component horizontalGlue = Box.createHorizontalGlue();
 		panel.add(horizontalGlue);
-		
+
 		btnClose = new JButton(LabelProvider.getLabel("CLOSE", LanguageUtil.getUILanguage()));
 		btnClose.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -174,7 +170,7 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 	}
 
 	private void showMetadata(AudioItem audioItem) {
-		propertiesTable.setModel(new AudioItemPropertiesModel(audioItem, this.readOnly));
+		propertiesTable.setModel(new AudioItemPropertiesModel(audioItem));
 		propertiesTable.getTableHeader().getColumnModel().getColumn(AudioItemPropertiesModel.EDIT_COL).setMaxWidth(25);
 	}
 
@@ -184,6 +180,6 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 			RequestedAudioItemMessage msg = (RequestedAudioItemMessage) arg;
 			showAudioItem(msg.getAudioItem());
 		}
-		
+
 	}
 }

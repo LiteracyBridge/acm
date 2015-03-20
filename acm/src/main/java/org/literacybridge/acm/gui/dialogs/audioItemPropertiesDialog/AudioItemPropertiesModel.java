@@ -53,27 +53,25 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			STATUS_VALUES_MAP.put(STATUS_VALUES[i], i);
 		}
 	}
-	
+
 	private String[] columnNames = {LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_PROPERTY", LanguageUtil.getUILanguage())
 								  , LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES_HEADER_VALUE", LanguageUtil.getUILanguage()),
 								  "" // edit column doesn't have a title
 								  };
-	
+
 	static final int TITLE_COL = 0;
 	static final int VALUE_COL = 1;
 	static final int EDIT_COL = 2;
-	
+
 	private AudioItem audioItem = null;
 	private List<AudioItemProperty> audioItemPropertiesObject = new ArrayList<AudioItemProperty>();
-	private final boolean readOnly;
-	
-	public AudioItemPropertiesModel(AudioItem audioItem, boolean readOnly) {
+
+	public AudioItemPropertiesModel(AudioItem audioItem) {
 		this.audioItem = audioItem;
-		this.readOnly = readOnly;
-		
+
 		// TODO: make this list configurable
 		audioItemPropertiesObject.add(new AudioItemProperty(true) {
-			@Override public String getName() { 
+			@Override public String getName() {
 				return STATUS_NAME;
 			}
 
@@ -82,21 +80,21 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 				if (values == null || values.isEmpty()) {
 					return "Current";
 				}
-				
+
 				return STATUS_VALUES[values.get(0).getValue()];
 			}
 
 			@Override
 			public void setValue(AudioItem audioItem, Object newValue) {
-				audioItem.getMetadata().setMetadataField(MetadataSpecification.LB_STATUS, 
+				audioItem.getMetadata().setMetadataField(MetadataSpecification.LB_STATUS,
 						new MetadataValue<Integer>(STATUS_VALUES_MAP.get(newValue.toString())));
-			}			
-		});	
+			}
+		});
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_TITLE, true));
 		// TODO: calculate duration of audio item
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_DURATION, false));
 		audioItemPropertiesObject.add(new AudioItemProperty(false, true) {
-			@Override public String getName() { 
+			@Override public String getName() {
 				return "Categories";
 			}
 
@@ -107,10 +105,10 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			@Override
 			public void setValue(AudioItem audioItem, Object newValue) {
 				// not supported
-			}			
+			}
 		});
 		audioItemPropertiesObject.add(new AudioItemProperty(false, false) {
-			@Override public String getName() { 
+			@Override public String getName() {
 				return "Playlists";
 			}
 
@@ -121,9 +119,9 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			@Override
 			public void setValue(AudioItem audioItem, Object newValue) {
 				// not supported
-			}			
+			}
 		});
-		
+
 		audioItemPropertiesObject.add(new AudioItemProperty.LanguageProperty(DC_LANGUAGE, true));
 
 		// TODO: add combo boxes
@@ -140,7 +138,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_IDENTIFIER, false));
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(DC_RELATION, true));
 		audioItemPropertiesObject.add(new AudioItemProperty(false) {
-			@Override public String getName() { 
+			@Override public String getName() {
 				return "Related Message Title";
 			}
 
@@ -156,18 +154,18 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 						}
 					}
 				}
-				
+
 				return null;
 			}
 
 			@Override
 			public void setValue(AudioItem audioItem, Object newValue) {
 				// not supported
-			}			
+			}
 		});
 
 		audioItemPropertiesObject.add(new AudioItemProperty(false) {
-			@Override public String getName() { 
+			@Override public String getName() {
 				return "File name";
 			}
 
@@ -179,15 +177,15 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			@Override
 			public void setValue(AudioItem audioItem, Object newValue) {
 				// not supported
-			}			
+			}
 		});
-		
+
 		// TOOD: long text fields
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_ENGLISH_TRANSCRIPTION, true));
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_NOTES, true));
 		audioItemPropertiesObject.add(new AudioItemProperty.MetadataProperty(LB_BENEFICIARY, true));
 	}
-	
+
 	@Override
 	public String getColumnName(int arg0) {
 		return columnNames[arg0];
@@ -202,15 +200,15 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 	public int getRowCount() {
 		return audioItemPropertiesObject.size();
 	}
-	
+
 	public AudioItem getSelectedAudioItem() {
 		return audioItem;
 	}
-	
+
 	public boolean showEditIcon(int row) {
 		return audioItemPropertiesObject.get(row).showEditIcon();
 	}
-	
+
 	public Locale getMetadataLocale() {
 		return getLanguage(audioItem, DC_LANGUAGE);
 	}
@@ -219,39 +217,39 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		// only shows first language
 		for (MetadataValue<RFC3066LanguageCode> mv : audioItem.getMetadata().getMetadataValues(language)) {
 			RFC3066LanguageCode code = mv.getValue();
-			return code.getLocale(); 		
+			return code.getLocale();
 		}
-		
+
 		return null;
 	}
-	
+
 	public AudioItemProperty getAudioItemProperty(int row) {
 		return audioItemPropertiesObject.get(row);
 	}
-	
+
 	boolean highlightRow(int row) {
 		if (row == 0) {
 			AudioItemProperty obj = audioItemPropertiesObject.get(row);
 			String value = obj.getValue(audioItem);
 			return !value.equals(STATUS_VALUES[0]);
 		}
-		
+
 		return false;
 	}
-	
+
 	boolean isLanguageRow(int row) {
 		AudioItemProperty obj = audioItemPropertiesObject.get(row);
 		if (obj instanceof AudioItemProperty.LanguageProperty) {
 			return true;
 		}
-		
+
 		return false;
 	}
-	
+
 	@Override
 	public Object getValueAt(int row, int col) {
 		AudioItemProperty obj = audioItemPropertiesObject.get(row);
-		
+
 		switch (col) {
 		case TITLE_COL:
 			return obj.getName();
@@ -262,52 +260,49 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		default:
 			break;
 		}
-			
+
 		return LabelProvider.getLabel("ERROR", LanguageUtil.getUILanguage());
 	}
-	
+
 	@Override
 	public boolean isCellEditable(int rowIndex, int columnIndex) {
-		if (readOnly) {
-			return false;
-		}
 		if (columnIndex != VALUE_COL) {
 			return false;
 		}
-		
+
 		AudioItemProperty obj = audioItemPropertiesObject.get(rowIndex);
 		return obj.isCellEditable();
 	}
 
 	@Override
 	public void setValueAt(Object aValue, int row, int col) {
-		if (readOnly || aValue == null) {
+		if (aValue == null) {
 			return;
 		}
-		
+
 		String newValue = aValue.toString();
 		AudioItemProperty<?> obj = audioItemPropertiesObject.get(row);
-		
-		
+
+
 		if (obj instanceof AudioItemProperty.LanguageProperty) {
 			Locale newLocale = (Locale) aValue;
 			((AudioItemProperty.LanguageProperty) obj).setValue(audioItem, newLocale);
 		} else if (obj instanceof AudioItemProperty) {
 			((AudioItemProperty) obj).setValue(audioItem, newValue);
 		}
-		
+
 		Metadata metadata = audioItem.getMetadata();
 		incrementRevision(metadata);
 		metadata.commit();
 		audioItem.getLocalizedAudioItem(null).commit();
 		audioItem.commit();
 	}
-	
+
 	protected static void setStringValue(MetadataField<String> field, Metadata metadata, String value) {
 		metadata.setMetadataField(field, new MetadataValue<String>(value));
 	}
 
-	
+
 	protected static void setLocaleValue(MetadataField<RFC3066LanguageCode> field, AudioItem audioItem, Locale newLocale) {
 		Locale oldLocale = getLanguage(audioItem, DC_LANGUAGE);
 		LocalizedAudioItem localizedItem = audioItem.getLocalizedAudioItem(oldLocale);
@@ -318,7 +313,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		metadata.setMetadataField(field, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(newLocale.getLanguage())));
 		metadata.commit();
 	}
-	
+
 	private static void incrementRevision(Metadata metadata) {
 		List<MetadataValue<String>> revisions = metadata.getMetadataValues(MetadataSpecification.DTB_REVISION);
 		if (revisions != null) {
@@ -331,13 +326,13 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 					// use 0
 				}
 			}
-			
+
 			rev++;
 			setStringValue(MetadataSpecification.DTB_REVISION, metadata, Long.toString(rev));
 		}
 	}
-	
-	
+
+
 	// TODO Ask Michael: What is that csv list for a single metadata field all about?
 //	private void setValues(MetadataField<String> field, Metadata metadata,
 //			String commaSeparatedListValue) {
