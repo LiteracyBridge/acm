@@ -16,7 +16,7 @@ import org.yaml.snakeyaml.Yaml;
 
 public class DefaultLiteracyBridgeTaxonomy {
 	public final static String LB_TAXONOMY_UID = "LB_TAX_1.0";
-	
+
 	public final static String YAML_FILE_NAME = "lb_taxonomy.yaml";
 	public final static String YAML_REVISION_FIELD = "revision";
 	public final static String YAML_CATEGORIES_FIELD = "categories";
@@ -29,17 +29,17 @@ public class DefaultLiteracyBridgeTaxonomy {
 	public static class TaxonomyRevision {
 		public final int revision;
 		private final Map<String, Object> categories;
-		
+
 		private TaxonomyRevision(int revision, Map<String, Object> categories) {
 			this.revision = revision;
 			this.categories = categories;
 		}
-		
+
 		public void createTaxonomy(Taxonomy taxonomy, final Map<String, PersistentCategory> existingCategories) {
 			DefaultLiteracyBridgeTaxonomy.loadYaml(taxonomy, categories, taxonomy.getRootCategory(), existingCategories);
 		}
 	}
-	
+
 	private static Category addCategory(Taxonomy taxonomy, Category parent, PersistentCategory existingCategory, String id, String name, String desc, int order) {
         Category cat = existingCategory == null ? new Category(id) : new Category(existingCategory);
         cat.setDefaultCategoryDescription(name, desc);
@@ -47,23 +47,23 @@ public class DefaultLiteracyBridgeTaxonomy {
         taxonomy.addChild(parent, cat);
         return cat;
 	}
-	
+
 	public static void main(String[] args) throws Exception {
 		Taxonomy taxonomy = new Taxonomy();
 		loadLatestTaxonomy().createTaxonomy(taxonomy, null);
 		Category root = taxonomy.getRootCategory();
 		print(root);
 	}
-	
+
 	public static TaxonomyRevision loadLatestTaxonomy() {
 		TaxonomyRevision taxonomy = loadTaxonomy(DefaultLiteracyBridgeTaxonomy.class.getResourceAsStream("/" + YAML_FILE_NAME));
-		
-		// check if there is a newer one in the 
-		File userFile = new File(ACMConfiguration.getCurrentDB().getACMDirectory(), YAML_FILE_NAME);
-		if (userFile.exists()) {
+
+		// check if there is a newer one in the
+		File acmTaxonomyFile = new File(ACMConfiguration.getCurrentDB().getSharedACMDirectory(), YAML_FILE_NAME);
+		if (acmTaxonomyFile.exists()) {
 			FileInputStream in = null;
 			try {
-				in = new FileInputStream(userFile);
+				in = new FileInputStream(acmTaxonomyFile);
 				TaxonomyRevision updatedTaxonomy = loadTaxonomy(in);
 				if (updatedTaxonomy.revision > taxonomy.revision) {
 					taxonomy = updatedTaxonomy;
@@ -78,23 +78,11 @@ public class DefaultLiteracyBridgeTaxonomy {
 				}
 			}
 		}
-		
-		// check online for latest taxonomy
-		try {
-			URL url = new URL("http://literacybridge.googlecode.com/svn/acm/trunk/acm/src/main/resources/lb_taxonomy.yaml");
-			InputStream in = url.openStream();
-			TaxonomyRevision updatedTaxonomy = loadTaxonomy(in);
-			if (updatedTaxonomy.revision > taxonomy.revision) {
-				taxonomy = updatedTaxonomy;
-			}
-		} catch (Exception e) {
-			// maybe there is no internet connection - go with previous taxonomy
-		}		
-		
+
 		return taxonomy;
-		
+
 	}
-	
+
 	private static TaxonomyRevision loadTaxonomy(InputStream input) {
 		try {
 		    Yaml yaml = new Yaml();
@@ -111,11 +99,11 @@ public class DefaultLiteracyBridgeTaxonomy {
 		    }
 		}
 	}
-	
+
 	private static void loadYaml(Taxonomy taxonomy, Map<String, Object> categories, Category parent, final Map<String, PersistentCategory> existingCategories) {
 	    for (Entry<String, Object> entry : categories.entrySet()) {
 	    	String catID = entry.getKey();
-	    	
+
 	    	PersistentCategory existingCategory = null;
 	    	if (existingCategories != null) {
 	    		existingCategory =  existingCategories.get(catID);
@@ -134,7 +122,7 @@ public class DefaultLiteracyBridgeTaxonomy {
 	    	}
 	    }
 	}
-	
+
 	public static void print(Category cat) {
 		List<Category> children = cat.getChildren();
 		if (children != null) {
@@ -143,5 +131,5 @@ public class DefaultLiteracyBridgeTaxonomy {
 			}
 		}
 	}
-	
+
 }
