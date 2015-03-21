@@ -160,5 +160,4 @@ public abstract class BaseAudioConverter {
 		public String response;
 		public File outputFile;
 	}
-
 }
