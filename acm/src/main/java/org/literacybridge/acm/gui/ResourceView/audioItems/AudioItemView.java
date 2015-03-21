@@ -33,6 +33,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.messages.AudioItemTableSortOrderMessage;
 import org.literacybridge.acm.gui.messages.PlayLocalizedAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAndSelectAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
@@ -128,6 +129,11 @@ public class AudioItemView extends Container implements Observer {
 		if (arg instanceof UILanguageChanged) {
 			UILanguageChanged newLocale = (UILanguageChanged) arg;
 			updateControlLanguage(newLocale.getNewLocale());
+		}
+
+		if (arg instanceof AudioItemTableSortOrderMessage) {
+			AudioItemTableSortOrderMessage message = (AudioItemTableSortOrderMessage) arg;
+			audioItemTable.setSortOrder(message.getIdentifier(), message.getSortOrder());
 		}
 
 		if (arg instanceof RequestAudioItemMessage) {

@@ -35,6 +35,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.SortOrder;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
@@ -62,6 +63,7 @@ import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
 import org.literacybridge.acm.gui.dialogs.audioItemImportDialog.AudioItemImportDialog;
+import org.literacybridge.acm.gui.messages.AudioItemTableSortOrderMessage;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.ACMContainer;
 import org.literacybridge.acm.gui.util.UIUtils;
@@ -428,6 +430,10 @@ public class CategoryView extends ACMContainer implements Observer {
 		tagsList.addListSelectionListener(new ListSelectionListener() {
 			@Override public void valueChanged(ListSelectionEvent e) {
 				clearTreeSelections();
+				Application.getMessageService().pumpMessage(
+						new AudioItemTableSortOrderMessage(
+								LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER,
+										               LanguageUtil.getUILanguage()), SortOrder.ASCENDING));
 			}
 		});
 		addAudioDeviceListener();
