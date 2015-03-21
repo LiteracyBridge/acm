@@ -92,6 +92,20 @@ public class ACMConfiguration {
 	public synchronized static DBConfiguration getCurrentDB() {
 		return currentDB.get();
 	}
+
+	public static File dirACM(String acmName) {
+		File f = null;
+		loadProps();
+
+		String globalSharePath = ACMGlobalConfigProperties.getProperty(Constants.GLOBAL_SHARE_PATH);
+		if (globalSharePath != null) {
+			f = new File (globalSharePath,acmName + "/" + Constants.TBLoadersHomeDir);
+			if (!f.exists()) {
+				f = null;
+			}
+		} 		
+		return f;		
+	}
 	
 	private static void setupACMGlobalPaths() {
 		String globalSharePath = ACMGlobalConfigProperties.getProperty(Constants.GLOBAL_SHARE_PATH);

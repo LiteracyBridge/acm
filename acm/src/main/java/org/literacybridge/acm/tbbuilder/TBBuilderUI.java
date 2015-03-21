@@ -35,7 +35,9 @@ public class TBBuilderUI extends JFrame implements ActionListener {
 	private JComboBox packageBList;
 	private TBBuilder tbBuilder;
 	private JLabel notice;
-	
+	private JComboBox languageImgAList1;
+	private JComboBox languageImgBList;
+
 	public static void main(String[] args) throws Exception {
 		new TBBuilderUI();
 	}
@@ -70,7 +72,22 @@ public class TBBuilderUI extends JFrame implements ActionListener {
 		}
 		return packageNames;
 	}
-	
+
+	private String[] getLanguages(String project) {
+		String[] languageCodes=new String[10];
+		File packages = new File(dropbox,TBBuilder.ACM_PREFIX+project+"/TB-Loaders/TB_Options/languages");
+		File[] dirs = packages.listFiles(new FileFilter() {
+			@Override public boolean accept(File path) {
+				return path.isDirectory();
+			}
+		});
+		int i=0;
+		for (File d:dirs) {
+			languageCodes[i++]=d.getName();
+		}
+		return languageCodes;
+	}
+
 	
 	public TBBuilderUI() throws Exception {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -109,10 +126,10 @@ public class TBBuilderUI extends JFrame implements ActionListener {
 		// so this isn't priority.
 		packageAList = new JComboBox();
 		packageBList = new JComboBox();
-		JComboBox languageImgAList = new JComboBox();
+		languageImgAList1 = new JComboBox();
 		JComboBox groupAList = new JComboBox();  // should be a JList to allow multiple groups in future
 
-		JComboBox languageImgBList = new JComboBox();  
+		languageImgBList = new JComboBox();  
 		JComboBox groupBList = new JComboBox();  // should be a JList to allow multiple groups in future
 		JButton buttonBuild = new JButton("Build");
 		JButton buttonPublish = new JButton("Publish");
@@ -150,7 +167,7 @@ public class TBBuilderUI extends JFrame implements ActionListener {
 					.addComponent(updateYearList)
 	        		.addComponent(updateNumberList)
 	        		.addComponent(packageAList)
-	        		.addComponent(languageImgAList)
+	        		.addComponent(languageImgAList1)
 	        		.addComponent(groupAList)
 	        		.addComponent(packageBList)
 	        		.addComponent(languageImgBList)
@@ -179,7 +196,7 @@ public class TBBuilderUI extends JFrame implements ActionListener {
 	        		)
         		.addGroup(layout.createParallelGroup(BASELINE)
 	        		.addComponent(languageALabel)
-	        		.addComponent(languageImgAList)
+	        		.addComponent(languageImgAList1)
 	        		)
         		.addGroup(layout.createParallelGroup(BASELINE)
 	        		.addComponent(groupALabel)
@@ -246,6 +263,13 @@ public class TBBuilderUI extends JFrame implements ActionListener {
 							break;
 						packageAList.addItem(s);
 						packageBList.addItem(s);
+					}
+					String contentLanguages[] = getLanguages(projectList.getSelectedItem().toString());
+					for (String s:contentLanguages) {
+						if (s==null)
+							break;
+						languageImgAList1.addItem(s);
+						languageImgBList.addItem(s);
 					}
 				}				
 			}

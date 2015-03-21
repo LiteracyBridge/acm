@@ -30,7 +30,7 @@ public class FileSystemExporter {
 							+ (idInFilename?localizedAudioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue():"");
 					
 					// replace invalid file name characters (windows) with an underscore ('_')
-					title = title.trim().replaceAll("[\\\\/:*?\"<>|]", "_");
+					title = title.trim().replaceAll("[\\\\/:*?\"<>|']", "_");
 					File targetFile;
 					int counter = 0;
 					do {

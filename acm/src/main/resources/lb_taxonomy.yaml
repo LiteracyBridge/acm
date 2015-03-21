@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 18
+  revision: 19
   categories:
     '0' : 
       name: Other Messages
@@ -33,6 +33,58 @@ taxonomy:
         '0-5' :
           name: Intro Message
           order: 15
+        '0-6' :
+          name: Deployments 
+          order: 99
+          children : 
+            '0-6-1' :
+              name: Update 1
+              order: 1
+            '0-6-2' :
+              name: Update 2
+              order: 2
+            '0-6-3' :
+              name: Update 3
+              order: 3
+            '0-6-4' :
+              name: Update 4
+              order: 4
+            '0-6-5' :
+              name: Update 5
+              order: 5
+            '0-6-6' :
+              name: Update 6
+              order: 6
+            '0-6-7' :
+              name: Update 7
+              order: 7
+            '0-6-8' :
+              name: Update 8
+              order: 8
+            '0-6-9' :
+              name: Update 9
+              order: 9
+            '0-6-10' :
+              name: Update 10
+              order: 10
+            '0-6-11' :
+              name: Update 11
+              order: 11
+            '0-6-12' :
+              name: Update 12
+              order: 12
+            '0-6-13' :
+              name: Update 13
+              order: 13
+            '0-6-14' :
+              name: Update 14
+              order: 14
+            '0-6-15' :
+              name: Update 15
+              order: 15
+            '0-6-16' :
+              name: Update 16
+              order: 16
     '1' : 
       name: Agriculture
       order: 10
