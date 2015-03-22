@@ -16,8 +16,6 @@ import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.index.AudioItemIndex;
 
-import com.google.common.collect.Maps;
-
 public class DataRequestService implements IDataRequestService {
 	private static final IDataRequestService instance = new DataRequestService();
 
@@ -52,15 +50,7 @@ public class DataRequestService implements IDataRequestService {
 	public IDataRequestResult getData(Locale locale, String filterString, List<PersistentCategory> categories, List<PersistentLocale> locales) {
 		if (index != null) {
 			try {
-				Map<Integer, Integer> facetCounts = Maps.newHashMap(); //Taxonomy.getFacetCounts(filterString, categories, locales);
-				List<String> audioItems = index.search(filterString, categories, locales);
-
-				Map<String, Integer> languageFacetCounts = Maps.newHashMap(); //PersistentLocale.getFacetCounts(filterString, categories, locales);
-
-				Taxonomy taxonomy = Taxonomy.getTaxonomy();
-				DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
-						PersistentTag.getFromDatabase());
-				return result;
+				return index.search(filterString, categories, locales);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}

@@ -3,6 +3,7 @@ package org.literacybridge.acm.index;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenFilter;
@@ -11,8 +12,10 @@ import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.facet.FacetResult;
 import org.apache.lucene.facet.FacetsCollector;
 import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.LabelAndValue;
 import org.apache.lucene.facet.sortedset.DefaultSortedSetDocValuesReaderState;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetCounts;
 import org.apache.lucene.index.AtomicReaderContext;
@@ -34,12 +37,16 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
+import org.literacybridge.acm.api.IDataRequestResult;
+import org.literacybridge.acm.categories.Taxonomy;
 import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.core.DataRequestResult;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentTag;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class AudioItemIndex {
 	public static final String TEXT_FIELD = "text";
@@ -84,7 +91,7 @@ public class AudioItemIndex {
 		searchmanager.maybeRefresh();
 	}
 
-	public List<String> search(String filterString, PersistentTag selectedTag) throws IOException {
+	public IDataRequestResult search(String filterString, PersistentTag selectedTag) throws IOException {
 		BooleanQuery q = new BooleanQuery();
 		q.add(new TermQuery(new Term(TEXT_FIELD, filterString)), Occur.MUST);
 		if (selectedTag != null) {
@@ -93,7 +100,7 @@ public class AudioItemIndex {
 		return search(q);
 	}
 
-	public List<String> search(String filterString, List<PersistentCategory> filterCategories,
+	public IDataRequestResult search(String filterString, List<PersistentCategory> filterCategories,
 			List<PersistentLocale> locales) throws IOException {
 		BooleanQuery q = new BooleanQuery();
 		if (filterString == null || filterString.isEmpty()) {
@@ -130,7 +137,7 @@ public class AudioItemIndex {
 		return search(q);
 	}
 
-	private List<String> search(Query query) throws IOException {
+	private IDataRequestResult search(Query query) throws IOException {
 		final FacetsCollector facetsCollector = new FacetsCollector();
 		final List<String> results = Lists.newArrayList();
 		final IndexSearcher searcher = searchmanager.acquire();
@@ -153,9 +160,20 @@ public class AudioItemIndex {
 		searcher.search(query, collector);
 		SortedSetDocValuesFacetCounts facetCounts =
 				new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
-		System.out.println(facetCounts.getAllDims(100));
+		List<FacetResult> facetResults = facetCounts.getAllDims(1000);
+		Map<Integer, Integer> categoryFacets = Maps.<Integer, Integer>newHashMap();
+		for (FacetResult r : facetResults) {
+			if (r.dim.equals(CATEGORIES_FACET_FIELD)) {
+				for (LabelAndValue lv : r.labelValues) {
+					categoryFacets.put(PersistentCategory.getFromDatabase(lv.label).getId(), lv.value.intValue());
+				}
+			}
+		}
 
-		return results;
+		DataRequestResult result = new DataRequestResult(Taxonomy.getTaxonomy().getRootCategory(), categoryFacets, Maps.<String, Integer>newHashMap(), results,
+				PersistentTag.getFromDatabase());
+
+		return result;
 	}
 
 	public static class QueryAnalyzer extends Analyzer {
