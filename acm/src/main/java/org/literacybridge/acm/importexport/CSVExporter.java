@@ -45,8 +45,8 @@ public class CSVExporter {
 			}
 		});
 
-		// +2 for categories and playlists
-		final int numColumns = columns.size() + 2;
+		// +3 for categories, quality and project
+		final int numColumns = columns.size() + 3;
 		String[] values = new String[numColumns];
 
 		// first write header
@@ -63,7 +63,7 @@ public class CSVExporter {
 		for (LocalizedAudioItem audioItem : audioItems) {
 			Metadata metadata = audioItem.getMetadata();
 			String quality = "l";
-			for (int i = 0; i < numColumns - 2; i++) {
+			for (int i = 0; i < numColumns - 3; i++) {
 				MetadataField<?> field = columns.get(i);
 				String value = getStringValue(metadata, field);
 				if (field == MetadataSpecification.LB_DURATION) {
