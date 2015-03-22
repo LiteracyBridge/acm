@@ -44,7 +44,7 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 	private JButton btnClose;
 
 	public AudioItemPropertiesDialog(JFrame parent, AudioItemView view,
-			List<AudioItem> audioItemList, AudioItem showItem) {
+			List<String> audioItemList, AudioItem showItem) {
 		super(parent, LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES",
 				LanguageUtil.getUILanguage()), true);
 		addToMessageService();

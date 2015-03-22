@@ -27,7 +27,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 	private static final long serialVersionUID = -2998511081572936717L;
 
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-	
+
 	// positions of the table columns
 	public static final int NUM_COLUMNS 	   = 8; // keep in sync
 	public static final int INFO_ICON 		   = 0;
@@ -46,48 +46,48 @@ public class AudioItemTableModel  extends AbstractTableModel {
 //	public static final int APPLY_COUNT 	   = 8;
 //	public static final int NOHELP_COUNT 	   = 9;
 	private static String[] columns = null;
-	
+
 	protected IDataRequestResult result = null;
-	
-	
+
+
 	public static void initializeTableColumns( String[] initalColumnNames) {
-		columns = initalColumnNames;	
+		columns = initalColumnNames;
 	}
-	
+
 	public AudioItemTableModel(IDataRequestResult result) {
 		this.result = result;
 		if (result != null) {
-			result.getAudioItems();			
+			result.getAudioItems();
 		}
 	}
-		
+
 	@Override
 	public int getColumnCount() {
 		return columns.length;
 	}
-	
+
 	@Override
 	public String getColumnName(int column) {
 		return columns[column];
 	}
-	
-	
+
+
 
 	@Override
 	public int getRowCount() {
 		if (result != null) {
-			return result.getAudioItems().size();	
+			return result.getAudioItems().size();
 		}
-		
+
 		return 0;
 	}
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-	
-		AudioItem audioItem = (AudioItem) result.getAudioItems().get(rowIndex);
-		LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());	
-			
+
+		AudioItem audioItem = AudioItem.getFromDatabase(result.getAudioItems().get(rowIndex));
+		LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
+
 		String cellText = "";
 		try {
 			switch (columnIndex) {
@@ -125,10 +125,10 @@ public class AudioItemTableModel  extends AbstractTableModel {
 				}
 
 				case LANGUAGES: {
-					cellText = LanguageUtil.getLocalizedLanguageName(localizedAudioItem.getLocale());				
+					cellText = LanguageUtil.getLocalizedLanguageName(localizedAudioItem.getLocale());
 					break;
 				}
-				
+
 /*				case MESSAGE_FORMAT: {
 					List<MetadataValue<String>> values = localizedAudioItem.getMetadata().getMetadataValues(
 							MetadataSpecification.LB_MESSAGE_FORMAT);
@@ -143,7 +143,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 					if (file != null) {
 						Date date = new Date(file.lastModified());
 						cellText = dateFormat.format(date);
-					}					
+					}
 					break;
 				}
 				case PLAYLIST_ORDER: {
@@ -159,7 +159,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 //				case COPY_COUNT: {
 //					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
 //							MetadataSpecification.LB_COPY_COUNT);
-//					cellText = values != null ? "" + values.get(0).getValue() : "0"; 
+//					cellText = values != null ? "" + values.get(0).getValue() : "0";
 //					break;
 //				}
 //				case OPEN_COUNT: {
@@ -202,12 +202,12 @@ public class AudioItemTableModel  extends AbstractTableModel {
 		} catch (Exception e) {
 			 e.printStackTrace();
 		}
-	
+
 		return new LocalizedAudioItemNode(localizedAudioItem, cellText, audioItem);
 	}
-	
-	
 
-	
+
+
+
 
 }

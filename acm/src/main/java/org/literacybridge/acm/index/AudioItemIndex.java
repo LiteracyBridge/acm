@@ -1,17 +1,26 @@
 package org.literacybridge.acm.index;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.util.List;
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenFilter;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.LowerCaseFilter;
+import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.taxonomy.TaxonomyWriter;
+import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.SearcherFactory;
@@ -20,6 +29,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
@@ -32,18 +42,32 @@ public class AudioItemIndex {
 	public static final String TEXT_FIELD = "text";
 	public static final String UID_FIELD = "uid";
 	public static final String CATEGORIES_FIELD = "categories";
+	public static final String CATEGORIES_FACET_FIELD = "categories_facet";
 	public static final String TAGS_FIELD = "tags";
 	public static final String LOCALES_FIELD = "locales";
+	public static final String LOCALES_FACET_FIELD = "locales_facet";
 
 	private Directory dir = new RAMDirectory();
+	private Directory taxonomyDir = new RAMDirectory();
 	AudioItemDocumentFactory factory = new AudioItemDocumentFactory();
 	private IndexWriter writer;
 	private SearcherManager searchmanager;
 
+	private final FacetsConfig facetsConfig;
+	private TaxonomyWriter taxonomyWriter;
+	private final QueryAnalyzer queryAnalyzer;
+
 	public AudioItemIndex() throws IOException {
+		facetsConfig = new FacetsConfig();
+		facetsConfig.setMultiValued(AudioItemIndex.CATEGORIES_FACET_FIELD, true);
+		facetsConfig.setMultiValued(AudioItemIndex.LOCALES_FACET_FIELD, true);
+
+		queryAnalyzer = new QueryAnalyzer();
+
 		List<AudioItem> items = AudioItem.getFromDatabase();
-		IndexWriterConfig config = new IndexWriterConfig(Version.LATEST, new AudioItemDocumentFactory.PrefixAnalyzer());
+		IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_47, new AudioItemDocumentFactory.PrefixAnalyzer());
 		writer = new IndexWriter(dir, config);
+		taxonomyWriter = new DirectoryTaxonomyWriter(taxonomyDir);
 		searchmanager = new SearcherManager(writer, true, new SearcherFactory());
 
 		for (AudioItem item : items) {
@@ -54,8 +78,9 @@ public class AudioItemIndex {
 	}
 
 	public void updateAudioItem(AudioItem audioItem) throws IOException {
+		Document doc = factory.createLuceneDocument(audioItem);
 		writer.updateDocument(new Term(UID_FIELD, audioItem.getUuid()),
-				factory.createLuceneDocument(audioItem));
+				facetsConfig.build(taxonomyWriter, doc));
 		searchmanager.maybeRefresh();
 	}
 
@@ -71,7 +96,19 @@ public class AudioItemIndex {
 	public List<AudioItem> search(String filterString, List<PersistentCategory> filterCategories,
 			List<PersistentLocale> locales) throws IOException {
 		BooleanQuery q = new BooleanQuery();
-		q.add(new TermQuery(new Term(TEXT_FIELD, filterString)), Occur.MUST);
+		if (filterString == null || filterString.isEmpty()) {
+			q.add(new MatchAllDocsQuery(), Occur.MUST);
+		} else {
+			TokenStream ts = queryAnalyzer.tokenStream(TEXT_FIELD, filterString);
+			TermToBytesRefAttribute termAtt = ts.addAttribute(TermToBytesRefAttribute.class);
+			ts.reset();
+
+			while (ts.incrementToken()) {
+				termAtt.fillBytesRef();
+				q.add(new TermQuery(new Term(TEXT_FIELD, BytesRef.deepCopyOf(termAtt.getBytesRef()))), Occur.MUST);
+			}
+			ts.close();
+		}
 
 		if (filterCategories != null && !filterCategories.isEmpty()) {
 			BooleanQuery categoriesQuery = new BooleanQuery();
@@ -89,6 +126,7 @@ public class AudioItemIndex {
 //		q.add(localesQuery, Occur.MUST);
 		}
 
+		System.out.println(q);
 		return search(q);
 	}
 
@@ -103,6 +141,15 @@ public class AudioItemIndex {
 			results.add(AudioItem.getFromDatabase(uuid));
 		}
 		return results;
+	}
+
+	public static class QueryAnalyzer extends Analyzer {
+		@Override
+		protected TokenStreamComponents createComponents(String field, Reader reader) {
+			WhitespaceTokenizer tokenizer = new WhitespaceTokenizer(Version.LUCENE_47, reader);
+			TokenFilter filter = new LowerCaseFilter(Version.LUCENE_47, tokenizer);
+			return new TokenStreamComponents(tokenizer, filter);
+		}
 	}
 
 }

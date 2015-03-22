@@ -14,26 +14,26 @@ import org.literacybridge.acm.db.PersistentTag;
 public interface IDataRequestResult {
 	/**
 	 * Returns the root category which should be used to walk
-	 * the tree of categories. The root category is a virtual root 
+	 * the tree of categories. The root category is a virtual root
 	 * and should generally not be displayed by the UI.
 	 */
 	public abstract Category getRootCategory();
 
 	/**
-	 * Returns the facet count for the passed-in category. 
+	 * Returns the facet count for the passed-in category.
 	 */
 	public abstract int getFacetCount(Category category);
 
 	/**
-	 * Returns the facet count for the passed-in language. 
+	 * Returns the facet count for the passed-in language.
 	 */
 	public abstract int getLanguageFacetCount(String languageCode);
-	
+
 	/**
-	 * Returns the list of AudioItems to be displayed. 
+	 * Returns the list of AudioItems to be displayed.
 	 */
-	public abstract List<AudioItem> getAudioItems();
-	
+	public abstract List<String> getAudioItems();
+
 	/**
 	 * Returns the list of audio tags to be displayed.
 	 */
