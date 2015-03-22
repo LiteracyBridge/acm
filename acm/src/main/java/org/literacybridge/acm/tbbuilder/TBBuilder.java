@@ -3,9 +3,13 @@ package org.literacybridge.acm.tbbuilder;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
@@ -18,7 +22,13 @@ import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.acm.utils.ZipUnzip;
 
+import au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVWriter;
+
 public class TBBuilder {
+	private static final String[] CSV_COLUMNS = {"project", "contentpackage", "contentid", "categoryid", "order"};
+	private static final String CONTENT_IN_PACKAGES_CSV_FILE_NAME = "contentinpackages.csv";
+
 	public static String firstMessageListName = "1";
 	public static String IntroMessageID = "0-5";
 	private static String IntroMessageListFilename = IntroMessageID + ".txt";
@@ -26,7 +36,7 @@ public class TBBuilder {
 	private final static int MAX_DEPLOYMENTS = 5;
 	private File dropboxTbLoadersDir;
 	private File targetDeploymentDir;
-	private File targetMetadataDir;
+	private CSVWriter contentInPackageCSVWriter;
 	private File sourceTbOptionsDir;
 	private File targetTempDir;
 	private String deploymentNumber;
@@ -88,11 +98,11 @@ public class TBBuilder {
 		File[] lists = targetListsDir.listFiles();
 		for (File list : lists) {
 			if (list.getName().equals(TBBuilder.IntroMessageListFilename)) {
-				exportList(list,targetWelcomeMessageDir,"intro.a18");
+				exportList(packageName, list,targetWelcomeMessageDir,"intro.a18", false);
 				list.delete();
 				hasIntro = true;
 			} else if (!list.getName().equalsIgnoreCase("_activeLists.txt")) {
-				exportList(list, targetAudioDir);
+				exportList(packageName, list, targetAudioDir, true);
 			}
 		}
 
@@ -142,7 +152,7 @@ public class TBBuilder {
 		Application.startUp(params);
 		deploymentNumber = deployment;
 		targetDeploymentDir = new File(targetTempDir, "content/" + deploymentNumber);
-		targetMetadataDir = new File(targetTempDir, "metadata/" + deploymentNumber);
+		File targetMetadataDir = new File(targetTempDir, "metadata/" + deploymentNumber);
 
 		sourceTbOptionsDir = new File(dropboxTbLoadersDir, "TB_Options");
 
@@ -151,6 +161,12 @@ public class TBBuilder {
 		targetDeploymentDir.mkdirs();
 		IOUtils.deleteRecursive(targetMetadataDir);
 		targetMetadataDir.mkdirs();
+
+		contentInPackageCSVWriter = new CSVWriter(new FileWriter(
+				new File(targetMetadataDir, CONTENT_IN_PACKAGES_CSV_FILE_NAME)), ',');
+
+		// write column headers
+		contentInPackageCSVWriter.writeNext(CSV_COLUMNS);
 
 		File sourceFirmware = null;
 		File[] firmwareOptions = new File(sourceTbOptionsDir,"firmware").listFiles();
@@ -237,6 +253,29 @@ public class TBBuilder {
 		String zipSuffix = deployments[0] + "-" + revision + ".zip";
 		File localContent = new File(targetTempDir,"content");
 		ZipUnzip.zip(localContent, new File(publishDeploymentDir,"content-" + zipSuffix), true, deployments);
+
+		// merge csv files
+		File localMetadata = new File(targetTempDir,"metadata");
+		final List<File> inputCSVFiles = new LinkedList<File>();
+		File[] deploymentDirs = localMetadata.listFiles(new FileFilter() {
+			@Override public boolean accept(File f) {
+				return f.isDirectory();
+			}
+		});
+		for (File deploymentDir : deploymentDirs) {
+			deploymentDir.listFiles(new FileFilter() {
+				@Override public boolean accept(File f) {
+					if (f.getName().endsWith(".csv")) {
+						inputCSVFiles.add(f);
+						return true;
+					}
+					return false;
+				}
+			});
+		}
+		File mergedCSVFile = new File(publishDeploymentDir, CONTENT_IN_PACKAGES_CSV_FILE_NAME);
+		mergeCSVFiles(inputCSVFiles, mergedCSVFile);
+
 		deleteRevFiles(targetTempDir);
 		ZipUnzip.zip(new File(publishDeploymentDir,"software"), new File(publishDeploymentDir,"software-" + zipSuffix), true);
 	}
@@ -273,6 +312,7 @@ public class TBBuilder {
 				printUsage();
 				System.exit(1);
 			}
+			tbb.contentInPackageCSVWriter.close();
 		} else if (args[0].equalsIgnoreCase("PUBLISH")) {
 			if (args.length < 3) {
 				printUsage();
@@ -298,15 +338,22 @@ public class TBBuilder {
 		System.out.println("OR   : java -cp acm.jar:lib/* org.literacybridge.acm.tbbuilder.TBBuilder PUBLISH <acm_name> <default_deployment> (<deployment2>...) ");
 	}
 
-	private static void exportList(File list, File targetDirectory) throws Exception {
-		exportList(list,targetDirectory,null);
+	private void exportList(String contentPackage, File list, File targetDirectory, boolean writeToCSV) throws Exception {
+		exportList(contentPackage, list,targetDirectory,null, writeToCSV);
 	}
 
-	private static void exportList(File list, File targetDirectory, String filename) throws Exception {
+	private void exportList(String contentPackage, File list, File targetDirectory,
+			String filename, boolean writeToCSV) throws Exception {
 		System.out.println("  Exporting list " + list);
+		String[] csvColumns = new String[5];
+		csvColumns[0] = ACMname;
+		csvColumns[1] = contentPackage;
+		csvColumns[3] = list.getName().substring(0, list.getName().length() - 4); // strip .txt
+
 		AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
 		BufferedReader reader = new BufferedReader(new FileReader(list));
 
+		int order = 1;
 		try {
 			while (reader.ready()) {
 				String uuid = reader.readLine();
@@ -317,9 +364,35 @@ public class TBBuilder {
 				} else {
 					repository.exportA18WithMetadataToFile(audioItem, new File(targetDirectory,filename));
 				}
+
+				if (writeToCSV) {
+					csvColumns[2] = uuid;
+					csvColumns[4] = Integer.toString(order);
+					contentInPackageCSVWriter.writeNext(csvColumns);
+				}
+
+				order++;
 			}
 		} finally {
 			reader.close();
+		}
+	}
+
+	private static void mergeCSVFiles(Iterable<File> inputFiles, File output) throws IOException {
+		CSVWriter writer = new CSVWriter(new FileWriter(output), ',');
+
+		try {
+			writer.writeNext(CSV_COLUMNS);
+
+			for (File input : inputFiles) {
+				CSVReader reader = new CSVReader(new FileReader(input), ',');
+				// skip header
+				reader.readNext();
+				writer.writeAll(reader.readAll());
+				reader.close();
+			}
+		} finally {
+			writer.close();
 		}
 	}
 }
