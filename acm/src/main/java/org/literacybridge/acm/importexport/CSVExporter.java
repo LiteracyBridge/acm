@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.metadata.LBMetadataIDs;
@@ -22,12 +23,18 @@ import com.google.common.collect.Lists;
 public class CSVExporter {
 	private final static String CATEGORY_COLUMN_NAME = "CATEGORIES";
 	private final static String QUALITY_COLUMN_NAME = "QUALITY";
+	private final static String PROJECT_COLUMN_NAME = "PROJECT";
 
 	public static void export(LocalizedAudioItem[] audioItems, File targetFile) throws IOException {
 		export(Lists.newArrayList(audioItems), targetFile);
 	}
 
 	public static void export(Iterable<LocalizedAudioItem> audioItems, File targetFile) throws IOException {
+		String project = ACMConfiguration.getCurrentDB().getSharedACMname();
+		if (project.toLowerCase().startsWith("acm-")) {
+			project = project.substring(4);
+		}
+
 		CSVWriter writer = new CSVWriter(new FileWriter(targetFile), ',');
 
 		List<MetadataField<?>> columns = Lists.newArrayList(LBMetadataIDs.FieldToIDMap.keySet());
@@ -43,12 +50,13 @@ public class CSVExporter {
 		String[] values = new String[numColumns];
 
 		// first write header
-		for (int i = 0; i < numColumns - 2; i++) {
+		for (int i = 0; i < numColumns - 3; i++) {
 			values[i] = columns.get(i).getName();
 		}
 
-		values[numColumns - 2] = CATEGORY_COLUMN_NAME;
-		values[numColumns - 1] = QUALITY_COLUMN_NAME;
+		values[numColumns - 3] = CATEGORY_COLUMN_NAME;
+		values[numColumns - 2] = QUALITY_COLUMN_NAME;
+		values[numColumns - 1] = PROJECT_COLUMN_NAME;
 
 		writer.writeNext(values);
 
@@ -68,8 +76,9 @@ public class CSVExporter {
 				}
 				values[i] = value;
 			}
-			values[numColumns - 2] = UIUtils.getCategoryListAsString(audioItem.getParentAudioItem());
-			values[numColumns - 1] = quality;
+			values[numColumns - 3] = UIUtils.getCategoryListAsString(audioItem.getParentAudioItem());
+			values[numColumns - 2] = quality;
+			values[numColumns - 1] = project;
 			writer.writeNext(values);
 		}
 
