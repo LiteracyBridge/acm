@@ -17,7 +17,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.facet.FacetField;
+import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
 import org.apache.lucene.util.Version;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
@@ -61,7 +61,7 @@ public class AudioItemDocumentFactory {
 		doc.add(new StringField(AudioItemIndex.UID_FIELD, audioItem.getUuid(), Store.YES));
 		for (Category category : audioItem.getCategoryList()) {
 			doc.add(new StringField(AudioItemIndex.CATEGORIES_FIELD, category.getUuid(), Store.YES));
-			doc.add(new FacetField(AudioItemIndex.CATEGORIES_FACET_FIELD, category.getUuid()));
+			doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.CATEGORIES_FACET_FIELD, category.getUuid()));
 		}
 
 		for (PersistentTag tag : audioItem.getPlaylists()) {
@@ -69,7 +69,7 @@ public class AudioItemDocumentFactory {
 		}
 		for (MetadataValue<RFC3066LanguageCode> code : metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE)) {
 			doc.add(new StringField(AudioItemIndex.LOCALES_FIELD, code.toString(), Store.YES));
-			doc.add(new FacetField(AudioItemIndex.LOCALES_FACET_FIELD, code.toString()));
+			doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.LOCALES_FACET_FIELD, code.toString()));
 		}
 
 		return doc;

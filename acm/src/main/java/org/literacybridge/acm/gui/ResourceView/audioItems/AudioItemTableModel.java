@@ -4,6 +4,7 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.table.AbstractTableModel;
 
@@ -21,6 +22,8 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
+
+import com.google.common.collect.Maps;
 
 public class AudioItemTableModel  extends AbstractTableModel {
 
@@ -49,6 +52,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 
 	protected IDataRequestResult result = null;
 
+	private Map<String, AudioItem> cache = Maps.newHashMap();
 
 	public static void initializeTableColumns( String[] initalColumnNames) {
 		columns = initalColumnNames;
@@ -82,10 +86,29 @@ public class AudioItemTableModel  extends AbstractTableModel {
 		return 0;
 	}
 
+	private AudioItem getFromCache(int rowIndex) {
+		// we cache more items to make scrolling smooth
+		ensureCached(Math.max(0, rowIndex - 20), Math.min(result.getAudioItems().size(), rowIndex + 100));
+		synchronized (cache) {
+			return cache.get(result.getAudioItems().get(rowIndex));
+		}
+	}
+
+	private void ensureCached(int fromRow, int toRow) {
+		synchronized (cache) {
+			for (int row = fromRow; row < toRow; row++) {
+				String uuid = result.getAudioItems().get(row);
+				if (!cache.containsKey(uuid)) {
+					cache.put(uuid, AudioItem.getFromDatabase(uuid));
+				}
+			}
+		}
+	}
+
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
 
-		AudioItem audioItem = AudioItem.getFromDatabase(result.getAudioItems().get(rowIndex));
+		AudioItem audioItem = getFromCache(rowIndex);
 		LocalizedAudioItem localizedAudioItem = audioItem.getLocalizedAudioItem(LanguageUtil.getUserChoosenLanguage());
 
 		String cellText = "";

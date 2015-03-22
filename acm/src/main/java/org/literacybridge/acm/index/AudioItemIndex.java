@@ -11,22 +11,25 @@ import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.facet.FacetsCollector;
 import org.apache.lucene.facet.FacetsConfig;
-import org.apache.lucene.facet.taxonomy.TaxonomyWriter;
-import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
+import org.apache.lucene.facet.sortedset.DefaultSortedSetDocValuesReaderState;
+import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetCounts;
+import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.MultiCollector;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.BytesRef;
@@ -48,13 +51,11 @@ public class AudioItemIndex {
 	public static final String LOCALES_FACET_FIELD = "locales_facet";
 
 	private Directory dir = new RAMDirectory();
-	private Directory taxonomyDir = new RAMDirectory();
 	AudioItemDocumentFactory factory = new AudioItemDocumentFactory();
 	private IndexWriter writer;
 	private SearcherManager searchmanager;
 
 	private final FacetsConfig facetsConfig;
-	private TaxonomyWriter taxonomyWriter;
 	private final QueryAnalyzer queryAnalyzer;
 
 	public AudioItemIndex() throws IOException {
@@ -67,7 +68,6 @@ public class AudioItemIndex {
 		List<AudioItem> items = AudioItem.getFromDatabase();
 		IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_47, new AudioItemDocumentFactory.PrefixAnalyzer());
 		writer = new IndexWriter(dir, config);
-		taxonomyWriter = new DirectoryTaxonomyWriter(taxonomyDir);
 		searchmanager = new SearcherManager(writer, true, new SearcherFactory());
 
 		for (AudioItem item : items) {
@@ -80,11 +80,11 @@ public class AudioItemIndex {
 	public void updateAudioItem(AudioItem audioItem) throws IOException {
 		Document doc = factory.createLuceneDocument(audioItem);
 		writer.updateDocument(new Term(UID_FIELD, audioItem.getUuid()),
-				facetsConfig.build(taxonomyWriter, doc));
+				facetsConfig.build(doc));
 		searchmanager.maybeRefresh();
 	}
 
-	public List<AudioItem> search(String filterString, PersistentTag selectedTag) throws IOException {
+	public List<String> search(String filterString, PersistentTag selectedTag) throws IOException {
 		BooleanQuery q = new BooleanQuery();
 		q.add(new TermQuery(new Term(TEXT_FIELD, filterString)), Occur.MUST);
 		if (selectedTag != null) {
@@ -93,7 +93,7 @@ public class AudioItemIndex {
 		return search(q);
 	}
 
-	public List<AudioItem> search(String filterString, List<PersistentCategory> filterCategories,
+	public List<String> search(String filterString, List<PersistentCategory> filterCategories,
 			List<PersistentLocale> locales) throws IOException {
 		BooleanQuery q = new BooleanQuery();
 		if (filterString == null || filterString.isEmpty()) {
@@ -130,16 +130,31 @@ public class AudioItemIndex {
 		return search(q);
 	}
 
-	private List<AudioItem> search(Query query) throws IOException {
-		List<AudioItem> results = Lists.newArrayList();
-		IndexSearcher searcher = searchmanager.acquire();
-		TopDocs topDocs = searcher.search(query, 100000);
-		for (ScoreDoc hit : topDocs.scoreDocs) {
-			Document doc = searcher.doc(hit.doc);
-			String uuid = doc.get(UID_FIELD);
+	private List<String> search(Query query) throws IOException {
+		final FacetsCollector facetsCollector = new FacetsCollector();
+		final List<String> results = Lists.newArrayList();
+		final IndexSearcher searcher = searchmanager.acquire();
 
-			results.add(AudioItem.getFromDatabase(uuid));
-		}
+		Collector collector = MultiCollector.wrap(facetsCollector, new Collector() {
+			@Override public void setScorer(Scorer arg0) throws IOException {}
+			@Override public void setNextReader(AtomicReaderContext arg0) throws IOException {}
+
+			@Override
+			public void collect(int docId) throws IOException {
+				Document doc = searcher.doc(docId);
+				results.add(doc.get(UID_FIELD));
+			}
+
+			@Override public boolean acceptsDocsOutOfOrder() {
+				return true;
+			}
+		});
+
+		searcher.search(query, collector);
+		SortedSetDocValuesFacetCounts facetCounts =
+				new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
+		System.out.println(facetCounts.getAllDims(100));
+
 		return results;
 	}
 

@@ -5,18 +5,17 @@ import java.util.Map;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.categories.Taxonomy.Category;
-import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.db.PersistentTag;
 
 public class DataRequestResult implements IDataRequestResult {
 	private final Category rootCategory;
 	private final Map<Integer, Integer> facetCounts;
 	private final Map<String, Integer> languageFacetCounts;
-	private final List<AudioItem> audioItems;
+	private final List<String> audioItems;
 	private final List<PersistentTag> tags;
-	
-	public DataRequestResult(Category rootCategory, Map<Integer, Integer> facetCounts, 
-						     Map<String, Integer> languageFacetCounts, List<AudioItem> audioItems,
+
+	public DataRequestResult(Category rootCategory, Map<Integer, Integer> facetCounts,
+						     Map<String, Integer> languageFacetCounts, List<String> audioItems,
 						     List<PersistentTag> tags) {
 		this.rootCategory = rootCategory;
 		this.facetCounts = facetCounts;
@@ -24,14 +23,14 @@ public class DataRequestResult implements IDataRequestResult {
 		this.audioItems = audioItems;
 		this.tags = tags;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see main.java.org.literacybridge.acm.api.IDataRequestResult#getRootCategory()
 	 */
 	public Category getRootCategory() {
 		return this.rootCategory;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see main.java.org.literacybridge.acm.api.IDataRequestResult#getFacetCount(main.java.org.literacybridge.acm.categories.Taxonomy.Category)
 	 */
@@ -46,11 +45,11 @@ public class DataRequestResult implements IDataRequestResult {
 			return count;
 		}
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see main.java.org.literacybridge.acm.api.IDataRequestResult#getAudioItems()
 	 */
-	public List<AudioItem> getAudioItems() {
+	public List<String> getAudioItems() {
 		return audioItems;
 	}
 

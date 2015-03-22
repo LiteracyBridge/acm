@@ -10,7 +10,6 @@ import java.util.Map;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.api.IDataRequestService;
 import org.literacybridge.acm.categories.Taxonomy;
-import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
@@ -54,7 +53,7 @@ public class DataRequestService implements IDataRequestService {
 		if (index != null) {
 			try {
 				Map<Integer, Integer> facetCounts = Maps.newHashMap(); //Taxonomy.getFacetCounts(filterString, categories, locales);
-				List<AudioItem> audioItems = index.search(filterString, categories, locales);
+				List<String> audioItems = index.search(filterString, categories, locales);
 
 				Map<String, Integer> languageFacetCounts = Maps.newHashMap(); //PersistentLocale.getFacetCounts(filterString, categories, locales);
 
@@ -68,9 +67,9 @@ public class DataRequestService implements IDataRequestService {
 		} else {
 			Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(filterString, categories, locales);
 			Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, categories, locales);
-			List<AudioItem> audioItems = new ArrayList<AudioItem>(items.size());
+			List<String> audioItems = new ArrayList<String>(items.size());
 			for (PersistentAudioItem item : items) {
-				audioItems.add(new AudioItem(item));
+				audioItems.add(item.getUuid());
 			}
 
 			Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, categories, locales);
@@ -106,9 +105,9 @@ public class DataRequestService implements IDataRequestService {
 
 		Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(filterString, selectedTag);
 		Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, null, null);
-		List<AudioItem> audioItems = new ArrayList<AudioItem>(items.size());
+		List<String> audioItems = new ArrayList<String>(items.size());
 		for (PersistentAudioItem item : items) {
-			audioItems.add(new AudioItem(item));
+			audioItems.add(item.getUuid());
 		}
 
 		Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, null, null);
