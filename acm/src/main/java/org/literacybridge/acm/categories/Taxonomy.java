@@ -8,10 +8,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioLabel;
 import org.literacybridge.acm.db.Persistable;
-import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentLocalizedString;
@@ -25,7 +23,7 @@ public class Taxonomy implements Persistable {
 	private Category mRootCategory;
 
 	private static Taxonomy taxonomy;
-	
+
 	public Taxonomy() {
 		PersistentString title = new PersistentString("root");
 		PersistentString desc = new PersistentString("root node");
@@ -42,22 +40,22 @@ public class Taxonomy implements Persistable {
 			mRootCategory = new Category(root);
 		}
 	}
-	
+
 	public static Taxonomy getTaxonomy() {
 		return getTaxonomy(DefaultLiteracyBridgeTaxonomy.LB_TAXONOMY_UID);
 	}
-	
+
 	private static Taxonomy getTaxonomy(String uuid) {
 		if (taxonomy != null) {
 			return taxonomy;
 		}
-		
+
 		taxonomy = new Taxonomy();
-		
+
 		PersistentCategory root = PersistentCategory.getFromDatabase(uuid);
 		DefaultLiteracyBridgeTaxonomy.TaxonomyRevision latestRevision = DefaultLiteracyBridgeTaxonomy.loadLatestTaxonomy();
 
-		if (root == null) {	
+		if (root == null) {
 			PersistentString title = new PersistentString("root");
 			PersistentString desc = new PersistentString("root node");
 			root = new PersistentCategory(title, desc, rootUUID);
@@ -73,41 +71,41 @@ public class Taxonomy implements Persistable {
 
 		return taxonomy;
 	}
-	
+
 	private static Taxonomy createNewTaxonomy(DefaultLiteracyBridgeTaxonomy.TaxonomyRevision revision, PersistentCategory existingRoot, final Map<String, PersistentCategory> existingCategories) {
 		Taxonomy taxonomy = new Taxonomy();
 		existingRoot.setRevision(revision.revision);
 		existingRoot.setOrder(0);
 		taxonomy.mRootCategory = new Category(existingRoot);
-		
+
 		revision.createTaxonomy(taxonomy, existingCategories);
 		return taxonomy;
 	}
-	
+
 	private static void updateTaxonomy(PersistentCategory existingRoot, DefaultLiteracyBridgeTaxonomy.TaxonomyRevision latestRevision) {
 		System.out.println("Updating taxonomy");
-		
+
 		final Map<String, PersistentCategory> existingCategories = new HashMap<String, PersistentCategory>();
 		traverse(null, existingRoot, new Function() {
 			@Override public void apply(PersistentCategory parent, PersistentCategory root) {
 				existingCategories.put(root.getUuid(), root);
-			}			
+			}
 		});
-		
+
 		existingRoot.clearPersistentChildCategories();
 		for (PersistentCategory cat : existingCategories.values()) {
 			cat.clearPersistentChildCategories();
 			cat.setPersistentParentCategory(null);
 			cat.commit();
 		}
-		
-		taxonomy = createNewTaxonomy(latestRevision, existingRoot, existingCategories);		
+
+		taxonomy = createNewTaxonomy(latestRevision, existingRoot, existingCategories);
 	}
-	
+
 	private static interface Function {
 		public void apply(PersistentCategory parent, PersistentCategory root);
 	}
-	
+
 	private static void traverse(PersistentCategory parent, PersistentCategory root, Function function) {
 		function.apply(parent, root);
 		for (PersistentCategory child : root.getPersistentChildCategoryList()) {
@@ -135,16 +133,16 @@ public class Taxonomy implements Persistable {
 	/**
 	 * Returns the facet count for all categories that are stored
 	 * in the database.
-	 * 
+	 *
 	 * Key: database id (getId())
 	 * Value: count value
-	 * 
+	 *
 	 * Note: Returns '0' for unassigned categories.
 	 */
 	public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
 		return PersistentCategory.getFacetCounts(filter, categories, locales);
 	}
-	
+
 	public Integer getId() {
 		return mRootCategory.getId();
 	}
@@ -178,16 +176,16 @@ public class Taxonomy implements Persistable {
 		public Category(PersistentCategory category) {
 			mCategory = category;
 		}
-		
+
 		@Override public int hashCode() {
 			return mCategory.getUuid().hashCode();
 		}
-		
+
 		@Override public boolean equals(Object o) {
 			if (o == null || !(o instanceof Category)) {
 				return false;
 			}
-			
+
 			Category other = (Category) o;
 			return other.getUuid().equals(getUuid());
 		}
@@ -195,11 +193,11 @@ public class Taxonomy implements Persistable {
 		public PersistentCategory getPersistentObject() {
 			return mCategory;
 		}
-		
+
 		public int getOrder() {
 			return mCategory.getOrder();
 		}
-		
+
 		public void setOrder(int order) {
 			mCategory.setOrder(order);
 		}
@@ -277,7 +275,7 @@ public class Taxonomy implements Persistable {
 			}
 			return children;
 		}
-		
+
 		public List<Category> getSortedChildren() {
 			List<Category> children = getChildren();
 			Collections.sort(children, new Comparator<Category>() {
@@ -285,7 +283,7 @@ public class Taxonomy implements Persistable {
 					return c1.getOrder() - c2.getOrder();
 				}
 			});
-			
+
 			return children;
 		}
 
@@ -342,7 +340,7 @@ public class Taxonomy implements Persistable {
 			}
 			return new Category(category);
 		}
-		
+
 		@Override public String toString() {
 			return getCategoryName(LanguageUtil.getUILanguage()).toString();
 		}
