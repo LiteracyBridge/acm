@@ -18,6 +18,7 @@ public class CSVDatabaseExporter {
 		params.disableUI = true;
 		params.readonly = true;
 		params.sandbox = true;
+		params.disableIndex = true;
 		params.sharedACM = acmName;
 		Application.startUp(params);
 	}
