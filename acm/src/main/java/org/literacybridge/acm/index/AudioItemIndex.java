@@ -93,9 +93,26 @@ public class AudioItemIndex {
 		searchmanager.maybeRefresh();
 	}
 
+	private void addTextQuery(BooleanQuery bq, String filterString) throws IOException {
+		if (filterString == null || filterString.isEmpty()) {
+			bq.add(new MatchAllDocsQuery(), Occur.MUST);
+		} else {
+			TokenStream ts = queryAnalyzer.tokenStream(TEXT_FIELD, filterString);
+			TermToBytesRefAttribute termAtt = ts.addAttribute(TermToBytesRefAttribute.class);
+			ts.reset();
+
+			while (ts.incrementToken()) {
+				termAtt.fillBytesRef();
+				bq.add(new TermQuery(new Term(TEXT_FIELD, BytesRef.deepCopyOf(termAtt.getBytesRef()))), Occur.MUST);
+			}
+			ts.close();
+		}
+
+	}
+
 	public IDataRequestResult search(String filterString, PersistentTag selectedTag) throws IOException {
 		BooleanQuery q = new BooleanQuery();
-		q.add(new TermQuery(new Term(TEXT_FIELD, filterString)), Occur.MUST);
+		addTextQuery(q, filterString);
 		if (selectedTag != null) {
 			q.add(new TermQuery(new Term(TAGS_FIELD, selectedTag.getName())), Occur.MUST);
 		}
@@ -105,19 +122,7 @@ public class AudioItemIndex {
 	public IDataRequestResult search(String filterString, List<PersistentCategory> filterCategories,
 			List<PersistentLocale> locales) throws IOException {
 		BooleanQuery q = new BooleanQuery();
-		if (filterString == null || filterString.isEmpty()) {
-			q.add(new MatchAllDocsQuery(), Occur.MUST);
-		} else {
-			TokenStream ts = queryAnalyzer.tokenStream(TEXT_FIELD, filterString);
-			TermToBytesRefAttribute termAtt = ts.addAttribute(TermToBytesRefAttribute.class);
-			ts.reset();
-
-			while (ts.incrementToken()) {
-				termAtt.fillBytesRef();
-				q.add(new TermQuery(new Term(TEXT_FIELD, BytesRef.deepCopyOf(termAtt.getBytesRef()))), Occur.MUST);
-			}
-			ts.close();
-		}
+		addTextQuery(q, filterString);
 
 		if (filterCategories != null && !filterCategories.isEmpty()) {
 			BooleanQuery categoriesQuery = new BooleanQuery();
@@ -128,11 +133,11 @@ public class AudioItemIndex {
 		}
 
 		if (locales != null && !locales.isEmpty()) {
-//		BooleanQuery localesQuery = new BooleanQuery();
-//		for (PersistentLocale locale : locales) {
-//			localesQuery.add(new TermQuery(new Term(LOCALES_FIELD, locale.getLanguage())), Occur.SHOULD);
-//		}
-//		q.add(localesQuery, Occur.MUST);
+			BooleanQuery localesQuery = new BooleanQuery();
+			for (PersistentLocale locale : locales) {
+				localesQuery.add(new TermQuery(new Term(LOCALES_FIELD, locale.getLanguage().toLowerCase())), Occur.SHOULD);
+			}
+			q.add(localesQuery, Occur.MUST);
 		}
 
 		System.out.println(q);
@@ -165,16 +170,23 @@ public class AudioItemIndex {
 			SortedSetDocValuesFacetCounts facetCounts =
 					new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
 			List<FacetResult> facetResults = facetCounts.getAllDims(1000);
-			Map<Integer, Integer> categoryFacets = Maps.<Integer, Integer>newHashMap();
+			Map<Integer, Integer> categoryFacets = Maps.newHashMap();
+			Map<String, Integer> localeFacets = Maps.newHashMap();
 			for (FacetResult r : facetResults) {
 				if (r.dim.equals(CATEGORIES_FACET_FIELD)) {
 					for (LabelAndValue lv : r.labelValues) {
 						categoryFacets.put(PersistentCategory.getFromDatabase(lv.label).getId(), lv.value.intValue());
 					}
 				}
+				if (r.dim.equals(LOCALES_FACET_FIELD)) {
+					for (LabelAndValue lv : r.labelValues) {
+						localeFacets.put(lv.label, lv.value.intValue());
+					}
+
+				}
 			}
 
-			DataRequestResult result = new DataRequestResult(Taxonomy.getTaxonomy().getRootCategory(), categoryFacets, Maps.<String, Integer>newHashMap(), Lists.newArrayList(results),
+			DataRequestResult result = new DataRequestResult(Taxonomy.getTaxonomy().getRootCategory(), categoryFacets, localeFacets, Lists.newArrayList(results),
 					PersistentTag.getFromDatabase());
 
 			return result;

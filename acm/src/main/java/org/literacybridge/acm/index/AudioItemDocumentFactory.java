@@ -22,8 +22,6 @@ import org.apache.lucene.util.Version;
 import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.db.PersistentTag;
-import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataField;
 import org.literacybridge.acm.metadata.MetadataSpecification;
@@ -31,7 +29,6 @@ import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 
 public class AudioItemDocumentFactory {
 	private static final Set<MetadataField<String>> PREFIX_SEARCH_COLUMNS = ImmutableSet.<MetadataField<String>>builder()
@@ -39,17 +36,19 @@ public class AudioItemDocumentFactory {
 			.add(MetadataSpecification.DC_TITLE)
 			.add(MetadataSpecification.DC_IDENTIFIER)
 			.add(MetadataSpecification.DC_SOURCE)
-			.build();
-
-	private static final Set<MetadataField<String>> TEXT_SEARCH_COLUMNS = ImmutableSet.<MetadataField<String>>builder()
-			.add(MetadataSpecification.LB_ENGLISH_TRANSCRIPTION)
+			.add(MetadataSpecification.LB_MESSAGE_FORMAT)
+			.add(MetadataSpecification.LB_TARGET_AUDIENCE)
+			.add(MetadataSpecification.LB_PRIMARY_SPEAKER)
 			.add(MetadataSpecification.LB_NOTES)
+			.add(MetadataSpecification.LB_GOAL)
+			.add(MetadataSpecification.LB_TIMING)
+			.add(MetadataSpecification.LB_BENEFICIARY)
 			.build();
 
 	public Document createLuceneDocument(AudioItem audioItem) throws IOException {
 		Document doc = new Document();
 		Metadata metadata = audioItem.getMetadata();
-		for (MetadataField<String> field : Sets.union(PREFIX_SEARCH_COLUMNS, TEXT_SEARCH_COLUMNS)) {
+		for (MetadataField<String> field : PREFIX_SEARCH_COLUMNS) {
 			List<MetadataValue<String>> values = metadata.getMetadataValues(field);
 			if (values != null) {
 				for (MetadataValue<String> value : values) {
@@ -68,7 +67,7 @@ public class AudioItemDocumentFactory {
 			doc.add(new StringField(AudioItemIndex.TAGS_FIELD, tag.getName(), Store.YES));
 		}
 		for (MetadataValue<RFC3066LanguageCode> code : metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE)) {
-			doc.add(new StringField(AudioItemIndex.LOCALES_FIELD, code.toString(), Store.YES));
+			doc.add(new StringField(AudioItemIndex.LOCALES_FIELD, code.getValue().getLocale().getLanguage().toLowerCase(), Store.YES));
 			doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.LOCALES_FACET_FIELD, code.toString()));
 		}
 
