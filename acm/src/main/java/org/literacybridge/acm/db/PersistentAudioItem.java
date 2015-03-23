@@ -25,8 +25,8 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.index.AudioItemIndex;
 
 @Entity
@@ -161,9 +161,9 @@ public class PersistentAudioItem extends PersistentObject {
 
     @Override
     protected void afterCommitHook() {
-    	Application app = Application.getApplication();
-    	if (app != null) {
-	    	AudioItemIndex index = app.getAudioItemIndex();
+    	DBConfiguration db = ACMConfiguration.getCurrentDB();
+    	if (db != null) {
+	    	AudioItemIndex index = db.getAudioItemIndex();
 	    	if (index != null) {
 	    		try {
 	    			index.updateAudioItem(new AudioItem(this));

@@ -29,6 +29,7 @@ import javax.swing.JOptionPane;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.Persistence.DatabaseConnection;
+import org.literacybridge.acm.index.AudioItemIndex;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 import org.literacybridge.acm.repository.AudioItemRepository;
 
@@ -45,17 +46,30 @@ public class DBConfiguration extends Properties {
 	private Map<Locale,String> languageLables = new HashMap<Locale, String>();
 
 	private AudioItemRepository repository;
+	private AudioItemIndex audioItemIndex;
+
 	private ControlAccess controlAccess;
 	private DatabaseConnection dbConn;
 
 	public DBConfiguration(String acmName) {
 		this.acmName = acmName;
 	}
-
+	
+	public AudioItemIndex loadAudioItemIndex() throws IOException {
+	    if (audioItemIndex == null) {
+	        audioItemIndex = AudioItemIndex.loadOrBuild(getLuceneIndexDirectory());
+	    }
+	    return audioItemIndex;
+	}
+	
+	public AudioItemIndex getAudioItemIndex() {
+	    return audioItemIndex;
+	}
+	
 	public AudioItemRepository getRepository() {
 		return repository;
 	}
-
+	
     void setRepository(AudioItemRepository newRepository) {
 		repository = newRepository;
 	}
@@ -71,6 +85,13 @@ public class DBConfiguration extends Properties {
 	public static File getLiteracyBridgeHomeDir() {
 		return ACMConfiguration.LB_HOME_DIR;
 	}
+	
+	public File getLuceneIndexDirectory() {
+        return new File(getACMDirectory(), 
+                Constants.LuceneIndexDir + "/" + getSharedACMname() 
+                + "/" + controlAccess.getCurrentZipFilename().substring(
+                        0, controlAccess.getCurrentZipFilename().length() - 4));
+    }
 
 	String getTempACMsDirectory() {
 		File temp = new File (getACMDirectory(), Constants.TempDir);
@@ -284,6 +305,7 @@ public class DBConfiguration extends Properties {
 		if (!cacheDirectory.exists()) {
 			cacheDirectory.mkdirs();
 		}
+		
 		if (getConfigurationPropertiesFile().exists()) {
 			try {
 				BufferedInputStream in = new BufferedInputStream(new FileInputStream(getConfigurationPropertiesFile()));

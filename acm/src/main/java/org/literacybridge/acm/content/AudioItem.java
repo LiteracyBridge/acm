@@ -18,6 +18,7 @@ import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentLocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.metadata.Metadata;
+import org.literacybridge.acm.metadata.MetadataSpecification;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -186,6 +187,10 @@ public class AudioItem implements Persistable {
 	
 	public Metadata getMetadata() {
 		return getLocalizedAudioItem(null).getMetadata();
+	}
+	
+	public String getRevision() {
+	    return getMetadata().getMetadataValues(MetadataSpecification.DTB_REVISION).get(0).getValue();
 	}
 	
 	public Set<Locale> getAvailableLocalizations() {

@@ -10,6 +10,8 @@ import java.util.Map;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.api.IDataRequestService;
 import org.literacybridge.acm.categories.Taxonomy;
+import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
@@ -103,9 +105,9 @@ public class DataRequestService implements IDataRequestService {
 	}
 
 	private AudioItemIndex getAudioItemIndex() {
-		Application app = Application.getApplication();
-		if (app != null) {
-			return app.getAudioItemIndex();
+		DBConfiguration db = ACMConfiguration.getCurrentDB();
+		if (db != null) {
+			return db.getAudioItemIndex();
 		}
 		return null;
 	}

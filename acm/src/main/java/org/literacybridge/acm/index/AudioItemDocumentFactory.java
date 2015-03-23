@@ -70,6 +70,8 @@ public class AudioItemDocumentFactory {
 			doc.add(new StringField(AudioItemIndex.LOCALES_FIELD, code.getValue().getLocale().getLanguage().toLowerCase(), Store.YES));
 			doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.LOCALES_FACET_FIELD, code.toString()));
 		}
+		
+		doc.add(new StringField(AudioItemIndex.REVISION_FIELD, audioItem.getRevision(), Store.YES));
 
 		return doc;
 	}

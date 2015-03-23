@@ -1,5 +1,6 @@
 package org.literacybridge.acm.index;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
@@ -20,8 +21,10 @@ import org.apache.lucene.facet.LabelAndValue;
 import org.apache.lucene.facet.sortedset.DefaultSortedSetDocValuesReaderState;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetCounts;
 import org.apache.lucene.index.AtomicReaderContext;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
@@ -35,7 +38,7 @@ import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 import org.literacybridge.acm.api.IDataRequestResult;
@@ -58,8 +61,8 @@ public class AudioItemIndex {
 	public static final String TAGS_FIELD = "tags";
 	public static final String LOCALES_FIELD = "locales";
 	public static final String LOCALES_FACET_FIELD = "locales_facet";
-
-	private Directory dir = new RAMDirectory();
+	public static final String REVISION_FIELD = "rev";
+	
 	AudioItemDocumentFactory factory = new AudioItemDocumentFactory();
 	private IndexWriter writer;
 	private SearcherManager searchmanager;
@@ -67,26 +70,58 @@ public class AudioItemIndex {
 	private final FacetsConfig facetsConfig;
 	private final QueryAnalyzer queryAnalyzer;
 
-	public AudioItemIndex() throws IOException {
+	private AudioItemIndex(IndexWriter writer) throws IOException {
+	    this.writer = writer;
 		facetsConfig = new FacetsConfig();
 		facetsConfig.setMultiValued(AudioItemIndex.CATEGORIES_FACET_FIELD, true);
 		facetsConfig.setMultiValued(AudioItemIndex.LOCALES_FACET_FIELD, true);
 
 		queryAnalyzer = new QueryAnalyzer();
 
-		List<AudioItem> items = AudioItem.getFromDatabase();
-		IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_47, new AudioItemDocumentFactory.PrefixAnalyzer());
-		writer = new IndexWriter(dir, config);
 		searchmanager = new SearcherManager(writer, true, new SearcherFactory());
-
-		for (AudioItem item : items) {
-			updateAudioItem(item);
-		}
-
-		writer.commit();
 	}
+	
+	public static AudioItemIndex loadOrBuild(File path) throws IOException {
+        if (!path.exists()) {
+            path.mkdirs();
+        }
 
+        if (!path.isDirectory()) {
+            throw new IOException("Path must be a directory.");
+        }
+        
+        Directory dir = FSDirectory.open(path);
+        boolean indexFromDB = !DirectoryReader.indexExists(dir);
+
+        IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_47, new AudioItemDocumentFactory.PrefixAnalyzer());
+        config.setOpenMode(OpenMode.CREATE_OR_APPEND);
+        IndexWriter writer = new IndexWriter(dir, config);
+	    
+	    AudioItemIndex index = new AudioItemIndex(writer);
+	    
+	    if (indexFromDB) {
+            List<AudioItem> items = AudioItem.getFromDatabase();
+    
+            for (AudioItem item : items) {
+                index.updateAudioItem(item, false);
+            }
+    
+            index.writer.commit();
+            index.writer.forceMerge(1);
+	    }
+        return index;
+	}
+	
+	public void closeAndFlush() throws IOException {
+	    writer.forceMerge(1);
+	    writer.close();
+	}
+	
 	public void updateAudioItem(AudioItem audioItem) throws IOException {
+	    updateAudioItem(audioItem, true);
+	}
+	
+	private void updateAudioItem(AudioItem audioItem, boolean refreshSearcher) throws IOException {
 		Document doc = factory.createLuceneDocument(audioItem);
 		writer.updateDocument(new Term(UID_FIELD, audioItem.getUuid()),
 				facetsConfig.build(doc));

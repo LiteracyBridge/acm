@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -48,7 +49,6 @@ public class Application extends JXFrame {
 	private Color backgroundColor;
 	private final ACMStatusBar statusBar;
 	private final BackgroundTaskManager taskManager;
-	private final AudioItemIndex audioItemIndex;
 
 	public static SimpleMessageService getMessageService() {
 		return simpleMessageService;
@@ -120,21 +120,27 @@ public class Application extends JXFrame {
 	    setStatusBar(statusBar);
 	    taskManager = new BackgroundTaskManager(statusBar);
 
-	    AudioItemIndex index = null;
-
 		try {
 			splashScreen.setProgressLabel("Updating index...");
 			System.out.print("Building index...");
 			long start = System.currentTimeMillis();
-			index = new AudioItemIndex();
+			final AudioItemIndex index = ACMConfiguration.getCurrentDB().loadAudioItemIndex();
+			if (index != null) {
+    			Runtime.getRuntime().addShutdownHook(new Thread() {
+    			   @Override public void run() {
+    			       try {
+    			           index.closeAndFlush();
+    			       } catch (IOException e) {
+    			           LOG.log(Level.WARNING, "Unable to flush Lucene index to disk on shutdown.", e);
+    			       }
+    			   }
+    			});
+			}
 			long end = System.currentTimeMillis();
 			System.out.println("done. (" + (end - start) + " ms)");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-		audioItemIndex = index;
-
 
 	    // starts file system monitor after UI has been initialized
 		fileSystemMonitor.addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());
@@ -164,10 +170,6 @@ public class Application extends JXFrame {
 
 	public BackgroundTaskManager getTaskManager() {
 		return taskManager;
-	}
-
-	public AudioItemIndex getAudioItemIndex() {
-		return audioItemIndex;
 	}
 
 	public SimpleSoundPlayer getSoundPlayer() {
