@@ -238,7 +238,7 @@ public class TBBuilder {
 		File localContent = new File(targetTempDir,"content");
 		ZipUnzip.zip(localContent, new File(publishDeploymentDir,"content-" + zipSuffix), true, deployments);
 		deleteRevFiles(targetTempDir);
-		ZipUnzip.zip(new File(publishDeploymentDir,"software"), new File(publishDeploymentDir,"software-" + zipSuffix), true);
+		ZipUnzip.zip(new File(dropboxTbLoadersDir,"software"), new File(publishDeploymentDir,"software-" + zipSuffix), true);
 	}
 
 
