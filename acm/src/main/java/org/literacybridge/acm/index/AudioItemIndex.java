@@ -20,6 +20,7 @@ import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.LabelAndValue;
 import org.apache.lucene.facet.sortedset.DefaultSortedSetDocValuesReaderState;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetCounts;
+import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
@@ -125,7 +126,7 @@ public class AudioItemIndex {
 		Document doc = factory.createLuceneDocument(audioItem);
 		writer.updateDocument(new Term(UID_FIELD, audioItem.getUuid()),
 				facetsConfig.build(doc));
-		searchmanager.maybeRefresh();
+		searchmanager.maybeRefreshBlocking();
 	}
 
 	private void addTextQuery(BooleanQuery bq, String filterString) throws IOException {
@@ -175,7 +176,6 @@ public class AudioItemIndex {
 			q.add(localesQuery, Occur.MUST);
 		}
 
-		System.out.println(q);
 		return search(q);
 	}
 
@@ -186,12 +186,16 @@ public class AudioItemIndex {
 
 		try {
 			Collector collector = MultiCollector.wrap(facetsCollector, new Collector() {
+                private AtomicReader atomicReader;
+
 				@Override public void setScorer(Scorer arg0) throws IOException {}
-				@Override public void setNextReader(AtomicReaderContext arg0) throws IOException {}
+				@Override public void setNextReader(AtomicReaderContext context) throws IOException {
+				    this.atomicReader = context.reader();
+				}
 
 				@Override
 				public void collect(int docId) throws IOException {
-					Document doc = searcher.doc(docId);
+					Document doc = atomicReader.document(docId);
 					results.add(doc.get(UID_FIELD));
 				}
 

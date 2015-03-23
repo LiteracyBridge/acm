@@ -213,7 +213,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 		return getLanguage(audioItem, DC_LANGUAGE);
 	}
 
-	protected static Locale getLanguage(AudioItem audioItem, MetadataField<RFC3066LanguageCode> language) {
+	public static Locale getLanguage(AudioItem audioItem, MetadataField<RFC3066LanguageCode> language) {
 		// only shows first language
 		for (MetadataValue<RFC3066LanguageCode> mv : audioItem.getMetadata().getMetadataValues(language)) {
 			RFC3066LanguageCode code = mv.getValue();

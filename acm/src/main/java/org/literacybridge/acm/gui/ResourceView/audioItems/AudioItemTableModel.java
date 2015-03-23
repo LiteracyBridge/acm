@@ -16,6 +16,7 @@ import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.db.PersistentTagOrdering;
 import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel;
 import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
@@ -91,6 +92,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 		ensureCached(Math.max(0, rowIndex - 20), Math.min(result.getAudioItems().size(), rowIndex + 100));
 		synchronized (cache) {
 			return cache.get(result.getAudioItems().get(rowIndex));
+			//return AudioItem.getFromDatabase(result.getAudioItems().get(rowIndex));
 		}
 	}
 
@@ -148,8 +150,9 @@ public class AudioItemTableModel  extends AbstractTableModel {
 				}
 
 				case LANGUAGES: {
-					cellText = LanguageUtil.getLocalizedLanguageName(localizedAudioItem.getLocale());
-					break;
+                    cellText = LanguageUtil.getLocalizedLanguageName(AudioItemPropertiesModel
+                            .getLanguage(audioItem, MetadataSpecification.DC_LANGUAGE));
+                    break;
 				}
 
 /*				case MESSAGE_FORMAT: {
