@@ -14,23 +14,13 @@ import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.PersistentTag;
+import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.index.AudioItemIndex;
 
 public class DataRequestService implements IDataRequestService {
 	private static final IDataRequestService instance = new DataRequestService();
 
-	private AudioItemIndex index;
-
 	private DataRequestService() {
-		try {
-			long start = System.currentTimeMillis();
-			index = new AudioItemIndex();
-			long end = System.currentTimeMillis();
-			System.out.println("Index built in " + (end - start) + "ms.");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		// singleton
 	}
 
 	public static IDataRequestService getInstance() {
@@ -48,27 +38,29 @@ public class DataRequestService implements IDataRequestService {
 	 * @see main.java.org.literacybridge.acm.api.IDataRequestService#getData(java.lang.String)
 	 */
 	public IDataRequestResult getData(Locale locale, String filterString, List<PersistentCategory> categories, List<PersistentLocale> locales) {
+		AudioItemIndex index = getAudioItemIndex();
 		if (index != null) {
 			try {
 				return index.search(filterString, categories, locales);
 			} catch (IOException e) {
-				throw new RuntimeException(e);
+				e.printStackTrace();
 			}
-		} else {
-			Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(filterString, categories, locales);
-			Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, categories, locales);
-			List<String> audioItems = new ArrayList<String>(items.size());
-			for (PersistentAudioItem item : items) {
-				audioItems.add(item.getUuid());
-			}
-
-			Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, categories, locales);
-
-			Taxonomy taxonomy = Taxonomy.getTaxonomy();
-			DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
-					PersistentTag.getFromDatabase());
-			return result;
 		}
+
+		// Couldn't get results from Lucene index - fall back to DB
+		Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(filterString, categories, locales);
+		Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, categories, locales);
+		List<String> audioItems = new ArrayList<String>(items.size());
+		for (PersistentAudioItem item : items) {
+			audioItems.add(item.getUuid());
+		}
+
+		Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, categories, locales);
+
+		Taxonomy taxonomy = Taxonomy.getTaxonomy();
+		DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
+				PersistentTag.getFromDatabase());
+		return result;
 	}
 
 	@Override
@@ -85,14 +77,16 @@ public class DataRequestService implements IDataRequestService {
 	@Override
 	public IDataRequestResult getData(Locale locale, String filterString,
 			PersistentTag selectedTag) {
+		AudioItemIndex index = getAudioItemIndex();
 		if (index != null) {
 			try {
-				System.out.println(index.search(filterString, selectedTag));
+				return index.search(filterString, selectedTag);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 
+		// Couldn't get results from Lucene index - fall back to DB
 		Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(filterString, selectedTag);
 		Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, null, null);
 		List<String> audioItems = new ArrayList<String>(items.size());
@@ -106,5 +100,13 @@ public class DataRequestService implements IDataRequestService {
 		DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
 				PersistentTag.getFromDatabase());
 		return result;
+	}
+
+	private AudioItemIndex getAudioItemIndex() {
+		Application app = Application.getApplication();
+		if (app != null) {
+			return app.getAudioItemIndex();
+		}
+		return null;
 	}
 }

@@ -22,7 +22,10 @@ public class CommandLineParams {
 
 	@Option(name="-no_ui",usage="start the system without showing the UI")
 	public boolean disableUI;
-	
+
+	@Option(name="-no_index",usage="start the system without building a Lucene index")
+	public boolean disableIndex;
+
 	@Argument
-	public String sharedACM;	
+	public String sharedACM;
 }

@@ -16,32 +16,32 @@ import org.literacybridge.acm.config.ACMConfiguration;
 public abstract class PersistentObject implements Serializable, Persistable {
     @Transient
     private Logger mLogger = Logger.getLogger(getClass().getName());
-    
+
     private static final long serialVersionUID = 1L;
     protected static final int INITIAL_VALUE = 0;
     protected static final int ALLOCATION_SIZE = 1;
     protected static final String SEQUENCE_TABLE_NAME = "t_sequence";
     protected static final String SEQUENCE_KEY = "seq_name";
     protected static final String SEQUENCE_VALUE = "seq_count";
-    
+
     public abstract Object getId();
 
     @SuppressWarnings("unchecked")
 	public synchronized <T> T commit() {
         mLogger.finest("Committing object " + toString());
-        
+
         T persistentObj = null;
         EntityManager em = null;
-        
+
         try {
             em = ACMConfiguration.getCurrentDB().getEntityManager();
             EntityTransaction t = null;
             try {
                 t = em.getTransaction();
                 t.begin();
-                
+
                 persistentObj = commit(em);
-                
+
                 t.commit();
             } finally {
                 if (t.isActive()) {
@@ -51,31 +51,35 @@ public abstract class PersistentObject implements Serializable, Persistable {
         } finally {
             em.close();
         }
-        
-        return persistentObj;
 
+        afterCommitHook();
+        return persistentObj;
     }
-    
+
+    protected void afterCommitHook() {
+    	// nothing to do by default
+    }
+
     @SuppressWarnings("unchecked")
 	public synchronized <T> T commit(EntityManager em) {
     	return (T) (em != null ? em.merge(this) : commit());
     }
-    
+
     public synchronized void destroy() {
         mLogger.finest("Destroying object " + toString());
-        
+
         EntityManager em = null;
-        
+
         try {
             em = ACMConfiguration.getCurrentDB().getEntityManager();
             EntityTransaction t = null;
             try {
                 t = em.getTransaction();
                 t.begin();
-                
+
                 PersistentObject managedObj = em.merge(this);
                 em.remove(managedObj);
-                
+
                 t.commit();
             } finally {
                 if (t.isActive()) {
@@ -83,11 +87,11 @@ public abstract class PersistentObject implements Serializable, Persistable {
                 }
             }
         } finally {
-            em.close();        
+            em.close();
         }
     }
-    
-    
+
+
     @SuppressWarnings("unchecked")
 	public <T> T refresh() {
         if (getId() == null) {
@@ -97,12 +101,12 @@ public abstract class PersistentObject implements Serializable, Persistable {
         T newInstance = (T) PersistentQueries.getPersistentObject(this.getClass(), getId());
         return newInstance;
     }
-    
+
     @Override
     public int hashCode() {
         return (getId() != null) ? getId().hashCode() : super.hashCode();
     }
-    
+
     @Override
     public boolean equals(Object object) {
         if (object == null) {
@@ -110,7 +114,7 @@ public abstract class PersistentObject implements Serializable, Persistable {
         } else {
             if (this.getClass().getName().equals(object.getClass().getName())) {
                 PersistentObject other = (PersistentObject) object;
-                if ((this.getId() != null && other.getId() != null) 
+                if ((this.getId() != null && other.getId() != null)
                         && (this.getId().equals(other.getId()))) {
                     return true;
                 }
@@ -118,7 +122,7 @@ public abstract class PersistentObject implements Serializable, Persistable {
         }
         return super.equals(object);
     }
-    
+
     @Override
     public String toString() {
         return "[id=" + getId() + "]" + this.getClass().toString();

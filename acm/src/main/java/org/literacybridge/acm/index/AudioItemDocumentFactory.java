@@ -128,17 +128,4 @@ public class AudioItemDocumentFactory {
 			first = true;
 		}
 	}
-
-	public static void main(String[] args) throws Exception {
-		CommandLineParams params = new CommandLineParams();
-		params.disableUI = true;
-		params.readonly = true;
-		params.sandbox = true;
-		params.sharedACM = "ACM-UWR";
-		Application.startUp(params);
-		long start = System.currentTimeMillis();
-		AudioItemIndex index = new AudioItemIndex();
-		long end = System.currentTimeMillis();
-		System.out.println((end - start) + "ms.");
-	}
 }

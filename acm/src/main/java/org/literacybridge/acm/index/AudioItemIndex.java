@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenFilter;
@@ -47,6 +48,7 @@ import org.literacybridge.acm.db.PersistentTag;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 public class AudioItemIndex {
 	public static final String TEXT_FIELD = "text";
@@ -139,41 +141,46 @@ public class AudioItemIndex {
 
 	private IDataRequestResult search(Query query) throws IOException {
 		final FacetsCollector facetsCollector = new FacetsCollector();
-		final List<String> results = Lists.newArrayList();
+		final Set<String> results = Sets.newHashSet();
 		final IndexSearcher searcher = searchmanager.acquire();
 
-		Collector collector = MultiCollector.wrap(facetsCollector, new Collector() {
-			@Override public void setScorer(Scorer arg0) throws IOException {}
-			@Override public void setNextReader(AtomicReaderContext arg0) throws IOException {}
+		try {
+			Collector collector = MultiCollector.wrap(facetsCollector, new Collector() {
+				@Override public void setScorer(Scorer arg0) throws IOException {}
+				@Override public void setNextReader(AtomicReaderContext arg0) throws IOException {}
 
-			@Override
-			public void collect(int docId) throws IOException {
-				Document doc = searcher.doc(docId);
-				results.add(doc.get(UID_FIELD));
-			}
+				@Override
+				public void collect(int docId) throws IOException {
+					Document doc = searcher.doc(docId);
+					results.add(doc.get(UID_FIELD));
+				}
 
-			@Override public boolean acceptsDocsOutOfOrder() {
-				return true;
-			}
-		});
+				@Override public boolean acceptsDocsOutOfOrder() {
+					return true;
+				}
+			});
 
-		searcher.search(query, collector);
-		SortedSetDocValuesFacetCounts facetCounts =
-				new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
-		List<FacetResult> facetResults = facetCounts.getAllDims(1000);
-		Map<Integer, Integer> categoryFacets = Maps.<Integer, Integer>newHashMap();
-		for (FacetResult r : facetResults) {
-			if (r.dim.equals(CATEGORIES_FACET_FIELD)) {
-				for (LabelAndValue lv : r.labelValues) {
-					categoryFacets.put(PersistentCategory.getFromDatabase(lv.label).getId(), lv.value.intValue());
+			searcher.search(query, collector);
+
+			SortedSetDocValuesFacetCounts facetCounts =
+					new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
+			List<FacetResult> facetResults = facetCounts.getAllDims(1000);
+			Map<Integer, Integer> categoryFacets = Maps.<Integer, Integer>newHashMap();
+			for (FacetResult r : facetResults) {
+				if (r.dim.equals(CATEGORIES_FACET_FIELD)) {
+					for (LabelAndValue lv : r.labelValues) {
+						categoryFacets.put(PersistentCategory.getFromDatabase(lv.label).getId(), lv.value.intValue());
+					}
 				}
 			}
+
+			DataRequestResult result = new DataRequestResult(Taxonomy.getTaxonomy().getRootCategory(), categoryFacets, Maps.<String, Integer>newHashMap(), Lists.newArrayList(results),
+					PersistentTag.getFromDatabase());
+
+			return result;
+		} finally {
+			searchmanager.release(searcher);
 		}
-
-		DataRequestResult result = new DataRequestResult(Taxonomy.getTaxonomy().getRootCategory(), categoryFacets, Maps.<String, Integer>newHashMap(), results,
-				PersistentTag.getFromDatabase());
-
-		return result;
 	}
 
 	public static class QueryAnalyzer extends Analyzer {
