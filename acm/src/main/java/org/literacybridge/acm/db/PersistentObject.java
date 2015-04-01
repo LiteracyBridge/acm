@@ -1,7 +1,6 @@
 package org.literacybridge.acm.db;
 
 import java.io.Serializable;
-
 import java.util.logging.Logger;
 
 import javax.persistence.EntityManager;
@@ -62,7 +61,15 @@ public abstract class PersistentObject implements Serializable, Persistable {
 
     @SuppressWarnings("unchecked")
 	public synchronized <T> T commit(EntityManager em) {
-    	return (T) (em != null ? em.merge(this) : commit());
+        final T result;
+        if (em != null) {
+            result = (T) em.merge(this);
+            afterCommitHook();
+        } else {
+            result = commit();
+        }
+
+        return result;
     }
 
     public synchronized void destroy() {

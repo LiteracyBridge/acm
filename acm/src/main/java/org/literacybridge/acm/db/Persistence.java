@@ -150,8 +150,13 @@ public class Persistence {
 			if (!audioItem.hasCategory(Taxonomy.getTaxonomy().getRootCategory())) {
 				List<Category> categories = Lists.newLinkedList(audioItem.getCategoryLeavesList());
 				if (categories.isEmpty()) {
-					LOG.log(Level.WARNING, "Audioitem " + audioItem.getUuid() + " does not contain any leaf categories. Assigning new general leaf category.");
-					categories = Lists.newLinkedList(audioItem.getCategoryList());
+					categories = Lists.newLinkedList();
+					Category leaf = Taxonomy.getTaxonomy().getRootCategory();
+					while (leaf.hasChildren()) {
+					    leaf = leaf.getSortedChildren().get(0);
+					}
+					categories.add(leaf);
+	                   LOG.log(Level.WARNING, "Audioitem " + audioItem.getUuid() + " does not contain any leaf categories. Assigning new general leaf category: " + leaf);
 				}
 				audioItem.removeAllCategories();
 				for (Category category : categories) {
