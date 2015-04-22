@@ -104,11 +104,11 @@ public class AudioItemIndex {
             List<AudioItem> items = AudioItem.getFromDatabase();
     
             for (AudioItem item : items) {
-                index.updateAudioItem(item, false);
+                index.addAudioItem(item);
             }
     
-            index.writer.commit();
             index.writer.forceMerge(1);
+            index.writer.commit();
 	    }
         return index;
 	}
@@ -119,15 +119,16 @@ public class AudioItemIndex {
 	}
 	
 	public void updateAudioItem(AudioItem audioItem) throws IOException {
-	    updateAudioItem(audioItem, true);
-	}
-	
-	private void updateAudioItem(AudioItem audioItem, boolean refreshSearcher) throws IOException {
 		Document doc = factory.createLuceneDocument(audioItem);
 		writer.updateDocument(new Term(UID_FIELD, audioItem.getUuid()),
 				facetsConfig.build(doc));
 		searchmanager.maybeRefreshBlocking();
 	}
+
+    private void addAudioItem(AudioItem audioItem) throws IOException {
+        Document doc = factory.createLuceneDocument(audioItem);
+        writer.addDocument(facetsConfig.build(doc));
+    }
 
 	private void addTextQuery(BooleanQuery bq, String filterString) throws IOException {
 		if (filterString == null || filterString.isEmpty()) {
