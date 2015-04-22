@@ -29,6 +29,7 @@ import javax.swing.JOptionPane;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.Persistence.DatabaseConnection;
+import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.index.AudioItemIndex;
 import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 import org.literacybridge.acm.repository.AudioItemRepository;
@@ -47,12 +48,14 @@ public class DBConfiguration extends Properties {
 
 	private AudioItemRepository repository;
 	private AudioItemIndex audioItemIndex;
+	private AudioItemCache cache;
 
 	private ControlAccess controlAccess;
 	private DatabaseConnection dbConn;
 
 	public DBConfiguration(String acmName) {
 		this.acmName = acmName;
+		this.cache = new AudioItemCache();
 	}
 	
 	public AudioItemIndex loadAudioItemIndex() throws IOException {
@@ -62,6 +65,10 @@ public class DBConfiguration extends Properties {
 	    return audioItemIndex;
 	}
 	
+	public AudioItemCache getAudioItemCache() {
+	    return cache;
+	}
+
 	public AudioItemIndex getAudioItemIndex() {
 	    return audioItemIndex;
 	}
