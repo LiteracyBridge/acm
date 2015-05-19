@@ -21,9 +21,11 @@ import org.apache.commons.lang.StringUtils;
 import org.eclipse.persistence.jpa.JpaHelper;
 import org.literacybridge.acm.categories.Taxonomy;
 import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.content.LocalizedAudioItem;
+import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
@@ -133,6 +135,12 @@ public class Persistence {
     		}
     	}
     	
+        DBConfiguration config = ACMConfiguration.getCurrentDB();
+        AudioItemCache cache = null;
+        if (config != null) {
+            cache = ACMConfiguration.getCurrentDB().getAudioItemCache();
+        }
+
     	for (AudioItem audioItem : AudioItem.getFromDatabase()) {
         	// =================================================================
     		// 1) calculate duration of audio items
@@ -150,14 +158,23 @@ public class Persistence {
 			if (!audioItem.hasCategory(Taxonomy.getTaxonomy().getRootCategory())) {
 				List<Category> categories = Lists.newLinkedList(audioItem.getCategoryLeavesList());
 				if (categories.isEmpty()) {
-					LOG.log(Level.WARNING, "Audioitem " + audioItem.getUuid() + " does not contain any leaf categories. Assigning new general leaf category.");
-					categories = Lists.newLinkedList(audioItem.getCategoryList());
+					categories = Lists.newLinkedList();
+					Category leaf = Taxonomy.getTaxonomy().getRootCategory();
+					while (leaf.hasChildren()) {
+					    leaf = leaf.getSortedChildren().get(0);
+					}
+					categories.add(leaf);
+	                   LOG.log(Level.WARNING, "Audioitem " + audioItem.getUuid() + " does not contain any leaf categories. Assigning new general leaf category: " + leaf);
 				}
 				audioItem.removeAllCategories();
 				for (Category category : categories) {
 					audioItem.addCategory(category);
 				}
 				audioItem.commit();
+			}
+
+			if (cache != null) {
+			    cache.add(audioItem);
 			}
     	}
 	}

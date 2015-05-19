@@ -123,7 +123,7 @@ public class AudioItemView extends Container implements Observer {
 	public void update(Observable o, Object arg) {
 		if (arg instanceof IDataRequestResult) {
 			currResult = (IDataRequestResult) arg;
-			updateTable(new AudioItemTableModel(currResult));
+			updateTable(new AudioItemTableModel(currResult, ACMConfiguration.getCurrentDB().getAudioItemCache()));
 		}
 
 		if (arg instanceof UILanguageChanged) {
@@ -356,7 +356,7 @@ public class AudioItemView extends Container implements Observer {
 
 	// Special handlers
 	public void setData(IDataRequestResult result) {
-		updateTable(new AudioItemTableModel(result));
+		updateTable(new AudioItemTableModel(result, ACMConfiguration.getCurrentDB().getAudioItemCache()));
 		mouseListener.setCurrentResult(result);
 	}
 

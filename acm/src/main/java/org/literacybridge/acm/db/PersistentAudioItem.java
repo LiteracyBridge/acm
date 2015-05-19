@@ -27,6 +27,7 @@ import javax.persistence.TableGenerator;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.index.AudioItemIndex;
 
 @Entity
@@ -171,6 +172,11 @@ public class PersistentAudioItem extends PersistentObject {
 	    			e.printStackTrace();
 	    		}
 	    	}
+
+            AudioItemCache cache = db.getAudioItemCache();
+            if (cache != null) {
+                cache.invalidate(getUuid());
+            }
     	}
     }
 

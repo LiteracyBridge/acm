@@ -4,7 +4,6 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import javax.swing.table.AbstractTableModel;
 
@@ -16,6 +15,7 @@ import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.db.PersistentTagOrdering;
 import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel;
 import org.literacybridge.acm.gui.util.LocalizedAudioItemNode;
 import org.literacybridge.acm.gui.util.UIUtils;
@@ -24,9 +24,7 @@ import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 
-import com.google.common.collect.Maps;
-
-public class AudioItemTableModel  extends AbstractTableModel {
+public class AudioItemTableModel extends AbstractTableModel {
 
 	private static final long serialVersionUID = -2998511081572936717L;
 
@@ -40,27 +38,21 @@ public class AudioItemTableModel  extends AbstractTableModel {
 	public static final int CATEGORIES 		   = 3;
 	public static final int SOURCE			   = 4;
 	public static final int LANGUAGES          = 5;
-//	public static final int MESSAGE_FORMAT	   = 5;
 	public static final int DATE_FILE_MODIFIED = 6;
 	public static final int PLAYLIST_ORDER	   = 7;
-//	public static final int OPEN_COUNT 		   = 4;
-//	public static final int COMPLETION_COUNT   = 5;
-//	public static final int COPY_COUNT 		   = 6;
-//	public static final int SURVEY1_COUNT 	   = 7;
-//	public static final int APPLY_COUNT 	   = 8;
-//	public static final int NOHELP_COUNT 	   = 9;
 	private static String[] columns = null;
 
 	protected IDataRequestResult result = null;
 
-	private Map<String, AudioItem> cache = Maps.newHashMap();
+	private final AudioItemCache cache;
 
 	public static void initializeTableColumns( String[] initalColumnNames) {
 		columns = initalColumnNames;
 	}
 
-	public AudioItemTableModel(IDataRequestResult result) {
+	public AudioItemTableModel(IDataRequestResult result, AudioItemCache cache) {
 		this.result = result;
+		this.cache = cache;
 		if (result != null) {
 			result.getAudioItems();
 		}
@@ -92,7 +84,6 @@ public class AudioItemTableModel  extends AbstractTableModel {
 		ensureCached(Math.max(0, rowIndex - 20), Math.min(result.getAudioItems().size(), rowIndex + 100));
 		synchronized (cache) {
 			return cache.get(result.getAudioItems().get(rowIndex));
-			//return AudioItem.getFromDatabase(result.getAudioItems().get(rowIndex));
 		}
 	}
 
@@ -100,9 +91,7 @@ public class AudioItemTableModel  extends AbstractTableModel {
 		synchronized (cache) {
 			for (int row = fromRow; row < toRow; row++) {
 				String uuid = result.getAudioItems().get(row);
-				if (!cache.containsKey(uuid)) {
-					cache.put(uuid, AudioItem.getFromDatabase(uuid));
-				}
+				cache.get(uuid);
 			}
 		}
 	}
