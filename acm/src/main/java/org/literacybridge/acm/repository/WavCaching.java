@@ -15,8 +15,15 @@ public class WavCaching {
 
     private Set<AudioItem> uncachedAudioItems = new HashSet<AudioItem>();
 
-    public void cacheNewA18Files() {
+    public WavCaching() {
         findUncachedWaveFiles();
+    }
+
+    public boolean hasUncachedA18Files() {
+        return !uncachedAudioItems.isEmpty();
+    }
+
+    public void cacheNewA18Files() {
         Application.getApplication().getTaskManager().execute(new Task());
     }
 

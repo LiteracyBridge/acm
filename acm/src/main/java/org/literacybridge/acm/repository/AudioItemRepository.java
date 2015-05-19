@@ -39,6 +39,31 @@ import com.google.common.collect.Sets;
 public abstract class AudioItemRepository {
     private final static File TMP_DIR = new File(System.getProperty("java.io.tmpdir"));
 
+    public static final class GCInfo {
+        private final boolean gcRecommended;
+        private final long currentSizeInBytes;
+        private final long maxSizeInBytes;
+
+        public GCInfo(boolean gcRecommended, long currentSizeInBytes,
+                long maxSizeInBytes) {
+            this.gcRecommended = gcRecommended;
+            this.currentSizeInBytes = currentSizeInBytes;
+            this.maxSizeInBytes = maxSizeInBytes;
+        }
+
+        public boolean isGcRecommended() {
+            return gcRecommended;
+        }
+
+        public long getCurrentSizeInBytes() {
+            return currentSizeInBytes;
+        }
+
+        public long getMaxSizeInBytes() {
+            return maxSizeInBytes;
+        }
+    }
+
     public static final class DuplicateItemException extends Exception {
         public DuplicateItemException(String msg) {
             super(msg);
@@ -154,9 +179,6 @@ public abstract class AudioItemRepository {
         // update the duration in the audioitem's metadata section
         A18DurationUtil.updateDuration(audioItem);
 
-        // optional garbage collection
-        gc();
-
         return toFile;
     }
 
@@ -207,9 +229,6 @@ public abstract class AudioItemRepository {
             audioConverter.convert(sourceFile, audioFile.getParentFile(), TMP_DIR,
                     targetFormat.getAudioConversionFormat(), false);
         }
-
-        // optional garbage collection
-        gc();
 
         return audioFile;
     }
@@ -297,10 +316,17 @@ public abstract class AudioItemRepository {
     protected abstract File resolveFile(AudioItem audioItem, AudioFormat format, boolean writeAccess);
 
     /**
+     * Returns whether this repository needs to perform gc.
+     */
+    public GCInfo needsGc() throws IOException {
+        return new GCInfo(false, 0, 0);
+    }
+
+    /**
      * Can optionally be overwritten by subclasses to performs a garbage collection
      * in the repository to free up disk space.
      */
-    protected void gc() throws IOException {
+    public void gc() throws IOException {
         // nothing to do by default
     }
 
