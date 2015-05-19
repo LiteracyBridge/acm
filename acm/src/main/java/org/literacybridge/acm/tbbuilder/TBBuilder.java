@@ -301,13 +301,16 @@ public class TBBuilder {
 		} else if (args[0].equalsIgnoreCase("CREATE")) {
 			tbb = new TBBuilder(args[1]);
 			tbb.createDeployment(args[2]);
-			if (args.length == 5) {
+			if (args.length == 5) {  // one package with default group
 				tbb.addImage(args[3],args[4], "default");
-			} else if (args.length == 6 || args.length == 9) {
+			} else if (args.length == 7) {  // two packages with default group
+				tbb.addImage(args[3], args[4], "default");
+				tbb.addImage(args[5], args[6], "default");
+			} else if (args.length == 6) {  // one package with specified group
 				tbb.addImage(args[3],args[4], args[5]);
-				if (args.length == 9) {
-					tbb.addImage(args[6],args[7], args[8]);
-				}
+			} else if (args.length == 9) {
+				tbb.addImage(args[3],args[4], args[5]);
+				tbb.addImage(args[6],args[7], args[8]);
 			} else {
 				printUsage();
 				System.exit(1);
