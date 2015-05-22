@@ -19,6 +19,7 @@ import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.tbloader.TBLoader;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.acm.utils.ZipUnzip;
 
@@ -190,9 +191,9 @@ public class TBBuilder {
 		FileUtils.copyDirectory(new File(dropboxTbLoadersDir, "software"),localSoftware);
 
 		deleteRevFiles(targetTempDir);
-		char revision;
-		revision = getLatestDeploymentVersion(dropboxTbLoadersDir,deploymentNumber,false);
-		File newRev = new File(targetTempDir,deploymentNumber + "-" + revision + ".rev");
+		String revision;
+		revision = TBLoader.UNPUBLISHED_REV + "_" + TBLoader.getDateTime().substring(8, 17);
+		File newRev = new File(targetTempDir,revision + ".rev");
 		newRev.createNewFile();
 
 		System.out.println("\nDone with deployment of software and basic/community content.");
@@ -218,9 +219,9 @@ public class TBBuilder {
 			throw new Exception("Too many *rev files.  There can only be one.");
 		else if (files.length == 1) {
 			revision = files[0].getName().subSequence(deploymentNumber.length()+1,deploymentNumber.length()+2).charAt(0);
-			revision++;
 		}
 		if (updateRevision) {
+			revision++;
 			// search files again, but this time for all *.rev files, not just the one with the same deployment number so we can delete them all
 			files = publishTbLoadersDir.listFiles(new FilenameFilter() {
 				@Override

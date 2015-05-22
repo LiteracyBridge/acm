@@ -52,6 +52,7 @@ import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.io.FileUtils;
 import org.jdesktop.swingx.JXDatePicker;
+import org.literacybridge.acm.config.ACMConfiguration;
 // commenting out import below so that TBLoader can stand-alone as .class 
 // until new ACM is running on Fidelis's laptop
 //import org.literacybridge.acm.utils.OSChecker;
@@ -61,15 +62,16 @@ import org.literacybridge.acm.utils.ZipUnzip;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "r1232";   // check new location of flash stats TBInfo class
-	private static final String COLLECTION_SUBDIR = "\\collected-data";
+	private static final String VERSION = "r1505221";   // 20(15)/(05)/(22) #(1)
+	public static final String UNPUBLISHED_REV = "UNPUBLISHED";
+	private static final String COLLECTION_SUBDIR = "/collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
-	private static final String SW_SUBDIR = ".\\software\\";
-	private static final String CONTENT_SUBDIR = ".\\content\\";
-	private static final String CONTENT_BASIC_SUBDIR = "basic\\";
-	private static final String COMMUNITIES_SUBDIR = "communities\\";
-	private static final String IMAGES_SUBDIR = "images\\";
-	private static final String SCRIPT_SUBDIR = SW_SUBDIR + "scripts\\";
+	private static final String SW_SUBDIR = "./software/";
+	private static final String CONTENT_SUBDIR = "./content/";
+	private static final String CONTENT_BASIC_SUBDIR = "basic/";
+	private static final String COMMUNITIES_SUBDIR = "communities/";
+	private static final String IMAGES_SUBDIR = "images/";
+	private static final String SCRIPT_SUBDIR = SW_SUBDIR + "scripts/";
 	private static final String NO_SERIAL_NUMBER = "UNKNOWN";
 	private static final String NO_DRIVE = "(nothing connected)";
 	private static final String TRIGGER_FILE_CHECK = "checkdir";
@@ -140,7 +142,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	void getRevisionNumbers() {
 		revision = "(No firmware)";
 
-		File basicContentPath = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "\\" + CONTENT_BASIC_SUBDIR);
+		File basicContentPath = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "" + CONTENT_BASIC_SUBDIR);
 		Logger.LogString("DEPLOYMENT:"+newDeploymentList.getSelectedItem().toString());
 		try {
 			File[] files;
@@ -199,13 +201,37 @@ public class TBLoader extends JFrame implements ActionListener {
 				return lowercase.endsWith(".rev");
 			}
 		});				
-		if (files.length > 1)
-			imageRevision = "(Multiple Image Revisions!)";
-		else if (files.length == 1) {
+		if (files.length > 1) {
+			// Multiple Image Revisions! -- Delete all to go back to published version, unless one marks it as UNPUBLISHED
+			boolean unpublished = false;
+			for (File f:files) {
+				if (!f.getName().startsWith(TBLoader.UNPUBLISHED_REV)) {
+					f.delete();
+				} else {
+					unpublished = true;
+					imageRevision = f.getName();
+					imageRevision = imageRevision.substring(0, imageRevision.length() - 4);
+				}
+			}
+			if (!unpublished) {
+	        	JOptionPane.showMessageDialog(null, "Revision conflict. Please click OK to shutdown.\nThen restart the TB-Loader to get the latest published version.");				
+	        	System.exit(NORMAL);
+			}
+		} else if (files.length == 1) {
 			imageRevision = files[0].getName();
 			imageRevision = imageRevision.substring(0, imageRevision.length() - 4);
 		}
 		setTitle("TB-Loader " + VERSION + "/" + imageRevision); 
+		if (imageRevision.startsWith(TBLoader.UNPUBLISHED_REV)) {
+			Object[] options = {"Yes-refresh from published","No-keep unpublished"};
+			int answer = JOptionPane.showOptionDialog(null, "This TB Loader is running an unpublished version.\nWould you like to delete the unpublished version and use the latest published version?", "Unpublished",
+	                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[1]);
+	        if (answer == JOptionPane.YES_OPTION) {
+	            files[0].delete();
+	        	JOptionPane.showMessageDialog(null, "Click OK to shutdown. Then restart to get the latest published version of the TB Loader.");
+	        	System.exit(NORMAL);
+	        }			
+		}
 
 		//"   Update:" + deploymentName + "   Firmware:" + revision);
 		
@@ -435,7 +461,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		return s;
 	}
 	
-	private static String getDateTime() {
+	public static String getDateTime() {
 		Calendar cal = Calendar.getInstance();
 		int year = cal.get(Calendar.YEAR);
 		int month = cal.get(Calendar.MONTH) + 1	;
@@ -456,22 +482,16 @@ public class TBLoader extends JFrame implements ActionListener {
 		f = new File(filename);
 		if (!f.exists())
 			f.mkdirs();
-		filename += "\\log-" + (TBLoader.currentDrive.datetime.equals("")?getDateTime():TBLoader.currentDrive.datetime) +".txt";
+		filename += "log-" + (TBLoader.currentDrive.datetime.equals("")?getDateTime():TBLoader.currentDrive.datetime) +".txt";
 		return filename;
 	}
 	private void setDeviceIDandPaths() {
-		int i = 0;
-		final int MAX_PATHS = 5;
-		String paths[]= new String[MAX_PATHS];
+		String path;
 
 		try {
+			homepath = System.getProperty("user.home");
 			BufferedReader reader;
-			//Process proc = Runtime.getRuntime().exec("cmd /C echo %HOMEDRIVE%%HOMEPATH%");
-			//reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-			homepath = System.getenv("HOMEDRIVE") + System.getenv("HOMEPATH"); 
-			//new String(reader.readLine());
-			//reader.close();
-			String LB_DIR = new String(homepath + "\\LiteracyBridge");
+			String LB_DIR = new String(homepath + "/LiteracyBridge");
 			File f = new File(LB_DIR);
 			f.mkdirs();
 
@@ -534,18 +554,17 @@ public class TBLoader extends JFrame implements ActionListener {
 				newFile.createNewFile();
 				*/
 			}
-			TEMP_COLLECTION_DIR = LB_DIR + COLLECTION_SUBDIR + "\\" + TBLoader.project;
+			TEMP_COLLECTION_DIR = LB_DIR + COLLECTION_SUBDIR + "/" + TBLoader.project;
 			f = new File(TEMP_COLLECTION_DIR);
 			f.mkdirs();
 			TBLoader.tempCollectionFile = f;
 			
 			reader = new BufferedReader(new FileReader(new File(SW_SUBDIR + "paths.txt")));
 			copyTo = "";
-			while (reader.ready() && i < MAX_PATHS) {
-				paths[i] = reader.readLine().replaceAll("%HOMEPATH%", Matcher.quoteReplacement(homepath));
-				//Logger.LogString(paths[i]);
-				if ((new File(paths[i])).exists()) {
-					copyTo = paths[i];
+			while (reader.ready()) {
+				path = reader.readLine().replaceAll("%HOMEPATH%", Matcher.quoteReplacement(homepath));
+				if ((new File(path)).exists()) {
+					copyTo = path;
 					break;						
 				}
 			}
@@ -668,6 +687,8 @@ public class TBLoader extends JFrame implements ActionListener {
 		newDeploymentList.removeAllItems();
 		File[] packageFolder = contentPath.listFiles();
 		for (int i = 0; i<packageFolder.length; i++) {
+			if (packageFolder[i].isHidden())
+				continue;
 			newDeploymentList.addItem(packageFolder[i].getName());
 			if (imageRevision.startsWith(packageFolder[i].getName())) {
 				indexSelected = i;
@@ -682,7 +703,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		newCommunityList.removeAllItems();
 		File[] files;
 
-		File fCommunityDir = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "\\" + COMMUNITIES_SUBDIR);
+		File fCommunityDir = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "/" + COMMUNITIES_SUBDIR);
 		
 		files = fCommunityDir.listFiles(new FilenameFilter() {
 			@Override public boolean accept(File dir, String name) {
@@ -1196,7 +1217,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		String imageName = "";
 		String groupName = "";
 		File[] images;
-		File imagedir = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "\\" + IMAGES_SUBDIR + "\\");
+		File imagedir = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "/" + IMAGES_SUBDIR + "/");
 		images = imagedir.listFiles(new FilenameFilter() {
 			@Override public boolean accept(File dir, String name) {
 				return dir.isDirectory();
@@ -1206,7 +1227,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			// grab first image package
 			imageName = images[0].getName();
 	    } else if (images != null) {	
-			File fCommunityDir = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "\\" + COMMUNITIES_SUBDIR + "\\" + community + "\\" + "system");
+			File fCommunityDir = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "/" + COMMUNITIES_SUBDIR + "/" + community + "/" + "system");
 			
 			if (fCommunityDir.exists()) {
 				// get groups
@@ -1550,13 +1571,13 @@ public class TBLoader extends JFrame implements ActionListener {
 	}
 
 	private synchronized void checkDirUpdate() {
-		String triggerFile = copyTo + "\\" + TRIGGER_FILE_CHECK;
+		String triggerFile = copyTo + "/" + TRIGGER_FILE_CHECK;
 		File f = new File (triggerFile);
 		if (f.exists()) {
 			status.setText("Updating list of files to send");
 			try {
 				f.delete();
-				execute("cmd /C dir " + copyTo + " /S > " + copyTo + "\\dir.txt");
+				execute("cmd /C dir " + copyTo + " /S > " + copyTo + "/dir.txt");
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
