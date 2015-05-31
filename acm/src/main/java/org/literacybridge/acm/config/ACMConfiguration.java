@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
@@ -17,6 +18,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.categories.Taxonomy;
 import org.literacybridge.acm.gui.CommandLineParams;
 
 import com.google.common.collect.Lists;
@@ -52,14 +54,24 @@ public class ACMConfiguration {
 			System.out.println("Found DB " + config.getSharedACMname());
 		}
 		
-		writeProps();
+        if (!ACMGlobalConfigProperties.containsKey(Constants.USER_NAME)) {
+            String username = (String)JOptionPane.showInputDialog(null, "Enter Username:", "Missing Username", JOptionPane.PLAIN_MESSAGE);
+            ACMGlobalConfigProperties.put(Constants.USER_NAME, username);
+            //propsChanged = true;
+        }
+        if (!ACMGlobalConfigProperties.containsKey(Constants.USER_CONTACT_INFO)) {
+            String contactinfo = (String)JOptionPane.showInputDialog(null, "Enter Phone #:", "Missing Contact Info", JOptionPane.PLAIN_MESSAGE);
+            ACMGlobalConfigProperties.put(Constants.USER_CONTACT_INFO, contactinfo);
+            //propsChanged = true;
+        }
+
+        writeProps();
 	}
 
 	// TODO: when we have a homescreen this method needs to be split up into different steps,
 	// e.g. close DB, open new DB, etc.
 	public synchronized static void setCurrentDB(String dbName, boolean createEmptyDB) throws Exception {
 		DBConfiguration config = allDBs.get(dbName);
-		
 		if (config == null) {
 			if (!createEmptyDB) {
 				throw new IllegalArgumentException("DB '" + dbName + "' not known.");
@@ -72,6 +84,8 @@ public class ACMConfiguration {
 		DBConfiguration oldDB = currentDB.get();
 		if (oldDB != null) {
 			oldDB.getDatabaseConnection().close();
+			Taxonomy.resetTaxonomy(); // necessary 
+			LockACM.unlockFile();
 		}
 
 		config.init(); 
@@ -106,6 +120,56 @@ public class ACMConfiguration {
 		} 		
 		return f;		
 	}
+	
+    public static String getUserName() {
+        return ACMGlobalConfigProperties.getProperty("USER_NAME");
+    }
+
+    public static String getUserContact() {
+        return ACMGlobalConfigProperties.getProperty(Constants.USER_CONTACT_INFO);
+    }
+
+    public static String getRecordingCounter() {
+        return ACMGlobalConfigProperties.getProperty(Constants.RECORDING_COUNTER_PROP);
+    }
+
+    public static void setRecordingCounter(String counter) {
+    	ACMGlobalConfigProperties.setProperty(Constants.RECORDING_COUNTER_PROP, counter);
+    	ACMConfiguration.writeProps();
+    }
+
+    public static String getNewAudioItemUID() throws IOException {
+        String value = ACMConfiguration.getRecordingCounter();
+        int counter = (value == null) ? 0 : Integer.parseInt(value, Character.MAX_RADIX);
+        counter++;
+        value = Integer.toString(counter, Character.MAX_RADIX);
+        String uuid = "LB-2" + "_"  + getDeviceID() + "_" + value;
+
+        // make sure we remember that this uuid was already used
+        ACMConfiguration.setRecordingCounter(value);
+        //writeProps();
+
+        return uuid;
+    }
+
+    public static String getDeviceID() throws IOException {
+        String value = ACMGlobalConfigProperties.getProperty(Constants.DEVICE_ID_PROP);
+        if (value == null) {
+            final int n = 10;
+            Random rnd = new Random();
+            // generate 10-digit unique ID for this acm instance
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < n; i++) {
+                builder.append(Character.forDigit(rnd.nextInt(Character.MAX_RADIX), Character.MAX_RADIX));
+            }
+            value = builder.toString();
+            ACMGlobalConfigProperties.setProperty(Constants.DEVICE_ID_PROP, value);
+            writeProps();
+        }
+
+        return value;
+    }
+
 	
 	private static void setupACMGlobalPaths() {
 		String globalSharePath = ACMGlobalConfigProperties.getProperty(Constants.GLOBAL_SHARE_PATH);

@@ -346,4 +346,7 @@ public class Taxonomy implements Persistable {
 		}
 	}
 
+	public static void resetTaxonomy() {
+		taxonomy = null;
+	}
 }

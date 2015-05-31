@@ -29,7 +29,7 @@ public class MP3Importer extends Importer {
 			MusicMetadataSet musicMetadataSet = new MyID3().read(file);
 			IMusicMetadata musicMetadata = musicMetadataSet.getSimplified();
 			
-			AudioItem audioItem = new AudioItem(ACMConfiguration.getCurrentDB().getNewAudioItemUID());
+			AudioItem audioItem = new AudioItem(ACMConfiguration.getNewAudioItemUID());
 			audioItem.addCategory(category);
 
 			LocalizedAudioItem localizedAudioItem = new LocalizedAudioItem(audioItem.getUuid() + "-en", Locale.ENGLISH);

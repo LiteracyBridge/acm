@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import javax.persistence.EntityManager;
 import javax.swing.JOptionPane;
 
+import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.Persistence.DatabaseConnection;
@@ -190,7 +191,10 @@ public class DBConfiguration extends Properties {
     }
 
     public File getSharedACMDirectory() {
-        return sharedACMDirectory;
+    	if (sharedACMDirectory == null) {
+            sharedACMDirectory = new File(ACMConfiguration.getGlobalShareDir(), getSharedACMname());
+    	}
+    	return sharedACMDirectory;
     }
 
     public String getUserName() {
@@ -208,7 +212,7 @@ public class DBConfiguration extends Properties {
     public void setRecordingCounter(String counter) {
         setProperty(Constants.RECORDING_COUNTER_PROP, counter);
     }
-
+/*
     public String getDeviceID() throws IOException {
         String value = getProperty(Constants.DEVICE_ID_PROP);
         if (value == null) {
@@ -228,19 +232,19 @@ public class DBConfiguration extends Properties {
     }
 
     public String getNewAudioItemUID() throws IOException {
-        String value = getRecordingCounter();
+        String value = ACMConfiguration.getRecordingCounter();
         int counter = (value == null) ? 0 : Integer.parseInt(value, Character.MAX_RADIX);
         counter++;
         value = Integer.toString(counter, Character.MAX_RADIX);
         String uuid = "LB-2" + "_"  + getDeviceID() + "_" + value;
 
         // make sure we remember that this uuid was already used
-        setRecordingCounter(value);
-        writeProps();
+        ACMConfiguration.setRecordingCounter(value);
+        //writeProps();
 
         return uuid;
     }
-
+*/
     public long getCacheSizeInBytes() {
         long size = Constants.DEFAULT_CACHE_SIZE_IN_BYTES;
         String value = getProperty(Constants.CACHE_SIZE_PROP_NAME);
@@ -251,7 +255,6 @@ public class DBConfiguration extends Properties {
                 // ignore and use default value
             }
         }
-
         return size;
     }
 
@@ -302,7 +305,17 @@ public class DBConfiguration extends Properties {
     }
 
     private File getConfigurationPropertiesFile() {
-        return new File(getACMDirectory(), Constants.CONFIG_PROPERTIES);
+    	File configFile = new File(getSharedACMDirectory(), Constants.CONFIG_PROPERTIES);
+    	if (!configFile.exists()) {
+    		File oldConfig = new File(getACMDirectory(), Constants.CONFIG_PROPERTIES);
+    		try {
+				FileUtils.copyFile(oldConfig, configFile);
+			} catch (IOException e) {
+				System.out.println ("No new config or old config  file found!");
+				e.printStackTrace();
+			}
+    	}
+        return configFile;
     }
 
     private void InitializeAcmConfiguration() {
@@ -339,7 +352,7 @@ public class DBConfiguration extends Properties {
                 System.exit(0);
             }
         }
-
+/*
         if (!containsKey(Constants.USER_NAME)) {
             String username = (String)JOptionPane.showInputDialog(null, "Enter Username:", "Missing Username", JOptionPane.PLAIN_MESSAGE);
             put(Constants.USER_NAME, username);
@@ -350,6 +363,7 @@ public class DBConfiguration extends Properties {
             put(Constants.USER_CONTACT_INFO, contactinfo);
             propsChanged = true;
         }
+*/
         if (!containsKey(Constants.AUDIO_LANGUAGES)) {
             put(Constants.AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),ssl(\"Sisaala\"),tw(\"Twi\"),");  //sfw(\"Sehwi\"),
             propsChanged = true;
@@ -362,58 +376,6 @@ public class DBConfiguration extends Properties {
         if (propsChanged) {
             writeProps();
         }
-        /*		COMMENTING THIS OUT SINCE WE ALWAYS PASS NAME OF ACM NOW - NEED TO RETHINK WHEN WE WANT TO USE CODE LIKE THIS AGAIN
-		if (!pathsOverridden) {
-			if (dbDirectory == null && instance.containsKey(DEFAULT_DB)) {
-				setDatabaseDirectory(new File(instance.getProperty(DEFAULT_DB)));
-			}
-			if (repositoryDirectory == null && instance.containsKey(DEFAULT_REPOSITORY)) {
-				setRepositoryDirectory(new File(instance.getProperty(DEFAULT_REPOSITORY)));
-			}
-
-			if (dbDirectory == null || !dbDirectory.exists()) {
-				setDatabaseDirectory(new File (globalShare,Constants.DefaultSharedDB));
-				if (dbDirectory.exists()) {
-					instance.put(DEFAULT_DB,getDatabaseDirectory().getAbsolutePath());
-				} else {
-					JFileChooser fc = null;
-					if (globalShare.exists())
-						fc = new JFileChooser(globalShare.getAbsolutePath());
-					else
-						fc = new JFileChooser();
-					fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-					fc.setDialogTitle("Select DB directory.");
-					int returnVal = fc.showOpenDialog(null);
-					if (returnVal == JFileChooser.APPROVE_OPTION) {
-						File file = fc.getSelectedFile();
-						setDatabaseDirectory(file);
-						instance.put(DEFAULT_DB,getDatabaseDirectory().getAbsolutePath());
-					}
-				}
-			}
-			if (repositoryDirectory == null || !repositoryDirectory.exists()) {
-				setRepositoryDirectory (new File (globalShare,Constants.DefaultSharedRepository));
-				if (repositoryDirectory.exists()) {
-					instance.put(DEFAULT_REPOSITORY,getRepositoryDirectory().getAbsolutePath());
-				} else {
-					JFileChooser fc = null;
-					if (globalShare.exists())
-						fc = new JFileChooser(globalShare.getAbsolutePath());
-					else
-						fc = new JFileChooser();
-					fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-					fc.setDialogTitle("Select repository directory.");
-					int returnVal = fc.showOpenDialog(null);
-					if (returnVal == JFileChooser.APPROVE_OPTION) {
-						File file = fc.getSelectedFile();
-						setRepositoryDirectory(file);
-						instance.put(DEFAULT_REPOSITORY,getRepositoryDirectory().getAbsolutePath());
-					}
-				}
-			}
-		}
-         */
-        sharedACMDirectory = new File(ACMConfiguration.getGlobalShareDir(), getSharedACMname());
         tbLoadersDirectory = new File(sharedACMDirectory, Constants.TBLoadersHomeDir);
         writeProps();
     }

@@ -152,7 +152,10 @@ public class ControlAccess {
 			@SuppressWarnings("unused")
 			LockACM l = new LockACM(config);
 		} catch (RuntimeException e) {
-			JOptionPane.showMessageDialog(null, "This ACM is already opened.");
+			if (!ACMConfiguration.isDisableUI())
+				JOptionPane.showMessageDialog(null, "This ACM is already opened.");
+			else
+				System.out.println("This ACM is already opened!!!");
 			System.exit(0);
 		}
 		if (dbInfo == null) {
@@ -406,7 +409,7 @@ public class ControlAccess {
 		String writeUser, thisUser;
 		boolean userHasWriteAccess = false;
 
-		thisUser = config.getUserName();
+		thisUser = ACMConfiguration.getUserName();
 		if (thisUser == null) {
 			// No User Name found in config.properties.  Forcing Read-Only mode.
 			return false;
@@ -456,7 +459,7 @@ public class ControlAccess {
 		}
 
 
-		url = new URL("http://literacybridge.org/checkout.php?db=" + db + "&action=" + action + "&name=" + config.getUserName() + "&contact=" + config.getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
+		url = new URL("http://literacybridge.org/checkout.php?db=" + db + "&action=" + action + "&name=" + ACMConfiguration.getUserName() + "&contact=" + ACMConfiguration.getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
 		InputStream in;
 		in = url.openStream();
 		Scanner scanner = new Scanner(in);
@@ -506,7 +509,7 @@ public class ControlAccess {
 			computerName = "UNKNOWN";
 		}
 
-		url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&action=" + action + "&key=" + key + "&filename=" + filename + "&name=" + config.getUserName() + "&contact=" + config.getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
+		url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&action=" + action + "&key=" + key + "&filename=" + filename + "&name=" + ACMConfiguration.getUserName() + "&contact=" + ACMConfiguration.getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
 		InputStream in;
 		in = url.openStream();
 		Scanner scanner = new Scanner(in);

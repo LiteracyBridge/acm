@@ -22,7 +22,7 @@ public class WAVImporter extends Importer {
 	@Override
 	protected void importSingleFile(Category category, File file) throws IOException {
 		try {
-			AudioItem audioItem = new AudioItem(ACMConfiguration.getCurrentDB().getNewAudioItemUID());
+			AudioItem audioItem = new AudioItem(ACMConfiguration.getNewAudioItemUID());
 			audioItem.addCategory(category);
 
 			LocalizedAudioItem localizedAudioItem = new LocalizedAudioItem(audioItem.getUuid() + "-en", Locale.ENGLISH);

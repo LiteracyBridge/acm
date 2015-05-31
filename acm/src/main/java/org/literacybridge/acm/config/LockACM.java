@@ -3,6 +3,7 @@ package org.literacybridge.acm.config;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 
@@ -42,6 +43,10 @@ public class LockACM {
                 channel.close();
                 f.delete();
             }
+        }
+        catch(ClosedChannelException e) {
+           	if (f.exists())
+           		e.printStackTrace();
         }
         catch(IOException e)  {
             e.printStackTrace();
