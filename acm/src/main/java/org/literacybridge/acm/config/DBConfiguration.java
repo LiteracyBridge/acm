@@ -191,10 +191,10 @@ public class DBConfiguration extends Properties {
     }
 
     public File getSharedACMDirectory() {
-    	if (sharedACMDirectory == null) {
+        if (sharedACMDirectory == null) {
             sharedACMDirectory = new File(ACMConfiguration.getGlobalShareDir(), getSharedACMname());
-    	}
-    	return sharedACMDirectory;
+        }
+        return sharedACMDirectory;
     }
 
     public String getUserName() {
@@ -212,7 +212,7 @@ public class DBConfiguration extends Properties {
     public void setRecordingCounter(String counter) {
         setProperty(Constants.RECORDING_COUNTER_PROP, counter);
     }
-/*
+    /*
     public String getDeviceID() throws IOException {
         String value = getProperty(Constants.DEVICE_ID_PROP);
         if (value == null) {
@@ -244,7 +244,7 @@ public class DBConfiguration extends Properties {
 
         return uuid;
     }
-*/
+     */
     public long getCacheSizeInBytes() {
         long size = Constants.DEFAULT_CACHE_SIZE_IN_BYTES;
         String value = getProperty(Constants.CACHE_SIZE_PROP_NAME);
@@ -305,16 +305,16 @@ public class DBConfiguration extends Properties {
     }
 
     private File getConfigurationPropertiesFile() {
-    	File configFile = new File(getSharedACMDirectory(), Constants.CONFIG_PROPERTIES);
-    	if (!configFile.exists()) {
-    		File oldConfig = new File(getACMDirectory(), Constants.CONFIG_PROPERTIES);
-    		try {
-				FileUtils.copyFile(oldConfig, configFile);
-			} catch (IOException e) {
-				System.out.println ("No new config or old config  file found!");
-				e.printStackTrace();
-			}
-    	}
+        File configFile = new File(getSharedACMDirectory(), Constants.CONFIG_PROPERTIES);
+        if (!configFile.exists()) {
+            File oldConfig = new File(getACMDirectory(), Constants.CONFIG_PROPERTIES);
+            try {
+                FileUtils.copyFile(oldConfig, configFile);
+            } catch (IOException e) {
+                System.out.println ("No new config or old config  file found!");
+                e.printStackTrace();
+            }
+        }
         return configFile;
     }
 
@@ -352,7 +352,7 @@ public class DBConfiguration extends Properties {
                 System.exit(0);
             }
         }
-/*
+        /*
         if (!containsKey(Constants.USER_NAME)) {
             String username = (String)JOptionPane.showInputDialog(null, "Enter Username:", "Missing Username", JOptionPane.PLAIN_MESSAGE);
             put(Constants.USER_NAME, username);
@@ -363,7 +363,7 @@ public class DBConfiguration extends Properties {
             put(Constants.USER_CONTACT_INFO, contactinfo);
             propsChanged = true;
         }
-*/
+         */
         if (!containsKey(Constants.AUDIO_LANGUAGES)) {
             put(Constants.AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),ssl(\"Sisaala\"),tw(\"Twi\"),");  //sfw(\"Sehwi\"),
             propsChanged = true;

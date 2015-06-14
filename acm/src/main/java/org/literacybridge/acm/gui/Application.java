@@ -228,12 +228,12 @@ public class Application extends JXFrame {
         splash.setProgressLabel("Initializing...");
         ACMConfiguration.initialize(params);
 
-        // TODO: when we have a homescreen this call will be delayed until the user selects a DB
-        // TODO: createEmtpyDB should be factored out when the UI has a create DB button.
-        ACMConfiguration.setCurrentDB(params.sharedACM, true);
-
         // init database
         try {
+            // TODO: when we have a homescreen this call will be delayed until the user selects a DB
+            // TODO: createEmtpyDB should be factored out when the UI has a create DB button.
+            ACMConfiguration.setCurrentDB(params.sharedACM, true);
+
             // DB migration if necessary
             System.out.print("Updating database ... ");
             splash.setProgressLabel("Updating database...");
@@ -241,6 +241,8 @@ public class Application extends JXFrame {
             System.out.println("done.");
         } catch (Exception e) {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Unable to connect to database. Please try restarting the ACM.");
+            System.exit(0);
         }
 
         application = new Application(splash);
