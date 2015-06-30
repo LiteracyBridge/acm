@@ -328,6 +328,7 @@ public class TBBuilder {
 	}
 
 	public static void main(String[] args) throws Exception {
+		System.out.println("TB-Builder v"+TBLoader.VERSION);
 		TBBuilder tbb;
 		if (args.length == 0){
 			printUsage();
@@ -342,9 +343,13 @@ public class TBBuilder {
 				tbb.addImage(args[5], args[6], "default");
 			} else if (args.length == 6) {  // one package with specified group
 				tbb.addImage(args[3],args[4], args[5]);
-			} else if (args.length == 9) {
+			} else if (args.length == 9) {  // two packages with specified groups
 				tbb.addImage(args[3],args[4], args[5]);
 				tbb.addImage(args[6],args[7], args[8]);
+			} else if (args.length == 12) { // three packages with specified groups
+				tbb.addImage(args[3],args[4], args[5]);
+				tbb.addImage(args[6],args[7], args[8]);
+				tbb.addImage(args[9],args[10], args[11]);
 			} else {
 				printUsage();
 				System.exit(1);

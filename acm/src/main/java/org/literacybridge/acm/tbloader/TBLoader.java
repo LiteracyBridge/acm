@@ -62,7 +62,7 @@ import org.literacybridge.acm.utils.ZipUnzip;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	private static final String VERSION = "r1505221";   // 20(15)/(05)/(22) #(1)
+	public static final String VERSION = "r1506120";   // 20(15)/(05)/(22) #(1)
 	public static final String UNPUBLISHED_REV = "UNPUBLISHED";
 	private static final String COLLECTION_SUBDIR = "/collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
@@ -482,7 +482,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		f = new File(filename);
 		if (!f.exists())
 			f.mkdirs();
-		filename += "log-" + (TBLoader.currentDrive.datetime.equals("")?getDateTime():TBLoader.currentDrive.datetime) +".txt";
+		filename += "/log-" + (TBLoader.currentDrive.datetime.equals("")?getDateTime():TBLoader.currentDrive.datetime) +".txt";
 		return filename;
 	}
 	private void setDeviceIDandPaths() {
