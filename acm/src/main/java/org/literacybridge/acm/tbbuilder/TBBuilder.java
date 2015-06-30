@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
@@ -255,7 +256,7 @@ public class TBBuilder {
 		return revision;
 	}
 
-	public void publish(String[] deployments) throws Exception {
+	public void publish(final String[] deployments) throws Exception {
 		// e.g. 'ACM-UWR/TB-Loaders/published/'
 		final File publishBaseDir = new File(dropboxTbLoadersDir, "published");
 		publishBaseDir.mkdirs();
@@ -276,7 +277,7 @@ public class TBBuilder {
 		File localMetadata = new File(targetTempDir,"metadata");
 		File[] deploymentDirs = localMetadata.listFiles(new FileFilter() {
 			@Override public boolean accept(File f) {
-				return f.isDirectory();
+				return f.isDirectory() && Arrays.asList(deployments).contains(f.getName());
 			}
 		});
 		final List<File> inputContentCSVFiles = new LinkedList<File>();

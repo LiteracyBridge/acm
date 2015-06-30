@@ -62,7 +62,7 @@ import org.literacybridge.acm.utils.ZipUnzip;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	public static final String VERSION = "r1506301";   // 20(15)/(05)/(22) #(1)
+	public static final String VERSION = "r1506303";   // 20(15)/(05)/(22) #(1)
 	public static final String UNPUBLISHED_REV = "UNPUBLISHED";
 	private static final String COLLECTION_SUBDIR = "/collected-data";
 	private static String TEMP_COLLECTION_DIR = "";
