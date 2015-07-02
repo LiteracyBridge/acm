@@ -12,6 +12,7 @@ import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.CommandLineParams;
+import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.tbloader.TBLoader;
 
 import com.google.common.collect.Sets;
@@ -34,7 +35,34 @@ public class MoveStats {
 		File[] subdirs = sourceDir.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
-				return dir.isDirectory() && dir.listFiles().length > 0 && !name.startsWith(".");
+				boolean good = false;
+				// Get non-hidden directories only
+				if (!name.startsWith(".")) {
+					File subdir = new File(dir,name);
+					if (subdir.isDirectory()) {
+						File collecteddata = new File (subdir,TBLoader.COLLECTED_DATA_SUBDIR_NAME);
+						if (collecteddata.exists()) {
+							File[] projects = collecteddata.listFiles();
+							boolean everyProjectHasTBData = false;
+							for (File project:projects) {
+								if (!project.isDirectory() || project.isHidden() || project.getName().startsWith(".")) {
+									continue;
+								}
+								File tbdata = new File(project,"talkingbookdata");
+								if (!tbdata.exists()) {
+									everyProjectHasTBData = false; // if any does not exist then false and exit
+									break;
+								} else {
+									everyProjectHasTBData = true;  // at least one must exist
+								}
+							}
+							if (everyProjectHasTBData) {
+								good = true;															
+							}
+						}
+					}
+				}
+				return good;
 			}
 		});
 		if (subdirs.length > 0) {

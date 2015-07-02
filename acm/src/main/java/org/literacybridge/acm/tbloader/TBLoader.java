@@ -64,7 +64,8 @@ import org.literacybridge.acm.utils.ZipUnzip;
 public class TBLoader extends JFrame implements ActionListener {
 	public static final String VERSION = "r1506303";   // 20(15)/(05)/(22) #(1)
 	public static final String UNPUBLISHED_REV = "UNPUBLISHED";
-	private static final String COLLECTION_SUBDIR = "/collected-data";
+	public static final String COLLECTED_DATA_SUBDIR_NAME = "collected-data";
+	private static final String COLLECTION_SUBDIR = "/" + COLLECTED_DATA_SUBDIR_NAME;
 	private static String TEMP_COLLECTION_DIR = "";
 	private static final String SW_SUBDIR = "./software/";
 	private static final String CONTENT_SUBDIR = "./content/";
