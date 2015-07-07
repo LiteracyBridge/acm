@@ -250,7 +250,7 @@ public class Application extends JXFrame {
         splash.setProgressLabel("Initialization complete. Launching UI...");
 
         if (showUI) {
-            application.setSize(1000, 750);
+            application.setSize(1000, 725);
 
             application.setVisible(true);
             application.toFront();
