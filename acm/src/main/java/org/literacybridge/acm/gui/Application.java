@@ -22,6 +22,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.PersistentCategory;
@@ -273,8 +274,9 @@ public class Application extends JXFrame {
                     }
                 }
             }
-
-            caching.cacheNewA18Files();
+            if (ACMConfiguration.getCurrentDB().shouldPreCacheWav()) {
+            	caching.cacheNewA18Files();
+            }
         }
     }
 

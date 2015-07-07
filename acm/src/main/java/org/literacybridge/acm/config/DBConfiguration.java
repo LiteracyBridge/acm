@@ -264,6 +264,15 @@ public class DBConfiguration extends Properties {
         return languageLables.get(locale);
     }
 
+    public boolean shouldPreCacheWav() {
+        boolean ret = false;
+        String preCache = getProperty(Constants.PRE_CACHE_WAV);
+        if (preCache.equalsIgnoreCase("TRUE")) {
+        	ret = true;
+        }
+        return ret;
+    }
+    
     public List<Locale> getAudioLanguages() {
         if (audioLanguages == null) {
             audioLanguages = new ArrayList<Locale>();
@@ -364,6 +373,10 @@ public class DBConfiguration extends Properties {
             propsChanged = true;
         }
          */
+        if (!containsKey(Constants.PRE_CACHE_WAV)) {
+            put(Constants.PRE_CACHE_WAV, "FALSE");
+            propsChanged = true;
+        }
         if (!containsKey(Constants.AUDIO_LANGUAGES)) {
             put(Constants.AUDIO_LANGUAGES, "en,dga(\"Dagaare\"),ssl(\"Sisaala\"),tw(\"Twi\"),");  //sfw(\"Sehwi\"),
             propsChanged = true;
@@ -377,7 +390,7 @@ public class DBConfiguration extends Properties {
             writeProps();
         }
         tbLoadersDirectory = new File(sharedACMDirectory, Constants.TBLoadersHomeDir);
-        writeProps();
+//        writeProps();
     }
 
     private void initializeLogger() {

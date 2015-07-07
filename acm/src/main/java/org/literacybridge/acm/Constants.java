@@ -3,7 +3,7 @@ package org.literacybridge.acm;
 import java.io.File;
 
 public class Constants {
-	public final static String ACM_VERSION					= "r1507011";
+	public final static String ACM_VERSION					= "r1507060";
 	public final static String LiteracybridgeHomeDirName	= "LiteracyBridge";
 	public final static String ACM_DIR_NAME			    	= "ACM";
 	public final static String CACHE_DIR_NAME			    = "cache";
@@ -35,5 +35,6 @@ public class Constants {
 	public final static String RECORDING_COUNTER_PROP = "RECORDING_COUNTER";
 	public final static String DEVICE_ID_PROP = "DEVICE_ID";
 	public final static String AUDIO_LANGUAGES = "AUDIO_LANGUAGES";	
+	public final static String PRE_CACHE_WAV = "PRE_CACHE_WAV";	
 	public final static String CACHE_SIZE_PROP_NAME = "CACHE_SIZE_IN_BYTES";
  }
