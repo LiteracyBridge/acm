@@ -62,7 +62,7 @@ import org.literacybridge.acm.utils.ZipUnzip;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	public static final String VERSION = "r1508281";   // 20(15)/(05)/(22) #(1)
+	public static final String VERSION = "r1508282";   // 20(15)/(05)/(22) #(1)
 	public static final String UNPUBLISHED_REV = "UNPUBLISHED";
 	public static final String COLLECTED_DATA_SUBDIR_NAME = "collected-data";
 	private static final String COLLECTION_SUBDIR = "/" + COLLECTED_DATA_SUBDIR_NAME;
@@ -396,7 +396,7 @@ public class TBLoader extends JFrame implements ActionListener {
     		    		.addComponent(status))
             );
         
-        setSize(650,520);
+        setSize(700,550);
         add(panel, BorderLayout.CENTER);
 		setLocationRelativeTo(null);
 		
