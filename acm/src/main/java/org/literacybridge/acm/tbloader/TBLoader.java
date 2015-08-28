@@ -62,7 +62,7 @@ import org.literacybridge.acm.utils.ZipUnzip;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	public static final String VERSION = "r1506303";   // 20(15)/(05)/(22) #(1)
+	public static final String VERSION = "r1508281";   // 20(15)/(05)/(22) #(1)
 	public static final String UNPUBLISHED_REV = "UNPUBLISHED";
 	public static final String COLLECTED_DATA_SUBDIR_NAME = "collected-data";
 	private static final String COLLECTION_SUBDIR = "/" + COLLECTED_DATA_SUBDIR_NAME;
@@ -77,6 +77,8 @@ public class TBLoader extends JFrame implements ActionListener {
 	private static final String NO_DRIVE = "(nothing connected)";
 	private static final String TRIGGER_FILE_CHECK = "checkdir";
 	private static final int STARTING_SERIALNUMBER = 0x200;
+	public static final String DEFAULT_GROUP_LABEL = "default";
+	public static final String GROUP_FILE_EXTENSION = ".grp";
 	private static String imageRevision = "(no rev)"; 
 	private static String dateRotation;
 	private static JComboBox newDeploymentList;
@@ -143,8 +145,9 @@ public class TBLoader extends JFrame implements ActionListener {
 	void getRevisionNumbers() {
 		revision = "(No firmware)";
 
-		File basicContentPath = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "" + CONTENT_BASIC_SUBDIR);
+		File basicContentPath = new File(CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "/" + CONTENT_BASIC_SUBDIR);
 		Logger.LogString("DEPLOYMENT:"+newDeploymentList.getSelectedItem().toString());
+		//Logger.LogString(basicContentPath.getAbsolutePath());
 		try {
 			File[] files;
 			if (basicContentPath.exists()) {
@@ -162,22 +165,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					revision = revision.substring(0, revision.length() - 4);
 				}
 				newRevisionText.setText(revision);
-
-/*				// get Package name
-				File contentSystem = new File(basicContentPath,"system");
-				files = contentSystem.listFiles(new FilenameFilter() {
-					@Override public boolean accept(File dir, String name) {
-						String lowercase = name.toLowerCase();
-						return lowercase.endsWith(".pkg");
-					}
-				});				
-				if (files.length > 1)
-					sourcePackage = "(Multiple Pkg Names!)";
-				else if (files.length == 1) {
-					sourcePackage = files[0].getName();
-					sourcePackage = sourcePackage.substring(0, sourcePackage.length() - 4);
-				}
-*/			}
+			}
 		} catch (Exception ignore) {
 			Logger.LogString("exception - ignore and keep going with default string");
 		}
@@ -305,14 +293,6 @@ public class TBLoader extends JFrame implements ActionListener {
 		update.addActionListener(this);
 		grabStatsOnly = new JButton("Get Stats");
 		grabStatsOnly.addActionListener(this);
-//		reformat = new JButton("Reformat");
-//		reformat.addActionListener(this);
-//		backup = new JButton("Backup");
-//		backup.addActionListener(this);
-//		xfer = new JButton("Upload Audio");
-//		xfer.addActionListener(this);
-//		setCommunity = new JButton("Set Community");
-//		setCommunity.addActionListener(this);
 		
 		
 		GroupLayout layout = new GroupLayout(panel);
@@ -403,9 +383,6 @@ public class TBLoader extends JFrame implements ActionListener {
                 		.addComponent(idLabel)
                 		.addComponent(oldID)
                 		.addComponent(newID))
-		        // .addGroup(layout.createParallelGroup(BASELINE)
-		        	//.addComponent(fetchIDFromServer)
-    				//.addComponent(handIcons))
 	    	    .addGroup(layout.createParallelGroup(BASELINE)
                 		.addComponent(forceFirmwareText)
                 		.addComponent(forceFirmware)
@@ -413,10 +390,6 @@ public class TBLoader extends JFrame implements ActionListener {
     		    .addGroup(layout.createParallelGroup(BASELINE)
     		    	.addComponent(update)
     		    	.addComponent(grabStatsOnly)
-//    		    	.addComponent(setCommunity)
-//		        	.addComponent(xfer)
-//    	    		.addComponent(backup)
-//    	    		.addComponent(reformat)
     	    		)
     		    .addGroup(layout.createParallelGroup(BASELINE)
     		    		.addComponent(status2)
@@ -425,8 +398,6 @@ public class TBLoader extends JFrame implements ActionListener {
         
         setSize(650,520);
         add(panel, BorderLayout.CENTER);
-//      add(status, BorderLayout.SOUTH);
-//      add(xfer, BorderLayout.EAST);
 		setLocationRelativeTo(null);
 		
 		//Logger.init();
@@ -1160,58 +1131,6 @@ public class TBLoader extends JFrame implements ActionListener {
 		s.append(NEW_LINE);
 */	}
 	
-//	public static void setCommunity(String path, String community, String dateTime) {
-//		String locFilename = path + community + ".loc";
-//		String rtcFilename = path + dateTime + ".rtc";
-//		
-//		try {
-//			execute("cmd /C del \"" + path + "*.loc\" \"" + path + "system\\*.loc\" \"" + path + "*.rtc\"");
-//
-//			File locFile = new File(locFilename);
-//			File rtcFile = new File(rtcFilename);
-//			File inspectFile = new File(path + "inspect");
-//			locFile.createNewFile();
-//			rtcFile.createNewFile();
-//			inspectFile.createNewFile();
-//		} catch (Exception e) {
-//			Logger.LogString(e.toString());
-//			Logger.flush();
-//			e.printStackTrace();
-//		}
-//	}
-
-	private void xferFiles() {
-		int response = JOptionPane.showConfirmDialog(this, "Do you currently have a good\n" +
-				"Internet connection to upload large files" +
-				"\n   in" + TEMP_COLLECTION_DIR + 
-				"\n   to " + copyTo + "?",
-                "Confirm", JOptionPane.YES_NO_OPTION);
-		if (response != JOptionPane.YES_OPTION)
-			return;
-//		xfer.setEnabled(false);
-		update.setEnabled(false);
-		grabStatsOnly.setEnabled(false);
-//		setCommunity.setEnabled(false);
-		Logger.LogString("Transfering audio files to dropbox.");
-		try {
-			execute("cmd /C " + SW_SUBDIR + "robocopy \"" + TEMP_COLLECTION_DIR + "\" \"" + copyTo +"\" /MOVE /E");
-		} catch (Exception e) {
-			Logger.LogString(e.toString());
-			Logger.flush();
-			e.printStackTrace();
-		}
-		Logger.LogString("Files transferred");
-		JOptionPane.showMessageDialog(this, "Files transferred",
-                "Success", JOptionPane.DEFAULT_OPTION);
-	}
-
-/* @Override
-   public void itemStateChanged(ItemEvent evt) {
-		Logger.LogString("Drive changed: " + evt.getItem());
-		// JComboBox cb = (JComboBox)evt.getSource();
-		setCommunityList();
-	}
-*/
 	private String getImageFromCommunity(String community) throws Exception {
 		if (community == null)
 			return null;
@@ -1224,7 +1143,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				return dir.isDirectory();
 			}
 		});
-		if (images != null && (images.length == 1 || community.equalsIgnoreCase("Non-specific"))) {
+		if (images != null && images.length == 1) {
 			// grab first image package
 			imageName = images[0].getName();
 	    } else if (images != null) {	
@@ -1235,7 +1154,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				File[] groups = fCommunityDir.listFiles(new FilenameFilter() {
 					@Override public boolean accept(File dir, String name) {
 						String lowercase = name.toLowerCase();
-						return lowercase.endsWith(".grp");
+						return lowercase.endsWith(GROUP_FILE_EXTENSION);
 					}
 				});
 				for (File group:groups) {
@@ -1247,7 +1166,7 @@ public class TBLoader extends JFrame implements ActionListener {
 						File[] imageGroups = imageSysFolder.listFiles(new FilenameFilter() {
 							@Override public boolean accept(File dir, String name) {
 								String lowercase = name.toLowerCase();
-								return lowercase.endsWith(".grp");
+								return lowercase.endsWith(GROUP_FILE_EXTENSION);
 							}
 						});				
 						for (File imageGroup:imageGroups) {
@@ -1262,23 +1181,23 @@ public class TBLoader extends JFrame implements ActionListener {
 							break;
 					}
 				}
-				if (imageName.equals("")) {
-					// no match of groups between community and multiple packages
-					// Only hope is to find a default package
-					for (File image:images) {
-						File imageSysFolder = new File(image,"system/");
-						File[] imageDefaultGroup = imageSysFolder.listFiles(new FilenameFilter() {
-							@Override public boolean accept(File dir, String name) {
-								String lowercase = name.toLowerCase();
-								return lowercase.endsWith("default.grp");
-							}
-						});
-						if (imageDefaultGroup.length == 1) {
-							imageName = image.getName();
-						}
-					}
-				}				
 			}
+			if (imageName.equals("")) {
+				// no match of groups between community and multiple packages
+				// Only hope is to find a default package
+				for (File image:images) {
+					File imageSysFolder = new File(image,"system/");
+					File[] imageDefaultGroup = imageSysFolder.listFiles(new FilenameFilter() {
+						@Override public boolean accept(File dir, String name) {
+							String lowercase = name.toLowerCase();
+							return lowercase.endsWith(DEFAULT_GROUP_LABEL + GROUP_FILE_EXTENSION);
+						}
+					});
+					if (imageDefaultGroup.length == 1) {
+						imageName = image.getName();
+					}
+				}
+			}				
 		}
 		if (imageName.equals("")) {
 			imageName = "ERROR!  MISSING CONTENT IMAGE!";
@@ -1428,28 +1347,6 @@ public class TBLoader extends JFrame implements ActionListener {
 					Logger.LogString("No community selected. Are you sure? YES");
 			} else
 				prevSelectedCommunity = newCommunityList.getSelectedIndex();
-//			if ( (b == update || b == setCommunity) && (communityList.getSelectedIndex() == 6 ||communityList.getSelectedIndex() == 8) && !handIcons.isSelected()) {
-//				// warn if reformatting for Jonga or Gyanvuuri but not adding hand icon messages
-//				int response = JOptionPane.showConfirmDialog(this, "Hand icons not selected for " + community + ". \nAre you sure?",
-//	                "Confirm", JOptionPane.YES_NO_OPTION);
-//				if (response != JOptionPane.YES_OPTION) {
-//					Logger.LogString("Hand icons not selected for " + community + ". Are you sure? NO");
-//					refreshUI();
-//					return;
-//				} else
-//					Logger.LogString("Hand icons not selected for " + community + ". Are you sure? YES");
-//			} else if ( (b == update || b == setCommunity) &&  (communityList.getSelectedIndex() != 6 && communityList.getSelectedIndex() != 8) && handIcons.isSelected()){
-//				// warn if adding hand icon messages to arrow communities when either updating or reformatting 
-//				int response = JOptionPane.showConfirmDialog(this, "Hand icons are selected for " + community + ". \nAre you sure?",
-//		                "Confirm", JOptionPane.YES_NO_OPTION);
-//				if (response != JOptionPane.YES_OPTION) {
-//					Logger.LogString("Hand icons are selected for " + community + ". Are you sure? NO");
-//					refreshUI();
-//					return;
-//				} else
-//					Logger.LogString("Hand icons are selected for " + community + ". Are you sure? YES");
-//			} else
-//				prevSelectedCommunity = communityList.getSelectedIndex();
 			if (b == grabStatsOnly) {
 				updatingTB = true;
 				disableAll();
@@ -1471,40 +1368,7 @@ public class TBLoader extends JFrame implements ActionListener {
 					t = new CopyThread(this, devicePath, di.serialNumber, "update");
 					t.start();
 				} 
-/*				else {
-					Logger.LogString("chkdsk was bad for " + di.label.toString());
-					int response = JOptionPane.showConfirmDialog(null, "TB is corrupted.\nBackup takes 6-8 minutes.\nBegin?",
-			              "Confirm", JOptionPane.OK_CANCEL_OPTION);
-					if (response == JOptionPane.OK_OPTION) {
-						Logger.LogString("TB is corrupted.  Backup takes 6-8 minutes. Begin?  YES");
-						backup(devicePath, community, di.serialNumber, dateTime);
-						CopyThread t = new CopyThread(this, devicePath, community, di.serialNumber, dateTime, handIcons.isSelected(), revision,di.revision,"corrupted");
-						t.start();
-					} else {
-						Logger.LogString("TB is corrupted.  Backup takes 6-8 minutes. Begin?  NO");
-					}
-				}
-*/			} 
-/*			else if (b == backup) {
-				int response = JOptionPane.showConfirmDialog(null, "Backup takes 6-8 minutes.\nBegin?",
-			              "Confirm", JOptionPane.OK_CANCEL_OPTION);
-				if (response == JOptionPane.OK_OPTION) {
-					Logger.LogString("Backup takes 6-8 minutes. Begin?  YES");
-					backup(devicePath, community, di.serialNumber, dateTime);
-				} else
-					Logger.LogString("Backup takes 6-8 minutes. Begin?  NO");
-			} else if (b == reformat) {
-					Logger.LogString("REFORMATTING");
-					CopyThread t = new CopyThread(this, devicePath, community, di.serialNumber, dateTime, handIcons.isSelected(), revision,di.revision,"compare-basic");//"reformat");
-					t.start();
 			} 
-*/
-//			else if (b == setCommunity) {
-//				//setCommunity(devicePath, community, dateTime);
-//				CopyThread t;
-//				t = new CopyThread(this, devicePath, di.serialNumber, di.isNewSerialNumber, dateTime, "setCommunity");
-//				t.start();
-//			}
 			refreshUI();
 			return;
 		} catch (Exception ex) {
@@ -1516,33 +1380,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			resetUI(false);
 		} 
 	}
-/*
-	private void backup(String devicePath, String community, String serialNumber, String dateTime) {
-		String imagePathForMkDir, imagePathForCmdLine, imageFile;
-		try {
-			imagePathForCmdLine = "\"" + TEMP_COLLECTION_DIR + "\\" + community + "\\" + serialNumber + "\\" + dateTime;
-			imagePathForMkDir = TEMP_COLLECTION_DIR + "\\" + community + "\\" + serialNumber + "\\" + dateTime;
-			Logger.LogString("backing up to " + imagePathForCmdLine);
-			File f = new File(imagePathForMkDir);
-			for (int i=0; i<3;i++) {
-				if (f.mkdirs()) {
-					Logger.LogString("directories created");
-					break;
-				} else
-					Logger.LogString("directories not created yet");
-			}
-			imageFile = imagePathForCmdLine + "\\" + serialNumber + ".zip\"";
-			execute("cmd /C " + CREATE_BACKUP + devicePath + " " + imageFile + " " + SW_SUBDIR);
-			JOptionPane.showMessageDialog(this, "Backup complete",
-	                "Completed", JOptionPane.DEFAULT_OPTION);
-			Logger.LogString("Backup complete");
-		} catch (Exception e) {
-			Logger.LogString(e.getLocalizedMessage());
-			e.printStackTrace();
-		}
-		refreshUI();
-	}
-*/
+
 	private void resetUI(boolean resetDrives) {
 		Logger.LogString("Resetting UI");
 		oldID.setText("");
@@ -1591,28 +1429,16 @@ public class TBLoader extends JFrame implements ActionListener {
 		checkDirUpdate();
 		
 		update.setText("Update TB");
-//		reformat.setText("Reformat");
-//		backup.setText("Backup");
-//		setCommunity.setText("Set Community");
-		//handIcons.setEnabled(false);
-		//fetchIDFromServer.setEnabled(false);
 		connected = driveConnected();
 		if (connected && !updatingTB) {
 			update.setEnabled(true);
 			grabStatsOnly.setEnabled(true);
-//			reformat.setEnabled(true);
-//			backup.setEnabled(true);
-//			xfer.setEnabled(true);
-			//setCommunity.setEnabled(true);
-//			xfer.setEnabled((new File(TEMP_COLLECTION_DIR)).exists());			
 			status.setText("STATUS: Ready");
 			status2.setText(status2.getText() + "\n\n");
 			Logger.LogString("STATUS: Ready");
 		} else {
 			update.setEnabled(false);
 			grabStatsOnly.setEnabled(false);
-//			setCommunity.setEnabled(false);
-//			xfer.setEnabled(false);
 			if (!connected) {
         		oldDeploymentText.setText("");
         		oldCommunityText.setText("");
@@ -1632,22 +1458,12 @@ public class TBLoader extends JFrame implements ActionListener {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-//			reformat.setEnabled(false);
-//			backup.setEnabled(false);
 		}
 		Logger.flush();
 	}
 
 	private void disableAll() {
-		// This is used after startup and when there have been no changes to the drives 
 		update.setEnabled(false);
-//		reformat.setEnabled(false);
-//		backup.setEnabled(false);
-//		xfer.setEnabled(false);	
-//		setCommunity.setEnabled(false);
-		//handIcons.setEnabled(false);
-		//fetchIDFromServer.setEnabled(false);
-		
 	}
 	
 	void finishCopy(boolean success, final String idString, final String mode, final String endMsg, final String endTitle) {
@@ -1744,7 +1560,6 @@ public class TBLoader extends JFrame implements ActionListener {
 		boolean alert = false;
 		boolean success = false;
 		long startTime;
-		private boolean forceFirmware = false;
 		
 
 		private void setStartTime() {
@@ -2032,60 +1847,6 @@ public class TBLoader extends JFrame implements ActionListener {
 			
 		}
 		
-//		private void setCommunity() {
-//			try {
-//				boolean hasCorruption,goodCard;
-//				success = false;
-//				Logger.LogString("Setting Community -- first checking connectin and memory card.");
-//				goodCard = executeFile(new File(SCRIPT_SUBDIR + "checkConnection.txt"));
-//				if (!goodCard) {
-//					return;
-//				}
-//				TBLoader.status2.setText("Checking Memory Card");
-//				Logger.LogString("STATUS:Checking Memory Card");
-//				hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
-//				if (hasCorruption) {
-//					((DriveInfo)driveList.getSelectedItem()).corrupted = true;
-//					Logger.LogString("Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.");
-//					TBLoader.status2.setText(TBLoader.status2.getText() + "...Corrupted");
-//					Logger.LogString("STATUS:Corrupted");
-//					JOptionPane.showMessageDialog(null, "Could not set community due to memory card corruption.  Run 'Update' to attempt to fix.",
-//			                "Failure", JOptionPane.DEFAULT_OPTION);
-//					return;
-//				}
-//				TBLoader.status2.setText(TBLoader.status2.getText() + "...Good\nSetting Community");
-//				Logger.LogString("STATUS:Memory Card Good...Setting Community");
-//				TBLoader.setCommunity(devicePath + "/system/", TBLoader.newCommunityList.getSelectedItem().toString(), this.datetime);
-//				TBLoader.status2.setText(TBLoader.status2.getText() + "...Set\n");
-//				Logger.LogString("STATUS:Community Set");
-//				success = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));
-//				callback.logTBData("set community");
-//				if (success) {
-//					TBLoader.status2.setText(TBLoader.status2.getText() + "Custom Files Applied\n");
-//					Logger.LogString("STATUS:Custom Files Applied");
-//					executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));
-//					TBLoader.status2.setText(TBLoader.status2.getText() + "Complete\n");
-//					Logger.LogString("STATUS:Complete");
-//					Logger.LogString("Community set to " + TBLoader.newCommunityList.getSelectedItem().toString() + " and custom files applied.");
-//					JOptionPane.showMessageDialog(null, "Community set to " + TBLoader.newCommunityList.getSelectedItem().toString() + ".",
-//			                "Success", JOptionPane.DEFAULT_OPTION);
-//				}
-//			for (int i=1;i<=3;i++)
-//					Toolkit.getDefaultToolkit().beep();
-//			} catch (Exception e) {
-//				if (alert) {
-//					JOptionPane.showMessageDialog(null, e.getMessage(),
-//		                "Error", JOptionPane.ERROR_MESSAGE);
-//					Logger.LogString("CRITICAL ERROR:" + e.getMessage());
-//					criticalError = true;
-//				}
-//				Logger.LogString(e.toString());
-//				Logger.flush();
-//				e.printStackTrace();
-//			} finally {
-//				callback.finishCopy(success, id, this.mode);
-//			}
-//		}
 		
 		@Override public void run() {
 			TBLoader.syncSubPath = "/TalkingBookData/" + TBLoader.oldDeploymentText.getText() + "/" + 
@@ -2094,64 +1855,10 @@ public class TBLoader extends JFrame implements ActionListener {
 				update();			
 			else if (this.mode == "grabStatsOnly")
 				grabStatsOnly();
-//			else if (this.mode == "setCommunity")
-//				setCommunity();			
 		}
 	}
 
-	/*	static boolean chkDsk(DriveInfo di) throws Exception {
-		String line;
-		String folders[] = {"system","languages","messages","statistics","log","log-archive","messages/lists","messages/audio","languages/dga","statistics/stats","statistics/ostats"};
-		boolean goodDisk = true;
-		
-		Logger.LogString("cmd /C echo n|chkdsk " + di.drive.toString());
-		// perform check disk
-		Process proc = Runtime.getRuntime().exec("cmd /C echo n|chkdsk " + di.drive.toString());
 
-		BufferedReader br1 = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-		BufferedReader br2 = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
-
-		while (goodDisk && (line = br1.readLine()) != null) {
-			int i;
-			Logger.LogString(line);
-			if ((i = line.indexOf("is cross-linked on allocation unit")) > -1) {
-				System.out.println(i);
-				Logger.LogString(line.substring(0, i));
-				di.corruptions[di.corruptionCount] = line.substring(0, i);
-				Logger.LogString("***BAD:" + di.corruptions[di.corruptionCount]);
-				di.corruptionCount++;
-			}				
-			if (line.startsWith("Windows found problems with the file system.")) {
-				goodDisk = false;
-			}
-			if (line.startsWith("Volume ") && line.contains(" created ")) {
-//				di.label = new String(line.substring(7, line.indexOf(' ', 7)));
-				Logger.LogString("***LABEL:" + line.substring(7, line.indexOf(' ', 7)));
-			}
-		} 
-		
-		for (int i = 0; i < folders.length; i++) {
-			String folderName = new String(di.drive.toString() + folders[i]);
-			Logger.LogString(folderName);
-			if (!(new File(folderName)).exists()) {
-				di.corruptions[di.corruptionCount] = folderName;
-				Logger.LogString("***BAD:" + di.corruptions[di.corruptionCount]);
-				di.corruptionCount++;
-				goodDisk = false;
-			}
-		}
-		
-		do {
-			line = br2.readLine();
-			Logger.LogString(line); 
-			
-		} while (line != null);
-		br1.close();
-		br2.close();
-		proc.waitFor();
-		return goodDisk;
-	}	
-*/
 	private static String dosErrorCheck(String line) {
 		String errorMsg = null;
 		
@@ -2169,32 +1876,8 @@ public class TBLoader extends JFrame implements ActionListener {
 		} else if (line.startsWith("The system cannot find the path specified.")) {
 			errorMsg = "TB not found.  Unplug/replug USB and try again.";
 		} 
-/*		else if (line.startsWith("Volume Serial Number is ", 0)) {
-			volumeSerialNumber = TBLoader.srnPrefix + line.substring(24,28) + line.substring(29,33);
-			if (newID.getText().equals(NO_SERIAL_NUMBER)) {
-				newID.setText(volumeSerialNumber);
-				Logger.LogString("TB Serial Number will be set to " + volumeSerialNumber);
-			}
-		} else if (line.startsWith("Volume Serial Number is ", 1)) {
-			volumeSerialNumber = TBLoader.srnPrefix + line.substring(25,29) + line.substring(30,34);			
-			if (newID.getText().equals(NO_SERIAL_NUMBER)) {
-				newID.setText(volumeSerialNumber);
-				Logger.LogString("TB Serial Number will be set to " + volumeSerialNumber);
-			}
-		}
-*/
 		return errorMsg;
 	}
-	//Log:ID=TB000336
-	//Log:REFORMAT
-	//Log:Formatting Talking Book
-	//Log:Executing:cmd /C format F: /FS:FAT32 /v:TB000336 /Y /Q
-	//Log:Cannot open volume for direct access.
-	
-	//Log:  Options : *.* /S /E /COPY:DAT /PURGE /MIR /NP /R:1000000 /W:30 
-	//Log:------------------------------------------------------------------------------
-	//Log:2013/07/11 23:40:38 ERROR 2 (0x00000002) Creating Destination Directory F:\
-	//Log:The system cannot find the file specified.
 
 	static String execute(String cmd) throws Exception {
 		String line;
@@ -2248,47 +1931,6 @@ public class TBLoader extends JFrame implements ActionListener {
 			return label;
 		}
 		
-/*		public boolean updateLastIssue() {
-			boolean foundIssue = false;
-			int rev = 0;
-			int i;
-			
-			if (this.drive == null) 
-				return false;
-			try {
-				File[] files;
-				File systemPath = new File(this.drive.getAbsolutePath(), "system");
-				if (!systemPath.exists())
-					return false;
-				files = systemPath.listFiles(new FilenameFilter() {
-					@Override public boolean accept(File dir, String name) {
-						String lowercase = name.toLowerCase();
-						return (lowercase.endsWith(".rev") || lowercase.endsWith(".img"));
-					}
-				});
-				for (i = 0; i<files.length; i++) {
-					String filenameRev = files[i].getName();
-					filenameRev = filenameRev.substring(1,filenameRev.indexOf('.'));
-					rev = Integer.parseInt(filenameRev);
-					if (rev > 700) {
-						foundIssue = true;
-						break;
-					}
-				}
-				if (foundIssue) {
-					if (rev < 860)
-						this.lastIssue = 1;
-					else if (rev < 900)
-						this.lastIssue = 2;
-					else this.lastIssue = 3;
-					Logger.LogString(this.label + " is currently Issue #" + String.valueOf(this.lastIssue) + " (based on " + files[i].getName() + ")");
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			return foundIssue;
-		}
-*/		
 		
 		@Override
 		public String toString() {

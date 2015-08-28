@@ -142,7 +142,7 @@ public class TBBuilder {
 		out.close();
 
 		for (int i=0;i<groupCount;i++) {
-			File f= new File(targetSystemDir,groups[i] + ".grp");
+			File f= new File(targetSystemDir,groups[i] + TBLoader.GROUP_FILE_EXTENSION);
 			f.createNewFile();
 		}
 
@@ -335,22 +335,30 @@ public class TBBuilder {
 			printUsage();
 			System.exit(1);
 		} else if (args[0].equalsIgnoreCase("CREATE")) {
+			String groups[] = new String[2];
+			groups[0] = TBLoader.DEFAULT_GROUP_LABEL;
 			tbb = new TBBuilder(args[1]);
 			tbb.createDeployment(args[2]);
 			if (args.length == 5) {  // one package with default group
-				tbb.addImage(args[3],args[4], "default");
-			} else if (args.length == 7) {  // two packages with default group
-				tbb.addImage(args[3], args[4], "default");
-				tbb.addImage(args[5], args[6], "default");
+				tbb.addImage(args[3],args[4], groups[0]);
+//			} else if (args.length == 7) {  // two packages with default group
+//				tbb.addImage(args[3], args[4], "default");
+//				tbb.addImage(args[5], args[6], "default");
 			} else if (args.length == 6) {  // one package with specified group
-				tbb.addImage(args[3],args[4], args[5]);
+				groups[1] = args[5];
+				tbb.addImage(args[3],args[4], groups);
 			} else if (args.length == 9) {  // two packages with specified groups
-				tbb.addImage(args[3],args[4], args[5]);
-				tbb.addImage(args[6],args[7], args[8]);
+				groups[1] = args[5];
+				tbb.addImage(args[3],args[4], groups);
+				groups[1] = args[8];
+				tbb.addImage(args[6],args[7], groups);
 			} else if (args.length == 12) { // three packages with specified groups
-				tbb.addImage(args[3],args[4], args[5]);
-				tbb.addImage(args[6],args[7], args[8]);
-				tbb.addImage(args[9],args[10], args[11]);
+				groups[1] = args[5];
+				tbb.addImage(args[3],args[4], groups);
+				groups[1] = args[8];
+				tbb.addImage(args[6],args[7], groups);
+				groups[1] = args[11];
+				tbb.addImage(args[9],args[10], groups);
 			} else {
 				printUsage();
 				System.exit(1);
