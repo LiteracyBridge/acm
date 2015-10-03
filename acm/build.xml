@@ -47,9 +47,6 @@
   <property name="ivy.local.default.root" value="${repository.dir}/local"/>
   <property name="ivy.shared.default.root" value="${repository.dir}/shared"/>
 
-  <!-- all modules use the same version of thrift -->
-  <property name="thrift.version" value="0.5.0"/>
-
   <!-- =================================
        target: resolve
        ================================= -->
@@ -78,7 +75,7 @@
   <!-- =================================
        target: compile
        ================================= -->
-  <target name="compile" depends="clean-build, resolve, generate-thrift" description="--> compile the project">
+  <target name="compile" depends="clean-build, resolve" description="--> compile the project">
     <mkdir dir="${classes.dir}"/>
     <javac srcdir="${java.src.dir}" destdir="${classes.dir}" classpathref="lib.path.id" debug="true" encoding="UTF-8"
 	       includeantruntime="false"/>
@@ -137,11 +134,6 @@
     <delete file="build.properties"/>
   </target>
 
-  <target name="clean-gen" description="--> clean the generated thrift files">
-    <delete includeemptydirs="true" dir="${src.dir}/main/gen-thrift"/>
-    <delete includeemptydirs="true" dir="${src.dir}/main/gen-rb"/>
-  </target>
-
   <target name="clean-dist" description="--> clean packaged zip files">
     <delete>
       <fileset dir="${basedir}" includes="*.zip"/>
@@ -153,7 +145,7 @@
     <delete includeemptydirs="true" dir="${ivy.repo.cache.dir}"/>
   </target>
 
-  <target name="clean" depends="clean-build, clean-gen, clean-dist, clean-repo-cache"/>
+  <target name="clean" depends="clean-build, clean-dist, clean-repo-cache"/>
 
   <!-- =================================
        target: test
@@ -229,91 +221,4 @@
       <include name="**/*.java"/>
     </javac>
   </target>
-
-
-  <!-- generate thrift code -->
-  <property name="thrift.source.dir" value="${src.dir}/main/thrift"/>
-  <property name="thrift.target.dir" value="${src.dir}/main/gen-thrift"/>
-
-  <!-- generate thrift stubs if necessary this version should be used by all sub projects ivy.xml -->
-  <macrodef name="generate-thrift">
-    <sequential>
-      <pathconvert property="thrift.gen.path">
-        <path location="${ivy.extra.thriftpackage}" />
-        <unpackagemapper from="${basedir}/*" to="${thrift.target.dir}/*" />
-      </pathconvert>
-      <mkdir dir="${thrift.target.dir}" />
-      <switch value="${os.name}">
-        <case value="Mac OS X">
-        <propertyregex property="thrift.bin"
-                  input="${os.version}"
-                  regexp="^(10\.([56789]|10)).*$"
-                  select="${root.dir}/../thrift/bin/mac/\1/${thrift.version}/thrift"/>
-        </case>
-        <case value="Windows XP">
-        <property name="thrift.bin"
-                  value="${root.dir}/../thrift/bin/win/${thrift.version}/thrift-${thrift.version}.exe"/>
-        </case>
-        <case value="Windows Vista">
-        <property name="thrift.bin"
-                  value="${root.dir}/../thrift/bin/win/${thrift.version}/thrift-${thrift.version}.exe"/>
-        </case>
-        <case value="Windows 7">
-        <property name="thrift.bin"
-                  value="${root.dir}/../thrift/bin/win/${thrift.version}/thrift-${thrift.version}.exe"/>
-        </case>
-        <case value="Windows 8.1">
-        <property name="thrift.bin"
-                  value="${root.dir}/../thrift/bin/win/${thrift.version}/thrift-${thrift.version}.exe"/>
-        </case>
-        <case value="Linux">
-        <switch value="${os.arch}">
-          <case value="amd64">
-            <property name="thrift.bin" location="${root.dir}/../thrift/bin/linux/x86_64/${thrift.version}/thrift"/>
-          </case>
-          <case value="x86_64">
-            <property name="thrift.bin" location="${root.dir}/../thrift/bin/linux/x86_64/${thrift.version}/thrift"/>
-          </case>
-          <case value="i386">
-            <property name="thrift.bin" location="/usr/local/bin/thrift"/>
-          </case>
-        </switch>
-        </case>
-      </switch>
-      <fail message="Do not have thrift binary for os: ${os.name} ${os.version} ${os.arch}" unless="thrift.bin"/>
-      <apply executable="${thrift.bin}" dest="${thrift.gen.path}" failonerror="true"
-             skipemptyfilesets="true" verbose="true">
-        <arg value="--gen"/>
-        <arg value="java:hashcode"/>
-        <arg value="--gen"/>
-        <arg value="rb"/>
-        <arg value="-o"/>
-        <arg value="${thrift.target.dir}"/>
-        <arg value=""/>
-        <fileset dir="${thrift.source.dir}" includes="**/*.thrift"/>
-        <globmapper from="*.thrift" to="*.java"/>
-      </apply>
-      <move todir="${src.dir}/main/java">
-        <fileset dir="${thrift.target.dir}/gen-java">
-          <include name="**/*.java"/>
-        </fileset>
-      </move>
-    </sequential>
-  </macrodef>
-
-  <macrodef name="compile-generated-thrift">
-    <sequential>
-      <javac srcdir="${thrift.target.dir}" destdir="${classes.dir}/classes" debug="true" includeantruntime="false">
-        <classpath>
-          <path refid="run.path.id"/>
-        </classpath>
-        <include name="**/*.java"/>
-      </javac>
-    </sequential>
-  </macrodef>
-
-  <target name="generate-thrift">
-    <generate-thrift />
-  </target>
-  <!-- end of generate thrift -->
 </project>

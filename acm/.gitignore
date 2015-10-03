@@ -1,5 +1,3 @@
 lib
 build
-src/main/gen-thrift/
-src/main/java/org/literacybridge/acm/thrift/
 .DS_Store
