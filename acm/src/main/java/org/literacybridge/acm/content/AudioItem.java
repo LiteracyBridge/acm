@@ -3,7 +3,6 @@ package org.literacybridge.acm.content;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -14,7 +13,6 @@ import org.literacybridge.acm.db.Persistable;
 import org.literacybridge.acm.db.PersistentAudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
-import org.literacybridge.acm.db.PersistentLocalizedAudioItem;
 import org.literacybridge.acm.db.PersistentTag;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
@@ -41,7 +39,8 @@ public class AudioItem implements Persistable {
     }
 
     public AudioItem(String uuid) {
-        mItem = new PersistentAudioItem(uuid);
+        mItem = new PersistentAudioItem();
+        mItem.setUuid(uuid);
     }
 
     public Integer getId() {

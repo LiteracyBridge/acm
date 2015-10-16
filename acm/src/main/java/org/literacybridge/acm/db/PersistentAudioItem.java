@@ -78,8 +78,13 @@ public class PersistentAudioItem extends PersistentObject {
     @OneToMany(mappedBy = "persistentAudioItem", cascade = {CascadeType.ALL})
     private List<PersistentLocalizedAudioItem> persistentLocalizedAudioItemList = new ArrayList<PersistentLocalizedAudioItem>();
 
-    public PersistentAudioItem(String uuid) {
-        persistentLocalizedAudioItemList.add(new PersistentLocalizedAudioItem(uuid));
+    public PersistentAudioItem() {
+        persistentLocalizedAudioItemList.add(new PersistentLocalizedAudioItem());
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+        getPersistentLocalizedAudioItem().setUuid(uuid);
     }
 
     public Integer getId() {
@@ -88,10 +93,6 @@ public class PersistentAudioItem extends PersistentObject {
 
     public String getUuid() {
         return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public Collection<PersistentCategory> getPersistentCategoryList() {

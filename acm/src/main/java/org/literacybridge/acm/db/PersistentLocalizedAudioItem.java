@@ -59,10 +59,13 @@ public class PersistentLocalizedAudioItem extends PersistentObject {
     @JoinColumn(name = "language")
     private PersistentLocale persistentLocale;
 
-    public PersistentLocalizedAudioItem(String uuid) {
+    public PersistentLocalizedAudioItem() {
         persistentLocale = new PersistentLocale();
         persistentLocale.setCountry(Locale.ENGLISH.getCountry());
         persistentLocale.setLanguage(Locale.ENGLISH.getLanguage());
+    }
+
+    public void setUuid(String uuid) {
         this.uuid = uuid;
     }
 
