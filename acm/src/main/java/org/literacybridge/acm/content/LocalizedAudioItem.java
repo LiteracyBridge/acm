@@ -10,83 +10,65 @@ import org.literacybridge.acm.metadata.Metadata;
 
 public class LocalizedAudioItem implements Persistable {
 
-	private PersistentLocalizedAudioItem mItem;
+    private PersistentLocalizedAudioItem mItem;
 
-	public LocalizedAudioItem() {
-		mItem = new PersistentLocalizedAudioItem();
-	}
+    public LocalizedAudioItem(
+            PersistentLocalizedAudioItem persistentLocalizedAudioItem) {
+        mItem = persistentLocalizedAudioItem;
+    }
 
-	public LocalizedAudioItem(
-			PersistentLocalizedAudioItem persistentLocalizedAudioItem) {
-		mItem = persistentLocalizedAudioItem;
-	}
+    public PersistentLocalizedAudioItem getPersistentObject() {
+        return mItem;
+    }
 
-	public PersistentLocalizedAudioItem getPersistentObject() {
-		return mItem;
-	}
+    public LocalizedAudioItem(String uuid) {
+        mItem = new PersistentLocalizedAudioItem(uuid);
+    }
 
-	public LocalizedAudioItem(String uuId, Locale locale) {
-		this();
-		mItem.setUuid(uuId);
-		setLocale(locale);
-	}
+    public Locale getLocale() {
+        PersistentLocale persistentLocale = mItem.getPersistentLocale();
+        if (persistentLocale == null) {
+            return null;
+        }
+        return new Locale(persistentLocale.getLanguage(), persistentLocale
+                .getCountry());
+    }
 
-	public void setLocale(Locale locale) {
-		//TODO prevent multiple locale entries with the same value
-		PersistentLocale persistentLocale = new PersistentLocale();
-		persistentLocale.setCountry(locale.getCountry());
-		persistentLocale.setLanguage(locale.getLanguage());
-		mItem.setPersistentLocale(persistentLocale);
-	}
+    public Integer getId() {
+        return mItem.getId();
+    }
 
-	public Locale getLocale() {
-		PersistentLocale persistentLocale = mItem.getPersistentLocale();
-		if (persistentLocale == null) {
-			return null;
-		}
-		return new Locale(persistentLocale.getLanguage(), persistentLocale
-				.getCountry());
-	}
+    public String getUuid() {
+        return mItem.getUuid();
+    }
 
-	public Integer getId() {
-		return mItem.getId();
-	}
+    public Metadata getMetadata() {
+        if (mItem.getPersistentMetadata() == null) {
+            PersistentMetadata m = new PersistentMetadata();
+            m.setPersistentLocalizedAudioItem(mItem);
+            mItem.setPersistentMetadata(m);
+        }
+        return new Metadata(mItem.getPersistentMetadata());
+    }
 
-	public String getUuid() {
-		return mItem.getUuid();
-	}
+    public AudioItem getParentAudioItem() {
+        if (mItem.getPersistentAudioItem() == null) {
+            return null;
+        }
+        return new AudioItem(mItem.getPersistentAudioItem());
+    }
 
-	public void setUuid(String uuid) {
-		mItem.setUuid(uuid);
-	}
+    public LocalizedAudioItem commit() {
+        mItem = mItem.<PersistentLocalizedAudioItem> commit();
+        return this;
+    }
 
-	public Metadata getMetadata() {
-		if (mItem.getPersistentMetadata() == null) {
-			PersistentMetadata m = new PersistentMetadata();
-			m.setPersistentLocalizedAudioItem(mItem);
-			mItem.setPersistentMetadata(m);
-		}
-		return new Metadata(mItem.getPersistentMetadata());
-	}
+    public void destroy() {
+        mItem.destroy();
+    }
 
-	public AudioItem getParentAudioItem() {
-		if (mItem.getPersistentAudioItem() == null) {
-			return null;
-		}
-		return new AudioItem(mItem.getPersistentAudioItem());
-	}
-
-	public LocalizedAudioItem commit() {
-		mItem = mItem.<PersistentLocalizedAudioItem> commit();
-		return this;
-	}
-
-	public void destroy() {
-		mItem.destroy();
-	}
-
-	public LocalizedAudioItem refresh() {
-		mItem = mItem.<PersistentLocalizedAudioItem> refresh();
-		return this;
-	}
+    public LocalizedAudioItem refresh() {
+        mItem = mItem.<PersistentLocalizedAudioItem> refresh();
+        return this;
+    }
 }

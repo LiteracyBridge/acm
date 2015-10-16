@@ -32,21 +32,21 @@ import org.literacybridge.acm.index.AudioItemIndex;
 
 @Entity
 @NamedQueries({
-  @NamedQuery(name = "PersistentAudioItem.findAll", query = "select o from PersistentAudioItem o")
+    @NamedQuery(name = "PersistentAudioItem.findAll", query = "select o from PersistentAudioItem o")
 })
 @Table(name = "t_audioitem")
 public class PersistentAudioItem extends PersistentObject {
 
-	private static final long serialVersionUID = 6523719801839346881L;
+    private static final long serialVersionUID = 6523719801839346881L;
 
-	private static final String COLUMN_VALUE = "gen_audioitem";
+    private static final String COLUMN_VALUE = "gen_audioitem";
 
     @TableGenerator(name = COLUMN_VALUE,
-    table = PersistentObject.SEQUENCE_TABLE_NAME,
-    pkColumnName = PersistentObject.SEQUENCE_KEY,
-    valueColumnName = PersistentObject.SEQUENCE_VALUE,
-    pkColumnValue = COLUMN_VALUE,
-    allocationSize = PersistentObject.ALLOCATION_SIZE)
+            table = PersistentObject.SEQUENCE_TABLE_NAME,
+            pkColumnName = PersistentObject.SEQUENCE_KEY,
+            valueColumnName = PersistentObject.SEQUENCE_VALUE,
+            pkColumnValue = COLUMN_VALUE,
+            allocationSize = PersistentObject.ALLOCATION_SIZE)
     @Column(name = "id", nullable = false)
     @Id @GeneratedValue(generator = COLUMN_VALUE)
     private Integer id;
@@ -56,29 +56,30 @@ public class PersistentAudioItem extends PersistentObject {
 
     @ManyToMany
     @JoinTable(
-        name = "t_audioitem_has_category",
-        joinColumns =
+            name = "t_audioitem_has_category",
+            joinColumns =
             @JoinColumn(name = "audioitem", referencedColumnName = "id"),
-        inverseJoinColumns =
+            inverseJoinColumns =
             @JoinColumn(name = "category", referencedColumnName = "id")
-    )
+            )
     private Set<PersistentCategory> persistentCategoryList = new LinkedHashSet<PersistentCategory>();
 
     @ManyToMany
     @JoinTable(
-        name = "t_audioitem_has_tag",
-        joinColumns =
+            name = "t_audioitem_has_tag",
+            joinColumns =
             @JoinColumn(name = "audioitem", referencedColumnName = "id"),
-        inverseJoinColumns =
+            inverseJoinColumns =
             @JoinColumn(name = "tag", referencedColumnName = "id")
-    )
+            )
     private Set<PersistentTag> persistentTagList = new LinkedHashSet<PersistentTag>();
 
 
     @OneToMany(mappedBy = "persistentAudioItem", cascade = {CascadeType.ALL})
     private List<PersistentLocalizedAudioItem> persistentLocalizedAudioItemList = new ArrayList<PersistentLocalizedAudioItem>();
 
-    public PersistentAudioItem() {
+    public PersistentAudioItem(String uuid) {
+        addPersistentLocalizedAudioItem(new PersistentLocalizedAudioItem(uuid));
     }
 
     public Integer getId() {
@@ -103,7 +104,7 @@ public class PersistentAudioItem extends PersistentObject {
     }
 
     public boolean hasPersistentAudioItemCategory(PersistentCategory persistentCategory) {
-    	return getPersistentCategoryList().contains(persistentCategory);
+        return getPersistentCategoryList().contains(persistentCategory);
     }
 
     public PersistentCategory removePersistentCategory(PersistentCategory persistentCategory) {
@@ -120,15 +121,15 @@ public class PersistentAudioItem extends PersistentObject {
     }
 
     public PersistentTag addPersistentAudioItemTag(PersistentTag persistentTag) {
-    	if (!getPersistentTagList().contains(persistentTag)) {
-	        getPersistentTagList().add(persistentTag);
-	        persistentTag.getPersistentAudioItemList().add(this);
-    	}
+        if (!getPersistentTagList().contains(persistentTag)) {
+            getPersistentTagList().add(persistentTag);
+            persistentTag.getPersistentAudioItemList().add(this);
+        }
         return persistentTag;
     }
 
     public boolean hasPersistentAudioItemTag(PersistentTag persistentTag) {
-    	return getPersistentTagList().contains(persistentTag);
+        return getPersistentTagList().contains(persistentTag);
     }
 
     public PersistentTag removePersistentTag(PersistentTag persistentTag) {
@@ -138,9 +139,9 @@ public class PersistentAudioItem extends PersistentObject {
     }
 
     public void removeAllPersistentTags() {
-    	for (PersistentTag tag : getPersistentTagList()) {
-    		tag.getPersistentAudioItemList().remove(this);
-    	}
+        for (PersistentTag tag : getPersistentTagList()) {
+            tag.getPersistentAudioItemList().remove(this);
+        }
         getPersistentTagList().clear();
     }
 
@@ -162,22 +163,22 @@ public class PersistentAudioItem extends PersistentObject {
 
     @Override
     protected void afterCommitHook() {
-    	DBConfiguration db = ACMConfiguration.getCurrentDB();
-    	if (db != null) {
-	    	AudioItemIndex index = db.getAudioItemIndex();
-	    	if (index != null) {
-	    		try {
-	    			index.updateAudioItem(new AudioItem(this));
-	    		} catch (IOException e) {
-	    			e.printStackTrace();
-	    		}
-	    	}
+        DBConfiguration db = ACMConfiguration.getCurrentDB();
+        if (db != null) {
+            AudioItemIndex index = db.getAudioItemIndex();
+            if (index != null) {
+                try {
+                    index.updateAudioItem(new AudioItem(this));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
 
             AudioItemCache cache = db.getAudioItemCache();
             if (cache != null) {
                 cache.invalidate(getUuid());
             }
-    	}
+        }
     }
 
     public static List<PersistentAudioItem> getFromDatabase() {
@@ -203,12 +204,12 @@ public class PersistentAudioItem extends PersistentObject {
     }
 
     public static List<PersistentAudioItem> getFromDatabaseBySearch(String searchFilter,
-    		List<PersistentCategory> categories, List<PersistentLocale> locales) {
-    	return PersistentQueries.searchForAudioItems(searchFilter, categories, locales);
+            List<PersistentCategory> categories, List<PersistentLocale> locales) {
+        return PersistentQueries.searchForAudioItems(searchFilter, categories, locales);
     }
 
     public static List<PersistentAudioItem> getFromDatabaseBySearch(String searchFilter,
-    		PersistentTag selectedTag) {
-    	return PersistentQueries.searchForAudioItems(searchFilter, selectedTag);
+            PersistentTag selectedTag) {
+        return PersistentQueries.searchForAudioItems(searchFilter, selectedTag);
     }
 }
