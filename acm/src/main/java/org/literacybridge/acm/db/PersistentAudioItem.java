@@ -79,7 +79,7 @@ public class PersistentAudioItem extends PersistentObject {
     private List<PersistentLocalizedAudioItem> persistentLocalizedAudioItemList = new ArrayList<PersistentLocalizedAudioItem>();
 
     public PersistentAudioItem(String uuid) {
-        addPersistentLocalizedAudioItem(new PersistentLocalizedAudioItem(uuid));
+        persistentLocalizedAudioItemList.add(new PersistentLocalizedAudioItem(uuid));
     }
 
     public Integer getId() {
@@ -145,20 +145,8 @@ public class PersistentAudioItem extends PersistentObject {
         getPersistentTagList().clear();
     }
 
-    public List<PersistentLocalizedAudioItem> getPersistentLocalizedAudioItems() {
-        return persistentLocalizedAudioItemList;
-    }
-
-    public PersistentLocalizedAudioItem addPersistentLocalizedAudioItem(PersistentLocalizedAudioItem persistentLocalizedAudioItem) {
-        getPersistentLocalizedAudioItems().add(persistentLocalizedAudioItem);
-        persistentLocalizedAudioItem.setPersistentAudioItem(this);
-        return persistentLocalizedAudioItem;
-    }
-
-    public PersistentLocalizedAudioItem removePersistentLocalizedAudioItem(PersistentLocalizedAudioItem persistentLocalizedAudioItem) {
-        getPersistentLocalizedAudioItems().remove(persistentLocalizedAudioItem);
-        persistentLocalizedAudioItem.setPersistentAudioItem(null);
-        return persistentLocalizedAudioItem;
+    public PersistentLocalizedAudioItem getPersistentLocalizedAudioItem() {
+        return persistentLocalizedAudioItemList.get(0);
     }
 
     @Override

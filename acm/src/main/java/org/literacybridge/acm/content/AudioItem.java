@@ -1,7 +1,6 @@
 package org.literacybridge.acm.content;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -173,11 +172,8 @@ public class AudioItem implements Persistable {
         //            }
         //            return null;
 
-        if (mItem.getPersistentLocalizedAudioItems() != null) {
-            PersistentLocalizedAudioItem localizedItem = mItem.getPersistentLocalizedAudioItems().get(0);
-            return new LocalizedAudioItem(localizedItem);
-        }
-        return null;
+        PersistentLocalizedAudioItem localizedItem = mItem.getPersistentLocalizedAudioItem();
+        return new LocalizedAudioItem(localizedItem);
     }
 
     public Metadata getMetadata() {
@@ -186,15 +182,6 @@ public class AudioItem implements Persistable {
 
     public String getRevision() {
         return getMetadata().getMetadataValues(MetadataSpecification.DTB_REVISION).get(0).getValue();
-    }
-
-    public Set<Locale> getAvailableLocalizations() {
-        Set<Locale> results = new LinkedHashSet<Locale>();
-        for (PersistentLocalizedAudioItem i : mItem.getPersistentLocalizedAudioItems()) {
-            PersistentLocale locale = i.getPersistentLocale();
-            results.add(new Locale(locale.getLanguage(),locale.getCountry()));
-        }
-        return results;
     }
 
     @SuppressWarnings("unchecked")
