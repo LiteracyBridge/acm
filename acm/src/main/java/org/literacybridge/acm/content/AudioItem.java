@@ -159,23 +159,6 @@ public class AudioItem implements Persistable {
         return mItem.getPersistentTagList();
     }
 
-    public LocalizedAudioItem getLocalizedAudioItem(Locale locale) {
-
-        // TODO local will be ignored for now
-
-        //            for (PersistentLocalizedAudioItem item : mItem.getPersistentLocalizedAudioItems()) {
-        //                PersistentLocale l = item.getPersistentLocale();
-        //                if ((locale.getCountry().equals(l.getCountry()) &&
-        //                    (locale.getLanguage().equals(l.getLanguage())))) {
-        //                    return new LocalizedAudioItem(item);
-        //                }
-        //            }
-        //            return null;
-
-        PersistentLocalizedAudioItem localizedItem = mItem.getPersistentLocalizedAudioItem();
-        return new LocalizedAudioItem(localizedItem);
-    }
-
     public Metadata getMetadata() {
         return new Metadata(mItem.getPersistentLocalizedAudioItem().getPersistentMetadata());
     }

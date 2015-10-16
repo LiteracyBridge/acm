@@ -31,7 +31,6 @@ import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.content.LocalizedAudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.messages.AudioItemTableSortOrderMessage;
 import org.literacybridge.acm.gui.messages.PlayAudioItemMessage;
@@ -50,7 +49,7 @@ public class AudioItemView extends Container implements Observer {
 
     private static final long serialVersionUID = -2886958461177831842L;
 
-    public static final DataFlavor AudioItemDataFlavor = new DataFlavor(LocalizedAudioItem.class, "LocalizedAudioItem");
+    public static final DataFlavor AudioItemDataFlavor = new DataFlavor(AudioItem.class, "LocalizedAudioItem");
     protected IDataRequestResult currResult = null;
     public JXTable audioItemTable = null;
 
@@ -298,9 +297,8 @@ public class AudioItemView extends Container implements Observer {
         AudioItem item = null;
         if (o instanceof AudioItemNode) {
             item = ((AudioItemNode) o).getAudioItem();
-        } else if (o instanceof LocalizedAudioItem) {
-            LocalizedAudioItem lItem = (LocalizedAudioItem) o;
-            item = lItem.getParentAudioItem();
+        } else if (o instanceof AudioItem) {
+            item = (AudioItem) o;
         }
 
         item.refresh();
