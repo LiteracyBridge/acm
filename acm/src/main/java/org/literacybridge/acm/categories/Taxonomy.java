@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.literacybridge.acm.content.LocalizedAudioLabel;
 import org.literacybridge.acm.db.Persistable;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
@@ -249,9 +248,9 @@ public class Taxonomy implements Persistable {
             mCategory.setDescription(new PersistentString(description));
         }
 
-        public LocalizedAudioLabel getCategoryName(Locale languageCode) {
-            return new LocalizedAudioLabel(mCategory.getTitle().toString(),
-                    mCategory.getDescription().toString());
+        public String getCategoryName(Locale languageCode) {
+            // TODO: Support localized category names
+            return mCategory.getTitle().toString();
         }
 
         public Category getParent() {
