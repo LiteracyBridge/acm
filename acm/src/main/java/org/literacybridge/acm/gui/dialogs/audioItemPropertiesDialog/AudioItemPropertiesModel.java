@@ -148,7 +148,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
                     String id = values.get(0).getValue();
                     if (!StringUtils.isEmpty(id)) {
                         AudioItem item = AudioItem.getFromDatabase(id);
-                        List<MetadataValue<String>> values1 = item.getLocalizedAudioItem(null).getMetadata().getMetadataValues(DC_TITLE);
+                        List<MetadataValue<String>> values1 = item.getMetadata().getMetadataValues(DC_TITLE);
                         if (values1 != null && !values1.isEmpty()) {
                             return values1.get(0).getValue();
                         }

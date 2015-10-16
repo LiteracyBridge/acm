@@ -177,7 +177,7 @@ public class AudioItem implements Persistable {
     }
 
     public Metadata getMetadata() {
-        return getLocalizedAudioItem(null).getMetadata();
+        return new Metadata(mItem.getPersistentLocalizedAudioItem().getPersistentMetadata());
     }
 
     public String getRevision() {

@@ -42,15 +42,6 @@ public class LocalizedAudioItem implements Persistable {
         return mItem.getUuid();
     }
 
-    public Metadata getMetadata() {
-        if (mItem.getPersistentMetadata() == null) {
-            PersistentMetadata m = new PersistentMetadata();
-            m.setPersistentLocalizedAudioItem(mItem);
-            mItem.setPersistentMetadata(m);
-        }
-        return new Metadata(mItem.getPersistentMetadata());
-    }
-
     public AudioItem getParentAudioItem() {
         if (mItem.getPersistentAudioItem() == null) {
             return null;
