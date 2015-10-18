@@ -22,12 +22,11 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
-import org.literacybridge.acm.db.PersistentTag;
+import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.ResourceView.ResourceView;
@@ -275,7 +274,7 @@ public class Application extends JXFrame {
                 }
             }
             if (ACMConfiguration.getCurrentDB().shouldPreCacheWav()) {
-            	caching.cacheNewA18Files();
+                caching.cacheNewA18Files();
             }
         }
     }
@@ -286,7 +285,7 @@ public class Application extends JXFrame {
         private String filterString;
         private List<PersistentCategory> filterCategories;
         private List<PersistentLocale> filterLanguages;
-        private PersistentTag selectedTag;
+        private Playlist selectedPlaylist;
 
         public synchronized String getFilterString() {
             return filterString;
@@ -312,13 +311,13 @@ public class Application extends JXFrame {
             updateResult();
         }
 
-        public synchronized void setSelectedTag(PersistentTag selectedTag) {
-            this.selectedTag = selectedTag;
+        public synchronized void setSelectedTag(Playlist selectedPlaylist) {
+            this.selectedPlaylist = selectedPlaylist;
             updateResult();
         }
 
-        public synchronized PersistentTag getSelectedTag() {
-            return selectedTag;
+        public synchronized Playlist getSelectedPlaylist() {
+            return selectedPlaylist;
         }
 
         public void updateResult() {
@@ -334,14 +333,14 @@ public class Application extends JXFrame {
 
             final IDataRequestResult result;
 
-            if (selectedTag == null) {
+            if (selectedPlaylist == null) {
                 result = DataRequestService.getInstance().getData(
                         LanguageUtil.getUserChoosenLanguage(),
                         filterString, filterCategories, filterLanguages);
             } else {
                 result = DataRequestService.getInstance().getData(
                         LanguageUtil.getUserChoosenLanguage(),
-                        filterString, selectedTag);
+                        filterString, selectedPlaylist);
             }
 
             // call UI back
@@ -383,8 +382,8 @@ public class Application extends JXFrame {
                     builder.append(",");
                 }
             }
-            if (selectedTag != null) {
-                builder.append("ST:").append(selectedTag.getName());
+            if (selectedPlaylist != null) {
+                builder.append("ST:").append(selectedPlaylist.getName());
                 builder.append(",");
             }
             return builder.toString();

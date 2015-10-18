@@ -2,7 +2,7 @@ package org.literacybridge.acm.gui;
 
 import java.util.Map;
 
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
 
 import com.google.common.collect.Maps;
 

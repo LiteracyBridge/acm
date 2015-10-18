@@ -59,13 +59,13 @@ public class PersistentLocalizedAudioItem extends PersistentObject {
     @JoinColumn(name = "language")
     private PersistentLocale persistentLocale;
 
-    public PersistentLocalizedAudioItem() {
+    PersistentLocalizedAudioItem() {
         persistentLocale = new PersistentLocale();
         persistentLocale.setCountry(Locale.ENGLISH.getCountry());
         persistentLocale.setLanguage(Locale.ENGLISH.getLanguage());
     }
 
-    public void setUuid(String uuid) {
+    void setUuid(String uuid) {
         this.uuid = uuid;
     }
 
@@ -73,20 +73,20 @@ public class PersistentLocalizedAudioItem extends PersistentObject {
         return id;
     }
 
-    public String getLocation() {
+    String getLocation() {
         return location;
     }
 
-    public void setLocation(String location) {
+    void setLocation(String location) {
         this.location = location;
     }
 
 
-    public String getUuid() {
+    String getUuid() {
         return uuid;
     }
 
-    public PersistentAudioItem getPersistentAudioItem() {
+    PersistentAudioItem getPersistentAudioItem() {
         return persistentAudioItem;
     }
 
@@ -98,7 +98,7 @@ public class PersistentLocalizedAudioItem extends PersistentObject {
         return persistentMetadata;
     }
 
-    public void setPersistentMetadata(PersistentMetadata persistentMetadata) {
+    void setPersistentMetadata(PersistentMetadata persistentMetadata) {
         this.persistentMetadata = persistentMetadata;
     }
 
@@ -106,11 +106,11 @@ public class PersistentLocalizedAudioItem extends PersistentObject {
         return persistentLocale;
     }
 
-    public static PersistentLocalizedAudioItem getFromDatabase(int id) {
+    static PersistentLocalizedAudioItem getFromDatabase(int id) {
         return PersistentQueries.getPersistentObject(PersistentLocalizedAudioItem.class, id);
     }
 
-    public static PersistentLocalizedAudioItem getFromDatabase(String uuid) {
+    static PersistentLocalizedAudioItem getFromDatabase(String uuid) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         PersistentLocalizedAudioItem result = null;
         try {

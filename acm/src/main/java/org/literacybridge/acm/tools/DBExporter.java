@@ -6,10 +6,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
-import org.literacybridge.acm.categories.Taxonomy;
-import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.db.Taxonomy;
+import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;

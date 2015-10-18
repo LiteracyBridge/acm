@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.repository.AudioItemRepository;
 

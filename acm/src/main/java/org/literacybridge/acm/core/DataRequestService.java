@@ -9,106 +9,105 @@ import java.util.Map;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.api.IDataRequestService;
-import org.literacybridge.acm.categories.Taxonomy;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
-import org.literacybridge.acm.db.PersistentAudioItem;
+import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
-import org.literacybridge.acm.db.PersistentTag;
-import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.db.Playlist;
+import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.index.AudioItemIndex;
 
 public class DataRequestService implements IDataRequestService {
-	private static final IDataRequestService instance = new DataRequestService();
+    private static final IDataRequestService instance = new DataRequestService();
 
-	private DataRequestService() {
-	}
+    private DataRequestService() {
+    }
 
-	public static IDataRequestService getInstance() {
-		return instance;
-	}
+    public static IDataRequestService getInstance() {
+        return instance;
+    }
 
-	/* (non-Javadoc)
-	 * @see main.java.org.literacybridge.acm.api.IDataRequestService#getData()
-	 */
-	public IDataRequestResult getData(Locale locale) {
-		return getData(locale, "", null);
-	}
+    /* (non-Javadoc)
+     * @see main.java.org.literacybridge.acm.api.IDataRequestService#getData()
+     */
+    public IDataRequestResult getData(Locale locale) {
+        return getData(locale, "", null);
+    }
 
-	/* (non-Javadoc)
-	 * @see main.java.org.literacybridge.acm.api.IDataRequestService#getData(java.lang.String)
-	 */
-	public IDataRequestResult getData(Locale locale, String filterString, List<PersistentCategory> categories, List<PersistentLocale> locales) {
-		AudioItemIndex index = getAudioItemIndex();
-		if (index != null) {
-			try {
-				return index.search(filterString, categories, locales);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+    /* (non-Javadoc)
+     * @see main.java.org.literacybridge.acm.api.IDataRequestService#getData(java.lang.String)
+     */
+    public IDataRequestResult getData(Locale locale, String filterString, List<PersistentCategory> categories, List<PersistentLocale> locales) {
+        AudioItemIndex index = getAudioItemIndex();
+        if (index != null) {
+            try {
+                return index.search(filterString, categories, locales);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
-		// Couldn't get results from Lucene index - fall back to DB
-		Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(filterString, categories, locales);
-		Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, categories, locales);
-		List<String> audioItems = new ArrayList<String>(items.size());
-		for (PersistentAudioItem item : items) {
-			audioItems.add(item.getUuid());
-		}
+        // Couldn't get results from Lucene index - fall back to DB
+        Collection<AudioItem> items = AudioItem.getFromDatabaseBySearch(filterString, categories, locales);
+        Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, categories, locales);
+        List<String> audioItems = new ArrayList<String>(items.size());
+        for (AudioItem item : items) {
+            audioItems.add(item.getUuid());
+        }
 
-		Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, categories, locales);
+        Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, categories, locales);
 
-		Taxonomy taxonomy = Taxonomy.getTaxonomy();
-		DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
-				PersistentTag.getFromDatabase());
-		return result;
-	}
+        Taxonomy taxonomy = Taxonomy.getTaxonomy();
+        DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
+                Playlist.getFromDatabase());
+        return result;
+    }
 
-	@Override
-	public IDataRequestResult getData(Locale locale,
-			List<PersistentCategory> filterCategories, List<PersistentLocale> locales) {
-		return getData(locale, null, filterCategories, locales);
-	}
+    @Override
+    public IDataRequestResult getData(Locale locale,
+            List<PersistentCategory> filterCategories, List<PersistentLocale> locales) {
+        return getData(locale, null, filterCategories, locales);
+    }
 
-	@Override
-	public IDataRequestResult getData(Locale locale, PersistentTag selectedTag) {
-		return getData(locale, "", selectedTag);
-	}
+    @Override
+    public IDataRequestResult getData(Locale locale, Playlist selectedPlaylist) {
+        return getData(locale, "", selectedPlaylist);
+    }
 
-	@Override
-	public IDataRequestResult getData(Locale locale, String filterString,
-			PersistentTag selectedTag) {
-		AudioItemIndex index = getAudioItemIndex();
-		if (index != null) {
-			try {
-				return index.search(filterString, selectedTag);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+    @Override
+    public IDataRequestResult getData(Locale locale, String filterString,
+            Playlist selectedPlaylist) {
+        AudioItemIndex index = getAudioItemIndex();
+        if (index != null) {
+            try {
+                return index.search(filterString, selectedPlaylist);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
-		// Couldn't get results from Lucene index - fall back to DB
-		Collection<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(filterString, selectedTag);
-		Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, null, null);
-		List<String> audioItems = new ArrayList<String>(items.size());
-		for (PersistentAudioItem item : items) {
-			audioItems.add(item.getUuid());
-		}
+        // Couldn't get results from Lucene index - fall back to DB
+        Collection<AudioItem> items = AudioItem.getFromDatabaseBySearch(filterString, selectedPlaylist);
+        Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, null, null);
+        List<String> audioItems = new ArrayList<String>(items.size());
+        for (AudioItem item : items) {
+            audioItems.add(item.getUuid());
+        }
 
-		Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, null, null);
+        Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, null, null);
 
-		Taxonomy taxonomy = Taxonomy.getTaxonomy();
-		DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
-				PersistentTag.getFromDatabase());
-		return result;
-	}
+        Taxonomy taxonomy = Taxonomy.getTaxonomy();
+        DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
+                Playlist.getFromDatabase());
+        return result;
+    }
 
-	private AudioItemIndex getAudioItemIndex() {
-		DBConfiguration db = ACMConfiguration.getCurrentDB();
-		if (db != null) {
-			return db.getAudioItemIndex();
-		}
-		return null;
-	}
+    private AudioItemIndex getAudioItemIndex() {
+        DBConfiguration db = ACMConfiguration.getCurrentDB();
+        if (db != null) {
+            return db.getAudioItemIndex();
+        }
+        return null;
+    }
 }

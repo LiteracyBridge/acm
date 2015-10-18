@@ -8,7 +8,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.metadata.LBMetadataIDs;
 import org.literacybridge.acm.metadata.Metadata;

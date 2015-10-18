@@ -11,8 +11,8 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
 
-import org.literacybridge.acm.categories.Taxonomy;
-import org.literacybridge.acm.categories.Taxonomy.Category;
+import org.literacybridge.acm.db.Taxonomy;
+import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.metadata.LBMetadataSerializer;
 import org.literacybridge.acm.metadata.Metadata;
 

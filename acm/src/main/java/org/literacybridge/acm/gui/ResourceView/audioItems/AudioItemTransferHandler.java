@@ -11,7 +11,7 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
 
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.gui.ResourceView.TreeTransferHandler;
 import org.literacybridge.acm.gui.util.AudioItemNode;
 

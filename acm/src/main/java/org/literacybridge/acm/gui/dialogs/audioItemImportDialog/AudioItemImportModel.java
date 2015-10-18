@@ -7,8 +7,8 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
-import org.literacybridge.acm.categories.Taxonomy.Category;
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.A18Importer;

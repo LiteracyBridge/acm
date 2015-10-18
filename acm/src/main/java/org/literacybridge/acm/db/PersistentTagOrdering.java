@@ -12,57 +12,57 @@ import javax.persistence.Table;
 
 @Entity
 @NamedQueries({
-	  @NamedQuery(name = "PersistentTag.findAll", query = "select o from PersistentTag o")
-	})
+    @NamedQuery(name = "PersistentTag.findAll", query = "select o from PersistentTag o")
+})
 @Table(name = "t_audioitem_has_tag")
 @IdClass(PersistentTagOrdering.PrimaryKey.class)
-public class PersistentTagOrdering extends PersistentObject {
-	@ManyToOne
+class PersistentTagOrdering extends PersistentObject {
+    @ManyToOne
     @JoinColumn(name="audioitem", nullable = false)
     @Id
-    private PersistentAudioItem audioitem;    
+    private PersistentAudioItem audioitem;
 
     @ManyToOne
     @JoinColumn(name="tag", nullable = false)
     @Id
-    private PersistentTag tag;    
+    private PersistentTag tag;
 
     @Column(name="ordering", nullable = false)
     private Integer position;
-    
-    public Integer getPosition() {
-    	return position;
+
+    Integer getPosition() {
+        return position;
     }
 
-    public void setPosition(int position) {
-    	this.position = position;
+    void setPosition(int position) {
+        this.position = position;
     }
-    
-	@Override
-	public Object getId() {
-		return new PrimaryKey(this);
-	}
-	
-	@Override
-	public String toString() {
-		return "TagOrdering[audioitem=" + audioitem.getUuid() + ",tag=" + tag.getName() + ",pos=" + position + "]";
-	}
-    
-    public static class PrimaryKey {
+
+    @Override
+    public Object getId() {
+        return new PrimaryKey(this);
+    }
+
+    @Override
+    public String toString() {
+        return "TagOrdering[audioitem=" + audioitem.getUuid() + ",tag=" + tag.getName() + ",pos=" + position + "]";
+    }
+
+    private static class PrimaryKey {
         private Integer audioitem;
-        private Integer tag;    
-        
+        private Integer tag;
+
         private PrimaryKey(PersistentTagOrdering ordering) {
-        	this(ordering.audioitem, ordering.tag);
+            this(ordering.audioitem, ordering.tag);
         }
-        
+
         private PrimaryKey(PersistentAudioItem audioItem, PersistentTag tag) {
-        	this.audioitem = audioItem.getId();
-        	this.tag = tag.getId();
+            this.audioitem = audioItem.getId();
+            this.tag = tag.getId();
         }
     }
-    
-    public static PersistentTagOrdering getFromDatabase(PersistentAudioItem audioItem, PersistentTag tag) {
-    	return PersistentQueries.getPersistentObject(PersistentTagOrdering.class, new PrimaryKey(audioItem, tag));
+
+    static PersistentTagOrdering getFromDatabase(PersistentAudioItem audioItem, PersistentTag tag) {
+        return PersistentQueries.getPersistentObject(PersistentTagOrdering.class, new PrimaryKey(audioItem, tag));
     }
 }

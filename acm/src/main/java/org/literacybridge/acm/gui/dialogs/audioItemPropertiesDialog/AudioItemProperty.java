@@ -2,7 +2,7 @@ package org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog;
 
 import java.util.Locale;
 
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.metadata.Metadata;

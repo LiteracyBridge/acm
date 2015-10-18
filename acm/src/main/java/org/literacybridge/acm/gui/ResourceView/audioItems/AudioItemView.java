@@ -30,7 +30,7 @@ import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.messages.AudioItemTableSortOrderMessage;
 import org.literacybridge.acm.gui.messages.PlayAudioItemMessage;
@@ -108,9 +108,9 @@ public class AudioItemView extends Container implements Observer {
             orderingColumn = audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER);
             firstDataSet = true;
         }
-        if (Application.getFilterState().getSelectedTag() == null && audioItemTable.getColumnCount() == audioItemTable.getModel().getColumnCount()) {
+        if (Application.getFilterState().getSelectedPlaylist() == null && audioItemTable.getColumnCount() == audioItemTable.getModel().getColumnCount()) {
             audioItemTable.removeColumn(orderingColumn);
-        } else if (Application.getFilterState().getSelectedTag() != null && audioItemTable.getColumnCount() < audioItemTable.getModel().getColumnCount()) {
+        } else if (Application.getFilterState().getSelectedPlaylist() != null && audioItemTable.getColumnCount() < audioItemTable.getModel().getColumnCount()) {
             audioItemTable.addColumn(orderingColumn);
         }
     }

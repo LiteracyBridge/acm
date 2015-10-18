@@ -13,9 +13,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.db.Taxonomy.Category;
 
 public class FileImporter {
 	private static final Logger LOG = Logger.getLogger(FileImporter.class.getName());

@@ -10,9 +10,8 @@ import javax.swing.table.AbstractTableModel;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.db.PersistentTag;
-import org.literacybridge.acm.db.PersistentTagOrdering;
+import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel;
@@ -160,12 +159,12 @@ public class AudioItemTableModel extends AbstractTableModel {
                 break;
             }
             case PLAYLIST_ORDER: {
-                PersistentTag tag = Application.getFilterState().getSelectedTag();
+                Playlist tag = Application.getFilterState().getSelectedPlaylist();
                 if (tag == null) {
                     cellText = "";
                 } else {
-                    PersistentTagOrdering ordering = PersistentTagOrdering.getFromDatabase(audioItem.getPersistentAudioItem(), tag);
-                    cellText = ordering.getPosition().toString();
+                    int position = tag.getPosition(audioItem);
+                    cellText = Integer.toString(position);
                 }
                 break;
             }

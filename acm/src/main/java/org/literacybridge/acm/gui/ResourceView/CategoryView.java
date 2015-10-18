@@ -46,13 +46,13 @@ import org.apache.commons.lang.StringUtils;
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.core.MessageBus.Message;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
-import org.literacybridge.acm.db.PersistentTag;
+import org.literacybridge.acm.db.Playlist;
+import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.device.DeviceConnectEvent;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.gui.Application;
@@ -132,7 +132,7 @@ public class CategoryView extends ACMContainer implements Observer {
 
         // init controls with default language
         updateControlLanguage(LanguageUtil.getUILanguage());
-        updateTagsTable(PersistentTag.getFromDatabase());
+        updateTagsTable(Playlist.getFromDatabase());
         Application.getMessageService().addObserver(this);
     }
 
@@ -567,7 +567,7 @@ public class CategoryView extends ACMContainer implements Observer {
         }
     }
 
-    public void updateTagsTable(List<PersistentTag> tags) {
+    public void updateTagsTable(List<Playlist> tags) {
         if (!clearingSelections) {
             tagsList.setModel(new TagsListModel(tags));
         }
@@ -581,11 +581,11 @@ public class CategoryView extends ACMContainer implements Observer {
                 JOptionPane.PLAIN_MESSAGE,
                 null, null, "");
         if (!StringUtils.isEmpty(tagName)) {
-            PersistentTag tag = new PersistentTag();
-            tag.setTitle(tagName);
+            Playlist tag = new Playlist();
+            tag.setName(tagName);
             tag.commit();
 
-            Application.getMessageService().pumpMessage(new TagsListChanged(PersistentTag.getFromDatabase()));
+            Application.getMessageService().pumpMessage(new TagsListChanged(Playlist.getFromDatabase()));
         }
     }
 
@@ -695,9 +695,9 @@ public class CategoryView extends ACMContainer implements Observer {
     };
 
     public static class TagsListChanged {
-        private final List<PersistentTag> tags;
+        private final List<Playlist> tags;
 
-        TagsListChanged(List<PersistentTag> tags) {
+        TagsListChanged(List<Playlist> tags) {
             this.tags = tags;
         }
     }

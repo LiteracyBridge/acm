@@ -18,7 +18,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.categories.Taxonomy;
+import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.gui.CommandLineParams;
 
 import com.google.common.collect.Lists;

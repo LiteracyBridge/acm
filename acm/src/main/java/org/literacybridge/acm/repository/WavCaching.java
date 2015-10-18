@@ -6,7 +6,7 @@ import java.util.Set;
 
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.BackgroundTaskManager.ExtendedSwingWorker;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;

@@ -3,7 +3,7 @@ package org.literacybridge.acm.tools;
 import java.io.File;
 import java.io.IOException;
 
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.importexport.CSVExporter;

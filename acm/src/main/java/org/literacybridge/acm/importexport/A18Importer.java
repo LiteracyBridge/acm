@@ -9,9 +9,9 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
-import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
 import org.literacybridge.acm.metadata.LBMetadataSerializer;
 import org.literacybridge.acm.metadata.Metadata;

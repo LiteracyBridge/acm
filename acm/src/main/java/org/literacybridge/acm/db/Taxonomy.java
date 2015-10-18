@@ -1,4 +1,4 @@
-package org.literacybridge.acm.categories;
+package org.literacybridge.acm.db;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -8,11 +8,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.literacybridge.acm.db.Persistable;
-import org.literacybridge.acm.db.PersistentCategory;
-import org.literacybridge.acm.db.PersistentLocale;
-import org.literacybridge.acm.db.PersistentLocalizedString;
-import org.literacybridge.acm.db.PersistentString;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 
 public class Taxonomy implements Persistable {

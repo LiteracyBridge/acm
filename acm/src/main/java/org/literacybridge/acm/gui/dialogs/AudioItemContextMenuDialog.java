@@ -21,10 +21,8 @@ import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.content.AudioItem;
-import org.literacybridge.acm.db.PersistentAudioItem;
-import org.literacybridge.acm.db.PersistentTag;
-import org.literacybridge.acm.db.PersistentTagOrdering;
+import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
@@ -56,7 +54,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
         final String selectedTitle = clickedAudioItem
                 .getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).toString();
 
-        final PersistentTag selectedTag = Application.getFilterState().getSelectedTag();
+        final Playlist selectedTag = Application.getFilterState().getSelectedPlaylist();
 
         String labelPostfix;
         final FlatButton deleteButton;
@@ -128,14 +126,13 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 
                     for (AudioItem a : selectedAudioItems) {
                         try {
-                            int position = PersistentTagOrdering.getFromDatabase(a.getPersistentAudioItem(), selectedTag).getPosition();
-                            a.removeTag(selectedTag);
+                            int position = selectedTag.getPosition(a);
+                            a.removePlaylist(selectedTag);
                             a.commit();
-                            for (PersistentAudioItem item : selectedTag.getPersistentAudioItemList()) {
-                                PersistentTagOrdering ordering = PersistentTagOrdering.getFromDatabase(item, selectedTag);
-                                if (ordering.getPosition() > position) {
-                                    ordering.setPosition(ordering.getPosition() - 1);
-                                    ordering.commit();
+                            for (AudioItem item : selectedTag.getAudioItemList()) {
+                                int itemPosition = selectedTag.getPosition(item);
+                                if (itemPosition > position) {
+                                    selectedTag.setPosition(item, itemPosition - 1);
                                 }
                             }
                         } catch (Exception e) {

@@ -8,7 +8,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.lang.mutable.MutableLong;
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.utils.IOUtils;
 
 import com.google.common.base.Predicate;

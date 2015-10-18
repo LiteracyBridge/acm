@@ -26,7 +26,6 @@ import javax.persistence.TableGenerator;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
-import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.index.AudioItemIndex;
 
@@ -35,7 +34,7 @@ import org.literacybridge.acm.index.AudioItemIndex;
     @NamedQuery(name = "PersistentAudioItem.findAll", query = "select o from PersistentAudioItem o")
 })
 @Table(name = "t_audioitem")
-public class PersistentAudioItem extends PersistentObject {
+class PersistentAudioItem extends PersistentObject {
 
     private static final long serialVersionUID = 6523719801839346881L;
 
@@ -190,15 +189,5 @@ public class PersistentAudioItem extends PersistentObject {
             em.close();
         }
         return result;
-    }
-
-    public static List<PersistentAudioItem> getFromDatabaseBySearch(String searchFilter,
-            List<PersistentCategory> categories, List<PersistentLocale> locales) {
-        return PersistentQueries.searchForAudioItems(searchFilter, categories, locales);
-    }
-
-    public static List<PersistentAudioItem> getFromDatabaseBySearch(String searchFilter,
-            PersistentTag selectedTag) {
-        return PersistentQueries.searchForAudioItems(searchFilter, selectedTag);
     }
 }

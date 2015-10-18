@@ -1,4 +1,4 @@
-package org.literacybridge.acm.content;
+package org.literacybridge.acm.db;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -8,12 +8,7 @@ import java.util.logging.Logger;
 
 import javax.persistence.EntityManager;
 
-import org.literacybridge.acm.categories.Taxonomy.Category;
-import org.literacybridge.acm.db.Persistable;
-import org.literacybridge.acm.db.PersistentAudioItem;
-import org.literacybridge.acm.db.PersistentCategory;
-import org.literacybridge.acm.db.PersistentLocale;
-import org.literacybridge.acm.db.PersistentTag;
+import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.metadata.Metadata;
 import org.literacybridge.acm.metadata.MetadataSpecification;
 
@@ -41,10 +36,6 @@ public class AudioItem implements Persistable {
     public AudioItem(String uuid) {
         mItem = new PersistentAudioItem();
         mItem.setUuid(uuid);
-    }
-
-    public Integer getId() {
-        return mItem.getId();
     }
 
     public String getUuid() {
@@ -83,16 +74,16 @@ public class AudioItem implements Persistable {
         return mItem.hasPersistentAudioItemCategory(category.getPersistentObject());
     }
 
-    public void addTag(PersistentTag tag) {
-        mItem.addPersistentAudioItemTag(tag);
+    public void addPlaylist(Playlist playlist) {
+        mItem.addPersistentAudioItemTag(playlist.getTag());
     }
 
-    public boolean hasTag(PersistentTag tag) {
-        return mItem.hasPersistentAudioItemTag(tag);
+    public boolean hasPlaylist(Playlist playlist) {
+        return mItem.hasPersistentAudioItemTag(playlist.getTag());
     }
 
-    public void removeTag(PersistentTag tag) {
-        mItem.removePersistentTag(tag);
+    public void removePlaylist(Playlist playlist) {
+        mItem.removePersistentTag(playlist.getTag());
     }
 
     public void removeCategory(Category category) {
@@ -154,8 +145,8 @@ public class AudioItem implements Persistable {
         return mItem;
     }
 
-    public Collection<PersistentTag> getPlaylists() {
-        return mItem.getPersistentTagList();
+    public Collection<Playlist> getPlaylists() {
+        return Playlist.toPlaylists(mItem.getPersistentTagList());
     }
 
     public Metadata getMetadata() {
@@ -213,11 +204,20 @@ public class AudioItem implements Persistable {
 
     public static List<AudioItem> getFromDatabaseBySearch(String searchFilter,
             List<PersistentCategory> categories, List<PersistentLocale> locales) {
+        return toAudioItemList(PersistentQueries.searchForAudioItems(searchFilter, categories, locales));
+    }
+
+    public static List<AudioItem> getFromDatabaseBySearch(String searchFilter,
+            Playlist selectedTag) {
+        return toAudioItemList(PersistentQueries.searchForAudioItems(searchFilter, selectedTag));
+    }
+
+    public static List<AudioItem> toAudioItemList(List<PersistentAudioItem> list) {
         List<AudioItem> results = new LinkedList<AudioItem>();
-        List<PersistentAudioItem> items = PersistentAudioItem.getFromDatabaseBySearch(searchFilter, categories, locales);
-        for (PersistentAudioItem item : items) {
+        for (PersistentAudioItem item : list) {
             results.add(new AudioItem(item));
         }
         return results;
     }
+
 }

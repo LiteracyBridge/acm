@@ -4,7 +4,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.dialogs.AudioItemContextMenuDialog;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;

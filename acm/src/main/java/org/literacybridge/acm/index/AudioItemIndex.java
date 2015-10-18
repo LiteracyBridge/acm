@@ -43,12 +43,12 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.categories.Taxonomy;
-import org.literacybridge.acm.content.AudioItem;
 import org.literacybridge.acm.core.DataRequestResult;
+import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
-import org.literacybridge.acm.db.PersistentTag;
+import org.literacybridge.acm.db.Playlist;
+import org.literacybridge.acm.db.Taxonomy;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -148,7 +148,7 @@ public class AudioItemIndex {
 
     }
 
-    public IDataRequestResult search(String filterString, PersistentTag selectedTag) throws IOException {
+    public IDataRequestResult search(String filterString, Playlist selectedTag) throws IOException {
         BooleanQuery q = new BooleanQuery();
         addTextQuery(q, filterString);
         if (selectedTag != null) {
@@ -228,7 +228,7 @@ public class AudioItemIndex {
             }
 
             DataRequestResult result = new DataRequestResult(Taxonomy.getTaxonomy().getRootCategory(), categoryFacets, localeFacets, Lists.newArrayList(results),
-                    PersistentTag.getFromDatabase());
+                    Playlist.getFromDatabase());
 
             return result;
         } finally {

@@ -1,4 +1,4 @@
-package org.literacybridge.acm.categories;
+package org.literacybridge.acm.db;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,9 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.PersistentCategory;
+import org.literacybridge.acm.db.Taxonomy.Category;
 import org.yaml.snakeyaml.Yaml;
 
 public class DefaultLiteracyBridgeTaxonomy {

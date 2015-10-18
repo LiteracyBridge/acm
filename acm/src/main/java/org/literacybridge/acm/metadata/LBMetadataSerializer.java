@@ -9,8 +9,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.db.PersistentCategory;
+import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.utils.IOUtils;
 
 /**

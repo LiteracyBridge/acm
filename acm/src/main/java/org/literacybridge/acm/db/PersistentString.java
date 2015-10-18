@@ -16,24 +16,24 @@ import javax.persistence.TableGenerator;
 
 @Entity
 @NamedQueries({
-  @NamedQuery(name = "PersistentString.findAll", query = "select o from PersistentString o")
+    @NamedQuery(name = "PersistentString.findAll", query = "select o from PersistentString o")
 })
 @Table(name = "t_string")
 public class PersistentString extends PersistentObject {
 
-	private static final long serialVersionUID = 1942793327937175428L;
+    private static final long serialVersionUID = 1942793327937175428L;
 
-	private static final String COLUMN_VALUE = "gen_string";
+    private static final String COLUMN_VALUE = "gen_string";
 
     @TableGenerator(name = COLUMN_VALUE,
-    table = PersistentObject.SEQUENCE_TABLE_NAME,
-    pkColumnName = PersistentObject.SEQUENCE_KEY,
-    valueColumnName = PersistentObject.SEQUENCE_VALUE,
-    pkColumnValue = COLUMN_VALUE,
-    allocationSize = PersistentObject.ALLOCATION_SIZE)
+            table = PersistentObject.SEQUENCE_TABLE_NAME,
+            pkColumnName = PersistentObject.SEQUENCE_KEY,
+            valueColumnName = PersistentObject.SEQUENCE_VALUE,
+            pkColumnValue = COLUMN_VALUE,
+            allocationSize = PersistentObject.ALLOCATION_SIZE)
     @Column(name = "id", nullable = false)
     @Id @GeneratedValue(generator = COLUMN_VALUE)
-    private Integer id; 
+    private Integer id;
 
     @Column(name="context")
     private String string;
@@ -42,25 +42,25 @@ public class PersistentString extends PersistentObject {
     private List<PersistentLocalizedString> persistentLocalizedStringList = new LinkedList<PersistentLocalizedString>();
 
     @SuppressWarnings("unused")
-	@OneToMany(mappedBy = "persistentTitleString")
+    @OneToMany(mappedBy = "persistentTitleString")
     private List<PersistentCategory> persistentCategoryTitleList = new LinkedList<PersistentCategory>();
-    
+
     @SuppressWarnings("unused")
-	@OneToMany(mappedBy = "persistentDescriptionString")
+    @OneToMany(mappedBy = "persistentDescriptionString")
     private List<PersistentCategory> persistentCategoryDescList = new LinkedList<PersistentCategory>();
 
 
 
     public PersistentString() {
     }
-    
+
     public PersistentString(String str) {
         string = str;
     }
 
     public Integer getId() {
         return id;
-    }  
+    }
 
     public String getString() {
         return string;
@@ -85,13 +85,13 @@ public class PersistentString extends PersistentObject {
         persistentLocalizedString.setPersistentString(null);
         return persistentLocalizedString;
     }
-    
+
     public static PersistentString getFromDatabase(int id) {
         return PersistentQueries.getPersistentObject(PersistentString.class, id);
-    }  
-    
+    }
+
     @Override
     public String toString() {
-            return getString();
+        return getString();
     }
 }

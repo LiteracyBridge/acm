@@ -22,39 +22,39 @@ import org.literacybridge.acm.config.ACMConfiguration;
 
 @Entity
 @NamedQueries({
-  @NamedQuery(name = "PersistentTag.findAll", query = "select o from PersistentTag o")
+    @NamedQuery(name = "PersistentTag.findAll", query = "select o from PersistentTag o")
 })
 @Table(name = "t_tag")
-public class PersistentTag extends PersistentObject {
-	private static final String COLUMN_VALUE = "gen_tag";
+class PersistentTag extends PersistentObject {
+    private static final String COLUMN_VALUE = "gen_tag";
 
     @TableGenerator(name = COLUMN_VALUE,
-    table = PersistentObject.SEQUENCE_TABLE_NAME,
-    pkColumnName = PersistentObject.SEQUENCE_KEY,
-    valueColumnName = PersistentObject.SEQUENCE_VALUE,
-    pkColumnValue = COLUMN_VALUE,
-    allocationSize = PersistentObject.ALLOCATION_SIZE)
+            table = PersistentObject.SEQUENCE_TABLE_NAME,
+            pkColumnName = PersistentObject.SEQUENCE_KEY,
+            valueColumnName = PersistentObject.SEQUENCE_VALUE,
+            pkColumnValue = COLUMN_VALUE,
+            allocationSize = PersistentObject.ALLOCATION_SIZE)
     @Column(name = "id", nullable = false)
     @Id @GeneratedValue(generator = COLUMN_VALUE)
-    private Integer id;    
-    
+    private Integer id;
+
     @Column(name="uuid", nullable = false)
-    private String uuid;    
+    private String uuid;
 
     @Column(name="name")
-    private String name;    
-    
+    private String name;
+
     @ManyToMany
     @JoinTable(
-        name = "t_audioitem_has_tag",
-        inverseJoinColumns = {
-            @JoinColumn(name = "audioitem", referencedColumnName = "id"),
-        },
-        joinColumns =
+            name = "t_audioitem_has_tag",
+            inverseJoinColumns = {
+                    @JoinColumn(name = "audioitem", referencedColumnName = "id"),
+            },
+            joinColumns =
             @JoinColumn(name = "tag", referencedColumnName = "id")
-    )
+            )
     private List<PersistentAudioItem> persistentAudioItemList = new LinkedList<PersistentAudioItem>();
-    
+
     public PersistentTag() {
     }
 
@@ -65,7 +65,7 @@ public class PersistentTag extends PersistentObject {
 
     public Integer getId() {
         return id;
-    }  
+    }
 
     public String getUuid() {
         return uuid;
@@ -84,13 +84,13 @@ public class PersistentTag extends PersistentObject {
     }
 
     public List<PersistentAudioItem> getPersistentAudioItemList() {
-    	return persistentAudioItemList;
+        return persistentAudioItemList;
     }
-    
+
     public static PersistentTag getFromDatabase(int id) {
         return PersistentQueries.getPersistentObject(PersistentTag.class, id);
     }
-    
+
     public static PersistentTag getFromDatabase(String uuid) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         PersistentTag result = null;
@@ -104,12 +104,12 @@ public class PersistentTag extends PersistentObject {
         }
         return result;
     }
-    
+
     public static List<PersistentTag> getFromDatabase() {
-    	return PersistentQueries.getPersistentObjects(PersistentTag.class);
+        return PersistentQueries.getPersistentObjects(PersistentTag.class);
     }
-    
+
     public String toString() {
-    	return uuid;
+        return uuid;
     }
 }

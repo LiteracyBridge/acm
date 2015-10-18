@@ -1,6 +1,6 @@
 package org.literacybridge.acm.gui.util;
 
-import org.literacybridge.acm.content.AudioItem;
+import org.literacybridge.acm.db.AudioItem;
 
 public class AudioItemNode {
     private final AudioItem audioItem;

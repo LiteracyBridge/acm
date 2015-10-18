@@ -2,8 +2,8 @@ package org.literacybridge.acm.gui.util.language;
 
 import java.util.Locale;
 
-import org.literacybridge.acm.categories.Taxonomy.Category;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.db.Taxonomy.Category;
 
 public class LanguageUtil {
 
