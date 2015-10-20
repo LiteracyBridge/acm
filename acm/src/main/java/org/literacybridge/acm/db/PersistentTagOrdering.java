@@ -48,7 +48,7 @@ class PersistentTagOrdering extends PersistentObject {
         return "TagOrdering[audioitem=" + audioitem.getUuid() + ",tag=" + tag.getName() + ",pos=" + position + "]";
     }
 
-    private static class PrimaryKey {
+    public static class PrimaryKey {
         private Integer audioitem;
         private Integer tag;
 

@@ -10,6 +10,8 @@ import java.util.Map;
 
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 
+import com.google.common.collect.Lists;
+
 public class Taxonomy implements Persistable {
 
     private static String rootUUID = DefaultLiteracyBridgeTaxonomy.LB_TAXONOMY_UID;
@@ -133,8 +135,17 @@ public class Taxonomy implements Persistable {
      *
      * Note: Returns '0' for unassigned categories.
      */
-    public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
-        return PersistentCategory.getFacetCounts(filter, categories, locales);
+    public static Map<Integer, Integer> getFacetCounts(String filter, List<Category> categories, List<PersistentLocale> locales) {
+        List<PersistentCategory> persistentCategories = null;
+
+        if (categories != null) {
+            persistentCategories = Lists.newArrayListWithCapacity(categories.size());
+
+            for (Category cat : categories) {
+                persistentCategories.add(cat.getPersistentObject());
+            }
+        }
+        return PersistentCategory.getFacetCounts(filter, persistentCategories, locales);
     }
 
     public Integer getId() {
@@ -338,6 +349,24 @@ public class Taxonomy implements Persistable {
         @Override public String toString() {
             return getCategoryName(LanguageUtil.getUILanguage()).toString();
         }
+    }
+
+    public static Category getFromDatabase(int id) {
+        PersistentCategory category = PersistentCategory
+                .getFromDatabase(id);
+        if (category == null) {
+            return null;
+        }
+        return new Category(category);
+    }
+
+    public static Category getFromDatabase(String uuid) {
+        PersistentCategory category = PersistentCategory
+                .getFromDatabase(uuid);
+        if (category == null) {
+            return null;
+        }
+        return new Category(category);
     }
 
     public static void resetTaxonomy() {

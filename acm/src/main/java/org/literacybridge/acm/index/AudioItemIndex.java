@@ -45,10 +45,10 @@ import org.apache.lucene.util.Version;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.core.DataRequestResult;
 import org.literacybridge.acm.db.AudioItem;
-import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy;
+import org.literacybridge.acm.db.Taxonomy.Category;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -157,14 +157,14 @@ public class AudioItemIndex {
         return search(q);
     }
 
-    public IDataRequestResult search(String filterString, List<PersistentCategory> filterCategories,
+    public IDataRequestResult search(String filterString, List<Category> filterCategories,
             List<PersistentLocale> locales) throws IOException {
         BooleanQuery q = new BooleanQuery();
         addTextQuery(q, filterString);
 
         if (filterCategories != null && !filterCategories.isEmpty()) {
             BooleanQuery categoriesQuery = new BooleanQuery();
-            for (PersistentCategory category : filterCategories) {
+            for (Category category : filterCategories) {
                 categoriesQuery.add(new TermQuery(new Term(CATEGORIES_FIELD, category.getUuid())), Occur.SHOULD);
             }
             q.add(categoriesQuery, Occur.MUST);
@@ -216,7 +216,7 @@ public class AudioItemIndex {
             for (FacetResult r : facetResults) {
                 if (r.dim.equals(CATEGORIES_FACET_FIELD)) {
                     for (LabelAndValue lv : r.labelValues) {
-                        categoryFacets.put(PersistentCategory.getFromDatabase(lv.label).getId(), lv.value.intValue());
+                        categoryFacets.put(Taxonomy.getFromDatabase(lv.label).getId(), lv.value.intValue());
                     }
                 }
                 if (r.dim.equals(LOCALES_FACET_FIELD)) {

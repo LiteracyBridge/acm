@@ -12,10 +12,10 @@ import org.literacybridge.acm.api.IDataRequestService;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.db.AudioItem;
-import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy;
+import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.index.AudioItemIndex;
 
 public class DataRequestService implements IDataRequestService {
@@ -38,7 +38,7 @@ public class DataRequestService implements IDataRequestService {
     /* (non-Javadoc)
      * @see main.java.org.literacybridge.acm.api.IDataRequestService#getData(java.lang.String)
      */
-    public IDataRequestResult getData(Locale locale, String filterString, List<PersistentCategory> categories, List<PersistentLocale> locales) {
+    public IDataRequestResult getData(Locale locale, String filterString, List<Category> categories, List<PersistentLocale> locales) {
         AudioItemIndex index = getAudioItemIndex();
         if (index != null) {
             try {
@@ -66,7 +66,7 @@ public class DataRequestService implements IDataRequestService {
 
     @Override
     public IDataRequestResult getData(Locale locale,
-            List<PersistentCategory> filterCategories, List<PersistentLocale> locales) {
+            List<Category> filterCategories, List<PersistentLocale> locales) {
         return getData(locale, null, filterCategories, locales);
     }
 

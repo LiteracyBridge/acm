@@ -11,6 +11,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.Query;
 
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.db.Taxonomy.Category;
 
 public class PersistentQueries {
 
@@ -40,7 +41,7 @@ public class PersistentQueries {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<PersistentAudioItem> searchForAudioItems(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
+    public static List<PersistentAudioItem> searchForAudioItems(String filter, List<Category> categories, List<PersistentLocale> locales) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         List<PersistentAudioItem> searchResults = new LinkedList<PersistentAudioItem>();
         try {
@@ -133,13 +134,13 @@ public class PersistentQueries {
     }
 
 
-    private static void appendCategoryClause(StringBuilder whereClause, List<PersistentCategory> categories) {
+    private static void appendCategoryClause(StringBuilder whereClause, List<Category> categories) {
         if (categories.isEmpty()) {
             return;
         }
 
-        Iterator<PersistentCategory> it = categories.iterator();
-        PersistentCategory category = it.next();
+        Iterator<Category> it = categories.iterator();
+        Category category = it.next();
         whereClause.append("tc.category = " + category.getId());
 
         while (it.hasNext()) {
@@ -244,7 +245,7 @@ public class PersistentQueries {
 
 
     @SuppressWarnings("unchecked")
-    static Map<String, Integer> getLanguageFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
+    static Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<PersistentLocale> locales) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         Map<String, Integer> results = new HashMap<String, Integer>();
         try {

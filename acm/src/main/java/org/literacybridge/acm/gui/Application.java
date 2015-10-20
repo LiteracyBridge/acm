@@ -24,9 +24,9 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.Persistence;
-import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.Playlist;
+import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.ResourceView.ResourceView;
@@ -283,7 +283,7 @@ public class Application extends JXFrame {
         private String previousFilterState = null;
 
         private String filterString;
-        private List<PersistentCategory> filterCategories;
+        private List<Category> filterCategories;
         private List<PersistentLocale> filterLanguages;
         private Playlist selectedPlaylist;
 
@@ -294,11 +294,11 @@ public class Application extends JXFrame {
             this.filterString = filterString;
             updateResult();
         }
-        public synchronized List<PersistentCategory> getFilterCategories() {
+        public synchronized List<Category> getFilterCategories() {
             return filterCategories;
         }
         public synchronized void setFilterCategories(
-                List<PersistentCategory> filterCategories) {
+                List<Category> filterCategories) {
             this.filterCategories = filterCategories;
             updateResult();
         }
@@ -371,7 +371,7 @@ public class Application extends JXFrame {
                 builder.append(",");
             }
             if (filterCategories != null && !filterCategories.isEmpty()) {
-                for (PersistentCategory cat : filterCategories) {
+                for (Category cat : filterCategories) {
                     builder.append("FC:").append(cat.getUuid());
                     builder.append(",");
                 }

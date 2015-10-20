@@ -23,8 +23,9 @@ import javax.swing.JPopupMenu;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.db.AudioItem;
-import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.Playlist;
+import org.literacybridge.acm.db.Taxonomy;
+import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.CategoryView.TagsListChanged;
 import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
@@ -121,7 +122,7 @@ public class TagsListPopupMenu extends JPopupMenu {
                 File listDirectory = new File(ACMConfiguration.getCurrentDB()
                         .getTBLoadersDirectory(),
                         "TB_Options/activeLists");
-                LinkedHashMap<String, PersistentCategory> categories = new LinkedHashMap();
+                LinkedHashMap<String, Category> categories = new LinkedHashMap();
                 Map<String, File> listCollection = Maps.newHashMap();
                 try {
                     String packageName = (String) JOptionPane.showInputDialog(
@@ -168,9 +169,9 @@ public class TagsListPopupMenu extends JPopupMenu {
                             IOUtils.copy(sourceActiveListsFile, targetActiveListsFile);
                         }
 
-                        PersistentCategory category = PersistentCategory
+                        Category category = Taxonomy
                                 .getFromDatabase(TBBuilder.IntroMessageID); // Update Intro Message
-                        categories.put(category.getTitle().getString(), category);
+                        categories.put(category.getCategoryName(LanguageUtil.getUILanguage()), category);
                         BufferedReader reader = new BufferedReader(new FileReader(
                                 targetActiveListsFile));
                         while (reader.ready()) {
@@ -185,10 +186,9 @@ public class TagsListPopupMenu extends JPopupMenu {
                                 line = line.substring(1);
                             }
 
-                            category = PersistentCategory
-                                    .getFromDatabase(line);
+                            category = Taxonomy.getFromDatabase(line);
                             if (category != null) {
-                                categories.put(category.getTitle().getString(),
+                                categories.put(category.getCategoryName(LanguageUtil.getUILanguage()),
                                         category);
                             }
                         }
@@ -219,7 +219,7 @@ public class TagsListPopupMenu extends JPopupMenu {
     }
 
     private final void export(final Playlist playlist, String updateName,
-            PersistentCategory category, File dir) throws IOException {
+            Category category, File dir) throws IOException {
 
         BufferedWriter writer = new BufferedWriter(new FileWriter(new File(dir,
                 category.getUuid() + ".txt"), false));

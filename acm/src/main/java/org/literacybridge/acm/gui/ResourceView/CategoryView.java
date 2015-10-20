@@ -49,7 +49,6 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.core.MessageBus.Message;
-import org.literacybridge.acm.db.PersistentCategory;
 import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy.Category;
@@ -416,11 +415,11 @@ public class CategoryView extends ACMContainer implements Observer {
                 clearTagSelection();
 
                 TreePath[] tp = categoryTree.getCheckingPaths();
-                List<PersistentCategory> filterCategories = new ArrayList<PersistentCategory>(tp.length);
+                List<Category> filterCategories = new ArrayList<Category>(tp.length);
                 for (int i = 0; i < tp.length; i++) {
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode) tp[i].getLastPathComponent();
                     CategoryTreeNodeObject obj = (CategoryTreeNodeObject) node.getUserObject();
-                    filterCategories.add(obj.getCategory().getPersistentObject());
+                    filterCategories.add(obj.getCategory());
                 }
 
                 Application.getFilterState().setFilterCategories(filterCategories);

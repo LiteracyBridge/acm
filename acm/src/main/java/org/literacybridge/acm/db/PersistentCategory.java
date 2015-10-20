@@ -24,46 +24,46 @@ import org.literacybridge.acm.config.ACMConfiguration;
 
 @Entity
 @NamedQueries({
-  @NamedQuery(name = "PersistentCategory.findAll", query = "select o from PersistentCategory o")
+    @NamedQuery(name = "PersistentCategory.findAll", query = "select o from PersistentCategory o")
 })
 @Table(name = "t_category")
-public class PersistentCategory extends PersistentObject {
-   
-	private static final long serialVersionUID = -126026515543050565L;
+class PersistentCategory extends PersistentObject {
 
-	private static final String COLUMN_VALUE = "gen_category";
+    private static final long serialVersionUID = -126026515543050565L;
+
+    private static final String COLUMN_VALUE = "gen_category";
 
     @TableGenerator(name = COLUMN_VALUE,
-    table = PersistentObject.SEQUENCE_TABLE_NAME,
-    pkColumnName = PersistentObject.SEQUENCE_KEY,
-    valueColumnName = PersistentObject.SEQUENCE_VALUE,
-    pkColumnValue = COLUMN_VALUE,
-    allocationSize = PersistentObject.ALLOCATION_SIZE)
+            table = PersistentObject.SEQUENCE_TABLE_NAME,
+            pkColumnName = PersistentObject.SEQUENCE_KEY,
+            valueColumnName = PersistentObject.SEQUENCE_VALUE,
+            pkColumnValue = COLUMN_VALUE,
+            allocationSize = PersistentObject.ALLOCATION_SIZE)
     @Column(name = "id", nullable = false)
     @Id @GeneratedValue(generator = COLUMN_VALUE)
-    private Integer id;    
-    
+    private Integer id;
+
     @Column(name="uuid", nullable = false)
-    private String uuid;    
+    private String uuid;
 
     @Column(name="revision")
-    private Integer revision;    
+    private Integer revision;
 
     @Column(name="ordering")
-    private Integer order;    
-    
+    private Integer order;
+
     @ManyToOne
     @JoinColumn(name = "lang_desc")
-    private PersistentString persistentDescriptionString;    
-    
+    private PersistentString persistentDescriptionString;
+
     @ManyToOne
     @JoinColumn(name = "lang_title")
     private PersistentString persistentTitleString;
-    
+
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "parent")
     private PersistentCategory persistentParentCategory;
-    
+
     @OneToMany(mappedBy = "persistentParentCategory", cascade = CascadeType.ALL)
     private List<PersistentCategory> persistentChildCategoryList = new LinkedList<PersistentCategory>();
 
@@ -78,24 +78,24 @@ public class PersistentCategory extends PersistentObject {
 
     public Integer getId() {
         return id;
-    }  
+    }
 
     public Integer getRevision() {
-    	return revision;
+        return revision;
     }
-    
+
     public void setRevision(Integer revision) {
-    	this.revision = revision;
+        this.revision = revision;
     }
 
     public Integer getOrder() {
-    	return order == null ? 0 : order.intValue();
+        return order == null ? 0 : order.intValue();
     }
-    
+
     public void setOrder(Integer order) {
-    	this.order = order;
+        this.order = order;
     }
-    
+
     public String getUuid() {
         return uuid;
     }
@@ -147,18 +147,18 @@ public class PersistentCategory extends PersistentObject {
         persistentCategory.setPersistentParentCategory(null);
         return persistentCategory;
     }
-    
+
     public void clearPersistentChildCategories() {
-    	for (PersistentCategory child : getPersistentChildCategoryList()) {
-    		child.setPersistentParentCategory(null);
-    	}
-    	getPersistentChildCategoryList().clear();
+        for (PersistentCategory child : getPersistentChildCategoryList()) {
+            child.setPersistentParentCategory(null);
+        }
+        getPersistentChildCategoryList().clear();
     }
 
     public static PersistentCategory getFromDatabase(int id) {
         return PersistentQueries.getPersistentObject(PersistentCategory.class, id);
     }
-    
+
     public static PersistentCategory getFromDatabase(String uuid) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         PersistentCategory result = null;
@@ -167,26 +167,26 @@ public class PersistentCategory extends PersistentObject {
             result = (PersistentCategory) findObject.getSingleResult();
         } catch (NoResultException e) {
             try {
-            	// cannot find category id; use the Other Messages Category as backup
+                // cannot find category id; use the Other Messages Category as backup
                 Query findObject = em.createQuery("SELECT o FROM PersistentCategory o WHERE o.uuid = '0-0'");
                 result = (PersistentCategory) findObject.getSingleResult();
                 System.out.println("  assigning Other category to this audioItem due to nonexistent category id ('" + uuid + "')");
             } catch (NoResultException nre) {
-            	nre.printStackTrace();
-            // do nothing
+                nre.printStackTrace();
+                // do nothing
             }
         } finally {
             em.close();
         }
         return result;
     }
-    
+
     @Override
     public String toString() {
-    	return uuid;
+        return uuid;
     }
-    
+
     public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
         return PersistentQueries.getCategoryFacetCounts(filter, categories, locales);
-    }    
+    }
 }

@@ -203,7 +203,7 @@ public class AudioItem implements Persistable {
     }
 
     public static List<AudioItem> getFromDatabaseBySearch(String searchFilter,
-            List<PersistentCategory> categories, List<PersistentLocale> locales) {
+            List<Category> categories, List<PersistentLocale> locales) {
         return toAudioItemList(PersistentQueries.searchForAudioItems(searchFilter, categories, locales));
     }
 
