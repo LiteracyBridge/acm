@@ -12,7 +12,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 
 
 @MappedSuperclass
-public abstract class PersistentObject implements Serializable, Persistable {
+abstract class PersistentObject implements Serializable, Persistable {
     @Transient
     private Logger mLogger = Logger.getLogger(getClass().getName());
 
@@ -26,7 +26,7 @@ public abstract class PersistentObject implements Serializable, Persistable {
     public abstract Object getId();
 
     @SuppressWarnings("unchecked")
-	public synchronized <T> T commit() {
+    public synchronized <T> T commit() {
         mLogger.finest("Committing object " + toString());
 
         T persistentObj = null;
@@ -56,11 +56,11 @@ public abstract class PersistentObject implements Serializable, Persistable {
     }
 
     protected void afterCommitHook() {
-    	// nothing to do by default
+        // nothing to do by default
     }
 
     @SuppressWarnings("unchecked")
-	public synchronized <T> T commit(EntityManager em) {
+    public synchronized <T> T commit(EntityManager em) {
         final T result;
         if (em != null) {
             result = (T) em.merge(this);
@@ -100,7 +100,7 @@ public abstract class PersistentObject implements Serializable, Persistable {
 
 
     @SuppressWarnings("unchecked")
-	public <T> T refresh() {
+    public <T> T refresh() {
         if (getId() == null) {
             throw new IllegalStateException("Illegal to call refresh on an uncommitted instance.");
         }

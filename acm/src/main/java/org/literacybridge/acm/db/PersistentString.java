@@ -19,7 +19,7 @@ import javax.persistence.TableGenerator;
     @NamedQuery(name = "PersistentString.findAll", query = "select o from PersistentString o")
 })
 @Table(name = "t_string")
-public class PersistentString extends PersistentObject {
+class PersistentString extends PersistentObject {
 
     private static final long serialVersionUID = 1942793327937175428L;
 

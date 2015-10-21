@@ -22,7 +22,7 @@ import javax.persistence.TableGenerator;
     @NamedQuery(name = "PersistentMetadata.findAll", query = "select o from PersistentMetadata o")
 })
 @Table(name = "t_metadata")
-public class PersistentMetadata extends PersistentObject {
+class PersistentMetadata extends PersistentObject {
 
     private static final long serialVersionUID = -4128827355718501175L;
 

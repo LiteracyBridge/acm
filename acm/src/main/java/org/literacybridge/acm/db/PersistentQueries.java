@@ -14,7 +14,7 @@ import javax.persistence.Query;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.db.Taxonomy.Category;
 
-public class PersistentQueries {
+class PersistentQueries {
 
     static <T> T getPersistentObject(Class<T> objectClass, Object id) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
