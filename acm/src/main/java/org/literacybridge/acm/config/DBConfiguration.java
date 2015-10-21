@@ -29,10 +29,10 @@ import javax.swing.JOptionPane;
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.db.Persistence;
+import org.literacybridge.acm.db.RFC3066LanguageCode;
 import org.literacybridge.acm.db.Persistence.DatabaseConnection;
 import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.index.AudioItemIndex;
-import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 import org.literacybridge.acm.repository.AudioItemRepository;
 
 @SuppressWarnings("serial")

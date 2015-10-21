@@ -17,8 +17,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
-import org.literacybridge.acm.metadata.types.MetadataStatisticsField;
-
 @Entity
 @NamedQueries({
     @NamedQuery(name = "PersistentMetadata.findAll", query = "select o from PersistentMetadata o")

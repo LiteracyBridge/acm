@@ -12,7 +12,6 @@ import org.literacybridge.acm.api.IDataRequestService;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.db.AudioItem;
-import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.db.Taxonomy.Category;
@@ -38,7 +37,7 @@ public class DataRequestService implements IDataRequestService {
     /* (non-Javadoc)
      * @see main.java.org.literacybridge.acm.api.IDataRequestService#getData(java.lang.String)
      */
-    public IDataRequestResult getData(Locale locale, String filterString, List<Category> categories, List<PersistentLocale> locales) {
+    public IDataRequestResult getData(Locale locale, String filterString, List<Category> categories, List<Locale> locales) {
         AudioItemIndex index = getAudioItemIndex();
         if (index != null) {
             try {
@@ -56,7 +55,7 @@ public class DataRequestService implements IDataRequestService {
             audioItems.add(item.getUuid());
         }
 
-        Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, categories, locales);
+        Map<String, Integer> languageFacetCounts = Taxonomy.getLanguageFacetCounts(filterString, categories, locales);
 
         Taxonomy taxonomy = Taxonomy.getTaxonomy();
         DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
@@ -66,7 +65,7 @@ public class DataRequestService implements IDataRequestService {
 
     @Override
     public IDataRequestResult getData(Locale locale,
-            List<Category> filterCategories, List<PersistentLocale> locales) {
+            List<Category> filterCategories, List<Locale> locales) {
         return getData(locale, null, filterCategories, locales);
     }
 
@@ -95,7 +94,7 @@ public class DataRequestService implements IDataRequestService {
             audioItems.add(item.getUuid());
         }
 
-        Map<String, Integer> languageFacetCounts = PersistentLocale.getFacetCounts(filterString, null, null);
+        Map<String, Integer> languageFacetCounts = Taxonomy.getLanguageFacetCounts(filterString, null, null);
 
         Taxonomy taxonomy = Taxonomy.getTaxonomy();
         DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,

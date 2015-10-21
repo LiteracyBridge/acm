@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import org.literacybridge.acm.db.AudioItem;
-import org.literacybridge.acm.metadata.Metadata;
-import org.literacybridge.acm.metadata.MetadataSpecification;
+import org.literacybridge.acm.db.Metadata;
+import org.literacybridge.acm.db.MetadataSpecification;
 
 public class StatisticsImporter {
     public void importStatsFolder(File folder) throws IOException {

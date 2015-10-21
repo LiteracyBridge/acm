@@ -1,6 +1,4 @@
-package org.literacybridge.acm.metadata.types;
-
-import org.literacybridge.acm.metadata.Attribute;
+package org.literacybridge.acm.db;
 
 public class MetadataStatisticsField extends MetadataIntegerField {
 	public MetadataStatisticsField(String name, Attribute<?>... attributes) {

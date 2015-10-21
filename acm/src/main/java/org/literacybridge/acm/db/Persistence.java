@@ -22,8 +22,6 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.AudioItemCache;
-import org.literacybridge.acm.metadata.MetadataSpecification;
-import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.repository.A18DurationUtil;
 
 import com.google.common.collect.Lists;

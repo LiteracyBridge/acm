@@ -19,11 +19,11 @@ import javax.swing.table.TableModel;
 
 import org.apache.commons.lang.StringUtils;
 import org.jdesktop.swingx.JXTable;
+import org.literacybridge.acm.db.MetadataSpecification;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.messages.SearchRequestMessage;
 import org.literacybridge.acm.gui.util.UIUtils;
-import org.literacybridge.acm.metadata.MetadataSpecification;
 
 public class AudioItemPropertiesTable extends JXTable {
 

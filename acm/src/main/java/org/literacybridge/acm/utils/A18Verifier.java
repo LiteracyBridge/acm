@@ -11,10 +11,10 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
 
+import org.literacybridge.acm.db.LBMetadataSerializer;
+import org.literacybridge.acm.db.Metadata;
 import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.db.Taxonomy.Category;
-import org.literacybridge.acm.metadata.LBMetadataSerializer;
-import org.literacybridge.acm.metadata.Metadata;
 
 public class A18Verifier {
 	public static void main(String[] args) throws Exception {

@@ -1,4 +1,4 @@
-package org.literacybridge.acm.metadata;
+package org.literacybridge.acm.db;
 
 public class InvalidMetadataException extends Exception {
 	private static final long serialVersionUID = 1L;

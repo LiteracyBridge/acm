@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,7 +46,6 @@ import org.apache.lucene.util.Version;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.core.DataRequestResult;
 import org.literacybridge.acm.db.AudioItem;
-import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.db.Taxonomy.Category;
@@ -158,7 +158,7 @@ public class AudioItemIndex {
     }
 
     public IDataRequestResult search(String filterString, List<Category> filterCategories,
-            List<PersistentLocale> locales) throws IOException {
+            List<Locale> locales) throws IOException {
         BooleanQuery q = new BooleanQuery();
         addTextQuery(q, filterString);
 
@@ -172,7 +172,7 @@ public class AudioItemIndex {
 
         if (locales != null && !locales.isEmpty()) {
             BooleanQuery localesQuery = new BooleanQuery();
-            for (PersistentLocale locale : locales) {
+            for (Locale locale : locales) {
                 localesQuery.add(new TermQuery(new Term(LOCALES_FIELD, locale.getLanguage().toLowerCase())), Occur.SHOULD);
             }
             q.add(localesQuery, Occur.MUST);

@@ -1,13 +1,9 @@
-package org.literacybridge.acm.metadata;
+package org.literacybridge.acm.db;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
-
-import org.literacybridge.acm.metadata.types.MetadataIntegerField;
-import org.literacybridge.acm.metadata.types.MetadataStatisticsField;
-import org.literacybridge.acm.metadata.types.MetadataStringField;
 
 import com.google.common.collect.ImmutableSet;
 

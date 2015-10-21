@@ -49,7 +49,6 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.core.MessageBus.Message;
-import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.device.DeviceConnectEvent;
@@ -394,16 +393,12 @@ public class CategoryView extends ACMContainer implements Observer {
     private void pumpLanguageFilter() {
         // map languages on 'Locales'
         TreePath[] tp = languageTree.getCheckingPaths();
-        List<PersistentLocale> filterLocales = new ArrayList<PersistentLocale>(tp.length);
+        List<Locale> filterLocales = new ArrayList<Locale>(tp.length);
         for (int i = 0; i < tp.length; i++) {
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) tp[i].getLastPathComponent();
             LanguageLabel obj = (LanguageLabel) node.getUserObject();
 
-            //new PersistentLocale
-            PersistentLocale locale = new PersistentLocale();
-            locale.setCountry(obj.getLocale().getCountry());
-            locale.setLanguage(obj.getLocale().getLanguage());
-            filterLocales.add(locale);
+            filterLocales.add(obj.getLocale());
         }
 
         Application.getFilterState().setFilterLanguages(filterLocales);

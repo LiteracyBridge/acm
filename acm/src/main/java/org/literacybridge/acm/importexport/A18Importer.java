@@ -11,13 +11,13 @@ import java.util.Set;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.db.LBMetadataSerializer;
+import org.literacybridge.acm.db.Metadata;
+import org.literacybridge.acm.db.MetadataSpecification;
+import org.literacybridge.acm.db.MetadataValue;
+import org.literacybridge.acm.db.RFC3066LanguageCode;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
-import org.literacybridge.acm.metadata.LBMetadataSerializer;
-import org.literacybridge.acm.metadata.Metadata;
-import org.literacybridge.acm.metadata.MetadataSpecification;
-import org.literacybridge.acm.metadata.MetadataValue;
-import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.DuplicateItemException;
 import org.literacybridge.acm.repository.AudioItemRepository.UnsupportedFormatException;

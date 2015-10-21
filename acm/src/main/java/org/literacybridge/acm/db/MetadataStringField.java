@@ -1,12 +1,9 @@
-package org.literacybridge.acm.metadata.types;
+package org.literacybridge.acm.db;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.literacybridge.acm.metadata.Attribute;
-import org.literacybridge.acm.metadata.MetadataField;
-import org.literacybridge.acm.metadata.MetadataValue;
 import org.literacybridge.acm.utils.IOUtils;
 
 

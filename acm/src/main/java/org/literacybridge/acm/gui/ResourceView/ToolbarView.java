@@ -31,6 +31,7 @@ import javax.swing.Timer;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.db.MetadataSpecification;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
@@ -43,7 +44,6 @@ import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
-import org.literacybridge.acm.metadata.MetadataSpecification;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.utils.OSChecker;
 

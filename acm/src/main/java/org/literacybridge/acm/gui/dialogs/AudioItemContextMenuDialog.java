@@ -22,6 +22,7 @@ import javax.swing.JOptionPane;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.db.MetadataSpecification;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
@@ -29,7 +30,6 @@ import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
-import org.literacybridge.acm.metadata.MetadataSpecification;
 
 // TODO: deal with localized audio items when languages are fully implemented
 public class AudioItemContextMenuDialog extends JDialog implements WindowListener {

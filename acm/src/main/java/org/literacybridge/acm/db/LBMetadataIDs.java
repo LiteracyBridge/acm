@@ -1,7 +1,8 @@
-package org.literacybridge.acm.metadata;
+package org.literacybridge.acm.db;
+
+import static org.literacybridge.acm.db.MetadataSpecification.*;
 
 import com.google.common.collect.ImmutableBiMap;
-import static org.literacybridge.acm.metadata.MetadataSpecification.*;
 
 public class LBMetadataIDs {
 	public static final int CATEGORY_FIELD_ID = 0;

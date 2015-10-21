@@ -13,24 +13,24 @@ import javax.persistence.TableGenerator;
 
 @Entity
 @NamedQueries({
-  @NamedQuery(name = "PersistentLocalizedString.findAll", query = "select o from PersistentLocalizedString o")
+    @NamedQuery(name = "PersistentLocalizedString.findAll", query = "select o from PersistentLocalizedString o")
 })
 @Table(name = "t_localized_string")
-public class PersistentLocalizedString extends PersistentObject {
+class PersistentLocalizedString extends PersistentObject {
 
-	private static final long serialVersionUID = -6293178189550152630L;
+    private static final long serialVersionUID = -6293178189550152630L;
 
-	private static final String COLUMN_VALUE = "gen_localized_string";
+    private static final String COLUMN_VALUE = "gen_localized_string";
 
     @TableGenerator(name = COLUMN_VALUE,
-    table = PersistentObject.SEQUENCE_TABLE_NAME,
-    pkColumnName = PersistentObject.SEQUENCE_KEY,
-    valueColumnName = PersistentObject.SEQUENCE_VALUE,
-    pkColumnValue = COLUMN_VALUE,
-    allocationSize = PersistentObject.ALLOCATION_SIZE)
+            table = PersistentObject.SEQUENCE_TABLE_NAME,
+            pkColumnName = PersistentObject.SEQUENCE_KEY,
+            valueColumnName = PersistentObject.SEQUENCE_VALUE,
+            pkColumnValue = COLUMN_VALUE,
+            allocationSize = PersistentObject.ALLOCATION_SIZE)
     @Column(name = "id", nullable = false)
     @Id @GeneratedValue(generator = COLUMN_VALUE)
-    private Integer id; 
+    private Integer id;
 
     @Column(name="translation_string")
     private String translation;
@@ -48,7 +48,7 @@ public class PersistentLocalizedString extends PersistentObject {
 
     public Integer getId() {
         return id;
-    }  
+    }
 
     public String getTranslation() {
         return translation;
@@ -62,21 +62,21 @@ public class PersistentLocalizedString extends PersistentObject {
     public PersistentLocale getPersistentLocale() {
         return persistentLocale;
     }
-    
+
     public PersistentString getPersistentString() {
         return persistentString;
     }
 
     void setPersistentString(PersistentString persistentString) {
         this.persistentString = persistentString;
-    }  
-    
+    }
+
     @Override
     public String toString() {
-            return getTranslation();
+        return getTranslation();
     }
-    
+
     public static PersistentLocalizedString getFromDatabase(int id) {
         return PersistentQueries.getPersistentObject(PersistentLocalizedString.class, id);
-    }   
+    }
 }

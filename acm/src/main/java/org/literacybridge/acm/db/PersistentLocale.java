@@ -3,7 +3,6 @@ package org.literacybridge.acm.db;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -15,14 +14,12 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
-import org.literacybridge.acm.db.Taxonomy.Category;
-
 @Entity
 @NamedQueries({
     @NamedQuery(name = "PersistentLocale.findAll", query = "select o from PersistentLocale o")
 })
 @Table(name = "t_locale")
-public class PersistentLocale extends PersistentObject implements Serializable {
+class PersistentLocale extends PersistentObject implements Serializable {
 
     private static final long serialVersionUID = 196741399223820451L;
 
@@ -101,9 +98,5 @@ public class PersistentLocale extends PersistentObject implements Serializable {
 
     public static PersistentLocale getFromDatabase(int id) {
         return PersistentQueries.getPersistentObject(PersistentLocale.class, id);
-    }
-
-    public static Map<String, Integer> getFacetCounts(String filter, List<Category> categories, List<PersistentLocale> locales) {
-        return PersistentQueries.getLanguageFacetCounts(filter, categories, locales);
     }
 }

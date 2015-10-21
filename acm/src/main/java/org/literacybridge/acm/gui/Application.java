@@ -7,6 +7,7 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,7 +25,6 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.Persistence;
-import org.literacybridge.acm.db.PersistentLocale;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.device.FileSystemMonitor;
@@ -284,7 +284,7 @@ public class Application extends JXFrame {
 
         private String filterString;
         private List<Category> filterCategories;
-        private List<PersistentLocale> filterLanguages;
+        private List<Locale> filterLanguages;
         private Playlist selectedPlaylist;
 
         public synchronized String getFilterString() {
@@ -303,10 +303,10 @@ public class Application extends JXFrame {
             updateResult();
         }
 
-        public synchronized List<PersistentLocale> getFilterLanguages() {
+        public synchronized List<Locale> getFilterLanguages() {
             return filterLanguages;
         }
-        public synchronized void setFilterLanguages(List<PersistentLocale> filterLanguages) {
+        public synchronized void setFilterLanguages(List<Locale> filterLanguages) {
             this.filterLanguages = filterLanguages;
             updateResult();
         }
@@ -377,7 +377,7 @@ public class Application extends JXFrame {
                 }
             }
             if (filterLanguages != null && !filterLanguages.isEmpty()) {
-                for (PersistentLocale lang : filterLanguages) {
+                for (Locale lang : filterLanguages) {
                     builder.append("FL:").append(lang.getLanguage()).append("-").append(lang.getCountry());
                     builder.append(",");
                 }

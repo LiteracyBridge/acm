@@ -1,4 +1,4 @@
-package org.literacybridge.acm.metadata;
+package org.literacybridge.acm.db;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
@@ -9,7 +9,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.utils.IOUtils;
 

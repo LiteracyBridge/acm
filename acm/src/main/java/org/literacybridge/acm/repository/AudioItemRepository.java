@@ -20,8 +20,8 @@ import org.literacybridge.acm.audioconverter.api.MP3Format;
 import org.literacybridge.acm.audioconverter.api.WAVFormat;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.db.AudioItem;
-import org.literacybridge.acm.metadata.LBMetadataSerializer;
-import org.literacybridge.acm.metadata.Metadata;
+import org.literacybridge.acm.db.LBMetadataSerializer;
+import org.literacybridge.acm.db.Metadata;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.acm.utils.OSChecker;
 

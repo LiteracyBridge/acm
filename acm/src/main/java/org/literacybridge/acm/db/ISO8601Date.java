@@ -1,4 +1,4 @@
-package org.literacybridge.acm.metadata;
+package org.literacybridge.acm.db;
 
 import java.io.DataInput;
 import java.io.DataOutput;

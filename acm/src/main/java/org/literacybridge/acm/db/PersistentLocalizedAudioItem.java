@@ -25,7 +25,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
     @NamedQuery(name = "PersistentLocalizedAudioItem.findAll", query = "select o from PersistentLocalizedAudioItem o")
 })
 @Table(name = "t_localized_audioitem")
-public class PersistentLocalizedAudioItem extends PersistentObject {
+class PersistentLocalizedAudioItem extends PersistentObject {
 
     private static final long serialVersionUID = -976609359839768497L;
 

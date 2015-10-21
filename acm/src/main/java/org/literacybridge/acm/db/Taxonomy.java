@@ -135,7 +135,7 @@ public class Taxonomy implements Persistable {
      *
      * Note: Returns '0' for unassigned categories.
      */
-    public static Map<Integer, Integer> getFacetCounts(String filter, List<Category> categories, List<PersistentLocale> locales) {
+    public static Map<Integer, Integer> getFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
         List<PersistentCategory> persistentCategories = null;
 
         if (categories != null) {
@@ -146,6 +146,10 @@ public class Taxonomy implements Persistable {
             }
         }
         return PersistentCategory.getFacetCounts(filter, persistentCategories, locales);
+    }
+
+    public static Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
+        return PersistentQueries.getLanguageFacetCounts(filter, categories, locales);
     }
 
     public Integer getId() {

@@ -8,13 +8,13 @@ import java.util.List;
 import javax.swing.table.AbstractTableModel;
 
 import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.db.MetadataSpecification;
+import org.literacybridge.acm.db.MetadataValue;
+import org.literacybridge.acm.db.RFC3066LanguageCode;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.A18Importer;
-import org.literacybridge.acm.metadata.MetadataSpecification;
-import org.literacybridge.acm.metadata.MetadataValue;
-import org.literacybridge.acm.metadata.RFC3066LanguageCode;
 
 @SuppressWarnings("serial")
 public class AudioItemImportModel extends AbstractTableModel {

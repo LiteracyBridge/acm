@@ -1,15 +1,10 @@
-package org.literacybridge.acm.metadata;
+package org.literacybridge.acm.db;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import org.literacybridge.acm.db.Persistable;
-import org.literacybridge.acm.db.PersistentAudioItemStatistic;
-import org.literacybridge.acm.db.PersistentMetadata;
-import org.literacybridge.acm.metadata.types.MetadataStatisticsField;
 
 public class Metadata implements Persistable {
 

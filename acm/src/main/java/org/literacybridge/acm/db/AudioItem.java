@@ -3,14 +3,13 @@ package org.literacybridge.acm.db;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.persistence.EntityManager;
 
 import org.literacybridge.acm.db.Taxonomy.Category;
-import org.literacybridge.acm.metadata.Metadata;
-import org.literacybridge.acm.metadata.MetadataSpecification;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -203,7 +202,7 @@ public class AudioItem implements Persistable {
     }
 
     public static List<AudioItem> getFromDatabaseBySearch(String searchFilter,
-            List<Category> categories, List<PersistentLocale> locales) {
+            List<Category> categories, List<Locale> locales) {
         return toAudioItemList(PersistentQueries.searchForAudioItems(searchFilter, categories, locales));
     }
 

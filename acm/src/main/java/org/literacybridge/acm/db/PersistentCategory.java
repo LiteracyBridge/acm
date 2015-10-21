@@ -2,6 +2,7 @@ package org.literacybridge.acm.db;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.persistence.CascadeType;
@@ -186,7 +187,7 @@ class PersistentCategory extends PersistentObject {
         return uuid;
     }
 
-    public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
+    public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<Locale> locales) {
         return PersistentQueries.getCategoryFacetCounts(filter, categories, locales);
     }
 }

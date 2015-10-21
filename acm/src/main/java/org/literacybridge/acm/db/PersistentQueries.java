@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.persistence.EntityManager;
@@ -41,7 +42,7 @@ public class PersistentQueries {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<PersistentAudioItem> searchForAudioItems(String filter, List<Category> categories, List<PersistentLocale> locales) {
+    public static List<PersistentAudioItem> searchForAudioItems(String filter, List<Category> categories, List<Locale> locales) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         List<PersistentAudioItem> searchResults = new LinkedList<PersistentAudioItem>();
         try {
@@ -158,13 +159,13 @@ public class PersistentQueries {
         whereClause.append("tc.tag = " + selectedTag.getId());
     }
 
-    private static void appendLocalesClause(StringBuilder whereClause, List<PersistentLocale> locales) {
+    private static void appendLocalesClause(StringBuilder whereClause, List<Locale> locales) {
         if (locales.isEmpty()) {
             return;
         }
 
-        Iterator<PersistentLocale> it = locales.iterator();
-        PersistentLocale locale = it.next();
+        Iterator<Locale> it = locales.iterator();
+        Locale locale = it.next();
         whereClause.append("t3.language = '" + locale.getLanguage() + "'");
 
         while (it.hasNext()) {
@@ -176,7 +177,7 @@ public class PersistentQueries {
 
 
     @SuppressWarnings("unchecked")
-    static Map<Integer, Integer> getCategoryFacetCounts(String filter, List<PersistentCategory> categories, List<PersistentLocale> locales) {
+    static Map<Integer, Integer> getCategoryFacetCounts(String filter, List<PersistentCategory> categories, List<Locale> locales) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         Map<Integer, Integer> results = new HashMap<Integer, Integer>();
         try {
@@ -245,7 +246,7 @@ public class PersistentQueries {
 
 
     @SuppressWarnings("unchecked")
-    static Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<PersistentLocale> locales) {
+    static Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         Map<String, Integer> results = new HashMap<String, Integer>();
         try {
