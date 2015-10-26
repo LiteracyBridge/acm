@@ -29,7 +29,6 @@ import javax.swing.table.AbstractTableModel;
 
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.Metadata;
 import org.literacybridge.acm.db.MetadataField;
 import org.literacybridge.acm.db.MetadataSpecification;
@@ -39,6 +38,7 @@ import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
+import org.literacybridge.acm.store.AudioItem;
 
 import com.google.common.collect.Maps;
 
@@ -146,7 +146,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
                 if (values != null && !values.isEmpty()) {
                     String id = values.get(0).getValue();
                     if (!StringUtils.isEmpty(id)) {
-                        AudioItem item = AudioItem.getFromDatabase(id);
+                        AudioItem item = ACMConfiguration.getCurrentDB().getMetadataStore().getAudioItem(id);
                         List<MetadataValue<String>> values1 = item.getMetadata().getMetadataValues(DC_TITLE);
                         if (values1 != null && !values1.isEmpty()) {
                             return values1.get(0).getValue();

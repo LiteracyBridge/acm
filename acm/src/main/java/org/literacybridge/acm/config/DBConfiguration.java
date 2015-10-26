@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
@@ -28,12 +27,14 @@ import javax.swing.JOptionPane;
 
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.db.DBMetadataStore;
 import org.literacybridge.acm.db.Persistence;
-import org.literacybridge.acm.db.RFC3066LanguageCode;
 import org.literacybridge.acm.db.Persistence.DatabaseConnection;
+import org.literacybridge.acm.db.RFC3066LanguageCode;
 import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.index.AudioItemIndex;
 import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.store.MetadataStore;
 
 @SuppressWarnings("serial")
 public class DBConfiguration extends Properties {
@@ -50,13 +51,15 @@ public class DBConfiguration extends Properties {
     private AudioItemRepository repository;
     private AudioItemIndex audioItemIndex;
     private AudioItemCache cache;
+    private MetadataStore store;
 
     private ControlAccess controlAccess;
     private DatabaseConnection dbConn;
 
     public DBConfiguration(String acmName) {
         this.acmName = acmName;
-        this.cache = new AudioItemCache();
+        this.store = new DBMetadataStore();
+        this.cache = new AudioItemCache(store);
     }
 
     public AudioItemIndex loadAudioItemIndex() throws IOException {
@@ -76,6 +79,10 @@ public class DBConfiguration extends Properties {
 
     public AudioItemRepository getRepository() {
         return repository;
+    }
+
+    public MetadataStore getMetadataStore() {
+        return store;
     }
 
     void setRepository(AudioItemRepository newRepository) {
@@ -268,11 +275,11 @@ public class DBConfiguration extends Properties {
         boolean ret = false;
         String preCache = getProperty(Constants.PRE_CACHE_WAV);
         if (preCache.equalsIgnoreCase("TRUE")) {
-        	ret = true;
+            ret = true;
         }
         return ret;
     }
-    
+
     public List<Locale> getAudioLanguages() {
         if (audioLanguages == null) {
             audioLanguages = new ArrayList<Locale>();
@@ -390,7 +397,7 @@ public class DBConfiguration extends Properties {
             writeProps();
         }
         tbLoadersDirectory = new File(sharedACMDirectory, Constants.TBLoadersHomeDir);
-//        writeProps();
+        //        writeProps();
     }
 
     private void initializeLogger() {

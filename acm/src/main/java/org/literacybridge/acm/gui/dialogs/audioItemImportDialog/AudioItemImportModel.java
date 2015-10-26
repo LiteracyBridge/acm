@@ -7,7 +7,7 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
-import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.db.MetadataSpecification;
 import org.literacybridge.acm.db.MetadataValue;
 import org.literacybridge.acm.db.RFC3066LanguageCode;
@@ -15,6 +15,7 @@ import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.A18Importer;
+import org.literacybridge.acm.store.AudioItem;
 
 @SuppressWarnings("serial")
 public class AudioItemImportModel extends AbstractTableModel {
@@ -64,7 +65,7 @@ public class AudioItemImportModel extends AbstractTableModel {
 
         for(int i=0; i<filesToImport.size(); ++i) {
             File file = filesToImport.get(i);
-            AudioItem audioItem = A18Importer.loadMetadata(file);
+            AudioItem audioItem = A18Importer.loadMetadata(ACMConfiguration.getCurrentDB().getMetadataStore(), file);
             rowIndex2audioItem[i] = new AudioItemNode(audioItem, "");
 
         }

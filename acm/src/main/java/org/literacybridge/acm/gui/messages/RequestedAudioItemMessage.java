@@ -1,6 +1,6 @@
 package org.literacybridge.acm.gui.messages;
 
-import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.store.AudioItem;
 
 public class RequestedAudioItemMessage extends Message {
 	private AudioItem audioItem;

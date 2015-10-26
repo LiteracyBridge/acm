@@ -9,12 +9,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.Metadata;
 import org.literacybridge.acm.db.MetadataSpecification;
+import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.MetadataStore;
 
 public class StatisticsImporter {
-    public void importStatsFolder(File folder) throws IOException {
+    public void importStatsFolder(MetadataStore store, File folder) throws IOException {
         File[] files = folder.listFiles(new FilenameFilter() {
             @Override public boolean accept(File dir, String name) {
                 if (name.toLowerCase().endsWith(".csv")) {
@@ -26,11 +27,11 @@ public class StatisticsImporter {
         });
 
         for (File file : files) {
-            importStatsFile(file);
+            importStatsFile(store, file);
         }
     }
 
-    public void importStatsFile(File file) throws IOException {
+    public void importStatsFile(MetadataStore store, File file) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(file));
         List<String> tokens = tokenizeCSV(reader.readLine());
         String deviceId = tokens.get(0);
@@ -39,7 +40,7 @@ public class StatisticsImporter {
         while(reader.ready()) {
             tokens = tokenizeCSV(reader.readLine());
             String audioItemID = tokens.get(0);
-            AudioItem audioItem = AudioItem.getFromDatabase(audioItemID);
+            AudioItem audioItem = store.getAudioItem(audioItemID);
             if (audioItem != null) {
                 Metadata metadata = audioItem.getMetadata();
 

@@ -12,7 +12,6 @@ import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
@@ -21,6 +20,7 @@ import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.A18DeviceExporter;
+import org.literacybridge.acm.store.AudioItem;
 
 public class ExportToDeviceTransferHandler extends TransferHandler {
     private static final long serialVersionUID = 1L;

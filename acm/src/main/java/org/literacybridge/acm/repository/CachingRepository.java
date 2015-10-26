@@ -3,7 +3,7 @@ package org.literacybridge.acm.repository;
 import java.io.File;
 import java.io.IOException;
 
-import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.store.AudioItem;
 
 /**
  * A repository implementation that stores .a18 files in a shared repository,

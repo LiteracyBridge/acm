@@ -2,12 +2,12 @@ package org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog;
 
 import java.util.Locale;
 
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.Metadata;
 import org.literacybridge.acm.db.MetadataField;
 import org.literacybridge.acm.db.RFC3066LanguageCode;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.store.AudioItem;
 
 public abstract class AudioItemProperty<V> {
 	private final boolean isCellEditable;

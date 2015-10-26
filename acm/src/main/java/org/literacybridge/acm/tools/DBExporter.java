@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Locale;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.Application;
@@ -84,7 +83,7 @@ public class DBExporter {
     private void metadataExporter() {
         File exportFile = new File(exportDirectory,project + "-metadata.csv");
         try {
-            CSVExporter.export(AudioItem.getFromDatabase(), exportFile);
+            CSVExporter.export(ACMConfiguration.getCurrentDB().getMetadataStore().getAudioItems(), exportFile);
         } catch (IOException e) {
             System.out.println("==========>Could not export metadata!");
             e.printStackTrace();

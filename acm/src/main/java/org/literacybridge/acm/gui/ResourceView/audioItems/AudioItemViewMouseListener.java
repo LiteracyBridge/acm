@@ -4,12 +4,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.dialogs.AudioItemContextMenuDialog;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemToPlayMessage;
 import org.literacybridge.acm.gui.util.UIUtils;
+import org.literacybridge.acm.store.AudioItem;
 
 public class AudioItemViewMouseListener extends MouseAdapter {
 	public AudioItemView adaptee;

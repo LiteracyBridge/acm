@@ -3,7 +3,7 @@ package org.literacybridge.acm.tools;
 import java.io.File;
 import java.io.IOException;
 
-import org.literacybridge.acm.db.AudioItem;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.importexport.CSVExporter;
@@ -20,7 +20,7 @@ public class CSVDatabaseExporter {
     }
 
     private void export(File csvFile) throws IOException {
-        CSVExporter.export(AudioItem.getFromDatabase(), csvFile);
+        CSVExporter.export(ACMConfiguration.getCurrentDB().getMetadataStore().getAudioItems(), csvFile);
     }
 
     public static void main(String[] args) throws Exception {

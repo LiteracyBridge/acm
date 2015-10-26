@@ -22,7 +22,6 @@ import javax.swing.JPopupMenu;
 
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.db.Taxonomy.Category;
@@ -31,6 +30,7 @@ import org.literacybridge.acm.gui.ResourceView.CategoryView.TagsListChanged;
 import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
 

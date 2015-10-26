@@ -10,7 +10,6 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.LBMetadataSerializer;
 import org.literacybridge.acm.db.Metadata;
 import org.literacybridge.acm.db.MetadataSpecification;
@@ -21,14 +20,16 @@ import org.literacybridge.acm.importexport.FileImporter.Importer;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.DuplicateItemException;
 import org.literacybridge.acm.repository.AudioItemRepository.UnsupportedFormatException;
+import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.utils.IOUtils;
 
 public class A18Importer extends Importer {
-    public static AudioItem loadMetadata(File file) throws IOException {
-        return loadMetadata(null, file);
+    public static AudioItem loadMetadata(MetadataStore store, File file) throws IOException {
+        return loadMetadata(store, null, file);
     }
 
-    public static AudioItem loadMetadata(Category importCategory, File file) throws IOException {
+    public static AudioItem loadMetadata(MetadataStore store, Category importCategory, File file) throws IOException {
         DataInputStream in = null;
 
         try {
@@ -52,7 +53,7 @@ public class A18Importer extends Importer {
 
             if (loadedMetadata.getNumberOfFields() == 0) {
                 // legacy mode
-                audioItem = new AudioItem(ACMConfiguration.getNewAudioItemUID());
+                audioItem = store.newAudioItem(ACMConfiguration.getNewAudioItemUID());
                 Metadata metadata = audioItem.getMetadata();
                 String fileName = file.getName();
                 metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
@@ -67,7 +68,7 @@ public class A18Importer extends Importer {
                 }
 
             } else {
-                audioItem = new AudioItem(loadedMetadata.getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue());
+                audioItem = store.newAudioItem(loadedMetadata.getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue());
                 Metadata metadata = audioItem.getMetadata();
                 categories.clear();
                 if (bytesToSkip + 4 < file.length()) {
@@ -99,13 +100,13 @@ public class A18Importer extends Importer {
     }
 
     @Override
-    protected void importSingleFile(Category category, File file)
+    protected void importSingleFile(MetadataStore store, Category category, File file)
             throws IOException {
         try {
-            AudioItem audioItem = loadMetadata(category, file);
+            AudioItem audioItem = loadMetadata(store, category, file);
 
             // TODO: handle updating the file by making use of revisions
-            if (AudioItem.getFromDatabase(audioItem.getUuid()) != null) {
+            if (store.getAudioItem(audioItem.getUuid()) != null) {
                 // just skip for now if we have an item with the same id already
                 System.out.println("  *already in database; skipping*");
                 return;

@@ -3,6 +3,11 @@ package org.literacybridge.acm.db;
 import java.util.Collection;
 import java.util.List;
 
+import javax.persistence.EntityManager;
+
+import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Persistable;
+
 import com.google.common.collect.Lists;
 
 public class Playlist implements Persistable {
@@ -17,7 +22,7 @@ public class Playlist implements Persistable {
     }
 
     public List<AudioItem> getAudioItemList() {
-        return AudioItem.toAudioItemList(playlist.getPersistentAudioItemList());
+        return DBMetadataStore.toAudioItemList(playlist.getPersistentAudioItemList());
     }
 
     public String getName() {
@@ -33,12 +38,12 @@ public class Playlist implements Persistable {
     }
 
     public int getPosition(AudioItem audioItem) {
-        return PersistentTagOrdering.getFromDatabase(audioItem.getPersistentAudioItem(), playlist).getPosition();
+        return PersistentTagOrdering.getFromDatabase(((DBAudioItem) audioItem).getPersistentAudioItem(), playlist).getPosition();
     }
 
     public void setPosition(AudioItem audioItem, int position) {
         PersistentTagOrdering ordering =
-                PersistentTagOrdering.getFromDatabase(audioItem.getPersistentAudioItem(), playlist);
+                PersistentTagOrdering.getFromDatabase(((DBAudioItem) audioItem).getPersistentAudioItem(), playlist);
         ordering.setPosition(position);
         ordering.commit();
     }
@@ -74,4 +79,8 @@ public class Playlist implements Persistable {
         return playlists;
     }
 
+    @Override
+    public <T> T commit(EntityManager em) {
+        return playlist.commit(em);
+    }
 }

@@ -6,6 +6,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import javax.persistence.EntityManager;
+
+import org.literacybridge.acm.store.Persistable;
+
 public class Metadata implements Persistable {
 
     // java does runtime erasure of generic types - using this wrapper
@@ -100,6 +104,12 @@ public class Metadata implements Persistable {
 
     public Metadata commit() {
         mMetadata = mMetadata.<PersistentMetadata> commit();
+        return this;
+    }
+
+    @Override
+    public Metadata commit(EntityManager em) {
+        mMetadata = mMetadata.<PersistentMetadata> commit(em);
         return this;
     }
 
@@ -286,6 +296,4 @@ public class Metadata implements Persistable {
             return null;
         }
     }
-
-
 }

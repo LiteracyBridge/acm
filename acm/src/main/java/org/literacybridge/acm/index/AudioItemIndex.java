@@ -44,11 +44,12 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 import org.literacybridge.acm.api.IDataRequestResult;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.DataRequestResult;
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.db.Taxonomy.Category;
+import org.literacybridge.acm.store.AudioItem;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -101,7 +102,7 @@ public class AudioItemIndex {
         AudioItemIndex index = new AudioItemIndex(writer);
 
         if (indexFromDB) {
-            List<AudioItem> items = AudioItem.getFromDatabase();
+            Iterable<AudioItem> items = ACMConfiguration.getCurrentDB().getMetadataStore().getAudioItems();
 
             for (AudioItem item : items) {
                 index.addAudioItem(item);

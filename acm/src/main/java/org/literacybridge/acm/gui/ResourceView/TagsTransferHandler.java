@@ -8,11 +8,11 @@ import java.io.IOException;
 import javax.swing.JList;
 import javax.swing.TransferHandler;
 
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
+import org.literacybridge.acm.store.AudioItem;
 
 public class TagsTransferHandler extends TransferHandler {
     static DataFlavor[] supportedFlavors = new DataFlavor[] {

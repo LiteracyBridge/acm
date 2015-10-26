@@ -11,11 +11,11 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.api.IDataRequestService;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.index.AudioItemIndex;
+import org.literacybridge.acm.store.AudioItem;
 
 public class DataRequestService implements IDataRequestService {
     private static final IDataRequestService instance = new DataRequestService();
@@ -48,9 +48,9 @@ public class DataRequestService implements IDataRequestService {
         }
 
         // Couldn't get results from Lucene index - fall back to DB
-        Collection<AudioItem> items = AudioItem.getFromDatabaseBySearch(filterString, categories, locales);
+        Iterable<AudioItem> items = ACMConfiguration.getCurrentDB().getMetadataStore().search(filterString, categories, locales);
         Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, categories, locales);
-        List<String> audioItems = new ArrayList<String>(items.size());
+        List<String> audioItems = new ArrayList<String>();
         for (AudioItem item : items) {
             audioItems.add(item.getUuid());
         }
@@ -87,9 +87,9 @@ public class DataRequestService implements IDataRequestService {
         }
 
         // Couldn't get results from Lucene index - fall back to DB
-        Collection<AudioItem> items = AudioItem.getFromDatabaseBySearch(filterString, selectedPlaylist);
+        Iterable<AudioItem> items = ACMConfiguration.getCurrentDB().getMetadataStore().search(filterString, selectedPlaylist);
         Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, null, null);
-        List<String> audioItems = new ArrayList<String>(items.size());
+        List<String> audioItems = new ArrayList<String>();
         for (AudioItem item : items) {
             audioItems.add(item.getUuid());
         }

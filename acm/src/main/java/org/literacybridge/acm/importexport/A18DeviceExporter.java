@@ -7,9 +7,9 @@ import java.util.logging.Logger;
 
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.store.AudioItem;
 
 public class A18DeviceExporter {
     private static final Logger LOG = Logger.getLogger(A18DeviceExporter.class.getName());

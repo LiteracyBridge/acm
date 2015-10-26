@@ -9,6 +9,7 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.store.Persistable;
 
 
 @MappedSuperclass

@@ -10,7 +10,6 @@ import javax.swing.table.AbstractTableModel;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.MetadataSpecification;
 import org.literacybridge.acm.db.MetadataValue;
 import org.literacybridge.acm.db.Playlist;
@@ -21,6 +20,7 @@ import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
+import org.literacybridge.acm.store.AudioItem;
 
 public class AudioItemTableModel extends AbstractTableModel {
 

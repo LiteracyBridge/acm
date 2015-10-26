@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Locale;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.Metadata;
 import org.literacybridge.acm.db.MetadataSpecification;
 import org.literacybridge.acm.db.MetadataValue;
@@ -15,13 +14,15 @@ import org.literacybridge.acm.importexport.FileImporter.Importer;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.DuplicateItemException;
 import org.literacybridge.acm.repository.AudioItemRepository.UnsupportedFormatException;
+import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.MetadataStore;
 
 public class WAVImporter extends Importer {
 
     @Override
-    protected void importSingleFile(Category category, File file) throws IOException {
+    protected void importSingleFile(MetadataStore store, Category category, File file) throws IOException {
         try {
-            AudioItem audioItem = new AudioItem(ACMConfiguration.getNewAudioItemUID());
+            AudioItem audioItem = store.newAudioItem(ACMConfiguration.getNewAudioItemUID());
             audioItem.addCategory(category);
 
             Metadata metadata = audioItem.getMetadata();

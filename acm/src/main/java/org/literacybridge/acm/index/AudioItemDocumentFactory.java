@@ -19,7 +19,6 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
 import org.apache.lucene.util.Version;
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.Metadata;
 import org.literacybridge.acm.db.MetadataField;
 import org.literacybridge.acm.db.MetadataSpecification;
@@ -27,6 +26,7 @@ import org.literacybridge.acm.db.MetadataValue;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.RFC3066LanguageCode;
 import org.literacybridge.acm.db.Taxonomy.Category;
+import org.literacybridge.acm.store.AudioItem;
 
 import com.google.common.collect.ImmutableSet;
 

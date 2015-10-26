@@ -9,10 +9,10 @@ import java.util.List;
 
 import javax.swing.SwingUtilities;
 
-import org.literacybridge.acm.db.AudioItem;
 import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.store.AudioItem;
 
 public class UIUtils {
     public static Container showDialog(Frame parent, final Container dialog) {

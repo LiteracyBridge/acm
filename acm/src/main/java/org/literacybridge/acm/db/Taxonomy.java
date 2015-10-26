@@ -8,7 +8,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.persistence.EntityManager;
+
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.store.Persistable;
 
 import com.google.common.collect.Lists;
 
@@ -158,6 +161,12 @@ public class Taxonomy implements Persistable {
 
     public Taxonomy commit() {
         mRootCategory.commit();
+        return this;
+    }
+
+    @Override
+    public Taxonomy commit(EntityManager em) {
+        mRootCategory.commit(em);
         return this;
     }
 
@@ -321,6 +330,12 @@ public class Taxonomy implements Persistable {
 
         public Category commit() {
             mCategory = mCategory.<PersistentCategory> commit();
+            return this;
+        }
+
+        @Override
+        public Category commit(EntityManager em) {
+            mCategory = mCategory.<PersistentCategory> commit(em);
             return this;
         }
 

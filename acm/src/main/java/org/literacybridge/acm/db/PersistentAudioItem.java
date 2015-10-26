@@ -156,7 +156,7 @@ class PersistentAudioItem extends PersistentObject {
             AudioItemIndex index = db.getAudioItemIndex();
             if (index != null) {
                 try {
-                    index.updateAudioItem(new AudioItem(this));
+                    index.updateAudioItem(new DBAudioItem(this));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

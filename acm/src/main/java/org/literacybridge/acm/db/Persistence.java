@@ -23,6 +23,7 @@ import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.repository.A18DurationUtil;
+import org.literacybridge.acm.store.AudioItem;
 
 import com.google.common.collect.Lists;
 
@@ -155,7 +156,7 @@ public class Persistence {
             cache = ACMConfiguration.getCurrentDB().getAudioItemCache();
         }
 
-        for (AudioItem audioItem : AudioItem.getFromDatabase()) {
+        for (AudioItem audioItem : config.getMetadataStore().getAudioItems()) {
             // =================================================================
             // 1) calculate duration of audio items
             List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(
