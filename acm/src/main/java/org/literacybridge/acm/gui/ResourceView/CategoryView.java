@@ -49,7 +49,6 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.core.MessageBus.Message;
-import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.device.DeviceConnectEvent;
 import org.literacybridge.acm.device.DeviceInfo;
@@ -62,6 +61,8 @@ import org.literacybridge.acm.gui.util.ACMContainer;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
+import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.Playlist;
 
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.DefaultCheckboxTreeCellRenderer;
@@ -130,7 +131,7 @@ public class CategoryView extends ACMContainer implements Observer {
 
         // init controls with default language
         updateControlLanguage(LanguageUtil.getUILanguage());
-        updateTagsTable(Playlist.getFromDatabase());
+        updateTagsTable(ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists());
         Application.getMessageService().addObserver(this);
     }
 
@@ -561,7 +562,7 @@ public class CategoryView extends ACMContainer implements Observer {
         }
     }
 
-    public void updateTagsTable(List<Playlist> tags) {
+    public void updateTagsTable(Iterable<Playlist> tags) {
         if (!clearingSelections) {
             tagsList.setModel(new TagsListModel(tags));
         }
@@ -575,11 +576,11 @@ public class CategoryView extends ACMContainer implements Observer {
                 JOptionPane.PLAIN_MESSAGE,
                 null, null, "");
         if (!StringUtils.isEmpty(tagName)) {
-            Playlist tag = new Playlist();
-            tag.setName(tagName);
+            MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
+            Playlist tag = store.newPlaylist(tagName);
             tag.commit();
 
-            Application.getMessageService().pumpMessage(new TagsListChanged(Playlist.getFromDatabase()));
+            Application.getMessageService().pumpMessage(new TagsListChanged(store.getPlaylists()));
         }
     }
 
@@ -689,9 +690,9 @@ public class CategoryView extends ACMContainer implements Observer {
     };
 
     public static class TagsListChanged {
-        private final List<Playlist> tags;
+        private final Iterable<Playlist> tags;
 
-        TagsListChanged(List<Playlist> tags) {
+        TagsListChanged(Iterable<Playlist> tags) {
             this.tags = tags;
         }
     }

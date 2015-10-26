@@ -23,10 +23,10 @@ import org.literacybridge.acm.db.Metadata;
 import org.literacybridge.acm.db.MetadataField;
 import org.literacybridge.acm.db.MetadataSpecification;
 import org.literacybridge.acm.db.MetadataValue;
-import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.RFC3066LanguageCode;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Playlist;
 
 import com.google.common.collect.ImmutableSet;
 

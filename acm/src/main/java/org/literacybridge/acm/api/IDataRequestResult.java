@@ -2,8 +2,8 @@ package org.literacybridge.acm.api;
 
 import java.util.List;
 
-import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy.Category;
+import org.literacybridge.acm.store.Playlist;
 
 /**
  * This is the result object returned by {@link IDataRequestService} containing all necessary
@@ -36,5 +36,5 @@ public interface IDataRequestResult {
     /**
      * Returns the list of audio tags to be displayed.
      */
-    public abstract List<Playlist> getTags();
+    public abstract Iterable<Playlist> getTags();
 }

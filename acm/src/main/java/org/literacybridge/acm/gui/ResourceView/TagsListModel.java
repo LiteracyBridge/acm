@@ -1,12 +1,10 @@
 package org.literacybridge.acm.gui.ResourceView;
 
-import java.util.List;
-
-import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.gui.util.SortedListModel;
+import org.literacybridge.acm.store.Playlist;
 
 public class TagsListModel extends SortedListModel<TagsListModel.TagLabel> {
-    public TagsListModel(List<Playlist> playlists) {
+    public TagsListModel(Iterable<Playlist> playlists) {
         for (Playlist playlist : playlists) {
             add(new TagLabel(playlist));
         }

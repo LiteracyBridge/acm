@@ -10,6 +10,7 @@ import javax.persistence.EntityManager;
 
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Playlist;
 
 import com.google.common.collect.Sets;
 
@@ -69,17 +70,17 @@ final class DBAudioItem extends AudioItem {
 
     @Override
     public void addPlaylist(Playlist playlist) {
-        mItem.addPersistentAudioItemTag(playlist.getTag());
+        mItem.addPersistentAudioItemTag(((DBPlaylist) playlist).getTag());
     }
 
     @Override
     public boolean hasPlaylist(Playlist playlist) {
-        return mItem.hasPersistentAudioItemTag(playlist.getTag());
+        return mItem.hasPersistentAudioItemTag(((DBPlaylist) playlist).getTag());
     }
 
     @Override
     public void removePlaylist(Playlist playlist) {
-        mItem.removePersistentTag(playlist.getTag());
+        mItem.removePersistentTag(((DBPlaylist) playlist).getTag());
     }
 
     @Override
@@ -147,7 +148,7 @@ final class DBAudioItem extends AudioItem {
 
     @Override
     public Collection<Playlist> getPlaylists() {
-        return Playlist.toPlaylists(mItem.getPersistentTagList());
+        return DBPlaylist.toPlaylists(mItem.getPersistentTagList());
     }
 
     @Override

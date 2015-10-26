@@ -22,7 +22,6 @@ import javax.swing.JPopupMenu;
 
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.Application;
@@ -31,6 +30,7 @@ import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
 
@@ -79,8 +79,8 @@ public class TagsListPopupMenu extends JPopupMenu {
                         }
                         selectedTag.getTag().destroy();
                         Application.getMessageService().pumpMessage(
-                                new TagsListChanged(Playlist
-                                        .getFromDatabase()));
+                                new TagsListChanged(
+                                        ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists()));
                     } catch (Exception ex) {
                         LOG.log(Level.WARNING, "Unable to remove playlist "
                                 + selectedTag.toString());
@@ -104,8 +104,8 @@ public class TagsListPopupMenu extends JPopupMenu {
                         selectedTag.getTag().commit();
 
                         Application.getMessageService().pumpMessage(
-                                new TagsListChanged(Playlist
-                                        .getFromDatabase()));
+                                new TagsListChanged(
+                                        ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists()));
                     } catch (Exception ex) {
                         LOG.log(Level.WARNING, "Unable to rename playlist "
                                 + selectedTag.toString());

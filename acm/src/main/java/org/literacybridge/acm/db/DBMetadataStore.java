@@ -7,6 +7,7 @@ import java.util.Locale;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.Playlist;
 
 public class DBMetadataStore extends MetadataStore {
     @Override
@@ -37,7 +38,7 @@ public class DBMetadataStore extends MetadataStore {
     @Override
     public Iterable<AudioItem> search(String searchFilter,
             Playlist selectedTag) {
-        return toAudioItemList(PersistentQueries.searchForAudioItems(searchFilter, selectedTag));
+        return toAudioItemList(PersistentQueries.searchForAudioItems(searchFilter, (DBPlaylist) selectedTag));
     }
 
     //    static AudioItem getFromDatabase(int id) {
@@ -54,5 +55,20 @@ public class DBMetadataStore extends MetadataStore {
             results.add(new DBAudioItem(item));
         }
         return results;
+    }
+
+    @Override
+    public Playlist newPlaylist(String uid) {
+        return new DBPlaylist();
+    }
+
+    @Override
+    public Playlist getPlaylist(String uid) {
+        return DBPlaylist.getFromDatabase(uid);
+    }
+
+    @Override
+    public Iterable<Playlist> getPlaylists() {
+        return DBPlaylist.getFromDatabase();
     }
 }

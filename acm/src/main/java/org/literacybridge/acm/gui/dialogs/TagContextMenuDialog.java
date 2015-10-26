@@ -19,15 +19,11 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
-//import org.literacybridge.acm.content.AudioItem;
-//import org.literacybridge.acm.content.LocalizedAudioItem;
-//import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
-//import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
+import org.literacybridge.acm.store.Playlist;
 
 public class TagContextMenuDialog extends JDialog implements WindowListener {
     private static final Logger LOG = Logger.getLogger(TagContextMenuDialog.class.getName());

@@ -2,7 +2,6 @@ package org.literacybridge.acm.core;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -11,11 +10,11 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.api.IDataRequestService;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
-import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.index.AudioItemIndex;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Playlist;
 
 public class DataRequestService implements IDataRequestService {
     private static final IDataRequestService instance = new DataRequestService();
@@ -59,7 +58,7 @@ public class DataRequestService implements IDataRequestService {
 
         Taxonomy taxonomy = Taxonomy.getTaxonomy();
         DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
-                Playlist.getFromDatabase());
+                ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists());
         return result;
     }
 
@@ -98,7 +97,7 @@ public class DataRequestService implements IDataRequestService {
 
         Taxonomy taxonomy = Taxonomy.getTaxonomy();
         DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
-                Playlist.getFromDatabase());
+                ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists());
         return result;
     }
 

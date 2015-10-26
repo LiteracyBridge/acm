@@ -6,25 +6,27 @@ import java.util.List;
 import javax.persistence.EntityManager;
 
 import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Persistable;
+import org.literacybridge.acm.store.Playlist;
 
 import com.google.common.collect.Lists;
 
-public class Playlist implements Persistable {
+class DBPlaylist implements Playlist {
     private final PersistentTag playlist;
 
-    public Playlist() {
+    public DBPlaylist() {
         this(new PersistentTag());
     }
 
-    public Playlist(PersistentTag playlist) {
+    public DBPlaylist(PersistentTag playlist) {
         this.playlist = playlist;
     }
 
+    @Override
     public List<AudioItem> getAudioItemList() {
         return DBMetadataStore.toAudioItemList(playlist.getPersistentAudioItemList());
     }
 
+    @Override
     public String getName() {
         return playlist.getName();
     }
@@ -33,14 +35,17 @@ public class Playlist implements Persistable {
         return playlist.getId();
     }
 
+    @Override
     public void setName(String name) {
         playlist.setTitle(name);
     }
 
+    @Override
     public int getPosition(AudioItem audioItem) {
         return PersistentTagOrdering.getFromDatabase(((DBAudioItem) audioItem).getPersistentAudioItem(), playlist).getPosition();
     }
 
+    @Override
     public void setPosition(AudioItem audioItem, int position) {
         PersistentTagOrdering ordering =
                 PersistentTagOrdering.getFromDatabase(((DBAudioItem) audioItem).getPersistentAudioItem(), playlist);
@@ -71,10 +76,14 @@ public class Playlist implements Persistable {
         return toPlaylists(PersistentTag.getFromDatabase());
     }
 
+    public static Playlist getFromDatabase(String uid) {
+        return new DBPlaylist(PersistentTag.getFromDatabase(uid));
+    }
+
     public static List<Playlist> toPlaylists(Collection<PersistentTag> tags) {
         List<Playlist> playlists = Lists.newArrayListWithCapacity(tags.size());
         for (PersistentTag tag : tags) {
-            playlists.add(new Playlist(tag));
+            playlists.add(new DBPlaylist(tag));
         }
         return playlists;
     }

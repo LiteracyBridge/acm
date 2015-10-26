@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.literacybridge.acm.db.Metadata;
-import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy.Category;
 
 /**

@@ -46,10 +46,10 @@ import org.apache.lucene.util.Version;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.DataRequestResult;
-import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Playlist;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -229,7 +229,7 @@ public class AudioItemIndex {
             }
 
             DataRequestResult result = new DataRequestResult(Taxonomy.getTaxonomy().getRootCategory(), categoryFacets, localeFacets, Lists.newArrayList(results),
-                    Playlist.getFromDatabase());
+                    ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists());
 
             return result;
         } finally {

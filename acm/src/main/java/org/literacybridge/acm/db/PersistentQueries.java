@@ -92,7 +92,7 @@ class PersistentQueries {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<PersistentAudioItem> searchForAudioItems(String filter, Playlist selectedTag) {
+    public static List<PersistentAudioItem> searchForAudioItems(String filter, DBPlaylist selectedTag) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         List<PersistentAudioItem> searchResults = new LinkedList<PersistentAudioItem>();
         try {
@@ -151,7 +151,7 @@ class PersistentQueries {
         }
     }
 
-    private static void appendTagClause(StringBuilder whereClause, Playlist selectedTag) {
+    private static void appendTagClause(StringBuilder whereClause, DBPlaylist selectedTag) {
         if (selectedTag == null) {
             return;
         }

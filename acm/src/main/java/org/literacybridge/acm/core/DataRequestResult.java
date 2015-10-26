@@ -4,19 +4,19 @@ import java.util.List;
 import java.util.Map;
 
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.db.Playlist;
 import org.literacybridge.acm.db.Taxonomy.Category;
+import org.literacybridge.acm.store.Playlist;
 
 public class DataRequestResult implements IDataRequestResult {
     private final Category rootCategory;
     private final Map<Integer, Integer> facetCounts;
     private final Map<String, Integer> languageFacetCounts;
     private final List<String> audioItems;
-    private final List<Playlist> tags;
+    private final Iterable<Playlist> tags;
 
     public DataRequestResult(Category rootCategory, Map<Integer, Integer> facetCounts,
             Map<String, Integer> languageFacetCounts, List<String> audioItems,
-            List<Playlist> tags) {
+            Iterable<Playlist> tags) {
         this.rootCategory = rootCategory;
         this.facetCounts = facetCounts;
         this.languageFacetCounts = languageFacetCounts;
@@ -67,7 +67,7 @@ public class DataRequestResult implements IDataRequestResult {
     }
 
     @Override
-    public List<Playlist> getTags() {
+    public Iterable<Playlist> getTags() {
         return tags;
     }
 }
