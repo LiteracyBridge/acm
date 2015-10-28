@@ -1,19 +1,12 @@
-package org.literacybridge.acm.db;
+package org.literacybridge.acm.store;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import javax.persistence.EntityManager;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.DefaultLiteracyBridgeTaxonomy;
-import org.literacybridge.acm.store.Persistable;
-import org.literacybridge.acm.store.DefaultLiteracyBridgeTaxonomy.TaxonomyRevision;
-
-import com.google.common.collect.Lists;
 
 public class Taxonomy implements Persistable {
 
@@ -122,32 +115,6 @@ public class Taxonomy implements Persistable {
     public boolean addChild(Category parent, Category newChild) {
         parent.addChild(newChild);
         return true;
-    }
-
-    /**
-     * Returns the facet count for all categories that are stored
-     * in the database.
-     *
-     * Key: database id (getId())
-     * Value: count value
-     *
-     * Note: Returns '0' for unassigned categories.
-     */
-    public static Map<Integer, Integer> getFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
-        List<PersistentCategory> persistentCategories = null;
-
-        if (categories != null) {
-            persistentCategories = Lists.newArrayListWithCapacity(categories.size());
-
-            for (Category cat : categories) {
-                persistentCategories.add(((DBCategory) cat).getPersistentObject());
-            }
-        }
-        return PersistentCategory.getFacetCounts(filter, persistentCategories, locales);
-    }
-
-    public static Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
-        return PersistentQueries.getLanguageFacetCounts(filter, categories, locales);
     }
 
     public Integer getId() {

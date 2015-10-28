@@ -10,11 +10,12 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.api.IDataRequestService;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
-import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.index.AudioItemIndex;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.Taxonomy;
 
 public class DataRequestService implements IDataRequestService {
     private static final IDataRequestService instance = new DataRequestService();
@@ -37,6 +38,7 @@ public class DataRequestService implements IDataRequestService {
      * @see main.java.org.literacybridge.acm.api.IDataRequestService#getData(java.lang.String)
      */
     public IDataRequestResult getData(Locale locale, String filterString, List<Category> categories, List<Locale> locales) {
+        MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
         AudioItemIndex index = getAudioItemIndex();
         if (index != null) {
             try {
@@ -48,17 +50,17 @@ public class DataRequestService implements IDataRequestService {
 
         // Couldn't get results from Lucene index - fall back to DB
         Iterable<AudioItem> items = ACMConfiguration.getCurrentDB().getMetadataStore().search(filterString, categories, locales);
-        Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, categories, locales);
+        Map<Integer, Integer> facetCounts = store.getFacetCounts(filterString, categories, locales);
         List<String> audioItems = new ArrayList<String>();
         for (AudioItem item : items) {
             audioItems.add(item.getUuid());
         }
 
-        Map<String, Integer> languageFacetCounts = Taxonomy.getLanguageFacetCounts(filterString, categories, locales);
+        Map<String, Integer> languageFacetCounts = store.getLanguageFacetCounts(filterString, categories, locales);
 
         Taxonomy taxonomy = Taxonomy.getTaxonomy();
         DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
-                ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists());
+                store.getPlaylists());
         return result;
     }
 
@@ -76,6 +78,7 @@ public class DataRequestService implements IDataRequestService {
     @Override
     public IDataRequestResult getData(Locale locale, String filterString,
             Playlist selectedPlaylist) {
+        MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
         AudioItemIndex index = getAudioItemIndex();
         if (index != null) {
             try {
@@ -87,17 +90,17 @@ public class DataRequestService implements IDataRequestService {
 
         // Couldn't get results from Lucene index - fall back to DB
         Iterable<AudioItem> items = ACMConfiguration.getCurrentDB().getMetadataStore().search(filterString, selectedPlaylist);
-        Map<Integer, Integer> facetCounts = Taxonomy.getFacetCounts(filterString, null, null);
+        Map<Integer, Integer> facetCounts = store.getFacetCounts(filterString, null, null);
         List<String> audioItems = new ArrayList<String>();
         for (AudioItem item : items) {
             audioItems.add(item.getUuid());
         }
 
-        Map<String, Integer> languageFacetCounts = Taxonomy.getLanguageFacetCounts(filterString, null, null);
+        Map<String, Integer> languageFacetCounts = store.getLanguageFacetCounts(filterString, null, null);
 
         Taxonomy taxonomy = Taxonomy.getTaxonomy();
         DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
-                ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists());
+                store.getPlaylists());
         return result;
     }
 

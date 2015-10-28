@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.Locale;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.CSVExporter;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.Taxonomy;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 
 import au.com.bytecode.opencsv.CSVWriter;

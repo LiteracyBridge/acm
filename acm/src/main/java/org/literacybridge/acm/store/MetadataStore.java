@@ -2,6 +2,7 @@ package org.literacybridge.acm.store;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public abstract class MetadataStore {
     public abstract AudioItem newAudioItem(String uid);
@@ -16,4 +17,7 @@ public abstract class MetadataStore {
 
     public abstract Category newCategory(String uid);
     public abstract Category getCategory(String uid);
+
+    public abstract Map<Integer, Integer> getFacetCounts(String filter, List<Category> categories, List<Locale> locales);
+    public abstract Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<Locale> locales);
 }

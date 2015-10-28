@@ -13,8 +13,8 @@ import java.util.Set;
 
 import org.literacybridge.acm.db.LBMetadataSerializer;
 import org.literacybridge.acm.db.Metadata;
-import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.Taxonomy;
 
 public class A18Verifier {
 	public static void main(String[] args) throws Exception {

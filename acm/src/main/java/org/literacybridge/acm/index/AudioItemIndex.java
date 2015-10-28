@@ -46,11 +46,11 @@ import org.apache.lucene.util.Version;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.DataRequestResult;
-import org.literacybridge.acm.db.Taxonomy;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.Taxonomy;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

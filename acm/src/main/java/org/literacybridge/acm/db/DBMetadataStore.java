@@ -3,11 +3,14 @@ package org.literacybridge.acm.db;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+
+import com.google.common.collect.Lists;
 
 public class DBMetadataStore extends MetadataStore {
     @Override
@@ -81,4 +84,33 @@ public class DBMetadataStore extends MetadataStore {
     public Category getCategory(String uid) {
         return DBCategory.getFromDatabase(uid);
     }
+
+    /**
+     * Returns the facet count for all categories that are stored
+     * in the database.
+     *
+     * Key: database id (getId())
+     * Value: count value
+     *
+     * Note: Returns '0' for unassigned categories.
+     */
+    @Override
+    public Map<Integer, Integer> getFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
+        List<PersistentCategory> persistentCategories = null;
+
+        if (categories != null) {
+            persistentCategories = Lists.newArrayListWithCapacity(categories.size());
+
+            for (Category cat : categories) {
+                persistentCategories.add(((DBCategory) cat).getPersistentObject());
+            }
+        }
+        return PersistentCategory.getFacetCounts(filter, persistentCategories, locales);
+    }
+
+    @Override
+    public Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
+        return PersistentQueries.getLanguageFacetCounts(filter, categories, locales);
+    }
+
 }

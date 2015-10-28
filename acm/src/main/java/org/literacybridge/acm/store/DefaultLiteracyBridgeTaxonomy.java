@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.Taxonomy;
 import org.yaml.snakeyaml.Yaml;
 
 public class DefaultLiteracyBridgeTaxonomy {
