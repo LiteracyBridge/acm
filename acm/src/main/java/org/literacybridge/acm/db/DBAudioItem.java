@@ -8,8 +8,8 @@ import java.util.logging.Logger;
 
 import javax.persistence.EntityManager;
 
-import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Playlist;
 
 import com.google.common.collect.Sets;
@@ -57,7 +57,7 @@ final class DBAudioItem extends AudioItem {
         // make sure all parents up to the root are added as well
         do {
             if (!hasCategory(category)) {
-                mItem.addPersistentAudioItemCategory(category.getPersistentObject());
+                mItem.addPersistentAudioItemCategory(((DBCategory) category).getPersistentObject());
             }
             category = category.getParent();
         } while (category != null);
@@ -65,7 +65,7 @@ final class DBAudioItem extends AudioItem {
 
     @Override
     public boolean hasCategory(Category category) {
-        return mItem.hasPersistentAudioItemCategory(category.getPersistentObject());
+        return mItem.hasPersistentAudioItemCategory(((DBCategory) category).getPersistentObject());
     }
 
     @Override
@@ -85,7 +85,7 @@ final class DBAudioItem extends AudioItem {
 
     @Override
     public void removeCategory(Category category) {
-        mItem.removePersistentCategory(category.getPersistentObject());
+        mItem.removePersistentCategory(((DBCategory) category).getPersistentObject());
 
         // remove orphaned non-leaves
         while (removeOrphanedNonLeafCategories());
@@ -110,7 +110,7 @@ final class DBAudioItem extends AudioItem {
         // now 'toRemove' only contains categories for which this audioitem has at least one child
 
         for (Category cat : toRemove) {
-            mItem.removePersistentCategory(cat.getPersistentObject());
+            mItem.removePersistentCategory(((DBCategory) cat).getPersistentObject());
         }
 
         return !toRemove.isEmpty();
@@ -125,7 +125,7 @@ final class DBAudioItem extends AudioItem {
     public List<Category> getCategoryList() {
         List<Category> categories = new LinkedList<Category>();
         for (PersistentCategory c : mItem.getPersistentCategoryList()) {
-            categories.add(new Category(c));
+            categories.add(new DBCategory(c));
         }
         return categories;
     }
@@ -134,7 +134,7 @@ final class DBAudioItem extends AudioItem {
     public List<Category> getCategoryLeavesList() {
         List<Category> categories = new LinkedList<Category>();
         for (PersistentCategory c : mItem.getPersistentCategoryList()) {
-            Category cat = new Category(c);
+            Category cat = new DBCategory(c);
             if (!cat.hasChildren()) {
                 categories.add(cat);
             }

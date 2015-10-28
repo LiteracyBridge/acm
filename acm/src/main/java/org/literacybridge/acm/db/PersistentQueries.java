@@ -12,7 +12,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.Query;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.Taxonomy.Category;
+import org.literacybridge.acm.store.Category;
 
 class PersistentQueries {
 

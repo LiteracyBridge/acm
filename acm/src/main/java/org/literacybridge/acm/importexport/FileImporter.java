@@ -14,8 +14,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 
 public class FileImporter {

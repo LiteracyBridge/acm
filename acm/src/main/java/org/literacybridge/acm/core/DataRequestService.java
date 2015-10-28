@@ -11,9 +11,9 @@ import org.literacybridge.acm.api.IDataRequestService;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.db.Taxonomy;
-import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.index.AudioItemIndex;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Playlist;
 
 public class DataRequestService implements IDataRequestService {

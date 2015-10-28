@@ -9,9 +9,9 @@ import java.util.List;
 
 import javax.swing.SwingUtilities;
 
-import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Playlist;
 
 public class UIUtils {

@@ -11,11 +11,11 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.db.MetadataSpecification;
 import org.literacybridge.acm.db.MetadataValue;
 import org.literacybridge.acm.db.RFC3066LanguageCode;
-import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.A18Importer;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
 
 @SuppressWarnings("serial")
 public class AudioItemImportModel extends AbstractTableModel {

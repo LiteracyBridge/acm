@@ -18,7 +18,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.CategoryView.CategoryTreeNodeObject;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
@@ -28,6 +27,7 @@ import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.FileImporter;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
 
 public class TreeTransferHandler extends TransferHandler {
     private static final long serialVersionUID = 1L;

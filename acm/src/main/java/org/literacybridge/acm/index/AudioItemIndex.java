@@ -47,8 +47,9 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.DataRequestResult;
 import org.literacybridge.acm.db.Taxonomy;
-import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 
 import com.google.common.collect.Lists;
@@ -209,6 +210,8 @@ public class AudioItemIndex {
 
             searcher.search(query, collector);
 
+            MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
+
             SortedSetDocValuesFacetCounts facetCounts =
                     new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
             List<FacetResult> facetResults = facetCounts.getAllDims(1000);
@@ -217,7 +220,7 @@ public class AudioItemIndex {
             for (FacetResult r : facetResults) {
                 if (r.dim.equals(CATEGORIES_FACET_FIELD)) {
                     for (LabelAndValue lv : r.labelValues) {
-                        categoryFacets.put(Taxonomy.getFromDatabase(lv.label).getId(), lv.value.intValue());
+                        categoryFacets.put(store.getCategory(lv.label).getId(), lv.value.intValue());
                     }
                 }
                 if (r.dim.equals(LOCALES_FACET_FIELD)) {
@@ -229,7 +232,7 @@ public class AudioItemIndex {
             }
 
             DataRequestResult result = new DataRequestResult(Taxonomy.getTaxonomy().getRootCategory(), categoryFacets, localeFacets, Lists.newArrayList(results),
-                    ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists());
+                    store.getPlaylists());
 
             return result;
         } finally {

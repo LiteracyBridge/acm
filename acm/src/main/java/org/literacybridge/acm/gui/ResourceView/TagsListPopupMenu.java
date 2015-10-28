@@ -22,14 +22,14 @@ import javax.swing.JPopupMenu;
 
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.Taxonomy;
-import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.CategoryView.TagsListChanged;
 import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
@@ -169,8 +169,8 @@ public class TagsListPopupMenu extends JPopupMenu {
                             IOUtils.copy(sourceActiveListsFile, targetActiveListsFile);
                         }
 
-                        Category category = Taxonomy
-                                .getFromDatabase(TBBuilder.IntroMessageID); // Update Intro Message
+                        MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
+                        Category category = store.getCategory(TBBuilder.IntroMessageID); // Update Intro Message
                         categories.put(category.getCategoryName(LanguageUtil.getUILanguage()), category);
                         BufferedReader reader = new BufferedReader(new FileReader(
                                 targetActiveListsFile));
@@ -186,7 +186,7 @@ public class TagsListPopupMenu extends JPopupMenu {
                                 line = line.substring(1);
                             }
 
-                            category = Taxonomy.getFromDatabase(line);
+                            category = store.getCategory(line);
                             if (category != null) {
                                 categories.put(category.getCategoryName(LanguageUtil.getUILanguage()),
                                         category);

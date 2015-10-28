@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.db.Taxonomy.Category;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Playlist;
 
 public class DataRequestResult implements IDataRequestResult {

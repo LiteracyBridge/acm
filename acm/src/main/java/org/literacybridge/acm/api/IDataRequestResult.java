@@ -2,7 +2,7 @@ package org.literacybridge.acm.api;
 
 import java.util.List;
 
-import org.literacybridge.acm.db.Taxonomy.Category;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Playlist;
 
 /**

@@ -9,7 +9,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import org.literacybridge.acm.db.Taxonomy.Category;
+import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.utils.IOUtils;
 
 /**
@@ -135,7 +136,7 @@ public class LBMetadataSerializer extends MetadataSerializer {
         int numValues = (in.readByte() & 0xff);
         for (int i = 0; i < numValues; i++) {
             String catID = IOUtils.readUTF8(in);
-            Category mCat = Taxonomy.getFromDatabase(catID);
+            Category mCat = ACMConfiguration.getCurrentDB().getMetadataStore().getCategory(catID);
             if (mCat != null) {
                 categories.add(mCat);
             }

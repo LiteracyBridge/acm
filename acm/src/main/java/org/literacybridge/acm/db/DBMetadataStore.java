@@ -4,8 +4,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
-import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 
@@ -70,5 +70,15 @@ public class DBMetadataStore extends MetadataStore {
     @Override
     public Iterable<Playlist> getPlaylists() {
         return DBPlaylist.getFromDatabase();
+    }
+
+    @Override
+    public Category newCategory(String uid) {
+        return new DBCategory(uid);
+    }
+
+    @Override
+    public Category getCategory(String uid) {
+        return DBCategory.getFromDatabase(uid);
     }
 }

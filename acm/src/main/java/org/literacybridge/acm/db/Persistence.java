@@ -20,10 +20,10 @@ import javax.persistence.Query;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
-import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.repository.A18DurationUtil;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
 
 import com.google.common.collect.Lists;
 

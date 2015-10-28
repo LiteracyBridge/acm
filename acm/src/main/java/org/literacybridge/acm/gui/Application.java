@@ -25,7 +25,6 @@ import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.db.Persistence;
-import org.literacybridge.acm.db.Taxonomy.Category;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.ResourceView.ResourceView;
@@ -37,6 +36,7 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.index.AudioItemIndex;
 import org.literacybridge.acm.repository.AudioItemRepository.GCInfo;
 import org.literacybridge.acm.repository.WavCaching;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Playlist;
 
 public class Application extends JXFrame {

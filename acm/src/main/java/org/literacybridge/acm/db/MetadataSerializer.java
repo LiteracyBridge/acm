@@ -5,7 +5,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 
-import org.literacybridge.acm.db.Taxonomy.Category;
+import org.literacybridge.acm.store.Category;
 
 public abstract class MetadataSerializer {
     public abstract void serialize(Collection<Category> categories, Metadata metadata, DataOutput out) throws IOException;
