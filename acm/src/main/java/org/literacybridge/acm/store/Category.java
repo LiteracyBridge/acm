@@ -18,7 +18,11 @@ public abstract class Category implements Persistable {
 
     public abstract Category getParent();
 
+    public abstract void setParent(Category parent);
+
     public abstract void addChild(Category childCategory);
+
+    public abstract void clearChildren();
 
     public abstract List<Category> getChildren();
 
@@ -31,4 +35,8 @@ public abstract class Category implements Persistable {
     public abstract String getUuid();
 
     public abstract void setUuid(String uuid);
+
+    public abstract int getRevision();
+
+    public abstract void setRevision(int revision);
 }

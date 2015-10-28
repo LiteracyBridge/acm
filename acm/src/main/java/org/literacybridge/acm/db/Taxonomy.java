@@ -7,8 +7,11 @@ import java.util.Map;
 
 import javax.persistence.EntityManager;
 
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.DefaultLiteracyBridgeTaxonomy;
 import org.literacybridge.acm.store.Persistable;
+import org.literacybridge.acm.store.DefaultLiteracyBridgeTaxonomy.TaxonomyRevision;
 
 import com.google.common.collect.Lists;
 
@@ -21,19 +24,15 @@ public class Taxonomy implements Persistable {
     private static Taxonomy taxonomy;
 
     public Taxonomy() {
-        PersistentString title = new PersistentString("root");
-        PersistentString desc = new PersistentString("root node");
-        PersistentCategory root = new PersistentCategory(title, desc, rootUUID);
-        mRootCategory = new DBCategory(root);
+        mRootCategory = ACMConfiguration.getCurrentDB().getMetadataStore().newCategory(rootUUID);
+        mRootCategory.setDefaultCategoryDescription("root", "root node");
     }
 
     public Taxonomy(String uuid) {
-        PersistentCategory root = PersistentCategory.getFromDatabase(uuid);
-        if (root == null) {
-            PersistentString title = new PersistentString("root");
-            PersistentString desc = new PersistentString("root node");
-            root = new PersistentCategory(title, desc, uuid);
-            mRootCategory = new DBCategory(root);
+        mRootCategory = ACMConfiguration.getCurrentDB().getMetadataStore().getCategory(rootUUID);
+        if (mRootCategory == null) {
+            mRootCategory = ACMConfiguration.getCurrentDB().getMetadataStore().newCategory(rootUUID);
+            mRootCategory.setDefaultCategoryDescription("root", "root node");
         }
     }
 
@@ -48,13 +47,12 @@ public class Taxonomy implements Persistable {
 
         taxonomy = new Taxonomy();
 
-        PersistentCategory root = PersistentCategory.getFromDatabase(uuid);
+        Category root = ACMConfiguration.getCurrentDB().getMetadataStore().getCategory(uuid);
         DefaultLiteracyBridgeTaxonomy.TaxonomyRevision latestRevision = DefaultLiteracyBridgeTaxonomy.loadLatestTaxonomy();
 
         if (root == null) {
-            PersistentString title = new PersistentString("root");
-            PersistentString desc = new PersistentString("root node");
-            root = new PersistentCategory(title, desc, rootUUID);
+            root = ACMConfiguration.getCurrentDB().getMetadataStore().newCategory(uuid);
+            root.setDefaultCategoryDescription("root", "root node");
             taxonomy = createNewTaxonomy(latestRevision, root, null);
             taxonomy.commit();
         } else if (root.getRevision() < latestRevision.revision) {
@@ -62,36 +60,36 @@ public class Taxonomy implements Persistable {
             taxonomy.commit();
             DefaultLiteracyBridgeTaxonomy.print(taxonomy.mRootCategory);
         } else {
-            taxonomy.mRootCategory = new DBCategory(root);
+            taxonomy.mRootCategory = root;
         }
 
         return taxonomy;
     }
 
-    private static Taxonomy createNewTaxonomy(DefaultLiteracyBridgeTaxonomy.TaxonomyRevision revision, PersistentCategory existingRoot, final Map<String, PersistentCategory> existingCategories) {
+    private static Taxonomy createNewTaxonomy(DefaultLiteracyBridgeTaxonomy.TaxonomyRevision revision, Category existingRoot, final Map<String, Category> existingCategories) {
         Taxonomy taxonomy = new Taxonomy();
         existingRoot.setRevision(revision.revision);
         existingRoot.setOrder(0);
-        taxonomy.mRootCategory = new DBCategory(existingRoot);
+        taxonomy.mRootCategory = existingRoot;
 
         revision.createTaxonomy(taxonomy, existingCategories);
         return taxonomy;
     }
 
-    private static void updateTaxonomy(PersistentCategory existingRoot, DefaultLiteracyBridgeTaxonomy.TaxonomyRevision latestRevision) {
+    private static void updateTaxonomy(Category existingRoot, DefaultLiteracyBridgeTaxonomy.TaxonomyRevision latestRevision) {
         System.out.println("Updating taxonomy");
 
-        final Map<String, PersistentCategory> existingCategories = new HashMap<String, PersistentCategory>();
+        final Map<String, Category> existingCategories = new HashMap<String, Category>();
         traverse(null, existingRoot, new Function() {
-            @Override public void apply(PersistentCategory parent, PersistentCategory root) {
+            @Override public void apply(Category parent, Category root) {
                 existingCategories.put(root.getUuid(), root);
             }
         });
 
-        existingRoot.clearPersistentChildCategories();
-        for (PersistentCategory cat : existingCategories.values()) {
-            cat.clearPersistentChildCategories();
-            cat.setPersistentParentCategory(null);
+        existingRoot.clearChildren();
+        for (Category cat : existingCategories.values()) {
+            cat.clearChildren();
+            cat.setParent(null);
             cat.commit();
         }
 
@@ -99,12 +97,12 @@ public class Taxonomy implements Persistable {
     }
 
     private static interface Function {
-        public void apply(PersistentCategory parent, PersistentCategory root);
+        public void apply(Category parent, Category root);
     }
 
-    private static void traverse(PersistentCategory parent, PersistentCategory root, Function function) {
+    private static void traverse(Category parent, Category root, Function function) {
         function.apply(parent, root);
-        for (PersistentCategory child : root.getPersistentChildCategoryList()) {
+        for (Category child : root.getChildren()) {
             traverse(root, child, function);
         }
     }

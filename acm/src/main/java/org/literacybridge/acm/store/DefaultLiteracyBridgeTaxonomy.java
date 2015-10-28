@@ -1,4 +1,4 @@
-package org.literacybridge.acm.db;
+package org.literacybridge.acm.store;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.db.Taxonomy;
 import org.yaml.snakeyaml.Yaml;
 
 public class DefaultLiteracyBridgeTaxonomy {
@@ -33,13 +33,13 @@ public class DefaultLiteracyBridgeTaxonomy {
             this.categories = categories;
         }
 
-        public void createTaxonomy(Taxonomy taxonomy, final Map<String, PersistentCategory> existingCategories) {
+        public void createTaxonomy(Taxonomy taxonomy, final Map<String, Category> existingCategories) {
             DefaultLiteracyBridgeTaxonomy.loadYaml(taxonomy, categories, taxonomy.getRootCategory(), existingCategories);
         }
     }
 
-    private static Category addCategory(Taxonomy taxonomy, Category parent, PersistentCategory existingCategory, String id, String name, String desc, int order) {
-        Category cat = existingCategory == null ? new DBCategory(id) : new DBCategory(existingCategory);
+    private static Category addCategory(Taxonomy taxonomy, Category parent, Category existingCategory, String id, String name, String desc, int order) {
+        Category cat = existingCategory == null ? ACMConfiguration.getCurrentDB().getMetadataStore().newCategory(id) : existingCategory;
         cat.setDefaultCategoryDescription(name, desc);
         cat.setOrder(order);
         taxonomy.addChild(parent, cat);
@@ -98,11 +98,11 @@ public class DefaultLiteracyBridgeTaxonomy {
         }
     }
 
-    private static void loadYaml(Taxonomy taxonomy, Map<String, Object> categories, Category parent, final Map<String, PersistentCategory> existingCategories) {
+    private static void loadYaml(Taxonomy taxonomy, Map<String, Object> categories, Category parent, final Map<String, Category> existingCategories) {
         for (Entry<String, Object> entry : categories.entrySet()) {
             String catID = entry.getKey();
 
-            PersistentCategory existingCategory = null;
+            Category existingCategory = null;
             if (existingCategories != null) {
                 existingCategory =  existingCategories.get(catID);
             }

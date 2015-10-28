@@ -199,4 +199,25 @@ class DBCategory extends Category {
     @Override public String toString() {
         return getCategoryName(LanguageUtil.getUILanguage()).toString();
     }
+
+    @Override
+    public int getRevision() {
+        return mCategory.getRevision();
+    }
+
+    @Override
+    public void setRevision(int revision) {
+        mCategory.setRevision(revision);
+    }
+
+    @Override
+    public void setParent(Category parent) {
+        mCategory.setPersistentParentCategory(parent != null
+                ? ((DBCategory) parent).getPersistentObject() : null);
+    }
+
+    @Override
+    public void clearChildren() {
+        mCategory.clearPersistentChildCategories();
+    }
 }
