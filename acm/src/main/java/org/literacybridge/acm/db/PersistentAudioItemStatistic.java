@@ -22,6 +22,11 @@ import org.literacybridge.acm.store.MetadataStatisticsField;
     @NamedQuery(name = "PersistentAudioItemStatistic.findAll", query = "select o from PersistentAudioItemStatistic o")
 })
 @Table(name = "t_audioitem_statistic")
+/**
+ * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
+ *              for storing and searching all metadata.
+ */
+@Deprecated
 class PersistentAudioItemStatistic extends PersistentObject {
 
     private static final long serialVersionUID = -976609359839768497L;

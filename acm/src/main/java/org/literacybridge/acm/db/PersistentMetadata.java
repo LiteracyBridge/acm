@@ -22,6 +22,11 @@ import javax.persistence.TableGenerator;
     @NamedQuery(name = "PersistentMetadata.findAll", query = "select o from PersistentMetadata o")
 })
 @Table(name = "t_metadata")
+/**
+ * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
+ *              for storing and searching all metadata.
+ */
+@Deprecated
 class PersistentMetadata extends PersistentObject {
 
     private static final long serialVersionUID = -4128827355718501175L;

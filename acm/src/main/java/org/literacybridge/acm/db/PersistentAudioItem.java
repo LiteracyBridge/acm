@@ -34,6 +34,11 @@ import org.literacybridge.acm.index.AudioItemIndex;
     @NamedQuery(name = "PersistentAudioItem.findAll", query = "select o from PersistentAudioItem o")
 })
 @Table(name = "t_audioitem")
+/**
+ * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
+ *              for storing and searching all metadata.
+ */
+@Deprecated
 class PersistentAudioItem extends PersistentObject {
 
     private static final long serialVersionUID = 6523719801839346881L;

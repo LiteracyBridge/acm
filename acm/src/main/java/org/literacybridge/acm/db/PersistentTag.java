@@ -25,6 +25,11 @@ import org.literacybridge.acm.config.ACMConfiguration;
     @NamedQuery(name = "PersistentTag.findAll", query = "select o from PersistentTag o")
 })
 @Table(name = "t_tag")
+/**
+ * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
+ *              for storing and searching all metadata.
+ */
+@Deprecated
 class PersistentTag extends PersistentObject {
     private static final String COLUMN_VALUE = "gen_tag";
 

@@ -16,6 +16,11 @@ import org.literacybridge.acm.store.Playlist;
 
 import com.google.common.collect.Sets;
 
+/**
+ * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
+ *              for storing and searching all metadata.
+ */
+@Deprecated
 final class DBAudioItem extends AudioItem {
     private static final Logger LOG = Logger.getLogger(DBAudioItem.class.getName());
 

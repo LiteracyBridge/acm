@@ -13,6 +13,11 @@ import org.literacybridge.acm.store.Persistable;
 
 
 @MappedSuperclass
+/**
+ * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
+ *              for storing and searching all metadata.
+ */
+@Deprecated
 abstract class PersistentObject implements Serializable, Persistable {
     @Transient
     private Logger mLogger = Logger.getLogger(getClass().getName());

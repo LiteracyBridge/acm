@@ -14,6 +14,11 @@ import javax.persistence.Query;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.Category;
 
+/**
+ * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
+ *              for storing and searching all metadata.
+ */
+@Deprecated
 class PersistentQueries {
 
     static <T> T getPersistentObject(Class<T> objectClass, Object id) {

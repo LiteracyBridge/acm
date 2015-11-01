@@ -19,6 +19,11 @@ import javax.persistence.TableGenerator;
     @NamedQuery(name = "PersistentLocale.findAll", query = "select o from PersistentLocale o")
 })
 @Table(name = "t_locale")
+/**
+ * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
+ *              for storing and searching all metadata.
+ */
+@Deprecated
 class PersistentLocale extends PersistentObject implements Serializable {
 
     private static final long serialVersionUID = 196741399223820451L;

@@ -16,6 +16,11 @@ import javax.persistence.TableGenerator;
     @NamedQuery(name = "PersistentLocalizedString.findAll", query = "select o from PersistentLocalizedString o")
 })
 @Table(name = "t_localized_string")
+/**
+ * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
+ *              for storing and searching all metadata.
+ */
+@Deprecated
 class PersistentLocalizedString extends PersistentObject {
 
     private static final long serialVersionUID = -6293178189550152630L;

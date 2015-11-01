@@ -49,7 +49,7 @@ public class DataRequestService implements IDataRequestService {
         }
 
         // Couldn't get results from Lucene index - fall back to DB
-        Iterable<AudioItem> items = ACMConfiguration.getCurrentDB().getMetadataStore().search(filterString, categories, locales);
+        Iterable<AudioItem> items = store.search(filterString, categories, locales);
         Map<Integer, Integer> facetCounts = store.getFacetCounts(filterString, categories, locales);
         List<String> audioItems = new ArrayList<String>();
         for (AudioItem item : items) {
@@ -89,7 +89,7 @@ public class DataRequestService implements IDataRequestService {
         }
 
         // Couldn't get results from Lucene index - fall back to DB
-        Iterable<AudioItem> items = ACMConfiguration.getCurrentDB().getMetadataStore().search(filterString, selectedPlaylist);
+        Iterable<AudioItem> items = store.search(filterString, selectedPlaylist);
         Map<Integer, Integer> facetCounts = store.getFacetCounts(filterString, null, null);
         List<String> audioItems = new ArrayList<String>();
         for (AudioItem item : items) {

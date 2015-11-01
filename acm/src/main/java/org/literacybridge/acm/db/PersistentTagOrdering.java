@@ -16,6 +16,11 @@ import javax.persistence.Table;
 })
 @Table(name = "t_audioitem_has_tag")
 @IdClass(PersistentTagOrdering.PrimaryKey.class)
+/**
+ * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
+ *              for storing and searching all metadata.
+ */
+@Deprecated
 class PersistentTagOrdering extends PersistentObject {
     @ManyToOne
     @JoinColumn(name="audioitem", nullable = false)

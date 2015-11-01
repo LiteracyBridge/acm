@@ -19,6 +19,11 @@ import javax.persistence.TableGenerator;
     @NamedQuery(name = "PersistentString.findAll", query = "select o from PersistentString o")
 })
 @Table(name = "t_string")
+/**
+ * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
+ *              for storing and searching all metadata.
+ */
+@Deprecated
 class PersistentString extends PersistentObject {
 
     private static final long serialVersionUID = 1942793327937175428L;
