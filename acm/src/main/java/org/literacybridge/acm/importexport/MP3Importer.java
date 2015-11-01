@@ -9,17 +9,17 @@ import org.cmc.music.metadata.IMusicMetadata;
 import org.cmc.music.metadata.MusicMetadataSet;
 import org.cmc.music.myid3.MyID3;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.Metadata;
-import org.literacybridge.acm.db.MetadataSpecification;
-import org.literacybridge.acm.db.MetadataValue;
-import org.literacybridge.acm.db.RFC3066LanguageCode;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.DuplicateItemException;
 import org.literacybridge.acm.repository.AudioItemRepository.UnsupportedFormatException;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.MetadataValue;
+import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 public class MP3Importer extends Importer {
 

@@ -3,8 +3,6 @@ package org.literacybridge.acm.store;
 import java.util.Collection;
 import java.util.List;
 
-import org.literacybridge.acm.db.Metadata;
-
 /**
  * An AudioItem is a unique audio entity, identified by its audioItemID.
  * It is optionally associated with one or more categories and must have

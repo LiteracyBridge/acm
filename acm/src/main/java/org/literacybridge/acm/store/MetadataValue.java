@@ -1,4 +1,4 @@
-package org.literacybridge.acm.db;
+package org.literacybridge.acm.store;
 
 import java.io.Serializable;
 import java.util.LinkedHashMap;

@@ -30,8 +30,6 @@ import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.MetadataSpecification;
-import org.literacybridge.acm.db.MetadataValue;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.messages.AudioItemTableSortOrderMessage;
 import org.literacybridge.acm.gui.messages.PlayAudioItemMessage;
@@ -44,6 +42,8 @@ import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataValue;
 
 public class AudioItemView extends Container implements Observer {
 

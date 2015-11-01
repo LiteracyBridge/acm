@@ -8,13 +8,13 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.LBMetadataIDs;
-import org.literacybridge.acm.db.Metadata;
-import org.literacybridge.acm.db.MetadataField;
-import org.literacybridge.acm.db.MetadataSpecification;
-import org.literacybridge.acm.db.MetadataValue;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.LBMetadataIDs;
+import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataField;
+import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataValue;
 
 import com.google.common.collect.Lists;
 

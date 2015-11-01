@@ -30,11 +30,11 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.db.DBMetadataStore;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.Persistence.DatabaseConnection;
-import org.literacybridge.acm.db.RFC3066LanguageCode;
 import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.index.AudioItemIndex;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 @SuppressWarnings("serial")
 public class DBConfiguration extends Properties {

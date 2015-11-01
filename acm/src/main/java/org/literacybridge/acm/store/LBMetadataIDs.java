@@ -1,6 +1,6 @@
-package org.literacybridge.acm.db;
+package org.literacybridge.acm.store;
 
-import static org.literacybridge.acm.db.MetadataSpecification.*;
+import static org.literacybridge.acm.store.MetadataSpecification.*;
 
 import com.google.common.collect.ImmutableBiMap;
 

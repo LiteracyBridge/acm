@@ -1,4 +1,4 @@
-package org.literacybridge.acm.db;
+package org.literacybridge.acm.store;
 
 public class Attribute<T> {
 	private boolean required;

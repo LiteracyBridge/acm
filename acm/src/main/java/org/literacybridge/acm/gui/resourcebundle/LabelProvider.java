@@ -15,8 +15,8 @@ import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
-import org.literacybridge.acm.db.LBMetadataIDs;
-import org.literacybridge.acm.db.MetadataField;
+import org.literacybridge.acm.store.LBMetadataIDs;
+import org.literacybridge.acm.store.MetadataField;
 
 import com.google.common.collect.UnmodifiableIterator;
 

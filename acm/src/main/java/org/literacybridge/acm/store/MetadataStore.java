@@ -18,6 +18,8 @@ public abstract class MetadataStore {
     public abstract Category newCategory(String uid);
     public abstract Category getCategory(String uid);
 
+    public abstract Metadata newMetadata();
+
     public abstract Map<Integer, Integer> getFacetCounts(String filter, List<Category> categories, List<Locale> locales);
     public abstract Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<Locale> locales);
 }

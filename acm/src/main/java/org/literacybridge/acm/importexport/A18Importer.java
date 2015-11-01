@@ -10,18 +10,18 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.LBMetadataSerializer;
-import org.literacybridge.acm.db.Metadata;
-import org.literacybridge.acm.db.MetadataSpecification;
-import org.literacybridge.acm.db.MetadataValue;
-import org.literacybridge.acm.db.RFC3066LanguageCode;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.DuplicateItemException;
 import org.literacybridge.acm.repository.AudioItemRepository.UnsupportedFormatException;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.LBMetadataSerializer;
+import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.MetadataValue;
+import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.utils.IOUtils;
 
 public class A18Importer extends Importer {
@@ -36,7 +36,7 @@ public class A18Importer extends Importer {
             in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
             int bytesToSkip = IOUtils.readLittleEndian32(in);
 
-            Metadata loadedMetadata = new Metadata();
+            Metadata loadedMetadata = store.newMetadata();
 
             Set<Category> categories = new HashSet<Category>();
             if (bytesToSkip + 4 < file.length()) {

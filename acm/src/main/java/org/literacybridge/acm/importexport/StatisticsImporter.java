@@ -9,9 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.literacybridge.acm.db.Metadata;
-import org.literacybridge.acm.db.MetadataSpecification;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 
 public class StatisticsImporter {

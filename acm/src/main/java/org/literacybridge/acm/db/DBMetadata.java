@@ -1,59 +1,30 @@
 package org.literacybridge.acm.db;
 
 import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import javax.persistence.EntityManager;
 
-import org.literacybridge.acm.store.Persistable;
+import org.literacybridge.acm.store.LBMetadataIDs;
+import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataField;
+import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataStatisticsField;
+import org.literacybridge.acm.store.MetadataValue;
+import org.literacybridge.acm.store.RFC3066LanguageCode;
 
-public class Metadata implements Persistable {
-
-    // java does runtime erasure of generic types - using this wrapper
-    // we can return List<MetadataValue<F>> in getMetadataValues()
-    // and also do type-safe value validation
-
-    private class ListWrapper<T> {
-        MetadataField<T> field;
-        List<MetadataValue<T>> list;
-
-        ListWrapper(MetadataField<T> field, List<MetadataValue<T>> list) {
-            this.field = field;
-            this.list = list;
-        };
-
-        void validateValues() throws InvalidMetadataException {
-            for (MetadataValue<T> value : list) {
-                field.validateValue(value.getValue());
-            }
-        }
-    }
-
+public class DBMetadata extends Metadata {
     private PersistentMetadata mMetadata;
 
     private boolean isRefreshing = false;
 
-    private Map<MetadataField<?>, ListWrapper<?>> fields;
-    private int numValues;
-
-    public Metadata() {
-        this.fields = new LinkedHashMap<MetadataField<?>, ListWrapper<?>>();
+    public DBMetadata() {
+        super();
         mMetadata = new PersistentMetadata();
     }
 
-    public int getNumberOfValues() {
-        return numValues;
-    }
-
-    public int getNumberOfFields() {
-        return this.fields.size();
-    }
-
-    public Metadata(PersistentMetadata metadata) {
-        this.fields = new LinkedHashMap<MetadataField<?>, ListWrapper<?>>();
+    public DBMetadata(PersistentMetadata metadata) {
+        super();
         mMetadata = metadata;
         refreshFieldsFromPersistenceObject();
     }
@@ -62,6 +33,13 @@ public class Metadata implements Persistable {
         return mMetadata.getId();
     }
 
+    @Override
+    public <F> void setMetadataField(MetadataField<F> field, MetadataValue<F> value) {
+        super.setMetadataField(field, value);
+        addMetadataToPersistenceObject(field, value);
+    }
+
+    @Override
     public void setStatistic(MetadataStatisticsField statisticsField, String deviceId, int bootCycleNumber, Integer count) {
         // look for existing statistics
         boolean found = false;
@@ -123,41 +101,6 @@ public class Metadata implements Persistable {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
-    public <F> void setMetadataField(MetadataField<F> field, MetadataValue<F> value) {
-        if ((value == null) || (value.getValue() == null)) {
-            return;
-        }
-
-        ListWrapper<F> fieldValues = new ListWrapper<F>(field, new LinkedList<MetadataValue<F>>());
-        this.fields.put(field, fieldValues);
-
-        value.setAttributes(field.getAttributes());
-        fieldValues.list.add(value);
-
-        addMetadataToPersistenceObject(field, value);
-    }
-
-    public void validate() throws InvalidMetadataException {
-        for (ListWrapper<?> entry : fields.values()) {
-            entry.validateValues();
-        }
-    }
-
-    public Iterator<MetadataField<?>> getFieldsIterator() {
-        return this.fields.keySet().iterator();
-    }
-
-    @SuppressWarnings("unchecked")
-    public <F> List<MetadataValue<F>> getMetadataValues(MetadataField<F> field) {
-        ListWrapper<F> list = (ListWrapper<F>) this.fields.get(field);
-        return list != null ? list.list : null;
-    }
-
-    //
-    // Persistence Helper methods
-    //
-
     private <F> void addMetadataToPersistenceObject(MetadataField<F> field,
             MetadataValue<F> value) {
         if (isRefreshing == true) {
@@ -209,7 +152,7 @@ public class Metadata implements Persistable {
     private void refreshFieldsFromPersistenceObject() {
         try {
             isRefreshing = true;
-            this.fields.clear();
+            this.clear();
             setMetadataField(MetadataSpecification.DC_IDENTIFIER,
                     new MetadataValue<String>(mMetadata.getDc_identifier()));
             setMetadataField(MetadataSpecification.DC_PUBLISHER,
@@ -296,4 +239,5 @@ public class Metadata implements Persistable {
             return null;
         }
     }
+
 }

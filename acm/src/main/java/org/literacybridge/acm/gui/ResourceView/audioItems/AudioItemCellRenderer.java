@@ -1,6 +1,6 @@
 package org.literacybridge.acm.gui.ResourceView.audioItems;
 
-import static org.literacybridge.acm.db.MetadataSpecification.LB_STATUS;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_STATUS;
 
 import java.awt.Component;
 import java.awt.Font;
@@ -11,10 +11,10 @@ import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
-import org.literacybridge.acm.db.MetadataValue;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel;
 import org.literacybridge.acm.gui.util.AudioItemNode;
+import org.literacybridge.acm.store.MetadataValue;
 
 @SuppressWarnings("serial")
 public class AudioItemCellRenderer extends DefaultTableCellRenderer {

@@ -10,6 +10,8 @@ import javax.persistence.EntityManager;
 
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.Playlist;
 
 import com.google.common.collect.Sets;
@@ -153,7 +155,7 @@ final class DBAudioItem extends AudioItem {
 
     @Override
     public Metadata getMetadata() {
-        return new Metadata(mItem.getPersistentLocalizedAudioItem().getPersistentMetadata());
+        return new DBMetadata(mItem.getPersistentLocalizedAudioItem().getPersistentMetadata());
     }
 
     @Override

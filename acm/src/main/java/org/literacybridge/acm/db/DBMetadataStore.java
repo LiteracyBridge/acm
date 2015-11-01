@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 
@@ -111,6 +112,11 @@ public class DBMetadataStore extends MetadataStore {
     @Override
     public Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
         return PersistentQueries.getLanguageFacetCounts(filter, categories, locales);
+    }
+
+    @Override
+    public Metadata newMetadata() {
+        return new DBMetadata();
     }
 
 }

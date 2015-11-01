@@ -11,8 +11,6 @@ import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.acm.db.MetadataSpecification;
-import org.literacybridge.acm.db.MetadataValue;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel;
@@ -21,6 +19,8 @@ import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataValue;
 
 public class AudioItemTableModel extends AbstractTableModel {
 

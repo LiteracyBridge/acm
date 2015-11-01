@@ -1,4 +1,4 @@
-package org.literacybridge.acm.db;
+package org.literacybridge.acm.store;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
@@ -10,7 +10,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.utils.IOUtils;
 
 /**

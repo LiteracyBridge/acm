@@ -15,6 +15,8 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataStatisticsField;
 
 @Entity
 @NamedQueries({

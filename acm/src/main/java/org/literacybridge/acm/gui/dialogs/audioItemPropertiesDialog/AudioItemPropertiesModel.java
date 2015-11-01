@@ -1,23 +1,23 @@
 package org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog;
 
-import static org.literacybridge.acm.db.MetadataSpecification.DC_IDENTIFIER;
-import static org.literacybridge.acm.db.MetadataSpecification.DC_LANGUAGE;
-import static org.literacybridge.acm.db.MetadataSpecification.DC_PUBLISHER;
-import static org.literacybridge.acm.db.MetadataSpecification.DC_RELATION;
-import static org.literacybridge.acm.db.MetadataSpecification.DC_SOURCE;
-import static org.literacybridge.acm.db.MetadataSpecification.DC_TITLE;
-import static org.literacybridge.acm.db.MetadataSpecification.LB_BENEFICIARY;
-import static org.literacybridge.acm.db.MetadataSpecification.LB_DATE_RECORDED;
-import static org.literacybridge.acm.db.MetadataSpecification.LB_DURATION;
-import static org.literacybridge.acm.db.MetadataSpecification.LB_ENGLISH_TRANSCRIPTION;
-import static org.literacybridge.acm.db.MetadataSpecification.LB_GOAL;
-import static org.literacybridge.acm.db.MetadataSpecification.LB_KEYWORDS;
-import static org.literacybridge.acm.db.MetadataSpecification.LB_MESSAGE_FORMAT;
-import static org.literacybridge.acm.db.MetadataSpecification.LB_NOTES;
-import static org.literacybridge.acm.db.MetadataSpecification.LB_PRIMARY_SPEAKER;
-import static org.literacybridge.acm.db.MetadataSpecification.LB_STATUS;
-import static org.literacybridge.acm.db.MetadataSpecification.LB_TARGET_AUDIENCE;
-import static org.literacybridge.acm.db.MetadataSpecification.LB_TIMING;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_PUBLISHER;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_RELATION;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_SOURCE;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_BENEFICIARY;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_DATE_RECORDED;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_DURATION;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_ENGLISH_TRANSCRIPTION;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_GOAL;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_KEYWORDS;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_MESSAGE_FORMAT;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_NOTES;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_PRIMARY_SPEAKER;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_STATUS;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_TARGET_AUDIENCE;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_TIMING;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -29,16 +29,16 @@ import javax.swing.table.AbstractTableModel;
 
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.Metadata;
-import org.literacybridge.acm.db.MetadataField;
-import org.literacybridge.acm.db.MetadataSpecification;
-import org.literacybridge.acm.db.MetadataValue;
-import org.literacybridge.acm.db.RFC3066LanguageCode;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataField;
+import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataValue;
+import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 import com.google.common.collect.Maps;
 

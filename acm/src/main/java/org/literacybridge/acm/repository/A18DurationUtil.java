@@ -7,10 +7,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.db.MetadataSpecification;
-import org.literacybridge.acm.db.MetadataValue;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.utils.IOUtils;
 
 public class A18DurationUtil {
