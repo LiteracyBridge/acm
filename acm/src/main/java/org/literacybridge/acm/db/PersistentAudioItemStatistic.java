@@ -15,7 +15,6 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStatisticsField;
 
 @Entity
@@ -95,40 +94,14 @@ class PersistentAudioItemStatistic extends PersistentObject {
         return boot_cycle_number;
     }
 
+    @Deprecated
     public int getStatistic(MetadataStatisticsField statisticsField) {
-        if (statisticsField.equals(MetadataSpecification.LB_APPLY_COUNT)) {
-            return lb_apply_count;
-        } else if (statisticsField.equals(MetadataSpecification.LB_COMPLETION_COUNT)) {
-            return lb_completion_count;
-        } else if (statisticsField.equals(MetadataSpecification.LB_COPY_COUNT)) {
-            return lb_copy_count;
-        } else if (statisticsField.equals(MetadataSpecification.LB_OPEN_COUNT)) {
-            return lb_open_count;
-        } else if (statisticsField.equals(MetadataSpecification.LB_SURVEY1_COUNT)) {
-            return lb_survey1_count;
-        } else if (statisticsField.equals(MetadataSpecification.LB_NOHELP_COUNT)) {
-            return lb_useless_count;
-        }
-
         throw new IllegalArgumentException("Unknown statistics field: " + statisticsField.getName());
     }
 
+    @Deprecated
     public void setStatistic(MetadataStatisticsField statisticsField, int count) {
-        if (statisticsField.equals(MetadataSpecification.LB_APPLY_COUNT)) {
-            lb_apply_count = count;
-        } else if (statisticsField.equals(MetadataSpecification.LB_COMPLETION_COUNT)) {
-            lb_completion_count = count;
-        } else if (statisticsField.equals(MetadataSpecification.LB_COPY_COUNT)) {
-            lb_copy_count = count;
-        } else if (statisticsField.equals(MetadataSpecification.LB_OPEN_COUNT)) {
-            lb_open_count = count;
-        } else if (statisticsField.equals(MetadataSpecification.LB_SURVEY1_COUNT)) {
-            lb_survey1_count = count;
-        } else if (statisticsField.equals(MetadataSpecification.LB_NOHELP_COUNT)) {
-            lb_useless_count = count;
-        } else {
-            throw new IllegalArgumentException("Unknown statistics field: " + statisticsField.getName());
-        }
+        throw new IllegalArgumentException("Unknown statistics field: " + statisticsField.getName());
     }
 
 

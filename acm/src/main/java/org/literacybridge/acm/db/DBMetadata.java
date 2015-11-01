@@ -9,7 +9,6 @@ import org.literacybridge.acm.store.LBMetadataIDs;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.MetadataSpecification;
-import org.literacybridge.acm.store.MetadataStatisticsField;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
@@ -38,47 +37,6 @@ public class DBMetadata extends Metadata {
         super.setMetadataField(field, value);
         addMetadataToPersistenceObject(field, value);
     }
-
-    @Override
-    public void setStatistic(MetadataStatisticsField statisticsField, String deviceId, int bootCycleNumber, Integer count) {
-        // look for existing statistics
-        boolean found = false;
-        for (PersistentAudioItemStatistic statistic : mMetadata.getPersistentAudioItemStatistics()) {
-            if (statistic.getDeviceID().equals(deviceId)) {
-                // only update if the new bootCycleNumber is higher
-                if (bootCycleNumber >= statistic.getBootCycleNumber()) {
-                    statistic.setStatistic(statisticsField, count);
-                    statistic.setBootCycleNumber(bootCycleNumber);
-                }
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            PersistentAudioItemStatistic statistic = new PersistentAudioItemStatistic(deviceId, bootCycleNumber);
-            statistic.setStatistic(statisticsField, count);
-            mMetadata.addPersistentAudioItemStatistic(statistic);
-        }
-    }
-
-    public Integer getStatistic(MetadataStatisticsField statisticsField) {
-        Integer sum = 0;
-        for (PersistentAudioItemStatistic statistic : mMetadata.getPersistentAudioItemStatistics()) {
-            sum += statistic.getStatistic(statisticsField);
-        }
-        return sum;
-    }
-
-    public void removeStatistic(MetadataStatisticsField statisticsField, String deviceId) {
-        for (PersistentAudioItemStatistic statistic : mMetadata.getPersistentAudioItemStatistics()) {
-            if (statistic.getDeviceID().equals(deviceId)) {
-                statistic.setStatistic(statisticsField, 0);
-                statistic.commit();
-                return;
-            }
-        }
-    }
-
 
     public Metadata commit() {
         mMetadata = mMetadata.<PersistentMetadata> commit();
@@ -167,12 +125,6 @@ public class DBMetadata extends Metadata {
                     new MetadataValue<String>(mMetadata.getDtb_revision()));
             setMetadataField(MetadataSpecification.LB_DATE_RECORDED,
                     new MetadataValue<String>(mMetadata.getDate_recorded()));
-            setStatisticsField(MetadataSpecification.LB_APPLY_COUNT);
-            setStatisticsField(MetadataSpecification.LB_COMPLETION_COUNT);
-            setStatisticsField(MetadataSpecification.LB_COPY_COUNT);
-            setStatisticsField(MetadataSpecification.LB_OPEN_COUNT);
-            setStatisticsField(MetadataSpecification.LB_SURVEY1_COUNT);
-            setStatisticsField(MetadataSpecification.LB_NOHELP_COUNT);
             setMetadataField(MetadataSpecification.DC_LANGUAGE,
                     new MetadataValue<RFC3066LanguageCode>(
                             (mMetadata.getPersistentLocale() == null || mMetadata.getPersistentLocale().getLanguage() == null)
@@ -204,11 +156,6 @@ public class DBMetadata extends Metadata {
         } finally {
             isRefreshing = false;
         }
-    }
-
-    private final void setStatisticsField(MetadataStatisticsField statisticsField) {
-        int count = getStatistic(statisticsField);
-        setMetadataField(statisticsField, count == 0 ? null : new MetadataValue<Integer>(count));
     }
 
     public String toString() {

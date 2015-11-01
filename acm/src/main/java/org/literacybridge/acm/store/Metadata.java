@@ -43,12 +43,6 @@ public abstract class Metadata implements Persistable {
         return this.fields.size();
     }
 
-    public abstract void setStatistic(MetadataStatisticsField statisticsField, String deviceId, int bootCycleNumber, Integer count);
-
-    public abstract Integer getStatistic(MetadataStatisticsField statisticsField);
-
-    public abstract void removeStatistic(MetadataStatisticsField statisticsField, String deviceId);
-
     public <F> void setMetadataField(MetadataField<F> field, MetadataValue<F> value) {
         if ((value == null) || (value.getValue() == null)) {
             return;

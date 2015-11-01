@@ -6,15 +6,8 @@ import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
-
-import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.importexport.StatisticsImporter;
 
 public class DeviceContents {
     public final static String CONFIG_FILE = "config.txt";
@@ -86,20 +79,6 @@ public class DeviceContents {
     public DeviceContents(File pathToDevice) throws IOException {
         this.pathToDevice = pathToDevice;
         loadDeviceInfos();
-    }
-
-    public void importStats() throws IOException {
-        internalImportStats();
-    }
-
-    //	public void importOtherDeviceStats() throws IOException {
-    //		internalImportStats(OTHER_DEVICE_STATS_SUB_DIR);
-    //	}
-
-    private void internalImportStats() throws IOException  {
-        StatisticsImporter importer = new StatisticsImporter();
-        File statsPath = new File(pathToDevice, STATISTICS_SUBFOLDER);
-        importer.importStatsFolder(ACMConfiguration.getCurrentDB().getMetadataStore(), statsPath);
     }
 
     public List<File> loadAudioItems() throws IOException {
