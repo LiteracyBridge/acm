@@ -17,7 +17,7 @@ import org.literacybridge.acm.store.RFC3066LanguageCode;
  *              for storing and searching all metadata.
  */
 @Deprecated
-public class DBMetadata extends Metadata {
+class DBMetadata extends Metadata {
     private PersistentMetadata mMetadata;
 
     private boolean isRefreshing = false;
