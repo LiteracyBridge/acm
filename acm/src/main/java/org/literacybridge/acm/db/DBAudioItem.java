@@ -1,7 +1,6 @@
 package org.literacybridge.acm.db;
 
 import java.io.IOException;
-import java.util.Collection;
 
 import javax.persistence.EntityManager;
 
@@ -33,30 +32,11 @@ final class DBAudioItem extends AudioItem {
         super(uuid);
         mItem = new PersistentAudioItem();
         mItem.setUuid(uuid);
-    }
-
-    @Override
-    public void addPlaylist(Playlist playlist) {
-        mItem.addPersistentAudioItemTag(((DBPlaylist) playlist).getTag());
-    }
-
-    @Override
-    public boolean hasPlaylist(Playlist playlist) {
-        return mItem.hasPersistentAudioItemTag(((DBPlaylist) playlist).getTag());
-    }
-
-    @Override
-    public void removePlaylist(Playlist playlist) {
-        mItem.removePersistentTag(((DBPlaylist) playlist).getTag());
+        mItem.commit();
     }
 
     public PersistentAudioItem getPersistentAudioItem() {
         return mItem;
-    }
-
-    @Override
-    public Collection<Playlist> getPlaylists() {
-        return DBPlaylist.toPlaylists(mItem.getPersistentTagList());
     }
 
     @Override
@@ -82,7 +62,16 @@ final class DBAudioItem extends AudioItem {
             mItem.addPersistentAudioItemCategory(PersistentCategory.getFromDatabase(cat.getUuid()));
         }
 
+        // add all playlists from in-memory list to DB
+        mItem.removeAllPersistentTags();
+        for (Playlist playlist : getPlaylists()) {
+            mItem.addPersistentAudioItemTag(PersistentTag.getFromDatabase(playlist.getUuid()));
+        }
+
+        // commit
         mItem = mItem.<PersistentAudioItem>commit(em);
+
+        // update audio index
         DBConfiguration db = ACMConfiguration.getCurrentDB();
         if (db != null) {
             AudioItemIndex index = db.getAudioItemIndex();
@@ -100,7 +89,6 @@ final class DBAudioItem extends AudioItem {
             }
         }
 
-
         return this;
     }
 
@@ -117,6 +105,12 @@ final class DBAudioItem extends AudioItem {
         for (PersistentCategory cat : mItem.getPersistentCategoryList()) {
             this.categories.put(cat.getUuid(), new DBCategory(cat));
         }
+
+        // add all playlists from DB to in-memory list
+        for (PersistentTag playlist : mItem.getPersistentTagList()) {
+            this.playlists.put(playlist.getUuid(), new DBPlaylist(playlist));
+        }
+
         return this;
     }
 }

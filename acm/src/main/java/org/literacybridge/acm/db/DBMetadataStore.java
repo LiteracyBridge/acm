@@ -68,7 +68,7 @@ public class DBMetadataStore extends MetadataStore {
 
     @Override
     public Playlist newPlaylist(String uid) {
-        return new DBPlaylist();
+        return new DBPlaylist(uid);
     }
 
     @Override

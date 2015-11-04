@@ -18,17 +18,25 @@ import com.google.common.collect.Lists;
 class DBPlaylist implements Playlist {
     private final PersistentTag playlist;
 
-    public DBPlaylist() {
+    public DBPlaylist(String name) {
         this(new PersistentTag());
+        setName(name);
+        playlist.commit();
     }
 
     public DBPlaylist(PersistentTag playlist) {
         this.playlist = playlist;
+        setName(playlist.getName());
     }
 
     @Override
     public List<AudioItem> getAudioItemList() {
         return DBMetadataStore.toAudioItemList(playlist.getPersistentAudioItemList());
+    }
+
+    @Override
+    public String getUuid() {
+        return playlist.getUuid();
     }
 
     @Override
@@ -43,6 +51,7 @@ class DBPlaylist implements Playlist {
     @Override
     public void setName(String name) {
         playlist.setTitle(name);
+        playlist.setUuid(name);
     }
 
     @Override

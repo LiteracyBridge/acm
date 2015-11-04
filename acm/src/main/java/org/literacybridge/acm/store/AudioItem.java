@@ -18,16 +18,18 @@ import com.google.common.collect.Sets;
  *
  */
 public abstract class AudioItem implements Persistable {
-    private final String uid;
+    private final String uuid;
     protected final Map<String, Category> categories;
+    protected final Map<String, Playlist> playlists;
 
-    public AudioItem(String uid) {
-        this.uid = uid;
+    public AudioItem(String uuid) {
+        this.uuid = uuid;
         this.categories = Maps.newHashMap();
+        this.playlists = Maps.newHashMap();
     }
 
     public final String getUuid() {
-        return uid;
+        return uuid;
     }
 
     public abstract Metadata getMetadata();
@@ -116,8 +118,19 @@ public abstract class AudioItem implements Persistable {
         });
     }
 
-    public abstract void addPlaylist(Playlist playlist);
-    public abstract boolean hasPlaylist(Playlist playlist);
-    public abstract void removePlaylist(Playlist playlist);
-    public abstract Iterable<Playlist> getPlaylists();
+    public final void addPlaylist(Playlist playlist) {
+        playlists.put(playlist.getUuid(), playlist);
+    }
+
+    public final boolean hasPlaylist(Playlist playlist) {
+        return playlists.containsKey(playlist.getUuid());
+    }
+
+    public final void removePlaylist(Playlist playlist) {
+        playlists.remove(playlist.getUuid());
+    }
+
+    public final Iterable<Playlist> getPlaylists() {
+        return playlists.values();
+    }
 }

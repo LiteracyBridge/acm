@@ -6,6 +6,8 @@ public interface Playlist extends Persistable {
 
     List<AudioItem> getAudioItemList();
 
+    String getUuid();
+
     String getName();
 
     void setName(String name);
