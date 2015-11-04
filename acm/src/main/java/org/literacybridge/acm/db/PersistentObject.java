@@ -57,12 +57,7 @@ abstract class PersistentObject implements Serializable, Persistable {
             em.close();
         }
 
-        afterCommitHook();
         return persistentObj;
-    }
-
-    protected void afterCommitHook() {
-        // nothing to do by default
     }
 
     @SuppressWarnings("unchecked")
@@ -70,7 +65,6 @@ abstract class PersistentObject implements Serializable, Persistable {
         final T result;
         if (em != null) {
             result = (T) em.merge(this);
-            afterCommitHook();
         } else {
             result = commit();
         }

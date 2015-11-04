@@ -25,65 +25,67 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
 public class CategoriesAndTagsEditDialog extends ACMDialog {
-	private final AudioItem audioItem;
-	private final JList categories;
-	
-	// TODO: support removing tags in this dialog too
-	//private final JList tags;
-	
-	public CategoriesAndTagsEditDialog(Frame owner, final AudioItem audioItem) {
-		super(owner, "Edit categories and labels", true);
-		this.audioItem = audioItem;
-		setMinimumSize(new Dimension(200, 100));
-		setSize(200, 100);
-		setUndecorated(true);
-		
-		categories = new JList(new AbstractListModel() {
-			@Override public int getSize() {
-				return audioItem.getCategoryLeavesList().size();
-			}
+    private final AudioItem audioItem;
+    private final JList categories;
 
-			@Override public Object getElementAt(int index) {
-				return audioItem.getCategoryLeavesList().get(index);
-			}
-			
-		});
-				
-		final JButton removeButton = new JButton("Remove selected categories");
-		removeButton.addActionListener(new ActionListener() {			
-			@Override public void actionPerformed(ActionEvent e) {
-				for (Object selected : categories.getSelectedValues()) {
-					audioItem.removeCategory((Category) selected);
-				}
-				audioItem.commit();
-				setVisible(false);
-			}
-		});
-		
-		removeButton.setEnabled(false);
-		
-		final JButton cancelButton = new JButton("Cancel");
-		cancelButton.addActionListener(new ActionListener() {			
-			@Override public void actionPerformed(ActionEvent e) {
-				setVisible(false);
-			}
-		});
-		
-		categories.addListSelectionListener(new ListSelectionListener() {
-			@Override public void valueChanged(ListSelectionEvent e) {
-				removeButton.setEnabled(categories.getSelectedIndex() != -1);
-			}
-		});
-		
-		JPanel buttonPanel = new JPanel();
-		buttonPanel.add(removeButton);
-		buttonPanel.add(cancelButton);
-		
-		JLabel categoryLabel = new JLabel("Select categories to remove");
-		getContentPane().add(categoryLabel, BorderLayout.NORTH);
-		getContentPane().add(new JScrollPane(categories), BorderLayout.CENTER);
-		getContentPane().add(buttonPanel, BorderLayout.SOUTH);
-		
-		pack();
-	}	
+    // TODO: support removing tags in this dialog too
+    //private final JList tags;
+
+    public CategoriesAndTagsEditDialog(Frame owner, final AudioItem audioItem) {
+        super(owner, "Edit categories and labels", true);
+        this.audioItem = audioItem;
+        setMinimumSize(new Dimension(200, 100));
+        setSize(200, 100);
+        setUndecorated(true);
+
+        List<Category> categoryLeaves = Lists.newArrayList(audioItem.getCategoryLeavesList());
+
+        categories = new JList(new AbstractListModel() {
+            @Override public int getSize() {
+                return categoryLeaves.size();
+            }
+
+            @Override public Object getElementAt(int index) {
+                return categoryLeaves.get(index);
+            }
+
+        });
+
+        final JButton removeButton = new JButton("Remove selected categories");
+        removeButton.addActionListener(new ActionListener() {
+            @Override public void actionPerformed(ActionEvent e) {
+                for (Object selected : categories.getSelectedValues()) {
+                    audioItem.removeCategory((Category) selected);
+                }
+                audioItem.commit();
+                setVisible(false);
+            }
+        });
+
+        removeButton.setEnabled(false);
+
+        final JButton cancelButton = new JButton("Cancel");
+        cancelButton.addActionListener(new ActionListener() {
+            @Override public void actionPerformed(ActionEvent e) {
+                setVisible(false);
+            }
+        });
+
+        categories.addListSelectionListener(new ListSelectionListener() {
+            @Override public void valueChanged(ListSelectionEvent e) {
+                removeButton.setEnabled(categories.getSelectedIndex() != -1);
+            }
+        });
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(removeButton);
+        buttonPanel.add(cancelButton);
+
+        JLabel categoryLabel = new JLabel("Select categories to remove");
+        getContentPane().add(categoryLabel, BorderLayout.NORTH);
+        getContentPane().add(new JScrollPane(categories), BorderLayout.CENTER);
+        getContentPane().add(buttonPanel, BorderLayout.SOUTH);
+
+        pack();
+    }
 }

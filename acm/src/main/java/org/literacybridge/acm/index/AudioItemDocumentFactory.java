@@ -1,5 +1,7 @@
 package org.literacybridge.acm.index;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -15,12 +17,14 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
 import org.apache.lucene.util.Version;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.LBMetadataSerializer;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.MetadataSpecification;
@@ -29,6 +33,7 @@ import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 
 public class AudioItemDocumentFactory {
     private static final Set<MetadataField<String>> PREFIX_SEARCH_COLUMNS = ImmutableSet.<MetadataField<String>>builder()
@@ -72,6 +77,13 @@ public class AudioItemDocumentFactory {
         }
 
         doc.add(new StringField(AudioItemIndex.REVISION_FIELD, audioItem.getRevision(), Store.YES));
+
+        LBMetadataSerializer serializer = new LBMetadataSerializer();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(baos);
+        serializer.serialize(Lists.newArrayList(audioItem.getCategoryList()), metadata, out);
+        out.flush();
+        doc.add(new StoredField(AudioItemIndex.RAW_METADATA_FIELD, baos.toByteArray()));
 
         return doc;
     }

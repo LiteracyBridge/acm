@@ -4,7 +4,6 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
 import java.util.List;
 
 import javax.swing.SwingUtilities;
@@ -13,6 +12,8 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Playlist;
+
+import com.google.common.collect.Lists;
 
 public class UIUtils {
     public static Container showDialog(Frame parent, final Container dialog) {
@@ -62,11 +63,9 @@ public class UIUtils {
     }
 
     public static String getCategoryListAsString(AudioItem audioItem) {
-        List<Category> categories = audioItem.getCategoryList();
         StringBuilder builder = new StringBuilder();
 
-        for (int i = 0; i < categories.size(); i++) {
-            Category cat = categories.get(i);
+        for (Category cat : audioItem.getCategoryList()) {
             if (!cat.hasChildren()) {
                 if (builder.length() > 0) {
                     builder.append(", ");
@@ -78,7 +77,7 @@ public class UIUtils {
     }
 
     public static String getPlaylistAsString(AudioItem audioItem) {
-        Collection<Playlist> playlists = audioItem.getPlaylists();
+        List<Playlist> playlists = Lists.newArrayList(audioItem.getPlaylists());
         StringBuilder builder = new StringBuilder();
 
         int i = 0;

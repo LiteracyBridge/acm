@@ -65,6 +65,7 @@ public class AudioItemIndex {
     public static final String LOCALES_FIELD = "locales";
     public static final String LOCALES_FACET_FIELD = "locales_facet";
     public static final String REVISION_FIELD = "rev";
+    public static final String RAW_METADATA_FIELD = "raw_data";
 
     AudioItemDocumentFactory factory = new AudioItemDocumentFactory();
     private IndexWriter writer;
@@ -211,7 +212,6 @@ public class AudioItemIndex {
             searcher.search(query, collector);
 
             MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
-
             SortedSetDocValuesFacetCounts facetCounts =
                     new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
             List<FacetResult> facetResults = facetCounts.getAllDims(1000);

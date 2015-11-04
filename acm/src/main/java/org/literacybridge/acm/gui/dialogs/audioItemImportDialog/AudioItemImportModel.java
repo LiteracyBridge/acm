@@ -17,6 +17,8 @@ import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
+import com.google.common.collect.Lists;
+
 @SuppressWarnings("serial")
 public class AudioItemImportModel extends AbstractTableModel {
 
@@ -100,7 +102,7 @@ public class AudioItemImportModel extends AbstractTableModel {
                 return audioItem.getMetadata().getMetadataValues(
                         MetadataSpecification.DC_TITLE).get(0).getValue();
             case CATEGORIES:
-                List<Category> categories = audioItem.getCategoryList();
+                List<Category> categories = Lists.newArrayList(audioItem.getCategoryList());
                 StringBuilder builder = new StringBuilder();
 
                 for (int i = 0; i < categories.size(); i++) {

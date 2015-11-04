@@ -1,6 +1,5 @@
 package org.literacybridge.acm.db;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -25,9 +24,6 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.DBConfiguration;
-import org.literacybridge.acm.gui.AudioItemCache;
-import org.literacybridge.acm.index.AudioItemIndex;
 
 @Entity
 @NamedQueries({
@@ -152,26 +148,6 @@ class PersistentAudioItem extends PersistentObject {
 
     public PersistentLocalizedAudioItem getPersistentLocalizedAudioItem() {
         return persistentLocalizedAudioItemList.get(0);
-    }
-
-    @Override
-    protected void afterCommitHook() {
-        DBConfiguration db = ACMConfiguration.getCurrentDB();
-        if (db != null) {
-            AudioItemIndex index = db.getAudioItemIndex();
-            if (index != null) {
-                try {
-                    index.updateAudioItem(new DBAudioItem(this));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            AudioItemCache cache = db.getAudioItemCache();
-            if (cache != null) {
-                cache.invalidate(getUuid());
-            }
-        }
     }
 
     public static List<PersistentAudioItem> getFromDatabase() {

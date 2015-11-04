@@ -25,6 +25,7 @@ import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.acm.utils.OSChecker;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -356,7 +357,7 @@ public abstract class AudioItemRepository {
         DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(a18File, true)));
         try {
             LBMetadataSerializer serializer = new LBMetadataSerializer();
-            serializer.serialize(audioItem.getCategoryList(), metadata, out);
+            serializer.serialize(Lists.newArrayList(audioItem.getCategoryList()), metadata, out);
         } finally {
             out.close();
         }
