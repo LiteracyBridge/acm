@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.literacybridge.acm.db.Persistence.DatabaseConnection;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.Persistable;
 import org.literacybridge.acm.store.Playlist;
 
 import com.google.common.collect.Lists;
@@ -19,6 +21,12 @@ import com.google.common.collect.Lists;
  */
 @Deprecated
 public class DBMetadataStore extends MetadataStore {
+    private final DatabaseConnection dbConn;
+
+    public DBMetadataStore(DatabaseConnection dbConn) {
+        this.dbConn = dbConn;
+    }
+
     @Override
     public AudioItem newAudioItem(String uid) {
         return new DBAudioItem(uid);
@@ -124,4 +132,8 @@ public class DBMetadataStore extends MetadataStore {
         return new DBMetadata();
     }
 
+    @Override
+    public Transaction newTransaction() {
+        return new DBTransaction(dbConn.getEntityManager());
+    }
 }

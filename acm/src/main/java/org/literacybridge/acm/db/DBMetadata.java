@@ -43,11 +43,6 @@ class DBMetadata extends Metadata {
         addMetadataToPersistenceObject(field, value);
     }
 
-    public Metadata commit() {
-        mMetadata = mMetadata.<PersistentMetadata> commit();
-        return this;
-    }
-
     @Override
     public Metadata commit(EntityManager em) {
         mMetadata = mMetadata.<PersistentMetadata> commit(em);

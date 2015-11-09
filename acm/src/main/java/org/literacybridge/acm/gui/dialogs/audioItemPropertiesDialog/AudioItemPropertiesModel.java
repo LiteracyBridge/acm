@@ -37,6 +37,7 @@ import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
@@ -292,8 +293,9 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
         Metadata metadata = audioItem.getMetadata();
         incrementRevision(metadata);
-        metadata.commit();
-        audioItem.commit();
+        MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
+        store.commit(metadata);
+        store.commit(audioItem);
     }
 
     protected static void setStringValue(MetadataField<String> field, Metadata metadata, String value) {
@@ -302,10 +304,11 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
 
     protected static void setLocaleValue(MetadataField<RFC3066LanguageCode> field, AudioItem audioItem, Locale newLocale) {
-        audioItem.commit();
+        MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
+        store.commit(audioItem);
         Metadata metadata = audioItem.getMetadata();
         metadata.setMetadataField(field, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(newLocale.getLanguage())));
-        metadata.commit();
+        store.commit(metadata);
     }
 
     private static void incrementRevision(Metadata metadata) {

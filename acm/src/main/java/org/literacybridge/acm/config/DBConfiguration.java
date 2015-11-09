@@ -58,8 +58,6 @@ public class DBConfiguration extends Properties {
 
     public DBConfiguration(String acmName) {
         this.acmName = acmName;
-        this.store = new DBMetadataStore();
-        this.cache = new AudioItemCache(store);
     }
 
     public AudioItemIndex loadAudioItemIndex() throws IOException {
@@ -149,7 +147,7 @@ public class DBConfiguration extends Properties {
         }
     }
 
-    public void init() {
+    public void init() throws Exception {
         //		File dbPath, repPath;
         if (!initialized) {
             //			if (args.readonly)
@@ -173,12 +171,11 @@ public class DBConfiguration extends Properties {
             controlAccess = new ControlAccess(this);
             controlAccess.init();
 
+            this.dbConn = Persistence.initialize(this);
+            this.store = new DBMetadataStore(dbConn);
+            this.cache = new AudioItemCache(store);
             initialized = true;
         }
-    }
-
-    public void connectDB() throws Exception {
-        this.dbConn = Persistence.initialize(this);
     }
 
     public EntityManager getEntityManager() {

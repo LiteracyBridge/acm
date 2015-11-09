@@ -34,8 +34,6 @@ public abstract class AudioItem implements Persistable {
 
     public abstract Metadata getMetadata();
 
-    public abstract String getRevision();
-
     public final void addCategory(Category category) {
         if (hasCategory(category)) {
             return;

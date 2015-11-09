@@ -8,6 +8,7 @@ import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.Persistable;
 import org.literacybridge.acm.store.Playlist;
 
 public class LuceneMetadataStore extends MetadataStore {
@@ -94,4 +95,9 @@ public class LuceneMetadataStore extends MetadataStore {
         return null;
     }
 
+    @Override
+    public Transaction newTransaction() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

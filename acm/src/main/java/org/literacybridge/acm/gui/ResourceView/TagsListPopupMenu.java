@@ -75,9 +75,9 @@ public class TagsListPopupMenu extends JPopupMenu {
                                 .getTag().getAudioItemList());
                         for (AudioItem audioItem : audioItems) {
                             audioItem.removePlaylist(selectedTag.getTag());
-                            audioItem.commit();
+                            ACMConfiguration.getCurrentDB().getMetadataStore().commit(audioItem);
                         }
-                        selectedTag.getTag().destroy();
+                        ACMConfiguration.getCurrentDB().getMetadataStore().delete(selectedTag.getTag());
                         Application.getMessageService().pumpMessage(
                                 new TagsListChanged(
                                         ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists()));
@@ -101,7 +101,7 @@ public class TagsListPopupMenu extends JPopupMenu {
                 if (!StringUtils.isEmpty(tagName)) {
                     try {
                         selectedTag.getTag().setName(tagName);
-                        selectedTag.getTag().commit();
+                        ACMConfiguration.getCurrentDB().getMetadataStore().commit(selectedTag.getTag());
 
                         Application.getMessageService().pumpMessage(
                                 new TagsListChanged(

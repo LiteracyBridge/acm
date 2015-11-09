@@ -11,7 +11,6 @@ import org.literacybridge.acm.index.AudioItemIndex;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Metadata;
-import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.Playlist;
 
 /**
@@ -32,7 +31,7 @@ final class DBAudioItem extends AudioItem {
         super(uuid);
         mItem = new PersistentAudioItem();
         mItem.setUuid(uuid);
-        mItem.commit();
+        ACMConfiguration.getCurrentDB().getMetadataStore().commit(mItem);
     }
 
     public PersistentAudioItem getPersistentAudioItem() {
@@ -44,17 +43,8 @@ final class DBAudioItem extends AudioItem {
         return new DBMetadata(mItem.getPersistentLocalizedAudioItem().getPersistentMetadata());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public String getRevision() {
-        return getMetadata().getMetadataValues(MetadataSpecification.DTB_REVISION).get(0).getValue();
-    }
-
-    @SuppressWarnings("unchecked")
-    public AudioItem commit() {
-        return commit(null);
-    }
-
-    @SuppressWarnings("unchecked")
     public AudioItem commit(EntityManager em) {
         // add all categories from in-memory list to DB
         mItem.removeAllPersistentCategories();

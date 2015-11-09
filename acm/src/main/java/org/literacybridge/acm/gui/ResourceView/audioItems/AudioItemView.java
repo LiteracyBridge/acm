@@ -301,7 +301,7 @@ public class AudioItemView extends Container implements Observer {
             item = (AudioItem) o;
         }
 
-        item.refresh();
+        ACMConfiguration.getCurrentDB().getMetadataStore().refresh(item);
 
         return item;
     }

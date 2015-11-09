@@ -36,7 +36,7 @@ public class WAVImporter extends Importer {
             AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
             repository.storeAudioFile(audioItem, file);
 
-            audioItem.commit();
+            store.commit(audioItem);
         } catch (UnsupportedFormatException e) {
             throw new IOException(e);
         } catch (DuplicateItemException e) {

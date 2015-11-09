@@ -7,6 +7,7 @@ import java.util.Map;
 import javax.persistence.EntityManager;
 
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.store.MetadataStore.Transaction;
 
 public class Taxonomy implements Persistable {
 
@@ -47,10 +48,10 @@ public class Taxonomy implements Persistable {
             root = ACMConfiguration.getCurrentDB().getMetadataStore().newCategory(uuid);
             root.setDefaultCategoryDescription("root", "root node");
             taxonomy = createNewTaxonomy(latestRevision, root, null);
-            taxonomy.commit();
+            ACMConfiguration.getCurrentDB().getMetadataStore().commit(taxonomy);
         } else if (root.getRevision() < latestRevision.revision) {
             updateTaxonomy(root, latestRevision);
-            taxonomy.commit();
+            ACMConfiguration.getCurrentDB().getMetadataStore().commit(taxonomy);
             DefaultLiteracyBridgeTaxonomy.print(taxonomy.mRootCategory);
         } else {
             taxonomy.mRootCategory = root;
@@ -80,11 +81,14 @@ public class Taxonomy implements Persistable {
         });
 
         existingRoot.clearChildren();
+        Transaction transaction = ACMConfiguration.getCurrentDB().getMetadataStore().newTransaction();
         for (Category cat : existingCategories.values()) {
             cat.clearChildren();
             cat.setParent(null);
-            cat.commit();
+            transaction.add(cat);
         }
+        transaction.begin();
+        transaction.commit();
 
         taxonomy = createNewTaxonomy(latestRevision, existingRoot, existingCategories);
     }
@@ -119,11 +123,6 @@ public class Taxonomy implements Persistable {
 
     public Integer getId() {
         return mRootCategory.getId();
-    }
-
-    public Taxonomy commit() {
-        mRootCategory.commit();
-        return this;
     }
 
     @Override

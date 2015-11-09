@@ -34,7 +34,7 @@ public class A18DurationUtil {
             String duration = sMin + ":" + sSec + ((bps==16000)?"  l":"  h");
             //duration += test;
             audioItem.getMetadata().setMetadataField(MetadataSpecification.LB_DURATION, new MetadataValue<String>(duration));
-            audioItem.commit();
+            ACMConfiguration.getCurrentDB().getMetadataStore().commit(audioItem);
         }
     }
 }

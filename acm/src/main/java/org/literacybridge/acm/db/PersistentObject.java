@@ -32,7 +32,7 @@ abstract class PersistentObject implements Serializable, Persistable {
     public abstract Object getId();
 
     @SuppressWarnings("unchecked")
-    public synchronized <T> T commit() {
+    private synchronized <T> T commit() {
         mLogger.finest("Committing object " + toString());
 
         T persistentObj = null;
@@ -61,6 +61,7 @@ abstract class PersistentObject implements Serializable, Persistable {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public synchronized <T> T commit(EntityManager em) {
         final T result;
         if (em != null) {

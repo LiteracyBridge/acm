@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
 
@@ -21,12 +22,11 @@ class DBPlaylist implements Playlist {
     public DBPlaylist(String name) {
         this(new PersistentTag());
         setName(name);
-        playlist.commit();
+        ACMConfiguration.getCurrentDB().getMetadataStore().commit(playlist);
     }
 
     public DBPlaylist(PersistentTag playlist) {
         this.playlist = playlist;
-        setName(playlist.getName());
     }
 
     @Override
@@ -51,7 +51,6 @@ class DBPlaylist implements Playlist {
     @Override
     public void setName(String name) {
         playlist.setTitle(name);
-        playlist.setUuid(name);
     }
 
     @Override
@@ -64,16 +63,11 @@ class DBPlaylist implements Playlist {
         PersistentTagOrdering ordering =
                 PersistentTagOrdering.getFromDatabase(((DBAudioItem) audioItem).getPersistentAudioItem(), playlist);
         ordering.setPosition(position);
-        ordering.commit();
+        ACMConfiguration.getCurrentDB().getMetadataStore().commit(ordering);
     }
 
     PersistentTag getTag() {
         return playlist;
-    }
-
-    @Override
-    public <T> T commit() {
-        return playlist.commit();
     }
 
     @Override

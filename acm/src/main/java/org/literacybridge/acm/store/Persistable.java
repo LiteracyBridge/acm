@@ -4,17 +4,18 @@ import javax.persistence.EntityManager;
 
 public interface Persistable {
     /**
-     * Saves the current state of the runtime object to the database.
-     *
-     * @return an instance to the persistent object.
+     * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
+     *              for storing and searching all metadata.
      */
-    <T> T commit();
-
+    @Deprecated
     <T> T commit(EntityManager em);
+
+    //<T extends Transaction> void commitTransaction(T t);
 
     /**
      * Deletes the persistent object from the database.
      */
+    @Deprecated
     void destroy();
 
     /**
@@ -22,6 +23,6 @@ public interface Persistable {
      *
      * @return an instance to the refreshed persistent object
      */
+    @Deprecated
     <T> T refresh();
-
 }

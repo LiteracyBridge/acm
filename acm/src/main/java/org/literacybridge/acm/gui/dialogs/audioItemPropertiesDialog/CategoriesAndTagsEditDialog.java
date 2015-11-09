@@ -16,12 +16,11 @@ import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.util.ACMDialog;
-import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
 public class CategoriesAndTagsEditDialog extends ACMDialog {
@@ -57,7 +56,7 @@ public class CategoriesAndTagsEditDialog extends ACMDialog {
                 for (Object selected : categories.getSelectedValues()) {
                     audioItem.removeCategory((Category) selected);
                 }
-                audioItem.commit();
+                ACMConfiguration.getCurrentDB().getMetadataStore().commit(audioItem);
                 setVisible(false);
             }
         });

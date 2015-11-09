@@ -83,7 +83,7 @@ public class FileImporter {
                     ACMConfiguration.getCurrentDB().getRepository().updateAudioItem(item, file);
                     // Commenting line below since duration is set with updateDuration as called from storeAudioFile()
                     // item.getLocalizedAudioItem(null).getMetadata().setMetadataField(MetadataSpecification.LB_DURATION, new MetadataValue<String>(""));
-                    item.commit();
+                    store.commit(item);
                 } catch (Exception e) {
                     LOG.log(Level.WARNING, "Unable to update files for audioitem with id=" + title, e);
                 }

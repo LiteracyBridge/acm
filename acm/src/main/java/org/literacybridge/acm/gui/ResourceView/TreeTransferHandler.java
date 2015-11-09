@@ -28,6 +28,7 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.FileImporter;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.MetadataStore.Transaction;
 
 public class TreeTransferHandler extends TransferHandler {
     private static final long serialVersionUID = 1L;
@@ -141,32 +142,20 @@ public class TreeTransferHandler extends TransferHandler {
 
             @Override
             public void run() {
-
-                EntityManager em = null;
+                Transaction transaction = ACMConfiguration.getCurrentDB().getMetadataStore().newTransaction();
+                transaction.begin();
                 try {
-                    em = ACMConfiguration.getCurrentDB().getEntityManager();
-                    EntityTransaction transaction = em.getTransaction();
-                    transaction.begin();
-                    try {
-                        for (AudioItem item : audioItems) {
-                            if (move) {
-                                item.removeAllCategories();
-                            }
-                            item.addCategory(target.getCategory());
-                            item.commit(em);
+                    for (AudioItem item : audioItems) {
+                        if (move) {
+                            item.removeAllCategories();
                         }
-                        transaction.commit();
-                    } finally {
-                        if (transaction.isActive()) {
-                            transaction.rollback();
-                        }
-
-                        Application.getFilterState().updateResult(true);
+                        item.addCategory(target.getCategory());
+                        transaction.add(item);
                     }
+                    transaction.commit();
                 } finally {
-                    if (em != null) {
-                        em.close();
-                    }
+                    transaction.rollback();
+                    Application.getFilterState().updateResult(true);
                 }
             }
         };

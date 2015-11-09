@@ -8,6 +8,7 @@ import java.io.IOException;
 import javax.swing.JList;
 import javax.swing.TransferHandler;
 
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
@@ -68,7 +69,7 @@ public class TagsTransferHandler extends TransferHandler {
             if (!item.hasPlaylist(tag)) {
                 try {
                     item.addPlaylist(tag);
-                    item.commit();
+                    ACMConfiguration.getCurrentDB().getMetadataStore().commit(item);
                     tag.setPosition(item, tag.getAudioItemList().size());
                 } catch (Exception e) {
                     e.printStackTrace();

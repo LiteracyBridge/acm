@@ -25,6 +25,7 @@ import org.literacybridge.acm.repository.A18DurationUtil;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.Taxonomy;
 
@@ -142,6 +143,8 @@ public class Persistence {
     }
 
     public static synchronized void maybeRunMigration() throws Exception {
+        DBConfiguration config = ACMConfiguration.getCurrentDB();
+        MetadataStore store = config.getMetadataStore();
         // set playlist ordering if not set before
         List<PersistentTag> allTags = PersistentTag.getFromDatabase();
         for (PersistentTag tag : allTags) {
@@ -152,19 +155,18 @@ public class Persistence {
                 if (ordering.getPosition() == null) {
                     // this simple approach works, since all entries in the corresponding table will either be null or set
                     ordering.setPosition(pos++);
-                    ordering.commit();
+                    store.commit(ordering);
                 }
 
             }
         }
 
-        DBConfiguration config = ACMConfiguration.getCurrentDB();
         AudioItemCache cache = null;
         if (config != null) {
             cache = ACMConfiguration.getCurrentDB().getAudioItemCache();
         }
 
-        for (AudioItem audioItem : config.getMetadataStore().getAudioItems()) {
+        for (AudioItem audioItem : store.getAudioItems()) {
             // =================================================================
             // 1) calculate duration of audio items
             List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(
@@ -191,7 +193,7 @@ public class Persistence {
                 for (Category category : categories) {
                     audioItem.addCategory(category);
                 }
-                audioItem.commit();
+                store.commit(audioItem);
             }
 
             if (cache != null) {

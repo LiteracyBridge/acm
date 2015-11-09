@@ -51,7 +51,7 @@ public class MP3Importer extends Importer {
             AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
             repository.storeAudioFile(audioItem, file);
 
-            audioItem.commit();
+            store.commit(audioItem);
         } catch (ID3ReadException e) {
             throw new IOException(e);
         } catch (UnsupportedFormatException e) {

@@ -165,11 +165,6 @@ class DBCategory extends Category {
         return mCategory.getId();
     }
 
-    public Category commit() {
-        mCategory = mCategory.<PersistentCategory> commit();
-        return this;
-    }
-
     @Override
     public Category commit(EntityManager em) {
         mCategory = mCategory.<PersistentCategory> commit(em);

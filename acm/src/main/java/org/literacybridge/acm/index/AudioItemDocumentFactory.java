@@ -76,7 +76,8 @@ public class AudioItemDocumentFactory {
             doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.LOCALES_FACET_FIELD, code.toString()));
         }
 
-        doc.add(new StringField(AudioItemIndex.REVISION_FIELD, audioItem.getRevision(), Store.YES));
+        doc.add(new StringField(AudioItemIndex.REVISION_FIELD,
+                metadata.getMetadataValues(MetadataSpecification.DTB_REVISION).get(0).getValue(), Store.YES));
 
         LBMetadataSerializer serializer = new LBMetadataSerializer();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
