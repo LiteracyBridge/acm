@@ -3,12 +3,10 @@ package org.literacybridge.acm.db;
 import java.io.Serializable;
 import java.util.logging.Logger;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 
-import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.store.MetadataStore.Transaction;
 import org.literacybridge.acm.store.Persistable;
 
 
@@ -31,83 +29,9 @@ abstract class PersistentObject implements Serializable, Persistable {
 
     public abstract Object getId();
 
-    @SuppressWarnings("unchecked")
-    private synchronized <T> T commit() {
-        mLogger.finest("Committing object " + toString());
-
-        T persistentObj = null;
-        EntityManager em = null;
-
-        try {
-            em = ACMConfiguration.getCurrentDB().getEntityManager();
-            EntityTransaction t = null;
-            try {
-                t = em.getTransaction();
-                t.begin();
-
-                persistentObj = commit(em);
-
-                t.commit();
-            } finally {
-                if (t.isActive()) {
-                    t.rollback();
-                }
-            }
-        } finally {
-            em.close();
-        }
-
-        return persistentObj;
-    }
-
-    @SuppressWarnings("unchecked")
     @Override
-    public synchronized <T> T commit(EntityManager em) {
-        final T result;
-        if (em != null) {
-            result = (T) em.merge(this);
-        } else {
-            result = commit();
-        }
-
-        return result;
-    }
-
-    public synchronized void destroy() {
-        mLogger.finest("Destroying object " + toString());
-
-        EntityManager em = null;
-
-        try {
-            em = ACMConfiguration.getCurrentDB().getEntityManager();
-            EntityTransaction t = null;
-            try {
-                t = em.getTransaction();
-                t.begin();
-
-                PersistentObject managedObj = em.merge(this);
-                em.remove(managedObj);
-
-                t.commit();
-            } finally {
-                if (t.isActive()) {
-                    t.rollback();
-                }
-            }
-        } finally {
-            em.close();
-        }
-    }
-
-
-    @SuppressWarnings("unchecked")
-    public <T> T refresh() {
-        if (getId() == null) {
-            throw new IllegalStateException("Illegal to call refresh on an uncommitted instance.");
-        }
-        mLogger.finest("Refreshing object " + toString());
-        T newInstance = (T) PersistentQueries.getPersistentObject(this.getClass(), getId());
-        return newInstance;
+    public void commitTransaction(Transaction t) {
+        throw new UnsupportedOperationException("Writing to Derby DB is not supported anymore.");
     }
 
     @Override

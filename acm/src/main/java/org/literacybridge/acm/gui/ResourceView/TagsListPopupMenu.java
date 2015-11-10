@@ -77,7 +77,7 @@ public class TagsListPopupMenu extends JPopupMenu {
                             audioItem.removePlaylist(selectedTag.getTag());
                             ACMConfiguration.getCurrentDB().getMetadataStore().commit(audioItem);
                         }
-                        ACMConfiguration.getCurrentDB().getMetadataStore().delete(selectedTag.getTag());
+                        ACMConfiguration.getCurrentDB().getMetadataStore().deletePlaylist(selectedTag.getTag().getUuid());
                         Application.getMessageService().pumpMessage(
                                 new TagsListChanged(
                                         ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists()));
@@ -171,7 +171,7 @@ public class TagsListPopupMenu extends JPopupMenu {
 
                         MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
                         Category category = store.getCategory(TBBuilder.IntroMessageID); // Update Intro Message
-                        categories.put(category.getCategoryName(LanguageUtil.getUILanguage()), category);
+                        categories.put(category.getCategoryName(), category);
                         BufferedReader reader = new BufferedReader(new FileReader(
                                 targetActiveListsFile));
                         while (reader.ready()) {
@@ -188,7 +188,7 @@ public class TagsListPopupMenu extends JPopupMenu {
 
                             category = store.getCategory(line);
                             if (category != null) {
-                                categories.put(category.getCategoryName(LanguageUtil.getUILanguage()),
+                                categories.put(category.getCategoryName(),
                                         category);
                             }
                         }

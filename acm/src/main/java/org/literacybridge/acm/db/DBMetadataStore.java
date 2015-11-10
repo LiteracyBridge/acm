@@ -1,5 +1,6 @@
 package org.literacybridge.acm.db;
 
+import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -8,12 +9,8 @@ import java.util.Map;
 import org.literacybridge.acm.db.Persistence.DatabaseConnection;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataStore;
-import org.literacybridge.acm.store.Persistable;
 import org.literacybridge.acm.store.Playlist;
-
-import com.google.common.collect.Lists;
 
 /**
  * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
@@ -23,7 +20,8 @@ import com.google.common.collect.Lists;
 public class DBMetadataStore extends MetadataStore {
     private final DatabaseConnection dbConn;
 
-    public DBMetadataStore(DatabaseConnection dbConn) {
+    public DBMetadataStore(File acmDirectory, DatabaseConnection dbConn) {
+        super(acmDirectory);
         this.dbConn = dbConn;
     }
 
@@ -58,14 +56,6 @@ public class DBMetadataStore extends MetadataStore {
         return toAudioItemList(PersistentQueries.searchForAudioItems(searchFilter, (DBPlaylist) selectedTag));
     }
 
-    //    static AudioItem getFromDatabase(int id) {
-    //        PersistentAudioItem item = PersistentAudioItem.getFromDatabase(id);
-    //        if (item == null) {
-    //            return null;
-    //        }
-    //        return new DBAudioItem(item);
-    //    }
-    //
     static List<AudioItem> toAudioItemList(List<PersistentAudioItem> list) {
         List<AudioItem> results = new LinkedList<AudioItem>();
         for (PersistentAudioItem item : list) {
@@ -89,16 +79,6 @@ public class DBMetadataStore extends MetadataStore {
         return DBPlaylist.getFromDatabase();
     }
 
-    @Override
-    public Category newCategory(String uid) {
-        return new DBCategory(uid);
-    }
-
-    @Override
-    public Category getCategory(String uid) {
-        return DBCategory.getFromDatabase(uid);
-    }
-
     /**
      * Returns the facet count for all categories that are stored
      * in the database.
@@ -109,17 +89,8 @@ public class DBMetadataStore extends MetadataStore {
      * Note: Returns '0' for unassigned categories.
      */
     @Override
-    public Map<Integer, Integer> getFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
-        List<PersistentCategory> persistentCategories = null;
-
-        if (categories != null) {
-            persistentCategories = Lists.newArrayListWithCapacity(categories.size());
-
-            for (Category cat : categories) {
-                persistentCategories.add(((DBCategory) cat).getPersistentObject());
-            }
-        }
-        return PersistentCategory.getFacetCounts(filter, persistentCategories, locales);
+    public Map<String, Integer> getFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
+        return PersistentCategory.getFacetCounts(filter, categories, locales);
     }
 
     @Override
@@ -128,12 +99,17 @@ public class DBMetadataStore extends MetadataStore {
     }
 
     @Override
-    public Metadata newMetadata() {
-        return new DBMetadata();
+    public Transaction newTransaction() {
+        throw new UnsupportedOperationException("Writing to Derby DB is not supported anymore.");
     }
 
     @Override
-    public Transaction newTransaction() {
-        return new DBTransaction(dbConn.getEntityManager());
+    public void deleteAudioItem(String uid) {
+        throw new UnsupportedOperationException("Writing to Derby DB is not supported anymore.");
+    }
+
+    @Override
+    public void deletePlaylist(String uid) {
+        throw new UnsupportedOperationException("Writing to Derby DB is not supported anymore.");
     }
 }

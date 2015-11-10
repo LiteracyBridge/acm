@@ -50,7 +50,7 @@ public class DataRequestService implements IDataRequestService {
 
         // Couldn't get results from Lucene index - fall back to DB
         Iterable<AudioItem> items = store.search(filterString, categories, locales);
-        Map<Integer, Integer> facetCounts = store.getFacetCounts(filterString, categories, locales);
+        Map<String, Integer> facetCounts = store.getFacetCounts(filterString, categories, locales);
         List<String> audioItems = new ArrayList<String>();
         for (AudioItem item : items) {
             audioItems.add(item.getUuid());
@@ -58,7 +58,7 @@ public class DataRequestService implements IDataRequestService {
 
         Map<String, Integer> languageFacetCounts = store.getLanguageFacetCounts(filterString, categories, locales);
 
-        Taxonomy taxonomy = Taxonomy.getTaxonomy();
+        Taxonomy taxonomy = store.getTaxonomy();
         DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
                 store.getPlaylists());
         return result;
@@ -90,7 +90,7 @@ public class DataRequestService implements IDataRequestService {
 
         // Couldn't get results from Lucene index - fall back to DB
         Iterable<AudioItem> items = store.search(filterString, selectedPlaylist);
-        Map<Integer, Integer> facetCounts = store.getFacetCounts(filterString, null, null);
+        Map<String, Integer> facetCounts = store.getFacetCounts(filterString, null, null);
         List<String> audioItems = new ArrayList<String>();
         for (AudioItem item : items) {
             audioItems.add(item.getUuid());
@@ -98,7 +98,7 @@ public class DataRequestService implements IDataRequestService {
 
         Map<String, Integer> languageFacetCounts = store.getLanguageFacetCounts(filterString, null, null);
 
-        Taxonomy taxonomy = Taxonomy.getTaxonomy();
+        Taxonomy taxonomy = store.getTaxonomy();
         DataRequestResult result = new DataRequestResult(taxonomy.getRootCategory(), facetCounts, languageFacetCounts, audioItems,
                 store.getPlaylists());
         return result;

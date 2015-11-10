@@ -84,7 +84,6 @@ public class ACMConfiguration {
         DBConfiguration oldDB = currentDB.get();
         if (oldDB != null) {
             oldDB.getDatabaseConnection().close();
-            Taxonomy.resetTaxonomy(); // necessary
             LockACM.unlockFile();
         }
 

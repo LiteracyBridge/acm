@@ -4,11 +4,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.literacybridge.acm.config.ACMConfiguration;
 import org.yaml.snakeyaml.Yaml;
 
 public class DefaultLiteracyBridgeTaxonomy {
@@ -20,7 +18,6 @@ public class DefaultLiteracyBridgeTaxonomy {
     public final static String YAML_TAXONOMY_FIELD = "taxonomy";
     public final static String YAML_CAT_NAME_FIELD = "name";
     public final static String YAML_CAT_ORDER_FIELD = "order";
-    public final static String YAML_CAT_DESC_FIELD = "description";
     public final static String YAML_CAT_CHILDREN_FIELD = "children";
 
     public static class TaxonomyRevision {
@@ -37,26 +34,19 @@ public class DefaultLiteracyBridgeTaxonomy {
         }
     }
 
-    private static Category addCategory(Taxonomy taxonomy, Category parent, Category existingCategory, String id, String name, String desc, int order) {
-        Category cat = existingCategory == null ? ACMConfiguration.getCurrentDB().getMetadataStore().newCategory(id) : existingCategory;
-        cat.setDefaultCategoryDescription(name, desc);
+    private static Category addCategory(Taxonomy taxonomy, Category parent, Category existingCategory, String id, String name, int order) {
+        Category cat = existingCategory == null ? new Category(id) : existingCategory;
+        cat.setName(name);
         cat.setOrder(order);
         taxonomy.addChild(parent, cat);
         return cat;
     }
 
-    public static void main(String[] args) throws Exception {
-        Taxonomy taxonomy = new Taxonomy();
-        loadLatestTaxonomy().createTaxonomy(taxonomy, null);
-        Category root = taxonomy.getRootCategory();
-        print(root);
-    }
-
-    public static TaxonomyRevision loadLatestTaxonomy() {
+    public static TaxonomyRevision loadLatestTaxonomy(File acmDirectory) {
         TaxonomyRevision taxonomy = loadTaxonomy(DefaultLiteracyBridgeTaxonomy.class.getResourceAsStream("/" + YAML_FILE_NAME));
 
         // check if there is a newer one in the
-        File acmTaxonomyFile = new File(ACMConfiguration.getCurrentDB().getSharedACMDirectory(), YAML_FILE_NAME);
+        File acmTaxonomyFile = new File(acmDirectory, YAML_FILE_NAME);
         if (acmTaxonomyFile.exists()) {
             FileInputStream in = null;
             try {
@@ -107,12 +97,8 @@ public class DefaultLiteracyBridgeTaxonomy {
             }
             Map<String, Object> catData = (Map<String, Object>) entry.getValue();
             String catName = (String) catData.get(YAML_CAT_NAME_FIELD);
-            String catDesc = (String) catData.get(YAML_CAT_DESC_FIELD);
             Integer order = (Integer) catData.get(YAML_CAT_ORDER_FIELD);
-            if (catDesc == null) {
-                catDesc = "";
-            }
-            Category cat = addCategory(taxonomy, parent, existingCategory, catID, catName, catDesc, order);
+            Category cat = addCategory(taxonomy, parent, existingCategory, catID, catName, order);
             Object children = catData.get(YAML_CAT_CHILDREN_FIELD);
             if (children != null) {
                 loadYaml(taxonomy, (Map<String, Object>) children, cat, existingCategories);
@@ -121,7 +107,7 @@ public class DefaultLiteracyBridgeTaxonomy {
     }
 
     public static void print(Category cat) {
-        List<Category> children = cat.getChildren();
+        Iterable<Category> children = cat.getChildren();
         if (children != null) {
             for (Category c : children) {
                 print(c);

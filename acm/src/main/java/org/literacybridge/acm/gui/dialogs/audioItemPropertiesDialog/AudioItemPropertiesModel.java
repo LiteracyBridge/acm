@@ -294,7 +294,6 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
         Metadata metadata = audioItem.getMetadata();
         incrementRevision(metadata);
         MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
-        store.commit(metadata);
         store.commit(audioItem);
     }
 
@@ -305,10 +304,9 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
     protected static void setLocaleValue(MetadataField<RFC3066LanguageCode> field, AudioItem audioItem, Locale newLocale) {
         MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
-        store.commit(audioItem);
         Metadata metadata = audioItem.getMetadata();
         metadata.setMetadataField(field, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(newLocale.getLanguage())));
-        store.commit(metadata);
+        store.commit(audioItem);
     }
 
     private static void incrementRevision(Metadata metadata) {

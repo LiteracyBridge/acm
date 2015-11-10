@@ -147,12 +147,12 @@ class PersistentQueries {
 
         Iterator<Category> it = categories.iterator();
         Category category = it.next();
-        whereClause.append("tc.category = " + category.getId());
+        whereClause.append("tc.category = " + DBCategory.uidToId(category.getUuid()));
 
         while (it.hasNext()) {
             category = it.next();
             whereClause.append(" OR ");
-            whereClause.append("tc.category = " + category.getId());
+            whereClause.append("tc.category = " + DBCategory.uidToId(category.getUuid()));
         }
     }
 
@@ -182,9 +182,9 @@ class PersistentQueries {
 
 
     @SuppressWarnings("unchecked")
-    static Map<Integer, Integer> getCategoryFacetCounts(String filter, List<PersistentCategory> categories, List<Locale> locales) {
+    static Map<String, Integer> getCategoryFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
-        Map<Integer, Integer> results = new HashMap<Integer, Integer>();
+        Map<String, Integer> results = new HashMap<String, Integer>();
         try {
             StringBuilder query = new StringBuilder("SELECT DISTINCT t5.id AS \"id\", COUNT(t4.category) AS \"count\" "
                     + "FROM t_audioitem t0 JOIN t_localized_audioitem t1 ON t0.id=t1.audioitem "
@@ -227,7 +227,7 @@ class PersistentQueries {
                     if (i > 0) {
                         query.append(",");
                     }
-                    query.append(categories.get(i).getId());
+                    query.append(DBCategory.uidToId(categories.get(i).getUuid()));
                 }
                 query.append(")");
             }
@@ -238,7 +238,7 @@ class PersistentQueries {
             List<Object[]> counts = facetCount.getResultList();
             for (Object[] count : counts) {
                 //System.out.println(count[0] + " -> " + count[1]);
-                results.put((Integer) count[0],
+                results.put(DBCategory.idToUid((Integer) count[0]),
                         (Integer) count[1]);
             }
         } catch (NoResultException e) {

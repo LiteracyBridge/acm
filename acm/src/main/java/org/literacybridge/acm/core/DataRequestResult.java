@@ -9,12 +9,12 @@ import org.literacybridge.acm.store.Playlist;
 
 public class DataRequestResult implements IDataRequestResult {
     private final Category rootCategory;
-    private final Map<Integer, Integer> facetCounts;
+    private final Map<String, Integer> facetCounts;
     private final Map<String, Integer> languageFacetCounts;
     private final List<String> audioItems;
     private final Iterable<Playlist> tags;
 
-    public DataRequestResult(Category rootCategory, Map<Integer, Integer> facetCounts,
+    public DataRequestResult(Category rootCategory, Map<String, Integer> facetCounts,
             Map<String, Integer> languageFacetCounts, List<String> audioItems,
             Iterable<Playlist> tags) {
         this.rootCategory = rootCategory;
@@ -38,7 +38,7 @@ public class DataRequestResult implements IDataRequestResult {
         if (category == null) {
             return 0;
         }
-        Integer count = facetCounts.get(category.getId());
+        Integer count = facetCounts.get(category.getUuid());
         if (count == null) {
             return 0;
         } else {

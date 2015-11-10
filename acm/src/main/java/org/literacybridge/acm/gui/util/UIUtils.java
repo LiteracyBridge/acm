@@ -70,7 +70,7 @@ public class UIUtils {
                 if (builder.length() > 0) {
                     builder.append(", ");
                 }
-                builder.append(cat.getCategoryName(LanguageUtil.getUILanguage()));
+                builder.append(cat.getCategoryName());
             }
         }
         return builder.toString();

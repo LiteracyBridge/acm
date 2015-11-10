@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Metadata implements Persistable {
+public class Metadata {
 
     // java does runtime erasure of generic types - using this wrapper
     // we can return List<MetadataValue<F>> in getMetadataValues()

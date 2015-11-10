@@ -27,7 +27,6 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
-import org.literacybridge.acm.store.Taxonomy;
 
 import com.google.common.collect.Lists;
 
@@ -178,13 +177,13 @@ public class Persistence {
             // =================================================================
             // 2) make sure categories are stored correctly, i.e. an audioitem's category list should contain
             // all parents of the leaf categories
-            if (!audioItem.hasCategory(Taxonomy.getTaxonomy().getRootCategory())) {
+            if (!audioItem.hasCategory(store.getTaxonomy().getRootCategory())) {
                 List<Category> categories = Lists.newLinkedList(audioItem.getCategoryLeavesList());
                 if (categories.isEmpty()) {
                     categories = Lists.newLinkedList();
-                    Category leaf = Taxonomy.getTaxonomy().getRootCategory();
+                    Category leaf = store.getTaxonomy().getRootCategory();
                     while (leaf.hasChildren()) {
-                        leaf = leaf.getSortedChildren().get(0);
+                        leaf = leaf.getSortedChildren().iterator().next();
                     }
                     categories.add(leaf);
                     LOG.log(Level.WARNING, "Audioitem " + audioItem.getUuid() + " does not contain any leaf categories. Assigning new general leaf category: " + leaf);

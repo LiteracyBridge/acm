@@ -35,7 +35,7 @@ public class LanguageUtil {
     }
 
     public static String getBestMatchingLocalizedLabel(Category category, Locale wish) {
-        return category.getCategoryName(wish);
+        return category.getCategoryName();
     }
 
     public static Locale getUILanguage() {

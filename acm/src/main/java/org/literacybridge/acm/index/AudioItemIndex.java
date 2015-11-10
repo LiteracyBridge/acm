@@ -215,12 +215,12 @@ public class AudioItemIndex {
             SortedSetDocValuesFacetCounts facetCounts =
                     new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
             List<FacetResult> facetResults = facetCounts.getAllDims(1000);
-            Map<Integer, Integer> categoryFacets = Maps.newHashMap();
+            Map<String, Integer> categoryFacets = Maps.newHashMap();
             Map<String, Integer> localeFacets = Maps.newHashMap();
             for (FacetResult r : facetResults) {
                 if (r.dim.equals(CATEGORIES_FACET_FIELD)) {
                     for (LabelAndValue lv : r.labelValues) {
-                        categoryFacets.put(store.getCategory(lv.label).getId(), lv.value.intValue());
+                        categoryFacets.put(store.getCategory(lv.label).getUuid(), lv.value.intValue());
                     }
                 }
                 if (r.dim.equals(LOCALES_FACET_FIELD)) {
@@ -231,7 +231,7 @@ public class AudioItemIndex {
                 }
             }
 
-            DataRequestResult result = new DataRequestResult(Taxonomy.getTaxonomy().getRootCategory(), categoryFacets, localeFacets, Lists.newArrayList(results),
+            DataRequestResult result = new DataRequestResult(store.getTaxonomy().getRootCategory(), categoryFacets, localeFacets, Lists.newArrayList(results),
                     store.getPlaylists());
 
             return result;

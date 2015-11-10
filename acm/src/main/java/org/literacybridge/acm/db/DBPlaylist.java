@@ -3,10 +3,9 @@ package org.literacybridge.acm.db;
 import java.util.Collection;
 import java.util.List;
 
-import javax.persistence.EntityManager;
-
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.MetadataStore.Transaction;
 import org.literacybridge.acm.store.Playlist;
 
 import com.google.common.collect.Lists;
@@ -70,16 +69,6 @@ class DBPlaylist implements Playlist {
         return playlist;
     }
 
-    @Override
-    public void destroy() {
-        playlist.destroy();
-    }
-
-    @Override
-    public <T> T refresh() {
-        return playlist.refresh();
-    }
-
     public static List<Playlist> getFromDatabase() {
         return toPlaylists(PersistentTag.getFromDatabase());
     }
@@ -97,7 +86,7 @@ class DBPlaylist implements Playlist {
     }
 
     @Override
-    public <T> T commit(EntityManager em) {
-        return playlist.commit(em);
+    public void commitTransaction(Transaction transaction) {
+        throw new UnsupportedOperationException("Writing to Derby DB is not supported anymore.");
     }
 }

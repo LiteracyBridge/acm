@@ -22,6 +22,7 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.store.Category;
 
 @Entity
 @NamedQueries({
@@ -192,7 +193,7 @@ class PersistentCategory extends PersistentObject {
         return uuid;
     }
 
-    public static Map<Integer, Integer> getFacetCounts(String filter, List<PersistentCategory> categories, List<Locale> locales) {
+    public static Map<String, Integer> getFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
         return PersistentQueries.getCategoryFacetCounts(filter, categories, locales);
     }
 }

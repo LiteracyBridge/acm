@@ -44,7 +44,7 @@ public abstract class AudioItem implements Persistable {
         if (category.hasChildren()) {
             do {
                 // always pick the first child, which usually is the 'general' child category
-                category = category.getSortedChildren().get(0);
+                category = category.getSortedChildren().iterator().next();
             } while (category.hasChildren());
         }
 

@@ -51,7 +51,7 @@ public class DBExporter {
         try {
             CSVWriter writer = new CSVWriter(new FileWriter(exportFile), ',');
             writer.writeNext(header);
-            Category leaf = Taxonomy.getTaxonomy().getRootCategory();
+            Category leaf = ACMConfiguration.getCurrentDB().getMetadataStore().getTaxonomy().getRootCategory();
             getChildren(writer,leaf);
             writer.close();
         } catch (IOException e) {
@@ -92,11 +92,10 @@ public class DBExporter {
 
 
     private void getChildren(CSVWriter writer, Category cat) {
-        List<Category> children = cat.getSortedChildren();
-        for (Category child:children) {
+        for (Category child : cat.getSortedChildren()) {
             String[] values = new String[3];
             values[0] = child.getUuid();
-            values[1] = child.getCategoryName(new Locale("en")).toString();
+            values[1] = child.getCategoryName().toString();
             values[2] = project;
             writer.writeNext(values);
             if (child.hasChildren()) {

@@ -172,7 +172,7 @@ public class DBConfiguration extends Properties {
             controlAccess.init();
 
             this.dbConn = Persistence.initialize(this);
-            this.store = new DBMetadataStore(dbConn);
+            this.store = new DBMetadataStore(sharedACMDirectory, dbConn);
             this.cache = new AudioItemCache(store);
             initialized = true;
         }

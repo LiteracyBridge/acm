@@ -36,7 +36,7 @@ public class A18Importer extends Importer {
             in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
             int bytesToSkip = IOUtils.readLittleEndian32(in);
 
-            Metadata loadedMetadata = store.newMetadata();
+            Metadata loadedMetadata = new Metadata();
 
             Set<Category> categories = new HashSet<Category>();
             if (bytesToSkip + 4 < file.length()) {
