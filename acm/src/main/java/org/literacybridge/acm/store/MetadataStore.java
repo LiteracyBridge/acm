@@ -41,10 +41,10 @@ public abstract class MetadataStore {
     public abstract Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<Locale> locales);
 
     public final void commit(Persistable p) {
-        Transaction t = newTransaction();
-        t.add(p);
-        t.begin();
-        t.commit();
+        //        Transaction t = newTransaction();
+        //        t.add(p);
+        //        t.begin();
+        //        t.commit();
     }
 
     public static abstract class Transaction {

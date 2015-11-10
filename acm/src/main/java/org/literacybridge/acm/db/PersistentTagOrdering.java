@@ -58,16 +58,16 @@ class PersistentTagOrdering extends PersistentObject {
         private Integer tag;
 
         private PrimaryKey(PersistentTagOrdering ordering) {
-            this(ordering.audioitem, ordering.tag);
+            this(ordering.audioitem.getUuid(), ordering.tag);
         }
 
-        private PrimaryKey(PersistentAudioItem audioItem, PersistentTag tag) {
-            this.audioitem = audioItem.getId();
+        private PrimaryKey(String audioItemUuid, PersistentTag tag) {
+            this.audioitem = PersistentAudioItem.uidToId(audioItemUuid);
             this.tag = tag.getId();
         }
     }
 
-    static PersistentTagOrdering getFromDatabase(PersistentAudioItem audioItem, PersistentTag tag) {
-        return PersistentQueries.getPersistentObject(PersistentTagOrdering.class, new PrimaryKey(audioItem, tag));
+    static PersistentTagOrdering getFromDatabase(String audioItemUuid, PersistentTag tag) {
+        return PersistentQueries.getPersistentObject(PersistentTagOrdering.class, new PrimaryKey(audioItemUuid, tag));
     }
 }

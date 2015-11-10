@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import org.literacybridge.acm.store.MetadataStore.Transaction;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
@@ -17,13 +19,16 @@ import com.google.common.collect.Sets;
  * of {@link LocalizedAudioItem} per translation referenced by this AudioItem.
  *
  */
-public abstract class AudioItem implements Persistable {
+public class AudioItem implements Persistable {
     private final String uuid;
-    protected final Map<String, Category> categories;
-    protected final Map<String, Playlist> playlists;
+    private final Metadata metadata;
+
+    private final Map<String, Category> categories;
+    private final Map<String, Playlist> playlists;
 
     public AudioItem(String uuid) {
         this.uuid = uuid;
+        this.metadata = new Metadata();
         this.categories = Maps.newHashMap();
         this.playlists = Maps.newHashMap();
     }
@@ -32,7 +37,9 @@ public abstract class AudioItem implements Persistable {
         return uuid;
     }
 
-    public abstract Metadata getMetadata();
+    public final Metadata getMetadata() {
+        return this.metadata;
+    }
 
     public final void addCategory(Category category) {
         if (hasCategory(category)) {
@@ -130,5 +137,10 @@ public abstract class AudioItem implements Persistable {
 
     public final Iterable<Playlist> getPlaylists() {
         return playlists.values();
+    }
+
+    @Override
+    public <T extends Transaction> void commitTransaction(T t) {
+
     }
 }

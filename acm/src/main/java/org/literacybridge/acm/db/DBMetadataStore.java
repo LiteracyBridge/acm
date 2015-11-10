@@ -27,16 +27,12 @@ public class DBMetadataStore extends MetadataStore {
 
     @Override
     public AudioItem newAudioItem(String uid) {
-        return new DBAudioItem(uid);
+        return new AudioItem(uid);
     }
 
     @Override
     public AudioItem getAudioItem(String uid) {
-        PersistentAudioItem item = PersistentAudioItem.getFromDatabase(uid);
-        if (item == null) {
-            return null;
-        }
-        return new DBAudioItem(item);
+        return PersistentAudioItem.convert(PersistentAudioItem.getFromDatabase(uid));
     }
 
     @Override
@@ -51,32 +47,31 @@ public class DBMetadataStore extends MetadataStore {
     }
 
     @Override
-    public Iterable<AudioItem> search(String searchFilter,
-            Playlist selectedTag) {
-        return toAudioItemList(PersistentQueries.searchForAudioItems(searchFilter, (DBPlaylist) selectedTag));
+    public Iterable<AudioItem> search(String searchFilter, Playlist playlist) {
+        return toAudioItemList(PersistentQueries.searchForAudioItems(searchFilter, playlist));
     }
 
     static List<AudioItem> toAudioItemList(List<PersistentAudioItem> list) {
         List<AudioItem> results = new LinkedList<AudioItem>();
         for (PersistentAudioItem item : list) {
-            results.add(new DBAudioItem(item));
+            results.add(PersistentAudioItem.convert(item));
         }
         return results;
     }
 
     @Override
     public Playlist newPlaylist(String uid) {
-        return new DBPlaylist(uid);
+        return new Playlist(uid);
     }
 
     @Override
     public Playlist getPlaylist(String uid) {
-        return DBPlaylist.getFromDatabase(uid);
+        return PersistentTag.convert(PersistentTag.getFromDatabase(uid));
     }
 
     @Override
     public Iterable<Playlist> getPlaylists() {
-        return DBPlaylist.getFromDatabase();
+        return PersistentTag.toPlaylists(PersistentTag.getFromDatabase());
     }
 
     /**

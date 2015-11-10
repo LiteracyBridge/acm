@@ -162,11 +162,11 @@ class PersistentCategory extends PersistentObject {
         getPersistentChildCategoryList().clear();
     }
 
-    public static PersistentCategory getFromDatabase(int id) {
+    private static PersistentCategory getFromDatabase(int id) {
         return PersistentQueries.getPersistentObject(PersistentCategory.class, id);
     }
 
-    public static PersistentCategory getFromDatabase(String uuid) {
+    private static PersistentCategory getFromDatabase(String uuid) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         PersistentCategory result = null;
         try {
@@ -195,5 +195,21 @@ class PersistentCategory extends PersistentObject {
 
     public static Map<String, Integer> getFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
         return PersistentQueries.getCategoryFacetCounts(filter, categories, locales);
+    }
+
+    public static String idToUid(int id) {
+        PersistentCategory category = PersistentCategory.getFromDatabase(id);
+        if (category == null) {
+            return null;
+        }
+        return category.getUuid();
+    }
+
+    public static Integer uidToId(String uuid) {
+        PersistentCategory category = PersistentCategory.getFromDatabase(uuid);
+        if (category == null) {
+            return null;
+        }
+        return category.getId();
     }
 }

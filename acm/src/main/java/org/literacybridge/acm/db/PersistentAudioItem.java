@@ -24,6 +24,11 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataValue;
+import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 @Entity
 @NamedQueries({
@@ -170,5 +175,76 @@ class PersistentAudioItem extends PersistentObject {
             em.close();
         }
         return result;
+    }
+
+    public static Integer uidToId(String uuid) {
+        PersistentAudioItem audioItem = PersistentAudioItem.getFromDatabase(uuid);
+        if (audioItem == null) {
+            return null;
+        }
+        return audioItem.getId();
+    }
+
+    public static AudioItem convert(PersistentAudioItem mItem) {
+        AudioItem audioItem = new AudioItem(mItem.getUuid());
+        // add all categories from DB to in-memory list
+        for (PersistentCategory cat : mItem.getPersistentCategoryList()) {
+            audioItem.addCategory(ACMConfiguration.getCurrentDB().getMetadataStore().getCategory(cat.getUuid()));
+        }
+
+        // add all playlists from DB to in-memory list
+        for (PersistentTag playlist : mItem.getPersistentTagList()) {
+            audioItem.addPlaylist(PersistentTag.convert(playlist));
+        }
+
+        loadMetadata(mItem, audioItem.getMetadata());
+        return audioItem;
+    }
+
+    private static Metadata loadMetadata(PersistentAudioItem mItem, Metadata metadata) {
+        PersistentMetadata mMetadata = mItem.getPersistentLocalizedAudioItem().getPersistentMetadata();
+
+        metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER,
+                new MetadataValue<String>(mMetadata.getDc_identifier()));
+        metadata.setMetadataField(MetadataSpecification.DC_PUBLISHER,
+                new MetadataValue<String>(mMetadata.getDc_publisher()));
+        metadata.setMetadataField(MetadataSpecification.DC_RELATION,
+                new MetadataValue<String>(mMetadata.getDc_relation()));
+        metadata.setMetadataField(MetadataSpecification.DC_SOURCE,
+                new MetadataValue<String>(mMetadata.getDc_source()));
+        metadata.setMetadataField(MetadataSpecification.DC_TITLE,
+                new MetadataValue<String>(mMetadata.getDc_title()));
+        metadata.setMetadataField(MetadataSpecification.DTB_REVISION,
+                new MetadataValue<String>(mMetadata.getDtb_revision()));
+        metadata.setMetadataField(MetadataSpecification.LB_DATE_RECORDED,
+                new MetadataValue<String>(mMetadata.getDate_recorded()));
+        metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE,
+                new MetadataValue<RFC3066LanguageCode>(
+                        (mMetadata.getPersistentLocale() == null || mMetadata.getPersistentLocale().getLanguage() == null)
+                        ? null : new RFC3066LanguageCode(mMetadata.getPersistentLocale().getLanguage())));
+        metadata.setMetadataField(MetadataSpecification.LB_DURATION,
+                new MetadataValue<String>(mMetadata.getDuration()));
+        metadata.setMetadataField(MetadataSpecification.LB_MESSAGE_FORMAT,
+                new MetadataValue<String>(mMetadata.getMessage_format()));
+        metadata.setMetadataField(MetadataSpecification.LB_TARGET_AUDIENCE,
+                new MetadataValue<String>(mMetadata.getTarget_audience()));
+        metadata.setMetadataField(MetadataSpecification.LB_KEYWORDS,
+                new MetadataValue<String>(mMetadata.getKeywords()));
+        metadata.setMetadataField(MetadataSpecification.LB_TIMING,
+                new MetadataValue<String>(mMetadata.getTiming()));
+        metadata.setMetadataField(MetadataSpecification.LB_PRIMARY_SPEAKER,
+                new MetadataValue<String>(mMetadata.getPrimary_speaker()));
+        metadata.setMetadataField(MetadataSpecification.LB_GOAL,
+                new MetadataValue<String>(mMetadata.getGoal()));
+        metadata.setMetadataField(MetadataSpecification.LB_ENGLISH_TRANSCRIPTION,
+                new MetadataValue<String>(mMetadata.getEnglish_transcription()));
+        metadata.setMetadataField(MetadataSpecification.LB_NOTES,
+                new MetadataValue<String>(mMetadata.getNotes()));
+        metadata.setMetadataField(MetadataSpecification.LB_BENEFICIARY,
+                new MetadataValue<String>(mMetadata.getBeneficiary()));
+        metadata.setMetadataField(MetadataSpecification.LB_STATUS,
+                new MetadataValue<Integer>(mMetadata.getNoLongerUsed()));
+
+        return metadata;
     }
 }

@@ -70,7 +70,8 @@ public class TagsTransferHandler extends TransferHandler {
                 try {
                     item.addPlaylist(tag);
                     ACMConfiguration.getCurrentDB().getMetadataStore().commit(item);
-                    tag.setPosition(item, tag.getAudioItemList().size());
+                    tag.addAudioItem(item.getUuid());
+                    ACMConfiguration.getCurrentDB().getMetadataStore().commit(tag);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

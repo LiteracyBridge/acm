@@ -2,18 +2,49 @@ package org.literacybridge.acm.store;
 
 import java.util.List;
 
-public interface Playlist extends Persistable {
+import org.literacybridge.acm.store.MetadataStore.Transaction;
 
-    List<AudioItem> getAudioItemList();
+import com.google.common.collect.Lists;
 
-    String getUuid();
+public class Playlist implements Persistable {
+    private final String uuid;
+    private String name;
+    private final List<String> audioItems;
 
-    String getName();
+    public Playlist(String uuid) {
+        this.uuid = uuid;
+        audioItems = Lists.newArrayList();
+    }
 
-    void setName(String name);
+    public String getUuid() {
+        return uuid;
+    }
 
-    int getPosition(AudioItem audioItem);
+    public String getName() {
+        return name;
+    }
 
-    void setPosition(AudioItem audioItem, int position);
+    public void setName(String name) {
+        this.name = name;
+    }
 
+    public void addAudioItem(String uuid) {
+        audioItems.add(uuid);
+    }
+
+    public void removeAudioItem(String uuid) {
+        audioItems.remove(uuid);
+    }
+
+    public int getAudioItemPosition(String uuid) {
+        return audioItems.indexOf(uuid);
+    }
+
+    public Iterable<String> getAudioItemList() {
+        return audioItems;
+    }
+
+    @Override
+    public <T extends Transaction> void commitTransaction(T t) {
+    }
 }

@@ -150,7 +150,7 @@ public class Persistence {
             List<PersistentAudioItem> audioItems = tag.getPersistentAudioItemList();
             int pos = 1;
             for (PersistentAudioItem audioItem : audioItems) {
-                PersistentTagOrdering ordering = PersistentTagOrdering.getFromDatabase(audioItem, tag);
+                PersistentTagOrdering ordering = PersistentTagOrdering.getFromDatabase(audioItem.getUuid(), tag);
                 if (ordering.getPosition() == null) {
                     // this simple approach works, since all entries in the corresponding table will either be null or set
                     ordering.setPosition(pos++);

@@ -126,15 +126,10 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
 
                     for (AudioItem a : selectedAudioItems) {
                         try {
-                            int position = selectedTag.getPosition(a);
                             a.removePlaylist(selectedTag);
+                            selectedTag.removeAudioItem(a.getUuid());
                             ACMConfiguration.getCurrentDB().getMetadataStore().commit(a);
-                            for (AudioItem item : selectedTag.getAudioItemList()) {
-                                int itemPosition = selectedTag.getPosition(item);
-                                if (itemPosition > position) {
-                                    selectedTag.setPosition(item, itemPosition - 1);
-                                }
-                            }
+                            ACMConfiguration.getCurrentDB().getMetadataStore().commit(selectedTag);
                         } catch (Exception e) {
                             LOG.log(Level.WARNING, "Unable to remove audioitem id=" + a.getUuid() + " from tag " + selectedTag.getName(), e);
                         }

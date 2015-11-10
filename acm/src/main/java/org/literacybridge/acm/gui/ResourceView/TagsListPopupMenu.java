@@ -8,8 +8,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,9 +69,10 @@ public class TagsListPopupMenu extends JPopupMenu {
 
                 if (n == 1) {
                     try {
-                        List<AudioItem> audioItems = Lists.newLinkedList(selectedTag
+                        List<String> audioItems = Lists.newLinkedList(selectedTag
                                 .getTag().getAudioItemList());
-                        for (AudioItem audioItem : audioItems) {
+                        for (String audioItemUuid : audioItems) {
+                            AudioItem audioItem = ACMConfiguration.getCurrentDB().getMetadataStore().getAudioItem(audioItemUuid);
                             audioItem.removePlaylist(selectedTag.getTag());
                             ACMConfiguration.getCurrentDB().getMetadataStore().commit(audioItem);
                         }
@@ -223,17 +222,10 @@ public class TagsListPopupMenu extends JPopupMenu {
 
         BufferedWriter writer = new BufferedWriter(new FileWriter(new File(dir,
                 category.getUuid() + ".txt"), false));
-        List<AudioItem> audioItems = playlist.getAudioItemList();
-        Collections.sort(audioItems, new Comparator<AudioItem>() {
-            @Override
-            public int compare(AudioItem a1, AudioItem a2) {
-                return Integer.compare(playlist.getPosition(a1),
-                        playlist.getPosition(a2));
-            }
-        });
+        Iterable<String> audioItems = playlist.getAudioItemList();
 
-        for (AudioItem audioItem : audioItems) {
-            writer.write(audioItem.getUuid());
+        for (String audioItem : audioItems) {
+            writer.write(audioItem);
             writer.newLine();
         }
 

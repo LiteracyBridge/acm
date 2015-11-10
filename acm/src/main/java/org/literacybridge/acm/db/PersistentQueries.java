@@ -13,6 +13,7 @@ import javax.persistence.Query;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.Playlist;
 
 /**
  * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
@@ -97,7 +98,7 @@ class PersistentQueries {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<PersistentAudioItem> searchForAudioItems(String filter, DBPlaylist selectedTag) {
+    public static List<PersistentAudioItem> searchForAudioItems(String filter, Playlist selectedPlaylist) {
         EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
         List<PersistentAudioItem> searchResults = new LinkedList<PersistentAudioItem>();
         try {
@@ -121,9 +122,9 @@ class PersistentQueries {
             }
 
             // queries all audioitems matching a certain category
-            if (selectedTag != null) {
+            if (selectedPlaylist != null) {
                 query.append(" AND (");
-                appendTagClause(query, selectedTag);
+                appendTagClause(query, selectedPlaylist);
                 query.append(")");
             }
 
@@ -147,21 +148,21 @@ class PersistentQueries {
 
         Iterator<Category> it = categories.iterator();
         Category category = it.next();
-        whereClause.append("tc.category = " + DBCategory.uidToId(category.getUuid()));
+        whereClause.append("tc.category = " + PersistentCategory.uidToId(category.getUuid()));
 
         while (it.hasNext()) {
             category = it.next();
             whereClause.append(" OR ");
-            whereClause.append("tc.category = " + DBCategory.uidToId(category.getUuid()));
+            whereClause.append("tc.category = " + PersistentCategory.uidToId(category.getUuid()));
         }
     }
 
-    private static void appendTagClause(StringBuilder whereClause, DBPlaylist selectedTag) {
-        if (selectedTag == null) {
+    private static void appendTagClause(StringBuilder whereClause, Playlist selectedPlaylist) {
+        if (selectedPlaylist == null) {
             return;
         }
 
-        whereClause.append("tc.tag = " + selectedTag.getId());
+        whereClause.append("tc.tag = " + PersistentTag.uidToId(selectedPlaylist.getUuid()));
     }
 
     private static void appendLocalesClause(StringBuilder whereClause, List<Locale> locales) {
@@ -227,7 +228,7 @@ class PersistentQueries {
                     if (i > 0) {
                         query.append(",");
                     }
-                    query.append(DBCategory.uidToId(categories.get(i).getUuid()));
+                    query.append(PersistentCategory.uidToId(categories.get(i).getUuid()));
                 }
                 query.append(")");
             }
@@ -238,7 +239,7 @@ class PersistentQueries {
             List<Object[]> counts = facetCount.getResultList();
             for (Object[] count : counts) {
                 //System.out.println(count[0] + " -> " + count[1]);
-                results.put(DBCategory.idToUid((Integer) count[0]),
+                results.put(PersistentCategory.idToUid((Integer) count[0]),
                         (Integer) count[1]);
             }
         } catch (NoResultException e) {

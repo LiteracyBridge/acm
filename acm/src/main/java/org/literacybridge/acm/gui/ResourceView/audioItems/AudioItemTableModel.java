@@ -10,7 +10,6 @@ import javax.swing.table.AbstractTableModel;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel;
@@ -21,6 +20,7 @@ import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataValue;
+import org.literacybridge.acm.store.Playlist;
 
 public class AudioItemTableModel extends AbstractTableModel {
 
@@ -163,47 +163,11 @@ public class AudioItemTableModel extends AbstractTableModel {
                 if (tag == null) {
                     cellText = "";
                 } else {
-                    int position = tag.getPosition(audioItem);
-                    cellText = Integer.toString(position);
+                    int position = tag.getAudioItemPosition(audioItem.getUuid());
+                    cellText = Integer.toString(position + 1);
                 }
                 break;
             }
-            //				case COPY_COUNT: {
-            //					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
-            //							MetadataSpecification.LB_COPY_COUNT);
-            //					cellText = values != null ? "" + values.get(0).getValue() : "0";
-            //					break;
-            //				}
-            //				case OPEN_COUNT: {
-            //					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
-            //							MetadataSpecification.LB_OPEN_COUNT);
-            //					cellText = values != null ? "" + values.get(0).getValue() : "0";
-            //					break;
-            //				}
-            //				case COMPLETION_COUNT: {
-            //					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
-            //							MetadataSpecification.LB_COMPLETION_COUNT);
-            //					cellText = values != null ? "" + values.get(0).getValue() : "0";
-            //					break;
-            //				}
-            //				case SURVEY1_COUNT: {
-            //					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
-            //							MetadataSpecification.LB_SURVEY1_COUNT);
-            //					cellText = values != null ? "" + values.get(0).getValue() : "0";
-            //					break;
-            //				}
-            //				case APPLY_COUNT: {
-            //					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
-            //							MetadataSpecification.LB_APPLY_COUNT);
-            //					cellText = values != null ? "" + values.get(0).getValue() : "0";
-            //					break;
-            //				}
-            //				case NOHELP_COUNT: {
-            //					List<MetadataValue<Integer>> values = localizedAudioItem.getMetadata().getMetadataValues(
-            //							MetadataSpecification.LB_NOHELP_COUNT);
-            //					cellText = values != null ? "" + values.get(0).getValue() : "0";
-            //					break;
-            //				}
 
 
             default: {

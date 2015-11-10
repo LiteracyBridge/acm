@@ -1,5 +1,7 @@
 package org.literacybridge.acm.db;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -19,6 +21,9 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.store.Playlist;
+
+import com.google.common.collect.Lists;
 
 @Entity
 @NamedQueries({
@@ -92,6 +97,11 @@ class PersistentTag extends PersistentObject {
         return persistentAudioItemList;
     }
 
+    @Override
+    public String toString() {
+        return uuid;
+    }
+
     public static PersistentTag getFromDatabase(int id) {
         return PersistentQueries.getPersistentObject(PersistentTag.class, id);
     }
@@ -114,7 +124,51 @@ class PersistentTag extends PersistentObject {
         return PersistentQueries.getPersistentObjects(PersistentTag.class);
     }
 
-    public String toString() {
-        return uuid;
+    public static List<Playlist> toPlaylists(Collection<PersistentTag> tags) {
+        List<Playlist> playlists = Lists.newArrayListWithCapacity(tags.size());
+        for (PersistentTag tag : tags) {
+            playlists.add(convert(tag));
+        }
+        return playlists;
+    }
+
+    public static Playlist convert(PersistentTag mItem) {
+        List<AudioItemAndPosition> sorted = Lists.newArrayList();
+
+        for (PersistentAudioItem audioItem : mItem.getPersistentAudioItemList()) {
+            int position = PersistentTagOrdering.getFromDatabase(audioItem.getUuid(), mItem).getPosition();
+            sorted.add(new AudioItemAndPosition(audioItem, position));
+        }
+
+        Collections.sort(sorted);
+
+        Playlist playlist = new Playlist(mItem.getUuid());
+        playlist.setName(mItem.getName());
+        for (AudioItemAndPosition item : sorted) {
+            playlist.addAudioItem(item.item.getUuid());
+        }
+        return playlist;
+    }
+
+    public static Integer uidToId(String uuid) {
+        PersistentTag tag = PersistentTag.getFromDatabase(uuid);
+        if (tag == null) {
+            return null;
+        }
+        return tag.getId();
+    }
+
+    private static final class AudioItemAndPosition implements Comparable<AudioItemAndPosition> {
+        final PersistentAudioItem item;
+        final int position;
+
+        AudioItemAndPosition(PersistentAudioItem item, int position) {
+            this.item = item;
+            this.position = position;
+        }
+
+        @Override public int compareTo(AudioItemAndPosition o) {
+            return Integer.compare(position, o.position);
+        }
     }
 }
