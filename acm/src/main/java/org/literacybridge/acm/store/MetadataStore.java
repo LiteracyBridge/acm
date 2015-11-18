@@ -3,8 +3,9 @@ package org.literacybridge.acm.store;
 import java.io.File;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
+
+import org.literacybridge.acm.api.IDataRequestResult;
 
 import com.google.common.collect.Sets;
 
@@ -35,10 +36,8 @@ public abstract class MetadataStore {
         return taxonomy.getCategory(uid);
     }
 
-    public abstract Iterable<AudioItem> search(String searchFilter, List<Category> categories, List<Locale> locales);
-    public abstract Iterable<AudioItem> search(String searchFilter, Playlist selectedTag);
-    public abstract Map<String, Integer> getFacetCounts(String filter, List<Category> categories, List<Locale> locales);
-    public abstract Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<Locale> locales);
+    public abstract IDataRequestResult search(String searchFilter, List<Category> categories, List<Locale> locales);
+    public abstract IDataRequestResult search(String searchFilter, Playlist selectedTag);
 
     public final void commit(Persistable p) {
         //        Transaction t = newTransaction();

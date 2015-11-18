@@ -125,18 +125,18 @@ public class Application extends JXFrame {
             splashScreen.setProgressLabel("Updating index...");
             System.out.print("Building index...");
             long start = System.currentTimeMillis();
-            final AudioItemIndex index = ACMConfiguration.getCurrentDB().loadAudioItemIndex();
-            if (index != null) {
-                Runtime.getRuntime().addShutdownHook(new Thread() {
-                    @Override public void run() {
-                        try {
-                            index.closeAndFlush();
-                        } catch (IOException e) {
-                            LOG.log(Level.WARNING, "Unable to flush Lucene index to disk on shutdown.", e);
-                        }
-                    }
-                });
-            }
+            //            final AudioItemIndex index = ACMConfiguration.getCurrentDB().loadAudioItemIndex();
+            //            if (index != null) {
+            //                Runtime.getRuntime().addShutdownHook(new Thread() {
+            //                    @Override public void run() {
+            //                        try {
+            //                            index.closeAndFlush();
+            //                        } catch (IOException e) {
+            //                            LOG.log(Level.WARNING, "Unable to flush Lucene index to disk on shutdown.", e);
+            //                        }
+            //                    }
+            //                });
+            //            }
             long end = System.currentTimeMillis();
             System.out.println("done. (" + (end - start) + " ms)");
         } catch (Exception e) {

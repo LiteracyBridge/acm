@@ -32,7 +32,9 @@ import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.Persistence.DatabaseConnection;
 import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.index.AudioItemIndex;
+import org.literacybridge.acm.index.LuceneMetadataStore;
 import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.store.HybridMetadataStore;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
@@ -173,6 +175,9 @@ public class DBConfiguration extends Properties {
 
             this.dbConn = Persistence.initialize(this);
             this.store = new DBMetadataStore(sharedACMDirectory, dbConn);
+            MetadataStore luceneStore = new LuceneMetadataStore(sharedACMDirectory, loadAudioItemIndex());
+
+            this.store = new HybridMetadataStore(sharedACMDirectory, luceneStore, this.store);
             this.cache = new AudioItemCache(store);
             initialized = true;
         }

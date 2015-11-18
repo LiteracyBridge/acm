@@ -1,12 +1,16 @@
 package org.literacybridge.acm.index;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenFilter;
@@ -48,9 +52,9 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.DataRequestResult;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.LBMetadataSerializer;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.acm.store.Taxonomy;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -66,10 +70,11 @@ public class AudioItemIndex {
     public static final String LOCALES_FACET_FIELD = "locales_facet";
     public static final String REVISION_FIELD = "rev";
     public static final String RAW_METADATA_FIELD = "raw_data";
+    public static final String IMPORT_ORDER_ID_FIELD = "import_order";
 
     AudioItemDocumentFactory factory = new AudioItemDocumentFactory();
-    private IndexWriter writer;
-    private SearcherManager searchmanager;
+    private final IndexWriter writer;
+    private final SearcherManager searchmanager;
 
     private final FacetsConfig facetsConfig;
     private final QueryAnalyzer queryAnalyzer;
@@ -123,14 +128,20 @@ public class AudioItemIndex {
     }
 
     public void updateAudioItem(AudioItem audioItem) throws IOException {
-        Document doc = factory.createLuceneDocument(audioItem);
-        writer.updateDocument(new Term(UID_FIELD, audioItem.getUuid()),
-                facetsConfig.build(doc));
+        Document oldDoc = getDocument(audioItem.getUuid());
+
+        if (oldDoc == null) {
+            addAudioItem(audioItem);
+        } else {
+            Document doc = factory.createLuceneDocument(audioItem, Long.parseLong(oldDoc.get(IMPORT_ORDER_ID_FIELD)));
+            writer.updateDocument(new Term(UID_FIELD, audioItem.getUuid()),
+                    facetsConfig.build(doc));
+        }
         searchmanager.maybeRefreshBlocking();
     }
 
     private void addAudioItem(AudioItem audioItem) throws IOException {
-        Document doc = factory.createLuceneDocument(audioItem);
+        Document doc = factory.createLuceneDocument(audioItem, System.currentTimeMillis());
         writer.addDocument(facetsConfig.build(doc));
     }
 
@@ -149,6 +160,84 @@ public class AudioItemIndex {
             ts.close();
         }
 
+    }
+
+    public AudioItem getAudioItem(final String uuid) throws IOException {
+        Document doc = getDocument(uuid);
+        return doc != null ? loadAudioItem(doc) : null;
+    }
+
+    public Iterable<AudioItem> getAudioItems() throws IOException {
+        final List<AudioItem> results = Lists.newArrayList();
+        final IndexSearcher searcher = searchmanager.acquire();
+        try {
+            searcher.search(new MatchAllDocsQuery(), new Collector() {
+                private AtomicReader atomicReader;
+
+                @Override public void setScorer(Scorer arg0) throws IOException {}
+                @Override public void setNextReader(AtomicReaderContext context) throws IOException {
+                    this.atomicReader = context.reader();
+                }
+
+                @Override
+                public void collect(int docId) throws IOException {
+                    results.add(loadAudioItem(atomicReader.document(docId)));
+                }
+
+                @Override public boolean acceptsDocsOutOfOrder() {
+                    return true;
+                }
+            });
+        } finally {
+            searchmanager.release(searcher);
+        }
+
+        return results;
+    }
+
+    private Document getDocument(final String uuid) throws IOException {
+        final AtomicReference<Document> result = new AtomicReference<Document>();
+
+        final IndexSearcher searcher = searchmanager.acquire();
+        try {
+            searcher.search(new TermQuery(new Term(UID_FIELD, uuid)), new Collector() {
+                private AtomicReader atomicReader;
+
+                @Override public void setScorer(Scorer arg0) throws IOException {}
+                @Override public void setNextReader(AtomicReaderContext context) throws IOException {
+                    this.atomicReader = context.reader();
+                }
+
+                @Override
+                public void collect(int docId) throws IOException {
+                    result.set(atomicReader.document(docId));
+                }
+
+                @Override public boolean acceptsDocsOutOfOrder() {
+                    return true;
+                }
+            });
+        } finally {
+            searchmanager.release(searcher);
+        }
+
+        return result.get();
+    }
+
+    private AudioItem loadAudioItem(Document doc) throws IOException {
+        AudioItem audioItem = new AudioItem(doc.get(UID_FIELD));
+
+        LBMetadataSerializer deserializer = new LBMetadataSerializer();
+        Set<Category> categories = new HashSet<Category>();
+        BytesRef ref = doc.getBinaryValue(RAW_METADATA_FIELD);
+        deserializer.deserialize(audioItem.getMetadata(), categories,
+                new DataInputStream(new ByteArrayInputStream(ref.bytes, ref.offset, ref.length)));
+
+        for (Category category : categories) {
+            audioItem.addCategory(category);
+        }
+
+        return audioItem;
     }
 
     public IDataRequestResult search(String filterString, Playlist selectedTag) throws IOException {
@@ -220,7 +309,7 @@ public class AudioItemIndex {
             for (FacetResult r : facetResults) {
                 if (r.dim.equals(CATEGORIES_FACET_FIELD)) {
                     for (LabelAndValue lv : r.labelValues) {
-                        categoryFacets.put(store.getCategory(lv.label).getUuid(), lv.value.intValue());
+                        categoryFacets.put(lv.label, lv.value.intValue());
                     }
                 }
                 if (r.dim.equals(LOCALES_FACET_FIELD)) {

@@ -64,13 +64,6 @@ public class AudioItem implements Persistable {
         } while (category != null);
     }
 
-    @Deprecated
-    protected final void addCategoriesDirectly(Collection<Category> cats) {
-        for (Category cat : cats) {
-            categories.put(cat.getUuid(), cat);
-        }
-    }
-
     public final boolean hasCategory(Category category) {
         return categories.containsKey(category.getUuid());
     }

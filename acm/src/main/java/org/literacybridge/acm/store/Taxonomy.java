@@ -60,6 +60,7 @@ public class Taxonomy {
 
     public boolean addChild(Category parent, Category newChild) {
         parent.addChild(newChild);
+        newChild.setParent(parent);
         categories.put(newChild.getUuid(), newChild);
         return true;
     }

@@ -4,8 +4,8 @@ import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
+import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.db.Persistence.DatabaseConnection;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
@@ -41,14 +41,14 @@ public class DBMetadataStore extends MetadataStore {
     }
 
     @Override
-    public Iterable<AudioItem> search(String searchFilter,
+    public IDataRequestResult search(String searchFilter,
             List<Category> categories, List<Locale> locales) {
-        return toAudioItemList(PersistentQueries.searchForAudioItems(searchFilter, categories, locales));
+        throw new UnsupportedOperationException("Searching the Derby DB is not supported anymore.");
     }
 
     @Override
-    public Iterable<AudioItem> search(String searchFilter, Playlist playlist) {
-        return toAudioItemList(PersistentQueries.searchForAudioItems(searchFilter, playlist));
+    public IDataRequestResult search(String searchFilter, Playlist playlist) {
+        throw new UnsupportedOperationException("Searching the Derby DB is not supported anymore.");
     }
 
     static List<AudioItem> toAudioItemList(List<PersistentAudioItem> list) {
@@ -72,25 +72,6 @@ public class DBMetadataStore extends MetadataStore {
     @Override
     public Iterable<Playlist> getPlaylists() {
         return PersistentTag.toPlaylists(PersistentTag.getFromDatabase());
-    }
-
-    /**
-     * Returns the facet count for all categories that are stored
-     * in the database.
-     *
-     * Key: database id (getId())
-     * Value: count value
-     *
-     * Note: Returns '0' for unassigned categories.
-     */
-    @Override
-    public Map<String, Integer> getFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
-        return PersistentCategory.getFacetCounts(filter, categories, locales);
-    }
-
-    @Override
-    public Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
-        return PersistentQueries.getLanguageFacetCounts(filter, categories, locales);
     }
 
     @Override

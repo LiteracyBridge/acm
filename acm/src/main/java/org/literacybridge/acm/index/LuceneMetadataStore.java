@@ -1,51 +1,72 @@
 package org.literacybridge.acm.index;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 
 public class LuceneMetadataStore extends MetadataStore {
+    private static final Logger LOG = Logger.getLogger(LuceneMetadataStore.class.getName());
 
-    public LuceneMetadataStore(File acmDirectory) {
+    private final AudioItemIndex index;
+
+    public LuceneMetadataStore(File acmDirectory, AudioItemIndex index) {
         super(acmDirectory);
+        this.index = index;
     }
 
     @Override
     public AudioItem newAudioItem(String uid) {
-        // TODO Auto-generated method stub
-        return null;
+        return new AudioItem(uid);
     }
 
     @Override
     public AudioItem getAudioItem(String uid) {
-        // TODO Auto-generated method stub
-        return null;
+        try {
+            return index.getAudioItem(uid);
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "IOException while load audioItem " + uid + " from Lucene index.", e);
+            return null;
+        }
     }
 
     @Override
     public Iterable<AudioItem> getAudioItems() {
-        // TODO Auto-generated method stub
-        return null;
+        try {
+            return index.getAudioItems();
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "IOException while loadign audioItems from Lucene index.", e);
+            return null;
+        }
     }
 
     @Override
-    public Iterable<AudioItem> search(String searchFilter,
+    public IDataRequestResult search(String query,
             List<Category> categories, List<Locale> locales) {
-        // TODO Auto-generated method stub
-        return null;
+        try {
+            return index.search(query, categories, locales);
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "IOException while searching Lucene index.", e);
+            return null;
+        }
     }
 
     @Override
-    public Iterable<AudioItem> search(String searchFilter,
-            Playlist selectedTag) {
-        // TODO Auto-generated method stub
-        return null;
+    public IDataRequestResult search(String query, Playlist playlist) {
+        try {
+            return index.search(query, playlist);
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "IOException while searching Lucene index.", e);
+            return null;
+        }
     }
 
     @Override
@@ -62,20 +83,6 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public Iterable<Playlist> getPlaylists() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Map<String, Integer> getFacetCounts(String filter,
-            List<Category> categories, List<Locale> locales) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Map<String, Integer> getLanguageFacetCounts(String filter,
-            List<Category> categories, List<Locale> locales) {
         // TODO Auto-generated method stub
         return null;
     }

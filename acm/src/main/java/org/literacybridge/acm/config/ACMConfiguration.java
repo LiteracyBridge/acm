@@ -87,8 +87,8 @@ public class ACMConfiguration {
             LockACM.unlockFile();
         }
 
-        config.init();
         currentDB.set(config);
+        config.init();
     }
 
     public synchronized static void closeCurrentDB() {
