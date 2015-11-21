@@ -89,8 +89,12 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public Transaction newTransaction() {
-        // TODO Auto-generated method stub
-        return null;
+        try {
+            return new Transaction(index);
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "IOException while starting transaction with Lucene index.", e);
+            return null;
+        }
     }
 
     @Override

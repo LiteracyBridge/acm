@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
 import javax.swing.JTree;
 import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -143,7 +141,6 @@ public class TreeTransferHandler extends TransferHandler {
             @Override
             public void run() {
                 Transaction transaction = ACMConfiguration.getCurrentDB().getMetadataStore().newTransaction();
-                transaction.begin();
                 try {
                     for (AudioItem item : audioItems) {
                         if (move) {

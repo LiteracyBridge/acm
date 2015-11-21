@@ -1,6 +1,6 @@
 package org.literacybridge.acm.store;
 
-import java.util.Collection;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
@@ -133,7 +133,7 @@ public class AudioItem implements Persistable {
     }
 
     @Override
-    public <T extends Transaction> void commitTransaction(T t) {
-
+    public void commitTransaction(Transaction t) throws IOException {
+        t.getIndex().updateAudioItem(this, t.getWriter());
     }
 }

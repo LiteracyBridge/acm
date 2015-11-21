@@ -75,14 +75,14 @@ public class AudioItemCache {
 
     public synchronized AudioItem get(String uuid) {
         // TODO: fix cache
-        return store.getAudioItem(uuid);
-        //        AudioItem audioItem = cache.get(uuid);
-        //        if (audioItem == null) {
-        //            audioItem = store.getAudioItem(uuid);
-        //            cache.put(uuid, audioItem);
-        //        }
-        //
-        //        return audioItem;
+        //        return store.getAudioItem(uuid);
+        AudioItem audioItem = cache.get(uuid);
+        if (audioItem == null) {
+            audioItem = store.getAudioItem(uuid);
+            cache.put(uuid, audioItem);
+        }
+
+        return audioItem;
     }
 
     public synchronized void add(AudioItem item) {

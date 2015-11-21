@@ -1,15 +1,22 @@
 package org.literacybridge.acm.store;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import org.apache.lucene.index.IndexWriter;
 import org.literacybridge.acm.api.IDataRequestResult;
+import org.literacybridge.acm.index.AudioItemIndex;
 
 import com.google.common.collect.Sets;
 
 public abstract class MetadataStore {
+    private static final Logger LOG = Logger.getLogger(MetadataStore.class.getName());
+
     private final Taxonomy taxonomy;
 
     public abstract Transaction newTransaction();
@@ -40,16 +47,20 @@ public abstract class MetadataStore {
     public abstract IDataRequestResult search(String searchFilter, Playlist selectedTag);
 
     public final void commit(Persistable p) {
-        //        Transaction t = newTransaction();
-        //        t.add(p);
-        //        t.begin();
-        //        t.commit();
+        Transaction t = newTransaction();
+        t.add(p);
+        t.commit();
     }
 
-    public static abstract class Transaction {
+    public static class Transaction {
         private final Set<Persistable> objects = Sets.newHashSet();
+        private final AudioItemIndex index;
+        private final IndexWriter writer;
 
-        public abstract void begin();
+        public Transaction(AudioItemIndex index) throws IOException {
+            this.index = index;
+            this.writer = index.newWriter();
+        }
 
         public final void commit() {
             boolean success = false;
@@ -58,12 +69,16 @@ public abstract class MetadataStore {
                     o.commitTransaction(this);
                 }
                 success = true;
+            } catch (IOException e) {
+                LOG.log(Level.SEVERE, "IOException while commiting a transaction.", e);
             } finally {
                 if (success) {
                     boolean success2 = false;
                     try {
-                        doCommit();
+                        writer.close();
                         success2 = true;
+                    } catch (IOException e) {
+                        LOG.log(Level.SEVERE, "IOException while commiting a transaction.", e);
                     } finally {
                         if (!success2) {
                             rollback();
@@ -76,14 +91,23 @@ public abstract class MetadataStore {
         }
 
         public final void rollback() {
-            doRollback();
+            try {
+                writer.rollback();
+            } catch (IOException e) {
+                LOG.log(Level.SEVERE, "IOException while rolling back a transaction.", e);
+            }
         }
-
-        protected abstract void doCommit();
-        protected abstract void doRollback();
 
         public void add(Persistable object) {
             objects.add(object);
+        }
+
+        public AudioItemIndex getIndex() {
+            return index;
+        }
+
+        public IndexWriter getWriter() {
+            return writer;
         }
     }
 }

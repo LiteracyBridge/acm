@@ -174,7 +174,7 @@ public class DBConfiguration extends Properties {
             controlAccess.init();
 
             this.dbConn = Persistence.initialize(this);
-            this.store = new DBMetadataStore(sharedACMDirectory, dbConn);
+            this.store = new DBMetadataStore(sharedACMDirectory);
             MetadataStore luceneStore = new LuceneMetadataStore(sharedACMDirectory, loadAudioItemIndex());
 
             this.store = new HybridMetadataStore(sharedACMDirectory, luceneStore, this.store);
