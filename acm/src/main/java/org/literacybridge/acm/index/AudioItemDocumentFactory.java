@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -13,15 +14,19 @@ import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+import org.apache.lucene.analysis.payloads.PayloadHelper;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.PayloadAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
@@ -69,9 +74,8 @@ public class AudioItemDocumentFactory {
             doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.CATEGORIES_FACET_FIELD, category.getUuid()));
         }
 
-        for (Playlist tag : audioItem.getPlaylists()) {
-            doc.add(new StringField(AudioItemIndex.TAGS_FIELD, tag.getName(), Store.YES));
-        }
+        doc.add(new Field(AudioItemIndex.TAGS_FIELD, new PlaylistTokenStream(audioItem), TextField.TYPE_NOT_STORED));
+
         for (MetadataValue<RFC3066LanguageCode> code : metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE)) {
             doc.add(new StringField(AudioItemIndex.LOCALES_FIELD, code.getValue().getLocale().getLanguage().toLowerCase(), Store.YES));
             doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.LOCALES_FACET_FIELD, code.toString()));
@@ -143,6 +147,35 @@ public class AudioItemDocumentFactory {
             currentInputTokenLength = 0;
             currentOutputTokenLength = 0;
             first = true;
+        }
+    }
+
+    private static class PlaylistTokenStream extends TokenStream {
+        private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
+        private final PayloadAttribute payloadAtt = addAttribute(PayloadAttribute.class);
+
+        private final AudioItem audioItem;
+        private final Iterator<Playlist> playlistIterator;
+
+        private PlaylistTokenStream(AudioItem audioItem) {
+            this.audioItem = audioItem;
+            this.playlistIterator = audioItem.getPlaylists().iterator();
+        }
+
+        @Override
+        public boolean incrementToken() throws IOException {
+            if (!playlistIterator.hasNext()) {
+                return false;
+            }
+
+            Playlist playlist = playlistIterator.next();
+            termAtt.setEmpty();
+            // TODO: generate uuid
+            termAtt.append(playlist.getName());
+            BytesRef payload = new BytesRef(PayloadHelper.encodeInt(playlist.getAudioItemPosition(audioItem.getUuid())));
+            payloadAtt.setPayload(payload);
+
+            return true;
         }
     }
 }

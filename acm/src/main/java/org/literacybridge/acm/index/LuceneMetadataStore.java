@@ -71,20 +71,27 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public Playlist newPlaylist(String uid) {
-        // TODO Auto-generated method stub
-        return null;
+        return new Playlist(uid);
     }
 
     @Override
-    public Playlist getPlaylist(String uid) {
-        // TODO Auto-generated method stub
-        return null;
+    public Playlist getPlaylist(String uuid) {
+        try {
+            return index.getPlaylist(uuid);
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "IOException while retrieving playlist (uuid=" + uuid + ") from Lucene index.", e);
+            return null;
+        }
     }
 
     @Override
     public Iterable<Playlist> getPlaylists() {
-        // TODO Auto-generated method stub
-        return null;
+        try {
+            return index.getPlaylists();
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "IOException while retrieving playlists from Lucene index.", e);
+            return null;
+        }
     }
 
     @Override

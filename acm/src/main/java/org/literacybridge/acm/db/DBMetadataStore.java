@@ -57,7 +57,7 @@ public class DBMetadataStore extends MetadataStore {
 
     @Override
     public Playlist newPlaylist(String uid) {
-        return new Playlist(uid);
+        throw new UnsupportedOperationException("Not supported anymore.");
     }
 
     @Override

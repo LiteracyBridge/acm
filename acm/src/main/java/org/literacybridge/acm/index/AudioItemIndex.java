@@ -17,6 +17,7 @@ import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+import org.apache.lucene.analysis.payloads.PayloadHelper;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.facet.FacetResult;
@@ -28,18 +29,25 @@ import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetCounts;
 import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.DocsAndPositionsEnum;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Collector;
+import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MultiCollector;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.SearcherFactory;
+import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -72,7 +80,7 @@ public class AudioItemIndex {
 
     private AudioItemDocumentFactory factory = new AudioItemDocumentFactory();
     private final Directory dir;
-    private DirectoryReader reader;
+    private SearcherManager searcherManager;
 
     private final FacetsConfig facetsConfig;
     private final QueryAnalyzer queryAnalyzer;
@@ -96,16 +104,7 @@ public class AudioItemIndex {
         }
 
         queryAnalyzer = new QueryAnalyzer();
-        refreshReader();
-    }
-
-    private void refreshReader() throws IOException {
-        if (reader == null) {
-            reader = DirectoryReader.open(dir);
-        } else {
-            // TODO: close old reader?
-            reader = DirectoryReader.openIfChanged(reader);
-        }
+        searcherManager = new SearcherManager(dir, new SearcherFactory());
     }
 
     public IndexWriter newWriter() throws IOException {
@@ -115,7 +114,9 @@ public class AudioItemIndex {
             @Override
             public void close() throws IOException {
                 super.close();
-                refreshReader();
+                if (searcherManager != null) {
+                    searcherManager.maybeRefreshBlocking();
+                }
             }
         };
     }
@@ -174,7 +175,81 @@ public class AudioItemIndex {
             }
             ts.close();
         }
+    }
 
+    public Iterable<Playlist> getPlaylists() throws IOException {
+        final Map<String, Playlist.Builder> playlists = Maps.newHashMap();
+        final IndexSearcher searcher = searcherManager.acquire();
+        try {
+            IndexReader reader = searcher.getIndexReader();
+            TermsEnum termsEnum = null;
+            for (AtomicReaderContext leaf : reader.leaves()) {
+                AtomicReader leafReader = leaf.reader();
+                Terms terms = leafReader.terms(TAGS_FIELD);
+                if (terms != null) {
+                    termsEnum = terms.iterator(termsEnum);
+                    BytesRef term = null;
+                    while ((term = termsEnum.next()) != null) {
+                        String uuid = term.utf8ToString();
+                        Playlist.Builder playlist = playlists.get(uuid);
+                        if (playlist == null) {
+                            playlist = Playlist.builder();
+                            // TODO: generate uuid
+                            playlist.withUuid(uuid);
+                            playlist.withName(uuid);
+                            playlists.put(uuid, playlist);
+                        }
+
+                        DocsAndPositionsEnum tp = leafReader.termPositionsEnum(new Term(TAGS_FIELD, term));
+                        while (tp.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+                            // TODO: we could also use the termPosition instead of a payload to store the playlist position
+                            tp.nextPosition();
+                            BytesRef payload = tp.getPayload();
+                            int playlistPos = PayloadHelper.decodeInt(payload.bytes, payload.offset);
+                            AudioItem audioItem = loadAudioItem(leafReader.document(tp.docID()));
+                            playlist.addAudioItem(audioItem.getUuid(), playlistPos);
+                        }
+                    }
+                }
+            }
+
+            List<Playlist> result = Lists.newArrayListWithCapacity(playlists.size());
+            for (Playlist.Builder builder : playlists.values()) {
+                result.add(builder.build());
+            }
+            return result;
+        } finally {
+            searcherManager.release(searcher);
+        }
+    }
+
+    public Playlist getPlaylist(String uuid) throws IOException {
+        final IndexSearcher searcher = searcherManager.acquire();
+        try {
+            final Playlist.Builder builder = Playlist.builder();
+            builder.withUuid(uuid);
+            builder.withName(uuid);
+
+            IndexReader reader = searcher.getIndexReader();
+            for (AtomicReaderContext leaf : reader.leaves()) {
+                AtomicReader leafReader = leaf.reader();
+                DocsAndPositionsEnum tp = leafReader.termPositionsEnum(new Term(TAGS_FIELD, uuid));
+                if (tp != null) {
+                    while (tp.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+                        // TODO: we could also use the termPosition instead of a payload to store the playlist position
+                        tp.nextPosition();
+                        BytesRef payload = tp.getPayload();
+                        int playlistPos = PayloadHelper.decodeInt(payload.bytes, payload.offset);
+                        AudioItem audioItem = loadAudioItem(leafReader.document(tp.docID()));
+                        builder.addAudioItem(audioItem.getUuid(), playlistPos);
+                    }
+                }
+            }
+
+            return builder.build();
+        } finally {
+            searcherManager.release(searcher);
+        }
     }
 
     public AudioItem getAudioItem(final String uuid) throws IOException {
@@ -184,49 +259,57 @@ public class AudioItemIndex {
 
     public Iterable<AudioItem> getAudioItems() throws IOException {
         final List<AudioItem> results = Lists.newArrayList();
-        final IndexSearcher searcher = new IndexSearcher(reader);
-        searcher.search(new MatchAllDocsQuery(), new Collector() {
-            private AtomicReader atomicReader;
+        final IndexSearcher searcher = searcherManager.acquire();
+        try {
+            searcher.search(new MatchAllDocsQuery(), new Collector() {
+                private AtomicReader atomicReader;
 
-            @Override public void setScorer(Scorer arg0) throws IOException {}
-            @Override public void setNextReader(AtomicReaderContext context) throws IOException {
-                this.atomicReader = context.reader();
-            }
+                @Override public void setScorer(Scorer arg0) throws IOException {}
+                @Override public void setNextReader(AtomicReaderContext context) throws IOException {
+                    this.atomicReader = context.reader();
+                }
 
-            @Override
-            public void collect(int docId) throws IOException {
-                results.add(loadAudioItem(atomicReader.document(docId)));
-            }
+                @Override
+                public void collect(int docId) throws IOException {
+                    results.add(loadAudioItem(atomicReader.document(docId)));
+                }
 
-            @Override public boolean acceptsDocsOutOfOrder() {
-                return true;
-            }
-        });
+                @Override public boolean acceptsDocsOutOfOrder() {
+                    return true;
+                }
+            });
 
-        return results;
+            return results;
+        } finally {
+            searcherManager.release(searcher);
+        }
     }
 
     private Document getDocument(final String uuid) throws IOException {
         final AtomicReference<Document> result = new AtomicReference<Document>();
 
-        final IndexSearcher searcher = new IndexSearcher(reader);
-        searcher.search(new TermQuery(new Term(UID_FIELD, uuid)), new Collector() {
-            private AtomicReader atomicReader;
+        final IndexSearcher searcher = searcherManager.acquire();
+        try {
+            searcher.search(new TermQuery(new Term(UID_FIELD, uuid)), new Collector() {
+                private AtomicReader atomicReader;
 
-            @Override public void setScorer(Scorer arg0) throws IOException {}
-            @Override public void setNextReader(AtomicReaderContext context) throws IOException {
-                this.atomicReader = context.reader();
-            }
+                @Override public void setScorer(Scorer arg0) throws IOException {}
+                @Override public void setNextReader(AtomicReaderContext context) throws IOException {
+                    this.atomicReader = context.reader();
+                }
 
-            @Override
-            public void collect(int docId) throws IOException {
-                result.set(atomicReader.document(docId));
-            }
+                @Override
+                public void collect(int docId) throws IOException {
+                    result.set(atomicReader.document(docId));
+                }
 
-            @Override public boolean acceptsDocsOutOfOrder() {
-                return true;
-            }
-        });
+                @Override public boolean acceptsDocsOutOfOrder() {
+                    return true;
+                }
+            });
+        } finally {
+            searcherManager.release(searcher);
+        }
 
         return result.get();
     }
@@ -251,7 +334,7 @@ public class AudioItemIndex {
         BooleanQuery q = new BooleanQuery();
         addTextQuery(q, filterString);
         if (selectedTag != null) {
-            q.add(new TermQuery(new Term(TAGS_FIELD, selectedTag.getName())), Occur.MUST);
+            q.add(new TermQuery(new Term(TAGS_FIELD, selectedTag.getUuid())), Occur.MUST);
         }
         return search(q);
     }
@@ -283,53 +366,56 @@ public class AudioItemIndex {
     private IDataRequestResult search(Query query) throws IOException {
         final FacetsCollector facetsCollector = new FacetsCollector();
         final Set<String> results = Sets.newHashSet();
-        final IndexSearcher searcher = new IndexSearcher(reader);
+        final IndexSearcher searcher = searcherManager.acquire();
+        try {
+            Collector collector = MultiCollector.wrap(facetsCollector, new Collector() {
+                private AtomicReader atomicReader;
 
-        Collector collector = MultiCollector.wrap(facetsCollector, new Collector() {
-            private AtomicReader atomicReader;
-
-            @Override public void setScorer(Scorer arg0) throws IOException {}
-            @Override public void setNextReader(AtomicReaderContext context) throws IOException {
-                this.atomicReader = context.reader();
-            }
-
-            @Override
-            public void collect(int docId) throws IOException {
-                Document doc = atomicReader.document(docId);
-                results.add(doc.get(UID_FIELD));
-            }
-
-            @Override public boolean acceptsDocsOutOfOrder() {
-                return true;
-            }
-        });
-
-        searcher.search(query, collector);
-
-        MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
-        SortedSetDocValuesFacetCounts facetCounts =
-                new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
-        List<FacetResult> facetResults = facetCounts.getAllDims(1000);
-        Map<String, Integer> categoryFacets = Maps.newHashMap();
-        Map<String, Integer> localeFacets = Maps.newHashMap();
-        for (FacetResult r : facetResults) {
-            if (r.dim.equals(CATEGORIES_FACET_FIELD)) {
-                for (LabelAndValue lv : r.labelValues) {
-                    categoryFacets.put(lv.label, lv.value.intValue());
-                }
-            }
-            if (r.dim.equals(LOCALES_FACET_FIELD)) {
-                for (LabelAndValue lv : r.labelValues) {
-                    localeFacets.put(lv.label, lv.value.intValue());
+                @Override public void setScorer(Scorer arg0) throws IOException {}
+                @Override public void setNextReader(AtomicReaderContext context) throws IOException {
+                    this.atomicReader = context.reader();
                 }
 
+                @Override
+                public void collect(int docId) throws IOException {
+                    Document doc = atomicReader.document(docId);
+                    results.add(doc.get(UID_FIELD));
+                }
+
+                @Override public boolean acceptsDocsOutOfOrder() {
+                    return true;
+                }
+            });
+
+            searcher.search(query, collector);
+
+            MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
+            SortedSetDocValuesFacetCounts facetCounts =
+                    new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
+            List<FacetResult> facetResults = facetCounts.getAllDims(1000);
+            Map<String, Integer> categoryFacets = Maps.newHashMap();
+            Map<String, Integer> localeFacets = Maps.newHashMap();
+            for (FacetResult r : facetResults) {
+                if (r.dim.equals(CATEGORIES_FACET_FIELD)) {
+                    for (LabelAndValue lv : r.labelValues) {
+                        categoryFacets.put(lv.label, lv.value.intValue());
+                    }
+                }
+                if (r.dim.equals(LOCALES_FACET_FIELD)) {
+                    for (LabelAndValue lv : r.labelValues) {
+                        localeFacets.put(lv.label, lv.value.intValue());
+                    }
+
+                }
             }
+
+            DataRequestResult result = new DataRequestResult(store.getTaxonomy().getRootCategory(), categoryFacets, localeFacets, Lists.newArrayList(results),
+                    store.getPlaylists());
+
+            return result;
+        } finally {
+            searcherManager.release(searcher);
         }
-
-        DataRequestResult result = new DataRequestResult(store.getTaxonomy().getRootCategory(), categoryFacets, localeFacets, Lists.newArrayList(results),
-                store.getPlaylists());
-
-        return result;
     }
 
     public static class QueryAnalyzer extends Analyzer {
