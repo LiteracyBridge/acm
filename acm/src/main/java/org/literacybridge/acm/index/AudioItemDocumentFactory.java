@@ -170,11 +170,9 @@ public class AudioItemDocumentFactory {
 
             Playlist playlist = playlistIterator.next();
             termAtt.setEmpty();
-            // TODO: generate uuid
-            termAtt.append(playlist.getName());
+            termAtt.append(playlist.getUuid());
             BytesRef payload = new BytesRef(PayloadHelper.encodeInt(playlist.getAudioItemPosition(audioItem.getUuid())));
             payloadAtt.setPayload(payload);
-
             return true;
         }
     }

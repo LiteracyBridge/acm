@@ -137,7 +137,7 @@ public class CategoryView extends ACMContainer implements Observer {
 
     private void createTasks() {
         // add all categories
-        Category rootCategory = result.getRootCategory();
+        Category rootCategory = ACMConfiguration.getCurrentDB().getMetadataStore().getTaxonomy().getRootCategory();
         if (rootCategory.hasChildren()) {
             for (Category c : rootCategory.getSortedChildren()) {
                 addChildNodes(categoryRootNode, c);

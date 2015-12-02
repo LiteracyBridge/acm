@@ -26,7 +26,7 @@ public abstract class MetadataStore {
     public abstract void deleteAudioItem(String uid);
     public abstract Iterable<AudioItem> getAudioItems();
 
-    public abstract Playlist newPlaylist(String uid);
+    public abstract Playlist newPlaylist(String name);
     public abstract Playlist getPlaylist(String uid);
     public abstract void deletePlaylist(String uid);
     public abstract Iterable<Playlist> getPlaylists();

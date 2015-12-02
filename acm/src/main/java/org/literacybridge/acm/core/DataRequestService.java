@@ -6,8 +6,6 @@ import java.util.Locale;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.api.IDataRequestService;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.DBConfiguration;
-import org.literacybridge.acm.index.AudioItemIndex;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
@@ -53,13 +51,5 @@ public class DataRequestService implements IDataRequestService {
             Playlist selectedPlaylist) {
         MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
         return store.search(filterString, selectedPlaylist);
-    }
-
-    private AudioItemIndex getAudioItemIndex() {
-        DBConfiguration db = ACMConfiguration.getCurrentDB();
-        if (db != null) {
-            return db.getAudioItemIndex();
-        }
-        return null;
     }
 }

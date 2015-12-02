@@ -12,13 +12,6 @@ import org.literacybridge.acm.store.Playlist;
  */
 public interface IDataRequestResult {
     /**
-     * Returns the root category which should be used to walk
-     * the tree of categories. The root category is a virtual root
-     * and should generally not be displayed by the UI.
-     */
-    public abstract Category getRootCategory();
-
-    /**
      * Returns the facet count for the passed-in category.
      */
     public abstract int getFacetCount(Category category);

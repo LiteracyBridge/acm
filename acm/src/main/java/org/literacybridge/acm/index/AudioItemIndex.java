@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -33,6 +34,7 @@ import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.SegmentInfos;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
@@ -59,9 +61,12 @@ import org.literacybridge.acm.core.DataRequestResult;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.LBMetadataSerializer;
-import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.MetadataStore.Transaction;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.Playlist.Builder;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -78,12 +83,17 @@ public class AudioItemIndex {
     public static final String RAW_METADATA_FIELD = "raw_data";
     public static final String IMPORT_ORDER_ID_FIELD = "import_order";
 
+    public static final String PLAYLIST_NAMES_COMMIT_DATA = "playlist_names";
+    public static final String MAX_PLAYLIST_UID_COMMIT_DATA = "max_playlist_uuid";
+
     private AudioItemDocumentFactory factory = new AudioItemDocumentFactory();
     private final Directory dir;
     private SearcherManager searcherManager;
 
     private final FacetsConfig facetsConfig;
     private final QueryAnalyzer queryAnalyzer;
+
+    private int currentMaxPlaylistUuid;
 
     private AudioItemIndex(Directory dir, Iterable<AudioItem> audioItems) throws IOException {
         this.dir = dir;
@@ -93,18 +103,39 @@ public class AudioItemIndex {
         facetsConfig.setMultiValued(AudioItemIndex.LOCALES_FACET_FIELD, true);
 
         if (audioItems != null) {
-            IndexWriter writer = newWriter();
-            for (AudioItem item : audioItems) {
-                addAudioItem(item, writer);
-            }
-
-            writer.forceMerge(1);
-            writer.commit();
-            writer.close();
+            migrateFromDB(audioItems);
         }
 
         queryAnalyzer = new QueryAnalyzer();
         searcherManager = new SearcherManager(dir, new SearcherFactory());
+        readPlaylistNames();
+    }
+
+    @Deprecated
+    private final void migrateFromDB(Iterable<AudioItem> audioItems) throws IOException {
+        Map<String, Playlist> playlists = Maps.newHashMap();
+        IndexWriter writer = newWriter();
+        for (AudioItem item : audioItems) {
+            addAudioItem(item, writer);
+            for (Playlist playlist : item.getPlaylists()) {
+                // important to use getName() here, because in the old DB we didn't use uuids for playlists;
+                // in the new Lucene index we do use uuids, which we generate here in the migration step
+                if (!playlists.containsKey(playlist.getName())) {
+                    playlist.setUuid(generateNewPlaylistUuid());
+                    playlists.put(playlist.getName(), playlist);
+                }
+            }
+        }
+
+        storePlaylistNames(playlists.values(), writer);
+
+        writer.forceMerge(1);
+        writer.commit();
+        writer.close();
+    }
+
+    private final String generateNewPlaylistUuid() {
+        return Integer.toString(currentMaxPlaylistUuid++);
     }
 
     public IndexWriter newWriter() throws IOException {
@@ -121,26 +152,32 @@ public class AudioItemIndex {
         };
     }
 
-    public static AudioItemIndex loadOrBuild(File path) throws IOException {
+    public static boolean indexExists(File path) throws IOException {
+        if (!path.isDirectory()) {
+            return false;
+        }
+
+        return DirectoryReader.indexExists(FSDirectory.open(path));
+    }
+
+    public static AudioItemIndex migrateFromDB(File path, Iterable<AudioItem> audioItems) throws IOException {
+        if (indexExists(path)) {
+            throw new IOException("Index already exists in " + path);
+        }
+
         if (!path.exists()) {
             path.mkdirs();
         }
 
-        if (!path.isDirectory()) {
-            throw new IOException("Path must be a directory.");
+        return new AudioItemIndex(FSDirectory.open(path), audioItems);
+    }
+
+    public static AudioItemIndex load(File path) throws IOException {
+        if (!indexExists(path)) {
+            throw new IOException("Index does not exist in " + path);
         }
 
-        Directory dir = FSDirectory.open(path);
-        Iterable<AudioItem> items = null;
-
-        if (!DirectoryReader.indexExists(dir)) {
-            // TODO: remove once Derby migration mode is removed
-            items = ACMConfiguration.getCurrentDB().getMetadataStore().getAudioItems();
-        }
-
-        AudioItemIndex index = new AudioItemIndex(dir, items);
-
-        return index;
+        return new AudioItemIndex(FSDirectory.open(path), null);
     }
 
     public void updateAudioItem(AudioItem audioItem, IndexWriter writer) throws IOException {
@@ -177,8 +214,66 @@ public class AudioItemIndex {
         }
     }
 
+    private Map<String, Playlist.Builder> readPlaylistNames() throws IOException {
+        Map<String, Playlist.Builder> playlists = Maps.newHashMap();
+        SegmentInfos infos = new SegmentInfos();
+        infos.read(dir);
+        Map<String, String> commitData = infos.getUserData();
+        String playlistNames = commitData.get(PLAYLIST_NAMES_COMMIT_DATA);
+        this.currentMaxPlaylistUuid = Math.max(currentMaxPlaylistUuid,
+                Integer.parseInt(commitData.get(MAX_PLAYLIST_UID_COMMIT_DATA)));
+        StringTokenizer tokenizer = new StringTokenizer(playlistNames, ",");
+        while (tokenizer.hasMoreTokens()) {
+            String[] pair = tokenizer.nextToken().split(":");
+            String uuid = pair[0];
+            String name = pair[1];
+            playlists.put(uuid, Playlist.builder().withUuid(uuid).withName(name));
+        }
+        return playlists;
+    }
+
+    private void storePlaylistNames(Iterable<Playlist> playlists, IndexWriter writer) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        for (Playlist playlist : playlists) {
+            builder.append(playlist.getUuid());
+            builder.append(':');
+            builder.append(playlist.getName());
+            builder.append(',');
+        }
+        if (builder.length() > 0) {
+            // remove trailing ','
+            builder.setLength(builder.length() - 1);
+        }
+        Map<String, String> commitData = Maps.newHashMap();
+        commitData.put(PLAYLIST_NAMES_COMMIT_DATA, builder.toString());
+        commitData.put(MAX_PLAYLIST_UID_COMMIT_DATA, Integer.toString(currentMaxPlaylistUuid));
+        writer.setCommitData(commitData);
+    }
+
+    public void deletePlaylist(String uuid, Transaction t) throws IOException {
+        Map<String, Playlist.Builder> playlists = readPlaylistNames();
+        playlists.remove(uuid);
+        storePlaylistNames(Iterables.transform(playlists.values(), new Function<Playlist.Builder, Playlist>() {
+            @Override public Playlist apply(Builder builder) {
+                return builder.build();
+            }
+        }), t.getWriter());
+    }
+
+    public Playlist addPlaylist(String name, Transaction t) throws IOException {
+        Playlist playlist = new Playlist(generateNewPlaylistUuid());
+        playlist.setName(name);
+        storePlaylistNames(Iterables.concat(Iterables.transform(readPlaylistNames().values(), new Function<Playlist.Builder, Playlist>() {
+            @Override public Playlist apply(Builder builder) {
+                return builder.build();
+            }
+        }), Lists.newArrayList(playlist)), t.getWriter());
+        return playlist;
+    }
+
+
     public Iterable<Playlist> getPlaylists() throws IOException {
-        final Map<String, Playlist.Builder> playlists = Maps.newHashMap();
+        final Map<String, Playlist.Builder> playlists = readPlaylistNames();
         final IndexSearcher searcher = searcherManager.acquire();
         try {
             IndexReader reader = searcher.getIndexReader();
@@ -192,22 +287,16 @@ public class AudioItemIndex {
                     while ((term = termsEnum.next()) != null) {
                         String uuid = term.utf8ToString();
                         Playlist.Builder playlist = playlists.get(uuid);
-                        if (playlist == null) {
-                            playlist = Playlist.builder();
-                            // TODO: generate uuid
-                            playlist.withUuid(uuid);
-                            playlist.withName(uuid);
-                            playlists.put(uuid, playlist);
-                        }
-
-                        DocsAndPositionsEnum tp = leafReader.termPositionsEnum(new Term(TAGS_FIELD, term));
-                        while (tp.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
-                            // TODO: we could also use the termPosition instead of a payload to store the playlist position
-                            tp.nextPosition();
-                            BytesRef payload = tp.getPayload();
-                            int playlistPos = PayloadHelper.decodeInt(payload.bytes, payload.offset);
-                            AudioItem audioItem = loadAudioItem(leafReader.document(tp.docID()));
-                            playlist.addAudioItem(audioItem.getUuid(), playlistPos);
+                        if (playlist != null) {
+                            DocsAndPositionsEnum tp = leafReader.termPositionsEnum(new Term(TAGS_FIELD, term));
+                            while (tp.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+                                // TODO: we could also use the termPosition instead of a payload to store the playlist position
+                                tp.nextPosition();
+                                BytesRef payload = tp.getPayload();
+                                int playlistPos = PayloadHelper.decodeInt(payload.bytes, payload.offset);
+                                AudioItem audioItem = loadAudioItem(leafReader.document(tp.docID()));
+                                playlist.addAudioItem(audioItem.getUuid(), playlistPos);
+                            }
                         }
                     }
                 }
@@ -282,6 +371,15 @@ public class AudioItemIndex {
             return results;
         } finally {
             searcherManager.release(searcher);
+        }
+    }
+
+    public void deleteAudioItem(final String uuid) throws IOException {
+        IndexWriter writer = newWriter();
+        try {
+            writer.deleteDocuments(new Term(UID_FIELD, uuid));
+        } finally {
+            writer.close();
         }
     }
 
@@ -389,7 +487,6 @@ public class AudioItemIndex {
 
             searcher.search(query, collector);
 
-            MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
             SortedSetDocValuesFacetCounts facetCounts =
                     new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
             List<FacetResult> facetResults = facetCounts.getAllDims(1000);
@@ -409,8 +506,8 @@ public class AudioItemIndex {
                 }
             }
 
-            DataRequestResult result = new DataRequestResult(store.getTaxonomy().getRootCategory(), categoryFacets, localeFacets, Lists.newArrayList(results),
-                    store.getPlaylists());
+            DataRequestResult result = new DataRequestResult(categoryFacets, localeFacets, Lists.newArrayList(results),
+                    getPlaylists());
 
             return result;
         } finally {

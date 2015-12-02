@@ -8,27 +8,18 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Playlist;
 
 public class DataRequestResult implements IDataRequestResult {
-    private final Category rootCategory;
     private final Map<String, Integer> facetCounts;
     private final Map<String, Integer> languageFacetCounts;
     private final List<String> audioItems;
     private final Iterable<Playlist> tags;
 
-    public DataRequestResult(Category rootCategory, Map<String, Integer> facetCounts,
+    public DataRequestResult(Map<String, Integer> facetCounts,
             Map<String, Integer> languageFacetCounts, List<String> audioItems,
             Iterable<Playlist> tags) {
-        this.rootCategory = rootCategory;
         this.facetCounts = facetCounts;
         this.languageFacetCounts = languageFacetCounts;
         this.audioItems = audioItems;
         this.tags = tags;
-    }
-
-    /* (non-Javadoc)
-     * @see main.java.org.literacybridge.acm.api.IDataRequestResult#getRootCategory()
-     */
-    public Category getRootCategory() {
-        return this.rootCategory;
     }
 
     /* (non-Javadoc)

@@ -237,7 +237,6 @@ public class Application extends JXFrame {
             // DB migration if necessary
             System.out.print("Updating database ... ");
             splash.setProgressLabel("Updating database...");
-            Persistence.maybeRunMigration();
             System.out.println("done.");
         } catch (Exception e) {
             e.printStackTrace();

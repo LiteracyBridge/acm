@@ -19,7 +19,6 @@ import javax.swing.JOptionPane;
 
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.gui.CommandLineParams;
-import org.literacybridge.acm.store.Taxonomy;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -83,7 +82,6 @@ public class ACMConfiguration {
 
         DBConfiguration oldDB = currentDB.get();
         if (oldDB != null) {
-            oldDB.getDatabaseConnection().close();
             LockACM.unlockFile();
         }
 
@@ -94,7 +92,7 @@ public class ACMConfiguration {
     public synchronized static void closeCurrentDB() {
         DBConfiguration oldDB = currentDB.get();
         if (oldDB != null) {
-            oldDB.getDatabaseConnection().close();
+            LockACM.unlockFile();
         }
     }
 

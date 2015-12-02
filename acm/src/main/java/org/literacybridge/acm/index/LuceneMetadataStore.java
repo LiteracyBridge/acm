@@ -13,6 +13,18 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 
+/**
+ *
+ * TODOs:
+ * - fix playlist ordering bug
+ * - generate playlist uuids
+ * - store playlist uuid->name mapping as commit data in Lucene index
+ * - checkin/out Lucene index with dropbox instead of DB
+ * - finish AudioItemCache (sort ordering)
+ * - add playlist cache
+ * - pass reference to MetadataStore around, instead of singleton pattern
+ *
+ */
 public class LuceneMetadataStore extends MetadataStore {
     private static final Logger LOG = Logger.getLogger(LuceneMetadataStore.class.getName());
 
@@ -70,8 +82,23 @@ public class LuceneMetadataStore extends MetadataStore {
     }
 
     @Override
-    public Playlist newPlaylist(String uid) {
-        return new Playlist(uid);
+    public Playlist newPlaylist(String name) {
+        Playlist playlist = null;
+        Transaction t = newTransaction();
+        boolean success = false;
+        try {
+            playlist = index.addPlaylist(name, t);
+            t.commit();
+            success = true;
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "IOException while adding playlist name=(" + name + ") from Lucene index.", e);
+        } finally {
+            if (!success) {
+                t.rollback();
+            }
+        }
+
+        return playlist;
     }
 
     @Override
@@ -105,14 +132,35 @@ public class LuceneMetadataStore extends MetadataStore {
     }
 
     @Override
-    public void deleteAudioItem(String uid) {
-        // TODO Auto-generated method stub
-
+    public void deleteAudioItem(String uuid) {
+        try {
+            index.deleteAudioItem(uuid);
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "IOException while deleting audioitem uuid=(" + uuid + ") from Lucene index.", e);
+        }
     }
 
     @Override
-    public void deletePlaylist(String uid) {
-        // TODO Auto-generated method stub
+    public void deletePlaylist(String uuid) {
+        Playlist playlist = getPlaylist(uuid);
+        Transaction t = newTransaction();
+        boolean success = false;
+        try {
+            for (String audioItemUuid : playlist.getAudioItemList()) {
+                AudioItem audioItem = getAudioItem(audioItemUuid);
+                audioItem.removePlaylist(playlist);
+                t.add(audioItem);
+            }
 
+            index.deletePlaylist(uuid, t);
+            t.commit();
+            success = true;
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "IOException while deleting playlist uuid=(" + uuid + ") from Lucene index.", e);
+        } finally {
+            if (!success) {
+                t.rollback();
+            }
+        }
     }
 }

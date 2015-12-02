@@ -9,13 +9,19 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class Playlist implements Persistable {
-    private final String uuid;
+    // TODO: make uuid final once deprecated method setUuid() is removed
+    private String uuid;
     private String name;
     private final List<String> audioItems;
 
     public Playlist(String uuid) {
         this.uuid = uuid;
         audioItems = Lists.newArrayList();
+    }
+
+    @Deprecated
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public String getUuid() {
@@ -44,6 +50,10 @@ public class Playlist implements Persistable {
 
     public Iterable<String> getAudioItemList() {
         return audioItems;
+    }
+
+    public int getNumAudioItems() {
+        return audioItems.size();
     }
 
     @Override

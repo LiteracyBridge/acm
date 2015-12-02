@@ -50,7 +50,6 @@ public class DBConfiguration extends Properties {
     private Map<Locale,String> languageLables = new HashMap<Locale, String>();
 
     private AudioItemRepository repository;
-    private AudioItemIndex audioItemIndex;
     private AudioItemCache cache;
     private MetadataStore store;
 
@@ -61,19 +60,8 @@ public class DBConfiguration extends Properties {
         this.acmName = acmName;
     }
 
-    public AudioItemIndex loadAudioItemIndex() throws IOException {
-        if (audioItemIndex == null) {
-            audioItemIndex = AudioItemIndex.loadOrBuild(getLuceneIndexDirectory());
-        }
-        return audioItemIndex;
-    }
-
     public AudioItemCache getAudioItemCache() {
         return cache;
-    }
-
-    public AudioItemIndex getAudioItemIndex() {
-        return audioItemIndex;
     }
 
     public AudioItemRepository getRepository() {
@@ -172,9 +160,15 @@ public class DBConfiguration extends Properties {
             controlAccess = new ControlAccess(this);
             controlAccess.init();
 
-            this.dbConn = Persistence.initialize(this);
-            this.store = new DBMetadataStore(sharedACMDirectory);
-            this.store = new LuceneMetadataStore(sharedACMDirectory, loadAudioItemIndex());
+            if (!AudioItemIndex.indexExists(getLuceneIndexDirectory())) {
+                this.dbConn = Persistence.initialize(this);
+                this.store = new DBMetadataStore(sharedACMDirectory);
+                Persistence.maybeRunMigration();
+                this.store = new LuceneMetadataStore(sharedACMDirectory, AudioItemIndex.migrateFromDB(getLuceneIndexDirectory(), this.store.getAudioItems()));
+                dbConn.close();
+            } else {
+                this.store = new LuceneMetadataStore(sharedACMDirectory, AudioItemIndex.load(getLuceneIndexDirectory()));
+            }
 
             this.cache = new AudioItemCache(store);
             initialized = true;
@@ -183,10 +177,6 @@ public class DBConfiguration extends Properties {
 
     public EntityManager getEntityManager() {
         return dbConn.getEntityManager();
-    }
-
-    public DatabaseConnection getDatabaseConnection() {
-        return dbConn;
     }
 
     public ControlAccess getControlAccess() {
