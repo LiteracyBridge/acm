@@ -5,7 +5,6 @@
 	<classpathentry kind="lib" path="ant/ant-contrib-1.0b3.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang-commons-lang.jar"/>
 	<classpathentry kind="lib" path="lib/org.apache.lucene-lucene-core.jar"/>
-	<classpathentry kind="lib" path="lib/org.apache.thrift-libthrift.jar"/>
 	<classpathentry kind="lib" path="lib/org.slf4j-slf4j-api.jar"/>
 	<classpathentry kind="lib" path="lib/com.google.collections-google-collections.jar"/>
 	<classpathentry kind="lib" path="lib/args4j-args4j.jar"/>

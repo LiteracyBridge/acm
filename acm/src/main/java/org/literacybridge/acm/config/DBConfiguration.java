@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
@@ -268,11 +267,11 @@ public class DBConfiguration extends Properties {
         boolean ret = false;
         String preCache = getProperty(Constants.PRE_CACHE_WAV);
         if (preCache.equalsIgnoreCase("TRUE")) {
-        	ret = true;
+            ret = true;
         }
         return ret;
     }
-    
+
     public List<Locale> getAudioLanguages() {
         if (audioLanguages == null) {
             audioLanguages = new ArrayList<Locale>();
@@ -390,7 +389,7 @@ public class DBConfiguration extends Properties {
             writeProps();
         }
         tbLoadersDirectory = new File(sharedACMDirectory, Constants.TBLoadersHomeDir);
-//        writeProps();
+        //        writeProps();
     }
 
     private void initializeLogger() {
@@ -406,7 +405,8 @@ public class DBConfiguration extends Properties {
             fileTxt.setFormatter(formatterTxt);
             logger.addHandler(fileTxt);
         } catch (IOException e) {
-            throw new RuntimeException("Unable to initialize logging framework", e);
+            e.printStackTrace();
+            System.err.println("Unable to initialize log file. Will be logging to stdout instead.");
         }
     }
 }
