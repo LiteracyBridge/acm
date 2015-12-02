@@ -403,7 +403,8 @@ public class DBConfiguration extends Properties {
             fileTxt.setFormatter(formatterTxt);
             logger.addHandler(fileTxt);
         } catch (IOException e) {
-            throw new RuntimeException("Unable to initialize logging framework", e);
+            e.printStackTrace();
+            System.err.println("Unable to initialize log file. Will be logging to stdout instead.");
         }
     }
 }
