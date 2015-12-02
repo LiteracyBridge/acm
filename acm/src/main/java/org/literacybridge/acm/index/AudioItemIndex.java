@@ -116,7 +116,6 @@ public class AudioItemIndex {
         Map<String, Playlist> playlists = Maps.newHashMap();
         IndexWriter writer = newWriter();
         for (AudioItem item : audioItems) {
-            addAudioItem(item, writer);
             for (Playlist playlist : item.getPlaylists()) {
                 // important to use getName() here, because in the old DB we didn't use uuids for playlists;
                 // in the new Lucene index we do use uuids, which we generate here in the migration step
@@ -124,7 +123,9 @@ public class AudioItemIndex {
                     playlist.setUuid(generateNewPlaylistUuid());
                     playlists.put(playlist.getName(), playlist);
                 }
+                playlist.setUuid(playlists.get(playlist.getName()).getUuid());
             }
+            addAudioItem(item, writer);
         }
 
         storePlaylistNames(playlists.values(), writer);
