@@ -171,7 +171,8 @@ public class AudioItemDocumentFactory {
             Playlist playlist = playlistIterator.next();
             termAtt.setEmpty();
             termAtt.append(playlist.getUuid());
-            BytesRef payload = new BytesRef(PayloadHelper.encodeInt(playlist.getAudioItemPosition(audioItem.getUuid())));
+            int value = playlist.getAudioItemPosition(audioItem.getUuid());
+            BytesRef payload = new BytesRef(PayloadHelper.encodeInt(value));
             payloadAtt.setPayload(payload);
             return true;
         }

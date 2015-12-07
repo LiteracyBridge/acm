@@ -16,9 +16,11 @@ import org.literacybridge.acm.store.Playlist;
 /**
  *
  * TODOs:
- * - fix playlist ordering bug
- * - generate playlist uuids
- * - store playlist uuid->name mapping as commit data in Lucene index
+ * OK fix playlist ordering bug
+ * OK rename playlists
+ * OK generate playlist uuids
+ * OK store playlist uuid->name mapping as commit data in Lucene index
+ * - clean-up transactions API
  * - checkin/out Lucene index with dropbox instead of DB
  * - finish AudioItemCache (sort ordering)
  * - add playlist cache

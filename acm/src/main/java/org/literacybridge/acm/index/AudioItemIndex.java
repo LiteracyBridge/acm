@@ -251,6 +251,17 @@ public class AudioItemIndex {
         writer.setCommitData(commitData);
     }
 
+    public void updatePlaylistName(Playlist playlist, Transaction t) throws IOException {
+        Map<String, Playlist.Builder> playlists = readPlaylistNames();
+        playlists.remove(playlist.getUuid());
+        List<Playlist> updatedPlaylists = Lists.newLinkedList();
+        for (Playlist.Builder p : playlists.values()) {
+            updatedPlaylists.add(p.build());
+        }
+        updatedPlaylists.add(playlist);
+        storePlaylistNames(updatedPlaylists, t.getWriter());
+    }
+
     public void deletePlaylist(String uuid, Transaction t) throws IOException {
         Map<String, Playlist.Builder> playlists = readPlaylistNames();
         playlists.remove(uuid);

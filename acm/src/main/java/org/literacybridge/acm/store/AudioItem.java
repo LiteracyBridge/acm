@@ -118,6 +118,7 @@ public class AudioItem implements Persistable {
 
     public final void addPlaylist(Playlist playlist) {
         playlists.put(playlist.getUuid(), playlist);
+        playlist.addAudioItem(uuid);
     }
 
     public final boolean hasPlaylist(Playlist playlist) {

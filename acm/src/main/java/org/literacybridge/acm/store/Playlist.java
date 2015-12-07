@@ -1,5 +1,6 @@
 package org.literacybridge.acm.store;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.SortedMap;
 
@@ -57,7 +58,8 @@ public class Playlist implements Persistable {
     }
 
     @Override
-    public <T extends Transaction> void commitTransaction(T t) {
+    public void commitTransaction(Transaction t) throws IOException {
+        t.getIndex().updatePlaylistName(this, t);
     }
 
     public static Builder builder() {

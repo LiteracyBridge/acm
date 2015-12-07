@@ -577,8 +577,7 @@ public class CategoryView extends ACMContainer implements Observer {
                 null, null, "");
         if (!StringUtils.isEmpty(tagName)) {
             MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
-            Playlist tag = store.newPlaylist(tagName);
-            store.commit(tag);
+            store.newPlaylist(tagName);
 
             Application.getMessageService().pumpMessage(new TagsListChanged(store.getPlaylists()));
         }
