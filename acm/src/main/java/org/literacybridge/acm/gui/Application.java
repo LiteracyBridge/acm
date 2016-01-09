@@ -24,7 +24,6 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.DataRequestService;
-import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.ResourceView.ResourceView;
@@ -33,7 +32,6 @@ import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
-import org.literacybridge.acm.index.AudioItemIndex;
 import org.literacybridge.acm.repository.AudioItemRepository.GCInfo;
 import org.literacybridge.acm.repository.WavCaching;
 import org.literacybridge.acm.store.Category;
@@ -123,22 +121,6 @@ public class Application extends JXFrame {
 
         try {
             splashScreen.setProgressLabel("Updating index...");
-            System.out.print("Building index...");
-            long start = System.currentTimeMillis();
-            //            final AudioItemIndex index = ACMConfiguration.getCurrentDB().loadAudioItemIndex();
-            //            if (index != null) {
-            //                Runtime.getRuntime().addShutdownHook(new Thread() {
-            //                    @Override public void run() {
-            //                        try {
-            //                            index.closeAndFlush();
-            //                        } catch (IOException e) {
-            //                            LOG.log(Level.WARNING, "Unable to flush Lucene index to disk on shutdown.", e);
-            //                        }
-            //                    }
-            //                });
-            //            }
-            long end = System.currentTimeMillis();
-            System.out.println("done. (" + (end - start) + " ms)");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -233,11 +215,6 @@ public class Application extends JXFrame {
             // TODO: when we have a homescreen this call will be delayed until the user selects a DB
             // TODO: createEmtpyDB should be factored out when the UI has a create DB button.
             ACMConfiguration.setCurrentDB(params.sharedACM, true);
-
-            // DB migration if necessary
-            System.out.print("Updating database ... ");
-            splash.setProgressLabel("Updating database...");
-            System.out.println("done.");
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "Unable to connect to database. Please try restarting the ACM.");

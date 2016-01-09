@@ -11,7 +11,6 @@ import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel;
 import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.UIUtils;
@@ -19,6 +18,7 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.Playlist;
 
@@ -41,16 +41,15 @@ public class AudioItemTableModel extends AbstractTableModel {
     private static String[] columns = null;
 
     protected IDataRequestResult result = null;
+    private final MetadataStore store;
 
-    private final AudioItemCache cache;
-
-    public static void initializeTableColumns( String[] initalColumnNames) {
+    public static void initializeTableColumns(String[] initalColumnNames) {
         columns = initalColumnNames;
     }
 
-    public AudioItemTableModel(IDataRequestResult result, AudioItemCache cache) {
+    public AudioItemTableModel(IDataRequestResult result) {
         this.result = result;
-        this.cache = cache;
+        this.store = ACMConfiguration.getCurrentDB().getMetadataStore();
         if (result != null) {
             result.getAudioItems();
         }
@@ -80,17 +79,13 @@ public class AudioItemTableModel extends AbstractTableModel {
     private AudioItem getFromCache(int rowIndex) {
         // we cache more items to make scrolling smooth
         ensureCached(Math.max(0, rowIndex - 20), Math.min(result.getAudioItems().size(), rowIndex + 100));
-        synchronized (cache) {
-            return cache.get(result.getAudioItems().get(rowIndex));
-        }
+        return store.getAudioItem(result.getAudioItems().get(rowIndex));
     }
 
     private void ensureCached(int fromRow, int toRow) {
-        synchronized (cache) {
-            for (int row = fromRow; row < toRow; row++) {
-                String uuid = result.getAudioItems().get(row);
-                cache.get(uuid);
-            }
+        for (int row = fromRow; row < toRow; row++) {
+            String uuid = result.getAudioItems().get(row);
+            store.getAudioItem(uuid);
         }
     }
 

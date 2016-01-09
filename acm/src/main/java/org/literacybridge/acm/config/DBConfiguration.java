@@ -30,12 +30,13 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.db.DBMetadataStore;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.Persistence.DatabaseConnection;
-import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.index.AudioItemIndex;
 import org.literacybridge.acm.index.LuceneMetadataStore;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
+import org.literacybridge.acm.store.Taxonomy;
+import org.literacybridge.acm.utils.IOUtils;
 
 @SuppressWarnings("serial")
 public class DBConfiguration extends Properties {
@@ -50,7 +51,6 @@ public class DBConfiguration extends Properties {
     private Map<Locale,String> languageLables = new HashMap<Locale, String>();
 
     private AudioItemRepository repository;
-    private AudioItemCache cache;
     private MetadataStore store;
 
     private ControlAccess controlAccess;
@@ -58,10 +58,6 @@ public class DBConfiguration extends Properties {
 
     public DBConfiguration(String acmName) {
         this.acmName = acmName;
-    }
-
-    public AudioItemCache getAudioItemCache() {
-        return cache;
     }
 
     public AudioItemRepository getRepository() {
@@ -89,10 +85,7 @@ public class DBConfiguration extends Properties {
     }
 
     public File getLuceneIndexDirectory() {
-        return new File(getACMDirectory(),
-                Constants.LuceneIndexDir + "/" + getSharedACMname()
-                + "/" + controlAccess.getCurrentZipFilename().substring(
-                        0, controlAccess.getCurrentZipFilename().length() - 4));
+        return new File(getDatabaseDirectory(), Constants.LuceneIndexDir);
     }
 
     String getTempACMsDirectory() {
@@ -160,17 +153,25 @@ public class DBConfiguration extends Properties {
             controlAccess = new ControlAccess(this);
             controlAccess.init();
 
+            final Taxonomy taxonomy = Taxonomy.createTaxonomy(sharedACMDirectory);
             if (!AudioItemIndex.indexExists(getLuceneIndexDirectory())) {
                 this.dbConn = Persistence.initialize(this);
-                this.store = new DBMetadataStore(sharedACMDirectory);
+                this.store = new DBMetadataStore(taxonomy);
+                System.out.print("Migrating database...");
+                long start = System.currentTimeMillis();
                 Persistence.maybeRunMigration();
-                this.store = new LuceneMetadataStore(sharedACMDirectory, AudioItemIndex.migrateFromDB(getLuceneIndexDirectory(), this.store.getAudioItems()));
+                this.store = //new CachingMetadataStore(
+                        new LuceneMetadataStore(taxonomy, AudioItemIndex.migrateFromDB(getLuceneIndexDirectory(), this.store.getAudioItems()));
                 dbConn.close();
+                IOUtils.deleteRecursive(new File(getDatabaseDirectory(), Persistence.DBNAME));
+                IOUtils.deleteRecursive(new File(getDatabaseDirectory(), "derby.log"));
+                long end = System.currentTimeMillis();
+                System.out.println("done. (" + (end - start) + " ms)");
             } else {
-                this.store = new LuceneMetadataStore(sharedACMDirectory, AudioItemIndex.load(getLuceneIndexDirectory()));
+                this.store = //new CachingMetadataStore(
+                        new LuceneMetadataStore(taxonomy, AudioItemIndex.load(getLuceneIndexDirectory()));
             }
 
-            this.cache = new AudioItemCache(store);
             initialized = true;
         }
     }

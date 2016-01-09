@@ -34,8 +34,8 @@ import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.SegmentInfos;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.index.SegmentInfos;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
@@ -56,7 +56,6 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.DataRequestResult;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
@@ -191,7 +190,6 @@ public class AudioItemIndex {
             writer.updateDocument(new Term(UID_FIELD, audioItem.getUuid()),
                     facetsConfig.build(doc));
         }
-        ACMConfiguration.getCurrentDB().getAudioItemCache().invalidate(audioItem.getUuid());
     }
 
     private void addAudioItem(AudioItem audioItem, IndexWriter writer) throws IOException {
@@ -251,17 +249,6 @@ public class AudioItemIndex {
         writer.setCommitData(commitData);
     }
 
-    public void updatePlaylistName(Playlist playlist, Transaction t) throws IOException {
-        Map<String, Playlist.Builder> playlists = readPlaylistNames();
-        playlists.remove(playlist.getUuid());
-        List<Playlist> updatedPlaylists = Lists.newLinkedList();
-        for (Playlist.Builder p : playlists.values()) {
-            updatedPlaylists.add(p.build());
-        }
-        updatedPlaylists.add(playlist);
-        storePlaylistNames(updatedPlaylists, t.getWriter());
-    }
-
     public void deletePlaylist(String uuid, Transaction t) throws IOException {
         Map<String, Playlist.Builder> playlists = readPlaylistNames();
         playlists.remove(uuid);
@@ -283,6 +270,16 @@ public class AudioItemIndex {
         return playlist;
     }
 
+    public void updatePlaylistName(Playlist playlist, Transaction t) throws IOException {
+        Map<String, Playlist.Builder> playlists = readPlaylistNames();
+        playlists.remove(playlist.getUuid());
+        List<Playlist> updatedPlaylists = Lists.newLinkedList();
+        for (Playlist.Builder p : playlists.values()) {
+            updatedPlaylists.add(p.build());
+        }
+        updatedPlaylists.add(playlist);
+        storePlaylistNames(updatedPlaylists, t.getWriter());
+    }
 
     public Iterable<Playlist> getPlaylists() throws IOException {
         final Map<String, Playlist.Builder> playlists = readPlaylistNames();
@@ -386,13 +383,8 @@ public class AudioItemIndex {
         }
     }
 
-    public void deleteAudioItem(final String uuid) throws IOException {
-        IndexWriter writer = newWriter();
-        try {
-            writer.deleteDocuments(new Term(UID_FIELD, uuid));
-        } finally {
-            writer.close();
-        }
+    public void deleteAudioItem(final String uuid, Transaction t) throws IOException {
+        t.getWriter().deleteDocuments(new Term(UID_FIELD, uuid));
     }
 
     private Document getDocument(final String uuid) throws IOException {

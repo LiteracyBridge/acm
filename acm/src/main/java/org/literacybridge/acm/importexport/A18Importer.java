@@ -53,7 +53,7 @@ public class A18Importer extends Importer {
 
             if (loadedMetadata.getNumberOfFields() == 0) {
                 // legacy mode
-                audioItem = store.newAudioItem(ACMConfiguration.getNewAudioItemUID());
+                audioItem = new AudioItem(ACMConfiguration.getNewAudioItemUID());
                 Metadata metadata = audioItem.getMetadata();
                 String fileName = file.getName();
                 metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
@@ -68,7 +68,7 @@ public class A18Importer extends Importer {
                 }
 
             } else {
-                audioItem = store.newAudioItem(loadedMetadata.getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue());
+                audioItem = new AudioItem(loadedMetadata.getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue());
                 Metadata metadata = audioItem.getMetadata();
                 categories.clear();
                 if (bytesToSkip + 4 < file.length()) {

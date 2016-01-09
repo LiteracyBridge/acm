@@ -52,6 +52,7 @@ import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.io.FileUtils;
 import org.jdesktop.swingx.JXDatePicker;
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 // commenting out import below so that TBLoader can stand-alone as .class 
 // until new ACM is running on Fidelis's laptop
@@ -62,7 +63,6 @@ import org.literacybridge.acm.utils.ZipUnzip;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame implements ActionListener {
-	public static final String VERSION = "r1508282";   // 20(15)/(05)/(22) #(1)
 	public static final String UNPUBLISHED_REV = "UNPUBLISHED";
 	public static final String COLLECTED_DATA_SUBDIR_NAME = "collected-data";
 	private static final String COLLECTION_SUBDIR = "/" + COLLECTED_DATA_SUBDIR_NAME;
@@ -210,7 +210,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			imageRevision = files[0].getName();
 			imageRevision = imageRevision.substring(0, imageRevision.length() - 4);
 		}
-		setTitle("TB-Loader " + VERSION + "/" + imageRevision); 
+		setTitle("TB-Loader " + Constants.ACM_VERSION + "/" + imageRevision); 
 		if (imageRevision.startsWith(TBLoader.UNPUBLISHED_REV)) {
 			Object[] options = {"Yes-refresh from published","No-keep unpublished"};
 			int answer = JOptionPane.showOptionDialog(null, "This TB Loader is running an unpublished version.\nWould you like to delete the unpublished version and use the latest published version?", "Unpublished",
@@ -1536,7 +1536,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				LogString("DEVICE:" + TBLoader.deviceID);
 				LogString("JAVA VERSION:" + System.getProperty("java.version"));
 				LogString("OPERATING SYSTEM:" + System.getProperty("os.name") +" v" + System.getProperty("os.version") + " - " + System.getProperty("os.arch"));
-				LogString("TB LOADER VERSION:" + VERSION);
+				LogString("ACM VERSION:" + Constants.ACM_VERSION);
 				LogString("IMAGE REVISION:"+imageRevision);
 				LogString("COMPUTERNAME:"+System.getenv("COMPUTERNAME"));
 				LogString("USERNAME:" + System.getenv("USERNAME"));

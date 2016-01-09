@@ -1,6 +1,5 @@
 package org.literacybridge.acm.db;
 
-import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -10,6 +9,7 @@ import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.Taxonomy;
 
 /**
  * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index
@@ -17,13 +17,8 @@ import org.literacybridge.acm.store.Playlist;
  */
 @Deprecated
 public class DBMetadataStore extends MetadataStore {
-    public DBMetadataStore(File acmDirectory) {
-        super(acmDirectory);
-    }
-
-    @Override
-    public AudioItem newAudioItem(String uid) {
-        return new AudioItem(uid);
+    public DBMetadataStore(Taxonomy taxonomy) {
+        super(taxonomy);
     }
 
     @Override

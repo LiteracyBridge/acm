@@ -6,9 +6,6 @@ import java.util.logging.Logger;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 
-import org.literacybridge.acm.store.MetadataStore.Transaction;
-import org.literacybridge.acm.store.Persistable;
-
 
 @MappedSuperclass
 /**
@@ -16,7 +13,7 @@ import org.literacybridge.acm.store.Persistable;
  *              for storing and searching all metadata.
  */
 @Deprecated
-abstract class PersistentObject implements Serializable, Persistable {
+abstract class PersistentObject implements Serializable {
     @Transient
     private Logger mLogger = Logger.getLogger(getClass().getName());
 
@@ -28,11 +25,6 @@ abstract class PersistentObject implements Serializable, Persistable {
     protected static final String SEQUENCE_VALUE = "seq_count";
 
     public abstract Object getId();
-
-    @Override
-    public void commitTransaction(Transaction t) {
-        throw new UnsupportedOperationException("Writing to Derby DB is not supported anymore.");
-    }
 
     @Override
     public int hashCode() {

@@ -20,7 +20,6 @@ import javax.persistence.Query;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
-import org.literacybridge.acm.gui.AudioItemCache;
 import org.literacybridge.acm.repository.A18DurationUtil;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
@@ -84,7 +83,7 @@ public class Persistence {
 
     private static String sPersistenceUnit = "lbPersistenceUnit";
 
-    private static String DBNAME = "literacybridge";
+    public static String DBNAME = "literacybridge";
 
     private static final String DRIVER = "eclipselink.jdbc.driver";
     private static final String LOG_LEVEL = "eclipselink.logging.level";
@@ -160,11 +159,6 @@ public class Persistence {
             }
         }
 
-        AudioItemCache cache = null;
-        if (config != null) {
-            cache = ACMConfiguration.getCurrentDB().getAudioItemCache();
-        }
-
         for (AudioItem audioItem : store.getAudioItems()) {
             // =================================================================
             // 1) calculate duration of audio items
@@ -193,10 +187,6 @@ public class Persistence {
                     audioItem.addCategory(category);
                 }
                 store.commit(audioItem);
-            }
-
-            if (cache != null) {
-                cache.add(audioItem);
             }
         }
     }

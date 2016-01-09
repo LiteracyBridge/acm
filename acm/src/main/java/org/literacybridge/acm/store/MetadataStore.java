@@ -1,6 +1,5 @@
 package org.literacybridge.acm.store;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
@@ -21,7 +20,6 @@ public abstract class MetadataStore {
 
     public abstract Transaction newTransaction();
 
-    public abstract AudioItem newAudioItem(String uid);
     public abstract AudioItem getAudioItem(String uid);
     public abstract void deleteAudioItem(String uid);
     public abstract Iterable<AudioItem> getAudioItems();
@@ -31,8 +29,8 @@ public abstract class MetadataStore {
     public abstract void deletePlaylist(String uid);
     public abstract Iterable<Playlist> getPlaylists();
 
-    public MetadataStore(File acmDirectory) {
-        taxonomy = Taxonomy.createTaxonomy(acmDirectory);
+    public MetadataStore(Taxonomy taxonomy) {
+        this.taxonomy = taxonomy;
     }
 
     public final Taxonomy getTaxonomy() {

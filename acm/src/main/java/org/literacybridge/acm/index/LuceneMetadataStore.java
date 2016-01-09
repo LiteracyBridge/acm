@@ -1,6 +1,5 @@
 package org.literacybridge.acm.index;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
@@ -12,6 +11,7 @@ import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.Taxonomy;
 
 /**
  *
@@ -21,10 +21,11 @@ import org.literacybridge.acm.store.Playlist;
  * OK generate playlist uuids
  * OK store playlist uuid->name mapping as commit data in Lucene index
  * - clean-up transactions API
- * - checkin/out Lucene index with dropbox instead of DB
+ * OK checkin/out Lucene index with dropbox instead of DB
  * - finish AudioItemCache (sort ordering)
  * - add playlist cache
  * - pass reference to MetadataStore around, instead of singleton pattern
+ * - default sort order should be insertion order
  *
  */
 public class LuceneMetadataStore extends MetadataStore {
@@ -32,14 +33,9 @@ public class LuceneMetadataStore extends MetadataStore {
 
     private final AudioItemIndex index;
 
-    public LuceneMetadataStore(File acmDirectory, AudioItemIndex index) {
-        super(acmDirectory);
+    public LuceneMetadataStore(Taxonomy taxonomy, AudioItemIndex index) {
+        super(taxonomy);
         this.index = index;
-    }
-
-    @Override
-    public AudioItem newAudioItem(String uid) {
-        return new AudioItem(uid);
     }
 
     @Override
@@ -135,10 +131,18 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public void deleteAudioItem(String uuid) {
+        Transaction t = newTransaction();
+        boolean success = false;
         try {
-            index.deleteAudioItem(uuid);
+            index.deleteAudioItem(uuid, t);
+            t.commit();
+            success = true;
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "IOException while deleting audioitem uuid=(" + uuid + ") from Lucene index.", e);
+        } finally {
+            if (!success) {
+                t.rollback();
+            }
         }
     }
 
