@@ -194,10 +194,17 @@ public class Application extends JXFrame {
     }
 
     public static void startUp(CommandLineParams params) throws Exception {
+        // TODO: This method is mostly about setting up the GUI, with a little bit of
+        // reading configuration and opening the database. That's fine, but the method
+        // is called by non-GUI utilities, just for the side effect of getting the database
+        // open. After Michael checks in his major database migration, we should factor out
+        // the configuration and database code, so the non-GUI utilities don't call this.
         boolean showUI = !params.disableUI;
-        SplashScreen splash = new SplashScreen();
+        SplashScreen splash = null;
 
         if (showUI) {
+            splash = new SplashScreen();
+
             // set look & feel
 
             // Not sure why, but making this call before setting the seaglass look and feel
@@ -226,7 +233,9 @@ public class Application extends JXFrame {
 
         //		String dbDirName = null, repositoryDirName= null;
         // initialize config and generate random ID for this acm instance
-        splash.setProgressLabel("Initializing...");
+        if (showUI) {
+            splash.setProgressLabel("Initializing...");
+        }
         ACMConfiguration.initialize(params);
 
         // init database
@@ -237,7 +246,9 @@ public class Application extends JXFrame {
 
             // DB migration if necessary
             System.out.print("Updating database ... ");
-            splash.setProgressLabel("Updating database...");
+            if (showUI) {
+                splash.setProgressLabel("Updating database...");
+            }
             Persistence.maybeRunMigration();
             System.out.println("done.");
         } catch (Exception e) {
@@ -246,10 +257,10 @@ public class Application extends JXFrame {
             System.exit(0);
         }
 
-        application = new Application(splash);
-        splash.setProgressLabel("Initialization complete. Launching UI...");
 
         if (showUI) {
+            application = new Application(splash);
+            splash.setProgressLabel("Initialization complete. Launching UI...");
             application.setSize(1000, 725);
 
             application.setVisible(true);
