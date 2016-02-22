@@ -65,6 +65,7 @@ import org.literacybridge.acm.utils.ZipUnzip;
 public class TBLoader extends JFrame implements ActionListener {
 	public static final String UNPUBLISHED_REV = "UNPUBLISHED";
 	public static final String COLLECTED_DATA_SUBDIR_NAME = "collected-data";
+	public static final String COLLECTED_DATA_DROPBOXDIR_PREFIX = "tbcd";
 	private static final String COLLECTION_SUBDIR = "/" + COLLECTED_DATA_SUBDIR_NAME;
 	private static String TEMP_COLLECTION_DIR = "";
 	private static final String SW_SUBDIR = "./software/";
@@ -79,6 +80,7 @@ public class TBLoader extends JFrame implements ActionListener {
 	private static final int STARTING_SERIALNUMBER = 0x200;
 	public static final String DEFAULT_GROUP_LABEL = "default";
 	public static final String GROUP_FILE_EXTENSION = ".grp";
+	public static final String DEVICE_FILE_EXTENSION = ".dev";
 	private static String imageRevision = "(no rev)"; 
 	private static String dateRotation;
 	private static JComboBox newDeploymentList;
@@ -180,7 +182,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		if (srnPrefix != null) {
 			TBLoader.srnPrefix = srnPrefix;
 		} else {
-			TBLoader.srnPrefix = "b-";
+			TBLoader.srnPrefix = "b-"; // for latest Talking Book hardware
 		}
 		// get image revision
 		File swPath = new File(".");
@@ -470,92 +472,61 @@ public class TBLoader extends JFrame implements ActionListener {
 			File[] files = f.listFiles(new FilenameFilter() {
 				@Override public boolean accept(File dir, String name) {
 					String lowercase = name.toLowerCase();
-					return lowercase.endsWith(".dev");
+					return lowercase.endsWith(TBLoader.DEVICE_FILE_EXTENSION);
 				}
 			});
 			if (files.length == 1) {
 				TBLoader.deviceID = files[0].getName().substring(0, files[0].getName().length() - 4).toUpperCase();
-				int deviceIDnumber = Integer.parseInt(TBLoader.deviceID.substring(1),16);
-				if (deviceIDnumber > 0x10) {
-					switch (deviceIDnumber) {
-					case 0x0b9b8e30:
-						TBLoader.deviceID = "0001";
-						break;
-					case 0x08498e7d:
-						TBLoader.deviceID = "0002";
-						break;
-					case 0x0d8839de:  // 9d8839de
-						TBLoader.deviceID = "0003";
-						break;
-					case 0x0c0a77d4:
-						TBLoader.deviceID = "0004";
-						break;
-					case 0x07ef4f18:
-						TBLoader.deviceID = "0005";
-						break;
-					case 0x0286d111:
-						TBLoader.deviceID = "0006";
-						break;
-					case 0x0db334bc:
-						TBLoader.deviceID = "0007";
-						break;
-					case 0x0a211000:
-						TBLoader.deviceID = "0008";
-						break;
-					case 0x0db6749d:
-						TBLoader.deviceID = "0000";
-						break;
-					default:
-						throw new Exception("unrecognized device id");
-					}
-					files[0].delete();
-					File newDeviceFile = new File(f,TBLoader.deviceID+".dev");
-					newDeviceFile.createNewFile();
-				}
 			} else {
-				throw new Exception("unrecognized device id");
-				/*
-				// create new device ID
-				String systemString = System.getenv("COMPUTERNAME") + System.getenv("USERNAME");
-				int hash = systemString.hashCode();
-				hash *= System.currentTimeMillis();
-				systemString = Integer.toHexString(hash);
-				systemString = systemString.substring(systemString.length()-8);
-				TBLoader.deviceID = systemString;
-				File newFile = new File(f,TBLoader.deviceID + ".dev");
-				newFile.createNewFile();
-				*/
+				JOptionPane.showMessageDialog(null, "This computer does not appear to be configured to use the TB Loader yet.  It needs a unique device id. Please contact ICT staff to get this.",
+		                "This Computer has no ID!", JOptionPane.DEFAULT_OPTION);
+				System.exit(ERROR);
 			}
+			// This is used to store collected data until finished with one TB, when it is zipped up and moved to the collectedDataFile setup below
 			TEMP_COLLECTION_DIR = LB_DIR + COLLECTION_SUBDIR + "/" + TBLoader.project;
 			f = new File(TEMP_COLLECTION_DIR);
 			f.mkdirs();
 			TBLoader.tempCollectionFile = f;
-			
-			reader = new BufferedReader(new FileReader(new File(SW_SUBDIR + "paths.txt")));
-			copyTo = "";
-			while (reader.ready()) {
-				path = reader.readLine().replaceAll("%HOMEPATH%", Matcher.quoteReplacement(homepath));
-				if ((new File(path)).exists()) {
-					copyTo = path;
-					break;						
-				}
+
+			String dropboxPath = System.getProperty("user.home") + "/Dropbox";
+			File dropboxFile = new File(dropboxPath);
+			if (!dropboxFile.exists()) {
+				JOptionPane.showMessageDialog(null, dropboxPath + " does not exist; cannot find the Dropbox path. Please contact ICT staff.",
+		                "Cannot Find Dropbox!", JOptionPane.DEFAULT_OPTION);
+				System.exit(ERROR);
 			}
-			reader.close();
+			File collectedDataFile = new File(dropboxFile,TBLoader.COLLECTED_DATA_DROPBOXDIR_PREFIX + TBLoader.deviceID);
+			if (!collectedDataFile.exists()) {
+				JOptionPane.showMessageDialog(null, collectedDataFile.getAbsolutePath() + " does not exist; cannot find the Dropbox collected data path. Please contact ICT staff.",
+		                "Cannot Find Dropbox Collected Data Folder!", JOptionPane.DEFAULT_OPTION);
+				System.exit(ERROR);
+			}
+			copyTo = collectedDataFile.getAbsolutePath();
+//			reader = new BufferedReader(new FileReader(new File(SW_SUBDIR + "paths.txt")));
+//			copyTo = "";
+//			while (reader.ready()) {
+//				path = reader.readLine().replaceAll("%HOMEPATH%", Matcher.quoteReplacement(homepath));
+//				if ((new File(path)).exists()) {
+//					copyTo = path;
+//					break;						
+//				}
+//			}
+//			reader.close();
 		} catch (Exception e) {
 			Logger.LogString(e.toString());
 			Logger.flush();
 			e.printStackTrace();
 		}
-		if (copyTo =="") {
-			Logger.LogString("***No Dropbox path not found. Storing all files locally.");
-			copyTo = TEMP_COLLECTION_DIR;
-		}
-		else {
+//		if (copyTo =="") {
+//			Logger.LogString("***No Dropbox path not found. Storing all files locally.");
+//			copyTo = TEMP_COLLECTION_DIR;
+//		}
+//		else {
 			copyTo += COLLECTION_SUBDIR;
 			dropboxCollectionFolder = copyTo;
 			copyTo += "/" + TBLoader.project;
 			new File(copyTo).mkdirs();  // creates COLLECTION_SUBDIR if good path is found
-		}
+//		}
 		pathOperationalData = copyTo + "/OperationalData/" + TBLoader.deviceID;
 		Logger.LogString("copyTo:"+copyTo);
 	}
@@ -872,7 +843,7 @@ public class TBLoader extends JFrame implements ActionListener {
 		if (!isSerialNumberFormatGood2(sn)) {			
 			int intSRN = TBLoader.STARTING_SERIALNUMBER;
 			// get latest serial number count from file
-			File f = new File(homepath + "/LiteracyBridge/"+TBLoader.deviceID+".dev"); // File f = new File(dropboxCollectionFolder,TBLoader.deviceID+".cnt");
+			File f = new File(homepath + "/LiteracyBridge/"+TBLoader.deviceID+TBLoader.DEVICE_FILE_EXTENSION); // File f = new File(dropboxCollectionFolder,TBLoader.deviceID+".cnt");
 			if (f.exists()) {
 				DataInputStream in;
 				try {
@@ -894,6 +865,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				f.delete();
 			} 
 			if (intSRN == TBLoader.STARTING_SERIALNUMBER) {
+				
 				// if file doesn't exist, use the SRN = STARTING_SERIALNUMBER
 				// TODO:raise exception and tell user to register the device or ensure file wasn't lost	
 			} 
@@ -901,7 +873,7 @@ public class TBLoader extends JFrame implements ActionListener {
 			DataOutputStream os = new DataOutputStream(new FileOutputStream(f));
 			os.writeInt(intSRN);
 			os.close();
-			FileUtils.copyFile(f, new File(dropboxCollectionFolder,TBLoader.deviceID+".dev"));
+			FileUtils.copyFile(f, new File(dropboxCollectionFolder,TBLoader.deviceID+TBLoader.DEVICE_FILE_EXTENSION));
 			String lowerSRN = String.format("%04x",intSRN);
 			sn = TBLoader.srnPrefix + TBLoader.deviceID + lowerSRN;
 		}
@@ -1710,6 +1682,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				File sourceFile = new File(sourceFullPath);
 				sourceFile.getParentFile().mkdirs();
 				ZipUnzip.zip(sourceFile, new File(targetFullPath), true);
+				FileUtils.deleteDirectory(sourceFile);
 			} catch (IOException e) {
 				Logger.LogString("Unable to zip device files:" + e.getMessage());
 				Logger.flush();
@@ -1758,7 +1731,7 @@ public class TBLoader extends JFrame implements ActionListener {
 				File sourceFile = new File(sourceFullPath);
 				sourceFile.getParentFile().mkdirs();
 				ZipUnzip.zip(sourceFile, new File(targetFullPath), true);
-				
+				FileUtils.deleteDirectory(sourceFile);
 				
 				if (hasCorruption) {
 					TBLoader.status2.setText(TBLoader.status2.getText() + "Reformatting");
