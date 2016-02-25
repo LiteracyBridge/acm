@@ -145,7 +145,7 @@ public class PersistentAudioItemStatistic extends PersistentObject {
     }
     
     public static PersistentAudioItemStatistic getFromDatabase(String deviceId) {
-        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
+        EntityManager em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
         PersistentAudioItemStatistic result = null;
         try {
             Query findObject = em.createQuery("SELECT o FROM PersistentAudioItemStatistic o WHERE o.device_id = '" + deviceId + "'");

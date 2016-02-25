@@ -41,7 +41,7 @@ public class DBExporter {
             Application.startUp(params);
             DBExporter.hasACMStarted = true;
         } else
-            ACMConfiguration.setCurrentDB(dbName, false);
+            ACMConfiguration.getInstance().setCurrentDB(dbName, false);
         project = dbName.substring(TBBuilder.ACM_PREFIX.length());
     }
 
@@ -72,7 +72,7 @@ public class DBExporter {
             CSVWriter writer = new CSVWriter(new FileWriter(exportFile), ',');
         //String[] header = {"ID","Name","Project"};
             writer.writeNext(header);
-            List <Locale> languages = ACMConfiguration.getCurrentDB().getAudioLanguages();
+            List <Locale> languages = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages();
             for (Locale l:languages) {
                 String languageCode = l.getLanguage();
                 String languageLabel = LanguageUtil.getLocalizedLanguageName(l);

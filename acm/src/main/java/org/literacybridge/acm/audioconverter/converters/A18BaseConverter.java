@@ -53,7 +53,7 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
 				}
 			}
 			
-			if (tmpDir != null && !tmpDir.equals(targetDir) && targetDir.getAbsolutePath().startsWith(ACMConfiguration.getCurrentDB().getSharedACMDirectory().getAbsolutePath())) {
+			if (tmpDir != null && !tmpDir.equals(targetDir) && targetDir.getAbsolutePath().startsWith(ACMConfiguration.getInstance().getCurrentDB().getSharedACMDirectory().getAbsolutePath())) {
 				// targetDir should never be in Dropbox because of some strange interaction with Dropbox that has caused bad A18 output 
 				ultimateDestDir = targetDir;
 				targetDir = tmpDir;

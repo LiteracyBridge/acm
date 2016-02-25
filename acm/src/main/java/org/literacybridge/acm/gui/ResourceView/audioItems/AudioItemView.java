@@ -80,7 +80,7 @@ public class AudioItemView extends Container implements Observer {
 		audioItemTable.setTransferHandler(new AudioItemTransferHandler());
 
 		// use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
-		if (ACMConfiguration.getCurrentDB().getControlAccess().isSandbox()) {
+		if (ACMConfiguration.getInstance().getCurrentDB().getControlAccess().isSandbox()) {
 			audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
 					Color.LIGHT_GRAY, new Color(237, 243, 254)));
 		} else  {
@@ -123,7 +123,7 @@ public class AudioItemView extends Container implements Observer {
 	public void update(Observable o, Object arg) {
 		if (arg instanceof IDataRequestResult) {
 			currResult = (IDataRequestResult) arg;
-			updateTable(new AudioItemTableModel(currResult, ACMConfiguration.getCurrentDB().getAudioItemCache()));
+			updateTable(new AudioItemTableModel(currResult, ACMConfiguration.getInstance().getCurrentDB().getAudioItemCache()));
 		}
 
 		if (arg instanceof UILanguageChanged) {
@@ -356,7 +356,7 @@ public class AudioItemView extends Container implements Observer {
 
 	// Special handlers
 	public void setData(IDataRequestResult result) {
-		updateTable(new AudioItemTableModel(result, ACMConfiguration.getCurrentDB().getAudioItemCache()));
+		updateTable(new AudioItemTableModel(result, ACMConfiguration.getInstance().getCurrentDB().getAudioItemCache()));
 		mouseListener.setCurrentResult(result);
 	}
 

@@ -152,7 +152,7 @@ public class ControlAccess {
 			@SuppressWarnings("unused")
 			LockACM l = new LockACM(config);
 		} catch (RuntimeException e) {
-			if (!ACMConfiguration.isDisableUI())
+			if (!ACMConfiguration.getInstance().isDisableUI())
 				JOptionPane.showMessageDialog(null, "This ACM is already opened.");
 			else
 				System.out.println("This ACM is already opened!!!");
@@ -162,12 +162,12 @@ public class ControlAccess {
 			dbInfo = new DBInfo(config);
 		}
 		if (dbInfo.isCheckedOut()) {
-			if (ACMConfiguration.isForceSandbox()) {
+			if (ACMConfiguration.getInstance().isForceSandbox()) {
 				System.out.println("Sandbox mode forced, but DB is currently checked out. Check DB in and restart with sandbox flag.");
 				System.exit(0);
 			}
 			setSandbox(false);
-			if (!ACMConfiguration.isDisableUI()) {
+			if (!ACMConfiguration.getInstance().isDisableUI()) {
 				JOptionPane.showMessageDialog(null,"You have already checked out this ACM.\nYou can now continue making changes to it.");
 			}
 		} else {
@@ -292,11 +292,11 @@ public class ControlAccess {
 			online = false;
 			sandboxMode = true;
 			if (setCurrentFileToLastModified()) {
-				if (!ACMConfiguration.isDisableUI()) {
+				if (!ACMConfiguration.getInstance().isDisableUI()) {
 					JOptionPane.showMessageDialog(null,"Cannot connect to Literacy Bridge server.");
 				}
 			} else {
-				if (!ACMConfiguration.isDisableUI()) {
+				if (!ACMConfiguration.getInstance().isDisableUI()) {
 					JOptionPane.showMessageDialog(null,"Cannot connect to Literacy Bridge server and no available database. Shutting down.");
 				}
 				System.exit(0);
@@ -312,7 +312,7 @@ public class ControlAccess {
 				} catch (IOException e) {
 					dbAvailable = false;
 					Object[] options = {"Try again", "Use Demo Mode"};
-					if (!ACMConfiguration.isDisableUI()) {
+					if (!ACMConfiguration.getInstance().isDisableUI()) {
 						onlineChoice = JOptionPane.showOptionDialog(null, "Cannot reach Literacy Bridge web server.  Do you want to get online now and try again or use Demo Mode?", "Cannot Connect to Server",JOptionPane.YES_NO_CANCEL_OPTION,
 								JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
 					}
@@ -323,7 +323,7 @@ public class ControlAccess {
 			if (dbAvailable && !haveLatestDB()) {
 				if (getCurrentZipFilename() == null) {
 					// no zip exists at all -- must shut down
-					if (!ACMConfiguration.isDisableUI()) {
+					if (!ACMConfiguration.getInstance().isDisableUI()) {
 						JOptionPane.showMessageDialog(null,"There is no copy of this ACM database on this computer.\nIt may be that the database has not been uploaded and downloaded yet.\nShutting down.");
 					}
 					System.exit(0);
@@ -331,7 +331,7 @@ public class ControlAccess {
 					outdatedDB = true;
 				}
 			}
-			if (!userHasWriteAccess() || !dbAvailable || outdatedDB || ACMConfiguration.isForceSandbox()) {
+			if (!userHasWriteAccess() || !dbAvailable || outdatedDB || ACMConfiguration.getInstance().isForceSandbox()) {
 				sandboxMode = true;
 			}
 			if (outdatedDB) {
@@ -340,7 +340,7 @@ public class ControlAccess {
 				dialogMessage = "Another user currently has write access to the ACM.\n";
 				dialogMessage += getPosessor() + "\n";
 			}
-			if (online && sandboxMode && userHasWriteAccess() && !ACMConfiguration.isDisableUI()) {
+			if (online && sandboxMode && userHasWriteAccess() && !ACMConfiguration.getInstance().isDisableUI()) {
 				Object[] optionsNoForce = {"Use Demo Mode", "Shutdown"};
 
 				int n = JOptionPane.showOptionDialog(null, dialogMessage,"Cannot Get Write Access",JOptionPane.YES_NO_CANCEL_OPTION,
@@ -352,7 +352,7 @@ public class ControlAccess {
 			}
 			if (!sandboxMode) {
 				int n = 0;
-				if (!ACMConfiguration.isDisableUI()) {
+				if (!ACMConfiguration.getInstance().isDisableUI()) {
 					if (getCurrentZipFilename().equalsIgnoreCase(DB_DOES_NOT_EXIST)) {
 						JOptionPane.showMessageDialog(null,"ACM does not exist yet. Creating a new ACM and giving you write access.");
 					} else {
@@ -375,7 +375,7 @@ public class ControlAccess {
 						} catch (IOException e) {
 							dbAvailable = false;
 							sandboxMode = true;
-							if (!ACMConfiguration.isDisableUI()) {
+							if (!ACMConfiguration.getInstance().isDisableUI()) {
 								Object[] options = {"Try again", "Use Demo Mode"};
 								onlineChoice = JOptionPane.showOptionDialog(null, "Cannot reach Literacy Bridge web server.  Do you want to get online now and try again or use Demo Mode?", "Cannot Connect to Server",JOptionPane.YES_NO_CANCEL_OPTION,
 										JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
@@ -386,7 +386,7 @@ public class ControlAccess {
 					} while (onlineChoice == 0);
 
 
-					if (!dbAvailable && !sandboxMode && !ACMConfiguration.isDisableUI()) {
+					if (!dbAvailable && !sandboxMode && !ACMConfiguration.getInstance().isDisableUI()) {
 						JOptionPane.showMessageDialog(null,"Sorry, but another user must have just checked out this ACM a moment ago!\nTry contacting " + getPosessor() + "\nAfter clicking OK, the ACM will shutdown.");
 						System.exit(0);
 					} else if (!sandboxMode) {
@@ -399,7 +399,7 @@ public class ControlAccess {
 		}
 		setSandbox(sandboxMode);
 		if (sandboxMode) {
-			if (!ACMConfiguration.isDisableUI()) {
+			if (!ACMConfiguration.getInstance().isDisableUI()) {
 				JOptionPane.showMessageDialog(null,"The ACM is running in demonstration mode.\nPlease remember that your changes will not be saved.");
 			}
 		}
@@ -409,7 +409,7 @@ public class ControlAccess {
 		String writeUser, thisUser;
 		boolean userHasWriteAccess = false;
 
-		thisUser = ACMConfiguration.getUserName().trim();
+		thisUser = ACMConfiguration.getInstance().getUserName().trim();
 		if (thisUser == null) {
 			// No User Name found in config.properties.  Forcing Read-Only mode.
 			return false;
@@ -459,7 +459,7 @@ public class ControlAccess {
 		}
 
 
-		url = new URL("http://literacybridge.org/checkout.php?db=" + db + "&action=" + action + "&name=" + ACMConfiguration.getUserName() + "&contact=" + ACMConfiguration.getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
+		url = new URL("http://literacybridge.org/checkout.php?db=" + db + "&action=" + action + "&name=" + ACMConfiguration.getInstance().getUserName() + "&contact=" + ACMConfiguration.getInstance().getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
 		InputStream in;
 		in = url.openStream();
 		Scanner scanner = new Scanner(in);
@@ -509,7 +509,7 @@ public class ControlAccess {
 			computerName = "UNKNOWN";
 		}
 
-		url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&action=" + action + "&key=" + key + "&filename=" + filename + "&name=" + ACMConfiguration.getUserName() + "&contact=" + ACMConfiguration.getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
+		url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&action=" + action + "&key=" + key + "&filename=" + filename + "&name=" + ACMConfiguration.getInstance().getUserName() + "&contact=" + ACMConfiguration.getInstance().getUserContact()+ "&version=" + Constants.ACM_VERSION + "&computername=" + computerName);
 		InputStream in;
 		in = url.openStream();
 		Scanner scanner = new Scanner(in);
@@ -533,7 +533,7 @@ public class ControlAccess {
 		File inFolder= config.getDatabaseDirectory();
 		File outFile= new File (config.getSharedACMDirectory(), getNextZipFilename());
 		int n;
-		if (!ACMConfiguration.isDisableUI()) {
+		if (!ACMConfiguration.getInstance().isDisableUI()) {
 			Object[] optionsSaveWork = {"Save Work", "Throw Away Your Latest Changes"};
 			n = JOptionPane.showOptionDialog(null, "If you made a mistake you can throw away all your changes now.", "Save Work?",JOptionPane.YES_NO_CANCEL_OPTION,
 					JOptionPane.QUESTION_MESSAGE, null, optionsSaveWork, optionsSaveWork[0]);
@@ -554,7 +554,7 @@ public class ControlAccess {
 					ZipUnzip.zip(inFolder, outFile);
 				} catch (IOException e) {
 					status = false;
-					if (!ACMConfiguration.isDisableUI()) {
+					if (!ACMConfiguration.getInstance().isDisableUI()) {
 						Object[] options = {"Keep Your Changes", "Throw Away Your Latest Changes"};
 						n = JOptionPane.showOptionDialog(null, "There is a problem getting your changes into Dropbox.  Do you want to keep your changes and try to get this problem fixed or throw away your latest changes?", "Problem creating zip file on Dropbox",JOptionPane.YES_NO_CANCEL_OPTION,
 								JOptionPane.WARNING_MESSAGE, null, options, options[0]);
@@ -569,7 +569,7 @@ public class ControlAccess {
 			}
 			try {
 				status = checkInDB(config.getSharedACMname(), key, filename);
-				if (!status && saveWork && !ACMConfiguration.isDisableUI()) {
+				if (!status && saveWork && !ACMConfiguration.getInstance().isDisableUI()) {
 					//Object[] options = {"Force your version","Throw Away Your Latest Changes"};
 					JOptionPane.showMessageDialog(null, "Someone has forced control of this ACM, so you cannot check-in your changes.\nIf you are worried about losing a lot of work, contact Cliff and he may be able to save you and your work.");
 					saveWork = false;  // zip is alredy written to dropbox an could be recovered.  !saveWork & status will delete checkoutfile marker but not any zips.
@@ -580,7 +580,7 @@ public class ControlAccess {
 				}
 			} catch (IOException e) {
 				status = false;
-				if (!ACMConfiguration.isDisableUI()) {
+				if (!ACMConfiguration.getInstance().isDisableUI()) {
 					Object[] options = {"Try again", "Shutdown"};
 					n = JOptionPane.showOptionDialog(null, "Cannot reach Literacy Bridge web server.\nDo you want to get online and try again or shutdown and try later?", "Cannot Connect to Server",JOptionPane.YES_NO_CANCEL_OPTION,
 							JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
@@ -588,7 +588,7 @@ public class ControlAccess {
 			}
 		}
 
-		if (!ACMConfiguration.isDisableUI()) {
+		if (!ACMConfiguration.getInstance().isDisableUI()) {
 			if (status && saveWork)
 				JOptionPane.showMessageDialog(null,"Your changes have been checked in.\n\nPlease stay online for a few minutes so your changes\ncan be uploaded (until Dropbox is 'Up to date').");
 			else if (saveWork && !status)

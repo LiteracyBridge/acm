@@ -33,7 +33,7 @@ public abstract class PersistentObject implements Serializable, Persistable {
         EntityManager em = null;
 
         try {
-            em = ACMConfiguration.getCurrentDB().getEntityManager();
+            em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
             EntityTransaction t = null;
             try {
                 t = em.getTransaction();
@@ -78,7 +78,7 @@ public abstract class PersistentObject implements Serializable, Persistable {
         EntityManager em = null;
 
         try {
-            em = ACMConfiguration.getCurrentDB().getEntityManager();
+            em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
             EntityTransaction t = null;
             try {
                 t = em.getTransaction();

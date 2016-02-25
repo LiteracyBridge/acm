@@ -3,12 +3,10 @@ package org.literacybridge.acm;
 import java.io.File;
 
 public class Constants {
-	public final static String ACM_VERSION					= "r1512150";
+	public final static String ACM_VERSION					= "r1602290";   // yy mm dd n
 	public final static String LiteracybridgeHomeDirName	= "LiteracyBridge";
 	public final static String ACM_DIR_NAME			    	= "ACM";
 	public final static String CACHE_DIR_NAME			    = "cache";
-	public final static String DefaultSharedDirName1		= "Dropbox";
-	public final static String DefaultSharedDirName2		= "My Documents/Dropbox";
 	public final static String TempDir 						= "temp";
 	public final static String DBHomeDir 					= "db";
 	public final static String RepositoryHomeDir 			= "content";
