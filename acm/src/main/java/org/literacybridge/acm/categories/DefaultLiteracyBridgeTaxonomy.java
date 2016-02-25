@@ -59,7 +59,7 @@ public class DefaultLiteracyBridgeTaxonomy {
 		TaxonomyRevision taxonomy = loadTaxonomy(DefaultLiteracyBridgeTaxonomy.class.getResourceAsStream("/" + YAML_FILE_NAME));
 
 		// check if there is a newer one in the
-		File acmTaxonomyFile = new File(ACMConfiguration.getCurrentDB().getSharedACMDirectory(), YAML_FILE_NAME);
+		File acmTaxonomyFile = new File(ACMConfiguration.getInstance().getCurrentDB().getSharedACMDirectory(), YAML_FILE_NAME);
 		if (acmTaxonomyFile.exists()) {
 			FileInputStream in = null;
 			try {

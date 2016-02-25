@@ -44,7 +44,7 @@ public class TBBuilderUI extends JFrame implements ActionListener {
 
 	private void fillProjectList(JComboBox l) {
 		l.addItem("Select Project");
-		dropbox = new File(Constants.USER_HOME_DIR,Constants.DefaultSharedDirName1);
+		dropbox = ACMConfiguration.getInstance().getGlobalShareDir();
 		// TODO: should be tied into ACMConfiguration.discoverDBs() -- but this means refactoring ACM init to not be DB-specific at first
 		if (dropbox.exists()) {
 			File[] dirs = dropbox.listFiles(new FileFilter() {
@@ -95,7 +95,7 @@ public class TBBuilderUI extends JFrame implements ActionListener {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-					ACMConfiguration.closeCurrentDB();
+					ACMConfiguration.getInstance().closeCurrentDB();
 			}
 		});
 
@@ -251,7 +251,7 @@ public class TBBuilderUI extends JFrame implements ActionListener {
 						} 
 					} else {
 						try {
-							ACMConfiguration.setCurrentDB(TBBuilder.ACM_PREFIX + projectList.getSelectedItem().toString(), false);
+							ACMConfiguration.getInstance().setCurrentDB(TBBuilder.ACM_PREFIX + projectList.getSelectedItem().toString(), false);
 						} catch (Exception e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();

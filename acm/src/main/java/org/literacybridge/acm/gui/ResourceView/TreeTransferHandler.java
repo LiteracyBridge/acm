@@ -145,7 +145,7 @@ public class TreeTransferHandler extends TransferHandler {
 
 				EntityManager em = null;
 				try {
-					em = ACMConfiguration.getCurrentDB().getEntityManager();
+					em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
 					EntityTransaction transaction = em.getTransaction();
 					transaction.begin();
 					try {

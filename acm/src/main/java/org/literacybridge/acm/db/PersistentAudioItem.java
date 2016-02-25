@@ -162,7 +162,7 @@ public class PersistentAudioItem extends PersistentObject {
 
     @Override
     protected void afterCommitHook() {
-    	DBConfiguration db = ACMConfiguration.getCurrentDB();
+    	DBConfiguration db = ACMConfiguration.getInstance().getCurrentDB();
     	if (db != null) {
 	    	AudioItemIndex index = db.getAudioItemIndex();
 	    	if (index != null) {
@@ -189,7 +189,7 @@ public class PersistentAudioItem extends PersistentObject {
     }
 
     public static PersistentAudioItem getFromDatabase(String uuid) {
-        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
+        EntityManager em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
         PersistentAudioItem result = null;
         try {
             Query findObject = em.createQuery("SELECT o FROM PersistentAudioItem o WHERE o.uuid = '" + uuid + "'");

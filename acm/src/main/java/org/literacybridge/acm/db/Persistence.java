@@ -155,10 +155,10 @@ public class Persistence {
             }
         }
 
-        DBConfiguration config = ACMConfiguration.getCurrentDB();
+        DBConfiguration config = ACMConfiguration.getInstance().getCurrentDB();
         AudioItemCache cache = null;
         if (config != null) {
-            cache = ACMConfiguration.getCurrentDB().getAudioItemCache();
+            cache = ACMConfiguration.getInstance().getCurrentDB().getAudioItemCache();
         }
 
         for (AudioItem audioItem : AudioItem.getFromDatabase()) {

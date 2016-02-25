@@ -29,7 +29,7 @@ public class WavCaching {
 
     private void findUncachedWaveFiles() {
         System.out.print("Finding uncached wave files...");
-        AudioItemRepository repository = ACMConfiguration.getCurrentDB()
+        AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB()
                 .getRepository();
 
         for (AudioItem audioItem : AudioItem.getFromDatabase()) {
@@ -57,7 +57,7 @@ public class WavCaching {
                 try {
                     itemBeingProcessed = item.getUuid();
                     System.out.println("Converting " + itemBeingProcessed);
-                    ACMConfiguration.getCurrentDB().getRepository()
+                    ACMConfiguration.getInstance().getCurrentDB().getRepository()
                     .convert(item, AudioFormat.WAV);
                 } catch (ConversionException e) {
                     e.printStackTrace();

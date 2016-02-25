@@ -119,7 +119,7 @@ public class TagsListPopupMenu extends JPopupMenu {
 		exportTag.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				File listDirectory = new File(ACMConfiguration.getCurrentDB()
+				File listDirectory = new File(ACMConfiguration.getInstance().getCurrentDB()
 						.getTBLoadersDirectory(),
 						"TB_Options/activeLists");
 				LinkedHashMap<String, PersistentCategory> categories = new LinkedHashMap();
@@ -134,7 +134,7 @@ public class TagsListPopupMenu extends JPopupMenu {
 						previousPackageName = packageName;
 						//TODO: need to accommodate multiple message lists (or profiles) in a single package/image
 						//TODO: each new message list would be numbered
-						File dir = new File(ACMConfiguration.getCurrentDB().getTBLoadersDirectory(), "packages/"
+						File dir = new File(ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory(), "packages/"
 								+ packageName + "/messages/lists/" + TBBuilder.firstMessageListName);
 						if (!dir.exists()) {
 							dir.mkdirs();

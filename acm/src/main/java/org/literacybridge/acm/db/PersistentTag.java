@@ -92,7 +92,7 @@ public class PersistentTag extends PersistentObject {
     }
     
     public static PersistentTag getFromDatabase(String uuid) {
-        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
+        EntityManager em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
         PersistentTag result = null;
         try {
             Query findObject = em.createQuery("SELECT o FROM PersistentTag o WHERE o.uuid = '" + uuid + "'");

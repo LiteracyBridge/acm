@@ -170,7 +170,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 			}
 
 			@Override public String getValue(AudioItem audioItem) {
-				File file = ACMConfiguration.getCurrentDB().getRepository().getAudioFile(audioItem, AudioFormat.A18);
+				File file = ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioFormat.A18);
 				return file != null ? file.getName() : null;
 			}
 

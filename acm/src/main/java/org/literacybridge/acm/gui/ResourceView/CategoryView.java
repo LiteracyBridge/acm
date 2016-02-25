@@ -372,7 +372,7 @@ public class CategoryView extends ACMContainer implements Observer {
 	}
 
 	private void createLanguageList() {
-		List<Locale> audioLanguages = ACMConfiguration.getCurrentDB().getAudioLanguages();
+		List<Locale> audioLanguages = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages();
 		for (Locale locale : audioLanguages) {
 			languagesList.add(new LanguageLabel(locale));
 		}

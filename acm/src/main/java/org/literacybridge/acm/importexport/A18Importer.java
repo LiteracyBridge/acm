@@ -54,7 +54,7 @@ public class A18Importer extends Importer {
 			
 			if (metadata.getNumberOfFields() == 0) {
 				// legacy mode
-				audioItem = new AudioItem(ACMConfiguration.getNewAudioItemUID());
+				audioItem = new AudioItem(ACMConfiguration.getInstance().getNewAudioItemUID());
 				String fileName = file.getName();
 				metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
 				metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER, new MetadataValue<String>(audioItem.getUuid()));
@@ -109,7 +109,7 @@ public class A18Importer extends Importer {
 				return;
 			}
 			
-			AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
+			AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
 			repository.storeAudioFile(audioItem, file);
 			
 			audioItem.commit();

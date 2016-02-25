@@ -68,7 +68,7 @@ public class CmdLineImporter {
 			System.exit(2);
 		}
 
-		if (ACMConfiguration.getCurrentDB().getControlAccess().isSandbox()) {
+		if (ACMConfiguration.getInstance().getCurrentDB().getControlAccess().isSandbox()) {
 			System.err.println("Unable to acquire writer access.");
 			System.exit(3);
 		}
@@ -81,7 +81,7 @@ public class CmdLineImporter {
 			System.out.println("At least one file could not be imported.");
 		}
 
-		ACMConfiguration.getCurrentDB().getControlAccess().updateDB();
+		ACMConfiguration.getInstance().getCurrentDB().getControlAccess().updateDB();
 		System.exit(success ? 0 : 4);
 	}
 

@@ -105,7 +105,7 @@ public class DataRequestService implements IDataRequestService {
 	}
 
 	private AudioItemIndex getAudioItemIndex() {
-		DBConfiguration db = ACMConfiguration.getCurrentDB();
+		DBConfiguration db = ACMConfiguration.getInstance().getCurrentDB();
 		if (db != null) {
 			return db.getAudioItemIndex();
 		}

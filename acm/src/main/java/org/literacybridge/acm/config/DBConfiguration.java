@@ -90,7 +90,7 @@ public class DBConfiguration extends Properties {
     }
 
     public static File getLiteracyBridgeHomeDir() {
-        return ACMConfiguration.LB_HOME_DIR;
+        return ACMConfiguration.getInstance().LB_HOME_DIR;
     }
 
     public File getLuceneIndexDirectory() {
@@ -191,7 +191,7 @@ public class DBConfiguration extends Properties {
 
     public File getSharedACMDirectory() {
         if (sharedACMDirectory == null) {
-            sharedACMDirectory = new File(ACMConfiguration.getGlobalShareDir(), getSharedACMname());
+            sharedACMDirectory = new File(ACMConfiguration.getInstance().getGlobalShareDir(), getSharedACMname());
         }
         return sharedACMDirectory;
     }
@@ -345,7 +345,7 @@ public class DBConfiguration extends Properties {
 
 
         if (getSharedACMname() != null && (getDatabaseDirectory() == null || getRepositoryDirectory() == null)) {
-            File fACM = new File(ACMConfiguration.getGlobalShareDir(), getSharedACMname());
+            File fACM = new File(ACMConfiguration.getInstance().getGlobalShareDir(), getSharedACMname());
             if (fACM.exists()) {
                 /*				File fDB = new File(fACM,Constants.DBHomeDir);
 				setDatabaseDirectory(fDB);

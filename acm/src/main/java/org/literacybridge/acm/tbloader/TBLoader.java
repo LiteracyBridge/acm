@@ -488,14 +488,13 @@ public class TBLoader extends JFrame implements ActionListener {
 			f.mkdirs();
 			TBLoader.tempCollectionFile = f;
 
-			String dropboxPath = System.getProperty("user.home") + "/Dropbox";
-			File dropboxFile = new File(dropboxPath);
-			if (!dropboxFile.exists()) {
-				JOptionPane.showMessageDialog(null, dropboxPath + " does not exist; cannot find the Dropbox path. Please contact ICT staff.",
+			File dropboxDir = ACMConfiguration.getInstance().getGlobalShareDir();
+			if (!dropboxDir.exists()) {
+				JOptionPane.showMessageDialog(null, dropboxDir.getAbsolutePath() + " does not exist; cannot find the Dropbox path. Please contact ICT staff.",
 		                "Cannot Find Dropbox!", JOptionPane.DEFAULT_OPTION);
 				System.exit(ERROR);
 			}
-			File collectedDataFile = new File(dropboxFile,TBLoader.COLLECTED_DATA_DROPBOXDIR_PREFIX + TBLoader.deviceID);
+			File collectedDataFile = new File(dropboxDir,TBLoader.COLLECTED_DATA_DROPBOXDIR_PREFIX + TBLoader.deviceID);
 			if (!collectedDataFile.exists()) {
 				JOptionPane.showMessageDialog(null, collectedDataFile.getAbsolutePath() + " does not exist; cannot find the Dropbox collected data path. Please contact ICT staff.",
 		                "Cannot Find Dropbox Collected Data Folder!", JOptionPane.DEFAULT_OPTION);
