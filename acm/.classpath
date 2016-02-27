@@ -4,14 +4,14 @@
 	<classpathentry kind="src" path="src/main/resources"/>
 	<classpathentry kind="lib" path="ant/ant-contrib-1.0b3.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang-commons-lang.jar"/>
-	<classpathentry kind="lib" path="lib/org.apache.lucene-lucene-core.jar" sourcepath="/Users/michael/svn/lucene/tags/lucene_solr_4_7_2/lucene"/>
+	<classpathentry kind="lib" path="lib/org.apache.lucene-lucene-core.jar"/>
 	<classpathentry kind="lib" path="lib/org.slf4j-slf4j-api.jar"/>
 	<classpathentry kind="lib" path="lib/com.google.collections-google-collections.jar"/>
 	<classpathentry kind="lib" path="lib/args4j-args4j.jar"/>
 	<classpathentry kind="lib" path="lib/commons-io-commons-io.jar"/>
 	<classpathentry kind="lib" path="lib/net.sf.opencsv-opencsv.jar"/>
-	<classpathentry kind="lib" path="lib/org.apache.lucene-lucene-analyzers-common.jar" sourcepath="/Users/michael/svn/lucene/tags/lucene_solr_4_7_2/lucene"/>
-	<classpathentry kind="lib" path="lib/org.apache.lucene-lucene-facet.jar" sourcepath="/Users/michael/svn/lucene/tags/lucene_solr_4_7_2/lucene"/>
+	<classpathentry kind="lib" path="lib/org.apache.lucene-lucene-analyzers-common.jar"/>
+	<classpathentry kind="lib" path="lib/org.apache.lucene-lucene-facet.jar"/>
 	<classpathentry kind="lib" path="lib/org.apache.lucene-lucene-queries.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/jakarta-regexp-jakarta-regexp.jar"/>
