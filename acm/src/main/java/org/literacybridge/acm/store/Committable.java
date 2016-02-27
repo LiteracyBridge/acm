@@ -10,8 +10,14 @@ public abstract class Committable {
     // if true, this object is in an undefined state due to a failed rollback attempt, and must be discarded.
     private boolean rollbackFailed;
 
+    private CommitListener listener;
+
     public Committable() {
         this.rollbackFailed = false;
+    }
+
+    public void setCommitListener(CommitListener listener) {
+        this.listener = listener;
     }
 
     /**
@@ -28,6 +34,9 @@ public abstract class Committable {
         boolean success = false;
         try {
             doCommit(t);
+            if (listener != null) {
+                listener.afterCommit();
+            }
             success = true;
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "IOException while committing Committable: " + this.toString(), e);
@@ -48,6 +57,9 @@ public abstract class Committable {
         boolean success = false;
         try {
             doRollback(t);
+            if (listener != null) {
+                listener.afterRollback();
+            }
             success = true;
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "IOException while rolling back Committable: " + this.toString(), e);
@@ -57,4 +69,9 @@ public abstract class Committable {
     }
 
     public abstract void doRollback(Transaction t) throws IOException;
+
+    public abstract static class CommitListener {
+        public abstract void afterCommit();
+        public abstract void afterRollback();
+    }
 }

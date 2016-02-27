@@ -22,7 +22,7 @@ public class Transaction {
         this.objects = Sets.newLinkedHashSet();
     }
 
-    public final void commit() {
+    public final void commit() throws IOException {
         boolean success = false;
         try {
             for (Committable o : objects) {
@@ -35,8 +35,6 @@ public class Transaction {
                 try {
                     writer.close();
                     success2 = true;
-                } catch (IOException e) {
-                    LOG.log(Level.SEVERE, "IOException while commiting a transaction.", e);
                 } finally {
                     if (!success2) {
                         rollback();
@@ -48,11 +46,9 @@ public class Transaction {
         }
     }
 
-    public final void rollback() {
+    public final void rollback() throws IOException {
         try {
             writer.rollback();
-        } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while rolling back a transaction.", e);
         } finally {
             for (Committable o : objects) {
                 o.rollback(this);

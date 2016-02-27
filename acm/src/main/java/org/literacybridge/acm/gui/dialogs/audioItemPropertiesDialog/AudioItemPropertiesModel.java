@@ -20,10 +20,13 @@ import static org.literacybridge.acm.store.MetadataSpecification.LB_TARGET_AUDIE
 import static org.literacybridge.acm.store.MetadataSpecification.LB_TIMING;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.table.AbstractTableModel;
 
@@ -44,6 +47,8 @@ import org.literacybridge.acm.store.RFC3066LanguageCode;
 import com.google.common.collect.Maps;
 
 public class AudioItemPropertiesModel extends AbstractTableModel {
+    private static final Logger LOG = Logger.getLogger(AudioItemPropertiesModel.class.getName());
+
     public static final String NO_LONGER_USED = "NO LONGER USED";
     static final String STATUS_NAME = "Status";
     public static final String[] STATUS_VALUES = {"Current", NO_LONGER_USED};
@@ -294,7 +299,11 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
         Metadata metadata = audioItem.getMetadata();
         incrementRevision(metadata);
         MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
-        store.commit(audioItem);
+        try {
+            store.commit(audioItem);
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "Unable to commit changes to AudioItem " + audioItem.getUuid(), e);
+        }
     }
 
     protected static void setStringValue(MetadataField<String> field, Metadata metadata, String value) {
@@ -306,7 +315,11 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
         MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
         Metadata metadata = audioItem.getMetadata();
         metadata.setMetadataField(field, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(newLocale.getLanguage())));
-        store.commit(audioItem);
+        try {
+            store.commit(audioItem);
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "Unable to commit changes to AudioItem " + audioItem.getUuid(), e);
+        }
     }
 
     private static void incrementRevision(Metadata metadata) {

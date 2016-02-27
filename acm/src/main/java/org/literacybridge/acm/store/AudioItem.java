@@ -139,6 +139,9 @@ public class AudioItem extends Committable {
 
     @Override
     public void doRollback(Transaction t) throws IOException {
+        categories.clear();
+        playlists.clear();
+        metadata.clear();
         t.getIndex().refresh(this);
     }
 }

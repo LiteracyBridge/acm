@@ -5,7 +5,10 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.AbstractListModel;
 import javax.swing.JButton;
@@ -24,6 +27,8 @@ import org.literacybridge.acm.store.Category;
 import com.google.common.collect.Lists;
 
 public class CategoriesAndTagsEditDialog extends ACMDialog {
+    private static final Logger LOG = Logger.getLogger(CategoriesAndTagsEditDialog.class.getName());
+
     private final AudioItem audioItem;
     private final JList categories;
 
@@ -56,7 +61,11 @@ public class CategoriesAndTagsEditDialog extends ACMDialog {
                 for (Object selected : categories.getSelectedValues()) {
                     audioItem.removeCategory((Category) selected);
                 }
-                ACMConfiguration.getCurrentDB().getMetadataStore().commit(audioItem);
+                try {
+                    ACMConfiguration.getCurrentDB().getMetadataStore().commit(audioItem);
+                } catch (IOException ex) {
+                    LOG.log(Level.SEVERE, "Unable to commit changes to AudioItem " + audioItem.getUuid(), ex);
+                }
                 setVisible(false);
             }
         });

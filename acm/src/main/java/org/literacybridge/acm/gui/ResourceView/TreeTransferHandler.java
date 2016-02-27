@@ -152,9 +152,15 @@ public class TreeTransferHandler extends TransferHandler {
                     }
                     transaction.commit();
                     success = true;
+                } catch (IOException e) {
+                    LOG.log(Level.SEVERE, "Unable to commit transaction.", e);
                 } finally {
                     if (!success) {
-                        transaction.rollback();
+                        try {
+                            transaction.rollback();
+                        } catch (IOException e) {
+                            LOG.log(Level.SEVERE, "Unable to rollback transaction.", e);
+                        }
                     }
                     Application.getFilterState().updateResult(true);
                 }

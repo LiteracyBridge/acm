@@ -1,5 +1,6 @@
 package org.literacybridge.acm.store;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Logger;
@@ -38,7 +39,7 @@ public abstract class MetadataStore {
     public abstract IDataRequestResult search(String searchFilter, List<Category> categories, List<Locale> locales);
     public abstract IDataRequestResult search(String searchFilter, Playlist selectedTag);
 
-    public final void commit(Committable... objects) {
+    public final void commit(Committable... objects) throws IOException {
         Transaction t = newTransaction();
         t.addAll(objects);
         t.commit();

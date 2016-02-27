@@ -58,6 +58,10 @@ public class AudioItemCache {
         }));
     }
 
+    public Iterable<AudioItem> getAudioItems() {
+        return cache.values();
+    }
+
     private String getSortKey(AudioItem audioItem, String field) {
         return null;
     }
@@ -70,7 +74,7 @@ public class AudioItemCache {
         return cache.get(uuid);
     }
 
-    public synchronized void add(AudioItem item) {
+    public synchronized void update(AudioItem item) {
         cache.put(item.getUuid(), item);
     }
 
