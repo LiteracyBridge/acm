@@ -409,7 +409,7 @@ public class ControlAccess {
         String writeUser, thisUser;
         boolean userHasWriteAccess = false;
 
-        thisUser = ACMConfiguration.getUserName();
+        thisUser = ACMConfiguration.getUserName().trim();
         if (thisUser == null) {
             // No User Name found in config.properties.  Forcing Read-Only mode.
             return false;
@@ -419,7 +419,7 @@ public class ControlAccess {
             try {
                 BufferedReader in = new BufferedReader (new FileReader(f));
                 while ((writeUser = in.readLine()) != null) {
-                    if (writeUser.equalsIgnoreCase(thisUser)) {
+                    if (writeUser.trim().equalsIgnoreCase(thisUser)) {
                         userHasWriteAccess = true;
                         break;
                     }
