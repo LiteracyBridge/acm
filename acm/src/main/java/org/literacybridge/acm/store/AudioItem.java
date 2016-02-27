@@ -17,7 +17,7 @@ import com.google.common.collect.Sets;
  * of {@link LocalizedAudioItem} per translation referenced by this AudioItem.
  *
  */
-public class AudioItem extends Persistable {
+public class AudioItem extends Committable {
     private final String uuid;
     private final Metadata metadata;
 
@@ -132,12 +132,12 @@ public class AudioItem extends Persistable {
     }
 
     @Override
-    public void commit(Transaction t) throws IOException {
+    public void doCommit(Transaction t) throws IOException {
         t.getIndex().updateAudioItem(this, t.getWriter());
     }
 
     @Override
-    public void rollback(Transaction t) throws IOException {
+    public void doRollback(Transaction t) throws IOException {
         t.getIndex().refresh(this);
     }
 }

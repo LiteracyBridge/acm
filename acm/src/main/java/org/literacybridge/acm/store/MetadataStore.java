@@ -37,9 +37,9 @@ public abstract class MetadataStore {
     public abstract IDataRequestResult search(String searchFilter, List<Category> categories, List<Locale> locales);
     public abstract IDataRequestResult search(String searchFilter, Playlist selectedTag);
 
-    public final void commit(Persistable p) {
+    public final void commit(Committable... objects) {
         Transaction t = newTransaction();
-        t.add(p);
+        t.addAll(objects);
         t.commit();
     }
 }

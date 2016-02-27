@@ -13,7 +13,7 @@ import com.google.common.collect.Sets;
 public class Transaction {
     private static final Logger LOG = Logger.getLogger(Transaction.class.getName());
 
-    public Set<Persistable> objects;
+    public Set<Committable> objects;
     public AudioItemIndex index;
     public IndexWriter writer;
 
@@ -26,12 +26,10 @@ public class Transaction {
     public final void commit() {
         boolean success = false;
         try {
-            for (Persistable o : objects) {
+            for (Committable o : objects) {
                 o.commit(this);
             }
             success = true;
-        } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while commiting a transaction.", e);
         } finally {
             if (success) {
                 boolean success2 = false;
@@ -54,20 +52,23 @@ public class Transaction {
     public final void rollback() {
         try {
             writer.rollback();
-            for (Persistable o : objects) {
-                try {
-                    o.rollback(this);
-                } catch (IOException e) {
-                    LOG.log(Level.SEVERE, "IOException while rolling back PersistableObject: " + o, e);
-                }
-            }
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "IOException while rolling back a transaction.", e);
+        } finally {
+            for (Committable o : objects) {
+                o.rollback(this);
+            }
         }
     }
 
-    public void add(Persistable object) {
-        objects.add(object);
+    public void add(Committable committable) {
+        objects.add(committable);
+    }
+
+    public void addAll(Committable... committables) {
+        for (Committable c : committables) {
+            add(c);
+        }
     }
 
     public AudioItemIndex getIndex() {

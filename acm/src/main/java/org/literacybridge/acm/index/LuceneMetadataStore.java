@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.Committable;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.Taxonomy;
@@ -82,21 +83,8 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public Playlist newPlaylist(String name) {
-        Playlist playlist = null;
-        Transaction t = newTransaction();
-        boolean success = false;
-        try {
-            playlist = index.addPlaylist(name, t);
-            t.commit();
-            success = true;
-        } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while adding playlist name=(" + name + ") from Lucene index.", e);
-        } finally {
-            if (!success) {
-                t.rollback();
-            }
-        }
-
+        Playlist playlist = index.newPlaylist(name);
+        commit(playlist);
         return playlist;
     }
 
@@ -132,42 +120,36 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public void deleteAudioItem(String uuid) {
-        Transaction t = newTransaction();
-        boolean success = false;
-        try {
-            index.deleteAudioItem(uuid, t);
-            t.commit();
-            success = true;
-        } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while deleting audioitem uuid=(" + uuid + ") from Lucene index.", e);
-        } finally {
-            if (!success) {
-                t.rollback();
+        commit(new Committable() {
+            @Override
+            public void doCommit(Transaction t) throws IOException {
+                index.deleteAudioItem(uuid, t);
             }
-        }
+
+            @Override
+            public void doRollback(Transaction t) throws IOException {
+            }
+        });
     }
 
     @Override
     public void deletePlaylist(String uuid) {
         Playlist playlist = getPlaylist(uuid);
-        Transaction t = newTransaction();
-        boolean success = false;
-        try {
-            for (String audioItemUuid : playlist.getAudioItemList()) {
-                AudioItem audioItem = getAudioItem(audioItemUuid);
-                audioItem.removePlaylist(playlist);
-                t.add(audioItem);
+        commit(new Committable() {
+            @Override
+            public void doCommit(Transaction t) throws IOException {
+                for (String audioItemUuid : playlist.getAudioItemList()) {
+                    AudioItem audioItem = getAudioItem(audioItemUuid);
+                    audioItem.removePlaylist(playlist);
+                    t.add(audioItem);
+                }
+
+                index.deletePlaylist(uuid, t);
             }
 
-            index.deletePlaylist(uuid, t);
-            t.commit();
-            success = true;
-        } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while deleting playlist uuid=(" + uuid + ") from Lucene index.", e);
-        } finally {
-            if (!success) {
-                t.rollback();
+            @Override
+            public void doRollback(Transaction t) throws IOException {
             }
-        }
+        });
     }
 }

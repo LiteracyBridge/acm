@@ -263,7 +263,13 @@ public class AudioItemIndex {
         }), t.getWriter());
     }
 
-    public Playlist addPlaylist(String name, Transaction t) throws IOException {
+    public Playlist newPlaylist(String name) {
+        Playlist playlist = new Playlist(generateNewPlaylistUuid());
+        playlist.setName(name);
+        return playlist;
+    }
+
+    public Playlist _addPlaylist(String name, Transaction t) throws IOException {
         Playlist playlist = new Playlist(generateNewPlaylistUuid());
         playlist.setName(name);
         storePlaylistNames(Iterables.concat(Iterables.transform(readPlaylistNames().values(), new Function<Playlist.Builder, Playlist>() {

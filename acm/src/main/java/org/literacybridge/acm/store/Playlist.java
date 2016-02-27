@@ -7,7 +7,7 @@ import java.util.SortedMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-public class Playlist extends Persistable {
+public class Playlist extends Committable {
     // TODO: make uuid final once deprecated method setUuid() is removed
     private String uuid;
     private String name;
@@ -56,12 +56,12 @@ public class Playlist extends Persistable {
     }
 
     @Override
-    public void commit(Transaction t) throws IOException {
+    public void doCommit(Transaction t) throws IOException {
         t.getIndex().updatePlaylistName(this, t);
     }
 
     @Override
-    public void rollback(Transaction t) throws IOException {
+    public void doRollback(Transaction t) throws IOException {
         t.getIndex().refresh(this);
     }
 
