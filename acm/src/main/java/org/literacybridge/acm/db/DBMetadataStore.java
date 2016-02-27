@@ -10,6 +10,7 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.Taxonomy;
+import org.literacybridge.acm.store.Transaction;
 
 /**
  * @deprecated: We're removing Derby DB from the ACM and are switching to a Lucene index

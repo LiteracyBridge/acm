@@ -26,7 +26,7 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.FileImporter;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.MetadataStore.Transaction;
+import org.literacybridge.acm.store.Transaction;
 
 public class TreeTransferHandler extends TransferHandler {
     private static final long serialVersionUID = 1L;
@@ -141,6 +141,7 @@ public class TreeTransferHandler extends TransferHandler {
             @Override
             public void run() {
                 Transaction transaction = ACMConfiguration.getCurrentDB().getMetadataStore().newTransaction();
+                boolean success = false;
                 try {
                     for (AudioItem item : audioItems) {
                         if (move) {
@@ -150,8 +151,11 @@ public class TreeTransferHandler extends TransferHandler {
                         transaction.add(item);
                     }
                     transaction.commit();
+                    success = true;
                 } finally {
-                    transaction.rollback();
+                    if (!success) {
+                        transaction.rollback();
+                    }
                     Application.getFilterState().updateResult(true);
                 }
             }

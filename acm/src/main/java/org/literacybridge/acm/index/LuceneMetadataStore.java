@@ -12,6 +12,7 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.Taxonomy;
+import org.literacybridge.acm.store.Transaction;
 
 /**
  *
@@ -122,7 +123,7 @@ public class LuceneMetadataStore extends MetadataStore {
     @Override
     public Transaction newTransaction() {
         try {
-            return new Transaction(index);
+            return index.newTransaction();
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "IOException while starting transaction with Lucene index.", e);
             return null;

@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
-import org.literacybridge.acm.store.MetadataStore.Transaction;
-
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
@@ -19,7 +17,7 @@ import com.google.common.collect.Sets;
  * of {@link LocalizedAudioItem} per translation referenced by this AudioItem.
  *
  */
-public class AudioItem implements Persistable {
+public class AudioItem extends Persistable {
     private final String uuid;
     private final Metadata metadata;
 
@@ -134,7 +132,12 @@ public class AudioItem implements Persistable {
     }
 
     @Override
-    public void commitTransaction(Transaction t) throws IOException {
+    public void commit(Transaction t) throws IOException {
         t.getIndex().updateAudioItem(this, t.getWriter());
+    }
+
+    @Override
+    public void rollback(Transaction t) throws IOException {
+        t.getIndex().refresh(this);
     }
 }

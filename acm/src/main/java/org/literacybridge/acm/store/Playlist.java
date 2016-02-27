@@ -4,12 +4,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.SortedMap;
 
-import org.literacybridge.acm.store.MetadataStore.Transaction;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-public class Playlist implements Persistable {
+public class Playlist extends Persistable {
     // TODO: make uuid final once deprecated method setUuid() is removed
     private String uuid;
     private String name;
@@ -58,8 +56,13 @@ public class Playlist implements Persistable {
     }
 
     @Override
-    public void commitTransaction(Transaction t) throws IOException {
+    public void commit(Transaction t) throws IOException {
         t.getIndex().updatePlaylistName(this, t);
+    }
+
+    @Override
+    public void rollback(Transaction t) throws IOException {
+        t.getIndex().refresh(this);
     }
 
     public static Builder builder() {
@@ -70,6 +73,7 @@ public class Playlist implements Persistable {
         private SortedMap<Integer, String> items = Maps.newTreeMap();
         private String uuid;
         private String name;
+        private Playlist playlistPrototype;
 
         private Builder() {}
 
@@ -83,13 +87,19 @@ public class Playlist implements Persistable {
             return this;
         }
 
+        public Builder withPlaylistPrototype(Playlist playlist) {
+            this.playlistPrototype = playlist;
+            return this;
+        }
+
         public Builder addAudioItem(String uuid, int position) {
             items.put(position, uuid);
             return this;
         }
 
         public Playlist build() {
-            Playlist playlist = new Playlist(uuid);
+            final Playlist playlist = (playlistPrototype == null) ? new Playlist(uuid) : playlistPrototype;
+            playlist.audioItems.clear();
             playlist.setName(name);
             for (String audioItem : items.values()) {
                 playlist.addAudioItem(audioItem);

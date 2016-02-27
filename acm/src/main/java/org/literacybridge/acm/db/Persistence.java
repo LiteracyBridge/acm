@@ -143,21 +143,6 @@ public class Persistence {
     public static synchronized void maybeRunMigration() throws Exception {
         DBConfiguration config = ACMConfiguration.getCurrentDB();
         MetadataStore store = config.getMetadataStore();
-        // set playlist ordering if not set before
-        List<PersistentTag> allTags = PersistentTag.getFromDatabase();
-        for (PersistentTag tag : allTags) {
-            List<PersistentAudioItem> audioItems = tag.getPersistentAudioItemList();
-            int pos = 1;
-            for (PersistentAudioItem audioItem : audioItems) {
-                PersistentTagOrdering ordering = PersistentTagOrdering.getFromDatabase(audioItem.getUuid(), tag);
-                if (ordering.getPosition() == null) {
-                    // this simple approach works, since all entries in the corresponding table will either be null or set
-                    ordering.setPosition(pos++);
-                    store.commit(ordering);
-                }
-
-            }
-        }
 
         for (AudioItem audioItem : store.getAudioItems()) {
             // =================================================================

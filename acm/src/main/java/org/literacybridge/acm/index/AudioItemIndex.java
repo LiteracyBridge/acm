@@ -60,9 +60,9 @@ import org.literacybridge.acm.core.DataRequestResult;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.LBMetadataSerializer;
-import org.literacybridge.acm.store.MetadataStore.Transaction;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.Playlist.Builder;
+import org.literacybridge.acm.store.Transaction;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
@@ -138,7 +138,7 @@ public class AudioItemIndex {
         return Integer.toString(currentMaxPlaylistUuid++);
     }
 
-    public IndexWriter newWriter() throws IOException {
+    private final IndexWriter newWriter() throws IOException {
         IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_47, new AudioItemDocumentFactory.PrefixAnalyzer());
         config.setOpenMode(OpenMode.CREATE_OR_APPEND);
         return new IndexWriter(dir, config) {
@@ -150,6 +150,10 @@ public class AudioItemIndex {
                 }
             }
         };
+    }
+
+    public Transaction newTransaction() throws IOException {
+        return new Transaction(this, newWriter());
     }
 
     public static boolean indexExists(File path) throws IOException {
@@ -321,12 +325,23 @@ public class AudioItemIndex {
         }
     }
 
+    public void refresh(Playlist playlist) throws IOException {
+        getPlaylist(playlist.getUuid(), playlist);
+    }
+
     public Playlist getPlaylist(String uuid) throws IOException {
+        return getPlaylist(uuid, null);
+    }
+
+    private Playlist getPlaylist(final String uuid, final Playlist playlist) throws IOException {
         final IndexSearcher searcher = searcherManager.acquire();
         try {
             final Playlist.Builder builder = Playlist.builder();
             builder.withUuid(uuid);
             builder.withName(uuid);
+            if (playlist != null) {
+                builder.withPlaylistPrototype(playlist);
+            }
 
             IndexReader reader = searcher.getIndexReader();
             for (AtomicReaderContext leaf : reader.leaves()) {
@@ -416,9 +431,22 @@ public class AudioItemIndex {
         return result.get();
     }
 
+    public void refresh(AudioItem audioItem) throws IOException {
+        Document doc = getDocument(audioItem.getUuid());
+        if (doc == null) {
+            throw new IOException("AudioItem not found.");
+        }
+
+        loadAudioItem(doc, audioItem);
+    }
+
     private AudioItem loadAudioItem(Document doc) throws IOException {
         AudioItem audioItem = new AudioItem(doc.get(UID_FIELD));
+        loadAudioItem(doc, audioItem);
+        return audioItem;
+    }
 
+    private void loadAudioItem(Document doc, AudioItem audioItem) throws IOException {
         LBMetadataSerializer deserializer = new LBMetadataSerializer();
         Set<Category> categories = new HashSet<Category>();
         BytesRef ref = doc.getBinaryValue(RAW_METADATA_FIELD);
@@ -428,8 +456,6 @@ public class AudioItemIndex {
         for (Category category : categories) {
             audioItem.addCategory(category);
         }
-
-        return audioItem;
     }
 
     public IDataRequestResult search(String filterString, Playlist selectedTag) throws IOException {
