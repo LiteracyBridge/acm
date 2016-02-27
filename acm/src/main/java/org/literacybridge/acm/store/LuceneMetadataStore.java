@@ -42,15 +42,21 @@ public class LuceneMetadataStore extends MetadataStore {
 
         // fill caches
         try {
-            Iterable<Playlist> playlists = index.getPlaylists();
-            for (Playlist playlist : playlists) {
-                playlistCache.put(playlist.getUuid(), playlist);
-            }
-
             Iterable<AudioItem> audioItems = index.getAudioItems();
             for (AudioItem audioItem : audioItems) {
                 audioItemCache.update(audioItem);
             }
+
+            Iterable<Playlist> playlists = index.getPlaylists();
+            for (Playlist playlist : playlists) {
+                playlistCache.put(playlist.getUuid(), playlist);
+                for (String uid : playlist.getAudioItemList()) {
+                    AudioItem audioItem = audioItemCache.get(uid);
+                    audioItem.addPlaylist(playlist);
+                    audioItemCache.update(audioItem);
+                }
+            }
+
         } catch (IOException e) {
             throw new RuntimeException("Unable to initialize caches", e);
         }

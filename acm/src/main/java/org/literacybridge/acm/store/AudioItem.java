@@ -123,7 +123,6 @@ public class AudioItem extends Committable implements Comparable<AudioItem> {
 
     public final void addPlaylist(Playlist playlist) {
         playlists.put(playlist.getUuid(), playlist);
-        playlist.addAudioItem(uuid);
     }
 
     public final boolean hasPlaylist(Playlist playlist) {

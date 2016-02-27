@@ -30,6 +30,7 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataValue;
+import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 @Entity
@@ -201,7 +202,9 @@ class PersistentAudioItem extends PersistentObject {
 
         // add all playlists from DB to in-memory list
         for (PersistentTag playlist : mItem.getPersistentTagList()) {
-            audioItem.addPlaylist(PersistentTag.convert(playlist));
+            Playlist pl = PersistentTag.convert(playlist);
+            audioItem.addPlaylist(pl);
+            pl.addAudioItem(audioItem.getUuid());
         }
 
         loadMetadata(mItem, audioItem.getMetadata());
