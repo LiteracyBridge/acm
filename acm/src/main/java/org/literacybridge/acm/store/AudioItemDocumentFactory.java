@@ -1,4 +1,4 @@
-package org.literacybridge.acm.index;
+package org.literacybridge.acm.store;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -28,15 +28,6 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.LBMetadataSerializer;
-import org.literacybridge.acm.store.Metadata;
-import org.literacybridge.acm.store.MetadataField;
-import org.literacybridge.acm.store.MetadataSpecification;
-import org.literacybridge.acm.store.MetadataValue;
-import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;

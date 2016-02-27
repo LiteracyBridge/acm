@@ -13,6 +13,7 @@ public class Playlist extends Committable {
     private String name;
     private final List<String> audioItems;
 
+    // TODO: make package-private once DB migration code is removed
     public Playlist(String uuid) {
         this.uuid = uuid;
         audioItems = Lists.newArrayList();

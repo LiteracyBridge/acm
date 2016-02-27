@@ -6,7 +6,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.lucene.index.IndexWriter;
-import org.literacybridge.acm.index.AudioItemIndex;
 
 import com.google.common.collect.Sets;
 

@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.SortedMap;
 
 import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.MetadataStore;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -45,12 +44,6 @@ public class AudioItemCache {
     private final Map<String, AudioItem> cache = Maps.newHashMap();
     private final Map<String, SortedMap<String, IndexEntry>> sortedIndexes = Maps.newHashMap();
 
-    private final MetadataStore store;
-
-    public AudioItemCache(MetadataStore store) {
-        this.store = store;
-    }
-
     public Iterable<AudioItem> getAudioItems(String sortKey, Predicate<String> filter) {
         SortedMap<String, IndexEntry> index = sortedIndexes.get(sortKey);
         return Iterables.filter(Iterables.transform(index.values(), new Function<IndexEntry, AudioItem>() {
@@ -74,15 +67,7 @@ public class AudioItemCache {
     }
 
     public synchronized AudioItem get(String uuid) {
-        // TODO: fix cache
-        //        return store.getAudioItem(uuid);
-        AudioItem audioItem = cache.get(uuid);
-        if (audioItem == null) {
-            audioItem = store.getAudioItem(uuid);
-            cache.put(uuid, audioItem);
-        }
-
-        return audioItem;
+        return cache.get(uuid);
     }
 
     public synchronized void add(AudioItem item) {

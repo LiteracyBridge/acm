@@ -22,7 +22,7 @@ public class WAVImporter extends Importer {
     @Override
     protected void importSingleFile(MetadataStore store, Category category, File file) throws IOException {
         try {
-            AudioItem audioItem = new AudioItem(ACMConfiguration.getNewAudioItemUID());
+            AudioItem audioItem = store.newAudioItem(ACMConfiguration.getNewAudioItemUID());
             audioItem.addCategory(category);
 
             Metadata metadata = audioItem.getMetadata();

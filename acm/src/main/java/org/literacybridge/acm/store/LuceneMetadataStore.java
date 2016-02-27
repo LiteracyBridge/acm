@@ -1,4 +1,4 @@
-package org.literacybridge.acm.index;
+package org.literacybridge.acm.store;
 
 import java.io.IOException;
 import java.util.List;
@@ -7,13 +7,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.Committable;
-import org.literacybridge.acm.store.MetadataStore;
-import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.acm.store.Taxonomy;
-import org.literacybridge.acm.store.Transaction;
 
 /**
  *
@@ -22,7 +15,7 @@ import org.literacybridge.acm.store.Transaction;
  * OK rename playlists
  * OK generate playlist uuids
  * OK store playlist uuid->name mapping as commit data in Lucene index
- * - clean-up transactions API
+ * OK clean-up transactions API
  * OK checkin/out Lucene index with dropbox instead of DB
  * - finish AudioItemCache (sort ordering)
  * - add playlist cache
@@ -151,5 +144,10 @@ public class LuceneMetadataStore extends MetadataStore {
             public void doRollback(Transaction t) throws IOException {
             }
         });
+    }
+
+    @Override
+    public AudioItem newAudioItem(String uid) {
+        return new AudioItem(uid);
     }
 }

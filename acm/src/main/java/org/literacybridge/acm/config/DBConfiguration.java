@@ -30,9 +30,9 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.db.DBMetadataStore;
 import org.literacybridge.acm.db.Persistence;
 import org.literacybridge.acm.db.Persistence.DatabaseConnection;
-import org.literacybridge.acm.index.AudioItemIndex;
-import org.literacybridge.acm.index.LuceneMetadataStore;
 import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.store.AudioItemIndex;
+import org.literacybridge.acm.store.LuceneMetadataStore;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.store.Taxonomy;
@@ -160,7 +160,7 @@ public class DBConfiguration extends Properties {
                 System.out.print("Migrating database...");
                 long start = System.currentTimeMillis();
                 Persistence.maybeRunMigration();
-                this.store = //new CachingMetadataStore(
+                this.store =
                         new LuceneMetadataStore(taxonomy, AudioItemIndex.migrateFromDB(getLuceneIndexDirectory(), this.store.getAudioItems()));
                 dbConn.close();
                 IOUtils.deleteRecursive(new File(getDatabaseDirectory(), Persistence.DBNAME));
@@ -168,7 +168,7 @@ public class DBConfiguration extends Properties {
                 long end = System.currentTimeMillis();
                 System.out.println("done. (" + (end - start) + " ms)");
             } else {
-                this.store = //new CachingMetadataStore(
+                this.store =
                         new LuceneMetadataStore(taxonomy, AudioItemIndex.load(getLuceneIndexDirectory()));
             }
 

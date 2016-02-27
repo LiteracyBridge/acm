@@ -80,4 +80,9 @@ public class DBMetadataStore extends MetadataStore {
     public void deletePlaylist(String uid) {
         throw new UnsupportedOperationException("Writing to Derby DB is not supported anymore.");
     }
+
+    @Override
+    public AudioItem newAudioItem(String uid) {
+        throw new UnsupportedOperationException("Not supported anymore.");
+    }
 }

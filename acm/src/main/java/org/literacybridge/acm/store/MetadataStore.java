@@ -13,6 +13,7 @@ public abstract class MetadataStore {
 
     public abstract Transaction newTransaction();
 
+    public abstract AudioItem newAudioItem(String uid);
     public abstract AudioItem getAudioItem(String uid);
     public abstract void deleteAudioItem(String uid);
     public abstract Iterable<AudioItem> getAudioItems();

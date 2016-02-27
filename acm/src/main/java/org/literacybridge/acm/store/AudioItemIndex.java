@@ -1,4 +1,4 @@
-package org.literacybridge.acm.index;
+package org.literacybridge.acm.store;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -57,12 +57,6 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.core.DataRequestResult;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.LBMetadataSerializer;
-import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.acm.store.Playlist.Builder;
-import org.literacybridge.acm.store.Transaction;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
@@ -257,7 +251,7 @@ public class AudioItemIndex {
         Map<String, Playlist.Builder> playlists = readPlaylistNames();
         playlists.remove(uuid);
         storePlaylistNames(Iterables.transform(playlists.values(), new Function<Playlist.Builder, Playlist>() {
-            @Override public Playlist apply(Builder builder) {
+            @Override public Playlist apply(Playlist.Builder builder) {
                 return builder.build();
             }
         }), t.getWriter());
@@ -266,17 +260,6 @@ public class AudioItemIndex {
     public Playlist newPlaylist(String name) {
         Playlist playlist = new Playlist(generateNewPlaylistUuid());
         playlist.setName(name);
-        return playlist;
-    }
-
-    public Playlist _addPlaylist(String name, Transaction t) throws IOException {
-        Playlist playlist = new Playlist(generateNewPlaylistUuid());
-        playlist.setName(name);
-        storePlaylistNames(Iterables.concat(Iterables.transform(readPlaylistNames().values(), new Function<Playlist.Builder, Playlist>() {
-            @Override public Playlist apply(Builder builder) {
-                return builder.build();
-            }
-        }), Lists.newArrayList(playlist)), t.getWriter());
         return playlist;
     }
 
@@ -542,8 +525,7 @@ public class AudioItemIndex {
                 }
             }
 
-            DataRequestResult result = new DataRequestResult(categoryFacets, localeFacets, Lists.newArrayList(results),
-                    getPlaylists());
+            DataRequestResult result = new DataRequestResult(categoryFacets, localeFacets, Lists.newArrayList(results));
 
             return result;
         } finally {

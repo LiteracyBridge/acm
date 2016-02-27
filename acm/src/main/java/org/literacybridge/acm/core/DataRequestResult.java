@@ -5,21 +5,17 @@ import java.util.Map;
 
 import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.Playlist;
 
 public class DataRequestResult implements IDataRequestResult {
     private final Map<String, Integer> facetCounts;
     private final Map<String, Integer> languageFacetCounts;
     private final List<String> audioItems;
-    private final Iterable<Playlist> tags;
 
     public DataRequestResult(Map<String, Integer> facetCounts,
-            Map<String, Integer> languageFacetCounts, List<String> audioItems,
-            Iterable<Playlist> tags) {
+            Map<String, Integer> languageFacetCounts, List<String> audioItems) {
         this.facetCounts = facetCounts;
         this.languageFacetCounts = languageFacetCounts;
         this.audioItems = audioItems;
-        this.tags = tags;
     }
 
     /* (non-Javadoc)
@@ -55,10 +51,5 @@ public class DataRequestResult implements IDataRequestResult {
         } else {
             return count;
         }
-    }
-
-    @Override
-    public Iterable<Playlist> getTags() {
-        return tags;
     }
 }
