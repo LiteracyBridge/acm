@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -106,6 +107,8 @@ public class AudioItemIndex {
 
     @Deprecated
     private final void migrateFromDB(Iterable<AudioItem> audioItems) throws IOException {
+        long importOrderId = 0;
+
         Map<String, Playlist> playlists = Maps.newHashMap();
         IndexWriter writer = newWriter();
         for (AudioItem item : audioItems) {
@@ -118,7 +121,9 @@ public class AudioItemIndex {
                 }
                 playlist.setUuid(playlists.get(playlist.getName()).getUuid());
             }
-            addAudioItem(item, writer);
+
+            Document doc = factory.createLuceneDocument(item, importOrderId++);
+            writer.addDocument(facetsConfig.build(doc));
         }
 
         storePlaylistNames(playlists.values(), writer);
@@ -381,6 +386,7 @@ public class AudioItemIndex {
                 }
             });
 
+            Collections.sort(results);
             return results;
         } finally {
             searcherManager.release(searcher);
@@ -445,6 +451,7 @@ public class AudioItemIndex {
         for (Category category : categories) {
             audioItem.addCategory(category);
         }
+        audioItem.setImportOrderId(Long.parseLong(doc.get(IMPORT_ORDER_ID_FIELD)));
     }
 
     public IDataRequestResult search(String filterString, Playlist selectedTag) throws IOException {

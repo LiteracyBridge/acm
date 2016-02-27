@@ -21,7 +21,6 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
@@ -82,7 +81,7 @@ public class AudioItemDocumentFactory {
         out.flush();
         doc.add(new StoredField(AudioItemIndex.RAW_METADATA_FIELD, baos.toByteArray()));
 
-        doc.add(new LongField(AudioItemIndex.IMPORT_ORDER_ID_FIELD, importOrderId, Store.YES));
+        doc.add(new StringField(AudioItemIndex.IMPORT_ORDER_ID_FIELD, Long.toString(importOrderId), Store.YES));
 
         return doc;
     }

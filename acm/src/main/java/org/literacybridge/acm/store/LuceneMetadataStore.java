@@ -22,7 +22,7 @@ import com.google.common.collect.Maps;
  * OK clean-up transactions API
  * OK checkin/out Lucene index with dropbox instead of DB
  * - finish AudioItemCache (sort ordering)
- * - default sort order should be insertion order
+ * OK default sort order should be insertion order
  * OK add playlist cache
  * - pass reference to MetadataStore around, instead of singleton pattern
  *

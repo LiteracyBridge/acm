@@ -41,7 +41,7 @@ public class AudioItemCache {
         }
     }
 
-    private final Map<String, AudioItem> cache = Maps.newHashMap();
+    private final Map<String, AudioItem> cache = Maps.newLinkedHashMap();
     private final Map<String, SortedMap<String, IndexEntry>> sortedIndexes = Maps.newHashMap();
 
     public Iterable<AudioItem> getAudioItems(String sortKey, Predicate<String> filter) {
