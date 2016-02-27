@@ -12,21 +12,6 @@ import org.literacybridge.acm.gui.AudioItemCache;
 
 import com.google.common.collect.Maps;
 
-/**
- *
- * TODOs:
- * OK fix playlist ordering bug
- * OK rename playlists
- * OK generate playlist uuids
- * OK store playlist uuid->name mapping as commit data in Lucene index
- * OK clean-up transactions API
- * OK checkin/out Lucene index with dropbox instead of DB
- * - finish AudioItemCache (sort ordering)
- * OK default sort order should be insertion order
- * OK add playlist cache
- * - pass reference to MetadataStore around, instead of singleton pattern
- *
- */
 public class LuceneMetadataStore extends MetadataStore {
     private static final Logger LOG = Logger.getLogger(LuceneMetadataStore.class.getName());
 
