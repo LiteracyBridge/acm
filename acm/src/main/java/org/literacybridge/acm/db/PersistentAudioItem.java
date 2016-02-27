@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -25,6 +26,7 @@ import javax.persistence.TableGenerator;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataValue;
@@ -41,7 +43,7 @@ import org.literacybridge.acm.store.RFC3066LanguageCode;
  */
 @Deprecated
 class PersistentAudioItem extends PersistentObject {
-
+    private static final Logger LOG = Logger.getLogger(PersistentAudioItem.class.getName());
     private static final long serialVersionUID = 6523719801839346881L;
 
     private static final String COLUMN_VALUE = "gen_audioitem";
@@ -189,7 +191,12 @@ class PersistentAudioItem extends PersistentObject {
         AudioItem audioItem = new AudioItem(mItem.getUuid());
         // add all categories from DB to in-memory list
         for (PersistentCategory cat : mItem.getPersistentCategoryList()) {
-            audioItem.addCategory(ACMConfiguration.getCurrentDB().getMetadataStore().getCategory(cat.getUuid()));
+            Category category = ACMConfiguration.getCurrentDB().getMetadataStore().getCategory(cat.getUuid());
+            if (category == null) {
+                LOG.warning("DB migration: Category with uuid " + cat.getUuid() + " not found.");
+            } else {
+                audioItem.addCategory(category);
+            }
         }
 
         // add all playlists from DB to in-memory list

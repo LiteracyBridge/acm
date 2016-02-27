@@ -12,7 +12,6 @@ import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.CSVExporter;
 import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.Taxonomy;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 
 import au.com.bytecode.opencsv.CSVWriter;

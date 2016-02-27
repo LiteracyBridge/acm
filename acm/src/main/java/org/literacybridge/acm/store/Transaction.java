@@ -8,6 +8,8 @@ import java.util.logging.Logger;
 import org.apache.lucene.index.IndexWriter;
 import org.literacybridge.acm.index.AudioItemIndex;
 
+import com.google.common.collect.Sets;
+
 public class Transaction {
     private static final Logger LOG = Logger.getLogger(Transaction.class.getName());
 
@@ -15,13 +17,10 @@ public class Transaction {
     public AudioItemIndex index;
     public IndexWriter writer;
 
-    public Transaction(Set<Persistable> objects) {
-        this.objects = objects;
-    }
-
     public Transaction(AudioItemIndex index, IndexWriter writer) throws IOException {
         this.index = index;
         this.writer = writer;
+        this.objects = Sets.newLinkedHashSet();
     }
 
     public final void commit() {
