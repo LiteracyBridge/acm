@@ -10,109 +10,120 @@ import java.util.Map.Entry;
 import org.yaml.snakeyaml.Yaml;
 
 public class DefaultLiteracyBridgeTaxonomy {
-    public final static String LB_TAXONOMY_UID = "LB_TAX_1.0";
+  public final static String LB_TAXONOMY_UID = "LB_TAX_1.0";
 
-    public final static String YAML_FILE_NAME = "lb_taxonomy.yaml";
-    public final static String YAML_REVISION_FIELD = "revision";
-    public final static String YAML_CATEGORIES_FIELD = "categories";
-    public final static String YAML_TAXONOMY_FIELD = "taxonomy";
-    public final static String YAML_CAT_NAME_FIELD = "name";
-    public final static String YAML_CAT_ORDER_FIELD = "order";
-    public final static String YAML_CAT_CHILDREN_FIELD = "children";
+  public final static String YAML_FILE_NAME = "lb_taxonomy.yaml";
+  public final static String YAML_REVISION_FIELD = "revision";
+  public final static String YAML_CATEGORIES_FIELD = "categories";
+  public final static String YAML_TAXONOMY_FIELD = "taxonomy";
+  public final static String YAML_CAT_NAME_FIELD = "name";
+  public final static String YAML_CAT_ORDER_FIELD = "order";
+  public final static String YAML_CAT_CHILDREN_FIELD = "children";
 
-    public static class TaxonomyRevision {
-        public final int revision;
-        private final Map<String, Object> categories;
+  public static class TaxonomyRevision {
+    public final int revision;
+    private final Map<String, Object> categories;
 
-        private TaxonomyRevision(int revision, Map<String, Object> categories) {
-            this.revision = revision;
-            this.categories = categories;
-        }
-
-        public void createTaxonomy(Taxonomy taxonomy, final Map<String, Category> existingCategories) {
-            DefaultLiteracyBridgeTaxonomy.loadYaml(taxonomy, categories, taxonomy.getRootCategory(), existingCategories);
-        }
+    private TaxonomyRevision(int revision, Map<String, Object> categories) {
+      this.revision = revision;
+      this.categories = categories;
     }
 
-    private static Category addCategory(Taxonomy taxonomy, Category parent, Category existingCategory, String id, String name, int order) {
-        Category cat = existingCategory == null ? new Category(id) : existingCategory;
-        cat.setName(name);
-        cat.setOrder(order);
-        taxonomy.addChild(parent, cat);
-        return cat;
+    public void createTaxonomy(Taxonomy taxonomy,
+        final Map<String, Category> existingCategories) {
+      DefaultLiteracyBridgeTaxonomy.loadYaml(taxonomy, categories,
+          taxonomy.getRootCategory(), existingCategories);
     }
+  }
 
-    public static TaxonomyRevision loadLatestTaxonomy(File acmDirectory) {
-        TaxonomyRevision taxonomy = loadTaxonomy(DefaultLiteracyBridgeTaxonomy.class.getResourceAsStream("/" + YAML_FILE_NAME));
+  private static Category addCategory(Taxonomy taxonomy, Category parent,
+      Category existingCategory, String id, String name, int order) {
+    Category cat = existingCategory == null ? new Category(id)
+        : existingCategory;
+    cat.setName(name);
+    cat.setOrder(order);
+    taxonomy.addChild(parent, cat);
+    return cat;
+  }
 
-        // check if there is a newer one in the
-        File acmTaxonomyFile = new File(acmDirectory, YAML_FILE_NAME);
-        if (acmTaxonomyFile.exists()) {
-            FileInputStream in = null;
-            try {
-                in = new FileInputStream(acmTaxonomyFile);
-                TaxonomyRevision updatedTaxonomy = loadTaxonomy(in);
-                if (updatedTaxonomy.revision > taxonomy.revision) {
-                    taxonomy = updatedTaxonomy;
-                }
-            } catch (Exception e) {
-                // ignore and use the packaged taxonomy
-            } finally {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
+  public static TaxonomyRevision loadLatestTaxonomy(File acmDirectory) {
+    TaxonomyRevision taxonomy = loadTaxonomy(DefaultLiteracyBridgeTaxonomy.class
+        .getResourceAsStream("/" + YAML_FILE_NAME));
+
+    // check if there is a newer one in the
+    File acmTaxonomyFile = new File(acmDirectory, YAML_FILE_NAME);
+    if (acmTaxonomyFile.exists()) {
+      FileInputStream in = null;
+      try {
+        in = new FileInputStream(acmTaxonomyFile);
+        TaxonomyRevision updatedTaxonomy = loadTaxonomy(in);
+        if (updatedTaxonomy.revision > taxonomy.revision) {
+          taxonomy = updatedTaxonomy;
         }
-
-        return taxonomy;
-
-    }
-
-    private static TaxonomyRevision loadTaxonomy(InputStream input) {
+      } catch (Exception e) {
+        // ignore and use the packaged taxonomy
+      } finally {
         try {
-            Yaml yaml = new Yaml();
-            Map<String, Object> data = (Map<String, Object>) yaml.load(input);
-            Map<String, Object> taxonomyMap = (Map<String, Object>) data.get(YAML_TAXONOMY_FIELD);
-            int revision = (Integer) taxonomyMap.get(YAML_REVISION_FIELD);
-            Map<String, Object> categories = (Map<String, Object>) taxonomyMap.get(YAML_CATEGORIES_FIELD);
-            return new TaxonomyRevision(revision, categories);
-        } finally {
-            try {
-                input.close();
-            } catch (IOException e) {
-                // ignore - at least we tried
-            }
+          in.close();
+        } catch (IOException e) {
+          // ignore
         }
+      }
     }
 
-    private static void loadYaml(Taxonomy taxonomy, Map<String, Object> categories, Category parent, final Map<String, Category> existingCategories) {
-        for (Entry<String, Object> entry : categories.entrySet()) {
-            String catID = entry.getKey();
+    return taxonomy;
 
-            Category existingCategory = null;
-            if (existingCategories != null) {
-                existingCategory =  existingCategories.get(catID);
-            }
-            Map<String, Object> catData = (Map<String, Object>) entry.getValue();
-            String catName = (String) catData.get(YAML_CAT_NAME_FIELD);
-            Integer order = (Integer) catData.get(YAML_CAT_ORDER_FIELD);
-            Category cat = addCategory(taxonomy, parent, existingCategory, catID, catName, order);
-            Object children = catData.get(YAML_CAT_CHILDREN_FIELD);
-            if (children != null) {
-                loadYaml(taxonomy, (Map<String, Object>) children, cat, existingCategories);
-            }
-        }
-    }
+  }
 
-    public static void print(Category cat) {
-        Iterable<Category> children = cat.getChildren();
-        if (children != null) {
-            for (Category c : children) {
-                print(c);
-            }
-        }
+  private static TaxonomyRevision loadTaxonomy(InputStream input) {
+    try {
+      Yaml yaml = new Yaml();
+      Map<String, Object> data = (Map<String, Object>) yaml.load(input);
+      Map<String, Object> taxonomyMap = (Map<String, Object>) data
+          .get(YAML_TAXONOMY_FIELD);
+      int revision = (Integer) taxonomyMap.get(YAML_REVISION_FIELD);
+      Map<String, Object> categories = (Map<String, Object>) taxonomyMap
+          .get(YAML_CATEGORIES_FIELD);
+      return new TaxonomyRevision(revision, categories);
+    } finally {
+      try {
+        input.close();
+      } catch (IOException e) {
+        // ignore - at least we tried
+      }
     }
+  }
+
+  private static void loadYaml(Taxonomy taxonomy,
+      Map<String, Object> categories, Category parent,
+      final Map<String, Category> existingCategories) {
+    for (Entry<String, Object> entry : categories.entrySet()) {
+      String catID = entry.getKey();
+
+      Category existingCategory = null;
+      if (existingCategories != null) {
+        existingCategory = existingCategories.get(catID);
+      }
+      Map<String, Object> catData = (Map<String, Object>) entry.getValue();
+      String catName = (String) catData.get(YAML_CAT_NAME_FIELD);
+      Integer order = (Integer) catData.get(YAML_CAT_ORDER_FIELD);
+      Category cat = addCategory(taxonomy, parent, existingCategory, catID,
+          catName, order);
+      Object children = catData.get(YAML_CAT_CHILDREN_FIELD);
+      if (children != null) {
+        loadYaml(taxonomy, (Map<String, Object>) children, cat,
+            existingCategories);
+      }
+    }
+  }
+
+  public static void print(Category cat) {
+    Iterable<Category> children = cat.getChildren();
+    if (children != null) {
+      for (Category c : children) {
+        print(c);
+      }
+    }
+  }
 
 }

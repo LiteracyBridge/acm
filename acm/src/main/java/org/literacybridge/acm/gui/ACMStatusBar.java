@@ -6,71 +6,72 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
+import javax.swing.SwingConstants;
 
 import org.jdesktop.swingx.JXStatusBar;
 import org.jdesktop.swingx.plaf.basic.BasicStatusBarUI;
 
 public class ACMStatusBar extends JXStatusBar {
-	private JLabel statusLabel;
-	
-	private JLabel progressLabel;
-	private JProgressBar progressBar;
-	private JButton cancelButton;
-	
-	public ACMStatusBar() {
-		putClientProperty(BasicStatusBarUI.AUTO_ADD_SEPARATOR, false);
-		setPreferredSize(new Dimension(1600, 25));
-		
-		statusLabel = new JLabel();
-		add(statusLabel, new JXStatusBar.Constraint(400));
-		
-		add(new JSeparator(JSeparator.VERTICAL));
-		
-		progressLabel = new JLabel("");
-		add(progressLabel, new JXStatusBar.Constraint(300));
-		
-		progressBar = new JProgressBar();
-		add(progressBar, new JXStatusBar.Constraint(200));
-		
-		cancelButton = new JButton("Cancel");
-		add(cancelButton);
+  private JLabel statusLabel;
 
-		progressBar.setVisible(false);
-		progressLabel.setVisible(false);
-		cancelButton.setVisible(false);		
-	}
+  private JLabel progressLabel;
+  private JProgressBar progressBar;
+  private JButton cancelButton;
 
-	public void setStatusMessage(String message) {
-		statusLabel.setText(message);
-	}
-	
-	public void setProgressMessage(String message) {
-		progressLabel.setText(message);
-	}
-	
-	public JButton getCancelButton() {
-		return cancelButton;
-	}
-	
-	public JProgressBar getProgressBar() {
-		return progressBar;
-	}
-	
-	public JLabel getProgressLabel() {
-		return progressLabel;
-	}
-	
-	public void startTask(String label) {
-		progressLabel.setText(label);
-		progressBar.setValue(0);
-		progressBar.setVisible(true);
-		progressLabel.setVisible(true);
-		cancelButton.setVisible(true);
-	}
-	
-	public void endTask() {
-		progressBar.setVisible(false);
-		progressLabel.setVisible(false);
-		cancelButton.setVisible(false);		
-	}
+  public ACMStatusBar() {
+    putClientProperty(BasicStatusBarUI.AUTO_ADD_SEPARATOR, false);
+    setPreferredSize(new Dimension(1600, 25));
+
+    statusLabel = new JLabel();
+    add(statusLabel, new JXStatusBar.Constraint(400));
+
+    add(new JSeparator(SwingConstants.VERTICAL));
+
+    progressLabel = new JLabel("");
+    add(progressLabel, new JXStatusBar.Constraint(300));
+
+    progressBar = new JProgressBar();
+    add(progressBar, new JXStatusBar.Constraint(200));
+
+    cancelButton = new JButton("Cancel");
+    add(cancelButton);
+
+    progressBar.setVisible(false);
+    progressLabel.setVisible(false);
+    cancelButton.setVisible(false);
+  }
+
+  public void setStatusMessage(String message) {
+    statusLabel.setText(message);
+  }
+
+  public void setProgressMessage(String message) {
+    progressLabel.setText(message);
+  }
+
+  public JButton getCancelButton() {
+    return cancelButton;
+  }
+
+  public JProgressBar getProgressBar() {
+    return progressBar;
+  }
+
+  public JLabel getProgressLabel() {
+    return progressLabel;
+  }
+
+  public void startTask(String label) {
+    progressLabel.setText(label);
+    progressBar.setValue(0);
+    progressBar.setVisible(true);
+    progressLabel.setVisible(true);
+    cancelButton.setVisible(true);
+  }
+
+  public void endTask() {
+    progressBar.setVisible(false);
+    progressLabel.setVisible(false);
+    cancelButton.setVisible(false);
+  }
 }

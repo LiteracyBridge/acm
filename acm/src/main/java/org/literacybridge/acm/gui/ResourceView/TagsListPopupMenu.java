@@ -36,196 +36,201 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class TagsListPopupMenu extends JPopupMenu {
-    private static final Logger LOG = Logger.getLogger(TagsListPopupMenu.class
-            .getName());
+  private static final Logger LOG = Logger
+      .getLogger(TagsListPopupMenu.class.getName());
 
-    private static String previousPackageName = "";
+  private static String previousPackageName = "";
 
-    public TagsListPopupMenu(final TagLabel selectedTag) {
-        JMenuItem deleteTag = new JMenuItem("Delete '" + selectedTag + "' ...");
-        JMenuItem renameTag = new JMenuItem("Rename '" + selectedTag + "' ...");
-        JMenuItem exportTag = new JMenuItem("Export '" + selectedTag + "' ...");
+  public TagsListPopupMenu(final TagLabel selectedTag) {
+    JMenuItem deleteTag = new JMenuItem("Delete '" + selectedTag + "' ...");
+    JMenuItem renameTag = new JMenuItem("Rename '" + selectedTag + "' ...");
+    JMenuItem exportTag = new JMenuItem("Export '" + selectedTag + "' ...");
 
-        add(deleteTag);
-        add(renameTag);
-        add(exportTag);
+    add(deleteTag);
+    add(renameTag);
+    add(exportTag);
 
-        deleteTag.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Object[] options = {
-                        LabelProvider.getLabel("CANCEL",
-                                LanguageUtil.getUILanguage()),
-                        LabelProvider.getLabel("DELETE",
-                                LanguageUtil.getUILanguage()) };
+    deleteTag.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        Object[] options = {
+            LabelProvider.getLabel("CANCEL", LanguageUtil.getUILanguage()),
+            LabelProvider.getLabel("DELETE", LanguageUtil.getUILanguage()) };
 
-                int n = JOptionPane.showOptionDialog(
-                        Application.getApplication(),
-                        "Delete playlist '" + selectedTag + "'?",
-                        LabelProvider.getLabel("CONFRIM_DELETE",
-                                LanguageUtil.getUILanguage()),
-                        JOptionPane.OK_CANCEL_OPTION,
-                        JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+        int n = JOptionPane.showOptionDialog(Application.getApplication(),
+            "Delete playlist '" + selectedTag + "'?",
+            LabelProvider.getLabel("CONFRIM_DELETE",
+                LanguageUtil.getUILanguage()),
+            JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+            options, options[0]);
 
-                if (n == 1) {
-                    try {
-                        List<String> audioItems = Lists.newLinkedList(selectedTag
-                                .getTag().getAudioItemList());
-                        for (String audioItemUuid : audioItems) {
-                            AudioItem audioItem = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getAudioItem(audioItemUuid);
-                            audioItem.removePlaylist(selectedTag.getTag());
-                            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(audioItem);
-                        }
-                        ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().deletePlaylist(selectedTag.getTag().getUuid());
-                        ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(selectedTag.getTag());
-                        Application.getMessageService().pumpMessage(new TagsListChanged());
-                    } catch (Exception ex) {
-                        LOG.log(Level.WARNING, "Unable to remove playlist "
-                                + selectedTag.toString());
-                    } finally {
-                        Application.getFilterState().updateResult(true);
-                    }
-                }
+        if (n == 1) {
+          try {
+            List<String> audioItems = Lists
+                .newLinkedList(selectedTag.getTag().getAudioItemList());
+            for (String audioItemUuid : audioItems) {
+              AudioItem audioItem = ACMConfiguration.getInstance()
+                  .getCurrentDB().getMetadataStore()
+                  .getAudioItem(audioItemUuid);
+              audioItem.removePlaylist(selectedTag.getTag());
+              ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
+                  .commit(audioItem);
             }
-        });
-
-        renameTag.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent arg0) {
-                String tagName = (String) JOptionPane.showInputDialog(
-                        TagsListPopupMenu.this, "Enter playlist name:",
-                        "Edit playlist", JOptionPane.PLAIN_MESSAGE, null, null,
-                        selectedTag.toString());
-                if (!StringUtils.isEmpty(tagName)) {
-                    try {
-                        selectedTag.getTag().setName(tagName);
-                        ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(selectedTag.getTag());
-
-                        Application.getMessageService().pumpMessage(new TagsListChanged());
-                    } catch (Exception ex) {
-                        LOG.log(Level.WARNING, "Unable to rename playlist "
-                                + selectedTag.toString());
-                    } finally {
-                        Application.getFilterState().updateResult(true);
-                    }
-                }
-            }
-        });
-
-        exportTag.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent arg0) {
-                File listDirectory = new File(ACMConfiguration.getInstance().getCurrentDB()
-                        .getTBLoadersDirectory(),
-                        "TB_Options/activeLists");
-                LinkedHashMap<String, Category> categories = new LinkedHashMap();
-                Map<String, File> listCollection = Maps.newHashMap();
-                try {
-                    String packageName = (String) JOptionPane.showInputDialog(
-                            Application.getApplication(), "Enter content package name:",
-                            "Export playlist", JOptionPane.PLAIN_MESSAGE, null,
-                            null, previousPackageName);
-
-                    if (!StringUtils.isEmpty(packageName)) {
-                        previousPackageName = packageName;
-                        //TODO: need to accommodate multiple message lists (or profiles) in a single package/image
-                        //TODO: each new message list would be numbered
-                        File dir = new File(ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory(), "packages/"
-                                + packageName + "/messages/lists/" + TBBuilder.firstMessageListName);
-                        if (!dir.exists()) {
-                            dir.mkdirs();
-                        }
-                        File targetActiveListsFile;
-                        targetActiveListsFile = new File(dir, "_activeLists.txt");
-                        if (!targetActiveListsFile.exists()) {
-                            File sourceActiveListsFile;
-                            if (listDirectory.listFiles().length > 1) {
-                                for (File possibleActiveListFile : listDirectory.listFiles()) {
-                                    String possibleActiveListString = possibleActiveListFile.getName();
-                                    possibleActiveListString = possibleActiveListString.substring(0, possibleActiveListString.length()-4);
-                                    possibleActiveListString = possibleActiveListString.replace('_', ' ');
-                                    listCollection.put(possibleActiveListString, possibleActiveListFile);
-                                }
-                                String[] listNames = listCollection.keySet().toArray(
-                                        new String[listCollection.size()]);
-                                String listName = (String) JOptionPane
-                                        .showInputDialog(Application.getApplication(),
-                                                "Choose categories & order:",
-                                                "Category Order",
-                                                JOptionPane.PLAIN_MESSAGE, null, listNames,
-                                                "");
-                                if (!StringUtils.isEmpty(listName)) {
-                                    sourceActiveListsFile = listCollection.get(listName);
-                                } else {
-                                    sourceActiveListsFile = listDirectory.listFiles()[0];
-                                }
-                            } else {
-                                sourceActiveListsFile = listDirectory.listFiles()[0];
-                            }
-                            IOUtils.copy(sourceActiveListsFile, targetActiveListsFile);
-                        }
-
-                        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-                        Category category = store.getCategory(TBBuilder.IntroMessageID); // Update Intro Message
-                        categories.put(category.getCategoryName(), category);
-                        BufferedReader reader = new BufferedReader(new FileReader(
-                                targetActiveListsFile));
-                        while (reader.ready()) {
-                            String line = reader.readLine();
-                            if (StringUtils.isEmpty(line)) {
-                                break;
-                            }
-                            if (line.contains("$")) {
-                                continue;
-                            }
-                            if (line.startsWith("!")) {
-                                line = line.substring(1);
-                            }
-
-                            category = store.getCategory(line);
-                            if (category != null) {
-                                categories.put(category.getCategoryName(),
-                                        category);
-                            }
-                        }
-
-                        reader.close();
-
-
-                        String[] names = categories.keySet().toArray(
-                                new String[categories.size()]);
-                        String categoryName = (String) JOptionPane
-                                .showInputDialog(Application.getApplication(),
-                                        "Choose export category:",
-                                        "Export playlist",
-                                        JOptionPane.PLAIN_MESSAGE, null, names,
-                                        "");
-
-                        if (!StringUtils.isEmpty(categoryName)) {
-                            export(selectedTag.getTag(), packageName,
-                                    categories.get(categoryName), dir);
-                        }
-                    }
-
-                } catch (IOException e) {
-                    LOG.log(Level.WARNING, "Error while exporting playlist.", e);
-                }
-            }
-        });
-    }
-
-    private final void export(final Playlist playlist, String updateName,
-            Category category, File dir) throws IOException {
-
-        BufferedWriter writer = new BufferedWriter(new FileWriter(new File(dir,
-                category.getUuid() + ".txt"), false));
-        Iterable<String> audioItems = playlist.getAudioItemList();
-
-        for (String audioItem : audioItems) {
-            writer.write(audioItem);
-            writer.newLine();
+            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
+                .deletePlaylist(selectedTag.getTag().getUuid());
+            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
+                .commit(selectedTag.getTag());
+            Application.getMessageService().pumpMessage(new TagsListChanged());
+          } catch (Exception ex) {
+            LOG.log(Level.WARNING,
+                "Unable to remove playlist " + selectedTag.toString());
+          } finally {
+            Application.getFilterState().updateResult(true);
+          }
         }
+      }
+    });
 
-        writer.close();
+    renameTag.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent arg0) {
+        String tagName = (String) JOptionPane.showInputDialog(
+            TagsListPopupMenu.this, "Enter playlist name:", "Edit playlist",
+            JOptionPane.PLAIN_MESSAGE, null, null, selectedTag.toString());
+        if (!StringUtils.isEmpty(tagName)) {
+          try {
+            selectedTag.getTag().setName(tagName);
+            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
+                .commit(selectedTag.getTag());
+
+            Application.getMessageService().pumpMessage(new TagsListChanged());
+          } catch (Exception ex) {
+            LOG.log(Level.WARNING,
+                "Unable to rename playlist " + selectedTag.toString());
+          } finally {
+            Application.getFilterState().updateResult(true);
+          }
+        }
+      }
+    });
+
+    exportTag.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent arg0) {
+        File listDirectory = new File(ACMConfiguration.getInstance()
+            .getCurrentDB().getTBLoadersDirectory(), "TB_Options/activeLists");
+        LinkedHashMap<String, Category> categories = new LinkedHashMap();
+        Map<String, File> listCollection = Maps.newHashMap();
+        try {
+          String packageName = (String) JOptionPane.showInputDialog(
+              Application.getApplication(), "Enter content package name:",
+              "Export playlist", JOptionPane.PLAIN_MESSAGE, null, null,
+              previousPackageName);
+
+          if (!StringUtils.isEmpty(packageName)) {
+            previousPackageName = packageName;
+            // TODO: need to accommodate multiple message lists (or profiles) in
+            // a single package/image
+            // TODO: each new message list would be numbered
+            File dir = new File(
+                ACMConfiguration.getInstance().getCurrentDB()
+                    .getTBLoadersDirectory(),
+                "packages/" + packageName + "/messages/lists/"
+                    + TBBuilder.firstMessageListName);
+            if (!dir.exists()) {
+              dir.mkdirs();
+            }
+            File targetActiveListsFile;
+            targetActiveListsFile = new File(dir, "_activeLists.txt");
+            if (!targetActiveListsFile.exists()) {
+              File sourceActiveListsFile;
+              if (listDirectory.listFiles().length > 1) {
+                for (File possibleActiveListFile : listDirectory.listFiles()) {
+                  String possibleActiveListString = possibleActiveListFile
+                      .getName();
+                  possibleActiveListString = possibleActiveListString
+                      .substring(0, possibleActiveListString.length() - 4);
+                  possibleActiveListString = possibleActiveListString
+                      .replace('_', ' ');
+                  listCollection.put(possibleActiveListString,
+                      possibleActiveListFile);
+                }
+                String[] listNames = listCollection.keySet()
+                    .toArray(new String[listCollection.size()]);
+                String listName = (String) JOptionPane.showInputDialog(
+                    Application.getApplication(), "Choose categories & order:",
+                    "Category Order", JOptionPane.PLAIN_MESSAGE, null,
+                    listNames, "");
+                if (!StringUtils.isEmpty(listName)) {
+                  sourceActiveListsFile = listCollection.get(listName);
+                } else {
+                  sourceActiveListsFile = listDirectory.listFiles()[0];
+                }
+              } else {
+                sourceActiveListsFile = listDirectory.listFiles()[0];
+              }
+              IOUtils.copy(sourceActiveListsFile, targetActiveListsFile);
+            }
+
+            MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
+                .getMetadataStore();
+            Category category = store.getCategory(TBBuilder.IntroMessageID); // Update
+                                                                             // Intro
+                                                                             // Message
+            categories.put(category.getCategoryName(), category);
+            BufferedReader reader = new BufferedReader(
+                new FileReader(targetActiveListsFile));
+            while (reader.ready()) {
+              String line = reader.readLine();
+              if (StringUtils.isEmpty(line)) {
+                break;
+              }
+              if (line.contains("$")) {
+                continue;
+              }
+              if (line.startsWith("!")) {
+                line = line.substring(1);
+              }
+
+              category = store.getCategory(line);
+              if (category != null) {
+                categories.put(category.getCategoryName(), category);
+              }
+            }
+
+            reader.close();
+
+            String[] names = categories.keySet()
+                .toArray(new String[categories.size()]);
+            String categoryName = (String) JOptionPane.showInputDialog(
+                Application.getApplication(), "Choose export category:",
+                "Export playlist", JOptionPane.PLAIN_MESSAGE, null, names, "");
+
+            if (!StringUtils.isEmpty(categoryName)) {
+              export(selectedTag.getTag(), packageName,
+                  categories.get(categoryName), dir);
+            }
+          }
+
+        } catch (IOException e) {
+          LOG.log(Level.WARNING, "Error while exporting playlist.", e);
+        }
+      }
+    });
+  }
+
+  private final void export(final Playlist playlist, String updateName,
+      Category category, File dir) throws IOException {
+
+    BufferedWriter writer = new BufferedWriter(
+        new FileWriter(new File(dir, category.getUuid() + ".txt"), false));
+    Iterable<String> audioItems = playlist.getAudioItemList();
+
+    for (String audioItem : audioItems) {
+      writer.write(audioItem);
+      writer.newLine();
     }
+
+    writer.close();
+  }
 }

@@ -9,34 +9,35 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 
 public class LanguageComboBoxModel extends DefaultComboBoxModel {
-	private final List<Locale> supportedLanguages;
-	private Object selectedItem;
-	
-	public LanguageComboBoxModel() {
-		supportedLanguages = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages();
-	}
+  private final List<Locale> supportedLanguages;
+  private Object selectedItem;
 
-	@Override
-	public Object getElementAt(int index) {
-		return LanguageUtil.getLocalizedLanguageName(supportedLanguages.get(index));
-	}
+  public LanguageComboBoxModel() {
+    supportedLanguages = ACMConfiguration.getInstance().getCurrentDB()
+        .getAudioLanguages();
+  }
 
-	@Override
-	public int getSize() {
-		return supportedLanguages.size();
-	}
-	
-	@Override
-	public Object getSelectedItem() {
-		return selectedItem;
-	}
+  @Override
+  public Object getElementAt(int index) {
+    return LanguageUtil.getLocalizedLanguageName(supportedLanguages.get(index));
+  }
 
-	@Override
-	public void setSelectedItem(Object anObject) {
-		selectedItem = anObject;
-	}
+  @Override
+  public int getSize() {
+    return supportedLanguages.size();
+  }
 
-	public Locale getLocalForIndex(int index) {
-		return supportedLanguages.get(index);
-	}
+  @Override
+  public Object getSelectedItem() {
+    return selectedItem;
+  }
+
+  @Override
+  public void setSelectedItem(Object anObject) {
+    selectedItem = anObject;
+  }
+
+  public Locale getLocalForIndex(int index) {
+    return supportedLanguages.get(index);
+  }
 }

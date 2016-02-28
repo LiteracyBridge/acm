@@ -12,44 +12,54 @@ import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.utils.IOUtils;
 
 public class FileSystemExporter {
-    public static final String FILENAME_SEPARATOR = "___";
+  public static final String FILENAME_SEPARATOR = "___";
 
-    public static void export(AudioItem[] selectedAudioItems, File targetDir, AudioFormat targetFormat, boolean titleInFilename, boolean idInFilename)
-            throws IOException {
+  public static void export(AudioItem[] selectedAudioItems, File targetDir,
+      AudioFormat targetFormat, boolean titleInFilename, boolean idInFilename)
+      throws IOException {
 
-        try {
-            AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
+    try {
+      AudioItemRepository repository = ACMConfiguration.getInstance()
+          .getCurrentDB().getRepository();
 
-            for (AudioItem audioItem : selectedAudioItems) {
-                // first: check which formats we have
-                File sourceFile = repository.convert(audioItem, targetFormat);
+      for (AudioItem audioItem : selectedAudioItems) {
+        // first: check which formats we have
+        File sourceFile = repository.convert(audioItem, targetFormat);
 
-                if (sourceFile != null) {
-                    String title = (titleInFilename?audioItem.getMetadata().getMetadataValue(MetadataSpecification.DC_TITLE).getValue():"")
-                            + (idInFilename && titleInFilename?FILENAME_SEPARATOR:"")
-                            + (idInFilename?audioItem.getMetadata().getMetadataValue(MetadataSpecification.DC_IDENTIFIER).getValue():"");
+        if (sourceFile != null) {
+          String title = (titleInFilename
+              ? audioItem.getMetadata()
+                  .getMetadataValue(MetadataSpecification.DC_TITLE).getValue()
+              : "")
+              + (idInFilename && titleInFilename ? FILENAME_SEPARATOR : "")
+              + (idInFilename ? audioItem.getMetadata()
+                  .getMetadataValue(MetadataSpecification.DC_IDENTIFIER)
+                  .getValue() : "");
 
-                    // replace invalid file name characters (windows) with an underscore ('_')
-                    title = title.trim().replaceAll("[\\\\/:*?\"<>|']", "_");
-                    File targetFile;
-                    int counter = 0;
-                    do {
-                        if (counter == 0) {
-                            targetFile = new File(targetDir, title + "." + targetFormat.getFileExtension());
-                        } else {
-                            targetFile = new File(targetDir, title + "-" + counter + "." + targetFormat.getFileExtension());
-                        }
-                        counter++;
-                    } while (targetFile.exists());
-                    if (targetFormat == AudioFormat.A18) {
-                        repository.exportA18WithMetadataToFile(audioItem, targetFile);
-                    } else {
-                        IOUtils.copy(sourceFile, targetFile);
-                    }
-                }
+          // replace invalid file name characters (windows) with an underscore
+          // ('_')
+          title = title.trim().replaceAll("[\\\\/:*?\"<>|']", "_");
+          File targetFile;
+          int counter = 0;
+          do {
+            if (counter == 0) {
+              targetFile = new File(targetDir,
+                  title + "." + targetFormat.getFileExtension());
+            } else {
+              targetFile = new File(targetDir, title + "-" + counter + "."
+                  + targetFormat.getFileExtension());
             }
-        } catch (ConversionException e) {
-            throw new IOException(e);
+            counter++;
+          } while (targetFile.exists());
+          if (targetFormat == AudioFormat.A18) {
+            repository.exportA18WithMetadataToFile(audioItem, targetFile);
+          } else {
+            IOUtils.copy(sourceFile, targetFile);
+          }
         }
+      }
+    } catch (ConversionException e) {
+      throw new IOException(e);
     }
+  }
 }

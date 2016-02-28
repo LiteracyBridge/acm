@@ -29,144 +29,160 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Transaction;
 
 public class TreeTransferHandler extends TransferHandler {
-    private static final long serialVersionUID = 1L;
-    private static final Logger LOG = Logger.getLogger(TreeTransferHandler.class.getName());
+  private static final long serialVersionUID = 1L;
+  private static final Logger LOG = Logger
+      .getLogger(TreeTransferHandler.class.getName());
 
-    static DataFlavor[] supportedFlavors = new DataFlavor[] {
-            DataFlavor.javaFileListFlavor,
-            AudioItemView.AudioItemDataFlavor
+  static DataFlavor[] supportedFlavors = new DataFlavor[] {
+      DataFlavor.javaFileListFlavor, AudioItemView.AudioItemDataFlavor };
+
+  @Override
+  public boolean canImport(TransferHandler.TransferSupport support) {
+    if (!support.isDrop()) {
+      return false;
+    }
+
+    boolean supported = false;
+    for (DataFlavor flavor : supportedFlavors) {
+      if (support.isDataFlavorSupported(flavor)) {
+        supported = true;
+        break;
+      }
+    }
+
+    if (!supported) {
+      return false;
+    }
+
+    // Get drop location info.
+    JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
+    TreePath dest = dl.getPath();
+    if (dest == null) {
+      return false;
+    }
+
+    DefaultMutableTreeNode parent = (DefaultMutableTreeNode) dest
+        .getLastPathComponent();
+    final CategoryTreeNodeObject target = (CategoryTreeNodeObject) parent
+        .getUserObject();
+
+    // only allow dropping on leaves
+    return !target.getCategory().hasChildren();
+  }
+
+  @Override
+  public boolean importData(TransferHandler.TransferSupport support) {
+    if (!canImport(support)) {
+      return false;
+    }
+    // Get drop location info.
+    JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
+    TreePath dest = dl.getPath();
+    DefaultMutableTreeNode parent = (DefaultMutableTreeNode) dest
+        .getLastPathComponent();
+    final CategoryTreeNodeObject target = (CategoryTreeNodeObject) parent
+        .getUserObject();
+
+    // Extract transfer data.
+    try {
+      if (support.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+        importExternalFiles(support, target.getCategory());
+        return true;
+      } else if (support
+          .isDataFlavorSupported(AudioItemView.AudioItemDataFlavor)) {
+        assignCategory(support, target);
+        return true;
+      }
+    } catch (UnsupportedFlavorException e) {
+      LOG.log(Level.WARNING, "Exception while importing files.", e);
+    } catch (IOException e) {
+      LOG.log(Level.WARNING, "Exception while importing files.", e);
+    }
+
+    return false;
+  }
+
+  public static void importExternalFiles(
+      TransferHandler.TransferSupport support, final Category category)
+      throws IOException, UnsupportedFlavorException {
+    Transferable t = support.getTransferable();
+    final List<File> files = (List<File>) t
+        .getTransferData(DataFlavor.javaFileListFlavor);
+
+    // don't piggyback on the drag&drop thread
+    Runnable job = new Runnable() {
+
+      @Override
+      public void run() {
+        Application parent = Application.getApplication();
+        Container busy = UIUtils.showDialog(parent,
+            new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES",
+                LanguageUtil.getUILanguage()), parent));
+        try {
+          for (File f : files) {
+            if (f.isDirectory()) {
+              FileImporter.getInstance().importDirectory(ACMConfiguration
+                  .getInstance().getCurrentDB().getMetadataStore(), category, f,
+                  false);
+            } else {
+              FileImporter.getInstance().importFile(ACMConfiguration
+                  .getInstance().getCurrentDB().getMetadataStore(), category,
+                  f);
+            }
+          }
+        } catch (IOException e) {
+          e.printStackTrace();
+        } finally {
+          UIUtils.hideDialog(busy);
+          Application.getFilterState().updateResult(true);
+        }
+      }
     };
 
-    @Override
-    public boolean canImport(TransferHandler.TransferSupport support) {
-        if (!support.isDrop()) {
-            return false;
-        }
+    new Thread(job).start();
+  }
 
-        boolean supported = false;
-        for (DataFlavor flavor : supportedFlavors) {
-            if (support.isDataFlavorSupported(flavor)) {
-                supported = true;
-                break;
-            }
-        }
+  private void assignCategory(TransferHandler.TransferSupport support,
+      final CategoryTreeNodeObject target)
+      throws IOException, UnsupportedFlavorException {
+    Transferable t = support.getTransferable();
+    final boolean move = support.getDropAction() == TransferHandler.MOVE;
 
-        if (!supported) {
-            return false;
-        }
+    final AudioItem[] audioItems = (AudioItem[]) t
+        .getTransferData(AudioItemView.AudioItemDataFlavor);
+    // don't piggyback on the drag&drop thread
+    Runnable job = new Runnable() {
 
-        // Get drop location info.
-        JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
-        TreePath dest = dl.getPath();
-        if (dest == null) {
-            return false;
-        }
-
-        DefaultMutableTreeNode parent = (DefaultMutableTreeNode) dest.getLastPathComponent();
-        final CategoryTreeNodeObject target = (CategoryTreeNodeObject) parent.getUserObject();
-
-        // only allow dropping on leaves
-        return !target.getCategory().hasChildren();
-    }
-
-    @Override
-    public boolean importData(TransferHandler.TransferSupport support) {
-        if (!canImport(support)) {
-            return false;
-        }
-        // Get drop location info.
-        JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
-        TreePath dest = dl.getPath();
-        DefaultMutableTreeNode parent = (DefaultMutableTreeNode) dest.getLastPathComponent();
-        final CategoryTreeNodeObject target = (CategoryTreeNodeObject) parent.getUserObject();
-
-        // Extract transfer data.
+      @Override
+      public void run() {
+        Transaction transaction = ACMConfiguration.getInstance().getCurrentDB()
+            .getMetadataStore().newTransaction();
+        boolean success = false;
         try {
-            if (support.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                importExternalFiles(support, target.getCategory());
-                return true;
-            } else if (support.isDataFlavorSupported(AudioItemView.AudioItemDataFlavor)) {
-                assignCategory(support, target);
-                return true;
+          for (AudioItem item : audioItems) {
+            if (move) {
+              item.removeAllCategories();
             }
-        } catch (UnsupportedFlavorException e) {
-            LOG.log(Level.WARNING, "Exception while importing files.", e);
+            item.addCategory(target.getCategory());
+            transaction.add(item);
+          }
+          transaction.commit();
+          success = true;
         } catch (IOException e) {
-            LOG.log(Level.WARNING, "Exception while importing files.", e);
+          LOG.log(Level.SEVERE, "Unable to commit transaction.", e);
+        } finally {
+          if (!success) {
+            try {
+              transaction.rollback();
+            } catch (IOException e) {
+              LOG.log(Level.SEVERE, "Unable to rollback transaction.", e);
+            }
+          }
+          Application.getFilterState().updateResult(true);
         }
+      }
+    };
+    new Thread(job).start();
 
-        return false;
-    }
-
-    public static void importExternalFiles(TransferHandler.TransferSupport support, final Category category) throws IOException, UnsupportedFlavorException {
-        Transferable t = support.getTransferable();
-        final List<File> files = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
-
-
-        // don't piggyback on the drag&drop thread
-        Runnable job = new Runnable() {
-
-            @Override
-            public void run() {
-                Application parent = Application.getApplication();
-                Container busy = UIUtils.showDialog(parent, new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES", LanguageUtil.getUILanguage()), parent));
-                try {
-                    for (File f : files) {
-                        if (f.isDirectory()) {
-                            FileImporter.getInstance().importDirectory(ACMConfiguration.getInstance().getCurrentDB().getMetadataStore(), category, f, false);
-                        } else {
-                            FileImporter.getInstance().importFile(ACMConfiguration.getInstance().getCurrentDB().getMetadataStore(), category, f);
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    UIUtils.hideDialog(busy);
-                    Application.getFilterState().updateResult(true);
-                }
-            }
-        };
-
-        new Thread(job).start();
-    }
-
-    private void assignCategory(TransferHandler.TransferSupport support, final CategoryTreeNodeObject target) throws IOException, UnsupportedFlavorException {
-        Transferable t = support.getTransferable();
-        final boolean move = support.getDropAction() == TransferHandler.MOVE;
-
-        final AudioItem[] audioItems = (AudioItem[]) t.getTransferData(AudioItemView.AudioItemDataFlavor);
-        // don't piggyback on the drag&drop thread
-        Runnable job = new Runnable() {
-
-            @Override
-            public void run() {
-                Transaction transaction = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().newTransaction();
-                boolean success = false;
-                try {
-                    for (AudioItem item : audioItems) {
-                        if (move) {
-                            item.removeAllCategories();
-                        }
-                        item.addCategory(target.getCategory());
-                        transaction.add(item);
-                    }
-                    transaction.commit();
-                    success = true;
-                } catch (IOException e) {
-                    LOG.log(Level.SEVERE, "Unable to commit transaction.", e);
-                } finally {
-                    if (!success) {
-                        try {
-                            transaction.rollback();
-                        } catch (IOException e) {
-                            LOG.log(Level.SEVERE, "Unable to rollback transaction.", e);
-                        }
-                    }
-                    Application.getFilterState().updateResult(true);
-                }
-            }
-        };
-        new Thread(job).start();
-
-    }
+  }
 }

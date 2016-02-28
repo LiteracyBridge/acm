@@ -5,71 +5,77 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Metadata {
-    private Map<MetadataField<?>, MetadataValue<?>> fields;
+  private Map<MetadataField<?>, MetadataValue<?>> fields;
 
-    public Metadata() {
-        this.fields = new LinkedHashMap<MetadataField<?>, MetadataValue<?>>();
+  public Metadata() {
+    this.fields = new LinkedHashMap<MetadataField<?>, MetadataValue<?>>();
+  }
+
+  public int getNumberOfFields() {
+    return this.fields.size();
+  }
+
+  public <F> void setMetadataField(MetadataField<F> field,
+      MetadataValue<F> value) {
+    if ((value == null) || (value.getValue() == null)) {
+      return;
     }
 
-    public int getNumberOfFields() {
-        return this.fields.size();
-    }
+    this.fields.put(field, value);
+  }
 
-    public <F> void setMetadataField(MetadataField<F> field, MetadataValue<F> value) {
-        if ((value == null) || (value.getValue() == null)) {
-            return;
-        }
+  public void validate() throws InvalidMetadataException {
+    // TODO: when MetadataFields support things like required/optional, we can
+    // implement validation here
+  }
 
+  public Iterator<MetadataField<?>> getFieldsIterator() {
+    return this.fields.keySet().iterator();
+  }
+
+  public boolean hasMetadataField(MetadataField<?> field) {
+    return this.fields.containsKey(field);
+  }
+
+  @SuppressWarnings("unchecked")
+  public <F> MetadataValue<F> getMetadataValue(MetadataField<F> field) {
+    return (MetadataValue<F>) this.fields.get(field);
+  }
+
+  public void clear() {
+    this.fields.clear();
+  }
+
+  /**
+   * Adds values from another Metadata object to this object. If the value
+   * already exists, in this object, it will be overwritten.
+   * 
+   * @param otherMetadata
+   */
+  public void addValuesFrom(Metadata otherMetadata) {
+    Iterator<MetadataField<?>> fieldsIterator = LBMetadataIDs.FieldToIDMap
+        .keySet().iterator();
+    while (fieldsIterator.hasNext()) {
+      MetadataField<?> field = fieldsIterator.next();
+      MetadataValue<?> value = otherMetadata.getMetadataValue(field);
+      if (value != null) {
         this.fields.put(field, value);
+      }
     }
+  }
 
-    public void validate() throws InvalidMetadataException {
-        // TODO: when MetadataFields support things like required/optional, we can implement validation here
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    Iterator<MetadataField<?>> fieldsIterator = LBMetadataIDs.FieldToIDMap
+        .keySet().iterator();
+    while (fieldsIterator.hasNext()) {
+      MetadataField<?> field = fieldsIterator.next();
+      MetadataValue<?> value = getMetadataValue(field);
+      if (value != null) {
+        builder.append(field.getName() + " = " + value.getValue() + "\n");
+      }
     }
-
-    public Iterator<MetadataField<?>> getFieldsIterator() {
-        return this.fields.keySet().iterator();
-    }
-
-    public boolean hasMetadataField(MetadataField<?> field) {
-        return this.fields.containsKey(field);
-    }
-
-    @SuppressWarnings("unchecked")
-    public <F> MetadataValue<F> getMetadataValue(MetadataField<F> field) {
-        return (MetadataValue<F>) this.fields.get(field);
-    }
-
-    public void clear() {
-        this.fields.clear();
-    }
-
-    /**
-     * Adds values from another Metadata object to this object. If the value already exists, in this
-     * object, it will be overwritten.
-     * @param otherMetadata
-     */
-    public void addValuesFrom(Metadata otherMetadata) {
-        Iterator<MetadataField<?>> fieldsIterator = LBMetadataIDs.FieldToIDMap.keySet().iterator();
-        while (fieldsIterator.hasNext()) {
-            MetadataField<?> field = fieldsIterator.next();
-            MetadataValue<?> value = otherMetadata.getMetadataValue(field);
-            if (value != null) {
-                this.fields.put(field, value);
-            }
-        }
-    }
-
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        Iterator<MetadataField<?>> fieldsIterator = LBMetadataIDs.FieldToIDMap.keySet().iterator();
-        while (fieldsIterator.hasNext()) {
-            MetadataField<?> field = fieldsIterator.next();
-            MetadataValue<?> value = getMetadataValue(field);
-            if (value != null) {
-                builder.append(field.getName() + " = " + value.getValue() + "\n");
-            }
-        }
-        return builder.toString();
-    }
+    return builder.toString();
+  }
 }

@@ -9,82 +9,89 @@ import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 public abstract class AudioItemProperty<V> {
-    private final boolean isCellEditable;
-    private final boolean showEditIcon;
+  private final boolean isCellEditable;
+  private final boolean showEditIcon;
 
-    public AudioItemProperty(boolean editable) {
-        this(editable, false);
+  public AudioItemProperty(boolean editable) {
+    this(editable, false);
+  }
+
+  public AudioItemProperty(boolean isCellEditable, boolean showEditIcon) {
+    this.isCellEditable = isCellEditable;
+    this.showEditIcon = showEditIcon;
+  }
+
+  public abstract String getName();
+
+  public abstract String getValue(AudioItem audioItem);
+
+  public abstract void setValue(AudioItem audioItem, V newValue);
+
+  public boolean isCellEditable() {
+    return isCellEditable;
+  }
+
+  public boolean showEditIcon() {
+    return showEditIcon;
+  }
+
+  public static class MetadataProperty extends AudioItemProperty<String> {
+    private final MetadataField<String> field;
+
+    public MetadataProperty(MetadataField<String> field, boolean editable) {
+      super(editable);
+      this.field = field;
     }
 
-    public AudioItemProperty(boolean isCellEditable, boolean showEditIcon) {
-        this.isCellEditable = isCellEditable;
-        this.showEditIcon = showEditIcon;
+    public MetadataField<?> getMetadataField() {
+      return field;
     }
 
-    public abstract String getName();
-    public abstract String getValue(AudioItem audioItem);
-    public abstract void setValue(AudioItem audioItem, V newValue);
-
-    public boolean isCellEditable() {
-        return isCellEditable;
+    @Override
+    public String getName() {
+      return LabelProvider.getLabel(field, LanguageUtil.getUILanguage());
     }
 
-    public boolean showEditIcon() {
-        return showEditIcon;
+    @Override
+    public String getValue(AudioItem audioItem) {
+      if (audioItem.getMetadata().hasMetadataField(field)) {
+        return audioItem.getMetadata().getMetadataValue(field).getValue();
+      } else {
+        return "";
+      }
     }
 
-    public static class MetadataProperty extends AudioItemProperty<String> {
-        private final MetadataField<String> field;
+    @Override
+    public void setValue(AudioItem audioItem, String newValue) {
+      AudioItemPropertiesModel.setStringValue(field, audioItem.getMetadata(),
+          newValue);
+    }
+  }
 
-        public MetadataProperty(MetadataField<String> field,
-                boolean editable) {
-            super(editable);
-            this.field = field;
-        }
+  public static class LanguageProperty extends AudioItemProperty<Locale> {
+    private final MetadataField<RFC3066LanguageCode> field;
 
-        public MetadataField<?> getMetadataField() {
-            return field;
-        }
-
-        public String getName() {
-            return LabelProvider.getLabel(field, LanguageUtil.getUILanguage());
-        }
-
-        public String getValue(AudioItem audioItem) {
-            if (audioItem.getMetadata().hasMetadataField(field)) {
-                return audioItem.getMetadata().getMetadataValue(field).getValue();
-            } else {
-                return "";
-            }
-        }
-
-        @Override
-        public void setValue(AudioItem audioItem, String newValue) {
-            AudioItemPropertiesModel.setStringValue(field, audioItem.getMetadata(), newValue);
-        }
+    public LanguageProperty(MetadataField<RFC3066LanguageCode> field,
+        boolean editable) {
+      super(editable);
+      this.field = field;
     }
 
-    public static class LanguageProperty extends AudioItemProperty<Locale> {
-        private final MetadataField<RFC3066LanguageCode> field;
-
-        public LanguageProperty(MetadataField<RFC3066LanguageCode> field,
-                boolean editable) {
-            super(editable);
-            this.field = field;
-        }
-
-        public String getName() {
-            return LabelProvider.getLabel(field, LanguageUtil.getUILanguage());
-        }
-
-        public String getValue(AudioItem audioItem) {
-            return LanguageUtil.getLocalizedLanguageName(AudioItemPropertiesModel.getLanguage(audioItem, field));
-        }
-
-        @Override
-        public void setValue(AudioItem audioItem, Locale newLocale) {
-            AudioItemPropertiesModel.setLocaleValue(field, audioItem, newLocale);
-        }
+    @Override
+    public String getName() {
+      return LabelProvider.getLabel(field, LanguageUtil.getUILanguage());
     }
+
+    @Override
+    public String getValue(AudioItem audioItem) {
+      return LanguageUtil.getLocalizedLanguageName(
+          AudioItemPropertiesModel.getLanguage(audioItem, field));
+    }
+
+    @Override
+    public void setValue(AudioItem audioItem, Locale newLocale) {
+      AudioItemPropertiesModel.setLocaleValue(field, audioItem, newLocale);
+    }
+  }
 
 }

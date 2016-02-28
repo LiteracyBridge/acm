@@ -12,46 +12,48 @@ import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.SearchResult;
 
 public class ResourceView extends ACMContainer {
-    private static final long serialVersionUID = 1464102221036629153L;
+  private static final long serialVersionUID = 1464102221036629153L;
 
-    public AudioItemView audioItemView;
+  public AudioItemView audioItemView;
 
-    public ResourceView() {
-        createViewComponents();
-    }
+  public ResourceView() {
+    createViewComponents();
+  }
 
-    private void createViewComponents() {
-        setLayout(new BorderLayout());
+  private void createViewComponents() {
+    setLayout(new BorderLayout());
 
-        final MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-        SearchResult result = store.search("", null);
+    final MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
+        .getMetadataStore();
+    SearchResult result = store.search("", null);
 
-        // Table with audio items
-        audioItemView = new AudioItemView();
-        audioItemView.setData(result);
+    // Table with audio items
+    audioItemView = new AudioItemView();
+    audioItemView.setData(result);
 
-        //  Tree with categories
-        //  Create at the end, because this is the main selection provider
-        CategoryView categoryView = new CategoryView(result);
+    // Tree with categories
+    // Create at the end, because this is the main selection provider
+    CategoryView categoryView = new CategoryView(result);
 
-        JSplitPane sp = new JSplitPane();
-        // left-side
-        sp.setLeftComponent(categoryView);
-        // right-side
-        sp.setRightComponent(audioItemView);
+    JSplitPane sp = new JSplitPane();
+    // left-side
+    sp.setLeftComponent(categoryView);
+    // right-side
+    sp.setRightComponent(audioItemView);
 
-        sp.setOneTouchExpandable(true);
-        sp.setContinuousLayout(true);
-        sp.setDividerLocation(300);
+    sp.setOneTouchExpandable(true);
+    sp.setContinuousLayout(true);
+    sp.setDividerLocation(300);
 
-        add(BorderLayout.CENTER, sp);
+    add(BorderLayout.CENTER, sp);
 
-        Application.getMessageService().pumpMessage(result);
-    }
+    Application.getMessageService().pumpMessage(result);
+  }
 
-    public static void updateDataRequestResult() {
-        final MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-        SearchResult result = store.search("", null);
-        Application.getMessageService().pumpMessage(result);
-    }
+  public static void updateDataRequestResult() {
+    final MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
+        .getMetadataStore();
+    SearchResult result = store.search("", null);
+    Application.getMessageService().pumpMessage(result);
+  }
 }

@@ -5,32 +5,37 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public abstract class MetadataField<T> {
-    private final String name;
+  private final String name;
 
-    protected MetadataField(String name) {
-        this.name = name;
+  protected MetadataField(String name) {
+    this.name = name;
+  }
+
+  void validateValue(T value) throws InvalidMetadataException {
+    // do nothing by default
+  }
+
+  public String getName() {
+    return this.name;
+  }
+
+  @Override
+  public int hashCode() {
+    return name.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (!(other instanceof MetadataField)) {
+      return false;
     }
 
-    void validateValue(T value) throws InvalidMetadataException {
-        // do nothing by default
-    }
+    return ((MetadataField<?>) other).name.equals(name);
+  }
 
-    public String getName() {
-        return this.name;
-    }
+  protected abstract MetadataValue<T> deserialize(DataInput in)
+      throws IOException;
 
-    @Override public int hashCode() {
-        return name.hashCode();
-    }
-
-    @Override public boolean equals(Object other) {
-        if (!(other instanceof MetadataField)) {
-            return false;
-        }
-
-        return ((MetadataField<?>) other).name.equals(name);
-    }
-
-    protected abstract MetadataValue<T> deserialize(DataInput in) throws IOException;
-    protected abstract void serialize(DataOutput out, MetadataValue<T> value) throws IOException;
+  protected abstract void serialize(DataOutput out, MetadataValue<T> value)
+      throws IOException;
 }

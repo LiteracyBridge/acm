@@ -13,159 +13,163 @@ import java.util.logging.Logger;
 import com.google.common.collect.Maps;
 
 public class LuceneMetadataStore extends MetadataStore {
-    private static final Logger LOG = Logger.getLogger(LuceneMetadataStore.class.getName());
+  private static final Logger LOG = Logger
+      .getLogger(LuceneMetadataStore.class.getName());
 
-    private final AudioItemIndex index;
-    private final Map<String, Playlist> playlistCache;
-    private final Map<String, AudioItem> audioItemCache;
+  private final AudioItemIndex index;
+  private final Map<String, Playlist> playlistCache;
+  private final Map<String, AudioItem> audioItemCache;
 
-    private AtomicReference<Transaction> activeTransaction = new AtomicReference<Transaction>();
+  private AtomicReference<Transaction> activeTransaction = new AtomicReference<Transaction>();
 
-    public LuceneMetadataStore(Taxonomy taxonomy, File indexDirectory) throws IOException {
-        super(taxonomy);
-        // initialize Lucene index
-        if (!AudioItemIndex.indexExists(indexDirectory)) {
-            this.index = AudioItemIndex.newIndex(indexDirectory, taxonomy);
-        } else {
-            this.index = AudioItemIndex.load(indexDirectory, taxonomy);
+  public LuceneMetadataStore(Taxonomy taxonomy, File indexDirectory)
+      throws IOException {
+    super(taxonomy);
+    // initialize Lucene index
+    if (!AudioItemIndex.indexExists(indexDirectory)) {
+      this.index = AudioItemIndex.newIndex(indexDirectory, taxonomy);
+    } else {
+      this.index = AudioItemIndex.load(indexDirectory, taxonomy);
+    }
+
+    this.playlistCache = Maps.newLinkedHashMap();
+    this.audioItemCache = Maps.newLinkedHashMap();
+
+    // fill caches
+    try {
+      Iterable<AudioItem> audioItems = index.getAudioItems();
+      for (AudioItem audioItem : audioItems) {
+        audioItemCache.put(audioItem.getUuid(), audioItem);
+      }
+
+      Iterable<Playlist> playlists = index.getPlaylists();
+      for (Playlist playlist : playlists) {
+        playlistCache.put(playlist.getUuid(), playlist);
+        for (String uid : playlist.getAudioItemList()) {
+          AudioItem audioItem = audioItemCache.get(uid);
+          if (audioItem != null) {
+            audioItem.addPlaylist(playlist);
+            audioItemCache.put(audioItem.getUuid(), audioItem);
+          }
         }
+      }
 
-        this.playlistCache = Maps.newLinkedHashMap();
-        this.audioItemCache = Maps.newLinkedHashMap();
+    } catch (IOException e) {
+      throw new RuntimeException("Unable to initialize caches", e);
+    }
 
-        // fill caches
-        try {
-            Iterable<AudioItem> audioItems = index.getAudioItems();
-            for (AudioItem audioItem : audioItems) {
-                audioItemCache.put(audioItem.getUuid(), audioItem);
-            }
-
-            Iterable<Playlist> playlists = index.getPlaylists();
-            for (Playlist playlist : playlists) {
-                playlistCache.put(playlist.getUuid(), playlist);
-                for (String uid : playlist.getAudioItemList()) {
-                    AudioItem audioItem = audioItemCache.get(uid);
-                    if (audioItem != null) {
-                        audioItem.addPlaylist(playlist);
-                        audioItemCache.put(audioItem.getUuid(), audioItem);
-                    }
-                }
-            }
-
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to initialize caches", e);
+    addDataChangeListener(new DataChangeListener() {
+      @Override
+      public void dataChanged(Committable item, DataChangeEventType eventType) {
+        if (item instanceof Playlist) {
+          Playlist playlist = (Playlist) item;
+          if (eventType == DataChangeEventType.ITEM_DELETED) {
+            playlistCache.remove(playlist.getUuid());
+          } else {
+            playlistCache.put(playlist.getUuid(), playlist);
+          }
         }
-
-        addDataChangeListener(new DataChangeListener() {
-            @Override
-            public void dataChanged(Committable item,
-                    DataChangeEventType eventType) {
-                if (item instanceof Playlist) {
-                    Playlist playlist = (Playlist) item;
-                    if (eventType == DataChangeEventType.ITEM_DELETED) {
-                        playlistCache.remove(playlist.getUuid());
-                    } else {
-                        playlistCache.put(playlist.getUuid(), playlist);
-                    }
-                }
-                if (item instanceof AudioItem) {
-                    AudioItem audioItem = (AudioItem) item;
-                    if (eventType == DataChangeEventType.ITEM_DELETED) {
-                        audioItemCache.remove(audioItem.getUuid());
-                    } else {
-                        audioItemCache.put(audioItem.getUuid(), audioItem);
-                    }
-                }
-            }
-
-        });
-    }
-
-    @Override
-    public AudioItem getAudioItem(String uid) {
-        return audioItemCache.get(uid);
-    }
-
-    @Override
-    public Iterable<AudioItem> getAudioItems() {
-        return audioItemCache.values();
-    }
-
-    @Override
-    public SearchResult search(String query,
-            List<Category> categories, List<Locale> locales) {
-        try {
-            return index.search(query, categories, locales);
-        } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while searching Lucene index.", e);
-            return null;
+        if (item instanceof AudioItem) {
+          AudioItem audioItem = (AudioItem) item;
+          if (eventType == DataChangeEventType.ITEM_DELETED) {
+            audioItemCache.remove(audioItem.getUuid());
+          } else {
+            audioItemCache.put(audioItem.getUuid(), audioItem);
+          }
         }
+      }
+
+    });
+  }
+
+  @Override
+  public AudioItem getAudioItem(String uid) {
+    return audioItemCache.get(uid);
+  }
+
+  @Override
+  public Iterable<AudioItem> getAudioItems() {
+    return audioItemCache.values();
+  }
+
+  @Override
+  public SearchResult search(String query, List<Category> categories,
+      List<Locale> locales) {
+    try {
+      return index.search(query, categories, locales);
+    } catch (IOException e) {
+      LOG.log(Level.SEVERE, "IOException while searching Lucene index.", e);
+      return null;
+    }
+  }
+
+  @Override
+  public SearchResult search(String query, Playlist playlist) {
+    try {
+      return index.search(query, playlist);
+    } catch (IOException e) {
+      LOG.log(Level.SEVERE, "IOException while searching Lucene index.", e);
+      return null;
+    }
+  }
+
+  @Override
+  public Playlist newPlaylist(String name) {
+    return index.newPlaylist(name);
+  }
+
+  @Override
+  public Playlist getPlaylist(String uuid) {
+    return playlistCache.get(uuid);
+  }
+
+  @Override
+  public Iterable<Playlist> getPlaylists() {
+    return playlistCache.values();
+  }
+
+  @Override
+  public synchronized Transaction newTransaction() {
+    try {
+      final Transaction oldTransaction = activeTransaction.get();
+      if (oldTransaction != null && oldTransaction.isActive()) {
+        throw new IOException("Nested transactions are not allowed.");
+      }
+
+      Transaction newTransaction = index.newTransaction(this);
+      activeTransaction.set(newTransaction);
+      return newTransaction;
+    } catch (IOException e) {
+      LOG.log(Level.SEVERE,
+          "IOException while starting transaction with Lucene index.", e);
+      return null;
+    }
+  }
+
+  @Override
+  public void deleteAudioItem(String uuid) {
+    final AudioItem item = getAudioItem(uuid);
+    if (item == null) {
+      throw new NoSuchElementException(
+          "AudioItem with " + uuid + " does not exist.");
     }
 
-    @Override
-    public SearchResult search(String query, Playlist playlist) {
-        try {
-            return index.search(query, playlist);
-        } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while searching Lucene index.", e);
-            return null;
-        }
+    item.delete();
+  }
+
+  @Override
+  public void deletePlaylist(String uuid) {
+    final Playlist playlist = getPlaylist(uuid);
+    if (playlist == null) {
+      throw new NoSuchElementException(
+          "Playlist with " + uuid + " does not exist.");
     }
 
-    @Override
-    public Playlist newPlaylist(String name) {
-        return index.newPlaylist(name);
-    }
+    playlist.delete();
+  }
 
-    @Override
-    public Playlist getPlaylist(String uuid) {
-        return  playlistCache.get(uuid);
-    }
-
-    @Override
-    public Iterable<Playlist> getPlaylists() {
-        return playlistCache.values();
-    }
-
-    @Override
-    public synchronized Transaction newTransaction() {
-        try {
-            final Transaction oldTransaction = activeTransaction.get();
-            if (oldTransaction != null && oldTransaction.isActive()) {
-                throw new IOException("Nested transactions are not allowed.");
-            }
-
-            Transaction newTransaction = index.newTransaction(this);
-            activeTransaction.set(newTransaction);
-            return newTransaction;
-        } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while starting transaction with Lucene index.", e);
-            return null;
-        }
-    }
-
-    @Override
-    public void deleteAudioItem(String uuid) {
-        final AudioItem item = getAudioItem(uuid);
-        if (item == null) {
-            throw new NoSuchElementException("AudioItem with " + uuid + " does not exist.");
-        }
-
-        item.delete();
-    }
-
-    @Override
-    public void deletePlaylist(String uuid) {
-        final Playlist playlist = getPlaylist(uuid);
-        if (playlist == null) {
-            throw new NoSuchElementException("Playlist with " + uuid + " does not exist.");
-        }
-
-        playlist.delete();
-    }
-
-    @Override
-    public AudioItem newAudioItem(String uid) {
-        return new AudioItem(uid);
-    }
+  @Override
+  public AudioItem newAudioItem(String uid) {
+    return new AudioItem(uid);
+  }
 }

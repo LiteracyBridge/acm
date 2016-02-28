@@ -19,33 +19,40 @@ import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 public class WAVImporter extends Importer {
 
-    @Override
-    protected void importSingleFile(MetadataStore store, Category category, File file) throws IOException {
-        try {
-            AudioItem audioItem = store.newAudioItem(ACMConfiguration.getInstance().getNewAudioItemUID());
-            audioItem.addCategory(category);
+  @Override
+  protected void importSingleFile(MetadataStore store, Category category,
+      File file) throws IOException {
+    try {
+      AudioItem audioItem = store
+          .newAudioItem(ACMConfiguration.getInstance().getNewAudioItemUID());
+      audioItem.addCategory(category);
 
-            Metadata metadata = audioItem.getMetadata();
-            String title = file.getName().substring(0, file.getName().length() - 4);
-            metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER, new MetadataValue<String>(audioItem.getUuid()));
-            metadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(title));
-            metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
-            metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE,
-                    new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
+      Metadata metadata = audioItem.getMetadata();
+      String title = file.getName().substring(0, file.getName().length() - 4);
+      metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER,
+          new MetadataValue<String>(audioItem.getUuid()));
+      metadata.setMetadataField(MetadataSpecification.DC_TITLE,
+          new MetadataValue<String>(title));
+      metadata.setMetadataField(MetadataSpecification.DTB_REVISION,
+          new MetadataValue<String>("1"));
+      metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE,
+          new MetadataValue<RFC3066LanguageCode>(
+              new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 
-            AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
-            repository.storeAudioFile(audioItem, file);
+      AudioItemRepository repository = ACMConfiguration.getInstance()
+          .getCurrentDB().getRepository();
+      repository.storeAudioFile(audioItem, file);
 
-            store.commit(audioItem);
-        } catch (UnsupportedFormatException e) {
-            throw new IOException(e);
-        } catch (DuplicateItemException e) {
-            throw new IOException(e);
-        }
+      store.commit(audioItem);
+    } catch (UnsupportedFormatException e) {
+      throw new IOException(e);
+    } catch (DuplicateItemException e) {
+      throw new IOException(e);
     }
+  }
 
-    @Override
-    protected String[] getSupportedFileExtensions() {
-        return new String[] {".wav"};
-    }
+  @Override
+  protected String[] getSupportedFileExtensions() {
+    return new String[] { ".wav" };
+  }
 }

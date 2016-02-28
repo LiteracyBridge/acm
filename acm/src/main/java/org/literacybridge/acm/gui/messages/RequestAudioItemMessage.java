@@ -2,20 +2,18 @@ package org.literacybridge.acm.gui.messages;
 
 public abstract class RequestAudioItemMessage extends Message {
 
-	public enum RequestType {
-		Current,
-		Previews,
-		Next
-	};
-	
-	private RequestType type;
+  public enum RequestType {
+    Current, Previews, Next
+  };
 
-	public RequestAudioItemMessage(RequestType type) {
-		super();
-		this.type = type;
-	}
+  private RequestType type;
 
-	public RequestType getRequestType() {
-		return type;
-	}
+  public RequestAudioItemMessage(RequestType type) {
+    super();
+    this.type = type;
+  }
+
+  public RequestType getRequestType() {
+    return type;
+  }
 }

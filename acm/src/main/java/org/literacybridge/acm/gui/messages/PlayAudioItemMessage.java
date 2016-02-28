@@ -4,14 +4,14 @@ import org.literacybridge.acm.store.AudioItem;
 
 public class PlayAudioItemMessage extends Message {
 
-    private AudioItem audioItem;
+  private AudioItem audioItem;
 
-    public PlayAudioItemMessage(AudioItem audioItem) {
-        super();
-        this.audioItem = audioItem;
-    }
+  public PlayAudioItemMessage(AudioItem audioItem) {
+    super();
+    this.audioItem = audioItem;
+  }
 
-    public AudioItem getAudioItem() {
-        return audioItem;
-    }
+  public AudioItem getAudioItem() {
+    return audioItem;
+  }
 }

@@ -7,43 +7,42 @@ import java.io.IOException;
 
 public class LiteracyBridgeTalkingBookRecognizer extends DeviceRecognizer {
 
-	@Override
-	public DeviceInfo identifyDevice(File pathToDevice) {
-		File systemPath = new File(pathToDevice, DeviceContents.SYSTEM_SUBFOLDER);
-		if (!systemPath.exists()) {
-			return null;
-		}
-		File configFile = new File(systemPath, DeviceContents.CONFIG_FILE);
-		if (!configFile.exists()) {
-			return null;
-		}
-		
-		BufferedReader reader = null;
-		try {
-			reader = new BufferedReader(new FileReader(configFile));
-			String line;
-			while( (line = reader.readLine()) != null) {
-				// TODO: read actual device ID
-				if (line.startsWith("LB_TALKINGBOOK_VERSION")) {
-					DeviceInfo info = new DeviceInfo("1", pathToDevice);
-					return info;
-				}
-			}
-			
-		} catch (IOException e) {
-			return null;
-		} finally {
-			if (reader != null) {
-				try {
-					reader.close();
-				} catch (IOException e) {
-					// ignore
-				}
-			}
-		}
-		
-		return null;	
-	}
-	
+  @Override
+  public DeviceInfo identifyDevice(File pathToDevice) {
+    File systemPath = new File(pathToDevice, DeviceContents.SYSTEM_SUBFOLDER);
+    if (!systemPath.exists()) {
+      return null;
+    }
+    File configFile = new File(systemPath, DeviceContents.CONFIG_FILE);
+    if (!configFile.exists()) {
+      return null;
+    }
+
+    BufferedReader reader = null;
+    try {
+      reader = new BufferedReader(new FileReader(configFile));
+      String line;
+      while ((line = reader.readLine()) != null) {
+        // TODO: read actual device ID
+        if (line.startsWith("LB_TALKINGBOOK_VERSION")) {
+          DeviceInfo info = new DeviceInfo("1", pathToDevice);
+          return info;
+        }
+      }
+
+    } catch (IOException e) {
+      return null;
+    } finally {
+      if (reader != null) {
+        try {
+          reader.close();
+        } catch (IOException e) {
+          // ignore
+        }
+      }
+    }
+
+    return null;
+  }
 
 }

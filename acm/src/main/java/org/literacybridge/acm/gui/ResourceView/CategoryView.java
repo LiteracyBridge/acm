@@ -74,655 +74,717 @@ import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingEvent;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingListener;
 
 public class CategoryView extends ACMContainer implements Observer {
-    private static final Logger LOG = Logger.getLogger(CategoryView.class.getName());
+  private static final Logger LOG = Logger
+      .getLogger(CategoryView.class.getName());
 
+  private static final long serialVersionUID = 5551716856269051991L;
 
-    private static final long serialVersionUID = 5551716856269051991L;
+  // model
+  private SearchResult result = null;
+  // categories
+  private CheckboxTree categoryTree = null;
+  // tags
+  private JList<TagLabel> tagsList = null;
+  private JButton addTagButton = null;
+  // Languages
+  private CheckboxTree languageTree = null;
 
-    // model
-    private SearchResult result = null;
-    // categories
-    private CheckboxTree categoryTree = null;
-    // tags
-    private JList<TagLabel> tagsList = null;
-    private JButton addTagButton = null;
-    // Languages
-    private CheckboxTree languageTree = null;
+  private JTree deviceTree = null;
+  // root nodes
+  private final DefaultMutableTreeNode categoryRootNode;
+  private final DefaultMutableTreeNode languageRootNode;
+  private final DefaultMutableTreeNode deviceRootNode;
+  private final DefaultTreeModel deviceTreeModel;
 
-    private JTree deviceTree = null;
-    // root nodes
-    private final DefaultMutableTreeNode categoryRootNode;
-    private final DefaultMutableTreeNode languageRootNode;
-    private final DefaultMutableTreeNode deviceRootNode;
-    private final DefaultTreeModel deviceTreeModel;
+  private JXTaskPaneContainer taskPaneContainer;
+  private JXTaskPane categoryPane;
+  private JXTaskPane tagsPane;
+  private JXTaskPane languagePane;
+  private JXTaskPane devicePane;
+  private JXTaskPane optionsPane;
 
+  private JLabel uiLangugeLb;
+  private Locale currLocale = null;
 
-    private JXTaskPaneContainer taskPaneContainer;
-    private JXTaskPane categoryPane;
-    private JXTaskPane tagsPane;
-    private JXTaskPane languagePane;
-    private JXTaskPane devicePane;
-    private JXTaskPane optionsPane;
+  // list of available devices
+  private Map<String, DefaultMutableTreeNode> deviceUidtoTreeNodeMap = new HashMap<String, DefaultMutableTreeNode>();
+  // list of available languages
+  private List<LanguageLabel> languagesList = new ArrayList<LanguageLabel>();
 
-    private JLabel uiLangugeLb;
-    private Locale currLocale = null;
+  public CategoryView(SearchResult result) {
+    this.result = result;
+    categoryRootNode = new DefaultMutableTreeNode();
+    deviceRootNode = new DefaultMutableTreeNode(LabelProvider.getLabel(
+        LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUILanguage()));
+    languageRootNode = new DefaultMutableTreeNode();
+    deviceTreeModel = new DefaultTreeModel(deviceRootNode);
+    createControls();
+  }
 
-    // list of available devices
-    private Map<String, DefaultMutableTreeNode> deviceUidtoTreeNodeMap = new HashMap<String, DefaultMutableTreeNode>();
-    // list of available languages
-    private List<LanguageLabel> languagesList = new ArrayList<LanguageLabel>();
+  private void createControls() {
+    setLayout(new BorderLayout());
 
-    public CategoryView(SearchResult result) {
-        this.result = result;
-        categoryRootNode = new DefaultMutableTreeNode();
-        deviceRootNode = new DefaultMutableTreeNode(
-                LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, LanguageUtil.getUILanguage()));
-        languageRootNode = new DefaultMutableTreeNode();
-        deviceTreeModel = new DefaultTreeModel(deviceRootNode);
-        createControls();
+    // parent
+    taskPaneContainer = new JXTaskPaneContainer();
+
+    createTasks();
+    createLanguageList();
+    addOptionList();
+    addDragAndDrop();
+    JScrollPane taskPane = new JScrollPane(taskPaneContainer);
+    add(BorderLayout.CENTER, taskPane);
+
+    // init controls with default language
+    updateControlLanguage(LanguageUtil.getUILanguage());
+    updateTagsTable();
+    Application.getMessageService().addObserver(this);
+  }
+
+  private void createTasks() {
+    // add all categories
+    Category rootCategory = ACMConfiguration.getInstance().getCurrentDB()
+        .getMetadataStore().getTaxonomy().getRootCategory();
+    if (rootCategory.hasChildren()) {
+      for (Category c : rootCategory.getSortedChildren()) {
+        addChildNodes(categoryRootNode, c);
+      }
     }
 
-    private void createControls() {
-        setLayout(new BorderLayout());
+    categoryTree = new CheckboxTree(categoryRootNode);
+    categoryTree.setRootVisible(false);
+    categoryTree.setCellRenderer(new FacetCountCellRenderer());
+    categoryTree.expandPath(new TreePath(categoryRootNode.getPath()));
+    categoryTree.setSelectionModel(NO_SELECTION_MODEL);
 
-        // parent
-        taskPaneContainer = new JXTaskPaneContainer();
+    deviceTree = new JTree(deviceTreeModel);
+    deviceTree.setRootVisible(false);
+    final DeviceTreeCellRenderer renderer = new DeviceTreeCellRenderer();
+    deviceTree.setCellRenderer(renderer);
 
-        createTasks();
-        createLanguageList();
-        addOptionList();
-        addDragAndDrop();
-        JScrollPane taskPane = new JScrollPane(taskPaneContainer);
-        add(BorderLayout.CENTER, taskPane);
+    deviceTree.addMouseMotionListener(new MouseMotionListener() {
 
-        // init controls with default language
-        updateControlLanguage(LanguageUtil.getUILanguage());
-        updateTagsTable();
-        Application.getMessageService().addObserver(this);
+      @Override
+      public void mouseMoved(MouseEvent e) {
+        TreePath path = deviceTree.getPathForLocation(e.getX(), e.getY());
+        renderer.highlight = (path == null) ? null
+            : path.getLastPathComponent();
+
+        deviceTree.repaint();
+      }
+
+      @Override
+      public void mouseDragged(MouseEvent e) {
+      }
+    });
+
+    deviceTree.addMouseListener(new MouseListener() {
+      @Override
+      public void mouseExited(MouseEvent e) {
+        renderer.highlight = null;
+        deviceTree.repaint();
+      }
+
+      @Override
+      public void mouseReleased(MouseEvent e) {
+      }
+
+      @Override
+      public void mousePressed(MouseEvent e) {
+      }
+
+      @Override
+      public void mouseEntered(MouseEvent e) {
+      }
+
+      @Override
+      public void mouseClicked(MouseEvent e) {
+        TreePath path = deviceTree.getPathForLocation(e.getX(), e.getY());
+        if (path != null) {
+          DefaultMutableTreeNode node = (DefaultMutableTreeNode) path
+              .getLastPathComponent();
+          Object deviceInfo = node.getUserObject();
+          if (deviceInfo instanceof DeviceInfo) {
+            UIUtils.showDialog(Application.getApplication(),
+                new AudioItemImportDialog(Application.getApplication(),
+                    (DeviceInfo) deviceInfo));
+          }
+        }
+      }
+    });
+
+    categoryPane = new JXTaskPane();
+    JScrollPane categoryScrollPane = new JScrollPane(categoryTree);
+    categoryPane.add(categoryScrollPane);
+
+    languagePane = new JXTaskPane();
+    languageTree = new CheckboxTree(languageRootNode);
+    languageTree.setSelectionModel(NO_SELECTION_MODEL);
+    languageTree.setCellRenderer(new FacetCountCellRenderer());
+    JScrollPane languageScrollPane = new JScrollPane(languageTree);
+    languagePane.add(languageScrollPane);
+
+    tagsPane = new JXTaskPane();
+    tagsList = new JList<TagLabel>();
+    tagsList.setSelectionModel(new DefaultListSelectionModel() {
+      @Override
+      public void setSelectionInterval(int index0, int index1) {
+        if (isSelectedIndex(index0)) {
+          super.removeSelectionInterval(index0, index1);
+          Application.getFilterState().setSelectedTag(null);
+        } else {
+          super.setSelectionInterval(index0, index1);
+          Application.getFilterState().setSelectedTag(
+              tagsList.getModel().getElementAt(index0).getTag());
+        }
+      }
+    });
+    tagsList.addMouseListener(new MouseListener() {
+
+      @Override
+      public void mouseReleased(MouseEvent e) {
+      }
+
+      @Override
+      public void mousePressed(MouseEvent e) {
+      }
+
+      @Override
+      public void mouseExited(MouseEvent e) {
+      }
+
+      @Override
+      public void mouseEntered(MouseEvent e) {
+      }
+
+      @Override
+      public void mouseClicked(MouseEvent e) {
+        boolean rightButtonClicked = e.getButton() == MouseEvent.BUTTON3;
+
+        if (rightButtonClicked) {
+          int index = tagsList.locationToIndex(e.getPoint());
+          if (tagsList.getSelectedIndex() != index) {
+            tagsList.setSelectedIndex(index);
+          }
+          TagLabel label = tagsList.getSelectedValue();
+          if (label != null) {
+            TagsListPopupMenu menu = new TagsListPopupMenu(label);
+            menu.show(e.getComponent(), e.getX(), e.getY());
+          }
+        }
+
+      }
+    });
+    tagsList.setCellRenderer(new DefaultListCellRenderer() {
+      @Override
+      public Component getListCellRendererComponent(JList<?> list, Object value,
+          int index, boolean isSelected, boolean cellHasFocus) {
+
+        Component component = super.getListCellRendererComponent(list, value,
+            index, isSelected, cellHasFocus);
+        TagLabel label = (TagLabel) value;
+
+        Font f = component.getFont();
+        if (label.getFacetCount() > 0) {
+          component.setFont(f.deriveFont(f.getStyle() | Font.BOLD));
+        } else {
+          component.setFont(f.deriveFont(f.getStyle() & ~Font.BOLD));
+        }
+
+        return component;
+      }
+    });
+    JScrollPane tagsScrollPane = new JScrollPane(tagsList);
+    tagsPane.add(tagsScrollPane);
+    addTagButton = new JButton(LabelProvider
+        .getLabel(LabelProvider.NEW_TAG_LABEL, LanguageUtil.getUILanguage()));
+    addTagButton.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent action) {
+        addNewTag();
+      }
+    });
+    tagsPane.add(addTagButton);
+
+    devicePane = new JXTaskPane();
+    JScrollPane deviceScrollPane = new JScrollPane(deviceTree);
+    devicePane.add(deviceScrollPane);
+    devicePane
+        .setIcon(new ImageIcon(getClass().getResource("/315_three-shot.png")));
+
+    taskPaneContainer.add(categoryPane);
+    taskPaneContainer.add(languagePane);
+    taskPaneContainer.add(tagsPane);
+    taskPaneContainer.add(devicePane);
+
+    categoryScrollPane.setPreferredSize(new Dimension(150, 240));
+    languageScrollPane.setPreferredSize(new Dimension(150, 90));
+    deviceScrollPane.setPreferredSize(new Dimension(150, 50));
+    tagsScrollPane.setPreferredSize(new Dimension(150, 90));
+
+    categoryTree.expandPath(new TreePath(deviceRootNode.getPath()));
+
+    categoryPane.setCollapsed(false);
+    languagePane.setCollapsed(false);
+    tagsPane.setCollapsed(true);
+    devicePane.setCollapsed(true);
+
+    addListeners(); // at last
+  }
+
+  private class LanguageLabel implements FacetCountProvider {
+    private Locale locale;
+
+    public LanguageLabel(Locale locale) {
+      this.locale = locale;
     }
-
-    private void createTasks() {
-        // add all categories
-        Category rootCategory = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getTaxonomy().getRootCategory();
-        if (rootCategory.hasChildren()) {
-            for (Category c : rootCategory.getSortedChildren()) {
-                addChildNodes(categoryRootNode, c);
-            }
-        }
-
-        categoryTree = new CheckboxTree(categoryRootNode);
-        categoryTree.setRootVisible(false);
-        categoryTree.setCellRenderer(new FacetCountCellRenderer());
-        categoryTree.expandPath(new TreePath(categoryRootNode.getPath()));
-        categoryTree.setSelectionModel(NO_SELECTION_MODEL);
-
-        deviceTree = new JTree(deviceTreeModel);
-        deviceTree.setRootVisible(false);
-        final DeviceTreeCellRenderer renderer = new DeviceTreeCellRenderer();
-        deviceTree.setCellRenderer(renderer);
-
-        deviceTree.addMouseMotionListener(new MouseMotionListener() {
-
-            @Override
-            public void mouseMoved(MouseEvent e) {
-                TreePath path = deviceTree.getPathForLocation(e.getX(), e.getY());
-                renderer.highlight = (path == null) ? null : path.getLastPathComponent();
-
-                deviceTree.repaint();
-            }
-
-            @Override
-            public void mouseDragged(MouseEvent e) {
-            }
-        });
-
-        deviceTree.addMouseListener(new MouseListener() {
-            @Override
-            public void mouseExited(MouseEvent e) {
-                renderer.highlight = null;
-                deviceTree.repaint();
-            }
-
-            @Override public void mouseReleased(MouseEvent e) {}
-            @Override public void mousePressed(MouseEvent e)  {}
-            @Override public void mouseEntered(MouseEvent e)  {}
-            @Override public void mouseClicked(MouseEvent e)  {
-                TreePath path = deviceTree.getPathForLocation(e.getX(), e.getY());
-                if (path != null) {
-                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
-                    Object deviceInfo = node.getUserObject();
-                    if (deviceInfo instanceof DeviceInfo) {
-                        UIUtils.showDialog(Application.getApplication(), new AudioItemImportDialog(Application.getApplication(), (DeviceInfo) deviceInfo));
-                    }
-                }
-            }
-        });
-
-        categoryPane = new JXTaskPane();
-        JScrollPane categoryScrollPane = new JScrollPane(categoryTree);
-        categoryPane.add(categoryScrollPane);
-
-        languagePane = new JXTaskPane();
-        languageTree = new CheckboxTree(languageRootNode);
-        languageTree.setSelectionModel(NO_SELECTION_MODEL);
-        languageTree.setCellRenderer(new FacetCountCellRenderer());
-        JScrollPane languageScrollPane = new JScrollPane(languageTree);
-        languagePane.add(languageScrollPane);
-
-        tagsPane = new JXTaskPane();
-        tagsList = new JList<TagLabel>();
-        tagsList.setSelectionModel(new DefaultListSelectionModel() {
-            @Override public void setSelectionInterval(int index0, int index1) {
-                if (isSelectedIndex(index0)) {
-                    super.removeSelectionInterval(index0, index1);
-                    Application.getFilterState().setSelectedTag(null);
-                }
-                else {
-                    super.setSelectionInterval(index0, index1);
-                    Application.getFilterState().setSelectedTag(((TagLabel) tagsList.getModel().getElementAt(index0)).getTag());
-                }
-            }
-        });
-        tagsList.addMouseListener(new MouseListener() {
-
-            @Override
-            public void mouseReleased(MouseEvent e) {}
-
-            @Override
-            public void mousePressed(MouseEvent e) {}
-
-            @Override
-            public void mouseExited(MouseEvent e) {}
-
-            @Override
-            public void mouseEntered(MouseEvent e) {}
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                boolean rightButtonClicked = e.getButton() == MouseEvent.BUTTON3;
-
-                if (rightButtonClicked) {
-                    int index = tagsList.locationToIndex(e.getPoint());
-                    if (tagsList.getSelectedIndex() != index) {
-                        tagsList.setSelectedIndex(index);
-                    }
-                    TagLabel label = (TagLabel) tagsList.getSelectedValue();
-                    if (label != null) {
-                        TagsListPopupMenu menu = new TagsListPopupMenu(label);
-                        menu.show(e.getComponent(), e.getX(), e.getY());
-                    }
-                }
-
-            }
-        });
-        tagsList.setCellRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(
-                    JList<?> list,
-                    Object value,
-                    int index,
-                    boolean isSelected,
-                    boolean cellHasFocus) {
-
-                Component component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                TagLabel label = (TagLabel) value;
-
-                Font f = component.getFont();
-                if (label.getFacetCount() > 0) {
-                    component.setFont(f.deriveFont(f.getStyle() | Font.BOLD));
-                } else {
-                    component.setFont(f.deriveFont(f.getStyle() & ~Font.BOLD));
-                }
-
-                return component;
-            }
-        });
-        JScrollPane tagsScrollPane = new JScrollPane(tagsList);
-        tagsPane.add(tagsScrollPane);
-        addTagButton = new JButton(LabelProvider.getLabel(LabelProvider.NEW_TAG_LABEL, LanguageUtil.getUILanguage()));
-        addTagButton.addActionListener(new ActionListener() {
-            @Override public void actionPerformed(ActionEvent action) {
-                addNewTag();
-            }
-        });
-        tagsPane.add(addTagButton);
-
-        devicePane = new JXTaskPane();
-        JScrollPane deviceScrollPane = new JScrollPane(deviceTree);
-        devicePane.add(deviceScrollPane);
-        devicePane.setIcon(new ImageIcon(getClass().getResource("/315_three-shot.png")));
-
-        taskPaneContainer.add(categoryPane);
-        taskPaneContainer.add(languagePane);
-        taskPaneContainer.add(tagsPane);
-        taskPaneContainer.add(devicePane);
-
-        categoryScrollPane.setPreferredSize(new Dimension(150, 240));
-        languageScrollPane.setPreferredSize(new Dimension(150, 90));
-        deviceScrollPane.setPreferredSize(new Dimension(150, 50));
-        tagsScrollPane.setPreferredSize(new Dimension(150, 90));
-
-        categoryTree.expandPath(new TreePath(deviceRootNode.getPath()));
-
-        categoryPane.setCollapsed(false);
-        languagePane.setCollapsed(false);
-        tagsPane.setCollapsed(true);
-        devicePane.setCollapsed(true);
-
-        addListeners(); // at last
-    }
-
-    private class LanguageLabel implements FacetCountProvider {
-        private Locale locale;
-        public LanguageLabel(Locale locale) {
-            this.locale = locale;
-        }
-
-        @Override public String toString() {
-            String displayLabel = LanguageUtil.getLocalizedLanguageName(locale);
-            int count = result.getLanguageFacetCount(locale.getLanguage());
-            if (count > 0) {
-                displayLabel += " ["+count+"]";
-            }
-            return displayLabel;
-        }
-
-        public Locale getLocale() {
-            return locale;
-        }
-
-        @Override
-        public int getFacetCount() {
-            return result.getLanguageFacetCount(locale.getLanguage());
-        }
-    }
-
-    private static final class UILanguageLabel {
-        private final Locale locale;
-
-        UILanguageLabel(Locale locale) {
-            this.locale = locale;
-        }
-
-        @Override public String toString() {
-            return LanguageUtil.getLocalizedLanguageName(locale);
-        }
-    }
-
-    private void addOptionList() {
-        final int NUM_OPTIONS = 2;
-        optionsPane = new JXTaskPane();
-        JPanel optionComponent = new JPanel();
-
-        // user language
-        optionComponent.setLayout(new GridLayout(NUM_OPTIONS, 2));
-        uiLangugeLb = new JLabel();
-        optionComponent.add(uiLangugeLb);
-        UILanguageLabel[] langs = {new UILanguageLabel(Locale.ENGLISH),
-                new UILanguageLabel(Locale.GERMAN),
-                new UILanguageLabel(Locale.FRENCH)};
-
-
-        JComboBox userLanguages = new JComboBox(langs);
-
-        userLanguages.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JComboBox cb = (JComboBox) e.getSource();
-                Locale newLocale = null;
-                int index = cb.getSelectedIndex();
-                switch (index) {
-                case 0:
-                    newLocale = Locale.ENGLISH;
-                    break;
-                case 1:
-                    newLocale = Locale.GERMAN;
-                    break;
-                case 2:
-                    newLocale = Locale.FRENCH;
-                    break;
-                default:
-                    newLocale = Locale.ENGLISH;
-                }
-
-                LanguageUtil.setUILanguage(newLocale); // set for controls that will be created on the fly, like ex. popup menus
-                Application.getMessageService().pumpMessage(new UILanguageChanged(newLocale, currLocale));
-                currLocale = newLocale;
-            }
-        });
-        optionComponent.add(userLanguages);
-
-        JScrollPane optionsScrollPane = new JScrollPane(optionComponent);
-        optionsPane.add(optionsScrollPane);
-        //taskPaneContainer.add(optionsPane);
-        optionsPane.setCollapsed(true);
-    }
-
-    private void createLanguageList() {
-        List<Locale> audioLanguages = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages();
-        for (Locale locale : audioLanguages) {
-            languagesList.add(new LanguageLabel(locale));
-        }
-
-        for (LanguageLabel currLable : languagesList) {
-            languageRootNode.add(new DefaultMutableTreeNode(currLable));
-        }
-
-        languageTree.setRootVisible(false);
-        languageTree.expandPath(new TreePath(languageRootNode.getPath()));
-
-        languageTree.addTreeCheckingListener(new TreeCheckingListener() {
-            @Override public void valueChanged(TreeCheckingEvent e) {
-                clearTagSelection();
-                pumpLanguageFilter();
-            };
-        });
-    }
-
-    private void pumpLanguageFilter() {
-        // map languages on 'Locales'
-        TreePath[] tp = languageTree.getCheckingPaths();
-        List<Locale> filterLocales = new ArrayList<Locale>(tp.length);
-        for (int i = 0; i < tp.length; i++) {
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) tp[i].getLastPathComponent();
-            LanguageLabel obj = (LanguageLabel) node.getUserObject();
-
-            filterLocales.add(obj.getLocale());
-        }
-
-        Application.getFilterState().setFilterLanguages(filterLocales);
-    }
-
-    private void addListeners() {
-        categoryTree.addTreeCheckingListener(new TreeCheckingListener() {
-            public void valueChanged(TreeCheckingEvent e) {
-                clearTagSelection();
-
-                TreePath[] tp = categoryTree.getCheckingPaths();
-                List<Category> filterCategories = new ArrayList<Category>(tp.length);
-                for (int i = 0; i < tp.length; i++) {
-                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) tp[i].getLastPathComponent();
-                    CategoryTreeNodeObject obj = (CategoryTreeNodeObject) node.getUserObject();
-                    filterCategories.add(obj.getCategory());
-                }
-
-                Application.getFilterState().setFilterCategories(filterCategories);
-            }
-        });
-
-        tagsList.addListSelectionListener(new ListSelectionListener() {
-            @Override public void valueChanged(ListSelectionEvent e) {
-                clearTreeSelections();
-                Application.getMessageService().pumpMessage(
-                        new AudioItemTableSortOrderMessage(
-                                LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER,
-                                        LanguageUtil.getUILanguage()), SortOrder.ASCENDING));
-            }
-        });
-        addAudioDeviceListener();
-    }
-
-    private void addChildNodes(DefaultMutableTreeNode parent, Category category) {
-        DefaultMutableTreeNode child = new DefaultMutableTreeNode(new CategoryTreeNodeObject(category));
-        parent.add(child);
-        if (category.hasChildren()) {
-            for (Category c : category.getSortedChildren()) {
-                addChildNodes(child, c);
-            }
-        }
-    }
-
-    private void addDeviceNode(DefaultMutableTreeNode parent, final DeviceInfo deviceInfo) {
-        if (parent != null) {
-            String deviceID = deviceInfo.getDeviceUID();
-            if (deviceUidtoTreeNodeMap.containsKey(deviceID)) {
-                // already existing, assume device was unplugged
-                DefaultMutableTreeNode node = deviceUidtoTreeNodeMap.get(deviceID);
-                deviceTreeModel.removeNodeFromParent(node);
-                deviceUidtoTreeNodeMap.remove(deviceID);
-            } else {
-                // new device found
-                DefaultMutableTreeNode child = new DefaultMutableTreeNode(deviceInfo);
-                deviceTreeModel.insertNodeInto(child, parent,
-                        parent.getChildCount());
-                deviceTree.expandPath(new TreePath(deviceRootNode.getPath()));
-                TreePath path = new TreePath(child.getPath());
-                deviceTree.setSelectionPath(path);
-                deviceUidtoTreeNodeMap.put(deviceID, child);
-            }
-        }
-    }
-
-    private void addAudioDeviceListener() {
-        MessageBus bus = MessageBus.getInstance();
-        bus.addListener(DeviceConnectEvent.class, new MessageBus.MessageListener() {
-
-            @Override
-            public void receiveMessage(final Message message) {
-
-                if (message instanceof DeviceConnectEvent) {
-                    final DeviceConnectEvent dce = (DeviceConnectEvent) message;
-                    Runnable addDeviceToList = new Runnable() {
-                        @Override
-                        public void run() {
-                            addDeviceNode(deviceRootNode, dce.getDeviceInfo());
-                        }
-                    };
-
-                    SwingUtilities.invokeLater(addDeviceToList);
-                }
-            }
-        });
-    }
-
-    private void addDragAndDrop() {
-        categoryTree.setDropMode(DropMode.ON);
-        categoryTree.setTransferHandler(new TreeTransferHandler());
-
-        deviceTree.setDropMode(DropMode.ON);
-        deviceTree.setTransferHandler(new ExportToDeviceTransferHandler());
-
-        tagsList.setDropMode(DropMode.ON);
-        tagsList.setTransferHandler(new TagsTransferHandler());
-    }
-
-
-    public static interface FacetCountProvider {
-        public int getFacetCount();
-    }
-
-    // Helper class for tree nodes
-    public class CategoryTreeNodeObject implements FacetCountProvider {
-        private Category category;
-
-        public CategoryTreeNodeObject(Category category) {
-            this.category = category;
-        }
-
-        public Category getCategory() {
-            return category;
-        }
-
-        @Override
-        public int getFacetCount() {
-            return result.getFacetCount(category);
-        }
-
-        @Override
-        public String toString() {
-            String displayLabel = null;
-            if (category != null) {
-                displayLabel = category.getCategoryName();
-                int count = result.getFacetCount(category);
-                if (count > 0) {
-                    displayLabel += " ["+count+"]";
-                }
-            } else {
-                displayLabel = LabelProvider.getLabel("ERROR", LanguageUtil.getUILanguage());
-            }
-
-            return displayLabel;
-        }
-    }
-
-
-    private static class FacetCountCellRenderer extends DefaultCheckboxTreeCellRenderer {
-        public Component getTreeCellRendererComponent(JTree tree, Object object, boolean selected, boolean expanded, boolean leaf, int row,
-                boolean hasFocus) {
-            DefaultMutableTreeNode cat = (DefaultMutableTreeNode) object;
-            DefaultCheckboxTreeCellRenderer cell = (DefaultCheckboxTreeCellRenderer) super.getTreeCellRendererComponent(tree, object, selected, expanded, leaf, row, hasFocus);
-
-            if (cat.getUserObject() != null && cat.getUserObject() instanceof FacetCountProvider) {
-                FacetCountProvider node = (FacetCountProvider) cat.getUserObject();
-                // make label bold
-                Font f = super.label.getFont();
-                int count = node.getFacetCount();
-                //System.out.println("Node: " + node.toString() + " - Count= " + count);
-                if (count > 0) {
-                    super.label.setFont(f.deriveFont(f.getStyle() | Font.BOLD));
-                } else {
-                    super.label.setFont(f.deriveFont(f.getStyle() & ~Font.BOLD));
-                }
-
-            }
-
-            return cell;
-        }
-    }
-
-    public void updateTagsTable() {
-        if (!clearingSelections) {
-            MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-            tagsList.setModel(new TagsListModel(store.getPlaylists(), result));
-        }
-    }
-
-    public void addNewTag() {
-        String tagName = (String)JOptionPane.showInputDialog(
-                this,
-                "Enter playlist name:",
-                "Add new playlist",
-                JOptionPane.PLAIN_MESSAGE,
-                null, null, "");
-        if (!StringUtils.isEmpty(tagName)) {
-            MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-            Playlist playlist = store.newPlaylist(tagName);
-            try {
-                store.commit(playlist);
-            } catch (IOException e) {
-                LOG.log(Level.WARNING, "Unable to create playlist with name " + tagName, e);
-            }
-
-            Application.getMessageService().pumpMessage(new TagsListChanged());
-        }
-    }
-
-    private void updateControlLanguage(Locale locale) {
-        categoryPane.setTitle(LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, locale));
-        tagsPane.setTitle(LabelProvider.getLabel(LabelProvider.TAGS_ROOT_LABEL, locale));
-        devicePane.setTitle(LabelProvider.getLabel(LabelProvider.DEVICES_ROOT_LABEL, locale));
-        optionsPane.setTitle(LabelProvider.getLabel(LabelProvider.OPTIONS_ROOT_LABEL, locale));
-        languagePane.setTitle(LabelProvider.getLabel(LabelProvider.LANGUAGES_ROOT_LABEL, locale));
-        uiLangugeLb.setText(LabelProvider.getLabel(LabelProvider.OPTIONS_USER_LANGUAGE, locale));
-        updateTreeNodes();
-    }
-
-
-    private void updateTreeNodes() {
-        for (Enumeration e = categoryRootNode.breadthFirstEnumeration(); e.hasMoreElements(); ) {
-            DefaultMutableTreeNode current = (DefaultMutableTreeNode)e.nextElement();
-            CategoryTreeNodeObject obj = (CategoryTreeNodeObject) current.getUserObject();
-            categoryTree.getModel().valueForPathChanged(new TreePath(current.getPath()), obj);
-        }
-        for (Enumeration e = languageRootNode.breadthFirstEnumeration(); e.hasMoreElements(); ) {
-            DefaultMutableTreeNode current = (DefaultMutableTreeNode)e.nextElement();
-            LanguageLabel obj = (LanguageLabel) current.getUserObject();
-            languageTree.getModel().valueForPathChanged(new TreePath(current.getPath()), obj);
-        }
-    }
-
 
     @Override
-    public void update(Observable o, Object arg) {
-        if (arg instanceof UILanguageChanged) {
-            UILanguageChanged newLocale = (UILanguageChanged) arg;
-            updateControlLanguage(newLocale.getNewLocale());
-        }
-
-        if (arg instanceof SearchResult) {
-            result = (SearchResult) arg;
-            updateTreeNodes();
-            updateTagsTable();
-        }
-
-        if (arg instanceof TagsListChanged) {
-            updateTagsTable();
-        }
+    public String toString() {
+      String displayLabel = LanguageUtil.getLocalizedLanguageName(locale);
+      int count = result.getLanguageFacetCount(locale.getLanguage());
+      if (count > 0) {
+        displayLabel += " [" + count + "]";
+      }
+      return displayLabel;
     }
 
-    private boolean clearingSelections = false;
+    public Locale getLocale() {
+      return locale;
+    }
 
-    private void clearTagSelection() {
-        if (!clearingSelections) {
-            clearingSelections = true;
-            try {
-                Application.getFilterState().setSelectedTag(null);
-                UIUtils.invokeAndWait(new Runnable() {
-                    @Override public void run() {
-                        tagsList.clearSelection();
-                    }
-                });
-            } finally {
-                clearingSelections = false;
+    @Override
+    public int getFacetCount() {
+      return result.getLanguageFacetCount(locale.getLanguage());
+    }
+  }
+
+  private static final class UILanguageLabel {
+    private final Locale locale;
+
+    UILanguageLabel(Locale locale) {
+      this.locale = locale;
+    }
+
+    @Override
+    public String toString() {
+      return LanguageUtil.getLocalizedLanguageName(locale);
+    }
+  }
+
+  private void addOptionList() {
+    final int NUM_OPTIONS = 2;
+    optionsPane = new JXTaskPane();
+    JPanel optionComponent = new JPanel();
+
+    // user language
+    optionComponent.setLayout(new GridLayout(NUM_OPTIONS, 2));
+    uiLangugeLb = new JLabel();
+    optionComponent.add(uiLangugeLb);
+    UILanguageLabel[] langs = { new UILanguageLabel(Locale.ENGLISH),
+        new UILanguageLabel(Locale.GERMAN),
+        new UILanguageLabel(Locale.FRENCH) };
+
+    JComboBox userLanguages = new JComboBox(langs);
+
+    userLanguages.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        JComboBox cb = (JComboBox) e.getSource();
+        Locale newLocale = null;
+        int index = cb.getSelectedIndex();
+        switch (index) {
+        case 0:
+          newLocale = Locale.ENGLISH;
+          break;
+        case 1:
+          newLocale = Locale.GERMAN;
+          break;
+        case 2:
+          newLocale = Locale.FRENCH;
+          break;
+        default:
+          newLocale = Locale.ENGLISH;
+        }
+
+        LanguageUtil.setUILanguage(newLocale); // set for controls that will be
+                                               // created on the fly, like ex.
+                                               // popup menus
+        Application.getMessageService()
+            .pumpMessage(new UILanguageChanged(newLocale, currLocale));
+        currLocale = newLocale;
+      }
+    });
+    optionComponent.add(userLanguages);
+
+    JScrollPane optionsScrollPane = new JScrollPane(optionComponent);
+    optionsPane.add(optionsScrollPane);
+    // taskPaneContainer.add(optionsPane);
+    optionsPane.setCollapsed(true);
+  }
+
+  private void createLanguageList() {
+    List<Locale> audioLanguages = ACMConfiguration.getInstance().getCurrentDB()
+        .getAudioLanguages();
+    for (Locale locale : audioLanguages) {
+      languagesList.add(new LanguageLabel(locale));
+    }
+
+    for (LanguageLabel currLable : languagesList) {
+      languageRootNode.add(new DefaultMutableTreeNode(currLable));
+    }
+
+    languageTree.setRootVisible(false);
+    languageTree.expandPath(new TreePath(languageRootNode.getPath()));
+
+    languageTree.addTreeCheckingListener(new TreeCheckingListener() {
+      @Override
+      public void valueChanged(TreeCheckingEvent e) {
+        clearTagSelection();
+        pumpLanguageFilter();
+      };
+    });
+  }
+
+  private void pumpLanguageFilter() {
+    // map languages on 'Locales'
+    TreePath[] tp = languageTree.getCheckingPaths();
+    List<Locale> filterLocales = new ArrayList<Locale>(tp.length);
+    for (int i = 0; i < tp.length; i++) {
+      DefaultMutableTreeNode node = (DefaultMutableTreeNode) tp[i]
+          .getLastPathComponent();
+      LanguageLabel obj = (LanguageLabel) node.getUserObject();
+
+      filterLocales.add(obj.getLocale());
+    }
+
+    Application.getFilterState().setFilterLanguages(filterLocales);
+  }
+
+  private void addListeners() {
+    categoryTree.addTreeCheckingListener(new TreeCheckingListener() {
+      @Override
+      public void valueChanged(TreeCheckingEvent e) {
+        clearTagSelection();
+
+        TreePath[] tp = categoryTree.getCheckingPaths();
+        List<Category> filterCategories = new ArrayList<Category>(tp.length);
+        for (int i = 0; i < tp.length; i++) {
+          DefaultMutableTreeNode node = (DefaultMutableTreeNode) tp[i]
+              .getLastPathComponent();
+          CategoryTreeNodeObject obj = (CategoryTreeNodeObject) node
+              .getUserObject();
+          filterCategories.add(obj.getCategory());
+        }
+
+        Application.getFilterState().setFilterCategories(filterCategories);
+      }
+    });
+
+    tagsList.addListSelectionListener(new ListSelectionListener() {
+      @Override
+      public void valueChanged(ListSelectionEvent e) {
+        clearTreeSelections();
+        Application
+            .getMessageService().pumpMessage(new AudioItemTableSortOrderMessage(
+                LabelProvider.getLabel(
+                    LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER,
+                    LanguageUtil.getUILanguage()),
+                SortOrder.ASCENDING));
+      }
+    });
+    addAudioDeviceListener();
+  }
+
+  private void addChildNodes(DefaultMutableTreeNode parent, Category category) {
+    DefaultMutableTreeNode child = new DefaultMutableTreeNode(
+        new CategoryTreeNodeObject(category));
+    parent.add(child);
+    if (category.hasChildren()) {
+      for (Category c : category.getSortedChildren()) {
+        addChildNodes(child, c);
+      }
+    }
+  }
+
+  private void addDeviceNode(DefaultMutableTreeNode parent,
+      final DeviceInfo deviceInfo) {
+    if (parent != null) {
+      String deviceID = deviceInfo.getDeviceUID();
+      if (deviceUidtoTreeNodeMap.containsKey(deviceID)) {
+        // already existing, assume device was unplugged
+        DefaultMutableTreeNode node = deviceUidtoTreeNodeMap.get(deviceID);
+        deviceTreeModel.removeNodeFromParent(node);
+        deviceUidtoTreeNodeMap.remove(deviceID);
+      } else {
+        // new device found
+        DefaultMutableTreeNode child = new DefaultMutableTreeNode(deviceInfo);
+        deviceTreeModel.insertNodeInto(child, parent, parent.getChildCount());
+        deviceTree.expandPath(new TreePath(deviceRootNode.getPath()));
+        TreePath path = new TreePath(child.getPath());
+        deviceTree.setSelectionPath(path);
+        deviceUidtoTreeNodeMap.put(deviceID, child);
+      }
+    }
+  }
+
+  private void addAudioDeviceListener() {
+    MessageBus bus = MessageBus.getInstance();
+    bus.addListener(DeviceConnectEvent.class, new MessageBus.MessageListener() {
+
+      @Override
+      public void receiveMessage(final Message message) {
+
+        if (message instanceof DeviceConnectEvent) {
+          final DeviceConnectEvent dce = (DeviceConnectEvent) message;
+          Runnable addDeviceToList = new Runnable() {
+            @Override
+            public void run() {
+              addDeviceNode(deviceRootNode, dce.getDeviceInfo());
             }
+          };
+
+          SwingUtilities.invokeLater(addDeviceToList);
         }
+      }
+    });
+  }
+
+  private void addDragAndDrop() {
+    categoryTree.setDropMode(DropMode.ON);
+    categoryTree.setTransferHandler(new TreeTransferHandler());
+
+    deviceTree.setDropMode(DropMode.ON);
+    deviceTree.setTransferHandler(new ExportToDeviceTransferHandler());
+
+    tagsList.setDropMode(DropMode.ON);
+    tagsList.setTransferHandler(new TagsTransferHandler());
+  }
+
+  public static interface FacetCountProvider {
+    public int getFacetCount();
+  }
+
+  // Helper class for tree nodes
+  public class CategoryTreeNodeObject implements FacetCountProvider {
+    private Category category;
+
+    public CategoryTreeNodeObject(Category category) {
+      this.category = category;
     }
 
-    private void clearTreeSelections() {
-        if (!clearingSelections) {
-            clearingSelections = true;
+    public Category getCategory() {
+      return category;
+    }
 
-            try {
-                UIUtils.invokeAndWait(new Runnable() {
-                    @Override public void run() {
-                        categoryTree.clearChecking();
-                        languageTree.clearChecking();
-                    }
-                });
-            } finally {
-                clearingSelections = false;
-            }
+    @Override
+    public int getFacetCount() {
+      return result.getFacetCount(category);
+    }
+
+    @Override
+    public String toString() {
+      String displayLabel = null;
+      if (category != null) {
+        displayLabel = category.getCategoryName();
+        int count = result.getFacetCount(category);
+        if (count > 0) {
+          displayLabel += " [" + count + "]";
         }
+      } else {
+        displayLabel = LabelProvider.getLabel("ERROR",
+            LanguageUtil.getUILanguage());
+      }
+
+      return displayLabel;
     }
+  }
 
-    private static class DeviceTreeCellRenderer extends DefaultTreeCellRenderer {
-        Object highlight;
-        ImageIcon icon = new ImageIcon(getClass().getResource("/sync-green-16.png"));
+  private static class FacetCountCellRenderer
+      extends DefaultCheckboxTreeCellRenderer {
+    @Override
+    public Component getTreeCellRendererComponent(JTree tree, Object object,
+        boolean selected, boolean expanded, boolean leaf, int row,
+        boolean hasFocus) {
+      DefaultMutableTreeNode cat = (DefaultMutableTreeNode) object;
+      DefaultCheckboxTreeCellRenderer cell = (DefaultCheckboxTreeCellRenderer) super.getTreeCellRendererComponent(
+          tree, object, selected, expanded, leaf, row, hasFocus);
 
-        @Override
-        public Component getTreeCellRendererComponent(JTree tree, Object value,
-                boolean sel,
-                boolean expanded,
-                boolean leaf, int row,
-                boolean hasFocus) {
-            JLabel cell = (JLabel) super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-            if (highlight != null && value.equals(highlight)) {
-                cell.setIcon(icon);
-            }
-            cell.setHorizontalTextPosition(SwingConstants.LEFT);
-            Dimension d = cell.getPreferredSize();
-            cell.setPreferredSize(new Dimension((int) d.getWidth() + icon.getIconWidth() + 15, (int) d.getHeight()));
-            return cell;
+      if (cat.getUserObject() != null
+          && cat.getUserObject() instanceof FacetCountProvider) {
+        FacetCountProvider node = (FacetCountProvider) cat.getUserObject();
+        // make label bold
+        Font f = super.label.getFont();
+        int count = node.getFacetCount();
+        // System.out.println("Node: " + node.toString() + " - Count= " +
+        // count);
+        if (count > 0) {
+          super.label.setFont(f.deriveFont(f.getStyle() | Font.BOLD));
+        } else {
+          super.label.setFont(f.deriveFont(f.getStyle() & ~Font.BOLD));
         }
+
+      }
+
+      return cell;
+    }
+  }
+
+  public void updateTagsTable() {
+    if (!clearingSelections) {
+      MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
+          .getMetadataStore();
+      tagsList.setModel(new TagsListModel(store.getPlaylists(), result));
+    }
+  }
+
+  public void addNewTag() {
+    String tagName = (String) JOptionPane.showInputDialog(this,
+        "Enter playlist name:", "Add new playlist", JOptionPane.PLAIN_MESSAGE,
+        null, null, "");
+    if (!StringUtils.isEmpty(tagName)) {
+      MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
+          .getMetadataStore();
+      Playlist playlist = store.newPlaylist(tagName);
+      try {
+        store.commit(playlist);
+      } catch (IOException e) {
+        LOG.log(Level.WARNING, "Unable to create playlist with name " + tagName,
+            e);
+      }
+
+      Application.getMessageService().pumpMessage(new TagsListChanged());
+    }
+  }
+
+  private void updateControlLanguage(Locale locale) {
+    categoryPane.setTitle(
+        LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL, locale));
+    tagsPane.setTitle(
+        LabelProvider.getLabel(LabelProvider.TAGS_ROOT_LABEL, locale));
+    devicePane.setTitle(
+        LabelProvider.getLabel(LabelProvider.DEVICES_ROOT_LABEL, locale));
+    optionsPane.setTitle(
+        LabelProvider.getLabel(LabelProvider.OPTIONS_ROOT_LABEL, locale));
+    languagePane.setTitle(
+        LabelProvider.getLabel(LabelProvider.LANGUAGES_ROOT_LABEL, locale));
+    uiLangugeLb.setText(
+        LabelProvider.getLabel(LabelProvider.OPTIONS_USER_LANGUAGE, locale));
+    updateTreeNodes();
+  }
+
+  private void updateTreeNodes() {
+    for (Enumeration e = categoryRootNode.breadthFirstEnumeration(); e
+        .hasMoreElements();) {
+      DefaultMutableTreeNode current = (DefaultMutableTreeNode) e.nextElement();
+      CategoryTreeNodeObject obj = (CategoryTreeNodeObject) current
+          .getUserObject();
+      categoryTree.getModel()
+          .valueForPathChanged(new TreePath(current.getPath()), obj);
+    }
+    for (Enumeration e = languageRootNode.breadthFirstEnumeration(); e
+        .hasMoreElements();) {
+      DefaultMutableTreeNode current = (DefaultMutableTreeNode) e.nextElement();
+      LanguageLabel obj = (LanguageLabel) current.getUserObject();
+      languageTree.getModel()
+          .valueForPathChanged(new TreePath(current.getPath()), obj);
+    }
+  }
+
+  @Override
+  public void update(Observable o, Object arg) {
+    if (arg instanceof UILanguageChanged) {
+      UILanguageChanged newLocale = (UILanguageChanged) arg;
+      updateControlLanguage(newLocale.getNewLocale());
     }
 
-    private static final TreeSelectionModel NO_SELECTION_MODEL = new DefaultTreeSelectionModel() {
-        @Override public void addSelectionPath(TreePath path) {}
-        @Override public void addSelectionPaths(TreePath[] paths) {}
-        @Override public void setSelectionPath(TreePath path) {}
-        @Override public void setSelectionPaths(TreePath[] paths) {}
-    };
-
-    public static class TagsListChanged {
+    if (arg instanceof SearchResult) {
+      result = (SearchResult) arg;
+      updateTreeNodes();
+      updateTagsTable();
     }
+
+    if (arg instanceof TagsListChanged) {
+      updateTagsTable();
+    }
+  }
+
+  private boolean clearingSelections = false;
+
+  private void clearTagSelection() {
+    if (!clearingSelections) {
+      clearingSelections = true;
+      try {
+        Application.getFilterState().setSelectedTag(null);
+        UIUtils.invokeAndWait(new Runnable() {
+          @Override
+          public void run() {
+            tagsList.clearSelection();
+          }
+        });
+      } finally {
+        clearingSelections = false;
+      }
+    }
+  }
+
+  private void clearTreeSelections() {
+    if (!clearingSelections) {
+      clearingSelections = true;
+
+      try {
+        UIUtils.invokeAndWait(new Runnable() {
+          @Override
+          public void run() {
+            categoryTree.clearChecking();
+            languageTree.clearChecking();
+          }
+        });
+      } finally {
+        clearingSelections = false;
+      }
+    }
+  }
+
+  private static class DeviceTreeCellRenderer extends DefaultTreeCellRenderer {
+    Object highlight;
+    ImageIcon icon = new ImageIcon(
+        getClass().getResource("/sync-green-16.png"));
+
+    @Override
+    public Component getTreeCellRendererComponent(JTree tree, Object value,
+        boolean sel, boolean expanded, boolean leaf, int row,
+        boolean hasFocus) {
+      JLabel cell = (JLabel) super.getTreeCellRendererComponent(tree, value,
+          sel, expanded, leaf, row, hasFocus);
+      if (highlight != null && value.equals(highlight)) {
+        cell.setIcon(icon);
+      }
+      cell.setHorizontalTextPosition(SwingConstants.LEFT);
+      Dimension d = cell.getPreferredSize();
+      cell.setPreferredSize(new Dimension(
+          (int) d.getWidth() + icon.getIconWidth() + 15, (int) d.getHeight()));
+      return cell;
+    }
+  }
+
+  private static final TreeSelectionModel NO_SELECTION_MODEL = new DefaultTreeSelectionModel() {
+    @Override
+    public void addSelectionPath(TreePath path) {
+    }
+
+    @Override
+    public void addSelectionPaths(TreePath[] paths) {
+    }
+
+    @Override
+    public void setSelectionPath(TreePath path) {
+    }
+
+    @Override
+    public void setSelectionPaths(TreePath[] paths) {
+    }
+  };
+
+  public static class TagsListChanged {
+  }
 }

@@ -19,140 +19,151 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 
 public class FileImporter {
-    private static final Logger LOG = Logger.getLogger(FileImporter.class.getName());
+  private static final Logger LOG = Logger
+      .getLogger(FileImporter.class.getName());
 
-    public static abstract class Importer {
-        protected abstract void importSingleFile(MetadataStore store, Category category, File file) throws IOException;
-        protected abstract String[] getSupportedFileExtensions();
+  public static abstract class Importer {
+    protected abstract void importSingleFile(MetadataStore store,
+        Category category, File file) throws IOException;
+
+    protected abstract String[] getSupportedFileExtensions();
+  }
+
+  private FileFilter filter;
+  private Map<String, Importer> map;
+
+  private static FileImporter instance = new FileImporter(new Importer[] {
+      new A18Importer(), new MP3Importer(), new WAVImporter() });
+
+  public static FileImporter getInstance() {
+    return instance;
+  }
+
+  private FileImporter(Importer... importers) {
+    Set<String> extensions = new HashSet<String>();
+    map = new HashMap<String, Importer>();
+
+    for (Importer imp : importers) {
+      for (String extension : imp.getSupportedFileExtensions()) {
+        extensions.add(extension);
+        map.put(extension, imp);
+      }
     }
 
-    private FileFilter filter;
-    private Map<String, Importer> map;
+    filter = getFileExtensionFilter(extensions);
+  }
 
-    private static FileImporter instance = new FileImporter(new Importer[] {
-            new A18Importer(), new MP3Importer(), new WAVImporter()
-    });
-
-    public static FileImporter getInstance() {
-        return instance;
+  public void importFile(MetadataStore store, Category category, File file)
+      throws IOException {
+    if (!file.exists()) {
+      throw new FileNotFoundException(file.toString());
     }
 
-    private FileImporter(Importer... importers) {
-        Set<String> extensions = new HashSet<String>();
-        map = new HashMap<String, Importer>();
+    if (file.isDirectory()) {
+      throw new IllegalArgumentException(file.toString() + " is a directory.");
+    } else {
+      String ext = getFileExtension(file);
+      Importer imp = map.get(ext);
+      if (imp == null) {
+        throw new UnsupportedOperationException(ext + " not supported.");
+      }
 
-        for (Importer imp : importers) {
-            for (String extension : imp.getSupportedFileExtensions()) {
-                extensions.add(extension);
-                map.put(extension, imp);
-            }
+      String title = stripFileExtension(file);
+      // check if file name matches an existing audio item id
+
+      AudioItem item = store.getAudioItem(title);
+      if (item == null) {
+        int pos = title.indexOf(FileSystemExporter.FILENAME_SEPARATOR);
+        if (pos != -1) {
+          String id = title
+              .substring(pos + FileSystemExporter.FILENAME_SEPARATOR.length());
+          item = store.getAudioItem(id);
+        }
+      }
+
+      if (item != null) {
+        try {
+          ACMConfiguration.getInstance().getCurrentDB().getRepository()
+              .updateAudioItem(item, file);
+          // Commenting line below since duration is set with updateDuration as
+          // called from storeAudioFile()
+          // item.getLocalizedAudioItem(null).getMetadata().setMetadataField(MetadataSpecification.LB_DURATION,
+          // new MetadataValue<String>(""));
+          store.commit(item);
+        } catch (Exception e) {
+          LOG.log(Level.WARNING,
+              "Unable to update files for audioitem with id=" + title, e);
+        }
+      } else {
+        // new audio item - import
+        imp.importSingleFile(store, category, file);
+      }
+    }
+  }
+
+  public void importDirectory(MetadataStore store, Category category, File dir,
+      boolean recursive) throws IOException {
+    List<File> filesToImport = new LinkedList<File>();
+    gatherFiles(dir, recursive, filesToImport);
+
+    for (File f : filesToImport) {
+      try {
+        importFile(store, category, f);
+      } catch (Exception e) {
+        LOG.log(Level.WARNING, "Failed to import file " + f, e);
+      }
+    }
+  }
+
+  private void gatherFiles(File dir, boolean recursive,
+      List<File> filesToImport) throws IOException {
+    File[] files = dir.listFiles(filter);
+    for (File f : files) {
+      filesToImport.add(f);
+    }
+
+    if (recursive) {
+      File[] subdirs = dir.listFiles(new FileFilter() {
+        @Override
+        public boolean accept(File pathname) {
+          return pathname.isDirectory();
+        }
+      });
+
+      for (File subDir : subdirs) {
+        gatherFiles(subDir, recursive, filesToImport);
+      }
+    }
+  }
+
+  public static String getFileExtension(File file) {
+    return getFileExtension(file.getName());
+  }
+
+  public static String getFileExtension(String fileName) {
+    return fileName.substring(fileName.length() - 4, fileName.length())
+        .toLowerCase();
+  }
+
+  public static String stripFileExtension(File file) {
+    return stripFileExtension(file.getName());
+  }
+
+  public static String stripFileExtension(String fileName) {
+    return fileName.substring(0, fileName.length() - 4);
+  }
+
+  public static FileFilter getFileExtensionFilter(
+      final Set<String> extensions) {
+    return new FileFilter() {
+      @Override
+      public boolean accept(File pathname) {
+        if (pathname.isDirectory()) {
+          return false;
         }
 
-        filter = getFileExtensionFilter(extensions);
-    }
-
-
-    public void importFile(MetadataStore store, Category category, File file) throws IOException {
-        if (!file.exists()) {
-            throw new FileNotFoundException(file.toString());
-        }
-
-        if (file.isDirectory()) {
-            throw new IllegalArgumentException(file.toString() + " is a directory.");
-        } else {
-            String ext = getFileExtension(file);
-            Importer imp = map.get(ext);
-            if (imp == null) {
-                throw new UnsupportedOperationException(ext + " not supported.");
-            }
-
-            String title = stripFileExtension(file);
-            // check if file name matches an existing audio item id
-
-            AudioItem item = store.getAudioItem(title);
-            if (item == null) {
-                int pos = title.indexOf(FileSystemExporter.FILENAME_SEPARATOR);
-                if (pos != -1) {
-                    String id = title.substring(pos + FileSystemExporter.FILENAME_SEPARATOR.length());
-                    item = store.getAudioItem(id);
-                }
-            }
-
-            if (item != null) {
-                try {
-					ACMConfiguration.getInstance().getCurrentDB().getRepository().updateAudioItem(item, file);
-                    // Commenting line below since duration is set with updateDuration as called from storeAudioFile()
-                    // item.getLocalizedAudioItem(null).getMetadata().setMetadataField(MetadataSpecification.LB_DURATION, new MetadataValue<String>(""));
-                    store.commit(item);
-                } catch (Exception e) {
-                    LOG.log(Level.WARNING, "Unable to update files for audioitem with id=" + title, e);
-                }
-            } else {
-                // new audio item - import
-                imp.importSingleFile(store, category, file);
-            }
-        }
-    }
-
-    public void importDirectory(MetadataStore store, Category category, File dir, boolean recursive) throws IOException {
-        List<File> filesToImport = new LinkedList<File>();
-        gatherFiles(dir, recursive, filesToImport);
-
-        for (File f : filesToImport) {
-            try {
-                importFile(store, category, f);
-            } catch (Exception e) {
-                LOG.log(Level.WARNING, "Failed to import file " + f, e);
-            }
-        }
-    }
-
-    private void gatherFiles(File dir, boolean recursive, List<File> filesToImport) throws IOException {
-        File[] files = dir.listFiles(filter);
-        for (File f : files) {
-            filesToImport.add(f);
-        }
-
-        if (recursive) {
-            File[] subdirs = dir.listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File pathname) {
-                    return pathname.isDirectory();
-                }
-            });
-
-            for (File subDir : subdirs) {
-                gatherFiles(subDir, recursive, filesToImport);
-            }
-        }
-    }
-
-    public static String getFileExtension(File file) {
-        return getFileExtension(file.getName());
-    }
-
-    public static String getFileExtension(String fileName) {
-        return fileName.substring(fileName.length() - 4, fileName.length()).toLowerCase();
-    }
-
-    public static String stripFileExtension(File file) {
-        return stripFileExtension(file.getName());
-    }
-
-    public static String stripFileExtension(String fileName) {
-        return fileName.substring(0, fileName.length() - 4);
-    }
-
-    public static FileFilter getFileExtensionFilter(final Set<String> extensions) {
-        return new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                if (pathname.isDirectory()) {
-                    return false;
-                }
-
-                return extensions.contains(getFileExtension(pathname));
-            }
-        };
-    }
+        return extensions.contains(getFileExtension(pathname));
+      }
+    };
+  }
 }

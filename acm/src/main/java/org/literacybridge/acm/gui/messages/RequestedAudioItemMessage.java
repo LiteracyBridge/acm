@@ -3,14 +3,14 @@ package org.literacybridge.acm.gui.messages;
 import org.literacybridge.acm.store.AudioItem;
 
 public class RequestedAudioItemMessage extends Message {
-	private AudioItem audioItem;
+  private AudioItem audioItem;
 
-	public RequestedAudioItemMessage(AudioItem audioItem) {
-		super();
-		this.audioItem = audioItem;
-	}
+  public RequestedAudioItemMessage(AudioItem audioItem) {
+    super();
+    this.audioItem = audioItem;
+  }
 
-	public AudioItem getAudioItem() {
-		return audioItem;
-	}
+  public AudioItem getAudioItem() {
+    return audioItem;
+  }
 }

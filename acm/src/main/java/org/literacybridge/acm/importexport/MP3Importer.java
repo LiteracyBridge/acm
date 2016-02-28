@@ -23,46 +23,55 @@ import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 public class MP3Importer extends Importer {
 
-    @Override
-    protected void importSingleFile(MetadataStore store, Category category, File file) throws IOException {
-        try {
-            MusicMetadataSet musicMetadataSet = new MyID3().read(file);
-            IMusicMetadata musicMetadata = musicMetadataSet.getSimplified();
+  @Override
+  protected void importSingleFile(MetadataStore store, Category category,
+      File file) throws IOException {
+    try {
+      MusicMetadataSet musicMetadataSet = new MyID3().read(file);
+      IMusicMetadata musicMetadata = musicMetadataSet.getSimplified();
 
-            AudioItem audioItem = store.newAudioItem(ACMConfiguration.getInstance().getNewAudioItemUID());
-            audioItem.addCategory(category);
+      AudioItem audioItem = store
+          .newAudioItem(ACMConfiguration.getInstance().getNewAudioItemUID());
+      audioItem.addCategory(category);
 
-            Metadata metadata = audioItem.getMetadata();
-            String title = musicMetadata.getSongTitle();
-            if (title == null || title.trim().isEmpty()) {
-                title = file.getName().substring(0, file.getName().length() - 4);
-            }
-            metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER, new MetadataValue<String>(audioItem.getUuid()));
-            metadata.setMetadataField(MetadataSpecification.DC_TITLE, new MetadataValue<String>(title));
-            metadata.setMetadataField(MetadataSpecification.LB_PRIMARY_SPEAKER, new MetadataValue<String>(musicMetadata.getArtist()));
-            metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("1"));
-            Number year = musicMetadata.getYear();
-            if (year != null) {
-                metadata.setMetadataField(MetadataSpecification.LB_DATE_RECORDED, new MetadataValue<String>(year.toString()));
-            }
-            metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE,
-                    new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
+      Metadata metadata = audioItem.getMetadata();
+      String title = musicMetadata.getSongTitle();
+      if (title == null || title.trim().isEmpty()) {
+        title = file.getName().substring(0, file.getName().length() - 4);
+      }
+      metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER,
+          new MetadataValue<String>(audioItem.getUuid()));
+      metadata.setMetadataField(MetadataSpecification.DC_TITLE,
+          new MetadataValue<String>(title));
+      metadata.setMetadataField(MetadataSpecification.LB_PRIMARY_SPEAKER,
+          new MetadataValue<String>(musicMetadata.getArtist()));
+      metadata.setMetadataField(MetadataSpecification.DTB_REVISION,
+          new MetadataValue<String>("1"));
+      Number year = musicMetadata.getYear();
+      if (year != null) {
+        metadata.setMetadataField(MetadataSpecification.LB_DATE_RECORDED,
+            new MetadataValue<String>(year.toString()));
+      }
+      metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE,
+          new MetadataValue<RFC3066LanguageCode>(
+              new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 
-            AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
-            repository.storeAudioFile(audioItem, file);
+      AudioItemRepository repository = ACMConfiguration.getInstance()
+          .getCurrentDB().getRepository();
+      repository.storeAudioFile(audioItem, file);
 
-            store.commit(audioItem);
-        } catch (ID3ReadException e) {
-            throw new IOException(e);
-        } catch (UnsupportedFormatException e) {
-            throw new IOException(e);
-        } catch (DuplicateItemException e) {
-            throw new IOException(e);
-        }
+      store.commit(audioItem);
+    } catch (ID3ReadException e) {
+      throw new IOException(e);
+    } catch (UnsupportedFormatException e) {
+      throw new IOException(e);
+    } catch (DuplicateItemException e) {
+      throw new IOException(e);
     }
+  }
 
-    @Override
-    protected String[] getSupportedFileExtensions() {
-        return new String[] {".mp3"};
-    }
+  @Override
+  protected String[] getSupportedFileExtensions() {
+    return new String[] { ".mp3" };
+  }
 }

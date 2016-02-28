@@ -5,14 +5,14 @@ import java.io.File;
 import javax.swing.JProgressBar;
 
 public interface SoundPlayer {
-   
-    public void setProgressBar(JProgressBar bar);
-    
-    public void setClip(File file);
-    
-    public void play();    
 
-    public void pause();
+  public void setProgressBar(JProgressBar bar);
 
-    public void stop();    
+  public void setClip(File file);
+
+  public void play();
+
+  public void pause();
+
+  public void stop();
 }

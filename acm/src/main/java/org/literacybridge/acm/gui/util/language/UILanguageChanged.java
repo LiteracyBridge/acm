@@ -4,19 +4,19 @@ import java.util.Locale;
 
 public class UILanguageChanged {
 
-	private Locale newLocale;
-	private Locale oldLocale;
-	
-	public UILanguageChanged(Locale newLocale, Locale oldLocale) {
-		this.newLocale = newLocale;
-		this.oldLocale = oldLocale;
-	}
+  private Locale newLocale;
+  private Locale oldLocale;
 
-	public Locale getNewLocale() {
-		return newLocale;
-	}
+  public UILanguageChanged(Locale newLocale, Locale oldLocale) {
+    this.newLocale = newLocale;
+    this.oldLocale = oldLocale;
+  }
 
-	public Locale getOldLocale() {
-		return oldLocale;
-	}
+  public Locale getNewLocale() {
+    return newLocale;
+  }
+
+  public Locale getOldLocale() {
+    return oldLocale;
+  }
 }
