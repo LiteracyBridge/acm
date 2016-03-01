@@ -27,19 +27,21 @@ public class DropboxFinderTest
     @Test
     public void testDetectWindows()
     {
+        PowerMockito.mockStatic(DropboxFinder.class);
+        PowerMockito.when(DropboxFinder.onWindows()).thenReturn(true);
+
         DropboxFinder dbFinder = new DropboxFinder();
-        PowerMockito.mockStatic(System.class);
-        PowerMockito.when(System.getProperty("os.name")).thenReturn("Windows");
-        assertTrue(dbFinder.onWindows());
+        assertTrue(DropboxFinder.onWindows());
     }
 
     @Test
     public void testDetectOSx()
     {
+        PowerMockito.mockStatic(DropboxFinder.class);
+        PowerMockito.when(DropboxFinder.onWindows()).thenReturn(false);
+
         DropboxFinder dbFinder = new DropboxFinder();
-        PowerMockito.mockStatic(System.class);
-        PowerMockito.when(System.getProperty("os.name")).thenReturn("Mac OSX");
-        assertFalse(dbFinder.onWindows());
+        assertFalse(DropboxFinder.onWindows());
     }
 
     @Test
@@ -51,6 +53,8 @@ public class DropboxFinderTest
         PowerMockito.when(System.getProperty("os.name")).thenReturn("Windows");
         PowerMockito.when(System.getenv("APPDATA")).thenReturn(null);
         PowerMockito.when(System.getenv("LOCALAPPDATA")).thenReturn(null);
+        PowerMockito.mockStatic(DropboxFinder.class);
+        PowerMockito.when(DropboxFinder.onWindows()).thenReturn(true);
 
         boolean gotException = false;
         File path = null;
@@ -71,6 +75,8 @@ public class DropboxFinderTest
         // Pretend we're on Mac
         PowerMockito.when(System.getProperty("os.name")).thenReturn("Mac OSX");
         PowerMockito.when(System.getProperty("user.home")).thenReturn("/home/LB");
+        PowerMockito.mockStatic(DropboxFinder.class);
+        PowerMockito.when(DropboxFinder.onWindows()).thenReturn(false);
 
         // If, by mistake, we think we're on Windows, we'll use LOCALAPPDATA to find the path:
         PowerMockito.when(System.getenv("APPDATA")).thenReturn("r:\\Users\\LB\\AppData\\Roaming");
@@ -90,6 +96,8 @@ public class DropboxFinderTest
         PowerMockito.when(System.getProperty("os.name")).thenReturn("Windows");
         PowerMockito.when(System.getenv("APPDATA")).thenReturn("r:\\Users\\LB\\AppData\\Roaming");
         PowerMockito.when(System.getenv("LOCALAPPDATA")).thenReturn("r:\\Users\\LB\\AppData\\Local");
+        PowerMockito.mockStatic(DropboxFinder.class);
+        PowerMockito.when(DropboxFinder.onWindows()).thenReturn(true);
 
         // If, by mistake, we think we're on OS/X or Linux, we'll use this to find the path:
         PowerMockito.when(System.getProperty("user.home")).thenReturn("/home/LB");

@@ -152,7 +152,7 @@ public class ControlAccess {
 			@SuppressWarnings("unused")
 			LockACM l = new LockACM(config);
 		} catch (RuntimeException e) {
-			if (!ACMConfiguration.getInstance().getInstance().isDisableUI())
+			if (!ACMConfiguration.getInstance().isDisableUI())
 				JOptionPane.showMessageDialog(null, "This ACM is already opened.");
 			else
 				System.out.println("This ACM is already opened!!!");
