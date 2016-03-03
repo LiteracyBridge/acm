@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenFilter;
@@ -66,6 +67,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 public class AudioItemIndex {
+    private static final Logger LOG = Logger.getLogger(AudioItemIndex.class.getName());
+
     public static final String TEXT_FIELD = "text";
     public static final String UID_FIELD = "uid";
     public static final String CATEGORIES_FIELD = "categories";
@@ -110,7 +113,7 @@ public class AudioItemIndex {
         long importOrderId = 0;
 
         Map<String, Playlist> playlists = Maps.newHashMap();
-        IndexWriter writer = newWriter();
+        IndexWriter writer = newWriter(OpenMode.CREATE);
         for (AudioItem item : audioItems) {
             for (Playlist playlist : item.getPlaylists()) {
                 // important to use getName() here, because in the old DB we didn't use uuids for playlists;
@@ -137,9 +140,9 @@ public class AudioItemIndex {
         return Integer.toString(currentMaxPlaylistUuid++);
     }
 
-    private final IndexWriter newWriter() throws IOException {
+    private final IndexWriter newWriter(OpenMode openMode) throws IOException {
         IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_47, new AudioItemDocumentFactory.PrefixAnalyzer());
-        config.setOpenMode(OpenMode.CREATE_OR_APPEND);
+        config.setOpenMode(openMode);
         return new IndexWriter(dir, config) {
             @Override
             public void close() throws IOException {
@@ -152,7 +155,7 @@ public class AudioItemIndex {
     }
 
     public Transaction newTransaction() throws IOException {
-        return new Transaction(this, newWriter());
+        return new Transaction(this, newWriter(OpenMode.APPEND));
     }
 
     public static boolean indexExists(File path) throws IOException {
@@ -173,6 +176,27 @@ public class AudioItemIndex {
         }
 
         return new AudioItemIndex(FSDirectory.open(path), audioItems);
+    }
+
+    public static AudioItemIndex newIndex(File path) throws IOException {
+        if (!path.exists()) {
+            boolean success = path.mkdirs();
+            if (!success) {
+                throw new IOException("Unable to create index directory " + path);
+            }
+        }
+
+        if (indexExists(path)) {
+            throw new IOException("Index already exists in " + path);
+        }
+
+        IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_47, new AudioItemDocumentFactory.PrefixAnalyzer());
+        config.setOpenMode(OpenMode.CREATE);
+        Directory dir = FSDirectory.open(path);
+        // create empty index
+        new IndexWriter(dir, config).close();
+
+        return new AudioItemIndex(dir, null);
     }
 
     public static AudioItemIndex load(File path) throws IOException {
@@ -221,15 +245,17 @@ public class AudioItemIndex {
         SegmentInfos infos = new SegmentInfos();
         infos.read(dir);
         Map<String, String> commitData = infos.getUserData();
-        String playlistNames = commitData.get(PLAYLIST_NAMES_COMMIT_DATA);
-        this.currentMaxPlaylistUuid = Math.max(currentMaxPlaylistUuid,
-                Integer.parseInt(commitData.get(MAX_PLAYLIST_UID_COMMIT_DATA)));
-        StringTokenizer tokenizer = new StringTokenizer(playlistNames, ",");
-        while (tokenizer.hasMoreTokens()) {
-            String[] pair = tokenizer.nextToken().split(":");
-            String uuid = pair[0];
-            String name = pair[1];
-            playlists.put(uuid, Playlist.builder().withUuid(uuid).withName(name));
+        if (!commitData.isEmpty()) {
+            String playlistNames = commitData.get(PLAYLIST_NAMES_COMMIT_DATA);
+            this.currentMaxPlaylistUuid = Math.max(currentMaxPlaylistUuid,
+                    Integer.parseInt(commitData.get(MAX_PLAYLIST_UID_COMMIT_DATA)));
+            StringTokenizer tokenizer = new StringTokenizer(playlistNames, ",");
+            while (tokenizer.hasMoreTokens()) {
+                String[] pair = tokenizer.nextToken().split(":");
+                String uuid = pair[0];
+                String name = pair[1];
+                playlists.put(uuid, Playlist.builder().withUuid(uuid).withName(name));
+            }
         }
         return playlists;
     }
@@ -513,23 +539,29 @@ public class AudioItemIndex {
 
             searcher.search(query, collector);
 
-            SortedSetDocValuesFacetCounts facetCounts =
-                    new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
-            List<FacetResult> facetResults = facetCounts.getAllDims(1000);
             Map<String, Integer> categoryFacets = Maps.newHashMap();
             Map<String, Integer> localeFacets = Maps.newHashMap();
-            for (FacetResult r : facetResults) {
-                if (r.dim.equals(CATEGORIES_FACET_FIELD)) {
-                    for (LabelAndValue lv : r.labelValues) {
-                        categoryFacets.put(lv.label, lv.value.intValue());
-                    }
-                }
-                if (r.dim.equals(LOCALES_FACET_FIELD)) {
-                    for (LabelAndValue lv : r.labelValues) {
-                        localeFacets.put(lv.label, lv.value.intValue());
-                    }
 
+            try {
+                SortedSetDocValuesFacetCounts facetCounts =
+                        new SortedSetDocValuesFacetCounts(new DefaultSortedSetDocValuesReaderState(searcher.getIndexReader()), facetsCollector);
+                List<FacetResult> facetResults = facetCounts.getAllDims(1000);
+                for (FacetResult r : facetResults) {
+                    if (r.dim.equals(CATEGORIES_FACET_FIELD)) {
+                        for (LabelAndValue lv : r.labelValues) {
+                            categoryFacets.put(lv.label, lv.value.intValue());
+                        }
+                    }
+                    if (r.dim.equals(LOCALES_FACET_FIELD)) {
+                        for (LabelAndValue lv : r.labelValues) {
+                            localeFacets.put(lv.label, lv.value.intValue());
+                        }
+
+                    }
                 }
+            } catch (IllegalArgumentException e) {
+                // With empty indexes it can happen that Lucene throws an exception here due to missing facet data;
+                // we can probably remove this try..catch once we upgrade to a newer Lucene version
             }
 
             DataRequestResult result = new DataRequestResult(categoryFacets, localeFacets, Lists.newArrayList(results));

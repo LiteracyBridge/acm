@@ -155,21 +155,25 @@ public class DBConfiguration extends Properties {
 
             final Taxonomy taxonomy = Taxonomy.createTaxonomy(sharedACMDirectory);
             if (!AudioItemIndex.indexExists(getLuceneIndexDirectory())) {
-                this.dbConn = Persistence.initialize(this);
-                this.store = new DBMetadataStore(taxonomy);
-                System.out.print("Migrating database...");
-                long start = System.currentTimeMillis();
-                Persistence.maybeRunMigration();
-                this.store =
-                        new LuceneMetadataStore(taxonomy, AudioItemIndex.migrateFromDB(getLuceneIndexDirectory(), this.store.getAudioItems()));
-                dbConn.close();
-                IOUtils.deleteRecursive(new File(getDatabaseDirectory(), Persistence.DBNAME));
-                IOUtils.deleteRecursive(new File(getDatabaseDirectory(), "derby.log"));
-                long end = System.currentTimeMillis();
-                System.out.println("done. (" + (end - start) + " ms)");
+                if (!getDatabaseDirectory().exists()) {
+                    this.store = new LuceneMetadataStore(taxonomy, AudioItemIndex.newIndex(getLuceneIndexDirectory()));
+                } else {
+                    // migrate the old DB into a new Lucene index
+                    this.dbConn = Persistence.initialize(this);
+                    this.store = new DBMetadataStore(taxonomy);
+                    System.out.print("Migrating database...");
+                    long start = System.currentTimeMillis();
+                    Persistence.maybeRunMigration();
+                    this.store =
+                            new LuceneMetadataStore(taxonomy, AudioItemIndex.migrateFromDB(getLuceneIndexDirectory(), this.store.getAudioItems()));
+                    dbConn.close();
+                    IOUtils.deleteRecursive(new File(getDatabaseDirectory(), Persistence.DBNAME));
+                    IOUtils.deleteRecursive(new File(getDatabaseDirectory(), "derby.log"));
+                    long end = System.currentTimeMillis();
+                    System.out.println("done. (" + (end - start) + " ms)");
+                }
             } else {
-                this.store =
-                        new LuceneMetadataStore(taxonomy, AudioItemIndex.load(getLuceneIndexDirectory()));
+                this.store = new LuceneMetadataStore(taxonomy, AudioItemIndex.load(getLuceneIndexDirectory()));
             }
 
             initialized = true;
