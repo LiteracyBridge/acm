@@ -218,7 +218,7 @@ public class TBBuilder {
     }
 
     public TBBuilder (String sharedACM) throws Exception {
-        dropboxTbLoadersDir = ACMConfiguration.dirACM(sharedACM);  //.getCurrentDB().getTBLoadersDirectory();
+        dropboxTbLoadersDir = ACMConfiguration.getInstance().dirACM(sharedACM);  //.getCurrentDB().getTBLoadersDirectory();
         project = sharedACM.substring(ACM_PREFIX.length());
         File localTbLoadersDir = new File(DBConfiguration.getLiteracyBridgeHomeDir(), Constants.TBLoadersHomeDir);
         targetTempDir = new File(localTbLoadersDir,project);
@@ -455,14 +455,14 @@ public class TBBuilder {
         csvColumns[1] = contentPackage.toUpperCase();
         csvColumns[3] = list.getName().substring(0, list.getName().length() - 4); // strip .txt
 
-        AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
+        AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
         BufferedReader reader = new BufferedReader(new FileReader(list));
 
         int order = 1;
         try {
             while (reader.ready()) {
                 String uuid = reader.readLine();
-                AudioItem audioItem = ACMConfiguration.getCurrentDB().getMetadataStore().getAudioItem(uuid);
+                AudioItem audioItem = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getAudioItem(uuid);
                 System.out.println("    Exporting audioitem " + uuid + " to " + targetDirectory);
                 if (filename == null) {
                     repository.exportA18WithMetadata(audioItem, targetDirectory);

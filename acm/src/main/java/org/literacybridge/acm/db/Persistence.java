@@ -141,7 +141,7 @@ public class Persistence {
     }
 
     public static synchronized void maybeRunMigration() throws Exception {
-        DBConfiguration config = ACMConfiguration.getCurrentDB();
+        DBConfiguration config = ACMConfiguration.getInstance().getCurrentDB();
         MetadataStore store = config.getMetadataStore();
 
         for (AudioItem audioItem : store.getAudioItems()) {

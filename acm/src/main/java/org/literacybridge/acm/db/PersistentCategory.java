@@ -167,7 +167,7 @@ class PersistentCategory extends PersistentObject {
     }
 
     private static PersistentCategory getFromDatabase(String uuid) {
-        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
+        EntityManager em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
         PersistentCategory result = null;
         try {
             Query findObject = em.createQuery("SELECT o FROM PersistentCategory o WHERE o.uuid = '" + uuid + "'");

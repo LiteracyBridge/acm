@@ -23,7 +23,7 @@ import org.literacybridge.acm.store.Playlist;
 class PersistentQueries {
 
     static <T> T getPersistentObject(Class<T> objectClass, Object id) {
-        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
+        EntityManager em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
         T persistentObject = null;
         try {
             persistentObject = em.find(objectClass, id);
@@ -35,7 +35,7 @@ class PersistentQueries {
 
     @SuppressWarnings("unchecked")
     static <T> List<T> getPersistentObjects(Class<T> objectClass) {
-        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
+        EntityManager em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
         List<T> results = null;
         try {
             Query findObjects = em.createQuery("SELECT o FROM " + objectClass.getSimpleName() + " o");
@@ -49,7 +49,7 @@ class PersistentQueries {
 
     @SuppressWarnings("unchecked")
     public static List<PersistentAudioItem> searchForAudioItems(String filter, List<Category> categories, List<Locale> locales) {
-        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
+        EntityManager em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
         List<PersistentAudioItem> searchResults = new LinkedList<PersistentAudioItem>();
         try {
             // queries all audioitems
@@ -99,7 +99,7 @@ class PersistentQueries {
 
     @SuppressWarnings("unchecked")
     public static List<PersistentAudioItem> searchForAudioItems(String filter, Playlist selectedPlaylist) {
-        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
+        EntityManager em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
         List<PersistentAudioItem> searchResults = new LinkedList<PersistentAudioItem>();
         try {
             // queries all audioitems
@@ -184,7 +184,7 @@ class PersistentQueries {
 
     @SuppressWarnings("unchecked")
     static Map<String, Integer> getCategoryFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
-        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
+        EntityManager em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
         Map<String, Integer> results = new HashMap<String, Integer>();
         try {
             StringBuilder query = new StringBuilder("SELECT DISTINCT t5.id AS \"id\", COUNT(t4.category) AS \"count\" "
@@ -253,7 +253,7 @@ class PersistentQueries {
 
     @SuppressWarnings("unchecked")
     static Map<String, Integer> getLanguageFacetCounts(String filter, List<Category> categories, List<Locale> locales) {
-        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
+        EntityManager em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
         Map<String, Integer> results = new HashMap<String, Integer>();
         try {
             StringBuilder query = new StringBuilder("SELECT a.\"lang_id\" AS \"id\", COUNT(a.\"lang_id\") AS \"count\" FROM ("

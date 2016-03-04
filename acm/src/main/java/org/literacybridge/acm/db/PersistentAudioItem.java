@@ -167,7 +167,7 @@ class PersistentAudioItem extends PersistentObject {
     }
 
     public static PersistentAudioItem getFromDatabase(String uuid) {
-        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
+        EntityManager em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
         PersistentAudioItem result = null;
         try {
             Query findObject = em.createQuery("SELECT o FROM PersistentAudioItem o WHERE o.uuid = '" + uuid + "'");
@@ -192,7 +192,7 @@ class PersistentAudioItem extends PersistentObject {
         AudioItem audioItem = new AudioItem(mItem.getUuid());
         // add all categories from DB to in-memory list
         for (PersistentCategory cat : mItem.getPersistentCategoryList()) {
-            Category category = ACMConfiguration.getCurrentDB().getMetadataStore().getCategory(cat.getUuid());
+            Category category = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getCategory(cat.getUuid());
             if (category == null) {
                 LOG.warning("DB migration: Category with uuid " + cat.getUuid() + " not found.");
             } else {

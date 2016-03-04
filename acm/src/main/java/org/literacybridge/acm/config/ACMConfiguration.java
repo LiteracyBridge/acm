@@ -1,12 +1,13 @@
 package org.literacybridge.acm.config;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.gui.CommandLineParams;
+import org.literacybridge.acm.utils.DropboxFinder;
+
+import javax.swing.*;
+import java.io.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -14,37 +15,54 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-
-import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.gui.CommandLineParams;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
 public class ACMConfiguration {
     private static final Logger LOG = Logger.getLogger(ACMConfiguration.class.getName());
 
-    private static final Map<String, DBConfiguration> allDBs = Maps.newHashMap();
-    private static final AtomicReference<DBConfiguration> currentDB = new AtomicReference<DBConfiguration>();
-    static final File LB_HOME_DIR = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
+    private  final Map<String, DBConfiguration> allDBs = Maps.newHashMap();
+    private  final AtomicReference<DBConfiguration> currentDB = new AtomicReference<DBConfiguration>();
+    final File LB_HOME_DIR = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
 
-    private static String title;
-    private static boolean disableUI = false;
-    private static boolean forceSandbox = false;
-    private static final Properties ACMGlobalConfigProperties = new Properties();
-    private static File globalShareDir;
+    private  String title;
+    private  boolean disableUI = false;
+    private  boolean forceSandbox = false;
+    private  final Properties ACMGlobalConfigProperties = new Properties();
+    private  File globalShareDir;
 
-    public synchronized static void initialize(CommandLineParams args) {
+    /**
+     * Get the shared instance of the configuration class. Initialize it if not already initialized.
+     *
+     * @return The shared ACMConfiguration instance.
+     */
+    private static ACMConfiguration instance;
+    public synchronized static ACMConfiguration getInstance() {
+        if (instance == null) {
+            CommandLineParams emptyParams = new CommandLineParams();
+            instance = new ACMConfiguration(emptyParams);
+        }
+        return instance;
+    }
+
+    /**
+     * Initialize the shared ACMConfiguration instance. Must not already be initialized.
+     *
+     * @param params ACM Command Line Parameter.
+     */
+    public synchronized static void initialize(CommandLineParams params) {
+        if (instance != null) {
+            throw new IllegalStateException("Attempt to initialize ACMConfiguration after it is already initialized");
+        }
+        instance = new ACMConfiguration(params);
+    }
+
+    private ACMConfiguration(CommandLineParams params) {
         loadProps();
 
-        if (args.titleACM != null) {
-            title = args.titleACM;
+        if (params.titleACM != null) {
+            title = params.titleACM;
         }
 
-        disableUI = args.disableUI;
-        forceSandbox = args.sandbox;
+        disableUI = params.disableUI;
+        forceSandbox = params.sandbox;
 
         setupACMGlobalPaths();
 
@@ -69,7 +87,7 @@ public class ACMConfiguration {
 
     // TODO: when we have a homescreen this method needs to be split up into different steps,
     // e.g. close DB, open new DB, etc.
-    public synchronized static void setCurrentDB(String dbName, boolean createEmptyDB) throws Exception {
+    public synchronized  void setCurrentDB(String dbName, boolean createEmptyDB) throws Exception {
         DBConfiguration config = allDBs.get(dbName);
         if (config == null) {
             if (!createEmptyDB) {
@@ -89,24 +107,22 @@ public class ACMConfiguration {
         config.init();
     }
 
-    public synchronized static void closeCurrentDB() {
+    public synchronized  void closeCurrentDB() {
         DBConfiguration oldDB = currentDB.get();
         if (oldDB != null) {
             LockACM.unlockFile();
         }
     }
 
-    public synchronized static DBConfiguration getCurrentDB() {
+    public synchronized  DBConfiguration getCurrentDB() {
         return currentDB.get();
     }
 
-    public static File dirACM(String acmName) {
+    public File dirACM(String acmName) {
         File f = null;
-        loadProps();
 
-        String globalSharePath = ACMGlobalConfigProperties.getProperty(Constants.GLOBAL_SHARE_PATH);
-        if (globalSharePath != null) {
-            f = new File (globalSharePath,acmName + "/" + Constants.TBLoadersHomeDir);
+        if (globalShareDir != null) {
+            f = new File (globalShareDir, acmName + File.separator + Constants.TBLoadersHomeDir);
             if (!f.exists()) {
                 f = null;
             }
@@ -114,38 +130,38 @@ public class ACMConfiguration {
         return f;
     }
 
-    public static String getUserName() {
+    public String getUserName() {
         return ACMGlobalConfigProperties.getProperty("USER_NAME");
     }
 
-    public static String getUserContact() {
+    public String getUserContact() {
         return ACMGlobalConfigProperties.getProperty(Constants.USER_CONTACT_INFO);
     }
 
-    public static String getRecordingCounter() {
+    public String getRecordingCounter() {
         return ACMGlobalConfigProperties.getProperty(Constants.RECORDING_COUNTER_PROP);
     }
 
-    public static void setRecordingCounter(String counter) {
+    public void setRecordingCounter(String counter) {
         ACMGlobalConfigProperties.setProperty(Constants.RECORDING_COUNTER_PROP, counter);
-        ACMConfiguration.writeProps();
+        writeProps();
     }
 
-    public static String getNewAudioItemUID() throws IOException {
-        String value = ACMConfiguration.getRecordingCounter();
+    public String getNewAudioItemUID() throws IOException {
+        String value = getRecordingCounter();
         int counter = (value == null) ? 0 : Integer.parseInt(value, Character.MAX_RADIX);
         counter++;
         value = Integer.toString(counter, Character.MAX_RADIX);
         String uuid = "LB-2" + "_"  + getDeviceID() + "_" + value;
 
         // make sure we remember that this uuid was already used
-        ACMConfiguration.setRecordingCounter(value);
+        setRecordingCounter(value);
         //writeProps();
 
         return uuid;
     }
 
-    public static String getDeviceID() throws IOException {
+    public String getDeviceID() throws IOException {
         String value = ACMGlobalConfigProperties.getProperty(Constants.DEVICE_ID_PROP);
         if (value == null) {
             final int n = 10;
@@ -164,38 +180,56 @@ public class ACMConfiguration {
     }
 
 
-    private static void setupACMGlobalPaths() {
-        String globalSharePath = ACMGlobalConfigProperties.getProperty(Constants.GLOBAL_SHARE_PATH);
-        if (globalSharePath != null) {
-            globalShareDir = new File (globalSharePath);
-        }
-
-        if (globalSharePath == null || globalShareDir == null || !globalShareDir.exists()) {
-            //try default dropbox installation
-            globalShareDir = new File (Constants.USER_HOME_DIR, Constants.DefaultSharedDirName1);
-            if (!globalShareDir.exists()) {
-                globalShareDir = new File (Constants.USER_HOME_DIR, Constants.DefaultSharedDirName2);
+    /**
+     * The Global Shared Directory is where all the ACMs an supporting files are kept.
+     * In general, this will be in Dropbox. For testing, it will be different, and it
+     * could be different for some specialized circumstances.
+     *
+     * Side effect: globalShareDir is set to a directory, or the application exits.
+     */
+    private  void setupACMGlobalPaths() {
+        boolean dirUpdated = false;
+        // If there is an environment override for 'dropbox', use that for the global directory.
+        String override = System.getenv("dropbox");
+        if (override != null && override.length() > 0) {
+            globalShareDir = new File(override);
+            LOG.info(String.format("Using override for shared global directory: %s", override));
+        } else {
+            String globalSharePath = ACMGlobalConfigProperties.getProperty(Constants.GLOBAL_SHARE_PATH);
+            if (globalSharePath != null) {
+                globalShareDir = new File(globalSharePath);
             }
-
-        }
-
-        if (!globalShareDir.exists()) {
-            JFileChooser fc = new JFileChooser();
-            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            fc.setDialogTitle("Select Dropbox directory.");
-            int returnVal = fc.showOpenDialog(null);
-            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                globalShareDir = fc.getSelectedFile();
-            } else {
-                JOptionPane.showMessageDialog(null,"Dropbox directory has not been identified. Shutting down.");
-                System.exit(0);
+            // If we didn't find the global directory, try to get it from Dropbox directly.
+            if (globalSharePath == null || globalShareDir == null || !globalShareDir.exists()) {
+                globalSharePath = DropboxFinder.getDropboxPath();
+                globalShareDir = new File(globalSharePath);
+                dirUpdated = true;
+                LOG.info(String.format("Using Dropbox configuration for shared global directory: %s", globalSharePath));
+            }
+            // If we still didn't find the directory, prompt the user.
+            if (!globalShareDir.exists() || !globalShareDir.isDirectory()) {
+                JFileChooser fc = new JFileChooser();
+                fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                fc.setDialogTitle("Select Dropbox directory.");
+                int returnVal = fc.showOpenDialog(null);
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    globalShareDir = fc.getSelectedFile();
+                    dirUpdated = true;
+                }
             }
         }
-
-        ACMGlobalConfigProperties.put(Constants.GLOBAL_SHARE_PATH, globalShareDir.getAbsolutePath());
+        // If we STILL didn't find the global directory, abort.
+        if (globalShareDir == null || !globalShareDir.exists() || !globalShareDir.isDirectory()) {
+            LOG.warning("Unable to find shared global directory. Shutting down");
+            JOptionPane.showMessageDialog(null, "Dropbox directory has not been identified. Shutting down.");
+            System.exit(0);
+        }
+        if (dirUpdated) {
+            ACMGlobalConfigProperties.put(Constants.GLOBAL_SHARE_PATH, globalShareDir.getAbsolutePath());
+        }
     }
 
-    private static List<DBConfiguration> discoverDBs() {
+    private  List<DBConfiguration> discoverDBs() {
         List<DBConfiguration> dbs = Lists.newLinkedList();
         if (getGlobalShareDir().exists()) {
             File[] dirs = getGlobalShareDir().listFiles(new FileFilter() {
@@ -213,27 +247,27 @@ public class ACMConfiguration {
         return dbs;
     }
 
-    public static String getACMname() {
+    public String getACMname() {
         return title;
     }
 
-    public static boolean isDisableUI() {
+    public boolean isDisableUI() {
         return disableUI;
     }
 
-    public static boolean isForceSandbox() {
+    public boolean isForceSandbox() {
         return forceSandbox;
     }
 
-    public static File getGlobalShareDir() {
+    public File getGlobalShareDir() {
         return globalShareDir;
     }
 
-    private static File getConfigurationPropertiesFile() {
+    private  File getConfigurationPropertiesFile() {
         return new File(LB_HOME_DIR, Constants.GLOBAL_CONFIG_PROPERTIES);
     }
 
-    public static void loadProps() {
+    private void loadProps() {
         if (getConfigurationPropertiesFile().exists()) {
             try {
                 BufferedInputStream in = new BufferedInputStream(new FileInputStream(getConfigurationPropertiesFile()));
@@ -244,7 +278,7 @@ public class ACMConfiguration {
         }
     }
 
-    public static void writeProps() {
+    private void writeProps() {
         try {
             BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(getConfigurationPropertiesFile()));
             ACMGlobalConfigProperties.store(out, null);

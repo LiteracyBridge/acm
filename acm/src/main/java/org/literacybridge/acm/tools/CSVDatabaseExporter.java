@@ -20,7 +20,7 @@ public class CSVDatabaseExporter {
     }
 
     private void export(File csvFile) throws IOException {
-        CSVExporter.export(ACMConfiguration.getCurrentDB().getMetadataStore().getAudioItems(), csvFile);
+        CSVExporter.export(ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getAudioItems(), csvFile);
     }
 
     public static void main(String[] args) throws Exception {

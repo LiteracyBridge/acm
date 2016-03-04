@@ -72,14 +72,14 @@ public class TagsListPopupMenu extends JPopupMenu {
                         List<String> audioItems = Lists.newLinkedList(selectedTag
                                 .getTag().getAudioItemList());
                         for (String audioItemUuid : audioItems) {
-                            AudioItem audioItem = ACMConfiguration.getCurrentDB().getMetadataStore().getAudioItem(audioItemUuid);
+                            AudioItem audioItem = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getAudioItem(audioItemUuid);
                             audioItem.removePlaylist(selectedTag.getTag());
-                            ACMConfiguration.getCurrentDB().getMetadataStore().commit(audioItem);
+                            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(audioItem);
                         }
-                        ACMConfiguration.getCurrentDB().getMetadataStore().deletePlaylist(selectedTag.getTag().getUuid());
+                        ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().deletePlaylist(selectedTag.getTag().getUuid());
                         Application.getMessageService().pumpMessage(
                                 new TagsListChanged(
-                                        ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists()));
+                                        ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getPlaylists()));
                     } catch (Exception ex) {
                         LOG.log(Level.WARNING, "Unable to remove playlist "
                                 + selectedTag.toString());
@@ -100,11 +100,11 @@ public class TagsListPopupMenu extends JPopupMenu {
                 if (!StringUtils.isEmpty(tagName)) {
                     try {
                         selectedTag.getTag().setName(tagName);
-                        ACMConfiguration.getCurrentDB().getMetadataStore().commit(selectedTag.getTag());
+                        ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(selectedTag.getTag());
 
                         Application.getMessageService().pumpMessage(
                                 new TagsListChanged(
-                                        ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists()));
+                                        ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getPlaylists()));
                     } catch (Exception ex) {
                         LOG.log(Level.WARNING, "Unable to rename playlist "
                                 + selectedTag.toString());
@@ -118,7 +118,7 @@ public class TagsListPopupMenu extends JPopupMenu {
         exportTag.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent arg0) {
-                File listDirectory = new File(ACMConfiguration.getCurrentDB()
+                File listDirectory = new File(ACMConfiguration.getInstance().getCurrentDB()
                         .getTBLoadersDirectory(),
                         "TB_Options/activeLists");
                 LinkedHashMap<String, Category> categories = new LinkedHashMap();
@@ -133,7 +133,7 @@ public class TagsListPopupMenu extends JPopupMenu {
                         previousPackageName = packageName;
                         //TODO: need to accommodate multiple message lists (or profiles) in a single package/image
                         //TODO: each new message list would be numbered
-                        File dir = new File(ACMConfiguration.getCurrentDB().getTBLoadersDirectory(), "packages/"
+                        File dir = new File(ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory(), "packages/"
                                 + packageName + "/messages/lists/" + TBBuilder.firstMessageListName);
                         if (!dir.exists()) {
                             dir.mkdirs();
@@ -168,7 +168,7 @@ public class TagsListPopupMenu extends JPopupMenu {
                             IOUtils.copy(sourceActiveListsFile, targetActiveListsFile);
                         }
 
-                        MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
+                        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
                         Category category = store.getCategory(TBBuilder.IntroMessageID); // Update Intro Message
                         categories.put(category.getCategoryName(), category);
                         BufferedReader reader = new BufferedReader(new FileReader(

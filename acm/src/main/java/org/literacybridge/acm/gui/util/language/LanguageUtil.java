@@ -47,7 +47,7 @@ public class LanguageUtil {
     }
 
     public static String getLocalizedLanguageName(Locale locale) {
-        String label = ACMConfiguration.getCurrentDB().getLanguageLabel(locale);
+		String label = ACMConfiguration.getInstance().getCurrentDB().getLanguageLabel(locale);
         if (label == null) {
             label = locale.getDisplayLanguage(getUILanguage());
         }

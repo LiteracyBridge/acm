@@ -29,7 +29,7 @@ public class MP3Importer extends Importer {
             MusicMetadataSet musicMetadataSet = new MyID3().read(file);
             IMusicMetadata musicMetadata = musicMetadataSet.getSimplified();
 
-            AudioItem audioItem = store.newAudioItem(ACMConfiguration.getNewAudioItemUID());
+            AudioItem audioItem = store.newAudioItem(ACMConfiguration.getInstance().getNewAudioItemUID());
             audioItem.addCategory(category);
 
             Metadata metadata = audioItem.getMetadata();
@@ -48,7 +48,7 @@ public class MP3Importer extends Importer {
             metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE,
                     new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 
-            AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
+            AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
             repository.storeAudioFile(audioItem, file);
 
             store.commit(audioItem);

@@ -68,7 +68,7 @@ public class CmdLineImporter {
             System.exit(2);
         }
 
-        if (ACMConfiguration.getCurrentDB().getControlAccess().isSandbox()) {
+        if (ACMConfiguration.getInstance().getCurrentDB().getControlAccess().isSandbox()) {
             System.err.println("Unable to acquire writer access.");
             System.exit(3);
         }
@@ -81,7 +81,7 @@ public class CmdLineImporter {
             System.out.println("At least one file could not be imported.");
         }
 
-        ACMConfiguration.getCurrentDB().getControlAccess().updateDB();
+        ACMConfiguration.getInstance().getCurrentDB().getControlAccess().updateDB();
         System.exit(success ? 0 : 4);
     }
 
@@ -135,7 +135,7 @@ public class CmdLineImporter {
         for (File file : filesToImport) {
             try {
                 System.out.println("Importing file " + String.valueOf(++count) + " of " + total + ": " + file);
-                importer.importFile(ACMConfiguration.getCurrentDB().getMetadataStore(), null, file);
+                importer.importFile(ACMConfiguration.getInstance().getCurrentDB().getMetadataStore(), null, file);
                 FileUtils.moveToDirectory(file, new File(file.getParentFile(),successDir), true);
             } catch (Exception e) {
                 success = false;

@@ -13,7 +13,7 @@ public class LanguageComboBoxModel extends DefaultComboBoxModel {
 	private Object selectedItem;
 	
 	public LanguageComboBoxModel() {
-		supportedLanguages = ACMConfiguration.getCurrentDB().getAudioLanguages();
+		supportedLanguages = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages();
 	}
 
 	@Override

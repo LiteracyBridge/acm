@@ -95,10 +95,10 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
                     if (n == 1) {
                         for (AudioItem a : selectedAudioItems) {
                             try {
-                                ACMConfiguration.getCurrentDB().getMetadataStore().deleteAudioItem(a.getUuid());
+                                ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().deleteAudioItem(a.getUuid());
                                 // it's okay to delete from DB but cannot delete the .a18 file since that's in the shared (dropbox) repository
-                                if (!ACMConfiguration.getCurrentDB().getControlAccess().isSandbox())
-                                    ACMConfiguration.getCurrentDB().getRepository().delete(a);
+                                if (!ACMConfiguration.getInstance().getCurrentDB().getControlAccess().isSandbox())
+                                    ACMConfiguration.getInstance().getCurrentDB().getRepository().delete(a);
                             } catch (Exception e) {
                                 LOG.log(Level.WARNING, "Unable to delete audioitem id=" + a.getUuid(), e);
                             }
@@ -128,7 +128,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
                         try {
                             a.removePlaylist(selectedTag);
                             selectedTag.removeAudioItem(a.getUuid());
-                            ACMConfiguration.getCurrentDB().getMetadataStore().commit(a);
+                            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(a);
                         } catch (Exception e) {
                             LOG.log(Level.WARNING, "Unable to remove audioitem id=" + a.getUuid() + " from tag " + selectedTag.getName(), e);
                         }

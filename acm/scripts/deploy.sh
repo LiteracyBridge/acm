@@ -1,12 +1,15 @@
 #!/bin/bash
 # Script to deploy everything that makes up the ACM.
+set -eu
+traditionalIFS="$IFS"
+IFS="`printf '\n\t'`"
 
 # Find dropbox.
-if [ -z $dropbox ]; then
+if [ -z ${dropbox-} ]; then
     if [ -e ~/LiteracyBridge/ACM/software/dbfinder.jar ]; then
         dropbox=$(java -jar ~/LiteracyBridge/ACM/software/dbfinder.jar)
     elif [ -e ~/Dropbox\ \(Literacy\ Bridge\) ]; then
-        dropbox=~/Dropbox\ \(Literacy\ Bridge\(
+        dropbox=~/Dropbox\ \(Literacy\ Bridge\)
     elif [ -e ~/Dropbox ]; then
         dropbox=~/Dropbox
     else
@@ -15,6 +18,7 @@ if [ -z $dropbox ]; then
     fi
     export dropbox=$dropbox
 fi
+echo "Dropbox is in $dropbox"
 
 # Convenience shortcuts.
 installDir=$dropbox/LB-software/ACM-install
@@ -61,6 +65,7 @@ echo "dbfinder is in $dbfinder"
 read -p "Press [enter] to continue..."
 
 # Copy the ACM itself.
+set -x
 mkdir -p $acmDir
 cp -r ../build/package/* $acmDir/
 cp acm.bat $acmDir/

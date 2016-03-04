@@ -113,9 +113,9 @@ public class TreeTransferHandler extends TransferHandler {
                 try {
                     for (File f : files) {
                         if (f.isDirectory()) {
-                            FileImporter.getInstance().importDirectory(ACMConfiguration.getCurrentDB().getMetadataStore(), category, f, false);
+                            FileImporter.getInstance().importDirectory(ACMConfiguration.getInstance().getCurrentDB().getMetadataStore(), category, f, false);
                         } else {
-                            FileImporter.getInstance().importFile(ACMConfiguration.getCurrentDB().getMetadataStore(), category, f);
+                            FileImporter.getInstance().importFile(ACMConfiguration.getInstance().getCurrentDB().getMetadataStore(), category, f);
                         }
                     }
                 } catch (IOException e) {
@@ -140,7 +140,7 @@ public class TreeTransferHandler extends TransferHandler {
 
             @Override
             public void run() {
-                Transaction transaction = ACMConfiguration.getCurrentDB().getMetadataStore().newTransaction();
+                Transaction transaction = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().newTransaction();
                 boolean success = false;
                 try {
                     for (AudioItem item : audioItems) {

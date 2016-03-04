@@ -80,7 +80,7 @@ public class FileImporter {
 
             if (item != null) {
                 try {
-                    ACMConfiguration.getCurrentDB().getRepository().updateAudioItem(item, file);
+					ACMConfiguration.getInstance().getCurrentDB().getRepository().updateAudioItem(item, file);
                     // Commenting line below since duration is set with updateDuration as called from storeAudioFile()
                     // item.getLocalizedAudioItem(null).getMetadata().setMetadataField(MetadataSpecification.LB_DURATION, new MetadataValue<String>(""));
                     store.commit(item);

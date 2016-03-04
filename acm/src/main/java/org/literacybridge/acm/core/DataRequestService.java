@@ -31,7 +31,7 @@ public class DataRequestService implements IDataRequestService {
      * @see main.java.org.literacybridge.acm.api.IDataRequestService#getData(java.lang.String)
      */
     public IDataRequestResult getData(Locale locale, String filterString, List<Category> categories, List<Locale> locales) {
-        MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
+        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         return store.search(filterString, categories, locales);
     }
 
@@ -49,7 +49,7 @@ public class DataRequestService implements IDataRequestService {
     @Override
     public IDataRequestResult getData(Locale locale, String filterString,
             Playlist selectedPlaylist) {
-        MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
+        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         return store.search(filterString, selectedPlaylist);
     }
 }

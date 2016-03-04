@@ -79,7 +79,7 @@ public class AudioItemView extends Container implements Observer {
         audioItemTable.setTransferHandler(new AudioItemTransferHandler());
 
         // use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
-        if (ACMConfiguration.getCurrentDB().getControlAccess().isSandbox()) {
+        if (ACMConfiguration.getInstance().getCurrentDB().getControlAccess().isSandbox()) {
             audioItemTable.addHighlighter(HighlighterFactory.createAlternateStriping(
                     Color.LIGHT_GRAY, new Color(237, 243, 254)));
         } else  {

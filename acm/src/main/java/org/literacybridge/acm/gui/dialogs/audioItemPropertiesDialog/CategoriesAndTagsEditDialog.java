@@ -62,7 +62,7 @@ public class CategoriesAndTagsEditDialog extends ACMDialog {
                     audioItem.removeCategory((Category) selected);
                 }
                 try {
-                    ACMConfiguration.getCurrentDB().getMetadataStore().commit(audioItem);
+                    ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(audioItem);
                 } catch (IOException ex) {
                     LOG.log(Level.SEVERE, "Unable to commit changes to AudioItem " + audioItem.getUuid(), ex);
                 }

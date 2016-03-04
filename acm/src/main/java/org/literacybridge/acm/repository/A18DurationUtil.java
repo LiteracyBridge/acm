@@ -15,7 +15,7 @@ import org.literacybridge.acm.utils.IOUtils;
 
 public class A18DurationUtil {
     public static void updateDuration(AudioItem audioItem) throws IOException {
-        File f = ACMConfiguration.getCurrentDB().getRepository().getAudioFile(audioItem, AudioFormat.A18);
+        File f = ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioFormat.A18);
         if (f != null) {
             DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(f)));
             in.skipBytes(4);
@@ -34,7 +34,7 @@ public class A18DurationUtil {
             String duration = sMin + ":" + sSec + ((bps==16000)?"  l":"  h");
             //duration += test;
             audioItem.getMetadata().setMetadataField(MetadataSpecification.LB_DURATION, new MetadataValue<String>(duration));
-            ACMConfiguration.getCurrentDB().getMetadataStore().commit(audioItem);
+            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(audioItem);
         }
     }
 }

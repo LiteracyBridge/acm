@@ -18,7 +18,7 @@ public class FileSystemExporter {
             throws IOException {
 
         try {
-            AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
+			AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
 
             for (AudioItem audioItem : selectedAudioItems) {
                 // first: check which formats we have

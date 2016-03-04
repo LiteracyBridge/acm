@@ -22,7 +22,7 @@ public class WAVImporter extends Importer {
     @Override
     protected void importSingleFile(MetadataStore store, Category category, File file) throws IOException {
         try {
-            AudioItem audioItem = store.newAudioItem(ACMConfiguration.getNewAudioItemUID());
+            AudioItem audioItem = store.newAudioItem(ACMConfiguration.getInstance().getNewAudioItemUID());
             audioItem.addCategory(category);
 
             Metadata metadata = audioItem.getMetadata();
@@ -33,7 +33,7 @@ public class WAVImporter extends Importer {
             metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE,
                     new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 
-            AudioItemRepository repository = ACMConfiguration.getCurrentDB().getRepository();
+            AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
             repository.storeAudioFile(audioItem, file);
 
             store.commit(audioItem);

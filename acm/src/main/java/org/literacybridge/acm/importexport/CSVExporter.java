@@ -30,7 +30,7 @@ public class CSVExporter {
     }
 
     public static void export(Iterable<AudioItem> audioItems, File targetFile) throws IOException {
-        String project = ACMConfiguration.getCurrentDB().getSharedACMname();
+        String project = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
         if (project.toLowerCase().startsWith("acm-")) {
             project = project.substring(4);
         }

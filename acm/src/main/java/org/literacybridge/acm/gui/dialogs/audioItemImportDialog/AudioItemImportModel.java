@@ -67,7 +67,7 @@ public class AudioItemImportModel extends AbstractTableModel {
 
         for(int i=0; i<filesToImport.size(); ++i) {
             File file = filesToImport.get(i);
-            AudioItem audioItem = A18Importer.loadMetadata(ACMConfiguration.getCurrentDB().getMetadataStore(), file);
+            AudioItem audioItem = A18Importer.loadMetadata(ACMConfiguration.getInstance().getCurrentDB().getMetadataStore(), file);
             rowIndex2audioItem[i] = new AudioItemNode(audioItem, "");
 
         }

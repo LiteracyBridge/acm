@@ -34,7 +34,7 @@ public class DBExporter {
             Application.startUp(params);
             DBExporter.hasACMStarted = true;
         } else
-            ACMConfiguration.setCurrentDB(dbName, false);
+            ACMConfiguration.getInstance().setCurrentDB(dbName, false);
         project = dbName.substring(TBBuilder.ACM_PREFIX.length());
     }
 
@@ -50,7 +50,7 @@ public class DBExporter {
         try {
             CSVWriter writer = new CSVWriter(new FileWriter(exportFile), ',');
             writer.writeNext(header);
-            Category leaf = ACMConfiguration.getCurrentDB().getMetadataStore().getTaxonomy().getRootCategory();
+            Category leaf = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getTaxonomy().getRootCategory();
             getChildren(writer,leaf);
             writer.close();
         } catch (IOException e) {
@@ -65,7 +65,7 @@ public class DBExporter {
             CSVWriter writer = new CSVWriter(new FileWriter(exportFile), ',');
             //String[] header = {"ID","Name","Project"};
             writer.writeNext(header);
-            List <Locale> languages = ACMConfiguration.getCurrentDB().getAudioLanguages();
+            List <Locale> languages = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages();
             for (Locale l:languages) {
                 String languageCode = l.getLanguage();
                 String languageLabel = LanguageUtil.getLocalizedLanguageName(l);
@@ -82,7 +82,7 @@ public class DBExporter {
     private void metadataExporter() {
         File exportFile = new File(exportDirectory,project + "-metadata.csv");
         try {
-            CSVExporter.export(ACMConfiguration.getCurrentDB().getMetadataStore().getAudioItems(), exportFile);
+            CSVExporter.export(ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getAudioItems(), exportFile);
         } catch (IOException e) {
             System.out.println("==========>Could not export metadata!");
             e.printStackTrace();

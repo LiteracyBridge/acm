@@ -85,9 +85,9 @@ public class Application extends JXFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 try {
-                    if (!ACMConfiguration.getCurrentDB().getControlAccess().isSandbox())
-                        ACMConfiguration.getCurrentDB().getControlAccess().updateDB();
-                    ACMConfiguration.closeCurrentDB();
+                    if (!ACMConfiguration.getInstance().getCurrentDB().getControlAccess().isSandbox())
+                        ACMConfiguration.getInstance().getCurrentDB().getControlAccess().updateDB();
+                    ACMConfiguration.getInstance().closeCurrentDB();
                 }
                 catch(Exception e1) {
                     e1.printStackTrace();
@@ -97,15 +97,15 @@ public class Application extends JXFrame {
 
         String title = new String(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM", LanguageUtil.getUILanguage()));
         title += " (" + Constants.ACM_VERSION + ")";
-        if (ACMConfiguration.getACMname() != null)
-            title += "                   " + ACMConfiguration.getACMname();
-        else if (ACMConfiguration.getCurrentDB().getSharedACMname() != null)
-            title += "                   " + ACMConfiguration.getCurrentDB().getSharedACMname();
-        String dbVersion = ACMConfiguration.getCurrentDB().getControlAccess().getCurrentZipFilename();
+        if (ACMConfiguration.getInstance().getACMname() != null)
+            title += "                   " + ACMConfiguration.getInstance().getACMname();
+        else if (ACMConfiguration.getInstance().getCurrentDB().getSharedACMname() != null)
+            title += "                   " + ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
+        String dbVersion = ACMConfiguration.getInstance().getCurrentDB().getControlAccess().getCurrentZipFilename();
         dbVersion = dbVersion.replaceAll("db", "");
         dbVersion = dbVersion.replaceAll(".zip", "");
         title += " (v" + dbVersion + ")";
-        if (ACMConfiguration.getCurrentDB().getControlAccess().isSandbox())
+        if (ACMConfiguration.getInstance().getCurrentDB().getControlAccess().isSandbox())
             title += "               CHANGES WILL *NOT* BE SAVED!   ";
 
         setTitle(title);
@@ -223,14 +223,7 @@ public class Application extends JXFrame {
         try {
             // TODO: when we have a homescreen this call will be delayed until the user selects a DB
             // TODO: createEmtpyDB should be factored out when the UI has a create DB button.
-            ACMConfiguration.setCurrentDB(params.sharedACM, true);
-
-            // DB migration if necessary
-            System.out.print("Updating database ... ");
-            if (showUI) {
-                splash.setProgressLabel("Updating database...");
-            }
-            System.out.println("done.");
+            ACMConfiguration.getInstance().setCurrentDB(params.sharedACM, true);
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "Unable to connect to database. Please try restarting the ACM.");
@@ -249,7 +242,7 @@ public class Application extends JXFrame {
 
             LOG.log(Level.INFO, "ACM successfully started.");
             WavCaching caching = new WavCaching();
-            GCInfo gcInfo = ACMConfiguration.getCurrentDB().getRepository().needsGc();
+            GCInfo gcInfo = ACMConfiguration.getInstance().getCurrentDB().getRepository().needsGc();
 
             if (gcInfo.isGcRecommended()) {
                 long sizeMB = gcInfo.getCurrentSizeInBytes() / 1024 / 1024;
@@ -261,11 +254,11 @@ public class Application extends JXFrame {
                             + " java command contains the argument -XMX512m (or more).");
 
                     if (answer == JOptionPane.YES_OPTION) {
-                        ACMConfiguration.getCurrentDB().getRepository().gc();
+                        ACMConfiguration.getInstance().getCurrentDB().getRepository().gc();
                     }
                 }
             }
-            if (ACMConfiguration.getCurrentDB().shouldPreCacheWav()) {
+            if (ACMConfiguration.getInstance().getCurrentDB().shouldPreCacheWav()) {
                 caching.cacheNewA18Files();
             }
         }

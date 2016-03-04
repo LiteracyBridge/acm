@@ -49,7 +49,7 @@ public class AudioItemTableModel extends AbstractTableModel {
 
     public AudioItemTableModel(IDataRequestResult result) {
         this.result = result;
-        this.store = ACMConfiguration.getCurrentDB().getMetadataStore();
+        this.store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         if (result != null) {
             result.getAudioItems();
         }
@@ -146,7 +146,7 @@ public class AudioItemTableModel extends AbstractTableModel {
 				}
              */
             case DATE_FILE_MODIFIED: {
-                File file = ACMConfiguration.getCurrentDB().getRepository().getAudioFile(audioItem, AudioFormat.A18);
+                File file = ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioFormat.A18);
                 if (file != null) {
                     Date date = new Date(file.lastModified());
                     cellText = dateFormat.format(date);

@@ -116,7 +116,7 @@ class PersistentLocalizedAudioItem extends PersistentObject {
     }
 
     static PersistentLocalizedAudioItem getFromDatabase(String uuid) {
-        EntityManager em = ACMConfiguration.getCurrentDB().getEntityManager();
+        EntityManager em = ACMConfiguration.getInstance().getCurrentDB().getEntityManager();
         PersistentLocalizedAudioItem result = null;
         try {
             Query findObject = em.createQuery("SELECT o FROM PersistentLocalizedAudioItem o WHERE o.uuid = '" + uuid + "'");

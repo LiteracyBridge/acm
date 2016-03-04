@@ -152,7 +152,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
                 if (values != null && !values.isEmpty()) {
                     String id = values.get(0).getValue();
                     if (!StringUtils.isEmpty(id)) {
-                        AudioItem item = ACMConfiguration.getCurrentDB().getMetadataStore().getAudioItem(id);
+                        AudioItem item = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getAudioItem(id);
                         List<MetadataValue<String>> values1 = item.getMetadata().getMetadataValues(DC_TITLE);
                         if (values1 != null && !values1.isEmpty()) {
                             return values1.get(0).getValue();
@@ -175,7 +175,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
             }
 
             @Override public String getValue(AudioItem audioItem) {
-                File file = ACMConfiguration.getCurrentDB().getRepository().getAudioFile(audioItem, AudioFormat.A18);
+                File file = ACMConfiguration.getInstance().getCurrentDB().getRepository().getAudioFile(audioItem, AudioFormat.A18);
                 return file != null ? file.getName() : null;
             }
 
@@ -298,7 +298,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
         Metadata metadata = audioItem.getMetadata();
         incrementRevision(metadata);
-        MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
+        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         try {
             store.commit(audioItem);
         } catch (IOException e) {
@@ -312,7 +312,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
 
     protected static void setLocaleValue(MetadataField<RFC3066LanguageCode> field, AudioItem audioItem, Locale newLocale) {
-        MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
+        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         Metadata metadata = audioItem.getMetadata();
         metadata.setMetadataField(field, new MetadataValue<RFC3066LanguageCode>(new RFC3066LanguageCode(newLocale.getLanguage())));
         try {

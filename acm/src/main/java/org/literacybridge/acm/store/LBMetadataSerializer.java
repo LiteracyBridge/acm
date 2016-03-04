@@ -135,7 +135,7 @@ public class LBMetadataSerializer extends MetadataSerializer {
         int numValues = (in.readByte() & 0xff);
         for (int i = 0; i < numValues; i++) {
             String catID = IOUtils.readUTF8(in);
-            Category mCat = ACMConfiguration.getCurrentDB().getMetadataStore().getCategory(catID);
+            Category mCat = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getCategory(catID);
             if (mCat != null) {
                 categories.add(mCat);
             }

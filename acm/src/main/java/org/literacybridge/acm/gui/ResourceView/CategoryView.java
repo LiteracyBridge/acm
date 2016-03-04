@@ -131,13 +131,13 @@ public class CategoryView extends ACMContainer implements Observer {
 
         // init controls with default language
         updateControlLanguage(LanguageUtil.getUILanguage());
-        updateTagsTable(ACMConfiguration.getCurrentDB().getMetadataStore().getPlaylists());
+        updateTagsTable(ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getPlaylists());
         Application.getMessageService().addObserver(this);
     }
 
     private void createTasks() {
         // add all categories
-        Category rootCategory = ACMConfiguration.getCurrentDB().getMetadataStore().getTaxonomy().getRootCategory();
+        Category rootCategory = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getTaxonomy().getRootCategory();
         if (rootCategory.hasChildren()) {
             for (Category c : rootCategory.getSortedChildren()) {
                 addChildNodes(categoryRootNode, c);
@@ -371,7 +371,7 @@ public class CategoryView extends ACMContainer implements Observer {
     }
 
     private void createLanguageList() {
-        List<Locale> audioLanguages = ACMConfiguration.getCurrentDB().getAudioLanguages();
+        List<Locale> audioLanguages = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages();
         for (Locale locale : audioLanguages) {
             languagesList.add(new LanguageLabel(locale));
         }
@@ -576,7 +576,7 @@ public class CategoryView extends ACMContainer implements Observer {
                 JOptionPane.PLAIN_MESSAGE,
                 null, null, "");
         if (!StringUtils.isEmpty(tagName)) {
-            MetadataStore store = ACMConfiguration.getCurrentDB().getMetadataStore();
+            MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
             store.newPlaylist(tagName);
 
             Application.getMessageService().pumpMessage(new TagsListChanged(store.getPlaylists()));
