@@ -66,13 +66,17 @@ public class AudioItemDocumentFactory {
 
         doc.add(new Field(AudioItemIndex.TAGS_FIELD, new PlaylistTokenStream(audioItem), TextField.TYPE_NOT_STORED));
 
-        for (MetadataValue<RFC3066LanguageCode> code : metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE)) {
-            doc.add(new StringField(AudioItemIndex.LOCALES_FIELD, code.getValue().getLocale().getLanguage().toLowerCase(), Store.YES));
-            doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.LOCALES_FACET_FIELD, code.toString()));
+        if (metadata.hasMetadataField(MetadataSpecification.DC_LANGUAGE)) {
+            for (MetadataValue<RFC3066LanguageCode> code : metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE)) {
+                doc.add(new StringField(AudioItemIndex.LOCALES_FIELD, code.getValue().getLocale().getLanguage().toLowerCase(), Store.YES));
+                doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.LOCALES_FACET_FIELD, code.toString()));
+            }
         }
 
-        doc.add(new StringField(AudioItemIndex.REVISION_FIELD,
-                metadata.getMetadataValues(MetadataSpecification.DTB_REVISION).get(0).getValue(), Store.YES));
+        if (metadata.hasMetadataField(MetadataSpecification.DTB_REVISION)) {
+            doc.add(new StringField(AudioItemIndex.REVISION_FIELD,
+                    metadata.getMetadataValues(MetadataSpecification.DTB_REVISION).get(0).getValue(), Store.YES));
+        }
 
         LBMetadataSerializer serializer = new LBMetadataSerializer();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

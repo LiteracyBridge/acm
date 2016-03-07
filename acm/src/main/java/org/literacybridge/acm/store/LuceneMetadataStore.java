@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -112,7 +113,7 @@ public class LuceneMetadataStore extends MetadataStore {
     @Override
     public Transaction newTransaction() {
         try {
-            return index.newTransaction();
+            return index.newTransaction(this);
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "IOException while starting transaction with Lucene index.", e);
             return null;
@@ -121,17 +122,15 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public void deleteAudioItem(String uuid) {
-        try {
-            commit(new Committable() {
-                @Override
-                public void doCommit(Transaction t) throws IOException {
-                    index.deleteAudioItem(uuid, t);
-                }
+        final AudioItem item = getAudioItem(uuid);
+        if (item == null) {
+            throw new NoSuchElementException("AudioItem with " + uuid + " does not exist.");
+        }
 
-                @Override
-                public void doRollback(Transaction t) throws IOException {
-                }
-            });
+        try {
+            item.delete();
+            commit(item);
+            audioItemCache.invalidate(uuid);
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "IOException while deleting playlist " + uuid, e);
         }
@@ -139,24 +138,15 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public void deletePlaylist(String uuid) {
-        Playlist playlist = getPlaylist(uuid);
+        final Playlist playlist = getPlaylist(uuid);
+        if (playlist == null) {
+            throw new NoSuchElementException("Playlist with " + uuid + " does not exist.");
+        }
+
+        playlist.delete();
         try {
-            commit(new Committable() {
-                @Override
-                public void doCommit(Transaction t) throws IOException {
-                    for (String audioItemUuid : playlist.getAudioItemList()) {
-                        AudioItem audioItem = getAudioItem(audioItemUuid);
-                        audioItem.removePlaylist(playlist);
-                        t.add(audioItem);
-                    }
-
-                    index.deletePlaylist(uuid, t);
-                }
-
-                @Override
-                public void doRollback(Transaction t) throws IOException {
-                }
-            });
+            playlist.delete();
+            commit(playlist);
             playlistCache.remove(uuid);
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "IOException while deleting playlist " + uuid, e);

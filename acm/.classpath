@@ -2,6 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="src" path="src/main/resources"/>
+	<classpathentry kind="src" path="src/test/java"/>
 	<classpathentry kind="lib" path="ant/ant-contrib-1.0b3.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang-commons-lang.jar"/>
 	<classpathentry kind="lib" path="lib/org.apache.lucene-lucene-core.jar"/>
@@ -15,6 +16,19 @@
 	<classpathentry kind="lib" path="lib/org.apache.lucene-lucene-queries.jar"/>
 	<classpathentry kind="lib" path="lib/org.codehaus.jackson-jackson-core-asl.jar"/>
 	<classpathentry kind="lib" path="lib/org.codehaus.jackson-jackson-mapper-asl.jar"/>
+	<classpathentry kind="lib" path="lib/org.mockito-mockito-core.jar"/>
+	<classpathentry kind="lib" path="lib/org.powermock-powermock-api-mockito.jar"/>
+	<classpathentry kind="lib" path="lib/org.powermock-powermock-api-support.jar"/>
+	<classpathentry kind="lib" path="lib/org.powermock-powermock-core.jar"/>
+	<classpathentry kind="lib" path="lib/org.powermock-powermock-module-junit4-common.jar"/>
+	<classpathentry kind="lib" path="lib/org.powermock-powermock-module-junit4.jar"/>
+	<classpathentry kind="lib" path="lib/org.powermock-powermock-reflect.jar"/>
+	<classpathentry kind="lib" path="lib/com.thoughtworks.paranamer-paranamer.jar"/>
+	<classpathentry kind="lib" path="lib/org.hamcrest-hamcrest-core.jar"/>
+	<classpathentry kind="lib" path="lib/org.javassist-javassist.jar"/>
+	<classpathentry kind="lib" path="lib/org.objenesis-objenesis.jar"/>
+	<classpathentry kind="lib" path="lib/org.tukaani-xz.jar"/>
+	<classpathentry kind="lib" path="lib/org.xerial.snappy-snappy-java.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/jakarta-regexp-jakarta-regexp.jar"/>
 	<classpathentry kind="lib" path="lib/javax.media-jmf.jar"/>

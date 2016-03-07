@@ -36,6 +36,10 @@ public class Playlist extends Committable {
         this.name = name;
     }
 
+    public void addAudioItem(AudioItem item) {
+        addAudioItem(item.getUuid());
+    }
+
     public void addAudioItem(String uuid) {
         audioItems.add(uuid);
     }
@@ -57,8 +61,29 @@ public class Playlist extends Committable {
     }
 
     @Override
+    public void prepareCommit(MetadataStore store, List<Committable> additionalObjects) {
+        if (isDeleteRequested()) {
+            for (String item : audioItems) {
+                AudioItem audioItem = store.getAudioItem(item);
+                audioItem.removePlaylist(this);
+                additionalObjects.add(audioItem);
+            }
+        } else {
+            for (String item : audioItems) {
+                AudioItem audioItem = store.getAudioItem(item);
+                audioItem.addPlaylist(this);
+                additionalObjects.add(audioItem);
+            }
+        }
+    }
+
+    @Override
     public void doCommit(Transaction t) throws IOException {
-        t.getIndex().updatePlaylistName(this, t);
+        if (isDeleteRequested()) {
+            t.getIndex().deletePlaylist(uuid, t);
+        } else {
+            t.getIndex().updatePlaylistName(this, t);
+        }
     }
 
     @Override

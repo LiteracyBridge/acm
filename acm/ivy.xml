@@ -17,7 +17,6 @@
     <dependency org="commons-lang" name="commons-lang" rev="2.4"/> 
     <dependency org="org.slf4j" name="slf4j-api" rev="1.7.16" force="true"/>
     <dependency org="org.slf4j" name="slf4j-simple" rev="1.7.16" force="true"/>
-    <dependency org="junit" name="junit" rev="4.8.1"/>
     <dependency	org="org.apache.derby" name="derby" rev="10.11.1.1"/>
     <dependency	org="javax.media" name="jmf" rev="2.1.1e"/>
     <dependency org="org.eclipse.persistence" name="org.eclipse.persistence.jpa" rev="2.0.1"/>
@@ -38,5 +37,6 @@
     <dependency org="org.powermock" name="powermock-api-mockito" rev="1.6.4" />
     <dependency org="org.powermock" name="powermock-module-junit4-common" rev="1.6.4" />
     <dependency org="org.powermock" name="powermock-module-junit4" rev="1.6.4" />
+    <dependency org="junit" name="junit" rev="4.12"/>
   </dependencies>
 </ivy-module>

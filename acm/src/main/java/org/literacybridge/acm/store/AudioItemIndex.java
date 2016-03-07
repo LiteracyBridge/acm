@@ -154,8 +154,8 @@ public class AudioItemIndex {
         };
     }
 
-    public Transaction newTransaction() throws IOException {
-        return new Transaction(this, newWriter(OpenMode.APPEND));
+    public Transaction newTransaction(MetadataStore store) throws IOException {
+        return new Transaction(store, this, newWriter(OpenMode.APPEND));
     }
 
     public static boolean indexExists(File path) throws IOException {

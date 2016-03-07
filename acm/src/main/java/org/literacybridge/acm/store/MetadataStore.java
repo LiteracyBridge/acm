@@ -40,6 +40,10 @@ public abstract class MetadataStore {
     public abstract IDataRequestResult search(String searchFilter, Playlist selectedTag);
 
     public final void commit(Committable... objects) throws IOException {
+        for (Committable c : objects) {
+            c.ensureIsCommittable();
+        }
+
         Transaction t = newTransaction();
         t.addAll(objects);
         t.commit();

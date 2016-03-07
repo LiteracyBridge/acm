@@ -139,7 +139,11 @@ public class AudioItem extends Committable implements Comparable<AudioItem> {
 
     @Override
     public void doCommit(Transaction t) throws IOException {
-        t.getIndex().updateAudioItem(this, t.getWriter());
+        if (isDeleteRequested()) {
+            t.getIndex().deleteAudioItem(uuid, t);
+        } else {
+            t.getIndex().updateAudioItem(this, t.getWriter());
+        }
     }
 
     @Override

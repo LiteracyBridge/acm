@@ -65,6 +65,10 @@ public class Metadata {
         return this.fields.keySet().iterator();
     }
 
+    public boolean hasMetadataField(MetadataField<?> field) {
+        return this.fields.containsKey(field);
+    }
+
     @SuppressWarnings("unchecked")
     public <F> List<MetadataValue<F>> getMetadataValues(MetadataField<F> field) {
         ListWrapper<F> list = (ListWrapper<F>) this.fields.get(field);
