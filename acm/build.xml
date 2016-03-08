@@ -194,6 +194,7 @@
         <pathelement path="${build.dir}/classes"/>
         <pathelement path="${build.native}"/>
         <pathelement path="${test.resource.dir}"/>
+        <pathelement path="${resources.dir}"/>
       </classpath>
       <formatter type="${test.junit.output.format}"/>
       <batchtest todir="${test.log.dir}" unless="testcase">
