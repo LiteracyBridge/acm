@@ -84,19 +84,17 @@ public class LuceneMetadataStore extends MetadataStore {
         final Playlist playlist = index.newPlaylist(name);
         playlist.setCommitListener(new Committable.CommitListener() {
             @Override public void afterCommit() {
-                playlistCache.put(playlist.getUuid(), playlist);
+                if (playlist.isDeleteRequested()) {
+                    playlistCache.remove(playlist.getUuid());
+                } else {
+                    playlistCache.put(playlist.getUuid(), playlist);
+                }
             }
 
             @Override public void afterRollback() {
             }
         });
 
-        try {
-            commit(playlist);
-        } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while creating new playlist.", e);
-            return null;
-        }
         return playlist;
     }
 
@@ -127,13 +125,7 @@ public class LuceneMetadataStore extends MetadataStore {
             throw new NoSuchElementException("AudioItem with " + uuid + " does not exist.");
         }
 
-        try {
-            item.delete();
-            commit(item);
-            audioItemCache.invalidate(uuid);
-        } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while deleting playlist " + uuid, e);
-        }
+        item.delete();
     }
 
     @Override
@@ -144,13 +136,6 @@ public class LuceneMetadataStore extends MetadataStore {
         }
 
         playlist.delete();
-        try {
-            playlist.delete();
-            commit(playlist);
-            playlistCache.remove(uuid);
-        } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while deleting playlist " + uuid, e);
-        }
     }
 
     @Override
@@ -158,7 +143,11 @@ public class LuceneMetadataStore extends MetadataStore {
         final AudioItem audioItem = new AudioItem(uid);
         audioItem.setCommitListener(new Committable.CommitListener() {
             @Override public void afterCommit() {
-                audioItemCache.update(audioItem);
+                if (audioItem.isDeleteRequested()) {
+                    audioItemCache.invalidate(audioItem.getUuid());
+                } else {
+                    audioItemCache.update(audioItem);
+                }
             }
 
             @Override public void afterRollback() {

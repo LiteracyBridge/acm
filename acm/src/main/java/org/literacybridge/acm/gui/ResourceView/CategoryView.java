@@ -10,6 +10,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -18,6 +19,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.DropMode;
@@ -70,6 +73,8 @@ import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingEvent;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingListener;
 
 public class CategoryView extends ACMContainer implements Observer {
+    private static final Logger LOG = Logger.getLogger(CategoryView.class.getName());
+
 
     private static final long serialVersionUID = 5551716856269051991L;
 
@@ -577,7 +582,12 @@ public class CategoryView extends ACMContainer implements Observer {
                 null, null, "");
         if (!StringUtils.isEmpty(tagName)) {
             MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-            store.newPlaylist(tagName);
+            Playlist playlist = store.newPlaylist(tagName);
+            try {
+                store.commit(playlist);
+            } catch (IOException e) {
+                LOG.log(Level.WARNING, "Unable to create playlist with name " + tagName, e);
+            }
 
             Application.getMessageService().pumpMessage(new TagsListChanged(store.getPlaylists()));
         }

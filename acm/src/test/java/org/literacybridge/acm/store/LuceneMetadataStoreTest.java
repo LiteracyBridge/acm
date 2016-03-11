@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -18,6 +19,28 @@ import com.google.common.collect.Lists;
 public class LuceneMetadataStoreTest {
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder();
+
+    private final static Committable newFailingCommittable() {
+        return new Committable() {
+            @Override public void doCommit(Transaction t) throws IOException {
+                throw new RuntimeException("Trigger rollback");
+            }
+
+            @Override public void doRollback(Transaction t) throws IOException {
+            }
+        };
+    }
+
+    private final static Committable newFailingRollback() {
+        return new Committable() {
+            @Override public void doCommit(Transaction t) throws IOException {
+            }
+
+            @Override public void doRollback(Transaction t) throws IOException {
+                throw new RuntimeException("Rollback failed");
+            }
+        };
+    }
 
     @Test
     public void testAudioItems() throws Exception {
@@ -45,6 +68,7 @@ public class LuceneMetadataStoreTest {
 
         assertNotNull(store.getAudioItem("3"));
         store.deleteAudioItem("3");
+        store.commit(a3);
         assertNumSearchResults(store, "lorem", 1);
         assertNull(store.getAudioItem("3"));
         assertNumItems(store.getAudioItems(), 2);
@@ -63,7 +87,7 @@ public class LuceneMetadataStoreTest {
     }
 
     @Test
-    public void testAudioPlaylists() throws Exception {
+    public void testPlaylists() throws Exception {
         LuceneMetadataStore store = newStore();
 
         AudioItem a1 = store.newAudioItem("1");
@@ -96,6 +120,7 @@ public class LuceneMetadataStoreTest {
         assertNumSearchResults(store, "lorem", p3, 1);
 
         store.deletePlaylist(p2.getUuid());
+        store.commit(p2);
         Exception expectedException = null;
         try {
             store.commit(p1, p2, p3);
@@ -175,6 +200,154 @@ public class LuceneMetadataStoreTest {
         assertNumSearchResults(store, "lor", Lists.newArrayList(cat2), Lists.newArrayList(Locale.GERMAN), 1);
         assertNumSearchResults(store, "lor do", Lists.newArrayList(cat2), Lists.newArrayList(Locale.GERMAN), 1);
         assertNumSearchResults(store, "lor do", Lists.newArrayList(cat2), Lists.newArrayList(Locale.ENGLISH), 0);
+    }
+
+    @Test
+    public void testTransactions() throws Exception {
+        LuceneMetadataStore store = newStore();
+
+        AudioItem a1 = store.newAudioItem("1");
+        AudioItem a2 = store.newAudioItem("2");
+        AudioItem a3 = store.newAudioItem("3");
+
+        a1.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lorem"));
+        a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lorem ipsum"));
+        a3.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lorem ipsum dolor"));
+
+        store.commit(a1, a2, a3);
+        assertNumSearchResults(store, "lor", 3);
+
+
+        // test rollback
+        a1.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lorem 123"));
+        a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lxyzorem ipsum"));
+        Exception expectedException = null;
+        try {
+            store.commit(a1, a2, newFailingCommittable());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+        assertNotNull(expectedException);
+
+
+        // the changes should not have made it to the index
+        assertNumSearchResults(store, "lor", 3);
+        assertNumSearchResults(store, "123", 0);
+
+        store.commit(a1, a2);
+        // this commit should have been a noop, assuming the previous rollback correctly reset the state of a1 and a2
+        assertNumSearchResults(store, "lor", 3);
+        assertNumSearchResults(store, "123", 0);
+
+        // try making the same changes again, this time without an exception
+        a1.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lorem 123"));
+        a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lxyzorem ipsum"));
+
+        store.commit (a1, a2);
+        assertNumSearchResults(store, "lor", 2);
+        assertNumSearchResults(store, "123", 1);
+
+        // try rollback of a delete attempt
+        store.deleteAudioItem(a1.getUuid());
+        // before the commit a2 should still be returned
+        assertEquals(a1, store.getAudioItem(a1.getUuid()));
+
+        a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lorem ipsum"));
+
+        try {
+            store.commit(a1, a2, newFailingCommittable());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+        assertNotNull(expectedException);
+
+        // a1 should not be deleted, and the title of a2 should not have been altered
+        assertNumSearchResults(store, "lor", 2);
+        assertNumSearchResults(store, "123", 1);
+        assertEquals(a1, store.getAudioItem(a1.getUuid()));
+
+        // this is a no-op, but we want to check that a1 is still committable after a successful rollback
+        store.commit(a1);
+
+
+        // Now try this scenario again, but also with a Committable that causes the rollback to fail
+
+        // try rollback of a delete attempt
+        store.deleteAudioItem(a1.getUuid());
+        // before the commit a2 should still be returned
+        assertEquals(a1, store.getAudioItem(a1.getUuid()));
+
+        a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lorem ipsum"));
+
+        expectedException = null;
+        try {
+            store.commit(a1, a2, newFailingCommittable(), newFailingRollback());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+        assertNotNull(expectedException);
+
+        // a1 should not be deleted, and the title of a2 should not have been altered
+        assertNumSearchResults(store, "lor", 2);
+        assertNumSearchResults(store, "123", 1);
+        assertEquals(a1, store.getAudioItem(a1.getUuid()));
+
+        expectedException = null;
+        try {
+            // now a1 should not be committable anymore - we expect an IllegalStateException
+            store.commit(a1);
+        } catch (IllegalStateException e) {
+            expectedException = e;
+        }
+        assertNotNull(expectedException);
+
+
+        // try one more scenario with a combination of AudioItems, Playlists and a failing Committable
+        store = newStore();
+
+        a1 = store.newAudioItem("1");
+        a2 = store.newAudioItem("2");
+        a3 = store.newAudioItem("3");
+
+        a1.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lorem"));
+        a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lorem ipsum"));
+        a3.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lorem ipsum dolor"));
+
+        assertNumSearchResults(store, "lor", 0);
+        store.commit(a1, a2, a3);
+
+        assertNumSearchResults(store, "lor", 3);
+        assertNumSearchResults(store, "lor ip ", 2);
+        assertNumSearchResults(store, "lor ip DO", 1);
+
+        Playlist p1 = store.newPlaylist("1");
+        Playlist p2 = store.newPlaylist("2");
+        Playlist p3 = store.newPlaylist("3");
+
+        p1.addAudioItem(a1);
+        p1.addAudioItem(a2);
+        p1.addAudioItem(a3);
+
+        p2.addAudioItem(a1);
+        p2.addAudioItem(a2);
+
+        p3.addAudioItem(a1);
+
+        store.commit(p1, p2, p3);
+
+        store.deletePlaylist(p2.getUuid());
+        a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE, MetadataValue.newValue("Lxyzorem ipsum"));
+        expectedException = null;
+        try {
+            store.commit(a1, a2, newFailingCommittable());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+        assertNotNull(expectedException);
+
+        assertNumSearchResults(store, "lorem", p1, 3);
+        assertNumSearchResults(store, "lorem", p2, 2);
+        assertNumSearchResults(store, "lorem", p3, 1);
     }
 
     private LuceneMetadataStore newStore() throws Exception {

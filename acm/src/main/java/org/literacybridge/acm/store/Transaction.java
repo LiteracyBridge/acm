@@ -11,8 +11,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 public class Transaction {
-    private static final Logger LOG = Logger.getLogger(Transaction.class.getName());
-
     private final Set<Committable> objects;
     private final AudioItemIndex index;
     private final IndexWriter writer;
@@ -53,7 +51,11 @@ public class Transaction {
                     writer.close();
                     success2 = true;
                 } finally {
-                    if (!success2) {
+                    if (success2) {
+                        for (Committable o : objects) {
+                            o.afterCommit();
+                        }
+                    } else {
                         rollback();
                     }
                 }
@@ -64,11 +66,33 @@ public class Transaction {
     }
 
     public final void rollback() throws IOException {
+        boolean success = false;
         try {
             writer.rollback();
+            success = true;
         } finally {
-            for (Committable o : objects) {
-                o.rollback(this);
+            if (success) {
+                boolean success2 = false;
+                try {
+                    for (Committable o : objects) {
+                        o.rollback(this);
+                    }
+                    success2 = true;
+                } finally {
+                    if (success2) {
+                        for (Committable o : objects) {
+                            o.afterRollback();
+                        }
+                    } else {
+                        for (Committable o : objects) {
+                            o.setRollbackFailed();
+                        }
+                    }
+                }
+            } else {
+                for (Committable o : objects) {
+                    o.setRollbackFailed();
+                }
             }
         }
     }

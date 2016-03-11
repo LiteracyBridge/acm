@@ -54,6 +54,10 @@ public abstract class Committable {
         return deleteState == DeleteState.DELETE_REQUESTED;
     }
 
+    final void setRollbackFailed() {
+        this.commitState = CommitState.ROLLBACK_FAILED;
+    }
+
     /**
      * Commits this object to the index.
      */
@@ -69,12 +73,6 @@ public abstract class Committable {
         boolean success = false;
         try {
             doCommit(t);
-            if (listener != null) {
-                listener.afterCommit();
-            }
-            if (deleteState == DeleteState.DELETE_REQUESTED) {
-                deleteState = DeleteState.DELETED;
-            }
             success = true;
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "IOException while committing Committable: " + this.toString(), e);
@@ -94,17 +92,31 @@ public abstract class Committable {
         boolean success = false;
         try {
             doRollback(t);
-            if (listener != null) {
-                listener.afterRollback();
-            }
-            if (deleteState == DeleteState.DELETE_REQUESTED) {
-                deleteState = DeleteState.NOT_DELETED;
-            }
             success = true;
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "IOException while rolling back Committable: " + this.toString(), e);
         } finally {
-            commitState = CommitState.ROLLBACK_FAILED;
+            if (!success) {
+                commitState = CommitState.ROLLBACK_FAILED;
+            }
+        }
+    }
+
+    final void afterCommit() {
+        if (listener != null) {
+            listener.afterCommit();
+        }
+        if (deleteState == DeleteState.DELETE_REQUESTED) {
+            deleteState = DeleteState.DELETED;
+        }
+    }
+
+    final void afterRollback() {
+        if (listener != null) {
+            listener.afterRollback();
+        }
+        if (deleteState == DeleteState.DELETE_REQUESTED) {
+            deleteState = DeleteState.NOT_DELETED;
         }
     }
 

@@ -96,6 +96,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
                         for (AudioItem a : selectedAudioItems) {
                             try {
                                 ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().deleteAudioItem(a.getUuid());
+                                ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(a);
                                 // it's okay to delete from DB but cannot delete the .a18 file since that's in the shared (dropbox) repository
                                 if (!ACMConfiguration.getInstance().getCurrentDB().getControlAccess().isSandbox())
                                     ACMConfiguration.getInstance().getCurrentDB().getRepository().delete(a);

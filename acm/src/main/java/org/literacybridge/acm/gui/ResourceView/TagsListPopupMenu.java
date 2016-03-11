@@ -77,6 +77,7 @@ public class TagsListPopupMenu extends JPopupMenu {
                             ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(audioItem);
                         }
                         ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().deletePlaylist(selectedTag.getTag().getUuid());
+                        ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(selectedTag.getTag());
                         Application.getMessageService().pumpMessage(
                                 new TagsListChanged(
                                         ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getPlaylists()));
