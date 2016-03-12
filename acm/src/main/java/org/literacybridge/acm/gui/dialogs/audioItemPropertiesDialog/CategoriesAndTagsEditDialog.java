@@ -42,7 +42,7 @@ public class CategoriesAndTagsEditDialog extends ACMDialog {
         setSize(200, 100);
         setUndecorated(true);
 
-        List<Category> categoryLeaves = Lists.newArrayList(audioItem.getCategoryLeavesList());
+        final List<Category> categoryLeaves = Lists.newArrayList(audioItem.getCategoryLeavesList());
 
         categories = new JList(new AbstractListModel() {
             @Override public int getSize() {
