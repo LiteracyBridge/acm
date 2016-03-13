@@ -5,7 +5,6 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -76,7 +75,6 @@ public class AudioItemIndex {
     public static final String LOCALES_FACET_FIELD = "locales_facet";
     public static final String REVISION_FIELD = "rev";
     public static final String RAW_METADATA_FIELD = "raw_data";
-    public static final String IMPORT_ORDER_ID_FIELD = "import_order";
 
     public static final String PLAYLIST_NAMES_COMMIT_DATA = "playlist_names";
     public static final String MAX_PLAYLIST_UID_COMMIT_DATA = "max_playlist_uuid";
@@ -123,7 +121,7 @@ public class AudioItemIndex {
                 playlist.setUuid(playlists.get(playlist.getName()).getUuid());
             }
 
-            Document doc = factory.createLuceneDocument(item, importOrderId++);
+            Document doc = factory.createLuceneDocument(item);
             writer.addDocument(facetsConfig.build(doc));
         }
 
@@ -211,14 +209,14 @@ public class AudioItemIndex {
         if (oldDoc == null) {
             addAudioItem(audioItem, writer);
         } else {
-            Document doc = factory.createLuceneDocument(audioItem, Long.parseLong(oldDoc.get(IMPORT_ORDER_ID_FIELD)));
+            Document doc = factory.createLuceneDocument(audioItem);
             writer.updateDocument(new Term(UID_FIELD, audioItem.getUuid()),
                     facetsConfig.build(doc));
         }
     }
 
     private void addAudioItem(AudioItem audioItem, IndexWriter writer) throws IOException {
-        Document doc = factory.createLuceneDocument(audioItem, System.currentTimeMillis());
+        Document doc = factory.createLuceneDocument(audioItem);
         writer.addDocument(facetsConfig.build(doc));
     }
 
@@ -410,7 +408,6 @@ public class AudioItemIndex {
                 }
             });
 
-            Collections.sort(results);
             return results;
         } finally {
             searcherManager.release(searcher);
@@ -475,7 +472,6 @@ public class AudioItemIndex {
         for (Category category : categories) {
             audioItem.addCategory(category);
         }
-        audioItem.setImportOrderId(Long.parseLong(doc.get(IMPORT_ORDER_ID_FIELD)));
     }
 
     public SearchResult search(String filterString, Playlist selectedTag) throws IOException {

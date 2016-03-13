@@ -15,11 +15,9 @@ import com.google.common.collect.Sets;
  * playlist.
  *
  */
-public class AudioItem extends Committable implements Comparable<AudioItem> {
+public class AudioItem extends Committable {
     private final String uuid;
     private final Metadata metadata;
-
-    private long importOrderId;
 
     private final Map<String, Category> categories;
     private final Map<String, Playlist> playlists;
@@ -30,10 +28,6 @@ public class AudioItem extends Committable implements Comparable<AudioItem> {
         this.metadata = new Metadata();
         this.categories = Maps.newHashMap();
         this.playlists = Maps.newHashMap();
-    }
-
-    public void setImportOrderId(long importOrderId) {
-        this.importOrderId = importOrderId;
     }
 
     public final String getUuid() {
@@ -150,11 +144,5 @@ public class AudioItem extends Committable implements Comparable<AudioItem> {
         playlists.clear();
         metadata.clear();
         t.getIndex().refresh(this);
-    }
-
-    @Override
-    public int compareTo(AudioItem o) {
-        // default sort order is import order
-        return Long.compare(importOrderId, o.importOrderId);
     }
 }

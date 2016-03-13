@@ -46,7 +46,7 @@ public class AudioItemDocumentFactory {
             .add(MetadataSpecification.LB_BENEFICIARY)
             .build();
 
-    public Document createLuceneDocument(AudioItem audioItem, long importOrderId) throws IOException {
+    public Document createLuceneDocument(AudioItem audioItem) throws IOException {
         Document doc = new Document();
         Metadata metadata = audioItem.getMetadata();
         for (MetadataField<String> field : PREFIX_SEARCH_COLUMNS) {
@@ -84,8 +84,6 @@ public class AudioItemDocumentFactory {
         serializer.serialize(Lists.newArrayList(audioItem.getCategoryList()), metadata, out);
         out.flush();
         doc.add(new StoredField(AudioItemIndex.RAW_METADATA_FIELD, baos.toByteArray()));
-
-        doc.add(new StringField(AudioItemIndex.IMPORT_ORDER_ID_FIELD, Long.toString(importOrderId), Store.YES));
 
         return doc;
     }
