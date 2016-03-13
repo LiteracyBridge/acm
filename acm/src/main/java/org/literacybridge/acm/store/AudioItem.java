@@ -11,10 +11,8 @@ import com.google.common.collect.Sets;
 
 /**
  * An AudioItem is a unique audio entity, identified by its audioItemID.
- * It is optionally associated with one or more categories and must have
- * at least one {@link LocalizedAudioItem}. If multiple translations of content
- * represented by this AudioItem are available, then there must an instance
- * of {@link LocalizedAudioItem} per translation referenced by this AudioItem.
+ * It is optionally associated with one or more categories and one ore more
+ * playlist.
  *
  */
 public class AudioItem extends Committable implements Comparable<AudioItem> {
