@@ -3,11 +3,8 @@ package org.literacybridge.acm.store;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
-import java.util.logging.Logger;
 
 public abstract class MetadataStore {
-    private static final Logger LOG = Logger.getLogger(MetadataStore.class.getName());
-
     private final Taxonomy taxonomy;
 
     public abstract Transaction newTransaction();

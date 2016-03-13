@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,6 +19,8 @@ public class LuceneMetadataStore extends MetadataStore {
     private final AudioItemIndex index;
     private final Map<String, Playlist> playlistCache;
     private final AudioItemCache audioItemCache;
+
+    private AtomicReference<Transaction> activeTransaction = new AtomicReference<Transaction>();
 
     public LuceneMetadataStore(Taxonomy taxonomy, AudioItemIndex index) {
         super(taxonomy);
@@ -108,9 +111,16 @@ public class LuceneMetadataStore extends MetadataStore {
     }
 
     @Override
-    public Transaction newTransaction() {
+    public synchronized Transaction newTransaction() {
         try {
-            return index.newTransaction(this);
+            final Transaction oldTransaction = activeTransaction.get();
+            if (oldTransaction != null && oldTransaction.isActive()) {
+                throw new IOException("Nested transactions are not allowed.");
+            }
+
+            Transaction newTransaction = index.newTransaction(this);
+            activeTransaction.set(newTransaction);
+            return newTransaction;
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "IOException while starting transaction with Lucene index.", e);
             return null;

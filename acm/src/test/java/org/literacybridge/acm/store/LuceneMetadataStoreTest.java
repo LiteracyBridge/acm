@@ -1,6 +1,7 @@
 package org.literacybridge.acm.store;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -8,6 +9,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -347,6 +349,69 @@ public class LuceneMetadataStoreTest {
         assertNumSearchResults(store, "lorem", p1, 3);
         assertNumSearchResults(store, "lorem", p2, 2);
         assertNumSearchResults(store, "lorem", p3, 1);
+    }
+
+    @Test
+    public void testNoNestedTransactions() throws Exception {
+        LuceneMetadataStore store = newStore();
+        Transaction t1 = store.newTransaction();
+
+        // this call should yield null, because t1 was not committed/rolled back yet
+        Transaction t2 = store.newTransaction();
+
+        assertNotNull(t1);
+        assertNull(t2);
+
+        t1.commit();
+        assertFalse(t1.isActive());
+        t2 = store.newTransaction();
+        assertNotNull(t2);
+        t2.rollback();
+        assertFalse(t2.isActive());
+        assertNotNull(store.newTransaction());
+    }
+
+    @Test
+    public void testNoNestedTransactionsMultiThreaded() throws Exception {
+        final LuceneMetadataStore store = newStore();
+        final Transaction t1 = store.newTransaction();
+        t1.add(new Committable() {
+            @Override public void doRollback(Transaction t) throws IOException {}
+
+            @Override public void doCommit(Transaction t) throws IOException {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        Thread thread1 = new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    t1.commit();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        final AtomicReference<Transaction> active = new AtomicReference<Transaction>(t1);
+
+        Thread thread2 = new Thread(new Runnable() {
+            @Override public void run() {
+                System.out.println("Creating new transaction");
+                active.set(store.newTransaction());
+            }
+        });
+
+        thread1.start();
+        thread2.start();
+        thread1.join();
+        thread2.join();
+
+        assertNull(active.get());
     }
 
     private LuceneMetadataStore newStore() throws Exception {

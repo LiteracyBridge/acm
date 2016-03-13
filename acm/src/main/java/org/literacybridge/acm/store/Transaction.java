@@ -15,11 +15,18 @@ public class Transaction {
     private final IndexWriter writer;
     private final MetadataStore store;
 
+    private boolean active;
+
     public Transaction(MetadataStore store, AudioItemIndex index, IndexWriter writer) throws IOException {
         this.store = store;
         this.index = index;
         this.writer = writer;
         this.objects = Sets.newLinkedHashSet();
+        this.active = true;
+    }
+
+    public final boolean isActive() {
+        return active;
     }
 
     private final void prepareCommit(Transaction t, MetadataStore store, Iterable<Committable> objects) {
@@ -54,6 +61,7 @@ public class Transaction {
                         for (Committable o : objects) {
                             o.afterCommit();
                         }
+                        active = false;
                     } else {
                         rollback();
                     }
@@ -82,6 +90,7 @@ public class Transaction {
                         for (Committable o : objects) {
                             o.afterRollback();
                         }
+                        active = false;
                     } else {
                         for (Committable o : objects) {
                             o.setRollbackFailed();
