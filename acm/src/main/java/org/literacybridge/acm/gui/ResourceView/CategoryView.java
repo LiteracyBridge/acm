@@ -48,7 +48,6 @@ import javax.swing.tree.TreeSelectionModel;
 import org.apache.commons.lang.StringUtils;
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
-import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.core.MessageBus.Message;
@@ -66,6 +65,7 @@ import org.literacybridge.acm.gui.util.language.UILanguageChanged;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.SearchResult;
 
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.DefaultCheckboxTreeCellRenderer;
@@ -79,7 +79,7 @@ public class CategoryView extends ACMContainer implements Observer {
     private static final long serialVersionUID = 5551716856269051991L;
 
     // model
-    private IDataRequestResult result = null;
+    private SearchResult result = null;
     // categories
     private CheckboxTree categoryTree = null;
     // tags
@@ -111,7 +111,7 @@ public class CategoryView extends ACMContainer implements Observer {
     // list of available languages
     private List<LanguageLabel> languagesList = new ArrayList<LanguageLabel>();
 
-    public CategoryView(IDataRequestResult result) {
+    public CategoryView(SearchResult result) {
         this.result = result;
         categoryRootNode = new DefaultMutableTreeNode();
         deviceRootNode = new DefaultMutableTreeNode(
@@ -625,8 +625,8 @@ public class CategoryView extends ACMContainer implements Observer {
             updateControlLanguage(newLocale.getNewLocale());
         }
 
-        if (arg instanceof IDataRequestResult) {
-            result = (IDataRequestResult) arg;
+        if (arg instanceof SearchResult) {
+            result = (SearchResult) arg;
             updateTreeNodes();
         }
 

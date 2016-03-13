@@ -18,18 +18,18 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
-import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.SearchResult;
 
 public class TagContextMenuDialog extends JDialog implements WindowListener {
     private static final Logger LOG = Logger.getLogger(TagContextMenuDialog.class.getName());
 
     public TagContextMenuDialog(final JFrame parent, final Playlist clickedTag,
-            final IDataRequestResult data) {
+            final SearchResult data) {
         super(parent, "", false);
 
         setResizable(false);

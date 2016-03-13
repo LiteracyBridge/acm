@@ -4,11 +4,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
-import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.SearchResult;
 import org.literacybridge.acm.store.Taxonomy;
 import org.literacybridge.acm.store.Transaction;
 
@@ -33,13 +33,13 @@ public class DBMetadataStore extends MetadataStore {
     }
 
     @Override
-    public IDataRequestResult search(String searchFilter,
+    public SearchResult search(String searchFilter,
             List<Category> categories, List<Locale> locales) {
         throw new UnsupportedOperationException("Searching the Derby DB is not supported anymore.");
     }
 
     @Override
-    public IDataRequestResult search(String searchFilter, Playlist playlist) {
+    public SearchResult search(String searchFilter, Playlist playlist) {
         throw new UnsupportedOperationException("Searching the Derby DB is not supported anymore.");
     }
 

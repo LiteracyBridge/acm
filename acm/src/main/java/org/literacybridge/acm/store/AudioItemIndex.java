@@ -57,8 +57,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
-import org.literacybridge.acm.api.IDataRequestResult;
-import org.literacybridge.acm.core.DataRequestResult;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
@@ -480,7 +478,7 @@ public class AudioItemIndex {
         audioItem.setImportOrderId(Long.parseLong(doc.get(IMPORT_ORDER_ID_FIELD)));
     }
 
-    public IDataRequestResult search(String filterString, Playlist selectedTag) throws IOException {
+    public SearchResult search(String filterString, Playlist selectedTag) throws IOException {
         BooleanQuery q = new BooleanQuery();
         addTextQuery(q, filterString);
         if (selectedTag != null) {
@@ -489,7 +487,7 @@ public class AudioItemIndex {
         return search(q);
     }
 
-    public IDataRequestResult search(String filterString, List<Category> filterCategories,
+    public SearchResult search(String filterString, List<Category> filterCategories,
             List<Locale> locales) throws IOException {
         BooleanQuery q = new BooleanQuery();
         addTextQuery(q, filterString);
@@ -513,7 +511,7 @@ public class AudioItemIndex {
         return search(q);
     }
 
-    private IDataRequestResult search(Query query) throws IOException {
+    private SearchResult search(Query query) throws IOException {
         final FacetsCollector facetsCollector = new FacetsCollector();
         final Set<String> results = Sets.newHashSet();
         final IndexSearcher searcher = searcherManager.acquire();
@@ -564,7 +562,7 @@ public class AudioItemIndex {
                 // we can probably remove this try..catch once we upgrade to a newer Lucene version
             }
 
-            DataRequestResult result = new DataRequestResult(categoryFacets, localeFacets, Lists.newArrayList(results));
+            SearchResult result = new SearchResult(categoryFacets, localeFacets, Lists.newArrayList(results));
 
             return result;
         } finally {

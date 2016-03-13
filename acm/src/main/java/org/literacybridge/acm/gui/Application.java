@@ -21,9 +21,7 @@ import org.jdesktop.swingx.JXFrame;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.core.DataRequestService;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.ResourceView.ResourceView;
@@ -35,7 +33,9 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.AudioItemRepository.GCInfo;
 import org.literacybridge.acm.repository.WavCaching;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.SearchResult;
 
 public class Application extends JXFrame {
     private static final Logger LOG = Logger.getLogger(Application.class.getName());
@@ -316,16 +316,13 @@ public class Application extends JXFrame {
 
             previousFilterState = this.toString();
 
-            final IDataRequestResult result;
+            final MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+            final SearchResult result;
 
             if (selectedPlaylist == null) {
-                result = DataRequestService.getInstance().getData(
-                        LanguageUtil.getUserChoosenLanguage(),
-                        filterString, filterCategories, filterLanguages);
+                result = store.search(filterString, filterCategories, filterLanguages);
             } else {
-                result = DataRequestService.getInstance().getData(
-                        LanguageUtil.getUserChoosenLanguage(),
-                        filterString, selectedPlaylist);
+                result = store.search(filterString, selectedPlaylist);
             }
 
             // call UI back

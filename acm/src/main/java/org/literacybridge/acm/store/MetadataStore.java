@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Logger;
 
-import org.literacybridge.acm.api.IDataRequestResult;
-
 public abstract class MetadataStore {
     private static final Logger LOG = Logger.getLogger(MetadataStore.class.getName());
 
@@ -36,8 +34,8 @@ public abstract class MetadataStore {
         return taxonomy.getCategory(uid);
     }
 
-    public abstract IDataRequestResult search(String searchFilter, List<Category> categories, List<Locale> locales);
-    public abstract IDataRequestResult search(String searchFilter, Playlist selectedTag);
+    public abstract SearchResult search(String searchFilter, List<Category> categories, List<Locale> locales);
+    public abstract SearchResult search(String searchFilter, Playlist selectedTag);
 
     public final void commit(Committable... objects) throws IOException {
         for (Committable c : objects) {

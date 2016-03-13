@@ -8,7 +8,6 @@ import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.gui.AudioItemCache;
 
 import com.google.common.collect.Maps;
@@ -59,7 +58,7 @@ public class LuceneMetadataStore extends MetadataStore {
     }
 
     @Override
-    public IDataRequestResult search(String query,
+    public SearchResult search(String query,
             List<Category> categories, List<Locale> locales) {
         try {
             return index.search(query, categories, locales);
@@ -70,7 +69,7 @@ public class LuceneMetadataStore extends MetadataStore {
     }
 
     @Override
-    public IDataRequestResult search(String query, Playlist playlist) {
+    public SearchResult search(String query, Playlist playlist) {
         try {
             return index.search(query, playlist);
         } catch (IOException e) {

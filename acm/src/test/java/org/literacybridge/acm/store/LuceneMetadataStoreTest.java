@@ -12,7 +12,6 @@ import java.util.Locale;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.literacybridge.acm.api.IDataRequestResult;
 
 import com.google.common.collect.Lists;
 
@@ -362,13 +361,13 @@ public class LuceneMetadataStoreTest {
 
     private static void assertNumSearchResults(MetadataStore store, String query,
             Playlist playlist, int expectedNumResults) throws Exception {
-        IDataRequestResult result = store.search(query, playlist);
+        SearchResult result = store.search(query, playlist);
         assertEquals(expectedNumResults, result.getAudioItems().size());
     }
 
     private static void assertNumSearchResults(MetadataStore store, String query,
             List<Category> categories, List<Locale> locales, int expectedNumResults) throws Exception {
-        IDataRequestResult result = store.search(query, categories, locales);
+        SearchResult result = store.search(query, categories, locales);
         assertEquals(expectedNumResults, result.getAudioItems().size());
     }
 

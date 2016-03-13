@@ -8,7 +8,6 @@ import java.util.List;
 import javax.swing.table.AbstractTableModel;
 
 import org.apache.commons.lang.StringUtils;
-import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel;
@@ -21,6 +20,7 @@ import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.SearchResult;
 
 public class AudioItemTableModel extends AbstractTableModel {
 
@@ -40,14 +40,14 @@ public class AudioItemTableModel extends AbstractTableModel {
     public static final int PLAYLIST_ORDER	   = 7;
     private static String[] columns = null;
 
-    protected IDataRequestResult result = null;
+    protected SearchResult result = null;
     private final MetadataStore store;
 
     public static void initializeTableColumns(String[] initalColumnNames) {
         columns = initalColumnNames;
     }
 
-    public AudioItemTableModel(IDataRequestResult result) {
+    public AudioItemTableModel(SearchResult result) {
         this.result = result;
         this.store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         if (result != null) {

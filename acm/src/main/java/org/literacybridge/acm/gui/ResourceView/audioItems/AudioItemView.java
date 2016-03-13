@@ -28,7 +28,6 @@ import javax.swing.table.TableColumn;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
-import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.messages.AudioItemTableSortOrderMessage;
@@ -44,13 +43,14 @@ import org.literacybridge.acm.gui.util.language.UILanguageChanged;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataValue;
+import org.literacybridge.acm.store.SearchResult;
 
 public class AudioItemView extends Container implements Observer {
 
     private static final long serialVersionUID = -2886958461177831842L;
 
     public static final DataFlavor AudioItemDataFlavor = new DataFlavor(AudioItem.class, "LocalizedAudioItem");
-    protected IDataRequestResult currResult = null;
+    protected SearchResult currResult = null;
     public JXTable audioItemTable = null;
 
     private AudioItemViewMouseListener mouseListener;
@@ -120,8 +120,8 @@ public class AudioItemView extends Container implements Observer {
      */
     @Override
     public void update(Observable o, Object arg) {
-        if (arg instanceof IDataRequestResult) {
-            currResult = (IDataRequestResult) arg;
+        if (arg instanceof SearchResult) {
+            currResult = (SearchResult) arg;
             updateTable(new AudioItemTableModel(currResult));
         }
 
@@ -350,7 +350,7 @@ public class AudioItemView extends Container implements Observer {
     }
 
     // Special handlers
-    public void setData(IDataRequestResult result) {
+    public void setData(SearchResult result) {
         updateTable(new AudioItemTableModel(result));
         mouseListener.setCurrentResult(result);
     }

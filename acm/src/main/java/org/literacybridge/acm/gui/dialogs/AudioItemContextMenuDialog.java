@@ -19,7 +19,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
-import org.literacybridge.acm.api.IDataRequestResult;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
@@ -30,13 +29,14 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.SearchResult;
 
 // TODO: deal with localized audio items when languages are fully implemented
 public class AudioItemContextMenuDialog extends JDialog implements WindowListener {
     private static final Logger LOG = Logger.getLogger(AudioItemContextMenuDialog.class.getName());
 
     public AudioItemContextMenuDialog(final JFrame parent, final AudioItem clickedAudioItem, final AudioItem[] selectedAudioItems,
-            final AudioItemView audioItemView, final IDataRequestResult data) {
+            final AudioItemView audioItemView, final SearchResult data) {
         super(parent, "", false);
 
         setResizable(false);

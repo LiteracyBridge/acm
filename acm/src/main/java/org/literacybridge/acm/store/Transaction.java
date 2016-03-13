@@ -3,7 +3,6 @@ package org.literacybridge.acm.store;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.apache.lucene.index.IndexWriter;
 
