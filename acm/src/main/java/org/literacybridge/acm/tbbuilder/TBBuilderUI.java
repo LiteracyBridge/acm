@@ -242,7 +242,7 @@ public class TBBuilderUI extends JFrame implements ActionListener {
 							notice.setText("STARTING DB"); 
 							notice.setForeground(Color.RED);
 							notice.setVisible(true);
-							tbBuilder = new TBBuilder(TBBuilder.ACM_PREFIX + projectList.getSelectedItem().toString());
+							tbBuilder = new TBBuilder(TBBuilder.ACM_PREFIX + projectList.getSelectedItem().toString(), true);
 							notice.setText("");
 							notice.setVisible(false);
 						} catch (Exception e1) {

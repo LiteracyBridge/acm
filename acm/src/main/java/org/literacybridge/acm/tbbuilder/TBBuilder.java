@@ -157,13 +157,6 @@ public class TBBuilder {
 	}
 
 	public void createDeployment(String deployment) throws Exception {
-		CommandLineParams params = new CommandLineParams();
-		params.disableUI = true;
-		params.readonly = true;
-		params.sandbox = true;
-		params.disableIndex = true;
-		params.sharedACM = ACM_PREFIX + project;
-		Application.startUp(params);
 		deploymentNumber = deployment;
 		targetDeploymentDir = new File(targetTempDir, "content/" + deploymentNumber);
 		File targetMetadataDir = new File(targetTempDir, "metadata/" + deploymentNumber);
@@ -217,7 +210,20 @@ public class TBBuilder {
 		System.out.println("\nDone with deployment of software and basic/community content.");
 	}
 
-	public TBBuilder (String sharedACM) throws Exception {
+	public TBBuilder (String sharedACM, boolean isCreate) throws Exception {
+		CommandLineParams params = new CommandLineParams();
+		params.disableUI = true;
+		params.readonly = true;
+		params.sandbox = true;
+		params.disableIndex = true;
+		params.sharedACM = sharedACM;
+		if (isCreate) {
+			// Creation needs the database, and the application.
+			Application.startUp(params);
+		} else {
+			// Publishing doesn't need the application.
+			ACMConfiguration.initialize(params);
+		}
 		dropboxTbLoadersDir = ACMConfiguration.getInstance().dirACM(sharedACM);  //.getCurrentDB().getTBLoadersDirectory();
 		project = sharedACM.substring(ACM_PREFIX.length());
 		File localTbLoadersDir = new File(DBConfiguration.getLiteracyBridgeHomeDir(), Constants.TBLoadersHomeDir);
@@ -335,7 +341,7 @@ public class TBBuilder {
 			printUsage();
 			System.exit(1);
 		} else if (args[0].equalsIgnoreCase("CREATE")) {
-			tbb = new TBBuilder(args[1]);
+			tbb = new TBBuilder(args[1], true);
 			tbb.createDeployment(args[2]);
 			if (args.length == 5) {  // one package with default group
 				tbb.addImage(args[3],args[4], TBLoader.DEFAULT_GROUP_LABEL);
@@ -375,7 +381,7 @@ public class TBBuilder {
 				printUsage();
 				System.exit(1);
 			}
-			tbb = new TBBuilder(args[1]);
+			tbb = new TBBuilder(args[1], false);
 			int deploymentCount = args.length - 2;
 			if (deploymentCount>MAX_DEPLOYMENTS)
 				deploymentCount=MAX_DEPLOYMENTS;
