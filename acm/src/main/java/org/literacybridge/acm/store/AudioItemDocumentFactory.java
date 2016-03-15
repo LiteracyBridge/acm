@@ -3,7 +3,6 @@ package org.literacybridge.acm.store;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringReader;
 import java.util.Iterator;
 import java.util.List;
@@ -26,7 +25,6 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.Version;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -90,9 +88,9 @@ public class AudioItemDocumentFactory {
 
     public static class PrefixAnalyzer extends Analyzer {
         @Override
-        protected TokenStreamComponents createComponents(String field, Reader reader) {
-            WhitespaceTokenizer tokenizer = new WhitespaceTokenizer(Version.LUCENE_47, reader);
-            TokenFilter filter = new LowerCaseFilter(Version.LUCENE_47, tokenizer);
+        protected TokenStreamComponents createComponents(String field) {
+            WhitespaceTokenizer tokenizer = new WhitespaceTokenizer();
+            TokenFilter filter = new LowerCaseFilter(tokenizer);
 
             filter = new PrefixTokenFilter(filter);
 
