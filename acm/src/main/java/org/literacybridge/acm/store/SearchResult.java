@@ -23,11 +23,15 @@ public class SearchResult {
 
     private final Map<String, Integer> categoryFacetCounts;
     private final Map<String, Integer> languageFacetCounts;
+    private final Map<String, Integer> playlistFacetCounts;
 
     public SearchResult(Map<String, Integer> facetCounts,
-            Map<String, Integer> languageFacetCounts, List<String> audioItems) {
+            Map<String, Integer> languageFacetCounts,
+            Map<String, Integer> playlistFacetCounts,
+            List<String> audioItems) {
         this.categoryFacetCounts = facetCounts;
         this.languageFacetCounts = languageFacetCounts;
+        this.playlistFacetCounts = playlistFacetCounts;
         this.audioItems = audioItems;
     }
 
@@ -36,6 +40,18 @@ public class SearchResult {
             return 0;
         }
         Integer count = categoryFacetCounts.get(category.getUuid());
+        if (count == null) {
+            return 0;
+        } else {
+            return count;
+        }
+    }
+
+    public int getFacetCount(Playlist playlist) {
+        if (playlist == null) {
+            return 0;
+        }
+        Integer count = playlistFacetCounts.get(playlist.getUuid());
         if (count == null) {
             return 0;
         } else {

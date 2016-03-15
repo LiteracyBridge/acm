@@ -76,6 +76,6 @@ public class TagsTransferHandler extends TransferHandler {
                 }
             }
         }
-        Application.getFilterState().updateResult();
+        Application.getFilterState().updateResult(true);
     }
 }

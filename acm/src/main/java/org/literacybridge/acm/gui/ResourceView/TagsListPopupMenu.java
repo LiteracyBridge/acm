@@ -78,9 +78,7 @@ public class TagsListPopupMenu extends JPopupMenu {
                         }
                         ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().deletePlaylist(selectedTag.getTag().getUuid());
                         ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(selectedTag.getTag());
-                        Application.getMessageService().pumpMessage(
-                                new TagsListChanged(
-                                        ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getPlaylists()));
+                        Application.getMessageService().pumpMessage(new TagsListChanged());
                     } catch (Exception ex) {
                         LOG.log(Level.WARNING, "Unable to remove playlist "
                                 + selectedTag.toString());
@@ -103,9 +101,7 @@ public class TagsListPopupMenu extends JPopupMenu {
                         selectedTag.getTag().setName(tagName);
                         ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(selectedTag.getTag());
 
-                        Application.getMessageService().pumpMessage(
-                                new TagsListChanged(
-                                        ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getPlaylists()));
+                        Application.getMessageService().pumpMessage(new TagsListChanged());
                     } catch (Exception ex) {
                         LOG.log(Level.WARNING, "Unable to rename playlist "
                                 + selectedTag.toString());

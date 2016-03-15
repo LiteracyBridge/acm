@@ -22,6 +22,7 @@ import java.util.Observer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
@@ -83,7 +84,7 @@ public class CategoryView extends ACMContainer implements Observer {
     // categories
     private CheckboxTree categoryTree = null;
     // tags
-    private JList tagsList = null;
+    private JList<TagLabel> tagsList = null;
     private JButton addTagButton = null;
     // Languages
     private CheckboxTree languageTree = null;
@@ -136,7 +137,7 @@ public class CategoryView extends ACMContainer implements Observer {
 
         // init controls with default language
         updateControlLanguage(LanguageUtil.getUILanguage());
-        updateTagsTable(ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getPlaylists());
+        updateTagsTable();
         Application.getMessageService().addObserver(this);
     }
 
@@ -209,7 +210,7 @@ public class CategoryView extends ACMContainer implements Observer {
         languagePane.add(languageScrollPane);
 
         tagsPane = new JXTaskPane();
-        tagsList = new JList();
+        tagsList = new JList<TagLabel>();
         tagsList.setSelectionModel(new DefaultListSelectionModel() {
             @Override public void setSelectionInterval(int index0, int index1) {
                 if (isSelectedIndex(index0)) {
@@ -252,6 +253,28 @@ public class CategoryView extends ACMContainer implements Observer {
                     }
                 }
 
+            }
+        });
+        tagsList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(
+                    JList<?> list,
+                    Object value,
+                    int index,
+                    boolean isSelected,
+                    boolean cellHasFocus) {
+
+                Component component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                TagLabel label = (TagLabel) value;
+
+                Font f = component.getFont();
+                if (label.getFacetCount() > 0) {
+                    component.setFont(f.deriveFont(f.getStyle() | Font.BOLD));
+                } else {
+                    component.setFont(f.deriveFont(f.getStyle() & ~Font.BOLD));
+                }
+
+                return component;
             }
         });
         JScrollPane tagsScrollPane = new JScrollPane(tagsList);
@@ -567,9 +590,10 @@ public class CategoryView extends ACMContainer implements Observer {
         }
     }
 
-    public void updateTagsTable(Iterable<Playlist> tags) {
+    public void updateTagsTable() {
         if (!clearingSelections) {
-            tagsList.setModel(new TagsListModel(tags));
+            MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+            tagsList.setModel(new TagsListModel(store.getPlaylists(), result));
         }
     }
 
@@ -589,7 +613,7 @@ public class CategoryView extends ACMContainer implements Observer {
                 LOG.log(Level.WARNING, "Unable to create playlist with name " + tagName, e);
             }
 
-            Application.getMessageService().pumpMessage(new TagsListChanged(store.getPlaylists()));
+            Application.getMessageService().pumpMessage(new TagsListChanged());
         }
     }
 
@@ -628,10 +652,11 @@ public class CategoryView extends ACMContainer implements Observer {
         if (arg instanceof SearchResult) {
             result = (SearchResult) arg;
             updateTreeNodes();
+            updateTagsTable();
         }
 
         if (arg instanceof TagsListChanged) {
-            updateTagsTable(((TagsListChanged) arg).tags);
+            updateTagsTable();
         }
     }
 
@@ -699,10 +724,5 @@ public class CategoryView extends ACMContainer implements Observer {
     };
 
     public static class TagsListChanged {
-        private final Iterable<Playlist> tags;
-
-        TagsListChanged(Iterable<Playlist> tags) {
-            this.tags = tags;
-        }
     }
 }

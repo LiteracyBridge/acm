@@ -69,7 +69,8 @@ public class AudioItemIndex {
     public static final String UID_FIELD = "uid";
     public static final String CATEGORIES_FIELD = "categories";
     public static final String CATEGORIES_FACET_FIELD = "categories_facet";
-    public static final String TAGS_FIELD = "tags";
+    public static final String PLAYLISTS_FIELD = "playlists";
+    public static final String PLAYLISTS_FACET_FIELD = "playlists_facet";
     public static final String LOCALES_FIELD = "locales";
     public static final String LOCALES_FACET_FIELD = "locales_facet";
     public static final String REVISION_FIELD = "rev";
@@ -93,6 +94,7 @@ public class AudioItemIndex {
         facetsConfig = new FacetsConfig();
         facetsConfig.setMultiValued(AudioItemIndex.CATEGORIES_FACET_FIELD, true);
         facetsConfig.setMultiValued(AudioItemIndex.LOCALES_FACET_FIELD, true);
+        facetsConfig.setMultiValued(AudioItemIndex.PLAYLISTS_FACET_FIELD, true);
 
         if (audioItems != null) {
             migrateFromDB(audioItems);
@@ -304,7 +306,7 @@ public class AudioItemIndex {
             TermsEnum termsEnum = null;
             for (LeafReaderContext leaf : reader.leaves()) {
                 LeafReader leafReader = leaf.reader();
-                Terms terms = leafReader.terms(TAGS_FIELD);
+                Terms terms = leafReader.terms(PLAYLISTS_FIELD);
                 if (terms != null) {
                     termsEnum = terms.iterator();
                     BytesRef term = null;
@@ -312,7 +314,7 @@ public class AudioItemIndex {
                         String uuid = term.utf8ToString();
                         Playlist.Builder playlist = playlists.get(uuid);
                         if (playlist != null) {
-                            PostingsEnum tp = leafReader.postings(new Term(TAGS_FIELD, term), PostingsEnum.PAYLOADS);
+                            PostingsEnum tp = leafReader.postings(new Term(PLAYLISTS_FIELD, term), PostingsEnum.PAYLOADS);
                             while (tp.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
                                 // TODO: we could also use the termPosition instead of a payload to store the playlist position
                                 tp.nextPosition();
@@ -357,7 +359,7 @@ public class AudioItemIndex {
             IndexReader reader = searcher.getIndexReader();
             for (LeafReaderContext leaf : reader.leaves()) {
                 LeafReader leafReader = leaf.reader();
-                PostingsEnum tp = leafReader.postings(new Term(TAGS_FIELD, uuid), PostingsEnum.PAYLOADS);
+                PostingsEnum tp = leafReader.postings(new Term(PLAYLISTS_FIELD, uuid), PostingsEnum.PAYLOADS);
                 if (tp != null) {
                     while (tp.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
                         // TODO: we could also use the termPosition instead of a payload to store the playlist position
@@ -480,7 +482,7 @@ public class AudioItemIndex {
         BooleanQuery.Builder bq = new BooleanQuery.Builder();
         addTextQuery(bq, filterString);
         if (selectedTag != null) {
-            bq.add(new TermQuery(new Term(TAGS_FIELD, selectedTag.getUuid())), Occur.MUST);
+            bq.add(new TermQuery(new Term(PLAYLISTS_FIELD, selectedTag.getUuid())), Occur.MUST);
         }
         return search(bq.build());
     }
@@ -541,6 +543,7 @@ public class AudioItemIndex {
 
             Map<String, Integer> categoryFacets = Maps.newHashMap();
             Map<String, Integer> localeFacets = Maps.newHashMap();
+            Map<String, Integer> playlistFacets = Maps.newHashMap();
 
             try {
                 SortedSetDocValuesFacetCounts facetCounts =
@@ -558,12 +561,18 @@ public class AudioItemIndex {
                         }
 
                     }
+                    if (r.dim.equals(PLAYLISTS_FACET_FIELD)) {
+                        for (LabelAndValue lv : r.labelValues) {
+                            playlistFacets.put(lv.label, lv.value.intValue());
+                        }
+
+                    }
                 }
             } catch (IllegalArgumentException e) {
                 // With empty indexes it can happen that Lucene throws an exception here due to missing facet data
             }
 
-            SearchResult result = new SearchResult(categoryFacets, localeFacets, Lists.newArrayList(results));
+            SearchResult result = new SearchResult(categoryFacets, localeFacets, playlistFacets, Lists.newArrayList(results));
 
             return result;
         } finally {

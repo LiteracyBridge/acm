@@ -62,7 +62,10 @@ public class AudioItemDocumentFactory {
             doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.CATEGORIES_FACET_FIELD, category.getUuid()));
         }
 
-        doc.add(new Field(AudioItemIndex.TAGS_FIELD, new PlaylistTokenStream(audioItem), TextField.TYPE_NOT_STORED));
+        doc.add(new Field(AudioItemIndex.PLAYLISTS_FIELD, new PlaylistTokenStream(audioItem), TextField.TYPE_NOT_STORED));
+        for  (Playlist playlist : audioItem.getPlaylists()) {
+            doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.PLAYLISTS_FACET_FIELD, playlist.getUuid()));
+        }
 
         if (metadata.hasMetadataField(MetadataSpecification.DC_LANGUAGE)) {
             for (MetadataValue<RFC3066LanguageCode> code : metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE)) {
