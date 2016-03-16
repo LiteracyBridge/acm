@@ -83,7 +83,7 @@ public class DropboxFinderTest
         PowerMockito.when(System.getenv("LOCALAPPDATA")).thenReturn("r:\\Users\\LB\\AppData\\Local");
 
         File infoFile = dbFinder.getInfoFile();
-        String expected = "/home/LB" + File.separator + ".dropbox" + File.separator + "info.json";
+        String expected = File.separator + "home" + File.separator + "LB" + File.separator + ".dropbox" + File.separator + "info.json";
         assertEquals(expected, infoFile.getPath());
     }
 
