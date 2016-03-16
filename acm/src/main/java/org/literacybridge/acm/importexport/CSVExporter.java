@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.content.LocalizedAudioItem;
@@ -21,6 +22,8 @@ import au.com.bytecode.opencsv.CSVWriter;
 import com.google.common.collect.Lists;
 
 public class CSVExporter {
+	private static final Logger LOG = Logger.getLogger(CSVExporter.class.getName());
+
 	private final static String CATEGORY_COLUMN_NAME = "CATEGORIES";
 	private final static String QUALITY_COLUMN_NAME = "QUALITY";
 	private final static String PROJECT_COLUMN_NAME = "PROJECT";
@@ -67,12 +70,18 @@ public class CSVExporter {
 				MetadataField<?> field = columns.get(i);
 				String value = getStringValue(metadata, field);
 				if (field == MetadataSpecification.LB_DURATION) {
-					// last character is the quality
-					quality = value.substring(value.length() - 1);
-					int durationInSeconds =
-							Integer.parseInt(value.substring(0, 2)) * 60
-							+ Integer.parseInt(value.substring(3, 5));
-					value = Integer.toString(durationInSeconds);
+					try {
+						// last character is the quality
+						quality = value.substring(value.length() - 1);
+						int durationInSeconds =
+								Integer.parseInt(value.substring(0, 2)) * 60
+										+ Integer.parseInt(value.substring(3, 5));
+						value = Integer.toString(durationInSeconds);
+					} catch (Exception ignored) {
+						LOG.warning(String.format("Exception parsing time & quality from '%s'. Substituting 0 l.", audioItem.getUuid()));
+						quality = "l";
+						value="0";
+					}
 				}
 				values[i] = value;
 			}
