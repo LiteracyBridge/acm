@@ -6,14 +6,9 @@ import java.util.Map;
 
 public class Metadata {
     private Map<MetadataField<?>, MetadataValue<?>> fields;
-    private int numValues;
 
     public Metadata() {
         this.fields = new LinkedHashMap<MetadataField<?>, MetadataValue<?>>();
-    }
-
-    public int getNumberOfValues() {
-        return numValues;
     }
 
     public int getNumberOfFields() {
