@@ -99,8 +99,8 @@ public class AudioItemImportModel extends AbstractTableModel {
             case INFO_ICON:
                 return new Boolean(item.isEnabled());
             case TITLE:
-                return audioItem.getMetadata().getMetadataValues(
-                        MetadataSpecification.DC_TITLE).get(0).getValue();
+                return audioItem.getMetadata().getMetadataValue(
+                        MetadataSpecification.DC_TITLE).getValue();
             case CATEGORIES:
                 List<Category> categories = Lists.newArrayList(audioItem.getCategoryList());
                 StringBuilder builder = new StringBuilder();
@@ -115,10 +115,10 @@ public class AudioItemImportModel extends AbstractTableModel {
 
                 return builder.toString();
             case LANGUAGES:
-                List<MetadataValue<RFC3066LanguageCode>> languages =
-                audioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_LANGUAGE);
-                if (languages != null && languages.size() > 0) {
-                    return LanguageUtil.getLocalizedLanguageName(languages.get(0).getValue().getLocale());
+                MetadataValue<RFC3066LanguageCode> language =
+                audioItem.getMetadata().getMetadataValue(MetadataSpecification.DC_LANGUAGE);
+                if (language != null) {
+                    return LanguageUtil.getLocalizedLanguageName(language.getValue().getLocale());
                 } else {
                     return "";
                 }

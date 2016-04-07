@@ -4,7 +4,6 @@ import static org.literacybridge.acm.store.MetadataSpecification.LB_STATUS;
 
 import java.awt.Component;
 import java.awt.Font;
-import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -43,8 +42,8 @@ public class AudioItemCellRenderer extends DefaultTableCellRenderer {
 
         label.setText(status.toString());
 
-        List<MetadataValue<Integer>> statuses = status.getAudioItem().getMetadata().getMetadataValues(LB_STATUS);
-        if (statuses != null && !statuses.isEmpty() && AudioItemPropertiesModel.STATUS_VALUES[statuses.get(0).getValue()] == AudioItemPropertiesModel.NO_LONGER_USED) {
+        MetadataValue<Integer> statusValue = status.getAudioItem().getMetadata().getMetadataValue(LB_STATUS);
+        if (statusValue != null && AudioItemPropertiesModel.STATUS_VALUES[statusValue.getValue()] == AudioItemPropertiesModel.NO_LONGER_USED) {
             Font italicsLabel =new Font(label.getFont().getName(),Font.ITALIC,label.getFont().getSize());
             label.setFont(italicsLabel);
         }

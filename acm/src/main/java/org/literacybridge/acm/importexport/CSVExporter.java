@@ -95,19 +95,11 @@ public class CSVExporter {
     }
 
     private static <T> String getStringValue(Metadata metadata, MetadataField<T> field) {
-        List<MetadataValue<T>> values = metadata.getMetadataValues(field);
-        if (values == null || values.isEmpty()) {
+        MetadataValue<T> value = metadata.getMetadataValue(field);
+        if (value == null) {
             return "";
+        } else {
+            return value.getValue().toString();
         }
-
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < values.size(); i++) {
-            builder.append(values.get(i).getValue());
-            if (i < values.size() - 1) {
-                builder.append(",");
-            }
-        }
-
-        return builder.toString();
     }
 }

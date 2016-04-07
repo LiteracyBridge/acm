@@ -5,7 +5,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -48,11 +47,9 @@ public class AudioItemDocumentFactory {
         Document doc = new Document();
         Metadata metadata = audioItem.getMetadata();
         for (MetadataField<String> field : PREFIX_SEARCH_COLUMNS) {
-            List<MetadataValue<String>> values = metadata.getMetadataValues(field);
-            if (values != null) {
-                for (MetadataValue<String> value : values) {
-                    doc.add(new TextField(AudioItemIndex.TEXT_FIELD, new StringReader(value.getValue())));
-                }
+            if (metadata.hasMetadataField(field)) {
+                MetadataValue<String> value = metadata.getMetadataValue(field);
+                doc.add(new TextField(AudioItemIndex.TEXT_FIELD, new StringReader(value.getValue())));
             }
         }
 
@@ -68,15 +65,15 @@ public class AudioItemDocumentFactory {
         }
 
         if (metadata.hasMetadataField(MetadataSpecification.DC_LANGUAGE)) {
-            for (MetadataValue<RFC3066LanguageCode> code : metadata.getMetadataValues(MetadataSpecification.DC_LANGUAGE)) {
-                doc.add(new StringField(AudioItemIndex.LOCALES_FIELD, code.getValue().getLocale().getLanguage().toLowerCase(), Store.YES));
-                doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.LOCALES_FACET_FIELD, code.toString()));
-            }
+            MetadataValue<RFC3066LanguageCode> code = metadata.getMetadataValue(MetadataSpecification.DC_LANGUAGE);
+            doc.add(new StringField(AudioItemIndex.LOCALES_FIELD, code.getValue().getLocale().getLanguage().toLowerCase(), Store.YES));
+            doc.add(new SortedSetDocValuesFacetField(AudioItemIndex.LOCALES_FACET_FIELD, code.toString()));
+
         }
 
         if (metadata.hasMetadataField(MetadataSpecification.DTB_REVISION)) {
             doc.add(new StringField(AudioItemIndex.REVISION_FIELD,
-                    metadata.getMetadataValues(MetadataSpecification.DTB_REVISION).get(0).getValue(), Store.YES));
+                    metadata.getMetadataValue(MetadataSpecification.DTB_REVISION).getValue(), Store.YES));
         }
 
         LBMetadataSerializer serializer = new LBMetadataSerializer();

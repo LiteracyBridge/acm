@@ -6,19 +6,13 @@ import java.io.IOException;
 
 public abstract class MetadataField<T> {
     private final String name;
-    private Attribute<?>[] attributes;
 
-    protected MetadataField(String name, Attribute<?>... attributes) {
-        this.attributes = attributes;
+    protected MetadataField(String name) {
         this.name = name;
     }
 
     void validateValue(T value) throws InvalidMetadataException {
         // do nothing by default
-    }
-
-    public Attribute<?>[] getAttributes() {
-        return this.attributes;
     }
 
     public String getName() {

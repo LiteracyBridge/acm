@@ -102,18 +102,18 @@ public class AudioItemTableModel extends AbstractTableModel {
                 break;
             }
             case TITLE: {
-                List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(
+                MetadataValue<String> value = audioItem.getMetadata().getMetadataValue(
                         MetadataSpecification.DC_TITLE);
-                if (values != null) {
-                    cellText = values.get(0).getValue();
+                if (value != null) {
+                    cellText = value.getValue();
                 }
                 break;
             }
             case DURATION: {
-                List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(
+                MetadataValue<String> value = audioItem.getMetadata().getMetadataValue(
                         MetadataSpecification.LB_DURATION);
-                if (values != null && !StringUtils.isEmpty(values.get(0).getValue())) {
-                    cellText = values.get(0).getValue();
+                if (value != null && !StringUtils.isEmpty(value.getValue())) {
+                    cellText = value.getValue();
                 }
                 break;
             }
@@ -122,10 +122,10 @@ public class AudioItemTableModel extends AbstractTableModel {
                 break;
             }
             case SOURCE: {
-                List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(
+                MetadataValue<String> value = audioItem.getMetadata().getMetadataValue(
                         MetadataSpecification.DC_SOURCE);
-                if (values != null) {
-                    cellText = values.get(0).getValue();
+                if (value != null) {
+                    cellText = value.getValue();
                 }
                 break;
             }

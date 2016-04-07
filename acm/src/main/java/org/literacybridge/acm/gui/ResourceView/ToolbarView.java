@@ -279,8 +279,8 @@ public class ToolbarView extends JToolBar implements ActionListener
             initPlayer(f);
             player.play();
             updatePlayerStateTimer.start();
-            titleInfoLbl.setText(item.getMetadata().getMetadataValues(
-                    MetadataSpecification.DC_TITLE).get(0).getValue());
+            titleInfoLbl.setText(item.getMetadata().getMetadataValue(
+                    MetadataSpecification.DC_TITLE).getValue());
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (ConversionException e) {

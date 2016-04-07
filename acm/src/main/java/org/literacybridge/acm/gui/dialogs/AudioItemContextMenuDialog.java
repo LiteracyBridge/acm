@@ -52,7 +52,7 @@ public class AudioItemContextMenuDialog extends JDialog implements WindowListene
         GridLayout grid = new GridLayout(3, 1);
 
         final String selectedTitle = clickedAudioItem
-                .getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).toString();
+                .getMetadata().getMetadataValue(MetadataSpecification.DC_TITLE).toString();
 
         final Playlist selectedTag = Application.getFilterState().getSelectedPlaylist();
 

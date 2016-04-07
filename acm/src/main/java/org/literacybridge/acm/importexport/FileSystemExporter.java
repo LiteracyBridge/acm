@@ -18,16 +18,16 @@ public class FileSystemExporter {
             throws IOException {
 
         try {
-			AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
+            AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
 
             for (AudioItem audioItem : selectedAudioItems) {
                 // first: check which formats we have
                 File sourceFile = repository.convert(audioItem, targetFormat);
 
                 if (sourceFile != null) {
-                    String title = (titleInFilename?audioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_TITLE).get(0).getValue():"")
+                    String title = (titleInFilename?audioItem.getMetadata().getMetadataValue(MetadataSpecification.DC_TITLE).getValue():"")
                             + (idInFilename && titleInFilename?FILENAME_SEPARATOR:"")
-                            + (idInFilename?audioItem.getMetadata().getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue():"");
+                            + (idInFilename?audioItem.getMetadata().getMetadataValue(MetadataSpecification.DC_IDENTIFIER).getValue():"");
 
                     // replace invalid file name characters (windows) with an underscore ('_')
                     title = title.trim().replaceAll("[\\\\/:*?\"<>|']", "_");

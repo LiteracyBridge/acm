@@ -81,12 +81,12 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
             }
 
             @Override public String getValue(AudioItem audioItem) {
-                List<MetadataValue<Integer>> values = audioItem.getMetadata().getMetadataValues(LB_STATUS);
-                if (values == null || values.isEmpty()) {
+                MetadataValue<Integer> value = audioItem.getMetadata().getMetadataValue(LB_STATUS);
+                if (value == null) {
                     return "Current";
                 }
 
-                return STATUS_VALUES[values.get(0).getValue()];
+                return STATUS_VALUES[value.getValue()];
             }
 
             @Override
@@ -148,14 +148,14 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
             }
 
             @Override public String getValue(AudioItem audioItem) {
-                List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(DC_RELATION);
-                if (values != null && !values.isEmpty()) {
-                    String id = values.get(0).getValue();
+                MetadataValue<String> value = audioItem.getMetadata().getMetadataValue(DC_RELATION);
+                if (value != null) {
+                    String id = value.getValue();
                     if (!StringUtils.isEmpty(id)) {
                         AudioItem item = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getAudioItem(id);
-                        List<MetadataValue<String>> values1 = item.getMetadata().getMetadataValues(DC_TITLE);
-                        if (values1 != null && !values1.isEmpty()) {
-                            return values1.get(0).getValue();
+                        MetadataValue<String> values1 = item.getMetadata().getMetadataValue(DC_TITLE);
+                        if (values1 != null) {
+                            return values1.getValue();
                         }
                     }
                 }
@@ -219,12 +219,10 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
     }
 
     public static Locale getLanguage(AudioItem audioItem, MetadataField<RFC3066LanguageCode> language) {
-        // only shows first language
-        for (MetadataValue<RFC3066LanguageCode> mv : audioItem.getMetadata().getMetadataValues(language)) {
-            RFC3066LanguageCode code = mv.getValue();
-            return code.getLocale();
+        MetadataValue<RFC3066LanguageCode> mv = audioItem.getMetadata().getMetadataValue(language);
+        if (mv != null) {
+            return mv.getValue().getLocale();
         }
-
         return null;
     }
 
@@ -323,13 +321,12 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
     }
 
     private static void incrementRevision(Metadata metadata) {
-        List<MetadataValue<String>> revisions = metadata.getMetadataValues(MetadataSpecification.DTB_REVISION);
-        if (revisions != null) {
-            String revision = revisions.get(0).getValue();
+        MetadataValue<String> revision = metadata.getMetadataValue(MetadataSpecification.DTB_REVISION);
+        if (revision != null) {
             long rev = 0;
-            if (revision != null && !revision.isEmpty()) {
+            if (!revision.getValue().isEmpty()) {
                 try {
-                    rev = Long.parseLong(revision);
+                    rev = Long.parseLong(revision.getValue());
                 } catch (NumberFormatException e) {
                     // use 0
                 }

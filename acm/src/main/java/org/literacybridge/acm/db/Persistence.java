@@ -147,9 +147,9 @@ public class Persistence {
         for (AudioItem audioItem : store.getAudioItems()) {
             // =================================================================
             // 1) calculate duration of audio items
-            List<MetadataValue<String>> values = audioItem.getMetadata().getMetadataValues(
+            MetadataValue<String> value = audioItem.getMetadata().getMetadataValue(
                     MetadataSpecification.LB_DURATION);
-            if (values == null || StringUtils.isEmpty(values.get(0).getValue())) {
+            if (value == null || StringUtils.isEmpty(value.getValue())) {
                 A18DurationUtil.updateDuration(audioItem);
             }
 

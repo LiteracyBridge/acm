@@ -12,7 +12,6 @@ import java.text.Collator;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
@@ -400,9 +399,9 @@ public class AudioItemView extends Container implements Observer {
                     for (int row : getCurrentSelectedRows()) {
                         AudioItem audioItem = getAudioItemAtTableRow(row);
                         if (audioItem != null) {
-                            List<MetadataValue<String>> metadata = audioItem.getMetadata().getMetadataValues(MetadataSpecification.LB_DURATION);
-                            if (metadata != null && !metadata.isEmpty()) {
-                                String duration = audioItem.getMetadata().getMetadataValues(MetadataSpecification.LB_DURATION).get(0).getValue();
+                            MetadataValue<String> metadata = audioItem.getMetadata().getMetadataValue(MetadataSpecification.LB_DURATION);
+                            if (metadata != null) {
+                                String duration = metadata.getValue();
                                 try {
                                     cal.add(Calendar.MINUTE, Integer.parseInt(duration.substring(0, 2)));
                                     cal.add(Calendar.SECOND, Integer.parseInt(duration.substring(3, 5)));

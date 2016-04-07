@@ -68,7 +68,7 @@ public class A18Importer extends Importer {
                 }
 
             } else {
-                audioItem = store.newAudioItem(loadedMetadata.getMetadataValues(MetadataSpecification.DC_IDENTIFIER).get(0).getValue());
+                audioItem = store.newAudioItem(loadedMetadata.getMetadataValue(MetadataSpecification.DC_IDENTIFIER).getValue());
                 Metadata metadata = audioItem.getMetadata();
                 categories.clear();
                 if (bytesToSkip + 4 < file.length()) {
@@ -81,7 +81,7 @@ public class A18Importer extends Importer {
                     }
                 }
 
-                if (metadata.getMetadataValues(MetadataSpecification.DTB_REVISION) == null) {
+                if (metadata.getMetadataValue(MetadataSpecification.DTB_REVISION) == null) {
                     metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("0"));
                 }
             }

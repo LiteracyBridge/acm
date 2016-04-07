@@ -7,9 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
-import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.utils.IOUtils;
 
 /**
@@ -106,12 +104,10 @@ public class LBMetadataSerializer {
     }
 
     private final <T> void serializeField(Metadata metadata, MetadataField<T> field, DataOutput out) throws IOException {
-        List<MetadataValue<T>> values = metadata.getMetadataValues(field);
-        if (values != null) {
-            out.writeByte((byte) values.size());
-            for (MetadataValue<T> value : values) {
-                field.serialize(out, value);
-            }
+        MetadataValue<T> value = metadata.getMetadataValue(field);
+        if (value != null) {
+            out.writeByte((byte) 1);  // legacy: we used to supported multiple values per field
+            field.serialize(out, value);
         } else {
             out.write((byte) 0);
         }

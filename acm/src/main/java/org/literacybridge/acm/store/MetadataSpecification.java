@@ -29,10 +29,8 @@ public interface MetadataSpecification {
 		Content: A string or number identifying the DTB. One instance of this element, that which is referenced from the packageunique-identifier attribute, must include an id.
 		Occurrence: Required
 		Added attributes:
-     * scheme -- (optional) The name of the system or authority that generated or assigned the identifier. For example, "DOI", "ISBN", or "DTB".
      */
-    public final static Attribute<String> DC_IDENTIFIER_SCHEME = new Attribute<String>();
-    public final static MetadataField<String> DC_IDENTIFIER = new MetadataStringField("DC_IDENTIFIER", DC_IDENTIFIER_SCHEME);
+    public final static MetadataField<String> DC_IDENTIFIER = new MetadataStringField("DC_IDENTIFIER");
 
     /** dc:Source
 		Content: A reference to a resource (e.g., a print original, ebook, etc.) from which the DTB is derived. Best practice is to use the ISBN when available.
@@ -89,7 +87,8 @@ public interface MetadataSpecification {
     public final static MetadataField<String> LB_DURATION = new MetadataStringField("LB_DURATION");
     public final static MetadataField<String> LB_MESSAGE_FORMAT = new MetadataStringField("LB_MESSAGE_FORMAT");
     public final static MetadataField<String> LB_TARGET_AUDIENCE = new MetadataStringField("LB_TARGET_AUDIENCE");
-    public final static MetadataField<String> LB_DATE_RECORDED = new MetadataStringField("LB_DATE_RECORDED");	public final static MetadataField<String> LB_KEYWORDS = new MetadataStringField("LB_KEYWORDS");
+    public final static MetadataField<String> LB_DATE_RECORDED = new MetadataStringField("LB_DATE_RECORDED");
+    public final static MetadataField<String> LB_KEYWORDS = new MetadataStringField("LB_KEYWORDS");
     public final static MetadataField<String> LB_TIMING = new MetadataStringField("LB_TIMING");
     public final static MetadataField<String> LB_PRIMARY_SPEAKER = new MetadataStringField("LB_PRIMARY_SPEAKER");
     public final static MetadataField<String> LB_GOAL = new MetadataStringField("LB_GOAL");
