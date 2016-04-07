@@ -43,7 +43,7 @@ public class A18Importer extends Importer {
                 try {
                     in.skipBytes(bytesToSkip);
                     LBMetadataSerializer serializer = new LBMetadataSerializer();
-                    serializer.deserialize(loadedMetadata, categories, in);
+                    serializer.deserialize(loadedMetadata, store.getTaxonomy(), categories, in);
                 } catch (IOException e) {
                     // do nothing
                 }
@@ -75,7 +75,7 @@ public class A18Importer extends Importer {
                     try {
                         in.skipBytes(bytesToSkip);
                         LBMetadataSerializer serializer = new LBMetadataSerializer();
-                        serializer.deserialize(metadata, categories, in);
+                        serializer.deserialize(metadata, store.getTaxonomy(), categories, in);
                     } catch (IOException e) {
                         // do nothing
                     }

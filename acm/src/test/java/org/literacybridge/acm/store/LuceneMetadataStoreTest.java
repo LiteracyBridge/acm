@@ -415,8 +415,8 @@ public class LuceneMetadataStoreTest {
     }
 
     private LuceneMetadataStore newStore() throws Exception {
-        AudioItemIndex index = AudioItemIndex.newIndex(tmp.newFolder());
         Taxonomy taxonomy = Taxonomy.createTaxonomy(null);
+        AudioItemIndex index = AudioItemIndex.newIndex(tmp.newFolder(), taxonomy);
         return new LuceneMetadataStore(taxonomy, index);
     }
 

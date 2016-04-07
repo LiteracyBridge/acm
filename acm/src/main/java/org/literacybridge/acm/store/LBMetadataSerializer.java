@@ -35,13 +35,12 @@ import org.literacybridge.acm.utils.IOUtils;
  * All known fields are decoded individually.
  *
  */
-public class LBMetadataSerializer extends MetadataSerializer {
+public class LBMetadataSerializer {
     public static final int METADATA_VERSION_1 = 1;
 
     public static final int METADATA_VERSION_CURRENT = METADATA_VERSION_1;
 
-    @Override
-    public void deserialize(Metadata metadata, Collection<Category> categories, DataInput in) throws IOException {
+    public void deserialize(Metadata metadata, Taxonomy taxonomy, Collection<Category> categories, DataInput in) throws IOException {
         // first read the metadata version and number of field infos in the header
         int serializedVersion = IOUtils.readLittleEndian32(in);
         int numberOfFields = IOUtils.readLittleEndian32(in);
@@ -51,7 +50,7 @@ public class LBMetadataSerializer extends MetadataSerializer {
             int fieldLength = IOUtils.readLittleEndian32(in);
 
             if (fieldID == LBMetadataIDs.CATEGORY_FIELD_ID) {
-                deserializeCategories(categories, in);
+                deserializeCategories(taxonomy, categories, in);
             } else {
                 MetadataField<?> field = LBMetadataIDs.FieldToIDMap.inverse().get(fieldID);
                 if (field == null) {
@@ -72,7 +71,6 @@ public class LBMetadataSerializer extends MetadataSerializer {
         }
     }
 
-    @Override
     public void serialize(Collection<Category> categories, Metadata metadata, DataOutput headerOut) throws IOException {
         IOUtils.writeLittleEndian32(headerOut, METADATA_VERSION_CURRENT);
         IOUtils.writeLittleEndian32(headerOut, 1 + metadata.getNumberOfFields());
@@ -131,11 +129,11 @@ public class LBMetadataSerializer extends MetadataSerializer {
         }
     }
 
-    private final void deserializeCategories(Collection<Category> categories, DataInput in) throws IOException {
+    private final void deserializeCategories(Taxonomy taxonomy, Collection<Category> categories, DataInput in) throws IOException {
         int numValues = (in.readByte() & 0xff);
         for (int i = 0; i < numValues; i++) {
             String catID = IOUtils.readUTF8(in);
-            Category mCat = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getCategory(catID);
+            Category mCat = taxonomy.getCategory(catID);
             if (mCat != null) {
                 categories.add(mCat);
             }

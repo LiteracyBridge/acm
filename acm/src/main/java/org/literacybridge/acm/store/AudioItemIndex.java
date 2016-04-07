@@ -85,11 +85,13 @@ public class AudioItemIndex {
 
     private final FacetsConfig facetsConfig;
     private final QueryAnalyzer queryAnalyzer;
+    private final Taxonomy taxonomy;
 
     private int currentMaxPlaylistUuid;
 
-    private AudioItemIndex(Directory dir, Iterable<AudioItem> audioItems) throws IOException {
+    private AudioItemIndex(Directory dir, Taxonomy taxonomy, Iterable<AudioItem> audioItems) throws IOException {
         this.dir = dir;
+        this.taxonomy = taxonomy;
 
         facetsConfig = new FacetsConfig();
         facetsConfig.setMultiValued(AudioItemIndex.CATEGORIES_FACET_FIELD, true);
@@ -161,7 +163,7 @@ public class AudioItemIndex {
         return DirectoryReader.indexExists(FSDirectory.open(path.toPath()));
     }
 
-    public static AudioItemIndex migrateFromDB(File path, Iterable<AudioItem> audioItems) throws IOException {
+    public static AudioItemIndex migrateFromDB(File path, Taxonomy taxonomy, Iterable<AudioItem> audioItems) throws IOException {
         if (indexExists(path)) {
             throw new IOException("Index already exists in " + path);
         }
@@ -170,10 +172,10 @@ public class AudioItemIndex {
             path.mkdirs();
         }
 
-        return new AudioItemIndex(FSDirectory.open(path.toPath()), audioItems);
+        return new AudioItemIndex(FSDirectory.open(path.toPath()), taxonomy, audioItems);
     }
 
-    public static AudioItemIndex newIndex(File path) throws IOException {
+    public static AudioItemIndex newIndex(File path, Taxonomy taxonomy) throws IOException {
         if (!path.exists()) {
             boolean success = path.mkdirs();
             if (!success) {
@@ -191,15 +193,15 @@ public class AudioItemIndex {
         // create empty index
         new IndexWriter(dir, config).close();
 
-        return new AudioItemIndex(dir, null);
+        return new AudioItemIndex(dir, taxonomy, null);
     }
 
-    public static AudioItemIndex load(File path) throws IOException {
+    public static AudioItemIndex load(File path, Taxonomy taxonomy) throws IOException {
         if (!indexExists(path)) {
             throw new IOException("Index does not exist in " + path);
         }
 
-        return new AudioItemIndex(FSDirectory.open(path.toPath()), null);
+        return new AudioItemIndex(FSDirectory.open(path.toPath()), taxonomy, null);
     }
 
     public void updateAudioItem(AudioItem audioItem, IndexWriter writer) throws IOException {
@@ -470,7 +472,7 @@ public class AudioItemIndex {
         LBMetadataSerializer deserializer = new LBMetadataSerializer();
         Set<Category> categories = new HashSet<Category>();
         BytesRef ref = doc.getBinaryValue(RAW_METADATA_FIELD);
-        deserializer.deserialize(audioItem.getMetadata(), categories,
+        deserializer.deserialize(audioItem.getMetadata(), taxonomy, categories,
                 new DataInputStream(new ByteArrayInputStream(ref.bytes, ref.offset, ref.length)));
 
         for (Category category : categories) {

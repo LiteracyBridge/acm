@@ -156,7 +156,7 @@ public class DBConfiguration extends Properties {
             final Taxonomy taxonomy = Taxonomy.createTaxonomy(sharedACMDirectory);
             if (!AudioItemIndex.indexExists(getLuceneIndexDirectory())) {
                 if (!getDatabaseDirectory().exists()) {
-                    this.store = new LuceneMetadataStore(taxonomy, AudioItemIndex.newIndex(getLuceneIndexDirectory()));
+                    this.store = new LuceneMetadataStore(taxonomy, AudioItemIndex.newIndex(getLuceneIndexDirectory(), taxonomy));
                 } else {
                     // migrate the old DB into a new Lucene index
                     this.dbConn = Persistence.initialize(this);
@@ -165,7 +165,7 @@ public class DBConfiguration extends Properties {
                     long start = System.currentTimeMillis();
                     Persistence.maybeRunMigration();
                     this.store =
-                            new LuceneMetadataStore(taxonomy, AudioItemIndex.migrateFromDB(getLuceneIndexDirectory(), this.store.getAudioItems()));
+                            new LuceneMetadataStore(taxonomy, AudioItemIndex.migrateFromDB(getLuceneIndexDirectory(), taxonomy, this.store.getAudioItems()));
                     dbConn.close();
                     IOUtils.deleteRecursive(new File(getDatabaseDirectory(), Persistence.DBNAME));
                     IOUtils.deleteRecursive(new File(getDatabaseDirectory(), "derby.log"));
@@ -173,7 +173,7 @@ public class DBConfiguration extends Properties {
                     System.out.println("done. (" + (end - start) + " ms)");
                 }
             } else {
-                this.store = new LuceneMetadataStore(taxonomy, AudioItemIndex.load(getLuceneIndexDirectory()));
+                this.store = new LuceneMetadataStore(taxonomy, AudioItemIndex.load(getLuceneIndexDirectory(), taxonomy));
             }
 
             initialized = true;
