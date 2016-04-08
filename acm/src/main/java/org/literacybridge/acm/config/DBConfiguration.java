@@ -22,21 +22,15 @@ import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.persistence.EntityManager;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.db.DBMetadataStore;
-import org.literacybridge.acm.db.Persistence;
-import org.literacybridge.acm.db.Persistence.DatabaseConnection;
 import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.store.AudioItemIndex;
 import org.literacybridge.acm.store.LuceneMetadataStore;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.store.Taxonomy;
-import org.literacybridge.acm.utils.IOUtils;
 
 @SuppressWarnings("serial")
 public class DBConfiguration extends Properties {
@@ -54,7 +48,6 @@ public class DBConfiguration extends Properties {
     private MetadataStore store;
 
     private ControlAccess controlAccess;
-    private DatabaseConnection dbConn;
 
     public DBConfiguration(String acmName) {
         this.acmName = acmName;
@@ -154,34 +147,10 @@ public class DBConfiguration extends Properties {
             controlAccess.init();
 
             final Taxonomy taxonomy = Taxonomy.createTaxonomy(sharedACMDirectory);
-            if (!AudioItemIndex.indexExists(getLuceneIndexDirectory())) {
-                if (!getDatabaseDirectory().exists()) {
-                    this.store = new LuceneMetadataStore(taxonomy, AudioItemIndex.newIndex(getLuceneIndexDirectory(), taxonomy));
-                } else {
-                    // migrate the old DB into a new Lucene index
-                    this.dbConn = Persistence.initialize(this);
-                    this.store = new DBMetadataStore(taxonomy);
-                    System.out.print("Migrating database...");
-                    long start = System.currentTimeMillis();
-                    Persistence.maybeRunMigration();
-                    this.store =
-                            new LuceneMetadataStore(taxonomy, AudioItemIndex.migrateFromDB(getLuceneIndexDirectory(), taxonomy, this.store.getAudioItems()));
-                    dbConn.close();
-                    IOUtils.deleteRecursive(new File(getDatabaseDirectory(), Persistence.DBNAME));
-                    IOUtils.deleteRecursive(new File(getDatabaseDirectory(), "derby.log"));
-                    long end = System.currentTimeMillis();
-                    System.out.println("done. (" + (end - start) + " ms)");
-                }
-            } else {
-                this.store = new LuceneMetadataStore(taxonomy, AudioItemIndex.load(getLuceneIndexDirectory(), taxonomy));
-            }
+            this.store = new LuceneMetadataStore(taxonomy, getLuceneIndexDirectory());
 
             initialized = true;
         }
-    }
-
-    public EntityManager getEntityManager() {
-        return dbConn.getEntityManager();
     }
 
     public ControlAccess getControlAccess() {

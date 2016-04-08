@@ -416,8 +416,7 @@ public class LuceneMetadataStoreTest {
 
     private LuceneMetadataStore newStore() throws Exception {
         Taxonomy taxonomy = Taxonomy.createTaxonomy(null);
-        AudioItemIndex index = AudioItemIndex.newIndex(tmp.newFolder(), taxonomy);
-        return new LuceneMetadataStore(taxonomy, index);
+        return new LuceneMetadataStore(taxonomy, tmp.newFolder());
     }
 
     private static void assertNumSearchResults(MetadataStore store, String query, int expectedNumResults) throws Exception {

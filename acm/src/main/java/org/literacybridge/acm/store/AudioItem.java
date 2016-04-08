@@ -22,8 +22,7 @@ public class AudioItem extends Committable {
     private final Map<String, Category> categories;
     private final Map<String, Playlist> playlists;
 
-    // TODO: make package-private once DB migration code is removed
-    public AudioItem(String uuid) {
+    AudioItem(String uuid) {
         this.uuid = uuid;
         this.metadata = new Metadata();
         this.categories = Maps.newHashMap();
