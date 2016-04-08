@@ -4,9 +4,14 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 
+/**
+ * Convenience class for multi-valued {@link MetadataField}s.
+ * Use this {@link MetadataValue} implementation if a single {@link MetadataField} should contain a
+ * list of multiple {@link MetadataValue}s.
+ */
 public class MetadataMultiValue<T> extends MetadataValue<List<MetadataValue<T>>> {
     public MetadataMultiValue(T value) {
-        super(Lists.newArrayList());
+        super(Lists.<MetadataValue<T>>newArrayList());
     }
 
     public void addValue(MetadataValue<T> value) {
