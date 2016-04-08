@@ -27,7 +27,6 @@ import javax.swing.JOptionPane;
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.store.AudioItemIndex;
 import org.literacybridge.acm.store.LuceneMetadataStore;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
