@@ -1,5 +1,6 @@
 package org.literacybridge.acm.store;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
@@ -22,10 +23,17 @@ public class LuceneMetadataStore extends MetadataStore {
 
     private AtomicReference<Transaction> activeTransaction = new AtomicReference<Transaction>();
 
-    public LuceneMetadataStore(Taxonomy taxonomy, AudioItemIndex index) {
+    public LuceneMetadataStore(Taxonomy taxonomy, File indexDirectory) throws IOException {
         super(taxonomy);
+
+        // initialize Lucene index
+        if (!AudioItemIndex.indexExists(indexDirectory)) {
+            this.index = AudioItemIndex.newIndex(indexDirectory, taxonomy);
+        } else {
+            this.index = AudioItemIndex.load(indexDirectory, taxonomy);
+        }
+
         this.playlistCache = Maps.newHashMap();
-        this.index = index;
         this.audioItemCache = new AudioItemCache();
 
         // fill caches

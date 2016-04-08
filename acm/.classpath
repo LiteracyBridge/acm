@@ -33,14 +33,7 @@
 	<classpathentry kind="lib" path="lib/jakarta-regexp-jakarta-regexp.jar"/>
 	<classpathentry kind="lib" path="lib/javax.media-jmf.jar"/>
 	<classpathentry kind="lib" path="lib/junit-junit.jar"/>
-	<classpathentry kind="lib" path="lib/org.apache.derby-derby.jar"/>
-	<classpathentry kind="lib" path="lib/org.apache.derby-derbyclient.jar"/>
 	<classpathentry kind="lib" path="lib/org.cmc.music-myid3.jar"/>
-	<classpathentry kind="lib" path="lib/org.eclipse.persistence-javax.persistence.jar"/>
-	<classpathentry kind="lib" path="lib/org.eclipse.persistence-org.eclipse.persistence.antlr.jar"/>
-	<classpathentry kind="lib" path="lib/org.eclipse.persistence-org.eclipse.persistence.asm.jar"/>
-	<classpathentry kind="lib" path="lib/org.eclipse.persistence-org.eclipse.persistence.core.jar"/>
-	<classpathentry kind="lib" path="lib/org.eclipse.persistence-org.eclipse.persistence.jpa.jar"/>
 	<classpathentry kind="lib" path="lib/org.yaml-snakeyaml.jar"/>
 	<classpathentry kind="lib" path="lib/com.jhlabs-filters.jar"/>
 	<classpathentry kind="lib" path="lib/com.seaglasslookandfeel-seaglasslookandfeel.jar"/>

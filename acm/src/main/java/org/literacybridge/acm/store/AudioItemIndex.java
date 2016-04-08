@@ -89,7 +89,7 @@ public class AudioItemIndex {
 
     private int currentMaxPlaylistUuid;
 
-    private AudioItemIndex(Directory dir, Taxonomy taxonomy, Iterable<AudioItem> audioItems) throws IOException {
+    private AudioItemIndex(Directory dir, Taxonomy taxonomy) throws IOException {
         this.dir = dir;
         this.taxonomy = taxonomy;
 
@@ -98,39 +98,9 @@ public class AudioItemIndex {
         facetsConfig.setMultiValued(AudioItemIndex.LOCALES_FACET_FIELD, true);
         facetsConfig.setMultiValued(AudioItemIndex.PLAYLISTS_FACET_FIELD, true);
 
-        if (audioItems != null) {
-            migrateFromDB(audioItems);
-        }
-
         queryAnalyzer = new QueryAnalyzer();
         searcherManager = new SearcherManager(dir, new SearcherFactory());
         readPlaylistNames();
-    }
-
-    @Deprecated
-    private final void migrateFromDB(Iterable<AudioItem> audioItems) throws IOException {
-        Map<String, Playlist> playlists = Maps.newHashMap();
-        IndexWriter writer = newWriter(OpenMode.CREATE);
-        for (AudioItem item : audioItems) {
-            for (Playlist playlist : item.getPlaylists()) {
-                // important to use getName() here, because in the old DB we didn't use uuids for playlists;
-                // in the new Lucene index we do use uuids, which we generate here in the migration step
-                if (!playlists.containsKey(playlist.getName())) {
-                    playlist.setUuid(generateNewPlaylistUuid());
-                    playlists.put(playlist.getName(), playlist);
-                }
-                playlist.setUuid(playlists.get(playlist.getName()).getUuid());
-            }
-
-            Document doc = factory.createLuceneDocument(item);
-            writer.addDocument(facetsConfig.build(doc));
-        }
-
-        storePlaylistNames(playlists.values(), writer);
-
-        writer.forceMerge(1);
-        writer.commit();
-        writer.close();
     }
 
     private final String generateNewPlaylistUuid() {
@@ -163,18 +133,6 @@ public class AudioItemIndex {
         return DirectoryReader.indexExists(FSDirectory.open(path.toPath()));
     }
 
-    public static AudioItemIndex migrateFromDB(File path, Taxonomy taxonomy, Iterable<AudioItem> audioItems) throws IOException {
-        if (indexExists(path)) {
-            throw new IOException("Index already exists in " + path);
-        }
-
-        if (!path.exists()) {
-            path.mkdirs();
-        }
-
-        return new AudioItemIndex(FSDirectory.open(path.toPath()), taxonomy, audioItems);
-    }
-
     public static AudioItemIndex newIndex(File path, Taxonomy taxonomy) throws IOException {
         if (!path.exists()) {
             boolean success = path.mkdirs();
@@ -193,7 +151,7 @@ public class AudioItemIndex {
         // create empty index
         new IndexWriter(dir, config).close();
 
-        return new AudioItemIndex(dir, taxonomy, null);
+        return new AudioItemIndex(dir, taxonomy);
     }
 
     public static AudioItemIndex load(File path, Taxonomy taxonomy) throws IOException {
@@ -201,7 +159,7 @@ public class AudioItemIndex {
             throw new IOException("Index does not exist in " + path);
         }
 
-        return new AudioItemIndex(FSDirectory.open(path.toPath()), taxonomy, null);
+        return new AudioItemIndex(FSDirectory.open(path.toPath()), taxonomy);
     }
 
     public void updateAudioItem(AudioItem audioItem, IndexWriter writer) throws IOException {
