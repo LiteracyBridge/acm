@@ -28,9 +28,7 @@ public class DBExporter {
             CommandLineParams params = new CommandLineParams();
             params.sharedACM = dbName;
             params.disableUI = true;
-            params.readonly = true;
             params.sandbox = true;
-            params.disableIndex = true;
             Application.startUp(params);
             DBExporter.hasACMStarted = true;
         } else
