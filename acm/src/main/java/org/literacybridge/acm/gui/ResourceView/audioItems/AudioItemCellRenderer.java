@@ -32,9 +32,9 @@ public class AudioItemCellRenderer extends DefaultTableCellRenderer {
 
         JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
-        AudioItemNode status = (AudioItemNode) value;
+        AudioItemNode<?> status = (AudioItemNode<?>) value;
 
-        if (AudioItemTableModel.INFO_ICON == column && highlightedRow == row) {
+        if (AudioItemTableModel.infoIconColumn.getColumnIndex() == column && highlightedRow == row) {
             label.setIcon(settingsImageIcon);
         } else {
             label.setIcon(null);

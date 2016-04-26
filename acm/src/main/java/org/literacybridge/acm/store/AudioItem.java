@@ -129,11 +129,12 @@ public class AudioItem extends Committable {
     }
 
     @Override
-    public void doCommit(Transaction t) throws IOException {
+    public boolean doCommit(Transaction t) throws IOException {
         if (isDeleteRequested()) {
             t.getIndex().deleteAudioItem(uuid, t);
+            return false;
         } else {
-            t.getIndex().updateAudioItem(this, t.getWriter());
+            return t.getIndex().updateAudioItem(this, t.getWriter());
         }
     }
 

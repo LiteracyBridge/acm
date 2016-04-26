@@ -23,7 +23,7 @@ public class LuceneMetadataStoreTest {
 
     private final static Committable newFailingCommittable() {
         return new Committable() {
-            @Override public void doCommit(Transaction t) throws IOException {
+            @Override public boolean doCommit(Transaction t) throws IOException {
                 throw new RuntimeException("Trigger rollback");
             }
 
@@ -34,7 +34,8 @@ public class LuceneMetadataStoreTest {
 
     private final static Committable newFailingRollback() {
         return new Committable() {
-            @Override public void doCommit(Transaction t) throws IOException {
+            @Override public boolean doCommit(Transaction t) throws IOException {
+                return false;
             }
 
             @Override public void doRollback(Transaction t) throws IOException {
@@ -378,12 +379,13 @@ public class LuceneMetadataStoreTest {
         t1.add(new Committable() {
             @Override public void doRollback(Transaction t) throws IOException {}
 
-            @Override public void doCommit(Transaction t) throws IOException {
+            @Override public boolean doCommit(Transaction t) throws IOException {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                return false;
             }
         });
 

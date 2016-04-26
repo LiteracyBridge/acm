@@ -149,6 +149,7 @@ public class DBConfiguration extends Properties {
             final Taxonomy taxonomy = Taxonomy.createTaxonomy(sharedACMDirectory);
             this.store = new LuceneMetadataStore(taxonomy, getLuceneIndexDirectory());
 
+            parseLanguageLabels();
             initialized = true;
         }
     }
@@ -244,7 +245,12 @@ public class DBConfiguration extends Properties {
         return ret;
     }
 
-    public List<Locale> getAudioLanguages() {
+    /**
+     * Parses the language labels from the 'AUDIO_LANGUAGES' String property contained
+     * in the config.properties file. The appropriate line in the file has the following format:
+     *       AUDIO_LANGUAGES=en,dga("Dagaare"),tw("Twi"),sfw("Sehwi")
+     */
+    private void parseLanguageLabels() {
         if (audioLanguages == null) {
             audioLanguages = new ArrayList<Locale>();
             String languages = getProperty(Constants.AUDIO_LANGUAGES);
@@ -272,6 +278,9 @@ public class DBConfiguration extends Properties {
                 }
             }
         }
+    }
+
+    public List<Locale> getAudioLanguages() {
         return Collections.unmodifiableList(audioLanguages);
     }
 

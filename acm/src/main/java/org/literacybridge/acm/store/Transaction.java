@@ -59,7 +59,7 @@ public class Transaction {
                 } finally {
                     if (success2) {
                         for (Committable o : objects) {
-                            o.afterCommit();
+                            o.afterCommit(store);
                         }
                         active = false;
                     } else {

@@ -10,8 +10,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.literacybridge.acm.gui.AudioItemCache;
-
 import com.google.common.collect.Maps;
 
 public class LuceneMetadataStore extends MetadataStore {
@@ -19,13 +17,12 @@ public class LuceneMetadataStore extends MetadataStore {
 
     private final AudioItemIndex index;
     private final Map<String, Playlist> playlistCache;
-    private final AudioItemCache audioItemCache;
+    private final Map<String, AudioItem> audioItemCache;
 
     private AtomicReference<Transaction> activeTransaction = new AtomicReference<Transaction>();
 
     public LuceneMetadataStore(Taxonomy taxonomy, File indexDirectory) throws IOException {
         super(taxonomy);
-
         // initialize Lucene index
         if (!AudioItemIndex.indexExists(indexDirectory)) {
             this.index = AudioItemIndex.newIndex(indexDirectory, taxonomy);
@@ -33,14 +30,14 @@ public class LuceneMetadataStore extends MetadataStore {
             this.index = AudioItemIndex.load(indexDirectory, taxonomy);
         }
 
-        this.playlistCache = Maps.newHashMap();
-        this.audioItemCache = new AudioItemCache();
+        this.playlistCache = Maps.newLinkedHashMap();
+        this.audioItemCache = Maps.newLinkedHashMap();
 
         // fill caches
         try {
             Iterable<AudioItem> audioItems = index.getAudioItems();
             for (AudioItem audioItem : audioItems) {
-                audioItemCache.update(audioItem);
+                audioItemCache.put(audioItem.getUuid(), audioItem);
             }
 
             Iterable<Playlist> playlists = index.getPlaylists();
@@ -48,14 +45,40 @@ public class LuceneMetadataStore extends MetadataStore {
                 playlistCache.put(playlist.getUuid(), playlist);
                 for (String uid : playlist.getAudioItemList()) {
                     AudioItem audioItem = audioItemCache.get(uid);
-                    audioItem.addPlaylist(playlist);
-                    audioItemCache.update(audioItem);
+                    if (audioItem != null) {
+                        audioItem.addPlaylist(playlist);
+                        audioItemCache.put(audioItem.getUuid(), audioItem);
+                    }
                 }
             }
 
         } catch (IOException e) {
             throw new RuntimeException("Unable to initialize caches", e);
         }
+
+        addDataChangeListener(new DataChangeListener() {
+            @Override
+            public void dataChanged(Committable item,
+                    DataChangeEventType eventType) {
+                if (item instanceof Playlist) {
+                    Playlist playlist = (Playlist) item;
+                    if (eventType == DataChangeEventType.ITEM_DELETED) {
+                        playlistCache.remove(playlist.getUuid());
+                    } else {
+                        playlistCache.put(playlist.getUuid(), playlist);
+                    }
+                }
+                if (item instanceof AudioItem) {
+                    AudioItem audioItem = (AudioItem) item;
+                    if (eventType == DataChangeEventType.ITEM_DELETED) {
+                        audioItemCache.remove(audioItem.getUuid());
+                    } else {
+                        audioItemCache.put(audioItem.getUuid(), audioItem);
+                    }
+                }
+            }
+
+        });
     }
 
     @Override
@@ -65,7 +88,7 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public Iterable<AudioItem> getAudioItems() {
-        return audioItemCache.getAudioItems();
+        return audioItemCache.values();
     }
 
     @Override
@@ -91,21 +114,7 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public Playlist newPlaylist(String name) {
-        final Playlist playlist = index.newPlaylist(name);
-        playlist.setCommitListener(new Committable.CommitListener() {
-            @Override public void afterCommit() {
-                if (playlist.isDeleteRequested()) {
-                    playlistCache.remove(playlist.getUuid());
-                } else {
-                    playlistCache.put(playlist.getUuid(), playlist);
-                }
-            }
-
-            @Override public void afterRollback() {
-            }
-        });
-
-        return playlist;
+        return index.newPlaylist(name);
     }
 
     @Override
@@ -157,20 +166,6 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public AudioItem newAudioItem(String uid) {
-        final AudioItem audioItem = new AudioItem(uid);
-        audioItem.setCommitListener(new Committable.CommitListener() {
-            @Override public void afterCommit() {
-                if (audioItem.isDeleteRequested()) {
-                    audioItemCache.invalidate(audioItem.getUuid());
-                } else {
-                    audioItemCache.update(audioItem);
-                }
-            }
-
-            @Override public void afterRollback() {
-            }
-        });
-
-        return audioItem;
+        return new AudioItem(uid);
     }
 }

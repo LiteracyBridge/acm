@@ -2,8 +2,9 @@ package org.literacybridge.acm.store;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.literacybridge.acm.store.MetadataStore.DataChangeListener.DataChangeEventType;
 
 public abstract class Committable {
     private static enum CommitState {
@@ -23,15 +24,12 @@ public abstract class Committable {
     private CommitState commitState;
     private DeleteState deleteState;
 
-    private CommitListener listener;
+    // remembers whether this is a new object that was added to the index, or whether an existing object was updated
+    private boolean newObjectCommitted;
 
     public Committable() {
         this.commitState = CommitState.VALID;
         this.deleteState = DeleteState.NOT_DELETED;
-    }
-
-    public void setCommitListener(CommitListener listener) {
-        this.listener = listener;
     }
 
     public final void ensureIsCommittable() {
@@ -72,10 +70,10 @@ public abstract class Committable {
 
         boolean success = false;
         try {
-            doCommit(t);
+            newObjectCommitted = doCommit(t);
             success = true;
         } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while committing Committable: " + this.toString(), e);
+            throw new RuntimeException("IOException while committing Committable: " + this.toString(), e);
         } finally {
             if (!success) {
                 commitState = CommitState.COMMIT_FAILED;
@@ -83,7 +81,11 @@ public abstract class Committable {
         }
     }
 
-    public abstract void doCommit(Transaction t) throws IOException;
+    /**
+     * Returns true, if this commit added a new object to the index,
+     * and false, if an existing object was updated.
+     */
+    public abstract boolean doCommit(Transaction t) throws IOException;
 
     /**
      * Resets the internal state of this object to the version stored in the index.
@@ -94,7 +96,7 @@ public abstract class Committable {
             doRollback(t);
             success = true;
         } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while rolling back Committable: " + this.toString(), e);
+            throw new RuntimeException("IOException while rolling back Committable: " + this.toString(), e);
         } finally {
             if (!success) {
                 commitState = CommitState.ROLLBACK_FAILED;
@@ -102,28 +104,25 @@ public abstract class Committable {
         }
     }
 
-    final void afterCommit() {
-        if (listener != null) {
-            listener.afterCommit();
-        }
+    final void afterCommit(MetadataStore store) {
+        DataChangeEventType dataChangeEventType = DataChangeEventType.ITEM_MODIFIED;
+
         if (deleteState == DeleteState.DELETE_REQUESTED) {
             deleteState = DeleteState.DELETED;
+            dataChangeEventType = DataChangeEventType.ITEM_DELETED;
+        } else if (newObjectCommitted == true) {
+            newObjectCommitted = false;
+            dataChangeEventType = DataChangeEventType.ITEM_ADDED;
         }
+
+        store.fireChangeEvent(this, dataChangeEventType);
     }
 
     final void afterRollback() {
-        if (listener != null) {
-            listener.afterRollback();
-        }
         if (deleteState == DeleteState.DELETE_REQUESTED) {
             deleteState = DeleteState.NOT_DELETED;
         }
     }
 
     public abstract void doRollback(Transaction t) throws IOException;
-
-    public abstract static class CommitListener {
-        public abstract void afterCommit();
-        public abstract void afterRollback();
-    }
 }

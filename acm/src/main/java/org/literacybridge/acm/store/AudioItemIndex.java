@@ -162,15 +162,17 @@ public class AudioItemIndex {
         return new AudioItemIndex(FSDirectory.open(path.toPath()), taxonomy);
     }
 
-    public void updateAudioItem(AudioItem audioItem, IndexWriter writer) throws IOException {
+    public boolean updateAudioItem(AudioItem audioItem, IndexWriter writer) throws IOException {
         Document oldDoc = getDocument(audioItem.getUuid());
 
         if (oldDoc == null) {
             addAudioItem(audioItem, writer);
+            return true;
         } else {
             Document doc = factory.createLuceneDocument(audioItem);
             writer.updateDocument(new Term(UID_FIELD, audioItem.getUuid()),
                     facetsConfig.build(doc));
+            return false;
         }
     }
 
@@ -247,15 +249,16 @@ public class AudioItemIndex {
         return playlist;
     }
 
-    public void updatePlaylistName(Playlist playlist, Transaction t) throws IOException {
+    public boolean updatePlaylistName(Playlist playlist, Transaction t) throws IOException {
         Map<String, Playlist.Builder> playlists = readPlaylistNames();
-        playlists.remove(playlist.getUuid());
+        Playlist.Builder removed = playlists.remove(playlist.getUuid());
         List<Playlist> updatedPlaylists = Lists.newLinkedList();
         for (Playlist.Builder p : playlists.values()) {
             updatedPlaylists.add(p.build());
         }
         updatedPlaylists.add(playlist);
         storePlaylistNames(updatedPlaylists, t.getWriter());
+        return removed == null;
     }
 
     public Iterable<Playlist> getPlaylists() throws IOException {
@@ -531,7 +534,8 @@ public class AudioItemIndex {
                 // With empty indexes it can happen that Lucene throws an exception here due to missing facet data
             }
 
-            SearchResult result = new SearchResult(categoryFacets, localeFacets, playlistFacets, Lists.newArrayList(results));
+            SearchResult result = new SearchResult(searcher.getIndexReader().numDocs(),
+                    categoryFacets, localeFacets, playlistFacets, Lists.newArrayList(results));
 
             return result;
         } finally {

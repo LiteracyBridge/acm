@@ -2,20 +2,24 @@ package org.literacybridge.acm.gui.util;
 
 import org.literacybridge.acm.store.AudioItem;
 
-public class AudioItemNode {
+public class AudioItemNode<T> {
     private final AudioItem audioItem;
-    private final String label;
+    private final T value;
     private boolean enabled;
 
-    public AudioItemNode(AudioItem audioItem, String label) {
-        this.label = label;
+    public AudioItemNode(AudioItem audioItem, T value) {
+        this.value = value;
         this.audioItem = audioItem;
         enabled = false;
     }
 
+    public T getValue() {
+        return value;
+    }
+
     @Override
     public String toString() {
-        return label;
+        return value != null ? value.toString() : "";
     }
 
     public AudioItem getAudioItem() {
