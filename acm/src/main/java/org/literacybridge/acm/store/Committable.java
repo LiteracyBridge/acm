@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.literacybridge.acm.store.MetadataStore.DataChangeListener.DataChangeEventType;
+
 public abstract class Committable {
     private static enum CommitState {
         VALID,                     // object is in a healthy state and in sync with the store
@@ -22,12 +24,14 @@ public abstract class Committable {
 
     private CommitState commitState;
     private DeleteState deleteState;
+    private boolean newItem;
 
     private CommitListener listener;
 
     public Committable() {
         this.commitState = CommitState.VALID;
         this.deleteState = DeleteState.NOT_DELETED;
+        this.newItem = true;
     }
 
     public void setCommitListener(CommitListener listener) {
@@ -102,13 +106,21 @@ public abstract class Committable {
         }
     }
 
-    final void afterCommit() {
+    final void afterCommit(MetadataStore store) {
+        DataChangeEventType dataChangeEventType = DataChangeEventType.ITEM_MODIFIED;
+
         if (listener != null) {
             listener.afterCommit();
         }
         if (deleteState == DeleteState.DELETE_REQUESTED) {
             deleteState = DeleteState.DELETED;
+            dataChangeEventType = DataChangeEventType.ITEM_DELETED;
+        } else if (newItem == true) {
+            newItem = false;
+            dataChangeEventType = DataChangeEventType.ITEM_ADDED;
         }
+
+        store.fireChangeEvent(this, dataChangeEventType);
     }
 
     final void afterRollback() {

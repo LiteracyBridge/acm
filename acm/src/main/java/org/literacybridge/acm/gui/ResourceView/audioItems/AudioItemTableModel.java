@@ -3,9 +3,10 @@ package org.literacybridge.acm.gui.ResourceView.audioItems;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 
+import javax.swing.event.RowSorterListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableRowSorter;
 
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
@@ -16,13 +17,15 @@ import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Committable;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.MetadataStore.DataChangeListener;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.SearchResult;
 
-public class AudioItemTableModel extends AbstractTableModel {
+public class AudioItemTableModel extends AbstractTableModel implements DataChangeListener {
 
     private static final long serialVersionUID = -2998511081572936717L;
 
@@ -50,6 +53,7 @@ public class AudioItemTableModel extends AbstractTableModel {
     public AudioItemTableModel(SearchResult result) {
         this.result = result;
         this.store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+        this.store.addDataChangeListener(this);
         if (result != null) {
             result.getAudioItems();
         }
@@ -177,8 +181,10 @@ public class AudioItemTableModel extends AbstractTableModel {
         return new AudioItemNode(audioItem, cellText);
     }
 
-
-
-
-
+    @Override
+    public void fireChangeEvent(Committable item, DataChangeEventType eventType) {
+        if (item instanceof AudioItem) {
+            AudioItem audioItem = (AudioItem) item;
+        }
+    }
 }

@@ -4,8 +4,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+import org.literacybridge.acm.store.MetadataStore.DataChangeListener.DataChangeEventType;
+
+import com.google.common.collect.Lists;
+
 public abstract class MetadataStore {
     private final Taxonomy taxonomy;
+
+    private final List<DataChangeListener> dataChangeListeners;
 
     public abstract Transaction newTransaction();
 
@@ -21,6 +27,7 @@ public abstract class MetadataStore {
 
     public MetadataStore(Taxonomy taxonomy) {
         this.taxonomy = taxonomy;
+        dataChangeListeners = Lists.newLinkedList();
     }
 
     public final Taxonomy getTaxonomy() {
@@ -29,6 +36,16 @@ public abstract class MetadataStore {
 
     public final Category getCategory(String uid) {
         return taxonomy.getCategory(uid);
+    }
+
+    public final void addDataChangeListener(DataChangeListener listener) {
+        this.dataChangeListeners.add(listener);
+    }
+
+    protected final void fireChangeEvent(Committable item, DataChangeEventType eventType) {
+        for (DataChangeListener listener : dataChangeListeners) {
+            listener.fireChangeEvent(item, eventType);
+        }
     }
 
     public abstract SearchResult search(String searchFilter, List<Category> categories, List<Locale> locales);
@@ -42,5 +59,15 @@ public abstract class MetadataStore {
         Transaction t = newTransaction();
         t.addAll(objects);
         t.commit();
+    }
+
+    public interface DataChangeListener {
+        public static enum DataChangeEventType {
+            ITEM_ADDED,
+            ITEM_MODIFIED,
+            ITEM_DELETED
+        }
+
+        public void fireChangeEvent(Committable item, DataChangeEventType eventType);
     }
 }
