@@ -213,9 +213,7 @@ public class TBBuilder {
     public TBBuilder (String sharedACM, boolean isCreate) throws Exception {
         CommandLineParams params = new CommandLineParams();
         params.disableUI = true;
-        params.readonly = true;
         params.sandbox = true;
-        params.disableIndex = true;
         params.sharedACM = sharedACM;
         if (isCreate) {
             // Creation needs the database, and the application.
