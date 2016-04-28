@@ -2,6 +2,9 @@ package org.literacybridge.acm.store;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import com.google.common.collect.Sets;
 
 /**
  * This object contains the results of a search request to the {@link MetadataStore}.
@@ -19,7 +22,7 @@ import java.util.Map;
  *    (en -> 2, de -> 1)
  */
 public class SearchResult {
-    private final List<String> audioItems;
+    private final Set<String> audioItems;
 
     private final Map<String, Integer> categoryFacetCounts;
     private final Map<String, Integer> languageFacetCounts;
@@ -32,7 +35,7 @@ public class SearchResult {
         this.categoryFacetCounts = facetCounts;
         this.languageFacetCounts = languageFacetCounts;
         this.playlistFacetCounts = playlistFacetCounts;
-        this.audioItems = audioItems;
+        this.audioItems = Sets.newLinkedHashSet(audioItems);
     }
 
     public int getFacetCount(Category category) {
@@ -59,7 +62,7 @@ public class SearchResult {
         }
     }
 
-    public List<String> getAudioItems() {
+    public Set<String> getAudioItems() {
         return audioItems;
     }
 

@@ -20,6 +20,7 @@ import javax.swing.DropMode;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
 import javax.swing.SortOrder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -27,6 +28,7 @@ import javax.swing.table.TableColumn;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
+import org.jdesktop.swingx.sort.TableSortController;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.messages.AudioItemTableSortOrderMessage;
@@ -53,14 +55,15 @@ public class AudioItemView extends Container implements Observer {
     public JXTable audioItemTable = null;
 
     private AudioItemViewMouseListener mouseListener;
+    private final AudioItemTableModel tableModel;
 
     private TableColumn orderingColumn;
     protected boolean firstDataSet = false;
 
     public AudioItemView() {
         AudioItemTableModel.initializeTableColumns(getColumnTitles(LanguageUtil.getUILanguage()));
-
         setLayout(new BorderLayout());
+        tableModel = new AudioItemTableModel();
         createTable();
         addHandler();
         addToMessageService();
@@ -76,6 +79,7 @@ public class AudioItemView extends Container implements Observer {
         audioItemTable.setDragEnabled(true);
         audioItemTable.setDropMode(DropMode.ON);
         audioItemTable.setTransferHandler(new AudioItemTransferHandler());
+        audioItemTable.setModel(tableModel);
 
         // use fixed color; there seems to be a bug in some plaf implementations that cause strange rendering
         if (ACMConfiguration.getInstance().getCurrentDB().getControlAccess().isSandbox()) {
@@ -86,22 +90,15 @@ public class AudioItemView extends Container implements Observer {
                     Color.white, new Color(237, 243, 254)));
         }
 
+        audioItemTable.setSortOrder(AudioItemTableModel.DATE_FILE_MODIFIED, SortOrder.ASCENDING);
+
         JScrollPane scrollPane = new JScrollPane(audioItemTable);
         scrollPane.setPreferredSize(new Dimension(800, 500));
 
         add(BorderLayout.CENTER, scrollPane);
     }
 
-    private void updateTable(AudioItemTableModel model) {
-        TableColumn column = audioItemTable.getSortedColumn();
-        if (column != null) {
-            SortOrder order = audioItemTable.getSortOrder(column.getIdentifier());
-            audioItemTable.setModel(model);
-            audioItemTable.setSortOrder(column.getIdentifier(), order);
-        } else {
-            audioItemTable.setModel(model);
-        }
-
+    private void updateTable() {
         if (!firstDataSet) {
             initColumnSize();
             orderingColumn = audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER);
@@ -111,6 +108,25 @@ public class AudioItemView extends Container implements Observer {
             audioItemTable.removeColumn(orderingColumn);
         } else if (Application.getFilterState().getSelectedPlaylist() != null && audioItemTable.getColumnCount() < audioItemTable.getModel().getColumnCount()) {
             audioItemTable.addColumn(orderingColumn);
+            TableSortController<AudioItemTableModel> tableRowSorter = (TableSortController<AudioItemTableModel>) audioItemTable.getRowSorter();
+            tableRowSorter.setComparator(AudioItemTableModel.PLAYLIST_ORDER, new Comparator<AudioItemNode<Integer>>() {
+                @Override
+                public int compare(AudioItemNode<Integer> o1,
+                        AudioItemNode<Integer> o2) {
+                    return Integer.compare(o1.getValue(), o2.getValue());
+                }
+            });
+        }
+
+        if (currResult != null) {
+            audioItemTable.setRowFilter(new RowFilter<Object, Object>() {
+                @Override
+                public boolean include(
+                        javax.swing.RowFilter.Entry<? extends Object, ? extends Object> entry) {
+                    return currResult.getAudioItems().contains(tableModel.getAudioItemUuid((Integer) entry.getIdentifier()));
+                }
+
+            });
         }
     }
 
@@ -121,7 +137,7 @@ public class AudioItemView extends Container implements Observer {
     public void update(Observable o, Object arg) {
         if (arg instanceof SearchResult) {
             currResult = (SearchResult) arg;
-            updateTable(new AudioItemTableModel(currResult));
+            updateTable();
         }
 
         if (arg instanceof UILanguageChanged) {
@@ -350,7 +366,7 @@ public class AudioItemView extends Container implements Observer {
 
     // Special handlers
     public void setData(SearchResult result) {
-        updateTable(new AudioItemTableModel(result));
+        updateTable();
         mouseListener.setCurrentResult(result);
     }
 

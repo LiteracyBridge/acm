@@ -31,7 +31,6 @@ public abstract class Committable {
     public Committable() {
         this.commitState = CommitState.VALID;
         this.deleteState = DeleteState.NOT_DELETED;
-        this.newItem = true;
     }
 
     public void setCommitListener(CommitListener listener) {
@@ -60,6 +59,10 @@ public abstract class Committable {
 
     final void setRollbackFailed() {
         this.commitState = CommitState.ROLLBACK_FAILED;
+    }
+
+    final void setIsNewItem() {
+        this.newItem = true;
     }
 
     /**

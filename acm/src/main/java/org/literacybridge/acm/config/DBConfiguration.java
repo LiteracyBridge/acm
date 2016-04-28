@@ -176,6 +176,7 @@ public class DBConfiguration extends Properties {
                 this.store = new LuceneMetadataStore(taxonomy, AudioItemIndex.load(getLuceneIndexDirectory(), taxonomy));
             }
 
+            loadLanguageLabels();
             initialized = true;
         }
     }
@@ -275,7 +276,7 @@ public class DBConfiguration extends Properties {
         return ret;
     }
 
-    public List<Locale> getAudioLanguages() {
+    private void loadLanguageLabels() {
         if (audioLanguages == null) {
             audioLanguages = new ArrayList<Locale>();
             String languages = getProperty(Constants.AUDIO_LANGUAGES);
@@ -303,6 +304,9 @@ public class DBConfiguration extends Properties {
                 }
             }
         }
+    }
+
+    public List<Locale> getAudioLanguages() {
         return Collections.unmodifiableList(audioLanguages);
     }
 

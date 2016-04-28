@@ -7,7 +7,6 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -36,150 +35,150 @@ import org.literacybridge.acm.store.AudioItem;
 
 public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 
-	private static final long serialVersionUID = -3854016276035587383L;
-	private AudioItemPropertiesTable propertiesTable = null;
+    private static final long serialVersionUID = -3854016276035587383L;
+    private AudioItemPropertiesTable propertiesTable = null;
 
-	private JButton backBtn;
-	private JButton nextBtn;
-	private JButton btnClose;
+    private JButton backBtn;
+    private JButton nextBtn;
+    private JButton btnClose;
 
-	public AudioItemPropertiesDialog(JFrame parent, AudioItemView view,
-			List<String> audioItemList, AudioItem showItem) {
-		super(parent, LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES",
-				LanguageUtil.getUILanguage()), true);
-		addToMessageService();
-		createControlsForAvailableProperties();
-		setMinimumSize(new Dimension(500, 500));
-		setSize(500, 500);
-		setUndecorated(true);
-		pack();
-		setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{backBtn, nextBtn, btnClose}));
+    public AudioItemPropertiesDialog(JFrame parent, AudioItemView view,
+            Iterable<String> audioItemList, AudioItem showItem) {
+        super(parent, LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES",
+                LanguageUtil.getUILanguage()), true);
+        addToMessageService();
+        createControlsForAvailableProperties();
+        setMinimumSize(new Dimension(500, 500));
+        setSize(500, 500);
+        setUndecorated(true);
+        pack();
+        setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{backBtn, nextBtn, btnClose}));
 
-		// show current item first
-		RequestAndSelectAudioItemMessage msg = new RequestAndSelectAudioItemMessage(RequestAudioItemMessage.RequestType.Current);
-		Application.getMessageService().pumpMessage(msg);
+        // show current item first
+        RequestAndSelectAudioItemMessage msg = new RequestAndSelectAudioItemMessage(RequestAudioItemMessage.RequestType.Current);
+        Application.getMessageService().pumpMessage(msg);
 
-		enableControls();
-	}
+        enableControls();
+    }
 
-	protected void addToMessageService() {
-		Application.getMessageService().addObserver(this);
-	}
+    protected void addToMessageService() {
+        Application.getMessageService().addObserver(this);
+    }
 
-	private void showAudioItem(AudioItem item) {
-		if (item == null)
-			return; // JTBD
-		showMetadata(item);
-	}
+    private void showAudioItem(AudioItem item) {
+        if (item == null)
+            return; // JTBD
+        showMetadata(item);
+    }
 
-	private void getNextItem() {
+    private void getNextItem() {
 
-		RequestAndSelectAudioItemMessage msg = new RequestAndSelectAudioItemMessage(RequestAudioItemMessage.RequestType.Next);
-		Application.getMessageService().pumpMessage(msg);
-	}
+        RequestAndSelectAudioItemMessage msg = new RequestAndSelectAudioItemMessage(RequestAudioItemMessage.RequestType.Next);
+        Application.getMessageService().pumpMessage(msg);
+    }
 
-	private void getPrevItem() {
-		RequestAndSelectAudioItemMessage msg = new RequestAndSelectAudioItemMessage(RequestAudioItemMessage.RequestType.Previews);
-		Application.getMessageService().pumpMessage(msg);
-	}
+    private void getPrevItem() {
+        RequestAndSelectAudioItemMessage msg = new RequestAndSelectAudioItemMessage(RequestAudioItemMessage.RequestType.Previews);
+        Application.getMessageService().pumpMessage(msg);
+    }
 
-	private void enableControls() {
-		// always true, if no audio items available ... no action
-		nextBtn.setEnabled(true);
-		backBtn.setEnabled(true);
-	}
+    private void enableControls() {
+        // always true, if no audio items available ... no action
+        nextBtn.setEnabled(true);
+        backBtn.setEnabled(true);
+    }
 
-	private void createControlsForAvailableProperties() {
-		// add navigation buttons
-		JPanel p = new JPanel();
+    private void createControlsForAvailableProperties() {
+        // add navigation buttons
+        JPanel p = new JPanel();
 
-		backBtn = new JButton(LabelProvider.getLabel("GOTO_PREV_AUDIO_ITEM", LanguageUtil.getUILanguage()));
-		backBtn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				getPrevItem();
-				enableControls();
-			}
-		});
-		p.add(backBtn);
+        backBtn = new JButton(LabelProvider.getLabel("GOTO_PREV_AUDIO_ITEM", LanguageUtil.getUILanguage()));
+        backBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                getPrevItem();
+                enableControls();
+            }
+        });
+        p.add(backBtn);
 
-		nextBtn = new JButton(LabelProvider.getLabel("GOTO_NEXT_AUDIO_ITEM", LanguageUtil.getUILanguage()));
-		nextBtn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				getNextItem();
-				enableControls();
-			}
-		});
-		p.add(nextBtn);
+        nextBtn = new JButton(LabelProvider.getLabel("GOTO_NEXT_AUDIO_ITEM", LanguageUtil.getUILanguage()));
+        nextBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                getNextItem();
+                enableControls();
+            }
+        });
+        p.add(nextBtn);
 
-		getContentPane().add(p, BorderLayout.NORTH);
+        getContentPane().add(p, BorderLayout.NORTH);
 
-		p.setBorder(BorderFactory.createEmptyBorder());
+        p.setBorder(BorderFactory.createEmptyBorder());
 
-		// Show properties table
-		JScrollPane theScrollPane = new JScrollPane();
-		propertiesTable = new AudioItemPropertiesTable(this);
-		propertiesTable.setShowGrid(false, false);
-		// use fixed color; there seems to be a bug in some plaf
-		// implementations that cause strange rendering
-		propertiesTable.addHighlighter(HighlighterFactory
-				.createAlternateStriping(Color.white, new Color(237, 243,
-						254)));
+        // Show properties table
+        JScrollPane theScrollPane = new JScrollPane();
+        propertiesTable = new AudioItemPropertiesTable(this);
+        propertiesTable.setShowGrid(false, false);
+        // use fixed color; there seems to be a bug in some plaf
+        // implementations that cause strange rendering
+        propertiesTable.addHighlighter(HighlighterFactory
+                .createAlternateStriping(Color.white, new Color(237, 243,
+                        254)));
 
-		final HighlightPredicate predicate = new HighlightPredicate() {
-			@Override
-			public boolean isHighlighted(Component comnponent, ComponentAdapter adapter) {
-				return ((AudioItemPropertiesModel) propertiesTable.getModel()).highlightRow(adapter.row);
-			}
-		};
-		AbstractHighlighter highlighter = new AbstractHighlighter() {
-			@Override protected Component doHighlight(Component component,
-					ComponentAdapter adapter) {
-				if (predicate.isHighlighted(component, adapter)) {
-					component.setFont(component.getFont().deriveFont(Font.BOLD));
-					component.setForeground(Color.RED);
-				}
-				return component;
-			}
+        final HighlightPredicate predicate = new HighlightPredicate() {
+            @Override
+            public boolean isHighlighted(Component comnponent, ComponentAdapter adapter) {
+                return ((AudioItemPropertiesModel) propertiesTable.getModel()).highlightRow(adapter.row);
+            }
+        };
+        AbstractHighlighter highlighter = new AbstractHighlighter() {
+            @Override protected Component doHighlight(Component component,
+                    ComponentAdapter adapter) {
+                if (predicate.isHighlighted(component, adapter)) {
+                    component.setFont(component.getFont().deriveFont(Font.BOLD));
+                    component.setForeground(Color.RED);
+                }
+                return component;
+            }
 
-		};
+        };
 
-		//ColorHighlighter highlighter = new ColorHighlighter(predicate, null, Color.RED, null, null);
-		propertiesTable.addHighlighter(highlighter);
+        //ColorHighlighter highlighter = new ColorHighlighter(predicate, null, Color.RED, null, null);
+        propertiesTable.addHighlighter(highlighter);
 
-		theScrollPane.setViewportView(propertiesTable);
-		getContentPane().add(theScrollPane);
+        theScrollPane.setViewportView(propertiesTable);
+        getContentPane().add(theScrollPane);
 
-		JPanel panel = new JPanel();
-		getContentPane().add(panel, BorderLayout.SOUTH);
-		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+        JPanel panel = new JPanel();
+        getContentPane().add(panel, BorderLayout.SOUTH);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
 
-		Component horizontalGlue = Box.createHorizontalGlue();
-		panel.add(horizontalGlue);
+        Component horizontalGlue = Box.createHorizontalGlue();
+        panel.add(horizontalGlue);
 
-		btnClose = new JButton(LabelProvider.getLabel("CLOSE", LanguageUtil.getUILanguage()));
-		btnClose.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				// update IRequestResult
-				Application.getFilterState().updateResult(true);
-				setVisible(false);
-			}
-		});
-		panel.add(btnClose);
-	}
+        btnClose = new JButton(LabelProvider.getLabel("CLOSE", LanguageUtil.getUILanguage()));
+        btnClose.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                // update IRequestResult
+                Application.getFilterState().updateResult(true);
+                setVisible(false);
+            }
+        });
+        panel.add(btnClose);
+    }
 
-	private void showMetadata(AudioItem audioItem) {
-		propertiesTable.setModel(new AudioItemPropertiesModel(audioItem));
-		propertiesTable.getTableHeader().getColumnModel().getColumn(AudioItemPropertiesModel.EDIT_COL).setMaxWidth(25);
-	}
+    private void showMetadata(AudioItem audioItem) {
+        propertiesTable.setModel(new AudioItemPropertiesModel(audioItem));
+        propertiesTable.getTableHeader().getColumnModel().getColumn(AudioItemPropertiesModel.EDIT_COL).setMaxWidth(25);
+    }
 
-	@Override
-	public void update(Observable o, Object arg) {
-		if (arg instanceof RequestedAudioItemMessage) {
-			RequestedAudioItemMessage msg = (RequestedAudioItemMessage) arg;
-			showAudioItem(msg.getAudioItem());
-		}
+    @Override
+    public void update(Observable o, Object arg) {
+        if (arg instanceof RequestedAudioItemMessage) {
+            RequestedAudioItemMessage msg = (RequestedAudioItemMessage) arg;
+            showAudioItem(msg.getAudioItem());
+        }
 
-	}
+    }
 }

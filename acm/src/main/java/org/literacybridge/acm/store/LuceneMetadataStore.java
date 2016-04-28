@@ -40,8 +40,10 @@ public class LuceneMetadataStore extends MetadataStore {
                 playlistCache.put(playlist.getUuid(), playlist);
                 for (String uid : playlist.getAudioItemList()) {
                     AudioItem audioItem = audioItemCache.get(uid);
-                    audioItem.addPlaylist(playlist);
-                    audioItemCache.update(audioItem);
+                    if (audioItem != null) {
+                        audioItem.addPlaylist(playlist);
+                        audioItemCache.update(audioItem);
+                    }
                 }
             }
 
@@ -84,6 +86,7 @@ public class LuceneMetadataStore extends MetadataStore {
     @Override
     public Playlist newPlaylist(String name) {
         final Playlist playlist = index.newPlaylist(name);
+        playlist.setIsNewItem();
         playlist.setCommitListener(new Committable.CommitListener() {
             @Override public void afterCommit() {
                 if (playlist.isDeleteRequested()) {
@@ -150,6 +153,7 @@ public class LuceneMetadataStore extends MetadataStore {
     @Override
     public AudioItem newAudioItem(String uid) {
         final AudioItem audioItem = new AudioItem(uid);
+        audioItem.setIsNewItem();
         audioItem.setCommitListener(new Committable.CommitListener() {
             @Override public void afterCommit() {
                 if (audioItem.isDeleteRequested()) {
