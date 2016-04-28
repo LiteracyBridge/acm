@@ -9,8 +9,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.literacybridge.acm.gui.AudioItemCache;
-
 import com.google.common.collect.Maps;
 
 public class LuceneMetadataStore extends MetadataStore {
@@ -18,21 +16,21 @@ public class LuceneMetadataStore extends MetadataStore {
 
     private final AudioItemIndex index;
     private final Map<String, Playlist> playlistCache;
-    private final AudioItemCache audioItemCache;
+    private final Map<String, AudioItem> audioItemCache;
 
     private AtomicReference<Transaction> activeTransaction = new AtomicReference<Transaction>();
 
     public LuceneMetadataStore(Taxonomy taxonomy, AudioItemIndex index) {
         super(taxonomy);
-        this.playlistCache = Maps.newHashMap();
+        this.playlistCache = Maps.newLinkedHashMap();
+        this.audioItemCache = Maps.newLinkedHashMap();
         this.index = index;
-        this.audioItemCache = new AudioItemCache();
 
         // fill caches
         try {
             Iterable<AudioItem> audioItems = index.getAudioItems();
             for (AudioItem audioItem : audioItems) {
-                audioItemCache.update(audioItem);
+                audioItemCache.put(audioItem.getUuid(), audioItem);
             }
 
             Iterable<Playlist> playlists = index.getPlaylists();
@@ -42,7 +40,7 @@ public class LuceneMetadataStore extends MetadataStore {
                     AudioItem audioItem = audioItemCache.get(uid);
                     if (audioItem != null) {
                         audioItem.addPlaylist(playlist);
-                        audioItemCache.update(audioItem);
+                        audioItemCache.put(audioItem.getUuid(), audioItem);
                     }
                 }
             }
@@ -50,6 +48,30 @@ public class LuceneMetadataStore extends MetadataStore {
         } catch (IOException e) {
             throw new RuntimeException("Unable to initialize caches", e);
         }
+
+        addDataChangeListener(new DataChangeListener() {
+            @Override
+            public void fireChangeEvent(Committable item,
+                    DataChangeEventType eventType) {
+                if (item instanceof Playlist) {
+                    Playlist playlist = (Playlist) item;
+                    if (eventType == DataChangeEventType.ITEM_DELETED) {
+                        playlistCache.remove(playlist.getUuid());
+                    } else {
+                        playlistCache.put(playlist.getUuid(), playlist);
+                    }
+                }
+                if (item instanceof AudioItem) {
+                    AudioItem audioItem = (AudioItem) item;
+                    if (eventType == DataChangeEventType.ITEM_DELETED) {
+                        audioItemCache.remove(audioItem.getUuid());
+                    } else {
+                        audioItemCache.put(audioItem.getUuid(), audioItem);
+                    }
+                }
+            }
+
+        });
     }
 
     @Override
@@ -59,7 +81,7 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public Iterable<AudioItem> getAudioItems() {
-        return audioItemCache.getAudioItems();
+        return audioItemCache.values();
     }
 
     @Override
@@ -87,18 +109,6 @@ public class LuceneMetadataStore extends MetadataStore {
     public Playlist newPlaylist(String name) {
         final Playlist playlist = index.newPlaylist(name);
         playlist.setIsNewItem();
-        playlist.setCommitListener(new Committable.CommitListener() {
-            @Override public void afterCommit() {
-                if (playlist.isDeleteRequested()) {
-                    playlistCache.remove(playlist.getUuid());
-                } else {
-                    playlistCache.put(playlist.getUuid(), playlist);
-                }
-            }
-
-            @Override public void afterRollback() {
-            }
-        });
 
         return playlist;
     }
@@ -154,19 +164,6 @@ public class LuceneMetadataStore extends MetadataStore {
     public AudioItem newAudioItem(String uid) {
         final AudioItem audioItem = new AudioItem(uid);
         audioItem.setIsNewItem();
-        audioItem.setCommitListener(new Committable.CommitListener() {
-            @Override public void afterCommit() {
-                if (audioItem.isDeleteRequested()) {
-                    audioItemCache.invalidate(audioItem.getUuid());
-                } else {
-                    audioItemCache.update(audioItem);
-                }
-            }
-
-            @Override public void afterRollback() {
-            }
-        });
-
         return audioItem;
     }
 }

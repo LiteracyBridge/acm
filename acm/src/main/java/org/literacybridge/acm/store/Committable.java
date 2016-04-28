@@ -26,15 +26,9 @@ public abstract class Committable {
     private DeleteState deleteState;
     private boolean newItem;
 
-    private CommitListener listener;
-
     public Committable() {
         this.commitState = CommitState.VALID;
         this.deleteState = DeleteState.NOT_DELETED;
-    }
-
-    public void setCommitListener(CommitListener listener) {
-        this.listener = listener;
     }
 
     public final void ensureIsCommittable() {
@@ -112,9 +106,6 @@ public abstract class Committable {
     final void afterCommit(MetadataStore store) {
         DataChangeEventType dataChangeEventType = DataChangeEventType.ITEM_MODIFIED;
 
-        if (listener != null) {
-            listener.afterCommit();
-        }
         if (deleteState == DeleteState.DELETE_REQUESTED) {
             deleteState = DeleteState.DELETED;
             dataChangeEventType = DataChangeEventType.ITEM_DELETED;
@@ -127,18 +118,10 @@ public abstract class Committable {
     }
 
     final void afterRollback() {
-        if (listener != null) {
-            listener.afterRollback();
-        }
         if (deleteState == DeleteState.DELETE_REQUESTED) {
             deleteState = DeleteState.NOT_DELETED;
         }
     }
 
     public abstract void doRollback(Transaction t) throws IOException;
-
-    public abstract static class CommitListener {
-        public abstract void afterCommit();
-        public abstract void afterRollback();
-    }
 }
