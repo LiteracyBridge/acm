@@ -19,7 +19,7 @@ public class AudioItemNode<T> {
 
     @Override
     public String toString() {
-        return value.toString();
+        return value != null ? value.toString() : "";
     }
 
     public AudioItem getAudioItem() {

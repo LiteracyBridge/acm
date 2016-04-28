@@ -69,7 +69,7 @@ public class AudioItemViewMouseListener extends MouseAdapter {
 
         // trigger if right button was clicked, or if the settings icon
         // was clicked with the left mouse button
-        if (col == AudioItemTableModel.INFO_ICON || e.getButton() != MouseEvent.BUTTON1) {
+        if (col == AudioItemTableModel.INFO_ICON_COLUMN.getColumnIndex() || e.getButton() != MouseEvent.BUTTON1) {
 
             AudioItem clickedAudioItem = adaptee.getCurrentAudioItem(); // always the first item of a selection!!
             if (clickedAudioItem != null) {

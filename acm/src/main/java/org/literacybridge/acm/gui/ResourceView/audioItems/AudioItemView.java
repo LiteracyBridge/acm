@@ -61,7 +61,6 @@ public class AudioItemView extends Container implements Observer {
     protected boolean firstDataSet = false;
 
     public AudioItemView() {
-        AudioItemTableModel.initializeTableColumns(getColumnTitles(LanguageUtil.getUILanguage()));
         setLayout(new BorderLayout());
         tableModel = new AudioItemTableModel();
         createTable();
@@ -90,7 +89,7 @@ public class AudioItemView extends Container implements Observer {
                     Color.white, new Color(237, 243, 254)));
         }
 
-        audioItemTable.setSortOrder(AudioItemTableModel.DATE_FILE_MODIFIED, SortOrder.ASCENDING);
+        audioItemTable.setSortOrder(AudioItemTableModel.DATE_FILE_MODIFIED_COLUMN.getColumnIndex(), SortOrder.ASCENDING);
 
         JScrollPane scrollPane = new JScrollPane(audioItemTable);
         scrollPane.setPreferredSize(new Dimension(800, 500));
@@ -101,7 +100,7 @@ public class AudioItemView extends Container implements Observer {
     private void updateTable() {
         if (!firstDataSet) {
             initColumnSize();
-            orderingColumn = audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER);
+            orderingColumn = audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER_COLUMN.getColumnIndex());
             firstDataSet = true;
         }
         if (Application.getFilterState().getSelectedPlaylist() == null && audioItemTable.getColumnCount() == audioItemTable.getModel().getColumnCount()) {
@@ -109,13 +108,12 @@ public class AudioItemView extends Container implements Observer {
         } else if (Application.getFilterState().getSelectedPlaylist() != null && audioItemTable.getColumnCount() < audioItemTable.getModel().getColumnCount()) {
             audioItemTable.addColumn(orderingColumn);
             TableSortController<AudioItemTableModel> tableRowSorter = (TableSortController<AudioItemTableModel>) audioItemTable.getRowSorter();
-            tableRowSorter.setComparator(AudioItemTableModel.PLAYLIST_ORDER, new Comparator<AudioItemNode<Integer>>() {
-                @Override
-                public int compare(AudioItemNode<Integer> o1,
-                        AudioItemNode<Integer> o2) {
-                    return Integer.compare(o1.getValue(), o2.getValue());
+            for (ColumnInfo<?> columnInfo : tableModel.getColumnInfos()) {
+                Comparator<?> comparator = columnInfo.getComparator();
+                if (comparator != null) {
+                    tableRowSorter.setComparator(columnInfo.getColumnIndex(), comparator);
                 }
-            });
+            }
         }
 
         if (currResult != null) {
@@ -182,81 +180,22 @@ public class AudioItemView extends Container implements Observer {
 
 
     private void updateControlLanguage(Locale newLocale) {
-        audioItemTable.getColumnModel().getColumn(AudioItemTableModel.TITLE)
-        .setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , newLocale));
-        audioItemTable.getColumnModel().getColumn(AudioItemTableModel.DURATION)
-        .setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DURATION , newLocale));
-        audioItemTable.getColumnModel().getColumn(AudioItemTableModel.CATEGORIES)
-        .setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , newLocale));
-        audioItemTable.getColumnModel().getColumn(AudioItemTableModel.SOURCE)
-        .setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SOURCE , newLocale));
-        audioItemTable.getColumnModel().getColumn(AudioItemTableModel.LANGUAGES)
-        .setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , newLocale));
-        //		audioItemTable.getColumnModel().getColumn(AudioItemTableModel.MESSAGE_FORMAT)
-        //										.setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_MESSAGE_FORMAT , newLocale));
-        audioItemTable.getColumnModel().getColumn(AudioItemTableModel.DATE_FILE_MODIFIED)
-        .setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED , newLocale));
-        audioItemTable.getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER)
-        .setHeaderValue(LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER , newLocale));
-    }
-
-    private String[] getColumnTitles(Locale locale) {
-        // order MUST fit match to table titles
-        String[] columnTitleArray = new String[AudioItemTableModel.NUM_COLUMNS]; // SET
-        columnTitleArray[AudioItemTableModel.INFO_ICON] = "";
-        columnTitleArray[AudioItemTableModel.TITLE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE , locale);
-        columnTitleArray[AudioItemTableModel.DURATION] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DURATION , locale);
-        //		columnTitleArray[AudioItemTableModel.COPY_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_COPY_COUNT, locale);
-        //		columnTitleArray[AudioItemTableModel.OPEN_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_OPEN_COUNT, locale);
-        //		columnTitleArray[AudioItemTableModel.COMPLETION_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_COMPLETION_COUNT, locale);
-        //		columnTitleArray[AudioItemTableModel.SURVEY1_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SURVEY1_COUNT, locale);
-        //		columnTitleArray[AudioItemTableModel.APPLY_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_APPLY_COUNT, locale);
-        //		columnTitleArray[AudioItemTableModel.NOHELP_COUNT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_NOHELP_COUNT, locale);
-        columnTitleArray[AudioItemTableModel.CATEGORIES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES , locale);
-        columnTitleArray[AudioItemTableModel.LANGUAGES] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE , locale);
-        columnTitleArray[AudioItemTableModel.SOURCE] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SOURCE , locale);
-        //		columnTitleArray[AudioItemTableModel.MESSAGE_FORMAT] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_MESSAGE_FORMAT , locale);
-        columnTitleArray[AudioItemTableModel.DATE_FILE_MODIFIED] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED , locale);
-        columnTitleArray[AudioItemTableModel.PLAYLIST_ORDER] = LabelProvider.getLabel(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER , locale);
-
-        return columnTitleArray;
+        for (ColumnInfo<?> columnInfo : tableModel.getColumnInfos()) {
+            audioItemTable.getColumnModel().getColumn(columnInfo.getColumnIndex())
+            .setHeaderValue(columnInfo.getColumnName(newLocale));
+        }
     }
 
     private void initColumnSize() {
         audioItemTable.setAutoCreateColumnsFromModel( false );
-
-        audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.INFO_ICON).setMaxWidth(25);
-        audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.TITLE).setPreferredWidth(230);
-        audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.DURATION).setPreferredWidth(65);
-        //		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.COPY_COUNT).setPreferredWidth(50);
-        //		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.OPEN_COUNT).setPreferredWidth(55);
-        //		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.COMPLETION_COUNT).setPreferredWidth(55);
-        //		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.SURVEY1_COUNT).setPreferredWidth(55);
-        //		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.APPLY_COUNT).setPreferredWidth(50);
-        //		audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.NOHELP_COUNT).setPreferredWidth(65);
-        audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.CATEGORIES).setPreferredWidth(140);
-        audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.SOURCE).setPreferredWidth(140);
-        audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.DATE_FILE_MODIFIED).setPreferredWidth(140);
-        audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER).setPreferredWidth(60);
-
-        Comparator<Object> comparator = new Comparator<Object>() {
-            @Override public int compare(Object o1, Object o2) {
-                try {
-                    Integer i1 = new Integer(o1.toString());
-                    Integer i2 = new Integer(o2.toString());
-                    return i1.compareTo(i2);
-                } catch (NumberFormatException e) {
-                    return Collator.getInstance().compare(o1.toString(), o2.toString());
-                }
+        for (ColumnInfo<?> columnInfo : tableModel.getColumnInfos()) {
+            if (columnInfo.getMaxWidth() != ColumnInfo.WIDTH_NOT_SET) {
+                audioItemTable.getTableHeader().getColumnModel().getColumn(columnInfo.getColumnIndex()).setMaxWidth(columnInfo.getMaxWidth());
             }
-        };
-
-        //		audioItemTable.getColumnExt(AudioItemTableModel.COPY_COUNT).setComparator(comparator);
-        //		audioItemTable.getColumnExt(AudioItemTableModel.OPEN_COUNT).setComparator(comparator);
-        //		audioItemTable.getColumnExt(AudioItemTableModel.COMPLETION_COUNT).setComparator(comparator);
-        //		audioItemTable.getColumnExt(AudioItemTableModel.SURVEY1_COUNT).setComparator(comparator);
-        //		audioItemTable.getColumnExt(AudioItemTableModel.APPLY_COUNT).setComparator(comparator);
-        //		audioItemTable.getColumnExt(AudioItemTableModel.NOHELP_COUNT).setComparator(comparator);
+            if (columnInfo.getPreferredWidth() != ColumnInfo.WIDTH_NOT_SET) {
+                audioItemTable.getTableHeader().getColumnModel().getColumn(columnInfo.getColumnIndex()).setPreferredWidth(columnInfo.getPreferredWidth());
+            }
+        }
     }
 
     boolean hasSelectedRows() {
