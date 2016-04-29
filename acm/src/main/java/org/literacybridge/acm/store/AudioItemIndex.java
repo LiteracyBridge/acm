@@ -362,17 +362,17 @@ public class AudioItemIndex {
     }
 
     private void loadPlaylistFromPostingList(LeafReader leafReader, String playlistUuid, Playlist.Builder playlistBuilder) throws IOException {
-        PostingsEnum tp = leafReader.postings(new Term(PLAYLISTS_FIELD, playlistUuid), PostingsEnum.PAYLOADS);
-        if (tp != null) {
-            while (tp.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+        // Iterate over the posting list that contains a posting for each AudioItem belonging to the given Playlist
+        PostingsEnum postingsEnum = leafReader.postings(new Term(PLAYLISTS_FIELD, playlistUuid), PostingsEnum.PAYLOADS);
+        if (postingsEnum != null) {
+            while (postingsEnum.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
                 // important: Lucene applies deletes of documents to posting lists lazily when it
                 // performs a segment merge, so it is necessary here to check if this audioItem is deleted
-                if (leafReader.getLiveDocs() == null || leafReader.getLiveDocs().get(tp.docID())) {
-                    // TODO: we could also use the termPosition instead of a payload to store the playlist position
-                    tp.nextPosition();
-                    BytesRef payload = tp.getPayload();
+                if (leafReader.getLiveDocs() == null || leafReader.getLiveDocs().get(postingsEnum.docID())) {
+                    postingsEnum.nextPosition();
+                    BytesRef payload = postingsEnum.getPayload();
                     int playlistPos = PayloadHelper.decodeInt(payload.bytes, payload.offset);
-                    AudioItem audioItem = loadAudioItem(leafReader.document(tp.docID()));
+                    AudioItem audioItem = loadAudioItem(leafReader.document(postingsEnum.docID()));
                     playlistBuilder.addAudioItem(audioItem.getUuid(), playlistPos);
                 }
             }
