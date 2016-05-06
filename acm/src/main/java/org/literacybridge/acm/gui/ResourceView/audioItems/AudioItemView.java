@@ -8,7 +8,6 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.text.Collator;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -37,9 +36,7 @@ import org.literacybridge.acm.gui.messages.RequestAndSelectAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemToPlayMessage;
 import org.literacybridge.acm.gui.messages.RequestedAudioItemMessage;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.AudioItemNode;
-import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataSpecification;
@@ -117,13 +114,26 @@ public class AudioItemView extends Container implements Observer {
         }
 
         if (currResult != null) {
+            if (currResult.getAudioItems().isEmpty()) {
+                audioItemTable.setRowFilter(new RowFilter<Object, Object>() {
+                    @Override public boolean include(javax.swing.RowFilter.Entry<? extends Object, ? extends Object> entry) {
+                        return false;
+                    }
+                });
+            }
+
+            if (currResult.getAudioItems().size() == currResult.getTotalNumDocsInIndex()) {
+                audioItemTable.setRowFilter(new RowFilter<Object, Object>() {
+                    @Override public boolean include(javax.swing.RowFilter.Entry<? extends Object, ? extends Object> entry) {
+                        return true;
+                    }
+                });
+            }
+
             audioItemTable.setRowFilter(new RowFilter<Object, Object>() {
-                @Override
-                public boolean include(
-                        javax.swing.RowFilter.Entry<? extends Object, ? extends Object> entry) {
+                @Override public boolean include(javax.swing.RowFilter.Entry<? extends Object, ? extends Object> entry) {
                     return currResult.getAudioItems().contains(tableModel.getAudioItemUuid((Integer) entry.getIdentifier()));
                 }
-
             });
         }
     }

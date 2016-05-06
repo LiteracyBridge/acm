@@ -573,7 +573,8 @@ public class AudioItemIndex {
                 // With empty indexes it can happen that Lucene throws an exception here due to missing facet data
             }
 
-            SearchResult result = new SearchResult(categoryFacets, localeFacets, playlistFacets, Lists.newArrayList(results));
+            SearchResult result = new SearchResult(searcher.getIndexReader().numDocs(),
+                    categoryFacets, localeFacets, playlistFacets, Lists.newArrayList(results));
 
             return result;
         } finally {
