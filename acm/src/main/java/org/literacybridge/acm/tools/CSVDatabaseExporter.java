@@ -12,9 +12,7 @@ public class CSVDatabaseExporter {
     private CSVDatabaseExporter(String acmName) throws Exception {
         CommandLineParams params = new CommandLineParams();
         params.disableUI = true;
-        params.readonly = true;
         params.sandbox = true;
-        params.disableIndex = true;
         params.sharedACM = acmName;
         Application.startUp(params);
     }

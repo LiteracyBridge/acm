@@ -274,15 +274,7 @@ public class AudioItemIndex {
                         String uuid = term.utf8ToString();
                         Playlist.Builder playlist = playlists.get(uuid);
                         if (playlist != null) {
-                            PostingsEnum tp = leafReader.postings(new Term(PLAYLISTS_FIELD, term), PostingsEnum.PAYLOADS);
-                            while (tp.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
-                                // TODO: we could also use the termPosition instead of a payload to store the playlist position
-                                tp.nextPosition();
-                                BytesRef payload = tp.getPayload();
-                                int playlistPos = PayloadHelper.decodeInt(payload.bytes, payload.offset);
-                                AudioItem audioItem = loadAudioItem(leafReader.document(tp.docID()));
-                                playlist.addAudioItem(audioItem.getUuid(), playlistPos);
-                            }
+                            loadPlaylistFromPostingList(leafReader, uuid, playlist);
                         }
                     }
                 }
@@ -318,23 +310,30 @@ public class AudioItemIndex {
 
             IndexReader reader = searcher.getIndexReader();
             for (LeafReaderContext leaf : reader.leaves()) {
-                LeafReader leafReader = leaf.reader();
-                PostingsEnum tp = leafReader.postings(new Term(PLAYLISTS_FIELD, uuid), PostingsEnum.PAYLOADS);
-                if (tp != null) {
-                    while (tp.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
-                        // TODO: we could also use the termPosition instead of a payload to store the playlist position
-                        tp.nextPosition();
-                        BytesRef payload = tp.getPayload();
-                        int playlistPos = PayloadHelper.decodeInt(payload.bytes, payload.offset);
-                        AudioItem audioItem = loadAudioItem(leafReader.document(tp.docID()));
-                        builder.addAudioItem(audioItem.getUuid(), playlistPos);
-                    }
-                }
+                loadPlaylistFromPostingList(leaf.reader(), uuid, builder);
             }
 
             return builder.build();
         } finally {
             searcherManager.release(searcher);
+        }
+    }
+
+    private void loadPlaylistFromPostingList(LeafReader leafReader, String playlistUuid, Playlist.Builder playlistBuilder) throws IOException {
+        // Iterate over the posting list that contains a posting for each AudioItem belonging to the given Playlist
+        PostingsEnum postingsEnum = leafReader.postings(new Term(PLAYLISTS_FIELD, playlistUuid), PostingsEnum.PAYLOADS);
+        if (postingsEnum != null) {
+            while (postingsEnum.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+                // important: Lucene applies deletes of documents to posting lists lazily when it
+                // performs a segment merge, so it is necessary here to check if this audioItem is deleted
+                if (leafReader.getLiveDocs() == null || leafReader.getLiveDocs().get(postingsEnum.docID())) {
+                    postingsEnum.nextPosition();
+                    BytesRef payload = postingsEnum.getPayload();
+                    int playlistPos = PayloadHelper.decodeInt(payload.bytes, payload.offset);
+                    AudioItem audioItem = loadAudioItem(leafReader.document(postingsEnum.docID()));
+                    playlistBuilder.addAudioItem(audioItem.getUuid(), playlistPos);
+                }
+            }
         }
     }
 
