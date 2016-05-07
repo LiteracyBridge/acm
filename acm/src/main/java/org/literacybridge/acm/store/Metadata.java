@@ -44,6 +44,22 @@ public class Metadata {
         this.fields.clear();
     }
 
+    /**
+     * Adds values from another Metadata object to this object. If the value already exists, in this
+     * object, it will be overwritten.
+     * @param otherMetadata
+     */
+    public void addValuesFrom(Metadata otherMetadata) {
+        Iterator<MetadataField<?>> fieldsIterator = LBMetadataIDs.FieldToIDMap.keySet().iterator();
+        while (fieldsIterator.hasNext()) {
+            MetadataField<?> field = fieldsIterator.next();
+            MetadataValue<?> value = otherMetadata.getMetadataValue(field);
+            if (value != null) {
+                this.fields.put(field, value);
+            }
+        }
+    }
+
     public String toString() {
         StringBuilder builder = new StringBuilder();
         Iterator<MetadataField<?>> fieldsIterator = LBMetadataIDs.FieldToIDMap.keySet().iterator();

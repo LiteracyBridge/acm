@@ -8,20 +8,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class Playlist extends Committable {
-    // TODO: make uuid final once deprecated method setUuid() is removed
-    private String uuid;
+    private final String uuid;
     private String name;
     private final List<String> audioItems;
 
-    // TODO: make package-private once DB migration code is removed
-    public Playlist(String uuid) {
+    Playlist(String uuid) {
         this.uuid = uuid;
         audioItems = Lists.newArrayList();
-    }
-
-    @Deprecated
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getUuid() {

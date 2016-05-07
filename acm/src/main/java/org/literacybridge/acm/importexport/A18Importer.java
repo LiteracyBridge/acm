@@ -70,16 +70,9 @@ public class A18Importer extends Importer {
             } else {
                 audioItem = store.newAudioItem(loadedMetadata.getMetadataValue(MetadataSpecification.DC_IDENTIFIER).getValue());
                 Metadata metadata = audioItem.getMetadata();
-                categories.clear();
-                if (bytesToSkip + 4 < file.length()) {
-                    try {
-                        in.skipBytes(bytesToSkip);
-                        LBMetadataSerializer serializer = new LBMetadataSerializer();
-                        serializer.deserialize(metadata, store.getTaxonomy(), categories, in);
-                    } catch (IOException e) {
-                        // do nothing
-                    }
-                }
+
+                // Add metadata the file already had, if any.
+                metadata.addValuesFrom(loadedMetadata);
 
                 if (metadata.getMetadataValue(MetadataSpecification.DTB_REVISION) == null) {
                     metadata.setMetadataField(MetadataSpecification.DTB_REVISION, new MetadataValue<String>("0"));
