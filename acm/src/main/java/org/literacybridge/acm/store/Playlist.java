@@ -71,11 +71,12 @@ public class Playlist extends Committable {
     }
 
     @Override
-    public void doCommit(Transaction t) throws IOException {
+    public boolean doCommit(Transaction t) throws IOException {
         if (isDeleteRequested()) {
             t.getIndex().deletePlaylist(uuid, t);
+            return false;
         } else {
-            t.getIndex().updatePlaylistName(this, t);
+            return t.getIndex().updatePlaylistName(this, t);
         }
     }
 

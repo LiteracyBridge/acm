@@ -114,10 +114,7 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public Playlist newPlaylist(String name) {
-        final Playlist playlist = index.newPlaylist(name);
-        playlist.setIsNewItem();
-
-        return playlist;
+        return index.newPlaylist(name);
     }
 
     @Override
@@ -169,8 +166,6 @@ public class LuceneMetadataStore extends MetadataStore {
 
     @Override
     public AudioItem newAudioItem(String uid) {
-        final AudioItem audioItem = new AudioItem(uid);
-        audioItem.setIsNewItem();
-        return audioItem;
+        return new AudioItem(uid);
     }
 }

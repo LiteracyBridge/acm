@@ -24,7 +24,9 @@ public abstract class Committable {
 
     private CommitState commitState;
     private DeleteState deleteState;
-    private boolean newItem;
+
+    // remembers whether this is a new Committable that was added to the index between the doCommit() and doAfterCommit() steps
+    private boolean newObjectCommitted;
 
     public Committable() {
         this.commitState = CommitState.VALID;
@@ -55,10 +57,6 @@ public abstract class Committable {
         this.commitState = CommitState.ROLLBACK_FAILED;
     }
 
-    final void setIsNewItem() {
-        this.newItem = true;
-    }
-
     /**
      * Commits this object to the index.
      */
@@ -73,7 +71,7 @@ public abstract class Committable {
 
         boolean success = false;
         try {
-            doCommit(t);
+            newObjectCommitted = doCommit(t);
             success = true;
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "IOException while committing Committable: " + this.toString(), e);
@@ -84,7 +82,11 @@ public abstract class Committable {
         }
     }
 
-    public abstract void doCommit(Transaction t) throws IOException;
+    /**
+     * Returns true, if this commit added a new object to the index,
+     * and false, if an existing object was updated.
+     */
+    public abstract boolean doCommit(Transaction t) throws IOException;
 
     /**
      * Resets the internal state of this object to the version stored in the index.
@@ -109,8 +111,8 @@ public abstract class Committable {
         if (deleteState == DeleteState.DELETE_REQUESTED) {
             deleteState = DeleteState.DELETED;
             dataChangeEventType = DataChangeEventType.ITEM_DELETED;
-        } else if (newItem == true) {
-            newItem = false;
+        } else if (newObjectCommitted == true) {
+            newObjectCommitted = false;
             dataChangeEventType = DataChangeEventType.ITEM_ADDED;
         }
 
