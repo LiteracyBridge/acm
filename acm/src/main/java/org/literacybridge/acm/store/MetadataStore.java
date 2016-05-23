@@ -43,7 +43,6 @@ public abstract class MetadataStore {
     }
 
     protected final void fireChangeEvent(Committable item, DataChangeEventType eventType) {
-        System.out.println(eventType);
         for (DataChangeListener listener : dataChangeListeners) {
             listener.fireChangeEvent(item, eventType);
         }
