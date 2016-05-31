@@ -2,7 +2,6 @@ package org.literacybridge.acm.store;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.literacybridge.acm.store.MetadataStore.DataChangeListener.DataChangeEventType;
@@ -25,7 +24,7 @@ public abstract class Committable {
     private CommitState commitState;
     private DeleteState deleteState;
 
-    // remembers whether this is a new Committable that was added to the index between the doCommit() and doAfterCommit() steps
+    // remembers whether this is a new object that was added to the index, or whether an existing object was updated
     private boolean newObjectCommitted;
 
     public Committable() {
@@ -74,7 +73,7 @@ public abstract class Committable {
             newObjectCommitted = doCommit(t);
             success = true;
         } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while committing Committable: " + this.toString(), e);
+            throw new RuntimeException("IOException while committing Committable: " + this.toString(), e);
         } finally {
             if (!success) {
                 commitState = CommitState.COMMIT_FAILED;
@@ -97,7 +96,7 @@ public abstract class Committable {
             doRollback(t);
             success = true;
         } catch (IOException e) {
-            LOG.log(Level.SEVERE, "IOException while rolling back Committable: " + this.toString(), e);
+            throw new RuntimeException("IOException while rolling back Committable: " + this.toString(), e);
         } finally {
             if (!success) {
                 commitState = CommitState.ROLLBACK_FAILED;

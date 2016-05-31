@@ -9,6 +9,13 @@ import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.MetadataValue;
 
+/**
+ * This class contains configuration for each column in the AudioItemTable, such as the column width and label.
+ * It also has a ValueProdier, which returns the content of this column for a particular row, and optionally
+ * provides a comparator for the values.
+ *
+ * @param <T> The type of data values in this column.
+ */
 public final class ColumnInfo<T> {
     public final static int WIDTH_NOT_SET = -1;
 
@@ -92,6 +99,9 @@ public final class ColumnInfo<T> {
     }
 
     public static abstract class ValueProvider<T> {
+        // The AudioItemTableModel needs to know for each column if the value returned by the
+        // ValueProvider can be cashed until invalidated by a DataChangeEventType, or if
+        // ValueProvider#getValue() must be called every time.
         private final boolean valueCachable;
 
         public ValueProvider(boolean valueCachable) {

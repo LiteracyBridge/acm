@@ -108,7 +108,6 @@ public class AudioItemTableModel extends AbstractTableModel implements DataChang
                 DATE_FILE_MODIFIED_COLUMN,
                 PLAYLIST_ORDER_COLUMN);
 
-        // iterate over all audioItems and add them to the uuid->rowIndex map
         for (AudioItem item : store.getAudioItems()) {
             addNewAudioItem(item);
         }
@@ -178,6 +177,9 @@ public class AudioItemTableModel extends AbstractTableModel implements DataChang
         return row;
     }
 
+    /**
+     * One instance of this class represents one materialized table row in rowIndexToUuidMap.
+     */
     private static final class AudioItemNodeRow {
         final AudioItem audioItem;
         final AudioItemNode<?>[] columns;
