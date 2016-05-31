@@ -34,7 +34,7 @@ public class AudioItemCellRenderer extends DefaultTableCellRenderer {
 
         AudioItemNode<?> status = (AudioItemNode<?>) value;
 
-        if (AudioItemTableModel.INFO_ICON_COLUMN.getColumnIndex() == column && highlightedRow == row) {
+        if (AudioItemTableModel.infoIconColumn.getColumnIndex() == column && highlightedRow == row) {
             label.setIcon(settingsImageIcon);
         } else {
             label.setIcon(null);

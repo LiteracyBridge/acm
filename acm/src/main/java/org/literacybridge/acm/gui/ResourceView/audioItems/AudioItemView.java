@@ -86,7 +86,7 @@ public class AudioItemView extends Container implements Observer {
                     Color.white, new Color(237, 243, 254)));
         }
 
-        audioItemTable.setSortOrder(AudioItemTableModel.DATE_FILE_MODIFIED_COLUMN.getColumnIndex(), SortOrder.ASCENDING);
+        audioItemTable.setSortOrder(AudioItemTableModel.dateFileModifiedColumn.getColumnIndex(), SortOrder.ASCENDING);
 
         JScrollPane scrollPane = new JScrollPane(audioItemTable);
         scrollPane.setPreferredSize(new Dimension(800, 500));
@@ -97,7 +97,7 @@ public class AudioItemView extends Container implements Observer {
     private void updateTable() {
         if (!firstDataSet) {
             initColumnSize();
-            orderingColumn = audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.PLAYLIST_ORDER_COLUMN.getColumnIndex());
+            orderingColumn = audioItemTable.getTableHeader().getColumnModel().getColumn(AudioItemTableModel.playlistOrderColumn.getColumnIndex());
             firstDataSet = true;
         }
         if (Application.getFilterState().getSelectedPlaylist() == null && audioItemTable.getColumnCount() == audioItemTable.getModel().getColumnCount()) {

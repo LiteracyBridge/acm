@@ -58,7 +58,7 @@ public class LuceneMetadataStore extends MetadataStore {
 
         addDataChangeListener(new DataChangeListener() {
             @Override
-            public void fireChangeEvent(Committable item,
+            public void dataChanged(Committable item,
                     DataChangeEventType eventType) {
                 if (item instanceof Playlist) {
                     Playlist playlist = (Playlist) item;

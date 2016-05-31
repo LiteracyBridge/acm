@@ -31,23 +31,23 @@ import com.google.common.collect.Maps;
 public class AudioItemTableModel extends AbstractTableModel implements DataChangeListener {
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
-    public static final ColumnInfo<String> INFO_ICON_COLUMN = ColumnInfo.newColumnInfo("", 25, ColumnInfo.WIDTH_NOT_SET, new ValueProvider<String>(true) {
+    public static final ColumnInfo<String> infoIconColumn = ColumnInfo.newColumnInfo("", 25, ColumnInfo.WIDTH_NOT_SET, new ValueProvider<String>(true) {
         @Override
         protected AudioItemNode<String> getValue(AudioItem audioItem) {
             return new AudioItemNode<String>(audioItem, "");
         }
     });
-    public static final ColumnInfo<String> TITLE_COLUMN = ColumnInfo.newMetadataColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE, ColumnInfo.WIDTH_NOT_SET, 230, MetadataSpecification.DC_TITLE);
-    public static final ColumnInfo<String> DURATION_COLUMN = ColumnInfo.newMetadataColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DURATION, ColumnInfo.WIDTH_NOT_SET, 65, MetadataSpecification.LB_DURATION);
-    public static final ColumnInfo<String> CATEGORIES_COLUMN = ColumnInfo.newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES, ColumnInfo.WIDTH_NOT_SET, 140, new ValueProvider<String>(true) {
+    public static final ColumnInfo<String> titleColumn = ColumnInfo.newMetadataColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE, ColumnInfo.WIDTH_NOT_SET, 230, MetadataSpecification.DC_TITLE);
+    public static final ColumnInfo<String> durationColumn = ColumnInfo.newMetadataColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DURATION, ColumnInfo.WIDTH_NOT_SET, 65, MetadataSpecification.LB_DURATION);
+    public static final ColumnInfo<String> categoriesColumn = ColumnInfo.newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES, ColumnInfo.WIDTH_NOT_SET, 140, new ValueProvider<String>(true) {
         @Override
         protected AudioItemNode<String> getValue(AudioItem audioItem) {
             String value = UIUtils.getCategoryListAsString(audioItem);
             return new AudioItemNode<String>(audioItem, value);
         }
     });
-    public static final ColumnInfo<String> SOURCE_COLUMN = ColumnInfo.newMetadataColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SOURCE, ColumnInfo.WIDTH_NOT_SET, 140, MetadataSpecification.DC_SOURCE);
-    public static final ColumnInfo<String> LANGUAGES_COLUMN = ColumnInfo.newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE, ColumnInfo.WIDTH_NOT_SET, 140, new ValueProvider<String>(true) {
+    public static final ColumnInfo<String> sourceColumn = ColumnInfo.newMetadataColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SOURCE, ColumnInfo.WIDTH_NOT_SET, 140, MetadataSpecification.DC_SOURCE);
+    public static final ColumnInfo<String> languagesColumn = ColumnInfo.newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE, ColumnInfo.WIDTH_NOT_SET, 140, new ValueProvider<String>(true) {
         @Override
         protected AudioItemNode<String> getValue(AudioItem audioItem) {
             String value = LanguageUtil.getLocalizedLanguageName(AudioItemPropertiesModel
@@ -55,7 +55,7 @@ public class AudioItemTableModel extends AbstractTableModel implements DataChang
             return new AudioItemNode<String>(audioItem, value);
         }
     });
-    public static final ColumnInfo<String> DATE_FILE_MODIFIED_COLUMN = ColumnInfo.newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED, ColumnInfo.WIDTH_NOT_SET, 140, new ValueProvider<String>(true) {
+    public static final ColumnInfo<String> dateFileModifiedColumn = ColumnInfo.newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED, ColumnInfo.WIDTH_NOT_SET, 140, new ValueProvider<String>(true) {
         @Override
         protected AudioItemNode<String> getValue(AudioItem audioItem) {
             String value = "";
@@ -68,7 +68,7 @@ public class AudioItemTableModel extends AbstractTableModel implements DataChang
             return new AudioItemNode<String>(audioItem, value);
         }
     });
-    public static final ColumnInfo<Integer> PLAYLIST_ORDER_COLUMN = ColumnInfo.newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER, ColumnInfo.WIDTH_NOT_SET, 60, new ValueProvider<Integer>(false) {
+    public static final ColumnInfo<Integer> playlistOrderColumn = ColumnInfo.newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER, ColumnInfo.WIDTH_NOT_SET, 60, new ValueProvider<Integer>(false) {
         @Override
         protected AudioItemNode<Integer> getValue(AudioItem audioItem) {
             Playlist tag = Application.getFilterState().getSelectedPlaylist();
@@ -99,14 +99,14 @@ public class AudioItemTableModel extends AbstractTableModel implements DataChang
         this.rowIndexToUuidMap = Lists.newArrayList();
 
         columns = initializeColumnInfoArray(
-                INFO_ICON_COLUMN,
-                TITLE_COLUMN,
-                DURATION_COLUMN,
-                CATEGORIES_COLUMN,
-                SOURCE_COLUMN,
-                LANGUAGES_COLUMN,
-                DATE_FILE_MODIFIED_COLUMN,
-                PLAYLIST_ORDER_COLUMN);
+                infoIconColumn,
+                titleColumn,
+                durationColumn,
+                categoriesColumn,
+                sourceColumn,
+                languagesColumn,
+                dateFileModifiedColumn,
+                playlistOrderColumn);
 
         for (AudioItem item : store.getAudioItems()) {
             addNewAudioItem(item);
@@ -191,7 +191,7 @@ public class AudioItemTableModel extends AbstractTableModel implements DataChang
     }
 
     @Override
-    public void fireChangeEvent(Committable item, DataChangeEventType eventType) {
+    public void dataChanged(Committable item, DataChangeEventType eventType) {
         if (item instanceof AudioItem) {
             AudioItem audioItem = (AudioItem) item;
             if (eventType == DataChangeEventType.ITEM_ADDED) {

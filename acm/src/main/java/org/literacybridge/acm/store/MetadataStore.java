@@ -44,7 +44,7 @@ public abstract class MetadataStore {
 
     protected final void fireChangeEvent(Committable item, DataChangeEventType eventType) {
         for (DataChangeListener listener : dataChangeListeners) {
-            listener.fireChangeEvent(item, eventType);
+            listener.dataChanged(item, eventType);
         }
     }
 
@@ -68,6 +68,6 @@ public abstract class MetadataStore {
             ITEM_DELETED
         }
 
-        public void fireChangeEvent(Committable item, DataChangeEventType eventType);
+        public void dataChanged(Committable item, DataChangeEventType eventType);
     }
 }
