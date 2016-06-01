@@ -132,7 +132,6 @@ public class TBLoader extends JFrame {
             + CONTENT_BASIC_SUBDIR);
     Logger.LogString(
         "DEPLOYMENT:" + newDeploymentList.getSelectedItem().toString());
-    //Logger.LogString(basicContentPath.getAbsolutePath());
     try {
       File[] files;
       if (basicContentPath.exists()) {
@@ -218,8 +217,6 @@ public class TBLoader extends JFrame {
         System.exit(NORMAL);
       }
     }
-
-    //"   Update:" + deploymentName + "   Firmware:" + revision);
 
     JPanel panel = new JPanel();
     JLabel warning;
@@ -336,8 +333,6 @@ public class TBLoader extends JFrame {
             .addComponent(newFirmwareRevisionText)
             .addComponent(newSrnText)
             .addComponent(forceFirmware)
-            //.addComponent(fetchIDFromServer)
-            //	    	                .addGroup(layout.createSequentialGroup()
             .addComponent(updateButton)
             .addComponent(status2))
         .addGroup(layout.createParallelGroup(LEADING)
@@ -350,11 +345,6 @@ public class TBLoader extends JFrame {
             .addComponent(oldSrnText)
             .addComponent(forceFirmwareText)
             .addComponent(grabStatsOnlyButton)
-            //.addComponent(handIcons)
-            //	    	                .addGroup(layout.createSequentialGroup()
-            //	    	        				.addComponent(setCommunity)
-            //	                 				.addComponent(xfer)
-            //              				)
             .addComponent(status)));
 
     layout.setVerticalGroup(layout.createSequentialGroup()
@@ -1217,9 +1207,6 @@ public class TBLoader extends JFrame {
     } catch (IOException e) {
       e.printStackTrace();
     }
-/*		s.append("Serial Number : " + this.serialNumber + NEW_LINE);
-    s.append(NEW_LINE);
-*/
   }
 
   private String getImageFromCommunity(String community) throws Exception {
@@ -1975,12 +1962,6 @@ public class TBLoader extends JFrame {
         Logger.LogString("STATUS:Updating TB Files");
         executeFile(new File(SCRIPT_SUBDIR + "update.txt"));
         Logger.LogString("STATUS:Updated");
-        //verified = executeFile(new File(SCRIPT_SUBDIR + "verify.txt"));
-        //if (verified) {
-        //	TBLoader.status2.setText(TBLoader.status2.getText() + "Verified Basic\nAdding Community Content\n");
-        //	Logger.LogString("STATUS:Verified Basic...Adding Any Custom Community Content");
-        //	verified = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));
-        //}
         Logger.LogString("STATUS:Adding Image Content");
         verified = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));
         if (TBLoader.forceFirmware.isSelected()) {
@@ -2114,7 +2095,6 @@ public class TBLoader extends JFrame {
     final File drive;
     String label;
     String serialNumber;
-    //String volumeSerialNumber;
     boolean corrupted;
     String datetime = "";
     String syncdir = "";
@@ -2124,7 +2104,6 @@ public class TBLoader extends JFrame {
       this.label = label.trim();
       this.corrupted = false;
       this.serialNumber = "";
-      //this.volumeSerialNumber ="";
       this.datetime = getDateTime();
       this.syncdir = this.datetime + "-" + TBLoader.deviceID;
     }
@@ -2145,8 +2124,6 @@ public class TBLoader extends JFrame {
 
   private static class TBInfo {
     static final int MAX_MESSAGES = 40;
-    // struct SystemData
-    // int structType
     boolean debug = true;
     String serialNumber;
     String deploymentNumber;
@@ -2157,8 +2134,6 @@ public class TBLoader extends JFrame {
     short updateMonth = -1;
     short updateYear = -1;
 
-    // struct SystemCounts2
-    // short structType
     short periods;
     short cumulativeDays;
     short corruptionDay;
@@ -2166,12 +2141,9 @@ public class TBLoader extends JFrame {
     short lastInitVoltage;
     RotationTiming[] rotations = new RotationTiming[5];
 
-    // struct NORmsgMap
-    // short structType
     short totalMessages;
     String[] msgIdMap = new String[MAX_MESSAGES]; // 40 messages, 20 chars
 
-    //struct NORallMsgStats
     short profileOrder;
     String profileName;
     short profileTotalMessages;
@@ -2187,12 +2159,10 @@ public class TBLoader extends JFrame {
 
       public RotationTiming() throws IOException {
         f.skipBytes(2);
-        //System.out.println("pointer:"+f.getFilePointer());
         this.rotationNumber = readShort();
         this.startingPeriod = readShort();
         this.hoursAfterLastUpdate = readShort();
         this.initVoltage = readShort();
-        //System.out.println("pointer:"+f.getFilePointer());
       }
     }
 
@@ -2293,7 +2263,6 @@ public class TBLoader extends JFrame {
 
       for (int l = 0; l < 2; l++) {
         b = f.readByte() & 0xFF; // remove sign
-        //System.out.print("          b:"+b);
         i = b << (8 * l);
         sum += (0xFFFF & i);
       }
@@ -2312,7 +2281,6 @@ public class TBLoader extends JFrame {
 
       for (int l = 0; l < 2; l++) {
         b = f.readByte() & 0xFF; // remove sign
-        //System.out.print("          b:"+b);
         i = b << (8 * l);
         sum += (0xFFFF & i);
       }
