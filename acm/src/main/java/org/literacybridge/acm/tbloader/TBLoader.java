@@ -29,6 +29,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
 import javax.swing.GroupLayout;
@@ -52,6 +54,8 @@ import org.literacybridge.acm.utils.ZipUnzip;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame {
+  private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
+
   public static final String UNPUBLISHED_REV = "UNPUBLISHED";
   public static final String COLLECTED_DATA_SUBDIR_NAME = "collected-data";
   public static final String COLLECTED_DATA_DROPBOXDIR_PREFIX = "tbcd";
@@ -115,8 +119,7 @@ public class TBLoader extends JFrame {
   class WindowEventHandler extends WindowAdapter {
     public void windowClosing(WindowEvent evt) {
       checkDirUpdate();
-      Logger.LogString("closing app");
-      Logger.close();
+      LOG.log(Level.INFO, "closing app");
       System.exit(0);
     }
   }
@@ -130,7 +133,7 @@ public class TBLoader extends JFrame {
     File basicContentPath = new File(
         CONTENT_SUBDIR + newDeploymentList.getSelectedItem().toString() + "/"
             + CONTENT_BASIC_SUBDIR);
-    Logger.LogString(
+    LOG.log(Level.INFO,
         "DEPLOYMENT:" + newDeploymentList.getSelectedItem().toString());
     try {
       File[] files;
@@ -152,7 +155,7 @@ public class TBLoader extends JFrame {
         newFirmwareRevisionText.setText(revision);
       }
     } catch (Exception ignore) {
-      Logger.LogString("exception - ignore and keep going with default string");
+      LOG.log(Level.WARNING, "exception - ignore and keep going with default string", ignore);
     }
 
   }
@@ -400,7 +403,7 @@ public class TBLoader extends JFrame {
     fillDeploymentList();
     resetUI(true);
     setVisible(true);
-    Logger.LogString("set visibility - starting drive monitoring");
+    LOG.log(Level.INFO, "set visibility - starting drive monitoring");
     deviceMonitorThread.setDaemon(true);
     deviceMonitorThread.start();
     startUpDone = true;
@@ -497,9 +500,7 @@ public class TBLoader extends JFrame {
       }
       copyTo = collectedDataFile.getAbsolutePath();
     } catch (Exception e) {
-      Logger.LogString(e.toString());
-      Logger.flush();
-      e.printStackTrace();
+      LOG.log(Level.WARNING, "Exception while setting DeviceId and paths", e);
     }
     // Like "/Users/mike/Dropbox (Literacy Bridge)/tbcd1234/collected-data"
     copyTo += COLLECTION_SUBDIR;
@@ -510,7 +511,7 @@ public class TBLoader extends JFrame {
         copyTo).mkdirs();  // creates COLLECTION_SUBDIR if good path is found
     // Like "/Users/mike/Dropbox (Literacy Bridge)/tbcd1234/collected-data/XYZ/OperationalData/1234"
     pathOperationalData = copyTo + "/OperationalData/" + TBLoader.deviceID;
-    Logger.LogString("copyTo:" + copyTo);
+    LOG.log(Level.INFO, "copyTo:" + copyTo);
   }
 
   int idCounter = 0;
@@ -554,7 +555,7 @@ public class TBLoader extends JFrame {
         }
       });
       if (files == null) {
-        Logger.LogString("This does not look like a TB: " + rootPath);
+        LOG.log(Level.INFO, "This does not look like a TB: " + rootPath);
 
       } else if (files.length == 1) {
         String locFileName = files[0].getName();
@@ -574,12 +575,10 @@ public class TBLoader extends JFrame {
         }
       }
     } catch (Exception ignore) {
-      Logger.LogString(ignore.toString());
-      Logger.flush();
-      ignore.printStackTrace();
+      LOG.log(Level.WARNING, "Exception while reading community", ignore);
       // ignore and keep going with empty string
     }
-    Logger.LogString("TB's current community name is " + communityName);
+    LOG.log(Level.INFO, "TB's current community name is " + communityName);
     return communityName;
   }
 
@@ -689,8 +688,8 @@ public class TBLoader extends JFrame {
         // No counter yet; normal for new device pc. Starting serial number is the right thing, in that case.
       } catch (IOException e) {
         // This shoudn't happen since we checked f.exists()
-        Logger.LogString("Unexpected IOException reading " + devFilename
-            + "; ignoring and using default serial number");
+        LOG.log(Level.WARNING, "Unexpected IOException reading " + devFilename
+            + "; ignoring and using default serial number", e);
       }
       if (serialnumber >= 0xFFFF) {
         throw new Exception("SRN out of bounds for this TB Loader device.");
@@ -745,9 +744,9 @@ public class TBLoader extends JFrame {
         sn = NO_SERIAL_NUMBER;
       }
       if (!sn.equals(NO_SERIAL_NUMBER)) {
-        Logger.LogString("No stats SRN. Found *.srn file:" + sn);
+        LOG.log(Level.INFO, "No stats SRN. Found *.srn file:" + sn);
       } else {
-        Logger.LogString("No stats SRN and no good *.srn file found.");
+        LOG.log(Level.INFO, "No stats SRN and no good *.srn file found.");
       }
     }
 
@@ -958,8 +957,7 @@ public class TBLoader extends JFrame {
       lastUpdatedText.setText(lastUpdate);
 
     } catch (Exception ignore) {
-      Logger.LogString(ignore.toString());
-      Logger.LogString("exception - ignore and keep going with empty strings");
+      LOG.log(Level.WARNING, "exception - ignore and keep going with empty strings", ignore);
     }
     sn = sn.toUpperCase();
     if (!isSerialNumberFormatGood2(sn)) {
@@ -996,7 +994,7 @@ public class TBLoader extends JFrame {
       }
     }
     if (driveList.getItemCount() == 0) {
-      Logger.LogString("No drives");
+      LOG.log(Level.INFO, "No drives");
       driveList.addItem(new DriveInfo(null, NO_DRIVE));
       index = 0;
     }
@@ -1048,10 +1046,9 @@ public class TBLoader extends JFrame {
 
           if (needRefresh) {
             refreshingDriveInfo = true;
-            Logger.LogString("deviceMonitor sees new drive");
+            LOG.log(Level.INFO, "deviceMonitor sees new drive");
             fillDriveList(roots);
             if (!((DriveInfo) driveList.getItemAt(0)).label.equals(NO_DRIVE)) {
-              Logger.init();
               status2.setText("");
             }
             try {
@@ -1078,8 +1075,7 @@ public class TBLoader extends JFrame {
         try {
           sleep(2000);
         } catch (InterruptedException e) {
-          Logger.LogString(e.toString());
-          Logger.flush();
+          LOG.log(Level.WARNING, "Exception while refreshing list of connected devices.", e);
           throw new RuntimeException(e);
         }
 
@@ -1311,7 +1307,7 @@ public class TBLoader extends JFrame {
       isGood = true;
     else {
       isGood = false;
-      Logger.LogString("***Incorrect Serial Number Format:" + srn + "***");
+      LOG.log(Level.INFO, "***Incorrect Serial Number Format:" + srn + "***");
     }
     return isGood;
   }
@@ -1369,7 +1365,7 @@ public class TBLoader extends JFrame {
       di = (DriveInfo) ((JComboBox) e.getSource()).getSelectedItem();
       TBLoader.currentDrive = di;
       if (di != null) {
-        Logger.LogString("Drive changed: " + di.drive + di.label);
+        LOG.log(Level.INFO, "Drive changed: " + di.drive + di.label);
         try {
           fillCommunityList();
         } catch (IOException e1) {
@@ -1435,7 +1431,7 @@ public class TBLoader extends JFrame {
 
     disableAll();
     try {
-      Logger.LogString("ACTION: " + b.getText());
+      LOG.log(Level.INFO, "ACTION: " + b.getText());
 
       di = TBLoader.currentDrive;
       File drive = di.drive;
@@ -1452,7 +1448,7 @@ public class TBLoader extends JFrame {
         oldDeploymentText.setText("UNKNOWN");
 
       String community = newCommunityList.getSelectedItem().toString();
-      Logger.LogString("Community: " + community);
+      LOG.log(Level.INFO, "Community: " + community);
 
       if (isUpdate) {
         if (dateRotation == null
@@ -1468,11 +1464,11 @@ public class TBLoader extends JFrame {
               "No community selected.\nAre you sure?", "Confirm",
               JOptionPane.YES_NO_OPTION);
           if (response != JOptionPane.YES_OPTION) {
-            Logger.LogString("No community selected. Are you sure? NO");
+            LOG.log(Level.INFO, "No community selected. Are you sure? NO");
             refreshUI();
             return;
           } else
-            Logger.LogString("No community selected. Are you sure? YES");
+            LOG.log(Level.INFO, "No community selected. Are you sure? YES");
         } else
           prevSelectedCommunity = newCommunityList.getSelectedIndex();
 
@@ -1488,7 +1484,7 @@ public class TBLoader extends JFrame {
         }
       }
 
-      Logger.LogString("ID:" + di.serialNumber);
+      LOG.log(Level.INFO, "ID:" + di.serialNumber);
       status.setText("STATUS: Starting\n");
 
       CopyThread t = new CopyThread(this, devicePath, di.serialNumber,
@@ -1498,8 +1494,7 @@ public class TBLoader extends JFrame {
       refreshUI();
       return;
     } catch (Exception ex) {
-      Logger.LogString(ex.toString());
-      ex.printStackTrace();
+      LOG.log(Level.WARNING, ex.toString(), ex);
       JOptionPane.showMessageDialog(this, "An error occured.", "Error",
           JOptionPane.ERROR_MESSAGE);
       fillDeploymentList();
@@ -1508,16 +1503,16 @@ public class TBLoader extends JFrame {
   }
 
   private void resetUI(boolean resetDrives) {
-    Logger.LogString("Resetting UI");
+    LOG.log(Level.INFO, "Resetting UI");
     oldSrnText.setText("");
     newSrnText.setText("");
     if (resetDrives && !refreshingDriveInfo) {
-      Logger.LogString(" -fill drives list");
+      LOG.log(Level.INFO, " -fill drives list");
       fillDriveList(getRoots());
     } else if (resetDrives && refreshingDriveInfo) {
-      Logger.LogString(" - drive list currently being filled by drive monitor");
+      LOG.log(Level.INFO, " - drive list currently being filled by drive monitor");
     }
-    Logger.LogString(" -refresh UI");
+    LOG.log(Level.INFO, " -refresh UI");
     refreshUI();
   }
 
@@ -1526,7 +1521,7 @@ public class TBLoader extends JFrame {
       final String endTitle) {
     updatingTB = false;
     resetUI(true);
-    Logger.LogString(endMsg);
+    LOG.log(Level.INFO, endMsg);
     JOptionPane.showMessageDialog(null, endMsg, endTitle,
         JOptionPane.DEFAULT_OPTION);
   }
@@ -1569,7 +1564,7 @@ public class TBLoader extends JFrame {
       grabStatsOnlyButton.setEnabled(true);
       status.setText("STATUS: Ready");
       status2.setText(status2.getText() + "\n\n");
-      Logger.LogString("STATUS: Ready");
+      LOG.log(Level.INFO, "STATUS: Ready");
     } else {
       updateButton.setEnabled(false);
       grabStatsOnlyButton.setEnabled(false);
@@ -1581,7 +1576,7 @@ public class TBLoader extends JFrame {
         newSrnText.setText("");
         oldSrnText.setText("");
         lastUpdatedText.setText("");
-        Logger.LogString("STATUS: " + NO_DRIVE);
+        LOG.log(Level.INFO, "STATUS: " + NO_DRIVE);
         status.setText("STATUS: " + NO_DRIVE);
       }
       try {
@@ -1593,97 +1588,15 @@ public class TBLoader extends JFrame {
         e.printStackTrace();
       }
     }
-    Logger.flush();
   }
 
   private void disableAll() {
     updateButton.setEnabled(false);
   }
 
-  // TODO: Use one (standard!) logger class.
-  public static class Logger {
-    private static BufferedWriter bw;
-
-    public Logger() {
-      init();
-    }
-
-    public synchronized static void LogString(String s) {
-      if (s == null)
-        return;
-      try {
-        System.out.println("Log:" + s);
-        if (bw != null) {
-          bw.write(getDateTime() + ": " + s + "\r\n");
-        }
-      } catch (IOException e) {
-        close();
-        open();
-        try {
-          bw.write(getDateTime() + ": " + s + "\r\n");
-        } catch (IOException ee) {
-          e.printStackTrace();
-          ee.printStackTrace();
-        }
-      }
-    }
-
-    public static void close() {
-      try {
-        if (bw != null) {
-          bw.flush();
-          bw.close();
-        }
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-
-    private static void open() {
-      try {
-        bw = new BufferedWriter(new FileWriter(getLogFileName()));
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
-
-    public static void flush() {
-      try {
-        if (bw != null)
-          bw.flush();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-
-    public static void init() {
-      try {
-        close();
-        open();
-        LogString("DEVICE:" + TBLoader.deviceID);
-        LogString("JAVA VERSION:" + System.getProperty("java.version"));
-        LogString("OPERATING SYSTEM:" + System.getProperty("os.name") + " v"
-            + System.getProperty("os.version") + " - " + System.getProperty(
-            "os.arch"));
-        LogString("ACM VERSION:" + Constants.ACM_VERSION);
-        LogString("IMAGE REVISION:" + imageRevision);
-        LogString("COMPUTERNAME:" + System.getenv("COMPUTERNAME"));
-        LogString("USERNAME:" + System.getenv("USERNAME"));
-        LogString("APP PATH: " + new File(".").getAbsolutePath());
-        LogString("LB HOMEPATH:" + TEMP_COLLECTION_DIR);
-        LogString("DROPBOX PATH = " + copyTo);
-        flush();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
-  }
-
   // TODO: Move this to its own file.
   public static class CopyThread extends Thread {
     public enum Operation {Update, CollectStats}
-
-    ;
 
     final Operation operation;
     final String devicePath;
@@ -1749,7 +1662,7 @@ public class TBLoader extends JFrame {
           String cmd = reader.readLine();
           if (cmd.startsWith("rem ")) {
             status.setText("STATUS: " + cmd.substring(4));
-            Logger.LogString(cmd.substring(4));
+            LOG.log(Level.INFO, cmd.substring(4));
             continue;
           }
           cmd = cmd.replaceAll("\\$\\{device_drive\\}",
@@ -1812,9 +1725,7 @@ public class TBLoader extends JFrame {
         }
         reader.close();
       } catch (Exception e) {
-        Logger.LogString(e.toString());
-        Logger.flush();
-        e.printStackTrace();
+        LOG.log(Level.WARNING, e.toString(), e);
       }
       return success;
     }
@@ -1831,40 +1742,40 @@ public class TBLoader extends JFrame {
           return;
         }
         TBLoader.status2.setText("Checking Memory Card");
-        Logger.LogString("STATUS:Checking Memory Card");
+        LOG.log(Level.INFO, "STATUS:Checking Memory Card");
         hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
         if (hasCorruption) {
           TBLoader.currentDrive.corrupted = true;
           TBLoader.status2.setText(
               TBLoader.status2.getText() + "...Corrupted\nGetting Stats");
-          Logger.LogString("STATUS:Corrupted...Getting Stats");
+          LOG.log(Level.INFO, "STATUS:Corrupted...Getting Stats");
           executeFile(new File(SCRIPT_SUBDIR + "chkdsk-save.txt"));
         } else {
           TBLoader.status2.setText(
               TBLoader.status2.getText() + "...Good\nGetting Stats");
-          Logger.LogString("STATUS:Good Card\nGetting Stats");
+          LOG.log(Level.INFO, "STATUS:Good Card\nGetting Stats");
         }
         gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));
         callback.logTBData("stats-only");
         if (gotStats) {
           TBLoader.status2.setText(
               TBLoader.status2.getText() + "...Got Stats\nErasing Flash Stats");
-          Logger.LogString("STATUS:Got Stats!\nErasing Flash Stats");
+          LOG.log(Level.INFO, "STATUS:Got Stats!\nErasing Flash Stats");
           executeFile(new File(SCRIPT_SUBDIR + "eraseFlashStats.txt"));
           TBLoader.status2.setText(TBLoader.status2.getText()
               + "...Erased Flash Stats\nDisconnecting");
-          Logger.LogString("STATUS:Erased Flash Stats");
-          Logger.LogString("STATUS:Disconnecting TB");
+          LOG.log(Level.INFO, "STATUS:Erased Flash Stats");
+          LOG.log(Level.INFO, "STATUS:Disconnecting TB");
           executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));
           TBLoader.status2.setText(TBLoader.status2.getText() + "...Complete");
-          Logger.LogString("STATUS:Complete");
+          LOG.log(Level.INFO, "STATUS:Complete");
           success = true;
           endMsg = new String("Got Stats!");
           endTitle = new String("Success");
         } else {
           TBLoader.status2.setText(
               TBLoader.status2.getText() + "...No Stats!\n");
-          Logger.LogString("STATUS:No Stats!");
+          LOG.log(Level.INFO, "STATUS:No Stats!");
           endMsg = new String("Could not get stats for some reason.");
           endTitle = new String("Failure");
         }
@@ -1876,9 +1787,7 @@ public class TBLoader extends JFrame {
         ZipUnzip.zip(sourceFile, new File(targetFullPath), true);
         FileUtils.deleteDirectory(sourceFile);
       } catch (IOException e) {
-        Logger.LogString("Unable to zip device files:" + e.getMessage());
-        Logger.flush();
-        e.printStackTrace();
+        LOG.log(Level.WARNING, "Unable to zip device files:", e);
       } finally {
         callback.onCopyFinished(success, tbSrn, this.operation, endMsg,
             endTitle);
@@ -1898,28 +1807,28 @@ public class TBLoader extends JFrame {
           return;
         }
         TBLoader.status2.setText("Checking Memory Card");
-        Logger.LogString("STATUS:Checking Memory Card");
+        LOG.log(Level.INFO, "STATUS:Checking Memory Card");
         hasCorruption = !executeFile(new File(SCRIPT_SUBDIR + "chkdsk.txt"));
         if (hasCorruption) {
           TBLoader.currentDrive.corrupted = true;
           TBLoader.status2.setText(
               TBLoader.status2.getText() + "...Corrupted\nGetting Stats");
-          Logger.LogString("STATUS:Corrupted...Getting Stats\n");
+          LOG.log(Level.INFO, "STATUS:Corrupted...Getting Stats\n");
           executeFile(new File(SCRIPT_SUBDIR + "chkdsk-save.txt"));
         } else {
           TBLoader.status2.setText(
               TBLoader.status2.getText() + "...Good\nGetting Stats");
-          Logger.LogString("STATUS:Good Card...Getting Stats\n");
+          LOG.log(Level.INFO, "STATUS:Good Card...Getting Stats\n");
         }
         gotStats = executeFile(new File(SCRIPT_SUBDIR + "grab.txt"));
         if (gotStats) {
           TBLoader.status2.setText(
               TBLoader.status2.getText() + "...Got Stats\n");
-          Logger.LogString("STATUS:Got Stats\n");
+          LOG.log(Level.INFO, "STATUS:Got Stats\n");
         } else {
           TBLoader.status2.setText(
               TBLoader.status2.getText() + "...No Stats!\n");
-          Logger.LogString("STATUS:No Stats!\n");
+          LOG.log(Level.INFO, "STATUS:No Stats!\n");
         }
         // zip up stats
         String sourceFullPath = TEMP_COLLECTION_DIR + TBLoader.syncSubPath;
@@ -1931,13 +1840,13 @@ public class TBLoader extends JFrame {
 
         if (hasCorruption) {
           TBLoader.status2.setText(TBLoader.status2.getText() + "Reformatting");
-          Logger.LogString("STATUS:Reformatting");
+          LOG.log(Level.INFO, "STATUS:Reformatting");
           goodCard = executeFile(new File(SCRIPT_SUBDIR + "reformat.txt"));
           if (!goodCard) {
             TBLoader.status2.setText(
                 TBLoader.status2.getText() + "...Failed\n");
-            Logger.LogString("STATUS:Reformat Failed");
-            Logger.LogString(
+            LOG.log(Level.INFO, "STATUS:Reformat Failed");
+            LOG.log(Level.INFO,
                 "Could not reformat memory card.\nMake sure you have a good USB connection\nand that the Talking Book is powered with batteries, then try again.\n\nIf you still cannot reformat, replace the memory card.");
             JOptionPane.showMessageDialog(null,
                 "Could not reformat memory card.\nMake sure you have a good USB connection\nand that the Talking Book is powered with batteries, then try again.\n\nIf you still cannot reformat, replace the memory card.",
@@ -1945,13 +1854,13 @@ public class TBLoader extends JFrame {
             return;
           } else {
             TBLoader.status2.setText(TBLoader.status2.getText() + "...Good\n");
-            Logger.LogString("STATUS:Format was good");
+            LOG.log(Level.INFO, "STATUS:Format was good");
           }
         } else {
           if (!newSrnText.getText()
               .equalsIgnoreCase(
                   TBLoader.currentDrive.getLabelWithoutDriveLetter())) {
-            Logger.LogString("STATUS:Relabeling volume");
+            LOG.log(Level.INFO, "STATUS:Relabeling volume");
             TBLoader.status2.setText(
                 TBLoader.status2.getText() + "Relabeling\n");
             executeFile(new File(SCRIPT_SUBDIR + "relabel.txt"));
@@ -1959,10 +1868,10 @@ public class TBLoader extends JFrame {
         }
         TBLoader.status2.setText(
             TBLoader.status2.getText() + "Updating TB Files");
-        Logger.LogString("STATUS:Updating TB Files");
+        LOG.log(Level.INFO, "STATUS:Updating TB Files");
         executeFile(new File(SCRIPT_SUBDIR + "update.txt"));
-        Logger.LogString("STATUS:Updated");
-        Logger.LogString("STATUS:Adding Image Content");
+        LOG.log(Level.INFO, "STATUS:Updated");
+        LOG.log(Level.INFO, "STATUS:Adding Image Content");
         verified = executeFile(new File(SCRIPT_SUBDIR + "customCommunity.txt"));
         if (TBLoader.forceFirmware.isSelected()) {
           // rename firmware at root to system.img to force TB to update itself
@@ -1972,17 +1881,17 @@ public class TBLoader extends JFrame {
           firmware.renameTo(new File(root, "system.img"));
           TBLoader.status2.setText(
               TBLoader.status2.getText() + "\nRefreshed firmware...");
-          Logger.LogString("STATUS:Forced Firmware Refresh");
+          LOG.log(Level.INFO, "STATUS:Forced Firmware Refresh");
         }
         TBLoader.status2.setText(TBLoader.status2.getText() + "...Updated\n");
         if (verified) {
           String duration;
           TBLoader.status2.setText(TBLoader.status2.getText()
               + "Updated & Verified\nDisconnecting TB");
-          Logger.LogString("STATUS:Updated & Verified...Disconnecting TB");
+          LOG.log(Level.INFO, "STATUS:Updated & Verified...Disconnecting TB");
           executeFile(new File(SCRIPT_SUBDIR + "disconnect.txt"));
           TBLoader.status2.setText(TBLoader.status2.getText() + "...Complete");
-          Logger.LogString("STATUS:Complete");
+          LOG.log(Level.INFO, "STATUS:Complete");
           success = true;
           duration = getDuration();
           if (TBLoader.forceFirmware.isSelected())
@@ -2001,7 +1910,7 @@ public class TBLoader extends JFrame {
           TBLoader.status2.setText(
               TBLoader.status2.getText() + "...Failed Verification in "
                   + duration + "\n");
-          Logger.LogString("STATUS:Failed Verification");
+          LOG.log(Level.INFO, "STATUS:Failed Verification");
           endMsg = new String(
               "Update failed verification.  Try again or replace memory card.");
           endTitle = new String("Failure");
@@ -2013,11 +1922,9 @@ public class TBLoader extends JFrame {
           JOptionPane.showMessageDialog(null, e.getMessage(), "Error",
               JOptionPane.ERROR_MESSAGE);
           criticalError = true;
-          Logger.LogString("CRITICAL ERROR:" + e.getMessage());
+          LOG.log(Level.SEVERE, "CRITICAL ERROR:", e);
         } else
-          Logger.LogString("NON-CRITICAL ERROR:" + e.getMessage());
-        Logger.flush();
-        e.printStackTrace();
+          LOG.log(Level.WARNING, "NON-CRITICAL ERROR:", e);
       } finally {
         callback.onCopyFinished(success, tbSrn, this.operation, endMsg,
             endTitle);
@@ -2065,7 +1972,7 @@ public class TBLoader extends JFrame {
   static String execute(String cmd) throws Exception {
     String line;
     String errorLine = null;
-    Logger.LogString("Executing:" + cmd);
+    LOG.log(Level.INFO, "Executing:" + cmd);
     Process proc = Runtime.getRuntime().exec(cmd);
 
     BufferedReader br1 = new BufferedReader(
@@ -2075,14 +1982,14 @@ public class TBLoader extends JFrame {
 
     do {
       line = br1.readLine();
-      Logger.LogString(line);
+      LOG.log(Level.INFO, line);
       if (line != null && errorLine == null)
         errorLine = dosErrorCheck(line);
     } while (line != null);
 
     do {
       line = br2.readLine();
-      Logger.LogString(line);
+      LOG.log(Level.INFO, line);
       if (line != null && errorLine == null)
         errorLine = dosErrorCheck(line);
     } while (line != null);
@@ -2253,7 +2160,7 @@ public class TBLoader extends JFrame {
         }
       }
       f.close();
-      Logger.LogString("FOUND FLASH STATS\n" + this.toString());
+      LOG.log(Level.INFO, "FOUND FLASH STATS\n" + this.toString());
     }
 
     short readShort() throws IOException {
