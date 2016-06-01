@@ -1,0 +1,47 @@
+File distDir = file("$projectDir/dist")
+
+task copyLibs(type: Sync) {
+  from configurations.runtime
+  into "$distDir/libs"
+}
+
+task copyJars(type: Copy, dependsOn: build) {
+  from libsDir
+  into distDir
+}
+
+task dist(dependsOn: [copyJars, copyLibs]) {
+  description = 'Builds the distribution.'
+  group = 'build'
+}
+
+clean {
+  delete distDir
+}
+
+dependencies {
+  compile 'org.apache.lucene:lucene-core:5.5.0'
+  compile 'org.apache.lucene:lucene-facet:5.5.0'
+  compile 'org.apache.lucene:lucene-analyzers-common:5.5.0'
+  compile 'org.apache.avro:avro:1.7.7'
+  compile 'commons-lang:commons-lang:2.4'
+  compile 'org.slf4j:slf4j-api:1.7.16'
+  compile 'org.slf4j:slf4j-simple:1.7.16'
+  compile 'javax.media:jmf:2.1.1e'
+  compile 'jakarta-regexp:jakarta-regexp:1.4'
+  compile 'com.google.collections:google-collections:1.0-rc5'
+  compile 'org.yaml:snakeyaml:1.6'
+  compile 'it.cnr.imaa.essi:lablib-checkboxtree:3.1.1'
+  compile 'org.netbeans.external:swing-layout-1.0.4:RELEASE68'
+  compile 'org.swinglabs:swingx:1.6.1'
+  compile 'args4j:args4j:2.0.16'
+  compile 'commons-io:commons-io:2.4'
+  compile 'net.sf.opencsv:opencsv:2.3'
+
+  compile files(fileTree('3rdparty').include('*.jar'))
+
+  testCompile 'org.powermock:powermock-api-mockito:1.6.4'
+  testCompile 'org.powermock:powermock-module-junit4-common:1.6.4'
+  testCompile 'org.powermock:powermock-module-junit4:1.6.4'
+  testCompile 'junit:junit:4.12'
+}

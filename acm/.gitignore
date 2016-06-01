@@ -1,5 +1,5 @@
 lib
 build
+dist
 .DS_Store
-acm.iml
-.idea/
+/.gradle/
