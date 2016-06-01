@@ -2,6 +2,23 @@ package org.literacybridge.acm.tbloader;
 
 import static javax.swing.GroupLayout.Alignment.BASELINE;
 import static javax.swing.GroupLayout.Alignment.LEADING;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTION_SUBDIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.COMMUNITIES_SUBDIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.CONTENT_BASIC_SUBDIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.CONTENT_SUBDIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.DEFAULT_GROUP_LABEL;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.DEVICE_FILE_EXTENSION;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.GROUP_FILE_EXTENSION;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.NEED_SERIAL_NUMBER;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.NO_DRIVE;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.NO_SERIAL_NUMBER;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.SCRIPT_SUBDIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.STARTING_SERIALNUMBER;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TEMP_COLLECTION_DIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TRIGGER_FILE_CHECK;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.UNPUBLISHED_REV;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -23,7 +40,6 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.RandomAccessFile;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -51,31 +67,12 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.utils.OSChecker;
 import org.literacybridge.acm.utils.ZipUnzip;
+import org.literacybridge.core.tbloader.TBInfo;
 
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame {
   private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
 
-  public static final String UNPUBLISHED_REV = "UNPUBLISHED";
-  public static final String COLLECTED_DATA_SUBDIR_NAME = "collected-data";
-  public static final String COLLECTED_DATA_DROPBOXDIR_PREFIX = "tbcd";
-  private static final String COLLECTION_SUBDIR =
-      "/" + COLLECTED_DATA_SUBDIR_NAME;
-  private static String TEMP_COLLECTION_DIR = "";
-  private static final String SW_SUBDIR = "./software/";
-  private static final String CONTENT_SUBDIR = "./content/";
-  private static final String CONTENT_BASIC_SUBDIR = "basic/";
-  private static final String COMMUNITIES_SUBDIR = "communities/";
-  private static final String IMAGES_SUBDIR = "images/";
-  private static final String SCRIPT_SUBDIR = SW_SUBDIR + "scripts/";
-  private static final String NO_SERIAL_NUMBER = "UNKNOWN";
-  private static final String NEED_SERIAL_NUMBER = "-- to be assigned --";
-  private static final String NO_DRIVE = "(nothing connected)";
-  private static final String TRIGGER_FILE_CHECK = "checkdir";
-  private static final int STARTING_SERIALNUMBER = 0;
-  public static final String DEFAULT_GROUP_LABEL = "default";
-  public static final String GROUP_FILE_EXTENSION = ".grp";
-  public static final String DEVICE_FILE_EXTENSION = ".dev";
   private static String imageRevision = "(no rev)";
   private static String dateRotation;
   private static JComboBox newDeploymentList;
@@ -187,7 +184,7 @@ public class TBLoader extends JFrame {
       // Multiple Image Revisions! -- Delete all to go back to published version, unless one marks it as UNPUBLISHED
       boolean unpublished = false;
       for (File f : files) {
-        if (!f.getName().startsWith(TBLoader.UNPUBLISHED_REV)) {
+        if (!f.getName().startsWith(UNPUBLISHED_REV)) {
           f.delete();
         } else {
           unpublished = true;
@@ -206,7 +203,7 @@ public class TBLoader extends JFrame {
       imageRevision = imageRevision.substring(0, imageRevision.length() - 4);
     }
     setTitle("TB-Loader " + Constants.ACM_VERSION + "/" + imageRevision);
-    if (imageRevision.startsWith(TBLoader.UNPUBLISHED_REV)) {
+    if (imageRevision.startsWith(UNPUBLISHED_REV)) {
       Object[] options = { "Yes-refresh from published",
           "No-keep unpublished" };
       int answer = JOptionPane.showOptionDialog(null,
@@ -462,7 +459,7 @@ public class TBLoader extends JFrame {
         @Override
         public boolean accept(File dir, String name) {
           String lowercase = name.toLowerCase();
-          return lowercase.endsWith(TBLoader.DEVICE_FILE_EXTENSION);
+          return lowercase.endsWith(DEVICE_FILE_EXTENSION);
         }
       });
       if (files.length == 1) {
@@ -490,7 +487,7 @@ public class TBLoader extends JFrame {
       }
       // Like "/Users/mike/Dropbox (Literacy Bridge)/tbcd1234"
       File collectedDataFile = new File(dropboxDir,
-          TBLoader.COLLECTED_DATA_DROPBOXDIR_PREFIX + TBLoader.deviceID);
+          COLLECTED_DATA_DROPBOXDIR_PREFIX + TBLoader.deviceID);
       if (!collectedDataFile.exists()) {
         JOptionPane.showMessageDialog(null, collectedDataFile.getAbsolutePath()
                 + " does not exist; cannot find the Dropbox collected data path. Please contact ICT staff.",
@@ -529,7 +526,7 @@ public class TBLoader extends JFrame {
       statsPath = new File(rootPath, "statistics/flashData.bin");
     }
     tbStats = new TBInfo(statsPath.toString());
-    if (tbStats.countReflashes == -1)
+    if (tbStats.getCountReflashes() == -1)
       tbStats = null;
     if (!statsPath.exists())
       throw new IOException();
@@ -640,9 +637,9 @@ public class TBLoader extends JFrame {
       }
     }
     driveCommunity = getCommunityFromCurrentDrive();
-    if (tbStats != null && tbStats.location != null && !tbStats.location.equals(
+    if (tbStats != null && tbStats.getLocation() != null && !tbStats.getLocation().equals(
         ""))
-      oldCommunityText.setText(tbStats.location);
+      oldCommunityText.setText(tbStats.getLocation());
     else
       oldCommunityText.setText(driveCommunity);
 
@@ -673,9 +670,9 @@ public class TBLoader extends JFrame {
    * @return The next serial number.
    */
   private int allocateNextSerialNumberFromDevice() throws Exception {
-    int serialnumber = TBLoader.STARTING_SERIALNUMBER;
+    int serialnumber = STARTING_SERIALNUMBER;
     String devFilename =
-        TBLoader.deviceID + TBLoader.DEVICE_FILE_EXTENSION; // xxxx.dev
+        TBLoader.deviceID + DEVICE_FILE_EXTENSION; // xxxx.dev
     File f = new File(
         homepath + File.separator + "LiteracyBridge" + File.separator
             + devFilename); // File f = new File(dropboxCollectionFolder,TBLoader.deviceID+".cnt");
@@ -696,7 +693,7 @@ public class TBLoader extends JFrame {
       }
       f.delete();
     }
-    if (serialnumber == TBLoader.STARTING_SERIALNUMBER) {
+    if (serialnumber == STARTING_SERIALNUMBER) {
       // if file doesn't exist, use the SRN = STARTING_SERIALNUMBER
       // TODO:raise exception and tell user to register the device or ensure file wasn't lost
     }
@@ -725,9 +722,9 @@ public class TBLoader extends JFrame {
     String sn = NO_SERIAL_NUMBER;
     File[] files;
 
-    if (tbStats != null && isSerialNumberFormatGood(tbStats.serialNumber)
-        && isSerialNumberFormatGood2(tbStats.serialNumber))
-      sn = tbStats.serialNumber;
+    if (tbStats != null && isSerialNumberFormatGood(tbStats.getSerialNumber())
+        && isSerialNumberFormatGood2(tbStats.getSerialNumber()))
+      sn = tbStats.getSerialNumber();
     else if (systemPath.exists()) {
       files = systemPath.listFiles(new FilenameFilter() {
         @Override
@@ -814,9 +811,9 @@ public class TBLoader extends JFrame {
     String pkg = "UNKNOWN";
     File[] files;
 
-    if (tbStats != null && tbStats.imageName != null
-        && !tbStats.imageName.equals(""))
-      pkg = tbStats.imageName;
+    if (tbStats != null && tbStats.getImageName() != null
+        && !tbStats.getImageName().equals(""))
+      pkg = tbStats.getImageName();
     else if (systemPath.exists()) {
       // get package name from .pkg file
       files = systemPath.listFiles(new FilenameFilter() {
@@ -846,9 +843,9 @@ public class TBLoader extends JFrame {
     String depl = "UNKNOWN";
     File[] files;
 
-    if (tbStats != null && tbStats.deploymentNumber != null
-        && !tbStats.deploymentNumber.equals(""))
-      depl = tbStats.deploymentNumber;
+    if (tbStats != null && tbStats.getDeploymentNumber() != null
+        && !tbStats.getDeploymentNumber().equals(""))
+      depl = tbStats.getDeploymentNumber();
     else if (systemPath.exists()) {
       // get deployment name from .dep file
       files = systemPath.listFiles(new FilenameFilter() {
@@ -874,9 +871,9 @@ public class TBLoader extends JFrame {
   private String getLastUpdateDate() {
     String lastUpdate = "UNKNOWN";
 
-    if (tbStats != null && tbStats.updateDate != -1)
-      lastUpdate = tbStats.updateYear + "/" + tbStats.updateMonth + "/"
-          + tbStats.updateDate;
+    if (tbStats != null && tbStats.getUpdateDate() != -1)
+      lastUpdate = tbStats.getUpdateYear() + "/" + tbStats.getUpdateMonth() + "/"
+          + tbStats.getUpdateDate();
     else {
       String strLine = TBLoader.lastSynchDir; // 1111y11m11d
       if (strLine != null) {
@@ -1149,33 +1146,33 @@ public class TBLoader extends JFrame {
         bw.write(TBLoader.currentDrive.label + ",");
         bw.write(di.corrupted + ",");
         if (tbStats != null) {
-          bw.write(tbStats.serialNumber.toUpperCase() + ",");
-          bw.write(tbStats.countReflashes + ",");
-          bw.write(tbStats.deploymentNumber.toUpperCase() + ",");
-          bw.write(tbStats.imageName.toUpperCase() + ",");
-          bw.write(tbStats.location.toUpperCase() + ",");
-          bw.write(tbStats.updateYear + "/" + tbStats.updateMonth + "/"
-              + tbStats.updateDate + ",");
-          bw.write(tbStats.cumulativeDays + ",");
-          bw.write(tbStats.corruptionDay + ",");
-          bw.write(tbStats.lastInitVoltage + ",");
-          bw.write(tbStats.powerups + ",");
-          bw.write(tbStats.periods + ",");
-          bw.write(tbStats.profileTotalRotations + ",");
-          bw.write(tbStats.totalMessages + ",");
+          bw.write(tbStats.getSerialNumber().toUpperCase() + ",");
+          bw.write(tbStats.getCountReflashes() + ",");
+          bw.write(tbStats.getDeploymentNumber().toUpperCase() + ",");
+          bw.write(tbStats.getImageName().toUpperCase() + ",");
+          bw.write(tbStats.getLocation().toUpperCase() + ",");
+          bw.write(tbStats.getUpdateYear() + "/" + tbStats.getUpdateMonth() + "/"
+              + tbStats.getUpdateDate() + ",");
+          bw.write(tbStats.getCumulativeDays() + ",");
+          bw.write(tbStats.getCorruptionDay() + ",");
+          bw.write(tbStats.getLastInitVoltage() + ",");
+          bw.write(tbStats.getPowerups() + ",");
+          bw.write(tbStats.getPeriods() + ",");
+          bw.write(tbStats.getProfileTotalRotations() + ",");
+          bw.write(tbStats.getTotalMessages() + ",");
           int totalSecondsPlayed = 0, countStarted = 0, countQuarter = 0, countHalf = 0, countThreequarters = 0, countCompleted = 0, countApplied = 0, countUseless = 0;
-          for (int m = 0; m < tbStats.totalMessages; m++) {
-            for (int r = 0; r < (tbStats.profileTotalRotations < 5 ?
-                tbStats.profileTotalRotations :
+          for (int m = 0; m < tbStats.getTotalMessages(); m++) {
+            for (int r = 0; r < (tbStats.getProfileTotalRotations() < 5 ?
+                tbStats.getProfileTotalRotations() :
                 5); r++) {
-              totalSecondsPlayed += tbStats.stats[m][r].totalSecondsPlayed;
-              countStarted += tbStats.stats[m][r].countStarted;
-              countQuarter += tbStats.stats[m][r].countQuarter;
-              countHalf += tbStats.stats[m][r].countHalf;
-              countThreequarters += tbStats.stats[m][r].countThreequarters;
-              countCompleted += tbStats.stats[m][r].countCompleted;
-              countApplied += tbStats.stats[m][r].countApplied;
-              countUseless += tbStats.stats[m][r].countUseless;
+              totalSecondsPlayed += tbStats.getStats()[m][r].getTotalSecondsPlayed();
+              countStarted += tbStats.getStats()[m][r].getCountStarted();
+              countQuarter += tbStats.getStats()[m][r].getCountQuarter();
+              countHalf += tbStats.getStats()[m][r].getCountHalf();
+              countThreequarters += tbStats.getStats()[m][r].getCountThreequarters();
+              countCompleted += tbStats.getStats()[m][r].getCountCompleted();
+              countApplied += tbStats.getStats()[m][r].getCountApplied();
+              countUseless += tbStats.getStats()[m][r].getCountUseless();
             }
           }
           bw.write(totalSecondsPlayed / 60 + ",");
@@ -1186,14 +1183,14 @@ public class TBLoader extends JFrame {
           bw.write(countCompleted + ",");
           bw.write(countApplied + ",");
           bw.write(String.valueOf(countUseless));
-          for (int r = 0; r < (tbStats.profileTotalRotations < 5 ?
-              tbStats.profileTotalRotations :
+          for (int r = 0; r < (tbStats.getProfileTotalRotations() < 5 ?
+              tbStats.getProfileTotalRotations() :
               5); r++) {
             bw.write(
                 "," + r + "," + tbStats.totalPlayedSecondsPerRotation(r) / 60
-                    + "," + tbStats.rotations[r].startingPeriod + ",");
-            bw.write(tbStats.rotations[r].hoursAfterLastUpdate + ","
-                + tbStats.rotations[r].initVoltage);
+                    + "," + tbStats.getRotations()[r].getStartingPeriod() + ",");
+            bw.write(tbStats.getRotations()[r].getHoursAfterLastUpdate() + ","
+                + tbStats.getRotations()[r].getInitVoltage());
           }
         }
         bw.write("\n");
@@ -1337,7 +1334,7 @@ public class TBLoader extends JFrame {
         // corrupted srns get through. 0x2f is somewhere in the middle.
         if (highBytes < 0x2f) {
           int lowBytes = Integer.parseInt(srn.substring(6), 0x10);
-          if (lowBytes >= TBLoader.STARTING_SERIALNUMBER) {
+          if (lowBytes >= STARTING_SERIALNUMBER) {
             isGood = true;
           }
         }
@@ -2026,291 +2023,6 @@ public class TBLoader extends JFrame {
         return drive.toString();
       }
       return label;
-    }
-  }
-
-  private static class TBInfo {
-    static final int MAX_MESSAGES = 40;
-    boolean debug = true;
-    String serialNumber;
-    String deploymentNumber;
-    short countReflashes;
-    String location;
-    String imageName;
-    short updateDate = -1;
-    short updateMonth = -1;
-    short updateYear = -1;
-
-    short periods;
-    short cumulativeDays;
-    short corruptionDay;
-    short powerups;
-    short lastInitVoltage;
-    RotationTiming[] rotations = new RotationTiming[5];
-
-    short totalMessages;
-    String[] msgIdMap = new String[MAX_MESSAGES]; // 40 messages, 20 chars
-
-    short profileOrder;
-    String profileName;
-    short profileTotalMessages;
-    short profileTotalRotations;
-    NORmsgStats[][] stats = new NORmsgStats[MAX_MESSAGES][5];
-    RandomAccessFile f;
-
-    private class RotationTiming {
-      short rotationNumber;
-      short startingPeriod;
-      short hoursAfterLastUpdate;
-      short initVoltage;
-
-      public RotationTiming() throws IOException {
-        f.skipBytes(2);
-        this.rotationNumber = readShort();
-        this.startingPeriod = readShort();
-        this.hoursAfterLastUpdate = readShort();
-        this.initVoltage = readShort();
-      }
-    }
-
-    private class NORmsgStats {
-      // short structType
-      short indexMsg;
-      short numberRotation;
-      short numberProfile;
-      short countStarted;
-      short countQuarter;
-      short countHalf;
-      short countThreequarters;
-      short countCompleted;
-      short countApplied;
-      short countUseless;
-      int totalSecondsPlayed;
-
-      public NORmsgStats() throws IOException {
-        f.skipBytes(2);
-        this.indexMsg = readShort();
-        this.numberProfile = readShort();
-        this.numberRotation = readShort();
-        this.countStarted = readShort();
-        this.countQuarter = readShort();
-        this.countHalf = readShort();
-        this.countThreequarters = readShort();
-        this.countCompleted = readShort();
-        this.countApplied = readShort();
-        this.countUseless = readShort();
-        this.totalSecondsPlayed = readUnsignedShort();
-      }
-    }
-
-    public TBInfo(String flashDataPath) throws IOException {
-      File file = new File(flashDataPath);
-      if (!file.exists()) {
-        System.out.print("No flash binary file to analyze.");
-        this.countReflashes = -1;
-        return;
-      }
-      f = new RandomAccessFile(flashDataPath, "r");
-      f.skipBytes(2);
-      this.countReflashes = readShort();
-      this.serialNumber = readString(12);
-      this.deploymentNumber = readString(20);
-      this.location = readString(40);
-      this.imageName = readString(20);
-      this.updateDate = readShort();
-      this.updateMonth = readShort();
-      this.updateYear = readShort();
-
-      f.skipBytes(2);
-      this.periods = readShort();
-      this.cumulativeDays = readShort();
-      this.corruptionDay = readShort();
-      this.powerups = readShort();
-      this.lastInitVoltage = readShort();
-      for (int i = 0; i < 5; i++) {
-        if (debug) {
-          System.out.println("i:" + i);
-          System.out.println("pointer:" + f.getFilePointer());
-        }
-        rotations[i] = new RotationTiming();
-      }
-
-      f.skipBytes(2);
-      this.totalMessages = readShort();
-      for (int i = 0; i < 40; i++) {
-        if (i < this.totalMessages)
-          this.msgIdMap[i] = readString(20);
-        else
-          f.skipBytes(40);
-      }
-
-      f.skipBytes(2);
-      this.profileOrder = readShort();
-      this.profileName = readString(20);
-      this.profileTotalMessages = readShort();
-      if (debug)
-        System.out.print("About to read totalrotations:");
-      this.profileTotalRotations = readShort();
-      for (int m = 0; m < this.totalMessages; m++) {
-        for (int r = 0; r < 5; r++) {
-          if (debug)
-            System.out.println(
-                "msg:" + m + " rot:" + r + " at " + f.getFilePointer());
-          this.stats[m][r] = new NORmsgStats();
-        }
-      }
-      f.close();
-      LOG.log(Level.INFO, "FOUND FLASH STATS\n" + this.toString());
-    }
-
-    short readShort() throws IOException {
-      long sum = 0;
-      int b, i;
-      short ret;
-
-      for (int l = 0; l < 2; l++) {
-        b = f.readByte() & 0xFF; // remove sign
-        i = b << (8 * l);
-        sum += (0xFFFF & i);
-      }
-      ret = (short) sum;
-      if (debug)
-        System.out.println(
-            "       readShort (" + sum + ") at " + f.getFilePointer() + ": "
-                + ret);
-      return ret;
-    }
-
-    int readUnsignedShort() throws IOException {
-      long sum = 0;
-      int b, i;
-      int ret;
-
-      for (int l = 0; l < 2; l++) {
-        b = f.readByte() & 0xFF; // remove sign
-        i = b << (8 * l);
-        sum += (0xFFFF & i);
-      }
-      ret = (int) sum;
-      if (debug)
-        System.out.println(
-            "       readShort (" + sum + ") at " + f.getFilePointer() + ": "
-                + ret);
-      return ret;
-    }
-
-    String readString(int maxChars) throws IOException {
-      char[] c = new char[maxChars];
-      boolean endString = false;
-      long start = f.getFilePointer();
-      for (int i = 0; i < maxChars; i++) {
-        c[i] = (char) f.readByte();
-        if (endString)
-          c[i] = 0;
-        else if (c[i] == 0)
-          endString = true;
-        f.readByte();
-      }
-      if (debug)
-        System.out.println("     string:" + String.valueOf(c) + " at " + start);
-      return new String(c).trim();
-    }
-
-    public long totalPlayedSecondsPerMsg(int msg) {
-      long totalSec = 0;
-      for (int r = 0; r < 5; r++) {
-        totalSec += this.stats[msg][r].totalSecondsPlayed;
-      }
-      return totalSec;
-    }
-
-    public long totalPlayedSecondsPerRotation(int rotation) {
-      long totalSec = 0;
-      for (int m = 0; m < this.totalMessages; m++) {
-        totalSec += this.stats[m][rotation].totalSecondsPlayed;
-      }
-      return totalSec;
-    }
-
-    public String toString() {
-      StringBuilder s = new StringBuilder();
-      String NEW_LINE = System.getProperty("line.separator");
-
-      s.append("Serial Number : " + this.serialNumber + NEW_LINE);
-      s.append("Reflashes     : " + this.countReflashes + NEW_LINE);
-      s.append("Deployment    : " + this.deploymentNumber + NEW_LINE);
-      s.append("Image         : " + this.imageName + NEW_LINE);
-      s.append("Profile       : " + this.profileName + NEW_LINE);
-      s.append("Location      : " + this.location + NEW_LINE);
-      s.append(
-          "Last Updated  : " + this.updateYear + "/" + this.updateMonth + "/"
-              + this.updateDate + NEW_LINE);
-      s.append("Powered Days  : " + this.cumulativeDays + NEW_LINE);
-      s.append("Last PowerupV : " + this.lastInitVoltage + NEW_LINE);
-      s.append("StartUps      : " + this.powerups + NEW_LINE);
-      s.append("Corruption Day: " + this.corruptionDay + NEW_LINE);
-      s.append("Periods       : " + this.periods + NEW_LINE);
-      s.append("Rotations     : " + this.profileTotalRotations + NEW_LINE);
-      s.append(NEW_LINE);
-      s.append("TOTAL STATS (" + this.totalMessages + " messages)" + NEW_LINE);
-      int totalSecondsPlayed = 0, countStarted = 0, countQuarter = 0, countHalf = 0, countThreequarters = 0, countCompleted = 0, countApplied = 0, countUseless = 0;
-      for (int m = 0; m < this.totalMessages; m++) {
-        for (int r = 0; r < (this.profileTotalRotations < 5 ?
-            this.profileTotalRotations :
-            5); r++) {
-          totalSecondsPlayed += this.stats[m][r].totalSecondsPlayed;
-          countStarted += this.stats[m][r].countStarted;
-          countQuarter += this.stats[m][r].countQuarter;
-          countHalf += this.stats[m][r].countHalf;
-          countThreequarters += this.stats[m][r].countThreequarters;
-          countCompleted += this.stats[m][r].countCompleted;
-          countApplied += this.stats[m][r].countApplied;
-          countUseless += this.stats[m][r].countUseless;
-        }
-      }
-      s.append("       Time:" + totalSecondsPlayed / 60 + "min "
-          + totalSecondsPlayed % 60 + "sec   Started:" + countStarted + "   P:"
-          + countQuarter +
-          "   H:" + countHalf + "   M:" + countThreequarters +
-          "   F:" + countCompleted);
-      s.append("   A:" + countApplied + "   U:" + countUseless + NEW_LINE);
-      s.append(NEW_LINE);
-
-      for (int r = 0; r < (this.profileTotalRotations < 5 ?
-          this.profileTotalRotations :
-          5); r++) {
-        s.append(
-            "  Rotation:" + r + "     " + totalPlayedSecondsPerRotation(r) / 60
-                + "min " + totalPlayedSecondsPerRotation(r) % 60
-                + "sec    Starting Period:" + this.rotations[r].startingPeriod
-                + "   Hours After Update:" +
-                this.rotations[r].hoursAfterLastUpdate + "   Init Voltage:"
-                + this.rotations[r].initVoltage + NEW_LINE);
-      }
-      s.append(NEW_LINE);
-      s.append(
-          "Message Stats  (" + this.totalMessages + " messages)" + NEW_LINE);
-      for (int m = 0; m < this.totalMessages; m++) {
-        s.append("  MESSAGE ID:" + this.msgIdMap[m] + " ("
-            + totalPlayedSecondsPerMsg(m) / 60 + "min "
-            + totalPlayedSecondsPerMsg(m) % 60 + "sec)" + NEW_LINE);
-        for (int r = 0; r < (this.profileTotalRotations < 5 ?
-            this.profileTotalRotations :
-            5); r++) {
-          s.append("     ROTATION: " + r);
-          s.append(
-              "       Time:" + this.stats[m][r].totalSecondsPlayed / 60 + "min "
-                  + this.stats[m][r].totalSecondsPlayed % 60 + "sec   Started:"
-                  + this.stats[m][r].countStarted + "   P:"
-                  + this.stats[m][r].countQuarter +
-                  "   H:" + this.stats[m][r].countHalf + "   M:"
-                  + this.stats[m][r].countThreequarters +
-                  "   F:" + this.stats[m][r].countCompleted);
-          s.append("   A:" + this.stats[m][r].countApplied + "   U:"
-              + this.stats[m][r].countUseless + NEW_LINE);
-        }
-      }
-      return s.toString();
     }
   }
 }

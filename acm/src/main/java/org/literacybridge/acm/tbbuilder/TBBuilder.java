@@ -25,6 +25,7 @@ import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.tbloader.TBLoader;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.acm.utils.ZipUnzip;
+import org.literacybridge.core.tbloader.TBLoaderConstants;
 
 import au.com.bytecode.opencsv.CSVReader;
 import au.com.bytecode.opencsv.CSVWriter;
@@ -161,7 +162,7 @@ public class TBBuilder {
 
     for (int i = 0; i < groupCount; i++) {
       File f = new File(targetSystemDir,
-          groups[i] + TBLoader.GROUP_FILE_EXTENSION);
+          groups[i] + TBLoaderConstants.GROUP_FILE_EXTENSION);
       f.createNewFile();
     }
 
@@ -233,7 +234,7 @@ public class TBBuilder {
 
     deleteRevFiles(targetTempDir);
     String revision;
-    revision = TBLoader.UNPUBLISHED_REV + "_"
+    revision = TBLoaderConstants.UNPUBLISHED_REV + "_"
         + TBLoader.getDateTime().substring(8, 17);
     File newRev = new File(targetTempDir, revision + ".rev");
     newRev.createNewFile();
@@ -399,21 +400,21 @@ public class TBBuilder {
       tbb = new TBBuilder(args[1], true);
       tbb.createDeployment(args[2]);
       if (args.length == 5) { // one package with default group
-        tbb.addImage(args[3], args[4], TBLoader.DEFAULT_GROUP_LABEL);
+        tbb.addImage(args[3], args[4], TBLoaderConstants.DEFAULT_GROUP_LABEL);
       } else if (args.length == 6) { // one package with specified group
         String groups[] = new String[2];
-        groups[0] = TBLoader.DEFAULT_GROUP_LABEL;
+        groups[0] = TBLoaderConstants.DEFAULT_GROUP_LABEL;
         groups[1] = args[5];
         tbb.addImage(args[3], args[4], groups);
       } else if (args.length == 9) { // two packages with specified groups
         String groups[] = new String[2];
-        groups[0] = TBLoader.DEFAULT_GROUP_LABEL;
+        groups[0] = TBLoaderConstants.DEFAULT_GROUP_LABEL;
         groups[1] = args[5];
         tbb.addImage(args[3], args[4], groups);
         tbb.addImage(args[6], args[7], groups);
       } else if (args.length == 12) { // three packages with specified groups
         String groups[] = new String[2];
-        groups[0] = TBLoader.DEFAULT_GROUP_LABEL;
+        groups[0] = TBLoaderConstants.DEFAULT_GROUP_LABEL;
         groups[1] = args[5];
         tbb.addImage(args[3], args[4], groups);
         groups = new String[1];

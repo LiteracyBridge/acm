@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.tbloader.TBLoader;
+import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public class MoveStats {
           File subdir = new File(dir, name);
           if (subdir.isDirectory()) {
             File collecteddata = FileNC(subdir,
-                TBLoader.COLLECTED_DATA_SUBDIR_NAME);
+                TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME);
             if (collecteddata.exists()) {
               // Check that every project directory has a talkingbookdata
               // subdirectory.
@@ -69,7 +70,7 @@ public class MoveStats {
             } else {
               logger.warn(String.format(
                   "The 'laptop' directory %s has no expected %s subdirectory.",
-                  name, TBLoader.COLLECTED_DATA_SUBDIR_NAME));
+                  name, TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME));
             }
           }
         }
