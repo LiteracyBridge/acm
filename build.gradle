@@ -1,5 +1,7 @@
-ext.gradleSettingsDir = "${rootProject.projectDir}/gradle"
-String javaLanguageLevel = "1.8"
+project.ext {
+  gradleSettingsDir = "${rootProject.projectDir}/gradle"
+  javaLanguageLevel = "1.8"
+}
 
 allprojects {
   apply plugin: 'idea'
@@ -12,45 +14,6 @@ allprojects {
     maven {
       url "http://essi-lab.eu/nexus/content/groups/open.repos"
     }
-  }
-}
-
-subprojects {
-  apply plugin: 'java'
-  apply plugin: 'eclipse'
-
-  eclipse {
-    jdt {
-      sourceCompatibility = javaLanguageLevel
-      targetCompatibility = javaLanguageLevel
-    }
-    classpath {
-      downloadSources = true
-      downloadJavadoc = true
-    }
-  }
-
-  // Include project specific settings
-  task eclipseSettings(type: Copy) {
-    from rootProject.files("$gradleSettingsDir/org.eclipse.jdt.ui.prefs")
-    into project.file('.settings/')
-  }
-
-  task eclipseJdtPrepare(type: Copy) {
-    from rootProject.file("$gradleSettingsDir/org.eclipse.jdt.core.prefs")
-    into project.file(".settings/")
-  }
-
-  task cleanEclipseJdtUi(type: Delete) {
-    delete project.file(".settings/org.eclipse.jdt.ui.prefs");
-  }
-
-  tasks["eclipseJdt"].dependsOn(eclipseJdtPrepare)
-  tasks["cleanEclipse"].dependsOn(cleanEclipseJdtUi)
-  tasks["eclipse"].dependsOn(eclipseSettings)
-
-  jar {
-    manifest.attributes provider: 'gradle'
   }
 }
 
@@ -90,7 +53,7 @@ def customizeIdeaCodeSyle(project) {
   }
 }
 
-/* Search component with given name */
+// Search component with given name
 def findComponent(project, name) {
   project.component.find { it.@name == name }
 }

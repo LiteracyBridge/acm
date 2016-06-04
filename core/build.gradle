@@ -1,5 +1,8 @@
+apply plugin: 'java'
+apply from: "${project.gradleSettingsDir}/eclipse.gradle"
 
-
+// This module 'core' gets packed into the Android TBLoader project,
+// so runtime dependencies should be chosen extremely carefully here.
 dependencies {
   testCompile 'junit:junit:4.12'
 }

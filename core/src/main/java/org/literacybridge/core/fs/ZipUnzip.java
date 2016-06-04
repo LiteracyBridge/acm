@@ -1,4 +1,4 @@
-package org.literacybridge.acm.utils;
+package org.literacybridge.core.fs;
 
 import java.io.File;
 import java.io.FileInputStream;

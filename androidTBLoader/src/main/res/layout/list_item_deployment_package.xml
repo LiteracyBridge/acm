@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/list_item_deployment_package_project"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="4dp"
+        android:textAppearance="@android:style/TextAppearance.Material.Menu"
+        tools:text="ACM UWR"
+        android:elegantTextHeight="false"
+        android:linksClickable="false"
+        android:singleLine="true"
+        />
+
+    <TextView
+        android:id="@+id/list_item_deployment_package_rev"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/list_item_deployment_package_project"
+        tools:text="Revision: 2016-13-e"
+        android:paddingLeft="4dp"/>
+
+    <TextView
+        android:id="@+id/list_item_deployment_package_expiration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/list_item_deployment_package_rev"
+        tools:text="Expires: 09/25/2016"
+        android:paddingLeft="4dp"/>
+
+    <Button
+        style="@android:style/Widget.Material.Button.Borderless.Colored"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="@string/deployment_package_download"
+        android:id="@+id/list_item_deployment_package_download_button"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"/>
+
+    <ProgressBar
+        android:id="@+id/list_item_deployment_package_progress_spinner"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:max="100"
+        android:progress="0"
+        android:indeterminate="false"
+        android:layout_marginRight="20dp"
+        android:visibility="invisible"
+        android:layout_marginTop="16dp"/>
+
+
+    <Button
+        style="@android:style/Widget.Material.Button.Borderless.Colored"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="@string/deployment_package_install"
+        android:id="@+id/list_item_deployment_package_install_button"
+        android:layout_below="@id/list_item_deployment_package_download_button"
+        android:layout_alignParentEnd="true"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/list_item_deployment_package_install_button"
+        android:background="?android:attr/listDivider"/>
+
+</RelativeLayout>

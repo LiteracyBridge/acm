@@ -1,3 +1,6 @@
+apply plugin: 'java'
+apply from: "${project.gradleSettingsDir}/eclipse.gradle"
+
 File distDir = file("$projectDir/dist")
 
 task copyLibs(type: Sync) {

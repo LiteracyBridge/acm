@@ -5,6 +5,7 @@ bin/
 .settings/
 .project
 .classpath
+local.properties
 .idea/
 *.iml
 *.ipr

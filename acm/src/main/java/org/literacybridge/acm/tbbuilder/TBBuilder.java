@@ -24,8 +24,9 @@ import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.tbloader.TBLoader;
 import org.literacybridge.acm.tools.DBExporter;
 import org.literacybridge.acm.utils.IOUtils;
-import org.literacybridge.acm.utils.ZipUnzip;
+import org.literacybridge.core.fs.ZipUnzip;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
+import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import au.com.bytecode.opencsv.CSVReader;
 import au.com.bytecode.opencsv.CSVWriter;
@@ -342,7 +343,7 @@ public class TBBuilder {
     deleteRevFiles(targetTempDir);
     String revision;
     revision = TBLoaderConstants.UNPUBLISHED_REV + "_"
-        + TBLoader.getDateTime().substring(8, 17);
+        + TBLoaderUtils.getDateTime().substring(8, 17);
     File newRev = new File(targetTempDir, revision + ".rev");
     newRev.createNewFile();
 

@@ -1,3 +1,0 @@
-rem REFORMAT
-rem Formatting Talking Book
-!format ${device_drive} /FS:FAT32 /v:${new_srn} /Y /Q

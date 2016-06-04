@@ -26,9 +26,9 @@ import javax.swing.JOptionPane;
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
+import org.literacybridge.core.fs.ZipUnzip;
 import org.literacybridge.acm.repository.CachingRepository;
 import org.literacybridge.acm.repository.FileSystemRepository;
-import org.literacybridge.acm.utils.ZipUnzip;
 
 import com.google.common.collect.Lists;
 

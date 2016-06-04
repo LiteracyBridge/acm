@@ -1,0 +1,52 @@
+<resources>
+    <string name="app_name">TB Loader</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+
+    <string name="pref_title_system_settings_group">System Settings</string>
+
+    <string name="pref_title_device_id">TB Loader Device ID</string>
+    <string name="pref_summary_no_device_id">No Device ID configured yet. Please talk to Bill to request one.</string>
+
+    <string name="pref_dropbox_credentials">Dropbox Account Settings</string>
+    <string name="pref_summary_dropbox_configured">Dropbox account configured.</string>
+    <string name="pref_summary_dropbox_not_configured">No Dropbox account is configured.</string>
+
+    <string name="pref_title_tb_access">Talking Book Default Access Permission</string>
+    <string name="pref_summary_tb_access_granted">Default permission granted.</string>
+    <string name="pref_summary_tb_access_not_granted">Default permission not granted.</string>
+
+
+    <string name="pref_title_advanced_settings_group">Advanced Settings</string>
+
+    <string name="pref_title_show_unpublished">Unpublished deployment packages</string>
+    <string name="pref_summary_show_unpublished">Unpublished Deployment Packages can be accessed on this device for testing purposes.</string>
+    <string name="pref_summary_show_published_only">Only published Deployment Packages can be accessed on this device.</string>
+
+    <string name="pref_title_allow_install_outdated">Outdated Deployment Packages</string>
+    <string name="pref_summary_allow_install_outdated_not_allowed">It is only allowed to install the latest revision of a Deployment Package on a Talking Book.</string>
+    <string name="pref_summary_allow_install_outdated_allowed">Outdated Deployment Packages may be installed on a Talking Book.</string>
+
+    <string name="deployment_package_revision">Revision: %s</string>
+    <string name="deployment_package_expiration">Expires: %s</string>
+    <string name="deployment_package_expiration_never">Never</string>
+
+    <string name="deployment_package_download">Download</string>
+    <string name="deployment_package_download_retry">Retry Download</string>
+    <string name="deployment_package_download_update">Update</string>
+    <string name="deployment_package_install">Install</string>
+
+    <string name="talking_book_connection_status_text">Connected to Talking Book: %1$s</string>
+    <string name="talking_book_not_connected_status_text">No Talking Book connected</string>
+
+    <string name="dropbox_connection_status_text">Connected to Dropbox: %1$s</string>
+    <string name="dropbox_not_connected_status_text">Offline</string>
+    <string name="dropbox_not_configured">Dropbox account not configured</string>
+
+
+    <string name="pick_community_dialog_title">Select Community</string>
+
+    <string name="dialog_tb_update_deployment_info">Project: %1$s\nDeployment: %2$s\nCommunity: %3$s</string>
+</resources>

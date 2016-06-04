@@ -1,10 +1,13 @@
 package org.literacybridge.core.tbloader;
 
-import java.io.File;
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.literacybridge.core.fs.RelativePath;
+import org.literacybridge.core.fs.TBFileSystem;
 
 public class TBInfo {
   private static final Logger LOG = Logger.getLogger(TBInfo.class.getName());
@@ -36,13 +39,13 @@ public class TBInfo {
   private short totalMessages;
   private String[] msgIdMap = new String[MAX_MESSAGES]; // 40 messages, 20 chars
 
-  //struct NORallMsgStats
+  // struct NORallMsgStats
   private short profileOrder;
   private String profileName;
   private short profileTotalMessages;
   private short profileTotalRotations;
   private NORmsgStats[][] stats = new NORmsgStats[MAX_MESSAGES][5];
-  private RandomAccessFile f;
+  private DataInputStream f;
 
   public short getCountReflashes() {
     return countReflashes;
@@ -120,12 +123,12 @@ public class TBInfo {
 
     private RotationTiming() throws IOException {
       f.skipBytes(2);
-      //System.out.println("pointer:"+f.getFilePointer());
+      // System.out.println("pointer:"+f.getFilePointer());
       this.rotationNumber = readShort();
       this.startingPeriod = readShort();
       this.hoursAfterLastUpdate = readShort();
       this.initVoltage = readShort();
-      //System.out.println("pointer:"+f.getFilePointer());
+      // System.out.println("pointer:"+f.getFilePointer());
     }
 
     public short getRotationNumber() {
@@ -219,14 +222,15 @@ public class TBInfo {
     }
   }
 
-  public TBInfo(String flashDataPath) throws IOException {
-    File file = new File(flashDataPath);
-    if (!file.exists()) {
+  public TBInfo(TBFileSystem tbFileSystem, RelativePath flashDataPath)
+      throws IOException {
+    InputStream in = tbFileSystem.openFileInputStream(flashDataPath);
+    if (in == null) {
       System.out.print("No flash binary file to analyze.");
       this.countReflashes = -1;
       return;
     }
-    f = new RandomAccessFile(flashDataPath, "r");
+    f = new DataInputStream(in);
     f.skipBytes(2);
     this.countReflashes = readShort();
     this.serialNumber = readString(12);
@@ -244,10 +248,6 @@ public class TBInfo {
     this.powerups = readShort();
     this.lastInitVoltage = readShort();
     for (int i = 0; i < 5; i++) {
-      if (debug) {
-        System.out.println("i:" + i);
-        System.out.println("pointer:" + f.getFilePointer());
-      }
       rotations[i] = new RotationTiming();
     }
 
@@ -269,9 +269,6 @@ public class TBInfo {
     this.profileTotalRotations = readShort();
     for (int m = 0; m < this.totalMessages; m++) {
       for (int r = 0; r < 5; r++) {
-        if (debug)
-          System.out.println(
-              "msg:" + m + " rot:" + r + " at " + f.getFilePointer());
         this.stats[m][r] = new NORmsgStats();
       }
     }
@@ -286,15 +283,11 @@ public class TBInfo {
 
     for (int l = 0; l < 2; l++) {
       b = f.readByte() & 0xFF; // remove sign
-      //System.out.print("          b:"+b);
+      // System.out.print(" b:"+b);
       i = b << (8 * l);
       sum += (0xFFFF & i);
     }
     ret = (short) sum;
-    if (debug)
-      System.out.println(
-          "       readShort (" + sum + ") at " + f.getFilePointer() + ": "
-              + ret);
     return ret;
   }
 
@@ -305,22 +298,17 @@ public class TBInfo {
 
     for (int l = 0; l < 2; l++) {
       b = f.readByte() & 0xFF; // remove sign
-      //System.out.print("          b:"+b);
+      // System.out.print(" b:"+b);
       i = b << (8 * l);
       sum += (0xFFFF & i);
     }
     ret = (int) sum;
-    if (debug)
-      System.out.println(
-          "       readShort (" + sum + ") at " + f.getFilePointer() + ": "
-              + ret);
     return ret;
   }
 
   private String readString(int maxChars) throws IOException {
     char[] c = new char[maxChars];
     boolean endString = false;
-    long start = f.getFilePointer();
     for (int i = 0; i < maxChars; i++) {
       c[i] = (char) f.readByte();
       if (endString)
@@ -329,8 +317,6 @@ public class TBInfo {
         endString = true;
       f.readByte();
     }
-    if (debug)
-      System.out.println("     string:" + String.valueOf(c) + " at " + start);
     return new String(c).trim();
   }
 
@@ -361,9 +347,8 @@ public class TBInfo {
     s.append("Image         : " + this.imageName + NEW_LINE);
     s.append("Profile       : " + this.profileName + NEW_LINE);
     s.append("Location      : " + this.location + NEW_LINE);
-    s.append(
-        "Last Updated  : " + this.updateYear + "/" + this.updateMonth + "/"
-            + this.updateDate + NEW_LINE);
+    s.append("Last Updated  : " + this.updateYear + "/" + this.updateMonth + "/"
+        + this.updateDate + NEW_LINE);
     s.append("Powered Days  : " + this.cumulativeDays + NEW_LINE);
     s.append("Last PowerupV : " + this.lastInitVoltage + NEW_LINE);
     s.append("StartUps      : " + this.powerups + NEW_LINE);
@@ -372,11 +357,12 @@ public class TBInfo {
     s.append("Rotations     : " + this.profileTotalRotations + NEW_LINE);
     s.append(NEW_LINE);
     s.append("TOTAL STATS (" + this.totalMessages + " messages)" + NEW_LINE);
-    int totalSecondsPlayed = 0, countStarted = 0, countQuarter = 0, countHalf = 0, countThreequarters = 0, countCompleted = 0, countApplied = 0, countUseless = 0;
+    int totalSecondsPlayed = 0, countStarted = 0, countQuarter = 0,
+        countHalf = 0, countThreequarters = 0, countCompleted = 0,
+        countApplied = 0, countUseless = 0;
     for (int m = 0; m < this.totalMessages; m++) {
-      for (int r = 0; r < (this.profileTotalRotations < 5 ?
-          this.profileTotalRotations :
-          5); r++) {
+      for (int r = 0; r < (this.profileTotalRotations < 5
+          ? this.profileTotalRotations : 5); r++) {
         totalSecondsPlayed += this.stats[m][r].totalSecondsPlayed;
         countStarted += this.stats[m][r].countStarted;
         countQuarter += this.stats[m][r].countQuarter;
@@ -389,42 +375,36 @@ public class TBInfo {
     }
     s.append("       Time:" + totalSecondsPlayed / 60 + "min "
         + totalSecondsPlayed % 60 + "sec   Started:" + countStarted + "   P:"
-        + countQuarter +
-        "   H:" + countHalf + "   M:" + countThreequarters +
-        "   F:" + countCompleted);
+        + countQuarter + "   H:" + countHalf + "   M:" + countThreequarters
+        + "   F:" + countCompleted);
     s.append("   A:" + countApplied + "   U:" + countUseless + NEW_LINE);
     s.append(NEW_LINE);
 
-    for (int r = 0; r < (this.profileTotalRotations < 5 ?
-        this.profileTotalRotations :
-        5); r++) {
-      s.append(
-          "  Rotation:" + r + "     " + totalPlayedSecondsPerRotation(r) / 60
-              + "min " + totalPlayedSecondsPerRotation(r) % 60
-              + "sec    Starting Period:" + this.rotations[r].startingPeriod
-              + "   Hours After Update:" +
-              this.rotations[r].hoursAfterLastUpdate + "   Init Voltage:"
-              + this.rotations[r].initVoltage + NEW_LINE);
+    for (int r = 0; r < (this.profileTotalRotations < 5
+        ? this.profileTotalRotations : 5); r++) {
+      s.append("  Rotation:" + r + "     "
+          + totalPlayedSecondsPerRotation(r) / 60 + "min "
+          + totalPlayedSecondsPerRotation(r) % 60 + "sec    Starting Period:"
+          + this.rotations[r].startingPeriod + "   Hours After Update:"
+          + this.rotations[r].hoursAfterLastUpdate + "   Init Voltage:"
+          + this.rotations[r].initVoltage + NEW_LINE);
     }
     s.append(NEW_LINE);
-    s.append(
-        "Message Stats  (" + this.totalMessages + " messages)" + NEW_LINE);
+    s.append("Message Stats  (" + this.totalMessages + " messages)" + NEW_LINE);
     for (int m = 0; m < this.totalMessages; m++) {
       s.append("  MESSAGE ID:" + this.msgIdMap[m] + " ("
           + totalPlayedSecondsPerMsg(m) / 60 + "min "
           + totalPlayedSecondsPerMsg(m) % 60 + "sec)" + NEW_LINE);
-      for (int r = 0; r < (this.profileTotalRotations < 5 ?
-          this.profileTotalRotations :
-          5); r++) {
+      for (int r = 0; r < (this.profileTotalRotations < 5
+          ? this.profileTotalRotations : 5); r++) {
         s.append("     ROTATION: " + r);
-        s.append(
-            "       Time:" + this.stats[m][r].totalSecondsPlayed / 60 + "min "
-                + this.stats[m][r].totalSecondsPlayed % 60 + "sec   Started:"
-                + this.stats[m][r].countStarted + "   P:"
-                + this.stats[m][r].countQuarter +
-                "   H:" + this.stats[m][r].countHalf + "   M:"
-                + this.stats[m][r].countThreequarters +
-                "   F:" + this.stats[m][r].countCompleted);
+        s.append("       Time:" + this.stats[m][r].totalSecondsPlayed / 60
+            + "min " + this.stats[m][r].totalSecondsPlayed % 60
+            + "sec   Started:" + this.stats[m][r].countStarted + "   P:"
+            + this.stats[m][r].countQuarter + "   H:"
+            + this.stats[m][r].countHalf + "   M:"
+            + this.stats[m][r].countThreequarters + "   F:"
+            + this.stats[m][r].countCompleted);
         s.append("   A:" + this.stats[m][r].countApplied + "   U:"
             + this.stats[m][r].countUseless + NEW_LINE);
       }
