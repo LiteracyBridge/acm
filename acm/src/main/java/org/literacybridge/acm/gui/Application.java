@@ -36,12 +36,22 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.SearchResult;
+import org.literacybridge.acm.utils.DropboxFinder;
+import org.literacybridge.acm.utils.OSChecker;
 
 public class Application extends JXFrame {
   private static final Logger LOG = Logger
       .getLogger(Application.class.getName());
 
   private static final long serialVersionUID = -7011153239978361786L;
+
+  public static double JAVA_VERSION = getVersion ();
+  static double getVersion () {
+    String version = System.getProperty("java.version");
+    int pos = version.indexOf('.');
+    pos = version.indexOf('.', pos+1);
+    return Double.parseDouble (version.substring (0, pos));
+  }
 
   // message pump
   private static SimpleMessageService simpleMessageService = new SimpleMessageService();
@@ -257,6 +267,17 @@ public class Application extends JXFrame {
       application.setVisible(true);
       application.toFront();
       splash.close();
+
+      // Prompt the user to update to Java 8.
+      if (JAVA_VERSION < 1.8) {
+        String message = "This computer needs to be updated to Java 8." +
+                "\n\nPlease contact ICT staff to arrange for the update." +
+                "\n\nThe update will only take a few minutes. Please try" +
+                "\nto do this in the next few days. In the meantime, the" +
+                "\nACM will continue to work normally." +
+                "\n\nThank you!";
+        JOptionPane.showMessageDialog(null, message, "Please Update Java", JOptionPane.INFORMATION_MESSAGE);
+      }
 
       LOG.log(Level.INFO, "ACM successfully started.");
       WavCaching caching = new WavCaching();
