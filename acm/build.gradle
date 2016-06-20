@@ -31,6 +31,7 @@ dependencies {
   compile 'org.slf4j:slf4j-simple:1.7.16'
   compile 'javax.media:jmf:2.1.1e'
   compile 'jakarta-regexp:jakarta-regexp:1.4'
+  compile 'com.googlecode.json-simple:json-simple:1.1.1'
   compile 'com.google.collections:google-collections:1.0-rc5'
   compile 'org.yaml:snakeyaml:1.6'
   compile 'it.cnr.imaa.essi:lablib-checkboxtree:3.1.1'

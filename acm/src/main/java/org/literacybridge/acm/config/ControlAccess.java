@@ -32,6 +32,9 @@ import org.literacybridge.acm.utils.ZipUnzip;
 
 import com.google.common.collect.Lists;
 
+// TESTING: required for AWS check-out platform
+import org.json.simple.JSONObject;
+
 public class ControlAccess {
   private static final Logger LOG = Logger
       .getLogger(ControlAccess.class.getName());
@@ -59,6 +62,18 @@ public class ControlAccess {
   private String getDBKey() {
     return dbInfo.getDbKey();
   }
+
+  // TESTING: used for AWS check-out parallel integration test
+
+  private void setAWSKey(String key) {
+    dbInfo.setAWSKey(key);
+  }
+
+  private String getAWSKey() {
+    return dbInfo.getAWSKey();
+  }
+
+  //
 
   private void setPossessor(String name) {
     possessor = name;
@@ -506,12 +521,72 @@ public class ControlAccess {
     String filename = null, key = null, possessor = null;
     URL url;
     String computerName;
+    // TESTING: for AWS parallel integration tests
+    boolean status_aws = true;
+    String filename_aws = null, key_aws = null, possessor_aws = null, response = null;
 
     try {
       computerName = InetAddress.getLocalHost().getHostName();
     } catch (UnknownHostException e1) {
       computerName = "UNKNOWN";
     }
+
+    // TESTING: AWS check-out
+    // send POST request to AWS API gateway to invoke acmCheckOut lambda function
+    String requestURL = "https://7z4pu4vzqk.execute-api.us-west-2.amazonaws.com/prod";
+    JSONObject request = new JSONObject();
+
+    if(action == "checkout"){
+      action = "checkOut";
+    }
+
+    request.put("db",db);
+    request.put("action", action);
+    request.put("name", ACMConfiguration.getInstance().getUserName());
+    request.put("contact",ACMConfiguration.getInstance().getUserContact());
+    request.put("version", Constants.ACM_VERSION);
+    request.put("computername",computerName);
+    //request.put("comment", comment);   for possible future use, allows any string input
+
+    try {
+      HttpUtility.sendPostRequest(requestURL, request);
+      response = HttpUtility.readSingleLineResponse();
+      System.out.println(response);
+    } catch (IOException ex) {
+      ex.printStackTrace();
+    }
+    HttpUtility.disconnect();
+    // parse response
+    Scanner scan = new Scanner(response).useDelimiter("\"");
+    while (scan.hasNext()) {
+      String s = scan.next();
+      if (s.startsWith("key="))
+        key_aws = s.substring(s.indexOf('=') + 1);
+      else if (s.startsWith("filename="))
+        filename_aws = s.substring(s.indexOf('=') + 1);
+      else if (s.startsWith("possessor=")) {
+        possessor_aws = s.substring(s.indexOf('=') + 1);
+        status_aws = false;
+      }
+    }
+    if (status_aws){
+      if (key_aws != null){
+        setAWSKey(key_aws);
+      }
+    }
+        // UNCOMMENT FOR FULL INTEGRATION
+//    if (filename != null)
+//      setZipFilenames(filename);
+//    if (status) {
+//      if (key != null) {
+//        setDBKey(key);
+//        dbInfo.setCheckedOut(true);
+//      }
+//    } else if (possessor != null) {
+//      setPossessor(possessor);
+//    }
+//    return status;
+//  }
 
     url = new URL("http://literacybridge.org/checkout.php?db=" + db + "&action="
         + action + "&name=" + ACMConfiguration.getInstance().getUserName()
@@ -543,6 +618,8 @@ public class ControlAccess {
     } else if (possessor != null) {
       setPossessor(possessor);
     }
+    System.out.println("ORIGINAL SYSTEM: "+getDBKey()+" "+filename+" "+possessor+" "+status);
+    System.out.println("AWS SYSTEM: "+getAWSKey()+" "+filename_aws+" "+possessor_aws+" "+status_aws);
     return status;
   }
 
@@ -555,6 +632,10 @@ public class ControlAccess {
     URL url;
     String action;
 
+    // for AWS parallel integration tests
+    boolean status_aws = false;
+    String response = null;
+
     if (filename == null) {
       action = "discard";
       filename = "";
@@ -566,6 +647,47 @@ public class ControlAccess {
       computerName = InetAddress.getLocalHost().getHostName();
     } catch (UnknownHostException e1) {
       computerName = "UNKNOWN";
+    }
+
+    // AWS check-in
+    String requestURL = "https://7z4pu4vzqk.execute-api.us-west-2.amazonaws.com/prod";
+    JSONObject request = new JSONObject();
+
+    if (key.equals("force")) {
+      setAWSKey("new");
+    }
+
+    if (action == "checkin"){
+      action = "checkIn";
+    }
+
+    request.put("db",db);
+    request.put("action", action);
+    request.put("key", getAWSKey());
+    request.put("filename", filename);
+    request.put("name", ACMConfiguration.getInstance().getUserName());
+    request.put("contact",ACMConfiguration.getInstance().getUserContact());
+    request.put("version", Constants.ACM_VERSION);
+    request.put("computername",computerName);
+    //request.put("comment", comment); for possible future use, allows string input
+    try {
+      HttpUtility.sendPostRequest(requestURL, request);
+      response = HttpUtility.readSingleLineResponse();
+      System.out.println(response);
+    } catch (IOException ex) {
+      ex.printStackTrace();
+    }
+    HttpUtility.disconnect();
+
+    Scanner scan = new Scanner(response).useDelimiter("\"");
+    while (scan.hasNext()) {
+      s = scan.next();
+      if (action.equals("discard"))
+        status_aws = true;
+      else if (s.startsWith("ok"))
+        status_aws = true;
+      else if (s.startsWith("denied"))
+        status_aws = false;
     }
 
     url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&action="
@@ -585,6 +707,8 @@ public class ControlAccess {
       status = false;
     else
       status = s.trim().equals("ok");
+    System.out.println("ORIGINAL SYSTEM: "+status+" "+getDBKey());
+    System.out.println("AWS SYSTEM: "+status_aws+" "+getAWSKey());
     return status;
   }
 

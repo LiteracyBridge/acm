@@ -15,6 +15,9 @@ public class DBInfo extends Properties {
   private boolean checkedOut;
   private final static String DB_NAME = "DB_NAME";
   private final static String DB_KEY = "DB_KEY";
+  //for AWS
+  private final static String AWS_KEY = "AWS_KEY";
+  //
   private final static String DB_CURRENT_FILENAME = "DB_CURRENT_FILENAME";
   private final static String DB_NEXT_FILENAME = "DB_NEXT_FILENAME";
   private final DBConfiguration config;
@@ -34,6 +37,16 @@ public class DBInfo extends Properties {
   public void setDbKey(String dbKey) {
     setProperty(DBInfo.DB_KEY, dbKey);
   }
+
+  // for AWS integration
+  public String getAWSKey() {
+    return getProperty(DBInfo.AWS_KEY);
+  }
+
+  public void setAWSKey(String AWSKey) {
+    setProperty(DBInfo.AWS_KEY, AWSKey);
+  }
+  //
 
   public String getCurrentFilename() {
     return getProperty(DBInfo.DB_CURRENT_FILENAME);
