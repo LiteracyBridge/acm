@@ -3,6 +3,12 @@ String javaLanguageLevel = "1.7"
 
 allprojects {
   apply plugin: 'idea'
+  // It's impossible to find this in the Gradle docs (which are admittedly pretty thin), but this
+  // is the only apparent way to actually set the 'targetCompatibility' property.
+  tasks.withType(JavaCompile) { 
+      sourceCompatibility = "1.7";
+      targetCompatibility = "1.7" 
+  }
 
   repositories {
     mavenCentral()
