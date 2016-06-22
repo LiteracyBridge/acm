@@ -2,7 +2,7 @@ File distDir = file("$projectDir/dist")
 
 task copyLibs(type: Sync) {
   from configurations.runtime
-  into "$distDir/libs"
+  into "$distDir/lib"
 }
 
 task copyJars(type: Copy, dependsOn: build) {
