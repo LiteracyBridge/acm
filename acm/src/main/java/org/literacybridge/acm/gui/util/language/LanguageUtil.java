@@ -1,11 +1,16 @@
 package org.literacybridge.acm.gui.util.language;
 
 import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.store.Category;
 
 public class LanguageUtil {
+  private static final Logger LOG = Logger
+            .getLogger(LanguageUtil.class.getName());
 
   // current default language for items shown in the UI
   private static Locale defaultLanguage = Locale.ENGLISH;
@@ -52,7 +57,12 @@ public class LanguageUtil {
     String label = ACMConfiguration.getInstance().getCurrentDB()
         .getLanguageLabel(locale);
     if (label == null) {
-      label = locale.getDisplayLanguage(getUILanguage());
+      if (locale == null) {
+        LOG.log(Level.SEVERE, "Unexpected null value for locale");
+        label = "--";
+      } else {
+        label = locale.getDisplayLanguage(getUILanguage());
+      }
     }
     return label;
   }

@@ -27,16 +27,23 @@ import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.MetadataSpecification;
-import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.acm.store.SearchResult;
+import org.literacybridge.acm.store.*;
 
 // TODO: deal with localized audio items when languages are fully implemented
 public class AudioItemContextMenuDialog extends JDialog
     implements WindowListener {
   private static final Logger LOG = Logger
       .getLogger(AudioItemContextMenuDialog.class.getName());
+
+  private String getMetadataTitle(final AudioItem clickedAudioItem) {
+    Metadata md = clickedAudioItem.getMetadata();
+    Object obj = md.getMetadataValue(MetadataSpecification.DC_TITLE);
+    if (obj != null) {
+      return obj.toString();
+    }
+    LOG.log(Level.SEVERE, "Unexpected null value for metadata value for title.");
+    return "--";
+  }
 
   public AudioItemContextMenuDialog(final JFrame parent,
       final AudioItem clickedAudioItem, final AudioItem[] selectedAudioItems,
@@ -58,8 +65,7 @@ public class AudioItemContextMenuDialog extends JDialog
 
     GridLayout grid = new GridLayout(3, 1);
 
-    final String selectedTitle = clickedAudioItem.getMetadata()
-        .getMetadataValue(MetadataSpecification.DC_TITLE).toString();
+    final String selectedTitle = getMetadataTitle(clickedAudioItem);
 
     final Playlist selectedTag = Application.getFilterState()
         .getSelectedPlaylist();
