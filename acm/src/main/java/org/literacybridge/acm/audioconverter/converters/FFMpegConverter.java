@@ -1,5 +1,7 @@
 package org.literacybridge.acm.audioconverter.converters;
 
+import org.literacybridge.acm.config.ACMConfiguration;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,13 +32,8 @@ public class FFMpegConverter extends BaseAudioConverter {
 
     ConversionResult result = new ConversionResult();
     result.outputFile = targetFile;
-    result.response = BaseAudioConverter.executeConversionCommand(cmd, true, // important!
-                                                                             // ffmpeg
-                                                                             // prints
-                                                                             // to
-                                                                             // stderr,
-                                                                             // not
-                                                                             // stdout
+    // important! ffmpeg prints to stderr, not stdout
+    result.response = BaseAudioConverter.executeConversionCommand(cmd, true,
         audioFile.getName());
 
     return result;
@@ -44,18 +41,13 @@ public class FFMpegConverter extends BaseAudioConverter {
 
   @Override
   public void validateConverter() throws AudioConverterInitializationException {
-    BaseAudioConverter.validateConverterExecutable(getConverterEXEPath(), true, // important!
-                                                                                // ffmpeg
-                                                                                // prints
-                                                                                // to
-                                                                                // stderr,
-                                                                                // not
-                                                                                // stdout
+    // important! ffmpeg prints to stderr, not stdout
+    BaseAudioConverter.validateConverterExecutable(getConverterEXEPath(), true,
         "FFmpeg version");
     boolean success = false;
     try {
-      File formatsFile = new File(
-          System.getProperty("user.dir") + "/converters/ffmpeg/formats.txt");
+      File formatsFile = new File(ACMConfiguration.getInstance().getSoftwareDir(),
+          "/converters/ffmpeg/formats.txt");
 
       FileInputStream fis = new FileInputStream(formatsFile);
       InputStreamReader isr = new InputStreamReader(fis);
@@ -110,9 +102,7 @@ public class FFMpegConverter extends BaseAudioConverter {
   }
 
   public String getConverterEXEPath() {
-    // as we assume our converter directory located in the same
-    // directory as we are, get out location
-    return System.getProperty("user.dir") + "/converters/ffmpeg/ffmpeg.exe";
+    return ACMConfiguration.getInstance().getSoftwareDir().getPath() + "/converters/ffmpeg/ffmpeg.exe";
   }
 
   @Override

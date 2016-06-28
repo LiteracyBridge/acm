@@ -82,10 +82,9 @@ public abstract class AudioItemRepository {
    */
   public static enum AudioFormat {
     // TODO: make settings configurable
-    A18("a18",
-        new A18Format(128, 16000, 1, AlgorithmList.A1800,
-            useHeaderChoice.No)), WAV("wav", new WAVFormat(128, 16000, 1)), MP3(
-                "mp3", new MP3Format(128, 16000, 1));
+    A18("a18", new A18Format(128, 16000, 1, AlgorithmList.A1800, useHeaderChoice.No)),
+    WAV("wav", new WAVFormat(128, 16000, 1)),
+    MP3("mp3", new MP3Format(128, 16000, 1));
 
     private final String fileExtension;
     private final AudioConversionFormat audioConversionFormat;
@@ -200,7 +199,7 @@ public abstract class AudioItemRepository {
    */
   public synchronized File getAudioFile(AudioItem audioItem,
       AudioFormat format) {
-    checkFilesUpToDate(audioItem);
+    cleanStaleAudioFiles(audioItem);
 
     File file = resolveFile(audioItem, format, false);
     return file.exists() ? file : null;
@@ -212,7 +211,7 @@ public abstract class AudioItemRepository {
    */
   public synchronized File convert(AudioItem audioItem,
       AudioFormat targetFormat) throws ConversionException, IOException {
-    checkFilesUpToDate(audioItem);
+    cleanStaleAudioFiles(audioItem);
 
     File audioFile = resolveFile(audioItem, targetFormat, true);
     if (!audioFile.exists() && targetFormat == AudioFormat.A18) {
@@ -234,7 +233,9 @@ public abstract class AudioItemRepository {
       // no WAV, try any other format
       for (AudioFormat sourceFormat : AudioFormat.values()) {
         sourceFile = getAudioFile(audioItem, sourceFormat);
-        break;
+        if (sourceFile != null) {
+          break;
+        }
       }
     }
 
@@ -375,10 +376,10 @@ public abstract class AudioItemRepository {
   }
 
   /**
-   * Checks if no file belonging to an audio item is older than its
+   * Ensures that no file belonging to an audio item is older than its
    * corresponding a18 file
    */
-  private void checkFilesUpToDate(AudioItem audioItem) {
+  private void cleanStaleAudioFiles(AudioItem audioItem) {
     File a18 = resolveFile(audioItem, AudioFormat.A18, false);
     if (a18.exists()) {
       for (AudioFormat format : AudioFormat.values()) {

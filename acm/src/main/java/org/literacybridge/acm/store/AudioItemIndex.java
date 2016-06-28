@@ -468,7 +468,16 @@ public class AudioItemIndex {
             new ByteArrayInputStream(ref.bytes, ref.offset, ref.length)));
 
     for (Category category : categories) {
-      audioItem.addCategory(category);
+      // When loading categories, we only want to add the leaves, because:
+      // - the order is not necessarily child-most first, and
+      // - when a non-leaf is added, an arbitrary child (the first one) is added, so
+      // - adding a non-leaf will add arbitrary nodes down to an arbitrary leaf.
+      // But when we add a child node, we walk up the tree and add the parent chain, so
+      // there is no reason to add the parent nodes here; we'll catch them in a later
+      // iteration.
+      if (!category.hasChildren()) {
+        audioItem.addCategory(category);
+      }
     }
   }
 

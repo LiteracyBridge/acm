@@ -75,7 +75,7 @@ public class DBConfiguration extends Properties {
   }
 
   public static File getLiteracyBridgeHomeDir() {
-    return ACMConfiguration.getInstance().LB_HOME_DIR;
+    return ACMConfiguration.getInstance().getApplicationDir();
   }
 
   public File getLuceneIndexDirectory() {

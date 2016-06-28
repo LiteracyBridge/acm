@@ -19,8 +19,6 @@ public class ExternalConverter {
   private AnyToA18Converter AnyToA18Conv;
   private FFMpegConverter FFMpegConv;
 
-  Map<String, String> parameters = new LinkedHashMap<String, String>();
-
   public ExternalConverter() {
     try {
       A18ToMP3Conv = new A18ToMP3Converter();
@@ -50,26 +48,27 @@ public class ExternalConverter {
         targetFormat, false);
   }
 
-  public String convert(File sourceFile, File targetFile, File tmpDir,
+  public String convert(File sourceFile, File targetDir, File tmpDir,
       AudioConversionFormat targetFormat, boolean overwrite)
       throws ConversionException {
     String result = null;
+    Map<String, String> parameters = null;
 
     if (targetFormat.getFileEnding() == "A18") {
-      SetParameters(targetFormat);
-      result = AnyToA18Conv.convertFile(sourceFile, targetFile, tmpDir,
-          overwrite, this.parameters);
+      parameters = getParameters(targetFormat);
+      result = AnyToA18Conv.convertFile(sourceFile, targetDir, tmpDir,
+          overwrite, parameters);
     }
     if (targetFormat.getFileEnding() == "WAV"
         || targetFormat.getFileEnding() == "MP3") {
       if (getFileExtension(sourceFile).equalsIgnoreCase(".a18")) {
-        SetParameters(targetFormat);
-        result = A18ToWAVConv.convertFile(sourceFile, targetFile, tmpDir,
-            overwrite, this.parameters);
+        parameters = getParameters(targetFormat);
+        result = A18ToWAVConv.convertFile(sourceFile, targetDir, tmpDir,
+            overwrite, parameters);
       } else {
-        SetParameters(targetFormat);
-        result = FFMpegConv.convertFile(sourceFile, targetFile, tmpDir,
-            overwrite, this.parameters, "." + targetFormat.getFileEnding());
+        parameters = getParameters(targetFormat);
+        result = FFMpegConv.convertFile(sourceFile, targetDir, tmpDir,
+            overwrite, parameters, "." + targetFormat.getFileEnding());
       }
     }
     return result;
@@ -80,22 +79,23 @@ public class ExternalConverter {
     return name.substring(name.length() - 4, name.length()).toLowerCase();
   }
 
-  private void SetParameters(AudioConversionFormat paramFormat) {
+  private Map<String, String> getParameters(AudioConversionFormat targetFormat) {
 
-    parameters.clear();
+    Map<String, String> parameters = new LinkedHashMap<String, String>();
 
     parameters.put(BaseAudioConverter.BIT_RATE,
-        String.valueOf(paramFormat.getBitRateString()));
+        String.valueOf(targetFormat.getBitRateString()));
     parameters.put(BaseAudioConverter.SAMPLE_RATE,
-        String.valueOf(paramFormat.getSampleRateString()));
+        String.valueOf(targetFormat.getSampleRateString()));
 
-    if (paramFormat.getFileEnding() == "A18") {
+    if (targetFormat.getFileEnding() == "A18") {
 
       parameters.put(AnyToA18Converter.USE_HEADER,
-          ((A18Format) paramFormat).usedHeader);
+          ((A18Format) targetFormat).usedHeader);
       parameters.put(AnyToA18Converter.ALGORITHM,
-          ((A18Format) paramFormat).usedAlgo);
+          ((A18Format) targetFormat).usedAlgo);
     }
+    return parameters;
   }
 
 }

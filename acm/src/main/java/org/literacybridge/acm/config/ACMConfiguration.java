@@ -300,6 +300,14 @@ public class ACMConfiguration {
     return globalShareDir;
   }
 
+  public File getApplicationDir() {
+    return LB_HOME_DIR;
+  }
+
+  public File getSoftwareDir() {
+    return new File(getApplicationDir(), "/ACM/software");
+  }
+
   private File getConfigurationPropertiesFile() {
     return new File(LB_HOME_DIR, Constants.GLOBAL_CONFIG_PROPERTIES);
   }

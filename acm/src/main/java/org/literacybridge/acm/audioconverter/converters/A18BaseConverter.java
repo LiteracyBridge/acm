@@ -24,9 +24,7 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
   protected abstract Pattern getPattern();
 
   public String getConverterEXEPath() {
-    // as we assume our converter directory located in the same
-    // directory as we are, get out location
-    return System.getProperty("user.dir")
+    return ACMConfiguration.getInstance().getSoftwareDir().getPath()
         + "/converters/a18/AudioBatchConverter.exe";
   }
 
@@ -77,14 +75,8 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
       if (ultimateDestDir != null && result.outputFile.exists()) {
         result.outputFile.delete();
       }
-      result.response = BaseAudioConverter.executeConversionCommand(cmd, false, // important!
-                                                                                // a18
-                                                                                // converter
-                                                                                // prints
-                                                                                // to
-                                                                                // stdout,
-                                                                                // not
-                                                                                // stderr
+      // important! a18 converter prints to stdout, not stderr
+      result.response = BaseAudioConverter.executeConversionCommand(cmd, false,
           audioFile.getName());
 
       if (ultimateDestDir != null) {

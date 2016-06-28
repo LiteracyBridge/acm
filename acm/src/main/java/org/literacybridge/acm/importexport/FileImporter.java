@@ -32,8 +32,11 @@ public class FileImporter {
   private FileFilter filter;
   private Map<String, Importer> map;
 
-  private static FileImporter instance = new FileImporter(new Importer[] {
-      new A18Importer(), new MP3Importer(), new WAVImporter() });
+  private static FileImporter instance = new FileImporter(
+          new Importer[] {
+              new A18Importer(), new MP3Importer(), new WAVImporter()
+          }
+  );
 
   public static FileImporter getInstance() {
     return instance;
@@ -85,10 +88,6 @@ public class FileImporter {
         try {
           ACMConfiguration.getInstance().getCurrentDB().getRepository()
               .updateAudioItem(item, file);
-          // Commenting line below since duration is set with updateDuration as
-          // called from storeAudioFile()
-          // item.getLocalizedAudioItem(null).getMetadata().setMetadataField(MetadataSpecification.LB_DURATION,
-          // new MetadataValue<String>(""));
           store.commit(item);
         } catch (Exception e) {
           LOG.log(Level.WARNING,
