@@ -106,8 +106,7 @@ public class TreeTransferHandler extends TransferHandler {
       TransferHandler.TransferSupport support, final Category category)
       throws IOException, UnsupportedFlavorException {
     Transferable t = support.getTransferable();
-    final List<File> files = (List<File>) t
-        .getTransferData(DataFlavor.javaFileListFlavor);
+    final List<File> files = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
 
     // don't piggyback on the drag&drop thread
     Runnable job = new Runnable() {

@@ -8,26 +8,24 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.IOException;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.BorderFactory;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
+import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.LanguageComboBoxModel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.store.*;
+
+import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
 // TODO: deal with localized audio items when languages are fully implemented
 public class AudioItemContextMenuDialog extends JDialog
@@ -58,12 +56,12 @@ public class AudioItemContextMenuDialog extends JDialog
     ImageIcon deleteImageIcon = new ImageIcon(
         UIConstants.getResource(UIConstants.ICON_DELETE_16_PX));
     ImageIcon exportImageIcon = new ImageIcon(
-        UIConstants.getResource(UIConstants.ICON_EXPORT_16_PX));
+            UIConstants.getResource(UIConstants.ICON_EXPORT_16_PX));
 
     Color backgroundColor = parent.getBackground();
     Color highlightedColor = SystemColor.textHighlight;
 
-    GridLayout grid = new GridLayout(3, 1);
+    GridLayout grid = new GridLayout(4, 1);
 
     final String selectedTitle = getMetadataTitle(clickedAudioItem);
 
@@ -210,24 +208,83 @@ public class AudioItemContextMenuDialog extends JDialog
       }
     };
 
+    FlatButton languageButton = makeLanguageButton(selectedAudioItems);
+
     setLayout(grid);
 
     editButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     deleteButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     exportButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    languageButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     add(editButton);
     add(exportButton);
     add(deleteButton);
+    add(languageButton);
 
     addWindowListener(this);
     setAlwaysOnTop(true);
-    setSize(new Dimension(450, 100));
+    setSize(new Dimension(450, 125));
   }
 
   @Override
   public void windowDeactivated(WindowEvent e) {
     setVisible(false);
   }
+
+  /**
+   * Creates the button ta handle setting the language on one or more audio items.
+   * @param selectedAudioItems
+   * @return
+   */
+  private FlatButton makeLanguageButton(final AudioItem[] selectedAudioItems) {
+    ImageIcon setLanguageImageIcon = new ImageIcon(
+            UIConstants.getResource(UIConstants.ICON_LANGUAGE_24_PX));
+    Color backgroundColor = Application.getApplication().getBackground();
+    Color highlightedColor = SystemColor.textHighlight;
+
+    String setLanguageForWhat = (selectedAudioItems.length > 1) ?
+            String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_LABEL_POSTFIX"), selectedAudioItems.length) :
+            getMetadataTitle(selectedAudioItems[0]);
+    String setLanguageLabel = String.format(
+            LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_SET_LANGUAGE"),
+            setLanguageForWhat);
+    FlatButton languageButton = new FlatButton(setLanguageLabel, setLanguageImageIcon, backgroundColor, highlightedColor) {
+      @Override
+      public void click() {
+        String dialogTitle = LabelProvider.getLabel("AUDIO_ITEM_LANGUAGE_MENU_SELECT_LANGUAGE");
+        JComboBox languageBox = new JComboBox();
+        LanguageComboBoxModel languageComboBoxModel = new LanguageComboBoxModel();
+        languageBox.setModel(languageComboBoxModel);
+        languageBox.setSelectedIndex(0);
+
+        AudioItemContextMenuDialog.this.setVisible(false);
+        int result = JOptionPane.showOptionDialog(null, languageBox, dialogTitle, JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, null, null);
+
+        if (result == JOptionPane.OK_OPTION ) {
+          int index = languageBox.getSelectedIndex();
+          Locale locale = languageComboBoxModel.getLocalForIndex(index);
+          String languageCode = locale.getLanguage();
+          RFC3066LanguageCode abstractLanguageCode = new RFC3066LanguageCode(languageCode);
+          MetadataValue<RFC3066LanguageCode> abstractMetadataLanguageCode = new MetadataValue(abstractLanguageCode);
+          MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+
+          for (AudioItem audioItem : selectedAudioItems) {
+            audioItem.getMetadata()
+                    .setMetadataField(DC_LANGUAGE, abstractMetadataLanguageCode);
+            try {
+              store.commit(audioItem);
+            } catch (IOException e1) {
+              e1.printStackTrace();
+            }
+          }
+        }
+
+      }
+    };
+
+    return languageButton;
+  }
+
 
   public abstract static class FlatButton extends JLabel
       implements MouseListener {

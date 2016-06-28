@@ -15,6 +15,7 @@ import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
+import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.store.LBMetadataIDs;
 import org.literacybridge.acm.store.MetadataField;
 
@@ -106,6 +107,15 @@ public class LabelProvider {
       }
 
     };
+  }
+
+  /**
+   * Helper because we always pass LanguageUtil.getUILanguage() anyway...
+   * @param propertyName
+   * @return
+   */
+  public static String getLabel(String propertyName) {
+     return getLabel(propertyName, LanguageUtil.getUILanguage());
   }
 
   public static String getLabel(String propertyName, Locale locale) {
