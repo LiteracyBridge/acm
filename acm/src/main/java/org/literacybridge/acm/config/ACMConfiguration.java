@@ -301,6 +301,7 @@ public class ACMConfiguration {
   }
 
   public File getApplicationDir() {
+    // ~/LiteracyBridge
     return LB_HOME_DIR;
   }
 

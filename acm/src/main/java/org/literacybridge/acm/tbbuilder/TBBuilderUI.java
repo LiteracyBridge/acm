@@ -213,7 +213,7 @@ public class TBBuilderUI extends JFrame implements ActionListener {
               notice.setForeground(Color.RED);
               notice.setVisible(true);
               tbBuilder = new TBBuilder(TBBuilder.ACM_PREFIX
-                  + projectList.getSelectedItem().toString(), true);
+                  + projectList.getSelectedItem().toString());
               notice.setText("");
               notice.setVisible(false);
             } catch (Exception e1) {

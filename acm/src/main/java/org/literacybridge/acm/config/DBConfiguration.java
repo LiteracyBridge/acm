@@ -75,6 +75,7 @@ public class DBConfiguration extends Properties {
   }
 
   public static File getLiteracyBridgeHomeDir() {
+    // ~/LiteracyBridge
     return ACMConfiguration.getInstance().getApplicationDir();
   }
 
@@ -168,22 +169,6 @@ public class DBConfiguration extends Properties {
           getSharedACMname());
     }
     return sharedACMDirectory;
-  }
-
-  public String getUserName() {
-    return getProperty("USER_NAME");
-  }
-
-  public String getUserContact() {
-    return getProperty(Constants.USER_CONTACT_INFO);
-  }
-
-  public String getRecordingCounter() {
-    return getProperty(Constants.RECORDING_COUNTER_PROP);
-  }
-
-  public void setRecordingCounter(String counter) {
-    setProperty(Constants.RECORDING_COUNTER_PROP, counter);
   }
 
   /*

@@ -56,14 +56,120 @@ public class TBBuilder {
   private String deploymentNumber;
   public String project;
 
-  public void addImage(String packageName, String languageCode, String group)
-      throws Exception {
-    String groups[] = new String[1];
-    groups[0] = group;
-    addImage(packageName, languageCode, groups);
+  public static void main(String[] args) throws Exception {
+    System.out.println("TB-Builder v" + Constants.ACM_VERSION);
+    if (args.length == 0) {
+      printUsage();
+      System.exit(1);
+    } else if (args[0].equalsIgnoreCase("CREATE")) {
+      doCreate(args);
+    } else if (args[0].equalsIgnoreCase("PUBLISH")) {
+      doPublish(args);
+    } else {
+      printUsage();
+      System.exit(1);
+    }
   }
 
-  public void addImage(String packageName, String languageCode, String[] groups)
+  /**
+   * Gathers the files that will make a deployment, into the directory
+   * ~/LiteracyBridge/TB-Loaders/PROJ/.
+   * Existing content in the /content/DEPLOYMENT and /metadata/DEPLOYMENT
+   * subdirectories of that directory will be deleted.
+   * @param args Command line args to the program.
+   *             The first arg is "CREATE" (or we wouldn't be here)
+   *             The second is the ACM name _with_ ACM- prefix
+   *             Next is the deployment name. By convention project-year-name-sequence
+   *             Then there is either:
+   *                 package-name language
+   *             Or one or more instances of:
+   *                 (package-name language group) ...
+   * @throws Exception
+   */
+  private static void doCreate(String[] args) throws Exception {
+    if (args.length < 5 || (args.length > 5 && ((args.length % 3) != 0))) {
+      printUsage();
+      System.exit(1);
+    }
+
+    TBBuilder tbb = new TBBuilder(args[1]);
+    tbb.createDeployment(args[2]);
+
+    if (args.length == 5) {
+      // one package with only default group
+      tbb.addImage(args[3], args[4], TBLoaderConstants.DEFAULT_GROUP_LABEL);
+    } else {
+      // one or more packages with specified group
+      int argIx = 3;
+      while (argIx < args.length) {
+        // First package is also for default group
+        if (argIx == 3) {
+          tbb.addImage(args[argIx], args[argIx+1], TBLoaderConstants.DEFAULT_GROUP_LABEL, args[argIx+2]);
+        } else {
+          tbb.addImage(args[argIx], args[argIx+1], args[argIx+2]);
+        }
+        argIx += 3;
+      }
+    }
+
+    tbb.contentInPackageCSVWriter.close();
+    tbb.categoriesInPackageCSVWriter.close();
+    tbb.packagesInDeploymentCSVWriter.close();
+
+  }
+
+  /**
+   * Publishes a previously created deployment to Dropbox.
+   * @param args Command line args to the program.
+   *             The first arg is "PUBLISH" (or we wouldn't be here)
+   *             The second is the ACM name _with_ ACM- prefix
+   *             Next is the deployment name, as above.
+   *             (There can optionally be additional deployments to be bundled
+   *             into the main deployment.)
+   * @throws Exception
+   */
+  private static void doPublish(String[] args) throws Exception {
+    TBBuilder tbb;
+    if (args.length < 3) {
+      printUsage();
+      System.exit(1);
+    }
+    tbb = new TBBuilder(args[1]);
+    int deploymentCount = args.length - 2;
+    if (deploymentCount > MAX_DEPLOYMENTS)
+      deploymentCount = MAX_DEPLOYMENTS;
+    String[] deployments = new String[deploymentCount];
+    for (int i = 0; i < deploymentCount; i++) {
+      deployments[i] = args[i + 2];
+    }
+    tbb.publish(deployments);
+  }
+
+  private static void printUsage() {
+    System.out.println("TB-Builder.bat runs java -cp acm.jar:lib/* org.literacybridge.acm.tbbuilder.TBBuilder");
+    System.out.println(
+            "Usage: TB-Builder.bat CREATE <acm_name> <deployment> <package_name> <language> (<group> (<package_name2> <language2> <group2>)...)");
+    System.out.println(
+            "OR   : TB-Builder.bat PUBLISH <acm_name> <default_deployment> (<deployment2>...) ");
+  }
+
+  public TBBuilder(String sharedACM) throws Exception {
+    CommandLineParams params = new CommandLineParams();
+    params.disableUI = true;
+    params.sandbox = true;
+    params.sharedACM = sharedACM;
+    ACMConfiguration.initialize(params);
+    ACMConfiguration.getInstance().setCurrentDB(params.sharedACM, true);
+    // Like ~/Dropbox/ACM-UWR/TB-Loaders
+    dropboxTbLoadersDir = ACMConfiguration.getInstance().dirACM(sharedACM); // .getCurrentDB().getTBLoadersDirectory();
+    project = sharedACM.substring(ACM_PREFIX.length());
+    // ~/LiteracyBridge/TB-Loaders
+    File localTbLoadersDir = new File(DBConfiguration.getLiteracyBridgeHomeDir(), Constants.TBLoadersHomeDir);
+    // Like ~/LiteracyBridge/TB-Loaders/UWR
+    targetTempDir = new File(localTbLoadersDir, project);
+  }
+
+  public void addImage(String packageName, String languageCode, String... groups)
       throws Exception {
     boolean hasIntro = false;
     int groupCount = groups.length;
@@ -209,6 +315,7 @@ public class TBBuilder {
     categoriesInPackageCSVWriter.writeNext(CSV_COLUMNS_CATEGORIES_IN_PACKAGE);
     packagesInDeploymentCSVWriter.writeNext(CSV_COLUMNS_PACKAGES_IN_DEPLOYMENT);
 
+    // Find the lexically greatest filename of firmware. Works because we'll never exceed 4 digits.
     File sourceFirmware = null;
     File[] firmwareOptions = new File(sourceTbOptionsDir, "firmware")
         .listFiles();
@@ -241,25 +348,6 @@ public class TBBuilder {
 
     System.out.println(
         "\nDone with deployment of software and basic/community content.");
-  }
-
-  public TBBuilder(String sharedACM, boolean isCreate) throws Exception {
-    CommandLineParams params = new CommandLineParams();
-    params.disableUI = true;
-    params.sandbox = true;
-    params.sharedACM = sharedACM;
-    if (isCreate) {
-      // Creation needs the database, and the application.
-      Application.startUp(params);
-    } else {
-      // Publishing doesn't need the application.
-      ACMConfiguration.initialize(params);
-    }
-    dropboxTbLoadersDir = ACMConfiguration.getInstance().dirACM(sharedACM); // .getCurrentDB().getTBLoadersDirectory();
-    project = sharedACM.substring(ACM_PREFIX.length());
-    File localTbLoadersDir = new File(
-        DBConfiguration.getLiteracyBridgeHomeDir(), Constants.TBLoadersHomeDir);
-    targetTempDir = new File(localTbLoadersDir, project);
   }
 
   private static char getLatestDistributionRevision(File publishTbLoadersDir,
@@ -388,73 +476,6 @@ public class TBBuilder {
     for (File revisionFile : files) {
       revisionFile.delete();
     }
-  }
-
-  public static void main(String[] args) throws Exception {
-    System.out.println("TB-Builder v" + Constants.ACM_VERSION);
-    TBBuilder tbb;
-    if (args.length == 0) {
-      printUsage();
-      System.exit(1);
-    } else if (args[0].equalsIgnoreCase("CREATE")) {
-      tbb = new TBBuilder(args[1], true);
-      tbb.createDeployment(args[2]);
-      if (args.length == 5) { // one package with default group
-        tbb.addImage(args[3], args[4], TBLoaderConstants.DEFAULT_GROUP_LABEL);
-      } else if (args.length == 6) { // one package with specified group
-        String groups[] = new String[2];
-        groups[0] = TBLoaderConstants.DEFAULT_GROUP_LABEL;
-        groups[1] = args[5];
-        tbb.addImage(args[3], args[4], groups);
-      } else if (args.length == 9) { // two packages with specified groups
-        String groups[] = new String[2];
-        groups[0] = TBLoaderConstants.DEFAULT_GROUP_LABEL;
-        groups[1] = args[5];
-        tbb.addImage(args[3], args[4], groups);
-        tbb.addImage(args[6], args[7], groups);
-      } else if (args.length == 12) { // three packages with specified groups
-        String groups[] = new String[2];
-        groups[0] = TBLoaderConstants.DEFAULT_GROUP_LABEL;
-        groups[1] = args[5];
-        tbb.addImage(args[3], args[4], groups);
-        groups = new String[1];
-        groups[0] = args[8];
-        tbb.addImage(args[6], args[7], groups);
-        groups = new String[1];
-        groups[0] = args[11];
-        tbb.addImage(args[9], args[10], groups);
-      } else {
-        printUsage();
-        System.exit(1);
-      }
-      tbb.contentInPackageCSVWriter.close();
-      tbb.categoriesInPackageCSVWriter.close();
-      tbb.packagesInDeploymentCSVWriter.close();
-    } else if (args[0].equalsIgnoreCase("PUBLISH")) {
-      if (args.length < 3) {
-        printUsage();
-        System.exit(1);
-      }
-      tbb = new TBBuilder(args[1], false);
-      int deploymentCount = args.length - 2;
-      if (deploymentCount > MAX_DEPLOYMENTS)
-        deploymentCount = MAX_DEPLOYMENTS;
-      String[] deployments = new String[deploymentCount];
-      for (int i = 0; i < deploymentCount; i++) {
-        deployments[i] = args[i + 2];
-      }
-      tbb.publish(deployments);
-    } else {
-      printUsage();
-      System.exit(1);
-    }
-  }
-
-  private static void printUsage() {
-    System.out.println(
-        "Usage: java -cp acm.jar:lib/* org.literacybridge.acm.tbbuilder.TBBuilder CREATE <acm_name> <deployment> <package_name> <language> (<group>) (<package_name2>) (<language2>) (<group3>) (<package_name3>) (<language3>) (<group3>)");
-    System.out.println(
-        "OR   : java -cp acm.jar:lib/* org.literacybridge.acm.tbbuilder.TBBuilder PUBLISH <acm_name> <default_deployment> (<deployment2>...) ");
   }
 
   private void exportList(String contentPackage, File list,
