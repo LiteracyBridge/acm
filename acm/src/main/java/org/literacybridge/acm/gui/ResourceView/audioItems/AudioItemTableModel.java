@@ -195,6 +195,22 @@ public class AudioItemTableModel extends AbstractTableModel
   }
 
   /**
+   * Removes an item from the id->index and index->id maps. Adjusts indices as necessary.
+   * @param item The audio item to be removed.
+     */
+  private void removeAudioItem(AudioItem item) {
+    int row = uuidToRowIndexMap.get(item.getUuid());
+    // Adjust higher numbered rows in the id -> row map to account for row removed in middle.
+    for (Map.Entry<String,Integer> e : uuidToRowIndexMap.entrySet()) {
+      if (e.getValue() > row) {
+        e.setValue(e.getValue() - 1);
+      }
+    }
+    uuidToRowIndexMap.remove(item.getUuid());
+    rowIndexToUuidMap.remove(row);
+  }
+
+  /**
    * One instance of this class represents one materialized table row in
    * rowIndexToUuidMap.
    */
@@ -222,8 +238,7 @@ public class AudioItemTableModel extends AbstractTableModel
           rowIndexToUuidMap.set(row, convertToAudioItemNodeRow(audioItem));
           fireTableRowsUpdated(row, row);
         } else if (eventType == DataChangeEventType.ITEM_DELETED) {
-          uuidToRowIndexMap.remove(audioItem.getUuid());
-          rowIndexToUuidMap.remove(row);
+          removeAudioItem(audioItem);
           fireTableRowsDeleted(row, row);
         }
       }
