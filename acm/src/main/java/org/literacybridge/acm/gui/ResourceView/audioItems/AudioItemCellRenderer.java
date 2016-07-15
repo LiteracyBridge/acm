@@ -30,8 +30,6 @@ public class AudioItemCellRenderer extends DefaultTableCellRenderer {
     JLabel label = (JLabel) super.getTableCellRendererComponent(table, value,
         isSelected, hasFocus, row, column);
 
-    AudioItemNode<?> status = (AudioItemNode<?>) value;
-
     if (AudioItemTableModel.infoIconColumn.getColumnIndex() == column
         && highlightedRow == row) {
       label.setIcon(settingsImageIcon);
@@ -39,16 +37,17 @@ public class AudioItemCellRenderer extends DefaultTableCellRenderer {
       label.setIcon(null);
     }
 
-    label.setText(status.toString());
-
-    MetadataValue<Integer> statusValue = status.getAudioItem().getMetadata()
-        .getMetadataValue(LB_STATUS);
-    if (statusValue != null
-        && AudioItemPropertiesModel.STATUS_VALUES[statusValue
-            .getValue()] == AudioItemPropertiesModel.NO_LONGER_USED) {
-      Font italicsLabel = new Font(label.getFont().getName(), Font.ITALIC,
-          label.getFont().getSize());
-      label.setFont(italicsLabel);
+    if (value != null) {
+      AudioItemNode<?> status = (AudioItemNode<?>) value;
+      label.setText(status.toString());
+      MetadataValue<Integer> statusValue = status.getAudioItem().getMetadata().getMetadataValue(LB_STATUS);
+      if (statusValue != null &&
+              AudioItemPropertiesModel.STATUS_VALUES[statusValue.getValue()] == AudioItemPropertiesModel.NO_LONGER_USED) {
+        Font italicsLabel = new Font(label.getFont().getName(), Font.ITALIC, label.getFont().getSize());
+        label.setFont(italicsLabel);
+      }
+    } else {
+      label.setText("<null>");
     }
     return label;
   }
