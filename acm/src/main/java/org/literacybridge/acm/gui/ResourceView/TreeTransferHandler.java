@@ -6,9 +6,12 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JTree;
 import javax.swing.TransferHandler;
@@ -27,6 +30,7 @@ import org.literacybridge.acm.importexport.FileImporter;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Transaction;
+import org.literacybridge.acm.utils.ACMRecorder;
 
 public class TreeTransferHandler extends TransferHandler {
   private static final long serialVersionUID = 1L;
@@ -147,7 +151,7 @@ public class TreeTransferHandler extends TransferHandler {
       throws IOException, UnsupportedFlavorException {
     Transferable t = support.getTransferable();
     final boolean move = support.getDropAction() == TransferHandler.MOVE;
-
+    final Map<String,String> tempRecord = new HashMap();
     final AudioItem[] audioItems = (AudioItem[]) t
         .getTransferData(AudioItemView.AudioItemDataFlavor);
     // don't piggyback on the drag&drop thread
@@ -165,9 +169,13 @@ public class TreeTransferHandler extends TransferHandler {
             }
             item.addCategory(target.getCategory());
             transaction.add(item);
+            tempRecord.put(item.getUuid(),target.getCategory().toString());
           }
           transaction.commit();
           success = true;
+          for (Map.Entry entry : tempRecord.entrySet()) {
+            ACMRecorder.recordAction("Added audioitem:'"+entry.getKey()+"' to category:'"+entry.getValue()+"'");
+          }
         } catch (IOException e) {
           LOG.log(Level.SEVERE, "Unable to commit transaction.", e);
         } finally {

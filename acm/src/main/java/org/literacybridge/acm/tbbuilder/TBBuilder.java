@@ -23,6 +23,7 @@ import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.tbloader.TBLoader;
+import org.literacybridge.acm.utils.ACMRecorder;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.acm.utils.ZipUnzip;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
@@ -67,8 +68,11 @@ public class TBBuilder {
       doPublish(args);
     } else {
       printUsage();
+      //if we don't create/publish deployment.. should we delete record also?
+      ACMRecorder.deleteTempRecord();
       System.exit(1);
     }
+    ACMRecorder.uploadRecord();
   }
 
   /**
@@ -143,6 +147,7 @@ public class TBBuilder {
       deployments[i] = args[i + 2];
     }
     tbb.publish(deployments);
+    ACMRecorder.recordAction("Published deployments:'"+deployments+"'");
   }
 
   private static void printUsage() {
@@ -276,6 +281,7 @@ public class TBBuilder {
     f.createNewFile();
 
     exportPackagesInDeployment(packageName, languageCode, groups);
+    ACMRecorder.recordAction("Added image for package:'"+packageName+"' language:'"+languageCode+"'");
     System.out.println("Done with adding image for " + packageName + " and "
         + languageCode + ".");
 
@@ -345,7 +351,7 @@ public class TBBuilder {
         + TBLoader.getDateTime().substring(8, 17);
     File newRev = new File(targetTempDir, revision + ".rev");
     newRev.createNewFile();
-
+    ACMRecorder.recordAction("Created deployment:'"+deployment+"'");
     System.out.println(
         "\nDone with deployment of software and basic/community content.");
   }
@@ -463,6 +469,8 @@ public class TBBuilder {
     deleteRevFiles(targetTempDir);
     ZipUnzip.zip(new File(dropboxTbLoadersDir, "software"),
         new File(publishDistributionDir, "software-" + zipSuffix), true);
+    // is this a separate publish?
+    ACMRecorder.recordAction("Published deployments:'"+deployments+"'");
   }
 
   private static void deleteRevFiles(File dir) {
