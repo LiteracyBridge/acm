@@ -27,6 +27,7 @@ import org.literacybridge.acm.store.Playlist;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.literacybridge.acm.utils.ACMRecorder;
 
 public class AudioItemTableModel extends AbstractTableModel
     implements DataChangeListener {
@@ -231,6 +232,7 @@ public class AudioItemTableModel extends AbstractTableModel
       if (eventType == DataChangeEventType.ITEM_ADDED) {
         int row = addNewAudioItem(audioItem);
         fireTableRowsInserted(row, row);
+        ACMRecorder.recordAction("Audioitem Added:'"+audioItem.getUuid()+"'");
       } else {
         int row = uuidToRowIndexMap.get(audioItem.getUuid());
 
@@ -240,6 +242,7 @@ public class AudioItemTableModel extends AbstractTableModel
         } else if (eventType == DataChangeEventType.ITEM_DELETED) {
           removeAudioItem(audioItem);
           fireTableRowsDeleted(row, row);
+          ACMRecorder.recordAction("Audioitem Deleted:'"+audioItem.getUuid()+"'");
         }
       }
     }

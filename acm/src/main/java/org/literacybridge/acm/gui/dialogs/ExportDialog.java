@@ -16,6 +16,7 @@ import javax.swing.JLabel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
@@ -24,6 +25,7 @@ import org.literacybridge.acm.importexport.CSVExporter;
 import org.literacybridge.acm.importexport.FileSystemExporter;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.utils.ACMRecorder;
 
 public class ExportDialog extends JDialog implements ActionListener {
   private static final Logger LOG = Logger

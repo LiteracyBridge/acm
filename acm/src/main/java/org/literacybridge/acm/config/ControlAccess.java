@@ -29,6 +29,7 @@ import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.repository.CachingRepository;
 import org.literacybridge.acm.repository.FileSystemRepository;
 import org.literacybridge.acm.utils.ZipUnzip;
+import org.literacybridge.acm.utils.ACMRecorder;
 
 import com.google.common.collect.Lists;
 
@@ -524,7 +525,7 @@ public class ControlAccess {
     // TESTING: for AWS parallel integration tests
     boolean status_aws = true;
     String filename_aws = null, key_aws = null, possessor_aws = null, response = null;
-
+    //
     try {
       computerName = InetAddress.getLocalHost().getHostName();
     } catch (UnknownHostException e1) {
@@ -533,13 +534,15 @@ public class ControlAccess {
 
     // TESTING: AWS check-out
     // send POST request to AWS API gateway to invoke acmCheckOut lambda function
-    String requestURL = "https://7z4pu4vzqk.execute-api.us-west-2.amazonaws.com/prod";
+    String requestURL = "https://bbm0jfgsf2.execute-api.us-west-2.amazonaws.com/test";
     JSONObject request = new JSONObject();
+
+    //ACMRecorder.recordAction("first thing i said");
 
     if(action == "checkout"){
       action = "checkOut";
     }
-
+    System.out.println(ACMConfiguration.getInstance().getUserName());
     request.put("db",db);
     request.put("action", action);
     request.put("name", ACMConfiguration.getInstance().getUserName());
@@ -632,6 +635,8 @@ public class ControlAccess {
     URL url;
     String action;
 
+    //ACMRecorder.recordAction("second thing");
+
     // for AWS parallel integration tests
     boolean status_aws = false;
     String response = null;
@@ -650,7 +655,7 @@ public class ControlAccess {
     }
 
     // AWS check-in
-    String requestURL = "https://7z4pu4vzqk.execute-api.us-west-2.amazonaws.com/prod";
+    String requestURL = "https://bbm0jfgsf2.execute-api.us-west-2.amazonaws.com/test";
     JSONObject request = new JSONObject();
 
     if (key.equals("force")) {
@@ -682,12 +687,21 @@ public class ControlAccess {
     Scanner scan = new Scanner(response).useDelimiter("\"");
     while (scan.hasNext()) {
       s = scan.next();
-      if (action.equals("discard"))
+      if (action.equals("discard")) {
+        //TESTING: delete temp record if discarding changes
+        ACMRecorder.deleteTempRecord();
         status_aws = true;
-      else if (s.startsWith("ok"))
+      }
+      else if (s.startsWith("ok")) {
         status_aws = true;
-      else if (s.startsWith("denied"))
+        //TESTING: upload record if changes successfully checked-in
+        ACMRecorder.uploadRecord();
+      }
+      else if (s.startsWith("denied")) {
+        //TESTING: should we delete if denied? or will the user attempt to check-in again?
+        ACMRecorder.deleteTempRecord();
         status_aws = false;
+      }
     }
 
     url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&action="

@@ -1,5 +1,7 @@
 File distDir = file("$projectDir/dist")
 
+
+
 task copyLibs(type: Sync) {
   from configurations.runtime
   into "$distDir/lib"
@@ -17,6 +19,28 @@ task dist(dependsOn: [copyJars, copyLibs]) {
 
 clean {
   delete distDir
+}
+
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath "io.spring.gradle:dependency-management-plugin:0.5.4.RELEASE"
+  }
+}
+
+apply plugin: "io.spring.dependency-management"
+//apply plugin: "java"
+//
+//repositories{
+//  mavenCentral()
+//}
+
+dependencyManagement {
+  imports {
+    mavenBom 'com.amazonaws:aws-java-sdk-bom:1.10.47'
+  }
 }
 
 dependencies {
@@ -40,6 +64,7 @@ dependencies {
   compile 'args4j:args4j:2.0.16'
   compile 'commons-io:commons-io:2.4'
   compile 'net.sf.opencsv:opencsv:2.3'
+  compile 'com.amazonaws:aws-java-sdk-s3'
 
   compile files(fileTree('3rdparty').include('*.jar'))
 

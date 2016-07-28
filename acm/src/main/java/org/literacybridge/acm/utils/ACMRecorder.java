@@ -2,6 +2,7 @@ package org.literacybridge.acm.utils;
 
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 
 import java.io.File;
@@ -24,8 +25,8 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 /**
  * ACMRecorder class
  *
- * Used to track & record user changes to the ACM. Creates a local temp record file that is uploaded to s3 bucket
- * 'acm-logging' --> records/acm_name/date
+ * Used to track & record user changes to the ACM for auditing and diagnostic purposes.
+ * Creates a local temp record file that is uploaded to s3 bucket: 'acm-logging' --> records/acm_name/date
  *
  * @author  Nihala Thanikkal
  * @since   2016-07-25
@@ -33,33 +34,30 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 
 
 public class ACMRecorder {
-    // get local directory of ACM
-    private static String getACMDirectory() {
-        File acm = new File(DBConfiguration.getLiteracyBridgeHomeDir(), Constants.ACM_DIR_NAME);
-        if (!acm.exists())
-            acm.mkdirs();
-        return acm.getAbsolutePath();
-    }
 
-    // create temp record file: 'LiteracyBridge/ACM/record.log'
+    // create temp record file: 'LiteracyBridge/record.log'
     private static File getTempRecord() {
-        return new File(getACMDirectory(), Constants.TEMP_RECORD);
+        return new File(DBConfiguration.getLiteracyBridgeHomeDir(), Constants.TEMP_RECORD);
     }
 
     public static void deleteTempRecord(){
-        File file = getTempRecord();
-        file.delete();
+        File f = getTempRecord();
+        f.delete();
     }
 
     // append actions as a new line in temp record
-    public static void recordAction(String record) {
+    public static void recordAction(String action) {
+        Date today = Calendar.getInstance().getTime();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-hh.mm.ss");
+        String timestamp = formatter.format(today);
+        String acm = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
+        String user = ACMConfiguration.getInstance().getUserName();
         try (
-            FileWriter fw = new FileWriter(getTempRecord(), true);
+            FileWriter fw = new FileWriter(getTempRecord(), true);    //append to file
             BufferedWriter bw = new BufferedWriter(fw);
-            PrintWriter out = new PrintWriter(bw))
-            {
-                out.println(record);
-            }
+            PrintWriter out = new PrintWriter(bw)){
+            out.println(timestamp + ","+ acm + ",'" + user + "'," + action);
+        }
         catch (IOException e) {
             throw new RuntimeException("Unable to write record: " + getTempRecord(), e);
         }
@@ -100,9 +98,5 @@ public class ACMRecorder {
                     "such as not being able to access the network.");
             System.out.println("Error Message: " + ace.getMessage());
         }
-
-
-
     }
-
 }

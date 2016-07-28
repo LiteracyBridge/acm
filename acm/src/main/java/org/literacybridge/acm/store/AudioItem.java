@@ -8,6 +8,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.literacybridge.acm.utils.ACMRecorder;
 
 /**
  * An AudioItem is a unique audio entity, identified by its audioItemID. It is
@@ -67,7 +68,6 @@ public class AudioItem extends Committable {
 
   public final void removeCategory(Category category) {
     categories.remove(category.getUuid());
-
     // remove orphaned non-leaves
     while (removeOrphanedNonLeafCategories())
       ;
