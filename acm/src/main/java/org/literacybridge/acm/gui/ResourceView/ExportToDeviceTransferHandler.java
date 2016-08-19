@@ -21,7 +21,6 @@ import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.A18DeviceExporter;
 import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.utils.ACMRecorder;
 
 public class ExportToDeviceTransferHandler extends TransferHandler {
   private static final long serialVersionUID = 1L;
@@ -74,7 +73,6 @@ public class ExportToDeviceTransferHandler extends TransferHandler {
             for (AudioItem item : audioItems) {
               try {
                 A18DeviceExporter.exportToDevice(item, device);
-                ACMRecorder.recordAction("Exported audioitem:'"+item.getUuid()+"'");
               } catch (Exception e) {
                 LOG.log(Level.WARNING,
                     "Unable to export AudioItem with id=" + item.getUuid(), e);

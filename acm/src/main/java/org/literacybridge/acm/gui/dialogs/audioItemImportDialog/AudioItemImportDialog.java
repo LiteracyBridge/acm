@@ -27,7 +27,7 @@ import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.FileImporter;
-import org.literacybridge.acm.utils.ACMRecorder;
+import org.literacybridge.acm.utils.AcmActionLogger;
 
 @SuppressWarnings("serial")
 public class AudioItemImportDialog extends JDialog {
@@ -167,8 +167,7 @@ public class AudioItemImportDialog extends JDialog {
                   FileImporter.getInstance().importFile(ACMConfiguration
                       .getInstance().getCurrentDB().getMetadataStore(), null,
                       f);
-                  // record file import
-                  ACMRecorder.recordAction("Imported file:'"+f+"'");
+                  AcmActionLogger.recordAction("Imported file:'"+f+"'");
                 } catch (Exception e) {
                   LOG.log(Level.WARNING, "Importing file '" + f + "' failed.", e);
                 }

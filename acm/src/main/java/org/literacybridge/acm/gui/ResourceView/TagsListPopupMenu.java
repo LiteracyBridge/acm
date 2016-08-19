@@ -30,7 +30,7 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
-import org.literacybridge.acm.utils.ACMRecorder;
+import org.literacybridge.acm.utils.AcmActionLogger;
 import org.literacybridge.acm.utils.IOUtils;
 
 import com.google.common.collect.Lists;
@@ -82,7 +82,7 @@ public class TagsListPopupMenu extends JPopupMenu {
             ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
                 .commit(selectedTag.getTag());
             Application.getMessageService().pumpMessage(new TagsListChanged());
-            ACMRecorder.recordAction("Removed playlist:'"+selectedTag.toString()+"'");
+            AcmActionLogger.recordAction("Removed playlist:'"+selectedTag.toString()+"'");
           } catch (Exception ex) {
             LOG.log(Level.WARNING,
                 "Unable to remove playlist " + selectedTag.toString());
@@ -107,7 +107,7 @@ public class TagsListPopupMenu extends JPopupMenu {
                 .commit(selectedTag.getTag());
 
             Application.getMessageService().pumpMessage(new TagsListChanged());
-            ACMRecorder.recordAction("Renamed playlist:'"+oldName+"' to:'"+tagName+"'");
+            AcmActionLogger.recordAction("Renamed playlist:'"+oldName+"' to:'"+tagName+"'");
           } catch (Exception ex) {
             LOG.log(Level.WARNING,
                 "Unable to rename playlist " + selectedTag.toString());
@@ -125,8 +125,8 @@ public class TagsListPopupMenu extends JPopupMenu {
             .getCurrentDB().getTBLoadersDirectory(), "TB_Options/activeLists");
         LinkedHashMap<String, Category> categories = new LinkedHashMap();
         Map<String, File> listCollection = Maps.newHashMap();
-        String catName = null;
-        String catList = null;
+        String categoryName = null;
+        String listName = null;
         String playName = selectedTag.toString();
         try {
           String packageName = (String) JOptionPane.showInputDialog(
@@ -164,11 +164,10 @@ public class TagsListPopupMenu extends JPopupMenu {
                 }
                 String[] listNames = listCollection.keySet()
                     .toArray(new String[listCollection.size()]);
-                String listName = (String) JOptionPane.showInputDialog(
+                listName = (String) JOptionPane.showInputDialog(
                     Application.getApplication(), "Choose categories & order:",
                     "Category Order", JOptionPane.PLAIN_MESSAGE, null,
                     listNames, "");
-                catList = listName;
                 if (!StringUtils.isEmpty(listName)) {
                   sourceActiveListsFile = listCollection.get(listName);
                 } else {
@@ -209,18 +208,17 @@ public class TagsListPopupMenu extends JPopupMenu {
             reader.close();
             String[] names = categories.keySet()
                 .toArray(new String[categories.size()]);
-            String categoryName = (String) JOptionPane.showInputDialog(
+            categoryName = (String) JOptionPane.showInputDialog(
                 Application.getApplication(), "Choose export category:",
                 "Export playlist", JOptionPane.PLAIN_MESSAGE, null, names, "");
 
             if (!StringUtils.isEmpty(categoryName)) {
               export(selectedTag.getTag(), packageName,
                   categories.get(categoryName), dir);
-              catName = categoryName;
             }
           }
-          ACMRecorder.recordAction("Exported playlist:'"+playName+"' to content package:'"+packageName+"' with " +
-                  "category order:'"+catList+"' in category:'"+catName+"'");
+          AcmActionLogger.recordAction("Exported playlist:'"+selectedTag.toString()+"' to content package:'"+packageName+"' with " +
+                  "category order:'"+listName+"' in category:'"+categoryName+"'");
         } catch (IOException e) {
           LOG.log(Level.WARNING, "Error while exporting playlist.", e);
         }

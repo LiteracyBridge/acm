@@ -14,7 +14,7 @@ import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.acm.utils.ACMRecorder;
+import org.literacybridge.acm.utils.AcmActionLogger;
 
 public class TagsTransferHandler extends TransferHandler {
   static DataFlavor[] supportedFlavors = new DataFlavor[] {
@@ -76,7 +76,7 @@ public class TagsTransferHandler extends TransferHandler {
           tag.addAudioItem(item.getUuid());
           ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
               .commit(item, tag);
-          ACMRecorder.recordAction("Added audioitem:'"+item.getUuid()+"' to playlist:'"+tag.getName()+"'");
+          AcmActionLogger.recordAction("Added audioitem:'"+item.getUuid()+"' to playlist:'"+tag.getName()+"'");
         } catch (Exception e) {
           e.printStackTrace();
         }

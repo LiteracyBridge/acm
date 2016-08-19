@@ -30,7 +30,7 @@ import org.literacybridge.acm.importexport.FileImporter;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Transaction;
-import org.literacybridge.acm.utils.ACMRecorder;
+import org.literacybridge.acm.utils.AcmActionLogger;
 
 public class TreeTransferHandler extends TransferHandler {
   private static final long serialVersionUID = 1L;
@@ -151,7 +151,7 @@ public class TreeTransferHandler extends TransferHandler {
       throws IOException, UnsupportedFlavorException {
     Transferable t = support.getTransferable();
     final boolean move = support.getDropAction() == TransferHandler.MOVE;
-    final Map<String,String> tempRecord = new HashMap();
+    final Map<String,String> itemsAdded = new HashMap();
     final AudioItem[] audioItems = (AudioItem[]) t
         .getTransferData(AudioItemView.AudioItemDataFlavor);
     // don't piggyback on the drag&drop thread
@@ -169,12 +169,12 @@ public class TreeTransferHandler extends TransferHandler {
             }
             item.addCategory(target.getCategory());
             transaction.add(item);
-            tempRecord.put(item.getUuid(),target.getCategory().toString());
+            itemsAdded.put(item.getUuid(),target.getCategory().toString());
           }
           transaction.commit();
           success = true;
-          for (Map.Entry entry : tempRecord.entrySet()) {
-            ACMRecorder.recordAction("Added audioitem:'"+entry.getKey()+"' to category:'"+entry.getValue()+"'");
+          for (Map.Entry entry : itemsAdded.entrySet()) {
+            AcmActionLogger.recordAction("Added audioitem:'"+entry.getKey()+"' to category:'"+entry.getValue()+"'");
           }
         } catch (IOException e) {
           LOG.log(Level.SEVERE, "Unable to commit transaction.", e);

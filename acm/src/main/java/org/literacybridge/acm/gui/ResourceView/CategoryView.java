@@ -72,7 +72,7 @@ import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.DefaultCheckboxTreeCellRenderer;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingEvent;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingListener;
-import org.literacybridge.acm.utils.ACMRecorder;
+import org.literacybridge.acm.utils.AcmActionLogger;
 
 public class CategoryView extends ACMContainer implements Observer {
   private static final Logger LOG = Logger
@@ -648,7 +648,7 @@ public class CategoryView extends ACMContainer implements Observer {
       Playlist playlist = store.newPlaylist(tagName);
       try {
         store.commit(playlist);
-        ACMRecorder.recordAction("Created playlist:'"+tagName+"'");
+        AcmActionLogger.recordAction("Created playlist:'"+tagName+"'");
       } catch (IOException e) {
         LOG.log(Level.WARNING, "Unable to create playlist with name " + tagName,
             e);

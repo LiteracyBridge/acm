@@ -29,7 +29,7 @@ import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPro
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.store.*;
-import org.literacybridge.acm.utils.ACMRecorder;
+import org.literacybridge.acm.utils.AcmActionLogger;
 
 // TODO: deal with localized audio items when languages are fully implemented
 public class AudioItemContextMenuDialog extends JDialog
@@ -131,8 +131,6 @@ public class AudioItemContextMenuDialog extends JDialog
                     .getControlAccess().isSandbox())
                   ACMConfiguration.getInstance().getCurrentDB().getRepository()
                       .delete(a);
-                // record deletion
-                ACMRecorder.recordAction("Deleted audioitem:'"+ a.getUuid()+"'");
               } catch (Exception e) {
                 LOG.log(Level.WARNING,
                     "Unable to delete audioitem id=" + a.getUuid(), e);
@@ -172,9 +170,7 @@ public class AudioItemContextMenuDialog extends JDialog
               selectedTag.removeAudioItem(a.getUuid());
               ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
                   .commit(a);
-              System.out.println(selectedTag.getName());
-              System.out.println(selectedTag.getUuid());
-              ACMRecorder.recordAction("Removed audioitem:'"+a.getUuid()+"' from playlist:'"+selectedTag.getName()+"'");
+              AcmActionLogger.recordAction("Removed audioitem:'"+a.getUuid()+"' from playlist:'"+selectedTag.getName()+"'");
             } catch (Exception e) {
               LOG.log(Level.WARNING, "Unable to remove audioitem id="
                   + a.getUuid() + " from tag " + selectedTag.getName(), e);

@@ -1,6 +1,5 @@
 package org.literacybridge.acm.utils;
 
-import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
@@ -13,6 +12,7 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.text.SimpleDateFormat;
+import java.lang.StringBuilder;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -23,63 +23,94 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 
 /**
- * ACMRecorder class
+ * AcmActionLogger class
  *
  * Used to track & record user changes to the ACM for auditing and diagnostic purposes.
- * Creates a local temp record file that is uploaded to s3 bucket: 'acm-logging' --> records/acm_name/date
+ * Uploads logs to s3 bucket: 'acm-logging' --> records/date-time
  *
  * @author  Nihala Thanikkal
  * @since   2016-07-25
  */
 
 
-public class ACMRecorder {
+public class AcmActionLogger {
+    private static StringBuilder sb = new StringBuilder(2000);
 
-    // create temp record file: 'LiteracyBridge/record.log'
-    private static File getTempRecord() {
-        return new File(DBConfiguration.getLiteracyBridgeHomeDir(), Constants.TEMP_RECORD);
+    // create a file to batch up records: 'LiteracyBridge/record.log'
+    private static File getBatchRecord() {
+        return new File(DBConfiguration.getLiteracyBridgeHomeDir(), Constants.BATCH_RECORD);
     }
 
-    public static void deleteTempRecord(){
-        File f = getTempRecord();
+    private static void deleteBatchRecord(){
+        File f = getBatchRecord();
         f.delete();
     }
 
-    // append actions as a new line in temp record
+    // write batch record from current session memory to disk
+    private static void writeBatchToFile(){
+        try (
+                FileWriter fw = new FileWriter(getBatchRecord(), true);    //append to file
+                BufferedWriter bw = new BufferedWriter(fw);
+                PrintWriter out = new PrintWriter(bw)){
+                out.print(sb.toString());
+        }
+        catch (IOException e) {
+            throw new RuntimeException("Unable to write to file: " + getBatchRecord(), e);
+        }
+    }
+
+    /**
+     * Deletes the batched up records stored in memory from the current user session.
+     * NOTE: did not implement yet --> not needed for discard or denied check-in because the program is terminated right
+     * after and so the memory is cleared. not sure where to implement this for creating/publishing deployments in the
+     * TBBuilder
+     */
+    public static void clearBatchMemory(){
+        sb.delete(0, sb.length());
+    }
+
+    /**
+     * Records changes made to the acm (with timestamp, user, & action taken) & adds it to the batch record in memory.
+     *
+     * @param action string  a description of what acm modification was made by the user
+     *                       (e.g. 'Added audioitem: ITEM_NAME')
+     */
     public static void recordAction(String action) {
         Date today = Calendar.getInstance().getTime();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-hh.mm.ss");
         String timestamp = formatter.format(today);
         String acm = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
         String user = ACMConfiguration.getInstance().getUserName();
-        try (
-            FileWriter fw = new FileWriter(getTempRecord(), true);    //append to file
-            BufferedWriter bw = new BufferedWriter(fw);
-            PrintWriter out = new PrintWriter(bw)){
-            out.println(timestamp + ","+ acm + ",'" + user + "'," + action);
-        }
-        catch (IOException e) {
-            throw new RuntimeException("Unable to write record: " + getTempRecord(), e);
-        }
+        String record = timestamp + ","+ acm + ",'" + user + "'," + action + "\n";
+        sb.append(record);
     }
 
-    // upload temp record file to s3 bucket & delete temp record locally
-    // NOTE: file size limit for single put object request 5GB; recommended limit 300MB
+    /**
+     * Creates a local batch file from logs stored in application memory. Uploads file to s3 bucket: 'acm-logging' in
+     * subdirectory 'records' with the datetime stamp as the s3 object name.
+     * Deletes local copy only on successful upload. Otherwise, local copy is kept and appended to on next use of acm.
+     */
     public static void uploadRecord(){
         Date today = Calendar.getInstance().getTime();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-hh.mm.ss");
         String fileName = formatter.format(today);
         String bucketName = Constants.S3_BUCKET;
         String keyName = "records/"+fileName;
-
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentType("text/plain");
         AmazonS3 s3client = new AmazonS3Client(new ProfileCredentialsProvider());
+
+        writeBatchToFile();
+        // early return to prevent creating empty logs in s3
+        if (getBatchRecord().length() == 0){
+            return;
+        }
+
         try {
-            System.out.println("Uploading a new object to S3 from a file\n");
-            s3client.putObject(new PutObjectRequest(bucketName, keyName, getTempRecord()).withMetadata(metadata));
-            // only delete if record is uploaded to s3
-            deleteTempRecord();
+            // NOTE: file size limit for single put object request 5GB; recommended limit 300MB
+            s3client.putObject(new PutObjectRequest(bucketName, keyName, getBatchRecord()).withMetadata(metadata));
+            // delete record because it was uploaded to s3
+            deleteBatchRecord();
         } catch (AmazonServiceException ase) {
             System.out.println("Caught an AmazonServiceException, which " +
                     "means your request made it " +

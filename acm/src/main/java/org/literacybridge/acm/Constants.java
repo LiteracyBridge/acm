@@ -38,6 +38,6 @@ public class Constants {
   public final static String AUDIO_LANGUAGES = "AUDIO_LANGUAGES";
   public final static String PRE_CACHE_WAV = "PRE_CACHE_WAV";
   public final static String CACHE_SIZE_PROP_NAME = "CACHE_SIZE_IN_BYTES";
-  public final static String TEMP_RECORD = "record.log";
+  public final static String BATCH_RECORD = "record.log";
   public final static String S3_BUCKET = "acm-logging";
 }

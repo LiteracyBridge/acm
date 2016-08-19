@@ -25,7 +25,6 @@ import org.literacybridge.acm.importexport.CSVExporter;
 import org.literacybridge.acm.importexport.FileSystemExporter;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.utils.ACMRecorder;
 
 public class ExportDialog extends JDialog implements ActionListener {
   private static final Logger LOG = Logger
