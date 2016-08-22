@@ -38,7 +38,7 @@ def lambda_handler(event, context, date=yesterday):
     :return: none
     """
     # specify s3 subdirectory where logs are stored ( i.e. logs/YEAR/MONTH )
-    base_dir = 'test/'+ str(date.year) + '/' + str(date.month)#'logs/'+ str(date.year) + '/' + str(date.month)
+    base_dir = 'logs/'+ str(date.year) + '/' + str(date.month)
 
     # pull from yesterdays subdirectory in the bucket
     response = client.list_objects(
@@ -122,18 +122,6 @@ def upload(new_log, base_dir, date):
     return uploaded
 
 
-# deprecated:: switched over to multipart upload
-def simple_upload(new_log, base_dir, date):
-    try:
-        upload_log = client.put_object(    # NOTE: AWS size limitations listed at top of file
-            Body=new_log,
-            Bucket=bucket,
-            ContentType='text/plain',
-            Key=base_dir + '/' + 'log_'+str(date)
-        )
-    except Exception as err:
-        pass
-
 # reads content of each log file and joins all into one buffer
 def aggregate_logs(logs):
     body = []
@@ -143,7 +131,7 @@ def aggregate_logs(logs):
             Key=log,
         )
         body.append(file['Body'].read())
-    return '\n'.join(body)
+    return '\n'.join(body)+'\n'
 
 
 # deletes a list of objects from the bucket
