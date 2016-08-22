@@ -20,25 +20,30 @@ import sys
 TABLE = 'acm_check_out'
 dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
 table = dynamodb.Table(TABLE)
+PRETTY_KEYS = ['acm_name', 'acm_state', 'now_out_name', 'now_out_date', 'last_in_name', 'last_in_date']
+PRETTY_LABELS = {'acm_name':'ACM',
+               'acm_state':"Status",
+               'last_in_name':'Last In By',
+               'last_in_date':"Date",
+               'now_out_name':'Now Out By',
+               'now_out_date':'Date'
+               }
 
-
-def status(acm_name=None, only_out=False, pretty=False):
+def status(acm_name=None, only_out=False, verbose=False, all=False):
     # if pretty:
     #     print "---------------------------------------------------------------"
     #     print "ACM Status Check"
     #     print "---------------------------------------------------------------"
-    if acm_name:
-        # query table to get a single acm entry from db
-        acm = table.get_item(Key={'acm_name': acm_name}).get('Item')
-
-        if not acm:    # early exit if ACM doesn't exist
-            print('ACM not found in table')
-            sys.exit(2)
-        if only_out and acm.get('acm_state') == "CHECKED_IN":    # early exit indicating acm not out
-            sys.exit(1)
-
-        print_record(acm,pretty)
-        return
+    acms = []
+    if verbose or all:
+        # all acms for verbose output
+        name_re = re.compile('.*')
+    elif not acm_name:
+        # 'acm-' followed by anything other than 'test'
+        name_re = re.compile('(?i)ACM-(?!TEST).+')
+    else:
+        # whatever the user specified, ignoring case
+        name_re = re.compile('(?i)' + acm_name)
 
     # no acm specified: query all acm entries from db
     acms = table.scan(TableName=TABLE).get('Items')
@@ -67,7 +72,8 @@ def print_record(acm, pretty):
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--out', action='store_true', help='Enable to print only checked-out ACMs')
-    parser.add_argument('--pretty', action='store_true', help='Enable to print prettified ACM data')
-    parser.add_argument('-a', '--acm', help="Check status of a particular acm", default=None)
+    parser.add_argument('--verbose', '-v', action='store_true', help='Enable to print all ACM data')
+    parser.add_argument('--acm', '-a', help="Check status of a particular acm", default=None)
+    parser.add_argument('--all', action='store_true', help="Check status of all particular acms", default=None)
     args = parser.parse_args()
-    status(args.acm,args.out,args.pretty)
+    status(args.acm, args.out, args.verbose, args.all)

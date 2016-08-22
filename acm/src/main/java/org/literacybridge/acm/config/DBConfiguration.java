@@ -224,6 +224,17 @@ public class DBConfiguration extends Properties {
   }
 
   /**
+   * Should locking be maintained in AWS. If not, it runs in the WordPress
+   * server. Reads USE_AWS_LOCKING = true|false from config file.
+   * Currently defaults to false. Next, default to true. Then remove old
+   * WordPress code and remove this entirely.
+   */
+  public boolean useAwsLocking() {
+    String awsLocking = getProperty(Constants.USE_AWS_LOCKING);
+    return awsLocking != null && awsLocking.equalsIgnoreCase("TRUE");
+  }
+
+  /**
    * Parses the language labels from the 'AUDIO_LANGUAGES' String property
    * contained in the config.properties file. The appropriate line in the file
    * has the following format:

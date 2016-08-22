@@ -574,20 +574,22 @@ public class ControlAccess {
         setAWSKey(key_aws);
       }
     }
-        // UNCOMMENT FOR FULL INTEGRATION
-//    if (filename != null)
-//      setZipFilenames(filename);
-//    if (status) {
-//      if (key != null) {
-//        setDBKey(key);
-//        dbInfo.setCheckedOut(true);
-//      }
-//    } else if (possessor != null) {
-//      setPossessor(possessor);
-//    }
-//    return status;
-//  }
+         //UNCOMMENT FOR FULL INTEGRATION
+    if (config.useAwsLocking()) {
+      if (filename_aws != null)
+        setZipFilenames(filename_aws);
+      if (status_aws) {
+        if (key_aws != null) {
+          setDBKey(key_aws);
+          dbInfo.setCheckedOut(true);
+        }
+      } else if (possessor_aws != null) {
+        setPossessor(possessor_aws);
+      }
+      return status_aws;
+    }
 
+    // From here on can be removed once we've completely cut over to AWS locking.
     url = new URL("http://literacybridge.org/checkout.php?db=" + db + "&action="
         + action + "&name=" + ACMConfiguration.getInstance().getUserName()
         + "&contact=" + ACMConfiguration.getInstance().getUserContact()
@@ -690,6 +692,11 @@ public class ControlAccess {
         status_aws = false;
     }
 
+    if (config.useAwsLocking()) {
+      return status_aws;
+    }
+
+    // From here on can be removed once we've completely cut over to AWS locking.
     url = new URL("http://literacybridge.org/checkin.php?db=" + db + "&action="
         + action + "&key=" + key + "&filename=" + filename + "&name="
         + ACMConfiguration.getInstance().getUserName() + "&contact="
