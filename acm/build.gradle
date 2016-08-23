@@ -1,17 +1,20 @@
 File distDir = file("$projectDir/dist")
 
 task copyLibs(type: Sync) {
+  // configurations.runtime is the set of runtime dependencies, ie, everything
+  // in the '"dependencies" section that is included by a "compile" line.
   from configurations.runtime
   into "$distDir/lib"
 }
 
 task copyJars(type: Copy, dependsOn: build) {
+  // libsDir is "build/libs". Copies acm.jar from "build/libs" to "dist".
   from libsDir
   into distDir
 }
 
 task dist(dependsOn: [copyJars, copyLibs]) {
-  description = 'Builds the distribution.'
+  description = 'This is the actual build. Ignore anything with \'assemble\'.'
   group = 'build'
 }
 
@@ -19,6 +22,7 @@ clean {
   delete distDir
 }
 
+// Begin code to allow dynamically including the most up-to-date AWS libs.
 buildscript {
   repositories {
     mavenCentral()
@@ -27,19 +31,15 @@ buildscript {
     classpath "io.spring.gradle:dependency-management-plugin:0.5.4.RELEASE"
   }
 }
-
 apply plugin: "io.spring.dependency-management"
-apply plugin: "java"
-//
-//repositories{
-//  mavenCentral()
-//}
-
 dependencyManagement {
-  imports {
-    mavenBom 'com.amazonaws:aws-java-sdk-bom:1.10.47'
-  }
+    imports {
+        mavenBom 'com.amazonaws:aws-java-sdk-bom:1.10.47'
+    }
 }
+// End code to allow dynamically including the most up-to-date AWS libs
+
+apply plugin: "java"
 
 dependencies {
   compile project(':core')
