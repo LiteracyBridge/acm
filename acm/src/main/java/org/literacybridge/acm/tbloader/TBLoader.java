@@ -59,6 +59,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.io.FileUtils;
@@ -76,6 +78,8 @@ public class TBLoader extends JFrame {
   private static String imageRevision = "(no rev)";
   private static String dateRotation;
   private static JComboBox newDeploymentList;
+  private static JTextField newCommunityFilter;
+  private static FilteringComboBoxModel newCommunityModel;
   private static JComboBox newCommunityList;
   private static JComboBox currentLocationList;
   private static JComboBox driveList;
@@ -229,6 +233,7 @@ public class TBLoader extends JFrame {
       warning.setForeground(Color.RED);
     }
     JLabel packageLabel = new JLabel("Update:");
+    JLabel communityFilterLabel = new JLabel("Community filter:");
     JLabel communityLabel = new JLabel("Community:");
     JLabel currentLocationLabel = new JLabel("Current Location:");
     JLabel dateLabel = new JLabel("First Rotation Date:");
@@ -278,7 +283,18 @@ public class TBLoader extends JFrame {
         comboBoxActionPerformed(e);
       }
     });
-    newCommunityList = new JComboBox();
+    newCommunityModel = new FilteringComboBoxModel();
+    newCommunityFilter = new JTextField("", 40);
+    newCommunityFilter.getDocument().addDocumentListener(new DocumentListener() {
+      // Listen for any change to the text
+      public void changedUpdate(DocumentEvent e) { common(); }
+      public void removeUpdate(DocumentEvent e) { common(); }
+      public void insertUpdate(DocumentEvent e) { common(); }
+      public void common() {
+        newCommunityModel.setFilterString(newCommunityFilter.getText());
+      }
+    });
+    newCommunityList = new JComboBox(newCommunityModel);
     newCommunityList.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         comboBoxActionPerformed(e);
@@ -315,6 +331,7 @@ public class TBLoader extends JFrame {
             .addComponent(deviceLabel)
             .addComponent(currentLocationLabel)
             .addComponent(packageLabel)
+            .addComponent(communityFilterLabel)
             .addComponent(communityLabel)
             .addComponent(imageLabel)
             .addComponent(dateLabel)
@@ -327,6 +344,7 @@ public class TBLoader extends JFrame {
             .addComponent(currentLocationList)
             .addComponent(newValue)
             .addComponent(newDeploymentList)
+            .addComponent(newCommunityFilter)
             .addComponent(newCommunityList)
             .addComponent(newImageText)
             .addComponent(datePicker)
@@ -362,6 +380,9 @@ public class TBLoader extends JFrame {
             .addComponent(packageLabel)
             .addComponent(newDeploymentList)
             .addComponent(oldDeploymentText))
+        .addGroup(layout.createParallelGroup(BASELINE)
+            .addComponent(communityFilterLabel)
+            .addComponent(newCommunityFilter))
         .addGroup(layout.createParallelGroup(BASELINE)
             .addComponent(communityLabel)
             .addComponent(newCommunityList)
