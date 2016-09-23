@@ -8,24 +8,24 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 
 public class LockACM {
-  private static File f;
+  private static File lockFile;
   private static FileChannel channel;
   private static FileLock lock;
 
-  public LockACM(DBConfiguration config) {
+  public static void lockDb(DBConfiguration config) {
     try {
-      f = new File(config.getTempACMsDirectory() + "/"
+      lockFile = new File(config.getTempACMsDirectory() + "/"
           + config.getSharedACMname() + ".lock");
       // Check if the lock exist
-      if (f.exists()) // if exist try to delete it
-        f.delete();
+      if (lockFile.exists()) // if exist try to delete it
+        lockFile.delete();
       // Try to get the lock
-      channel = new RandomAccessFile(f, "rw").getChannel();
+      channel = new RandomAccessFile(lockFile, "rw").getChannel();
       lock = channel.tryLock();
       if (lock == null) {
         // File is lock by other application
         channel.close();
-        throw new RuntimeException("Two instance cant run at a time.");
+        throw new RuntimeException("Two instances for the same ACM can't run at the same time.");
       }
       // Add shutdown hook to release lock when application shutdown
       ShutdownHook shutdownHook = new ShutdownHook();
@@ -35,16 +35,16 @@ public class LockACM {
     }
   }
 
-  public static void unlockFile() {
+  public static void unlockDb() {
     // release and delete file lock
     try {
       if (lock != null) {
         lock.release();
         channel.close();
-        f.delete();
+        lockFile.delete();
       }
     } catch (ClosedChannelException e) {
-      if (f.exists())
+      if (lockFile.exists())
         e.printStackTrace();
     } catch (IOException e) {
       e.printStackTrace();
@@ -54,7 +54,7 @@ public class LockACM {
   static class ShutdownHook extends Thread {
     @Override
     public void run() {
-      unlockFile();
+      unlockDb();
     }
   }
 }

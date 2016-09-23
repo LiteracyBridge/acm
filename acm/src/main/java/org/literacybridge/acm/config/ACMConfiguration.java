@@ -133,7 +133,7 @@ public class ACMConfiguration {
 
     DBConfiguration oldDB = currentDB.get();
     if (oldDB != null) {
-      LockACM.unlockFile();
+      LockACM.unlockDb();
     }
 
     currentDB.set(config);
@@ -143,7 +143,7 @@ public class ACMConfiguration {
   public synchronized void closeCurrentDB() {
     DBConfiguration oldDB = currentDB.get();
     if (oldDB != null) {
-      LockACM.unlockFile();
+      LockACM.unlockDb();
       currentDB.set(null);
     }
   }
@@ -373,7 +373,20 @@ public class ACMConfiguration {
   }
 
   private File getConfigurationPropertiesFile() {
-    return new File(LB_HOME_DIR, Constants.GLOBAL_CONFIG_PROPERTIES);
+    return new File(getApplicationDirectory(), Constants.GLOBAL_CONFIG_PROPERTIES);
+  }
+
+  public File getTbLoaderDirFor(String acmName) {
+    File f = null;
+
+    if (globalShareDir != null) {
+      f = new File(globalShareDir,
+              acmName + File.separator + Constants.TBLoadersHomeDir);
+      if (!f.exists()) {
+        f = null;
+      }
+    }
+    return f;
   }
 
   private void loadProps() {

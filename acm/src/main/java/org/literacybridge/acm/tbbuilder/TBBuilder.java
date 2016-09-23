@@ -160,7 +160,7 @@ public class TBBuilder {
     ACMConfiguration.initialize(params);
     ACMConfiguration.getInstance().setCurrentDB(params.sharedACM);
     // Like ~/Dropbox/ACM-UWR/TB-Loaders
-    dropboxTbLoadersDir = ACMConfiguration.getInstance().dirACM(sharedACM); // .getCurrentDB().getTBLoadersDirectory();
+    dropboxTbLoadersDir = ACMConfiguration.getInstance().getTbLoaderDirFor(sharedACM);
     project = sharedACM.substring(ACM_PREFIX.length());
     // ~/LiteracyBridge/TB-Loaders
     File localTbLoadersDir = new File(DBConfiguration.getLiteracyBridgeHomeDirectory(), Constants.TBLoadersHomeDir);
@@ -353,7 +353,6 @@ public class TBBuilder {
       final String distribution, boolean updateRevision) throws Exception {
     char revision = 'a';
     File[] files = publishTbLoadersDir.listFiles(new FilenameFilter() {
-
       @Override
       public boolean accept(File dir, String name) {
         return name.toLowerCase().endsWith(".rev")

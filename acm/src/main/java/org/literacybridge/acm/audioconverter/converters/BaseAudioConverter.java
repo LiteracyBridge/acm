@@ -41,7 +41,7 @@ public abstract class BaseAudioConverter {
         if (!outputFile.delete()) {
           // TODO: we should probably have some retry logic here, and fail after
           // 5 attempts or so
-          throw new ConversionException("Unable to overwrite output file.");
+          throw new ConversionException(String.format("Unable to overwrite output file (%s).", outputFile));
         }
       }
     ConversionResult result = doConvertFile(inputFile, targetDir, outputFile,
@@ -52,7 +52,7 @@ public abstract class BaseAudioConverter {
       // attempts or so
       if (!result.outputFile.equals(outputFile)
           && !result.outputFile.renameTo(outputFile)) {
-        throw new ConversionException("Unable to rename output file.");
+        throw new ConversionException(String.format("Unable to rename output file (%s as %s).", result.outputFile, outputFile));
       }
     }
     return result.response;

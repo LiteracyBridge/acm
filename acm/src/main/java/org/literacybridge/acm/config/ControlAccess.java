@@ -41,7 +41,7 @@ public class ControlAccess {
   private static final int NUM_ZIP_FILES_TO_KEEP = 4;
   private final static String DB_ZIP_FILENAME_PREFIX = Constants.DBHomeDir;
   private final static String DB_ZIP_FILENAME_INITIAL = DB_ZIP_FILENAME_PREFIX + "1.zip";
-  // The php checkout app returns the string "NULL" if no checkin file is found.
+  // The php checkout app returns the string "NULL" if no checkin file was found
   private final static String DB_DOES_NOT_EXIST = "NULL";
   private final static String DB_KEY_OVERRIDE = "force";
   private boolean sandbox = false;
@@ -175,13 +175,16 @@ public class ControlAccess {
 
   public void init() {
     try {
-      @SuppressWarnings("unused")
-      LockACM l = new LockACM(config);
+      LockACM.lockDb(config);
     } catch (RuntimeException e) {
+      String msg = "Can't open ACM";
+      if (e.getMessage() != null && e.getMessage().length() > 0) {
+        msg = msg + ": " + e.getMessage();
+      }
       if (!ACMConfiguration.getInstance().isDisableUI())
-        JOptionPane.showMessageDialog(null, "This ACM is already opened.");
+        JOptionPane.showMessageDialog(null, msg);
       else
-        System.out.println("This ACM is already opened!!!");
+        System.out.println(msg);
       System.exit(0);
     }
     if (dbInfo == null) {
@@ -203,14 +206,10 @@ public class ControlAccess {
       determineRWStatus();
       createDBMirror();
     }
-    System.out.println(
-        "  Repository:                     " + config.getRepositoryDirectory());
-    System.out.println(
-        "  Temp Database:                  " + config.getDatabaseDirectory());
-    System.out
-        .println("  Temp Repository (sandbox mode): " + getSandboxDirectory());
-    System.out
-        .println("  UserRWAccess:                   " + userHasWriteAccess());
+    System.out.println("  Repository:                     " + config.getRepositoryDirectory());
+    System.out.println("  Temp Database:                  " + config.getDatabaseDirectory());
+    System.out.println("  Temp Repository (sandbox mode): " + getSandboxDirectory());
+    System.out.println("  UserRWAccess:                   " + userHasWriteAccess());
     System.out.println("  online:                         " + isOnline());
 
     config.setRepository(new CachingRepository(
@@ -224,7 +223,7 @@ public class ControlAccess {
                   }
                 })),
         new FileSystemRepository(config.getRepositoryDirectory()),
-        isSandbox() ? new FileSystemRepository(getSandboxDirectory()) : null));
+            isSandbox() ? new FileSystemRepository(getSandboxDirectory()) : null));
   }
 
   private void createDBMirror() {
@@ -395,7 +394,7 @@ public class ControlAccess {
       }
       if (online && sandboxMode && userHasWriteAccess()
           && !ACMConfiguration.getInstance().isDisableUI()) {
-        Object[] optionsNoForce = { "Use Demo Mode", "Shutdown" };
+        Object[] optionsNoForce = { "Shutdown", "Use Demo Mode" };
 
         int n = JOptionPane.showOptionDialog(null, dialogMessage,
             "Cannot Get Write Access", JOptionPane.YES_NO_CANCEL_OPTION,
@@ -452,7 +451,7 @@ public class ControlAccess {
             JOptionPane.showMessageDialog(null,
                 "Sorry, but another user must have just checked out this ACM a moment ago!\nTry contacting "
                     + getPosessor()
-                    + "\nAfter clicking OK, the ACM will shutdown.");
+                    + "\nAfter clicking OK, the ACM will shut down.");
             System.exit(0);
           } else if (!sandboxMode) {
             if (getCurrentZipFilename().equalsIgnoreCase(DB_DOES_NOT_EXIST)) {

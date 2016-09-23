@@ -122,7 +122,7 @@ public class TreeTransferHandler extends TransferHandler {
             if (f.isDirectory()) {
               FileImporter.getInstance().importDirectory(ACMConfiguration
                   .getInstance().getCurrentDB().getMetadataStore(), category, f,
-                  false);
+                  true);
             } else {
               FileImporter.getInstance().importFile(ACMConfiguration
                   .getInstance().getCurrentDB().getMetadataStore(), category,
