@@ -44,13 +44,10 @@ public class AudioItemPropertiesDialog extends ACMDialog implements Observer {
 
   public AudioItemPropertiesDialog(JFrame parent, AudioItemView view,
       Iterable<String> audioItemList, AudioItem showItem) {
-    super(parent, LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES",
-        LanguageUtil.getUILanguage()), true);
+    super(parent, LabelProvider.getLabel("AUDIO_ITEM_PROPERTIES"), true);
     addToMessageService();
     createControlsForAvailableProperties();
-    setMinimumSize(new Dimension(500, 500));
-    setSize(500, 500);
-    setUndecorated(true);
+    setMinimumSize(new Dimension(500, 570));
     pack();
     setFocusTraversalPolicy(new FocusTraversalOnArray(
         new Component[] { backBtn, nextBtn, btnClose }));

@@ -80,6 +80,11 @@ public class LabelProvider {
     return bundle;
   }
 
+  public static String getLabel(MetadataField<?> field) {
+    return getLabel(field, LanguageUtil.getUILanguage());
+  }
+
+  @Deprecated // Use the overload without locale
   public static String getLabel(MetadataField<?> field, Locale locale) {
     int fieldID = LBMetadataIDs.FieldToIDMap.get(field);
     String resourceName = METAFIELD_PROPERTY_PREFIX + fieldID;
@@ -88,6 +93,11 @@ public class LabelProvider {
     return bundle.getString(resourceName);
   }
 
+  public static Iterator<KeyValuePair<MetadataField<?>, String>> getMetaFieldLabelsIterator() {
+    return getMetaFieldLabelsIterator(LanguageUtil.getUILanguage());
+  }
+
+  @Deprecated // Use the overload without locale
   public static Iterator<KeyValuePair<MetadataField<?>, String>> getMetaFieldLabelsIterator(
       final Locale locale) {
     final Iterator<MetadataField<?>> fieldIterator = LBMetadataIDs.FieldToIDMap
@@ -118,6 +128,7 @@ public class LabelProvider {
      return getLabel(propertyName, LanguageUtil.getUILanguage());
   }
 
+  @Deprecated // Use the overload without locale
   public static String getLabel(String propertyName, Locale locale) {
     try {
       return getResourceBundle(locale).getString(propertyName);

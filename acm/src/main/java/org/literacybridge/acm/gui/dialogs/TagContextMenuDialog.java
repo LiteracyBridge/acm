@@ -59,13 +59,13 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 
       labelPostfix = selectedTitle;
       deleteMessage = String.format(
-          LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_TITLE",
+          LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__DELETE_TITLE",
               LanguageUtil.getUILanguage()),
           selectedTitle);
 
       deleteButton = new FlatButton(
           String.format(
-              LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE",
+              LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__DELETE",
                   LanguageUtil.getUILanguage()),
               labelPostfix),
           deleteImageIcon, backgroundColor, highlightedColor) {
@@ -101,7 +101,7 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
       deleteButton = new FlatButton(
           String.format(
               LabelProvider.getLabel(
-                  "AUDIO_ITEM_CONTEXT_MENU_DIALOG_REMOVE_TAG",
+                  "AUDIO_ITEM_CONTEXT_MENU_DIALOG__REMOVE_TAG",
                   LanguageUtil.getUILanguage()),
               labelPostfix, selectedTag.getName()),
           deleteImageIcon, backgroundColor, highlightedColor) {
@@ -124,7 +124,7 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
     }
 
     final String editButtonLabel = LabelProvider.getLabel(
-        "AUDIO_ITEM_CONTEXT_MENU_DIALOG_EDIT_TITLE",
+        "AUDIO_ITEM_CONTEXT_MENU_DIALOG__EDIT_TITLE",
         LanguageUtil.getUILanguage());
 
     FlatButton editButton = new FlatButton(

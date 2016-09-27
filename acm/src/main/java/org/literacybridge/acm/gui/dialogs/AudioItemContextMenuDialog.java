@@ -51,164 +51,14 @@ public class AudioItemContextMenuDialog extends JDialog
     setResizable(false);
     setUndecorated(true);
 
-    ImageIcon editImageIcon = new ImageIcon(
-        UIConstants.getResource(UIConstants.ICON_EDIT_16_PX));
-    ImageIcon deleteImageIcon = new ImageIcon(
-        UIConstants.getResource(UIConstants.ICON_DELETE_16_PX));
-    ImageIcon exportImageIcon = new ImageIcon(
-            UIConstants.getResource(UIConstants.ICON_EXPORT_16_PX));
-
-    Color backgroundColor = parent.getBackground();
-    Color highlightedColor = SystemColor.textHighlight;
-
     GridLayout grid = new GridLayout(4, 1);
 
-    final String selectedTitle = getMetadataTitle(clickedAudioItem);
+    final String labelPostfix = getPostfixLabel(selectedAudioItems);
 
-    final Playlist selectedTag = Application.getFilterState()
-        .getSelectedPlaylist();
-
-    String labelPostfix;
-    final FlatButton deleteButton;
-
-    if (selectedTag == null) {
-      final String deleteMessage;
-
-      if (selectedAudioItems.length > 1) {
-        labelPostfix = String
-            .format(
-                LabelProvider.getLabel(
-                    "AUDIO_ITEM_CONTEXT_MENU_DIALOG_LABEL_POSTFIX",
-                    LanguageUtil.getUILanguage()),
-                selectedAudioItems.length);
-        deleteMessage = String
-            .format(
-                LabelProvider.getLabel(
-                    "AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_ITEMS",
-                    LanguageUtil.getUILanguage()),
-                selectedAudioItems.length);
-      } else {
-        labelPostfix = selectedTitle;
-        deleteMessage = String.format(LabelProvider.getLabel(
-            "AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE_TITLE",
-            LanguageUtil.getUILanguage()), selectedTitle);
-      }
-
-      deleteButton = new FlatButton(
-          String.format(
-              LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_DELETE",
-                  LanguageUtil.getUILanguage()),
-              labelPostfix),
-          deleteImageIcon, backgroundColor, highlightedColor) {
-        @Override
-        public void click() {
-          AudioItemContextMenuDialog.this.setVisible(false);
-
-          Object[] options = {
-              LabelProvider.getLabel("CANCEL", LanguageUtil.getUILanguage()),
-              LabelProvider.getLabel("DELETE", LanguageUtil.getUILanguage()) };
-          int n = JOptionPane.showOptionDialog(Application.getApplication(),
-              deleteMessage,
-              LabelProvider.getLabel("CONFRIM_DELETE",
-                  LanguageUtil.getUILanguage()),
-              JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null,
-              options, options[0]);
-
-          if (n == 1) {
-            for (AudioItem a : selectedAudioItems) {
-              try {
-                ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
-                    .deleteAudioItem(a.getUuid());
-                ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
-                    .commit(a);
-                // it's okay to delete from DB but cannot delete the .a18 file
-                // since that's in the shared (dropbox) repository
-                if (!ACMConfiguration.getInstance().getCurrentDB()
-                    .getControlAccess().isSandbox())
-                  ACMConfiguration.getInstance().getCurrentDB().getRepository()
-                      .delete(a);
-              } catch (Exception e) {
-                LOG.log(Level.WARNING,
-                    "Unable to delete audioitem id=" + a.getUuid(), e);
-              }
-            }
-            Application.getFilterState().updateResult(true);
-          }
-
-        }
-      };
-    } else {
-      if (selectedAudioItems.length > 1) {
-        labelPostfix = String
-            .format(
-                LabelProvider.getLabel(
-                    "AUDIO_ITEM_CONTEXT_MENU_DIALOG_LABEL_POSTFIX",
-                    LanguageUtil.getUILanguage()),
-                selectedAudioItems.length);
-      } else {
-        labelPostfix = selectedTitle;
-      }
-
-      deleteButton = new FlatButton(
-          String.format(
-              LabelProvider.getLabel(
-                  "AUDIO_ITEM_CONTEXT_MENU_DIALOG_REMOVE_TAG",
-                  LanguageUtil.getUILanguage()),
-              labelPostfix, selectedTag.getName()),
-          deleteImageIcon, backgroundColor, highlightedColor) {
-        @Override
-        public void click() {
-          AudioItemContextMenuDialog.this.setVisible(false);
-
-          for (AudioItem a : selectedAudioItems) {
-            try {
-              a.removePlaylist(selectedTag);
-              selectedTag.removeAudioItem(a.getUuid());
-              ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
-                  .commit(a);
-            } catch (Exception e) {
-              LOG.log(Level.WARNING, "Unable to remove audioitem id="
-                  + a.getUuid() + " from tag " + selectedTag.getName(), e);
-            }
-          }
-          Application.getFilterState().updateResult(true);
-
-        }
-      };
-
-    }
-
-    final String editButtonLabel = LabelProvider.getLabel(
-        "AUDIO_ITEM_CONTEXT_MENU_DIALOG_EDIT_TITLE",
-        LanguageUtil.getUILanguage());
-
-    FlatButton editButton = new FlatButton(
-        String.format(editButtonLabel, selectedTitle), editImageIcon,
-        backgroundColor, highlightedColor) {
-      @Override
-      public void click() {
-        AudioItemContextMenuDialog.this.setVisible(false);
-        AudioItemPropertiesDialog dlg = new AudioItemPropertiesDialog(
-            Application.getApplication(), audioItemView, data.getAudioItems(),
-            clickedAudioItem);
-        dlg.setVisible(true);
-      }
-    };
-
-    FlatButton exportButton = new FlatButton(
-        String.format(LabelProvider.getLabel(
-            "AUDIO_ITEM_CONTEXT_MENU_DIALOG_EXPORT_TITLE",
-            LanguageUtil.getUILanguage()), labelPostfix),
-        exportImageIcon, backgroundColor, highlightedColor) {
-      @Override
-      public void click() {
-        AudioItemContextMenuDialog.this.setVisible(false);
-        ExportDialog export = new ExportDialog(selectedAudioItems);
-        export.setVisible(true);
-      }
-    };
-
-    FlatButton languageButton = makeLanguageButton(selectedAudioItems);
+    FlatButton deleteButton = makeDeleteButton(selectedAudioItems, labelPostfix);
+    FlatButton editButton = makeEditButton(selectedAudioItems);
+    FlatButton exportButton = makeExportButton(selectedAudioItems, labelPostfix);
+    FlatButton languageButton = makeLanguageButton(selectedAudioItems, labelPostfix);
 
     setLayout(grid);
 
@@ -226,28 +76,237 @@ public class AudioItemContextMenuDialog extends JDialog
     setSize(new Dimension(450, 125));
   }
 
-  @Override
-  public void windowDeactivated(WindowEvent e) {
-    setVisible(false);
+  /**
+   * Helper to get the string "N Audio Items" or <audio item name>
+   * @param selectedAudioItems
+   * @return The string to be displayed
+   */
+  private String getPostfixLabel(final AudioItem[] selectedAudioItems) {
+    String labelPostfix = "";
+    int numSelected = selectedAudioItems.length;
+
+    if (numSelected > 1) {
+      labelPostfix = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__LABEL_POSTFIX"), numSelected);
+    } else {
+      labelPostfix =  getMetadataTitle(selectedAudioItems[0]);
+    }
+
+    return labelPostfix;
+  }
+
+  /**
+   * Makes a delete button. If there is a playlist selected, it will be "delete items
+   * from playlist". If no playlist, it will be "delete items".
+   * TODO: address usability
+   * @param selectedAudioItems
+   * @param labelPostfix String to label the item(s)
+   * @return The button
+   */
+  private FlatButton makeDeleteButton(final AudioItem[] selectedAudioItems, final String labelPostfix) {
+    if (Application.getFilterState().getSelectedPlaylist() != null) {
+      return makeRemoveFromPlaylistButton(selectedAudioItems, labelPostfix);
+    } else
+      return makeDeleteAuditItemsButton(selectedAudioItems, labelPostfix);
+  }
+
+  /**
+   * Makes a button to remove audio items from a playlist.
+   * @param selectedAudioItems
+   * @param labelPostfix String to label the item(s)
+   * @return The button.
+   */
+  private FlatButton makeRemoveFromPlaylistButton(final AudioItem[] selectedAudioItems, final String labelPostfix) {
+    Color backgroundColor = Application.getApplication().getBackground();
+    Color highlightedColor = SystemColor.textHighlight;
+    ImageIcon deleteImageIcon = new ImageIcon(
+            UIConstants.getResource(UIConstants.ICON_DELETE_16_PX));
+    final String selectedTitle = getMetadataTitle(selectedAudioItems[0]);
+    final Playlist selectedTag = Application.getFilterState().getSelectedPlaylist();
+    String buttonLabel = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__REMOVE_TAG"),
+            labelPostfix, selectedTag.getName());
+
+    FlatButton removeFromPlaylistButton = new FlatButton(buttonLabel, deleteImageIcon, backgroundColor, highlightedColor) {
+      @Override
+      public void click() {
+        AudioItemContextMenuDialog.this.setVisible(false);
+
+        for (AudioItem a : selectedAudioItems) {
+          try {
+            a.removePlaylist(selectedTag);
+            selectedTag.removeAudioItem(a.getUuid());
+            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
+                    .commit(a);
+          } catch (Exception e) {
+            LOG.log(Level.WARNING, "Unable to remove audioitem id="
+                    + a.getUuid() + " from tag " + selectedTag.getName(), e);
+          }
+        }
+        Application.getFilterState().updateResult(true);
+
+      }
+    };
+
+    return removeFromPlaylistButton;
+  }
+
+  /**
+   * Makes a button to delete audio items from the database.
+   * @param selectedAudioItems
+   * @param labelPostfix String to label the item(s)
+   * @return The button
+   */
+  private FlatButton makeDeleteAuditItemsButton(final AudioItem[] selectedAudioItems, final String labelPostfix) {
+    Color backgroundColor = Application.getApplication().getBackground();
+    Color highlightedColor = SystemColor.textHighlight;
+    ImageIcon deleteImageIcon = new ImageIcon(
+            UIConstants.getResource(UIConstants.ICON_DELETE_16_PX));
+    final String selectedTitle = getMetadataTitle(selectedAudioItems[0]);
+    String buttonLabel = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__DELETE"), labelPostfix);
+
+    FlatButton deleteButton = new FlatButton(buttonLabel, deleteImageIcon, backgroundColor, highlightedColor) {
+      @Override
+      public void click() {
+        final String deleteMessage;
+        int numSelected = selectedAudioItems.length;
+        if (numSelected > 1) {
+          deleteMessage = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__DELETE_ITEMS"), numSelected);
+        } else {
+          deleteMessage = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__DELETE_TITLE"), selectedTitle);
+        }
+        Object[] options = { LabelProvider.getLabel("CANCEL"),
+                LabelProvider.getLabel("DELETE") };
+
+        AudioItemContextMenuDialog.this.setVisible(false);
+        int n = JOptionPane.showOptionDialog(Application.getApplication(),
+                deleteMessage, LabelProvider.getLabel("CONFRIM_DELETE"),
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+                null, options, options[0]);
+
+        if (n == 1) {
+          for (AudioItem a : selectedAudioItems) {
+            try {
+              ACMConfiguration.getInstance()
+                      .getCurrentDB()
+                      .getMetadataStore()
+                      .deleteAudioItem(a.getUuid());
+              ACMConfiguration.getInstance()
+                      .getCurrentDB()
+                      .getMetadataStore()
+                      .commit(a);
+              // TODO: It is NOT OKAY to not delete from the file system. It is simply harder
+              // to do it right. But, unless we delete the file system, we accumulate obsolete
+              // cruft forever.
+
+              // it's okay to delete from DB but cannot delete the .a18 file
+              // since that's in the shared (dropbox) repository
+              if (!ACMConfiguration.getInstance()
+                      .getCurrentDB()
+                      .getControlAccess()
+                      .isSandbox())
+                ACMConfiguration.getInstance()
+                        .getCurrentDB()
+                        .getRepository()
+                        .delete(a);
+            } catch (Exception e) {
+              // TODO: fix all of these silently ignored exceptions
+              LOG.log(Level.WARNING,
+                      "Unable to delete audioitem id=" + a.getUuid(), e);
+            }
+          }
+          Application.getFilterState().updateResult(true);
+        }
+
+      }
+    };
+
+    return deleteButton;
+  }
+
+  /**
+   * Makes the button to handle editing one audio item
+   * @param selectedAudioItems
+   * @return the button
+   */
+  private FlatButton makeEditButton(final AudioItem[] selectedAudioItems) {
+    Color backgroundColor = Application.getApplication().getBackground();
+    Color highlightedColor = SystemColor.textHighlight;
+    ImageIcon editImageIcon = new ImageIcon(
+            UIConstants.getResource(UIConstants.ICON_EDIT_16_PX));
+    // We don't support editing multiple items, and when multiples, the "clicked" item
+    // is always reported as the first item, regardless of what's actually clicked. So,
+    // to avoid confusion, only allow editing when only a single item is selected. Of
+    // course, always show the button, so the UI doesn't jump around, just disable it
+    // when appropriate.
+    boolean multiEditAttempted = selectedAudioItems.length > 1;
+    final String editButtonLabel = multiEditAttempted ? LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__CANT_MULTI_EDIT")
+                                                      : LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__EDIT_TITLE");
+                                                                  ;
+    final String selectedTitle = getMetadataTitle(selectedAudioItems[0]);
+    String buttonLabel = String.format(editButtonLabel, selectedTitle);
+
+    FlatButton editButton = new FlatButton(buttonLabel, editImageIcon, backgroundColor, highlightedColor) {
+      @Override
+      public void click() {
+        AudioItemContextMenuDialog.this.setVisible(false);
+        AudioItemPropertiesDialog dialog = new AudioItemPropertiesDialog(
+                Application.getApplication(), null, null,
+                selectedAudioItems[0]);
+        // Place the new dialog within the application frame.
+        dialog.setLocation(Application.getApplication().getX()+20, Application.getApplication().getY()+20);
+        dialog.setVisible(true);
+      }
+    };
+    if (multiEditAttempted) {
+      editButton.setEnabled(false);
+    }
+
+    return editButton;
+  }
+
+  /**
+   * Creates the button to handle exporting audio items
+   * @param selectedAudioItems
+   * @param labelPostfix String to label the item(s)
+   * @return The button control
+   */
+  private FlatButton makeExportButton(final AudioItem[] selectedAudioItems, final String labelPostfix) {
+    Color backgroundColor = Application.getApplication().getBackground();
+    Color highlightedColor = SystemColor.textHighlight;
+    ImageIcon exportImageIcon = new ImageIcon(
+            UIConstants.getResource(UIConstants.ICON_EXPORT_16_PX));
+    String buttonLabel = String.format(LabelProvider.getLabel(
+            "AUDIO_ITEM_CONTEXT_MENU_DIALOG__EXPORT_TITLE"), labelPostfix);
+
+    FlatButton exportButton = new FlatButton(buttonLabel, exportImageIcon, backgroundColor, highlightedColor) {
+      @Override
+      public void click() {
+        AudioItemContextMenuDialog.this.setVisible(false);
+        ExportDialog dialog = new ExportDialog(selectedAudioItems);
+        // Place the new dialog within the application frame.
+        dialog.setLocation(Application.getApplication().getX()+20, Application.getApplication().getY()+20);
+        dialog.setVisible(true);
+      }
+    };
+
+    return exportButton;
   }
 
   /**
    * Creates the button ta handle setting the language on one or more audio items.
    * @param selectedAudioItems
+   * @param labelPostfix String to label the item(s)
    * @return
    */
-  private FlatButton makeLanguageButton(final AudioItem[] selectedAudioItems) {
+  private FlatButton makeLanguageButton(final AudioItem[] selectedAudioItems, final String labelPostfix) {
     ImageIcon setLanguageImageIcon = new ImageIcon(
             UIConstants.getResource(UIConstants.ICON_LANGUAGE_24_PX));
     Color backgroundColor = Application.getApplication().getBackground();
     Color highlightedColor = SystemColor.textHighlight;
 
-    String setLanguageForWhat = (selectedAudioItems.length > 1) ?
-            String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_LABEL_POSTFIX"), selectedAudioItems.length) :
-            getMetadataTitle(selectedAudioItems[0]);
     String setLanguageLabel = String.format(
-            LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG_SET_LANGUAGE"),
-            setLanguageForWhat);
+            LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__SET_LANGUAGE"),
+            labelPostfix);
+
     FlatButton languageButton = new FlatButton(setLanguageLabel, setLanguageImageIcon, backgroundColor, highlightedColor) {
       @Override
       public void click() {
@@ -285,6 +344,10 @@ public class AudioItemContextMenuDialog extends JDialog
     return languageButton;
   }
 
+  @Override
+  public void windowDeactivated(WindowEvent e) {
+    setVisible(false);
+  }
 
   public abstract static class FlatButton extends JLabel
       implements MouseListener {
