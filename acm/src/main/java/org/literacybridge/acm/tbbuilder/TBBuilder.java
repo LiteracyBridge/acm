@@ -22,6 +22,7 @@ import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.tbloader.TBLoader;
+import org.literacybridge.acm.tools.DBExporter;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.acm.utils.ZipUnzip;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
@@ -356,32 +357,30 @@ public class TBBuilder {
       @Override
       public boolean accept(File dir, String name) {
         return name.toLowerCase().endsWith(".rev")
-            && name.toLowerCase().startsWith(distribution);
+            && name.toLowerCase().startsWith(distribution.toLowerCase());
       }
     });
     if (files.length > 1)
       throw new Exception("Too many *rev files.  There can only be one.");
     else if (files.length == 1) {
-      revision = files[0].getName()
-          .subSequence(distribution.length() + 1, distribution.length() + 2)
-          .charAt(0);
+      // Assuming distribution-X.rev, pick the next higher than 'X'
+      char foundRevision = files[0].getName().charAt(distribution.length()+1);
+      if (foundRevision >= revision) {
+        revision = ++foundRevision;
+      }
     }
     if (updateRevision) {
-      revision++;
-      // search files again, but this time for all *.rev files, not just the one
-      // with the same deployment number so we can delete them all
+      // Delete *.rev, then create our distribution-revision.rev marker file.
       files = publishTbLoadersDir.listFiles(new FilenameFilter() {
         @Override
         public boolean accept(File dir, String name) {
           return name.toLowerCase().endsWith(".rev");
         }
       });
-      int fileCount = files.length;
-      for (int i = 0; i < fileCount; i++) {
-        files[i].delete();
+      for (File f: files) {
+        f.delete();
       }
-      File newRev = new File(publishTbLoadersDir,
-          distribution + "-" + revision + ".rev");
+      File newRev = new File(publishTbLoadersDir, distribution + "-" + revision + ".rev");
       newRev.createNewFile();
     }
     return revision;
@@ -457,6 +456,8 @@ public class TBBuilder {
     mergedCSVFile = new File(metadataDir, PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME);
     mergeCSVFiles(inputPackagesCSVFiles, mergedCSVFile,
         CSV_COLUMNS_PACKAGES_IN_DEPLOYMENT);
+
+    new DBExporter(ACM_PREFIX+project, metadataDir).export();
 
     deleteRevFiles(targetTempDir);
     ZipUnzip.zip(new File(dropboxTbLoadersDir, "software"),

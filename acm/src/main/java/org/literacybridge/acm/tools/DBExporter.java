@@ -18,22 +18,25 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 public class DBExporter {
   private String project;
+  private String filenamePrefix;
   private File exportDirectory;
-  private static boolean hasACMStarted = false;
 
-  private DBExporter(String dbName, File exportDir) throws Exception {
+  /**
+   * Creates and initializes an exporter.
+   * @param dbName The ACM directory, with the ACM- part; 'ACM-EXAMPLE'.
+   * @param exportDir A directory into which to export the metadata.
+   * @throws Exception
+   */
+  public DBExporter(String dbName, File exportDir) throws Exception {
+    this(dbName, exportDir, "");
+  }
+
+  private DBExporter(String dbName, File exportDir, String prefix) throws Exception {
     exportDirectory = exportDir;
-
-    if (!DBExporter.hasACMStarted) {
-      CommandLineParams params = new CommandLineParams();
-      params.sharedACM = dbName;
-      params.disableUI = true;
-      params.sandbox = true;
-      Application.startUp(params);
-      DBExporter.hasACMStarted = true;
-    } else
-      ACMConfiguration.getInstance().setCurrentDB(dbName);
     project = dbName.substring(TBBuilder.ACM_PREFIX.length());
+    filenamePrefix = prefix;
+
+    ACMConfiguration.getInstance().setCurrentDB(dbName, false);
   }
 
   public void export() {
@@ -44,7 +47,7 @@ public class DBExporter {
 
   private void categoriesExporter() {
     String[] header = { "ID", "Name", "Project" };
-    File exportFile = new File(exportDirectory, project + "-categories.csv");
+    File exportFile = new File(exportDirectory, filenamePrefix + "categories.csv");
     try {
       CSVWriter writer = new CSVWriter(new FileWriter(exportFile), ',');
       writer.writeNext(header);
@@ -60,7 +63,7 @@ public class DBExporter {
 
   private void languagesExporter() {
     String[] header = { "ID", "Name", "Project" };
-    File exportFile = new File(exportDirectory, project + "-languages.csv");
+    File exportFile = new File(exportDirectory, filenamePrefix + "languages.csv");
     try {
       CSVWriter writer = new CSVWriter(new FileWriter(exportFile), ',');
       // String[] header = {"ID","Name","Project"};
@@ -81,7 +84,7 @@ public class DBExporter {
   }
 
   private void metadataExporter() {
-    File exportFile = new File(exportDirectory, project + "-metadata.csv");
+    File exportFile = new File(exportDirectory, filenamePrefix + "metadata.csv");
     try {
       CSVExporter.export(ACMConfiguration.getInstance().getCurrentDB()
           .getMetadataStore().getAudioItems(), exportFile);
@@ -111,23 +114,24 @@ public class DBExporter {
 
   public static void main(String[] args) throws Exception {
     int argCount = args.length;
-    if (argCount < 2) { // TODO: when IllegalThreadStateException below is
-                        // addressed, we can allow more than 2 args
+    if (argCount < 2) {
       printUsage();
       System.exit(1);
     }
     File exportDir = new File(args[0]);
     if (!exportDir.isDirectory()) {
       throw new Exception(
-          "Export directory doesn't exist.\n" + exportDir.getAbsolutePath()); // "and
-                                                                              // cannot
-                                                                              // be
-                                                                              // created"
+          "Export directory doesn't exist.\n" + exportDir.getAbsolutePath());
     }
-    // TODO:This currently causes an IllegalThreadStateException with more than
-    // one ACM
+
+    CommandLineParams params = new CommandLineParams();
+    params.disableUI = true;
+    params.sandbox = true;
+    ACMConfiguration.initialize(params);
+
     for (int i = 1; i < argCount; i++) {
-      DBExporter exporter = new DBExporter(args[i], exportDir);
+      String prefix = args[i].substring(TBBuilder.ACM_PREFIX.length()) + "-";
+      DBExporter exporter = new DBExporter(args[i], exportDir, prefix);
       exporter.export();
     }
   }
