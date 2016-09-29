@@ -23,7 +23,7 @@ import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.LBMetadataSerializer;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.utils.IOUtils;
-import org.literacybridge.acm.utils.OSChecker;
+import org.literacybridge.acm.utils.OsUtils;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -239,7 +239,7 @@ public abstract class AudioItemRepository {
       }
     }
 
-    if (OSChecker.WINDOWS && sourceFile != null) {
+    if (OsUtils.WINDOWS && sourceFile != null) {
       audioConverter.convert(sourceFile, audioFile.getParentFile(), TMP_DIR,
           targetFormat.getAudioConversionFormat(), false);
     }

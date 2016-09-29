@@ -36,8 +36,7 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.SearchResult;
-import org.literacybridge.acm.utils.DropboxFinder;
-import org.literacybridge.acm.utils.OSChecker;
+import org.literacybridge.acm.utils.OsUtils;
 
 public class Application extends JXFrame {
   private static final Logger LOG = Logger
@@ -179,6 +178,11 @@ public class Application extends JXFrame {
   }
 
   public static void main(String[] args) throws Exception {
+    // We can use this to put the menu in the right place on MacOS. When we have a menu.
+    //System.setProperty("apple.laf.useScreenMenuBar", "true");
+    // This doesn't work because somehow the property has already been read by this point.
+    // Something to do with the AppKit thread starting earlier than this.
+    //System.setProperty("apple.eawt.quitStrategy", "CLOSE_ALL_WINDOWS");
     System.out.println("starting main()");
     CommandLineParams params = new CommandLineParams();
     CmdLineParser parser = new CmdLineParser(params);
@@ -209,6 +213,7 @@ public class Application extends JXFrame {
     SplashScreen splash = null;
 
     if (showUI) {
+      OsUtils.enableOSXQuitStrategy();
       splash = new SplashScreen();
 
       // set look & feel
@@ -261,6 +266,7 @@ public class Application extends JXFrame {
 
     if (showUI) {
       application = new Application(splash);
+      OsUtils.enableOSXFullscreen(application);
       splash.setProgressLabel("Initialization complete. Launching UI...");
       application.setSize(1000, 725);
 

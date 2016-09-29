@@ -67,7 +67,7 @@ import org.apache.commons.io.FileUtils;
 import org.jdesktop.swingx.JXDatePicker;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.utils.OSChecker;
+import org.literacybridge.acm.utils.OsUtils;
 import org.literacybridge.acm.utils.ZipUnzip;
 import org.literacybridge.core.tbloader.TBInfo;
 
@@ -171,6 +171,7 @@ public class TBLoader extends JFrame {
   }
 
   private void runApplication() throws Exception {
+    OsUtils.enableOSXQuitStrategy();
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     this.addWindowListener(new WindowEventHandler());
     setDeviceIdAndPaths();
@@ -999,7 +1000,7 @@ public class TBLoader extends JFrame {
         if (label.trim().equals("CD Drive") || label.startsWith("DVD"))
           continue;
         // Ignore drives shared by Parallels. Value determined empirically.
-        if (OSChecker.WINDOWS && label.indexOf(" on 'Mac' (") >= 0) {
+        if (OsUtils.WINDOWS && label.indexOf(" on 'Mac' (") >= 0) {
           continue;
         }
         driveList.addItem(new DriveInfo(root, label));
@@ -1031,10 +1032,10 @@ public class TBLoader extends JFrame {
     // changing line below to allow TBLoader to run as a single .class file
     // (until new ACM version is running on Fidelis's laptop)
     if (System.getProperty("os.name")
-        .startsWith("Windows")) { // (OSChecker.WINDOWS) {
+        .startsWith("Windows")) { // (OsUtils.WINDOWS) {
       roots = File.listRoots();
     } else if (System.getProperty("os.name")
-        .startsWith("Mac OS")) { //(OSChecker.MAC_OS) {
+        .startsWith("Mac OS")) { //(OsUtils.MAC_OS) {
       roots = new File("/Volumes").listFiles();
     }
     return roots;

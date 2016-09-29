@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.literacybridge.acm.core.MessageBus;
-import org.literacybridge.acm.utils.OSChecker;
+import org.literacybridge.acm.utils.OsUtils;
 
 public class FileSystemMonitor extends Thread {
   private static final int DEFAULT_SLEEP_TIME = 3000; // 3 secs
@@ -38,9 +38,9 @@ public class FileSystemMonitor extends Thread {
   public void run() {
     while (true) {
       File[] roots;
-      if (OSChecker.WINDOWS) {
+      if (OsUtils.WINDOWS) {
         roots = File.listRoots();
-      } else if (OSChecker.MAC_OS) {
+      } else if (OsUtils.MAC_OS) {
         roots = new File("/Volumes").listFiles();
       } else {
         // TODO: support linux

@@ -40,12 +40,10 @@ public class ControlAccess {
       .getLogger(ControlAccess.class.getName());
   private static final int NUM_ZIP_FILES_TO_KEEP = 4;
   private final static String DB_ZIP_FILENAME_PREFIX = Constants.DBHomeDir;
-  private final static String DB_ZIP_FILENAME_INITIAL = new String(
-      DB_ZIP_FILENAME_PREFIX + "1.zip");
-  private final static String DB_DOES_NOT_EXIST = "NULL"; // PHP returns this if
-                                                          // no checkin file
-                                                          // found
-  private final static String DB_KEY_OVERRIDE = new String("force");
+  private final static String DB_ZIP_FILENAME_INITIAL = DB_ZIP_FILENAME_PREFIX + "1.zip";
+  // The php checkout app returns the string "NULL" if no checkin file is found.
+  private final static String DB_DOES_NOT_EXIST = "NULL";
+  private final static String DB_KEY_OVERRIDE = "force";
   private boolean sandbox = false;
   private String possessor;
   private DBInfo dbInfo;

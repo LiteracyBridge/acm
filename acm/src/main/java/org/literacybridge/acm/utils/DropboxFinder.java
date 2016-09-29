@@ -34,12 +34,12 @@ public class DropboxFinder {
    * Determine if running on Windows.
    *
    * This is implemented as a static function so that it can be mocked, for
-   * testing. All we really want is the value of OSChecker.WINDOWS.
+   * testing. All we really want is the value of OsUtils.WINDOWS.
    *
    * @return True if running on Windows. False otherwise.
    */
   protected static boolean onWindows() {
-    return OSChecker.WINDOWS;
+    return OsUtils.WINDOWS;
   }
 
   /**
