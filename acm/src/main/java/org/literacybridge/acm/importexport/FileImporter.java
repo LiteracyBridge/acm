@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.MetadataStore;
 
 public class FileImporter {
@@ -24,7 +25,7 @@ public class FileImporter {
 
   public static abstract class Importer {
     protected abstract void importSingleFile(MetadataStore store,
-        Category category, File file) throws IOException;
+        Category category, File file, Map<String,String> additionalMetadata) throws IOException;
 
     protected abstract String[] getSupportedFileExtensions();
   }
@@ -56,7 +57,7 @@ public class FileImporter {
     filter = getFileExtensionFilter(extensions);
   }
 
-  public void importFile(MetadataStore store, Category category, File file)
+  public void importFile(MetadataStore store, Category category, File file, Map<String,String> additionalMetadata)
       throws IOException {
     if (!file.exists()) {
       throw new FileNotFoundException(file.toString());
@@ -95,7 +96,7 @@ public class FileImporter {
         }
       } else {
         // new audio item - import
-        imp.importSingleFile(store, category, file);
+        imp.importSingleFile(store, category, file, additionalMetadata);
       }
     }
   }
@@ -107,7 +108,7 @@ public class FileImporter {
 
     for (File f : filesToImport) {
       try {
-        importFile(store, category, f);
+        importFile(store, category, f, null);
       } catch (Exception e) {
         LOG.log(Level.WARNING, "Failed to import file " + f, e);
       }
@@ -140,8 +141,7 @@ public class FileImporter {
   }
 
   public static String getFileExtension(String fileName) {
-    return fileName.substring(fileName.length() - 4, fileName.length())
-        .toLowerCase();
+    return fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
   }
 
   public static String stripFileExtension(File file) {
@@ -149,7 +149,7 @@ public class FileImporter {
   }
 
   public static String stripFileExtension(String fileName) {
-    return fileName.substring(0, fileName.length() - 4);
+    return fileName.substring(0, fileName.lastIndexOf('.'));
   }
 
   public static FileFilter getFileExtensionFilter(

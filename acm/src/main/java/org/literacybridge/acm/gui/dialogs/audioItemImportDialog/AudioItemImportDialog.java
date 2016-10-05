@@ -165,7 +165,7 @@ public class AudioItemImportDialog extends JDialog {
                 try {
                   FileImporter.getInstance().importFile(ACMConfiguration
                       .getInstance().getCurrentDB().getMetadataStore(), null,
-                      f);
+                      f, null);
                 } catch (Exception e) {
                   LOG.log(Level.WARNING, "Importing file '" + f + "' failed.",
                       e);

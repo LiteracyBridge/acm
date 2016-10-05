@@ -32,7 +32,7 @@ public class DBExporter {
       Application.startUp(params);
       DBExporter.hasACMStarted = true;
     } else
-      ACMConfiguration.getInstance().setCurrentDB(dbName, false);
+      ACMConfiguration.getInstance().setCurrentDB(dbName);
     project = dbName.substring(TBBuilder.ACM_PREFIX.length());
   }
 

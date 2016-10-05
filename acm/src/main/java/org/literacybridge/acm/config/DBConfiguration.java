@@ -67,16 +67,16 @@ public class DBConfiguration extends Properties {
 
   // Call this methods to get the non-shared directory root for config, content
   // cache, builds, etc...
-  public String getACMDirectory() {
-    File acm = new File(getLiteracyBridgeHomeDir(), Constants.ACM_DIR_NAME);
+  public String getHomeAcmDirectory() {
+    File acm = new File(getLiteracyBridgeHomeDirectory(), Constants.ACM_DIR_NAME);
     if (!acm.exists())
       acm.mkdirs();
     return acm.getAbsolutePath();
   }
 
-  public static File getLiteracyBridgeHomeDir() {
+  public static File getLiteracyBridgeHomeDirectory() {
     // ~/LiteracyBridge
-    return ACMConfiguration.getInstance().getApplicationDir();
+    return ACMConfiguration.getInstance().getApplicationDirectory();
   }
 
   public File getLuceneIndexDirectory() {
@@ -84,7 +84,7 @@ public class DBConfiguration extends Properties {
   }
 
   String getTempACMsDirectory() {
-    File temp = new File(getACMDirectory(), Constants.TempDir);
+    File temp = new File(getHomeAcmDirectory(), Constants.TempDir);
     if (!temp.exists())
       temp.mkdirs();
     return temp.getAbsolutePath();
@@ -93,9 +93,8 @@ public class DBConfiguration extends Properties {
   public File getDatabaseDirectory() {
     if (dbDirectory == null)
       dbDirectory = new File(getTempACMsDirectory(),
-          getSharedACMname() + "/" + Constants.DBHomeDir);
+          getSharedACMname() + File.separator + Constants.DBHomeDir);
     return dbDirectory;
-    // return new File(getSharedACMDirectory(), Constants.DerbyDBHomeDir);
   }
 
   public File getRepositoryDirectory() {
@@ -111,7 +110,7 @@ public class DBConfiguration extends Properties {
   }
 
   public File getTBBuildsDirectory() {
-    return new File(getACMDirectory(), Constants.TBBuildsHomeDirName);
+    return new File(getHomeAcmDirectory(), Constants.TBBuildsHomeDirName);
   }
 
   public void writeProps() {
@@ -274,11 +273,19 @@ public class DBConfiguration extends Properties {
     return Collections.unmodifiableList(audioLanguages);
   }
 
-  // Commenting out since getDatabaseDirectory uses Constants to calculate path
-  // from other roots
-  // static void setDatabaseDirectory(File f) {
-  // dbDirectory = f; // new File(f,Constants.DerbyDBHomeDir);
-  // }
+  public int getNextCorrelationId() {
+    String nextId = getProperty("NEXT_CORRELATION_ID");
+    if (nextId == null) {
+      return 0;
+    }
+    return Integer.valueOf(nextId);
+  }
+
+  public void setNextCorrelationId(int nextId) {
+    String id = String.valueOf(nextId);
+    setProperty("NEXT_CORRELATION_ID", id);
+    writeProps();
+  }
 
   private void setRepositoryDirectory(File f) {
     repositoryDirectory = f; // new File(f,Constants.RepositoryHomeDirName);
@@ -288,7 +295,7 @@ public class DBConfiguration extends Properties {
     File configFile = new File(getSharedACMDirectory(),
         Constants.CONFIG_PROPERTIES);
     if (!configFile.exists()) {
-      File oldConfig = new File(getACMDirectory(), Constants.CONFIG_PROPERTIES);
+      File oldConfig = new File(getHomeAcmDirectory(), Constants.CONFIG_PROPERTIES);
       try {
         FileUtils.copyFile(oldConfig, configFile);
       } catch (IOException e) {
@@ -302,12 +309,13 @@ public class DBConfiguration extends Properties {
   private void InitializeAcmConfiguration() {
     boolean propsChanged = false;
 
-    cacheDirectory = new File(getACMDirectory(),
+    cacheDirectory = new File(getHomeAcmDirectory(),
         Constants.CACHE_DIR_NAME + "/" + getSharedACMname());
     if (!cacheDirectory.exists()) {
       cacheDirectory.mkdirs();
     }
 
+    // like ~/Dropbox/ACM-UWR/config.properties
     if (getConfigurationPropertiesFile().exists()) {
       try {
         BufferedInputStream in = new BufferedInputStream(
@@ -377,7 +385,7 @@ public class DBConfiguration extends Properties {
       Logger logger = Logger.getLogger("");
 
       logger.setLevel(Level.INFO);
-      String fileNamePattern = getACMDirectory() + File.separator
+      String fileNamePattern = getHomeAcmDirectory() + File.separator
           + "acm.log.%g.%u.txt";
       FileHandler fileTxt = new FileHandler(fileNamePattern);
 

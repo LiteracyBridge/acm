@@ -3,6 +3,7 @@ package org.literacybridge.acm.importexport;
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Map;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.importexport.FileImporter.Importer;
@@ -11,7 +12,9 @@ import org.literacybridge.acm.repository.AudioItemRepository.DuplicateItemExcept
 import org.literacybridge.acm.repository.AudioItemRepository.UnsupportedFormatException;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.LBMetadataIDs;
 import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
@@ -21,7 +24,7 @@ public class WAVImporter extends Importer {
 
   @Override
   protected void importSingleFile(MetadataStore store, Category category,
-      File file) throws IOException {
+      File file, Map<String,String> additionalMetadata) throws IOException {
     try {
       AudioItem audioItem = store
           .newAudioItem(ACMConfiguration.getInstance().getNewAudioItemUID());
@@ -38,6 +41,13 @@ public class WAVImporter extends Importer {
       metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE,
           new MetadataValue<RFC3066LanguageCode>(
               new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
+
+      if (additionalMetadata != null) {
+        for (Map.Entry<String,String> e : additionalMetadata.entrySet()) {
+          MetadataField<?> field = LBMetadataIDs.FieldToNameMap.inverse().get(e.getKey());
+          metadata.setMetadataField(field, e.getValue());
+        }
+      }
 
       AudioItemRepository repository = ACMConfiguration.getInstance()
           .getCurrentDB().getRepository();

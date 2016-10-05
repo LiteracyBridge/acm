@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.literacybridge.acm.config.ACMConfiguration;
@@ -16,8 +17,10 @@ import org.literacybridge.acm.repository.AudioItemRepository.DuplicateItemExcept
 import org.literacybridge.acm.repository.AudioItemRepository.UnsupportedFormatException;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.LBMetadataIDs;
 import org.literacybridge.acm.store.LBMetadataSerializer;
 import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
@@ -107,15 +110,22 @@ public class A18Importer extends Importer {
 
   @Override
   protected void importSingleFile(MetadataStore store, Category category,
-      File file) throws IOException {
+      File file, Map<String,String> additionalMetadata) throws IOException {
     try {
       AudioItem audioItem = loadMetadata(store, category, file);
 
       // TODO: handle updating the file by making use of revisions
       if (store.getAudioItem(audioItem.getUuid()) != null) {
         // just skip for now if we have an item with the same id already
-        System.out.println("  *already in database; skipping*");
+        System.out.println(String.format("File '%s' is already in database; skipping", file.getName()));
         return;
+      }
+
+      if (additionalMetadata != null) {
+        for (Map.Entry<String,String> e : additionalMetadata.entrySet()) {
+          MetadataField<?> field = LBMetadataIDs.FieldToNameMap.inverse().get(e.getKey());
+          audioItem.getMetadata().setMetadataField(field, e.getValue());
+        }
       }
 
       AudioItemRepository repository = ACMConfiguration.getInstance()

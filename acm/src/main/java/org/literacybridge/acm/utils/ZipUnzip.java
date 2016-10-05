@@ -12,20 +12,22 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 public class ZipUnzip {
-  static File baseInDir;
+  File baseInDir;
 
-  private static void addDirectory(ZipOutputStream zout, File fileSource,
+  private ZipUnzip(File baseDirectory) {
+    baseInDir = baseDirectory;
+  }
+
+  private void addDirectory(ZipOutputStream zout, File fileSource,
       boolean includeBaseDir, boolean includeChildren) throws IOException {
     if (includeBaseDir || fileSource != baseInDir) {
       String relativeDirName = baseInDir.toURI().relativize(fileSource.toURI())
           .getPath();
       zout.putNextEntry(new ZipEntry(relativeDirName));
-      // System.out.println("RelDirName:" + relativeDirName);
     }
     if (!includeChildren)
       return;
     File[] files = fileSource.listFiles();
-    // System.out.println("Adding directory " + fileSource.getName());
     for (int i = 0; i < files.length; i++) {
       if (files[i].isDirectory()) {
         addDirectory(zout, files[i], false, true);
@@ -34,7 +36,6 @@ public class ZipUnzip {
       try {
         String relativeFileName = baseInDir.toURI().relativize(files[i].toURI())
             .getPath();
-        // System.out.println("Adding file " + relativeFileName);
         byte[] buffer = new byte[1024];
         FileInputStream fin = new FileInputStream(files[i]);
         zout.putNextEntry(new ZipEntry(relativeFileName));
@@ -56,34 +57,36 @@ public class ZipUnzip {
 
   public static void zip(File inDir, File outFile, boolean includeBaseDir)
       throws IOException {
+    ZipUnzip zipper;
     if (includeBaseDir) {
-      baseInDir = inDir.getParentFile();
+      zipper = new ZipUnzip(inDir.getParentFile());
     } else {
-      baseInDir = inDir;
+      zipper = new ZipUnzip(inDir);
     }
     outFile.delete();
     outFile.getParentFile().mkdirs();
     ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(outFile));
-    addDirectory(zout, inDir, includeBaseDir, true);
+    zipper.addDirectory(zout, inDir, includeBaseDir, true);
     zout.close();
     // System.out.println("Zip file has been created!");
   }
 
   public static void zip(File inDir, File outFile, boolean includeBaseDir,
       String[] subdirs) throws IOException {
+    ZipUnzip zipper;
     if (includeBaseDir) {
-      baseInDir = inDir.getParentFile();
+      zipper = new ZipUnzip(inDir.getParentFile());
     } else {
-      baseInDir = inDir;
+      zipper = new ZipUnzip(inDir);
     }
     outFile.delete();
     outFile.getParentFile().mkdirs();
     ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(outFile));
-    addDirectory(zout, inDir, includeBaseDir, false);
+    zipper.addDirectory(zout, inDir, includeBaseDir, false);
     for (String dir : subdirs) {
       File f = new File(inDir, dir);
       if (f.exists()) {
-        addDirectory(zout, f, false, true);
+        zipper.addDirectory(zout, f, false, true);
       }
     }
     zout.close();

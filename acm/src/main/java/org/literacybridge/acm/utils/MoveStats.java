@@ -4,95 +4,127 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 
+import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.tbloader.TBLoader;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Moves stats and user feedback to a directory for processing.
+ * The arguments are two paths, an input and a target.
+ *
+ * The input is a directory, like ~/Dropbox/stats, containing one or more subdirectories
+ * for tbloaders. The tbloader directories then contains a 'collected-data' directory,
+ * and those contain directories for projects. The project directories may contain
+ * userrecordings and talkingbookdata subdirectories, which are the actual directories
+ * of interest.
+ *
+ * The directories are processed as follows:
+ * given a directory with these subdirectories:
+ *   {TBLOADER-ID} / collected-data / {PROJECT} / talkingbookdata / --- files ---
+ *   {TBLOADER-ID} / collected-data / {PROJECT} / userrecordings / {UPDATE-ID} / --- files ---
+ * the files in userrecordings are moved to
+ *   {TARGET} / {TIMESTAMP} / userrecordings / {PROJECT} / {UPDATE-ID} / ...
+ * and the files in talkingbookdata are moved to a .zip file
+ *   {TARGET} / {TIMESTAMP} / {TBLOADER-ID}.zip
+ *
+ */
 public class MoveStats {
   private static final Logger logger = LoggerFactory.getLogger(MoveStats.class);
   private static final String TALKING_BOOK_DATA = "TalkingBookData";
+  private static final String USER_RECORDINGS = "userrecordings";
+
+  private String timeStamp;
+  private File targetCollection;
+  private File targetUserRecordingsCollection;
 
   public static void main(String[] args) throws IOException {
+    int rc = new MoveStats().move(args);
+    System.exit(rc);
+  }
+
+  private int move(String[] args) throws IOException {
 
     if (args.length != 2) {
       printUsage();
-      System.exit(1);
+      return 1;
     }
+    // Generally, ~/Dropbox/stats or ~Dropbox/outbox/stats
     File sourceDir = new File(args[0]);
+    // Generally, ~/Dropbox/collected-data-processed
     File targetDir = new File(args[1]);
     if (!(sourceDir.exists() && targetDir.exists())) {
       printUsage();
-      System.exit(1);
+      return 1;
     }
 
-    File[] subdirs = sourceDir.listFiles(new FilenameFilter() {
-      @Override
-      public boolean accept(File dir, String name) {
-        // Filters the 'sourceDir' for subdirectories with contents like:
-        // collected-data/<project>/talkingbookdata
-        // <project> is like uwr or CARE, one or more in the collected-data
-        // directory
-        boolean good = false;
-        // Get non-hidden directories only
-        if (!name.startsWith(".")) {
-          File subdir = new File(dir, name);
-          if (subdir.isDirectory()) {
-            File collecteddata = FileNC(subdir,
-                TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME);
-            if (collecteddata.exists()) {
-              // Check that every project directory has a talkingbookdata
-              // subdirectory.
-              File[] projects = collecteddata.listFiles();
-              boolean everyProjectHasTBData = false; // must be at least one
-                                                     // project with TBData
-              for (File project : projects) {
-                if (!project.isDirectory() || project.isHidden()
-                    || project.getName().startsWith(".")) {
-                  continue;
-                }
-                File tbdata = FileNC(project, TALKING_BOOK_DATA);
-                if (!tbdata.exists() || !tbdata.isDirectory()) {
-                  logger.warn(String.format(
-                      "The 'project' directory %s has no expected %s subdirectory.",
-                      project.getName(), TALKING_BOOK_DATA));
-                  everyProjectHasTBData = false; // if any does not exist then
-                                                 // false and exit
-                  break;
-                } else {
-                  everyProjectHasTBData = true; // found at least with TBData
-                }
-              }
-              if (everyProjectHasTBData) {
-                good = true;
-              }
-            } else {
-              logger.warn(String.format(
-                  "The 'laptop' directory %s has no expected %s subdirectory.",
-                  name, TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME));
-            }
+    timeStamp = TBLoader.getDateTime();
+    targetCollection = new File(targetDir, timeStamp);
+    targetUserRecordingsCollection = new File(targetCollection, USER_RECORDINGS);
+
+    File[] feedbackDirs = sourceDir.listFiles(new UserRecordingsFilter());
+    moveUserRecordings(feedbackDirs);
+
+    File[] statsDirs = sourceDir.listFiles(new TalkingBookDataFilter());
+    if (statsDirs.length > 0) {
+      moveStats(statsDirs);
+      System.out.println(targetCollection.getAbsolutePath());
+      return 0;
+    } else {
+      System.err.println(
+              "no directories found in target (other than possibly empty or hidden ones)");
+      return 2;
+    }
+
+  }
+
+  /**
+   * Move userrecordings out of the statistics and into their own subdirectory. Don't bother
+   * zipping them because the audio files are compressed, and mostly do not compress at all.
+   * @param feedbackDirs An array of tbloader dirs, each of which contains at least one
+   *                     userrecordings dir.
+   * @throws IOException
+   */
+  private void moveUserRecordings(File[] feedbackDirs) throws IOException {
+    // Iterate over the tbloaders reporting feedback...
+    for (File tbLoaderDir : feedbackDirs) {
+      // Get the contained collected-data subdirectory, and enumerate the project subdirectories.
+      File collectedData = IOUtils.FileIgnoreCase(tbLoaderDir, TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME);
+      File[] projectDirs = collectedData.listFiles((fn) -> fn.isDirectory() && !fn.isHidden() && !fn.getName().startsWith("."));
+      // Iterate over the projects...
+      for (File projectDir : projectDirs) {
+        // and see if this project has userrecordings.
+        File userrecordings = IOUtils.FileIgnoreCase(projectDir, USER_RECORDINGS);
+        if (!userrecordings.exists()) continue;
+        // We have a userrecordings subdirectory, inside some project subdirectory.
+        // Enumerate the contained {UPDATE} directories.
+        File[] updateDirs = userrecordings.listFiles((fn) -> fn.isDirectory() && !fn.isHidden() && !fn.getName().startsWith("."));
+        for (File updateDir : updateDirs) {
+          // Move that to the userrecordings collection point.
+          File targetProjDir = new File(targetUserRecordingsCollection, projectDir.getName().toLowerCase());
+          try {
+            FileUtils.moveDirectoryToDirectory(updateDir, targetProjDir, true);
+          } catch (FileExistsException e) {
+            // Already exists (from a different tbloader's feedback), so copy & delete.
+            FileUtils.copyDirectory( updateDir, targetProjDir );
+            FileUtils.deleteDirectory( updateDir );
           }
         }
-        return good;
       }
-    });
-    if (subdirs.length > 0) {
-      String timeStamp = TBLoader.getDateTime();
-      File targetCollection = new File(targetDir, timeStamp);
-      targetCollection.mkdir();
+    }
+  }
 
-      for (File subdir : subdirs) {
-        logger.info("Zipping " + subdir + " and moving to "
-            + targetCollection.getAbsolutePath());
-        ZipUnzip.zip(subdir,
-            new File(targetCollection, subdir.getName() + ".zip"), true);
-        FileUtils.cleanDirectory(subdir);
-      }
-      System.out.println(targetCollection.getAbsolutePath());
-    } else {
-      System.out.println(
-          "no directories found in target (other than possibly empty or hidden ones)");
+  private void moveStats(File[] statsDirs) throws IOException {
+    targetCollection.mkdir();
+    // Iterate over the tbloaders reporting stats
+    for (File statsDir : statsDirs) {
+      // Zip the contents of one tbloader's reported stats directory
+      logger.info(String.format("Zipping %s and moving to %s", statsDir, targetCollection.getAbsolutePath()));
+      File zipFile = new File(targetCollection, statsDir.getName() + ".zip");
+      ZipUnzip.zip(statsDir, zipFile, true /* include base dir */);
+      FileUtils.cleanDirectory(statsDir);
     }
   }
 
@@ -102,43 +134,115 @@ public class MoveStats {
   }
 
   /**
-   * Copied from the lb-core-api project. There should be, obviously, only one,
-   * and this entire util-let should probably not be in the ACM project. But,
-   * there are dependencies on the TBLoader that also need to be refactored as
-   * part of splitting it out.
-   * 
-   * @param parent
-   *          A File representing a directory that may contain a child file or
-   *          directory.
-   * @param child
-   *          The name of a possible child file or directory, but not
-   *          necessarily with the correct casing, for instance,
-   *          TALKING_BOOK_DATA vs talkingbookdata.
-   * @return A File representing the child.
+   * A FilenameFilter class to accept well-formed collected-data subdirectories
+   * of the stats inbox.
+   *
+   * These well-formed directories look like:
+   *  {TB-LOADER-ID} / collected-data / {PROJECT} / talkingbookdata
+   * and
+   *  {TB-LOADER-ID} / collected-data / {PROJECT} / userrecordings
+   * where {TB-LOADER-ID} is like 'tbcd000c' and {PROJECT} is like 'UWR'
+   *
+   * This class is intended to be subclassed. This class determines if a
+   * collected-data directory exists, and the subclasses determine if the
+   * contents of the collected-data subdirectory warrents inclusion of this
+   * file.
    */
-  private static final File FileNC(File parent, final String child) {
-    File retval = new File(parent, child);
-    // Check for name that matches, ignoring case.
-    if (!retval.exists()) {
-      File[] candidates = parent.listFiles(new FilenameFilter() {
-        boolean found = false;
+  private static abstract class CollectedDataFilter implements FilenameFilter {
 
-        @Override
-        public boolean accept(File dir, String name) {
-          // Accept the first file that matches case insenstively.
-          if (!found && name.equalsIgnoreCase(child)) {
-            found = true;
-            return true;
-          }
-          return false;
-        }
-      });
-      // If candidates contains a file, we know it exists, so use it.
-      if (candidates.length == 1) {
-        retval = candidates[0];
+    /**
+     * Tests if a specified file should be included in a file list.
+     *
+     * @param dir  the directory in which the file was found.
+     * @param name the name of the file.
+     * @return <code>true</code> if and only if the name should be
+     * included in the file list; <code>false</code> otherwise.
+     */
+    @Override
+    public boolean accept(File dir, String name) {
+      // Filters the 'sourceDir' for subdirectories with contents like:
+      // collected-data/<project>/talkingbookdata
+      // <project> is like uwr or CARE, one or more in the collected-data
+      // directory
+
+      // Only accept directories
+      File subdir = new File(dir, name);
+      if (!subdir.isDirectory()) return false;
+
+      // Only accept non-hidden directories
+      if (name.startsWith(".") || subdir.isHidden()) return false;
+
+      // Only accept directories that contain a subdirectory named 'collected-data', like
+      // tbcd000c/collected-data
+      File collectedData = IOUtils.FileIgnoreCase(subdir, TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME);
+      if (!collectedData.exists() || !collectedData.isDirectory()) {
+        logger.warn(String.format(
+                "The 'TB-Builder id' directory %s has no expected %s subdirectory.",
+                name, TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME));
+        return false;
       }
+
+      // If we made it this far, see if the subclass accepts this collected-data directory.
+      return acceptCollectedData(collectedData);
     }
-    return retval;
+
+    // Subclasses implement this to accept a collected-data subdirectory based on
+    // whatever further criteria they choose.
+    abstract boolean acceptCollectedData(File collectedData);
+  }
+
+  static class TalkingBookDataFilter extends CollectedDataFilter {
+
+    @Override
+    boolean acceptCollectedData(File collectedData) {
+      // The 'collected-data' subdirectory should contain project (UWR, CARE, ...)
+      // subdirectories. There must be at least one such project subdirectory, and ALL
+      // of them must contain a 'talkingbookdata' subdirectory:
+      // tbcd000c/collected-data/UWR/talkingbookdata
+      File[] projects = collectedData.listFiles();
+      boolean foundProjectWithTbData = false;  // haven't found anything
+      boolean foundProjectWithoutTbData = false;  // yet...
+      for (File project : projects) {
+        if (!project.isDirectory() || project.isHidden() || project.getName().startsWith(".")) {
+          continue;
+        }
+        File tbdata = IOUtils.FileIgnoreCase(project, TALKING_BOOK_DATA);
+        if (!tbdata.exists() || !tbdata.isDirectory()) {
+          logger.warn(String.format(
+                  "The 'project' directory %s has no expected %s subdirectory.",
+                  project.getName(), TALKING_BOOK_DATA));
+          foundProjectWithoutTbData = true;
+          break;
+        } else {
+          foundProjectWithTbData = true; // found at least with TBData
+        }
+      }
+
+      return (foundProjectWithTbData && !foundProjectWithoutTbData);
+    }
+  }
+
+  static class UserRecordingsFilter extends CollectedDataFilter {
+
+    @Override
+    boolean acceptCollectedData(File collectedData) {
+      // The 'collected-data' subdirectory should contain project (UWR, CARE, ...)
+      // subdirectories. There must be at least one such project subdirectory, and at
+      // least one of them must contain a 'userrecordings' subdirectory:
+      // tbcd000c/collected-data/UWR/userrecordings
+      File[] projects = collectedData.listFiles();
+      for (File project : projects) {
+        if (!project.isDirectory() || project.isHidden() || project.getName().startsWith(".")) {
+          continue;
+        }
+        File userrecordings = IOUtils.FileIgnoreCase(project, USER_RECORDINGS);
+        if (userrecordings.exists() && userrecordings.isDirectory()) {
+          return true;
+        }
+      }
+
+      return false;
+    }
   }
 
 }

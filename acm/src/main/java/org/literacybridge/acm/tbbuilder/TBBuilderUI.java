@@ -223,7 +223,7 @@ public class TBBuilderUI extends JFrame implements ActionListener {
           } else {
             try {
               ACMConfiguration.getInstance().setCurrentDB(TBBuilder.ACM_PREFIX
-                  + projectList.getSelectedItem().toString(), false);
+                  + projectList.getSelectedItem().toString());
             } catch (Exception e1) {
               // TODO Auto-generated catch block
               e1.printStackTrace();

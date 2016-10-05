@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
+import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.utils.DropboxFinder;
@@ -29,6 +30,9 @@ public class ACMConfiguration {
       .getLogger(ACMConfiguration.class.getName());
 
   private final Map<String, DBConfiguration> allDBs = Maps.newHashMap();
+  // @TODO: There isn't an apparent reason for this to be an AtomicReference; we're not
+  //   using any of the 'compareAnd...' operations. All we're getting (that I can see -- b.e.)
+  //   is a wrapper around a 'volatile currentDB'.
   private final AtomicReference<DBConfiguration> currentDB = new AtomicReference<DBConfiguration>();
   final File LB_HOME_DIR = new File(Constants.USER_HOME_DIR,
       Constants.LiteracybridgeHomeDirName);
@@ -103,6 +107,15 @@ public class ACMConfiguration {
     writeProps();
   }
 
+  /**
+   * Helper because most callers don't create a new DB.
+   * @param dbName
+   * @throws Exception
+   */
+  public void setCurrentDB(String dbName) throws Exception {
+    setCurrentDB(dbName, false);
+  }
+
   // TODO: when we have a homescreen this method needs to be split up into
   // different steps,
   // e.g. close DB, open new DB, etc.
@@ -131,11 +144,61 @@ public class ACMConfiguration {
     DBConfiguration oldDB = currentDB.get();
     if (oldDB != null) {
       LockACM.unlockFile();
+      currentDB.set(null);
     }
   }
 
   public synchronized DBConfiguration getCurrentDB() {
     return currentDB.get();
+  }
+
+  /**
+   * This is a hacky way to create a new Acm database, basing it on another Acm
+   * database. Ideally, there should be a means of modifying the language list,
+   * the access list, and the taxonomy without manually editing files in the
+   * database directory. When/if we do get such functions, this should be re-
+   * written in terms of those.
+   *
+   * Note that the database is created with no TB-Loaders directory, no system
+   * messages, no content.
+   *
+   * @param templateDbName The name of the existing database used as a template.
+   * @param newDbName The name of the new database, to be created. Must not exist.
+   */
+  public synchronized void createNewDb(String templateDbName, String newDbName)
+          throws Exception {
+    final String[] templateFileNames = new String[]{"config.properties", "lb_taxonomy.yaml", "accessList.txt", "Install-ACM.bat"};
+
+    // Validate the arguments.
+    if (allDBs.get(newDbName) != null) {
+      throw new IllegalArgumentException(String.format("DB '%s' already exists.", newDbName));
+    }
+    DBConfiguration templateDbConfiguration = allDBs.get(templateDbName);
+    if (templateDbConfiguration == null) {
+      throw new IllegalArgumentException(String.format("DB '%s' not known.", templateDbName));
+    }
+
+    // Create the new configuration, and the new directory.
+    DBConfiguration newDbConfiguration = new DBConfiguration(newDbName);
+    File newDbDir = newDbConfiguration.getSharedACMDirectory();
+
+    // Populate from the template.
+    File templateDbDir = templateDbConfiguration.getSharedACMDirectory();
+    try {
+      newDbDir.mkdirs();
+      for (String name : templateFileNames) {
+        File templateFile = new File(templateDbDir, name);
+        FileUtils.copyFileToDirectory(templateFile, newDbDir);
+      }
+    } catch (IOException e) {
+      // Could not create or copy something. Try to clean up.
+      FileUtils.deleteQuietly(newDbDir);
+      throw e;
+    }
+
+    // Remember the new database, and return it.
+    allDBs.put(newDbName, newDbConfiguration);
+    setCurrentDB(newDbName);
   }
 
   public File dirACM(String acmName) {
@@ -300,13 +363,13 @@ public class ACMConfiguration {
     return globalShareDir;
   }
 
-  public File getApplicationDir() {
+  public File getApplicationDirectory() {
     // ~/LiteracyBridge
     return LB_HOME_DIR;
   }
 
   public File getSoftwareDir() {
-    return new File(getApplicationDir(), "/ACM/software");
+    return new File(getApplicationDirectory(), "/ACM/software");
   }
 
   private File getConfigurationPropertiesFile() {

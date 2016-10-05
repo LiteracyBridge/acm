@@ -250,4 +250,42 @@ public class IOUtils {
     }
     path.delete();
   }
+
+  /**
+   * Opens a file by name, but ignores the case of the spelling on case-
+   * sensitive file systems.
+   *
+   * @param parentDirectory
+   *          A File representing a directory that may contain a child file or
+   *          directory.
+   * @param child
+   *          The name of a possible child file or directory, but not
+   *          necessarily with the correct casing, for instance,
+   *          TalkingBookData vs talkingbookdata.
+   * @return A File representing the child.
+   */
+  static final File FileIgnoreCase(File parentDirectory, final String child) {
+    File retval = new File(parentDirectory, child);
+    // If the file doesn't exist as-cased, search for a spelling that does match.
+    if (!retval.exists()) {
+      File[] candidates = parentDirectory.listFiles(new FilenameFilter() {
+        boolean found = false;
+
+        @Override
+        public boolean accept(File dir, String name) {
+          // Accept the first file that matches case insenstively.
+          if (!found && name.equalsIgnoreCase(child)) {
+            found = true;
+            return true;
+          }
+          return false;
+        }
+      });
+      // If candidates contains a file, we know it exists, so use it.
+      if (candidates.length == 1) {
+        retval = candidates[0];
+      }
+    }
+    return retval;
+  }
 }

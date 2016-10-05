@@ -151,14 +151,6 @@ public abstract class AudioItemRepository {
       File externalFile)
       throws DuplicateItemException, UnsupportedFormatException, IOException {
 
-    // Commenting out these four lines below so that an existing cached .wav
-    // file doesn't stop an .a18 import
-    // if (hasAudioItem(audioItem)) {
-    // throw new DuplicateItemException(
-    // "Audio item with uid=" + audioItem.getUuid() + " already exists in this
-    // repository.");
-    // }
-
     AudioFormat format = determineFormat(externalFile);
     if (format == null) {
       throw new UnsupportedFormatException(

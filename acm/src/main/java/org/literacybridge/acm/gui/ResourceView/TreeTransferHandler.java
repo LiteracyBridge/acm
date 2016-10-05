@@ -126,7 +126,7 @@ public class TreeTransferHandler extends TransferHandler {
             } else {
               FileImporter.getInstance().importFile(ACMConfiguration
                   .getInstance().getCurrentDB().getMetadataStore(), category,
-                  f);
+                  f, null);
             }
           }
         } catch (IOException e) {

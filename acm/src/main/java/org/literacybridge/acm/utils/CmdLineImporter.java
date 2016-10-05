@@ -64,8 +64,7 @@ public class CmdLineImporter {
       System.exit(2);
     }
 
-    if (ACMConfiguration.getInstance().getCurrentDB().getControlAccess()
-        .isSandbox()) {
+    if (ACMConfiguration.getInstance().getCurrentDB().getControlAccess().isSandbox()) {
       System.err.println("Unable to acquire writer access.");
       System.exit(3);
     }
@@ -85,7 +84,7 @@ public class CmdLineImporter {
     @Option(name = "-r", usage = "Traverse directories recursively to discover .a18 files.")
     public boolean recursive = false;
 
-    @Option(name = "-acm", usage = "Name of the ACM database")
+    @Option(name = "--acm", aliases={"-a","-acm"}, usage = "Name of the ACM-XYZ directory.")
     public String acmName;
 
     @Argument
@@ -138,7 +137,7 @@ public class CmdLineImporter {
             + total + ": " + file);
         importer.importFile(
             ACMConfiguration.getInstance().getCurrentDB().getMetadataStore(),
-            null, file);
+            null, file, null);
         FileUtils.moveToDirectory(file,
             new File(file.getParentFile(), successDir), true);
       } catch (Exception e) {

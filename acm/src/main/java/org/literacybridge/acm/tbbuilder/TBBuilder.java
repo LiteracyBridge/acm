@@ -18,7 +18,6 @@ import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
-import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
@@ -159,12 +158,12 @@ public class TBBuilder {
     params.sandbox = true;
     params.sharedACM = sharedACM;
     ACMConfiguration.initialize(params);
-    ACMConfiguration.getInstance().setCurrentDB(params.sharedACM, true);
+    ACMConfiguration.getInstance().setCurrentDB(params.sharedACM);
     // Like ~/Dropbox/ACM-UWR/TB-Loaders
     dropboxTbLoadersDir = ACMConfiguration.getInstance().dirACM(sharedACM); // .getCurrentDB().getTBLoadersDirectory();
     project = sharedACM.substring(ACM_PREFIX.length());
     // ~/LiteracyBridge/TB-Loaders
-    File localTbLoadersDir = new File(DBConfiguration.getLiteracyBridgeHomeDir(), Constants.TBLoadersHomeDir);
+    File localTbLoadersDir = new File(DBConfiguration.getLiteracyBridgeHomeDirectory(), Constants.TBLoadersHomeDir);
     // Like ~/LiteracyBridge/TB-Loaders/UWR
     targetTempDir = new File(localTbLoadersDir, project);
   }
