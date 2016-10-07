@@ -13,7 +13,13 @@ task copyJars(type: Copy, dependsOn: build) {
   into distDir
 }
 
-task dist(dependsOn: [copyJars, copyLibs]) {
+task copyUpdateScript(type: Copy, dependsOn: copyJars) {
+  // The update script is in 'scripts/deployToDbx.sh'
+  from "$projectDir/scripts/deployToDbx.sh"
+  into distDir
+}
+
+task dist(dependsOn: [copyJars, copyLibs, copyUpdateScript]) {
   description = 'This is the actual build. Ignore anything with \'assemble\'.'
   group = 'build'
 }
