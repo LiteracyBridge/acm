@@ -55,8 +55,10 @@ public class AudioItemView extends Container implements Observer {
   private AudioItemViewMouseListener mouseListener;
   private final AudioItemTableModel tableModel;
 
-  private TableColumn orderingColumn;
+  private TableColumn playlistOrderColumn;
+  private TableColumn correlationIdColumn;
   protected boolean firstDataSet = false;
+  private boolean showCorrelationId = ACMConfiguration.getInstance().getCurrentDB().getNextCorrelationId() > 0;
 
   public AudioItemView() {
     setLayout(new BorderLayout());
@@ -100,20 +102,29 @@ public class AudioItemView extends Container implements Observer {
   }
 
   private void updateTable() {
+    // Cache the playlistOrderColumn
     if (!firstDataSet) {
       initColumnSize();
-      orderingColumn = audioItemTable.getTableHeader().getColumnModel()
+      playlistOrderColumn = audioItemTable.getTableHeader().getColumnModel()
           .getColumn(AudioItemTableModel.playlistOrderColumn.getColumnIndex());
+      correlationIdColumn = audioItemTable.getTableHeader().getColumnModel()
+          .getColumn(AudioItemTableModel.correlationIdColumn.getColumnIndex());
       firstDataSet = true;
     }
-    if (Application.getFilterState().getSelectedPlaylist() == null
-        && audioItemTable.getColumnCount() == audioItemTable.getModel()
-            .getColumnCount()) {
-      audioItemTable.removeColumn(orderingColumn);
-    } else if (Application.getFilterState().getSelectedPlaylist() != null
-        && audioItemTable.getColumnCount() < audioItemTable.getModel()
-            .getColumnCount()) {
-      audioItemTable.addColumn(orderingColumn);
+
+    // If a playlist is selected (ie, is filtering), make the playlist order column visible.
+    boolean showPlaylistOrder = Application.getFilterState().getSelectedPlaylist() != null;
+
+    // There's no evident way to query if a column is in the table. Removing when not there
+    // has no effect. So, always remove the optional columns, then add back the ones we want.
+    audioItemTable.removeColumn(playlistOrderColumn);
+    audioItemTable.removeColumn(correlationIdColumn);
+
+    if (showCorrelationId) {
+      audioItemTable.addColumn(correlationIdColumn);
+    }
+    if (showPlaylistOrder) {
+      audioItemTable.addColumn(playlistOrderColumn);
       TableSortController<AudioItemTableModel> tableRowSorter = (TableSortController<AudioItemTableModel>) audioItemTable
           .getRowSorter();
       for (ColumnInfo<?> columnInfo : tableModel.getColumnInfos()) {

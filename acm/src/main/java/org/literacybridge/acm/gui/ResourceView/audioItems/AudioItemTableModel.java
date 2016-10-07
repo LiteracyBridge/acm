@@ -86,6 +86,9 @@ public class AudioItemTableModel extends AbstractTableModel
               return new AudioItemNode<String>(audioItem, value);
             }
           });
+  public static final ColumnInfo<String> correlationIdColumn = ColumnInfo
+          .newMetadataColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CORRELATION_ID,
+                  ColumnInfo.WIDTH_NOT_SET, 140, MetadataSpecification.LB_CORRELATION_ID);
   public static final ColumnInfo<Integer> playlistOrderColumn = ColumnInfo
       .newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER,
           ColumnInfo.WIDTH_NOT_SET, 60, new ValueProvider<Integer>(false) {
@@ -122,7 +125,7 @@ public class AudioItemTableModel extends AbstractTableModel
 
     columns = initializeColumnInfoArray(infoIconColumn, titleColumn,
         durationColumn, categoriesColumn, sourceColumn, languagesColumn,
-        dateFileModifiedColumn, playlistOrderColumn);
+        dateFileModifiedColumn, correlationIdColumn, playlistOrderColumn);
 
     for (AudioItem item : store.getAudioItems()) {
       addNewAudioItem(item);
