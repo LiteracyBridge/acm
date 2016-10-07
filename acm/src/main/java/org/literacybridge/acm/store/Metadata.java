@@ -24,6 +24,18 @@ public class Metadata {
     this.fields.put(field, value);
   }
 
+  /**
+   * This breaks the strong typing, but is actually closer to what we really
+   * have: metadata is string:value pairs.
+   * @param field
+   * @param stringValue
+   * @param <F>
+   */
+  public <F> void setMetadataField(MetadataField<F> field, String stringValue)  {
+      MetadataValue<F> value = new MetadataValue<F>((F)stringValue);
+      setMetadataField(field, value);
+  }
+
   public void validate() throws InvalidMetadataException {
     // TODO: when MetadataFields support things like required/optional, we can
     // implement validation here
