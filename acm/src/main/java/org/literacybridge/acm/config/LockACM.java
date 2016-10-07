@@ -16,10 +16,7 @@ public class LockACM {
     try {
       lockFile = new File(config.getTempACMsDirectory() + "/"
           + config.getSharedACMname() + ".lock");
-      // Check if the lock exist
-      if (lockFile.exists()) // if exist try to delete it
-        lockFile.delete();
-      // Try to get the lock
+      // Opens the file if it exists, otherwise creates it.
       channel = new RandomAccessFile(lockFile, "rw").getChannel();
       lock = channel.tryLock();
       if (lock == null) {
