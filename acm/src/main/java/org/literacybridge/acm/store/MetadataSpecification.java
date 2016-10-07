@@ -115,16 +115,33 @@ public interface MetadataSpecification {
       "LB_BENEFICIARY");
   public final static MetadataField<Integer> LB_STATUS = new MetadataIntegerField(
       "LB_STATUS");
+  public final static MetadataField<String> LB_CORRELATION_ID = new MetadataStringField(
+      "LB_CORRELATION_ID");
 
   // ============================================================================================================
 
   /** Convenience collection to iterate over all metadata fields */
   // TODO: reflection?
   public Collection<MetadataField<?>> ALL_METADATA_FIELDS = new ImmutableSet.Builder<MetadataField<?>>()
-      .add(DC_TITLE).add(DC_PUBLISHER).add(DC_IDENTIFIER).add(DC_SOURCE)
-      .add(DC_LANGUAGE).add(DC_RELATION).add(DTB_REVISION).add(LB_DURATION)
-      .add(LB_MESSAGE_FORMAT).add(LB_TARGET_AUDIENCE).add(LB_DATE_RECORDED)
-      .add(LB_KEYWORDS).add(LB_TIMING).add(LB_PRIMARY_SPEAKER).add(LB_GOAL)
-      .add(LB_ENGLISH_TRANSCRIPTION).add(LB_NOTES).add(LB_BENEFICIARY)
-      .add(LB_STATUS).build();
+          .add(DC_TITLE)
+          .add(DC_PUBLISHER)
+          .add(DC_IDENTIFIER)
+          .add(DC_SOURCE)
+          .add(DC_LANGUAGE)
+          .add(DC_RELATION)
+          .add(DTB_REVISION)
+          .add(LB_DURATION)
+          .add(LB_MESSAGE_FORMAT)
+          .add(LB_TARGET_AUDIENCE)
+          .add(LB_DATE_RECORDED)
+          .add(LB_KEYWORDS)
+          .add(LB_TIMING)
+          .add(LB_PRIMARY_SPEAKER)
+          .add(LB_GOAL)
+          .add(LB_ENGLISH_TRANSCRIPTION)
+          .add(LB_NOTES)
+          .add(LB_BENEFICIARY)
+          .add(LB_STATUS)
+          .add(LB_CORRELATION_ID)
+          .build();
 }
