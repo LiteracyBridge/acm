@@ -653,7 +653,7 @@ public class ControlAccess {
     String requestURL = "https://7z4pu4vzqk.execute-api.us-west-2.amazonaws.com/prod";
     JSONObject request = new JSONObject();
 
-    if (key.equals("force")) {
+    if (key != null && key.equals("force")) {
       setAWSKey("new");
     }
 
