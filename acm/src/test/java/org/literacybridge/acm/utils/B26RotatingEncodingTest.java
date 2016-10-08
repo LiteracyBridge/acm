@@ -8,6 +8,8 @@ import java.util.Set;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
+import static org.literacybridge.acm.utils.B26RotatingEncoding.MINIMUM_LENGTH;
+import static org.literacybridge.acm.utils.B26RotatingEncoding.RADIX;
 
 /**
  * Created by bill on 10/4/16.
@@ -43,6 +45,24 @@ public class B26RotatingEncodingTest {
   }
 
   @Test
+  public void test4CharUnique() {
+    // encode / decode 1M distinct numbers, check for no duplicate strings
+    Set<String> prevStrings = new HashSet<>();
+    int num4chars = (int)Math.pow(RADIX, MINIMUM_LENGTH);
+    int count = 0;
+    for (int i = 0; i<num4chars; i++) {
+      count++;
+      String s = B26RotatingEncoding.encode(i);
+      boolean seen = prevStrings.contains(s);
+      assertFalse("Should not have already seen a string", seen);
+      prevStrings.add(s);
+      int r = B26RotatingEncoding.decode(s);
+      assertEquals("Numbers should be equal", i, r);
+    }
+    assertEquals("Should have same # strings as # numbers", count, prevStrings.size());
+  }
+
+  @Test
   public void test1MUnique() {
     // encode / decode 1M distinct numbers, check for no duplicate strings
     Set<String> prevStrings = new HashSet<>();
@@ -61,8 +81,8 @@ public class B26RotatingEncodingTest {
 
   @Test
   public void test4CharacterLength() {
-    // 4 characters should encode 26^4 values. See if it does.
-    int v = 26 * 26 * 26 * 26;
+    // 4 characters should encode radix^length values. See if it does.
+    int v = (int)Math.pow(RADIX, MINIMUM_LENGTH);
     String s = B26RotatingEncoding.encode(v-1);
     assertEquals("v should encode in 4 characters", 4, s.length());
     s = B26RotatingEncoding.encode(v);

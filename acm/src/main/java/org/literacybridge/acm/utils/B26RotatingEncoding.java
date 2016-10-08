@@ -23,9 +23,10 @@ import java.util.List;
  *
  */
 public class B26RotatingEncoding {
-  private static final String SYMBOLS = "ELRZUXMIPCHWQYGTABONJKFSVD"; // entire alphabet, scrambled
-  private static final int RADIX = 26;
-  private static final int MINIMUM_LENGTH = 4;
+  private static final String OFFSET_MAP = "BCDFGHJKLMNPQRSTVWXYZ";
+  private static final String SYMBOLS    = "LRXZMPCHWQYGTBNJKFSVD"; // entire alphabet, scrambled
+  public static final int RADIX = SYMBOLS.length();
+  public static final int MINIMUM_LENGTH = 4;
 
   /**
    * Given a positive integer, create a string that encodes the value.
@@ -56,7 +57,7 @@ public class B26RotatingEncoding {
       // Add each new digit to the left of the string; moving least- to most-significant.
       encodedDigits.insert(0, ch);
       // for the next most significant digit's offset, use the just-generated encoded digit
-      offset = ch - 'A';
+      offset = OFFSET_MAP.indexOf(ch);
     }
 
     return encodedDigits.toString();
@@ -83,7 +84,7 @@ public class B26RotatingEncoding {
       digits.add(d);
       // for the next most significant digit's offset, use the place value of
       // the digit that was just decoded
-      offset = e - 'A';
+      offset = OFFSET_MAP.indexOf(e);
     }
 
     // convert the array of digits back to a number
