@@ -400,7 +400,7 @@ public class ControlAccess {
             "Cannot Get Write Access", JOptionPane.YES_NO_CANCEL_OPTION,
             JOptionPane.QUESTION_MESSAGE, null, (optionsNoForce),
             optionsNoForce[0]);
-        if (n == -1 || n == 1) { // user closed option pane or selected Shutdown
+        if (n == -1 || n == 0) { // user closed option pane or selected Shutdown
           JOptionPane.showMessageDialog(null, "Shutting down.");
           System.exit(0);
         }
