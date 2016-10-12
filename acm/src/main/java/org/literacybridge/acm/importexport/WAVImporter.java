@@ -24,7 +24,7 @@ public class WAVImporter extends Importer {
 
   @Override
   protected void importSingleFile(MetadataStore store, Category category,
-      File file, Map<String,String> additionalMetadata) throws IOException {
+      File file, Metadata additionalMetadata) throws IOException {
     try {
       AudioItem audioItem = store
           .newAudioItem(ACMConfiguration.getInstance().getNewAudioItemUID());
@@ -43,10 +43,7 @@ public class WAVImporter extends Importer {
               new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 
       if (additionalMetadata != null) {
-        for (Map.Entry<String,String> e : additionalMetadata.entrySet()) {
-          MetadataField<?> field = LBMetadataIDs.FieldToNameMap.inverse().get(e.getKey());
-          metadata.setMetadataField(field, e.getValue());
-        }
+        audioItem.getMetadata().addValuesFrom(additionalMetadata);
       }
 
       AudioItemRepository repository = ACMConfiguration.getInstance()

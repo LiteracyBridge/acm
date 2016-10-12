@@ -115,7 +115,7 @@ public interface MetadataSpecification {
       "LB_BENEFICIARY");
   public final static MetadataField<Integer> LB_STATUS = new MetadataIntegerField(
       "LB_STATUS");
-  public final static MetadataField<String> LB_CORRELATION_ID = new MetadataStringField(
+  public final static MetadataField<Integer> LB_CORRELATION_ID = new MetadataIntegerField(
       "LB_CORRELATION_ID");
 
   // ============================================================================================================

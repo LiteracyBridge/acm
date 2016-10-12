@@ -28,7 +28,7 @@ public class MP3Importer extends Importer {
 
   @Override
   protected void importSingleFile(MetadataStore store, Category category,
-      File file, Map<String,String> additionalMetadata) throws IOException {
+      File file, Metadata additionalMetadata) throws IOException {
     try {
       MusicMetadataSet musicMetadataSet = new MyID3().read(file);
       IMusicMetadata musicMetadata = musicMetadataSet.getSimplified();
@@ -60,10 +60,7 @@ public class MP3Importer extends Importer {
               new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 
       if (additionalMetadata != null) {
-        for (Map.Entry<String,String> e : additionalMetadata.entrySet()) {
-          MetadataField<?> field = LBMetadataIDs.FieldToNameMap.inverse().get(e.getKey());
-          metadata.setMetadataField(field, e.getValue());
-        }
+        audioItem.getMetadata().addValuesFrom(additionalMetadata);
       }
 
       AudioItemRepository repository = ACMConfiguration.getInstance()

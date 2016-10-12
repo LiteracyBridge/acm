@@ -6,8 +6,10 @@ import org.kohsuke.args4j.Option;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.importexport.FileImporter;
+import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.MetadataValue;
 
 import java.io.File;
 import java.util.Arrays;
@@ -219,10 +221,11 @@ public class FeedbackImporter {
   private boolean importFiles(Set<File> filesToImport) {
     boolean success = true;
     int count = 0;
-    Map<String,String> metadata = new HashMap<>();
+    Metadata metadata = new Metadata();
+
     FileImporter importer = FileImporter.getInstance();
     MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-    int id = ACMConfiguration.getInstance().getCurrentDB().getNextCorrelationId();
+    int id = ACMConfiguration.getInstance().getCurrentDB().getNextCorrelationId() + 1;
     ACMConfiguration.getInstance().getCurrentDB().setNextCorrelationId(id + filesToImport.size());
 
     for (File file : filesToImport) {
@@ -230,8 +233,7 @@ public class FeedbackImporter {
         if (params.verbose) {
           System.out.println(String.format("Importing %d of %d: %s", ++count, filesToImport.size(), file.getName()));
         }
-        metadata.put(MetadataSpecification.LB_CORRELATION_ID.getName(), B26RotatingEncoding
-                .encode(id++));
+        metadata.setMetadataField(MetadataSpecification.LB_CORRELATION_ID, new MetadataValue<Integer>(id++));
         importer.importFile(store, null /* category */, file, metadata);
         filesImported++;
       } catch (Exception e) {

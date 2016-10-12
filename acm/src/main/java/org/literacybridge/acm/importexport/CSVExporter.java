@@ -20,6 +20,7 @@ import org.literacybridge.acm.store.MetadataValue;
 import com.google.common.collect.Lists;
 
 import au.com.bytecode.opencsv.CSVWriter;
+import org.literacybridge.acm.utils.B26RotatingEncoding;
 
 public class CSVExporter {
   private static final Logger LOG = Logger
@@ -77,19 +78,11 @@ public class CSVExporter {
         MetadataField<?> field = columns.get(i);
         String value = getStringValue(metadata, field);
         if (field == MetadataSpecification.LB_DURATION) {
-          try {
-            // last character is the quality
-            quality = value.substring(value.length() - 1);
-            int durationInSeconds = Integer.parseInt(value.substring(0, 2)) * 60
-                + Integer.parseInt(value.substring(3, 5));
-            value = Integer.toString(durationInSeconds);
-          } catch (Exception ignored) {
-            LOG.warning(String.format(
-                "Exception parsing time & quality from '%s'. Substituting 0 l.",
-                audioItem.getUuid()));
-            quality = "l";
-            value = "0";
-          }
+          value = durationFromValue(value);
+          quality = qualityFromValue(value);
+        }
+        else if (field == MetadataSpecification.LB_CORRELATION_ID) {
+          value = correlationIdFromValue(value);
         }
         values[i] = value;
       }
@@ -100,6 +93,66 @@ public class CSVExporter {
     }
 
     writer.close();
+  }
+
+  /**
+   * Given a string mm:ssq, parse the mm:ss into seconds.
+   * @param value
+   * @return Value in seconds.
+   */
+  private static String durationFromValue(String value) {
+    try {
+      // last character is the quality
+      int durationInSeconds = Integer.parseInt(value.substring(0, 2)) * 60
+              + Integer.parseInt(value.substring(3, 5));
+      value = Integer.toString(durationInSeconds);
+    } catch (Exception ignored) {
+      LOG.warning(String.format(
+              "Exception parsing time & quality from '%s'. Substituting 0 l.", value));
+      value = "0";
+    }
+    return value;
+  }
+
+  /**
+   * Given a string mm:ssq, parse the quality.
+   * @param value
+   * @return The quality.
+   */
+  private static String qualityFromValue(String value) {
+    String quality;
+    try {
+      // last character is the quality
+      quality = value.substring(value.length() - 1);
+      int durationInSeconds = Integer.parseInt(value.substring(0, 2)) * 60
+              + Integer.parseInt(value.substring(3, 5));
+      // Only for the possible side effect of throwing.
+      value = Integer.toString(durationInSeconds);
+    } catch (Exception ignored) {
+      LOG.warning(String.format(
+              "Exception parsing time & quality from '%s'. Substituting 0 l.", value));
+      quality = "l";
+    }
+    return quality;
+  }
+
+  /**
+   * Given an integer valued string, return the B26RotatingEncoding encoding of
+   * the integer. If not integer valued, return an empty string.
+   * @param value An integer valued string.
+   * @return The encoded string, or an empty string.
+   */
+  private static String correlationIdFromValue(String value) {
+    String id = "";
+    if (value.length() > 0) {
+      try {
+        int intValue = Integer.valueOf(value);
+        id = B26RotatingEncoding.encode(intValue);
+      } catch (Exception ignored) {
+        // ignore, return empty string.
+      }
+    }
+    return id;
   }
 
   private static <T> String getStringValue(Metadata metadata,

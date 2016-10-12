@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.MetadataStore;
 
@@ -25,7 +26,7 @@ public class FileImporter {
 
   public static abstract class Importer {
     protected abstract void importSingleFile(MetadataStore store,
-        Category category, File file, Map<String,String> additionalMetadata) throws IOException;
+        Category category, File file, Metadata additionalMetadata) throws IOException;
 
     protected abstract String[] getSupportedFileExtensions();
   }
@@ -57,7 +58,7 @@ public class FileImporter {
     filter = getFileExtensionFilter(extensions);
   }
 
-  public void importFile(MetadataStore store, Category category, File file, Map<String,String> additionalMetadata)
+  public void importFile(MetadataStore store, Category category, File file, Metadata additionalMetadata)
       throws IOException {
     if (!file.exists()) {
       throw new FileNotFoundException(file.toString());

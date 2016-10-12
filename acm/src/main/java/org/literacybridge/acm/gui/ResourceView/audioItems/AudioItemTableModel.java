@@ -23,10 +23,12 @@ import org.literacybridge.acm.store.Committable;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataStore.DataChangeListener;
+import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.Playlist;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.literacybridge.acm.utils.B26RotatingEncoding;
 
 public class AudioItemTableModel extends AbstractTableModel
     implements DataChangeListener {
@@ -87,8 +89,18 @@ public class AudioItemTableModel extends AbstractTableModel
             }
           });
   public static final ColumnInfo<String> correlationIdColumn = ColumnInfo
-          .newMetadataColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CORRELATION_ID,
-                  ColumnInfo.WIDTH_NOT_SET, 140, MetadataSpecification.LB_CORRELATION_ID);
+      .newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CORRELATION_ID,
+          ColumnInfo.WIDTH_NOT_SET, 140, new ValueProvider<String>(true) {
+            @Override
+              protected AudioItemNode<String> getValue(AudioItem audioItem) {
+                String value = "";
+                if (audioItem.getMetadata().hasMetadataField(MetadataSpecification.LB_CORRELATION_ID)) {
+                  Integer integerValue = audioItem.getMetadata().getMetadataValue(MetadataSpecification.LB_CORRELATION_ID).getValue();
+                  value = B26RotatingEncoding.encode(integerValue);
+                }
+                return new AudioItemNode<String>(audioItem, value);
+              }
+          });
   public static final ColumnInfo<Integer> playlistOrderColumn = ColumnInfo
       .newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER,
           ColumnInfo.WIDTH_NOT_SET, 60, new ValueProvider<Integer>(false) {

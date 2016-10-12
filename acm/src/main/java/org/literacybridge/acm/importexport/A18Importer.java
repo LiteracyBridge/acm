@@ -110,7 +110,7 @@ public class A18Importer extends Importer {
 
   @Override
   protected void importSingleFile(MetadataStore store, Category category,
-      File file, Map<String,String> additionalMetadata) throws IOException {
+      File file, Metadata additionalMetadata) throws IOException {
     try {
       AudioItem audioItem = loadMetadata(store, category, file);
 
@@ -122,10 +122,7 @@ public class A18Importer extends Importer {
       }
 
       if (additionalMetadata != null) {
-        for (Map.Entry<String,String> e : additionalMetadata.entrySet()) {
-          MetadataField<?> field = LBMetadataIDs.FieldToNameMap.inverse().get(e.getKey());
-          audioItem.getMetadata().setMetadataField(field, e.getValue());
-        }
+        audioItem.getMetadata().addValuesFrom(additionalMetadata);
       }
 
       AudioItemRepository repository = ACMConfiguration.getInstance()
