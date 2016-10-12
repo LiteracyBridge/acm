@@ -49,5 +49,11 @@ for f in $(ls ${acmDir}/lib); do
     fi
 done
 
-echo "Be sure to update $(ls ${installDir}/*.rev)"
+revision=$(ls ${installDir}/*.rev)
+# strip .rev, leading path and '/r'
+revision=${revision%.rev}
+revision=${revision##*/r}
+let newRevision=revision+1
+echo mv ${installDir}/r${revision}.rev ${installDir}/r${newRevision}.rev
+mv ${installDir}/r${revision}.rev ${installDir}/r${newRevision}.rev
 
