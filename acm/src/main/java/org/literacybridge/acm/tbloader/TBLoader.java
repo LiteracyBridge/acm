@@ -49,16 +49,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
-import javax.swing.GroupLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
+import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileSystemView;
@@ -177,6 +168,7 @@ public class TBLoader extends JFrame {
     setDeviceIdAndPaths();
 
     // get image revision
+    // TODO: fix assumption about current working directory. (It's assumed to be ~/LiteracyBridge/TB-Loaders/{PROJECT} )
     File swPath = new File(".");
     File[] files = swPath.listFiles(new FilenameFilter() {
       @Override
@@ -1475,6 +1467,7 @@ public class TBLoader extends JFrame {
           JOptionPane.showMessageDialog(null,
               "You must first select a rotation date and a location.",
               "Need Date and Location!", JOptionPane.DEFAULT_OPTION);
+          refreshUI();
           return;
         }
 
@@ -1510,7 +1503,6 @@ public class TBLoader extends JFrame {
           operation);
       t.start();
 
-      refreshUI();
       return;
     } catch (Exception ex) {
       LOG.log(Level.WARNING, ex.toString(), ex);
@@ -1538,11 +1530,12 @@ public class TBLoader extends JFrame {
   void onCopyFinished(boolean success, final String idString,
       final CopyThread.Operation operation, final String endMsg,
       final String endTitle) {
-    updatingTB = false;
-    resetUI(true);
-    LOG.log(Level.INFO, endMsg);
-    JOptionPane.showMessageDialog(null, endMsg, endTitle,
-        JOptionPane.DEFAULT_OPTION);
+    SwingUtilities.invokeLater(() -> {
+      updatingTB = false;
+      resetUI(true);
+      LOG.log(Level.INFO, endMsg);
+      JOptionPane.showMessageDialog(null, endMsg, endTitle, JOptionPane.DEFAULT_OPTION);
+    });
   }
 
   private synchronized boolean isDriveConnected() {
@@ -1611,6 +1604,7 @@ public class TBLoader extends JFrame {
 
   private void disableAll() {
     updateButton.setEnabled(false);
+    grabStatsOnlyButton.setEnabled(false);
   }
 
   // TODO: Move this to its own file.
@@ -1807,6 +1801,8 @@ public class TBLoader extends JFrame {
         FileUtils.deleteDirectory(sourceFile);
       } catch (IOException e) {
         LOG.log(Level.WARNING, "Unable to zip device files:", e);
+        endMsg = String.format("Exception zipping TB-Loader statistics: %s", e.getMessage());
+        endTitle = "An Exception Occurred";
       } finally {
         callback.onCopyFinished(success, tbSrn, this.operation, endMsg,
             endTitle);
@@ -1944,6 +1940,8 @@ public class TBLoader extends JFrame {
           LOG.log(Level.SEVERE, "CRITICAL ERROR:", e);
         } else
           LOG.log(Level.WARNING, "NON-CRITICAL ERROR:", e);
+        endMsg = String.format("Exception updating TB-Loader: %s", e.getMessage());
+        endTitle = "An Exception Occurred";
       } finally {
         callback.onCopyFinished(success, tbSrn, this.operation, endMsg,
             endTitle);
