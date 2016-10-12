@@ -140,6 +140,7 @@ public class ExportDialog extends JDialog implements ActionListener {
 
   private void export(final File target) {
     final Runnable job;
+    final int numItems = ExportDialog.this.selectedAudioItems.length;
 
     if (csvButton.isSelected()) {
       job = new Runnable() {
@@ -147,7 +148,9 @@ public class ExportDialog extends JDialog implements ActionListener {
         public void run() {
           try {
             CSVExporter.export(ExportDialog.this.selectedAudioItems, target);
+            Application.getApplication().setStatusMessage(String.format("%d Item(s) exported.", numItems));
           } catch (IOException e) {
+            Application.getApplication().setStatusMessage(String.format("Exporting %d audio item(s) failed.", numItems));
             LOG.log(Level.WARNING, "Exporting audio items failed", e);
           }
         }
@@ -158,7 +161,7 @@ public class ExportDialog extends JDialog implements ActionListener {
           || title_idButton.isSelected();
       final boolean titleInFilename = titleOnlyButton.isSelected()
           || title_idButton.isSelected();
-      // TODO export dialog that let's you modify audio settings
+      // TODO export dialog that lets you modify audio settings
       if (mp3Button.isSelected()) {
         targetFormat = AudioFormat.MP3;
       } else if (wavButton.isSelected()) {
@@ -179,8 +182,10 @@ public class ExportDialog extends JDialog implements ActionListener {
           try {
             FileSystemExporter.export(ExportDialog.this.selectedAudioItems,
                 target, targetFormat, titleInFilename, idInFilename);
+            Application.getApplication().setStatusMessage(String.format("%d Item(s) exported.", numItems));
           } catch (IOException e) {
             LOG.log(Level.WARNING, "Exporting audio items failed", e);
+            Application.getApplication().setStatusMessage(String.format("Exporting %d audio item(s) failed.", numItems));
           } finally {
             UIUtils.hideDialog(dialog);
           }

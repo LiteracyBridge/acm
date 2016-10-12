@@ -7,6 +7,7 @@ import static org.literacybridge.acm.store.MetadataSpecification.DC_RELATION;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_SOURCE;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_BENEFICIARY;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_CORRELATION_ID;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_DATE_RECORDED;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_DURATION;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_ENGLISH_TRANSCRIPTION;
@@ -33,6 +34,7 @@ import javax.swing.table.AbstractTableModel;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
@@ -45,6 +47,7 @@ import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 import com.google.common.collect.Maps;
+import org.literacybridge.acm.utils.B26RotatingEncoding;
 
 public class AudioItemPropertiesModel extends AbstractTableModel {
   private static final Logger LOG = Logger
@@ -183,7 +186,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
           if (!StringUtils.isEmpty(id)) {
             AudioItem item = ACMConfiguration.getInstance().getCurrentDB()
                 .getMetadataStore().getAudioItem(id);
-            MetadataValue<String> values1 = item.getMetadata()
+            MetadataValue<String> values1 = item == null ? null : item.getMetadata()
                 .getMetadataValue(DC_TITLE);
             if (values1 != null) {
               return values1.getValue();
@@ -226,6 +229,29 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
         .add(new AudioItemProperty.MetadataProperty(LB_NOTES, true));
     audioItemPropertiesObject
         .add(new AudioItemProperty.MetadataProperty(LB_BENEFICIARY, true));
+
+    audioItemPropertiesObject.add(new AudioItemProperty(false) {
+      @Override
+      public String getName() {
+        return "ID";
+      }
+
+      @Override
+      public String getValue(AudioItem audioItem) {
+        String value = "";
+        if (audioItem.getMetadata().hasMetadataField(MetadataSpecification.LB_CORRELATION_ID)) {
+          Integer integerValue = audioItem.getMetadata().getMetadataValue(MetadataSpecification.LB_CORRELATION_ID).getValue();
+          value = String.format("%s (%d)", B26RotatingEncoding.encode(integerValue), integerValue);
+        }
+        return value;
+      }
+
+      @Override
+      public void setValue(AudioItem audioItem, Object newValue) {
+        // not supported
+      }
+    });
+
   }
 
   @Override
