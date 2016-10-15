@@ -24,7 +24,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
 
-import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.LuceneMetadataStore;
@@ -49,7 +48,7 @@ public class DBConfiguration extends Properties {
 
   private ControlAccess controlAccess;
 
-  public DBConfiguration(String acmName) {
+  DBConfiguration(String acmName) {
     this.acmName = acmName;
   }
 
@@ -65,55 +64,131 @@ public class DBConfiguration extends Properties {
     repository = newRepository;
   }
 
+  /**
+   *  Gets the name of the ACM directory, like "ACM-DEMO".
+   * @return The name of this content database, including "ACM-".
+   */
+  public String getSharedACMname() {
+    return acmName;
+  }
+
+  /**
+   * Gets a File representing global (ie, Dropbox) ACM directory.
+   * @return The global File for this content database.
+   */
+  public File getSharedACMDirectory() {
+    if (sharedACMDirectory == null) {
+      sharedACMDirectory = new File(
+              ACMConfiguration.getInstance().getGlobalShareDir(),
+              getSharedACMname());
+    }
+    return sharedACMDirectory;
+  }
+
+  /**
+   * Gets the File representing the local ACM Application directory.
+   *
+   * TODO: Why is this here? This is not a per-database property.
+   * @return The local application directory.
+   */
+  public static File getLiteracyBridgeHomeDirectory() {
+    // ~/LiteracyBridge
+    return ACMConfiguration.getInstance().getApplicationDirectory();
+  }
+
   // Call this methods to get the non-shared directory root for config, content
   // cache, builds, etc...
-  public String getHomeAcmDirectory() {
+  private String getHomeAcmDirectory() {
+    // ~/LiteracyBridge/ACM
     File acm = new File(getLiteracyBridgeHomeDirectory(), Constants.ACM_DIR_NAME);
     if (!acm.exists())
       acm.mkdirs();
     return acm.getAbsolutePath();
   }
 
-  public static File getLiteracyBridgeHomeDirectory() {
-    // ~/LiteracyBridge
-    return ACMConfiguration.getInstance().getApplicationDirectory();
-  }
-
-  public File getLuceneIndexDirectory() {
-    return new File(getDatabaseDirectory(), Constants.LuceneIndexDir);
-  }
-
+  /**
+   * Gets the name of the local temp file directory.
+   * @return The name of the directory.
+   */
   String getTempACMsDirectory() {
+    // ~/LiteracyBridge/temp
     File temp = new File(getHomeAcmDirectory(), Constants.TempDir);
     if (!temp.exists())
       temp.mkdirs();
     return temp.getAbsolutePath();
   }
 
-  public File getDatabaseDirectory() {
+  /**
+   * Gets a File representing the temporary database directory.
+   * @return The File object for the directory.
+   */
+  File getDatabaseDirectory() {
     if (dbDirectory == null)
+      // ~/LiteracyBridge/temp/ACM-DEMO/db
       dbDirectory = new File(getTempACMsDirectory(),
           getSharedACMname() + File.separator + Constants.DBHomeDir);
     return dbDirectory;
   }
 
-  public File getRepositoryDirectory() {
+  /**
+   * Gets a File representing the location of the lucene index, in the
+   * temporary database directory.
+   * @return The File object for the lucene directory.
+   */
+  private File getLuceneIndexDirectory() {
+    // ~/LiteracyBridge/temp/ACM-DEMO/db/index
+    return new File(getDatabaseDirectory(), Constants.LuceneIndexDir);
+  }
+
+  /**
+   * Gets a File representing the location of the content repository.
+   * @return The File object for the content directory.
+   */
+  File getRepositoryDirectory() {
+    if (repositoryDirectory == null) {
+      // ~/Dropbox/ACM-DEMO/content
+      repositoryDirectory = new File(getSharedACMDirectory(), Constants.RepositoryHomeDir);
+    }
     return repositoryDirectory;
   }
 
-  public File getCacheDirectory() {
+  File getCacheDirectory() {
+    if (cacheDirectory == null) {
+      // ~/LiteracyBridge/ACM/cache/ACM-DEMO
+      cacheDirectory = new File(getHomeAcmDirectory(),
+              Constants.CACHE_DIR_NAME + "/" + getSharedACMname());
+    }
     return cacheDirectory;
   }
 
   public File getTBLoadersDirectory() {
+    if (tbLoadersDirectory == null) {
+      // ~/Dropbox/ACM-DEMO/TB-Loaders
+      tbLoadersDirectory = new File(getSharedACMDirectory(),
+              Constants.TBLoadersHomeDir);
+    }
     return tbLoadersDirectory;
   }
 
-  public File getTBBuildsDirectory() {
-    return new File(getHomeAcmDirectory(), Constants.TBBuildsHomeDirName);
+  /**
+   * Gets the File, if it exists, containing the list of content updates that
+   * have been whitelisted for user feedback importing.
+   * @return The File.
+   */
+  public File getUserFeedbackWhitelistFile() {
+    // ~/Dropbox/ACM-DEMO/userfeedback.list
+    return new File(getSharedACMDirectory(), Constants.USER_FEEDBACK_WHITELISTED_UPDATES_FILENAME);
+  }
+  /**
+   * Gets a File containing the configuration properties for this ACM database.
+   * @return The File.
+   */
+  private File getConfigurationPropertiesFile() {
+    // ~/Dropbox/ACM-DEMO/config.properties
+    return new File(getSharedACMDirectory(), Constants.CONFIG_PROPERTIES);
   }
 
-  public void writeProps() {
+  private void writeProps() {
     try {
       BufferedOutputStream out = new BufferedOutputStream(
           new FileOutputStream(getConfigurationPropertiesFile()));
@@ -126,20 +201,8 @@ public class DBConfiguration extends Properties {
     }
   }
 
-  public void init() throws Exception {
-    // File dbPath, repPath;
+  void init() throws Exception {
     if (!initialized) {
-      // if (args.readonly)
-      // instance.setReadOnly(true);
-      /*
-       * NOT CURRENTLY USING THIS PARAMETER -- NEED TO RETHINK IT WHEN WE NEED
-       * IT if (args.pathDB != null) { dbPath = new File(args.pathDB); if
-       * (args.pathRepository != null) { repPath = new File
-       * (args.pathRepository); if (dbPath.exists() && repPath.exists()) {
-       * pathsOverridden = true; setDatabaseDirectory(dbPath);
-       * setRepositoryDirectory(repPath); } else System.out.println(
-       * "DB or Repository Path does not exist.  Ignoring override."); } } else
-       */
       InitializeAcmConfiguration();
       initializeLogger();
       controlAccess = new ControlAccess(this);
@@ -157,43 +220,7 @@ public class DBConfiguration extends Properties {
     return controlAccess;
   }
 
-  public String getSharedACMname() {
-    return acmName;
-  }
-
-  public File getSharedACMDirectory() {
-    if (sharedACMDirectory == null) {
-      sharedACMDirectory = new File(
-          ACMConfiguration.getInstance().getGlobalShareDir(),
-          getSharedACMname());
-    }
-    return sharedACMDirectory;
-  }
-
-  /*
-   * public String getDeviceID() throws IOException { String value =
-   * getProperty(Constants.DEVICE_ID_PROP); if (value == null) { final int n =
-   * 10; Random rnd = new Random(); // generate 10-digit unique ID for this acm
-   * instance StringBuilder builder = new StringBuilder(); for (int i = 0; i <
-   * n; i++) {
-   * builder.append(Character.forDigit(rnd.nextInt(Character.MAX_RADIX),
-   * Character.MAX_RADIX)); } value = builder.toString();
-   * setProperty(Constants.DEVICE_ID_PROP, value); writeProps(); }
-   * 
-   * return value; }
-   * 
-   * public String getNewAudioItemUID() throws IOException { String value =
-   * ACMConfiguration.getRecordingCounter(); int counter = (value == null) ? 0 :
-   * Integer.parseInt(value, Character.MAX_RADIX); counter++; value =
-   * Integer.toString(counter, Character.MAX_RADIX); String uuid = "LB-2" + "_"
-   * + getDeviceID() + "_" + value;
-   * 
-   * // make sure we remember that this uuid was already used
-   * ACMConfiguration.setRecordingCounter(value); //writeProps();
-   * 
-   * return uuid; }
-   */
-  public long getCacheSizeInBytes() {
+  long getCacheSizeInBytes() {
     long size = Constants.DEFAULT_CACHE_SIZE_IN_BYTES;
     String value = getProperty(Constants.CACHE_SIZE_PROP_NAME);
     if (value != null) {
@@ -228,7 +255,7 @@ public class DBConfiguration extends Properties {
    * Currently defaults to false. Next, default to true. Then remove old
    * WordPress code and remove this entirely.
    */
-  public boolean useAwsLocking() {
+  boolean useAwsLocking() {
     String awsLocking = getProperty(Constants.USE_AWS_LOCKING);
     return awsLocking != null && awsLocking.equalsIgnoreCase("TRUE");
   }
@@ -273,6 +300,14 @@ public class DBConfiguration extends Properties {
     return Collections.unmodifiableList(audioLanguages);
   }
 
+  /**
+   * The "correlation id" is a small, incrementing integer that is assigned
+   * to user feedback imported into an ACM database (generally, a -FB- database.)
+   *
+   * These ids are managed by the feedback importer, and stored here so that
+   * the latest value is available on every machine.
+   * @return The next correlation id property.
+   */
   public int getNextCorrelationId() {
     String nextId = getProperty("NEXT_CORRELATION_ID");
     if (nextId == null) {
@@ -287,33 +322,19 @@ public class DBConfiguration extends Properties {
     writeProps();
   }
 
-  private void setRepositoryDirectory(File f) {
-    repositoryDirectory = f; // new File(f,Constants.RepositoryHomeDirName);
-  }
-
-  private File getConfigurationPropertiesFile() {
-    File configFile = new File(getSharedACMDirectory(),
-        Constants.CONFIG_PROPERTIES);
-    if (!configFile.exists()) {
-      File oldConfig = new File(getHomeAcmDirectory(), Constants.CONFIG_PROPERTIES);
-      try {
-        FileUtils.copyFile(oldConfig, configFile);
-      } catch (IOException e) {
-        System.out.println("No new config or old config  file found!");
-        e.printStackTrace();
-      }
-    }
-    return configFile;
-  }
-
   private void InitializeAcmConfiguration() {
     boolean propsChanged = false;
 
-    cacheDirectory = new File(getHomeAcmDirectory(),
-        Constants.CACHE_DIR_NAME + "/" + getSharedACMname());
-    if (!cacheDirectory.exists()) {
-      cacheDirectory.mkdirs();
+    if (!getSharedACMDirectory().exists()) {
+      // TODO: Get all UI out of this configuration object!!
+      JOptionPane.showMessageDialog(null, "ACM database " + getSharedACMname()
+              + " is not found within Dropbox.\n\nBe sure that you have accepted the Dropbox invitation\nto share the folder"
+              + " by logging into your account at\nhttp://dropbox.com and click on the 'Sharing' link.\n\nShutting down.");
+      System.exit(0);
     }
+
+    // Create the cache directory before it's actually needed, to trigger any security exceptions.
+    getCacheDirectory().mkdirs();
 
     // like ~/Dropbox/ACM-UWR/config.properties
     if (getConfigurationPropertiesFile().exists()) {
@@ -327,35 +348,6 @@ public class DBConfiguration extends Properties {
       }
     }
 
-    if (getSharedACMname() != null && (getDatabaseDirectory() == null
-        || getRepositoryDirectory() == null)) {
-      File fACM = new File(ACMConfiguration.getInstance().getGlobalShareDir(),
-          getSharedACMname());
-      if (fACM.exists()) {
-        /*
-         * File fDB = new File(fACM,Constants.DBHomeDir);
-         * setDatabaseDirectory(fDB);
-         * instance.put(DEFAULT_DB,getDatabaseDirectory().getAbsolutePath());
-         */ File fRepo = new File(fACM, Constants.RepositoryHomeDir);
-        setRepositoryDirectory(fRepo);
-        // instance.put(DEFAULT_REPOSITORY,getRepositoryDirectory().getAbsolutePath());
-      } else {
-        JOptionPane.showMessageDialog(null, "ACM database " + getSharedACMname()
-            + " is not found within Dropbox.\n\nBe sure that you have accepted the Dropbox invitation\nto share the folder"
-            + " by logging into your account at\nhttp://dropbox.com and click on the 'Sharing' link.\n\nShutting down.");
-        System.exit(0);
-      }
-    }
-    /*
-     * if (!containsKey(Constants.USER_NAME)) { String username =
-     * (String)JOptionPane.showInputDialog(null, "Enter Username:",
-     * "Missing Username", JOptionPane.PLAIN_MESSAGE); put(Constants.USER_NAME,
-     * username); propsChanged = true; } if
-     * (!containsKey(Constants.USER_CONTACT_INFO)) { String contactinfo =
-     * (String)JOptionPane.showInputDialog(null, "Enter Phone #:",
-     * "Missing Contact Info", JOptionPane.PLAIN_MESSAGE);
-     * put(Constants.USER_CONTACT_INFO, contactinfo); propsChanged = true; }
-     */
     if (!containsKey(Constants.PRE_CACHE_WAV)) {
       put(Constants.PRE_CACHE_WAV, "FALSE");
       propsChanged = true;
@@ -374,14 +366,13 @@ public class DBConfiguration extends Properties {
     if (propsChanged) {
       writeProps();
     }
-    tbLoadersDirectory = new File(sharedACMDirectory,
-        Constants.TBLoadersHomeDir);
-    // writeProps();
   }
 
   private void initializeLogger() {
     try {
       // Get the global logger to configure it
+      // TODO: WTF? Shouldn't the *global* logger be initialized in some
+      // *global* constructor? Or better yet, static initializer?
       Logger logger = Logger.getLogger("");
 
       logger.setLevel(Level.INFO);

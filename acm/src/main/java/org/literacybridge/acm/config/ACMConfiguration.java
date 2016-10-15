@@ -152,6 +152,10 @@ public class ACMConfiguration {
     return currentDB.get();
   }
 
+  public synchronized DBConfiguration getDb(String acmName) {
+    return allDBs.get(acmName);
+  }
+
   /**
    * This is a hacky way to create a new Acm database, basing it on another Acm
    * database. Ideally, there should be a means of modifying the language list,
@@ -347,7 +351,7 @@ public class ACMConfiguration {
     return dbs;
   }
 
-  public String getACMname() {
+  public String getTitle() {
     return title;
   }
 

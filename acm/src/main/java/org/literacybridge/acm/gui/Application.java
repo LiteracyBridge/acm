@@ -108,9 +108,9 @@ public class Application extends JXFrame {
     String title = new String(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM",
         LanguageUtil.getUILanguage()));
     title += " (" + Constants.ACM_VERSION + ")";
-    if (ACMConfiguration.getInstance().getACMname() != null)
+    if (ACMConfiguration.getInstance().getTitle() != null)
       title += "                   "
-          + ACMConfiguration.getInstance().getACMname();
+          + ACMConfiguration.getInstance().getTitle();
     else if (ACMConfiguration.getInstance().getCurrentDB()
         .getSharedACMname() != null)
       title += "                   "

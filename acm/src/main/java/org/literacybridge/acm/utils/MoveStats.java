@@ -36,7 +36,6 @@ public class MoveStats {
   private static final String TALKING_BOOK_DATA = "TalkingBookData";
   private static final String USER_RECORDINGS = "userrecordings";
 
-  private String timeStamp;
   private File targetCollection;
   private File targetUserRecordingsCollection;
 
@@ -60,7 +59,7 @@ public class MoveStats {
       return 1;
     }
 
-    timeStamp = TBLoader.getDateTime();
+    String timeStamp = TBLoader.getDateTime();
     targetCollection = new File(targetDir, timeStamp);
     targetUserRecordingsCollection = new File(targetCollection, USER_RECORDINGS);
 
@@ -90,20 +89,26 @@ public class MoveStats {
   private void moveUserRecordings(File[] feedbackDirs) throws IOException {
     // Iterate over the tbloaders reporting feedback...
     for (File tbLoaderDir : feedbackDirs) {
+
       // Get the contained collected-data subdirectory, and enumerate the project subdirectories.
       File collectedData = IOUtils.FileIgnoreCase(tbLoaderDir, TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME);
       File[] projectDirs = collectedData.listFiles((fn) -> fn.isDirectory() && !fn.isHidden() && !fn.getName().startsWith("."));
       // Iterate over the projects...
       for (File projectDir : projectDirs) {
-        // and see if this project has userrecordings.
+
+        // See if this project has userrecordings.
         File userrecordings = IOUtils.FileIgnoreCase(projectDir, USER_RECORDINGS);
         if (!userrecordings.exists()) continue;
-        // We have a userrecordings subdirectory, inside some project subdirectory.
+
+        // Target directory for any {UPDATE} found within this {PROJECT}
+        File targetProjDir = new File(targetUserRecordingsCollection, projectDir.getName().toLowerCase());
+
+        // We have a userrecordings subdirectory, within some project subdirectory.
         // Enumerate the contained {UPDATE} directories.
         File[] updateDirs = userrecordings.listFiles((fn) -> fn.isDirectory() && !fn.isHidden() && !fn.getName().startsWith("."));
         for (File updateDir : updateDirs) {
-          // Move that to the userrecordings collection point.
-          File targetProjDir = new File(targetUserRecordingsCollection, projectDir.getName().toLowerCase());
+
+          // Move the {UPDATE} directory to the target
           try {
             FileUtils.moveDirectoryToDirectory(updateDir, targetProjDir, true);
           } catch (FileExistsException e) {
