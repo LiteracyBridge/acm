@@ -22,6 +22,28 @@ import com.google.common.collect.Lists;
 import au.com.bytecode.opencsv.CSVWriter;
 import org.literacybridge.acm.utils.B26RotatingEncoding;
 
+import static org.literacybridge.acm.store.LBMetadataIDs.FieldToIDMap;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_PUBLISHER;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_RELATION;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_SOURCE;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
+import static org.literacybridge.acm.store.MetadataSpecification.DTB_REVISION;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_BENEFICIARY;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_CORRELATION_ID;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_DATE_RECORDED;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_DURATION;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_ENGLISH_TRANSCRIPTION;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_GOAL;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_KEYWORDS;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_MESSAGE_FORMAT;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_NOTES;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_PRIMARY_SPEAKER;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_STATUS;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_TARGET_AUDIENCE;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_TIMING;
+
 public class CSVExporter {
   private static final Logger LOG = Logger
       .getLogger(CSVExporter.class.getName());
@@ -29,6 +51,46 @@ public class CSVExporter {
   private final static String CATEGORY_COLUMN_NAME = "CATEGORIES";
   private final static String QUALITY_COLUMN_NAME = "QUALITY";
   private final static String PROJECT_COLUMN_NAME = "PROJECT";
+
+  /**
+   * This horrible thing defines the order of the metadata columns in the .csv file.
+   * Because PostgreSQL can not add new columns in the middle of a table, new columns
+   * must be added at the end. But, the CATEGORIES, QUALITY, and PROJECT were
+   * unfortunately placed at "the end". Now, we need to keep them in indices
+   * 19, 20, and 21, and let new columns flow after that.
+   */
+  private final static MetadataField<?>[] columns = {
+          DC_TITLE,
+          DC_PUBLISHER,
+          DC_IDENTIFIER,
+          DC_SOURCE,
+          DC_LANGUAGE,
+          DC_RELATION,
+          DTB_REVISION,
+          LB_DURATION,
+          LB_MESSAGE_FORMAT,
+          LB_TARGET_AUDIENCE,
+          LB_DATE_RECORDED,
+          LB_KEYWORDS,
+          LB_TIMING,
+          LB_PRIMARY_SPEAKER,
+          LB_GOAL,
+          LB_ENGLISH_TRANSCRIPTION,
+          LB_NOTES,
+          LB_BENEFICIARY,
+          LB_STATUS,
+          null,  // categories are stuffed here
+          null,  // quality is stuffed here
+          null,  // project is stuffed here
+          LB_CORRELATION_ID
+  };
+
+  private static final int CATEGORY_COLUMN_INDEX = 19;
+  private static final int QUALITY_COLUMN_INDEX = 20;
+  private static final int PROJECT_COLUMN_INDEX = 21;
+
+  private static final int NUMBER_OF_COLUMNS = columns.length;
+
 
   public static void export(AudioItem[] audioItems, File targetFile)
       throws IOException {
@@ -43,52 +105,51 @@ public class CSVExporter {
       project = project.substring(4);
     }
 
-    CSVWriter writer = new CSVWriter(new FileWriter(targetFile), ',');
-
-    List<MetadataField<?>> columns = Lists
-        .newArrayList(LBMetadataIDs.FieldToIDMap.keySet());
-    // create a stable sort order based on the metadata field ids
-    Collections.sort(columns, new Comparator<MetadataField<?>>() {
-      @Override
-      public int compare(MetadataField<?> o1, MetadataField<?> o2) {
-        return LBMetadataIDs.FieldToIDMap.get(o1)
-            .compareTo(LBMetadataIDs.FieldToIDMap.get(o2));
-      }
-    });
-
-    // +3 for categories, quality and project
-    final int numColumns = columns.size() + 3;
-    String[] values = new String[numColumns];
-
-    // first write header
-    for (int i = 0; i < numColumns - 3; i++) {
-      values[i] = columns.get(i).getName();
+    // Verify that the manual columns are correct.
+    if (columns[CATEGORY_COLUMN_INDEX] != null ||
+            columns[QUALITY_COLUMN_INDEX] != null ||
+            columns[PROJECT_COLUMN_INDEX] != null) {
+      throw new IllegalStateException("column collision");
+    }
+    if (columns.length != FieldToIDMap.size()+3) {
+      throw new IllegalStateException("missing columns");
     }
 
-    values[numColumns - 3] = CATEGORY_COLUMN_NAME;
-    values[numColumns - 2] = QUALITY_COLUMN_NAME;
-    values[numColumns - 1] = PROJECT_COLUMN_NAME;
+    CSVWriter writer = new CSVWriter(new FileWriter(targetFile), ',');
+
+    String[] values = new String[NUMBER_OF_COLUMNS];
+
+    // first write header (column names)
+    for (int i = 0; i < NUMBER_OF_COLUMNS; i++) {
+      if (columns[i] != null)
+        values[i] = columns[i].getName();
+    }
+    values[CATEGORY_COLUMN_INDEX] = CATEGORY_COLUMN_NAME;
+    values[QUALITY_COLUMN_INDEX] = QUALITY_COLUMN_NAME;
+    values[PROJECT_COLUMN_INDEX] = PROJECT_COLUMN_NAME;
 
     writer.writeNext(values);
 
     for (AudioItem audioItem : audioItems) {
       Metadata metadata = audioItem.getMetadata();
       String quality = "l";
-      for (int i = 0; i < numColumns - 3; i++) {
-        MetadataField<?> field = columns.get(i);
-        String value = getStringValue(metadata, field);
-        if (field == MetadataSpecification.LB_DURATION) {
-          value = durationFromValue(value);
-          quality = qualityFromValue(value);
+      for (int i = 0; i < NUMBER_OF_COLUMNS; i++) {
+        if (columns[i] != null) {
+          MetadataField<?> field = columns[i];
+          String value = getStringValue(metadata, field);
+          if (field == MetadataSpecification.LB_DURATION) {
+            DurationAndQuality dq = durationAndQualityFromValue(value);
+            value = dq.duration;
+            quality = dq.quality;
+          } else if (field == MetadataSpecification.LB_CORRELATION_ID) {
+            value = correlationIdFromValue(value);
+          }
+          values[i] = value;
         }
-        else if (field == MetadataSpecification.LB_CORRELATION_ID) {
-          value = correlationIdFromValue(value);
-        }
-        values[i] = value;
       }
-      values[numColumns - 3] = UIUtils.getCategoryListAsString(audioItem);
-      values[numColumns - 2] = quality;
-      values[numColumns - 1] = project;
+      values[CATEGORY_COLUMN_INDEX] = UIUtils.getCategoryListAsString(audioItem);
+      values[QUALITY_COLUMN_INDEX] = quality;
+      values[PROJECT_COLUMN_INDEX] = project;
       writer.writeNext(values);
     }
 
@@ -100,40 +161,23 @@ public class CSVExporter {
    * @param value
    * @return Value in seconds.
    */
-  private static String durationFromValue(String value) {
+  private static DurationAndQuality durationAndQualityFromValue(String value) {
+    DurationAndQuality result = new DurationAndQuality();
     try {
       // last character is the quality
       int durationInSeconds = Integer.parseInt(value.substring(0, 2)) * 60
               + Integer.parseInt(value.substring(3, 5));
-      value = Integer.toString(durationInSeconds);
-    } catch (Exception ignored) {
-      LOG.warning(String.format(
-              "Exception parsing time & quality from '%s'. Substituting 0 l.", value));
-      value = "0";
-    }
-    return value;
-  }
+      result.duration = Integer.toString(durationInSeconds);
+      // last character is the quality
+      result.quality = value.substring(value.length() - 1);
 
-  /**
-   * Given a string mm:ssq, parse the quality.
-   * @param value
-   * @return The quality.
-   */
-  private static String qualityFromValue(String value) {
-    String quality;
-    try {
-      // last character is the quality
-      quality = value.substring(value.length() - 1);
-      int durationInSeconds = Integer.parseInt(value.substring(0, 2)) * 60
-              + Integer.parseInt(value.substring(3, 5));
-      // Only for the possible side effect of throwing.
-      value = Integer.toString(durationInSeconds);
     } catch (Exception ignored) {
       LOG.warning(String.format(
               "Exception parsing time & quality from '%s'. Substituting 0 l.", value));
-      quality = "l";
+      result.duration = "0";
+      result.quality = "l";
     }
-    return quality;
+    return result;
   }
 
   /**
@@ -164,4 +208,10 @@ public class CSVExporter {
       return value.getValue().toString();
     }
   }
+
+  private static class DurationAndQuality {
+    public String duration;
+    public String quality;
+  }
+
 }
