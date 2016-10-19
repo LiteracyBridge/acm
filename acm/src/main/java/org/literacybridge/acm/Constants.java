@@ -21,7 +21,7 @@ public class Constants {
   public final static String CHECKOUT_PROPERTIES_SUFFIX = "-checkedOut.properties";
   public final static String USER_WRITE_LOCK_FILENAME = "locked.txt";
   public final static String DB_ACCESS_FILENAME = "accessList.txt";
-  public final static String USER_FEEDBACK_WHITELISTED_UPDATES_FILENAME = "userfeedback.list";
+  public final static String USER_FEEDBACK_DEFERRED_UPDATES_FILENAME = "userfeedback.deferred";
 
   public final static File USER_HOME_DIR = new File(
       System.getProperty("user.home", "."));

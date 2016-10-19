@@ -21,6 +21,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,7 +38,7 @@ public class FeedbackImporter {
   private static final String FEEDBACK_IMPORT_REPORT = "feedbackImport.txt";
   private final Params params;
   // Cache for whitelisted content updates (only whitelisted updates are to be imported).
-  private Map<String, Set<String>> whitelistCache = new HashMap<>();
+  private Map<String, Set<String>> deferredUpdatesCache = new HashMap<>();
 
   public static void main(String[] args) throws Exception {
     Params params = new Params();
@@ -136,11 +137,9 @@ public class FeedbackImporter {
       // Iterate over the project sub-directories of the user recordings...
       File[] projectDirs = userRecordingsDir.listFiles(File::isDirectory);
       for (File projectDir : projectDirs != null ? projectDirs : new File[0]) {
-        // Ignore unknown projects. They have no ACM anyway... And ignore projects with
-        // no whitelisted updates, since there's no point.
-        if (projectDir.getName().equalsIgnoreCase("unknown") ||
-                !projectHasWhitelistedUpdates(projectDir.getName())) {
-          dirResults.projectIgnored(projectDir.getName());
+        // Ignore unknown projects. They have no ACM anyway...
+        if (projectDir.getName().equalsIgnoreCase("unknown")) {
+          dirResults.projectSkipped(projectDir.getName());
           skippedProject(projectDir);
           continue;
         }
@@ -149,10 +148,10 @@ public class FeedbackImporter {
         ImportResults projectResults = new ImportResults();
         File[] updateDirs = projectDir.listFiles(File::isDirectory);
         for (File updateDir : updateDirs != null ? updateDirs : new File[0]) {
-          // Ignore unknown updates, and updates not whitelisted.
+          // Ignore unknown updates, and updates to be deferred.
           if (updateDir.getName().equalsIgnoreCase("unknown") ||
-                  !isUpdateWhitelisted(projectDir.getName(), updateDir.getName())) {
-            projectResults.updateIgnored(projectDir.getName() + " / " + updateDir.getName());
+                  shouldUpdateBeSkipped(projectDir.getName(), updateDir.getName())) {
+            projectResults.updateSkipped(projectDir.getName(), updateDir.getName());
             skippedUpdate(projectDir, updateDir);
             continue;
           }
@@ -233,7 +232,7 @@ public class FeedbackImporter {
     } catch (Exception ex) {
       System.err.println(ex.getMessage());
       results = new ImportResults();
-      results.updateFailedToImport(projectDir.getName() + " / " + updateDir.getName());
+      results.updateFailedToImport(projectDir.getName(), updateDir.getName());
       return results;
     }
 
@@ -241,9 +240,11 @@ public class FeedbackImporter {
     ACMConfiguration.getInstance().getCurrentDB().getControlAccess().updateDB();
     ACMConfiguration.getInstance().closeCurrentDB();
     if (results.isSuccess()) {
-      results.updateImportedNoErrors(projectDir.getName() + " / " + updateDir.getName());
+      results.updateImportedNoErrors(projectDir.getName(), updateDir.getName(),
+              results.filesImported.size());
     } else {
-      results.updateImportedWithErrors(projectDir.getName() + " / " + updateDir.getName());
+      results.updateImportedWithErrors(projectDir.getName(), updateDir.getName(),
+              results.filesImported.size(), results.filesFailedToImport.size());
     }
     return results;
   }
@@ -348,64 +349,75 @@ public class FeedbackImporter {
   }
 
   /**
-   * Checks whether a project has any whitelisted updates.
-   * @param project The name of the project (minus any "ACM-")
-   * @return True if the project has whitelisted updates
-   */
-  private boolean projectHasWhitelistedUpdates(String project) {
-    return getWhitelistForProject(project).size() > 0;
-  }
-
-  /**
-   * Checks whether an update is whitelisted for user feedback, within a project.
+   * Checks whether user feedback for an update within a project should be
+   * skipped or imported. It should be skipped if it is in the deferred list.
    * @param project The project with updates.
    * @param update The update.
-   * @return True if the update is in the update whitelist for the project
+   * @return True if the update should be skipped, False if it should be imported.
    */
-  private boolean isUpdateWhitelisted(String project, String update) {
-    return getWhitelistForProject(project).contains(update.toUpperCase());
+  private boolean shouldUpdateBeSkipped(String project, String update) {
+    Set<String> deferred = getDeferredUpdateListForProject(project);
+    update = update.toUpperCase();
+    // Short circuit if the update is listed literally. Also eases manual debugging.
+    if (deferred.contains(update)) {
+      return true;
+    }
+    // Treat the list as regular expressions, and see if any match. This lets
+    // us write "([a-z]*-)?201[3-5]-.*" to match 2013-, 14-, 15-, with or
+    // without a prefix.
+    for (String d : deferred) {
+      // Make the test case insensitive
+      if (update.matches("(?i)"+d)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
-   * Gets the list of whitelisted updates for a project. The list is read from
-   * the file "userfeedback.list" in the ACM- directory for the project.
+   * Content updates for which the user feedback should not be imported at this
+   * time are listed in a per-project file named "userfeedback.deferred".
+   *
+   * Gets the list of deferred updates for a project.
    *
    * If the project does not exist, or has no such file, or if the file is
    * empty, the list will be empty.
    *
-   * Lines starting with # are treated as comments and ignored.
+   * # is treated as the start of a comment. Comments and leading/trailing
+   * whitespace are trimmed. Blank lines are ignored.
+   *
    * @param project The name of the project.
-   * @return A Set<String> of whitelisted content update names.
+   * @return A Set<String> of deferred content update names.
    */
-  private Set<String> getWhitelistForProject(String project) {
+  private Set<String> getDeferredUpdateListForProject(String project) {
     // May already be cached.
     project = project.toUpperCase();
-    Set<String> updates = whitelistCache.get(project);
-    if (updates == null) {
+    Set<String> deferredUpdates = deferredUpdatesCache.get(project);
+    if (deferredUpdates == null) {
       // No cache, so create.
-      updates = new HashSet<>();
+      deferredUpdates = new HashSet<>();
       // Try to load from file in shared ACM directory.
       String acmName = Constants.ACM_DIR_NAME + "-" + project;
       DBConfiguration config = ACMConfiguration.getInstance().getDb(acmName);
       if (config != null) {
-        File whitelistFile = config.getUserFeedbackWhitelistFile();
+        File deferredUpdatesFile = config.getUserFeedbackDeferredUpdatesFile();
         //read file into stream, try-with-resources
-        try (BufferedReader br = new BufferedReader(new FileReader(whitelistFile))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(deferredUpdatesFile))) {
           String line;
           while ((line = br.readLine()) != null) {
+            line = line.split("#")[0];
             line = line.trim();
             if (line.length() < 1) continue;
-            if (line.charAt(0) == '#') continue;
-            updates.add(line.toLowerCase());
+            deferredUpdates.add(line.toLowerCase());
           }
         } catch (IOException e) {
            // Ignore exception and continue without file.
         }
       }
       // Save for next time.
-      whitelistCache.put(project, updates);
+      deferredUpdatesCache.put(project, deferredUpdates);
     }
-    return updates;
+    return deferredUpdates;
   }
 
   /**
@@ -415,13 +427,13 @@ public class FeedbackImporter {
    * individual and aggregate results.
    */
   private static class ImportResults {
-    Set<String> filesImported = new HashSet<>();
-    Set<String> filesFailedToImport = new HashSet<>();
-    Set<String> updatesImportedNoErrors = new HashSet<>();
-    Set<String> updatesImportedWithErrors = new HashSet<>();
-    Set<String> updatesFailedToImport = new HashSet<>();
-    Set<String> projectsIgnored = new HashSet<>();
-    Set<String> updatesIgnored = new HashSet<>();
+    List<String> filesImported = new ArrayList<>();
+    List<String> filesFailedToImport = new ArrayList<>();
+    List<String> updatesImportedNoErrors = new ArrayList<>();
+    List<String> updatesImportedWithErrors = new ArrayList<>();
+    List<String> updatesFailedToImport = new ArrayList<>();
+    List<String> projectsSkipped = new ArrayList<>();
+    List<String> updatesSkipped = new ArrayList<>();
     
     void fileImported(String filename) {
       filesImported.add(filename);
@@ -429,20 +441,20 @@ public class FeedbackImporter {
     void fileFailedToImport(String filename) {
       filesFailedToImport.add(filename);
     }
-    void updateImportedNoErrors(String projectName) {
-      updatesImportedNoErrors.add(projectName);
+    void updateImportedNoErrors(String projectName, String updateName, int numImported) {
+      updatesImportedNoErrors.add(String.format("%s / %s : %d file(s)", projectName, updateName, numImported));
     }
-    void updateImportedWithErrors(String projectName) {
-      updatesImportedWithErrors.add(projectName);
+    void updateImportedWithErrors(String projectName, String updateName, int numImported, int numErrors) {
+      updatesImportedWithErrors.add(String.format("%s / %s : %d file(s), %d error(s)", projectName, updateName, numImported, numErrors));
     }
-    void updateFailedToImport(String projectName) {
-      updatesFailedToImport.add(projectName);
+    void updateFailedToImport(String projectName, String updateName) {
+      updatesFailedToImport.add(String.format("%s / %s", projectName, updateName));
     }
-    void projectIgnored(String projectName) {
-      projectsIgnored.add(projectName);
+    void projectSkipped(String projectName) {
+      projectsSkipped.add(projectName);
     }
-    void updateIgnored(String updateName) {
-      updatesIgnored.add(updateName);
+    void updateSkipped(String projectName, String updateName) {
+      updatesSkipped.add(String.format("%s / %s", projectName, updateName));
     }
     
     public ImportResults add(ImportResults moreResults) {
@@ -451,8 +463,8 @@ public class FeedbackImporter {
       updatesImportedNoErrors.addAll(moreResults.updatesImportedNoErrors);
       updatesImportedWithErrors.addAll(moreResults.updatesImportedWithErrors);
       updatesFailedToImport.addAll(moreResults.updatesFailedToImport);
-      projectsIgnored.addAll(moreResults.projectsIgnored);
-      updatesIgnored.addAll(moreResults.updatesIgnored);
+      projectsSkipped.addAll(moreResults.projectsSkipped);
+      updatesSkipped.addAll(moreResults.updatesSkipped);
       return this;
     }
     public boolean isSuccess() {
@@ -524,9 +536,9 @@ public class FeedbackImporter {
                 updatesImportedWithErrors);
         reportDetailLine("update(s) failed to open for imports",
                 updatesFailedToImport);
-        reportDetailLine("non-whitelisted project(s) skipped",
-                projectsIgnored);
-        reportDetailLine("non-whitelisted update(s) skipped", updatesIgnored);
+        reportDetailLine("unknown project(s) skipped",
+                projectsSkipped);
+        reportDetailLine("deferred update(s) skipped", updatesSkipped);
         reportLine(String.format("  Return code: %d", getExitCode()));
         if (html) {
           ps.print("</ul>");
@@ -541,7 +553,7 @@ public class FeedbackImporter {
        * @param title   The line to print.
        * @param details Details for the line, if any.
        */
-      private void reportDetailLine(String title, Set<String> details) {
+      private void reportDetailLine(String title, List<String> details) {
         if (html) ps.print("<li>");
         ps.print(String.format("%4d %s", details.size(), title));
         if (details.size() > 0) {

@@ -172,12 +172,13 @@ public class DBConfiguration extends Properties {
 
   /**
    * Gets the File, if it exists, containing the list of content updates that
-   * have been whitelisted for user feedback importing.
+   * are deferred until later for user feedback importing. (ie, user feedback
+   * for these updates won't be imported.)
    * @return The File.
    */
-  public File getUserFeedbackWhitelistFile() {
-    // ~/Dropbox/ACM-DEMO/userfeedback.list
-    return new File(getSharedACMDirectory(), Constants.USER_FEEDBACK_WHITELISTED_UPDATES_FILENAME);
+  public File getUserFeedbackDeferredUpdatesFile() {
+    // ~/Dropbox/ACM-DEMO/userfeedback.deferred
+    return new File(getSharedACMDirectory(), Constants.USER_FEEDBACK_DEFERRED_UPDATES_FILENAME);
   }
   /**
    * Gets a File containing the configuration properties for this ACM database.
