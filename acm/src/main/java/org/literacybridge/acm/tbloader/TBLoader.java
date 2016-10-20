@@ -918,7 +918,7 @@ public class TBLoader extends JFrame {
         return lowercase.equals("last_updated.txt");
       }
     });
-    if (files.length == 1) {
+    if (files != null && files.length == 1) {
       try (FileInputStream fstream = new FileInputStream(files[0]);
           DataInputStream in = new DataInputStream(fstream);
           BufferedReader br = new BufferedReader(new InputStreamReader(in))
@@ -1156,7 +1156,8 @@ public class TBLoader extends JFrame {
         bw.write(oldFirmwareRevisionText.getText() + ",");
         bw.write(oldCommunityText.getText().toUpperCase() + ",");
         bw.write(lastUpdatedText.getText() + ",");
-        bw.write(TBLoader.lastSynchDir.toUpperCase() + ",");
+        String lastSynch = TBLoader.lastSynchDir != null ? TBLoader.lastSynchDir : "";
+        bw.write(lastSynch.toUpperCase() + ",");
         bw.write(TBLoader.currentDrive.label + ",");
         bw.write(di.corrupted + ",");
         if (tbStats != null) {
