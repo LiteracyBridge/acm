@@ -3,7 +3,7 @@ package org.literacybridge.acm.tbloader;
 import static javax.swing.GroupLayout.Alignment.BASELINE;
 import static javax.swing.GroupLayout.Alignment.LEADING;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTION_SUBDIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.COMMUNITIES_SUBDIR;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.CONTENT_BASIC_SUBDIR;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.CONTENT_SUBDIR;
@@ -14,9 +14,9 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.NEED_SERIAL_NUMBER;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.NO_DRIVE;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.NO_SERIAL_NUMBER;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.PROJECT_FILE_EXTENSION;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.SCRIPT_SUBDIR;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.STARTING_SERIALNUMBER;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.TEMP_COLLECTION_DIR;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TRIGGER_FILE_CHECK;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.UNPUBLISHED_REV;
 
@@ -90,8 +90,7 @@ public class TBLoader extends JFrame {
   private static String homepath;
   private static JButton updateButton;
   private static JButton grabStatsOnlyButton;
-  private static String dropboxCollectionFolder;
-  private static String copyTo;
+  private static String dropboxCollectedDataPath;
   private static String pathOperationalData;
   private static String revision;
   public static String deploymentName;
@@ -99,8 +98,9 @@ public class TBLoader extends JFrame {
   public static int durationSeconds;
   public static DriveInfo currentDrive;
   private static String srnPrefix;
-  static String project;
-  static File tempCollectionFile;
+  static String newProject;
+  static String oldProject;
+  static File tempCollectionDir;
   static String syncSubPath;
   private static JCheckBox forceFirmware;
 
@@ -110,7 +110,7 @@ public class TBLoader extends JFrame {
 
   class WindowEventHandler extends WindowAdapter {
     public void windowClosing(WindowEvent evt) {
-      checkDirUpdate();
+      refreshFileListForCollectedData();
       LOG.log(Level.INFO, "closing app");
       System.exit(0);
     }
@@ -153,7 +153,13 @@ public class TBLoader extends JFrame {
   }
 
   public TBLoader(String project, String srnPrefix) {
-    TBLoader.project = project;
+    String acmDash = Constants.ACM_DIR_NAME + "-";
+    if (project != null && project.toUpperCase().startsWith(acmDash)) {
+      // Most apps take ACM-XYZ. The TB-Loader only wants XYZ.
+      project = project.substring(acmDash.length());
+    }
+    TBLoader.newProject = project;
+    TBLoader.oldProject = project; // until we have a better value...
     if (srnPrefix != null) {
       TBLoader.srnPrefix = srnPrefix;
     } else {
@@ -487,10 +493,9 @@ public class TBLoader extends JFrame {
         System.exit(ERROR);
       }
       // This is used to store collected data until finished with one TB, when it is zipped up and moved to the collectedDataFile setup below
-      TEMP_COLLECTION_DIR = LB_DIR + COLLECTION_SUBDIR + "/" + TBLoader.project;
-      f = new File(TEMP_COLLECTION_DIR);
-      f.mkdirs();
-      TBLoader.tempCollectionFile = f;
+      String tempCollectionPath = LB_DIR + File.separator + COLLECTED_DATA_SUBDIR_NAME + File.separator + TBLoader.newProject;
+      TBLoader.tempCollectionDir = new File(tempCollectionPath);
+      TBLoader.tempCollectionDir.mkdirs();
 
       File dropboxDir = ACMConfiguration.getInstance().getGlobalShareDir();
       if (!dropboxDir.exists()) {
@@ -509,20 +514,30 @@ public class TBLoader extends JFrame {
             JOptionPane.DEFAULT_OPTION);
         System.exit(ERROR);
       }
-      copyTo = collectedDataFile.getAbsolutePath();
+      // Like ~/Dropbox/tbcd1234/collected-data
+      dropboxCollectedDataPath = collectedDataFile.getAbsolutePath() + File.separator + COLLECTED_DATA_SUBDIR_NAME;
     } catch (Exception e) {
-      LOG.log(Level.WARNING, "Exception while setting DeviceId and paths", e);
+      LOG.log(Level.SEVERE, "Exception while setting DeviceId and paths", e);
+      throw e;
     }
-    // Like "/Users/mike/Dropbox (Literacy Bridge)/tbcd1234/collected-data"
-    copyTo += COLLECTION_SUBDIR;
-    dropboxCollectionFolder = copyTo;
     // Like "/Users/mike/Dropbox (Literacy Bridge)/tbcd1234/collected-data/XYZ"
-    copyTo += "/" + TBLoader.project;
+    String collectedDataProject = dropboxCollectedDataPath + File.separator + TBLoader.newProject;
     new File(
-        copyTo).mkdirs();  // creates COLLECTION_SUBDIR if good path is found
+            collectedDataProject).mkdirs();  // creates COLLECTION_SUBDIR if good path is found
     // Like "/Users/mike/Dropbox (Literacy Bridge)/tbcd1234/collected-data/XYZ/OperationalData/1234"
-    pathOperationalData = copyTo + "/OperationalData/" + TBLoader.deviceID;
-    LOG.log(Level.INFO, "copyTo:" + copyTo);
+    pathOperationalData = collectedDataProject + "/OperationalData/" + TBLoader.deviceID;
+    LOG.log(Level.INFO, "copy collected data To:" + collectedDataProject);
+  }
+
+  /**
+   * Returns the path to the place in dropbox where the device statistics
+   * should be copied.
+   * Like ~/Dropbox/tbcd1234/collected-data/ABC, where ABC is the project
+   * that was previously on the device.
+   * @return The path name, as a string.
+   */
+  private static String dropboxCollectedDataPathForTb() {
+    return dropboxCollectedDataPath + File.separator + TBLoader.oldProject;
   }
 
   int idCounter = 0;
@@ -719,7 +734,8 @@ public class TBLoader extends JFrame {
       os.writeInt(serialnumber);
     }
     // Back up the file in case of loss.
-    FileUtils.copyFile(f, new File(dropboxCollectionFolder, devFilename));
+    // Like ~/Dropbox/tbcd1234/collected-data/1234.dev
+    FileUtils.copyFile(f, new File(dropboxCollectedDataPath, devFilename));
 
     return serialnumber;
   }
@@ -814,7 +830,39 @@ public class TBLoader extends JFrame {
   }
 
   /**
-   * Checks in tbstats structure for image name. If not found, will then
+   * Look in the TalkingBook's system directory for any files with a ".prj" extension. If any such
+   * files are found, return the name of the first one found (ie, selected at random), without the
+   * extension.
+   *
+   * If no .prj file is found, use the value of the new project. Since Talking Books
+   * don't move between projects very often, this is usually correct. Not always, though.
+   *
+   * @param systemDir A file representing the TalkingBook's system directory.
+   * @return The file's name found (minus extension), or the value of newProject if none is
+   * found.
+   */
+  private String getProjectFromSystem(File systemDir) {
+    // If no value found, just assume the new project name.
+    String project = newProject;
+    File [] prjFiles;
+    if (systemDir.exists()) {
+      prjFiles = systemDir.listFiles(new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+          return name.toLowerCase().endsWith(PROJECT_FILE_EXTENSION);
+        }
+      });
+      // Pick one at random, get the name, drop the extension.
+      if (prjFiles.length > 0) {
+        String fn = prjFiles[0].getName();
+        project = fn.substring(0, fn.length()-PROJECT_FILE_EXTENSION.length());
+      }
+    }
+    return project;
+  }
+
+  /**
+   * Looks in tbstats structure for image name. If not found, will then
    * look in the TalkingBook's system directory for a file with a ".pkg" extension. If there is exactly
    * one such file, returns the file's name, sans extension.
    *
@@ -966,6 +1014,9 @@ public class TBLoader extends JFrame {
       readLastSynchDirFromSystem(systemPath);
       String lastUpdate = getLastUpdateDate();
       lastUpdatedText.setText(lastUpdate);
+
+      // This doesn't display anywhere.
+      oldProject = getProjectFromSystem(systemPath);
 
     } catch (Exception ignore) {
       LOG.log(Level.WARNING, "exception - ignore and keep going with empty strings", ignore);
@@ -1134,7 +1185,7 @@ public class TBLoader extends JFrame {
           }
           bw.write("\n");
         }
-        bw.write(TBLoader.project.toUpperCase() + ",");
+        bw.write(TBLoader.newProject.toUpperCase() + ",");
         bw.write(TBLoader.currentDrive.datetime.toUpperCase() + ",");
         bw.write(TBLoader.currentDrive.datetime.toUpperCase() + "-"
             + TBLoader.deviceID.toUpperCase() + ",");
@@ -1551,14 +1602,18 @@ public class TBLoader extends JFrame {
     return connected;
   }
 
-  private synchronized void checkDirUpdate() {
-    String triggerFile = copyTo + "/" + TRIGGER_FILE_CHECK;
+  /**
+   * As nearly as I can tell, this is never actually used -- the trigger file
+   * is never created.
+   */
+  private synchronized void refreshFileListForCollectedData() {
+    String triggerFile = dropboxCollectedDataPathForTb() + "/" + TRIGGER_FILE_CHECK;
     File f = new File(triggerFile);
     if (f.exists()) {
-      status.setText("Updating list of files to send");
+      status.setText("Updating list of files in collected-data");
       try {
         f.delete();
-        execute("cmd /C dir " + copyTo + " /S > " + copyTo + "/dir.txt");
+        execute("cmd /C dir " + dropboxCollectedDataPathForTb() + " /S > " + dropboxCollectedDataPathForTb() + "/dir.txt");
       } catch (Exception e) {
         e.printStackTrace();
       }
@@ -1568,7 +1623,7 @@ public class TBLoader extends JFrame {
   private void refreshUI() {
     boolean connected;
     disableAll();
-    checkDirUpdate();
+    refreshFileListForCollectedData();
 
     updateButton.setText("Update TB");
     connected = isDriveConnected();
@@ -1664,10 +1719,11 @@ public class TBLoader extends JFrame {
 
       try {
         BufferedReader reader;
-        String syncdirFullPath = TEMP_COLLECTION_DIR
-            + TBLoader.syncSubPath;  // at the end, this gets zipped up into the copyTo (Dropbox dir)
-        String feedbackCommunityPath =
-            copyTo + "/UserRecordings/" + TBLoader.oldDeploymentText.getText()
+        // At the end, this gets zipped up into the dropboxCollectedDataPathForTb() (Dropbox dir)
+        String syncdirFullPath = tempCollectionDir + TBLoader.syncSubPath;
+        // User recordings are copied directly to dropbox
+        String userRecordingsPath =
+                dropboxCollectedDataPathForTb() + "/UserRecordings/" + TBLoader.oldDeploymentText.getText()
                 + "/" +
                 TBLoader.deviceID + "/" + TBLoader.oldCommunityText.getText();
 
@@ -1682,6 +1738,7 @@ public class TBLoader extends JFrame {
           cmd = cmd.replaceAll("\\$\\{device_drive\\}",
               devicePath.substring(0, 2));
           //cmd = cmd.replaceAll("\\$\\{srn\\}", tbSrn);
+          cmd = cmd.replaceAll("\\$\\{new_project\\}", newProject);
           cmd = cmd.replaceAll("\\$\\{new_srn\\}", tbSrn.toUpperCase());
           cmd = cmd.replaceAll("\\$\\{device_id\\}",
               TBLoader.deviceID.toUpperCase());  // this is the computer/tablet/phone tbSrn
@@ -1692,12 +1749,12 @@ public class TBLoader extends JFrame {
           cmd = cmd.replaceAll("\\$\\{syncdir\\}",
               TBLoader.currentDrive.syncdir);
           cmd = cmd.replaceAll("\\$\\{recording_path\\}",
-              Matcher.quoteReplacement(feedbackCommunityPath));
+              Matcher.quoteReplacement(userRecordingsPath));
           cmd = cmd.replaceAll("\\$\\{dateInMonth\\}", dateInMonth);
           cmd = cmd.replaceAll("\\$\\{month\\}", month);
           cmd = cmd.replaceAll("\\$\\{year\\}", year);
           cmd = cmd.replaceAll("\\$\\{send_now_dir\\}",
-              Matcher.quoteReplacement(copyTo));
+              Matcher.quoteReplacement(dropboxCollectedDataPathForTb()));
           cmd = cmd.replaceAll("\\$\\{new_revision\\}",
               TBLoader.newFirmwareRevisionText.getText());
           cmd = cmd.replaceAll("\\$\\{old_revision\\}",
@@ -1719,8 +1776,6 @@ public class TBLoader extends JFrame {
           cmd = cmd.replaceAll("\\$\\{old_image\\}",
               TBLoader.oldImageText.getText().toUpperCase());
           cmd = cmd.replaceAll("\\$\\{volumeSRN\\}", volumeSerialNumber);
-          //cmd = cmd.replaceAll("\\$\\{holding_dir\\}", Matcher.quoteReplacement(TEMP_COLLECTION_DIR));
-          //cmd = cmd.replaceAll("\\$\\{hand\\}", handValue);
           alert = cmd.startsWith("!");
           if (alert)
             cmd = cmd.substring(1);
@@ -1794,8 +1849,8 @@ public class TBLoader extends JFrame {
           endTitle = new String("Failure");
         }
         // zip up stats
-        String sourceFullPath = TEMP_COLLECTION_DIR + TBLoader.syncSubPath;
-        String targetFullPath = copyTo + TBLoader.syncSubPath + ".zip";
+        String sourceFullPath = tempCollectionDir + TBLoader.syncSubPath;
+        String targetFullPath = dropboxCollectedDataPathForTb() + TBLoader.syncSubPath + ".zip";
         File sourceFile = new File(sourceFullPath);
         sourceFile.getParentFile().mkdirs();
         ZipUnzip.zip(sourceFile, new File(targetFullPath), true);
@@ -1847,8 +1902,8 @@ public class TBLoader extends JFrame {
           LOG.log(Level.INFO, "STATUS:No Stats!\n");
         }
         // zip up stats
-        String sourceFullPath = TEMP_COLLECTION_DIR + TBLoader.syncSubPath;
-        String targetFullPath = copyTo + TBLoader.syncSubPath + ".zip";
+        String sourceFullPath = tempCollectionDir + TBLoader.syncSubPath;
+        String targetFullPath = dropboxCollectedDataPathForTb() + TBLoader.syncSubPath + ".zip";
         File sourceFile = new File(sourceFullPath);
         sourceFile.getParentFile().mkdirs();
         ZipUnzip.zip(sourceFile, new File(targetFullPath), true);
