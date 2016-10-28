@@ -32,13 +32,14 @@ public class FilteringComboBoxModel<E> extends DefaultComboBoxModel<E> {
    *               list (towards index 0) to find an element that both previously
    *               and currently match. If no such element is found, the first
    *               element is selected, if there are any elements in the new list.
-   *
+   * @return The old filter string.
    */
-  public void setFilterString(String filter) {
+  public String setFilterString(String filter) {
+    String oldFilter = currentFilter;
     Vector<E> newElements = null;
     boolean newFiltering = filter != null && filter.length() > 0;
-    if (!filtering && !newFiltering) return;
-    if (filtering && newFiltering && filter.equalsIgnoreCase(currentFilter)) return;
+    if (!filtering && !newFiltering) return oldFilter;
+    if (filtering && newFiltering && filter.equalsIgnoreCase(currentFilter)) return oldFilter;
 
     // If we will be filtering after this, get the new list, handle selection.
     if (newFiltering) {
@@ -56,6 +57,7 @@ public class FilteringComboBoxModel<E> extends DefaultComboBoxModel<E> {
     currentFilter = filter;
     if (getSize() > 0)
       fireIntervalAdded(this, 0, getSize()-1);
+    return oldFilter;
   }
 
   /**

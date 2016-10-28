@@ -65,6 +65,9 @@ import org.literacybridge.core.tbloader.TBInfo;
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame {
   private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
+  // This string must match firmware code to generate special dings on startup
+  // as reminder that specific name has not been set.
+  private static final String NO_COMMUNITY_SELECTED = "Non-specific";
 
   private static String imageRevision = "(no rev)";
   private static String dateRotation;
@@ -628,6 +631,7 @@ public class TBLoader extends JFrame {
   }
 
   private synchronized void fillCommunityList() throws IOException {
+    String filter = newCommunityModel.setFilterString(null);
     newCommunityList.removeAllItems();
     File[] files;
 
@@ -641,13 +645,12 @@ public class TBLoader extends JFrame {
         return dir.isDirectory();
       }
     });
-    newCommunityList.addItem(
-        "Non-specific");  // This string must match firmware code to generate special dings on startup
-    // as reminder that specific name has not been set.
+    newCommunityList.addItem(NO_COMMUNITY_SELECTED);
     for (File f : files) {
       newCommunityList.addItem(f.getName());
     }
     setCommunityList();
+    newCommunityModel.setFilterString(filter);
   }
 
   private synchronized void setCommunityList() throws IOException {
@@ -1523,7 +1526,7 @@ public class TBLoader extends JFrame {
           return;
         }
 
-        if (newCommunityList.getSelectedIndex() == 0) {
+        if (community.equals(NO_COMMUNITY_SELECTED)) {
           int response = JOptionPane.showConfirmDialog(this,
               "No community selected.\nAre you sure?", "Confirm",
               JOptionPane.YES_NO_OPTION);
