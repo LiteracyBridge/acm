@@ -42,9 +42,10 @@ public class TagsListPopupMenu extends JPopupMenu {
   private static String previousPackageName = "";
 
   public TagsListPopupMenu(final TagLabel selectedTag) {
-    JMenuItem deleteTag = new JMenuItem("Delete '" + selectedTag + "' ...");
-    JMenuItem renameTag = new JMenuItem("Rename '" + selectedTag + "' ...");
-    JMenuItem exportTag = new JMenuItem("Export '" + selectedTag + "' ...");
+    String tag = selectedTag.getTag().getName();
+    JMenuItem deleteTag = new JMenuItem("Delete '" + tag + "' ...");
+    JMenuItem renameTag = new JMenuItem("Rename '" + tag + "' ...");
+    JMenuItem exportTag = new JMenuItem("Export '" + tag + "' ...");
 
     add(deleteTag);
     add(renameTag);
@@ -96,7 +97,7 @@ public class TagsListPopupMenu extends JPopupMenu {
       public void actionPerformed(ActionEvent arg0) {
         String tagName = (String) JOptionPane.showInputDialog(
             TagsListPopupMenu.this, "Enter playlist name:", "Edit playlist",
-            JOptionPane.PLAIN_MESSAGE, null, null, selectedTag.toString());
+            JOptionPane.PLAIN_MESSAGE, null, null, selectedTag.getTag().getName());
         if (!StringUtils.isEmpty(tagName)) {
           try {
             selectedTag.getTag().setName(tagName);

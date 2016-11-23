@@ -319,7 +319,7 @@ public class CategoryView extends ACMContainer implements Observer {
     categoryScrollPane.setPreferredSize(new Dimension(150, 240));
     languageScrollPane.setPreferredSize(new Dimension(150, 90));
     deviceScrollPane.setPreferredSize(new Dimension(150, 50));
-    tagsScrollPane.setPreferredSize(new Dimension(150, 90));
+    tagsScrollPane.setPreferredSize(new Dimension(150, 120));
 
     categoryTree.expandPath(new TreePath(deviceRootNode.getPath()));
 
