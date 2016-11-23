@@ -1541,7 +1541,7 @@ public class TBLoader extends JFrame {
 
         // If the Talking Book needs a new serial number, allocate one. We did not do it before this to
         // avoid wasting allocations.
-        if (di.serialNumber == NEED_SERIAL_NUMBER) {
+        if (di.serialNumber.equalsIgnoreCase(NEED_SERIAL_NUMBER)) {
           int intSrn = allocateNextSerialNumberFromDevice();
           String lowerSrn = String.format("%04x", intSrn);
           String srn = (TBLoader.srnPrefix + TBLoader.deviceID
