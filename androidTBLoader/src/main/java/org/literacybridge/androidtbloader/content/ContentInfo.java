@@ -1,0 +1,208 @@
+package org.literacybridge.androidtbloader.content;
+
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
+
+import org.literacybridge.androidtbloader.TBLoaderAppContext;
+import org.literacybridge.androidtbloader.util.PathsProvider;
+
+import java.io.File;
+import java.security.cert.TrustAnchor;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * Description of a Content Update.
+ */
+public class ContentInfo {
+    private static final String TAG = "ContentInfo";
+
+    public enum DownloadStatus {
+        NEVER_DOWNLOADED,
+        DOWNLOADED,
+        DOWNLOAD_FAILED,
+
+        NONE,
+    }
+    // Like "UWR"
+    private String mProjectName;
+
+    // Like "DEMO-2017-2-a"
+    private String mVersion;
+
+    // Date that the Content Update expires, if any
+    private Date mExpiration;
+
+    // Size of the download, the "content-DEMO-2016-2.zip" file
+    private long mSize;
+
+    private DownloadStatus mDownloadStatus;
+
+    // If currently downloading, will be non-null
+    private Downloader mDownloader = null;
+    // A client that wants to listen to download state.
+    private TransferListener mListener = null;
+
+    // Community list built from the communities in the actual content update
+    private Set<String> mCommunitiesCache = null;
+
+    ContentInfo(String projectName) {
+        this.mProjectName = projectName;
+        this.mVersion = "";
+    }
+
+    ContentInfo withVersion(String version) {
+        this.mVersion = version;
+        return this;
+    }
+
+    public ContentInfo withExpiration(Date expiration) {
+        this.mExpiration = expiration;
+        return this;
+    }
+
+    public ContentInfo withSize(long size) {
+        this.mSize = size;
+        return this;
+    }
+
+    ContentInfo withStatus(ContentInfo.DownloadStatus status) {
+        this.mDownloadStatus = status;
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s: %s (%d)", mProjectName, mVersion, mSize);
+    }
+
+    public String getProjectName() {
+        return mProjectName;
+    }
+
+    public String getVersion() {
+        return mVersion;
+    }
+
+    public Date getExpiration() {
+        return mExpiration;
+    }
+    public boolean hasExpiration() {
+        return mExpiration != null && mExpiration.getTime() != 0;
+    }
+
+    public long getSize() {
+        return mSize;
+    }
+
+    long addToSize(long size) {
+        this.mSize += size;
+        return this.mSize;
+    }
+
+    public DownloadStatus getDownloadStatus() {
+        return mDownloadStatus;
+    }
+
+    void setDownloadStatus(DownloadStatus status) {
+        this.mDownloadStatus = status;
+    }
+
+    public void setDownloader(Downloader downloader) {
+        this.mDownloader = downloader;
+    }
+
+    /**
+     * Returns the current progress of any current download, as a percentage.
+     * @return The percentage, as an integer.
+     */
+    public int getProgress() {
+        int progress = 0;
+        if (mDownloader != null && mSize != 0) {
+            long bytesProgress = mDownloader.getBytesTransferred();
+            progress = (int) ((double) bytesProgress * 100 / mSize);
+        }
+        return progress;
+    }
+
+    /**
+     * Is a download currently in progress?
+     * @return true if so
+     */
+    public boolean isDownloading() {
+        return mDownloader != null;
+    }
+
+    public boolean isUpdateAvailable() {
+        // If we want to allow the user to manually choose when to download updates,
+        // implement this.
+        return false;
+    }
+
+    /**
+     * Starts a download of this Content Update
+     * @param applicationContext The application's context
+     * @param listener Listener on s3 progress
+     * @return true if a download was started, false if one was already in progress
+     */
+    boolean startDownload(TBLoaderAppContext applicationContext, TransferListener listener) {
+        if (mDownloader != null) return false;
+        mListener = listener;
+        mDownloader = new Downloader(this, myTransferListener);
+        mDownloader.start();
+        return true;
+    }
+
+    public void setTransferListener(TransferListener transferListener) {
+        mListener = transferListener;
+    }
+
+    private TransferListener myTransferListener = new TransferListener() {
+        @Override
+        public void onStateChanged(int id, TransferState state) {
+            if (state == TransferState.COMPLETED ||
+                    state == TransferState.CANCELED ||
+                    state == TransferState.FAILED) {
+                mDownloader = null;
+            }
+            if (mListener != null) mListener.onStateChanged(id, state);
+        }
+
+        @Override
+        public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+            if (mListener != null) mListener.onProgressChanged(id, bytesCurrent, bytesTotal);
+        }
+
+        @Override
+        public void onError(int id, Exception ex) {
+            if (mListener != null) mListener.onError(id, ex);
+        }
+    };
+
+    /**
+     * Gets a list of the communities in the content update.
+     * @return
+     */
+    public Set<String> getCommunities() {
+        if (mCommunitiesCache == null) {
+            Set<String> result = new HashSet<>();
+            File projectDir = PathsProvider.getLocalContentProjectDirectory(mProjectName);
+            File contentDir = new File(projectDir, "content");
+            File[] contentUpdates = contentDir.listFiles();
+            if (contentUpdates != null && contentUpdates.length == 1) {
+                File communitiesDir = new File(contentUpdates[0], "communities");
+                File[] communities = communitiesDir.listFiles();
+                if (communities != null) {
+                    for (File community : communities) {
+                        result.add(community.getName());
+                    }
+                }
+            }
+            mCommunitiesCache = result;
+        }
+        return mCommunitiesCache;
+    }
+
+}

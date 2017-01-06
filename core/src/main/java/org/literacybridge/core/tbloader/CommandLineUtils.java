@@ -1,5 +1,7 @@
 package org.literacybridge.core.tbloader;
 
+import org.literacybridge.core.OSChecker;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -10,10 +12,17 @@ import java.util.logging.Logger;
 public class CommandLineUtils {
   private static final Logger LOG = Logger.getLogger(CommandLineUtils.class.getName());
 
+  /**
+   * Runs the given command in a DOS command shell.
+   * @param cmd The command, in a string.
+   * @return An ad-hoc reinterpretation of the command output.
+   * @throws IOException
+     */
   public static String execute(String cmd) throws IOException {
     String line;
     String errorLine = null;
     LOG.log(Level.INFO, "Executing:" + cmd);
+    if (!cmd.startsWith("cmd /C ")) cmd = "cmd /C " + cmd;
     Process proc = Runtime.getRuntime().exec(cmd);
 
     BufferedReader br1 = new BufferedReader(
@@ -69,16 +78,28 @@ public class CommandLineUtils {
   }
 
   public static boolean formatDisk(String drive, String newLabel) throws IOException {
+    if (!OSChecker.WINDOWS) {
+      throw new IllegalStateException("formatDisk operation is only supported on Windows");
+    }
+    if (drive.length() > 2) drive = drive.substring(0,2);
     String errorLine = CommandLineUtils.execute(String.format("format %s /FS:FAT32 /v:%s /Y /Q", drive, newLabel));
     return errorLine == null;
   }
 
   public static boolean checkDisk(String drive) throws IOException {
+    if (!OSChecker.WINDOWS) {
+      throw new IllegalStateException("checkDisk operation is only supported on Windows");
+    }
+    if (drive.length() > 2) drive = drive.substring(0,2);
     String errorLine = CommandLineUtils.execute(String.format("echo n|chkdsk %s", drive));
     return errorLine == null;
   }
 
   public static boolean checkDisk(String drive, String saveOutputFile) throws IOException {
+    if (!OSChecker.WINDOWS) {
+      throw new IllegalStateException("checkDisk operation is only supported on Windows");
+    }
+    if (drive.length() > 2) drive = drive.substring(0,2);
     File output = new File(saveOutputFile);
     if (!output.getParentFile().exists()) {
       output.getParentFile().mkdirs();
@@ -88,6 +109,10 @@ public class CommandLineUtils {
   }
 
   public static boolean relabel(String drive, String newLabel) throws IOException {
+    if (!OSChecker.WINDOWS) {
+      throw new IllegalStateException("relabel operation is only supported on Windows");
+    }
+    if (drive.length() > 2) drive = drive.substring(0,2);
     String errorLine = CommandLineUtils.execute(String.format("label %s %s", drive, newLabel));
     return errorLine == null;
   }

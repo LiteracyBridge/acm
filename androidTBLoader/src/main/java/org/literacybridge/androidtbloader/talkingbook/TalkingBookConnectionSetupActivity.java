@@ -8,9 +8,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 
+import java.util.Calendar;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TalkingBookConnectionSetupActivity extends Activity {
@@ -57,6 +59,29 @@ public class TalkingBookConnectionSetupActivity extends Activity {
 
 
         new Thread(new Runnable() {
+            // @TODO: replace this with CountUpTimer.
+            // Provides a count of the elapsed time as a connection is established to the Talking Book.
+            // Gives the user something to see, and makes the UI seem more alive.
+            long startTimeMillis = Calendar.getInstance().getTimeInMillis();
+            CountDownTimer timer = new CountDownTimer(60000, 1000) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            long delta = Calendar.getInstance().getTimeInMillis() - startTimeMillis;
+                            dialog.setMessage(String.format("Establishing connection to Talking Book [%d]...", delta / 1000));
+                        }
+                    });
+                }
+
+                @Override
+                public void onFinish() {
+
+                }
+            };
+
+
             @Override
             public void run() {
                 while (!talkingBookConnectionManager.isDeviceConnected() && !canceled.get()) {
@@ -68,15 +93,11 @@ public class TalkingBookConnectionSetupActivity extends Activity {
                 }
 
                 if (canceled.get()) {
+                    timer.cancel();
                     finish();
                 }
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        dialog.setMessage("Establishing connection to Talking Book ...");
-                    }
-                });
+                timer.start();
 
                 while (!talkingBookConnectionManager.isDeviceMounted() && !canceled.get()) {
                     try {
@@ -87,6 +108,7 @@ public class TalkingBookConnectionSetupActivity extends Activity {
                 }
 
                 if (canceled.get()) {
+                    timer.cancel();
                     finish();
                 }
 
@@ -102,6 +124,7 @@ public class TalkingBookConnectionSetupActivity extends Activity {
                         }
                     }
 
+                    timer.cancel();
                     dialog.dismiss();
                     finish();
                 }

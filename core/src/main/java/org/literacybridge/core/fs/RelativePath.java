@@ -62,6 +62,7 @@ public class RelativePath {
 
   public static RelativePath parse(String relativePath) {
     List<String> segments = new ArrayList<String>();
+    // A hard way to say "relativePath.split(File.separator)"
     StringTokenizer tokenizer = new StringTokenizer(relativePath, File.separator);
     while (tokenizer.hasMoreTokens()) {
       segments.add(tokenizer.nextToken());
@@ -87,6 +88,8 @@ public class RelativePath {
 
 
   public String asString() {
+    // If only Android supported remotely modern Java...
+    // String result = String.join(File.separator, pathSegments);
     StringBuilder builder = new StringBuilder();
     for (String segment : pathSegments) {
       builder.append(segment);

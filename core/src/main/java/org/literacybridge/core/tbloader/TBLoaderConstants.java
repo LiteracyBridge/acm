@@ -1,11 +1,6 @@
 package org.literacybridge.core.tbloader;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.literacybridge.core.fs.RelativePath;
-import org.literacybridge.core.fs.TBFileSystem;
-import org.literacybridge.core.fs.TBFileSystem.FilenameFilter;
 
 public class TBLoaderConstants {
   public static final String UNPUBLISHED_REV = "UNPUBLISHED";
@@ -39,21 +34,9 @@ public class TBLoaderConstants {
   public static final RelativePath TB_AUDIO_PATH = RelativePath.parse("messages/audio");
 
   public static final RelativePath SYS_DATA_TXT = RelativePath.parse("sysdata.txt");
+  public static final RelativePath DIRS_TXT = RelativePath.parse("dir.txt");
 
   public static final String TB_DATA_PATH = "TalkingBookData";
   public static final String USER_RECORDINGS_PATH = "UserRecordings";
 
-  public static final FilenameFilter XCOPY_EXCLUDE_FILTER;
-  static {
-      final Set<String> XCOPY_EXCLUDE_FILES = new HashSet<String>();
-      for (String exclude : new String[] {"languages", "messages", "ostats", "Inbox", "archive", "img", "old", "config.bin", ".Spotlight-V100", "Android"}) {
-        XCOPY_EXCLUDE_FILES.add(exclude);
-      }
-      XCOPY_EXCLUDE_FILTER = new FilenameFilter() {
-        @Override
-        public boolean accept(TBFileSystem fs, RelativePath dir, String name) {
-          return !XCOPY_EXCLUDE_FILES.contains(name);
-        }
-      };
-  }
 }

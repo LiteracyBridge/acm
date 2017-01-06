@@ -1,31 +1,36 @@
 package org.literacybridge.core.tbloader;
 
-import org.literacybridge.core.fs.RelativePath;
-import org.literacybridge.core.fs.TBFileSystem;
+
+import org.literacybridge.core.fs.TbFile;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TBLoaderConfig {
   // this device is the computer/tablet/phone that is running the TB Loader
-  private final String deviceID;
+  private final String tbLoaderId;
+  // The project for which TBs are being configured
   private final String project;
+  // "A-" or "B-"; old-style or new-style talking books.
   private final String srnPrefix;
-  private final String homePath;
-  private final TBFileSystem dropboxFS;
-  private final RelativePath collectedDataPath;
-  private final TBFileSystem tempFS;
 
-  private TBLoaderConfig(String deviceID, String project, String srnPrefix, String homePath,
-      TBFileSystem dropboxFS, RelativePath collectedDataPath, TBFileSystem tempFS) {
-    this.deviceID = deviceID;
+  // A TbFile representing where the TB-Loader will copy its output (stats, signin recordings), like ~/Dropbox/tbcd000c/collected-data
+  private final TbFile collectedDataDirectory;
+
+  // A "TBFileSystem" object representing the root of a temporary gathering point.
+  private final TbFile tempDirectory;
+
+  private TBLoaderConfig(String tbLoaderId, String project, String srnPrefix,
+                         TbFile collectedDataDirectory, TbFile tempDirectory) {
+    this.tbLoaderId = tbLoaderId;
     this.project = project;
     this.srnPrefix = srnPrefix;
-    this.homePath = homePath;
-    this.dropboxFS = dropboxFS;
-    this.collectedDataPath = collectedDataPath;
-    this.tempFS = tempFS;
+    this.collectedDataDirectory = collectedDataDirectory;
+    this.tempDirectory = tempDirectory;
   }
 
-  public String getDeviceID() {
-    return deviceID;
+  public String getTbLoaderId() {
+    return tbLoaderId;
   }
 
   public String getProject() {
@@ -36,37 +41,38 @@ public class TBLoaderConfig {
     return srnPrefix;
   }
 
-  public String getHomePath() {
-    return homePath;
+  public TbFile getTempDirectory() {
+    return tempDirectory;
   }
 
-  public TBFileSystem getDropboxFileSystem() {
-    return dropboxFS;
-  }
-
-  public TBFileSystem getTempFileSystem() {
-    return tempFS;
-  }
-
-  public RelativePath getCollectedDataPath() {
-    return collectedDataPath;
+  public TbFile getCollectedDataDirectory() {
+    return collectedDataDirectory;
   }
 
   public static class Builder {
-    private String deviceID;
+    private String tbLoaderId;
     private String project;
     private String srnPrefix;
-    private String homePath;
-    private TBFileSystem dropboxFS;
-    private RelativePath collectedDataPath;
-    private TBFileSystem tempFS;
+    private TbFile collectedDataDirectory;
+    private TbFile tempDirectory;
 
     public final TBLoaderConfig build() {
-      return new TBLoaderConfig(deviceID, project, srnPrefix, homePath, dropboxFS, collectedDataPath, tempFS);
+      List<String> missing = new ArrayList<>();
+
+      if (tbLoaderId == null) missing.add("tbLoaderId");
+      if (project == null) missing.add("project");
+      if (srnPrefix == null) missing.add("srnPrefix");
+      if (collectedDataDirectory == null) missing.add("collected-data directory");
+      if (tempDirectory == null) missing.add("tempDirectory");
+      if (!missing.isEmpty()) {
+        throw new IllegalStateException("TBLoaderConfig not initialized with " + missing.toString());
+      }
+      return new TBLoaderConfig(tbLoaderId, project, srnPrefix,
+              collectedDataDirectory, tempDirectory);
     }
 
-    public Builder withDeviceID(String deviceID) {
-      this.deviceID = deviceID;
+    public Builder withTbLoaderId(String tbLoaderId) {
+      this.tbLoaderId = tbLoaderId;
       return this;
     }
 
@@ -80,19 +86,13 @@ public class TBLoaderConfig {
       return this;
     }
 
-    public Builder withHomePath(String homePath) {
-      this.homePath = homePath;
+    public Builder withCollectedDataDirectory(TbFile collectedDataDirectory) {
+      this.collectedDataDirectory = collectedDataDirectory;
       return this;
     }
 
-    public Builder withDropbox(TBFileSystem dropboxFS, RelativePath collectedDataPath) {
-      this.dropboxFS = dropboxFS;
-      this.collectedDataPath = collectedDataPath;
-      return this;
-    }
-
-    public Builder withTempFileSystem(TBFileSystem tempFS) {
-      this.tempFS = tempFS;
+    public Builder withTempDirectory(TbFile tempDirectory) {
+      this.tempDirectory = tempDirectory;
       return this;
     }
   }

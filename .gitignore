@@ -14,3 +14,4 @@ out/
 local.properties
 keystore.*
 *.apk
+captures

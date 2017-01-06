@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+echo Current devices:
+adb devices
+
+echo Current netcfg
+adb shell netcfg
+
+ip="$(adb shell netcfg|awk 'BEGIN{FS=" +|/"}/wlan/{print $3}'):5556"
+
+echo Setting to tcp
+adb tcpip 5556
+adb connect ${ip}
+
+echo New devices
+adb devices
+

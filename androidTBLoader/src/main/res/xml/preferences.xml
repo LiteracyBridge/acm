@@ -5,16 +5,15 @@
         android:key="pref_key_system_settings">
 
         <EditTextPreference
-            android:key="pref_tbloader_device_id"
+            android:key="tbcd"
             android:title="@string/pref_title_device_id"
             android:summary="@string/pref_summary_no_device_id"/>
-        <Preference
-            android:key="pref_dropbox"
-            android:title="@string/pref_dropbox_credentials">
-            <intent
-                android:targetPackage="org.literacybridge.androidtbloader"
-                android:targetClass="org.literacybridge.androidtbloader.dropbox.DropboxAccountPickerActivity" />
-        </Preference>
+
+        <EditTextPreference
+            android:key="projects"
+            android:title="@string/pref_title_project_filter"
+            android:summary="@string/pref_summary_no_project_filter"/>
+
         <Preference
             android:key="pref_tb_access"
             android:title="@string/pref_title_tb_access">
@@ -32,8 +31,13 @@
         android:key="pref_key_advanced_settings">
 
         <CheckBoxPreference
+            android:key="pref_simulate_device"
+            android:title="@string/pref_title_simulate_device"/>
+
+        <CheckBoxPreference
             android:key="pref_show_unpublished"
             android:title="@string/pref_title_show_unpublished"/>
+
         <CheckBoxPreference
             android:key="pref_allow_install_outdated"
             android:title="@string/pref_title_allow_install_outdated"/>

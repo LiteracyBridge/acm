@@ -3,7 +3,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.0'
+        classpath 'com.android.tools.build:gradle:2.2.3'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -13,21 +13,50 @@ buildscript {
 apply plugin: 'com.android.application'
 apply plugin: 'idea'
 
+// Load Google Play Store signing properties
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
 android {
+    // Load versionCode from version.properties file.
+    def Properties versionProps = new Properties()
+    def versionPropsFile = file('version.properties')
+    if(versionPropsFile.exists())
+        versionProps.load(new FileInputStream(versionPropsFile))
+    def code = (versionProps['versionCode'] ?: "0").toInteger()
+
+    // If this is a release build (ie, will be signed for the play store), increment versionCode, and save.
+    def runTasks = gradle.startParameter.taskNames
+    for (String item : runTasks) {
+        if (item.contains("assembleRelease")) {
+            code = code + 1
+            versionProps['versionCode'] = code.toString()
+            versionProps.store(versionPropsFile.newWriter(), null)
+        }
+    }
+
+    signingConfigs {
+        Release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+        }
+    }
     compileSdkVersion 23
     buildToolsVersion "23.0.3"
-
     defaultConfig {
         applicationId "org.literacybridge.androidtbloader"
         minSdkVersion 21
         targetSdkVersion 23
-        versionCode 1
-        versionName "1.0"
+        versionCode code
+        versionName "0.8 (${code})"
     }
     buildTypes {
         release {
-            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.Release
         }
     }
 }
@@ -38,11 +67,13 @@ task clean(type: Delete) {
 
 dependencies {
     compile project(':core')
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.4.0'
     compile 'com.android.support:design:23.4.0'
     compile 'com.android.support:support-v4:23.4.0'
     compile files('libs/dropbox-android-sdk-1.6.3.jar')
     compile files('libs/json_simple-1.1.jar')
+    compile 'com.amazonaws:aws-android-sdk-s3:2.2.+'
+    compile 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.3.2'
 }

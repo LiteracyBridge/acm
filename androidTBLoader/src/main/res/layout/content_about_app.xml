@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright 2013-2016 Amazon.com,
+  ~ Inc. or its affiliates. All Rights Reserved.
+  ~
+  ~ Licensed under the Amazon Software License (the "License").
+  ~ You may not use this file except in compliance with the
+  ~ License. A copy of the License is located at
+  ~
+  ~     http://aws.amazon.com/asl/
+  ~
+  ~ or in the "license" file accompanying this file. This file is
+  ~ distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+  ~ CONDITIONS OF ANY KIND, express or implied. See the License
+  ~ for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/ScrollView01"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:scrollbars="none">
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                    xmlns:tools="http://schemas.android.com/tools"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                    android:layout_marginRight="@dimen/activity_horizontal_margin"
+                    android:layout_marginTop="70dp"
+                    tools:context="com.amazonaws.youruserpools.AboutApp"
+                    tools:showIn="@layout/activity_about_app">
+
+        <!-- Main about text -->
+        <TextView
+            android:id="@+id/textViewAbout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:autoLink="all"
+            android:text="@string/about"/>
+
+        <Space
+            android:id="@+id/space_about_1"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/activity_inter_group_separation"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/textViewAbout"/>
+
+        <!-- Tag line -->
+        <TextView
+            android:id="@+id/textViewMoreInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/space_about_1"
+            android:autoLink="all"
+            android:text="@string/more_info"/>
+
+        <Space
+            android:id="@+id/space_about_2"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/activity_inter_group_separation"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/textViewMoreInfo"/>
+
+        <!-- Version line -->
+        <TextView
+            android:id="@+id/about_version_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/space_about_2"
+            android:text="Version"
+            tools:text="Version 1.2 (3)"/>
+
+        <Space
+            android:id="@+id/space_about_3"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/activity_inter_group_separation"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/about_version_name"
+            />
+
+        <Button
+            android:id="@+id/aboutBack"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/space_about_3"
+            android:layout_centerHorizontal="true"
+            android:background="@drawable/button_selector"
+            android:text="Back"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="@dimen/activity_button_text_size"/>
+    </RelativeLayout>
+</ScrollView>

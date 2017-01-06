@@ -4,71 +4,66 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
+    <!-- project name -->
     <TextView
         android:id="@+id/list_item_deployment_package_project"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="4dp"
-        android:textAppearance="@android:style/TextAppearance.Material.Menu"
-        tools:text="ACM UWR"
         android:elegantTextHeight="false"
         android:linksClickable="false"
+        android:padding="4dp"
         android:singleLine="true"
+        android:textAppearance="@android:style/TextAppearance.Material.Menu"
+        tools:text="ACM UWR"
         />
 
+    <!-- version textview -->
     <TextView
         android:id="@+id/list_item_deployment_package_rev"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/list_item_deployment_package_project"
-        tools:text="Revision: 2016-13-e"
-        android:paddingLeft="4dp"/>
+        android:paddingLeft="4dp"
+        tools:text="Version: 2016-13-e"/>
 
+    <!-- Expiration textview -->
     <TextView
         android:id="@+id/list_item_deployment_package_expiration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/list_item_deployment_package_rev"
-        tools:text="Expires: 09/25/2016"
-        android:paddingLeft="4dp"/>
+        android:paddingLeft="4dp"
+        tools:text="Expires: 09/25/2016"/>
 
+    <!-- Download button -->
     <Button
+        android:id="@+id/list_item_deployment_package_download_button"
         style="@android:style/Widget.Material.Button.Borderless.Colored"
         android:layout_width="wrap_content"
         android:layout_height="40dp"
-        android:text="@string/deployment_package_download"
-        android:id="@+id/list_item_deployment_package_download_button"
+        android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"/>
+        android:text="@string/deployment_package_download"/>
 
+    <!-- Download progress bar -->
     <ProgressBar
-        android:id="@+id/list_item_deployment_package_progress_spinner"
+        android:id="@+id/list_item_deployment_package_progress_bar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="16dp"
+        android:indeterminate="false"
         android:max="100"
         android:progress="0"
-        android:indeterminate="false"
-        android:layout_marginRight="20dp"
-        android:visibility="invisible"
-        android:layout_marginTop="16dp"/>
-
-
-    <Button
-        style="@android:style/Widget.Material.Button.Borderless.Colored"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:text="@string/deployment_package_install"
-        android:id="@+id/list_item_deployment_package_install_button"
-        android:layout_below="@id/list_item_deployment_package_download_button"
-        android:layout_alignParentEnd="true"/>
+        android:visibility="invisible"/>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_below="@id/list_item_deployment_package_install_button"
+        android:layout_below="@id/list_item_deployment_package_expiration"
         android:background="?android:attr/listDivider"/>
 
 </RelativeLayout>

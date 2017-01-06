@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="#eff"
+              android:orientation="vertical"
+              android:padding="4dp">
+
+    <!-- Project name -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Project"
+        android:textSize="10sp"/>
+
+    <TextView
+        android:id="@+id/checkin_project_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Project"
+        android:textSize="24sp"
+        tools:text="Project"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp"/>
+
+
+    <!-- Content update name, aka deployment name -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Content Update Name"
+        android:textSize="10sp"/>
+
+    <TextView
+        android:id="@+id/content_update_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Content update"
+        tools:text="Content update"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp"/>
+
+    <!-- Talking Book ID -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Talking Book Serial Number"
+        android:textSize="10sp"/>
+
+    <TextView
+        android:id="@+id/talking_book_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Talking Book ID"
+        tools:text="Talking Book ID"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp"/>
+
+    <!-- Warning messages -->
+    <TextView
+        android:id="@+id/talking_book_warnings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Danger, Will Robinson!"
+        android:textColor="@color/alert"
+        android:textSize="14sp"
+        tools:text="Danger, Will Robinson!"/>
+
+    <!-- community name -->
+    <LinearLayout
+        android:id="@+id/loader_community"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:background="#fff"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Updating Talking Book for Community"
+            android:textSize="14sp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tap to change"
+            android:textSize="10sp"
+            android:textStyle="normal|italic"/>
+
+        <TextView
+            android:id="@+id/community_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:maxLines="1"
+            android:text="Please set the Community name"
+            android:textSize="30sp"
+            tools:ellipsize="marquee"
+            tools:text="Please set the Community name"/>
+
+    </LinearLayout>
+
+    <!-- Talking Book Update display -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:layout_weight="1"
+        android:background="#ffd"
+        android:orientation="vertical">
+
+        <!-- Option to force refresh. Maybe we'll just make this the default. -->
+        <CheckBox
+            android:id="@+id/refresh_firmware"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Refresh firmware?"
+            tools:text="Refresh firmware?"/>
+
+        <ProgressBar
+            android:id="@+id/progressBar1"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:indeterminate="true"
+            android:indeterminateDuration="16000"/>
+
+        <TextView
+            android:id="@+id/textView11"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Update Step:"
+            android:textSize="10sp"
+            tools:text="Update Step:"/>
+
+        <TextView
+            android:id="@+id/update_step"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:text=""
+            tools:text="Step 1 of N: Getting started."/>
+
+        <TextView
+            android:id="@+id/textView12"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Detail"
+            android:textSize="10sp"
+            tools:text="Detail"/>
+
+        <TextView
+            android:id="@+id/update_detail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="marquee"
+            android:paddingLeft="10dp"
+            android:text=""
+            tools:text="The details..."/>
+
+        <TextView
+            android:id="@+id/textView14"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Log"
+            android:textSize="10sp"
+            tools:text="Log"/>
+
+        <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+                    android:id="@+id/ScrollView01"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:fillViewport="true"
+                    android:scrollbars="none">
+
+            <TextView
+                android:id="@+id/update_log"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#efe"
+                android:paddingLeft="10dp"
+                android:text=""
+                tools:text="Log..."/>
+
+        </ScrollView>
+
+    </LinearLayout>
+
+    <!-- The Big Red Switch (updates the TB) -->
+    <Button
+        android:id="@+id/button_go"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/holo_red_light"
+        android:text="Go!"
+        android:textSize="18sp"
+        tools:text="Go!"/>
+
+</LinearLayout>

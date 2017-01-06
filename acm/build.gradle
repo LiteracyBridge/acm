@@ -1,6 +1,11 @@
 apply plugin: 'java'
 apply from: "${project.gradleSettingsDir}/eclipse.gradle"
 
+compileJava {
+  targetCompatibility = '1.8'
+  sourceCompatibility = '1.8'
+}
+
 File distDir = file("$projectDir/dist")
 
 task copyLibs(type: Sync) {

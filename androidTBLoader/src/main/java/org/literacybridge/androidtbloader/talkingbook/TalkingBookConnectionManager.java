@@ -1,53 +1,40 @@
 package org.literacybridge.androidtbloader.talkingbook;
 
-import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.UriPermission;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
-import android.location.Criteria;
-import android.location.Location;
-import android.location.LocationManager;
 import android.net.Uri;
 import android.os.storage.StorageManager;
-import android.preference.PreferenceManager;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 
-import org.literacybridge.androidtbloader.DeploymentPackage;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
-import org.literacybridge.androidtbloader.db.TalkingBookDBHelper;
-import org.literacybridge.androidtbloader.db.TalkingBookDBSchema.KnownTalkingBooksTable;
-import org.literacybridge.androidtbloader.dropbox.DropboxFileSystem;
-import org.literacybridge.androidtbloader.dropbox.IOHandler;
-import org.literacybridge.core.ProgressListener;
-import org.literacybridge.core.fs.DefaultTBFileSystem;
-import org.literacybridge.core.fs.RelativePath;
-import org.literacybridge.core.fs.TBFileSystem;
-import org.literacybridge.core.tbloader.DeploymentInfo;
+import org.literacybridge.androidtbloader.db.TalkingBookDbHelper;
+import org.literacybridge.androidtbloader.db.TalkingBookDbSchema.KnownTalkingBooksTable;
+import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.tbloader.TBDeviceInfo;
-import org.literacybridge.core.tbloader.TBLoaderConfig;
-import org.literacybridge.core.tbloader.TBLoaderConstants;
-import org.literacybridge.core.tbloader.TBLoaderCore;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class TalkingBookConnectionManager {
     private static final String TAG = TalkingBookConnectionManager.class.getSimpleName();
     private static final String TB_FS_DEFAULT_SERIAL_NUMBER = "9285-F050";
+    private static Integer [] GEN_PLUS_VENDOR_ID_LIST = {6975, 5325};
+    private static Integer [] GEN_PLUS_PRODUCT_ID_LIST = {8194, 4636};
+    private static Set<Integer> GEN_PLUS_VENDOR_IDS = new HashSet<>(Arrays.asList(GEN_PLUS_VENDOR_ID_LIST));
+    private static Set<Integer> GEN_PLUS_PRODUCT_IDS = new HashSet<>(Arrays.asList(GEN_PLUS_PRODUCT_ID_LIST));
 
     private final TBLoaderAppContext mAppContext;
     private final UsbManager mUsbManagermanager;
@@ -61,36 +48,40 @@ public class TalkingBookConnectionManager {
 
     private volatile boolean mUsbWatcherDisabled;
 
-    private final LocationManager mLocationManager;
 
     public TalkingBookConnectionManager(TBLoaderAppContext context) {
         mAppContext = context;
         mUsbManagermanager = (UsbManager) mAppContext.getSystemService(Context.USB_SERVICE);
         mStorageManager = (StorageManager) mAppContext.getSystemService(Context.STORAGE_SERVICE);
-        mLocationManager = (LocationManager) mAppContext.getSystemService(Context.LOCATION_SERVICE);
-        mDatabase = new TalkingBookDBHelper(context).getWritableDatabase();
+        mDatabase = new TalkingBookDbHelper(context).getWritableDatabase();
 
         checkMountedDevices();
 
         registerReceiver();
     }
 
-    public boolean isDeviceConnected() {
+    /**
+     * Is there a device with vendor id 0x1b3f (GeneralPlus) and
+     * product id 0x2002 (web camera) attached to the USB? (That's
+     * how the Talking Book shows up.)
+     * @return True if such a device is found, False otherwise
+     */
+    boolean isDeviceConnected() {
         Map<String, UsbDevice> map = mUsbManagermanager.getDeviceList();
         for (Map.Entry<String, UsbDevice> entry : map.entrySet()) {
             final UsbDevice device = entry.getValue();
-            if (device.getVendorId() == 6975 && device.getProductId() == 8194) {
+            if (GEN_PLUS_VENDOR_IDS.contains(device.getVendorId()) && GEN_PLUS_PRODUCT_IDS.contains(device.getProductId())) {
                 return true;
             }
         }
         return false;
     }
 
-    public boolean isDeviceMounted() {
+    boolean isDeviceMounted() {
         return mIsMounted;
     }
 
-    public void setUsbWatcherDisabled(boolean disabled) {
+    void setUsbWatcherDisabled(boolean disabled) {
         mUsbWatcherDisabled = disabled;
     }
 
@@ -105,7 +96,7 @@ public class TalkingBookConnectionManager {
 
     }
 
-    public void addPermission(Uri deviceBasePath) throws IllegalStateException {
+    void addPermission(Uri deviceBasePath) throws IllegalStateException {
         Map<String, MountedDevice> volumesMap = getSecondaryMountedVolumesMap();
         if (volumesMap.size() != 1) {
             throw new IllegalStateException("More than one USB devices connected.");
@@ -118,7 +109,7 @@ public class TalkingBookConnectionManager {
         }
     }
 
-    public boolean hasPermission() {
+    boolean hasPermission() {
         if (mConnectedTalkingBook != null) {
             return true;
         } else {
@@ -139,6 +130,17 @@ public class TalkingBookConnectionManager {
         }
     }
 
+    public TalkingBook getConnectedTalkingBook() {
+        return mConnectedTalkingBook;
+    }
+    ////////////////////////////////////////////////////////////////////////////////
+    // Debug code
+    public void setSimulatedTalkingBook(TalkingBook simulatedTalkingBook) {
+        mConnectedTalkingBook = simulatedTalkingBook;
+    }
+    // Debug code
+    ////////////////////////////////////////////////////////////////////////////////
+
     public TalkingBook canAccessConnectedDevice() {
         if (mConnectedTalkingBook != null) {
             return mConnectedTalkingBook;
@@ -154,8 +156,8 @@ public class TalkingBookConnectionManager {
                     DocumentFile root = DocumentFile.fromTreeUri(mAppContext, deviceBaseUri);
                     if (root != null && root.exists()) {
                         if (mConnectedTalkingBook == null) {
-                            TBFileSystem fs = new AndroidTBFileSystem(mAppContext.getContentResolver(), root);
-                            mConnectedTalkingBook = new TalkingBook(fs, TBLoaderCore.getSerialNumberFromSystem(fs), device.getValue().mLabel);
+                            TbFile fs = new AndroidDocFile(root, mAppContext.getContentResolver());
+                            mConnectedTalkingBook = new TalkingBook(fs, TBDeviceInfo.getSerialNumberFromFileSystem(fs), device.getValue().mLabel);
                             if (mTalkingBookConnectionEventListener != null) {
                                 mTalkingBookConnectionEventListener.onTalkingBookConnectEvent(mConnectedTalkingBook);
                             }
@@ -244,7 +246,7 @@ public class TalkingBookConnectionManager {
         private final String mUuid;
         private final String mPath;
 
-        public MountedDevice(String label, String uuid, String path) {
+        MountedDevice(String label, String uuid, String path) {
             mLabel = label;
             mUuid = uuid;
             mPath = path;
@@ -277,7 +279,7 @@ public class TalkingBookConnectionManager {
         return values;
     }
 
-    public void onUSBEvent() {
+    private void onUSBEvent() {
         if (isDeviceConnected()) {
             if (!mUsbWatcherDisabled) {
                 Intent setupIntent = TalkingBookConnectionSetupActivity.newIntent(mAppContext, false);
@@ -304,19 +306,19 @@ public class TalkingBookConnectionManager {
         }
     }
 
-    public class TalkingBook {
-        private final TBFileSystem mTalkingBookFileSystem;
+    public static class TalkingBook {
+        private final TbFile mTalkingBookRoot;
         private final String mSerialNumber;
         private final String mDeviceLabel;
 
-        private TalkingBook(TBFileSystem talkingBookFileSystem, String serialNumber, String deviceLabel) {
-            mTalkingBookFileSystem = talkingBookFileSystem;
+        public TalkingBook(TbFile talkingBookRoot, String serialNumber, String deviceLabel) {
+            mTalkingBookRoot = talkingBookRoot;
             mSerialNumber = serialNumber;
             mDeviceLabel = deviceLabel;
         }
 
-        public TBFileSystem getTalkingBookFileSystem() {
-            return mTalkingBookFileSystem;
+        public TbFile getTalkingBookRoot() {
+            return mTalkingBookRoot;
         }
 
         public String getSerialNumber() {
@@ -333,97 +335,4 @@ public class TalkingBookConnectionManager {
         void onTalkingBookDisConnectEvent();
     }
 
-    public void installDeploymentPackage(DeploymentPackage deploymentPackage,
-                                         String community,
-                                         ProgressListener progressListener) throws IOException {
-        final TalkingBook talkingBook = mConnectedTalkingBook;
-
-        File f = new File(mAppContext.getExternalFilesDir(IOHandler.EXTERNAL_FILES_TYPE), deploymentPackage.getLocalUnzipPath().asString());
-        f = new File(f, "content");
-        Log.d(TAG, "opening dirc " + f);
-        // TODO: make TBLoaderCore accept RelativePath here
-        TBFileSystem imageSource = DefaultTBFileSystem.open(f);
-        Log.d(TAG, "opening " + imageSource);
-        String deploymentName = null;
-        for (String file : imageSource.list(RelativePath.EMPTY)) {
-            deploymentName = file;
-            break;
-        }
-
-        imageSource = DefaultTBFileSystem.open(new File(f, deploymentName));
-        Log.d(TAG, "opening " + imageSource);
-
-        String imageName = TBLoaderCore.getImageFromCommunity(imageSource, community);
-        Log.d(TAG, "imageName " + imageName);
-
-        String myDeviceId = PreferenceManager.getDefaultSharedPreferences(mAppContext)
-                .getString("pref_tbloader_device_id", null);
-
-        TBFileSystem dropboxFileSystem = new DropboxFileSystem(mAppContext.getDropboxConnecton().getApi(), "/");
-
-        try {
-            RelativePath collectedDataFile = RelativePath.parse(
-                    TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + myDeviceId);
-            TBLoaderConfig tbLoaderConfig = new TBLoaderConfig.Builder()
-                    .withDeviceID(myDeviceId)
-                    .withProject(deploymentPackage.getProjectName())
-                    .withSrnPrefix("b-")
-                    .withDropbox(dropboxFileSystem, collectedDataFile)
-                    .withTempFileSystem(DefaultTBFileSystem.open(mAppContext.getExternalCacheDir()))
-                    .build();
-            TBDeviceInfo deviceInfo = new TBDeviceInfo(talkingBook.getTalkingBookFileSystem(), talkingBook.getDeviceLabel(), myDeviceId);
-            TBLoaderCore core = new TBLoaderCore(tbLoaderConfig, deviceInfo);
-            DeploymentInfo oldDeploymentInfo = core.loadDeploymentInfoFromDevice();
-            String deviceSerialNumber = deviceInfo.getSerialNumber();
-            if (deviceSerialNumber.equals(TBLoaderConstants.NEED_SERIAL_NUMBER)) {
-                deviceSerialNumber = (tbLoaderConfig.getSrnPrefix() + tbLoaderConfig.getDeviceID()
-                        + getNewDeviceSerialNumber()).toUpperCase();
-            }
-
-            DeploymentInfo newDeploymentInfo = new DeploymentInfo(deviceSerialNumber, imageName, deploymentName, null,
-                    TBLoaderCore.getFirmwareRevisionNumbers(imageSource), community);
-
-            Log.d(TAG, "UPDATE: \n\toldDeploymentInfo: " + oldDeploymentInfo.toString() + "\n\tnewDeploymentInfo: " + newDeploymentInfo.toString());
-            core.update(oldDeploymentInfo, newDeploymentInfo, getCurrentLocation(), false, false, imageSource, progressListener);
-        } catch (IOException e) {
-            Log.d("tbloader", "Unable to read TBInfo", e);
-        }
-    }
-
-    private String getNewDeviceSerialNumber() {
-        final String prefName = "device_serial_number_counter";
-        final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mAppContext);
-        int intSrn = sharedPreferences.getInt(prefName, 0);
-
-        final SharedPreferences.Editor sharedPreferencesEditor = PreferenceManager.getDefaultSharedPreferences(mAppContext).edit();
-        sharedPreferencesEditor.putInt(prefName, intSrn + 1);
-
-        return String.format("%04x", intSrn);
-    }
-
-    private String getCurrentLocation() {
-        Criteria criteria = new Criteria();
-        criteria.setAccuracy(Criteria.ACCURACY_FINE);
-        criteria.setAltitudeRequired(false);
-        criteria.setBearingRequired(false);
-        criteria.setCostAllowed(true);
-        criteria.setPowerRequirement(Criteria.NO_REQUIREMENT);
-        final String provider = mLocationManager.getBestProvider(criteria, true);
-
-        String locationString = "UNKNOWN";
-        if (isLocationEnabled(mLocationManager) && (ActivityCompat.checkSelfPermission(mAppContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                || ActivityCompat.checkSelfPermission(mAppContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)) {
-            Location location = mLocationManager.getLastKnownLocation(provider);
-            if (location != null) {
-                locationString = "\"(" + location.getLatitude() + ", " + location.getLongitude() + ")\"";
-            }
-        }
-
-        return locationString;
-    }
-
-    private static boolean isLocationEnabled(LocationManager locationManager) {
-        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
-                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-    }
-}
+ }

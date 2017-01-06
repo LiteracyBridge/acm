@@ -6,7 +6,6 @@ import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 
-import org.literacybridge.androidtbloader.dropbox.DropboxConnection;
 import org.literacybridge.androidtbloader.talkingbook.TalkingBookConnectionManager;
 
 public class SettingsFragment extends PreferenceFragment
@@ -56,28 +55,16 @@ public class SettingsFragment extends PreferenceFragment
     }
 
     private void updateSummaries() {
-        DropboxConnection dropboxConnection =
-                ((TBLoaderAppContext) getActivity().getApplicationContext()).getDropboxConnecton();
 
         TalkingBookConnectionManager talkingBookConnectionManager =
                 ((TBLoaderAppContext) getActivity().getApplicationContext()).getTalkingBookConnectionManager();
 
-
-        Preference preference = findPreference("pref_dropbox");
-        if (dropboxConnection.isAuthenticated()) {
-            preference.setSummary(getString(R.string.pref_summary_dropbox_configured));
-        } else {
-            preference.setSummary(getString(R.string.pref_summary_dropbox_not_configured));
-        }
-
-
-        preference = findPreference("pref_show_unpublished");
+        Preference preference = findPreference("pref_show_unpublished");
         if (mSharedPreferences.getBoolean("pref_show_unpublished", false)) {
             preference.setSummary(getString(R.string.pref_summary_show_unpublished));
         } else {
             preference.setSummary(getString(R.string.pref_summary_show_published_only));
         }
-
 
         preference = findPreference("pref_tb_access");
         if (talkingBookConnectionManager.hasDefaultPermission()) {
@@ -85,6 +72,17 @@ public class SettingsFragment extends PreferenceFragment
         } else {
             preference.setSummary(getString(R.string.pref_summary_tb_access_not_granted));
         }
+
+        ////////////////////////////////////////////////////////////////////////////////
+        // Debug code
+        preference = findPreference(("pref_simulate_device"));
+        if (mSharedPreferences.getBoolean(preference.getKey(), false)) {
+            preference.setSummary(R.string.pref_summary_simulate_device);
+        } else {
+            preference.setSummary(R.string.pref_summary_physical_device);
+        }
+        // Debug code
+        ////////////////////////////////////////////////////////////////////////////////
 
         preference = findPreference(("pref_allow_install_outdated"));
         if (mSharedPreferences.getBoolean(preference.getKey(), false)) {

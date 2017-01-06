@@ -1,0 +1,222 @@
+package org.literacybridge.androidtbloader.talkingbook;
+
+import android.content.ContentResolver;
+import android.support.v4.provider.DocumentFile;
+
+import org.literacybridge.core.fs.TbFile;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.literacybridge.core.fs.TbFile.Flags.append;
+
+/**
+ * This is an implementation of TbFile that wraps the Android DocumentFile.
+ */
+
+public class AndroidDocFile extends TbFile {
+    private AndroidDocFile parent;
+    private String filename;
+    private DocumentFile file;
+    private ContentResolver resolver;
+
+    /**
+     * Creates a "root" AndroidDocFile.
+     * @param file The DocFile.
+     * @param resolver The ContentResolver for the docfile and it's children.
+     */
+    public AndroidDocFile(DocumentFile file, ContentResolver resolver) {
+        this.parent = null;
+        this.filename = null;
+        this.file = file;
+        this.resolver = resolver;
+    }
+
+    /**
+     * Private constructor for when we don't know the child file, or it doesn't exist yet.
+     * @param parent The parent of this new file.
+     * @param child The name of this new file.
+     */
+    private AndroidDocFile(AndroidDocFile parent, String child) {
+        this.parent = parent;
+        this.filename = child;
+        this.file = null;
+        this.resolver = parent.resolver;
+    }
+
+    /**
+     * Private constructor for when we already have the DocumentFile.
+     * @param parent Parent directory of the new file.
+     * @param child The new DocumentFile.
+     */
+    private AndroidDocFile(AndroidDocFile parent, DocumentFile child) {
+        this.parent = parent;
+        this.filename = child.getName();
+        this.file = child;
+        this.resolver = parent.resolver;
+    }
+
+    /**
+     * Attempts to "resolve" the actual DocumentFile for this wrapper object. Resolves
+     * parent first.
+     */
+    private void resolve() {
+        if (file == null) {
+            parent.resolve();
+            if (parent.file != null) {
+                file = parent.file.findFile(this.filename);
+            }
+        }
+    }
+
+    @Override
+    public AndroidDocFile open(String child) {
+        return new AndroidDocFile(this, child);
+    }
+
+    @Override
+    public AndroidDocFile getParent() {
+        return parent;
+    }
+
+    @Override
+    public String getName() {
+        return filename;
+    }
+
+    @Override
+    public String getAbsolutePath() {
+        resolve();
+        return file.getUri().getPath();
+    }
+
+    @Override
+    public void renameTo(String newName) {
+        resolve();
+        if (file != null) {
+            file.renameTo(newName);
+            filename = newName;
+        }
+    }
+
+    @Override
+    public boolean exists() {
+        resolve();
+        return file != null;
+    }
+
+    @Override
+    public boolean isDirectory() {
+        resolve();
+        return file != null && file.isDirectory();
+    }
+
+    @Override
+    public boolean mkdir() {
+        resolve();
+        // Is there already a file or directory here? Can't create one.
+        if (file != null) return false;
+        // Is there a parent? If not, can't create this child.
+        if (parent.file == null) return false;
+        file = parent.file.createDirectory(filename);
+        return file != null;
+    }
+
+    @Override
+    public boolean mkdirs() {
+        resolve();
+        // Is there already a file or directory here? Can't create one.
+        if (file != null) return false;
+        // If there's no parent, try to create it.
+        if (parent.file == null) {
+            boolean parentOk = parent.mkdirs();
+            if (!parentOk) return false;
+        }
+        // See if the directory already exists.
+        file = parent.file.findFile(filename);
+        // TODO: throw error if exists as a file?
+        // If not, create it.
+        if (file == null)
+            file = parent.file.createDirectory(filename);
+        return file != null;
+    }
+
+    @Override
+    public void createNew(InputStream content, Flags... flags) throws IOException {
+        String streamFlags = (Arrays.asList(flags).contains(append)) ? "wa" : "w";
+        resolve();
+        if (file == null) {
+            file = parent.file.createFile("application/octet-stream", filename);
+        }
+        try (OutputStream out = resolver.openOutputStream(file.getUri(), streamFlags) ) {
+            copy(content, out);
+        }
+    }
+
+    @Override
+    public boolean delete() {
+        resolve();
+        return file == null || file.delete();
+    }
+
+    @Override
+    public long length() {
+        resolve();
+        if (file != null) return file.length();
+        return 0;
+    }
+
+    @Override
+    public long lastModified() {
+        return file.lastModified();
+    }
+
+    @Override
+    public String[] list() {
+        return list(null);
+    }
+
+    @Override
+    public String[] list(FilenameFilter filter) {
+        resolve();
+        if (file == null || !file.isDirectory()) return new String[0];
+
+        List<String> fileNames = new ArrayList<>();
+        DocumentFile[] files = file.listFiles();
+        for (DocumentFile file : files) {
+            if (filter == null || filter.accept(this, file.getName())) {
+                fileNames.add(file.getName());
+            }
+        }
+        return fileNames.toArray(new String[fileNames.size()]);
+    }
+
+    @Override
+    public AndroidDocFile[] listFiles(final FilenameFilter filter) {
+        resolve();
+        if (file == null || !file.isDirectory()) return new AndroidDocFile[0];
+
+        List<AndroidDocFile> filteredFiles = new ArrayList<>();
+        DocumentFile[] files = file.listFiles();
+        for (DocumentFile file : files) {
+            if (filter == null || filter.accept(this, file.getName())) {
+                filteredFiles.add(new AndroidDocFile(this, file));
+            }
+        }
+        return filteredFiles.toArray(new AndroidDocFile[filteredFiles.size()]);
+    }
+
+    @Override
+    public long getFreeSpace() {
+        return 0;
+    }
+
+    @Override
+    public InputStream openFileInputStream() throws IOException {
+        return resolver.openInputStream(file.getUri());
+    }
+}
