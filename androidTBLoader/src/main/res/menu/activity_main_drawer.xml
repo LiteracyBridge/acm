@@ -5,8 +5,8 @@
         android:id="@+id/group_user_add_attribute"
         android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_user_add_attribute"
-            android:title="Add attribute" />
+            android:id="@+id/nav_user_edit_greeting"
+            android:title="@string/edit_greeting" />
 
         <item
             android:id="@+id/nav_user_verify_attribute"
@@ -16,9 +16,6 @@
             android:id="@+id/nav_user_settings"
             android:title="Settings" />
 
-        <item
-            android:id="@+id/nav_continue_without_checkin"
-            android:title="Continue without checking in" />
     </group>
 
     <group

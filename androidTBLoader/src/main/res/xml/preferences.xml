@@ -14,6 +14,10 @@
             android:title="@string/pref_title_project_filter"
             android:summary="@string/pref_summary_no_project_filter"/>
 
+        <CheckBoxPreference
+            android:key="pref_prefer_network_location"
+            android:title="@string/pref_title_prefer_network_location"/>
+
         <Preference
             android:key="pref_tb_access"
             android:title="@string/pref_title_tb_access">

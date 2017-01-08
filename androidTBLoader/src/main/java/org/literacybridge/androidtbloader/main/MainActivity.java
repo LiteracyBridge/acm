@@ -1,10 +1,14 @@
 package org.literacybridge.androidtbloader.main;
 
 import android.app.Fragment;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
 import org.literacybridge.androidtbloader.SingleFragmentActivity;
+import org.literacybridge.androidtbloader.signin.UserHelper;
+
+import java.util.ArrayList;
 
 /**
  * Created by bill on 12/23/16.
@@ -25,4 +29,11 @@ public class MainActivity extends SingleFragmentActivity {
         super.onCreate(savedInstanceState);
     }
 
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent();
+        intent.putExtra("TODO", "exit");
+        setResult(RESULT_OK, intent);
+        finish();
+    }
 }

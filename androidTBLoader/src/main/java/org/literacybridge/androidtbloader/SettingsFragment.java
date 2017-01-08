@@ -59,7 +59,14 @@ public class SettingsFragment extends PreferenceFragment
         TalkingBookConnectionManager talkingBookConnectionManager =
                 ((TBLoaderAppContext) getActivity().getApplicationContext()).getTalkingBookConnectionManager();
 
-        Preference preference = findPreference("pref_show_unpublished");
+        Preference preference = findPreference("pref_prefer_network_location");
+        if (mSharedPreferences.getBoolean("pref_prefer_network_location", false)) {
+            preference.setSummary(getString(R.string.pref_summary_prefer_network));
+        } else {
+            preference.setSummary(getString(R.string.pref_summary_prefer_gps));
+        }
+
+        preference = findPreference("pref_show_unpublished");
         if (mSharedPreferences.getBoolean("pref_show_unpublished", false)) {
             preference.setSummary(getString(R.string.pref_summary_show_unpublished));
         } else {

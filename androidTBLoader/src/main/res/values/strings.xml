@@ -73,7 +73,6 @@
     <string name="title_activity_forgot_password">ForgotPasswordActivity</string>
     <string name="title_activity_change_password">ChangePasswordActivity</string>
     <string name="title_activity_verify">VerifyActivity</string>
-    <string name="title_activity_add_attribute">AddAttributeActivity</string>
     <string name="title_activity_device_settings">DeviceSettings</string>
     <string name="title_activity_new_password">NewPassword</string>
     <string name="pref_title_simulate_device">Simulate Talking Book device.</string>
@@ -85,5 +84,10 @@
     <string name="add_communities_to_be_updated">Add communities to be updated...</string>
     <string name="community_groups_at_this_location">Community Groups at this location</string>
     <string name="community_groups_to_update_today">Community Groups to update today</string>
+    <string name="pref_title_prefer_network_location">Prefer getting location from network, not GPS.</string>
+    <string name="pref_summary_prefer_network">The device will try first to get location from the network, not GPS. This may be faster, but less accurate, and may not work in remote areas.</string>
+    <string name="pref_summary_prefer_gps">The device will try first to get location from GPS, not the network. This will be more accurate, and works in remote areas, but may be slower.</string>
+    <string name="edit_greeting">Edit preferred greeting</string>
+    <string name="main_greeting_label">Hello, </string>
 
 </resources>

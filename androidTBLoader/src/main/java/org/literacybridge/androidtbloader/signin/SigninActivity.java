@@ -75,6 +75,7 @@ public class SigninActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private AlertDialog userDialog;
     private ProgressDialog waitDialog;
+    private boolean mExplicitSignIn = false;
 
     // Screen fields
     private EditText inUsername;
@@ -187,11 +188,18 @@ public class SigninActivity extends AppCompatActivity {
             case MAIN_ACTIVITY_CODE:
                 // User
                 if(resultCode == RESULT_OK) {
+                    Log.d(TAG, "Back in Signin Activity.");
+                    // Not sure about this. If one signs in, then goes back, should credentials still be there?
+                    // If so, remove this.
                     clearInput();
                     String name = data.getStringExtra("TODO");
                     if(name != null) {
                         if (!name.isEmpty() && name.equals("exit")) {
-                            onBackPressed();
+                            Log.d(TAG, String.format("Got a TODO:exit, explicit signin: %b", mExplicitSignIn));
+                            // If we signed in implicitly, just do another BackPressed, because the user never saw this page.
+                            if (!mExplicitSignIn) {
+                                onBackPressed();
+                            }
                         }
                     }
                     boolean signout = data.getBooleanExtra("signout", false);
@@ -339,6 +347,7 @@ public class SigninActivity extends AppCompatActivity {
         Log.d(TAG, String.format("User: '%s', Pwd: '%s'", uid, pwd));
 
         showWaitDialog("Signing in...");
+        mExplicitSignIn = true;
         UserHelper.getPool().getUser(uid).getSessionInBackground(authenticationHandler);
     }
 

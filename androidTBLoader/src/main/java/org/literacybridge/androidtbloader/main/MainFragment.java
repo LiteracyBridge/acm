@@ -1,13 +1,17 @@
 package org.literacybridge.androidtbloader.main;
 
 import android.app.Fragment;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -18,10 +22,16 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttributes;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDeliveryDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GetDetailsHandler;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.UpdateAttributesHandler;
 
 import org.literacybridge.androidtbloader.OldMainActivity;
 import org.literacybridge.androidtbloader.R;
@@ -38,6 +48,7 @@ import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.Util;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static android.app.Activity.RESULT_OK;
@@ -49,9 +60,10 @@ import static android.app.Activity.RESULT_OK;
 public class MainFragment extends Fragment {
     private static final String TAG = MainFragment.class.getSimpleName();
 
+    private static final int REQUEST_CODE_MANAGE_CONTENT = 101;
     private static final int REQUEST_CODE_CHECKIN = 102;
     private static final int REQUEST_CODE_UPDATE_TBS = 103;
-    private static final int REQUEST_CODE_MANAGE_CONTENT = 101;
+    private static final int REQUEST_CODE_SET_GREETING = 104;
 
     private TBLoaderAppContext mApplicationContext;
     private ContentManager mContentManager;
@@ -60,6 +72,9 @@ public class MainFragment extends Fragment {
     private DrawerLayout mDrawer;
     private ActionBarDrawerToggle mDrawerToggle;
     private Toolbar toolbar;
+
+    private TextView mGreetingName;
+    private TextView mGreetingEmail;
 
     private ViewGroup mManageGroup;
     private ViewGroup mCheckinGroup;
@@ -75,6 +90,11 @@ public class MainFragment extends Fragment {
 
     private TextView mUploadCountTextView;
     private TextView mUploadSizeTextView;
+
+    private AlertDialog userDialog;
+    private ProgressDialog waitDialog;
+    private Map<String, String> mUserDetails;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -102,6 +122,9 @@ public class MainFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_main, container, false);
+
+        mGreetingName = (TextView)view.findViewById(R.id.main_greeting_name);
+        mGreetingEmail = (TextView)view.findViewById(R.id.main_greeting_email);
 
         mManageGroup = (ViewGroup)view.findViewById(R.id.main_manage_content_group);
         mCheckinGroup = (ViewGroup)view.findViewById(R.id.main_checkin_group);
@@ -140,10 +163,12 @@ public class MainFragment extends Fragment {
         });
 
         setButtonState();
+        showWaitDialog("Loading...");
         getUserDetails();
 
         mApplicationContext.getUploadManager().restartUploads();
         fillUploadValues();
+        updateGreeting();
 
         return view;
     }
@@ -221,6 +246,15 @@ public class MainFragment extends Fragment {
         }
     }
 
+    private void updateGreeting() {
+        final SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(
+                mApplicationContext);
+        String greeting = userPrefs.getString("greeting", "Friend");
+        String email = userPrefs.getString("email", "");
+        mGreetingName.setText(greeting + "!");
+        mGreetingEmail.setText(email);
+    }
+
     /**
      * Perform the action for the selected navigation / menu item. Note that some of these
      * are repeated from the signin screen.
@@ -232,10 +266,6 @@ public class MainFragment extends Fragment {
 
         // Find which item was selected
         switch(item.getItemId()) {
-            case R.id.nav_continue_without_checkin:
-                doUpdate();
-                break;
-
             case R.id.nav_user_sign_out:
                 UserHelper.getPool().getUser(mUser).signOut();
                 UserHelper.getCredentialsProvider(getActivity().getApplicationContext()).clear();
@@ -257,23 +287,19 @@ public class MainFragment extends Fragment {
                 startActivity(settingsActivity);
                 break;
 
-//            case R.id.nav_sign_up_confirm:
-//                // Confirm new user
-//                confirmUser();
-//                break;
-//            case R.id.nav_sign_in_forgot_password:
-//                // User has forgotten the password, start the process to set a new password
-//                forgotpasswordUser();
-//                break;
             case R.id.nav_main_about:
                 // For the inquisitive
                 Intent aboutAppActivity = new Intent(getActivity(), AboutApp.class);
                 startActivity(aboutAppActivity);
                 break;
 
+            case R.id.nav_user_edit_greeting:
+                editUserDetail("Preferred Greeting", mUserDetails.get("custom:greeting"));
+                break;
+
+
         }
     }
-
 
     private void getUserDetails() {
 
@@ -283,16 +309,38 @@ public class MainFragment extends Fragment {
                 Log.d(TAG, "detailsHandler success: " + cognitoUserDetails.getAttributes().getAttributes().toString());
                 // Store details in the AppHandler
                 UserHelper.setUserDetails(cognitoUserDetails);
-                Map<String, String> attributes = cognitoUserDetails.getAttributes().getAttributes();
-                Log.d(TAG, "User Attributes: " + attributes.toString());
-                getConfig();
+                mUserDetails = cognitoUserDetails.getAttributes().getAttributes();
+                final SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(
+                        mApplicationContext);
+                SharedPreferences.Editor prefsEditor = userPrefs.edit();
+                prefsEditor.putString("greeting", mUserDetails.get("custom:greeting"));
+                prefsEditor.putString("email", mUserDetails.get("email"));
+                prefsEditor.apply();
+
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateGreeting();
+                        setButtonState();
+                    }
+                });
+                Log.d(TAG, "User Attributes: " + mUserDetails.toString());
+                if (!mHaveConfig) {
+                    getConfig();
+                } else {
+                    closeWaitDialog();
+                }
             }
 
             @Override
             public void onFailure(Exception exception) {
                 // This shouldn't be possible. We have successfully authenticated with Cognito before even trying.
                 Log.d(TAG, "detailsHandler failure", exception);
-                getConfig();
+                if (!mHaveConfig) {
+                    getConfig();
+                } else {
+                    closeWaitDialog();
+                }
             }
         };
 
@@ -308,6 +356,7 @@ public class MainFragment extends Fragment {
             public void gotConfig(SharedPreferences prefs) {
                 // Excellent! Continue.
                 mHaveConfig = true;
+                closeWaitDialog();
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -318,6 +367,7 @@ public class MainFragment extends Fragment {
 
             @Override
             public void noConfig() {
+                closeWaitDialog();
                 // This is a fatal error.
             }
         });
@@ -409,4 +459,116 @@ public class MainFragment extends Fragment {
         mUpdateGroup.setAlpha(canUpdate ? 1.0f : 0.33f);
         mUpdateGroup.setEnabled(canUpdate);
     }
+
+    private void editUserDetail(final String attributeType, final String attributeValue) {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle(attributeType);
+        final EditText input = new EditText(getActivity());
+        input.setText(attributeValue);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT);
+
+        input.setLayoutParams(lp);
+        input.requestFocus();
+        builder.setView(input);
+
+        builder.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                try {
+                    String newValue = input.getText().toString();
+                    if(!newValue.equals(attributeValue)) {
+                        showWaitDialog("Updating...");
+                        updateAttribute(UserHelper.getSignUpFieldsC2O().get(attributeType), newValue);
+                    }
+                    userDialog.dismiss();
+                } catch (Exception e) {
+                    // Log failure
+                }
+            }
+        });
+        userDialog = builder.create();
+        userDialog.show();
+    }
+
+    // Update attributes
+    private void updateAttribute(String attributeType, String attributeValue) {
+        if(attributeType == null || attributeType.length() < 1) {
+            closeWaitDialog();
+            return;
+        }
+        CognitoUserAttributes updatedUserAttributes = new CognitoUserAttributes();
+        updatedUserAttributes.addAttribute(attributeType, attributeValue);
+        Toast.makeText(mApplicationContext, attributeType + ": " + attributeValue, Toast.LENGTH_LONG);
+        showWaitDialog("Updating...");
+        UserHelper.getPool().getUser(UserHelper.getUserId()).updateAttributesInBackground(updatedUserAttributes, updateHandler);
+    }
+
+    UpdateAttributesHandler updateHandler = new UpdateAttributesHandler() {
+        @Override
+        public void onSuccess(List<CognitoUserCodeDeliveryDetails> attributesVerificationList) {
+            // Update successful
+            if(attributesVerificationList.size() > 0) {
+                showDialogMessage("Updated", "The updated attributes has to be verified",  false);
+            }
+            getUserDetails();
+        }
+
+        @Override
+        public void onFailure(Exception exception) {
+            // Update failed
+            closeWaitDialog();
+            showDialogMessage("Update failed", UserHelper.formatException(exception), false);
+        }
+    };
+
+    private void closeUserDialog() {
+        if (userDialog != null) {
+            userDialog.dismiss();
+        }
+        userDialog = null;
+    }
+
+    private void showDialogMessage(String title, String body, final boolean exit) {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle(title).setMessage(body).setNeutralButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                try {
+                    closeUserDialog();
+                    if(exit) {
+                        getActivity().finish();
+                    }
+                } catch (Exception e) {
+                    // Log failure
+                    Log.e(TAG,"Dialog dismiss failed");
+                    if(exit) {
+                        getActivity().finish();
+                    }
+                }
+            }
+        });
+        userDialog = builder.create();
+        userDialog.show();
+    }
+
+    private void closeWaitDialog() {
+        try {
+            waitDialog.dismiss();
+        }
+        catch (Exception e) {
+            //
+        }
+        waitDialog = null;
+    }
+    private void showWaitDialog(String message) {
+        closeWaitDialog();
+        waitDialog = new ProgressDialog(getActivity());
+        waitDialog.setTitle(message);
+        waitDialog.show();
+    }
+
+
 }

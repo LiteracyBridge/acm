@@ -29,7 +29,6 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttribu
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserPool;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProvider;
 import com.amazonaws.services.cognitoidentityprovider.model.AttributeType;
 
@@ -80,28 +79,6 @@ public class UserHelper {
      */
     private static final String userPoolId = "us-west-2_6EKGzq75p";
     private static final String userPoolOtherId = "cognito-idp.us-west-2.amazonaws.com/" + userPoolId;
-    /**
-     * Add you app id
-     */
-    private static final String clientId = "5h9tg11mb73p4j2ca1oii7bhkn";
-
-    /**
-     * App secret associated with your app id - if the App id does not have an associated App secret,
-     * set the App secret to null.
-     * e.g. clientSecret = null;
-     */
-    private static final String clientSecret = null; // "replace_this_with_the_app_client_secret";
-
-    /**
-     * The Identity Pool ID, not the same as the User Pool ID
-     */
-    private static final String identityPoolId = "us-west-2:a544b58b-8be0-46db-aece-e6fe14d29124";
-
-    /**
-     * Set Your User Pools region.
-     * e.g. if your user pools are in US East (N Virginia) then set cognitoRegion = Regions.US_EAST_1.
-     */
-    private static final Regions cognitoRegion = Regions.US_WEST_2; // Regions.DEFAULT_REGION;
 
     // User details from the service
     private static CognitoUserSession currSession;
@@ -465,7 +442,7 @@ public class UserHelper {
         signUpFieldsO2C.put("email_verified", "Email verified");
         signUpFieldsO2C.put("email", "Email");
 //        signUpFieldsO2C.put("middle_name", "Middle name");
-        signUpFieldsO2C.put("custom:greeting", "Greeting");
+        signUpFieldsO2C.put("custom:greeting", "Preferred Greeting");
 
     }
 
