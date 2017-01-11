@@ -3,6 +3,7 @@ package org.literacybridge.androidtbloader.talkingbook;
 import android.content.ContentResolver;
 import android.support.v4.provider.DocumentFile;
 
+import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 
 import java.io.IOException;
@@ -10,7 +11,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.literacybridge.core.fs.TbFile.Flags.append;
 
@@ -188,8 +191,16 @@ public class AndroidDocFile extends TbFile {
         List<String> fileNames = new ArrayList<>();
         DocumentFile[] files = file.listFiles();
         for (DocumentFile file : files) {
-            if (filter == null || filter.accept(this, file.getName())) {
-                fileNames.add(file.getName());
+            String name = file.getName();
+            if (name == null) {
+                Map<String,String> info = new HashMap<>();
+                info.put("parent", filename);
+                info.put("siblings", Integer.toString(files.length));
+                OperationLog.logEvent("nullfilename", info);
+            } else {
+                if (filter == null || filter.accept(this, file.getName())) {
+                    fileNames.add(file.getName());
+                }
             }
         }
         return fileNames.toArray(new String[fileNames.size()]);

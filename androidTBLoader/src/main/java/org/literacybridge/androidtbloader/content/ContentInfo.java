@@ -1,14 +1,13 @@
 package org.literacybridge.androidtbloader.content;
 
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.util.PathsProvider;
+import org.literacybridge.core.fs.OperationLog;
 
 import java.io.File;
-import java.security.cert.TrustAnchor;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -44,6 +43,8 @@ public class ContentInfo {
     private Downloader mDownloader = null;
     // A client that wants to listen to download state.
     private TransferListener mListener = null;
+    // Logger for the download perf.
+    private OperationLog.Operation mOpLog;
 
     // Community list built from the communities in the actual content update
     private Set<String> mCommunitiesCache = null;
@@ -150,6 +151,10 @@ public class ContentInfo {
     boolean startDownload(TBLoaderAppContext applicationContext, TransferListener listener) {
         if (mDownloader != null) return false;
         mListener = listener;
+        mOpLog = OperationLog.startOperation("download");
+        mOpLog.put("projectname", getProjectName());
+        mOpLog.put("version", getVersion());
+        mOpLog.put("size", getSize());
         mDownloader = new Downloader(this, myTransferListener);
         mDownloader.start();
         return true;
@@ -165,6 +170,8 @@ public class ContentInfo {
             if (state == TransferState.COMPLETED ||
                     state == TransferState.CANCELED ||
                     state == TransferState.FAILED) {
+                mOpLog.end();
+                mOpLog = null;
                 mDownloader = null;
             }
             if (mListener != null) mListener.onStateChanged(id, state);

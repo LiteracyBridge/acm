@@ -55,6 +55,26 @@ public class UploadManager {
     }
 
     /**
+     * Submits a file to be uploaded to S3.
+     * @param file The file to be uploaded.
+     * @param uploadName The name the object should have once uploaded.
+     * @return True if the file was moved into the upload directory.
+     */
+    public synchronized boolean upload(File file, String uploadName) {
+        File uploadFile = new File(mUploadDirectory, uploadName);
+        File parent = uploadFile.getParentFile();
+        if (!parent.exists()) {
+            parent.mkdirs();
+        }
+        if (!file.renameTo(uploadFile)) {
+            Log.d(TAG, String.format("Unable to rename %s to %s", file, uploadFile));
+            return false;
+        }
+        upload(uploadFile);
+        return true;
+    }
+
+    /**
      * Submits a single file to be uploaded to S3. Only one transfer is performed at a time.
      * @param file The file to be uploaded.
      */
@@ -108,7 +128,7 @@ public class UploadManager {
     private void startUpload(final File file) {
         // Build a key from the file's relative position in the upload directory.
         String relativeName = mUploadDirectory.toURI().relativize(file.toURI()).getPath();
-        String key = String.format("collected-data/%s", relativeName);
+        String key = relativeName;
 
         mActiveDownloaded = 0;
         final TransferUtility transferUtility = S3Helper.getTransferUtility();

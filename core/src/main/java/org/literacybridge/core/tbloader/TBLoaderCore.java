@@ -1,6 +1,7 @@
 package org.literacybridge.core.tbloader;
 
 import org.literacybridge.core.OSChecker;
+import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.RelativePath;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.fs.ZipUnzip;
@@ -1133,30 +1134,37 @@ public class TBLoaderCore {
         String dateInMonth = String.valueOf(cal.get(Calendar.DAY_OF_MONTH));
         String year = String.valueOf(cal.get(Calendar.YEAR));
 
-        StringBuilder sysDataTxtBuilder = new StringBuilder();
-        sysDataTxtBuilder.append(String.format("SRN:%s\n", mNewDeploymentInfo.getSerialNumber()));
-        sysDataTxtBuilder.append(String.format("IMAGE:%s\n", mNewDeploymentInfo.getPackageName()));
-        sysDataTxtBuilder.append(String.format("UPDATE:%s\n",
-                mNewDeploymentInfo.getDeploymentName()));
-        sysDataTxtBuilder.append(String.format("LOCATION:%s\n", mNewDeploymentInfo.getCommunity()));
-        sysDataTxtBuilder.append(String.format("YEAR:%s\n", year));
-        sysDataTxtBuilder.append(String.format("MONTH:%s\n", month));
-        sysDataTxtBuilder.append(String.format("DATE:%s\n", dateInMonth));
-        sysDataTxtBuilder.append(String.format("PROJECT:%s\n",
-                mNewDeploymentInfo.getProjectName()));
-        eraseAndOverwriteFile(talkingBookRoot.open(TBLoaderConstants.SYS_DATA_TXT),
-                sysDataTxtBuilder.toString());
+        // The Talking Book is hard coded to expect the MS-DOS line ending.
+        String MSDOS_LINE_ENDING = new String(new byte[] { 0x0d, 0x0a });
+
+        String projectName = mNewDeploymentInfo.getProjectName().toUpperCase();
+        String communityName = mNewDeploymentInfo.getCommunity().toUpperCase();
+        String srn = mNewDeploymentInfo.getSerialNumber().toUpperCase();
+        String deploymentName = mNewDeploymentInfo.getDeploymentName().toUpperCase();
+        String packageName = mNewDeploymentInfo.getPackageName().toUpperCase(); // aka 'image'
+        String sysDataTxt = String.format("SRN:%s%s", srn, MSDOS_LINE_ENDING) +
+                String.format("IMAGE:%s%s", packageName, MSDOS_LINE_ENDING) +
+                String.format("UPDATE:%s%s", deploymentName, MSDOS_LINE_ENDING) +
+                String.format("LOCATION:%s%s", communityName, MSDOS_LINE_ENDING) +
+                String.format("YEAR:%s%s", year, MSDOS_LINE_ENDING) +
+                String.format("MONTH:%s%s", month, MSDOS_LINE_ENDING) +
+                String.format("DATE:%s%s", dateInMonth, MSDOS_LINE_ENDING) +
+                String.format("PROJECT:%s%s", projectName, MSDOS_LINE_ENDING);
+        eraseAndOverwriteFile(talkingBookRoot.open(TBLoaderConstants.SYS_DATA_TXT), sysDataTxt);
         eraseAndOverwriteFile(talkingBookRoot.open("inspect"), ".");
         eraseAndOverwriteFile(talkingBookRoot.open("0h1m0s.rtc"), ".");
 
+        talkingBookRoot.open("log").mkdir();
+        talkingBookRoot.open("log-archive").mkdir();
+        talkingBookRoot.open("Inbox").mkdir();
+        talkingBookRoot.open("statistics").mkdir();
+
         system.mkdir();
-        eraseAndOverwriteFile(system.open(mNewDeploymentInfo.getSerialNumber() + ".srn"), ".");
-        eraseAndOverwriteFile(system.open(mNewDeploymentInfo.getDeploymentName() + ".dep"), ".");
-        eraseAndOverwriteFile(system.open(mNewDeploymentInfo.getCommunity() + ".loc"),
-                mNewDeploymentInfo.getCommunity());
+        eraseAndOverwriteFile(system.open(srn + ".srn"), ".");
+        eraseAndOverwriteFile(system.open(deploymentName + ".dep"), ".");
+        eraseAndOverwriteFile(system.open(communityName + ".loc"), communityName);
         eraseAndOverwriteFile(system.open("last_updated.txt"), collectionTempName);
-        eraseAndOverwriteFile(system.open(mNewDeploymentInfo.getProjectName() + ".prj"),
-                mNewDeploymentInfo.getProjectName());
+        eraseAndOverwriteFile(system.open(projectName + ".prj"), projectName);
         eraseAndOverwriteFile(system.open("notest.pcb"), ".");
 
         mProgressListenerListener.log(String.format("Updated TB files, %s", getStepTime()));

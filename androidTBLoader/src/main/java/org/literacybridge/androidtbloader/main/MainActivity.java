@@ -7,6 +7,7 @@ import android.util.Log;
 
 import org.literacybridge.androidtbloader.SingleFragmentActivity;
 import org.literacybridge.androidtbloader.signin.UserHelper;
+import org.literacybridge.core.fs.OperationLog;
 
 import java.util.ArrayList;
 
@@ -27,6 +28,17 @@ public class MainActivity extends SingleFragmentActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        OperationLog.close();
     }
 
     @Override

@@ -26,13 +26,16 @@ import org.literacybridge.androidtbloader.content.ContentManager;
 import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.core.fs.FsFile;
+import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -111,26 +114,43 @@ public class DeploymentPackageListFragment extends Fragment {
         }
 
         if (reloadRemotePackages) {
-            mContentManager.refreshContentList(contentManagerListener);
+            final OperationLog.Operation op = OperationLog.startOperation("refreshcontentlist");
+            mContentManager.refreshContentList(new ContentManager.ContentManagerListener() {
+
+                @Override
+                public void contentListChanged() {
+                    List<ContentInfo> content = mContentManager.getContentList();
+                    int local = 0;
+                    int cloud = 0;
+                    for (ContentInfo ci : content) {
+                        if (ci.getDownloadStatus() == ContentInfo.DownloadStatus.DOWNLOADED) {
+                            local++;
+                        } else {
+                            cloud++;
+                        }
+                    }
+                    op.put("local", local);
+                    op.put("cloud", cloud);
+                    op.end();
+                    mAdapter.setContentInfos(content);
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mAdapter.notifyDataSetChanged();
+                            mSwipeRefreshLayout.setRefreshing(false);
+                        }
+                    });
+                }
+            });
         }
 
-    }
-
-    private List<ContentInfo> getContentList() {
-        List<ContentInfo> result = new ArrayList<>();
-        for (ContentInfo info : mContentManager.getContentList()) {
-            if (Config.isUsersProject(info.getProjectName())) {
-                result.add(info);
-            }
-        }
-        return result;
     }
 
     ContentManager.ContentManagerListener contentManagerListener = new ContentManager.ContentManagerListener() {
 
         @Override
         public void contentListChanged() {
-            mAdapter.setContentInfos(getContentList());
+            mAdapter.setContentInfos(mContentManager.getContentList());
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {

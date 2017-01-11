@@ -46,7 +46,7 @@ public abstract class TbFile {
             out.write(buffer, 0, bytesRead);
         }
 
-        out.flush();
+        out.close();
     }
 
     /**
@@ -175,6 +175,7 @@ public abstract class TbFile {
     public static long copyDir(TbFile src, TbFile dst, CopyFilter filter, CopyProgress progress) throws IOException {
         long bytesCopied = 0;
         if (src.isDirectory()) {
+            dst.mkdirs();
             String[] children = src.list();
             int numCopied = 0;
             long startTime = System.nanoTime();
@@ -183,7 +184,6 @@ public abstract class TbFile {
                 TbFile srcChild = src.open(child);
                 if (filter == null || filter.accept(srcChild)) {
                     numCopied++;
-                    dst.mkdirs();
                     bytesCopied += copyDir(srcChild, dst.open(child), filter, progress);
                 }
             }

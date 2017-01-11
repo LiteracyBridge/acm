@@ -1,5 +1,6 @@
 package org.literacybridge.androidtbloader.installer;
 
+import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -26,6 +27,7 @@ import org.literacybridge.androidtbloader.talkingbook.TalkingBookConnectionManag
 import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.core.fs.FsFile;
+import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.fs.ZipUnzip;
 import org.literacybridge.core.tbloader.DeploymentInfo;
@@ -173,9 +175,6 @@ public class UpdateFragment extends Fragment {
         if (mCommunity != null && mCommunity.length() > 0) {
             setCommunityName(mCommunity);
         }
-        updateTbConnectionStatus(mTalkingBookConnectionManager.getConnectedTalkingBook());
-
-        setButtonState();
 
         return view;
     }
@@ -192,8 +191,12 @@ public class UpdateFragment extends Fragment {
         super.onResume();
         mTalkingBookConnectionManager
                 .setTalkingBookConnectionEventListener(talkingBookConnectionEventListener);
-        updateTbConnectionStatus(mTalkingBookConnectionManager.canAccessConnectedDevice());
+        OperationLog.Operation op = OperationLog.startOperation("CanAccessConnectedDevice");
+        TalkingBookConnectionManager.TalkingBook connnectedDevice = mTalkingBookConnectionManager.canAccessConnectedDevice();
+        op.end();
+        updateTbConnectionStatus(connnectedDevice);
         setButtonState();
+        progressListenerListener.refresh();
     }
 
     /**
@@ -242,9 +245,7 @@ public class UpdateFragment extends Fragment {
     private OnClickListener goClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            mUpdateStepTextView.setText("");
-            mUpdateDetailTextView.setText("");
-            mUpdateLogTextView.setText("");
+            progressListenerListener.clear();
             mSpinner.setVisibility(View.VISIBLE);
             mUpdateInProgress = true;
             setButtonState();
@@ -356,6 +357,8 @@ public class UpdateFragment extends Fragment {
                     @Override
                     public void run() {
                         updateTbConnectionStatus(connectedDevice);
+                        // New TB connected, so clear any results from updating a previous TB.
+                        progressListenerListener.clear();
                         setButtonState();
                     }
                 });
@@ -390,34 +393,57 @@ public class UpdateFragment extends Fragment {
     /**
      * Listens to progress from the tbloader, updates the progress display.
      */
-    ProgressListener progressListenerListener = new ProgressListener() {
+    abstract class MyProgressListener extends ProgressListener {
+        abstract public void clear();
+        abstract public void refresh();
+    }
+    MyProgressListener progressListenerListener = new MyProgressListener () {
+        private String mStep;
+        private String mDetail;
+        private String mLog;
+
+        public void clear() {
+            mStep = mDetail = mLog = "";
+            refresh();
+        }
+
+        public void refresh() {
+            mUpdateStepTextView.setText(mStep);
+            mUpdateDetailTextView.setText(mDetail);
+            mUpdateLogTextView.setText(mLog);
+        }
+
         @Override
         public void step(final Steps step) {
+            mStep = step.description();
+            mDetail = "";
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mUpdateStepTextView.setText(step.description());
-                    mUpdateDetailTextView.setText("");
+                    mUpdateStepTextView.setText(mStep);
+                    mUpdateDetailTextView.setText(mDetail);
                 }
             });
         }
 
         @Override
         public void detail(final String detail) {
+            mDetail = detail;
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mUpdateDetailTextView.setText(detail);
+                    mUpdateDetailTextView.setText(mDetail);
                 }
             });
         }
 
         @Override
         public void log(final String line) {
+            mLog = line + "\n" + mLog;
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mUpdateLogTextView.setText(line + "\n" + mUpdateLogTextView.getText());
+                    mUpdateLogTextView.setText(mLog);
                 }
             });
         }
@@ -425,23 +451,26 @@ public class UpdateFragment extends Fragment {
         @Override
         public void log(final boolean append, final String line) {
             if (!append) {
-                log(line);
+                mLog = line + "\n" + mLog;
             } else {
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        String oldValue = mUpdateLogTextView.getText().toString();
-                        int nl = oldValue.indexOf("\n");
-                        if (nl > 0) {
-                            String pref = oldValue.substring(0, nl);
-                            String suff = oldValue.substring(nl+1);
-                            mUpdateLogTextView.setText(pref + line + "\n" + suff);
-                        } else {
-                            mUpdateLogTextView.setText(oldValue + line);
-                        }
-                    }
-                });
+                // Find first (or only) line break
+                int nl = mLog.indexOf("\n");
+                if (nl > 0) {
+                    // {old stuff from before line break} {new stuff} {line break} {old stuff from after line break}
+                    String pref = mLog.substring(0, nl);
+                    String suff = mLog.substring(nl + 1);
+                    mLog = pref + line + "\n" + suff;
+                } else {
+                    // No line breaks, so simply append to anything already there.
+                    mLog = mLog + line;
+                }
             }
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mUpdateLogTextView.setText(mLog);
+                }
+            });
         }
     };
 
@@ -462,6 +491,7 @@ public class UpdateFragment extends Fragment {
 //        TbFile collectionTbFile = new FsFile(PathsProvider.getUploadDirectory());
 //        TbFile collectedDataDirectory = collectionTbFile.open(COLLECTED_DATA_SUBDIR_NAME);
         TimeZone tz = TimeZone.getTimeZone("UTC");
+        @SuppressLint("SimpleDateFormat")
         DateFormat df = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'");
         df.setTimeZone(tz);
         String collectionTimestamp = df.format(new Date());
@@ -516,7 +546,7 @@ public class UpdateFragment extends Fragment {
 
         // Zip up the files, and give the .zip to the uploader.
         try {
-            String collectedDataZipName = "tbcd" + Config.getTbcdid() + "/" + collectionTimestamp + ".zip";
+            String collectedDataZipName = "collected-data/tbcd" + Config.getTbcdid() + "/" + collectionTimestamp + ".zip";
             File uploadableZipFile = new File(PathsProvider.getUploadDirectory(), collectedDataZipName);
 
             // Zip all the files together. We don't really get any compression, but it collects them into

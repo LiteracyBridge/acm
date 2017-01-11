@@ -73,6 +73,10 @@ public class Config {
     private TBLoaderAppContext mApplicationContext;
     public Config(TBLoaderAppContext appContext) {
         mApplicationContext = appContext;
+        SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(appContext);
+        mTbcdId = userPrefs.getString(Constants.TBLOADER_DEVICE_PREF_NAME, "");
+        // Default project filter is "match anything"
+        mProjectFilter = userPrefs.getString("projects", ".*");
     }
 
     public void getUserConfig(final ConfigHandler handler) {

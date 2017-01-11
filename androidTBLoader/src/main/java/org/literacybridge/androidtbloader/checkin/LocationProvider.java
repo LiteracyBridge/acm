@@ -10,6 +10,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
+import org.literacybridge.core.fs.OperationLog;
 
 /**
  * Created by bill on 1/3/17.
@@ -32,12 +33,17 @@ public class LocationProvider {
 //        mLocationManager.requestLocationUpdates(GPS_PROVIDER, LOCATION_REFRESH_TIME,
 //                LOCATION_REFRESH_DISTANCE, mLocationListener);
 
+        final OperationLog.Operation op = OperationLog.startOperation("getlocation");
         requestSingleUpdate(TBLoaderAppContext.getInstance(),
                 new LocationCallback() {
                     @Override
                     public void onNewLocationAvailable(Location location,
                             String provider,
                             long nanos) {
+                        op.put("provider", provider);
+                        op.put("latitude", location.getLatitude());
+                        op.put("longitude", location.getLongitude());
+                        op.end();
                         locationListener.onLocationChanged(location, provider, nanos);
                     }
                 });

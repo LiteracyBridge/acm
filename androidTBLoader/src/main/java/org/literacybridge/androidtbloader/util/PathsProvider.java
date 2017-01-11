@@ -85,5 +85,14 @@ public class PathsProvider {
         return sTbLoaderAppContext.getExternalFilesDir("upload");
     }
 
+    /**
+     * Gets a File object that represents a directory into which log files should be placed. The
+     * expectation is that they will eventually be moved to the "upload" directory.
+     * @return the staging directory's File.
+     */
+    public static File getLogDirectory() {
+        return sTbLoaderAppContext.getExternalFilesDir("log");
+    }
+
 
 }

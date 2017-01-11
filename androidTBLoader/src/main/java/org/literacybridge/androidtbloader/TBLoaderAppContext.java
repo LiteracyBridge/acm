@@ -13,8 +13,10 @@ import org.literacybridge.androidtbloader.content.ContentManager;
 import org.literacybridge.androidtbloader.talkingbook.TalkingBookConnectionManager;
 import org.literacybridge.androidtbloader.uploader.UploadManager;
 import org.literacybridge.androidtbloader.util.Config;
+import org.literacybridge.androidtbloader.util.OperationLogImpl;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.androidtbloader.util.S3Helper;
+import org.literacybridge.core.fs.OperationLog;
 
 /**
  * An "Application" class. Used to hold long lifetime objects.
@@ -59,6 +61,8 @@ public class TBLoaderAppContext extends Application {
         mContentManager = new ContentManager(this);
         mUploadManager = new UploadManager(this);
         mConfig = new Config(this);
+
+        OperationLog.setImplementation(new OperationLogImpl());
     }
 
     public boolean isDebug() {

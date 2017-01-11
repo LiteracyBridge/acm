@@ -128,11 +128,19 @@ public class ContentManager {
         return result;
     }
 
+    public List<ContentInfo> getContentList(Flags... flags) {
+        List<ContentInfo> result = new ArrayList<>();
+        for (String projectName : getProjectNames(flags)) {
+            result.add(mProjects.get(projectName));
+        }
+        return result;
+    }
+
 
     public synchronized Map<String, Set<String>> getCommunitiesInProjects() {
         if (mProjectCommunitiesCache == null) {
             Map<String, Set<String>> projectCommunities = new HashMap<>();
-            for (ContentInfo info : getContentList()) {
+            for (ContentInfo info : mContentList) {
                 if (info.getDownloadStatus() == ContentInfo.DownloadStatus.DOWNLOADED) {
                     projectCommunities.put(info.getProjectName(), info.getCommunities());
                 }
@@ -154,10 +162,6 @@ public class ContentManager {
         return new ArrayList<>(resultSet);
     }
 
-    public List<ContentInfo> getContentList() {
-        return mContentList;
-    }
-    
     public ContentInfo getContentInfo(String project) {
         for (ContentInfo info : mContentList) {
             if (info.getProjectName().equalsIgnoreCase(project))
