@@ -1,7 +1,6 @@
 package org.literacybridge.core.tbloader;
 
 import org.literacybridge.core.OSChecker;
-import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.RelativePath;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.fs.ZipUnzip;
@@ -28,6 +27,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.Thread.sleep;
 import static org.literacybridge.core.fs.TbFile.Flags.append;
 import static org.literacybridge.core.fs.TbFile.Flags.nil;
 import static org.literacybridge.core.fs.TbFile.Flags.recursive;
@@ -41,6 +41,7 @@ import static org.literacybridge.core.tbloader.ProgressListener.Steps.finishing;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.gatherDeviceFiles;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.gatherUserRecordings;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.listDeviceFiles;
+import static org.literacybridge.core.tbloader.ProgressListener.Steps.listDeviceFiles2;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.reformatting;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.relabelling;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.starting;
@@ -610,7 +611,10 @@ public class TBLoaderCore {
 
                 forceFirmwareRefresh();
 
+                listDeviceFilesPostUpdate();
+
             }
+
             writeTbLog(gotStatistics, verified);
 
             disconnectDevice();
@@ -632,7 +636,7 @@ public class TBLoaderCore {
                 tbHasDiskCorruption,
                 false,
                 verified);
-        String completionMessage = String.format("TB-Loader completed in %s", result.duration);
+        String completionMessage = String.format("TB-Loader updated in %s", result.duration);
         mProgressListenerListener.detail("");
         mProgressListenerListener.log(completionMessage);
         LOG.log(Level.INFO, completionMessage);
@@ -773,16 +777,7 @@ public class TBLoaderCore {
         return myCount;
     }
 
-    /**
-     * Lists all the files on the Talking Book, and writes the listing to a file named sysdata.txt.
-     *
-     * @throws IOException
-     */
-    private void listDeviceFiles() throws IOException {
-        newStep(listDeviceFiles);
-
-        // rem Capturing Full Directory
-        // dir ${device_drive} /s > "${syncpath}\dir.txt"
+    public String getDeviceFileList() {
         StringBuilder builder = new StringBuilder();
         DirectoryCount counts = listDirectory(talkingBookRoot, builder);
 
@@ -797,9 +792,41 @@ public class TBLoaderCore {
             builder.append(String.format(" %,15d bytes free", free));
         }
         builder.append("\n");
+        return builder.toString();
+    }
 
-        eraseAndOverwriteFile(talkingBookDataRoot.open(TBLoaderConstants.DIRS_TXT),
-                builder.toString());
+    /**
+     * Lists all the files on the Talking Book, and writes the listing to a file named sysdata.txt.
+     *
+     * @throws IOException
+     */
+    private void listDeviceFiles() throws IOException {
+        newStep(listDeviceFiles);
+
+        // rem Capturing Full Directory
+        // dir ${device_drive} /s > "${syncpath}\dir.txt"
+        String fileList = getDeviceFileList();
+        eraseAndOverwriteFile(talkingBookDataRoot.open(TBLoaderConstants.DIRS_TXT), fileList);
+        mProgressListenerListener.log(String.format("Captured device file list, %s",
+                getStepTime()));
+    }
+
+    /**
+     * Lists all the files on the Talking Book, after the update. Note that this is written
+     * to the temp directory, and not zipped and uploaded.
+     *
+     * The main purpose, sadly, is to get the Android implementation of a USB host to write out
+     * the contents of the files.
+     *
+     * @throws IOException
+     */
+    private void listDeviceFilesPostUpdate() throws IOException {
+        newStep(listDeviceFiles2);
+
+        // rem Capturing Full Directory
+        // dir ${device_drive} /s > "${syncpath}\dir.txt"
+        String fileList = getDeviceFileList();
+        eraseAndOverwriteFile(tempDirectory.open(TBLoaderConstants.DIRS_POST_TXT), fileList);
         mProgressListenerListener.log(String.format("Captured device file list, %s",
                 getStepTime()));
     }
@@ -981,7 +1008,6 @@ public class TBLoaderCore {
         // Same name and location as the tempDirectory, but a file with a .zip extension.
         TbFile tempZip = talkingBookDataRoot.getParent().open(collectionTempName + ".zip");
 
-
         File sourceFilesDir = new File(talkingBookDataRoot.getAbsolutePath());
         File tempZipFile = new File(tempZip.getAbsolutePath());
         ZipUnzip.zip(sourceFilesDir, tempZipFile, true);
@@ -990,9 +1016,6 @@ public class TBLoaderCore {
         TbFile outputZip = projectCollectedData
                 .open(mTalkingBookDataZipPath);
 
-//      TbFile outputXip = projectCollectedData
-//              .open(talkingBookDataParentPath)
-//              .open(collectionTempName + ".zip");
         outputZip.getParent().mkdirs();
         TbFile.copy(tempZip, outputZip);
 
@@ -1053,6 +1076,7 @@ public class TBLoaderCore {
         newStep(clearSystem);
 
         talkingBookRoot.open("archive").deleteDirectory();
+        talkingBookRoot.open("LOST.DIR").deleteDirectory();
 
         // Delete files from /
         String[] names = talkingBookRoot.list(new TbFile.FilenameFilter() {

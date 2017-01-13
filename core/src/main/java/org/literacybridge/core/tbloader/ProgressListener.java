@@ -22,6 +22,7 @@ public abstract class ProgressListener {
         updateSystem("Updating TB system files"),
         updateContent("Updating TB content"),
         updateCommunity("Updating community content"),
+        listDeviceFiles2("Listing device files after update"),
         finishing("Finished");
 
         private final String description;

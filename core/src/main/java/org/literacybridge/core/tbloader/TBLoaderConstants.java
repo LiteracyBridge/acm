@@ -35,6 +35,7 @@ public class TBLoaderConstants {
 
   public static final RelativePath SYS_DATA_TXT = RelativePath.parse("sysdata.txt");
   public static final RelativePath DIRS_TXT = RelativePath.parse("dir.txt");
+  public static final RelativePath DIRS_POST_TXT = RelativePath.parse("dir_post.txt");
 
   public static final String TB_DATA_PATH = "TalkingBookData";
   public static final String USER_RECORDINGS_PATH = "UserRecordings";
