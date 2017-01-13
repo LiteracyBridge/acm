@@ -18,12 +18,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TalkingBookConnectionSetupActivity extends Activity {
     private static final String TAG = TalkingBookConnectionSetupActivity.class.getSimpleName();
     private static final int READ_REQUEST_CODE = 1001;
-    private static final String REQUEST_DEFAULT_PERMISSION_EXTRA
+    private static final String EXPLICIT_REQUEST_DEFAULT_PERMISSION
             = "org.literacybridge.androidtbloader.request_default_permission";
 
     public static Intent newIntent(Context parent, boolean requestDefaultPermission) {
         Intent intent = new Intent(parent, TalkingBookConnectionSetupActivity.class);
-        intent.putExtra(REQUEST_DEFAULT_PERMISSION_EXTRA, requestDefaultPermission);
+        intent.putExtra(EXPLICIT_REQUEST_DEFAULT_PERMISSION, requestDefaultPermission);
         return intent;
     }
 
@@ -38,7 +38,7 @@ public class TalkingBookConnectionSetupActivity extends Activity {
 
         final ProgressDialog dialog = new ProgressDialog(this);
         dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        dialog.setCancelable(getIntent().getBooleanExtra(REQUEST_DEFAULT_PERMISSION_EXTRA, false));
+        dialog.setCancelable(getIntent().getBooleanExtra(EXPLICIT_REQUEST_DEFAULT_PERMISSION, false));
         dialog.setTitle("Waiting for Talking Book");
         dialog.setMessage("Waiting for a Talking Book to connect. In the Dialog that appears " +
                 "please find the Talking Book and select it. You only have to do this once.");
@@ -46,7 +46,7 @@ public class TalkingBookConnectionSetupActivity extends Activity {
         dialog.setCanceledOnTouchOutside(false);
         final AtomicBoolean canceled = new AtomicBoolean(false);
 
-        if (getIntent().getBooleanExtra(REQUEST_DEFAULT_PERMISSION_EXTRA, false)) {
+        if (getIntent().getBooleanExtra(EXPLICIT_REQUEST_DEFAULT_PERMISSION, false)) {
             dialog.setButton(ProgressDialog.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -174,7 +174,7 @@ public class TalkingBookConnectionSetupActivity extends Activity {
                         .create();
 
                 dialog.show();
-            } else if (getIntent().getBooleanExtra(REQUEST_DEFAULT_PERMISSION_EXTRA, false)) {
+            } else if (getIntent().getBooleanExtra(EXPLICIT_REQUEST_DEFAULT_PERMISSION, false)) {
                 if (!talkingBookConnectionManager.hasDefaultPermission()) {
                     AlertDialog dialog = new AlertDialog.Builder(this)
                             .setCancelable(false)

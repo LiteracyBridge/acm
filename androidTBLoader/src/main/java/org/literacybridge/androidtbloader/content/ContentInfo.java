@@ -40,7 +40,7 @@ public class ContentInfo {
     private DownloadStatus mDownloadStatus;
 
     // If currently downloading, will be non-null
-    private Downloader mDownloader = null;
+    private ContentDownloader mContentDownloader = null;
     // A client that wants to listen to download state.
     private TransferListener mListener = null;
     // Logger for the download perf.
@@ -111,8 +111,8 @@ public class ContentInfo {
         this.mDownloadStatus = status;
     }
 
-    public void setDownloader(Downloader downloader) {
-        this.mDownloader = downloader;
+    public void setDownloader(ContentDownloader contentDownloader) {
+        this.mContentDownloader = contentDownloader;
     }
 
     /**
@@ -121,8 +121,8 @@ public class ContentInfo {
      */
     public int getProgress() {
         int progress = 0;
-        if (mDownloader != null && mSize != 0) {
-            long bytesProgress = mDownloader.getBytesTransferred();
+        if (mContentDownloader != null && mSize != 0) {
+            long bytesProgress = mContentDownloader.getBytesTransferred();
             progress = (int) ((double) bytesProgress * 100 / mSize);
         }
         return progress;
@@ -133,7 +133,7 @@ public class ContentInfo {
      * @return true if so
      */
     public boolean isDownloading() {
-        return mDownloader != null;
+        return mContentDownloader != null;
     }
 
     public boolean isUpdateAvailable() {
@@ -149,14 +149,14 @@ public class ContentInfo {
      * @return true if a download was started, false if one was already in progress
      */
     boolean startDownload(TBLoaderAppContext applicationContext, TransferListener listener) {
-        if (mDownloader != null) return false;
+        if (mContentDownloader != null) return false;
         mListener = listener;
         mOpLog = OperationLog.startOperation("download");
         mOpLog.put("projectname", getProjectName());
         mOpLog.put("version", getVersion());
         mOpLog.put("size", getSize());
-        mDownloader = new Downloader(this, myTransferListener);
-        mDownloader.start();
+        mContentDownloader = new ContentDownloader(this, myTransferListener);
+        mContentDownloader.start();
         return true;
     }
 
@@ -172,7 +172,7 @@ public class ContentInfo {
                     state == TransferState.FAILED) {
                 mOpLog.end();
                 mOpLog = null;
-                mDownloader = null;
+                mContentDownloader = null;
             }
             if (mListener != null) mListener.onStateChanged(id, state);
         }

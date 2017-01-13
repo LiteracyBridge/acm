@@ -66,34 +66,34 @@
             android:screenOrientation="portrait"/>
 
         <activity
-            android:name=".OldMainActivity"
-            android:label="@string/app_name"
+            android:name=".content.ManageContentActivity"
+            android:label="Manage Content"
             android:screenOrientation="portrait">
         </activity>
 
         <activity
             android:name=".checkin.CheckinActivity"
-            android:label="TB Loader"
+            android:label="Check-In"
             android:screenOrientation="portrait"/>
 
         <activity
             android:name=".installer.UpdateActivity"
-            android:label="TB Loader"
+            android:label="Update TB"
             android:screenOrientation="portrait"/>
 
         <activity
             android:name=".community.ChooseCommunityActivity"
-            android:label="TB Loader"
+            android:label="Community"
             android:screenOrientation="portrait"/>
 
         <activity
             android:name=".SettingsActivity"
-            android:label="@string/app_name"
-            android:parentActivityName=".OldMainActivity"
+            android:label="Settings"
+            android:parentActivityName=".content.ManageContentActivity"
             android:screenOrientation="portrait">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="org.literacybridge.androidtbloader.OldMainActivity"/>
+                android:value="org.literacybridge.androidtbloader.content.ManageContentActivity"/>
         </activity>
 
         <activity

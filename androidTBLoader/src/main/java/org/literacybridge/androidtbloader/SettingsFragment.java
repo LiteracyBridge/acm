@@ -4,9 +4,17 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
+import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
 
 import org.literacybridge.androidtbloader.talkingbook.TalkingBookConnectionManager;
+import org.literacybridge.androidtbloader.util.Config;
 
 public class SettingsFragment extends PreferenceFragment
         implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -60,18 +68,7 @@ public class SettingsFragment extends PreferenceFragment
                 ((TBLoaderAppContext) getActivity().getApplicationContext()).getTalkingBookConnectionManager();
 
         Preference preference = findPreference("pref_prefer_network_location");
-        if (mSharedPreferences.getBoolean("pref_prefer_network_location", false)) {
-            preference.setSummary(getString(R.string.pref_summary_prefer_network));
-        } else {
-            preference.setSummary(getString(R.string.pref_summary_prefer_gps));
-        }
-
-        preference = findPreference("pref_show_unpublished");
-        if (mSharedPreferences.getBoolean("pref_show_unpublished", false)) {
-            preference.setSummary(getString(R.string.pref_summary_show_unpublished));
-        } else {
-            preference.setSummary(getString(R.string.pref_summary_show_published_only));
-        }
+        preference.setSummary(getString(R.string.pref_summary_location_preference));
 
         preference = findPreference("pref_tb_access");
         if (talkingBookConnectionManager.hasDefaultPermission()) {
@@ -80,22 +77,37 @@ public class SettingsFragment extends PreferenceFragment
             preference.setSummary(getString(R.string.pref_summary_tb_access_not_granted));
         }
 
-        ////////////////////////////////////////////////////////////////////////////////
-        // Debug code
-        preference = findPreference(("pref_simulate_device"));
-        if (mSharedPreferences.getBoolean(preference.getKey(), false)) {
-            preference.setSummary(R.string.pref_summary_simulate_device);
+        if (!Config.isAdvanced()) {
+            // TODO: it should be possible to avoid even loading the advanced settings.
+            Preference pc = findPreference("pref_key_advanced_settings");
+            if (pc != null) {
+                getPreferenceScreen().removePreference(pc);
+            }
         } else {
-            preference.setSummary(R.string.pref_summary_physical_device);
-        }
-        // Debug code
-        ////////////////////////////////////////////////////////////////////////////////
+            preference = findPreference("pref_show_unpublished");
+            if (mSharedPreferences.getBoolean("pref_show_unpublished", false)) {
+                preference.setSummary(getString(R.string.pref_summary_show_unpublished));
+            } else {
+                preference.setSummary(getString(R.string.pref_summary_show_published_only));
+            }
 
-        preference = findPreference(("pref_allow_install_outdated"));
-        if (mSharedPreferences.getBoolean(preference.getKey(), false)) {
-            preference.setSummary(R.string.pref_summary_allow_install_outdated_allowed);
-        } else {
-            preference.setSummary(R.string.pref_summary_allow_install_outdated_not_allowed);
+            ////////////////////////////////////////////////////////////////////////////////
+            // Debug code
+            preference = findPreference(("pref_simulate_device"));
+            if (mSharedPreferences.getBoolean(preference.getKey(), false)) {
+                preference.setSummary(R.string.pref_summary_simulate_device);
+            } else {
+                preference.setSummary(R.string.pref_summary_physical_device);
+            }
+            // Debug code
+            ////////////////////////////////////////////////////////////////////////////////
+
+            preference = findPreference(("pref_allow_install_outdated"));
+            if (mSharedPreferences.getBoolean(preference.getKey(), false)) {
+                preference.setSummary(R.string.pref_summary_allow_install_outdated_allowed);
+            } else {
+                preference.setSummary(R.string.pref_summary_allow_install_outdated_not_allowed);
+            }
         }
     }
 }

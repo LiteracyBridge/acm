@@ -41,6 +41,7 @@
         android:layout_below="@+id/imageViewAppMainCognitoIcon"
         android:layout_centerHorizontal="true"/>
 
+    <!-- Title -->
     <TextView
         android:id="@+id/textViewAppMainTitle"
         android:layout_width="wrap_content"
@@ -58,6 +59,7 @@
         android:layout_alignParentStart="true"
         android:layout_below="@+id/textViewAppMainTitle"/>
 
+    <!-- Sub-title -->
     <TextView
         android:id="@+id/textView"
         android:layout_width="match_parent"
@@ -74,6 +76,7 @@
         android:layout_below="@+id/textView"
         android:layout_centerHorizontal="true"/>
 
+    <!-- User name field -->
     <TextView
         android:id="@+id/textViewUserIdLabel"
         android:layout_width="match_parent"
@@ -107,6 +110,7 @@
         android:textColor="@color/alert"
         android:textSize="@dimen/activity_text_padding"/>
 
+    <!-- Password field -->
     <TextView
         android:id="@+id/textViewUserPasswordLabel"
         android:layout_width="match_parent"
@@ -146,6 +150,7 @@
         android:layout_below="@+id/textViewUserPasswordMessage"
         android:layout_centerHorizontal="true"/>
 
+    <!-- Sign in button -->
     <Button
         android:id="@+id/buttonLogIn"
         android:layout_width="match_parent"
@@ -173,6 +178,7 @@
         android:layout_below="@+id/space5"
         android:layout_centerHorizontal="true"/>
 
+    <!-- Forgot password link -->
     <TextView
         android:id="@+id/textViewUserForgotPassword"
         android:layout_width="wrap_content"
@@ -186,6 +192,7 @@
         android:textColor="@color/button_default"
         android:textSize="15dp"/>
 
+    <!-- New user link -->
     <TextView
         android:id="@+id/textViewUserSignUp"
         android:layout_width="wrap_content"

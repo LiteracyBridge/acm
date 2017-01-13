@@ -1,12 +1,14 @@
-package org.literacybridge.androidtbloader;
+package org.literacybridge.androidtbloader.content;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -21,28 +23,16 @@ import android.widget.TextView;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 
-import org.literacybridge.androidtbloader.content.ContentInfo;
-import org.literacybridge.androidtbloader.content.ContentManager;
-import org.literacybridge.androidtbloader.util.Config;
-import org.literacybridge.androidtbloader.util.PathsProvider;
-import org.literacybridge.core.fs.FsFile;
+import org.literacybridge.androidtbloader.R;
+import org.literacybridge.androidtbloader.SettingsActivity;
+import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.core.fs.OperationLog;
-import org.literacybridge.core.fs.TbFile;
 
-import java.io.File;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import static android.app.Activity.RESULT_OK;
-
-public class DeploymentPackageListFragment extends Fragment {
-    private static final String TAG = DeploymentPackageListFragment.class.getSimpleName();
+public class ManageContentFragment extends Fragment {
+    private static final String TAG = ManageContentFragment.class.getSimpleName();
 
     @SuppressLint("SimpleDateFormat")
     private static final SimpleDateFormat EXPIRATION_DATE_FORMAT = new SimpleDateFormat("dd.MM.yyyy");
@@ -63,7 +53,26 @@ public class DeploymentPackageListFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_deployment_package_list, container, false);
+        View view = inflater.inflate(R.layout.activity_manage_content, container, false);
+
+        // The actionbar has a "title" property that is set from the activity's "label=" property
+        // from the AndroidManifest file. Here, we make the toolbar work like an action bar.
+        Toolbar toolbar = (Toolbar) view.findViewById(R.id.main_toolbar);
+        ((AppCompatActivity)getActivity()).setSupportActionBar(toolbar);
+        // The toolbar also *contains* a TextView with an id of main_toolbar_title.
+        TextView main_title = (TextView) view.findViewById(R.id.main_toolbar_title);
+        main_title.setText("");
+
+        // We want a "back" button (sometimes called "up"), but we don't want back navigation, but
+        // to simply end this activity without setting project or community.
+        toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                getActivity().finish();
+            }
+        });
+
         mContentInfoRecyclerView = (RecyclerView) view.findViewById(R.id.deployment_package_recycler_view);
         mContentInfoRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         mContentInfoRecyclerView.getRecycledViewPool().setMaxRecycledViews(0, 0);
@@ -92,7 +101,7 @@ public class DeploymentPackageListFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.fragment_deployment_package_list, menu);
+        //inflater.inflate(R.menu.fragment_deployment_package_list, menu);
     }
 
     @Override

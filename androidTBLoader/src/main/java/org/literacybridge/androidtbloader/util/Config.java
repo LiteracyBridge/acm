@@ -42,6 +42,7 @@ public class Config {
         void noConfig();
     }
 
+    private static boolean mIsAdvanced = false;
     private static String mTbcdId;
     private static String mProjectFilter;
     private static Pattern mProjectPattern;
@@ -52,6 +53,14 @@ public class Config {
 
     public static String getProjectFilter() {
         return mProjectFilter;
+    }
+
+    public static boolean isAdvanced() { return mIsAdvanced; }
+
+    public static void signOut() {
+        SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(TBLoaderAppContext.getInstance());
+        SharedPreferences.Editor editor = userPrefs.edit();
+        editor.clear().commit();
     }
 
     /**
@@ -77,6 +86,7 @@ public class Config {
         mTbcdId = userPrefs.getString(Constants.TBLOADER_DEVICE_PREF_NAME, "");
         // Default project filter is "match anything"
         mProjectFilter = userPrefs.getString("projects", ".*");
+        mIsAdvanced = Boolean.parseBoolean(userPrefs.getString("advanced", "false"));
     }
 
     public void getUserConfig(final ConfigHandler handler) {
@@ -128,6 +138,8 @@ public class Config {
         mTbcdId = prefs.getString(Constants.TBLOADER_DEVICE_PREF_NAME, "");
         // Default project filter is "match anything"
         mProjectFilter = prefs.getString("projects", ".*");
+        mIsAdvanced = Boolean.parseBoolean(prefs.getString("advanced", "false"));
+
         handler.gotConfig(prefs);
     }
 
@@ -181,7 +193,7 @@ public class Config {
                     prefsEditor.putString("etag", summary.getETag());
                     // Add rest of signin config to prefs
                     for (Properties.Entry e : newSettings.entrySet()) {
-                        prefsEditor.putString((String)e.getKey(), (String)e.getValue());
+                        prefsEditor.putString((String) e.getKey(), (String) e.getValue());
                     }
                     prefsEditor.apply();
 

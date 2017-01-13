@@ -22,10 +22,14 @@ import static org.literacybridge.core.fs.TbFile.Flags.append;
  */
 
 public class AndroidDocFile extends TbFile {
+    // This helps a little with the problem of zero byte files. What seems to help more is to
+    // walk the directory tree after doing the update.
+    public static boolean deleteBeforeCreate = false;
+
     private AndroidDocFile parent;
     private String filename;
     private DocumentFile file;
-    private ContentResolver resolver;
+    public ContentResolver resolver;
 
     /**
      * Creates a "root" AndroidDocFile.
@@ -150,8 +154,12 @@ public class AndroidDocFile extends TbFile {
 
     @Override
     public void createNew(InputStream content, Flags... flags) throws IOException {
-        String streamFlags = (Arrays.asList(flags).contains(append)) ? "wa" : "w";
+        boolean appendToExisting = Arrays.asList(flags).contains(append);
+        String streamFlags = appendToExisting ? "wa" : "w";
         resolve();
+        if (deleteBeforeCreate && !appendToExisting && exists()) {
+            delete();
+        }
         if (file == null) {
             file = parent.file.createFile("application/octet-stream", filename);
         }
@@ -163,7 +171,12 @@ public class AndroidDocFile extends TbFile {
     @Override
     public boolean delete() {
         resolve();
-        return file == null || file.delete();
+        // If no file, consider it successfully deleted.
+        if (file == null) return true;
+        // Otherwise try to delete, and if successful, null out the file handle.
+        boolean result = file.delete();
+        if (result) file = null;
+        return result;
     }
 
     @Override

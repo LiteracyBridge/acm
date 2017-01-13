@@ -18,8 +18,8 @@ import java.io.IOException;
 /**
  * Performs download of a Content Update
  */
-class Downloader {
-    private static final String TAG="Downloader";
+class ContentDownloader {
+    private static final String TAG="ContentDownloader";
 
     private ContentInfo mContentInfo;
     private TransferListener mTransferListener;
@@ -27,7 +27,7 @@ class Downloader {
     private TransferObserver mObserver;
     private File mProjectDir;
 
-    Downloader(ContentInfo contentInfo, TransferListener transferListener) {
+    ContentDownloader(ContentInfo contentInfo, TransferListener transferListener) {
         this.mContentInfo = contentInfo;
         this.mTransferListener = transferListener;
     }

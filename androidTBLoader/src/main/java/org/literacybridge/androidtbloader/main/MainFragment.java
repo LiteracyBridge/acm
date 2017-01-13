@@ -33,7 +33,7 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GetDetailsHandler;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.UpdateAttributesHandler;
 
-import org.literacybridge.androidtbloader.OldMainActivity;
+import org.literacybridge.androidtbloader.content.ManageContentActivity;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.SettingsActivity;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
@@ -269,6 +269,7 @@ public class MainFragment extends Fragment {
             case R.id.nav_user_sign_out:
                 UserHelper.getPool().getUser(mUser).signOut();
                 UserHelper.getCredentialsProvider(getActivity().getApplicationContext()).clear();
+                Config.signOut();
                 Intent intent = new Intent();
                 intent.putExtra("signout", true);
                 getActivity().setResult(RESULT_OK, intent);
@@ -394,7 +395,7 @@ public class MainFragment extends Fragment {
         }
     };
 
-    private void doManage() {Intent userActivity = new Intent(getActivity(), OldMainActivity.class);
+    private void doManage() {Intent userActivity = new Intent(getActivity(), ManageContentActivity.class);
         userActivity.putExtra("name", mUser);
         startActivityForResult(userActivity, REQUEST_CODE_MANAGE_CONTENT);
     }

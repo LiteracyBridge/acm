@@ -45,6 +45,7 @@ public class TalkingBookConnectionManager {
 
     private volatile boolean mIsMounted;
     private volatile TalkingBook mConnectedTalkingBook;
+    private volatile TalkingBook mSimulatedTalkingBook;
 
     private volatile boolean mUsbWatcherDisabled;
 
@@ -131,20 +132,24 @@ public class TalkingBookConnectionManager {
     }
 
     public TalkingBook getConnectedTalkingBook() {
+        if (mSimulatedTalkingBook != null) return mSimulatedTalkingBook;
         return mConnectedTalkingBook;
     }
     ////////////////////////////////////////////////////////////////////////////////
     // Debug code
     public void setSimulatedTalkingBook(TalkingBook simulatedTalkingBook) {
-        mConnectedTalkingBook = simulatedTalkingBook;
+        mSimulatedTalkingBook = simulatedTalkingBook;
     }
     // Debug code
     ////////////////////////////////////////////////////////////////////////////////
 
     public TalkingBook canAccessConnectedDevice() {
-        if (mConnectedTalkingBook != null) {
-            return mConnectedTalkingBook;
+        if (mSimulatedTalkingBook != null) {
+            return mSimulatedTalkingBook;
         }
+//        if (mConnectedTalkingBook != null) {
+//            return mConnectedTalkingBook;
+//        }
 
         try {
             Map<String, MountedDevice> volumesMap = getSecondaryMountedVolumesMap();
@@ -159,7 +164,10 @@ public class TalkingBookConnectionManager {
                             TbFile fs = new AndroidDocFile(root, mAppContext.getContentResolver());
                             mConnectedTalkingBook = new TalkingBook(fs, TBDeviceInfo.getSerialNumberFromFileSystem(fs), device.getValue().mLabel);
                             if (mTalkingBookConnectionEventListener != null) {
+                                Log.d(TAG, "Sending Talking Book connection event");
                                 mTalkingBookConnectionEventListener.onTalkingBookConnectEvent(mConnectedTalkingBook);
+                            } else {
+                                Log.d(TAG, "Not sending Talking Book connection event; no listener");
                             }
                         }
 

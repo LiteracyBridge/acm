@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,12 +19,16 @@ import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
+
+
 
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.community.ChooseCommunityActivity;
 import org.literacybridge.androidtbloader.content.ContentInfo;
 import org.literacybridge.androidtbloader.content.ContentManager;
+import org.literacybridge.androidtbloader.talkingbook.AndroidDocFile;
 import org.literacybridge.androidtbloader.talkingbook.TalkingBookConnectionManager;
 import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.PathsProvider;
@@ -78,20 +84,20 @@ public class UpdateFragment extends Fragment {
     private TextView mContentUpdateNameTextView;
     private TextView mTalkingBookIdTextView;
     private TextView mTalkingBookWarningsTextView;
+
+    private LinearLayout mCommunityGroup;
     private TextView mCommunityNameTextView;
+
+    private CheckBox mRefreshFirmwareCheckBox;
 
     private TextView mUpdateStepTextView;
     private TextView mUpdateDetailTextView;
     private TextView mUpdateLogTextView;
 
-    private CheckBox mRefreshFirmwareCheckBox;
-    private LinearLayout mCommunityGroup;
-
     private Button mGoButton;
     private ProgressBar mSpinner;
 
     private boolean mUpdateInProgress = false;
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -132,15 +138,36 @@ public class UpdateFragment extends Fragment {
         // Debug code
         ////////////////////////////////////////////////////////////////////////////////
 
+        OperationLog.Operation op = OperationLog.startOperation("CanAccessConnectedDevice");
+        mTalkingBookConnectionManager.canAccessConnectedDevice();
+        op.end();
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_loader, container, false);
+        View view = inflater.inflate(R.layout.activity_update, container, false);
+
+        // The actionbar has a "title" property that is set from the activity's "label=" property
+        // from the AndroidManifest file. Here, we make the toolbar work like an action bar.
+        Toolbar toolbar = (Toolbar) view.findViewById(R.id.main_toolbar);
+        ((AppCompatActivity)getActivity()).setSupportActionBar(toolbar);
+        // The toolbar also *contains* a TextView with an id of main_toolbar_title.
+        TextView main_title = (TextView) view.findViewById(R.id.main_toolbar_title);
+        main_title.setText("");
+
+        // We want a "back" button (sometimes called "up"), but we don't want back navigation, but
+        // to simply end this activity without setting project or community.
+        toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                getActivity().finish();
+            }
+        });
 
         // Project name and initial value.
-        mProjectNameTextView = (TextView) view.findViewById(R.id.checkin_project_name);
+        mProjectNameTextView = (TextView) view.findViewById(R.id.update_project_name);
         mProjectNameTextView.setText(mProject);
         mContentUpdateNameTextView = (TextView)view.findViewById(R.id.content_update_name);
         File contentUpdateDirectory = PathsProvider.getLocalContentUpdateDirectory(mProject);
@@ -148,7 +175,6 @@ public class UpdateFragment extends Fragment {
 
         // Talking Book ID, aka serial number, and initial value.
         mTalkingBookIdTextView = (TextView)view.findViewById(R.id.talking_book_id);
-        mRefreshFirmwareCheckBox = (CheckBox)view.findViewById(R.id.refresh_firmware);
 
         // Field for any warning text.
         mTalkingBookWarningsTextView = (TextView)view.findViewById(R.id.talking_book_warnings);
@@ -182,6 +208,7 @@ public class UpdateFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
+        Log.d(TAG, "Update Fragment paused");
         mTalkingBookConnectionManager
                 .setTalkingBookConnectionEventListener(null);
     }
@@ -189,14 +216,13 @@ public class UpdateFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        Log.d(TAG, "Update Fragment resumed");
         mTalkingBookConnectionManager
                 .setTalkingBookConnectionEventListener(talkingBookConnectionEventListener);
-        OperationLog.Operation op = OperationLog.startOperation("CanAccessConnectedDevice");
-        TalkingBookConnectionManager.TalkingBook connnectedDevice = mTalkingBookConnectionManager.canAccessConnectedDevice();
-        op.end();
+        TalkingBookConnectionManager.TalkingBook connnectedDevice = mTalkingBookConnectionManager.getConnectedTalkingBook();
         updateTbConnectionStatus(connnectedDevice);
         setButtonState();
-        progressListenerListener.refresh();
+        mProgressListener.refresh();
     }
 
     /**
@@ -245,7 +271,7 @@ public class UpdateFragment extends Fragment {
     private OnClickListener goClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            progressListenerListener.clear();
+            mProgressListener.clear();
             mSpinner.setVisibility(View.VISIBLE);
             mUpdateInProgress = true;
             setButtonState();
@@ -264,24 +290,40 @@ public class UpdateFragment extends Fragment {
                          * no longer happen, well, we'll no longer show them to the user. And if, somehow,
                          * an exception DOES occur, we *really* need to get that back to the developer.
                          */
-                        progressListenerListener.log(getStackTrace(e));
-                        progressListenerListener.log("Unexpected exception:");
+                        mProgressListener.log(getStackTrace(e));
+                        mProgressListener.log("Unexpected exception:");
                     } finally {
+                        mConnectedDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
+                                mConnectedDevice.getDeviceLabel(),
+                                mSrnPrefix);
+                        final String srn = mConnectedDeviceInfo.getSerialNumber();
                         // We always want to turn off the spinner, and re-enable the Go button.
                         getActivity().runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                mSpinner.setVisibility(View.GONE);
+                                mSpinner.setVisibility(View.INVISIBLE);
                                 mUpdateInProgress = false;
+                                mTalkingBookIdTextView.setText(srn);
                                 setButtonState();
                                 setMessages();
+                                Toast.makeText(getActivity(), "It is now safe to disconnect the Talking Book.", Toast.LENGTH_SHORT).show();
                             }
                         });
+                        unmount();
                     }
                 }
             });
         }
     };
+
+    private void unmount() {
+        TbFile f = mConnectedDevice.getTalkingBookRoot();
+        AndroidDocFile af = (AndroidDocFile)f;
+        Log.d(TAG, String.format("resolver: %s", af.resolver));
+
+//        Intent i = new Intent(android.provider.Settings.ACTION_MEMORY_CARD_SETTINGS);
+//        startActivity(i);
+    }
 
     private static String getStackTrace(Throwable aThrowable) {
         Writer result = new StringWriter();
@@ -323,6 +365,7 @@ public class UpdateFragment extends Fragment {
      * and project vs the connected Talking Book's previous community and project.
      */
     private void setMessages() {
+        String message = "";
         if (mConnectedDeviceInfo != null) {
             String deviceCommunity = mConnectedDeviceInfo.getCommunityName();
             String deviceProject = mConnectedDeviceInfo.getProjectName();
@@ -331,18 +374,15 @@ public class UpdateFragment extends Fragment {
             boolean communityMismatch = mCommunity != null && !deviceCommunity.equalsIgnoreCase(mCommunity) &&
                     !deviceCommunity.equalsIgnoreCase("UNKNOWN");
             if (projectMismatch || communityMismatch) {
-                String message = "Warning: This Talking Book was previously part of";
+                message = "Warning: This Talking Book was previously part of";
                 if (projectMismatch) message += " project " + deviceProject;
                 if (mCommunity != null) {
                     if (projectMismatch && communityMismatch) message += " and";
                     if (communityMismatch) message += " community " + deviceCommunity;
                 }
-                mTalkingBookWarningsTextView.setText(message);
             }
-        } else {
-            mTalkingBookWarningsTextView.setText("");
         }
-
+        mTalkingBookWarningsTextView.setText(message);
     }
 
     /**
@@ -353,12 +393,13 @@ public class UpdateFragment extends Fragment {
         new TalkingBookConnectionManager.TalkingBookConnectionEventListener() {
             @Override
             public void onTalkingBookConnectEvent(final TalkingBookConnectionManager.TalkingBook connectedDevice) {
+                Log.d(TAG, String.format("Saw new Talking Book: %s", connectedDevice));
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         updateTbConnectionStatus(connectedDevice);
                         // New TB connected, so clear any results from updating a previous TB.
-                        progressListenerListener.clear();
+                        mProgressListener.clear();
                         setButtonState();
                     }
                 });
@@ -366,6 +407,7 @@ public class UpdateFragment extends Fragment {
 
             @Override
             public void onTalkingBookDisConnectEvent() {
+                Log.d(TAG, "Disconnected Talking Book");
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -377,7 +419,16 @@ public class UpdateFragment extends Fragment {
         };
 
     private void updateTbConnectionStatus(TalkingBookConnectionManager.TalkingBook connectedDevice) {
+        // If there's an object, is it still the same object?
+        if (mConnectedDevice == connectedDevice) {
+            // Yep, nothing to do.
+            return;
+        }
         String srn = "";
+        // Is there now a (new) device connected?
+        if (connectedDevice != null) {
+            mProgressListener.clear();
+        }
         mConnectedDevice = connectedDevice;
         mConnectedDeviceInfo = null;
         if (connectedDevice != null) {
@@ -396,8 +447,9 @@ public class UpdateFragment extends Fragment {
     abstract class MyProgressListener extends ProgressListener {
         abstract public void clear();
         abstract public void refresh();
+        abstract public void extraStep(String step);
     }
-    MyProgressListener progressListenerListener = new MyProgressListener () {
+    MyProgressListener mProgressListener = new MyProgressListener () {
         private String mStep;
         private String mDetail;
         private String mLog;
@@ -411,6 +463,18 @@ public class UpdateFragment extends Fragment {
             mUpdateStepTextView.setText(mStep);
             mUpdateDetailTextView.setText(mDetail);
             mUpdateLogTextView.setText(mLog);
+        }
+
+        public void extraStep(String step) {
+            mStep = step;
+            mDetail = "";
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mUpdateStepTextView.setText(mStep);
+                    mUpdateDetailTextView.setText(mDetail);
+                }
+            });
         }
 
         @Override
@@ -482,6 +546,8 @@ public class UpdateFragment extends Fragment {
                     mConnectedDevice.getDeviceLabel(),
                     mSrnPrefix);
 
+        long startTime = System.currentTimeMillis();
+
         // The directory with images. {project}/content/{deployment}
         File contentUpdateDirectory = PathsProvider.getLocalContentUpdateDirectory(mProject);
         String contentUpdateName = contentUpdateDirectory.getName();
@@ -532,6 +598,14 @@ public class UpdateFragment extends Fragment {
                 firmwareRevision,
                 mCommunity);
 
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mTalkingBookWarningsTextView.setText("Do not disconnect the Talking Book!");
+            }
+        });
+
+
         TBLoaderCore core = new TBLoaderCore.Builder()
                 .withTbLoaderConfig(tbLoaderConfig)
                 .withTbDeviceInfo(tbDeviceInfo)
@@ -540,12 +614,14 @@ public class UpdateFragment extends Fragment {
                 .withNewDeploymentInfo(newDeploymentInfo)
                 .withLocation(mLocation)
                 .withRefreshFirmware(mRefreshFirmwareCheckBox.isChecked())
-                .withProgressListener(progressListenerListener)
+                .withProgressListener(mProgressListener)
                 .build();
         TBLoaderCore.Result result = core.update();
 
         // Zip up the files, and give the .zip to the uploader.
         try {
+            long zipStart = System.currentTimeMillis();
+            mProgressListener.extraStep("Zipping statistics and user feedback");
             String collectedDataZipName = "collected-data/tbcd" + Config.getTbcdid() + "/" + collectionTimestamp + ".zip";
             File uploadableZipFile = new File(PathsProvider.getUploadDirectory(), collectedDataZipName);
 
@@ -555,10 +631,30 @@ public class UpdateFragment extends Fragment {
             collectedDataTbFile.deleteDirectory();
 
             ((TBLoaderAppContext)getActivity().getApplicationContext()).getUploadManager().upload(uploadableZipFile);
+            String message = String.format("Zipped statistics and user feedback in %s", formatElapsedTime(System.currentTimeMillis()-zipStart));
+            mProgressListener.log(message);
+            message = String.format("TB-Loader completed in %s", formatElapsedTime(System.currentTimeMillis()-startTime));
+            mProgressListener.log(message);
+            mProgressListener.extraStep("Finished");
         } catch (IOException e) {
             e.printStackTrace();
-            progressListenerListener.log(getStackTrace(e));
-            progressListenerListener.log("Exception zipping stats");
+            mProgressListener.log(getStackTrace(e));
+            mProgressListener.log("Exception zipping stats");
+        }
+    }
+
+    private String formatElapsedTime(Long millis) {
+        if (millis < 1000) {
+            // Less than one second
+            return String.format("%d ms", millis);
+        } else if (millis < 60000) {
+            // Less than one minute
+            String time = String.format("%f", millis / 1000.0);
+            return time.substring(0, 4) + " s";
+        } else {
+            long minutes = millis / 60000;
+            long seconds = (millis % 60000) / 1000;
+            return String.format("%d:%02d", minutes, seconds);
         }
     }
 

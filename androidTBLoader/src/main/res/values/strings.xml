@@ -79,14 +79,17 @@
     <string name="pref_summary_simulate_device">Simulate a Talking Book using storage on the SD card.</string>
     <string name="pref_summary_physical_device">Use only a physical Talking Book device.</string>
     <string name="gps_coordinates">GPS coordinates</string>
-    <string name="waiting_for_gps">Waiting for gps...</string>
-    <string name="add_gps_location_to_community">Add GPS location to community...</string>
-    <string name="add_communities_to_be_updated">Add communities to be updated...</string>
+    <string name="waiting_for_gps">Waiting for gps…</string>
+    <string name="add_gps_location_to_community">Add GPS location to community…</string>
+    <string name="add_communities_to_be_updated">Add communities to be updated…</string>
     <string name="community_groups_at_this_location">Community Groups at this location</string>
     <string name="community_groups_to_update_today">Community Groups to update today</string>
+
     <string name="pref_title_prefer_network_location">Prefer getting location from network, not GPS.</string>
     <string name="pref_summary_prefer_network">The device will try first to get location from the network, not GPS. This may be faster, but less accurate, and may not work in remote areas.</string>
     <string name="pref_summary_prefer_gps">The device will try first to get location from GPS, not the network. This will be more accurate, and works in remote areas, but may be slower.</string>
+    <string name="pref_summary_location_preference">When checked, the device will try first to get location from the network, which may be faster, but less accurate, and may not work in remote areas. When unchecked, the device will try first to get location from GPS, which will be more accurate, and works in remote areas, but may be slower.</string>
+
     <string name="edit_greeting">Edit preferred greeting</string>
     <string name="main_greeting_label">Hello, </string>
 

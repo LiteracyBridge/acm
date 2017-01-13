@@ -15,7 +15,7 @@
         android:textSize="10sp"/>
 
     <TextView
-        android:id="@+id/checkin_project_name"
+        android:id="@+id/update_project_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Project"
@@ -119,13 +119,32 @@
         android:background="#ffd"
         android:orientation="vertical">
 
-        <!-- Option to force refresh. Maybe we'll just make this the default. -->
-        <CheckBox
-            android:id="@+id/refresh_firmware"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Refresh firmware?"
-            tools:text="Refresh firmware?"/>
+            android:orientation="horizontal">
+
+            <!-- Option to force refresh. Maybe we'll just make this the default. -->
+            <CheckBox
+                android:id="@+id/refresh_firmware"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Refresh firmware?"
+                tools:text="Refresh firmware?"/>
+
+            <CheckBox
+                android:id="@+id/delete_before_write"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delete first?"/>
+
+            <CheckBox
+                android:id="@+id/delete_option_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Option 3?"/>
+
+        </LinearLayout>
 
         <ProgressBar
             android:id="@+id/progressBar1"
@@ -134,7 +153,8 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:indeterminate="true"
-            android:indeterminateDuration="16000"/>
+            android:indeterminateDuration="16000"
+            android:visibility="invisible"/>
 
         <TextView
             android:id="@+id/textView11"

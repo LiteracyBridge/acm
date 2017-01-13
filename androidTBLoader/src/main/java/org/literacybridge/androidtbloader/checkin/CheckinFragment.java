@@ -11,6 +11,8 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static android.app.Activity.RESULT_OK;
@@ -102,7 +103,25 @@ public class CheckinFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater,
             ViewGroup container,
             Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_checkin, container, false);
+        View view = inflater.inflate(R.layout.activity_checkin, container, false);
+
+        // The actionbar has a "title" property that is set from the activity's "label=" property
+        // from the AndroidManifest file. Here, we make the toolbar work like an action bar.
+        Toolbar toolbar = (Toolbar) view.findViewById(R.id.main_toolbar);
+        ((AppCompatActivity)getActivity()).setSupportActionBar(toolbar);
+        // The toolbar also *contains* a TextView with an id of main_toolbar_title.
+        TextView main_title = (TextView) view.findViewById(R.id.main_toolbar_title);
+        main_title.setText("");
+
+        // We want a "back" button (sometimes called "up"), but we don't want back navigation, but
+        // to simply end this activity without setting project or community.
+        toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                getActivity().finish();
+            }
+        });
 
         // GPS Coordinates.
         mGpsCoordinatesTextView = (TextView) view.findViewById(R.id.checkin_gps_coordinates);

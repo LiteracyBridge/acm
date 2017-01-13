@@ -99,9 +99,9 @@ public class SigninActivity extends AppCompatActivity {
 
         // Set toolbar for this screen
         toolbar = (Toolbar) findViewById(R.id.main_toolbar);
-        toolbar.setTitle("Menu");
+        toolbar.setTitle("Sign In");
         TextView main_title = (TextView) findViewById(R.id.main_toolbar_title);
-        main_title.setText("AppMain");
+        main_title.setText("");
         setSupportActionBar(toolbar);
 
         // Set navigation drawer for this screen
