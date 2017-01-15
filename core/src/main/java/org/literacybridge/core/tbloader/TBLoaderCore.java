@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 
 import static java.lang.Thread.sleep;
 import static org.literacybridge.core.fs.TbFile.Flags.append;
+import static org.literacybridge.core.fs.TbFile.Flags.contentRecursive;
 import static org.literacybridge.core.fs.TbFile.Flags.nil;
 import static org.literacybridge.core.fs.TbFile.Flags.recursive;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.checkDisk;
@@ -930,9 +931,9 @@ public class TBLoaderCore {
         // del ${device_drive}\statistics\stats\*.* /S /Q
         //      /s : Deletes specified files from the current directory and all subdirectories. Displays the names of the files as they are being deleted.
         //      /q : Specifies quiet mode. You are not prompted for delete confirmation.
-        talkingBookRoot.open("log").delete(TbFile.Flags.contentRecursive);
-        talkingBookRoot.open("log-archive").delete(TbFile.Flags.contentRecursive);
-        talkingBookRoot.open("statistics").delete(TbFile.Flags.contentRecursive);
+        talkingBookRoot.open("log").delete(contentRecursive);
+        talkingBookRoot.open("log-archive").delete(contentRecursive);
+        talkingBookRoot.open("statistics").delete(contentRecursive);
 
         mProgressListenerListener.log(String.format("Cleared statistics, %s", getStepTime()));
     }
@@ -1019,7 +1020,8 @@ public class TBLoaderCore {
         outputZip.getParent().mkdirs();
         TbFile.copy(tempZip, outputZip);
 
-        tempDirectory.delete(recursive);
+        // Clean out everything we put in the temp directory. Any other cruft that was there, as well.
+        tempDirectory.delete(contentRecursive);
         mProgressListenerListener.log(String.format("Copied statistics and files, %s",
                 getStepTime()));
     }

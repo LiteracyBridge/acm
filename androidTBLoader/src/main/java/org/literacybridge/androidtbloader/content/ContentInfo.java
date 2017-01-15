@@ -4,13 +4,16 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
+import org.literacybridge.androidtbloader.checkin.KnownLocations;
+import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.core.fs.OperationLog;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Description of a Content Update.
@@ -47,7 +50,7 @@ public class ContentInfo {
     private OperationLog.Operation mOpLog;
 
     // Community list built from the communities in the actual content update
-    private Set<String> mCommunitiesCache = null;
+    private Map<String, CommunityInfo> mCommunitiesCache = null;
 
     ContentInfo(String projectName) {
         this.mProjectName = projectName;
@@ -190,11 +193,12 @@ public class ContentInfo {
 
     /**
      * Gets a list of the communities in the content update.
-     * @return
+     * @return A Set of CommunityInfo.
      */
-    public Set<String> getCommunities() {
+    public Map<String, CommunityInfo> getCommunities() {
+        KnownLocations.loadLocationsForProjects(Arrays.asList(getProjectName().toUpperCase()));
         if (mCommunitiesCache == null) {
-            Set<String> result = new HashSet<>();
+            Map<String, CommunityInfo> result = new HashMap<>();
             File projectDir = PathsProvider.getLocalContentProjectDirectory(mProjectName);
             File contentDir = new File(projectDir, "content");
             File[] contentUpdates = contentDir.listFiles();
@@ -203,7 +207,13 @@ public class ContentInfo {
                 File[] communities = communitiesDir.listFiles();
                 if (communities != null) {
                     for (File community : communities) {
-                        result.add(community.getName());
+                        String communityName = community.getName().toUpperCase();
+                        CommunityInfo ci = KnownLocations.findCommunity(communityName,
+                                getProjectName().toUpperCase());
+                        if (ci == null) {
+                            ci = new CommunityInfo(communityName, getProjectName());
+                        }
+                        result.put(community.getName(), ci);
                     }
                 }
             }

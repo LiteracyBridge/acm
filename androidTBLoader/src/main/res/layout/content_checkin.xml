@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:background="#ffe"
-              android:orientation="vertical"
-              android:padding="4dp">
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#ffe"
+                android:orientation="vertical"
+                android:padding="4dp">
 
     <!-- GPS Coordinates -->
 
     <LinearLayout
+        android:id="@+id/checkin_gps_group"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
         android:orientation="vertical">
 
         <TextView
@@ -44,6 +46,7 @@
         android:id="@+id/checkin_project_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/checkin_gps_group"
         android:textSize="10sp"
         tools:ignore="SmallSp"
         tools:text="Tap to choose -or- Auto chosen"/>
@@ -52,167 +55,150 @@
         android:id="@+id/checkin_project_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/checkin_project_label"
+        android:layout_marginBottom="10dp"
         android:textSize="18sp"
         tools:text="DEMO"/>
 
-    <Space
+    <!-- Tabs for Nearby / Today -->
+    <TabHost
+        android:id="@+id/checkin_tabHost"
         android:layout_width="match_parent"
-        android:layout_height="10dp"
-        />
+        android:layout_height="match_parent"
+        android:layout_below="@+id/checkin_project_name"
+        android:layout_centerHorizontal="true"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="10dp"
+        android:background="#eee"
+        android:layout_above="@+id/checkin_bottom_button_group">
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-    <!-- Nearby Community / Groups -->
+            <TabWidget
+                android:id="@android:id/tabs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+            </TabWidget>
+
+            <FrameLayout
+                android:id="@android:id/tabcontent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <!-- Nearby Community / Groups -->
+                <RelativeLayout
+                    android:id="@+id/checkin_tab_nearby"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    >
+
+                    <TextView
+                        android:id="@+id/checkin_nearby_label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:text="@string/community_groups_at_this_location"
+                        android:textSize="10sp"
+                        tools:ignore="SmallSp"
+                        tools:text="Community Groups at this location"
+                        />
+
+                    <android.support.v7.widget.RecyclerView
+                        android:id="@+id/checkin_nearby_community_groups"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scrollbars="vertical"
+                        android:fadeScrollbars="false"
+                        android:layout_alignParentBottom="true"
+                        android:layout_below="@+id/checkin_nearby_label"
+                        android:paddingLeft="10dp"
+                        android:paddingRight="10dp"
+                        tools:layout_height="130dp"
+                        tools:text="List"
+                        />
+
+                </RelativeLayout>
+
+                <!-- communities to be updated today -->
+                <RelativeLayout
+                    android:id="@+id/checkin_tab_update_today"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    >
+
+                    <TextView
+                        android:id="@+id/checkin_update_today_label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:text="@string/community_groups_to_update_today"
+                        android:textSize="10sp"
+                        tools:ignore="SmallSp"
+                        tools:text="Community Groups to update today"/>
+
+                    <android.support.v7.widget.RecyclerView
+                        android:id="@+id/checkin_update_today_communities"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scrollbars="vertical"
+                        android:fadeScrollbars="false"
+                        android:layout_alignParentBottom="true"
+                        android:layout_below="@+id/checkin_update_today_label"
+                        android:paddingLeft="10dp"
+                        android:paddingRight="10dp"
+                        tools:layout_height="130dp"
+                        tools:text="List"
+                        />
+
+                </RelativeLayout>
+
+            </FrameLayout>
+        </LinearLayout>
+    </TabHost>
+
     <LinearLayout
+        android:id="@+id/checkin_bottom_button_group"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        >
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/checkin_nearby_label"
+        <Button
+            android:id="@+id/checkin_add_community"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/community_groups_at_this_location"
-            android:textSize="10sp"
-            tools:ignore="SmallSp"
-            tools:text="Community Groups at this location"
-            />
+            android:text="Add community..."
+            android:textAlignment="textEnd"
+            android:textStyle="normal|italic"
+            tools:text="Add communities to be current tab..."/>
 
-        <ListView
-            android:id="@+id/checkin_nearby_community_groups"
+        <!-- Do the check in -->
+        <ImageButton
+            android:id="@+id/checkin_button"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight=".2"
-            android:choiceMode="none"
-            android:fadeScrollbars="false"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:listSelector="@android:color/darker_gray"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
-            tools:layout_height="130dp"
-            tools:text="List"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:srcCompat="@drawable/check"
             />
 
         <Button
-            android:id="@+id/checkin_add_gps_to_community"
+            android:id="@+id/checkin_button_2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/add_gps_location_to_community"
-            android:textAlignment="textEnd"
-            android:textStyle="normal|italic"
-            tools:text="Add GPS location to community..."/>
+            android:layout_gravity="bottom|end"
+            android:background="@android:color/holo_red_light"
+            android:scaleType="fitCenter"
+            android:text="Check In!"
+            android:textSize="18sp"
+            tools:text="Check In!"/>
 
-        <RelativeLayout
-            android:id="@+id/checkin_add_gps_to_community_group"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="20dp"
-            android:background="#fff"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <ImageView
-                android:id="@+id/checkin_add_gps_to_community_image"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:background="#fff"
-                android:contentDescription="@string/add_gps_location_to_community"
-                android:scaleType="centerCrop"
-                android:src="?android:attr/actionModeShareDrawable"
-                app:srcCompat="@android:drawable/ic_input_add"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@+id/checkin_add_gps_to_community_image"
-                android:paddingLeft="20dp"
-                android:text="@string/add_gps_location_to_community"
-                android:textAlignment="viewStart"
-                android:textSize="18sp"
-                tools:text="Add GPS location to community"/>
-        </RelativeLayout>
 
     </LinearLayout>
 
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="10dp"
-        />
-
-
-    <!-- communities to be updated today -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        >
-
-        <TextView
-            android:id="@+id/checkin_update_today_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/community_groups_to_update_today"
-            android:textSize="10sp"
-            tools:ignore="SmallSp"
-            tools:text="Community Groups to update today"/>
-
-        <ListView
-            android:id="@+id/checkin_update_today_communities"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight=".2"
-            android:choiceMode="none"
-            android:elevation="11dp"
-            android:fadeScrollbars="false"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:listSelector="@android:color/darker_gray"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
-            tools:layout_height="130dp"
-            tools:text="List"/>
-
-        <Button
-            android:id="@+id/checkin_update_today_add_community"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/add_communities_to_be_updated"
-            android:textAlignment="textEnd"
-            android:textStyle="normal|italic"
-            tools:text="Add communities to be updated..."/>
-
-    </LinearLayout>
-
-
-    <android.support.v4.widget.Space
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        />
-
-    <!-- Do the check in -->
-    <ImageButton
-        android:id="@+id/checkin_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.1"
-        android:visibility="gone"
-        app:srcCompat="@drawable/check"
-        />
-
-    <Button
-        android:id="@+id/checkin_button_2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:background="@android:color/holo_red_light"
-        android:scaleType="fitCenter"
-        android:text="Check In!"
-        android:textSize="18sp"
-        tools:text="Check In!"
-        />
-
-
-</LinearLayout>
+</RelativeLayout>

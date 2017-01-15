@@ -2,88 +2,196 @@ package org.literacybridge.androidtbloader.community;
 
 import android.app.Fragment;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.ListView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import org.literacybridge.androidtbloader.R;
+import org.literacybridge.androidtbloader.TBLoaderAppContext;
+import org.literacybridge.androidtbloader.checkin.LocationProvider;
+import org.literacybridge.androidtbloader.content.ContentManager;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static android.app.Activity.RESULT_OK;
+import static android.view.View.GONE;
 
 /**
- * Created by bill on 12/22/16.
+ * Choose a community from a list.
+ *
+ * A number of options are provided, depending on the needs of the caller.
+ * - communities: extra data; if provided is the list of communities to show.
+ * - projects: extra data; if provided let user choose a project from the list to
+ *   filter the communities shown. If only one project, don't show it as a choice.
  */
 
 public class ChooseCommunityFragment extends Fragment {
     private static final String TAG = ChooseCommunityFragment.class.getSimpleName();
 
-    private List<String> mOriginalList;
-    private List<String> mFilteredList;
+    private ContentManager mContentManager;
+    private List<String> mProjectList;
+    private String mProject;
+
+    private List<CommunityInfo> mOriginalList;
+    private List<CommunityInfo> mSortedList;
+    private List<CommunityInfo> mFilteredList;
     private String mFilter;
     private Pattern mFilterPattern;
 
-    private ArrayAdapter mAdapter;
-
+    private LinearLayout mProjectGroup;
+    private TextView mProjectTextView;
+    private TextView mProjectLabelTextView;
+    private CheckBox mSortByDistanceCheckBox;
     private EditText mFilterText;
-    private ListView mListView;
+    private RecyclerView mCommunityInfoRecyclerView;
+
+    private CommunityInfoAdapter mAdapter;
+
+    private boolean mSortByDistance;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mContentManager = ((TBLoaderAppContext) getActivity().getApplicationContext()).getContentManager();
+        mSortedList = new ArrayList<>();
+        mFilteredList = new ArrayList<>();
+
+        // Get the arguments; a project or projects, or a list of communities.
         Intent intent = getActivity().getIntent();
-        mOriginalList = new ArrayList<>(intent.getStringArrayListExtra("list"));
-        mFilteredList = new ArrayList<>(mOriginalList);
-        Collections.sort(mOriginalList, new Comparator<String>() {
-            @Override
-            public int compare(String lhs, String rhs) {
-                return lhs.compareToIgnoreCase(rhs);
+        List<String> projectsList = intent.getStringArrayListExtra("projects");
+        mProject = intent.getStringExtra("project");
+        if (projectsList != null) {
+            mProjectList = new ArrayList<>(projectsList);
+        } else {
+            mProjectList = Arrays.asList(mProject);
+        }
+        // If there is no project given, but there is a list, take the first item in the list as the project
+        if (mProject == null) {
+            if (mProjectList.size() > 0) {
+                mProject = mProjectList.get(0);
             }
-        });
+        } else {
+            // There is a project given. If there's also a list, make sure the project is in the list.
+            boolean found = false;
+            for (String proj : mProjectList) {
+                if (proj.equals(mProject)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) throw new IllegalStateException("Given project not in given list of projects");
+        }
+        // If there is a project, populate the original list from it.
+        if (mProject != null) {
+            setProject(mProject);
+        } else {
+            // No project(s) passed, we need to have communities passed.
+            List<String> communities = intent.getStringArrayListExtra("communities");
+            if (communities != null) {
+                mOriginalList = CommunityInfo.parseExtra(communities);
+            }
+        }
+        // Ensure we have communities to choose from.
+        if (mOriginalList == null || mOriginalList.size() == 0) {
+            throw new IllegalStateException("No communities from which to choose");
+        }
         mFilter = intent.getStringExtra("filter");
+        if (mFilter == null) mFilter = "";
 
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_choose_community, container, false);
+        View view = inflater.inflate(R.layout.activity_choose_community, container, false);
+
+        // The actionbar has a "title" property that is set from the activity's "label=" property
+        // from the AndroidManifest file. Here, we make the toolbar work like an action bar.
+        Toolbar toolbar = (Toolbar) view.findViewById(R.id.main_toolbar);
+        ((AppCompatActivity)getActivity()).setSupportActionBar(toolbar);
+        // The toolbar also *contains* a TextView with an id of main_toolbar_title.
+        TextView main_title = (TextView) view.findViewById(R.id.main_toolbar_title);
+        main_title.setText("");
+
+        // We want a "back" button (sometimes called "up"), but we don't want back navigation, rather
+        // to simply end this activity without setting project or community.
+        toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+        toolbar.setNavigationOnClickListener(new OnClickListener(){
+            @Override
+            public void onClick(View view){
+                getActivity().finish();
+            }
+        });
 
         mFilterText = (EditText)view.findViewById(R.id.filtered_chooser_filter_text);
-        mListView = (ListView)view.findViewById(R.id.filtered_chooser_list);
-
         mFilterText.addTextChangedListener(filterTextListener);
+        mSortByDistanceCheckBox = (CheckBox) view.findViewById(R.id.filtered_chooser_sort_distance_checkBox);
+        mSortByDistanceCheckBox.setOnClickListener(sortByDistanceClickListener);
+        mProjectGroup = (LinearLayout)view.findViewById(R.id.filtered_chooser_project_group);
+        mProjectGroup.setOnClickListener(projectClickListener);
+        mProjectTextView = (TextView)view.findViewById(R.id.filtered_chooser_project);
+        mProjectLabelTextView = (TextView)view.findViewById(R.id.filtered_chooser_project_label);
 
-        mListView.setOnTouchListener(listViewTouchListener);
-        mListView.setOnItemClickListener(listViewItemClickListener);
+        mCommunityInfoRecyclerView = (RecyclerView) view.findViewById(
+                R.id.filtered_chooser_recycler);
+        mCommunityInfoRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        mCommunityInfoRecyclerView.setOnTouchListener(listViewTouchListener);
 
-        mFilter = "";
-        mAdapter = new ArrayAdapter(getActivity(), android.R.layout.simple_list_item_1, mFilteredList);
-        mListView.setAdapter(mAdapter);
+        mAdapter = new CommunityInfoAdapter(getActivity(), mFilteredList, mCommunitySelectedListener
+        );
+        mCommunityInfoRecyclerView.setAdapter(mAdapter);
 
+        if (mProject == null) {
+            mProjectGroup.setVisibility(GONE);
+        } else if (mProjectList == null || mProjectList.size() == 1) {
+            mProjectTextView.setText(mProject);
+            mProjectLabelTextView.setText(R.string.filtered_chooser_project_label);
+        }
+
+        sortList();
         updateListView();
 
         return view;
     }
+
+    @NonNull
+    private OnClickListener sortByDistanceClickListener = new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mSortByDistance = mSortByDistanceCheckBox.isChecked();
+                sortList();
+                filterList();
+                mAdapter.notifyDataSetChanged();
+            }
+        };
+
 
     /**
      * This is to hide the keyboard when the user scrolls the list. Shows more list.
@@ -97,17 +205,26 @@ public class ChooseCommunityFragment extends Fragment {
         }
     };
 
-    /**
-     * Handles the actual choosing of an item.
-     */
-    OnItemClickListener listViewItemClickListener = new OnItemClickListener() {
+    private OnClickListener projectClickListener = new OnClickListener() {
         @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            String selected = (String)mListView.getItemAtPosition(position);
-            Intent intent = new Intent();
-            intent.putExtra("selected", selected);
-            getActivity().setResult(RESULT_OK, intent);
-            getActivity().finish();
+        public void onClick(View v) {
+            final String[] projects = mProjectList.toArray(new String[mProjectList.size()]);
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setTitle(R.string.pick_project_dialog_title)
+                    .setItems(projects, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, final int which) {
+                            setProject(projects[which]);
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mProjectTextView.setText(mProject);
+                                    mAdapter.notifyDataSetChanged();
+                                }
+                            });
+                        }
+                    });
+            builder.create().show();
         }
     };
 
@@ -130,21 +247,79 @@ public class ChooseCommunityFragment extends Fragment {
         }
     };
 
+    private CommunityInfoAdapter.CommunityInfoAdapterListener mCommunitySelectedListener = new CommunityInfoAdapter.CommunityInfoAdapterListener() {
+        @Override
+        public void onCommunityClicked(CommunityInfo community) {
+            Intent intent = new Intent();
+            intent.putExtra("selected", community.makeExtra());
+            getActivity().setResult(RESULT_OK, intent);
+            getActivity().finish();
+        }
+    };
+
+    private void setProject(String project) {
+        Map<String, Map<String, CommunityInfo>> projects = mContentManager.getCommunitiesForProjects(
+                Arrays.asList(project));
+        if (projects.containsKey(project)) {
+            mProject = project;
+            mOriginalList = new ArrayList<>(projects.get(mProject).values());
+            sortList();
+            filterList();
+        }
+    }
+
+    private void setNewList(List<CommunityInfo> newList) {
+        mOriginalList = newList;
+        sortList();
+        filterList();
+    }
+
+    /**
+     * Sorts the original list to the sorted list, based on current criteria.
+     */
+    private void sortList() {
+        mSortedList.clear();
+        mSortedList.addAll(mOriginalList);
+        Collections.sort(mSortedList, new Comparator<CommunityInfo>() {
+            @Override
+            public int compare(CommunityInfo lhs, CommunityInfo rhs) {
+                if (mSortByDistance) {
+                    Float dlhs = LocationProvider.distanceTo(lhs);
+                    Float drhs = LocationProvider.distanceTo(rhs);
+                    if (dlhs < drhs) return -1;
+                    if (dlhs > drhs) return 1;
+                }
+                int cmp = lhs.getProject().compareToIgnoreCase(rhs.getProject());
+                if (cmp != 0) {
+                    return cmp;
+                }
+                return lhs.getName().compareToIgnoreCase(rhs.getName());
+            }
+        });
+    }
+
+    /**
+     * Filters the sorted list to the filtered list, based on current criteria.
+     */
+    private void filterList() {
+        mFilteredList.clear();
+        if (mFilter == null || mFilter.length() == 0) {
+            mFilteredList.addAll(mSortedList);
+        } else {
+            for (CommunityInfo info : mSortedList) {
+                Matcher m = mFilterPattern.matcher(info.getName());
+                if (m.find()) {
+                    mFilteredList.add(info);
+                }
+            }
+        }
+    }
+
     /**
      * Updates the filtered list with the current filter.
      */
     private void updateListView() {
-        mFilteredList.clear();
-        if (mFilter == null || mFilter.length() == 0) {
-            mFilteredList.addAll(mOriginalList);
-        } else {
-            for (String s : mOriginalList) {
-                Matcher m = mFilterPattern.matcher(s);
-                if (m.find()) {
-                    mFilteredList.add(s);
-                }
-            }
-        }
+        filterList();
         mAdapter.notifyDataSetChanged();
     }
 

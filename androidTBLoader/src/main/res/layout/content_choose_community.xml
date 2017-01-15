@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:padding="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <!-- Project display -->
+        <LinearLayout
+            android:id="@+id/filtered_chooser_project_group"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/filtered_chooser_project_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tap to change project"
+                android:textSize="10sp"/>
+
+            <TextView
+                android:id="@+id/filtered_chooser_project"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingLeft="4dp"
+                android:paddingTop="4dp"
+                android:text="TextView"
+                tools:text="DEMO"/>
+
+        </LinearLayout>
+
+        <Space
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+
+        <!-- Sort by distance checkbox -->
+        <CheckBox
+            android:id="@+id/filtered_chooser_sort_distance_checkBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="false"
+            android:text="@string/filtered_chooser_sort_distance_checkbox"
+            />
+
+    </LinearLayout>
+
+
+    <!-- Filter text edit -->
+    <TextView
+        android:id="@+id/filtered_chooser_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="4dp"
+        android:text="Filter"
+        android:textSize="10sp"
+        tools:text="Filter"/>
+
+    <EditText
+        android:id="@+id/filtered_chooser_filter_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Filter..."
+        android:paddingLeft="10dp"
+        android:text=""
+        tools:text="The filter..."/>
+
+    <!-- List -->
+    <TextView
+        android:id="@+id/textView14"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:text="Filtered list"
+        android:textSize="10sp"
+        tools:text="Filtered list"
+        />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/filtered_chooser_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/textView14"
+        android:scrollbars="vertical"
+        />
+
+    <!-- ListView
+        android:id="@+id/filtered_chooser_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:choiceMode="none"
+        android:listSelector="@android:color/darker_gray"
+        android:focusableInTouchMode="true"
+        android:focusable="true"
+        android:fadeScrollbars="false"
+        tools:text="List"/ -->
+
+
+</LinearLayout>

@@ -227,7 +227,10 @@ public class AndroidDocFile extends TbFile {
         List<AndroidDocFile> filteredFiles = new ArrayList<>();
         DocumentFile[] files = file.listFiles();
         for (DocumentFile file : files) {
-            if (filter == null || filter.accept(this, file.getName())) {
+            // The "exists" is to deal with a situation in Android 5.1 where the listFiles() call returns
+            // a file named ".android_secure", but file.exists() is false.
+            // Jeez, Google, how the hell is anybody supposed to deal with stunts like this?
+            if (file.exists() && (filter == null || filter.accept(this, file.getName()))) {
                 filteredFiles.add(new AndroidDocFile(this, file));
             }
         }

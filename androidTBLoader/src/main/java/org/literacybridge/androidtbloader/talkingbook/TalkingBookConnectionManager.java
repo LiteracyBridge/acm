@@ -11,6 +11,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.net.Uri;
+import android.os.IBinder;
 import android.os.storage.StorageManager;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
@@ -21,6 +22,8 @@ import org.literacybridge.androidtbloader.db.TalkingBookDbSchema.KnownTalkingBoo
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.tbloader.TBDeviceInfo;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -147,10 +150,6 @@ public class TalkingBookConnectionManager {
         if (mSimulatedTalkingBook != null) {
             return mSimulatedTalkingBook;
         }
-//        if (mConnectedTalkingBook != null) {
-//            return mConnectedTalkingBook;
-//        }
-
         try {
             Map<String, MountedDevice> volumesMap = getSecondaryMountedVolumesMap();
             Log.d(TAG, "getSecondaryMountedVolumesMap: " + getSecondaryMountedVolumesMap().size());
@@ -162,12 +161,16 @@ public class TalkingBookConnectionManager {
                     if (root != null && root.exists()) {
                         if (mConnectedTalkingBook == null) {
                             TbFile fs = new AndroidDocFile(root, mAppContext.getContentResolver());
-                            mConnectedTalkingBook = new TalkingBook(fs, TBDeviceInfo.getSerialNumberFromFileSystem(fs), device.getValue().mLabel);
+                            mConnectedTalkingBook = new TalkingBook(fs,
+                                    TBDeviceInfo.getSerialNumberFromFileSystem(fs),
+                                    device.getValue().mLabel, device.getValue().mPath);
                             if (mTalkingBookConnectionEventListener != null) {
                                 Log.d(TAG, "Sending Talking Book connection event");
-                                mTalkingBookConnectionEventListener.onTalkingBookConnectEvent(mConnectedTalkingBook);
+                                mTalkingBookConnectionEventListener.onTalkingBookConnectEvent(
+                                        mConnectedTalkingBook);
                             } else {
-                                Log.d(TAG, "Not sending Talking Book connection event; no listener");
+                                Log.d(TAG,
+                                        "Not sending Talking Book connection event; no listener");
                             }
                         }
 
@@ -209,6 +212,33 @@ public class TalkingBookConnectionManager {
 
     private void checkMountedDevices() {
         mIsMounted = !getSecondaryMountedVolumesMap().isEmpty();
+    }
+
+    public boolean unMount(TalkingBook talkingBook) {
+        boolean success = false;
+        if (talkingBook.mPath == null) return true;
+
+        // If not path, it's not a real USB, so nothing to do.
+        try {
+            // mMountService is a private field on the StorageManager.  Get it.
+            Field mMountService = mStorageManager.getClass().getDeclaredField("mMountService");
+            mMountService.setAccessible(true);
+            Object mountService = mMountService.get(mStorageManager);
+            // unmountVolume(String mountPoint, boolean force, boolean removeEncryption) is a method of IMountService
+            Method unmountVolume = mountService.getClass().getMethod("unmountVolume", String.class, boolean.class, boolean.class);
+            unmountVolume.invoke(mountService, talkingBook.mPath, false, false);
+            success = true;
+            // TODO: I think we need to wait for a callback that the USB has disconnected.
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return success;
     }
 
     private Map<String, MountedDevice> getSecondaryMountedVolumesMap() {
@@ -319,10 +349,13 @@ public class TalkingBookConnectionManager {
         private final String mSerialNumber;
         private final String mDeviceLabel;
 
-        public TalkingBook(TbFile talkingBookRoot, String serialNumber, String deviceLabel) {
+        private final String mPath;
+
+        public TalkingBook(TbFile talkingBookRoot, String serialNumber, String deviceLabel, String path) {
             mTalkingBookRoot = talkingBookRoot;
             mSerialNumber = serialNumber;
             mDeviceLabel = deviceLabel;
+            mPath = path;
         }
 
         public TbFile getTalkingBookRoot() {

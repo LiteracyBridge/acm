@@ -2,14 +2,17 @@ package org.literacybridge.androidtbloader.checkin;
 
 import android.util.Log;
 
+import org.literacybridge.androidtbloader.community.CommunityInfo;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Reads a location csv file, and returns a list of CommunityInfo.
@@ -24,10 +27,10 @@ class LocationsCsvFile {
         this.inputFile = inputFile;
     }
 
-    public List<CommunityInfo> read() {
-        List<CommunityInfo> resultList = new ArrayList<>();
+    public Map<String, CommunityInfo> read() {
+        Map<String, CommunityInfo> resultList = new HashMap<>();
         try (InputStream is = new FileInputStream(inputFile);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
             String csvLine;
             while ((csvLine = reader.readLine()) != null) {
                 String[] row = csvLine.split(",");
@@ -36,9 +39,11 @@ class LocationsCsvFile {
                     Log.d(TAG, String.format("Invalid location line: %s", csvLine));
                     continue;
                 }
+                String community = row[0].toUpperCase();
+                String project = row[1].toUpperCase();
                 double latitude = Double.parseDouble(row[2]);
                 double longitude = Double.parseDouble(row[3]);
-                resultList.add(new CommunityInfo(row[0], row[1], latitude, longitude));
+                resultList.put(community, new CommunityInfo(community, project, latitude, longitude));
             }
         } catch (Exception e) {
             Log.d(TAG, String.format("Exception parsing csv file: %s", inputFile.getName()), e);

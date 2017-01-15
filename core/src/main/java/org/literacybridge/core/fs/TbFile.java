@@ -21,9 +21,9 @@ public abstract class TbFile {
      */
     public enum Flags {
         nil,                // means nothing
-        append,
-        recursive,
-        contentRecursive
+        append,             // When opening a file for write, append, not overwrite
+        recursive,          // Delete a directory and its contents
+        contentRecursive    // Delete a directory's contents, but not the directory
     }
 
     public interface FilenameFilter {

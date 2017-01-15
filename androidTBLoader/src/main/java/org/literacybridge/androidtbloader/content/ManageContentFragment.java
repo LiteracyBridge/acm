@@ -179,7 +179,7 @@ public class ManageContentFragment extends Fragment {
         private TextView mExpirationTextView;
 
         private Button mDownloadButton;
-
+        private final TextView mReadyToUse;
         private ProgressBar mProgressBar;
 
 
@@ -195,9 +195,11 @@ public class ManageContentFragment extends Fragment {
                 @Override
                 public void onClick(View v) {
                     Log.d(TAG, String.format("Download clicked: %s", mContentInfo.toString()));
-                   mContentManager.startDownload(mContentInfo, mTransferListener);
+                    mContentManager.startDownload(mContentInfo, mTransferListener);
                 }
-           });
+            });
+
+            mReadyToUse = (TextView) itemView.findViewById(R.id.list_item_deployment_package_ready_label);
 
             mProgressBar = (ProgressBar) itemView.findViewById(R.id.list_item_deployment_package_progress_bar);
         }
@@ -240,11 +242,38 @@ public class ManageContentFragment extends Fragment {
         private void setCurrentlyDownloading() {
             if (mContentInfo.isDownloading()) {
                 mDownloadButton.setVisibility(View.INVISIBLE);
+                mReadyToUse.setVisibility(View.INVISIBLE);
                 mProgressBar.setVisibility(View.VISIBLE);
                 mProgressBar.setProgress(mContentInfo.getProgress());
             } else {
-                mDownloadButton.setVisibility(View.VISIBLE);
                 mProgressBar.setVisibility(View.INVISIBLE);
+                switch (mContentInfo.getDownloadStatus()) {
+                    case NEVER_DOWNLOADED:
+                        mReadyToUse.setVisibility(View.INVISIBLE);
+                        mDownloadButton.setVisibility(View.VISIBLE);
+                        mDownloadButton.setEnabled(true);
+                        mDownloadButton.setText(getString(R.string.deployment_package_download));
+                        break;
+                    case DOWNLOAD_FAILED:
+                        mReadyToUse.setVisibility(View.INVISIBLE);
+                        mDownloadButton.setVisibility(View.VISIBLE);
+                        mDownloadButton.setEnabled(true);
+                        mDownloadButton.setText(getString(R.string.deployment_package_download_retry));
+                        break;
+                    case DOWNLOADED:
+                        if (!mContentInfo.isUpdateAvailable()) {
+                            mReadyToUse.setVisibility(View.VISIBLE);
+                            mDownloadButton.setEnabled(false);
+                            mDownloadButton.setVisibility(View.INVISIBLE);
+                        } else {
+                            mReadyToUse.setVisibility(View.INVISIBLE);
+                            mDownloadButton.setVisibility(View.VISIBLE);
+                            mDownloadButton.setEnabled(true);
+                            mDownloadButton.setText(getString(R.string.deployment_package_download_update));
+                        }
+                        break;
+                }
+
             }
         }
 
@@ -261,32 +290,6 @@ public class ManageContentFragment extends Fragment {
                 expiration = getString(R.string.deployment_package_expiration_never);
             }
             mExpirationTextView.setText(getString(R.string.deployment_package_expiration, expiration));
-
-            switch (contentInfo.getDownloadStatus()) {
-                case NEVER_DOWNLOADED:
-                    mDownloadButton.setVisibility(View.VISIBLE);
-                    mProgressBar.setVisibility(View.INVISIBLE);
-                    mDownloadButton.setEnabled(true);
-                    mDownloadButton.setText(getString(R.string.deployment_package_download));
-                    break;
-                case DOWNLOAD_FAILED:
-                    mDownloadButton.setVisibility(View.VISIBLE);
-                    mProgressBar.setVisibility(View.INVISIBLE);
-                    mDownloadButton.setEnabled(true);
-                    mDownloadButton.setText(getString(R.string.deployment_package_download_retry));
-                    break;
-                case DOWNLOADED:
-                    mDownloadButton.setVisibility(View.VISIBLE);
-                    mProgressBar.setVisibility(View.INVISIBLE);
-                    if (!contentInfo.isUpdateAvailable()) {
-                        mDownloadButton.setEnabled(false);
-                        mDownloadButton.setText(getString(R.string.deployment_package_download));
-                    } else {
-                        mDownloadButton.setEnabled(true);
-                        mDownloadButton.setText(getString(R.string.deployment_package_download_update));
-                    }
-                    break;
-            }
 
             setCurrentlyDownloading();
         }

@@ -20,12 +20,8 @@
         android:layout_height="wrap_content"
         android:text="Project"
         android:textSize="24sp"
-        tools:text="Project"/>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="10dp"/>
-
+        tools:text="Project"
+        android:layout_marginLeft="5dp"/>
 
     <!-- Content update name, aka deployment name -->
     <TextView
@@ -39,11 +35,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Content update"
-        tools:text="Content update"/>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="10dp"/>
+        tools:text="Content update"
+        android:layout_marginLeft="5dp"/>
 
     <!-- Talking Book ID -->
     <TextView
@@ -57,11 +50,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Talking Book ID"
-        tools:text="Talking Book ID"/>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="10dp"/>
+        tools:text="Talking Book ID"
+        android:layout_marginLeft="5dp"/>
 
     <!-- Warning messages -->
     <TextView
@@ -78,7 +68,7 @@
         android:id="@+id/loader_community"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="12dp"
+        android:layout_margin="10dp"
         android:background="#fff"
         android:orientation="vertical">
 
@@ -114,7 +104,9 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="12dp"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
         android:layout_weight="1"
         android:background="#ffd"
         android:orientation="vertical">
@@ -131,19 +123,6 @@
                 android:layout_height="wrap_content"
                 android:text="Refresh firmware?"
                 tools:text="Refresh firmware?"/>
-
-            <CheckBox
-                android:id="@+id/delete_before_write"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Delete first?"/>
-
-            <CheckBox
-                android:id="@+id/delete_option_3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Option 3?"/>
-
         </LinearLayout>
 
         <ProgressBar

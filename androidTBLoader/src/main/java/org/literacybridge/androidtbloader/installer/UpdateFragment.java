@@ -26,6 +26,7 @@ import android.widget.Toast;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.community.ChooseCommunityActivity;
+import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.content.ContentInfo;
 import org.literacybridge.androidtbloader.content.ContentManager;
 import org.literacybridge.androidtbloader.talkingbook.AndroidDocFile;
@@ -52,7 +53,11 @@ import java.io.Writer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 
@@ -74,8 +79,8 @@ public class UpdateFragment extends Fragment {
     private TBDeviceInfo mConnectedDeviceInfo;
     private ContentManager mContentManager;
     private String mProject;
-    private ArrayList<String> mCommunities;
-    private String mCommunity;
+    private List<CommunityInfo> mCommunities;
+    private CommunityInfo mCommunity;
     private String mLocation;
     private ContentInfo mContentInfo;
     private String mSrnPrefix = "b-";
@@ -105,7 +110,7 @@ public class UpdateFragment extends Fragment {
         Intent intent = getActivity().getIntent();
         mProject = intent.getStringExtra("project");
         mLocation = intent.getStringExtra("location");
-        mCommunities = intent.getStringArrayListExtra("communities");
+        mCommunities = CommunityInfo.parseExtra(intent.getStringArrayListExtra("communities"));
         // If only one community, don't prompt the user to select it.
         if (mCommunities != null && mCommunities.size() == 1) {
             mCommunity = mCommunities.get(0);
@@ -133,7 +138,7 @@ public class UpdateFragment extends Fragment {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            mTalkingBookConnectionManager.setSimulatedTalkingBook(new TalkingBookConnectionManager.TalkingBook(tbRoot, "B-000CFFFF", "B-000CFFFF"));
+            mTalkingBookConnectionManager.setSimulatedTalkingBook(new TalkingBookConnectionManager.TalkingBook(tbRoot, "B-000CFFFF", "B-000CFFFF", null));
         }
         // Debug code
         ////////////////////////////////////////////////////////////////////////////////
@@ -198,7 +203,7 @@ public class UpdateFragment extends Fragment {
         mGoButton = (Button)view.findViewById(R.id.button_go);
         mGoButton.setOnClickListener(goClickListener);
 
-        if (mCommunity != null && mCommunity.length() > 0) {
+        if (mCommunity != null) {
             setCommunityName(mCommunity);
         }
 
@@ -244,7 +249,7 @@ public class UpdateFragment extends Fragment {
     private void onGotCommunity(int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
             if (data.hasExtra("selected")) {
-                final String community = data.getStringExtra("selected");
+                final CommunityInfo community = CommunityInfo.parseExtra(data.getStringExtra("selected"));
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -255,9 +260,9 @@ public class UpdateFragment extends Fragment {
         }
     }
 
-    private void setCommunityName(String community) {
+    private void setCommunityName(CommunityInfo community) {
         mCommunity = community;
-        mCommunityNameTextView.setText(mCommunity);
+        mCommunityNameTextView.setText(mCommunity.getName());
         mCommunityNameTextView.setEllipsize(MARQUEE);
         mCommunityNameTextView.setSingleLine(true);
         mCommunityNameTextView.setMarqueeRepeatLimit(-1);
@@ -317,12 +322,12 @@ public class UpdateFragment extends Fragment {
     };
 
     private void unmount() {
-        TbFile f = mConnectedDevice.getTalkingBookRoot();
-        AndroidDocFile af = (AndroidDocFile)f;
-        Log.d(TAG, String.format("resolver: %s", af.resolver));
-
-//        Intent i = new Intent(android.provider.Settings.ACTION_MEMORY_CARD_SETTINGS);
-//        startActivity(i);
+        boolean success = mTalkingBookConnectionManager.unMount(mConnectedDevice);
+        // This stinks from usability, but is the official way.
+//        if (!success) {
+//            Intent i = new Intent(android.provider.Settings.ACTION_MEMORY_CARD_SETTINGS);
+//            startActivity(i);
+//        }
     }
 
     private static String getStackTrace(Throwable aThrowable) {
@@ -339,9 +344,9 @@ public class UpdateFragment extends Fragment {
         @Override
         public void onClick(View v) {
             if (mCommunities != null && mCommunities.size() == 1) { return; }
-            ArrayList<String> list = mCommunities != null ? mCommunities : new ArrayList<>(mContentInfo.getCommunities());
+            List<CommunityInfo> list = mCommunities != null ? mCommunities : new ArrayList(mContentInfo.getCommunities().values());
             Intent intent = new Intent(getActivity(), ChooseCommunityActivity.class);
-            intent.putExtra("list", list);
+            intent.putExtra("communities", CommunityInfo.makeExtra(list));
             startActivityForResult(intent, REQUEST_CODE_GET_COMMUNITY);
         }
     };
@@ -352,7 +357,7 @@ public class UpdateFragment extends Fragment {
     private void setButtonState() {
         // Enable the Go button if we have a TB connected, have a location & a community,
         // and aren't already updating.
-        boolean goEnabled = (mCommunity != null && mCommunity.length() > 0) &&
+        boolean goEnabled = (mCommunity != null) &&
                 (mConnectedDevice != null) &&
                 !mUpdateInProgress;
         mGoButton.setAlpha(goEnabled ? 1 : 0.5f);
@@ -371,7 +376,7 @@ public class UpdateFragment extends Fragment {
             String deviceProject = mConnectedDeviceInfo.getProjectName();
             boolean projectMismatch =  !deviceProject.equalsIgnoreCase(mProject) &&
                     !deviceProject.equalsIgnoreCase("UNKNOWN");
-            boolean communityMismatch = mCommunity != null && !deviceCommunity.equalsIgnoreCase(mCommunity) &&
+            boolean communityMismatch = mCommunity != null && !deviceCommunity.equalsIgnoreCase(mCommunity.getName()) &&
                     !deviceCommunity.equalsIgnoreCase("UNKNOWN");
             if (projectMismatch || communityMismatch) {
                 message = "Warning: This Talking Book was previously part of";
@@ -570,7 +575,7 @@ public class UpdateFragment extends Fragment {
         tempTbFile.getParent().mkdirs();
 
         // Find the image with the community's language and/or group (such as a/b test group).
-        String imageName = TBLoaderUtils.getImageForCommunity(contentUpdateDirectory, mCommunity);
+        String imageName = TBLoaderUtils.getImageForCommunity(contentUpdateDirectory, mCommunity.getName());
 
         // What firmware comes with this content update?
         String firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(contentUpdateTbFile);
@@ -596,7 +601,7 @@ public class UpdateFragment extends Fragment {
                 collectedDataDirectory.getName(),
                 null, // TODO: this should be the "deployment date", the first date the new content is deployed.
                 firmwareRevision,
-                mCommunity);
+                mCommunity.getName());
 
         getActivity().runOnUiThread(new Runnable() {
             @Override

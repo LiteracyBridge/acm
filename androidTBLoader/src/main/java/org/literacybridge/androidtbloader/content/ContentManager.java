@@ -10,6 +10,7 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
+import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.PathsProvider;
@@ -66,7 +67,7 @@ public class ContentManager {
     private List<ContentInfo> mContentList = new ArrayList<>();
 
     // A cache of community names for projects, as contained in the Content Updates.
-    private Map<String, Set<String>> mProjectCommunitiesCache = null;
+    private Map<String, Map<String, CommunityInfo>> mProjectCommunitiesCache = null;
 
     public ContentManager(TBLoaderAppContext applicationContext) {
         this.applicationContext = applicationContext;
@@ -137,9 +138,9 @@ public class ContentManager {
     }
 
 
-    public synchronized Map<String, Set<String>> getCommunitiesInProjects() {
+    public synchronized Map<String, Map<String, CommunityInfo>> getCommunitiesForProjects() {
         if (mProjectCommunitiesCache == null) {
-            Map<String, Set<String>> projectCommunities = new HashMap<>();
+            Map<String, Map<String, CommunityInfo>> projectCommunities = new HashMap<>();
             for (ContentInfo info : mContentList) {
                 if (info.getDownloadStatus() == ContentInfo.DownloadStatus.DOWNLOADED) {
                     projectCommunities.put(info.getProjectName(), info.getCommunities());
@@ -150,16 +151,16 @@ public class ContentManager {
         return mProjectCommunitiesCache;
     }
 
-    public List<String> getCommunitiesInProjects(List<String> projects) {
-        Map<String, Set<String>> pc = getCommunitiesInProjects();
-        Set<String> resultSet = new HashSet<>();
+    public Map<String, Map<String, CommunityInfo>> getCommunitiesForProjects(List<String> projects) {
+        Map<String, Map<String, CommunityInfo>> pc = getCommunitiesForProjects();
+        Map<String, Map<String, CommunityInfo>> resultSet = new HashMap<>();
         for (String project : projects) {
-            Set<String> communities = pc.get(project);
+            Map<String, CommunityInfo> communities = pc.get(project);
             if (communities != null) {
-                resultSet.addAll(communities);
+                resultSet.put(project, communities);
             }
         }
-        return new ArrayList<>(resultSet);
+        return resultSet;
     }
 
     public ContentInfo getContentInfo(String project) {

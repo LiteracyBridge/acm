@@ -33,6 +33,7 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GetDetailsHandler;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.UpdateAttributesHandler;
 
+import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.content.ManageContentActivity;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.SettingsActivity;
@@ -86,7 +87,7 @@ public class MainFragment extends Fragment {
     private String mProject;
 
     private String mCheckinLocation;
-    private ArrayList<String> mCheckinCommunities;
+    private ArrayList<CommunityInfo> mCheckinCommunities;
 
     private TextView mUploadCountTextView;
     private TextView mUploadSizeTextView;
@@ -228,7 +229,7 @@ public class MainFragment extends Fragment {
                         mCheckinLocation = data.getStringExtra("location");
                     }
                     if (data.hasExtra("communities")) {
-                        mCheckinCommunities = data.getStringArrayListExtra("communities");
+                        mCheckinCommunities = CommunityInfo.parseExtra(data.getStringArrayListExtra("communities"));
                     }
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
@@ -423,7 +424,7 @@ public class MainFragment extends Fragment {
         userActivity.putExtra("name", mUser);
         userActivity.putExtra("project", mProject);
         userActivity.putExtra("location", mCheckinLocation);
-        userActivity.putExtra("communities", mCheckinCommunities);
+        userActivity.putExtra("communities", CommunityInfo.makeExtra(mCheckinCommunities));
         startActivityForResult(userActivity, REQUEST_CODE_UPDATE_TBS);
     }
 

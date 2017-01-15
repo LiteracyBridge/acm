@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+    <!-- Community name -->
+    <TextView
+        android:id="@+id/list_item_community_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:elegantTextHeight="false"
+        android:linksClickable="false"
+        android:padding="4dp"
+        android:singleLine="true"
+        android:textAppearance="@android:style/TextAppearance.Material.Menu"
+        tools:text="Ving Ving"
+        />
+
+    <!-- Project name -->
+    <TextView
+        android:id="@+id/list_item_project_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/list_item_community_name"
+        android:paddingLeft="4dp"
+        tools:text="UWR"/>
+
+    <!-- Distance -->
+    <TextView
+        android:id="@+id/list_item_distance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@id/list_item_community_name"
+        android:paddingLeft="4dp"
+        tools:text="10 km"/>
+
+    <!-- dividing line -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/list_item_project_name"
+        android:background="?android:attr/listDivider"/>
+
+</RelativeLayout>

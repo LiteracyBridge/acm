@@ -10,7 +10,11 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
+import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.core.fs.OperationLog;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by bill on 1/3/17.
@@ -18,6 +22,66 @@ import org.literacybridge.core.fs.OperationLog;
 @SuppressWarnings("MissingPermission")
 public class LocationProvider {
     private static final String TAG = LocationProvider.class.getSimpleName();
+    private static final float UNKNOWN_DISTANCE = (float) 1e12; // a bit past the orbit of Jupiter, in meteres.
+    private static Map<CommunityInfo, Float> sCachedDistances = new HashMap<>();
+    private static Location sLatestLocation = null;
+
+    /**
+     * Returns the most recently acquired GPS location.
+     * @return
+     */
+    public static Location getLatestLocation() {
+        return sLatestLocation;
+    }
+
+    /**
+     * Given a community, how far away is it from the current location?
+     * @param community The community.
+     * @return The distance, in meters.
+     */
+    public static float distanceTo(CommunityInfo community) {
+        if (sCachedDistances.containsKey(community)) {
+            return sCachedDistances.get(community);
+        }
+        float distance = UNKNOWN_DISTANCE;
+        if (community.getLocation() != null && LocationProvider.getLatestLocation() != null) {
+            distance = LocationProvider.getLatestLocation().distanceTo(community.getLocation());
+        }
+        sCachedDistances.put(community, distance);
+        return distance;
+    }
+
+    /**
+     * Given a community, get the distance in a nice readable format.
+     */
+    public static String getDistanceString(CommunityInfo community) {
+        float distance = distanceTo(community);
+        if (distance < 1000) {
+            return String.format("%.0f m", distance);
+        }
+        distance = distance / 1000.0f; // convert to km
+        if (distance < 100) {
+            return String.format("%.1f km", distance);
+        }
+        return String.format("%.0f km", distance);
+    }
+
+    private static void gotNewLocation(Location newLocation) {
+        float delta = 0;
+        // If the location changed, invalidate any distances < 10x the change, on the premise
+        // that longer distances didn't change much, as a percentage.
+        if (sLatestLocation != null) {
+            delta = sLatestLocation.distanceTo(newLocation);
+            delta *= 10.0f;
+            for (Map.Entry<CommunityInfo, Float> entry : sCachedDistances.entrySet()) {
+                if (entry.getValue() < delta) {
+                    sCachedDistances.remove(entry.getKey());
+                }
+            }
+        }
+        sLatestLocation = newLocation;
+    }
+
 
     interface LocationCallback {
         void onNewLocationAvailable(Location location, String provider, long nanos);
@@ -63,8 +127,9 @@ public class LocationProvider {
         LocationListener listener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
+                gotNewLocation(location);
                 callback.onNewLocationAvailable(location,
-                        LocationManager.GPS_PROVIDER,
+                        location.getProvider(),
                         System.nanoTime() - startTime);
             }
             @Override

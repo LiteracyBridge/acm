@@ -43,7 +43,24 @@
         android:layout_height="40dp"
         android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"
+        android:enabled="false"
+        android:visibility="invisible"
         android:text="@string/deployment_package_download"/>
+
+    <TextView
+        android:id="@+id/list_item_deployment_package_ready_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginEnd="10dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/conent_update_ready_to_use"
+        android:textColor="@color/success"
+        android:textSize="18sp"
+        android:textStyle="normal|italic"
+        android:visibility="visible"/>
+    />
 
     <!-- Download progress bar -->
     <ProgressBar
@@ -60,6 +77,7 @@
         android:progress="0"
         android:visibility="invisible"/>
 
+    <!-- line between items -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
