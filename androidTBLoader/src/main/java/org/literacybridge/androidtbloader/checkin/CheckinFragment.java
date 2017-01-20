@@ -20,7 +20,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TabHost;
@@ -34,11 +33,14 @@ import org.literacybridge.androidtbloader.community.ChooseCommunityActivity;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.community.CommunityInfoAdapter;
 import org.literacybridge.androidtbloader.content.ContentManager;
+import org.literacybridge.core.fs.OperationLog;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static android.app.Activity.RESULT_OK;
@@ -55,13 +57,13 @@ import static android.app.Activity.RESULT_OK;
 public class CheckinFragment extends Fragment {
     private static final String TAG = CheckinFragment.class.getSimpleName();
 
-    private final int REQUEST_CODE_ADD_GPS_TO_COMMUNITY = 102;
-    private final int REQUEST_CODE_UPDATE_TODAY_COMMUNITY = 103;
+    private final static int REQUEST_CODE_ADD_GPS_TO_COMMUNITY = 102;
+    private final static int REQUEST_CODE_UPDATE_TODAY_COMMUNITY = 103;
 
-    private ContentManager mContentManager;
-    private String mUser;
+    private final static String NEARBY_TAB_TAG = "nearby";
+    private final static String TODAY_TAB_TAG = "today";
+
     private String mChosenProject;
-    private List<String> mTodayProjectList;
     private List<String> mProjectList;
     private List<CommunityInfo> mNearbyCommunitiesList;
     private List<CommunityInfo> mUpdateTodayCommunitiesList;
@@ -79,11 +81,6 @@ public class CheckinFragment extends Fragment {
     private ImageButton mGoButton;
     private Button mGoButton2;
 
-    private TextView mNearbyLabel;
-    private RecyclerView mNearbyCommunitiesRecyclerView;
-    private TextView mUpdateTodayLabel;
-    private RecyclerView mUpdateTodayRecyclerView;
-
     private Button mAddCommunityToButton;
     private TabHost mTabHost;
 
@@ -91,9 +88,9 @@ public class CheckinFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getActivity().getIntent();
-        mUser = intent.getStringExtra("user");
         mChosenProject = intent.getStringExtra("project");
-        mContentManager = ((TBLoaderAppContext) getActivity().getApplicationContext()).getContentManager();
+        ContentManager mContentManager = ((TBLoaderAppContext) getActivity().getApplicationContext())
+                .getContentManager();
 
         mProjectList = new ArrayList<>(mContentManager.getProjectNames(ContentManager.Flags.Local));
         mKnownLocations = new KnownLocations(mProjectList);
@@ -119,7 +116,7 @@ public class CheckinFragment extends Fragment {
         TextView main_title = (TextView) view.findViewById(R.id.main_toolbar_title);
         main_title.setText("");
 
-        // We want a "back" button (sometimes called "up"), but we don't want back navigation, rather
+        // We want an "up" button (that is, one that points "back"), but we don't want back navigation, rather
         // to simply end this activity without setting project or community.
         toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_mtrl_am_alpha);
         toolbar.setNavigationOnClickListener(new View.OnClickListener(){
@@ -136,7 +133,7 @@ public class CheckinFragment extends Fragment {
         // Project name and initial value.
         mProjectLabelTextView = (TextView) view.findViewById(R.id.checkin_project_label);
         mProjectNameTextView = (TextView) view.findViewById(R.id.checkin_project_name);
-        mProjectNameTextView.setOnClickListener(mProjectListener);
+        mProjectNameTextView.setOnClickListener(mSelectProjectListener);
         if (mChosenProject != null) {
             mProjectNameTextView.setText(mChosenProject);
         }
@@ -146,16 +143,16 @@ public class CheckinFragment extends Fragment {
         mAddCommunityToButton.setOnClickListener(mAddCommunityToListListener);
 
         // Nearby communities
-        mNearbyLabel = (TextView) view.findViewById(R.id.checkin_nearby_label);
-        mNearbyCommunitiesRecyclerView = (RecyclerView) view.findViewById(R.id.checkin_nearby_community_groups);
+        RecyclerView mNearbyCommunitiesRecyclerView = (RecyclerView) view.findViewById(
+                R.id.checkin_nearby_community_groups);
         mNearbyCommunitiesRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
         mNearbyCommunitiesAdapter = new CommunityInfoAdapter(getActivity(), mNearbyCommunitiesList);
         mNearbyCommunitiesRecyclerView.setAdapter(mNearbyCommunitiesAdapter);
 
         // Other communities to update
-        mUpdateTodayLabel = (TextView) view.findViewById(R.id.checkin_update_today_label);
-        mUpdateTodayRecyclerView = (RecyclerView) view.findViewById(R.id.checkin_update_today_communities);
+        RecyclerView mUpdateTodayRecyclerView = (RecyclerView) view.findViewById(
+                R.id.checkin_update_today_communities);
         mUpdateTodayRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         mUpdateTodayCommunitiesAdapter = new CommunityInfoAdapter(getActivity(),
                 mUpdateTodayCommunitiesList);
@@ -171,16 +168,16 @@ public class CheckinFragment extends Fragment {
         mTabHost.setup();
         mTabHost.setOnTabChangedListener(mOnTabChangeListener);
 
-        //Tab 1
-        TabHost.TabSpec spec = mTabHost.newTabSpec("Nearby");
-        spec.setContent(R.id.checkin_tab_nearby);
-        spec.setIndicator("Nearby");
+        // "Communities to update today" tab. This will be the default tab.
+        TabHost.TabSpec spec = mTabHost.newTabSpec(TODAY_TAB_TAG);
+        spec.setContent(R.id.checkin_tab_update_today);
+        spec.setIndicator("Updating Today");
         mTabHost.addTab(spec);
 
-        //Tab 2
-        spec = mTabHost.newTabSpec("Today");
-        spec.setContent(R.id.checkin_tab_update_today);
-        spec.setIndicator("Today");
+        // "Set GPS coordinates for community" tab.
+        spec = mTabHost.newTabSpec(NEARBY_TAB_TAG);
+        spec.setContent(R.id.checkin_tab_nearby);
+        spec.setIndicator("At This Location");
         mTabHost.addTab(spec);
 
         setButtonState();
@@ -226,6 +223,14 @@ public class CheckinFragment extends Fragment {
                 // TODO: Which project community did they choose?
                 mKnownLocations.setLocationInfoFor(mGpsLocation, community);
                 addNewToList(community, mNearbyCommunitiesList, mNearbyCommunitiesAdapter);
+
+                // We can use this location to improve our locations. Send to the server; let them handle it.
+                Map<String,String> info = new HashMap<>();
+                info.put("community", community.getName());
+                info.put("project", community.getProject());
+                info.put("longitude", Double.toString(mGpsLocation.getLongitude()));
+                info.put("latitude", Double.toString(mGpsLocation.getLatitude()));
+                OperationLog.logEvent("setlocation", info);
             }
         }
     }
@@ -279,16 +284,21 @@ public class CheckinFragment extends Fragment {
     private OnClickListener mAddCommunityToListListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            if (mTabHost.getCurrentTab() == 0) {
+            if (mTabHost.getCurrentTabTag().equals(NEARBY_TAB_TAG)) {
                 // List of ALL communities to set GPS locations.
                 Intent intent = new Intent(getActivity(), ChooseCommunityActivity.class);
                 intent.putStringArrayListExtra("projects", new ArrayList<>(mProjectList));
+                // Don't offer communities already in the list.
+                intent.putStringArrayListExtra("excluded", CommunityInfo.makeExtra(mNearbyCommunitiesList));
                 startActivityForResult(intent, REQUEST_CODE_ADD_GPS_TO_COMMUNITY);
-            } else {
+            } else if (mTabHost.getCurrentTabTag().equals(TODAY_TAB_TAG)) {
                 // List of project communities, to add to update today list.
-                List<String> projects = mChosenProject != null ? Arrays.asList(mChosenProject) : mProjectList;
+                List<String> projects = mChosenProject == null ? mProjectList :
+                        Collections.singletonList(mChosenProject);
                 Intent intent = new Intent(getActivity(), ChooseCommunityActivity.class);
                 intent.putStringArrayListExtra("projects", new ArrayList<>(projects));
+                // Don't offer communities already in the list.
+                intent.putStringArrayListExtra("excluded", CommunityInfo.makeExtra(mUpdateTodayCommunitiesList));
                 startActivityForResult(intent, REQUEST_CODE_UPDATE_TODAY_COMMUNITY);
             }
         }
@@ -297,17 +307,17 @@ public class CheckinFragment extends Fragment {
     private OnTabChangeListener mOnTabChangeListener = new OnTabChangeListener() {
         @Override
         public void onTabChanged(String tabId) {
-            if (tabId.equals("Today")) {
-                mAddCommunityToButton.setText("Add Community to update today...");
-            } else {
-                mAddCommunityToButton.setText("Set GPS location for community...");
+            if (tabId.equals(NEARBY_TAB_TAG)){
+                mAddCommunityToButton.setText(R.string.checkin_set_gps_location_button_label);
+            } else if (tabId.equals(TODAY_TAB_TAG)) {
+                mAddCommunityToButton.setText(R.string.checkin_updating_community_today_button_label);
             }
             setButtonState();
         }
     };
 
     /**
-     * Listener on the main button. Return information to caller.
+     * Listener on the "Check In" button. Return information to caller.
      */
     private OnClickListener mCheckinListener = new View.OnClickListener() {
         @Override
@@ -326,19 +336,19 @@ public class CheckinFragment extends Fragment {
      */
     private void setButtonState() {
         if (mChosenProject != null) {
-            mProjectLabelTextView.setText("Project");
+            mProjectLabelTextView.setText(R.string.checkin_project_label);
             mProjectNameTextView.setText(mChosenProject);
         } else {
-            mProjectLabelTextView.setText(String.format("%d projects",
+            mProjectLabelTextView.setText(String.format(getString(R.string.checkin_n_projects_format),
                     mProjectList.size()));
-            mProjectNameTextView.setText("Tap to choose project.");
+            mProjectNameTextView.setText(R.string.checkin_tap_to_choose_project_label);
         }
         // Enable the "Add Community To..." button if...
         boolean enabled = false;
-        if (mTabHost.getCurrentTab() == 0 && mGpsLocation != null) {
+        if (mTabHost.getCurrentTabTag().equals(NEARBY_TAB_TAG) && mGpsLocation != null) {
             // GPS tab, and we have GPS location.
             enabled = true;
-        } else if (mChosenProject != null){
+        } else if (mTabHost.getCurrentTabTag().equals(TODAY_TAB_TAG) && mChosenProject != null){
             // Today tab, and we have chosen a project
             enabled = true;
         }
@@ -353,7 +363,7 @@ public class CheckinFragment extends Fragment {
      * Listener for clicks on project. Lets user select a project from the ones that have been
      * downloaded. Uses the simple "pick from list" dialog.
      */
-    private OnClickListener mProjectListener = new View.OnClickListener() {
+    private OnClickListener mSelectProjectListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             final String[] projects = mProjectList.toArray(new String[mProjectList.size()]);
@@ -432,6 +442,7 @@ public class CheckinFragment extends Fragment {
             onGotLocation(location);
         }
 
+        @SuppressLint("DefaultLocale")
         @Override
         public void onLocationChanged(Location location, String provider, long nanos) {
             onLocationChanged(location);

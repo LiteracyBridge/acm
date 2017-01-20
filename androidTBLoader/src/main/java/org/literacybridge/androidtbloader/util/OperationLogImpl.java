@@ -16,7 +16,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * Log operations of the applications. Uploaded to server, to extract app metrics, usage, and updates.
@@ -32,8 +31,8 @@ public class OperationLogImpl implements OperationLog.Implementation{
     private Runnable runnable;
 
     private File logFile;
-    private DateFormat dateFormat;
-    private DateFormat timeFormat;
+    private DateFormat filenameFormat;
+    private DateFormat logFormat;
     @SuppressLint("SimpleDateFormat")
     public OperationLogImpl() {
         File logDir = PathsProvider.getLogDirectory();
@@ -42,10 +41,10 @@ public class OperationLogImpl implements OperationLog.Implementation{
         }
         uploadExistingLogs();
         TimeZone tz = TimeZone.getTimeZone("UTC");
-        dateFormat = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'");
-        dateFormat.setTimeZone(tz);
-        timeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
-        timeFormat.setTimeZone(tz);
+        filenameFormat = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'");
+        filenameFormat.setTimeZone(tz);
+        logFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+        logFormat.setTimeZone(tz);
 
         runnable = new Runnable() {
             @Override
@@ -57,7 +56,7 @@ public class OperationLogImpl implements OperationLog.Implementation{
 
     private synchronized File getLogFile() {
         if (logFile == null) {
-            String logTimestamp = dateFormat.format(new Date());
+            String logTimestamp = filenameFormat.format(new Date());
             logFile = new File(PathsProvider.getLogDirectory(), logTimestamp + ".log");
         }
         return logFile;
@@ -65,7 +64,7 @@ public class OperationLogImpl implements OperationLog.Implementation{
 
     public void logEvent(String name, Map<String, String> info) {
         StringBuilder builder = new StringBuilder();
-        builder.append(String.format("%s,%s", timeFormat.format(new Date()), name));
+        builder.append(String.format("%s,%s", logFormat.format(new Date()), name));
         if (info != null) {
             for (Map.Entry<String, String> entry : info.entrySet()) {
                 builder.append(',').append(entry.getKey()).append(':');

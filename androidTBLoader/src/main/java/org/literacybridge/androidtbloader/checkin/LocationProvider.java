@@ -56,6 +56,9 @@ public class LocationProvider {
      */
     public static String getDistanceString(CommunityInfo community) {
         float distance = distanceTo(community);
+        if (distance == UNKNOWN_DISTANCE) {
+            return "--";
+        }
         if (distance < 1000) {
             return String.format("%.0f m", distance);
         }

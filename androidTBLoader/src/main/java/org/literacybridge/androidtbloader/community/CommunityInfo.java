@@ -105,11 +105,14 @@ public class CommunityInfo {
     }
 
     @Override
+    /**
+     * Equal if same community and same project.
+     */
     public boolean equals(Object o) {
         if (!(o instanceof CommunityInfo)) return false;
         boolean eql = name.equalsIgnoreCase(((CommunityInfo) o).name);
         if (eql) {
-            eql = project.equalsIgnoreCase(((CommunityInfo) o).name);
+            eql = project.equalsIgnoreCase(((CommunityInfo) o).project);
         }
         return eql;
     }

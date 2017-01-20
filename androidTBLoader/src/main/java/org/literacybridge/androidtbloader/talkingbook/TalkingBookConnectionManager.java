@@ -214,30 +214,39 @@ public class TalkingBookConnectionManager {
         mIsMounted = !getSecondaryMountedVolumesMap().isEmpty();
     }
 
+    /**
+     * We need to be able to reliably unmount the Talking Book, but that is not possible.
+     * Unfortunately, Google has apparently stopped supporting USB drives in applications.
+     * @param talkingBook The TalkingBook to be unmounted.
+     * @return True if unmounted successfully, false otherwise. So, false always.
+     */
     public boolean unMount(TalkingBook talkingBook) {
-        boolean success = false;
+        // If no path, it's not a real USB, so nothing to do.
         if (talkingBook.mPath == null) return true;
 
-        // If not path, it's not a real USB, so nothing to do.
-        try {
-            // mMountService is a private field on the StorageManager.  Get it.
-            Field mMountService = mStorageManager.getClass().getDeclaredField("mMountService");
-            mMountService.setAccessible(true);
-            Object mountService = mMountService.get(mStorageManager);
-            // unmountVolume(String mountPoint, boolean force, boolean removeEncryption) is a method of IMountService
-            Method unmountVolume = mountService.getClass().getMethod("unmountVolume", String.class, boolean.class, boolean.class);
-            unmountVolume.invoke(mountService, talkingBook.mPath, false, false);
-            success = true;
-            // TODO: I think we need to wait for a callback that the USB has disconnected.
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
+        boolean success = false;
+        // TODO: If we ever learn how to do this, implement it. This fails with a missing permission
+        // MOUNT_UNMOUNT_FILESYSTEMS (we DO declare that permission in the manifest, but Google
+        // ignores that, too.)
+//        try {
+//            // mMountService is a private field on the StorageManager.  Get it.
+//            Field mMountService = mStorageManager.getClass().getDeclaredField("mMountService");
+//            mMountService.setAccessible(true);
+//            Object mountService = mMountService.get(mStorageManager);
+//            // unmountVolume(String mountPoint, boolean force, boolean removeEncryption) is a method of IMountService
+//            Method unmountVolume = mountService.getClass().getMethod("unmountVolume", String.class, boolean.class, boolean.class);
+//            unmountVolume.invoke(mountService, talkingBook.mPath, false, false);
+//            success = true;
+//            // TODO: I think we need to wait for a callback that the USB has disconnected.
+//        } catch (NoSuchFieldException e) {
+//            e.printStackTrace();
+//        } catch (IllegalAccessException e) {
+//            e.printStackTrace();
+//        } catch (NoSuchMethodException e) {
+//            e.printStackTrace();
+//        } catch (InvocationTargetException e) {
+//            e.printStackTrace();
+//        }
         return success;
     }
 

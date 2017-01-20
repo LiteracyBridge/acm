@@ -55,7 +55,7 @@
         android:layout_alignParentTop="true"
         android:layout_marginEnd="10dp"
         android:layout_marginTop="8dp"
-        android:text="@string/conent_update_ready_to_use"
+        android:text="@string/content_update_ready_to_use"
         android:textColor="@color/success"
         android:textSize="18sp"
         android:textStyle="normal|italic"

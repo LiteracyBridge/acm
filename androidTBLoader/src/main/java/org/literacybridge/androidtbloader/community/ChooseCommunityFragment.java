@@ -14,12 +14,14 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -30,6 +32,7 @@ import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.checkin.LocationProvider;
 import org.literacybridge.androidtbloader.content.ContentManager;
+import org.literacybridge.androidtbloader.util.PathsProvider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,12 +68,9 @@ public class ChooseCommunityFragment extends Fragment {
     private String mFilter;
     private Pattern mFilterPattern;
 
-    private LinearLayout mProjectGroup;
     private TextView mProjectTextView;
-    private TextView mProjectLabelTextView;
     private CheckBox mSortByDistanceCheckBox;
     private EditText mFilterText;
-    private RecyclerView mCommunityInfoRecyclerView;
 
     private CommunityInfoAdapter mAdapter;
 
@@ -87,14 +87,20 @@ public class ChooseCommunityFragment extends Fragment {
         Intent intent = getActivity().getIntent();
         List<String> projectsList = intent.getStringArrayListExtra("projects");
         mProject = intent.getStringExtra("project");
-        if (projectsList != null) {
+
+
+        if (projectsList != null && projectsList.size() > 0) {
+            Log.d(TAG, "Got a list of projects");
             mProjectList = new ArrayList<>(projectsList);
-        } else {
-            mProjectList = Arrays.asList(mProject);
+        } else if (mProject != null){
+            Log.d(TAG, String.format("Using '%s' to build project list", mProject));
+            mProjectList = Collections.singletonList(mProject);
         }
+
         // If there is no project given, but there is a list, take the first item in the list as the project
         if (mProject == null) {
-            if (mProjectList.size() > 0) {
+            if (mProjectList != null && mProjectList.size() > 0) {
+                Log.d(TAG, "Using first project from list as initial project");
                 mProject = mProjectList.get(0);
             }
         } else {
@@ -108,6 +114,7 @@ public class ChooseCommunityFragment extends Fragment {
             }
             if (!found) throw new IllegalStateException("Given project not in given list of projects");
         }
+
         // If there is a project, populate the original list from it.
         if (mProject != null) {
             setProject(mProject);
@@ -118,10 +125,21 @@ public class ChooseCommunityFragment extends Fragment {
                 mOriginalList = CommunityInfo.parseExtra(communities);
             }
         }
+
         // Ensure we have communities to choose from.
         if (mOriginalList == null || mOriginalList.size() == 0) {
             throw new IllegalStateException("No communities from which to choose");
         }
+
+        // Caller can exclude some communities from the display, if desired.
+        List<String> excluded = intent.getStringArrayListExtra("excluded");
+        if (excluded != null && excluded.size() > 0) {
+            List<CommunityInfo> excludedCommunities = CommunityInfo.parseExtra(excluded);
+            for (CommunityInfo info : excludedCommunities) {
+                if (mOriginalList.contains(info)) mOriginalList.remove(info);
+            }
+        }
+
         mFilter = intent.getStringExtra("filter");
         if (mFilter == null) mFilter = "";
 
@@ -154,12 +172,14 @@ public class ChooseCommunityFragment extends Fragment {
         mFilterText.addTextChangedListener(filterTextListener);
         mSortByDistanceCheckBox = (CheckBox) view.findViewById(R.id.filtered_chooser_sort_distance_checkBox);
         mSortByDistanceCheckBox.setOnClickListener(sortByDistanceClickListener);
-        mProjectGroup = (LinearLayout)view.findViewById(R.id.filtered_chooser_project_group);
+        LinearLayout mProjectGroup = (LinearLayout) view.findViewById(
+                R.id.filtered_chooser_project_group);
         mProjectGroup.setOnClickListener(projectClickListener);
         mProjectTextView = (TextView)view.findViewById(R.id.filtered_chooser_project);
-        mProjectLabelTextView = (TextView)view.findViewById(R.id.filtered_chooser_project_label);
+        TextView mProjectLabelTextView = (TextView) view.findViewById(
+                R.id.filtered_chooser_project_label);
 
-        mCommunityInfoRecyclerView = (RecyclerView) view.findViewById(
+        RecyclerView mCommunityInfoRecyclerView = (RecyclerView) view.findViewById(
                 R.id.filtered_chooser_recycler);
         mCommunityInfoRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         mCommunityInfoRecyclerView.setOnTouchListener(listViewTouchListener);
@@ -170,10 +190,15 @@ public class ChooseCommunityFragment extends Fragment {
 
         if (mProject == null) {
             mProjectGroup.setVisibility(GONE);
-        } else if (mProjectList == null || mProjectList.size() == 1) {
+        } else {
             mProjectTextView.setText(mProject);
-            mProjectLabelTextView.setText(R.string.filtered_chooser_project_label);
+            if (mProjectList == null || mProjectList.size() == 1) {
+                mProjectLabelTextView.setText(R.string.filtered_chooser_project_label);
+            }
         }
+
+        // Don't show the keyboard until user taps in filter.
+        getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
         sortList();
         updateListView();

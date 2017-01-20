@@ -1,5 +1,6 @@
 package org.literacybridge.androidtbloader.main;
 
+import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -25,7 +26,6 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttributes;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDeliveryDetails;
@@ -33,13 +33,13 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GetDetailsHandler;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.UpdateAttributesHandler;
 
-import org.literacybridge.androidtbloader.community.CommunityInfo;
-import org.literacybridge.androidtbloader.content.ManageContentActivity;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.SettingsActivity;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.checkin.CheckinActivity;
+import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.content.ContentManager;
+import org.literacybridge.androidtbloader.content.ManageContentActivity;
 import org.literacybridge.androidtbloader.installer.UpdateActivity;
 import org.literacybridge.androidtbloader.signin.AboutApp;
 import org.literacybridge.androidtbloader.signin.ChangePasswordActivity;
@@ -64,15 +64,10 @@ public class MainFragment extends Fragment {
     private static final int REQUEST_CODE_MANAGE_CONTENT = 101;
     private static final int REQUEST_CODE_CHECKIN = 102;
     private static final int REQUEST_CODE_UPDATE_TBS = 103;
-    private static final int REQUEST_CODE_SET_GREETING = 104;
 
     private TBLoaderAppContext mApplicationContext;
-    private ContentManager mContentManager;
 
-    private NavigationView nDrawer;
     private DrawerLayout mDrawer;
-    private ActionBarDrawerToggle mDrawerToggle;
-    private Toolbar toolbar;
 
     private TextView mGreetingName;
     private TextView mGreetingEmail;
@@ -101,7 +96,7 @@ public class MainFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mApplicationContext = (TBLoaderAppContext)getActivity().getApplicationContext();
-        mContentManager = mApplicationContext.getContentManager();
+        ContentManager mContentManager = mApplicationContext.getContentManager();
         Intent intent = getActivity().getIntent();
         mUser = intent.getStringExtra("user");
         mContentManager.refreshContentList(contentManagerListener);
@@ -141,7 +136,7 @@ public class MainFragment extends Fragment {
 
         // Set toolbar for this screen. By default, has a title from the application manifest
         // application.label property.
-        toolbar = (Toolbar) view.findViewById(R.id.main_toolbar);
+        Toolbar toolbar = (Toolbar) view.findViewById(R.id.main_toolbar);
         // This title is independent of the default title, defined in the main_tool_bar.xml file
         TextView main_title = (TextView) view.findViewById(R.id.main_toolbar_title);
         main_title.setText("");
@@ -150,10 +145,11 @@ public class MainFragment extends Fragment {
         // Set navigation drawer for this screen.  Note that R.id.main_drawer_layout is in the
         // $.layout.activity_main (.xml) file.
         mDrawer = (DrawerLayout) view.findViewById(R.id.main_drawer_layout);
-        mDrawerToggle = new ActionBarDrawerToggle(getActivity(), mDrawer, toolbar, R.string.nav_drawer_open, R.string.nav_drawer_close);
+        ActionBarDrawerToggle mDrawerToggle = new ActionBarDrawerToggle(getActivity(), mDrawer,
+                toolbar, R.string.nav_drawer_open, R.string.nav_drawer_close);
         mDrawer.addDrawerListener(mDrawerToggle);
         mDrawerToggle.syncState();
-        nDrawer = (NavigationView) view.findViewById(R.id.nav_view);
+        NavigationView nDrawer = (NavigationView) view.findViewById(R.id.nav_view);
         nDrawer.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(MenuItem item) {
@@ -247,6 +243,7 @@ public class MainFragment extends Fragment {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private void updateGreeting() {
         final SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(
                 mApplicationContext);
@@ -259,7 +256,7 @@ public class MainFragment extends Fragment {
     /**
      * Perform the action for the selected navigation / menu item. Note that some of these
      * are repeated from the signin screen.
-     * @param item
+     * @param item The Menu item selected.
      */
     private void performAction(MenuItem item) {
         // Close the navigation drawer
@@ -437,11 +434,11 @@ public class MainFragment extends Fragment {
 
     private void fillUploadValues(int count, long size) {
         if (count > 0) {
-            mUploadCountTextView.setText(String.format("%d stats files to upload.", count));
-            mUploadSizeTextView.setText(String.format("%s left to upload.", Util.getBytesString(size)));
+            mUploadCountTextView.setText(String.format(getString(R.string.main_n_stats_files_to_upload), count));
+            mUploadSizeTextView.setText(String.format(getString(R.string.main_n_bytes_to_upload), Util.getBytesString(size)));
             mUploadSizeTextView.setVisibility(View.VISIBLE);
         } else {
-            mUploadCountTextView.setText("No files to upload.");
+            mUploadCountTextView.setText(getString(R.string.main_no_stats_files_to_upload));
             mUploadSizeTextView.setVisibility(View.GONE);
         }
     }
@@ -503,7 +500,6 @@ public class MainFragment extends Fragment {
         }
         CognitoUserAttributes updatedUserAttributes = new CognitoUserAttributes();
         updatedUserAttributes.addAttribute(attributeType, attributeValue);
-        Toast.makeText(mApplicationContext, attributeType + ": " + attributeValue, Toast.LENGTH_LONG);
         showWaitDialog("Updating...");
         UserHelper.getPool().getUser(UserHelper.getUserId()).updateAttributesInBackground(updatedUserAttributes, updateHandler);
     }

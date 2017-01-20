@@ -21,7 +21,7 @@
             android:id="@+id/textView2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/gps_coordinates"
+            android:text="@string/checkin_gps_coordinates_label"
             android:textSize="10sp"
             tools:ignore="SmallSp"/>
 
@@ -29,7 +29,7 @@
             android:id="@+id/checkin_gps_coordinates"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/waiting_for_gps"
+            android:text="@string/checkin_waiting_for_gps_label"
             android:textSize="18sp"/>
 
         <TextView
@@ -65,13 +65,13 @@
         android:id="@+id/checkin_tabHost"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_above="@+id/checkin_bottom_button_group"
         android:layout_below="@+id/checkin_project_name"
         android:layout_centerHorizontal="true"
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
         android:layout_marginTop="10dp"
-        android:background="#eee"
-        android:layout_above="@+id/checkin_bottom_button_group">
+        android:background="#eee">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -89,20 +89,20 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <!-- Nearby Community / Groups -->
+                <!-- Communities "At This Location" -->
                 <RelativeLayout
                     android:id="@+id/checkin_tab_nearby"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    >
+                    android:background="#fef"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/checkin_nearby_label"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
-                        android:text="@string/community_groups_at_this_location"
+                        android:text="@string/checkin_community_groups_at_this_location_label"
                         android:textSize="10sp"
                         tools:ignore="SmallSp"
                         tools:text="Community Groups at this location"
@@ -112,32 +112,32 @@
                         android:id="@+id/checkin_nearby_community_groups"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:scrollbars="vertical"
-                        android:fadeScrollbars="false"
                         android:layout_alignParentBottom="true"
                         android:layout_below="@+id/checkin_nearby_label"
+                        android:fadeScrollbars="false"
                         android:paddingLeft="10dp"
                         android:paddingRight="10dp"
+                        android:scrollbars="vertical"
                         tools:layout_height="130dp"
                         tools:text="List"
                         />
 
                 </RelativeLayout>
 
-                <!-- communities to be updated today -->
+                <!-- communities "Updating Today" -->
                 <RelativeLayout
                     android:id="@+id/checkin_tab_update_today"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    >
+                    android:background="#eff"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/checkin_update_today_label"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
-                        android:text="@string/community_groups_to_update_today"
+                        android:text="@string/checkin_community_groups_to_update_today_label"
                         android:textSize="10sp"
                         tools:ignore="SmallSp"
                         tools:text="Community Groups to update today"/>
@@ -146,12 +146,12 @@
                         android:id="@+id/checkin_update_today_communities"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:scrollbars="vertical"
-                        android:fadeScrollbars="false"
                         android:layout_alignParentBottom="true"
                         android:layout_below="@+id/checkin_update_today_label"
+                        android:fadeScrollbars="false"
                         android:paddingLeft="10dp"
                         android:paddingRight="10dp"
+                        android:scrollbars="vertical"
                         tools:layout_height="130dp"
                         tools:text="List"
                         />
@@ -167,15 +167,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
         android:orientation="vertical">
 
         <Button
             android:id="@+id/checkin_add_community"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Add community..."
-            android:textAlignment="textEnd"
-            android:textStyle="normal|italic"
             tools:text="Add communities to be current tab..."/>
 
         <!-- Do the check in -->
@@ -195,7 +193,6 @@
             android:background="@android:color/holo_red_light"
             android:scaleType="fitCenter"
             android:text="Check In!"
-            android:textSize="18sp"
             tools:text="Check In!"/>
 
 

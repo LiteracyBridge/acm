@@ -15,6 +15,7 @@
 
 package org.literacybridge.androidtbloader.util;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.Uri;
 
@@ -38,18 +39,19 @@ public class Util {
      * @param bytes number of bytes to be converted.
      * @return A string that represents the bytes in a proper scale.
      */
+    @SuppressLint("DefaultLocale")
     public static String getBytesString(long bytes) {
         String[] quantifiers = new String[] {
                 "KB", "MB", "GB", "TB"
         };
-        double speedNum = bytes;
+        double sizeNum = bytes;
         for (int i = 0;; i++) {
             if (i >= quantifiers.length) {
-                return "";
+                return "Too Much";
             }
-            speedNum /= 1024;
-            if (speedNum < 512) {
-                return String.format("%.2f", speedNum) + " " + quantifiers[i];
+            sizeNum /= 1024;
+            if (sizeNum < 512) {
+                return String.format("%.2f %s", sizeNum, quantifiers[i]);
             }
         }
     }

@@ -78,12 +78,16 @@
     <string name="pref_title_simulate_device">Simulate Talking Book device.</string>
     <string name="pref_summary_simulate_device">Simulate a Talking Book using storage on the SD card.</string>
     <string name="pref_summary_physical_device">Use only a physical Talking Book device.</string>
-    <string name="gps_coordinates">GPS coordinates</string>
-    <string name="waiting_for_gps">Waiting for gps…</string>
-    <string name="add_gps_location_to_community">Add GPS location to community…</string>
-    <string name="add_communities_to_be_updated">Add communities to be updated…</string>
-    <string name="community_groups_at_this_location">Community Groups at this location</string>
-    <string name="community_groups_to_update_today">Community Groups to update today</string>
+
+
+    <string name="checkin_gps_coordinates_label">GPS coordinates</string>
+    <string name="checkin_waiting_for_gps_label">Waiting for gps…</string>
+
+    <string name="checkin_set_gps_location_button_label">Set GPS location for community...</string>
+    <string name="checkin_updating_community_today_button_label">Add Community to update today...</string>
+
+    <string name="checkin_community_groups_at_this_location_label">Community Groups at this location</string>
+    <string name="checkin_community_groups_to_update_today_label">Community Groups to update today</string>
 
     <string name="pref_title_prefer_network_location">Prefer getting location from network, not GPS.</string>
     <string name="pref_summary_prefer_network">The device will try first to get location from the network, not GPS. This may be faster, but less accurate, and may not work in remote areas.</string>
@@ -92,8 +96,16 @@
 
     <string name="edit_greeting">Edit preferred greeting</string>
     <string name="main_greeting_label">Hello, </string>
+
     <string name="filtered_chooser_sort_distance_checkbox">Sort by distance</string>
     <string name="filtered_chooser_project_label">Project</string>
-    <string name="conent_update_ready_to_use">Ready to use</string>
+
+    <string name="content_update_ready_to_use">Ready to use</string>
+    <string name="checkin_project_label">Project</string>
+    <string name="checkin_n_projects_format">%d projects</string>
+    <string name="checkin_tap_to_choose_project_label">Tap to choose project.</string>
+    <string name="main_no_stats_files_to_upload">No statistics files to upload.</string>
+    <string name="main_n_stats_files_to_upload">%d statastics files to upload.</string>
+    <string name="main_n_bytes_to_upload">%s left to upload.</string>
 
 </resources>
