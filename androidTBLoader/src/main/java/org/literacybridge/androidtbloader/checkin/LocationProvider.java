@@ -13,7 +13,9 @@ import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.core.fs.OperationLog;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -76,10 +78,14 @@ public class LocationProvider {
         if (sLatestLocation != null) {
             delta = sLatestLocation.distanceTo(newLocation);
             delta *= 10.0f;
+            List<CommunityInfo> toRemove = new ArrayList<>();
             for (Map.Entry<CommunityInfo, Float> entry : sCachedDistances.entrySet()) {
-                if (entry.getValue() < delta) {
-                    sCachedDistances.remove(entry.getKey());
+                if (entry.getValue() < delta || entry.getValue() == UNKNOWN_DISTANCE) {
+                    toRemove.add(entry.getKey());
                 }
+            }
+            for (CommunityInfo entry : toRemove) {
+                sCachedDistances.remove(entry);
             }
         }
         sLatestLocation = newLocation;
