@@ -13,7 +13,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Moves stats and user feedback to a directory for processing.
- * The arguments are two paths, an input and a target.
+ * The arguments are two paths, an input directory, an output directory, and a timestamp. Any
+ * output will be written to the output directory in a subdirectory named with the timestamp. If
+ * no stats or user feedback is found, the timestamp directory will not be created.
  *
  * The input is a directory, like ~/Dropbox/stats, containing one or more subdirectories
  * for tbloaders. The tbloader directories then contains a 'collected-data' directory,
@@ -58,8 +60,7 @@ public class MoveStats {
       printUsage();
       return 1;
     }
-
-    String timeStamp = TBLoader.getDateTime();
+    String timeStamp = args[2];
     targetCollection = new File(targetDir, timeStamp);
     targetUserRecordingsCollection = new File(targetCollection, USER_RECORDINGS);
 
@@ -89,6 +90,7 @@ public class MoveStats {
   private void moveUserRecordings(File[] feedbackDirs) throws IOException {
     // Iterate over the tbloaders reporting feedback...
     for (File tbLoaderDir : feedbackDirs) {
+      logger.info(String.format("Processing user feedback in %s", tbLoaderDir.getAbsolutePath()));
 
       // Get the contained collected-data subdirectory, and enumerate the project subdirectories.
       File collectedData = IOUtils.FileIgnoreCase(tbLoaderDir, TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME);
@@ -102,11 +104,13 @@ public class MoveStats {
 
         // Target directory for any {UPDATE} found within this {PROJECT}
         File targetProjDir = new File(targetUserRecordingsCollection, projectDir.getName().toLowerCase());
+        logger.info(String.format("  processing %s into %s", projectDir.getName(), targetProjDir.getAbsolutePath()));
 
         // We have a userrecordings subdirectory, within some project subdirectory.
         // Enumerate the contained {UPDATE} directories.
         File[] updateDirs = userrecordings.listFiles((fn) -> fn.isDirectory() && !fn.isHidden() && !fn.getName().startsWith("."));
         for (File updateDir : updateDirs) {
+          logger.info(String.format("    moving %s", updateDir.getName()));
 
           // Move the {UPDATE} directory to the target
           try {
@@ -135,7 +139,7 @@ public class MoveStats {
 
   private static void printUsage() {
     System.err.println(
-        "java -cp acm.jar:lib/* org.literacybridge.acm.utils.MoveStats source target");
+        "java -cp acm.jar:lib/* org.literacybridge.acm.utils.MoveStats source target timestamp");
   }
 
   /**
