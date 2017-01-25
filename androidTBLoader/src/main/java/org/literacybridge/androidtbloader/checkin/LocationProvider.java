@@ -19,12 +19,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by bill on 1/3/17.
+ * Most of the location and distance handling code.
  */
 @SuppressWarnings("MissingPermission")
 public class LocationProvider {
     private static final String TAG = LocationProvider.class.getSimpleName();
-    private static final float UNKNOWN_DISTANCE = (float) 1e12; // a bit past the orbit of Jupiter, in meteres.
+    private static final float UNKNOWN_DISTANCE = (float) 1e12; // a bit past the orbit of Jupiter, in meters.
     private static Map<CommunityInfo, Float> sCachedDistances = new HashMap<>();
     private static Location sLatestLocation = null;
 

@@ -86,13 +86,15 @@ public class OperationLogImpl implements OperationLog.Implementation{
 
     public synchronized void closeLogFile() {
         handler.removeCallbacks(runnable);
-        try {
-            uploadLog(logFile);
-        } catch(Exception e) {
-            Log.d(TAG, String.format("Exception closing log file: %s", logFile), e);
-            // Not much we can do about this...
-        } finally {
-            logFile = null;
+        if (logFile != null) {
+            try {
+                uploadLog(logFile);
+            } catch (Exception e) {
+                Log.d(TAG, String.format("Exception closing log file: %s", logFile), e);
+                // Not much we can do about this...
+            } finally {
+                logFile = null;
+            }
         }
     }
 

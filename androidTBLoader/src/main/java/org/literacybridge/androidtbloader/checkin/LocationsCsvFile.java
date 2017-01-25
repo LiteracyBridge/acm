@@ -9,9 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,11 +21,21 @@ class LocationsCsvFile {
 
     private File inputFile;
 
+    /**
+     * Constructor; takes the input file to be read. The input format should be
+     *     community,project,latitude,longitude
+     * Latitude and longitude are decimal degrees east and north (negative for west or south).
+     * @param inputFile The .csv file.
+     */
     LocationsCsvFile(File inputFile) {
         this.inputFile = inputFile;
     }
 
-    public Map<String, CommunityInfo> read() {
+    /**
+     * The function that does the work. Reads the .csv file and returns the data.
+     * @return A Map of community name to CommunityInfo
+     */
+    Map<String, CommunityInfo> read() {
         Map<String, CommunityInfo> resultList = new HashMap<>();
         try (InputStream is = new FileInputStream(inputFile);
             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {

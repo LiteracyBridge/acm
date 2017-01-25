@@ -220,17 +220,8 @@ public class CheckinFragment extends Fragment {
                                 mGpsLocation.getLongitude(),
                                 mGpsLocation.getLatitude(),
                                 mNearbyCommunitiesList.size()+1));
-                // TODO: Which project community did they choose?
-                mKnownLocations.setLocationInfoFor(mGpsLocation, community);
+                KnownLocations.setLocationInfoFor(mGpsLocation, community);
                 addNewToList(community, mNearbyCommunitiesList, mNearbyCommunitiesAdapter);
-
-                // We can use this location to improve our locations. Send to the server; let them handle it.
-                Map<String,String> info = new HashMap<>();
-                info.put("community", community.getName());
-                info.put("project", community.getProject());
-                info.put("longitude", Double.toString(mGpsLocation.getLongitude()));
-                info.put("latitude", Double.toString(mGpsLocation.getLatitude()));
-                OperationLog.logEvent("setlocation", info);
             }
         }
     }
