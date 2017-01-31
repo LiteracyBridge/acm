@@ -14,6 +14,8 @@ import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -33,6 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FeedbackImporter {
+  private static final Logger logger = LoggerFactory.getLogger(FeedbackImporter.class);
   private static final Set<String> EXTENSIONS_TO_IMPORT = new HashSet<>(
           Collections.singletonList("a18"));
   private static final String FEEDBACK_IMPORT_REPORT = "feedbackImport.txt";
@@ -130,6 +133,7 @@ public class FeedbackImporter {
     ImportResults results = new ImportResults();
     // Iterate over the given user recordings directories...
     for (String dirName : params.dirNames) {
+      logger.info(String.format("Looking for recordings in %s", dirName));
       // Every argument should be a directory containing {PROJECT} / {UPDATE} subdirs.
       File userRecordingsDir = new File(dirName);
       ImportResults dirResults = new ImportResults();
@@ -143,6 +147,7 @@ public class FeedbackImporter {
           skippedProject(projectDir);
           continue;
         }
+        logger.info(String.format("  importing from project directory %s", projectDir.getName()));
 
         // Iterate over the update sub-directories of the projects...
         ImportResults projectResults = new ImportResults();
@@ -155,6 +160,7 @@ public class FeedbackImporter {
             skippedUpdate(projectDir, updateDir);
             continue;
           }
+          logger.info(String.format("    importing from update directory %s", updateDir.getName()));
 
           projectResults.add(importDirectory(projectDir, updateDir));
           processedUpdate(projectDir, updateDir);
@@ -278,6 +284,8 @@ public class FeedbackImporter {
     String feedbackProject = mainProject + "-FB-" + updateName;
 
     try {
+      logger.info(String.format("    Opening feedback project %s", feedbackProject));
+
       // Throws an exception to indicate "not found".
       ACMConfiguration.getInstance().setCurrentDB(feedbackProject);
     } catch (Exception setEx) {
@@ -298,6 +306,7 @@ public class FeedbackImporter {
     ImportResults results = new ImportResults();
     int count = 0;
     Metadata metadata = new Metadata();
+    logger.info(String.format("      Importing %d files", filesToImport.size()));
 
     FileImporter importer = FileImporter.getInstance();
     MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
@@ -308,12 +317,14 @@ public class FeedbackImporter {
       try {
         if (params.verbose) {
           System.out.println(String.format("Importing %d of %d: %s", ++count, filesToImport.size(), file.getName()));
+          logger.info(String.format("        Importing %d of %d: %s", ++count, filesToImport.size(), file.getName()));
         }
         metadata.setMetadataField(MetadataSpecification.LB_CORRELATION_ID, new MetadataValue<>(id++));
         importer.importFile(store, null /* category */, file, metadata);
         results.fileImported(file.getName());
       } catch (Exception e) {
         System.err.println(String.format("Failed to import '%s': %s", file.getName(), e.getMessage()));
+        logger.info(String.format("Failed to import '%s': %s", file.getName(), e.getMessage()));
         results.fileFailedToImport(file.getName());
       }
     }
@@ -557,7 +568,10 @@ public class FeedbackImporter {
         if (html) ps.print("<li>");
         ps.print(String.format("%4d %s", details.size(), title));
         if (details.size() > 0) {
-          if (html) ps.print("<ul>");
+          if (html)
+              ps.print("<ul>");
+          else
+              ps.println();
           for (String d : details) {
             if (html)
               ps.print("<li>");

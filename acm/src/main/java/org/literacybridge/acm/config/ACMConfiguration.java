@@ -43,6 +43,23 @@ public class ACMConfiguration {
   private final Properties ACMGlobalConfigProperties = new Properties();
   private File globalShareDir;
 
+  private static final String ACM_PREFIX = "ACM-";
+  public static String cannonicalAcmDirectoryName(String acmName) {
+      acmName = acmName.toUpperCase();
+      if (!acmName.startsWith(ACM_PREFIX)) {
+          acmName = ACM_PREFIX + acmName;
+      }
+      return acmName;
+  }
+  public static String cannonicalProjectName(String projectName) {
+      projectName = projectName.toUpperCase();
+      if (projectName.startsWith(ACM_PREFIX)) {
+          projectName = projectName.substring(ACM_PREFIX.length());
+      }
+      return projectName;
+  }
+
+
   /**
    * Get the shared instance of the configuration class. Initialize it if not
    * already initialized.

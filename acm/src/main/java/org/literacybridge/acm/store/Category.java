@@ -7,14 +7,14 @@ import java.util.List;
 import com.google.common.collect.Lists;
 
 public class Category {
-  private final String uuid;
+  private final String id;
   private String name;
   private int order;
   private Category parent;
   private final List<Category> children;
 
-  Category(String uuid) {
-    this.uuid = uuid;
+  Category(String id) {
+    this.id = id;
     this.children = Lists.newLinkedList();
   }
 
@@ -71,7 +71,7 @@ public class Category {
   }
 
   public String getUuid() {
-    return uuid;
+    return id;
   }
 
   @Override

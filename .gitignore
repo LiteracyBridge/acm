@@ -10,3 +10,6 @@ bin/
 *.ipr
 *.iws
 out/
+local.properties
+keystore.*
+*.apk

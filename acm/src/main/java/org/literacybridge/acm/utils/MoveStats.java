@@ -48,7 +48,7 @@ public class MoveStats {
 
   private int move(String[] args) throws IOException {
 
-    if (args.length != 2) {
+    if (args.length != 3) {
       printUsage();
       return 1;
     }
@@ -116,7 +116,8 @@ public class MoveStats {
           try {
             FileUtils.moveDirectoryToDirectory(updateDir, targetProjDir, true);
           } catch (FileExistsException e) {
-            // Already exists (from a different tbloader's feedback), so copy & delete.
+              logger.info(String.format("    -> move failed, copying %s", updateDir.getName()));
+              // Already exists (from a different tbloader's feedback), so copy & delete.
             FileUtils.copyDirectory( updateDir, targetProjDir );
             FileUtils.deleteDirectory( updateDir );
           }
@@ -139,7 +140,7 @@ public class MoveStats {
 
   private static void printUsage() {
     System.err.println(
-        "java -cp acm.jar:lib/* org.literacybridge.acm.utils.MoveStats source target timestamp");
+        "Usage:\n  java -cp acm.jar:lib/* org.literacybridge.acm.utils.MoveStats source target timestamp");
   }
 
   /**

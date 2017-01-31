@@ -16,6 +16,7 @@ import javax.swing.JLabel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 
+import com.google.common.collect.Lists;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
@@ -147,7 +148,7 @@ public class ExportDialog extends JDialog implements ActionListener {
         @Override
         public void run() {
           try {
-            CSVExporter.export(ExportDialog.this.selectedAudioItems, target);
+            CSVExporter.export(Lists.newArrayList(ExportDialog.this.selectedAudioItems), target);
             Application.getApplication().setStatusMessage(String.format("%d Item(s) exported.", numItems));
           } catch (IOException e) {
             Application.getApplication().setStatusMessage(String.format("Exporting %d audio item(s) failed.", numItems));

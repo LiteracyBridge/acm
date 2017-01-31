@@ -75,7 +75,22 @@ public class UIUtils {
     return builder.toString();
   }
 
-  public static String getPlaylistAsString(AudioItem audioItem) {
+    public static String getCategoryCodesAsString(AudioItem audioItem) {
+        StringBuilder builder = new StringBuilder();
+
+        for (Category cat : audioItem.getCategoryList()) {
+            if (!cat.hasChildren()) {
+                if (builder.length() > 0) {
+                    builder.append(", ");
+                }
+                // Not a UUID, just the category code, like "1-2"
+                builder.append(cat.getUuid());
+            }
+        }
+        return builder.toString();
+    }
+
+    public static String getPlaylistAsString(AudioItem audioItem) {
     List<Playlist> playlists = Lists.newArrayList(audioItem.getPlaylists());
     StringBuilder builder = new StringBuilder();
 

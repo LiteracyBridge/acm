@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.LBMetadataIDs;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataField;
@@ -45,173 +46,226 @@ import static org.literacybridge.acm.store.MetadataSpecification.LB_TARGET_AUDIE
 import static org.literacybridge.acm.store.MetadataSpecification.LB_TIMING;
 
 public class CSVExporter {
-  private static final Logger LOG = Logger
-      .getLogger(CSVExporter.class.getName());
+    private static final Logger LOG = Logger.getLogger(CSVExporter.class.getName());
 
-  private final static String CATEGORY_COLUMN_NAME = "CATEGORIES";
-  private final static String QUALITY_COLUMN_NAME = "QUALITY";
-  private final static String PROJECT_COLUMN_NAME = "PROJECT";
+    private final static String CATEGORY_COLUMN_NAME = "CATEGORIES";
+    private final static String QUALITY_COLUMN_NAME = "QUALITY";
+    private final static String PROJECT_COLUMN_NAME = "PROJECT";
 
-  /**
-   * This horrible thing defines the order of the metadata columns in the .csv file.
-   * Because PostgreSQL can not add new columns in the middle of a table, new columns
-   * must be added at the end. But, the CATEGORIES, QUALITY, and PROJECT were
-   * unfortunately placed at "the end". Now, we need to keep them in indices
-   * 19, 20, and 21, and let new columns flow after that.
-   */
-  private final static MetadataField<?>[] columns = {
-          DC_TITLE,
-          DC_PUBLISHER,
-          DC_IDENTIFIER,
-          DC_SOURCE,
-          DC_LANGUAGE,
-          DC_RELATION,
-          DTB_REVISION,
-          LB_DURATION,
-          LB_MESSAGE_FORMAT,
-          LB_TARGET_AUDIENCE,
-          LB_DATE_RECORDED,
-          LB_KEYWORDS,
-          LB_TIMING,
-          LB_PRIMARY_SPEAKER,
-          LB_GOAL,
-          LB_ENGLISH_TRANSCRIPTION,
-          LB_NOTES,
-          LB_BENEFICIARY,
-          LB_STATUS,
-          null,  // categories are stuffed here
-          null,  // quality is stuffed here
-          null,  // project is stuffed here
-          LB_CORRELATION_ID
-  };
+    /**
+     * This horrible thing defines the order of the metadata columns in the .csv file.
+     * Because PostgreSQL can not add new columns in the middle of a table, new columns
+     * must be added at the end. But, the CATEGORIES, QUALITY, and PROJECT were
+     * unfortunately placed at "the end". Now, we need to keep them in indices
+     * 19, 20, and 21, and let new columns flow after that.
+     */
+    private final static MetadataField<?>[] columns = { DC_TITLE, DC_PUBLISHER, DC_IDENTIFIER,
+            DC_SOURCE, DC_LANGUAGE, DC_RELATION, DTB_REVISION, LB_DURATION, LB_MESSAGE_FORMAT,
+            LB_TARGET_AUDIENCE, LB_DATE_RECORDED, LB_KEYWORDS, LB_TIMING, LB_PRIMARY_SPEAKER,
+            LB_GOAL, LB_ENGLISH_TRANSCRIPTION, LB_NOTES, LB_BENEFICIARY, LB_STATUS, null,
+            // categories are stuffed here
+            null,  // quality is stuffed here
+            null,  // project is stuffed here
+            LB_CORRELATION_ID };
 
-  private static final int CATEGORY_COLUMN_INDEX = 19;
-  private static final int QUALITY_COLUMN_INDEX = 20;
-  private static final int PROJECT_COLUMN_INDEX = 21;
+    private static final int CATEGORY_COLUMN_INDEX = 19;
+    private static final int QUALITY_COLUMN_INDEX = 20;
+    private static final int PROJECT_COLUMN_INDEX = 21;
 
-  private static final int NUMBER_OF_COLUMNS = columns.length;
+    private static final int NUMBER_OF_COLUMNS = columns.length;
 
-
-  public static void export(AudioItem[] audioItems, File targetFile)
-      throws IOException {
-    export(Lists.newArrayList(audioItems), targetFile);
-  }
-
-  public static void export(Iterable<AudioItem> audioItems, File targetFile)
-      throws IOException {
-    String project = ACMConfiguration.getInstance().getCurrentDB()
-        .getSharedACMname();
-    if (project.toLowerCase().startsWith("acm-")) {
-      project = project.substring(4);
+    public static void export(Iterable<AudioItem> audioItems, File targetFile) throws IOException {
+        export(audioItems, targetFile, false);
     }
 
-    // Verify that the manual columns are correct.
-    if (columns[CATEGORY_COLUMN_INDEX] != null ||
-            columns[QUALITY_COLUMN_INDEX] != null ||
-            columns[PROJECT_COLUMN_INDEX] != null) {
-      throw new IllegalStateException("column collision");
-    }
-    if (columns.length != FieldToIDMap.size()+3) {
-      throw new IllegalStateException("missing columns");
-    }
-
-    CSVWriter writer = new CSVWriter(new FileWriter(targetFile), ',');
-
-    String[] values = new String[NUMBER_OF_COLUMNS];
-
-    // first write header (column names)
-    for (int i = 0; i < NUMBER_OF_COLUMNS; i++) {
-      if (columns[i] != null)
-        values[i] = columns[i].getName();
-    }
-    values[CATEGORY_COLUMN_INDEX] = CATEGORY_COLUMN_NAME;
-    values[QUALITY_COLUMN_INDEX] = QUALITY_COLUMN_NAME;
-    values[PROJECT_COLUMN_INDEX] = PROJECT_COLUMN_NAME;
-
-    writer.writeNext(values);
-
-    for (AudioItem audioItem : audioItems) {
-      Metadata metadata = audioItem.getMetadata();
-      String quality = "l";
-      for (int i = 0; i < NUMBER_OF_COLUMNS; i++) {
-        if (columns[i] != null) {
-          MetadataField<?> field = columns[i];
-          String value = getStringValue(metadata, field);
-          if (field == MetadataSpecification.LB_DURATION) {
-            DurationAndQuality dq = durationAndQualityFromValue(value);
-            value = dq.duration;
-            quality = dq.quality;
-          } else if (field == MetadataSpecification.LB_CORRELATION_ID) {
-            value = correlationIdFromValue(value);
-          }
-          values[i] = value;
+    public static void export(Iterable<AudioItem> audioItems, File targetFile,
+                              boolean categoryCodes) throws IOException {
+        String project = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
+        if (project.toLowerCase().startsWith("acm-")) {
+            project = project.substring(4);
         }
-      }
-      values[CATEGORY_COLUMN_INDEX] = UIUtils.getCategoryListAsString(audioItem);
-      values[QUALITY_COLUMN_INDEX] = quality;
-      values[PROJECT_COLUMN_INDEX] = project;
-      writer.writeNext(values);
+
+        // Verify that the manual columns are correct.
+        if (columns[CATEGORY_COLUMN_INDEX] != null || columns[QUALITY_COLUMN_INDEX] != null
+                || columns[PROJECT_COLUMN_INDEX] != null) {
+            throw new IllegalStateException("column collision");
+        }
+        if (columns.length != FieldToIDMap.size() + 3) {
+            throw new IllegalStateException("missing columns");
+        }
+
+        CSVWriter writer = new CSVWriter(new FileWriter(targetFile), ',');
+
+        String[] values = new String[NUMBER_OF_COLUMNS];
+
+        // first write header (column names)
+        for (int i = 0; i < NUMBER_OF_COLUMNS; i++) {
+            if (columns[i] != null)
+                values[i] = columns[i].getName();
+        }
+        values[CATEGORY_COLUMN_INDEX] = CATEGORY_COLUMN_NAME;
+        values[QUALITY_COLUMN_INDEX] = QUALITY_COLUMN_NAME;
+        values[PROJECT_COLUMN_INDEX] = PROJECT_COLUMN_NAME;
+
+        writer.writeNext(values);
+
+        for (AudioItem audioItem : audioItems) {
+            Metadata metadata = audioItem.getMetadata();
+            String quality = "l";
+            for (int i = 0; i < NUMBER_OF_COLUMNS; i++) {
+                if (columns[i] != null) {
+                    MetadataField<?> field = columns[i];
+                    String value = getStringValue(metadata, field);
+                    if (field == MetadataSpecification.LB_DURATION) {
+                        DurationAndQuality dq = durationAndQualityFromValue(value);
+                        value = dq.duration;
+                        quality = dq.quality;
+                    } else if (field == MetadataSpecification.LB_CORRELATION_ID) {
+                        value = correlationIdFromValue(value);
+                    }
+                    values[i] = value;
+                }
+            }
+            values[CATEGORY_COLUMN_INDEX] = categoryCodes ? UIUtils.getCategoryCodesAsString(
+                    audioItem) : UIUtils.getCategoryListAsString(audioItem);
+            values[QUALITY_COLUMN_INDEX] = quality;
+            values[PROJECT_COLUMN_INDEX] = project;
+            writer.writeNext(values);
+        }
+
+        writer.close();
     }
 
-    writer.close();
-  }
-
-  /**
-   * Given a string mm:ssq, parse the mm:ss into seconds.
-   * @param value
-   * @return Value in seconds.
-   */
-  private static DurationAndQuality durationAndQualityFromValue(String value) {
-    DurationAndQuality result = new DurationAndQuality();
-    try {
-      // last character is the quality
-      int durationInSeconds = Integer.parseInt(value.substring(0, 2)) * 60
-              + Integer.parseInt(value.substring(3, 5));
-      result.duration = Integer.toString(durationInSeconds);
-      // last character is the quality
-      result.quality = value.substring(value.length() - 1);
-
-    } catch (Exception ignored) {
-      LOG.warning(String.format(
-              "Exception parsing time & quality from '%s'. Substituting 0 l.", value));
-      result.duration = "0";
-      result.quality = "l";
+    /**
+     * Create a .csv file of category ids and names.
+     * @param targetFile Where to write the .csv
+     * @param listFullCategories If true, include full names, like "Health:Nutrition"
+     * @throws IOException
+     */
+    public static void exportCategoryCodes(File targetFile, boolean listFullCategories) throws IOException {
+        CategoryExporter exporter = new CategoryExporter(targetFile, listFullCategories);
+        exporter.export();
     }
-    return result;
-  }
 
-  /**
-   * Given an integer valued string, return the B26RotatingEncoding encoding of
-   * the integer. If not integer valued, return an empty string.
-   * @param value An integer valued string.
-   * @return The encoded string, or an empty string.
-   */
-  private static String correlationIdFromValue(String value) {
-    String id = "";
-    if (value.length() > 0) {
-      try {
-        int intValue = Integer.valueOf(value);
-        id = B26RotatingEncoding.encode(intValue);
-      } catch (Exception ignored) {
-        // ignore, return empty string.
-      }
+    /**
+     * Given a string mm:ssq, parse the mm:ss into seconds.
+     *
+     * @param value
+     * @return Value in seconds.
+     */
+    private static DurationAndQuality durationAndQualityFromValue(String value) {
+        DurationAndQuality result = new DurationAndQuality();
+        try {
+            // last character is the quality
+            int durationInSeconds = Integer.parseInt(value.substring(0, 2)) * 60 + Integer.parseInt(
+                    value.substring(3, 5));
+            result.duration = Integer.toString(durationInSeconds);
+            // last character is the quality
+            result.quality = value.substring(value.length() - 1);
+
+        } catch (Exception ignored) {
+            LOG.warning(
+                    String.format("Exception parsing time & quality from '%s'. Substituting 0 l.",
+                                  value));
+            result.duration = "0";
+            result.quality = "l";
+        }
+        return result;
     }
-    return id;
-  }
 
-  private static <T> String getStringValue(Metadata metadata,
-      MetadataField<T> field) {
-    MetadataValue<T> value = metadata.getMetadataValue(field);
-    if (value == null) {
-      return "";
-    } else {
-      return value.getValue().toString();
+    /**
+     * Given an integer valued string, return the B26RotatingEncoding encoding of
+     * the integer. If not integer valued, return an empty string.
+     *
+     * @param value An integer valued string.
+     * @return The encoded string, or an empty string.
+     */
+    private static String correlationIdFromValue(String value) {
+        String id = "";
+        if (value.length() > 0) {
+            try {
+                int intValue = Integer.valueOf(value);
+                id = B26RotatingEncoding.encode(intValue);
+            } catch (Exception ignored) {
+                // ignore, return empty string.
+            }
+        }
+        return id;
     }
-  }
 
-  private static class DurationAndQuality {
-    public String duration;
-    public String quality;
-  }
+    private static <T> String getStringValue(Metadata metadata, MetadataField<T> field) {
+        MetadataValue<T> value = metadata.getMetadataValue(field);
+        if (value == null) {
+            return "";
+        } else {
+            return value.getValue().toString();
+        }
+    }
+
+    private static class DurationAndQuality {
+        public String duration;
+        public String quality;
+    }
+
+    /**
+     * Helper class to export category ids and names.
+     */
+    private static class CategoryExporter {
+        CSVWriter writer;
+        String [] values;
+        boolean listFullCategories;
+
+        CategoryExporter(File targetFile, boolean listFullCategories) throws IOException {
+            writer = new CSVWriter(new FileWriter(targetFile), ',');
+            this.listFullCategories = listFullCategories;
+            // If listFullCategories, we have 3 columns; otherwise only 2
+            if (listFullCategories) {
+                values = new String[3];
+                values[2] = "FULLNAME";
+            } else {
+                values = new String[2];
+            }
+            values[0] = "ID";
+            values[1] = "NAME";
+            writer.writeNext(values);
+        }
+
+        /**
+         * Starts the export process.
+         * @throws IOException
+         */
+        void export() throws IOException {
+            Category root = ACMConfiguration.getInstance()
+                    .getCurrentDB()
+                    .getMetadataStore()
+                    .getTaxonomy()
+                    .getRootCategory();
+            for (Category child : root.getSortedChildren()) {
+                exportCategoryCodes(writer, child, "");
+            }
+
+            writer.close();
+        }
+
+        /**
+         * Writes one node to the .csv file, then recurses on any children.
+         * @param writer Where to write
+         * @param node   What to write
+         * @param prefix If writing full names, construct by prefixing name with this.
+         */
+        private void exportCategoryCodes(CSVWriter writer, Category node, String prefix) {
+            String fullName = prefix + node.getCategoryName();
+            values[0] = node.getUuid();
+            values[1] = node.getCategoryName();
+            if (listFullCategories) {
+                values[2] = fullName;
+            }
+            writer.writeNext(values);
+            for (Category child : node.getSortedChildren()) {
+                exportCategoryCodes(writer, child, fullName+":");
+            }
+        }
+    }
+
 
 }
