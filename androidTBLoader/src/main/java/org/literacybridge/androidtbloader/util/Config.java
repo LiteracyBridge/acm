@@ -14,6 +14,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.signin.UserHelper;
+import org.literacybridge.core.fs.OperationLog;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,6 +43,11 @@ public class Config {
         void noConfig();
     }
 
+    public interface LocationHandler {
+        void gotLocations();
+        void onError();
+    }
+
     private static boolean mIsAdvanced = false;
     private static String mTbcdId;
     private static String mProjectFilter;
@@ -57,7 +63,10 @@ public class Config {
 
     public static boolean isAdvanced() { return mIsAdvanced; }
 
-    public static void signOut() {
+    /**
+     * This should be called to clear any user-specific cached settings.
+     */
+    public static void onSignOut() {
         SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(TBLoaderAppContext.getInstance());
         SharedPreferences.Editor editor = userPrefs.edit();
         editor.clear().commit();
@@ -89,16 +98,20 @@ public class Config {
         mIsAdvanced = Boolean.parseBoolean(userPrefs.getString("advanced", "false"));
     }
 
-    public void getUserConfig(final ConfigHandler handler) {
+    /**
+     * Get the user config from server. If no connectivity, and have a cached config use that.
+     * @param username The user's sign-in id, corresponding to their server-side config file.
+     * @param handler A ConfigHandler to accept the results.
+     */
+    public void getServerSideUserConfig(String username, final ConfigHandler handler) {
         // Load any persisted settings.
-//        final SharedPreferences userPrefs = mApplicationContext.getSharedPreferences(UserHelper.getUserId(), MODE_PRIVATE);
         final SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(
                 mApplicationContext);
         final String etag = userPrefs.getString("etag", "");
         // Query settings from s3.
         ListObjectsV2Request request = new ListObjectsV2Request()
                 .withBucketName(Constants.CONTENT_UPDATES_BUCKET_NAME)
-                .withPrefix("users/" + UserHelper.getUserId() + ".config");
+                .withPrefix("users/" + username + ".config");
 
         Log.d(TAG, String.format("Fetching config file info for %s", UserHelper.getUserId()));
         S3Helper.listObjects(request, new S3Helper.ListObjectsListener() {
@@ -145,7 +158,7 @@ public class Config {
 
     private void fetchUserSettings(final S3ObjectSummary summary, final ConfigHandler handler) {
         Log.d(TAG, String.format("Fetching config file info for %s", UserHelper.getUserId()));
-        String filename = UserHelper.getUserId() + ".config";
+        String filename = UserHelper.getUsername() + ".config";
         String key = "users/" + filename;
         final File file = new File(PathsProvider.getLocalTempDirectory(), filename);
 
@@ -177,7 +190,6 @@ public class Config {
                     }
 
                     // Update user preferences based on download.
-//                    SharedPreferences userPrefs = mApplicationContext.getSharedPreferences(UserHelper.getUserId(), MODE_PRIVATE);
                     SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(
                             mApplicationContext);
                     SharedPreferences.Editor prefsEditor = userPrefs.edit();
@@ -215,142 +227,5 @@ public class Config {
         });
 
     }
-
-    /**
-     * Reads the versions (etags) from S3 for location files. Downloads any that are stale.
-     * @param handler A handler to call when the current files have been downloaded, or if
-     *                we can't get the list of S3 objects.
-     */
-    public void refreshCommunityLocations(final Config.ConfigHandler handler) {
-        // Load the etags for any location info we already have.
-        final SharedPreferences locationPrefs = mApplicationContext.getSharedPreferences("community.locations", MODE_PRIVATE);
-        // Query new location info from s3.
-        ListObjectsV2Request request = new ListObjectsV2Request()
-                .withBucketName(Constants.CONTENT_UPDATES_BUCKET_NAME)
-                .withPrefix("locations/");
-
-        Log.d(TAG, String.format("Fetching community location file info"));
-        S3Helper.listObjects(request, new S3Helper.ListObjectsListener() {
-            // Build list of files to be downloaded here.
-            final List<S3ObjectSummary> toFetch = new ArrayList<>();
-
-            @Override
-            public void onSuccess(ListObjectsV2Result result) {
-                List<S3ObjectSummary> s3LocFiles = result.getObjectSummaries();
-                for (S3ObjectSummary summary : s3LocFiles) {
-                    String keyFileName = summary.getKey().substring(summary.getKey().indexOf('/')+1).toUpperCase();
-                    // For some reason, querying this prefix returns the bare prefix ("locations/"), while querying
-                    // the "projects/" prefix does NOT return the bare prefix. The docs are unhelpful...
-                    if (keyFileName.length() == 0) { continue; }
-
-                    String project = keyFileName.substring(0, keyFileName.lastIndexOf('.'));
-                    // Only concerned with this user's projects.
-                    if (!isUsersProject(project)) { continue; }
-
-                    // Version of any saved location info.
-                    String etag = locationPrefs.getString(project, "");
-                    Log.d(TAG, String.format("Location key: %s, project: %s, etag: %s, saved etag: %s",
-                                    summary.getKey(), project, summary.getETag(), etag));
-                    // Version of current location info.
-                    String s3etag = summary.getETag();
-                    if (s3etag.equalsIgnoreCase(etag) && new File(PathsProvider.getLocationsCacheDirectory(), project + LOCATION_FILE_EXTENSION).exists()) {
-                        Log.d(TAG, String.format("Already have current location file info for %s", project));
-                    } else {
-                        Log.d(TAG, String.format("Need to download location file for %s", project));
-                        toFetch.add(summary);
-                    }
-                }
-                fetchCommunityLocations();
-            }
-
-            /**
-             * Downloads the first item in the 'toFetch' list. When the download completes,
-             * (asynchronously) recursively calls itself to download the next.
-             */
-            private void fetchCommunityLocations() {
-                if (toFetch.size() == 0) {
-                    // Nothing left to do...
-                    handler.gotConfig(null);
-                    return;
-                }
-                S3ObjectSummary summary = toFetch.remove(0);
-                downloadLocationsFile(summary, new Runnable() {
-                    @Override
-                    public void run() {
-                        fetchCommunityLocations();
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Exception ex) {
-                Log.d(TAG, String.format("Could not fetch community location file info"));
-                handler.noConfig();
-            }
-        });
-
-    }
-
-    /**
-     * Downloads a single community locations file from S3.
-     * @param summary The S3ObjectSummary that describes the S3 object.
-     * @param handler A Runnable for the completion callback.
-     */
-    private void downloadLocationsFile(final S3ObjectSummary summary, final Runnable handler) {
-        Log.d(TAG, String.format("Fetching location info for %s", UserHelper.getUserId()));
-        String keyFileName = summary.getKey().substring(summary.getKey().indexOf('/')+1).toUpperCase();
-        final String project = keyFileName.substring(0, keyFileName.lastIndexOf('.'));
-        final File tempFile = new File(PathsProvider.getLocationsCacheDirectory(), project + LOCATION_FILE_EXTENSION + ".temp");
-        final File newFile = new File(PathsProvider.getLocationsCacheDirectory(), project + LOCATION_FILE_EXTENSION);
-
-        // Initiate the download. Make sure there's someplace to put the new file.
-        tempFile.mkdirs();
-        if (tempFile.exists()) {
-            tempFile.delete();
-        }
-        Log.d(TAG, "about to call transferUtility.download");
-        final TransferUtility transferUtility = S3Helper.getTransferUtility();
-        final TransferObserver observer = transferUtility.download(Constants.CONTENT_UPDATES_BUCKET_NAME, summary.getKey(), tempFile);
-        Log.d(TAG, "back from call to transferUtility.download");
-
-        observer.setTransferListener(new TransferListener() {
-            @Override
-            public void onStateChanged(int id, TransferState state) {
-                Log.d(TAG, String.format("transfer state changed: %s", state.toString()));
-                if (state == TransferState.COMPLETED) {
-                    Log.d(TAG, String.format("Got new locations file for %s", project));
-                    // This doesn't seem to be automatic, so do it manually.
-                    transferUtility.deleteTransferRecord(observer.getId());
-
-                    // Swap new file for old.
-                    if (newFile.exists()) {
-                        newFile.delete();
-                    }
-                    tempFile.renameTo(newFile);
-
-                    // Remember which version of location info we've just downloaded.
-                    final SharedPreferences locationPrefs = mApplicationContext.getSharedPreferences("community.locations", MODE_PRIVATE);
-                    SharedPreferences.Editor prefsEditor = locationPrefs.edit();
-                    prefsEditor.putString(project, summary.getETag());
-                    prefsEditor.apply();
-
-                    handler.run();
-                }
-            }
-
-            @Override
-            public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-                Log.d(TAG, String.format("transfer progress: %d of %d", bytesCurrent, bytesTotal));
-            }
-
-            @Override
-            public void onError(int id, Exception ex) {
-                Log.d(TAG, "transfer error", ex);
-                handler.run();
-            }
-        });
-
-    }
-
 
 }

@@ -1,5 +1,11 @@
 apply plugin: 'java'
-apply from: "${project.gradleSettingsDir}/eclipse.gradle"
+//apply from: "${project.gradleSettingsDir}/eclipse.gradle"
+
+// We have to target this ancient Java because Google can't keep up with modern Java. Perhaps
+// when the get OpenJDK for Android...
+targetCompatibility = '1.7'
+sourceCompatibility = '1.7'
+
 
 // This module 'core' gets packed into the Android TBLoader project,
 // so runtime dependencies should be chosen extremely carefully here.

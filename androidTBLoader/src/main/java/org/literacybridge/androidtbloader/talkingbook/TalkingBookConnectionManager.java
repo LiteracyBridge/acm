@@ -329,7 +329,7 @@ public class TalkingBookConnectionManager {
     private void onUSBEvent() {
         if (isDeviceConnected()) {
             if (!mUsbWatcherDisabled) {
-                Intent setupIntent = TalkingBookConnectionSetupActivity.newIntent(mAppContext, false);
+                Intent setupIntent = TalkingBookConnectionSetupActivity.newIntent(mAppContext);
                 setupIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 mAppContext.startActivity(setupIntent);
             }

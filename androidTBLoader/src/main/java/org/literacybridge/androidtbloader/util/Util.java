@@ -16,17 +16,6 @@
 package org.literacybridge.androidtbloader.util;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
-import android.net.Uri;
-
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.UUID;
 
 /*
  * Handles basic helper functions used throughout the app.
@@ -54,34 +43,6 @@ public class Util {
                 return String.format("%.2f %s", sizeNum, quantifiers[i]);
             }
         }
-    }
-
-    /**
-     * Copies the data from the passed in Uri, to a new file for use with the
-     * Transfer Service
-     * 
-     * @param context
-     * @param uri
-     * @return
-     * @throws IOException
-     */
-    public static File copyContentUriToFile(Context context, Uri uri) throws IOException {
-        InputStream is = context.getContentResolver().openInputStream(uri);
-        File copiedData = new File(context.getDir("SampleImagesDir", Context.MODE_PRIVATE), UUID
-                .randomUUID().toString());
-        copiedData.createNewFile();
-
-        FileOutputStream fos = new FileOutputStream(copiedData);
-        byte[] buf = new byte[2046];
-        int read = -1;
-        while ((read = is.read(buf)) != -1) {
-            fos.write(buf, 0, read);
-        }
-
-        fos.flush();
-        fos.close();
-
-        return copiedData;
     }
 
 

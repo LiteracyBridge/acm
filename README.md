@@ -4,13 +4,45 @@ This is the Audio Content Manager project for Literacy Bridge.
 
 ## Building and Artifacts
 ### Prerequesites for Building
-**Java 7**
-: The project still uses Java 7. Make sure you have it installed.
+**Java 8**
+: The project uses Java 8. Make sure you have it installed.
 
 **Gradle**
-: Get it from http://gradle.org/gradle-download/ and follow the installation instructions.
+: Get it from http://gradle.org/gradle-download/ and follow the installation instructions. 
+Suggest using version 2.14.1; if you use the Gradle wrapper, that's the version it uses.
+ 
+## A Note on Structure
+There are three sub-projects:
+* `acm`: The Java ACM application and various tools.
+* `androidTbLoader`: An Android version of the TB-Loader.
+* `core`: The core of the TB-Loader. 
+
+There are two buildable projects, `acm` and `androidTbLoader`. Both of these
+include `core` as a sub-project.
+
+**You will have the best results treating these as two independent projects.**
+
+Of course there are complicated interdependencies. Of course, if you change the 
+tbLoader API, you'll have to make changes in two projects. But, there doesn't seem
+to be any clean way to structure a project that builds both an Android artifact
+and a Java artifact.
+
+_If you can figure that out, please, fix it!_
 
 ### Building
+To build the Java application:
+```bash
+cd acm
+gradle clean dist
+```
+
+To build the Android application:
+```bash
+# Install gigabytes of Android SDKs
+cd androidTbLoader
+gradle build
+```
+
 To build the application, run the tests, and create a distribution, simply run  
    `gradle dist`
 This will fetch dependencies, build the application, run the tests, and create the distribution package. To clean old build artifacts, run  
@@ -22,7 +54,7 @@ The simple command line to run the application is
 (On Windows, use **`;`** as a path separator, not **`:`**.)
 
 ## Making Changes
-1. Follow the ambient style!
+1. Follow the ambient style! Most important, indent by 4, use spaces.
 1. There are settings files checked in to configure IntelliJ and Eclipse for our formatting standards; use them.
 1. Try to add a unit test to exercise the new or changed code.
 1. If you add a file or directory, under no circumstances shall the name include a space. 

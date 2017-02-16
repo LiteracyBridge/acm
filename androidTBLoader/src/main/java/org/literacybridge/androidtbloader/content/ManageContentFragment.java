@@ -123,24 +123,11 @@ public class ManageContentFragment extends Fragment {
         }
 
         if (reloadRemotePackages) {
-            final OperationLog.Operation op = OperationLog.startOperation("refreshcontentlist");
             mContentManager.refreshContentList(new ContentManager.ContentManagerListener() {
 
                 @Override
                 public void contentListChanged() {
                     List<ContentInfo> content = mContentManager.getContentList();
-                    int local = 0;
-                    int cloud = 0;
-                    for (ContentInfo ci : content) {
-                        if (ci.getDownloadStatus() == ContentInfo.DownloadStatus.DOWNLOADED) {
-                            local++;
-                        } else {
-                            cloud++;
-                        }
-                    }
-                    op.put("local", local);
-                    op.put("cloud", cloud);
-                    op.end();
                     mAdapter.setContentInfos(content);
                     getActivity().runOnUiThread(new Runnable() {
                         @Override

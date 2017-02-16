@@ -15,6 +15,7 @@ import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.androidtbloader.util.S3Helper;
+import org.literacybridge.core.fs.OperationLog;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -204,16 +205,27 @@ public class ContentManager {
      * -- marking as stale any projects not up to date (delete content?)
      */
     public void refreshContentList(final ContentManagerListener listener) {
-
+        final OperationLog.Operation opLog = OperationLog.startOperation("RefreshContentList");
         final Map<String,ContentInfo> localVersions = findLocalContent();
 
         // Reconcile with cloud (if we can).
         findCloudContent(new ListContentListener() {
+            void addProjectsToLog() {
+                for (Map.Entry<String, ContentInfo> entry : mProjects.entrySet()) {
+                    if (entry.getValue().getDownloadStatus() == ContentInfo.DownloadStatus.DOWNLOADED) {
+                        opLog.put(entry.getKey(), "local");
+                    } else {
+                        opLog.put(entry.getKey(), "cloud");
+                    }
+                }
+            }
             @Override
             public void onSuccess(List<ContentInfo> cloudInfo) {
                 reconcileCloudVersions(localVersions, cloudInfo, new Runnable() {
                     @Override
                     public void run() {
+                        addProjectsToLog();
+                        opLog.end();
                         listener.contentListChanged();
                     }
                 });
@@ -230,6 +242,9 @@ public class ContentManager {
                     }
                 }
                 mProjectCommunitiesCache = null;
+                addProjectsToLog();
+                opLog.put("exception", ex)
+                    .end();
                 listener.contentListChanged();
             }
         });
@@ -286,6 +301,9 @@ public class ContentManager {
     }
 
     private void removeContent(final List<String> projectsToClear, final List<String> projectsToRemove, final Runnable onFinished) {
+        final OperationLog.Operation opLog = OperationLog.startOperation("RemoveLocalContent")
+                .put("toClear", String.format("\"%s\"", projectsToClear))
+                .put("toRemove", String.format("\"%s\"", projectsToRemove));
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
@@ -309,6 +327,7 @@ public class ContentManager {
                         }
                     }
                 } catch (Exception e) {
+                    opLog.put("exception", e);
                     Log.d(TAG, "Exception removing files", e);
                 }
                 Log.d(TAG, "Done removing files");
@@ -317,6 +336,7 @@ public class ContentManager {
             @Override
             protected void onPostExecute(Void result) {
                 Log.d(TAG, "Back from deleting files");
+                opLog.end();
                 onFinished.run();
             }
         }.execute();

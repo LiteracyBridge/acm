@@ -10,24 +10,29 @@ public abstract class ProgressListener {
         starting("Starting"),
         checkDisk("Checking SD card"),
         listDeviceFiles("Listing device files"),
-        gatherDeviceFiles("Gathering device files"),
-        gatherUserRecordings("Gathering user recordings"),
+        gatherDeviceFiles("Gathering device files", true),
+        gatherUserRecordings("Gathering user recordings", true),
         clearStats("Clearing statistics"),
         clearUserRecordings("Clearing user recordings"),
         clearFeedbackCategories("Clearing feedback categories"),
         copyStatsAndFiles("Zipping statistics and files"),
         reformatting("Reformatting SD card"),
         relabelling("Relabelling SD card"),
-        clearSystem("Clearing old TB system files"),
-        updateSystem("Updating TB system files"),
-        updateContent("Updating TB content"),
-        updateCommunity("Updating community content"),
+        clearSystem("Clearing old TB system files", true),
+        updateSystem("Updating TB system files", true),
+        updateContent("Updating TB content", true),
+        updateCommunity("Updating community content", true),
         listDeviceFiles2("Listing device files after update"),
         finishing("Finished");
 
-        private final String description;
+        public final String description;
+        public final boolean hasFiles;
         Steps(String description) {
+            this(description, false);
+        }
+        Steps(String description, boolean hasFiles) {
             this.description = description;
+            this.hasFiles = hasFiles;
         }
 
         public String description() {

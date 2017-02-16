@@ -13,6 +13,7 @@ import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.androidtbloader.util.S3Helper;
 
 import java.io.File;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,10 @@ import static org.literacybridge.androidtbloader.util.Constants.COLLECTED_DATA_B
 
 /**
  * Manages uploading files to S3.
+ *
+ * Files pending upload are moved to an "upload directory". When we're able to upload, we
+ * copy files from that directory to the S3 bucket named by COLLECTED_DATA_BUCKET_NAME, or
+ * "acm-stats".
  */
 
 public class UploadManager {
@@ -41,27 +46,27 @@ public class UploadManager {
     }
     private UploadListener mUploadListener;
 
-    private TBLoaderAppContext mApplicationContext;
     private File mUploadDirectory;
     
     private Map<String, QueuedItem> mUploadQueue;
     private String mActive;
     private long mActiveDownloaded;
 
-    public UploadManager(TBLoaderAppContext applicationContext) {
-        mApplicationContext = applicationContext;
+    public UploadManager() {
         mUploadDirectory = PathsProvider.getUploadDirectory();
         mUploadQueue = new LinkedHashMap<>();
     }
 
     /**
-     * Submits a file to be uploaded to S3.
+     * Submits a single file to be uploaded to S3. The file will be moved to the upload directory.
+     * If the file isn't uploaded while the app is running, it will have another chance the next
+     * time that the app runs.
      * @param file The file to be uploaded.
-     * @param uploadName The name the object should have once uploaded.
+     * @param objectName The name the object should have once uploaded.
      * @return True if the file was moved into the upload directory.
      */
-    public synchronized boolean upload(File file, String uploadName) {
-        File uploadFile = new File(mUploadDirectory, uploadName);
+    public synchronized boolean uploadFileAsName(File file, String objectName) {
+        File uploadFile = new File(mUploadDirectory, objectName);
         File parent = uploadFile.getParentFile();
         if (!parent.exists()) {
             parent.mkdirs();
@@ -75,10 +80,12 @@ public class UploadManager {
     }
 
     /**
-     * Submits a single file to be uploaded to S3. Only one transfer is performed at a time.
+     * Submits a single file to be uploaded to S3. Only one transfer is performed at a time. The
+     * file must exist in the upload directory. The relative path of the file within the upload
+     * directory is the name of the object in the S3 bucket.
      * @param file The file to be uploaded.
      */
-    public synchronized void upload(File file) {
+    private synchronized void upload(File file) {
         enqueueUpload(file);
         checkQueue();
     }
@@ -94,7 +101,7 @@ public class UploadManager {
 
     /**
      * Gets a count of the files waiting to be uploaded.
-     * @return
+     * @return the count of files waiting.
      */
     public int getCountQueuedFiles() {
         return mUploadQueue.size();
@@ -102,7 +109,7 @@ public class UploadManager {
 
     /**
      * Gets the size of the files waiting to be uploaded.
-     * @return
+     * @return the sum of the sizes of the files.
      */
     public long getSizeQueuedFiles() {
         long size = 0;
@@ -116,24 +123,23 @@ public class UploadManager {
         mUploadListener = listener;
     }
 
-    void onUploadActivity() {
+    private void onUploadActivity() {
         if (mUploadListener != null)
             mUploadListener.onUploadActivity(getCountQueuedFiles(), getSizeQueuedFiles());
     }
 
     /**
      * Starts uploading the given file.
-     * @param file
+     * @param file to be uploaded.
      */
     private void startUpload(final File file) {
         // Build a key from the file's relative position in the upload directory.
-        String relativeName = mUploadDirectory.toURI().relativize(file.toURI()).getPath();
-        String key = relativeName;
+        String key = mUploadDirectory.toURI().relativize(file.toURI()).getPath();
 
         mActiveDownloaded = 0;
         final TransferUtility transferUtility = S3Helper.getTransferUtility();
         TransferObserver observer = transferUtility.upload(COLLECTED_DATA_BUCKET_NAME, key, file);
-        Log.d(TAG, String.format("Uploading file %s to key %s, id: ", file.getName(), key, observer.getId()));
+        Log.d(TAG, String.format("Uploading file %s to key %s, id: %s", file.getName(), key, observer.getId()));
 
         observer.setTransferListener(new TransferListener() {
             @Override
@@ -167,7 +173,7 @@ public class UploadManager {
 
     /**
      * Removes the given file from the upload queue, and checks the queue for more files to upload.
-     * @param file
+     * @param file to be removed from the queue.
      */
     private synchronized void dequeueUploadAndCheck(File file) {
         String relativeName = mUploadDirectory.toURI().relativize(file.toURI()).getPath();
@@ -180,7 +186,7 @@ public class UploadManager {
 
     /**
      * Adds a file to the upload queue.
-     * @param file
+     * @param file to be added.
      */
     private void enqueueUpload(File file) {
         String relativeName = mUploadDirectory.toURI().relativize(file.toURI()).getPath();
@@ -207,7 +213,7 @@ public class UploadManager {
 
     /**
      * Restarts (re-enqueues) the given file, or files in the given directory.
-     * @param file
+     * @param file to be restarted.
      */
     private void restart(File file) {
         if (file.isDirectory()) {

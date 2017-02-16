@@ -8,23 +8,32 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.CountDownTimer;
-
+import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
-
-import java.util.Calendar;
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.literacybridge.androidtbloader.util.CountUpTimer;
+import org.literacybridge.core.fs.OperationLog;
 
 public class TalkingBookConnectionSetupActivity extends Activity {
     private static final String TAG = TalkingBookConnectionSetupActivity.class.getSimpleName();
     private static final int READ_REQUEST_CODE = 1001;
+    /**
+     * This extra value is used to signal that the activity has been started from the preference
+     * option to "request default permission".
+     */
     private static final String EXPLICIT_REQUEST_DEFAULT_PERMISSION
             = "org.literacybridge.androidtbloader.request_default_permission";
 
-    public static Intent newIntent(Context parent, boolean requestDefaultPermission) {
-        Intent intent = new Intent(parent, TalkingBookConnectionSetupActivity.class);
-        intent.putExtra(EXPLICIT_REQUEST_DEFAULT_PERMISSION, requestDefaultPermission);
-        return intent;
+    private boolean requestingDefaultPermission = false;
+    private boolean cancelled = false;
+    private OperationLog.Operation opLog;
+
+    /**
+     * Create an intent to launch this activity. This is only used in response to USB activity.
+     * @param parent The application context.
+     * @return the new intent.
+     */
+    static Intent newIntent(Context parent) {
+        return new Intent(parent, TalkingBookConnectionSetupActivity.class);
     }
 
     @Override
@@ -33,58 +42,59 @@ public class TalkingBookConnectionSetupActivity extends Activity {
 
         final TalkingBookConnectionManager talkingBookConnectionManager =
                 ((TBLoaderAppContext) getApplicationContext()).getTalkingBookConnectionManager();
+        requestingDefaultPermission = getIntent().getBooleanExtra(EXPLICIT_REQUEST_DEFAULT_PERMISSION, false);
 
+        opLog = OperationLog.startOperation("TalkingBookConnectionSetupActivity");
         talkingBookConnectionManager.setUsbWatcherDisabled(true);
 
         final ProgressDialog dialog = new ProgressDialog(this);
         dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        dialog.setCancelable(getIntent().getBooleanExtra(EXPLICIT_REQUEST_DEFAULT_PERMISSION, false));
-        dialog.setTitle("Waiting for Talking Book");
-        dialog.setMessage("Waiting for a Talking Book to connect. In the Dialog that appears " +
-                "please find the Talking Book and select it. You only have to do this once.");
-        dialog.setIndeterminate(true);
-        dialog.setCanceledOnTouchOutside(false);
-        final AtomicBoolean canceled = new AtomicBoolean(false);
-
-        if (getIntent().getBooleanExtra(EXPLICIT_REQUEST_DEFAULT_PERMISSION, false)) {
+        // If the dialog is launched from the settings item "request default permission", let it be
+        // cancelable. Any other reason for launching, do not let it be cancelable.
+        dialog.setCancelable(requestingDefaultPermission);
+        if (requestingDefaultPermission) {
+            opLog.put("requestingdefaultpermission", true);
             dialog.setButton(ProgressDialog.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    canceled.set(true);
+                    cancelled = true;
+                    opLog.put("cancelled", true);
                     dialog.cancel();
                 }
             });
         }
+        dialog.setTitle("Waiting for Talking Book");
+        // This message is only displayed until 'isDeviceMounted()' returns true. If a device is
+        // *already* mounted, it will never actually be seen, because if a device was previously
+        // mounted, this activity is started from the USB handler.
+        dialog.setMessage("Waiting for a Talking Book to connect. In the Dialog that appears " +
+                "please find the Talking Book and select it. You only have to do this once.");
+        dialog.setIndeterminate(true);
+        dialog.setCanceledOnTouchOutside(false);
+
         dialog.show();
 
 
         new Thread(new Runnable() {
-            // @TODO: replace this with CountUpTimer.
             // Provides a count of the elapsed time as a connection is established to the Talking Book.
             // Gives the user something to see, and makes the UI seem more alive.
-            long startTimeMillis = Calendar.getInstance().getTimeInMillis();
-            CountDownTimer timer = new CountDownTimer(60000, 1000) {
+            CountUpTimer timer = new CountUpTimer(1000) {
                 @Override
-                public void onTick(long millisUntilFinished) {
+                public void onTick(final long elapsedTime) {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            long delta = Calendar.getInstance().getTimeInMillis() - startTimeMillis;
-                            dialog.setMessage(String.format("Establishing connection to Talking Book [%d]...", delta / 1000));
+                            dialog.setMessage(String.format(getString(R.string.establishing_connection), elapsedTime / 1000));
                         }
                     });
-                }
-
-                @Override
-                public void onFinish() {
-
                 }
             };
 
 
             @Override
             public void run() {
-                while (!talkingBookConnectionManager.isDeviceConnected() && !canceled.get()) {
+                // Show the "Waiting for Talking Book to connect..." message.
+                while (!talkingBookConnectionManager.isDeviceConnected() && !cancelled) {
                     try {
                         Thread.sleep(500);
                     } catch (InterruptedException e) {
@@ -92,14 +102,18 @@ public class TalkingBookConnectionSetupActivity extends Activity {
                     }
                 }
 
-                if (canceled.get()) {
-                    timer.cancel();
+                if (cancelled) {
                     finish();
+                    return;
+                } else {
+                    opLog.split("deviceconnected.time");
                 }
 
+                // Counts the seconds until the device is accessible.
                 timer.start();
 
-                while (!talkingBookConnectionManager.isDeviceMounted() && !canceled.get()) {
+                // (After timer.tick...) show the "Establishing connection..." message.
+                while (!talkingBookConnectionManager.isDeviceMounted() && !cancelled) {
                     try {
                         Thread.sleep(500);
                     } catch (InterruptedException e) {
@@ -107,21 +121,33 @@ public class TalkingBookConnectionSetupActivity extends Activity {
                     }
                 }
 
-                if (canceled.get()) {
+                if (cancelled) {
                     timer.cancel();
                     finish();
+                    return;
+                } else {
+                    opLog.split("devicemounted.time");
                 }
 
+                // Do we already have permission to this TB device?
                 if (!talkingBookConnectionManager.hasPermission()) {
+                    // No, let the user open the device through the OS.
+                    timer.cancel();
                     dialog.dismiss();
                     requestPermission();
                 } else {
-                    while (talkingBookConnectionManager.canAccessConnectedDevice() == null && !canceled.get()) {
+                    // Yes. Wait for the device to be accessible. Can take a *long* time (15~20 seconds,
+                    // maybe longer, depending on the Android device).
+                    while (talkingBookConnectionManager.canAccessConnectedDevice() == null && !cancelled) {
                         try {
                             Thread.sleep(500);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                         }
+                    }
+
+                    if (!cancelled) {
+                        opLog.split("deviceaccessible.time");
                     }
 
                     timer.cancel();
@@ -145,6 +171,7 @@ public class TalkingBookConnectionSetupActivity extends Activity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
         if (requestCode == READ_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            opLog.split("requestedpermission.time");
             Uri baseURI = resultData.getData();
             int flags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
             getContentResolver().takePersistableUriPermission(baseURI, flags);
@@ -153,8 +180,10 @@ public class TalkingBookConnectionSetupActivity extends Activity {
                     ((TBLoaderAppContext) getApplicationContext()).getTalkingBookConnectionManager();
 
             talkingBookConnectionManager.addPermission(baseURI);
+            opLog.put("hasdefaultpermission", talkingBookConnectionManager.hasDefaultPermission());
 
             if (talkingBookConnectionManager.canAccessConnectedDevice() == null) {
+                opLog.put("permissionrequestfailed", true);
                 AlertDialog dialog = new AlertDialog.Builder(this)
                         .setCancelable(false)
                         .setTitle("Access Permission Setup Failed")
@@ -174,7 +203,7 @@ public class TalkingBookConnectionSetupActivity extends Activity {
                         .create();
 
                 dialog.show();
-            } else if (getIntent().getBooleanExtra(EXPLICIT_REQUEST_DEFAULT_PERMISSION, false)) {
+            } else if (requestingDefaultPermission) {
                 if (!talkingBookConnectionManager.hasDefaultPermission()) {
                     AlertDialog dialog = new AlertDialog.Builder(this)
                             .setCancelable(false)
@@ -207,9 +236,21 @@ public class TalkingBookConnectionSetupActivity extends Activity {
         }
     }
 
+    /**
+     * Call this when your activity is done and should be closed.  The
+     * ActivityResult is propagated back to whoever launched you via
+     * onActivityResult().
+     */
+    @Override
+    public void finish() {
+        opLog.end();
+        super.finish();
+    }
+
     private void requestPermission() {
         // ACTION_OPEN_DOCUMENT is the intent to choose a file via the system's file
         // browser.
+        opLog.put("requestpermission", true);
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
         startActivityForResult(intent, READ_REQUEST_CODE);
     }

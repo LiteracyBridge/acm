@@ -2,17 +2,15 @@ package org.literacybridge.androidtbloader.util;
 
 import android.os.AsyncTask;
 import android.util.Log;
-
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
-
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.signin.UserHelper;
 
 /**
- * Created by bill on 11/11/16.
+ * Common code for S3.
  */
 
 public class S3Helper {
@@ -34,7 +32,7 @@ public class S3Helper {
      *
      * @return A default S3 client.
      */
-    public static AmazonS3Client getS3Client() {
+    private static AmazonS3Client getS3Client() {
         if (sS3Client == null) {
             sS3Client = new AmazonS3Client(UserHelper.getCredentialsProvider(sApplicationContext));
         }

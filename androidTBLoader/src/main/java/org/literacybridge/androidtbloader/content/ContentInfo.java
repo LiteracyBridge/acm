@@ -154,10 +154,10 @@ public class ContentInfo {
     boolean startDownload(TBLoaderAppContext applicationContext, TransferListener listener) {
         if (mContentDownloader != null) return false;
         mListener = listener;
-        mOpLog = OperationLog.startOperation("download");
-        mOpLog.put("projectname", getProjectName());
-        mOpLog.put("version", getVersion());
-        mOpLog.put("size", getSize());
+        mOpLog = OperationLog.startOperation("DownloadContent")
+            .put("projectname", getProjectName())
+            .put("version", getVersion())
+            .put("bytesToDownload", getSize());
         mContentDownloader = new ContentDownloader(this, myTransferListener);
         mContentDownloader.start();
         return true;
@@ -173,7 +173,8 @@ public class ContentInfo {
             if (state == TransferState.COMPLETED ||
                     state == TransferState.CANCELED ||
                     state == TransferState.FAILED) {
-                mOpLog.end();
+                mOpLog.put("endState", state)
+                    .end();
                 mOpLog = null;
                 mContentDownloader = null;
             }

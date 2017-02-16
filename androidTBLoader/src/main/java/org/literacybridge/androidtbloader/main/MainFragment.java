@@ -37,16 +37,18 @@ import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.SettingsActivity;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.checkin.CheckinActivity;
+import org.literacybridge.androidtbloader.checkin.KnownLocations;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.content.ContentManager;
 import org.literacybridge.androidtbloader.content.ManageContentActivity;
-import org.literacybridge.androidtbloader.installer.UpdateActivity;
+import org.literacybridge.androidtbloader.tbloader.TbLoaderActivity;
 import org.literacybridge.androidtbloader.signin.AboutApp;
 import org.literacybridge.androidtbloader.signin.ChangePasswordActivity;
 import org.literacybridge.androidtbloader.signin.UserHelper;
 import org.literacybridge.androidtbloader.uploader.UploadManager;
 import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.Util;
+import org.literacybridge.core.fs.OperationLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,16 +101,32 @@ public class MainFragment extends Fragment {
         ContentManager mContentManager = mApplicationContext.getContentManager();
         Intent intent = getActivity().getIntent();
         mUser = intent.getStringExtra("user");
-        mContentManager.refreshContentList(contentManagerListener);
-
-        mApplicationContext.getConfig().refreshCommunityLocations(new Config.ConfigHandler() {
+        final OperationLog.Operation opLogContentList = OperationLog.startOperation("Main.RefreshContentList");
+        mContentManager.refreshContentList(new ContentManager.ContentManagerListener() {
             @Override
-            public void gotConfig(SharedPreferences prefs) {
+            public void contentListChanged() {
+                mHaveContentList = true;
+                opLogContentList.end();
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setButtonState();
+                    }
+                });
+            }
+        });
+
+        final OperationLog.Operation opLogLocationList = OperationLog.startOperation("Main.RefreshCommunityLocations");
+        KnownLocations.refreshCommunityLocations(new Config.LocationHandler() {
+            @Override
+            public void gotLocations() {
+                opLogLocationList.end();
                 Log.d(TAG, "Got location config");
             }
 
             @Override
-            public void noConfig() {
+            public void onError() {
+                opLogLocationList.put("noLocations", Boolean.TRUE).end();
                 Log.d(TAG, "No location config");
             }
         });
@@ -267,7 +285,7 @@ public class MainFragment extends Fragment {
             case R.id.nav_user_sign_out:
                 UserHelper.getPool().getUser(mUser).signOut();
                 UserHelper.getCredentialsProvider(getActivity().getApplicationContext()).clear();
-                Config.signOut();
+                Config.onSignOut();
                 Intent intent = new Intent();
                 intent.putExtra("signout", true);
                 getActivity().setResult(RESULT_OK, intent);
@@ -325,7 +343,7 @@ public class MainFragment extends Fragment {
                 });
                 Log.d(TAG, "User Attributes: " + mUserDetails.toString());
                 if (!mHaveConfig) {
-                    getConfig();
+                    getUserConfig();
                 } else {
                     closeWaitDialog();
                 }
@@ -336,7 +354,7 @@ public class MainFragment extends Fragment {
                 // This shouldn't be possible. We have successfully authenticated with Cognito before even trying.
                 Log.d(TAG, "detailsHandler failure", exception);
                 if (!mHaveConfig) {
-                    getConfig();
+                    getUserConfig();
                 } else {
                     closeWaitDialog();
                 }
@@ -348,13 +366,19 @@ public class MainFragment extends Fragment {
         UserHelper.getPool().getUser(userId).getDetailsInBackground(detailsHandler);
     }
 
-    private void getConfig() {
-        Config config = ((TBLoaderAppContext) getActivity().getApplicationContext()).getConfig();
-        config.getUserConfig(new Config.ConfigHandler() {
+    private void getUserConfig() {
+        final OperationLog.Operation opLog = OperationLog.startOperation("getUserConfig");
+        SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(
+                mApplicationContext);
+        String username = UserHelper.getUsername();
+        opLog.put("username", username);
+        Config config = TBLoaderAppContext.getInstance().getConfig();
+        config.getServerSideUserConfig(username, new Config.ConfigHandler() {
             @Override
             public void gotConfig(SharedPreferences prefs) {
                 // Excellent! Continue.
                 mHaveConfig = true;
+                opLog.end();
                 closeWaitDialog();
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -366,6 +390,8 @@ public class MainFragment extends Fragment {
 
             @Override
             public void noConfig() {
+                opLog.put("failed", Boolean.TRUE)
+                    .end();
                 closeWaitDialog();
                 // This is a fatal error.
             }
@@ -417,7 +443,7 @@ public class MainFragment extends Fragment {
     };
 
     private void doUpdate() {
-        Intent userActivity = new Intent(getActivity(), UpdateActivity.class);
+        Intent userActivity = new Intent(getActivity(), TbLoaderActivity.class);
         userActivity.putExtra("name", mUser);
         userActivity.putExtra("project", mProject);
         userActivity.putExtra("location", mCheckinLocation);

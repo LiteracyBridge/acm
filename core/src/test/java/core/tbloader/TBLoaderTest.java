@@ -11,6 +11,11 @@ import static org.junit.Assert.assertTrue;
  */
 public class TBLoaderTest {
 
+//    @Test
+//    public void testAlwaysFails() {
+//        assertTrue("Should fail", false);
+//    }
+
     @Test
     public void testSerialIs10Chars() {
         String prefix = "b-";

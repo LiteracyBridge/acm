@@ -78,7 +78,7 @@ S
             android:screenOrientation="portrait"/>
 
         <activity
-            android:name=".installer.UpdateActivity"
+            android:name=".tbloader.TbLoaderActivity"
             android:label="Update TB"
             android:screenOrientation="portrait"/>
 

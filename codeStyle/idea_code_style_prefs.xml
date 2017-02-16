@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <code_scheme name="Literacy Bridge">
   <option name="AUTODETECT_INDENTS" value="false" />
-  <option name="RIGHT_MARGIN" value="80" />
+  <option name="RIGHT_MARGIN" value="120" />
   <JavaCodeStyleSettings>
     <option name="DO_NOT_WRAP_AFTER_SINGLE_ANNOTATION" value="true" />
   </JavaCodeStyleSettings>
@@ -33,9 +33,9 @@
     <option name="TERNARY_OPERATION_WRAP" value="5" />
     <option name="ARRAY_INITIALIZER_WRAP" value="1" />
     <indentOptions>
-      <option name="INDENT_SIZE" value="2" />
+      <option name="INDENT_SIZE" value="4" />
       <option name="CONTINUATION_INDENT_SIZE" value="4" />
-      <option name="TAB_SIZE" value="2" />
+      <option name="TAB_SIZE" value="4" />
       <option name="SMART_TABS" value="true" />
     </indentOptions>
   </codeStyleSettings>

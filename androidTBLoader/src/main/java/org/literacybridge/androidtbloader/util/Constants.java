@@ -19,31 +19,18 @@ import com.amazonaws.regions.Regions;
 
 public class Constants {
 
-    /*
-     * You should replace these values with your own. See the README for details
-     * on what to fill in.
-     */
-
-    public static final Regions REGION = Regions.US_WEST_2;
+    public static final Regions COGNITO_REGION = Regions.US_WEST_2;
 
     public static final String COGNITO_IDENTITY_POOL_ID = "us-west-2:a544b58b-8be0-46db-aece-e6fe14d29124";
     public static final String COGNITO_USER_POOL_ID = "us-west-2_6EKGzq75p";
-
     public static final String COGNITO_USER_POOL_LOGIN_STRING = "cognito-idp.us-west-2.amazonaws.com/" + COGNITO_USER_POOL_ID;
-
-    public static final String COGNITO_POOL_ID = COGNITO_IDENTITY_POOL_ID;
 
     public static final String COGNITO_APP_CLIENT_ID = "5h9tg11mb73p4j2ca1oii7bhkn";
     public static final String COGNITO_APP_SECRET = null;
 
-
-    /*
-     * Note, you must first create a bucket using the S3 console before running
-     * the sample (https://console.aws.amazon.com/s3/). After creating a bucket,
-     * put it's name in the field below.
-     */
+    // Content updates come from here.
     public static final String CONTENT_UPDATES_BUCKET_NAME = "acm-content-updates";
-
+    // Statistics, logs get uploaded to here.
     public static final String COLLECTED_DATA_BUCKET_NAME = "acm-stats";
 
 

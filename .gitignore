@@ -1,6 +1,6 @@
 .DS_Store
 bin/
-/.gradle/
+.gradle/
 /build/
 .settings/
 .project

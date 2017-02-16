@@ -1,7 +1,6 @@
 package org.literacybridge.androidtbloader;
 
 import android.app.Application;
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -59,7 +58,7 @@ public class TBLoaderAppContext extends Application {
         PathsProvider.init(this);
         mTalkingBookConnectionManager = new TalkingBookConnectionManager(this);
         mContentManager = new ContentManager(this);
-        mUploadManager = new UploadManager(this);
+        mUploadManager = new UploadManager();
         mConfig = new Config(this);
 
         OperationLog.setImplementation(new OperationLogImpl());

@@ -74,10 +74,6 @@ public abstract class TbFile {
         }
         return tmp;
     }
-    // Convenience.
-    public TbFile open(RelativePath childPath) {
-        return open(childPath.getSegments());
-    }
 
     public abstract TbFile getParent();
 
@@ -122,17 +118,19 @@ public abstract class TbFile {
                 if (f == q) return true;
         return false;
     }
-    public void delete(Flags... flags) {
-        if (!exists()) return;
+    public int delete(Flags... flags) {
+        int numDeleted = 0;
+        if (!exists()) return numDeleted;
         if (isDirectory() && hasFlag(flags, Flags.recursive, Flags.contentRecursive)) {
             String [] children = list();
             for (String child : children) {
                 TbFile f = open(child);
-                f.delete(Flags.recursive);
+                numDeleted += f.delete(Flags.recursive);
             }
-            if (hasFlag(flags, Flags.contentRecursive)) return;
+            if (hasFlag(flags, Flags.contentRecursive)) return numDeleted;
         }
-        delete();
+        if (delete()) numDeleted++;
+        return numDeleted;
     }
 
     public void deleteDirectory() {

@@ -1,3 +1,5 @@
+
+// External dependencies for the build script. (Gradle, WTF...)
 buildscript {
     repositories {
         jcenter()
@@ -10,8 +12,27 @@ buildscript {
     }
 }
 
+project(':core') {          
+    buildDir = 'android_build'
+}
+
+allprojects {
+    apply plugin: 'idea'
+
+    repositories {
+        mavenCentral()
+        maven {
+            url "http://bits.netbeans.org/maven2"
+        }
+        maven {
+            url "http://essi-lab.eu/nexus/content/groups/open.repos"
+        }
+    }
+}
+
+
+
 apply plugin: 'com.android.application'
-apply plugin: 'idea'
 
 // Load Google Play Store signing properties
 def keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -61,19 +82,23 @@ android {
     }
 }
 
-task clean(type: Delete) {
+clean.doLast  {
     delete rootProject.buildDir
+    delete project(':core').buildDir
 }
 
 dependencies {
     compile project(':core')
+    
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    testCompile 'junit:junit:4.12'
+
     compile 'com.android.support:appcompat-v7:23.4.0'
     compile 'com.android.support:design:23.4.0'
     compile 'com.android.support:support-v4:23.4.0'
-    compile files('libs/dropbox-android-sdk-1.6.3.jar')
+    //compile files('libs/dropbox-android-sdk-1.6.3.jar')
     compile files('libs/json_simple-1.1.jar')
     compile 'com.amazonaws:aws-android-sdk-s3:2.2.+'
     compile 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.3.2'
+
+    testCompile 'junit:junit:4.12'
 }

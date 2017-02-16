@@ -22,11 +22,11 @@ public class RelativePathTest {
     RelativePath path = new RelativePath();
     assertEquals("", path.asString());
     path = new RelativePath(path, "var");
-    assertEquals(1, path.getSegments().size());
+    assertEquals(1, path.getSegmentCount());
     assertEquals("var", path.getLastSegment());
     path = new RelativePath(path, "log", "daily.out");
     assertEquals("daily.out", path.getLastSegment());
-    assertEquals(3, path.getSegments().size());
+    assertEquals(3, path.getSegmentCount());
     assertEquals(pathStr, path.asString());
   }
 
@@ -38,7 +38,7 @@ public class RelativePathTest {
     assertEquals(pathStr, path.asString());
 
     RelativePath parent = path.getParent();
-    assertEquals(2, parent.getSegments().size());
+    assertEquals(2, parent.getSegmentCount());
     assertEquals("var/log", parent.asString());
     assertEquals("log", parent.getLastSegment());
   }
@@ -47,7 +47,7 @@ public class RelativePathTest {
   public void testEquals() {
     String pathStr = "var/log/daily.out";
     RelativePath path = RelativePath.parse(pathStr);
-    RelativePath path1 = new RelativePath(path.getSegments());
+    RelativePath path1 = new RelativePath(path);
     RelativePath path2 = RelativePath.parse(path.asString());
     assertEquals(path, path1);
     assertEquals(path, path2);
@@ -55,18 +55,4 @@ public class RelativePathTest {
     assertEquals(path.hashCode(), path2.hashCode());
   }
 
-  @Test
-  public void testGetRelativePath() {
-    String root = "var/";
-    String absolutePath = "var/log/daily.out";
-
-    RelativePath relativePath = RelativePath.getRelativePath(root, "daily.out");
-    assertNull(relativePath);
-
-    relativePath = RelativePath.getRelativePath(root, absolutePath);
-    assertNotNull(relativePath);
-
-    assertEquals("daily.out", relativePath.getLastSegment());
-    assertEquals("log/daily.out", relativePath.asString());
-  }
 }

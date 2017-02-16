@@ -1,6 +1,7 @@
 package org.literacybridge.core.fs;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -22,8 +23,32 @@ public class OperationLog {
      * these when the operation starts, put properties as they become available, and end it when it finishes.
      */
     public interface Operation {
-        <T> void put(String key, T value);
+        /**
+         * Put a key:value pair. Anything with a toString() for the value
+         * @param key The key; any name that's meaningful to the application. Note that another
+         *            put to the same name replaces the earlier value.
+         * @param value Anything with a toString() as the value.
+         * @return this so that calls can be chained.
+         */
+        <T> Operation put(String key, T value);
+
+        /**
+         * Marks the time, by recording the value of the elapsed milliseconds as key.
+         * @param key The name of the timer.
+         * @return The Operation, so this can be chained with put()
+         */
+        Operation split(String key);
+
+        /**
+         * End the operation, and provide more info.
+         * @param info A Map<String, String> of additional key:value pairs. Any keys here will overwrite
+         *             any keys set through 'put()'.
+         */
         void end(Map<String,String> info);
+
+        /**
+         * Ends the timer.
+         */
         void end();
     }
 
@@ -66,44 +91,44 @@ public class OperationLog {
      * Implementation of Operation.
      */
     private static class OperationEvent implements Operation {
-        private Map<String, String> info = new HashMap<>();
+        private static final String ELAPSED = "elapsedTime";
+        private Map<String, String> info = new LinkedHashMap<>();
         private long startTime;
+        private long splitStart;
         private String name;
 
         private OperationEvent(String name) {
             this.name = name;
             this.startTime = System.currentTimeMillis();
+            this.splitStart = startTime;
+            this.put(ELAPSED, 0);
         }
 
-        /**
-         * Put a key:value pair. Anything with a toString() for the value
-         * @param key The key; any name that's meaningful to the application. Note that another
-         *            put to the same name replaces the earlier value.
-         * @param value Anything with a toString() as the value.
-         */
         @Override
-        public <T> void put(String key, T value) {
+        public <T> Operation put(String key, T value) {
             info.put(key, value.toString());
+            return this;
         }
-
-        /**
-         * End the operation, and provide more info.
-         * @param info A Map<String, String> of additional key:value pairs. Any keys here will overwrite
-         *             any keys set through 'put()'.
-         */
+        @Override
+        public Operation split(String name) {
+            long t = System.currentTimeMillis();
+            this.put(name, Long.toString(t-splitStart));
+            splitStart = t; // for next split
+            return this;
+        }
         @Override
         public void end(Map<String, String> info) {
             this.info.putAll(info);
             end();
         }
-
-        /**
-         * Simply end the operation.
-         */
         @Override
         public void end() {
-            info.put("time", Long.toString(System.currentTimeMillis()-startTime));
-            OperationLog.logEvent(name, info);
+            // Only record once.
+            if (startTime > 0) {
+                this.put(ELAPSED, Long.toString(System.currentTimeMillis() - startTime));
+                startTime = -1;
+                OperationLog.logEvent(name, info);
+            }
         }
     }
 

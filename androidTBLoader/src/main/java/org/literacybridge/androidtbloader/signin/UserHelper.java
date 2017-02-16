@@ -22,6 +22,8 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.auth.CognitoCredentialsProvider;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoDevice;
@@ -29,9 +31,13 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttribu
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserPool;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession;
+import com.amazonaws.regions.Region;
 import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProvider;
+import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProviderClient;
 import com.amazonaws.services.cognitoidentityprovider.model.AttributeType;
 
+import com.amazonaws.services.cognitoidentityprovider.model.GetUserRequest;
+import com.amazonaws.services.cognitoidentityprovider.model.GetUserResult;
 import org.literacybridge.androidtbloader.util.Constants;
 
 import java.util.ArrayList;
@@ -50,6 +56,11 @@ public class UserHelper {
 
     private static UserHelper appHelper;
     private static CognitoUserPool userPool;
+    /**
+     * This is the actual, unique, non-alias user id in the Cognito User Pool. Their official
+     * term for this value is "username".
+     */
+    private static String username;
     private static String user;
     private static CognitoDevice newDevice;
 
@@ -73,12 +84,6 @@ public class UserHelper {
     private static String firstTimeLoginNewPassword;
 
     // Change the next three lines of code to run this demo on your user pool
-
-    /**
-     * Add your pool id here
-     */
-    private static final String userPoolId = "us-west-2_6EKGzq75p";
-    private static final String userPoolOtherId = "cognito-idp.us-west-2.amazonaws.com/" + userPoolId;
 
     // User details from the service
     private static CognitoUserSession currSession;
@@ -110,14 +115,14 @@ public class UserHelper {
         if (userPool == null) {
 
             // Create a user pool with default ClientConfiguration
-            userPool = new CognitoUserPool(context, Constants.COGNITO_USER_POOL_ID, Constants.COGNITO_APP_CLIENT_ID, Constants.COGNITO_APP_SECRET, Constants.REGION);
+            //userPool = new CognitoUserPool(context, Constants.COGNITO_USER_POOL_ID, Constants.COGNITO_APP_CLIENT_ID, Constants.COGNITO_APP_SECRET, Constants.COGNITO_REGION);
 
             // This will also work
-            /*
+            //*
             ClientConfiguration clientConfiguration = new ClientConfiguration();
             cipClient = new AmazonCognitoIdentityProviderClient(new AnonymousAWSCredentials(), clientConfiguration);
-            cipClient.setRegion(Region.getRegion(cognitoRegion));
-            userPool = new CognitoUserPool(context, userPoolId, clientId, clientSecret, cipClient);
+            cipClient.setRegion(Region.getRegion(Constants.COGNITO_REGION));
+            userPool = new CognitoUserPool(context, Constants.COGNITO_USER_POOL_ID, Constants.COGNITO_APP_CLIENT_ID, Constants.COGNITO_APP_SECRET, cipClient);
             // */
 
         }
@@ -142,8 +147,8 @@ public class UserHelper {
         if (credentialsProvider == null) {
             credentialsProvider = new CognitoCachingCredentialsProvider(
                     context.getApplicationContext(),
-                    Constants.COGNITO_POOL_ID,
-                    Constants.REGION);
+                    Constants.COGNITO_IDENTITY_POOL_ID,
+                    Constants.COGNITO_REGION);
         }
         return credentialsProvider;
     }
@@ -189,9 +194,31 @@ public class UserHelper {
             @Override
             protected void onPostExecute(Void result) {
                 Log.d("AUTH", "Back from refresh()");
+                getUsernameFromSession(done);
+            }
+        }.execute();
+    }
+
+    private static void getUsernameFromSession(final Runnable done) {
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                GetUserRequest getUserRequest = new GetUserRequest();
+                getUserRequest.setAccessToken(currSession.getAccessToken().getJWTToken());
+                GetUserResult userResult = cipClient.getUser(getUserRequest);
+                username = userResult.getUsername();
+                return null;
+            }
+            @Override
+            protected void onPostExecute(Void result) {
+                Log.d("AUTH", "Back from refresh()");
                 done.run();
             }
         }.execute();
+    }
+
+    public static String getUsername() {
+        return username;
     }
 
     public static  CognitoUserSession getCurrSession() {

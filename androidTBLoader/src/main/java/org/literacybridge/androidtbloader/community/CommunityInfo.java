@@ -63,7 +63,7 @@ public class CommunityInfo {
      * @return The string, suitable for extra data.
      */
     public String makeExtra() {
-        return this.project + DELIMITER + this.name;
+        return this.name + DELIMITER + this.project;
     }
 
     /**

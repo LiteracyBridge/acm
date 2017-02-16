@@ -1,4 +1,4 @@
-package org.literacybridge.androidtbloader.installer;
+package org.literacybridge.androidtbloader.tbloader;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
@@ -29,7 +29,6 @@ import org.literacybridge.androidtbloader.community.ChooseCommunityActivity;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.content.ContentInfo;
 import org.literacybridge.androidtbloader.content.ContentManager;
-import org.literacybridge.androidtbloader.talkingbook.AndroidDocFile;
 import org.literacybridge.androidtbloader.talkingbook.TalkingBookConnectionManager;
 import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.PathsProvider;
@@ -53,11 +52,8 @@ import java.io.Writer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 
@@ -68,16 +64,14 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_
 /**
  * This implements the UI of the Loader portion of the application.
  */
-public class UpdateFragment extends Fragment {
-    private static final String TAG = UpdateFragment.class.getSimpleName();
+public class TbLoaderFragment extends Fragment {
+    private static final String TAG = TbLoaderFragment.class.getSimpleName();
 
     private final int REQUEST_CODE_GET_COMMUNITY = 101;
 
-    private boolean mSimulateDevice;
     private TalkingBookConnectionManager mTalkingBookConnectionManager;
     private TalkingBookConnectionManager.TalkingBook mConnectedDevice;
     private TBDeviceInfo mConnectedDeviceInfo;
-    private ContentManager mContentManager;
     private String mProject;
     private List<CommunityInfo> mCommunities;
     private CommunityInfo mCommunity;
@@ -85,12 +79,9 @@ public class UpdateFragment extends Fragment {
     private ContentInfo mContentInfo;
     private String mSrnPrefix = "b-";
 
-    private TextView mProjectNameTextView;
-    private TextView mContentUpdateNameTextView;
     private TextView mTalkingBookIdTextView;
     private TextView mTalkingBookWarningsTextView;
 
-    private LinearLayout mCommunityGroup;
     private TextView mCommunityNameTextView;
 
     private CheckBox mRefreshFirmwareCheckBox;
@@ -116,7 +107,8 @@ public class UpdateFragment extends Fragment {
             mCommunity = mCommunities.get(0);
         }
         mTalkingBookConnectionManager = ((TBLoaderAppContext) getActivity().getApplicationContext()).getTalkingBookConnectionManager();
-        mContentManager = ((TBLoaderAppContext) getActivity().getApplicationContext()).getContentManager();
+        ContentManager mContentManager = ((TBLoaderAppContext) getActivity().getApplicationContext())
+                .getContentManager();
         mContentInfo = mContentManager.getContentInfo(mProject);
 
         ////////////////////////////////////////////////////////////////////////////////
@@ -124,7 +116,7 @@ public class UpdateFragment extends Fragment {
         SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
         TBLoaderAppContext tbLoaderAppContext = (TBLoaderAppContext) getActivity().getApplicationContext();
         boolean isDebug = tbLoaderAppContext.isDebug();
-        mSimulateDevice = userPrefs.getBoolean("pref_simulate_device", false);
+        boolean mSimulateDevice = userPrefs.getBoolean("pref_simulate_device", false);
         if (isDebug && mSimulateDevice) {
             InputStream tbStream = getResources().openRawResource(R.raw.demotbbackupzip);
             File tbZipFile = new File(PathsProvider.getLocalTempDirectory(), "simulated_tb.zip");
@@ -172,9 +164,10 @@ public class UpdateFragment extends Fragment {
         });
 
         // Project name and initial value.
-        mProjectNameTextView = (TextView) view.findViewById(R.id.update_project_name);
+        TextView mProjectNameTextView = (TextView) view.findViewById(R.id.update_project_name);
         mProjectNameTextView.setText(mProject);
-        mContentUpdateNameTextView = (TextView)view.findViewById(R.id.content_update_name);
+        TextView mContentUpdateNameTextView = (TextView) view.findViewById(
+                R.id.content_update_name);
         File contentUpdateDirectory = PathsProvider.getLocalContentUpdateDirectory(mProject);
         mContentUpdateNameTextView.setText(contentUpdateDirectory.getName());
 
@@ -187,7 +180,7 @@ public class UpdateFragment extends Fragment {
 
         // Community. Show the values if we already know them.
         mCommunityNameTextView = (TextView)view.findViewById(R.id.community_name);
-        mCommunityGroup = (LinearLayout)view.findViewById(R.id.loader_community);
+        LinearLayout mCommunityGroup = (LinearLayout) view.findViewById(R.id.loader_community);
         mCommunityNameTextView.setSelected(true);
         mCommunityGroup.setOnClickListener(setCommunityListener);
 
@@ -233,8 +226,8 @@ public class UpdateFragment extends Fragment {
     /**
      * Handle the results of activities that we start.
      * @param requestCode The request code that we used in startActivityForResult
-     * @param resultCode
-     * @param data
+     * @param resultCode The result code that the activity set at its exit.
+     * @param data Any extra data returned by the activity.
      */
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -322,7 +315,9 @@ public class UpdateFragment extends Fragment {
     };
 
     private void unmount() {
-        boolean success = mTalkingBookConnectionManager.unMount(mConnectedDevice);
+        // This call doesn't actually do anything. Maybe someday Android will let us unmount
+        // our own devices.
+//        boolean success = mTalkingBookConnectionManager.unMount(mConnectedDevice);
         // This stinks from usability, but is the official way.
 //        if (!success) {
 //            Intent i = new Intent(android.provider.Settings.ACTION_MEMORY_CARD_SETTINGS);
@@ -392,7 +387,6 @@ public class UpdateFragment extends Fragment {
 
     /**
      * Listens to updates from the TalkingBookConnectionManager, updates buttons.
-     * @param connectedDevice
      */
     private TalkingBookConnectionManager.TalkingBookConnectionEventListener talkingBookConnectionEventListener =
         new TalkingBookConnectionManager.TalkingBookConnectionEventListener() {
@@ -454,7 +448,7 @@ public class UpdateFragment extends Fragment {
         abstract public void refresh();
         abstract public void extraStep(String step);
     }
-    MyProgressListener mProgressListener = new MyProgressListener () {
+    private MyProgressListener mProgressListener = new MyProgressListener () {
         private String mStep;
         private String mDetail;
         private String mLog;
@@ -470,6 +464,10 @@ public class UpdateFragment extends Fragment {
             mUpdateLogTextView.setText(mLog);
         }
 
+        /**
+         * Not part of the progress interface; this activity has a few steps of its own.
+         * @param step in string form.
+         */
         public void extraStep(String step) {
             mStep = step;
             mDetail = "";
@@ -547,6 +545,7 @@ public class UpdateFragment extends Fragment {
      * Updates the Talking Book
      */
     private void installContentUpdate() {
+        OperationLog.Operation opLog = OperationLog.startOperation("UpdateTalkingBook");
         TBDeviceInfo tbDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
                     mConnectedDevice.getDeviceLabel(),
                     mSrnPrefix);
@@ -566,6 +565,9 @@ public class UpdateFragment extends Fragment {
         DateFormat df = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'");
         df.setTimeZone(tz);
         String collectionTimestamp = df.format(new Date());
+        df = new SimpleDateFormat("yyyy/MM/dd");
+        df.setTimeZone(tz);
+        String todaysDate = df.format(new Date());
 
         File collectedDataDirectory = new File(PathsProvider.getLocalTempDirectory(), COLLECTED_DATA_SUBDIR_NAME + File.separator + collectionTimestamp);
         TbFile collectedDataTbFile = new FsFile(collectedDataDirectory);
@@ -599,18 +601,21 @@ public class UpdateFragment extends Fragment {
                 contentUpdateName,
                 imageName,
                 collectedDataDirectory.getName(),
-                null, // TODO: this should be the "deployment date", the first date the new content is deployed.
+                todaysDate, // TODO: this should be the "deployment date", the first date the new content is deployed.
                 firmwareRevision,
                 mCommunity.getName());
 
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mTalkingBookWarningsTextView.setText("Do not disconnect the Talking Book!");
+                mTalkingBookWarningsTextView.setText(getString(R.string.do_not_disconnect));
             }
         });
 
-
+        opLog.put("project", mProject)
+            .put("deployment", contentUpdateName)
+            .put("package", imageName);
+        
         TBLoaderCore core = new TBLoaderCore.Builder()
                 .withTbLoaderConfig(tbLoaderConfig)
                 .withTbDeviceInfo(tbDeviceInfo)
@@ -628,14 +633,14 @@ public class UpdateFragment extends Fragment {
             long zipStart = System.currentTimeMillis();
             mProgressListener.extraStep("Zipping statistics and user feedback");
             String collectedDataZipName = "collected-data/tbcd" + Config.getTbcdid() + "/" + collectionTimestamp + ".zip";
-            File uploadableZipFile = new File(PathsProvider.getUploadDirectory(), collectedDataZipName);
+            File uploadableZipFile = new File(PathsProvider.getLocalTempDirectory(), collectedDataZipName);
 
             // Zip all the files together. We don't really get any compression, but it collects them into
             // a single archive file.
             ZipUnzip.zip(collectedDataDirectory, uploadableZipFile, true);
             collectedDataTbFile.deleteDirectory();
 
-            ((TBLoaderAppContext)getActivity().getApplicationContext()).getUploadManager().upload(uploadableZipFile);
+            ((TBLoaderAppContext)getActivity().getApplicationContext()).getUploadManager().uploadFileAsName(uploadableZipFile, collectedDataZipName);
             String message = String.format("Zipped statistics and user feedback in %s", formatElapsedTime(System.currentTimeMillis()-zipStart));
             mProgressListener.log(message);
             message = String.format("TB-Loader completed in %s", formatElapsedTime(System.currentTimeMillis()-startTime));
@@ -645,15 +650,18 @@ public class UpdateFragment extends Fragment {
             e.printStackTrace();
             mProgressListener.log(getStackTrace(e));
             mProgressListener.log("Exception zipping stats");
+            opLog.put("zipException", e);
         }
+        opLog.end();
     }
 
+    @SuppressLint("DefaultLocale")
     private String formatElapsedTime(Long millis) {
         if (millis < 1000) {
             // Less than one second
             return String.format("%d ms", millis);
         } else if (millis < 60000) {
-            // Less than one minute
+            // Less than one minute. Format like '1.25 s' or '25.3 s' (3 digits).
             String time = String.format("%f", millis / 1000.0);
             return time.substring(0, 4) + " s";
         } else {

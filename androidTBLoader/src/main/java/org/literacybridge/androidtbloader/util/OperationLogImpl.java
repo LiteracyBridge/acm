@@ -25,7 +25,7 @@ public class OperationLogImpl implements OperationLog.Implementation{
     private static final String TAG = OperationLogImpl.class.getSimpleName();
 
     private static int ZIP_THRESHOLD = 20000;
-    private static int UPLOAD_WAIT_TIME = 2 * 60 * 1000; // 2 minutes in ms
+    private static int UPLOAD_WAIT_TIME = 10 * 60 * 1000; // 10 minutes in ms
 
     private Handler handler = new Handler();
     private Runnable runnable;
@@ -62,6 +62,13 @@ public class OperationLogImpl implements OperationLog.Implementation{
         return logFile;
     }
 
+    private String enquote(String rawString) {
+        if (rawString.indexOf(',') >= 0) {
+            return String.format("\"%s\"", rawString);
+        }
+        return rawString;
+    }
+
     public void logEvent(String name, Map<String, String> info) {
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("%s,%s", logFormat.format(new Date()), name));
@@ -69,7 +76,7 @@ public class OperationLogImpl implements OperationLog.Implementation{
             for (Map.Entry<String, String> entry : info.entrySet()) {
                 builder.append(',').append(entry.getKey()).append(':');
                 // TODO: check for new lines.
-                builder.append(entry.getValue());
+                builder.append(enquote(entry.getValue()));
             }
         }
         builder.append("\n");
@@ -112,7 +119,7 @@ public class OperationLogImpl implements OperationLog.Implementation{
         if (logFile.length() > ZIP_THRESHOLD) {
             //TODO Zip it.
         }
-        TBLoaderAppContext.getInstance().getUploadManager().upload(logFile, logName);
+        TBLoaderAppContext.getInstance().getUploadManager().uploadFileAsName(logFile, logName);
     }
 
 }

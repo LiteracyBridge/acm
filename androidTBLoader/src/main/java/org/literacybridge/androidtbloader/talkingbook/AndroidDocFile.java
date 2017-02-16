@@ -18,25 +18,24 @@ import java.util.Map;
 import static org.literacybridge.core.fs.TbFile.Flags.append;
 
 /**
- * This is an implementation of TbFile that wraps the Android DocumentFile.
+ * This is an implementation of TbFile that wraps the Android DocumentFile. The DocumentFile is
+ * a performance train wreck. We might eke out a bit more performance by caching lists of child
+ * files, rather than always asking the OS.
  */
 
 public class AndroidDocFile extends TbFile {
-    // This helps a little with the problem of zero byte files. What seems to help more is to
-    // walk the directory tree after doing the update.
-    public static boolean deleteBeforeCreate = false;
 
     private AndroidDocFile parent;
     private String filename;
     private DocumentFile file;
-    public ContentResolver resolver;
+    private ContentResolver resolver;
 
     /**
      * Creates a "root" AndroidDocFile.
      * @param file The DocFile.
      * @param resolver The ContentResolver for the docfile and it's children.
      */
-    public AndroidDocFile(DocumentFile file, ContentResolver resolver) {
+    AndroidDocFile(DocumentFile file, ContentResolver resolver) {
         this.parent = null;
         this.filename = null;
         this.file = file;
@@ -157,9 +156,6 @@ public class AndroidDocFile extends TbFile {
         boolean appendToExisting = Arrays.asList(flags).contains(append);
         String streamFlags = appendToExisting ? "wa" : "w";
         resolve();
-        if (deleteBeforeCreate && !appendToExisting && exists()) {
-            delete();
-        }
         if (file == null) {
             file = parent.file.createFile("application/octet-stream", filename);
         }
@@ -207,9 +203,10 @@ public class AndroidDocFile extends TbFile {
             String name = file.getName();
             if (name == null) {
                 Map<String,String> info = new HashMap<>();
-                info.put("parent", filename);
+                String fn = filename != null ? filename : "(null)";
+                info.put("childOf", fn);
                 info.put("siblings", Integer.toString(files.length));
-                OperationLog.logEvent("nullfilename", info);
+                OperationLog.logEvent("NullFilenameInListFiles", info);
             } else {
                 if (filter == null || filter.accept(this, file.getName())) {
                     fileNames.add(file.getName());

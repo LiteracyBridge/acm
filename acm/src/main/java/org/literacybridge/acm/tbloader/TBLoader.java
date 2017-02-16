@@ -759,7 +759,7 @@ public class TBLoader extends JFrame {
    */
   private void populatePreviousValuesFromCurrentDrive() {
       String driveLabel = currentTbDevice.getLabelWithoutDriveLetter();
-      if (!isSerialNumberFormatGood(srnPrefix, driveLabel)) {
+      if (!driveLabel.equals(NO_DRIVE) && !isSerialNumberFormatGood(srnPrefix, driveLabel)) {
         // could not find flashStats file -- but TB should save flashstats on normal shutdown and on *-startup.
         JOptionPane.showMessageDialog(null,
             "The TB's statistics cannot be found. Please follow these steps:\n 1. Unplug the TB\n 2. Hold down the * while turning on the TB\n "
@@ -1044,6 +1044,42 @@ public class TBLoader extends JFrame {
     final String devicePath;
     boolean criticalError = false;
     boolean alert = false;
+      ProgressListener progressListenerListener =  new ProgressListener() {
+          ProgressListener.Steps currentStep = ProgressListener.Steps.ready;
+
+          @Override
+          public void step(ProgressListener.Steps step) {
+              currentStep = step;
+              statusRight.setText(step.description());
+          }
+
+          @Override
+          public void detail(String value) {
+              statusRight.setText(currentStep.description() + "\n\n" + value);
+          }
+
+          @Override
+          public void log(String value) {
+              statusLeft.setText(value + "\n" + statusLeft.getText());
+          }
+
+          @Override
+          public void log(boolean append, String value) {
+              if (!append) {
+                  log(value);
+              } else {
+                  String oldValue = statusLeft.getText();
+                  int nl = oldValue.indexOf("\n");
+                  if (nl > 0) {
+                      String pref = oldValue.substring(0, nl);
+                      String suff = oldValue.substring(nl+1);
+                      statusLeft.setText(pref + value + "\n" + suff);
+                  } else {
+                      statusLeft.setText(oldValue + value);
+                  }
+              }
+          }
+      };
 
     CopyThread(String devicePath, Operation operation) {
       this.devicePath = devicePath;
@@ -1053,42 +1089,7 @@ public class TBLoader extends JFrame {
     private void grabStatsOnly(DeploymentInfo newDeploymentInfo) {
       TBLoaderCore.Result result = null;
       try {
-          ProgressListener progressListenerListener =  new ProgressListener() {
-              ProgressListener.Steps currentStep = ProgressListener.Steps.ready;
 
-              @Override
-              public void step(ProgressListener.Steps step) {
-                  currentStep = step;
-                  statusRight.setText(step.description());
-              }
-
-              @Override
-              public void detail(String value) {
-                  statusRight.setText(currentStep.description() + "\n\n" + value);
-              }
-
-              @Override
-              public void log(String value) {
-                  statusLeft.setText(value + "\n" + statusLeft.getText());
-              }
-
-              @Override
-              public void log(boolean append, String value) {
-                  if (!append) {
-                      log(value);
-                  } else {
-                      String oldValue = statusLeft.getText();
-                      int nl = oldValue.indexOf("\n");
-                      if (nl > 0) {
-                          String pref = oldValue.substring(0, nl);
-                          String suff = oldValue.substring(nl+1);
-                          statusLeft.setText(pref + value + "\n" + suff);
-                      } else {
-                          statusLeft.setText(oldValue + value);
-                      }
-                  }
-              }
-          };
           TBLoaderCore tbLoader = new TBLoaderCore.Builder()
                   .withTbLoaderConfig(tbLoaderConfig)
                   .withTbDeviceInfo(currentTbDevice)
@@ -1096,7 +1097,7 @@ public class TBLoader extends JFrame {
                   .withNewDeploymentInfo(newDeploymentInfo)
                   .withLocation(currentLocationList.getSelectedItem().toString())
                   .withRefreshFirmware(false)
-                  .withStatsOnly(true)
+                  .withStatsOnly()
                   .withProgressListener(progressListenerListener)
           .build();
           result = tbLoader.update();
@@ -1124,43 +1125,7 @@ public class TBLoader extends JFrame {
 
       TBLoaderCore.Result result = null;
       try {
-          ProgressListener progressListenerListener =  new ProgressListener() {
-              ProgressListener.Steps currentStep = ProgressListener.Steps.ready;
-
-              @Override
-              public void step(ProgressListener.Steps step) {
-                  currentStep = step;
-                  statusRight.setText(step.description());
-              }
-
-              @Override
-              public void detail(String value) {
-                  statusRight.setText(currentStep.description() + "\n\n" + value);
-              }
-
-              @Override
-              public void log(String value) {
-                  statusLeft.setText(value + "\n" + statusLeft.getText());
-              }
-
-              @Override
-              public void log(boolean append, String value) {
-                  if (!append) {
-                      log(value);
-                  } else {
-                      String oldValue = statusLeft.getText();
-                      int nl = oldValue.indexOf("\n");
-                      if (nl > 0) {
-                          String pref = oldValue.substring(0, nl);
-                          String suff = oldValue.substring(nl+1);
-                          statusLeft.setText(pref + value + "\n" + suff);
-                      } else {
-                          statusLeft.setText(oldValue + value);
-                      }
-                  }
-              }
-          };
-
+          
           TBLoaderCore tbLoader = new TBLoaderCore.Builder()
                   .withTbLoaderConfig(tbLoaderConfig)
                   .withTbDeviceInfo(currentTbDevice)

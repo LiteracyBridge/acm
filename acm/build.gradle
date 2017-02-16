@@ -1,49 +1,78 @@
+project.ext {
+    codeStyleDir = "${rootProject.projectDir}/../codeStyle"
+    javaLanguageLevel = "1.8"
+}
+
 apply plugin: 'java'
-apply from: "${project.gradleSettingsDir}/eclipse.gradle"
+
+allprojects {
+    apply plugin: 'idea'
+
+    repositories {
+        mavenCentral()
+        maven {
+            url "http://bits.netbeans.org/maven2"
+        }
+        maven {
+            url "http://essi-lab.eu/nexus/content/groups/open.repos"
+        }
+    }
+}
+
+// Put the :core projects build artifacts in our own directory. Prevents us pulling in stale
+// Android artifacts.
+project(':core') {
+    buildDir = 'java_build'
+}
 
 compileJava {
-  targetCompatibility = '1.8'
-  sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+    sourceCompatibility = '1.8'
 }
 
 File distDir = file("$projectDir/dist")
 
 task copyLibs(type: Sync) {
-  // configurations.runtime is the set of runtime dependencies, ie, everything
-  // in the '"dependencies" section that is included by a "compile" line.
-  from configurations.runtime
-  into "$distDir/lib"
+    // configurations.runtime is the set of runtime dependencies, ie, everything
+    // in the '"dependencies" section that is included by a "compile" line.
+    from configurations.runtime
+    into "$distDir/lib"
 }
 
 task copyJars(type: Copy, dependsOn: build) {
-  // libsDir is "build/libs". Copies acm.jar from "build/libs" to "dist".
-  from libsDir
-  into distDir
+    // libsDir is "build/libs". Copies acm.jar from "build/libs" to "dist".
+    from libsDir
+    into distDir
 }
 
 task copyUpdateScript(type: Copy, dependsOn: copyJars) {
-  // The update script is in 'scripts/deployToDbx.sh'
-  from "$projectDir/scripts/deployToDbx.sh"
-  into distDir
+    // The update script is in 'scripts/deployToDbx.sh'
+    from "$projectDir/scripts/deployToDbx.sh"
+    from "$projectDir/scripts/acm.sh"
+    into distDir
 }
 
 task dist(dependsOn: [copyJars, copyLibs, copyUpdateScript]) {
-  description = 'This is the actual build. Ignore anything with \'assemble\'.'
-  group = 'build'
+    description = 'This is the actual build. Ignore anything with \'assemble\'.'
+    group = 'build'
 }
 
-clean {
-  delete distDir
+clean.doLast {
+    println "Deleting ${distDir}"
+    file(distDir).deleteDir()
+    // Wonder why this doesn't work?
+    //delete distDir
+    delete project(':core').buildDir
 }
 
 // Begin code to allow dynamically including the most up-to-date AWS libs.
 buildscript {
-  repositories {
-    mavenCentral()
-  }
-  dependencies {
-    classpath "io.spring.gradle:dependency-management-plugin:0.6.1.RELEASE"
-  }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "io.spring.gradle:dependency-management-plugin:0.6.1.RELEASE"
+    }
 }
 apply plugin: "io.spring.dependency-management"
 dependencyManagement {
@@ -53,34 +82,79 @@ dependencyManagement {
 }
 // End code to allow dynamically including the most up-to-date AWS libs
 
-apply plugin: "java"
-
 dependencies {
-  compile project(':core')
+    compile project(':core')
 
-  compile 'org.apache.lucene:lucene-core:5.5.0'
-  compile 'org.apache.lucene:lucene-facet:5.5.0'
-  compile 'org.apache.lucene:lucene-analyzers-common:5.5.0'
-  compile 'org.apache.avro:avro:1.7.7'
-  compile 'commons-lang:commons-lang:2.4'
-  compile 'org.slf4j:slf4j-api:1.7.16'
-  compile 'org.slf4j:slf4j-simple:1.7.16'
-  compile 'javax.media:jmf:2.1.1e'
-  compile 'jakarta-regexp:jakarta-regexp:1.4'
-  compile 'com.googlecode.json-simple:json-simple:1.1.1'
-  compile 'com.google.collections:google-collections:1.0-rc5'
-  compile 'org.yaml:snakeyaml:1.6'
-  compile 'it.cnr.imaa.essi:lablib-checkboxtree:3.1.1'
-  compile 'org.netbeans.external:swing-layout-1.0.4:RELEASE68'
-  compile 'org.swinglabs:swingx:1.6.1'
-  compile 'args4j:args4j:2.0.16'
-  compile 'commons-io:commons-io:2.4'
-  compile 'net.sf.opencsv:opencsv:2.3'
+    compile 'org.apache.lucene:lucene-core:5.5.0'
+    compile 'org.apache.lucene:lucene-facet:5.5.0'
+    compile 'org.apache.lucene:lucene-analyzers-common:5.5.0'
+    compile 'org.apache.avro:avro:1.7.7'
+    compile 'commons-lang:commons-lang:2.4'
+    compile 'org.slf4j:slf4j-api:1.7.16'
+    compile 'org.slf4j:slf4j-simple:1.7.16'
+    compile 'javax.media:jmf:2.1.1e'
+    compile 'jakarta-regexp:jakarta-regexp:1.4'
+    compile 'com.googlecode.json-simple:json-simple:1.1.1'
+    compile 'com.google.collections:google-collections:1.0-rc5'
+    compile 'org.yaml:snakeyaml:1.6'
+    compile 'it.cnr.imaa.essi:lablib-checkboxtree:3.1.1'
+    compile 'org.netbeans.external:swing-layout-1.0.4:RELEASE68'
+    compile 'org.swinglabs:swingx:1.6.1'
+    compile 'args4j:args4j:2.0.16'
+    compile 'commons-io:commons-io:2.4'
+    compile 'net.sf.opencsv:opencsv:2.3'
 
-  compile files(fileTree('3rdparty').include('*.jar'))
+    compile files(fileTree('3rdparty').include('*.jar'))
 
-  testCompile 'org.powermock:powermock-api-mockito:1.6.4'
-  testCompile 'org.powermock:powermock-module-junit4-common:1.6.4'
-  testCompile 'org.powermock:powermock-module-junit4:1.6.4'
-  testCompile 'junit:junit:4.12'
+    testCompile 'org.powermock:powermock-api-mockito:1.6.4'
+    testCompile 'org.powermock:powermock-module-junit4-common:1.6.4'
+    testCompile 'org.powermock:powermock-module-junit4:1.6.4'
+    testCompile 'junit:junit:4.12'
 }
+
+// IntelliJ configuration
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+
+    project {
+        languageLevel = javaLanguageLevel
+
+        ipr {
+            withXml { xmlProvider ->
+                // Get root node.
+                def project = xmlProvider.asNode()
+                customizeIdeaCodeSyle project
+            }
+        }
+    }
+}
+
+
+// =========== IntelliJ settings ===========
+def customizeIdeaCodeSyle(project) {
+    //codeStyleDir="$projectDir/../codeStyle"
+    println "codeStyleDir: $codeStyleDir"
+    println "customizeIdeaCodeStyle($project)"
+    
+    project.appendNode('component', [name: 'ProjectCodeStyleSettingsManager'])
+    def codeStyleNode = findComponent(project, 'ProjectCodeStyleSettingsManager')
+
+    codeStyleNode.appendNode('option', [name: 'USE_PER_PROJECT_SETTINGS', value: 'true'])
+    def projectSettingsNode = codeStyleNode.appendNode('option', [name: 'PER_PROJECT_SETTINGS']).appendNode('value')
+
+    def codeStyleUrl = rootProject.file("$codeStyleDir/idea_code_style_prefs.xml").toURL()
+
+    def codeStyleXml = new XmlParser().parseText(codeStyleUrl.text)
+    codeStyleXml.children().each { option ->
+        codeStyleNode.append(option)
+    }
+}
+
+// Search component with given name
+def findComponent(project, name) {
+    project.component.find { it.@name == name }
+}
+
