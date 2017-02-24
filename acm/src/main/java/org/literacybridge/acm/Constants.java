@@ -3,7 +3,7 @@ package org.literacybridge.acm;
 import java.io.File;
 
 public class Constants {
-  public final static String ACM_VERSION = "r1611220"; // yy mm dd n
+  public final static String ACM_VERSION = "r1702240"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String ACM_DIR_NAME = "ACM";
   public final static String CACHE_DIR_NAME = "cache";
@@ -25,8 +25,7 @@ public class Constants {
 
   public final static File USER_HOME_DIR = new File(
       System.getProperty("user.home", "."));
-  public final static long DEFAULT_CACHE_SIZE_IN_BYTES = 2L * 1024L * 1024L
-      * 1024L; // 2GB
+  public final static long DEFAULT_CACHE_SIZE_IN_BYTES = 2L * 1024L * 1024L * 1024L; // 2GB
 
   public final static String USER_NAME = "USER_NAME";
   public final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";

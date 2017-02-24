@@ -1,18 +1,7 @@
 package org.literacybridge.acm.tbbuilder;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.LinkedList;
-import java.util.List;
-
+import au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.Constants;
@@ -21,15 +10,26 @@ import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.tbloader.TBLoader;
 import org.literacybridge.acm.tools.DBExporter;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.fs.ZipUnzip;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
 
-import au.com.bytecode.opencsv.CSVReader;
-import au.com.bytecode.opencsv.CSVWriter;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 public class TBBuilder {
   private static final String[] CSV_COLUMNS_CONTENT_IN_PACKAGE = { "project",
@@ -147,11 +147,37 @@ public class TBBuilder {
   }
 
   private static void printUsage() {
-    System.out.println("TB-Builder.bat runs java -cp acm.jar:lib/* org.literacybridge.acm.tbbuilder.TBBuilder");
-    System.out.println(
-            "Usage: TB-Builder.bat CREATE <acm_name> <deployment> <package_name> <language> (<group> (<package_name2> <language2> <group2>)...)");
-    System.out.println(
-            "OR   : TB-Builder.bat PUBLISH <acm_name> <default_deployment> (<deployment2>...) ");
+      String NL = System.lineSeparator();
+      SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM");
+      String Y_M = sdfDate.format(new Date());
+
+    System.out.print(
+  // This may be printing on a Windows system, in a default console. Limit the width
+  // to 80 columns. Ugly on a wider screen, but much better for narrow ones.
+  // ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8
+    "TB-Builder.bat runs " +NL+ 
+    "    java -cp acm.jar:lib/* org.literacybridge.acm.tbbuilder.TBBuilder" +NL+NL+
+    "Prepares a new Deployment (Content Update) to be loaded onto Talking Books by" +NL+
+    "the TB-Loader. There are two steps, the CREATE step and the PUBLISH step." +NL+NL+
+    "    TB-Builder.bat CREATE ACM-NAME DEPLOYMENT package1 language1 group1 " +NL+
+    "                                                package2 language2 group2 ..." +NL+NL+
+    "    TB-Builder.bat PUBLISH ACM-NAME DEPLOYMENT1 DEPLOYMENT2 ..." +NL+NL+
+    "Usually, the \"language\" and \"group\" are the same, and, usually, there is" +NL+
+    "only one deployment. If you need to use groups or multiple deployments, please" +NL+
+    "contact Literacy Bridge Seattle for detailed instructions." +NL+NL+
+    "For example, assume your ACM is named ACM-DEMO, and that you have two Packages," +NL+ 
+    "DEMO-"+Y_M+"-EPO in the Esperanto language, and DEMO-"+Y_M+"-TLH in the Klingon" +NL+
+    "language, and that you wish to create a Deployment named DEMO-"+Y_M+"." +NL+
+    "The steps to follow would be like this:" +NL+NL+
+    "1) Use a CREATE step to put the two Packages together into a Deployment." +NL+
+    "     TB-Builder.bat CREATE ACM-DEMO DEMO-"+Y_M+" DEMO-"+Y_M+"-EPO EPO EPO " +NL+
+    "        DEMO-"+Y_M+"-TLH TLH TLH" +NL+
+    "   (You can now, optionally, but only on the same machine, use TB-Loader to put" +NL+
+    "   this deployment onto a Talking Book, for testing purposes.)" +NL+NL+
+    "2) Use a PUBLISH step to make the Deployment available to everyone." +NL+
+    "     TB-Builder.bat PUBLISH ACM-DEMO DEMO-"+Y_M +NL+NL
+    );
+
   }
 
   public TBBuilder(String sharedACM) throws Exception {
