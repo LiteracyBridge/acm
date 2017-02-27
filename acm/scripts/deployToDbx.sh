@@ -26,9 +26,9 @@ echo "Dropbox is in $dropbox"
 installDir=$dropbox/LB-software/ACM-install
 acmDir=$installDir/ACM/software
 
-# Add any missing libs
+# Copy any missing or changed libs
 for f in $(ls lib); do
-    if [ ! -e ${acmDir}/lib/${f} ]; then
+    if ! cmp -s lib/${f} ${acmDir}/lib/${f} ; then
         echo cp lib/${f} ${acmDir}/lib/${f} 
         cp lib/${f} ${acmDir}/lib/${f} 
     fi
