@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 46
+  revision: 48
   categories:
     '0' : 
       name: Other Messages
@@ -120,6 +120,9 @@ taxonomy:
             '1-1-6' :
               name: Soybeans
               order: 60
+            '1-1-7' :
+              name: Cotton
+              order: 70
         '1-3' : 
           name: Agric Process
           order: 30
