@@ -12,12 +12,18 @@ import java.util.logging.Logger;
 public class CommandLineUtils {
   private static final Logger LOG = Logger.getLogger(CommandLineUtils.class.getName());
 
+  private static File windowsUtilsDirectory = new File(".");
+
+  static void setUtilsDirectory(File windowsUtilsDirectory) {
+    CommandLineUtils.windowsUtilsDirectory = windowsUtilsDirectory;
+  }
+
   /**
    * Runs the given command in a DOS command shell.
    * @param cmd The command, in a string.
    * @return An ad-hoc reinterpretation of the command output.
    * @throws IOException
-     */
+   */
   public static String execute(String cmd) throws IOException {
     String line;
     String errorLine = null;
@@ -26,9 +32,9 @@ public class CommandLineUtils {
     Process proc = Runtime.getRuntime().exec(cmd);
 
     BufferedReader br1 = new BufferedReader(
-        new InputStreamReader(proc.getInputStream()));
+            new InputStreamReader(proc.getInputStream()));
     BufferedReader br2 = new BufferedReader(
-        new InputStreamReader(proc.getErrorStream()));
+            new InputStreamReader(proc.getErrorStream()));
 
     do {
       line = br1.readLine();
@@ -64,11 +70,11 @@ public class CommandLineUtils {
       // formatting error
       errorMsg = "Bad memory card.  Please discard and replace it.";
     } else if (line.contains("Specified drive does not exist.")
-        || line.startsWith(
-        "The volume does not contain a recognized file system.")) {
+            || line.startsWith(
+            "The volume does not contain a recognized file system.")) {
       errorMsg = "Either bad memory card or USB connection problem.  Try again.";
     } else if (line.contains("Windows found problems with the file system") /* || line.startsWith("File Not Found") */
-        || line.startsWith("The system cannot find the file")) {
+            || line.startsWith("The system cannot find the file")) {
       // checkdisk shows corruption
       errorMsg = "File system corrupted";
     } else if (line.startsWith("The system cannot find the path specified.")) {
@@ -118,7 +124,8 @@ public class CommandLineUtils {
   }
 
   public static boolean disconnectDrive(String drive) throws IOException {
-    String errorLine = CommandLineUtils.execute(String.format(new File("software/RemoveDrive.exe").toString() +" %s", drive));
+    String cmd = String.format("%s %s",new File(windowsUtilsDirectory, "RemoveDrive.exe") ,drive);
+    String errorLine = CommandLineUtils.execute(cmd);
     return errorLine == null;
   }
 }

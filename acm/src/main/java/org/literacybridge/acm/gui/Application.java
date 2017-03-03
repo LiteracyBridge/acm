@@ -94,10 +94,9 @@ public class Application extends JXFrame {
       @Override
       public void windowClosing(WindowEvent e) {
         try {
-          if (!ACMConfiguration.getInstance().getCurrentDB().getControlAccess()
-              .isSandbox())
-            ACMConfiguration.getInstance().getCurrentDB().getControlAccess()
-                .updateDB();
+          if (!ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) {
+              ACMConfiguration.getInstance().getCurrentDB().updateDb();
+          }
           ACMConfiguration.getInstance().closeCurrentDB();
         } catch (Exception e1) {
           e1.printStackTrace();
@@ -108,22 +107,18 @@ public class Application extends JXFrame {
     String title = new String(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM",
         LanguageUtil.getUILanguage()));
     title += " (" + Constants.ACM_VERSION + ")";
-    if (ACMConfiguration.getInstance().getTitle() != null)
-      title += "                   "
-          + ACMConfiguration.getInstance().getTitle();
-    else if (ACMConfiguration.getInstance().getCurrentDB()
-        .getSharedACMname() != null)
-      title += "                   "
-          + ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
-    String dbVersion = ACMConfiguration.getInstance().getCurrentDB()
-        .getControlAccess().getCurrentZipFilename();
+    if (ACMConfiguration.getInstance().getTitle() != null) {
+        title += "                   " + ACMConfiguration.getInstance().getTitle();
+    } else if (ACMConfiguration.getInstance().getCurrentDB().getSharedACMname() != null) {
+        title += "                   " + ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
+    }
+    String dbVersion = ACMConfiguration.getInstance().getCurrentDB().getAccessControl().getCurrentZipFilename();
     dbVersion = dbVersion.replaceAll("db", "");
     dbVersion = dbVersion.replaceAll(".zip", "");
     title += " (v" + dbVersion + ")";
-    if (ACMConfiguration.getInstance().getCurrentDB().getControlAccess()
-        .isSandbox())
-      title += "               CHANGES WILL *NOT* BE SAVED!   ";
-
+    if (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) {
+        title += "               CHANGES WILL *NOT* BE SAVED!   ";
+    }
     setTitle(title);
     // toolbar view on top
     ResourceView resourceView = new ResourceView();

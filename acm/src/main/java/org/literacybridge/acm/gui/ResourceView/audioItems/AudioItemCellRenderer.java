@@ -42,7 +42,7 @@ public class AudioItemCellRenderer extends DefaultTableCellRenderer {
       label.setText(status.toString());
       MetadataValue<Integer> statusValue = status.getAudioItem().getMetadata().getMetadataValue(LB_STATUS);
       if (statusValue != null &&
-              AudioItemPropertiesModel.STATUS_VALUES[statusValue.getValue()] == AudioItemPropertiesModel.NO_LONGER_USED) {
+              AudioItemPropertiesModel.STATUS_VALUES[statusValue.getValue()].equals(AudioItemPropertiesModel.NO_LONGER_USED)) {
         Font italicsLabel = new Font(label.getFont().getName(), Font.ITALIC, label.getFont().getSize());
         label.setFont(italicsLabel);
       }

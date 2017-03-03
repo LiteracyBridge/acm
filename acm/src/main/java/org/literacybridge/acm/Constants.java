@@ -3,7 +3,7 @@ package org.literacybridge.acm;
 import java.io.File;
 
 public class Constants {
-  public final static String ACM_VERSION = "r1702240"; // yy mm dd n
+  public final static String ACM_VERSION = "r1703070"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String ACM_DIR_NAME = "ACM";
   public final static String CACHE_DIR_NAME = "cache";
@@ -16,7 +16,7 @@ public class Constants {
   public final static String DefaultSharedRepository = "ACM-test/"
       + RepositoryHomeDir;
   public final static String TBDefinitionsHomeDirName = "TB-definitions";
-  public final static String GLOBAL_CONFIG_PROPERTIES = "acm_config.properties";
+  public final static String USERS_APPLICATION_PROPERTIES = "acm_config.properties";
   public final static String CONFIG_PROPERTIES = "config.properties";
   public final static String CHECKOUT_PROPERTIES_SUFFIX = "-checkedOut.properties";
   public final static String USER_WRITE_LOCK_FILENAME = "locked.txt";

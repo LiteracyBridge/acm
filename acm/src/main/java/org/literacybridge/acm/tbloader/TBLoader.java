@@ -2,16 +2,6 @@ package org.literacybridge.acm.tbloader;
 
 import static javax.swing.GroupLayout.Alignment.BASELINE;
 import static javax.swing.GroupLayout.Alignment.LEADING;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.COMMUNITIES_SUBDIR;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.CONTENT_BASIC_SUBDIR;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.CONTENT_SUBDIR;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.DEVICE_FILE_EXTENSION;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.NEED_SERIAL_NUMBER;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.NO_DRIVE;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.STARTING_SERIALNUMBER;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.UNPUBLISHED_REV;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
 
 import java.awt.BorderLayout;
@@ -102,7 +92,10 @@ public class TBLoader extends JFrame {
 
   private TBLoaderConfig tbLoaderConfig;
 
-  class WindowEventHandler extends WindowAdapter {
+  // All content is relative to this.
+  private File baseDirectory;
+
+    class WindowEventHandler extends WindowAdapter {
     @Override
     public void windowClosing(WindowEvent evt) {
       LOG.log(Level.INFO, "closing app");
@@ -113,45 +106,23 @@ public class TBLoader extends JFrame {
   private String currentLocation[] = new String[] { "Select location",
       "Community", "Jirapa office", "Wa office", "Other" };
 
-  void getFirmwareRevisionNumbers() {
-    revision = "(No firmware)";
+    private boolean startUpDone = false;
+    private boolean refreshingDriveInfo = false;
+    private boolean updatingTB = false;
 
-    File basicContentPath = new File(
-        CONTENT_SUBDIR + File.separator + newDeploymentList.getSelectedItem().toString() + "/"
-            + CONTENT_BASIC_SUBDIR);
-    LOG.log(Level.INFO,
-        "DEPLOYMENT:" + newDeploymentList.getSelectedItem().toString());
-    try {
-      File[] files;
-      if (basicContentPath.exists()) {
-        // get Package
-        files = basicContentPath.listFiles(new FilenameFilter() {
-          @Override
-          public boolean accept(File dir, String name) {
-            String lowercase = name.toLowerCase();
-            return lowercase.endsWith(".img");
-          }
-        });
-        if (files.length > 1)
-          revision = "(Multiple Firmwares!)";
-        else if (files.length == 1) {
-          revision = files[0].getName();
-          revision = revision.substring(0, revision.length() - 4);
+    public static void main(String[] args) throws Exception {
+        String project = args[0];
+        String srnPrefix = "b-"; // for latest Talking Book hardware
+
+        if (args.length == 2) {
+            srnPrefix = args[1];
         }
-        newFirmwareRevisionText.setText(revision);
-      }
-    } catch (Exception ignore) {
-      LOG.log(Level.WARNING, "exception - ignore and keep going with default string", ignore);
-    }
 
-  }
+        new TBLoader(project, srnPrefix).runApplication();
+    }
 
   public TBLoader(String project, String srnPrefix) throws IOException {
-    String acmDash = Constants.ACM_DIR_NAME + "-";
-    if (project != null && project.toUpperCase().startsWith(acmDash)) {
-      // Most apps take ACM-XYZ. The TB-Loader only wants XYZ.
-      project = project.substring(acmDash.length());
-    }
+    project = ACMConfiguration.cannonicalProjectName(project);
     this.newProject = project;
     this.oldProject = project; // until we have a better value...
     if (srnPrefix != null) {
@@ -169,8 +140,7 @@ public class TBLoader extends JFrame {
 
     // get image revision
     // TODO: fix assumption about current working directory. (It's assumed to be ~/LiteracyBridge/TB-Loaders/{PROJECT} )
-    File swPath = new File(".");
-    File[] files = swPath.listFiles(new FilenameFilter() {
+    File[] files = baseDirectory.listFiles(new FilenameFilter() {
       @Override
       public boolean accept(File dir, String name) {
         String lowercase = name.toLowerCase();
@@ -181,7 +151,7 @@ public class TBLoader extends JFrame {
       // Multiple Image Revisions! -- Delete all to go back to published version, unless one marks it as UNPUBLISHED
       boolean unpublished = false;
       for (File f : files) {
-        if (!f.getName().startsWith(UNPUBLISHED_REV)) {
+        if (!f.getName().startsWith(TBLoaderConstants.UNPUBLISHED_REV)) {
           f.delete();
         } else {
           unpublished = true;
@@ -200,7 +170,7 @@ public class TBLoader extends JFrame {
       imageRevision = imageRevision.substring(0, imageRevision.length() - 4);
     }
     setTitle("TB-Loader " + Constants.ACM_VERSION + "/" + imageRevision);
-    if (imageRevision.startsWith(UNPUBLISHED_REV)) {
+    if (imageRevision.startsWith(TBLoaderConstants.UNPUBLISHED_REV)) {
       Object[] options = { "Yes-refresh from published",
           "No-keep unpublished" };
       int answer = JOptionPane.showOptionDialog(null,
@@ -430,27 +400,12 @@ public class TBLoader extends JFrame {
         "Use Batteries!", JOptionPane.DEFAULT_OPTION);
   }
 
-  private boolean startUpDone = false;
-  private boolean refreshingDriveInfo = false;
-  private boolean updatingTB = false;
-
-  public static void main(String[] args) throws Exception {
-    String project = args[0];
-    String srnPrefix = "b-"; // for latest Talking Book hardware
-
-    if (args.length == 2) {
-      srnPrefix = args[1];
-    }
-
-    new TBLoader(project, srnPrefix).runApplication();
-  }
-
   private void setDeviceIdAndPaths() throws IOException {
     try {
-      String homePath = System.getProperty("user.home");
-      String LB_DIR = homePath + "/LiteracyBridge";
-      File f = new File(LB_DIR);
-      f.mkdirs();
+      File applicationHomeDirectory = ACMConfiguration.getInstance().getApplicationHomeDirectory();
+      baseDirectory = new File(applicationHomeDirectory, Constants.TBLoadersHomeDir + File.separator + newProject);
+      baseDirectory.mkdirs();
+      TbFile softwareDir = new FsFile(baseDirectory).open(TBLoaderConstants.SOFTWARE_SUBDIR);
 
       File dropboxDir = ACMConfiguration.getInstance().getGlobalShareDir();
       if (!dropboxDir.exists()) {
@@ -461,11 +416,12 @@ public class TBLoader extends JFrame {
       }
       TbFile dropboxFile = new FsFile(dropboxDir);
 
-      File[] files = f.listFiles(new FilenameFilter() {
+      // Look for ~/LiteracyBridge/1234.dev file.
+      File[] files = applicationHomeDirectory.listFiles(new FilenameFilter() {
         @Override
         public boolean accept(File dir, String name) {
           String lowercase = name.toLowerCase();
-          return lowercase.endsWith(DEVICE_FILE_EXTENSION);
+          return lowercase.endsWith(TBLoaderConstants.DEVICE_FILE_EXTENSION);
         }
       });
       if (files.length == 1) {
@@ -474,7 +430,7 @@ public class TBLoader extends JFrame {
             .toUpperCase();
 
         // Like "~/Dropbox/tbcd1234"
-        TbFile tbLoaderDir = dropboxFile.open(COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
+        TbFile tbLoaderDir = dropboxFile.open(TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
         if (!tbLoaderDir.exists()) {
           JOptionPane.showMessageDialog(null, tbLoaderDir.toString()
                   + " does not exist; cannot find the Dropbox collected data path. Please contact ICT staff.",
@@ -483,7 +439,7 @@ public class TBLoader extends JFrame {
           System.exit(ERROR);
         }
         // Like ~/Dropbox/tbcd1234/collected-data
-        TbFile collectedDataDir = tbLoaderDir.open(COLLECTED_DATA_SUBDIR_NAME);
+        TbFile collectedDataDir = tbLoaderDir.open(TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME);
 
         TbFile tempDir = new FsFile(Files.createTempDirectory("tbloader-tmp").toFile());
 
@@ -493,6 +449,7 @@ public class TBLoader extends JFrame {
             .withSrnPrefix(srnPrefix)
             .withCollectedDataDirectory(collectedDataDir)
             .withTempDirectory(tempDir)
+            .withWindowsUtilsDirectory(softwareDir)
             .build();
       } else {
         JOptionPane.showMessageDialog(null,
@@ -506,12 +463,46 @@ public class TBLoader extends JFrame {
     }
   }
 
-  private File prevSelected = null;
+    void getFirmwareRevisionNumbers() {
+        revision = "(No firmware)";
+
+        File basicContentPath = new File(baseDirectory,
+                                         TBLoaderConstants.CONTENT_SUBDIR + File.separator + newDeploymentList.getSelectedItem().toString() + "/"
+                        + TBLoaderConstants.CONTENT_BASIC_SUBDIR);
+        LOG.log(Level.INFO,
+                "DEPLOYMENT:" + newDeploymentList.getSelectedItem().toString());
+        try {
+            File[] files;
+            if (basicContentPath.exists()) {
+                // get Package
+                files = basicContentPath.listFiles(new FilenameFilter() {
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        String lowercase = name.toLowerCase();
+                        return lowercase.endsWith(".img");
+                    }
+                });
+                if (files.length > 1)
+                    revision = "(Multiple Firmwares!)";
+                else if (files.length == 1) {
+                    revision = files[0].getName();
+                    revision = revision.substring(0, revision.length() - 4);
+                }
+                newFirmwareRevisionText.setText(revision);
+            }
+        } catch (Exception ignore) {
+            LOG.log(Level.WARNING, "exception - ignore and keep going with default string", ignore);
+        }
+
+    }
+
+
+    private File prevSelected = null;
   private int prevSelectedCommunity = -1;
 
   private synchronized void fillDeploymentList() {
     int indexSelected = -1;
-    File contentPath = new File("content");
+    File contentPath = new File(baseDirectory, TBLoaderConstants.CONTENT_SUBDIR);
     newDeploymentList.removeAllItems();
     File[] packageFolder = contentPath.listFiles();
     for (int i = 0; i < packageFolder.length; i++) {
@@ -532,9 +523,9 @@ public class TBLoader extends JFrame {
     newCommunityList.removeAllItems();
     File[] files;
 
-    File fCommunityDir = new File(
-        CONTENT_SUBDIR + File.separator + newDeploymentList.getSelectedItem().toString() + "/"
-            + COMMUNITIES_SUBDIR);
+    File fCommunityDir = new File(baseDirectory,
+                                  TBLoaderConstants.CONTENT_SUBDIR + File.separator + newDeploymentList.getSelectedItem().toString() + "/"
+            + TBLoaderConstants.COMMUNITIES_SUBDIR);
 
     files = fCommunityDir.listFiles(new FilenameFilter() {
       @Override
@@ -577,12 +568,10 @@ public class TBLoader extends JFrame {
    * @return The next serial number.
    */
   private int allocateNextSerialNumberFromTbLoader() throws Exception {
-    int serialnumber = STARTING_SERIALNUMBER;
+    int serialnumber = TBLoaderConstants.STARTING_SERIALNUMBER;
     String deviceId = tbLoaderConfig.getTbLoaderId();
-    String devFilename =
-        deviceId + DEVICE_FILE_EXTENSION; // xxxx.dev
-    File f = new File(System.getProperty("user.home") + File.separator + "LiteracyBridge" + File.separator
-            + devFilename); // File f = new File(dropboxCollectionFolder,TBLoader.deviceId+".cnt");
+    String devFilename = deviceId + TBLoaderConstants.DEVICE_FILE_EXTENSION; // xxxx.dev
+    File f = new File(ACMConfiguration.getInstance().getApplicationHomeDirectory(), devFilename);
 
     // Get the most recent serial number assigned.
     if (f.exists()) {
@@ -600,7 +589,7 @@ public class TBLoader extends JFrame {
       }
       f.delete();
     }
-    if (serialnumber == STARTING_SERIALNUMBER) {
+    if (serialnumber == TBLoaderConstants.STARTING_SERIALNUMBER) {
       // if file doesn't exist, use the SRN = STARTING_SERIALNUMBER
       // TODO:raise exception and tell user to register the device or ensure file wasn't lost
     }
@@ -613,7 +602,7 @@ public class TBLoader extends JFrame {
     }
     // Back up the file in case of loss.
     File dropboxDir = ACMConfiguration.getInstance().getGlobalShareDir();
-    File backupDir = new File(dropboxDir, COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
+    File backupDir = new File(dropboxDir, TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
     File backupFile = new File(backupDir, devFilename);
     try (DataOutputStream os = new DataOutputStream(new FileOutputStream(backupFile))) {
       os.writeInt(serialnumber);
@@ -647,7 +636,7 @@ public class TBLoader extends JFrame {
     }
     if (driveList.getItemCount() == 0) {
       LOG.log(Level.INFO, "No drives");
-      driveList.addItem(new TBDeviceInfo(null, NO_DRIVE, srnPrefix));
+      driveList.addItem(new TBDeviceInfo(null, TBLoaderConstants.NO_DRIVE, srnPrefix));
       index = 0;
     }
 
@@ -678,7 +667,7 @@ public class TBLoader extends JFrame {
 	      }
       }
     }
-    return roots.isEmpty() ? null : roots.toArray(new File[roots.size()]);
+    return roots.isEmpty() ? new File[0] : roots.toArray(new File[roots.size()]);
   }
 
   private Thread deviceMonitorThread = new Thread() {
@@ -707,7 +696,7 @@ public class TBLoader extends JFrame {
             refreshingDriveInfo = true;
             LOG.log(Level.INFO, "deviceMonitor sees new drive");
             fillDriveList(roots);
-            if (!driveList.getItemAt(0).getLabel().equals(NO_DRIVE)) {
+            if (!driveList.getItemAt(0).getLabel().equals(TBLoaderConstants.NO_DRIVE)) {
               statusLeft.setText("");
             }
             try {
@@ -746,7 +735,8 @@ public class TBLoader extends JFrame {
 //    File imagesDir = new File(
 //        CONTENT_SUBDIR + File.separator + newDeploymentList.getSelectedItem().toString() + "/"
 //            + IMAGES_SUBDIR + "/");
-    File deploymentDirectory = new File(CONTENT_SUBDIR + File.separator + newDeploymentList.getSelectedItem().toString());
+    File deploymentDirectory = new File(baseDirectory,
+                                        TBLoaderConstants.CONTENT_SUBDIR + File.separator + newDeploymentList.getSelectedItem().toString());
 //    TBFileSystem imagesTbFs = DefaultTBFileSystem.open(imagesDir);
     String imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, community);
     newImageText.setText(imageName);
@@ -759,7 +749,7 @@ public class TBLoader extends JFrame {
    */
   private void populatePreviousValuesFromCurrentDrive() {
       String driveLabel = currentTbDevice.getLabelWithoutDriveLetter();
-      if (!driveLabel.equals(NO_DRIVE) && !isSerialNumberFormatGood(srnPrefix, driveLabel)) {
+      if (!driveLabel.equals(TBLoaderConstants.NO_DRIVE) && !isSerialNumberFormatGood(srnPrefix, driveLabel)) {
         // could not find flashStats file -- but TB should save flashstats on normal shutdown and on *-startup.
         JOptionPane.showMessageDialog(null,
             "The TB's statistics cannot be found. Please follow these steps:\n 1. Unplug the TB\n 2. Hold down the * while turning on the TB\n "
@@ -800,7 +790,7 @@ public class TBLoader extends JFrame {
         // If we want to do this...
         // oldProjectText.setTExt(oldDeploymentInfo.getProjectName());
     } else {
-      newSrnText.setText(NEED_SERIAL_NUMBER);
+      newSrnText.setText(TBLoaderConstants.NEED_SERIAL_NUMBER);
     }
   }
 
@@ -931,7 +921,7 @@ public class TBLoader extends JFrame {
 
         // If the Talking Book needs a new serial number, allocate one. We did not do it before this to
         // avoid wasting allocations.
-        if (newSrnText.getText().equalsIgnoreCase(NEED_SERIAL_NUMBER)) {
+        if (newSrnText.getText().equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER)) {
           int intSrn = allocateNextSerialNumberFromTbLoader();
           String lowerSrn = String.format("%04x", intSrn);
           String srn = (tbLoaderConfig.getSrnPrefix() + tbLoaderConfig.getTbLoaderId()
@@ -1016,8 +1006,8 @@ public class TBLoader extends JFrame {
         newSrnText.setText("");
         oldSrnText.setText("");
         lastUpdatedText.setText("");
-        LOG.log(Level.INFO, "STATUS: " + NO_DRIVE);
-        statusRight.setText("STATUS: " + NO_DRIVE);
+        LOG.log(Level.INFO, "STATUS: " + TBLoaderConstants.NO_DRIVE);
+        statusRight.setText("STATUS: " + TBLoaderConstants.NO_DRIVE);
       }
       try {
         if (newCommunityList.getSelectedItem() != null) {
@@ -1118,7 +1108,7 @@ public class TBLoader extends JFrame {
       String endMsg = "";
       String endTitle = "";
 
-      File newDeploymentContentDir = new File(TBLoaderConstants.CONTENT_SUBDIR,
+      File newDeploymentContentDir = new File(baseDirectory, TBLoaderConstants.CONTENT_SUBDIR + File.separator +
           newDeploymentInfo.getDeploymentName());
 
       TbFile sourceImage = new FsFile(newDeploymentContentDir);

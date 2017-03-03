@@ -73,7 +73,7 @@ public class DBInfo extends Properties {
 
   public void writeProps() {
     try {
-      File dbDir = config.getDatabaseDirectory();
+      File dbDir = config.getTempDatabaseDirectory();
       if (!dbDir.exists())
         dbDir.mkdirs();
       BufferedOutputStream out = new BufferedOutputStream(

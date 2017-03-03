@@ -54,13 +54,13 @@ public class ExternalConverter {
     String result = null;
     Map<String, String> parameters = null;
 
-    if (targetFormat.getFileEnding() == "A18") {
+    if (targetFormat.getFileEnding().equals("A18")) {
       parameters = getParameters(targetFormat);
       result = AnyToA18Conv.convertFile(sourceFile, targetDir, tmpDir,
           overwrite, parameters);
     }
-    if (targetFormat.getFileEnding() == "WAV"
-        || targetFormat.getFileEnding() == "MP3") {
+    if (targetFormat.getFileEnding().equals("WAV")
+        || targetFormat.getFileEnding().equals("MP3")) {
       if (getFileExtension(sourceFile).equalsIgnoreCase(".a18")) {
         parameters = getParameters(targetFormat);
         result = A18ToWAVConv.convertFile(sourceFile, targetDir, tmpDir,
@@ -88,7 +88,7 @@ public class ExternalConverter {
     parameters.put(BaseAudioConverter.SAMPLE_RATE,
         String.valueOf(targetFormat.getSampleRateString()));
 
-    if (targetFormat.getFileEnding() == "A18") {
+    if (targetFormat.getFileEnding().equals("A18")) {
 
       parameters.put(AnyToA18Converter.USE_HEADER,
           ((A18Format) targetFormat).usedHeader);

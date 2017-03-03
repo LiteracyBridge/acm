@@ -22,7 +22,6 @@ import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.LanguageComboBoxModel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
-import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.store.*;
 
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
@@ -201,8 +200,7 @@ public class AudioItemContextMenuDialog extends JDialog
               // since that's in the shared (dropbox) repository
               if (!ACMConfiguration.getInstance()
                       .getCurrentDB()
-                      .getControlAccess()
-                      .isSandbox())
+                      .isSandboxed())
                 ACMConfiguration.getInstance()
                         .getCurrentDB()
                         .getRepository()

@@ -20,13 +20,18 @@ public class TBLoaderConfig {
   // A "TBFileSystem" object representing the root of a temporary gathering point.
   private final TbFile tempDirectory;
 
+  // A directory that can contain dos utilities. (In particular, RemoveDrive.exe.)
+  private final TbFile windowsUtilsDirectory;
+
   private TBLoaderConfig(String tbLoaderId, String project, String srnPrefix,
-                         TbFile collectedDataDirectory, TbFile tempDirectory) {
+                         TbFile collectedDataDirectory, TbFile tempDirectory,
+                         TbFile windowsUtilsDirectory) {
     this.tbLoaderId = tbLoaderId;
     this.project = project;
     this.srnPrefix = srnPrefix;
     this.collectedDataDirectory = collectedDataDirectory;
     this.tempDirectory = tempDirectory;
+    this.windowsUtilsDirectory = windowsUtilsDirectory;
   }
 
   public String getTbLoaderId() {
@@ -41,12 +46,16 @@ public class TBLoaderConfig {
     return srnPrefix;
   }
 
-  public TbFile getTempDirectory() {
+  TbFile getTempDirectory() {
     return tempDirectory;
   }
 
-  public TbFile getCollectedDataDirectory() {
+  TbFile getCollectedDataDirectory() {
     return collectedDataDirectory;
+  }
+
+  TbFile getWindowsUtilsDirectory() {
+    return windowsUtilsDirectory;
   }
 
   public static class Builder {
@@ -55,6 +64,7 @@ public class TBLoaderConfig {
     private String srnPrefix;
     private TbFile collectedDataDirectory;
     private TbFile tempDirectory;
+    private TbFile windowsUtilsDirectory = null;
 
     public final TBLoaderConfig build() {
       List<String> missing = new ArrayList<>();
@@ -68,7 +78,7 @@ public class TBLoaderConfig {
         throw new IllegalStateException("TBLoaderConfig not initialized with " + missing.toString());
       }
       return new TBLoaderConfig(tbLoaderId, project, srnPrefix,
-              collectedDataDirectory, tempDirectory);
+              collectedDataDirectory, tempDirectory, windowsUtilsDirectory);
     }
 
     public Builder withTbLoaderId(String tbLoaderId) {
@@ -93,6 +103,11 @@ public class TBLoaderConfig {
 
     public Builder withTempDirectory(TbFile tempDirectory) {
       this.tempDirectory = tempDirectory;
+      return this;
+    }
+
+    public Builder withWindowsUtilsDirectory(TbFile windowsUtilsDirectory) {
+      this.windowsUtilsDirectory = windowsUtilsDirectory;
       return this;
     }
   }

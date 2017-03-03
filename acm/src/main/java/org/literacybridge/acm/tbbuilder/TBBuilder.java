@@ -191,7 +191,7 @@ public class TBBuilder {
     dropboxTbLoadersDir = ACMConfiguration.getInstance().getTbLoaderDirFor(sharedACM);
     project = sharedACM.substring(ACM_PREFIX.length());
     // ~/LiteracyBridge/TB-Loaders
-    File localTbLoadersDir = new File(DBConfiguration.getLiteracyBridgeHomeDirectory(), Constants.TBLoadersHomeDir);
+    File localTbLoadersDir = new File(ACMConfiguration.getInstance().getApplicationHomeDirectory(), Constants.TBLoadersHomeDir);
     // Like ~/LiteracyBridge/TB-Loaders/UWR
     targetTempDir = new File(localTbLoadersDir, project);
   }

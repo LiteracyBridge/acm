@@ -1,10 +1,22 @@
 package org.literacybridge.acm.config;
 
+import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.store.LuceneMetadataStore;
+import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.RFC3066LanguageCode;
+import org.literacybridge.acm.store.Taxonomy;
+
+import javax.swing.*;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,15 +34,6 @@ import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.JOptionPane;
-
-import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.store.LuceneMetadataStore;
-import org.literacybridge.acm.store.MetadataStore;
-import org.literacybridge.acm.store.RFC3066LanguageCode;
-import org.literacybridge.acm.store.Taxonomy;
-
 @SuppressWarnings("serial")
 public class DBConfiguration extends Properties {
   private boolean initialized = false;
@@ -46,7 +49,9 @@ public class DBConfiguration extends Properties {
   private AudioItemRepository repository;
   private MetadataStore store;
 
-  private ControlAccess controlAccess;
+  private boolean sandboxed;
+
+  private AccessControl accessControl;
 
   DBConfiguration(String acmName) {
     this.acmName = acmName;
@@ -56,15 +61,15 @@ public class DBConfiguration extends Properties {
     return repository;
   }
 
-  public MetadataStore getMetadataStore() {
-    return store;
-  }
-
   void setRepository(AudioItemRepository newRepository) {
     repository = newRepository;
   }
 
-  /**
+    public MetadataStore getMetadataStore() {
+        return store;
+    }
+
+    /**
    *  Gets the name of the ACM directory, like "ACM-DEMO".
    * @return The name of this content database, including "ACM-".
    */
@@ -74,6 +79,7 @@ public class DBConfiguration extends Properties {
 
   /**
    * Gets a File representing global (ie, Dropbox) ACM directory.
+   * Like ~/Dropbox/ACM-TEST
    * @return The global File for this content database.
    */
   public File getSharedACMDirectory() {
@@ -85,30 +91,24 @@ public class DBConfiguration extends Properties {
     return sharedACMDirectory;
   }
 
-  /**
-   * Gets the File representing the local ACM Application directory.
-   *
-   * TODO: Why is this here? This is not a per-database property.
-   * @return The local application directory.
-   */
-  public static File getLiteracyBridgeHomeDirectory() {
-    // ~/LiteracyBridge
-    return ACMConfiguration.getInstance().getApplicationDirectory();
-  }
 
-  // Call this methods to get the non-shared directory root for config, content
-  // cache, builds, etc...
+    /**
+     * The application's home directory.
+     *  The non-shared directory root for config, content, cache, builds, etc...
+     * @return ~/LiteracyBridge/ACM
+     */
   private String getHomeAcmDirectory() {
     // ~/LiteracyBridge/ACM
-    File acm = new File(getLiteracyBridgeHomeDirectory(), Constants.ACM_DIR_NAME);
+    File acm = new File(ACMConfiguration.getInstance().getApplicationHomeDirectory(), Constants.ACM_DIR_NAME);
     if (!acm.exists())
       acm.mkdirs();
     return acm.getAbsolutePath();
   }
 
   /**
-   * Gets the name of the local temp file directory.
-   * @return The name of the directory.
+   * Gets the name of the local temp file directory. Each ACM has a sub-directory; those sub-dirs
+   * are cleaned up at app exit.
+   * @return ~/LiteracyBridge/ACM/temp
    */
   String getTempACMsDirectory() {
     // ~/LiteracyBridge/temp
@@ -118,11 +118,21 @@ public class DBConfiguration extends Properties {
     return temp.getAbsolutePath();
   }
 
-  /**
+    File getSandboxDirectory() {
+        File fSandbox = null;
+        if (isSandboxed()) {
+            fSandbox = new File(getTempACMsDirectory(),
+                                getSharedACMname() + "/"
+                                        + Constants.RepositoryHomeDir);
+        }
+        return fSandbox;
+    }
+
+    /**
    * Gets a File representing the temporary database directory.
    * @return The File object for the directory.
    */
-  File getDatabaseDirectory() {
+  File getTempDatabaseDirectory() {
     if (dbDirectory == null)
       // ~/LiteracyBridge/temp/ACM-DEMO/db
       dbDirectory = new File(getTempACMsDirectory(),
@@ -137,7 +147,7 @@ public class DBConfiguration extends Properties {
    */
   private File getLuceneIndexDirectory() {
     // ~/LiteracyBridge/temp/ACM-DEMO/db/index
-    return new File(getDatabaseDirectory(), Constants.LuceneIndexDir);
+    return new File(getTempDatabaseDirectory(), Constants.LuceneIndexDir);
   }
 
   /**
@@ -161,6 +171,10 @@ public class DBConfiguration extends Properties {
     return cacheDirectory;
   }
 
+    /**
+     * The global TB-Loaders directory, where content updates are published.
+     * @return The global directory.
+     */
   public File getTBLoadersDirectory() {
     if (tbLoadersDirectory == null) {
       // ~/Dropbox/ACM-DEMO/TB-Loaders
@@ -170,7 +184,81 @@ public class DBConfiguration extends Properties {
     return tbLoadersDirectory;
   }
 
-  /**
+    /**
+     * The local TB-Loaders directory. New content update distributions are CREATEd here, before
+     * being PUBLISHed to the global directory. Also, content update distributions are expanded
+     * here, before being opened by TB-Loader.
+     * @return the local TB-Loaders directory
+     */
+  public File getLocalTbLoadersDirectory() {
+      File tbLoaders = new File(ACMConfiguration.getInstance().getApplicationHomeDirectory(),
+                                Constants.TBLoadersHomeDir + File.separator + getSharedACMname());
+      if (!tbLoaders.exists())
+          tbLoaders.mkdirs();
+      return tbLoaders;
+  }
+
+  public boolean isSandboxed() {
+      return sandboxed;
+  }
+  void setSandboxed(boolean sandboxed) {
+      this.sandboxed = sandboxed;
+  }
+
+    private File getDBAccessListFile() {
+        return new File(getSharedACMDirectory(), Constants.DB_ACCESS_FILENAME);
+    }
+
+    /**
+     * Does the user named in ~/LiteracyBridge/acm_config.properties have write access to the
+     * current database? (Is their name in the accessList.txt file?)
+     * @param user The user in question.
+     * @return true if user has write permission.
+     */
+    public boolean userHasWriteAccess(String user) {
+        String writeUser;
+        boolean userHasWriteAccess = false;
+
+        user = user.trim();
+        if (user == null) {
+            // No User Name found in ~/LB/acm_config.properties. Forcing Read-Only mode.
+            return userHasWriteAccess;
+        }
+        File f = getDBAccessListFile();
+        if (f.exists()) {
+            try {
+                BufferedReader in = new BufferedReader(new FileReader(f));
+                while ((writeUser = in.readLine()) != null) {
+                    if (writeUser.trim().equalsIgnoreCase(user)) {
+                        userHasWriteAccess = true;
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else if (getSharedACMDirectory().list().length == 0) {
+            // TODO: The "create new ACM" function should pre-populate the accessList.txt file,
+            // rather than relying on this questionable side-effect.
+
+            // empty directory -- which means that a new directory was created to
+            // start an ACM in
+            // Since the directory already exists, it is not the case that the user
+            // just hasn't accepted the dropbox invitaiton yet.
+            // So, give this user write access to the newly created ACM
+            userHasWriteAccess = true;
+            try {
+                BufferedWriter out = new BufferedWriter(new FileWriter(f));
+                out.write(user + "\n");
+                out.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return userHasWriteAccess;
+    }
+
+    /**
    * Gets the File, if it exists, containing the list of content updates that
    * are deferred until later for user feedback importing. (ie, user feedback
    * for these updates won't be imported.)
@@ -206,8 +294,9 @@ public class DBConfiguration extends Properties {
     if (!initialized) {
       InitializeAcmConfiguration();
       initializeLogger();
-      controlAccess = new ControlAccess(this);
-      controlAccess.init();
+      // This is pretty hackey, knowing if we're GUI or not, here, deep in the guts.
+      accessControl = (ACMConfiguration.getInstance().isDisableUI()) ? new AccessControl(this) : new GuiAccessControl(this);
+      accessControl.initDb();
 
       final Taxonomy taxonomy = Taxonomy.createTaxonomy(sharedACMDirectory);
       this.store = new LuceneMetadataStore(taxonomy, getLuceneIndexDirectory());
@@ -217,8 +306,12 @@ public class DBConfiguration extends Properties {
     }
   }
 
-  public ControlAccess getControlAccess() {
-    return controlAccess;
+  public boolean updateDb() {
+      return accessControl.updateDb();
+  }
+
+  public AccessControl getAccessControl() {
+    return accessControl;
   }
 
   long getCacheSizeInBytes() {

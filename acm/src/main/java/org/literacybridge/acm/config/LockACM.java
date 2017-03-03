@@ -12,7 +12,13 @@ public class LockACM {
   private static FileChannel channel;
   private static FileLock lock;
 
-  public static void lockDb(DBConfiguration config) {
+  public static class MultipleInstanceException extends RuntimeException {
+      public MultipleInstanceException(String msg) {
+          super(msg);
+      }
+  }
+
+    public static void lockDb(DBConfiguration config) {
     try {
       lockFile = new File(config.getTempACMsDirectory() + "/"
           + config.getSharedACMname() + ".lock");
@@ -22,7 +28,7 @@ public class LockACM {
       if (lock == null) {
         // File is lock by other application
         channel.close();
-        throw new RuntimeException("Two instances for the same ACM can't run at the same time.");
+        throw new MultipleInstanceException("Two instances for the same ACM can't run at the same time.");
       }
       // Add shutdown hook to release lock when application shutdown
       ShutdownHook shutdownHook = new ShutdownHook();
@@ -46,6 +52,10 @@ public class LockACM {
     } catch (IOException e) {
       e.printStackTrace();
     }
+  }
+
+  public static boolean isLocked() {
+      return lock != null;
   }
 
   static class ShutdownHook extends Thread {

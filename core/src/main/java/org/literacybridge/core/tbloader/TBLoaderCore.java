@@ -1302,6 +1302,8 @@ public class TBLoaderCore {
      */
     private void disconnectDevice() throws IOException {
         if (OSChecker.WINDOWS) {
+            String fn = mTtbLoaderConfig.getWindowsUtilsDirectory().getAbsolutePath();
+            CommandLineUtils.setUtilsDirectory(new File(fn));
             mProgressListenerListener.log("Disconnecting TB");
             CommandLineUtils.disconnectDrive(mTbDeviceInfo.getRootFile().getAbsolutePath());
         }
