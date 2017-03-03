@@ -177,8 +177,11 @@ public final class TBDeviceInfo {
      * @return The file's name found (minus extension), or "UNKNOWN"
      */
     public static String getSerialNumberFromFileSystem(TbFile tbRoot) {
-        TbFile tbSystem = tbRoot.open(TBLoaderConstants.TB_SYSTEM_PATH);
         String sn = NO_SERIAL_NUMBER;
+        if (tbRoot == null) {
+            return sn;
+        }
+        TbFile tbSystem = tbRoot.open(TBLoaderConstants.TB_SYSTEM_PATH);
         String[] files;
 
         if (tbSystem.exists()) {
