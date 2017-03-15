@@ -596,14 +596,16 @@ public class TbLoaderFragment extends Fragment {
             deviceSerialNumber = getNewDeviceSerialNumber();
         }
 
-        DeploymentInfo newDeploymentInfo = new DeploymentInfo(deviceSerialNumber,
-                mProject,
-                contentUpdateName,
-                imageName,
-                collectedDataDirectory.getName(),
-                todaysDate, // TODO: this should be the "deployment date", the first date the new content is deployed.
-                firmwareRevision,
-                mCommunity.getName());
+        DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
+                .withSerialNumber(deviceSerialNumber)
+                .withProjectName(mProject)
+                .withDeploymentName(contentUpdateName)
+                .withPackageName(imageName)
+                .withUpdateDirectory(collectedDataDirectory.getName())
+                .withUpdateTimestamp(todaysDate) // TODO: this should be the "deployment date", the first date the new content is deployed.
+                .withFirmwareRevision(firmwareRevision)
+                .withCommunity(mCommunity.getName());
+        DeploymentInfo newDeploymentInfo = builder.build();
 
         getActivity().runOnUiThread(new Runnable() {
             @Override

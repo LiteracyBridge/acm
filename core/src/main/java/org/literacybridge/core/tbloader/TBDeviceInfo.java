@@ -34,6 +34,7 @@ public final class TBDeviceInfo {
         this.label = label.trim();
         this.corrupted = false;
         this.serialNumber = "";
+        tbPrefix = prefix;
         if (tbRoot != null) {
             tbSystem = tbRoot.open(TBLoaderConstants.TB_SYSTEM_PATH);
             tbFlashData = loadFlashData(tbRoot);
@@ -41,7 +42,7 @@ public final class TBDeviceInfo {
             tbSystem = null;
             tbFlashData = null;
         }
-        tbPrefix = prefix;
+        loadSerialNumber();
     }
 
     public TbFile getRootFile() {
@@ -61,8 +62,8 @@ public final class TBDeviceInfo {
         return labelNoDriveLetter;
     }
 
-    void setCorrupted(boolean corrupted) {
-        this.corrupted = corrupted;
+    void setCorrupted() {
+        this.corrupted = true;
     }
 
     boolean isCorrupted() {
@@ -135,6 +136,18 @@ public final class TBDeviceInfo {
         }
 
         return tbFlashData;
+    }
+
+    private void loadSerialNumber() {
+        serialNumber = getSerialNumber(tbPrefix).toUpperCase();
+        // See if we need to allocate a new serial number. If we do, just mark it, don't actually
+        // allocate one until we're sure we'll use it.
+        if (!TBLoaderUtils.isSerialNumberFormatGood(tbPrefix, serialNumber) ||
+                !TBLoaderUtils.isSerialNumberFormatGood2(serialNumber)) {
+            needNewSerialNumber = true;
+            // We will allocate a new-style serial number before we update the tbDeviceInfo.
+            serialNumber = TBLoaderConstants.NEED_SERIAL_NUMBER;
+        }
     }
 
     /**
@@ -239,13 +252,16 @@ public final class TBDeviceInfo {
 
     /**
      * Looks in the TalkingBook's system directory for any files with a ".rev" or ".img" extension. If any such files
-     * are found, returns the name of the first one found (ie, one selected at random), without the extension.
+     * are found, returns the name (without extension) of the first .rev file found, else the name of the first .img file
+     * found (ie, chosen somewhat at random.).
      *
      * @return The file's name found (minus extension), or "UNKNOWN" if no file found, or if the file name consists
      * only of the extension (eg, a file named ".img" will return "UNKNOWN").
      */
     String getFirmwareVersion() {
         String rev = "UNKNOWN";
+        String revFileName = null;
+        String imgFileName = null;
         String[] files;
 
         if (tbSystem.exists()) {
@@ -253,18 +269,22 @@ public final class TBDeviceInfo {
                 @Override
                 public boolean accept(TbFile parent, String name) {
                     String lowercase = name.toLowerCase();
-                    return lowercase.endsWith(".img") || lowercase.endsWith(".rev");
+                    return lowercase.length() > 4 && (lowercase.endsWith(".img") || lowercase.endsWith(".rev"));
                 }
             });
 
-            for (int i = 0; i < files.length; i++) {
-                String revFileName = files[i];
-                revFileName = revFileName.substring(0, revFileName.length() - 4);
-                if (i == 0)
-                    rev = revFileName;
+            for (String file : files) {
+                String fn = file;
+                fn = fn.substring(0, fn.length() - 4);
+                String ext = file.substring(fn.length());
+                if (ext.equalsIgnoreCase(".img") && imgFileName == null) {
+                    imgFileName = fn;
+                } else if (revFileName == null) {
+                    revFileName = fn;
+                }
             }
-            if (rev.length() == 0)
-                rev = "UNKNOWN";  // eliminate problem of zero length filenames being inserted into batch statements
+            // Found .rev? .img?
+            rev = (revFileName!=null) ? revFileName : ((imgFileName!=null) ? imgFileName : rev);
         }
 
         return rev;
@@ -418,10 +438,10 @@ public final class TBDeviceInfo {
 
     /**
      * Loads information about the previous deployment from the Talking Book's file system.
+     * If the project name can't be determined, use the fallback name.
      *
      */
-    public DeploymentInfo createDeploymentInfo(String defaultProject) {
-        String serialNumber = NO_SERIAL_NUMBER; // "UNKNOWN"
+    public DeploymentInfo createDeploymentInfo(String fallbackProjectName) {
         DeploymentInfo deploymentInfo = null;
 
         if (tbRoot == null) {
@@ -431,8 +451,6 @@ public final class TBDeviceInfo {
 
         try {
             String  community = getCommunityName();
-
-            serialNumber = getSerialNumber(tbPrefix);
 
             String firmwareVersion = getFirmwareVersion();
 
@@ -447,25 +465,21 @@ public final class TBDeviceInfo {
             String lastSynchDir = getSynchDir();
             String lastUpdate = getLastUpdateDate(lastSynchDir);
 
-            // Project previously deployed to Talking Book, if known, else the new project about to be
-            // deployed to the Talking Book.
+            // Project previously deployed to Talking Book, if known.
             String oldProject = getProjectName();
-            if (oldProject == null || oldProject.equalsIgnoreCase("UNKNOWN")) {
-                oldProject = defaultProject;
-            }
 
-            // See if we need to allocate a new serial number. If we do, just mark it, don't actually
-            // allocate one until we're sure we'll use it.
-            serialNumber = serialNumber.toUpperCase();
-            if (!TBLoaderUtils.isSerialNumberFormatGood2(serialNumber)) {
-                needNewSerialNumber = true;
-                // We will allocate a new-style serial number before we update the tbDeviceInfo.
-                serialNumber = TBLoaderConstants.NEED_SERIAL_NUMBER;
-            }
+            DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
+                    .withSerialNumber(serialNumber)
+                    .withProjectName(oldProject)
+                    .withDeploymentName(depl)
+                    .withPackageName(pkg)
+                    .withUpdateDirectory(lastSynchDir)
+                    .withUpdateTimestamp(lastUpdate)
+                    .withFirmwareRevision(firmwareVersion)
+                    .withCommunity(community)
+                    .withFallbackProjectName(fallbackProjectName);
+            deploymentInfo = builder.build();
 
-            deploymentInfo = new DeploymentInfo(serialNumber, oldProject, depl, pkg, lastSynchDir, lastUpdate, firmwareVersion, community);
-
-            setSerialNumber(serialNumber);
         } catch (Exception ignore) {
             LOG.log(Level.WARNING, "exception - ignore and keep going with empty strings", ignore);
         }

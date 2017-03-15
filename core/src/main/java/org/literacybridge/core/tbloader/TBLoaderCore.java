@@ -189,10 +189,13 @@ public class TBLoaderCore {
             if (tbLoaderConfig == null) missing.add("tbLoaderConfig");
             if (tbDeviceInfo == null) missing.add("tbDeviceInfo");
             if (oldDeploymentInfo == null) missing.add("oldDeploymentInfo");
-            if (newDeploymentInfo == null) missing.add("newDeploymentInfo");
-            if (deploymentDirectory == null) missing.add("deploymentDirectory");
             if (location == null) missing.add("location");
             if (progressListenerListener == null) missing.add("progressListenerListener");
+            if (!statsOnly) {
+                // Just getting stats doesn't use any new deployment.
+                if (newDeploymentInfo == null) missing.add("newDeploymentInfo");
+                if (deploymentDirectory == null) missing.add("deploymentDirectory");
+            }
             if (!missing.isEmpty()) {
                 throw new IllegalStateException("TBLoaderConfig not initialized with " + missing.toString());
             }
@@ -539,7 +542,7 @@ public class TBLoaderCore {
     public Result update() {
         mStepsLog = OperationLog.startOperation("CoreTalkingBookUpdate");
         if (mOldDeploymentInfo == null) {
-            mOldDeploymentInfo = new DeploymentInfo();
+            mOldDeploymentInfo = new DeploymentInfo.DeploymentInfoBuilder().build();
         }
         System.out.println("oldDeploymentInfo:\n" + mOldDeploymentInfo.toString());
         System.out.println("newDeploymentInfo:\n" + mNewDeploymentInfo.toString());
@@ -633,7 +636,9 @@ public class TBLoaderCore {
             mProgressListenerListener.log(getStackTrace(e));
         }
 
-        if (gotStatistics && verified) {
+        if (mStatsOnly) {
+            mProgressListenerListener.log("Get Stats " + (gotStatistics?"successful.":"failed."));
+        } else if (gotStatistics && verified) {
             mProgressListenerListener.log("Update complete.");
         } else {
             mProgressListenerListener.log("Update failed.");
@@ -673,7 +678,7 @@ public class TBLoaderCore {
             mTbHasDiskCorruption = !CommandLineUtils.checkDisk(mTbDeviceInfo.getRootFile()
                     .getAbsolutePath());
             if (mTbHasDiskCorruption) {
-                mTbDeviceInfo.setCorrupted(true);
+                mTbDeviceInfo.setCorrupted();
                 mProgressListenerListener.log("Storage corrupted, attempting repair.");
                 CommandLineUtils.checkDisk(mTbDeviceInfo.getRootFile().getAbsolutePath(),
                                            new RelativePath(mTalkingBookDataDirectoryPath,
@@ -1298,7 +1303,8 @@ public class TBLoaderCore {
     /**
      * Disconnects the Talking Book from the system.
      *
-     * @throws IOException
+     * @throws IOException if there is an error disconnecting the drive. Note that on some OS
+     * it may be completely impossible to disconnect the drive, and no exception is thrown.
      */
     private void disconnectDevice() throws IOException {
         if (OSChecker.WINDOWS) {

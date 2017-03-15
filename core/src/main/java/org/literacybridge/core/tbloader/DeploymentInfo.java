@@ -27,9 +27,88 @@ public class DeploymentInfo {
     // The name of the community in which the Talking Book was last deployed.
     private final String community;
 
-    public DeploymentInfo(String serialNumber, String projectName, String deploymentName,
-                          String packageName, String updateDirectory, String updateTimestamp, String firmwareRevision,
-                          String community) {
+    public static class DeploymentInfoBuilder {
+        private static final String UNKNOWN = "UNKNOWN";
+        private String serialNumber = UNKNOWN;
+        private String projectName = UNKNOWN;
+        private String deploymentName = UNKNOWN;
+        private String packageName = UNKNOWN;
+        private String updateDirectory = null;
+        private String updateTimestamp = null;
+        private String firmwareRevision = UNKNOWN;
+        private String community = UNKNOWN;
+
+        public DeploymentInfoBuilder withSerialNumber(String serialNumber) {
+            this.serialNumber = serialNumber;
+            return this;
+        }
+
+        public DeploymentInfoBuilder withProjectName(String projectName) {
+            this.projectName = projectName;
+            return this;
+        }
+
+        public DeploymentInfoBuilder withDeploymentName(String deploymentName) {
+            this.deploymentName = deploymentName;
+            return this;
+        }
+
+        public DeploymentInfoBuilder withPackageName(String packageName) {
+            this.packageName = packageName;
+            return this;
+        }
+
+        public DeploymentInfoBuilder withUpdateDirectory(String updateDirectory) {
+            this.updateDirectory = updateDirectory;
+            return this;
+        }
+
+        public DeploymentInfoBuilder withUpdateTimestamp(String updateTimestamp) {
+            this.updateTimestamp = updateTimestamp;
+            return this;
+        }
+
+        public DeploymentInfoBuilder withFirmwareRevision(String firmwareRevision) {
+            this.firmwareRevision = firmwareRevision;
+            return this;
+        }
+
+        public DeploymentInfoBuilder withCommunity(String community) {
+            this.community = community;
+            return this;
+        }
+
+        // Build from an existing DeploymentInfo
+        public DeploymentInfoBuilder fromDeploymentInfo(DeploymentInfo di) {
+            serialNumber = di.serialNumber;
+            projectName = di.projectName;
+            deploymentName = di.deploymentName;
+            packageName = di.packageName;
+            updateDirectory = di.updateDirectory;
+            updateTimestamp = di.updateTimestamp;
+            firmwareRevision = di.firmwareRevision;
+            community = di.community;
+            return this;
+        }
+
+        // Set the project name, if it is not already set.
+        public DeploymentInfoBuilder withFallbackProjectName(String fallbackName) {
+            if (projectName == null || projectName.equalsIgnoreCase("UNKNOWN")) {
+                projectName = fallbackName;
+            }
+            return this;
+        }
+
+        public DeploymentInfo build() {
+            return new DeploymentInfo(serialNumber, projectName, deploymentName, packageName,
+                                      updateDirectory, updateTimestamp, firmwareRevision,
+                                      community);
+        }
+    }
+
+    private DeploymentInfo(String serialNumber, String projectName, String deploymentName,
+                           String packageName, String updateDirectory, String updateTimestamp,
+                           String firmwareRevision, String community) {
         this.serialNumber = serialNumber;
         this.projectName = projectName;
         this.deploymentName = deploymentName;
@@ -40,20 +119,13 @@ public class DeploymentInfo {
         this.community = community;
     }
 
-    /**
-     * If there is no DeploymentInfo, all these values are unknown.
-     */
-    public static final String U = "UNKNOWN";
-
-    public DeploymentInfo() {
-        this(U, U, U, U, U, U, U, U);
-    }
-
     public String getSerialNumber() {
         return serialNumber;
     }
 
-    public String getProjectName() { return projectName; }
+    public String getProjectName() {
+        return projectName;
+    }
 
     public String getDeploymentName() {
         return deploymentName;
