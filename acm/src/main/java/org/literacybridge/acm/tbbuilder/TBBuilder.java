@@ -394,6 +394,19 @@ public class TBBuilder {
       char foundRevision = files[0].getName().charAt(distribution.length()+1);
       if (foundRevision >= revision) {
         revision = ++foundRevision;
+        // If there's already a directory (or file) of the new name, keep looking.
+        File probe = new File(publishTbLoadersDir, distribution + '-' + revision);
+        while (probe.exists() && Character.isLetter(revision)) {
+            revision++;
+            probe = new File(publishTbLoadersDir, distribution + '-' + revision);
+        }
+        // If no un-used name found, keep the original one.
+        if (!Character.isLetter(revision)) {
+            if (!Character.isLetter(foundRevision)) {
+                throw new Exception("Too many revisions. Can't allocate a new file name suffix.");
+            }
+            revision = foundRevision;
+        }
       }
     }
     if (updateRevision) {
