@@ -377,9 +377,19 @@ public class AccessControl {
         }
         setSandboxed(useSandbox);
 
+        // If we're able to open the database, create mirror if necessary, set up the repository.
         if (openStatus.isOpen()) {
             // If newly checked out, create the db mirror.
             if (openStatus != OpenStatus.reopened) {
+                // If we successfully called checkOutDB, the zip file name has been set. If we didn't
+                // make the call (reopened, openedSandboxed, newDatabase), or if the call failed
+                // (notAvailableError, serverError), then the name has not been set. Only if the
+                // status is (opened) will the name have been set. So, if needed, set it now from
+                // the latest timestamp.
+                if (openStatus != OpenStatus.opened) {
+                    assert getCurrentZipFilename() == null : "Expected no zip file name.";
+                    setNewestModifiedZipFileAsCurrent();
+                }
                 createDBMirror();
                 // Is this newly created, as far as server knows?
                 if (!useSandbox && getCurrentZipFilename().equalsIgnoreCase(DB_DOES_NOT_EXIST)) {
