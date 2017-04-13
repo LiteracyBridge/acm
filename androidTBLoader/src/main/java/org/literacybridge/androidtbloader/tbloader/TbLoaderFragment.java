@@ -546,6 +546,7 @@ public class TbLoaderFragment extends Fragment {
      */
     private void installContentUpdate() {
         OperationLog.Operation opLog = OperationLog.startOperation("UpdateTalkingBook");
+        Config config = TBLoaderAppContext.getInstance().getConfig();
         TBDeviceInfo tbDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
                     mConnectedDevice.getDeviceLabel(),
                     mSrnPrefix);
@@ -583,7 +584,7 @@ public class TbLoaderFragment extends Fragment {
         String firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(contentUpdateTbFile);
 
         TBLoaderConfig tbLoaderConfig = new TBLoaderConfig.Builder()
-                .withTbLoaderId(Config.getTbcdid())
+                .withTbLoaderId(config.getTbcdid())
                 .withProject(mProject)
                 .withSrnPrefix(mSrnPrefix)
                 .withCollectedDataDirectory(collectedDataTbFile)
@@ -634,7 +635,7 @@ public class TbLoaderFragment extends Fragment {
         try {
             long zipStart = System.currentTimeMillis();
             mProgressListener.extraStep("Zipping statistics and user feedback");
-            String collectedDataZipName = "collected-data/tbcd" + Config.getTbcdid() + "/" + collectionTimestamp + ".zip";
+            String collectedDataZipName = "collected-data/tbcd" + config.getTbcdid() + "/" + collectionTimestamp + ".zip";
             File uploadableZipFile = new File(PathsProvider.getLocalTempDirectory(), collectedDataZipName);
 
             // Zip all the files together. We don't really get any compression, but it collects them into
@@ -682,7 +683,7 @@ public class TbLoaderFragment extends Fragment {
         final String prefName = "device_serial_number_counter";
         final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
         int intSrn = sharedPreferences.getInt(prefName, 0);
-        int tbcdid = Integer.parseInt(Config.getTbcdid(), 16);
+        int tbcdid = Integer.parseInt(TBLoaderAppContext.getInstance().getConfig().getTbcdid(), 16);
         tbcdid |= 0x8000;
 
         final SharedPreferences.Editor sharedPreferencesEditor = sharedPreferences.edit();

@@ -193,11 +193,12 @@ public class SigninActivity extends AppCompatActivity {
                     // If so, remove this.
                     clearInput();
                     String name = data.getStringExtra("TODO");
-                    if(name != null) {
-                        if (!name.isEmpty() && name.equals("exit")) {
+                    boolean forceExit = data.getBooleanExtra("forceExit", false);
+                    if(forceExit || name != null) {
+                        if (forceExit || (!name.isEmpty() && name.equals("exit"))) {
                             Log.d(TAG, String.format("Got a TODO:exit, explicit signin: %b", mExplicitSignIn));
                             // If we signed in implicitly, just do another BackPressed, because the user never saw this page.
-                            if (!mExplicitSignIn) {
+                            if (forceExit || !mExplicitSignIn) {
                                 onBackPressed();
                             }
                         }

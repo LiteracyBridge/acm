@@ -77,7 +77,7 @@ public class SettingsFragment extends PreferenceFragment
             preference.setSummary(getString(R.string.pref_summary_tb_access_not_granted));
         }
 
-        if (!Config.isAdvanced()) {
+        if (!TBLoaderAppContext.getInstance().getConfig().isAdvanced()) {
             // TODO: it should be possible to avoid even loading the advanced settings.
             Preference pc = findPreference("pref_key_advanced_settings");
             if (pc != null) {

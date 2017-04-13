@@ -47,6 +47,7 @@ import org.literacybridge.androidtbloader.signin.ChangePasswordActivity;
 import org.literacybridge.androidtbloader.signin.UserHelper;
 import org.literacybridge.androidtbloader.uploader.UploadManager;
 import org.literacybridge.androidtbloader.util.Config;
+import org.literacybridge.androidtbloader.util.Errors;
 import org.literacybridge.androidtbloader.util.Util;
 import org.literacybridge.core.fs.OperationLog;
 
@@ -62,6 +63,14 @@ import static android.app.Activity.RESULT_OK;
 
 public class MainFragment extends Fragment {
     private static final String TAG = MainFragment.class.getSimpleName();
+
+    private static final String CANT_LAUNCH_TITLE = "Can't Start TB-Loader";
+    private static final String NO_CONFIG_ERROR = "TB-Loader can not load a configuration file from server, and has no cached configuration. " +
+        "This is probably a network or connectivity error. Sadly, TB-Loader must exit. ";
+
+    private String configErrorMessage(Errors error) {
+        return NO_CONFIG_ERROR + String.format(" Please note this error code: [%d].", error.errorNo);
+    }
 
     private static final int REQUEST_CODE_MANAGE_CONTENT = 101;
     private static final int REQUEST_CODE_CHECKIN = 102;
@@ -93,6 +102,9 @@ public class MainFragment extends Fragment {
     private ProgressDialog waitDialog;
     private Map<String, String> mUserDetails;
 
+    private boolean awaitingUserDetails = true;
+    private boolean awaitingUserConfig = true;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -117,9 +129,9 @@ public class MainFragment extends Fragment {
         });
 
         final OperationLog.Operation opLogLocationList = OperationLog.startOperation("Main.RefreshCommunityLocations");
-        KnownLocations.refreshCommunityLocations(new Config.LocationHandler() {
+        KnownLocations.refreshCommunityLocations(new Config.Listener() {
             @Override
-            public void gotLocations() {
+            public void onSuccess() {
                 opLogLocationList.end();
                 Log.d(TAG, "Got location config");
             }
@@ -179,6 +191,7 @@ public class MainFragment extends Fragment {
 
         setButtonState();
         showWaitDialog("Loading...");
+        getUserConfig();
         getUserDetails();
 
         mApplicationContext.getUploadManager().restartUploads();
@@ -285,7 +298,7 @@ public class MainFragment extends Fragment {
             case R.id.nav_user_sign_out:
                 UserHelper.getPool().getUser(mUser).signOut();
                 UserHelper.getCredentialsProvider(getActivity().getApplicationContext()).clear();
-                Config.onSignOut();
+                TBLoaderAppContext.getInstance().getConfig().onSignOut();
                 Intent intent = new Intent();
                 intent.putExtra("signout", true);
                 getActivity().setResult(RESULT_OK, intent);
@@ -311,13 +324,16 @@ public class MainFragment extends Fragment {
                 break;
 
             case R.id.nav_user_edit_greeting:
-                editUserDetail("Preferred Greeting", mUserDetails.get("custom:greeting"));
+                editPreferredGreeting(mUserDetails.get("custom:greeting"));
                 break;
 
 
         }
     }
 
+    /**
+     * Get the Cognito user details (username, greeting, email address).
+     */
     private void getUserDetails() {
 
         GetDetailsHandler detailsHandler = new GetDetailsHandler() {
@@ -342,20 +358,17 @@ public class MainFragment extends Fragment {
                     }
                 });
                 Log.d(TAG, "User Attributes: " + mUserDetails.toString());
-                if (!mHaveConfig) {
-                    getUserConfig();
-                } else {
+                awaitingUserDetails = false;
+                if (!awaitingUserConfig) {
                     closeWaitDialog();
                 }
             }
 
             @Override
             public void onFailure(Exception exception) {
-                // This shouldn't be possible. We have successfully authenticated with Cognito before even trying.
-                Log.d(TAG, "detailsHandler failure", exception);
-                if (!mHaveConfig) {
-                    getUserConfig();
-                } else {
+                // Probably a network issue.
+                awaitingUserDetails = false;
+                if (!awaitingUserConfig) {
                     closeWaitDialog();
                 }
             }
@@ -366,20 +379,27 @@ public class MainFragment extends Fragment {
         UserHelper.getPool().getUser(userId).getDetailsInBackground(detailsHandler);
     }
 
+    /**
+     * Ensures that we have a user config, or exits the application. First tries to check if the
+     * config is up to date w.r.t. the server, failing that, falls back to a cached config.
+     */
     private void getUserConfig() {
         final OperationLog.Operation opLog = OperationLog.startOperation("getUserConfig");
-        SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(
-                mApplicationContext);
-        String username = UserHelper.getUsername();
-        opLog.put("username", username);
-        Config config = TBLoaderAppContext.getInstance().getConfig();
-        config.getServerSideUserConfig(username, new Config.ConfigHandler() {
+        final Config config = TBLoaderAppContext.getInstance().getConfig();
+        final String username = UserHelper.getUsername();
+
+        Config.Listener listener = new Config.Listener() {
             @Override
-            public void gotConfig(SharedPreferences prefs) {
+            public void onSuccess() {
                 // Excellent! Continue.
                 mHaveConfig = true;
-                opLog.end();
-                closeWaitDialog();
+                awaitingUserConfig = false;
+                opLog.put("username", config.getUsername())
+                        .put("cachedusername", (username==null))
+                        .end();
+                if (!awaitingUserDetails) {
+                    closeWaitDialog();
+                }
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -389,14 +409,24 @@ public class MainFragment extends Fragment {
             }
 
             @Override
-            public void noConfig() {
-                opLog.put("failed", Boolean.TRUE)
-                    .end();
-                closeWaitDialog();
+            public void onError() {
                 // This is a fatal error.
+                opLog.put("failed", true).end();
+                showDialogMessage(CANT_LAUNCH_TITLE, configErrorMessage(Errors.NoConfig), true);
             }
-        });
+        };
+
+        if (username == null) {
+            if (config.haveCachedConfig()) {
+                listener.onSuccess();
+            } else {
+                listener.onError();
+            }
+        } else {
+            config.getServerSideUserConfig(username, listener);
+        }
     }
+
     ContentManager.ContentManagerListener contentManagerListener = new ContentManager.ContentManagerListener() {
 
         @Override
@@ -485,9 +515,9 @@ public class MainFragment extends Fragment {
         mUpdateGroup.setEnabled(canUpdate);
     }
 
-    private void editUserDetail(final String attributeType, final String attributeValue) {
+    private void editPreferredGreeting(final String attributeValue) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle(attributeType);
+        builder.setTitle("Preferred Greeting");
         final EditText input = new EditText(getActivity());
         input.setText(attributeValue);
 
@@ -506,7 +536,7 @@ public class MainFragment extends Fragment {
                     String newValue = input.getText().toString();
                     if(!newValue.equals(attributeValue)) {
                         showWaitDialog("Updating...");
-                        updateAttribute(UserHelper.getSignUpFieldsC2O().get(attributeType), newValue);
+                        updateAttribute(UserHelper.getSignUpFieldsC2O().get("Preferred Greeting"), newValue);
                     }
                     userDialog.dismiss();
                 } catch (Exception e) {
@@ -562,18 +592,20 @@ public class MainFragment extends Fragment {
             public void onClick(DialogInterface dialog, int which) {
                 try {
                     closeUserDialog();
-                    if(exit) {
-                        getActivity().finish();
-                    }
                 } catch (Exception e) {
                     // Log failure
                     Log.e(TAG,"Dialog dismiss failed");
-                    if(exit) {
+                } finally {
+                    if (exit) {
+                        Intent intent = new Intent();
+                        intent.putExtra("forceExit", true);
+                        getActivity().setResult(RESULT_OK, intent);
                         getActivity().finish();
                     }
                 }
             }
         });
+        closeWaitDialog();
         userDialog = builder.create();
         userDialog.show();
     }

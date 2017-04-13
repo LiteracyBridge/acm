@@ -115,7 +115,7 @@ public class ContentManager {
 
         Set<String> result = new HashSet<>();
         for (Map.Entry<String, ContentInfo> entry : mProjects.entrySet()) {
-            if (includeForAllUsers || Config.isUsersProject(entry.getKey())) {
+            if (includeForAllUsers || TBLoaderAppContext.getInstance().getConfig().isUsersProject(entry.getKey())) {
                 if (entry.getValue().getDownloadStatus() == ContentInfo.DownloadStatus.DOWNLOADED) {
                     if (includeLocal) {
                         result.add(entry.getKey());

@@ -20,16 +20,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static android.content.Context.MODE_PRIVATE;
-import static org.literacybridge.androidtbloader.util.Constants.LOCATION_FILE_EXTENSION;
 
 /**
  * Configuration for the current user.
@@ -38,38 +34,59 @@ import static org.literacybridge.androidtbloader.util.Constants.LOCATION_FILE_EX
 public class Config {
     private static final String TAG = Config.class.getSimpleName();
 
-    public interface ConfigHandler {
-        void gotConfig(SharedPreferences prefs);
-        void noConfig();
-    }
+    public static final String DEVICE_ID_KEY = "tbcd";
+    public static final String PROJECTS_FILTER_KEY = "projects";
+    public static final String ADVANCED_FLAG_KEY = "advanced";
+    public static final String USERNAME_KEY = "username";
+    public static final String ETAG_KEY = "etag";
 
-    public interface LocationHandler {
-        void gotLocations();
+    public static final String DEVICE_ID_DEFAULT = "";
+    public static final String PROJECTS_FILTER_DEFAULT = ".*";
+    public static final Boolean ADVANCED_FLAG_DEFAULT = false;
+    public static final String USERNAME_DEFAULT = null;
+    public static final String ETAG_DEFAULT = "";
+
+    public interface Listener {
+        void onSuccess();
         void onError();
     }
 
-    private static boolean mIsAdvanced = false;
-    private static String mTbcdId;
-    private static String mProjectFilter;
-    private static Pattern mProjectPattern;
+    private boolean mIsAdvanced = false;
+    private String mTbcdId;
+    private String mProjectFilter;
+    private Pattern mProjectPattern;
+    private String mUsername;
 
-    public static String getTbcdid() {
+    public String getTbcdid() {
         return mTbcdId;
     }
 
-    public static String getProjectFilter() {
+    public String getProjectFilter() {
         return mProjectFilter;
     }
 
-    public static boolean isAdvanced() { return mIsAdvanced; }
+    public boolean isAdvanced() { return mIsAdvanced; }
+
+    public String getUsername() { return mUsername; }
+
+    public boolean haveCachedConfig() {
+        SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(
+                TBLoaderAppContext.getInstance());
+        String etag = userPrefs.getString(ETAG_KEY, null);
+        String username = userPrefs.getString(USERNAME_KEY, null);
+        return (etag != null && username != null);
+    }
 
     /**
      * This should be called to clear any user-specific cached settings.
      */
-    public static void onSignOut() {
+    public void onSignOut() {
         SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(TBLoaderAppContext.getInstance());
         SharedPreferences.Editor editor = userPrefs.edit();
         editor.clear().commit();
+        mIsAdvanced = false;
+        mTbcdId = mProjectFilter = mUsername = null;
+        mProjectPattern = null;
     }
 
     /**
@@ -78,7 +95,7 @@ public class Config {
      * @param projectName The project of interest.
      * @return true if the current user should see the project, false otherwise.
      */
-    public static boolean isUsersProject(String projectName) {
+    public boolean isUsersProject(String projectName) {
         if (mProjectFilter == null) return true;
         if (mProjectPattern == null) {
             mProjectPattern = Pattern.compile("(?i)" + mProjectFilter);
@@ -89,25 +106,52 @@ public class Config {
 
 
     private TBLoaderAppContext mApplicationContext;
+
     public Config(TBLoaderAppContext appContext) {
         mApplicationContext = appContext;
         SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(appContext);
-        mTbcdId = userPrefs.getString(Constants.TBLOADER_DEVICE_PREF_NAME, "");
+        gotUserSettings(userPrefs, null);
+    }
+
+    private void gotUserSettings(SharedPreferences prefs, final Listener listener) {
+        mTbcdId = prefs.getString(DEVICE_ID_KEY, DEVICE_ID_DEFAULT);
         // Default project filter is "match anything"
-        mProjectFilter = userPrefs.getString("projects", ".*");
-        mIsAdvanced = Boolean.parseBoolean(userPrefs.getString("advanced", "false"));
+        mProjectFilter = prefs.getString(PROJECTS_FILTER_KEY, PROJECTS_FILTER_DEFAULT);
+        mIsAdvanced = Boolean.parseBoolean(prefs.getString(ADVANCED_FLAG_KEY, ADVANCED_FLAG_DEFAULT.toString()));
+        String newName = prefs.getString(USERNAME_KEY, USERNAME_DEFAULT);
+        if (mUsername == null) {
+            mUsername = newName;
+        } else if (newName!=null && !mUsername.equals(newName)) {
+            // It is unexpected that the name should change while logged in.
+            OperationLog.log("UserNameChanged").put("from", mUsername).put("to", newName).save();
+            mUsername = newName;
+        }
+        if (listener != null) {
+            listener.onSuccess();
+        }
     }
 
     /**
      * Get the user config from server. If no connectivity, and have a cached config use that.
      * @param username The user's sign-in id, corresponding to their server-side config file.
-     * @param handler A ConfigHandler to accept the results.
+     * @param listener A Listener to accept the results.
      */
-    public void getServerSideUserConfig(String username, final ConfigHandler handler) {
+    public void getServerSideUserConfig(final String username, final Listener listener) {
         // Load any persisted settings.
         final SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(
                 mApplicationContext);
-        final String etag = userPrefs.getString("etag", "");
+        final String etag = userPrefs.getString(ETAG_KEY, ETAG_DEFAULT);
+
+        String cachedUsername = userPrefs.getString(USERNAME_KEY, USERNAME_DEFAULT);
+        if (cachedUsername == null || !cachedUsername.equals(username)) {
+            SharedPreferences.Editor prefsEditor = userPrefs.edit();
+            prefsEditor.putString(USERNAME_KEY, username);
+            prefsEditor.apply();
+            if (mUsername==null) {                                                       
+                mUsername = username;
+            }
+        }
+
         // Query settings from s3.
         ListObjectsV2Request request = new ListObjectsV2Request()
                 .withBucketName(Constants.CONTENT_UPDATES_BUCKET_NAME)
@@ -120,7 +164,7 @@ public class Config {
                 List<S3ObjectSummary> s3Users = result.getObjectSummaries();
                 // Should be only one
                 if (s3Users.size() != 1) {
-                    handler.noConfig();
+                    listener.onError();
                     return;
                 }
                 S3ObjectSummary summary = s3Users.get(0);
@@ -128,35 +172,27 @@ public class Config {
                 String s3etag = summary.getETag();
                 if (s3etag.equalsIgnoreCase(etag)) {
                     Log.d(TAG, String.format("Already have current config file info for %s", UserHelper.getUserId()));
-                    gotUserSettings(userPrefs, handler);
+                    gotUserSettings(userPrefs, listener);
                     return;
                 }
-                fetchUserSettings(summary, handler);
+                fetchUserSettings(username, summary, listener);
             }
 
             @Override
             public void onFailure(Exception ex) {
                 if (!etag.equals("")) {
                     Log.d(TAG, String.format("Could not fetch config file info for %s, but have saved settings", UserHelper.getUserId()));
-                    gotUserSettings(userPrefs, handler);
+                    gotUserSettings(userPrefs, listener);
                     return;
                 }
-                handler.noConfig();
+                listener.onError();
             }
         });
 
     }
 
-    private void gotUserSettings(SharedPreferences prefs, final ConfigHandler handler) {
-        mTbcdId = prefs.getString(Constants.TBLOADER_DEVICE_PREF_NAME, "");
-        // Default project filter is "match anything"
-        mProjectFilter = prefs.getString("projects", ".*");
-        mIsAdvanced = Boolean.parseBoolean(prefs.getString("advanced", "false"));
 
-        handler.gotConfig(prefs);
-    }
-
-    private void fetchUserSettings(final S3ObjectSummary summary, final ConfigHandler handler) {
+    private void fetchUserSettings(final String username, final S3ObjectSummary summary, final Listener listener) {
         Log.d(TAG, String.format("Fetching config file info for %s", UserHelper.getUserId()));
         String filename = UserHelper.getUsername() + ".config";
         String key = "users/" + filename;
@@ -185,7 +221,7 @@ public class Config {
                     }
                     file.delete();
                     if (newSettings.getProperty("tbcd") == null) {
-                        handler.noConfig();
+                        listener.onError();
                         return;
                     }
 
@@ -202,14 +238,14 @@ public class Config {
                     prefsEditor.putString("downloaded", nowAsIso);
                     Log.d(TAG, String.format("Setting time as %s", nowAsIso));
                     // Add etag to prefs
-                    prefsEditor.putString("etag", summary.getETag());
+                    prefsEditor.putString(ETAG_KEY, summary.getETag());
                     // Add rest of signin config to prefs
                     for (Properties.Entry e : newSettings.entrySet()) {
                         prefsEditor.putString((String) e.getKey(), (String) e.getValue());
                     }
                     prefsEditor.apply();
 
-                    gotUserSettings(userPrefs, handler);
+                    gotUserSettings(userPrefs, listener);
 
                 }
             }
@@ -222,7 +258,7 @@ public class Config {
             @Override
             public void onError(int id, Exception ex) {
                 Log.d(TAG, "transfer error", ex);
-                handler.noConfig();
+                listener.onError();
             }
         });
 

@@ -115,7 +115,7 @@ public class OperationLogImpl implements OperationLog.Implementation{
 
     private void uploadLog(File logFile) {
         Log.d(TAG, String.format("Upload log file %s", logFile));
-        String logName = "log/tbcd" + Config.getTbcdid() + "/" + logFile.getName();
+        String logName = "log/tbcd" + TBLoaderAppContext.getInstance().getConfig().getTbcdid() + "/" + logFile.getName();
         if (logFile.length() > ZIP_THRESHOLD) {
             //TODO Zip it.
         }

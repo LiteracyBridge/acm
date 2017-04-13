@@ -33,7 +33,8 @@ public class OperationLog {
         <T> Operation put(String key, T value);
 
         /**
-         * Marks the time, by recording the value of the elapsed milliseconds as key.
+         * Marks the time, by recording the value of the elapsed milliseconds as key. Note: only
+         * applies to timed events; ignored otherwise.
          * @param key The name of the timer.
          * @return The Operation, so this can be chained with put()
          */
@@ -50,6 +51,11 @@ public class OperationLog {
          * Ends the timer.
          */
         void end();
+
+        /**
+         * Synonym for end
+         */
+        void save();
     }
 
     /**
@@ -78,30 +84,29 @@ public class OperationLog {
         }
     }
 
+    public static Operation log(String name) {
+        return new OperationEvent(name);
+    }
+
     /**
      * Applications call this to start a timed operation.
      * @param name String that's meaningful to the application.
      * @return An Object implementing Operation.
      */
     public static Operation startOperation(String name) {
-        return new OperationEvent(name);
+        return new TimedOperationEvent(name);
     }
 
     /**
      * Implementation of Operation.
      */
     private static class OperationEvent implements Operation {
-        private static final String ELAPSED = "elapsedTime";
         private Map<String, String> info = new LinkedHashMap<>();
-        private long startTime;
-        private long splitStart;
         private String name;
 
         private OperationEvent(String name) {
             this.name = name;
-            this.startTime = System.currentTimeMillis();
-            this.splitStart = startTime;
-            this.put(ELAPSED, 0);
+            assert name != null && name.length() > 0 : "Must provide a name for log entry.";
         }
 
         @Override
@@ -109,13 +114,18 @@ public class OperationLog {
             info.put(key, value.toString());
             return this;
         }
+
+        /**
+         * Marks the time, by recording the value of the elapsed milliseconds as key.
+         *
+         * @param key The name of the timer.
+         * @return The Operation, so this can be chained with put()
+         */
         @Override
-        public Operation split(String name) {
-            long t = System.currentTimeMillis();
-            this.put(name, Long.toString(t-splitStart));
-            splitStart = t; // for next split
+        public Operation split(String key) {
             return this;
         }
+
         @Override
         public void end(Map<String, String> info) {
             this.info.putAll(info);
@@ -124,10 +134,42 @@ public class OperationLog {
         @Override
         public void end() {
             // Only record once.
+            if (name != null) {
+                OperationLog.logEvent(name, info);
+                name = null;
+            }
+        }
+        @Override
+        public void save() {
+            end();
+        }
+    }
+    private static class TimedOperationEvent extends OperationEvent {
+        private static final String ELAPSED = "elapsedTime";
+        private long startTime;
+        private long splitStart;
+
+        private TimedOperationEvent(String name) {
+            super(name);
+            this.startTime = System.currentTimeMillis();
+            this.splitStart = startTime;
+            this.put(ELAPSED, 0);
+        }
+
+        @Override
+        public Operation split(String name) {
+            long t = System.currentTimeMillis();
+            this.put(name, Long.toString(t-splitStart));
+            splitStart = t; // for next split
+            return this;
+        }
+        @Override
+        public void end() {
+            // Only record once.
             if (startTime > 0) {
                 this.put(ELAPSED, Long.toString(System.currentTimeMillis() - startTime));
                 startTime = -1;
-                OperationLog.logEvent(name, info);
+                super.end();
             }
         }
     }

@@ -39,6 +39,7 @@ public class KnownLocations {
     private static final String TAG = KnownLocations.class.getSimpleName();
     //private static final String TAG = KnownLocations.class.getSimpleName();
 
+    // Cached list of {project name => {community name => community info} }
     private static Map<String, Map<String, CommunityInfo>> allProjects = new HashMap<>();
 
     /**
@@ -99,10 +100,14 @@ public class KnownLocations {
     private List<SR> findByDistance(Location target, float minDist, float maxDist) {
         List<SR> result = new ArrayList<>();
         for (String project : projects) {
-            for (CommunityInfo community : communities.get(project).values()) {
-                float distance = community.getLocation().distanceTo(target);
-                if (distance >= minDist && distance < maxDist) {
-                    result.add(new SR(distance, community));
+            // There may or may not be community infos for a given project.
+            Map<String, CommunityInfo> infos = communities.get(project);
+            if (infos != null) {
+                for (CommunityInfo community : infos.values()) {
+                    float distance = community.getLocation().distanceTo(target);
+                    if (distance >= minDist && distance < maxDist) {
+                        result.add(new SR(distance, community));
+                    }
                 }
             }
         }
@@ -167,7 +172,8 @@ public class KnownLocations {
                         project + LOCATION_FILE_EXTENSION);
                 if (locFile.exists()) {
                     LocationsCsvFile csv = new LocationsCsvFile(locFile);
-                    allProjects.put(project, csv.read());
+                    Map<String, CommunityInfo> infos = csv.read();
+                    allProjects.put(project, infos);
                 }
             }
         }
@@ -175,10 +181,10 @@ public class KnownLocations {
 
     /**
      * Reads the versions (etags) from S3 for location files. Downloads any that are stale.
-     * @param handler A handler to call when the current files have been downloaded, or if
+     * @param listener A listener to call when the current files have been downloaded, or if
      *                we can't get the list of S3 objects.
      */
-    public static void refreshCommunityLocations(final Config.LocationHandler handler) {
+    public static void refreshCommunityLocations(final Config.Listener listener) {
         final OperationLog.Operation opLog = OperationLog.startOperation("RefreshCommunityLocations");
         // Load the etags for any location info we already have.
         final SharedPreferences locationPrefs = TBLoaderAppContext.getInstance().getSharedPreferences("community.locations", MODE_PRIVATE);
@@ -203,7 +209,7 @@ public class KnownLocations {
 
                     String project = keyFileName.substring(0, keyFileName.lastIndexOf('.'));
                     // Only concerned with this user's projects.
-                    if (!Config.isUsersProject(project)) { continue; }
+                    if (!TBLoaderAppContext.getInstance().getConfig().isUsersProject(project)) { continue; }
 
                     // Version of any saved location info.
                     String etag = locationPrefs.getString(project, "");
@@ -231,7 +237,7 @@ public class KnownLocations {
                 if (toFetch.size() == 0) {
                     // Nothing left to do...
                     opLog.end();
-                    handler.gotLocations();
+                    listener.onSuccess();
                     return;
                 }
                 S3ObjectSummary summary = toFetch.remove(0);
@@ -248,7 +254,7 @@ public class KnownLocations {
                 opLog.put("exception", ex)
                         .end();
                 Log.d(TAG, String.format("Could not fetch community location file info"));
-                handler.onError();
+                listener.onError();
             }
         });
 

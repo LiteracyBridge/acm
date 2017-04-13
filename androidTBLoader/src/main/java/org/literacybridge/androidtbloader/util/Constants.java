@@ -16,6 +16,10 @@
 package org.literacybridge.androidtbloader.util;
 
 import com.amazonaws.regions.Regions;
+import org.literacybridge.core.fs.OperationLog;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Constants {
 
@@ -32,10 +36,6 @@ public class Constants {
     public static final String CONTENT_UPDATES_BUCKET_NAME = "acm-content-updates";
     // Statistics, logs get uploaded to here.
     public static final String COLLECTED_DATA_BUCKET_NAME = "acm-stats";
-
-
-    public static final String TBLOADER_DEVICE_PREF_NAME = "tbcd";
-
 
     public static final String LOCATION_FILE_EXTENSION = ".csv";
 }
