@@ -54,11 +54,14 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 
 import static android.app.Activity.RESULT_OK;
 import static android.text.TextUtils.TruncateAt.MARQUEE;
+import static org.literacybridge.androidtbloader.util.Constants.ISO8601;
+import static org.literacybridge.androidtbloader.util.Constants.UTC;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME;
 
 /**
@@ -137,7 +140,7 @@ public class TbLoaderFragment extends Fragment {
 
         OperationLog.Operation op = OperationLog.startOperation("CanAccessConnectedDevice");
         mTalkingBookConnectionManager.canAccessConnectedDevice();
-        op.end();
+        op.finish();
     }
 
     @Nullable
@@ -561,13 +564,9 @@ public class TbLoaderFragment extends Fragment {
         // Where to gather the statistics and user recordings, to be uploaded.
 //        TbFile collectionTbFile = new FsFile(PathsProvider.getUploadDirectory());
 //        TbFile collectedDataDirectory = collectionTbFile.open(COLLECTED_DATA_SUBDIR_NAME);
-        TimeZone tz = TimeZone.getTimeZone("UTC");
-        @SuppressLint("SimpleDateFormat")
-        DateFormat df = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'");
-        df.setTimeZone(tz);
-        String collectionTimestamp = df.format(new Date());
-        df = new SimpleDateFormat("yyyy/MM/dd");
-        df.setTimeZone(tz);
+        String collectionTimestamp = ISO8601.format(new Date());
+        DateFormat df = new SimpleDateFormat("yyyy/MM/dd", Locale.US);
+        df.setTimeZone(UTC);
         String todaysDate = df.format(new Date());
 
         File collectedDataDirectory = new File(PathsProvider.getLocalTempDirectory(), COLLECTED_DATA_SUBDIR_NAME + File.separator + collectionTimestamp);
@@ -617,7 +616,12 @@ public class TbLoaderFragment extends Fragment {
 
         opLog.put("project", mProject)
             .put("deployment", contentUpdateName)
-            .put("package", imageName);
+            .put("package", imageName)
+            .put("community", mCommunity.getName())
+            .put("sn", deviceSerialNumber)
+            .put("tbloaderId", config.getTbcdid())
+            .put("username", config.getUsername())
+            .put("timestamp", collectionTimestamp);
         
         TBLoaderCore core = new TBLoaderCore.Builder()
                 .withTbLoaderConfig(tbLoaderConfig)
@@ -655,7 +659,7 @@ public class TbLoaderFragment extends Fragment {
             mProgressListener.log("Exception zipping stats");
             opLog.put("zipException", e);
         }
-        opLog.end();
+        opLog.finish();
     }
 
     @SuppressLint("DefaultLocale")
@@ -680,17 +684,16 @@ public class TbLoaderFragment extends Fragment {
      * @return The serial number string.
      */
     private String getNewDeviceSerialNumber() {
-        final String prefName = "device_serial_number_counter";
         final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
-        int intSrn = sharedPreferences.getInt(prefName, 0);
+        int intSrn = sharedPreferences.getInt(Config.SERIAL_NUMBER_COUNTER_KEY, 0);
         int tbcdid = Integer.parseInt(TBLoaderAppContext.getInstance().getConfig().getTbcdid(), 16);
         tbcdid |= 0x8000;
 
-        final SharedPreferences.Editor sharedPreferencesEditor = sharedPreferences.edit();
-        sharedPreferencesEditor.putInt(prefName, intSrn + 1);
-        sharedPreferencesEditor.apply();
+        int newSrn = TBLoaderAppContext.getInstance().getConfig().allocateDeviceSerialNumber();
 
-        return String.format("%s%04x%04x", mSrnPrefix, tbcdid, intSrn).toUpperCase();
+        String newSerialNumber = String.format("%s%04x%04x", mSrnPrefix, tbcdid, newSrn).toUpperCase();
+        OperationLog.log("AllocateSerialNumber").put("srn", newSerialNumber).finish();
+        return newSerialNumber;
     }
 
 }

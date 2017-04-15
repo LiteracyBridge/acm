@@ -18,14 +18,20 @@ import org.literacybridge.core.fs.OperationLog;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.literacybridge.androidtbloader.util.Constants.ISO8601;
 
 /**
  * Configuration for the current user.
@@ -34,6 +40,7 @@ import java.util.regex.Pattern;
 public class Config {
     private static final String TAG = Config.class.getSimpleName();
 
+    public static final String SERIAL_NUMBER_COUNTER_KEY = "device_serial_number_counter";
     public static final String DEVICE_ID_KEY = "tbcd";
     public static final String PROJECTS_FILTER_KEY = "projects";
     public static final String ADVANCED_FLAG_KEY = "advanced";
@@ -123,12 +130,55 @@ public class Config {
             mUsername = newName;
         } else if (newName!=null && !mUsername.equals(newName)) {
             // It is unexpected that the name should change while logged in.
-            OperationLog.log("UserNameChanged").put("from", mUsername).put("to", newName).save();
+            OperationLog.log("UserNameChanged").put("from", mUsername).put("to", newName).finish();
             mUsername = newName;
         }
         if (listener != null) {
             listener.onSuccess();
         }
+    }
+
+    /**
+     * Upload a serial number counter to S3. Uploaded in a file that is a properties file fragment.
+     * @param counter The counter value to be uploaded.
+     */
+    private void uploadSerialNumberCounter(int counter) {
+        // Write the new serial number to a file. The file will be formatted as a Java properties file,
+        // with one value "device_serial_number_counter=1234"
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        // Like #Fri Oct 23 10:58:38 PDT 2015
+        DateFormat timestampFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);
+        timestampFormat.setTimeZone(tz);
+        String data = String.format(Locale.US, "#%s\ndevice_serial_number_counter=%d\n", timestampFormat.format(new Date()), counter);
+
+        // The file should be named for this user. It will be merged with the user's config file.
+        String filename = String.format("%s.srn", getUsername());
+        File srnFile = new File(PathsProvider.getSrnDirectory(), filename);
+
+        try (OutputStream fos = new FileOutputStream(srnFile)) {
+            fos.write(data.getBytes());
+        } catch (IOException e) {
+            Log.d(TAG, String.format("Exception writing to log file: %s", srnFile), e);
+        }
+
+        TBLoaderAppContext.getInstance().getUploadManager().uploadFileAsName(srnFile, "srn/"+filename, true);
+    }
+
+    /**
+     * Allocate the next Talking Book serial number for this TBLoader. Upload to the server as well.
+     * @return the allocated number
+     */
+    public int allocateDeviceSerialNumber() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mApplicationContext);
+        int newSrn = sharedPreferences.getInt(Config.SERIAL_NUMBER_COUNTER_KEY, 0) + 1;
+
+        final SharedPreferences.Editor sharedPreferencesEditor = sharedPreferences.edit();
+        sharedPreferencesEditor.putInt(Config.SERIAL_NUMBER_COUNTER_KEY, newSrn);
+        sharedPreferencesEditor.apply();
+
+        uploadSerialNumberCounter(newSrn);
+
+        return newSrn;
     }
 
     /**
@@ -231,17 +281,28 @@ public class Config {
                     SharedPreferences.Editor prefsEditor = userPrefs.edit();
 
                     // Add update time to prefs
-                    TimeZone tz = TimeZone.getTimeZone("UTC");
-                    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
-                    df.setTimeZone(tz);
-                    String nowAsIso = df.format(new Date());
+                    String nowAsIso = ISO8601.format(new Date());
                     prefsEditor.putString("downloaded", nowAsIso);
                     Log.d(TAG, String.format("Setting time as %s", nowAsIso));
                     // Add etag to prefs
                     prefsEditor.putString(ETAG_KEY, summary.getETag());
                     // Add rest of signin config to prefs
                     for (Properties.Entry e : newSettings.entrySet()) {
-                        prefsEditor.putString((String) e.getKey(), (String) e.getValue());
+                        String key = (String)e.getKey();
+                        // Generally, the server's view is considered truth. However, if we know
+                        // locally that more serial numbers have been used, that overrides any
+                        // server values. Keep the local value, and let the server know about the update.
+                        if (key.equalsIgnoreCase(SERIAL_NUMBER_COUNTER_KEY)) {
+                            int newValue = Integer.valueOf((String)e.getValue());
+                            int oldValue = userPrefs.getInt(Config.SERIAL_NUMBER_COUNTER_KEY, 0);
+                            if (oldValue > newValue) {
+                                uploadSerialNumberCounter(oldValue);
+                            } else {
+                                prefsEditor.putInt(Config.SERIAL_NUMBER_COUNTER_KEY, newValue);
+                            }
+                        } else {
+                            prefsEditor.putString(key, (String) e.getValue());
+                        }
                     }
                     prefsEditor.apply();
 

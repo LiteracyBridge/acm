@@ -126,7 +126,7 @@ public class KnownLocations {
         logInfo.put("project", community.getProject());
         logInfo.put("longitude", Double.toString(mGpsLocation.getLongitude()));
         logInfo.put("latitude", Double.toString(mGpsLocation.getLatitude()));
-        OperationLog.logEvent("setlocation", logInfo);
+        OperationLog.logEvent("SetLocation", logInfo);
 
         // Also record it locally.
         // Find the collection of communities associated with the given community's project.
@@ -200,6 +200,9 @@ public class KnownLocations {
 
             @Override
             public void onSuccess(ListObjectsV2Result result) {
+                List<String> cached = new ArrayList<>();
+                List<String> missing = new ArrayList<>();
+                List<String> stale = new ArrayList<>();
                 List<S3ObjectSummary> s3LocFiles = result.getObjectSummaries();
                 for (S3ObjectSummary summary : s3LocFiles) {
                     String keyFileName = summary.getKey().substring(summary.getKey().indexOf('/')+1).toUpperCase();
@@ -217,15 +220,23 @@ public class KnownLocations {
                                              summary.getKey(), project, summary.getETag(), etag));
                     // Version of current location info.
                     String s3etag = summary.getETag();
-                    if (s3etag.equalsIgnoreCase(etag) && new File(PathsProvider.getLocationsCacheDirectory(), project + LOCATION_FILE_EXTENSION).exists()) {
-                        opLog.put(project, "cached");
+                    File locationFile = new File(PathsProvider.getLocationsCacheDirectory(), project + LOCATION_FILE_EXTENSION);
+                    if (s3etag.equalsIgnoreCase(etag) && locationFile.exists()) {
+                        cached.add(project);
                         Log.d(TAG, String.format("Already have current location file info for %s", project));
                     } else {
-                        opLog.put(project, "needed");
+                        if (!locationFile.exists()) {
+                            missing.add(project);
+                        } else {
+                            stale.add(project);
+                        }
                         Log.d(TAG, String.format("Need to download location file for %s", project));
                         toFetch.add(summary);
                     }
                 }
+                if (cached.size() > 0) opLog.put("cached", cached);
+                if (stale.size() > 0) opLog.put("stale", stale);
+                if (missing.size() > 0) opLog.put("missing", missing);
                 fetchCommunityLocations();
             }
 
@@ -236,7 +247,7 @@ public class KnownLocations {
             private void fetchCommunityLocations() {
                 if (toFetch.size() == 0) {
                     // Nothing left to do...
-                    opLog.end();
+                    opLog.finish();
                     listener.onSuccess();
                     return;
                 }
@@ -252,7 +263,7 @@ public class KnownLocations {
             @Override
             public void onFailure(Exception ex) {
                 opLog.put("exception", ex)
-                        .end();
+                        .finish();
                 Log.d(TAG, String.format("Could not fetch community location file info"));
                 listener.onError();
             }

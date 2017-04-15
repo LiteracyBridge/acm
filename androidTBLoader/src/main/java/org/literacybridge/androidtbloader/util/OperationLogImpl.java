@@ -14,8 +14,12 @@ import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+
+import static org.literacybridge.androidtbloader.util.Constants.ISO8601;
+import static org.literacybridge.androidtbloader.util.Constants.UTC;
 
 /**
  * Log operations of the applications. Uploaded to server, to extract app metrics, usage, and updates.
@@ -40,11 +44,9 @@ public class OperationLogImpl implements OperationLog.Implementation{
             logDir.mkdirs();
         }
         uploadExistingLogs();
-        TimeZone tz = TimeZone.getTimeZone("UTC");
-        filenameFormat = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'");
-        filenameFormat.setTimeZone(tz);
-        logFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
-        logFormat.setTimeZone(tz);
+        filenameFormat = ISO8601;
+        logFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
+        logFormat.setTimeZone(UTC);
 
         runnable = new Runnable() {
             @Override

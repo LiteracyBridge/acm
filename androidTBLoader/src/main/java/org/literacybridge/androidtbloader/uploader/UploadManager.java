@@ -63,13 +63,18 @@ public class UploadManager {
      * time that the app runs.
      * @param file The file to be uploaded.
      * @param objectName The name the object should have once uploaded.
+     * @param removeConflicting If true, and a file of the same name already exists, replace it
+     *                          with this one.
      * @return True if the file was moved into the upload directory.
      */
-    public synchronized boolean uploadFileAsName(File file, String objectName) {
+    public synchronized boolean uploadFileAsName(File file, String objectName, boolean removeConflicting) {
         File uploadFile = new File(mUploadDirectory, objectName);
         File parent = uploadFile.getParentFile();
         if (!parent.exists()) {
             parent.mkdirs();
+        }
+        if (removeConflicting && uploadFile.exists()) {
+            uploadFile.delete();
         }
         if (!file.renameTo(uploadFile)) {
             Log.d(TAG, String.format("Unable to rename %s to %s", file, uploadFile));
@@ -77,6 +82,18 @@ public class UploadManager {
         }
         upload(uploadFile);
         return true;
+    }
+
+    /**
+     * Submits a single file to be uploaded to S3. The file will be moved to the upload directory.
+     * If the file isn't uploaded while the app is running, it will have another chance the next
+     * time that the app runs.
+     * @param file The file to be uploaded.
+     * @param objectName The name the object should have once uploaded.
+     * @return True if the file was moved into the upload directory.
+     */
+    public boolean uploadFileAsName(File file, String objectName) {
+        return uploadFileAsName(file, objectName, false);
     }
 
     /**

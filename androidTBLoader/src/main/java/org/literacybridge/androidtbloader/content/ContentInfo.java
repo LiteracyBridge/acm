@@ -174,7 +174,7 @@ public class ContentInfo {
                     state == TransferState.CANCELED ||
                     state == TransferState.FAILED) {
                 mOpLog.put("endState", state)
-                    .end();
+                    .finish();
                 mOpLog = null;
                 mContentDownloader = null;
             }

@@ -11,7 +11,6 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
-import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.androidtbloader.util.S3Helper;
@@ -211,13 +210,18 @@ public class ContentManager {
         // Reconcile with cloud (if we can).
         findCloudContent(new ListContentListener() {
             void addProjectsToLog() {
+                List<String> local = new ArrayList<>();
+                List<String> cloud = new ArrayList<>();
                 for (Map.Entry<String, ContentInfo> entry : mProjects.entrySet()) {
                     if (entry.getValue().getDownloadStatus() == ContentInfo.DownloadStatus.DOWNLOADED) {
-                        opLog.put(entry.getKey(), "local");
+                        local.add(entry.getKey());
                     } else {
-                        opLog.put(entry.getKey(), "cloud");
+                        cloud.add(entry.getKey());
                     }
                 }
+                opLog.put("local", local)
+                    .put("cloud", cloud);
+
             }
             @Override
             public void onSuccess(List<ContentInfo> cloudInfo) {
@@ -225,7 +229,7 @@ public class ContentManager {
                     @Override
                     public void run() {
                         addProjectsToLog();
-                        opLog.end();
+                        opLog.finish();
                         listener.contentListChanged();
                     }
                 });
@@ -244,7 +248,7 @@ public class ContentManager {
                 mProjectCommunitiesCache = null;
                 addProjectsToLog();
                 opLog.put("exception", ex)
-                    .end();
+                    .finish();
                 listener.contentListChanged();
             }
         });
@@ -301,9 +305,13 @@ public class ContentManager {
     }
 
     private void removeContent(final List<String> projectsToClear, final List<String> projectsToRemove, final Runnable onFinished) {
-        final OperationLog.Operation opLog = OperationLog.startOperation("RemoveLocalContent")
-                .put("toClear", String.format("\"%s\"", projectsToClear))
-                .put("toRemove", String.format("\"%s\"", projectsToRemove));
+        final OperationLog.Operation opLog = OperationLog.startOperation("RemoveLocalContent");
+        if (projectsToClear.size() > 0) {
+            opLog.put("toClear", projectsToClear);
+        }
+        if (projectsToRemove.size() > 0) {
+            opLog.put("toRemove", projectsToRemove);
+        }
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
@@ -336,7 +344,7 @@ public class ContentManager {
             @Override
             protected void onPostExecute(Void result) {
                 Log.d(TAG, "Back from deleting files");
-                opLog.end();
+                opLog.finish();
                 onFinished.run();
             }
         }.execute();

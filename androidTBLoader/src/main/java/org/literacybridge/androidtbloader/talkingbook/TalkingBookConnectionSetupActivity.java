@@ -53,7 +53,7 @@ public class TalkingBookConnectionSetupActivity extends Activity {
         // cancelable. Any other reason for launching, do not let it be cancelable.
         dialog.setCancelable(requestingDefaultPermission);
         if (requestingDefaultPermission) {
-            opLog.put("requestingdefaultpermission", true);
+            opLog.put("requestingDefaultPermission", true);
             dialog.setButton(ProgressDialog.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -106,7 +106,7 @@ public class TalkingBookConnectionSetupActivity extends Activity {
                     finish();
                     return;
                 } else {
-                    opLog.split("deviceconnected.time");
+                    opLog.split("deviceConnected.time");
                 }
 
                 // Counts the seconds until the device is accessible.
@@ -126,7 +126,7 @@ public class TalkingBookConnectionSetupActivity extends Activity {
                     finish();
                     return;
                 } else {
-                    opLog.split("devicemounted.time");
+                    opLog.split("deviceMounted.time");
                 }
 
                 // Do we already have permission to this TB device?
@@ -147,7 +147,7 @@ public class TalkingBookConnectionSetupActivity extends Activity {
                     }
 
                     if (!cancelled) {
-                        opLog.split("deviceaccessible.time");
+                        opLog.split("deviceAccessible.time");
                     }
 
                     timer.cancel();
@@ -180,10 +180,10 @@ public class TalkingBookConnectionSetupActivity extends Activity {
                     ((TBLoaderAppContext) getApplicationContext()).getTalkingBookConnectionManager();
 
             talkingBookConnectionManager.addPermission(baseURI);
-            opLog.put("hasdefaultpermission", talkingBookConnectionManager.hasDefaultPermission());
+            opLog.put("hasDefaultPermission", talkingBookConnectionManager.hasDefaultPermission());
 
             if (talkingBookConnectionManager.canAccessConnectedDevice() == null) {
-                opLog.put("permissionrequestfailed", true);
+                opLog.put("permissionRequestFailed", true);
                 AlertDialog dialog = new AlertDialog.Builder(this)
                         .setCancelable(false)
                         .setTitle("Access Permission Setup Failed")
@@ -243,14 +243,14 @@ public class TalkingBookConnectionSetupActivity extends Activity {
      */
     @Override
     public void finish() {
-        opLog.end();
+        opLog.finish();
         super.finish();
     }
 
     private void requestPermission() {
         // ACTION_OPEN_DOCUMENT is the intent to choose a file via the system's file
         // browser.
-        opLog.put("requestpermission", true);
+        opLog.put("requestPermission", true);
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
         startActivityForResult(intent, READ_REQUEST_CODE);
     }

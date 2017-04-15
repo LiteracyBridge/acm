@@ -52,6 +52,7 @@ import org.literacybridge.androidtbloader.util.Util;
 import org.literacybridge.core.fs.OperationLog;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -113,12 +114,10 @@ public class MainFragment extends Fragment {
         ContentManager mContentManager = mApplicationContext.getContentManager();
         Intent intent = getActivity().getIntent();
         mUser = intent.getStringExtra("user");
-        final OperationLog.Operation opLogContentList = OperationLog.startOperation("Main.RefreshContentList");
         mContentManager.refreshContentList(new ContentManager.ContentManagerListener() {
             @Override
             public void contentListChanged() {
                 mHaveContentList = true;
-                opLogContentList.end();
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -128,17 +127,14 @@ public class MainFragment extends Fragment {
             }
         });
 
-        final OperationLog.Operation opLogLocationList = OperationLog.startOperation("Main.RefreshCommunityLocations");
         KnownLocations.refreshCommunityLocations(new Config.Listener() {
             @Override
             public void onSuccess() {
-                opLogLocationList.end();
                 Log.d(TAG, "Got location config");
             }
 
             @Override
             public void onError() {
-                opLogLocationList.put("noLocations", Boolean.TRUE).end();
                 Log.d(TAG, "No location config");
             }
         });
@@ -335,6 +331,7 @@ public class MainFragment extends Fragment {
      * Get the Cognito user details (username, greeting, email address).
      */
     private void getUserDetails() {
+        final OperationLog.Operation opLog = OperationLog.startOperation("GetUserDetails");
 
         GetDetailsHandler detailsHandler = new GetDetailsHandler() {
             @Override
@@ -343,6 +340,7 @@ public class MainFragment extends Fragment {
                 // Store details in the AppHandler
                 UserHelper.setUserDetails(cognitoUserDetails);
                 mUserDetails = cognitoUserDetails.getAttributes().getAttributes();
+                opLog.finish(mUserDetails);
                 final SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(
                         mApplicationContext);
                 SharedPreferences.Editor prefsEditor = userPrefs.edit();
@@ -368,6 +366,7 @@ public class MainFragment extends Fragment {
             public void onFailure(Exception exception) {
                 // Probably a network issue.
                 awaitingUserDetails = false;
+                opLog.put("failed", true).finish();
                 if (!awaitingUserConfig) {
                     closeWaitDialog();
                 }
@@ -384,7 +383,7 @@ public class MainFragment extends Fragment {
      * config is up to date w.r.t. the server, failing that, falls back to a cached config.
      */
     private void getUserConfig() {
-        final OperationLog.Operation opLog = OperationLog.startOperation("getUserConfig");
+        final OperationLog.Operation opLog = OperationLog.startOperation("GetUserConfig");
         final Config config = TBLoaderAppContext.getInstance().getConfig();
         final String username = UserHelper.getUsername();
 
@@ -394,9 +393,14 @@ public class MainFragment extends Fragment {
                 // Excellent! Continue.
                 mHaveConfig = true;
                 awaitingUserConfig = false;
-                opLog.put("username", config.getUsername())
-                        .put("cachedusername", (username==null))
-                        .end();
+                Map<String,String> prefsMap = new HashMap<>();
+                Map<String,?> allPrefs = PreferenceManager.getDefaultSharedPreferences(
+                        mApplicationContext).getAll();
+                for (Map.Entry<String,?>entry : allPrefs.entrySet()) {
+                    String v = entry.getValue()!=null?entry.getValue().toString():"(null)";
+                    prefsMap.put(entry.getKey(), v);
+                }
+                opLog.finish(prefsMap);
                 if (!awaitingUserDetails) {
                     closeWaitDialog();
                 }
@@ -411,7 +415,7 @@ public class MainFragment extends Fragment {
             @Override
             public void onError() {
                 // This is a fatal error.
-                opLog.put("failed", true).end();
+                opLog.put("failed", true).finish();
                 showDialogMessage(CANT_LAUNCH_TITLE, configErrorMessage(Errors.NoConfig), true);
             }
         };

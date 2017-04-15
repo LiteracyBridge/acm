@@ -24,11 +24,11 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Thread.sleep;
 import static org.literacybridge.core.fs.TbFile.Flags.append;
 import static org.literacybridge.core.fs.TbFile.Flags.contentRecursive;
 import static org.literacybridge.core.fs.TbFile.Flags.nil;
@@ -351,7 +351,7 @@ public class TBLoaderCore {
         final String VERSION_TBDATA = "v03";
         BufferedWriter bw;
 
-        SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy'y'MM'm'dd'd'");
+        SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy'y'MM'm'dd'd'", Locale.US);
         String strDate = sdfDate.format(new Date());
         String filename = String.format("tbData-%s-%s-%s.csv",
                                         VERSION_TBDATA,
@@ -371,135 +371,130 @@ public class TBLoaderCore {
             boolean isNewFile = !logFile.exists();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             bw = new BufferedWriter(new OutputStreamWriter(baos));
-            if (bw != null) {
-                if (isNewFile) {
-                    bw.write("PROJECT,UPDATE_DATE_TIME,OUT_SYNCH_DIR,LOCATION,ACTION,DURATION_SEC,");
-                    bw.write("OUT-SN,OUT-DEPLOYMENT,OUT-IMAGE,OUT-FW-REV,OUT-COMMUNITY,OUT-ROTATION-DATE,");
-                    bw.write("IN-SN,IN-DEPLOYMENT,IN-IMAGE,IN-FW-REV,IN-COMMUNITY,IN-LAST-UPDATED,IN-SYNCH-DIR,IN-DISK-LABEL,CHKDSK CORRUPTION?,");
-                    bw.write("FLASH-SN,FLASH-REFLASHES,");
-                    bw.write("FLASH-DEPLOYMENT,FLASH-IMAGE,FLASH-COMMUNITY,FLASH-LAST-UPDATED,FLASH-CUM-DAYS,FLASH-CORRUPTION-DAY,FLASH-VOLT,FLASH-POWERUPS,FLASH-PERIODS,FLASH-ROTATIONS,");
-                    bw.write("FLASH-MSGS,FLASH-MINUTES,FLASH-STARTS,FLASH-PARTIAL,FLASH-HALF,FLASH-MOST,FLASH-ALL,FLASH-APPLIED,FLASH-USELESS");
-                    for (int i = 0; i < 5; i++) {
-                        bw.write(",FLASH-ROTATION,FLASH-MINUTES-R" + i + ",FLASH-PERIOD-R" + i
-                                        + ",FLASH-HRS-POST-UPDATE-R" + i + ",FLASH-VOLT-R" + i);
-                    }
-                    bw.write("\n");
+            if (isNewFile) {
+                bw.write("PROJECT,UPDATE_DATE_TIME,OUT_SYNCH_DIR,LOCATION,ACTION,DURATION_SEC,");
+                bw.write("OUT-SN,OUT-DEPLOYMENT,OUT-IMAGE,OUT-FW-REV,OUT-COMMUNITY,OUT-ROTATION-DATE,");
+                bw.write("IN-SN,IN-DEPLOYMENT,IN-IMAGE,IN-FW-REV,IN-COMMUNITY,IN-LAST-UPDATED,IN-SYNCH-DIR,IN-DISK-LABEL,CHKDSK CORRUPTION?,");
+                bw.write("FLASH-SN,FLASH-REFLASHES,");
+                bw.write("FLASH-DEPLOYMENT,FLASH-IMAGE,FLASH-COMMUNITY,FLASH-LAST-UPDATED,FLASH-CUM-DAYS,FLASH-CORRUPTION-DAY,FLASH-VOLT,FLASH-POWERUPS,FLASH-PERIODS,FLASH-ROTATIONS,");
+                bw.write("FLASH-MSGS,FLASH-MINUTES,FLASH-STARTS,FLASH-PARTIAL,FLASH-HALF,FLASH-MOST,FLASH-ALL,FLASH-APPLIED,FLASH-USELESS");
+                for (int i = 0; i < 5; i++) {
+                    bw.write(",FLASH-ROTATION,FLASH-MINUTES-R" + i + ",FLASH-PERIOD-R" + i
+                                    + ",FLASH-HRS-POST-UPDATE-R" + i + ",FLASH-VOLT-R" + i);
                 }
-                bw.write(mTtbLoaderConfig.getProject().toUpperCase() + ",");
-                bw.write(mUpdateTimestamp.toUpperCase() + ",");
-                bw.write(mUpdateTimestamp.toUpperCase() + "-" + mTtbLoaderConfig.getTbLoaderId()
-                        .toUpperCase() + ",");
-                bw.write(location.toUpperCase() + ",");
-                bw.write(action + ",");
-                bw.write(Integer.toString(durationSeconds) + ",");
-                bw.write(mTbDeviceInfo.getSerialNumber().toUpperCase() + ",");
-                bw.write(newDeployment.getDeploymentName().toUpperCase() + ",");
-                bw.write(newDeployment.getPackageName().toUpperCase() + ",");
-                bw.write(newDeployment.getFirmwareRevision() + ",");
-                bw.write(newDeployment.getCommunity().toUpperCase() + ",");
-                bw.write(newDeployment.getUpdateTimestamp() + ",");
-                bw.write(oldDeployment.getSerialNumber().toUpperCase() + ",");
-                bw.write(oldDeployment.getDeploymentName().toUpperCase() + ",");
-                bw.write(oldDeployment.getPackageName().toUpperCase() + ",");
-                bw.write(oldDeployment.getFirmwareRevision() + ",");
-                bw.write(oldDeployment.getCommunity().toUpperCase() + ",");
-                bw.write(oldDeployment.getUpdateTimestamp() + ",");
-                String lastSynchDir = oldDeployment.getUpdateDirectory();
-                bw.write((lastSynchDir != null ? lastSynchDir.toUpperCase() : "") + ",");
-                bw.write(mTbDeviceInfo.getLabel() + ",");
-                bw.write(mTbDeviceInfo.isCorrupted() + ",");
+                bw.write("\n");
+            }
+            bw.write(mTtbLoaderConfig.getProject().toUpperCase() + ",");
+            bw.write(mUpdateTimestamp.toUpperCase() + ",");
+            bw.write(mUpdateTimestamp.toUpperCase() + "-" + mTtbLoaderConfig.getTbLoaderId()
+                    .toUpperCase() + ",");
+            bw.write(location.toUpperCase() + ",");
+            bw.write(action + ",");
+            bw.write(Integer.toString(durationSeconds) + ",");
+            bw.write(mTbDeviceInfo.getSerialNumber().toUpperCase() + ",");
+            bw.write(newDeployment.getDeploymentName().toUpperCase() + ",");
+            bw.write(newDeployment.getPackageName().toUpperCase() + ",");
+            bw.write(newDeployment.getFirmwareRevision() + ",");
+            bw.write(newDeployment.getCommunity().toUpperCase() + ",");
+            bw.write(newDeployment.getUpdateTimestamp() + ",");
+            bw.write(oldDeployment.getSerialNumber().toUpperCase() + ",");
+            bw.write(oldDeployment.getDeploymentName().toUpperCase() + ",");
+            bw.write(oldDeployment.getPackageName().toUpperCase() + ",");
+            bw.write(oldDeployment.getFirmwareRevision() + ",");
+            bw.write(oldDeployment.getCommunity().toUpperCase() + ",");
+            bw.write(oldDeployment.getUpdateTimestamp() + ",");
+            String lastSynchDir = oldDeployment.getUpdateDirectory();
+            bw.write((lastSynchDir != null ? lastSynchDir.toUpperCase() : "") + ",");
+            bw.write(mTbDeviceInfo.getLabel() + ",");
+            bw.write(mTbDeviceInfo.isCorrupted() + ",");
 
-                opLog.put("project", mTtbLoaderConfig.getProject().toUpperCase())
-                    //.put("update_date_time", mUpdateTimestamp.toUpperCase())
-                    .put("out_synchdir", mUpdateTimestamp.toUpperCase() + "-" + mTtbLoaderConfig.getTbLoaderId()
-                            .toUpperCase())
-                    .put("location", location.toUpperCase())
-                    .put("action", action)
-                    //.put("duration", Integer.toString(durationSeconds))
-                    .put("out_sn", mTbDeviceInfo.getSerialNumber().toUpperCase())
-                    .put("out_deployment", newDeployment.getDeploymentName().toUpperCase())
-                    .put("out_package", newDeployment.getPackageName().toUpperCase())
-                    .put("out_firmware", newDeployment.getFirmwareRevision())
-                    .put("out_community", newDeployment.getCommunity().toUpperCase())
-                    .put("out_rotation", newDeployment.getUpdateTimestamp())
-                    .put("in_sn", oldDeployment.getSerialNumber().toUpperCase())
-                    .put("in_deployment", oldDeployment.getDeploymentName().toUpperCase())
-                    .put("in_package", oldDeployment.getPackageName().toUpperCase())
-                    .put("in_firmware", oldDeployment.getFirmwareRevision())
-                    .put("in_community", oldDeployment.getCommunity().toUpperCase())
-                    .put("in_update_timestamp", oldDeployment.getUpdateTimestamp())
-                    .put("in_synchdir", (lastSynchDir != null ? lastSynchDir.toUpperCase() : ""))
-                    .put("in_disk_label", mTbDeviceInfo.getLabel())
-                    .put("disk_corrupted", mTbDeviceInfo.isCorrupted());
+            opLog.put("project", mTtbLoaderConfig.getProject().toUpperCase())
+                //.put("update_date_time", mUpdateTimestamp.toUpperCase())
+                .put("out_synchdir", mUpdateTimestamp.toUpperCase() + "-" + mTtbLoaderConfig.getTbLoaderId()
+                        .toUpperCase())
+                .put("location", location.toUpperCase())
+                .put("action", action)
+                //.put("duration", Integer.toString(durationSeconds))
+                .put("out_sn", mTbDeviceInfo.getSerialNumber().toUpperCase())
+                .put("out_deployment", newDeployment.getDeploymentName().toUpperCase())
+                .put("out_package", newDeployment.getPackageName().toUpperCase())
+                .put("out_firmware", newDeployment.getFirmwareRevision())
+                .put("out_community", newDeployment.getCommunity().toUpperCase())
+                .put("out_rotation", newDeployment.getUpdateTimestamp())
+                .put("in_sn", oldDeployment.getSerialNumber().toUpperCase())
+                .put("in_deployment", oldDeployment.getDeploymentName().toUpperCase())
+                .put("in_package", oldDeployment.getPackageName().toUpperCase())
+                .put("in_firmware", oldDeployment.getFirmwareRevision())
+                .put("in_community", oldDeployment.getCommunity().toUpperCase())
+                .put("in_update_timestamp", oldDeployment.getUpdateTimestamp())
+                .put("in_synchdir", (lastSynchDir != null ? lastSynchDir.toUpperCase() : ""))
+                .put("in_disk_label", mTbDeviceInfo.getLabel())
+                .put("disk_corrupted", mTbDeviceInfo.isCorrupted());
 
-                
-                if (mTtbFlashData != null) {
-                    bw.write(mTtbFlashData.getSerialNumber().toUpperCase() + ",");
-                    bw.write(mTtbFlashData.getCountReflashes() + ",");
-                    bw.write(mTtbFlashData.getDeploymentNumber().toUpperCase() + ",");
-                    bw.write(mTtbFlashData.getImageName().toUpperCase() + ",");
-                    bw.write(mTtbFlashData.getLocation().toUpperCase() + ",");
-                    bw.write(mTtbFlashData.getUpdateYear() + "/" + mTtbFlashData.getUpdateMonth() + "/"
-                            + mTtbFlashData.getUpdateDate() + ",");
-                    bw.write(mTtbFlashData.getCumulativeDays() + ",");
-                    bw.write(mTtbFlashData.getCorruptionDay() + ",");
-                    bw.write(mTtbFlashData.getLastInitVoltage() + ",");
-                    bw.write(mTtbFlashData.getPowerups() + ",");
-                    bw.write(mTtbFlashData.getPeriods() + ",");
-                    bw.write(mTtbFlashData.getProfileTotalRotations() + ",");
-                    bw.write(mTtbFlashData.getTotalMessages() + ",");
-                    int totalSecondsPlayed = 0, countStarted = 0, countQuarter = 0, countHalf = 0, countThreequarters = 0, countCompleted = 0, countApplied = 0, countUseless = 0;
-                    for (int m = 0; m < mTtbFlashData.getTotalMessages(); m++) {
-                        for (int r = 0; r < (mTtbFlashData.getProfileTotalRotations() < 5 ?
-                                             mTtbFlashData.getProfileTotalRotations() :
-                                             5); r++) {
-                            totalSecondsPlayed += mTtbFlashData.getStats()[m][r].getTotalSecondsPlayed();
-                            countStarted += mTtbFlashData.getStats()[m][r].getCountStarted();
-                            countQuarter += mTtbFlashData.getStats()[m][r].getCountQuarter();
-                            countHalf += mTtbFlashData.getStats()[m][r].getCountHalf();
-                            countThreequarters += mTtbFlashData.getStats()[m][r].getCountThreequarters();
-                            countCompleted += mTtbFlashData.getStats()[m][r].getCountCompleted();
-                            countApplied += mTtbFlashData.getStats()[m][r].getCountApplied();
-                            countUseless += mTtbFlashData.getStats()[m][r].getCountUseless();
-                        }
-                    }
-                    bw.write(totalSecondsPlayed / 60 + ",");
-                    bw.write(countStarted + ",");
-                    bw.write(countQuarter + ",");
-                    bw.write(countHalf + ",");
-                    bw.write(countThreequarters + ",");
-                    bw.write(countCompleted + ",");
-                    bw.write(countApplied + ",");
-                    bw.write(String.valueOf(countUseless));
+            if (mTtbFlashData != null) {
+                bw.write(mTtbFlashData.getSerialNumber().toUpperCase() + ",");
+                bw.write(mTtbFlashData.getCountReflashes() + ",");
+                bw.write(mTtbFlashData.getDeploymentNumber().toUpperCase() + ",");
+                bw.write(mTtbFlashData.getImageName().toUpperCase() + ",");
+                bw.write(mTtbFlashData.getLocation().toUpperCase() + ",");
+                bw.write(mTtbFlashData.getUpdateYear() + "/" + mTtbFlashData.getUpdateMonth() + "/"
+                        + mTtbFlashData.getUpdateDate() + ",");
+                bw.write(mTtbFlashData.getCumulativeDays() + ",");
+                bw.write(mTtbFlashData.getCorruptionDay() + ",");
+                bw.write(mTtbFlashData.getLastInitVoltage() + ",");
+                bw.write(mTtbFlashData.getPowerups() + ",");
+                bw.write(mTtbFlashData.getPeriods() + ",");
+                bw.write(mTtbFlashData.getProfileTotalRotations() + ",");
+                bw.write(mTtbFlashData.getTotalMessages() + ",");
+                int totalSecondsPlayed = 0, countStarted = 0, countQuarter = 0, countHalf = 0, countThreequarters = 0, countCompleted = 0, countApplied = 0, countUseless = 0;
+                for (int m = 0; m < mTtbFlashData.getTotalMessages(); m++) {
                     for (int r = 0; r < (mTtbFlashData.getProfileTotalRotations() < 5 ?
                                          mTtbFlashData.getProfileTotalRotations() :
                                          5); r++) {
-                        bw.write(
-                                "," + r + "," + mTtbFlashData.totalPlayedSecondsPerRotation(r) / 60
-                                        + "," + mTtbFlashData.getRotations()[r].getStartingPeriod() + ",");
-                        bw.write(mTtbFlashData.getRotations()[r].getHoursAfterLastUpdate() + ","
-                                + mTtbFlashData.getRotations()[r].getInitVoltage());
+                        totalSecondsPlayed += mTtbFlashData.getStats()[m][r].getTotalSecondsPlayed();
+                        countStarted += mTtbFlashData.getStats()[m][r].getCountStarted();
+                        countQuarter += mTtbFlashData.getStats()[m][r].getCountQuarter();
+                        countHalf += mTtbFlashData.getStats()[m][r].getCountHalf();
+                        countThreequarters += mTtbFlashData.getStats()[m][r].getCountThreequarters();
+                        countCompleted += mTtbFlashData.getStats()[m][r].getCountCompleted();
+                        countApplied += mTtbFlashData.getStats()[m][r].getCountApplied();
+                        countUseless += mTtbFlashData.getStats()[m][r].getCountUseless();
                     }
-
-                    // TODO: Consider logging the stats to opLog.
                 }
-                bw.write("\n");
-                bw.flush();
-                bw.close();
-
-                InputStream content = new ByteArrayInputStream(baos.toByteArray());
-                TbFile.Flags flag = isNewFile ? nil : append;
-                opLog.put("append", !isNewFile);
-
-                logFile.createNew(content, flag);
-                content.close();
-                baos.close();
+                bw.write(totalSecondsPlayed / 60 + ",");
+                bw.write(countStarted + ",");
+                bw.write(countQuarter + ",");
+                bw.write(countHalf + ",");
+                bw.write(countThreequarters + ",");
+                bw.write(countCompleted + ",");
+                bw.write(countApplied + ",");
+                bw.write(String.valueOf(countUseless));
+                for (int r = 0; r < (mTtbFlashData.getProfileTotalRotations() < 5 ?
+                                     mTtbFlashData.getProfileTotalRotations() :
+                                     5); r++) {
+                    bw.write(
+                            "," + r + "," + mTtbFlashData.totalPlayedSecondsPerRotation(r) / 60
+                                    + "," + mTtbFlashData.getRotations()[r].getStartingPeriod() + ",");
+                    bw.write(mTtbFlashData.getRotations()[r].getHoursAfterLastUpdate() + ","
+                            + mTtbFlashData.getRotations()[r].getInitVoltage());
+                }
             }
+            bw.write("\n");
+            bw.flush();
+            bw.close();
+
+            InputStream content = new ByteArrayInputStream(baos.toByteArray());
+            TbFile.Flags flag = isNewFile ? nil : append;
+            opLog.put("append", !isNewFile);
+
+            logFile.createNew(content, flag);
+            content.close();
+            baos.close();
         } catch (IOException e) {
             opLog.put("exception", e);
             e.printStackTrace();
         }
-        opLog.end();
+        opLog.finish();
     }
 
     /**
@@ -652,7 +647,7 @@ public class TBLoaderCore {
         mProgressListenerListener.detail("");
         mProgressListenerListener.log(completionMessage);
         LOG.log(Level.INFO, completionMessage);
-        mStepsLog.end();
+        mStepsLog.finish();
         return result;
     }
 
@@ -661,7 +656,7 @@ public class TBLoaderCore {
      * just pokes around the file system.
      *
      * @return True if the Talking Book storage looks good.
-     * @throws IOException
+     * @throws IOException if chkdsk throws an IOException
      */
     private boolean isTalkingBookStorageGood() throws IOException {
         boolean goodCard;
@@ -735,13 +730,13 @@ public class TBLoaderCore {
      */
     private void listDirectoryEntry(TbFile entry, StringBuilder buffer) {
         Date date = new Date(entry.lastModified());
-        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy  hh:mm aa");
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy  hh:mm aa", Locale.US);
         String formattedDate = sdf.format(date);
         String dirOrSize;
         if (entry.isDirectory()) {
             dirOrSize = "    <DIR>          ";
         } else {
-            dirOrSize = String.format("   %,15d ", entry.length());
+            dirOrSize = String.format(Locale.US, "   %,15d ", entry.length());
         }
         buffer.append(formattedDate).append(dirOrSize).append(entry.getName()).append("\n");
     }
@@ -773,7 +768,7 @@ public class TBLoaderCore {
             listDirectoryEntry(child, buffer);
         }
         // Print the summary line
-        buffer.append(String.format("%11c%5d File(s)%,15d bytes\n\n",
+        buffer.append(String.format(Locale.US, "%11c%5d File(s)%,15d bytes\n\n",
                 ' ',
                 myCount.files,
                 myCount.size));
@@ -793,14 +788,14 @@ public class TBLoaderCore {
         DirectoryCount counts = listDirectory(mTalkingBookRoot, builder);
 
         // Add the summary.
-        builder.append(String.format("%5cTotal Files Listed:\n%1$10c%6d File(s)%,15d bytes\n",
+        builder.append(String.format(Locale.US, "%5cTotal Files Listed:\n%1$10c%6d File(s)%,15d bytes\n",
                 ' ',
                 counts.files,
                 counts.size));
-        builder.append(String.format("%10c%6d Dir(s)", ' ', counts.dirs));
+        builder.append(String.format(Locale.US, "%10c%6d Dir(s)", ' ', counts.dirs));
         long free = mTalkingBookRoot.getFreeSpace();
         if (free > 0) {
-            builder.append(String.format(" %,15d bytes free", free));
+            builder.append(String.format(Locale.US, " %,15d bytes free", free));
         }
         builder.append("\n");
         return builder.toString();
@@ -809,7 +804,7 @@ public class TBLoaderCore {
     /**
      * Lists all the files on the Talking Book, and writes the listing to a file named sysdata.txt.
      *
-     * @throws IOException
+     * @throws IOException if we can't create the listing file.
      */
     private void listDeviceFiles() throws IOException {
         startStep(listDeviceFiles);
@@ -828,7 +823,7 @@ public class TBLoaderCore {
      * The main purpose, sadly, is to get the Android implementation of a USB host to write out
      * the contents of the files.
      *
-     * @throws IOException
+     * @throws IOException if we can't create the listing file.
      */
     private void listDeviceFilesPostUpdate() throws IOException {
         startStep(listDeviceFiles2);
@@ -843,7 +838,7 @@ public class TBLoaderCore {
     /**
      * Copies a subset of files from the Talking Book. For logs, and for troubleshooting purposes.
      *
-     * @throws IOException
+     * @throws IOException if we can't copy one of the files.
      */
     private void gatherDeviceFiles() throws IOException {// And Copy from tbRoot to tempRoot, with filter.
         startStep(gatherDeviceFiles);
@@ -867,14 +862,16 @@ public class TBLoaderCore {
             @Override
             public boolean accept(TbFile file) {
                 String name = file.getName().toLowerCase();
+                // Black-listed name? Skip them.
                 if (excludedNames.contains(name)) {
                     return false;
                 }
+                // Hiden file? Skip them.
                 if (name.charAt(0) == '.') {
                     return false;
                 }
-                if (name.endsWith(".img") ||
-                        name.endsWith(".old")) {
+                // Image or backup file? Skip them.
+                if (name.endsWith(".img") || name.endsWith(".old")) {
                     return false;
                 }
                 return true;
@@ -888,8 +885,9 @@ public class TBLoaderCore {
     /**
      * Copy user recordings from the Talking Book to the collected data directory.
      *
-     * @param projectCollectedData
-     * @throws IOException
+     * @param projectCollectedData The recordings will be copied to a subdirectory "UserRecordings"
+     *                             of this directory.
+     * @throws IOException if a recording can't be copied.
      */
     private void gatherUserRecordings(TbFile projectCollectedData) throws IOException {
         startStep(gatherUserRecordings);
@@ -1002,8 +1000,8 @@ public class TBLoaderCore {
     /**
      * Zips the statistics, logs, and other files, and copies them to the collected data directory.
      *
-     * @param projectCollectedData
-     * @throws IOException
+     * @param projectCollectedData The files will be zipped into a file in this directory.
+     * @throws IOException If the .zip can't be created.
      */
     private void zipAndCopyFiles(TbFile projectCollectedData) throws IOException {
         startStep(copyStatsAndFiles);
@@ -1033,7 +1031,7 @@ public class TBLoaderCore {
      *
      * @return A Result if the TB needs reformatting, but can't be (ie, still needs reformatting.)
      * Returns null if format succeeded or not needed.
-     * @throws IOException
+     * @throws IOException if the format or relabel fails.
      */
     private Result reformatRelabel() throws IOException {
         boolean goodCard;
@@ -1073,7 +1071,7 @@ public class TBLoaderCore {
      * <p>
      * Derived from the "update.txt" file.
      *
-     * @throws IOException
+     * @throws IOException if a file can't be deleted.
      */
     private void clearSystemFiles() throws IOException {
         startStep(clearSystem);
@@ -1212,7 +1210,7 @@ public class TBLoaderCore {
      * <p>
      * Derived from the "community.txt" file.
      *
-     * @throws IOException
+     * @throws IOException if a file can't be copied.
      */
     private void updateContent() throws IOException {
         startStep(updateContent);
@@ -1231,7 +1229,7 @@ public class TBLoaderCore {
      * <p>
      * Derived from the "community.txt" file.
      *
-     * @throws IOException
+     * @throws IOException if a file can't be copied.
      */
     private void updateCommunity() throws IOException {
         startStep(updateCommunity);
@@ -1341,7 +1339,7 @@ public class TBLoaderCore {
         builder.append(": ");
         if (mCurrentStep.hasFiles) {
             mStepsLog.put(mCurrentStep.toString() + ".files", mStepFileCount);
-            builder.append(String.format("%d file(s), ", mStepFileCount));
+            builder.append(String.format(Locale.US, "%d file(s), ", mStepFileCount));
         }
         builder.append(getStepTime());
 
@@ -1356,15 +1354,15 @@ public class TBLoaderCore {
         long millis = System.currentTimeMillis() - mStepStartTime;
         if (millis < 1000) {
             // Less than one second
-            return String.format("%d ms", millis);
+            return String.format(Locale.US, "%d ms", millis);
         } else if (millis < 60000) {
             // Less than one minute
-            String time = String.format("%f", millis / 1000.0);
+            String time = String.format(Locale.US, "%f", millis / 1000.0);
             return time.substring(0, 4) + " s";
         } else {
             long minutes = millis / 60000;
             long seconds = (millis % 60000) / 1000;
-            return String.format("%d:%02d", minutes, seconds);
+            return String.format(Locale.US, "%d:%02d", minutes, seconds);
         }
     }
 

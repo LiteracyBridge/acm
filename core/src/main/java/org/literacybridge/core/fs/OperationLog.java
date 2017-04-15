@@ -1,6 +1,5 @@
 package org.literacybridge.core.fs;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -45,17 +44,12 @@ public class OperationLog {
          * @param info A Map<String, String> of additional key:value pairs. Any keys here will overwrite
          *             any keys set through 'put()'.
          */
-        void end(Map<String,String> info);
+        void finish(Map<String,String> info);
 
         /**
-         * Ends the timer.
+         * Ends any timer, and saves the event.
          */
-        void end();
-
-        /**
-         * Synonym for end
-         */
-        void save();
+        void finish();
     }
 
     /**
@@ -127,21 +121,17 @@ public class OperationLog {
         }
 
         @Override
-        public void end(Map<String, String> info) {
+        public void finish(Map<String, String> info) {
             this.info.putAll(info);
-            end();
+            finish();
         }
         @Override
-        public void end() {
+        public void finish() {
             // Only record once.
             if (name != null) {
                 OperationLog.logEvent(name, info);
                 name = null;
             }
-        }
-        @Override
-        public void save() {
-            end();
         }
     }
     private static class TimedOperationEvent extends OperationEvent {
@@ -164,12 +154,12 @@ public class OperationLog {
             return this;
         }
         @Override
-        public void end() {
+        public void finish() {
             // Only record once.
             if (startTime > 0) {
                 this.put(ELAPSED, Long.toString(System.currentTimeMillis() - startTime));
                 startTime = -1;
-                super.end();
+                super.finish();
             }
         }
     }

@@ -18,8 +18,12 @@ package org.literacybridge.androidtbloader.util;
 import com.amazonaws.regions.Regions;
 import org.literacybridge.core.fs.OperationLog;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
+import java.util.TimeZone;
 
 public class Constants {
 
@@ -38,4 +42,10 @@ public class Constants {
     public static final String COLLECTED_DATA_BUCKET_NAME = "acm-stats";
 
     public static final String LOCATION_FILE_EXTENSION = ".csv";
+
+    public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+    public static final DateFormat ISO8601 = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
+    static {
+        ISO8601.setTimeZone(UTC);
+    }
 }

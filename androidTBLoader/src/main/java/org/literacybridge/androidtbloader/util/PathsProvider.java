@@ -94,5 +94,13 @@ public class PathsProvider {
         return sTbLoaderAppContext.getExternalFilesDir("log");
     }
 
+    /**
+     * Gets a File object that represents a directory into which srn files should be placed. The
+     * expectation is that they will eventually be moved to the "upload" directory.
+     * @return the staging directory's File.
+     */
+    public static File getSrnDirectory() {
+        return sTbLoaderAppContext.getExternalFilesDir("srn");
+    }
 
 }

@@ -105,7 +105,7 @@
     <string name="checkin_n_projects_format">%d projects</string>
     <string name="checkin_tap_to_choose_project_label">Tap to choose project.</string>
     <string name="main_no_stats_files_to_upload">No statistics files to upload.</string>
-    <string name="main_n_stats_files_to_upload">%d statastics files to upload.</string>
+    <string name="main_n_stats_files_to_upload">%d statistics file(s) to upload.</string>
     <string name="main_n_bytes_to_upload">%s left to upload.</string>
     <string name="do_not_disconnect">Do not disconnect the Talking Book!</string>
     <string name="establishing_connection">Establishing connection to Talking Book [%d]...</string>

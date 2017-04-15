@@ -30,12 +30,13 @@ import org.literacybridge.core.fs.OperationLog;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 public class ManageContentFragment extends Fragment {
     private static final String TAG = ManageContentFragment.class.getSimpleName();
 
     @SuppressLint("SimpleDateFormat")
-    private static final SimpleDateFormat EXPIRATION_DATE_FORMAT = new SimpleDateFormat("dd.MM.yyyy");
+    private static final SimpleDateFormat EXPIRATION_DATE_FORMAT = new SimpleDateFormat("dd.MM.yyyy", Locale.US);
 
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private RecyclerView mContentInfoRecyclerView;

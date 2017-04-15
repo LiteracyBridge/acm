@@ -106,7 +106,7 @@ public class LocationProvider {
 //        mLocationManager.requestLocationUpdates(GPS_PROVIDER, LOCATION_REFRESH_TIME,
 //                LOCATION_REFRESH_DISTANCE, mLocationListener);
 
-        final OperationLog.Operation op = OperationLog.startOperation("getlocation");
+        final OperationLog.Operation op = OperationLog.startOperation("GetLocation");
         requestSingleUpdate(TBLoaderAppContext.getInstance(),
                 new LocationCallback() {
                     @Override
@@ -116,7 +116,7 @@ public class LocationProvider {
                         op.put("provider", provider);
                         op.put("latitude", location.getLatitude());
                         op.put("longitude", location.getLongitude());
-                        op.end();
+                        op.finish();
                         locationListener.onLocationChanged(location, provider, nanos);
                     }
                 });

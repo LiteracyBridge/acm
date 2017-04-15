@@ -7,6 +7,7 @@ import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,7 +21,7 @@ public class TBLoaderUtils {
 
     public static String getDateTime() {
         SimpleDateFormat sdfDate = new SimpleDateFormat(
-                "yyyy'y'MM'm'dd'd'HH'h'mm'm'ss's'");
+                "yyyy'y'MM'm'dd'd'HH'h'mm'm'ss's'", Locale.US);
         String dateTime = sdfDate.format(new Date());
         return dateTime;
     }
