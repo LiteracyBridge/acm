@@ -354,6 +354,8 @@ public class AccessControl {
 
         // Good to go...
         case newDatabase:
+            // Sets the key to "force" to force creation of the new record.
+            setDBKey(DB_KEY_OVERRIDE);
             break;
         case available:
             break;

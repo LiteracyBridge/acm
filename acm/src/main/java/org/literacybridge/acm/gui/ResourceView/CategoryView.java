@@ -316,7 +316,7 @@ public class CategoryView extends ACMContainer implements Observer {
     taskPaneContainer.add(tagsPane);
     taskPaneContainer.add(devicePane);
 
-    categoryScrollPane.setPreferredSize(new Dimension(150, 240));
+    categoryScrollPane.setPreferredSize(new Dimension(150, 300));
     languageScrollPane.setPreferredSize(new Dimension(150, 90));
     deviceScrollPane.setPreferredSize(new Dimension(150, 50));
     tagsScrollPane.setPreferredSize(new Dimension(150, 120));

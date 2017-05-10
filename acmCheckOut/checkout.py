@@ -80,14 +80,12 @@ def lambda_handler(event, context):
 
         # available transactions
         if action == 'revokeCheckOut':
-            return revoke_check_out(event)
+            return revoke_check_out(event, acm)
         if action == 'discard':
-            return discard(event)
+            return discard(event, acm)
         if action == 'statusCheck':
             return status_check(acm)
         if action == 'checkIn':
-            if check_key == 'new':
-                return new_check_in(event, acm)
             return check_in(event, acm)
         if action == 'checkOut':
             return check_out(event, acm)
@@ -105,6 +103,20 @@ def lambda_handler(event, context):
             'error': str(err)
         }
 
+def build_remove_now_out(acm):
+    '''
+    Given an acm record, build a list of "now_out_*" keys into a string like "REMOVE now_out_foo, now_out_bar ".
+    If there are no "now_out_*" items, return an empty string.
+    :param acm: An acm item record. 
+    :return: A string like "REMOVE now_out_user " or "" 
+    '''
+    # A list like now_out_name, now_out_contact, now_out_date, now_out_key, now_out_comment
+    list_to_remove = [key for key in acm.keys() if key.startswith('now_out_')]
+    if len(list_to_remove) == 0:
+        return ''
+    string_to_remove = ', '.join(list_to_remove)
+    return 'REMOVE ' + string_to_remove + ' '
+
 
 def check_in(event, acm):
     '''
@@ -121,6 +133,16 @@ def check_in(event, acm):
                 SUCCESS -- 'ok'
                 FAILURE -- 'denied'
     '''
+    # parameters received from HTTPS POST request
+    check_key = event.get('key')  # key must match check-key assigned at ACM check-out for check-in
+    file_name = event.get('filename')  # tracks number of times ACM has been checked out, format db##.zip (e.g. db12.zip)
+    user_name = event.get('name')  # name of requester
+    contact = event.get('contact')  # phone number of requester
+
+    # If the key is 'new' instead of a pseudo-random number, this is a new db. Different code path.
+    if check_key == 'new':
+        return new_check_in(event, acm)
+
     # early return if ACM does not exist
     if not acm:
         logger(event, 'denied')
@@ -137,14 +159,9 @@ def check_in(event, acm):
             'data': 'denied'
         }
 
-    # parameters received from HTTPS POST request
-    check_key = event.get('key')  # key must match check-key assigned at ACM check-out for check-in
-    file_name = event.get('filename')  # tracks number of times ACM has been checked out, format db##.zip (e.g. db12.zip)
-    user_name = event.get('name')  # name of requester
-    contact = event.get('contact')  # phone number of requester
-
     # passed into AWS update table item function: delete check-out info from entry and update check-in info
-    update_exp = 'REMOVE now_out_name, now_out_contact, now_out_date, now_out_key, now_out_comment \
+
+    update_exp = build_remove_now_out(acm) + '\
                 SET acm_state = :s, last_in_file_name = :f, last_in_name = :n, last_in_contact = :c, last_in_date = :d, \
                 last_in_comment = now_out_comment'
     condition_exp = 'now_out_key = :k and now_out_name = :n'  # only perform check-in if THIS user has THIS check-out
@@ -214,7 +231,7 @@ def new_check_in(event, acm):
     return update_dynamo(event, update_exp, condition_exp, exp_values, json_resp)
 
 
-def discard(event):
+def discard(event, acm):
     '''
     Allows user to delete his/her own ACM check-out entry from the db (i.e. if the check-out key and user-names match)
 
@@ -232,7 +249,7 @@ def discard(event):
     check_key = event.get('key')
 
     # passed to AWS update table item function: delete check-out info and mark ACM as checked-in
-    update_exp = 'REMOVE now_out_name, now_out_contact, now_out_date, now_out_key, now_out_comment SET acm_state = :s'
+    update_exp = build_remove_now_out(acm) + 'SET acm_state = :s'
     condition_exp = 'now_out_key = :k and now_out_name = :n'  # only perform check-in if THIS user has THIS check-out
     exp_values = {
         ':s': CHECKED_IN,
@@ -272,6 +289,7 @@ def check_out(event, acm):
     contact = event.get('contact')  # phone number of requester
     version = event.get('version')  # current ACM version in format: r YY MM DD n (e.g. r1606221)
     comment = event.get('comment')  # to allow for internal comments if later required
+    computer_name = event.get('computername') # computer where checkout is taking place
 
     # Make sure ACM is available to be checked out
     status = status_check(acm)
@@ -282,7 +300,8 @@ def check_out(event, acm):
     new_key = str(randint(0, 10000000))    # generate new check-out key to use when checking ACM back in
 
     update_exp = 'SET acm_state = :s, now_out_name = :n, now_out_contact = :c, now_out_key = :k, \
-                            now_out_version = :v, now_out_comment = :t, now_out_date = :d'
+                            now_out_version = :v, now_out_comment = :t, now_out_date = :d, \
+                            now_out_computername = :m'
     condition_exp = 'attribute_not_exists(now_out_name)'    # check for unexpected check-out entry
     exp_values = {
         ':s': CHECKED_OUT,
@@ -291,7 +310,8 @@ def check_out(event, acm):
         ':k': new_key,
         ':v': version,
         ':t': comment,
-        ':d': START_TIME
+        ':d': START_TIME,
+        ':m': computer_name
     }
 
     # JSON response parameters
@@ -307,7 +327,7 @@ def check_out(event, acm):
     return update_dynamo(event, update_exp, condition_exp, exp_values, json_resp)
 
 
-def revoke_check_out(event):
+def revoke_check_out(event, acm):
     '''
     A successful 'revokeCheckOut' request deletes any ACM check-out entry from the db.
     :param event: dict -- data passed in through POST request
@@ -318,8 +338,7 @@ def revoke_check_out(event):
                 FAILURE -- 'denied'
     '''
 
-    update_exp = 'SET acm_state = :s REMOVE now_out_name, now_out_contact, now_out_date, now_out_key, \
-                            now_out_comment'
+    update_exp = 'SET acm_state = :s ' + build_remove_now_out(acm)
     condition_exp = ':s = :s'  # revoke check-out should always execute
     exp_values = {
         ':s': CHECKED_IN,
@@ -347,21 +366,28 @@ def status_check(acm):
                 FAILURE ACM does not exist  -- 'filename=NULL'
                 FAILURE error occurred      -- 'denied'    ###THIS NEEDS TO BE IMPLEMENTED ON JAVA SIDE
     '''
-    # First time for a new ACM
+    # First time for a new ACM. Note that the filename is the string "NULL". That is most likely a PHP artifact
+    # from the previous implementation of the checkout/checkin code.
     if not acm:
         return {
             'response': 'Create new ACM',
             'data': 'filename=NULL'    # filename:tracks number of times acm has been checked-out
         }
+
     if acm.get('acm_state') == 'CHECKED_OUT':
         return {
             'response': 'Already checked out',
             'data': {'1': 'possessor=' + str(acm.get('now_out_name')),
-                     '2': 'filename=' + str(acm.get('last_in_file_name'))}
+                     '2': 'filename=' + str(acm.get('last_in_file_name')),
+                     '3': 'contact=' + str(acm.get('now_out_contact')),
+                     '4': 'date=' + str(acm.get('now_out_date'))}
         }
     return {
         'response': 'ACM available',
-        'data': 'filename='+str(acm.get('last_in_file_name'))
+        'data': {'1': 'filename='+str(acm.get('last_in_file_name')),
+                 '2': 'updater=' + str(acm.get('last_in_name')),
+                 '3': 'contact=' + str(acm.get('last_in_contact')),
+                 '4': 'date=' + str(acm.get('last_in_date'))}
     }
 
 
