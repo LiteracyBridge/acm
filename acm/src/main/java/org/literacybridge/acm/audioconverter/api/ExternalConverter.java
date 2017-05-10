@@ -59,16 +59,17 @@ public class ExternalConverter {
       result = AnyToA18Conv.convertFile(sourceFile, targetDir, tmpDir,
           overwrite, parameters);
     }
-    if (targetFormat.getFileEnding().equals("WAV")
-        || targetFormat.getFileEnding().equals("MP3")) {
+    if (targetFormat.getFileEnding().equals("WAV") || targetFormat.getFileEnding().equals("MP3")) {
       if (getFileExtension(sourceFile).equalsIgnoreCase(".a18")) {
         parameters = getParameters(targetFormat);
-        result = A18ToWAVConv.convertFile(sourceFile, targetDir, tmpDir,
-            overwrite, parameters);
+        if (targetFormat.getFileEnding().equals("WAV")) {
+          result = A18ToWAVConv.convertFile(sourceFile, targetDir, tmpDir, overwrite, parameters);
+        } else {
+          result = A18ToMP3Conv.convertFile(sourceFile, targetDir, tmpDir, overwrite, parameters);
+        }
       } else {
         parameters = getParameters(targetFormat);
-        result = FFMpegConv.convertFile(sourceFile, targetDir, tmpDir,
-            overwrite, parameters, "." + targetFormat.getFileEnding());
+        result = FFMpegConv.convertFile(sourceFile, targetDir, tmpDir, overwrite, parameters, "." + targetFormat.getFileEnding());
       }
     }
     return result;
