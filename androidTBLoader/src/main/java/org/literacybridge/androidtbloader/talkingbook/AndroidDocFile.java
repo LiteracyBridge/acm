@@ -202,11 +202,8 @@ public class AndroidDocFile extends TbFile {
         for (DocumentFile file : files) {
             String name = file.getName();
             if (name == null) {
-                Map<String,String> info = new HashMap<>();
-                String fn = filename != null ? filename : "(null)";
-                info.put("childOf", fn);
-                info.put("siblings", Integer.toString(files.length));
-                OperationLog.logEvent("NullFilenameInListFiles", info);
+                // We used to log these, but there was no useful information. This is
+                // probably the same as the !exists() check in listFiles.
             } else {
                 if (filter == null || filter.accept(this, file.getName())) {
                     fileNames.add(file.getName());

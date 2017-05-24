@@ -7,6 +7,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.StatFs;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
@@ -138,6 +140,15 @@ public class MainFragment extends Fragment {
                 Log.d(TAG, "No location config");
             }
         });
+
+        OperationLog.log("MainFragment.onCreate")
+                .put("externalStorageAvailable",
+                     Util.getBytesString(new StatFs(Environment.getExternalStorageDirectory().getAbsolutePath()).getAvailableBytes()))
+                .put("internalStorageAvailable",
+                     Util.getBytesString(new StatFs(Environment.getDataDirectory().getAbsolutePath()).getAvailableBytes()))
+                .put("tempStorageAvailable",
+                     Util.getBytesString(new StatFs(Environment.getDownloadCacheDirectory().getAbsolutePath()).getAvailableBytes()))
+                .finish();
     }
 
     @Nullable

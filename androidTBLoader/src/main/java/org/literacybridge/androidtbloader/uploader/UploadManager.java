@@ -8,6 +8,7 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferType;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.androidtbloader.util.S3Helper;
@@ -152,10 +153,20 @@ public class UploadManager {
     private void startUpload(final File file) {
         // Build a key from the file's relative position in the upload directory.
         String key = mUploadDirectory.toURI().relativize(file.toURI()).getPath();
+        // If the file is a ".srn" or a ".log", set its type as text/plain
+        ObjectMetadata metadata = new ObjectMetadata();
+        String name = file.getName();
+        int extIx = name.lastIndexOf('.');
+        if (extIx > 0) {
+            name = name.substring(extIx).toLowerCase();
+            if (name.equals(".srn") || name.equals(".log")) {
+                metadata.setContentType("text/plain");
+            }
+        }
 
         mActiveDownloaded = 0;
         final TransferUtility transferUtility = S3Helper.getTransferUtility();
-        TransferObserver observer = transferUtility.upload(COLLECTED_DATA_BUCKET_NAME, key, file);
+        TransferObserver observer = transferUtility.upload(COLLECTED_DATA_BUCKET_NAME, key, file, metadata);
         Log.d(TAG, String.format("Uploading file %s to key %s, id: %s", file.getName(), key, observer.getId()));
 
         observer.setTransferListener(new TransferListener() {

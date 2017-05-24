@@ -31,7 +31,7 @@ public class Util {
     @SuppressLint("DefaultLocale")
     public static String getBytesString(long bytes) {
         String[] quantifiers = new String[] {
-                "KB", "MB", "GB", "TB"
+                "KiB", "MiB", "GiB", "TiB"
         };
         double sizeNum = bytes;
         for (int i = 0;; i++) {
@@ -39,7 +39,7 @@ public class Util {
                 return "Too Much";
             }
             sizeNum /= 1024;
-            if (sizeNum < 512) {
+            if (sizeNum <= 999) {
                 return String.format("%.2f %s", sizeNum, quantifiers[i]);
             }
         }
