@@ -1,13 +1,16 @@
 package org.literacybridge.acm.utils;
 
+import java.io.BufferedReader;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Set;
 
 import com.google.common.base.Predicate;
 
@@ -298,5 +301,25 @@ public class IOUtils {
       if (!parent.exists()) {
           parent.mkdirs();
       }
+    }
+
+    /**
+     * Reads a file, line by line. '#' introduces a comment. comments & whitespace are trimmed.
+     * Places the lines into a set, so this is really good for whitelists, blacklists, etc.
+     * @param lines File of lines
+     * @param set Place lines into this set.
+     * @throws IOException
+     */
+    static void readLines(File lines, Set<String> set) throws IOException {
+        //read file into stream, try-with-resources
+        try (BufferedReader br = new BufferedReader(new FileReader(lines))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                line = line.split("#")[0];
+                line = line.trim();
+                if (line.length() < 1) continue;
+                set.add(line.toLowerCase());
+            }
+        }
     }
 }

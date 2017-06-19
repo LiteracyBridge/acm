@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -38,6 +40,7 @@ public class ACMConfiguration {
     private String title;
     private boolean disableUI = false;
     private boolean forceSandbox = false;
+    private boolean verbose = false; // TODO: some means to set it true.
     private final Properties UsersConfigurationProperties = new Properties();
     private File globalShareDir;
 
@@ -103,7 +106,9 @@ public class ACMConfiguration {
 
         for (DBConfiguration config : discoverDBs()) {
             allDBs.put(config.getSharedACMname(), config);
-            System.out.println("Found DB " + config.getSharedACMname());
+            if (verbose) {
+                System.out.println("Found DB " + config.getSharedACMname());
+            }
         }
 
         if (!UsersConfigurationProperties.containsKey(Constants.USER_NAME)) {
@@ -215,6 +220,17 @@ public class ACMConfiguration {
             // Could not create or copy something. Try to clean up.
             FileUtils.deleteQuietly(newDbDir);
             throw e;
+        }
+
+        // Set new DB to use AWS locking from the beginning.
+        Properties newDbProps = new Properties();
+        File propsFile = newDbConfiguration.getConfigurationPropertiesFile();
+        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(propsFile))) {
+            newDbProps.load(in);
+            newDbProps.setProperty(Constants.USE_AWS_LOCKING, Boolean.TRUE.toString());
+            try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(propsFile))) {
+                newDbProps.store(out, null);
+            }
         }
 
         // Remember the new database, and return it.
@@ -338,6 +354,8 @@ public class ACMConfiguration {
     }
 
     private List<DBConfiguration> discoverDBs() {
+        // Regex to match & extract the number from strings like db123.zip
+        String dbRegex = "^db(\\d+).zip$";
         List<DBConfiguration> dbs = Lists.newLinkedList();
         if (getGlobalShareDir().exists()) {
             File[] dirs = getGlobalShareDir().listFiles(new FileFilter() {
@@ -348,8 +366,12 @@ public class ACMConfiguration {
             });
 
             for (File d : dirs) {
-                if (d.exists() && new File(d, Constants.DB_ACCESS_FILENAME).exists()) {
-                    dbs.add(new DBConfiguration(d.getName()));
+                if (d.exists() && d.isDirectory()) {
+                    File accessList = new File(d, Constants.DB_ACCESS_FILENAME);
+                    String dbFiles[] = d.list((dir, name) -> name.matches(dbRegex));
+                    if (accessList.exists() && dbFiles.length>0) {
+                        dbs.add(new DBConfiguration(d.getName()));
+                    }
                 }
             }
         }

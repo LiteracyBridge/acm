@@ -444,11 +444,6 @@ public class AccessControl {
             }
         }
 
-        if (findNewestModifiedZipFile() == null) {
-            // No zip file at all -- Dropbox problems? Hard error.
-            return AccessStatus.noDbError;
-        }
-
         try {
             boolean dbAvailable = checkOutDB(dbConfiguration.getSharedACMname(), "statusCheck");
             if (!dbAvailable) {
@@ -464,6 +459,10 @@ public class AccessControl {
             return AccessStatus.newDatabase;
         }
 
+        if (findNewestModifiedZipFile() == null) {
+            // No zip file at all -- Dropbox problems? Hard error.
+            return AccessStatus.noDbError;
+        }
         if (!haveLatestDB()) {
             // Out of date .zip file. This can still be successful, in sandbox mode.
             return AccessStatus.outdatedDb;

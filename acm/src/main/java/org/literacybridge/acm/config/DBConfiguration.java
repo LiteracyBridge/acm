@@ -272,7 +272,7 @@ public class DBConfiguration extends Properties {
    * Gets a File containing the configuration properties for this ACM database.
    * @return The File.
    */
-  private File getConfigurationPropertiesFile() {
+  File getConfigurationPropertiesFile() {
     // ~/Dropbox/ACM-DEMO/config.properties
     return new File(getSharedACMDirectory(), Constants.CONFIG_PROPERTIES);
   }
@@ -354,7 +354,7 @@ public class DBConfiguration extends Properties {
     return awsLocking != null && awsLocking.equalsIgnoreCase("TRUE");
   }
 
-  /**
+    /**
    * Parses the language labels from the 'AUDIO_LANGUAGES' String property
    * contained in the config.properties file. The appropriate line in the file
    * has the following format:

@@ -97,9 +97,14 @@ public class AccessControlTest {
         mockOnline();
 
         DBConfiguration dbConfig = getMockDbConfig();
-        AccessControl ac = new AccessControl(dbConfig);
 
-        AccessControl.AccessStatus status = ac.init();
+        AccessControl ac = new AccessControl(dbConfig);
+        AccessControl spy = spy(ac);
+        doReturn(true).when(spy).checkOutDB("ACM-NADA", "statusCheck");
+        // No db*.zip exists; we don't have any database at all.
+        doReturn("db2.zip").when(spy).getCurrentZipFilename();
+
+        AccessControl.AccessStatus status = spy.init();
 
         assertEquals(status, AccessControl.AccessStatus.noDbError);
     }

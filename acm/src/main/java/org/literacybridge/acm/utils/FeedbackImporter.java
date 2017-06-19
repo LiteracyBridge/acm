@@ -413,14 +413,8 @@ public class FeedbackImporter {
       if (config != null) {
         File deferredUpdatesFile = config.getUserFeedbackDeferredUpdatesFile();
         //read file into stream, try-with-resources
-        try (BufferedReader br = new BufferedReader(new FileReader(deferredUpdatesFile))) {
-          String line;
-          while ((line = br.readLine()) != null) {
-            line = line.split("#")[0];
-            line = line.trim();
-            if (line.length() < 1) continue;
-            deferredUpdates.add(line.toLowerCase());
-          }
+        try {
+            IOUtils.readLines(deferredUpdatesFile, deferredUpdates);
         } catch (IOException e) {
            // Ignore exception and continue without file.
         }
