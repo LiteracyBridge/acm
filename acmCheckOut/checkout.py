@@ -90,7 +90,7 @@ def lambda_handler(event, context):
         if action == 'checkOut':
             return check_out(event, acm)
         # user requested an unknown action
-        logger(event, 'denied')
+        logger(event, 'denied', action_name='unknownAction')
         return {
             'data': 'denied',
             'response': 'Unknown action requested'
@@ -298,6 +298,9 @@ def check_out(event, acm):
 
     # Create a check-out entry for ACM in table
     new_key = str(randint(0, 10000000))    # generate new check-out key to use when checking ACM back in
+    # Add it to the event object, so it will be logged
+    event['key'] = new_key
+    event['filename'] = acm.get('last_in_file_name')
 
     update_exp = 'SET acm_state = :s, now_out_name = :n, now_out_contact = :c, now_out_key = :k, \
                             now_out_version = :v, now_out_comment = :t, now_out_date = :d, \
@@ -450,38 +453,46 @@ def update_dynamo(event, update_exp, condition_exp, exp_values, json_resp):
             'error': str(err)
         }
 
+# adds quotes to a string with embedded commas. For data destined for a .csv
+def enquote(v):
+    # escape any quotes
+    v = v.replace('"', '\\"')
+    # if any commas, enclose in quotes
+    if v.find(',') > 0:
+        v = '"' + v + '"'
+    return v
+
 
 # helper function to write plain txt log files & upload to s3 bucket 'acm-logging'
-def logger(event, response):
+def logger(event, response, action_name=None):
     '''
     Writes a single line .txt file with filename as current datetime + random integer in s3 bucket 'acm-logging'
     in the 'logs/year/month' directory.
 
-    Each log string contains the following parameters:
-        datetime, action, response, acm_name, name, contact, computer_name, version, file_name, check_key
+    Each log string contains the following parameters, where name:value are the values from the event:
+        datetime, action, response:{resp}, name:{value},...
 
     :param event: dict -- passed in parameters from POST request
     :param response: string -- transaction result
+    :param action_name: string -- if given, use this as the action name, and also log 'action:{action}' (for unrecognized actions)
     :return: None -- creates an s3 object
     '''
-    acm_name = str(event.get('db'))    # name of ACM (e.g. 'ACM-FB-2013-01') - primary key of dynamoDB table
     action = str(event.get('action'))  # 'checkIn', 'revokeCheckOut', 'checkOut', 'statusCheck', 'discard'
-    check_key = str(event.get('key'))  # key must match check-key assigned at ACM check-out for check-in
-    file_name = str(event.get('filename'))  # tracks no. of times ACM has been checked out, format db#.zip (e.g. db8.zip)
-    name = str(event.get('name'))  # name of requester
-    contact = str(event.get('contact'))  # phone number of requester
-    version = str(event.get('version'))  # current ACM version in format: r YY MM DD n (e.g. r1606221)
-    computer_name = str(event.get('computername'))  # IP address of request
-    comment = str(event.get('comment'))  # to allow for internal comments if later required
     date = datetime.date.today()
 
-    log = [START_TIME, action, response, acm_name, name, contact, computer_name, version, comment]
-    if action == 'checkIn':
-        log = [START_TIME, action, response, acm_name, name, contact, computer_name, version, file_name, check_key, comment]
+    # override action if an override was given
+    if action_name <> None:
+        action = action_name
+    body = datetime.datetime.utcnow().isoformat() + "," + action + ",response:" + str(response)
+    for k in event.keys():
+        v = event.get(k)
+        # Don't log 'None'. Don't log the action, unless there was an override.
+        if v <> None and (k <> 'action' or action_name <> None):
+            body += ',' + k + ':' + enquote(str(v))
 
     try:
         response = bucket.put_object(
-            Body=','.join('"' + item + '"' for item in log),    # quotified log string
+            Body=body,  # timestamp,action,k1:v1,k2:v2,... log entry
             Key='logs/'+ str(date.year) + '/' + str(date.month) + '/' + START_TIME + '_' + str(randint(0,1000)), # unique filename
             ContentType='text/plain',
         )
