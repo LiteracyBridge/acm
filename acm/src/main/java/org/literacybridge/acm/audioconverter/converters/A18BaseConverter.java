@@ -43,6 +43,8 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
       throws ConversionException {
     File tmpSourceFile = null;
     File ultimateDestDir = null;
+    boolean OK = false;
+    String originalFile = audioFile.getAbsolutePath();
 
     try {
       if (tmpDir != null && !tmpDir.equals(audioFile.getParentFile())) {
@@ -69,6 +71,7 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
       }
 
       String cmd = getCommand(audioFile, targetDir, parameters);
+      System.out.println(String.format("Convert to '%s' from file:\n%s\n with command:\n%s", targetFormatExtension, originalFile, cmd));
       ConversionResult result = new ConversionResult();
       result.outputFile = new File(targetDir,
           audioFile.getName() + targetFormatExtension);
@@ -92,8 +95,10 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
                   + audioFile.getName() + "'");
         }
       }
+      OK = true;
       return result;
     } finally {
+        System.out.println(String.format("Conversion %s.",OK?"successful":"failed"));
       if (tmpSourceFile != null && tmpSourceFile.exists()) {
         tmpSourceFile.delete();
       }

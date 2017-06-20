@@ -280,8 +280,7 @@ public class ToolbarView extends JToolBar implements ActionListener, Observer {
       player.stop();
       updatePlayerStateTimer.stop();
     }
-    System.out.println("LocalizedAudioItem:" + item.getUuid());
-    System.out.println("Its parent:" + item.getUuid());
+    System.out.println("Audio Item to play:" + item.getUuid());
     try {
       // convert on the fly if necessary
       Application parent = Application.getApplication();
