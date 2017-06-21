@@ -39,8 +39,6 @@ public abstract class BaseAudioConverter {
         return null;
       } else {
         if (!outputFile.delete()) {
-          // TODO: we should probably have some retry logic here, and fail after
-          // 5 attempts or so
           throw new ConversionException(String.format("Unable to overwrite output file (%s).", outputFile));
         }
       }

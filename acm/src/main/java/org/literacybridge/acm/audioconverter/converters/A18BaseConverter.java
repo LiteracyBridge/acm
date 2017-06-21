@@ -37,6 +37,10 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
   protected abstract String getCommand(File audioFile, File targetFile,
       Map<String, String> parameters);
 
+  protected void postConversion(File outputFile, Map<String, String> parameters) {
+      // Default is to do nothing.
+  }
+
   @Override
   public ConversionResult doConvertFile(File audioFile, File targetDir,
       File targetFile, File tmpDir, Map<String, String> parameters)
@@ -95,6 +99,7 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
                   + audioFile.getName() + "'");
         }
       }
+      postConversion(result.outputFile, parameters);
       OK = true;
       return result;
     } finally {
