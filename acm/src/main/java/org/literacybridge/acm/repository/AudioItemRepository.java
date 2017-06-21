@@ -158,6 +158,7 @@ public abstract class AudioItemRepository {
     }
 
     File toFile = resolveFile(audioItem, format, true);
+    IOUtils.ensureDirectoryExists(toFile);
 
     if (format == AudioFormat.A18) {
       // we only store the audio itself in the repo, as we keep the metadata
@@ -211,6 +212,7 @@ public abstract class AudioItemRepository {
       // just copy over the a18 file in dropbox over there if it exists.
       File audioFileShared = resolveFile(audioItem, targetFormat, false);
       if (audioFileShared.exists()) {
+        IOUtils.ensureDirectoryExists(audioFile);
         IOUtils.copy(audioFileShared, audioFile, true);
       }
     }
@@ -232,6 +234,7 @@ public abstract class AudioItemRepository {
     }
 
     if (OsUtils.WINDOWS && sourceFile != null) {
+      IOUtils.ensureDirectoryExists(audioFile);
       audioConverter.convert(sourceFile, audioFile.getParentFile(), TMP_DIR,
           targetFormat.getAudioConversionFormat(), false);
     }
@@ -383,6 +386,8 @@ public abstract class AudioItemRepository {
           // a18 file is newer - delete it, it will get recreated from the a18
           // in convert()
           file.delete();
+          // Try to delete the parent directory. It's OK if it fails.
+          file.getParentFile().delete();
         }
       }
 

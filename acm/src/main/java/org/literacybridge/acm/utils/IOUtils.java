@@ -288,4 +288,15 @@ public class IOUtils {
     }
     return retval;
   }
+
+    /**
+     * Given a file, create the parent directories if they don't already exist.
+     * @param file whose parent directory should be created.
+     */
+    public static void ensureDirectoryExists(File file) {
+      File parent = file.getParentFile();
+      if (!parent.exists()) {
+          parent.mkdirs();
+      }
+    }
 }

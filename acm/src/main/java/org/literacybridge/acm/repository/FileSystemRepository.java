@@ -102,7 +102,7 @@ public class FileSystemRepository extends AudioItemRepository {
         audioItem.getUuid() + "." + format.getFileExtension());
   }
 
-  protected File resolveDirectory(AudioItem audioItem, AudioFormat format) {
+  private File resolveDirectory(AudioItem audioItem, AudioFormat format) {
     // TODO: For now we just use the unique ID of the audio item; in the future,
     // we might want to use
     // a different way to construct the path
@@ -118,9 +118,6 @@ public class FileSystemRepository extends AudioItemRepository {
 
     String path = builder.toString();
     File dir = new File(path);
-    if (!dir.exists()) {
-      dir.mkdirs();
-    }
 
     return dir;
   }
