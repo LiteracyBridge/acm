@@ -12,10 +12,16 @@ public class Category {
   private int order;
   private Category parent;
   private final List<Category> children;
+  // If this is true, it should not be possible to assign a message to the category. To effect that,
+  // the 'categories' tree control omits them.
+  // TODO: A better and more general solution will be to make the visible categories configurable by
+  // project.
+  private boolean nonAssignable;
 
   Category(String id) {
     this.id = id;
     this.children = Lists.newLinkedList();
+    this.nonAssignable = false;
   }
 
   public void setName(String name) {
@@ -78,4 +84,12 @@ public class Category {
   public String toString() {
     return this.name;
   }
+
+    public boolean isNonAssignable() {
+        return nonAssignable;
+    }
+
+    public void setNonAssignable(boolean nonAssignable) {
+        this.nonAssignable = nonAssignable;
+    }
 }

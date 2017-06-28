@@ -18,6 +18,7 @@ public class DefaultLiteracyBridgeTaxonomy {
   public final static String YAML_TAXONOMY_FIELD = "taxonomy";
   public final static String YAML_CAT_NAME_FIELD = "name";
   public final static String YAML_CAT_ORDER_FIELD = "order";
+  public final static String YAML_CAT_NON_ASSIGNABLE_FIELD = "nonassignable"; // Can a message be assigned to this category?
   public final static String YAML_CAT_CHILDREN_FIELD = "children";
 
   public static class TaxonomyRevision {
@@ -36,12 +37,13 @@ public class DefaultLiteracyBridgeTaxonomy {
     }
   }
 
-  private static Category addCategory(Taxonomy taxonomy, Category parent,
-      Category existingCategory, String id, String name, int order) {
+  private static Category addCategory(Taxonomy taxonomy, Category parent, Category existingCategory,
+                                      String id, String name, int order, boolean nonAssignable) {
     Category cat = existingCategory == null ? new Category(id)
         : existingCategory;
     cat.setName(name);
     cat.setOrder(order);
+    cat.setNonAssignable(nonAssignable);
     taxonomy.addChild(parent, cat);
     return cat;
   }
@@ -107,8 +109,18 @@ public class DefaultLiteracyBridgeTaxonomy {
       Map<String, Object> catData = (Map<String, Object>) entry.getValue();
       String catName = (String) catData.get(YAML_CAT_NAME_FIELD);
       Integer order = (Integer) catData.get(YAML_CAT_ORDER_FIELD);
+      // If no "nonassignable" value, inherit from parent. Defaults to 'false'.
+      Object field = catData.get(YAML_CAT_NON_ASSIGNABLE_FIELD);
+      boolean nonAssignable = parent.isNonAssignable();
+      try {
+          if (field != null) {
+              nonAssignable = (Boolean)field;
+          }
+      } catch (Exception ex) {
+          // ignore.
+      }
       Category cat = addCategory(taxonomy, parent, existingCategory, catID,
-          catName, order);
+          catName, order, nonAssignable);
       Object children = catData.get(YAML_CAT_CHILDREN_FIELD);
       if (children != null) {
         loadYaml(taxonomy, (Map<String, Object>) children, cat,

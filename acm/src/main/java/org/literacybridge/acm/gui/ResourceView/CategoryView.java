@@ -146,7 +146,10 @@ public class CategoryView extends ACMContainer implements Observer {
         .getMetadataStore().getTaxonomy().getRootCategory();
     if (rootCategory.hasChildren()) {
       for (Category c : rootCategory.getSortedChildren()) {
-        addChildNodes(categoryRootNode, c);
+          // If a category can't have messages assigned to it, don't show it.
+          if (!c.isNonAssignable()) {
+              addChildNodes(categoryRootNode, c);
+          }
       }
     }
 
@@ -501,7 +504,9 @@ public class CategoryView extends ACMContainer implements Observer {
     parent.add(child);
     if (category.hasChildren()) {
       for (Category c : category.getSortedChildren()) {
-        addChildNodes(child, c);
+          if (!c.isNonAssignable()) {
+              addChildNodes(child, c);
+          }
       }
     }
   }
