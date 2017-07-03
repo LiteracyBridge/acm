@@ -27,14 +27,8 @@ import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.utils.IOUtils;
 
-public class A18Importer extends Importer {
-  public static AudioItem loadMetadata(MetadataStore store, File file)
-      throws IOException {
-    return loadMetadata(store, null, file);
-  }
-
-  public static AudioItem loadMetadata(MetadataStore store,
-      Category importCategory, File file) throws IOException {
+public class A18Importer extends FileImporter.Importer {
+  public static AudioItem loadMetadata(MetadataStore store, File file) throws IOException {
     DataInputStream in = null;
 
     try {
@@ -75,10 +69,6 @@ public class A18Importer extends Importer {
         metadata.setMetadataField(MetadataSpecification.DC_TITLE,
             new MetadataValue<String>(
                 fileName.substring(0, fileName.length() - 4)));
-        // add the category that was selected during drag&drop
-        if (importCategory != null) {
-          categories.add(importCategory);
-        }
 
       } else {
         audioItem = store.newAudioItem(loadedMetadata
@@ -108,35 +98,35 @@ public class A18Importer extends Importer {
     }
   }
 
-  @Override
-  protected void importSingleFile(MetadataStore store, Category category,
-      File file, Metadata additionalMetadata) throws IOException {
-    try {
-      AudioItem audioItem = loadMetadata(store, category, file);
+    @Override
+    protected void importSingleFile(MetadataStore store, File file,
+                                    FileImporter.AudioItemProcessor processor) throws IOException {
+      try {
+        AudioItem audioItem = loadMetadata(store, file);
 
-      // TODO: handle updating the file by making use of revisions
-      if (store.getAudioItem(audioItem.getUuid()) != null) {
-        // just skip for now if we have an item with the same id already
-        System.out.println(String.format("File '%s' is already in database; skipping", file.getName()));
-        return;
+        // TODO: handle updating the file by making use of revisions
+        if (store.getAudioItem(audioItem.getUuid()) != null) {
+            // just skip for now if we have an item with the same id already
+            System.out.println(String.format("File '%s' is already in database; skipping", file.getName()));
+            return;
+        }
+
+        AudioItemRepository repository = ACMConfiguration.getInstance()
+                .getCurrentDB().getRepository();
+        repository.storeAudioFile(audioItem, file);
+          // let caller tweak audio item
+          if (processor != null) {
+              processor.process(audioItem);
+          }
+
+          store.commit(audioItem);
+
+      } catch (UnsupportedFormatException e) {
+          throw new IOException(e);
+      } catch (DuplicateItemException e) {
+          throw new IOException(e);
       }
-
-      if (additionalMetadata != null) {
-        audioItem.getMetadata().addValuesFrom(additionalMetadata);
-      }
-
-      AudioItemRepository repository = ACMConfiguration.getInstance()
-          .getCurrentDB().getRepository();
-      repository.storeAudioFile(audioItem, file);
-
-      store.commit(audioItem);
-
-    } catch (UnsupportedFormatException e) {
-      throw new IOException(e);
-    } catch (DuplicateItemException e) {
-      throw new IOException(e);
     }
-  }
 
   @Override
   protected String[] getSupportedFileExtensions() {

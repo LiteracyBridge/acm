@@ -136,8 +136,7 @@ public class CmdLineImporter {
         System.out.println("Importing file " + String.valueOf(++count) + " of "
             + total + ": " + file);
         importer.importFile(
-            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore(),
-            null, file, null);
+            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore(), file, null);
         FileUtils.moveToDirectory(file,
             new File(file.getParentFile(), successDir), true);
       } catch (Exception e) {

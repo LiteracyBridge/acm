@@ -17,16 +17,19 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Metadata;
-import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.MetadataStore;
 
 public class FileImporter {
   private static final Logger LOG = Logger
       .getLogger(FileImporter.class.getName());
 
+  public interface AudioItemProcessor {
+      void process(AudioItem item);
+  }
+
   public static abstract class Importer {
-    protected abstract void importSingleFile(MetadataStore store,
-        Category category, File file, Metadata additionalMetadata) throws IOException;
+    protected abstract void importSingleFile(MetadataStore store, File file,
+                                             AudioItemProcessor processor) throws IOException;
 
     protected abstract String[] getSupportedFileExtensions();
   }
@@ -58,48 +61,54 @@ public class FileImporter {
     filter = getFileExtensionFilter(extensions);
   }
 
-  public void importFile(MetadataStore store, Category category, File file, Metadata additionalMetadata)
+  public void importFile(MetadataStore store, File file, AudioItemProcessor processor)
       throws IOException {
-    if (!file.exists()) {
-      throw new FileNotFoundException(file.toString());
-    }
 
-    if (file.isDirectory()) {
-      throw new IllegalArgumentException(file.toString() + " is a directory.");
-    } else {
-      String ext = getFileExtension(file);
-      Importer imp = map.get(ext);
-      if (imp == null) {
-        throw new UnsupportedOperationException(ext + " not supported.");
+      if (!file.exists()) {
+          throw new FileNotFoundException(file.toString());
       }
 
-      String title = stripFileExtension(file);
-      // check if file name matches an existing audio item id
-
-      AudioItem item = store.getAudioItem(title);
-      if (item == null) {
-        int pos = title.indexOf(FileSystemExporter.FILENAME_SEPARATOR);
-        if (pos != -1) {
-          String id = title
-              .substring(pos + FileSystemExporter.FILENAME_SEPARATOR.length());
-          item = store.getAudioItem(id);
-        }
-      }
-
-      if (item != null) {
-        try {
-          ACMConfiguration.getInstance().getCurrentDB().getRepository()
-              .updateAudioItem(item, file);
-          store.commit(item);
-        } catch (Exception e) {
-          LOG.log(Level.WARNING,
-              "Unable to update files for audioitem with id=" + title, e);
-        }
+      if (file.isDirectory()) {
+          throw new IllegalArgumentException(file.toString() + " is a directory.");
       } else {
-        // new audio item - import
-        imp.importSingleFile(store, category, file, additionalMetadata);
+          String ext = getFileExtension(file);
+          Importer imp = map.get(ext);
+          if (imp == null) {
+              throw new UnsupportedOperationException(ext + " not supported.");
+          }
+
+          String title = stripFileExtension(file);
+          // check if file name matches an existing audio item id
+
+          AudioItem item = store.getAudioItem(title);
+          if (item == null) {
+              int pos = title.indexOf(FileSystemExporter.FILENAME_SEPARATOR);
+              if (pos != -1) {
+                  String id = title
+                          .substring(pos + FileSystemExporter.FILENAME_SEPARATOR.length());
+                  item = store.getAudioItem(id);
+              }
+          }
+
+          if (item != null) {
+              try {
+                  ACMConfiguration.getInstance().getCurrentDB().getRepository()
+                          .updateAudioItem(item, file);
+                  store.commit(item);
+              } catch (Exception e) {
+                  LOG.log(Level.WARNING,
+                          "Unable to update files for audioitem with id=" + title, e);
+              }
+          } else {
+              // new audio item - import
+              imp.importSingleFile(store, file, processor);
+          }
       }
-    }
+  }
+
+  public void importFile(MetadataStore store, Category category, File file)
+      throws IOException {
+    importFile(store, file, (item)->{if (item!=null) item.addCategory(category);});
   }
 
   public void importDirectory(MetadataStore store, Category category, File dir,
@@ -109,7 +118,7 @@ public class FileImporter {
 
     for (File f : filesToImport) {
       try {
-        importFile(store, category, f, null);
+        importFile(store, category, f);
       } catch (Exception e) {
         LOG.log(Level.WARNING, "Failed to import file " + f, e);
       }

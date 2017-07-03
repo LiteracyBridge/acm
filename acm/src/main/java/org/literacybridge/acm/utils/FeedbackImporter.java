@@ -10,17 +10,17 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.importexport.FileImporter;
+import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
+import org.literacybridge.acm.store.Taxonomy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -36,6 +36,13 @@ import java.util.regex.Pattern;
 
 public class FeedbackImporter {
   private static final Logger logger = LoggerFactory.getLogger(FeedbackImporter.class);
+  private static final String GENERAL_FEEDBACK = "9-0";
+    private static final String TOO_SHORT_FEEDBACK = "92-2";
+    private static final String TOO_LONG_FEEDBACK = "92-6";
+    private static final String UNKNOWN_LENGTH_FEEDBACK = "92-8";
+    private static final int too_short_duration = 5; // anything 5 seconds or less is too short
+    private static final int too_long_duration = 300; // anything 5 minutes or more is too long
+
   private static final Set<String> EXTENSIONS_TO_IMPORT = new HashSet<>(
           Collections.singletonList("a18"));
   private static final String FEEDBACK_IMPORT_REPORT = "feedbackImport.txt";
@@ -297,6 +304,44 @@ public class FeedbackImporter {
     }
   }
 
+    /**
+     * Given an audio item, adjust the feedback category based on the item's duration. If the
+     * duration is < 5 seconds, make the category 92-2, "Too Short". If the duration is > 5
+     * minutes, make the category 92-6, "Too Long". And if we can't read the duration, make the
+     * category 92-8, "Unknown length".
+     * @param item The audio item to adjust.
+     */
+    private static void adjustCategoriesForDuration(AudioItem item) {
+        // Tweak category based on play time.
+        MetadataValue<String> metaString = item.getMetadata().getMetadataValue(
+                MetadataSpecification.LB_DURATION);
+        int seconds = 0;
+        String newCategory = null;
+        if (metaString != null) {
+            String duration = metaString.getValue();
+            try {
+                seconds = Integer.parseInt(duration.substring(0, 2)) * 60;
+                seconds += Integer.parseInt(duration.substring(3, 5));
+                if (seconds <= too_short_duration) {
+                    newCategory = TOO_SHORT_FEEDBACK;
+                } else if (seconds >= too_long_duration) {
+                    newCategory = TOO_LONG_FEEDBACK;
+                }
+            } catch (NumberFormatException ex) {
+                // can't read this audio item
+                newCategory = UNKNOWN_LENGTH_FEEDBACK;
+            }
+            if (newCategory != null) {
+                Taxonomy taxonomy = ACMConfiguration.getInstance()
+                        .getCurrentDB()
+                        .getMetadataStore()
+                        .getTaxonomy();
+                item.removeCategory(taxonomy.getCategory(GENERAL_FEEDBACK));
+                item.addCategory(taxonomy.getCategory(newCategory));
+            }
+        }
+    }
+
   /**
    * Imports a set of files into the currently opened Acm project.
    * @param filesToImport A Set<File> of files to import.
@@ -320,7 +365,12 @@ public class FeedbackImporter {
           logger.info(String.format("        Importing %d of %d: %s", ++count, filesToImport.size(), file.getName()));
         }
         metadata.setMetadataField(MetadataSpecification.LB_CORRELATION_ID, new MetadataValue<>(id++));
-        importer.importFile(store, null /* category */, file, metadata);
+        importer.importFile(store,
+                            file,
+                            (item)->{
+                                item.getMetadata().addValuesFrom(metadata);
+                                adjustCategoriesForDuration(item);
+                            });
         results.fileImported(file.getName());
       } catch (Exception e) {
         System.err.println(String.format("Failed to import '%s': %s", file.getName(), e.getMessage()));

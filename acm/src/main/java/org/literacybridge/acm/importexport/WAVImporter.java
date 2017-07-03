@@ -20,15 +20,14 @@ import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
-public class WAVImporter extends Importer {
+public class WAVImporter extends FileImporter.Importer {
 
   @Override
-  protected void importSingleFile(MetadataStore store, Category category,
-      File file, Metadata additionalMetadata) throws IOException {
+  protected void importSingleFile(MetadataStore store, File file,
+                                  FileImporter.AudioItemProcessor processor) throws IOException {
     try {
       AudioItem audioItem = store
           .newAudioItem(ACMConfiguration.getInstance().getNewAudioItemUID());
-      audioItem.addCategory(category);
 
       Metadata metadata = audioItem.getMetadata();
       String title = file.getName().substring(0, file.getName().length() - 4);
@@ -42,13 +41,13 @@ public class WAVImporter extends Importer {
           new MetadataValue<RFC3066LanguageCode>(
               new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
 
-      if (additionalMetadata != null) {
-        audioItem.getMetadata().addValuesFrom(additionalMetadata);
-      }
-
       AudioItemRepository repository = ACMConfiguration.getInstance()
           .getCurrentDB().getRepository();
       repository.storeAudioFile(audioItem, file);
+        // let caller tweak audio item
+        if (processor != null) {
+            processor.process(audioItem);
+        }
 
       store.commit(audioItem);
     } catch (UnsupportedFormatException e) {

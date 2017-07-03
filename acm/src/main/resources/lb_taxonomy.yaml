@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 52
+  revision: 53
   categories:
     '0' : 
       name: Other Messages
@@ -1216,10 +1216,23 @@ taxonomy:
         '90-91':
           name: TB Model
           order: 910
-    '100':  # These are for use in exported packages only. No message should ever be code with these.
+    '92':
+      name: Ignored Feedback
+      order: 1000
+      children:
+        '92-2':
+          name: Too Short
+          order: 2
+        '92-6':
+          name: Too Long
+          order: 6
+        '92-8':
+          name: Unknown Length
+          order: 8
+    '100':  # These are for use in exported packages only. No message should ever be coded with these.
        name: TB Subjects
        nonassignable: true
-       order: 1001
+       order: 2000
        children:
          '100-1':
            name: Breastfeeding and immunization
