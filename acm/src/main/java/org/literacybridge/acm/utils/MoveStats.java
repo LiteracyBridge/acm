@@ -755,17 +755,19 @@ public class MoveStats {
          * @param file Where to print the report.
          */
         void makeReport(File file) {
-            try {
-                boolean html = file.getName().toLowerCase().endsWith(".html");
-                // If the file exists, append a new report to it.
-                FileOutputStream fos = new FileOutputStream(file, true);
-                PrintStream ps = new PrintStream(fos);
+            boolean html = file.getName().toLowerCase().endsWith(".html");
+            String report = new Report(html).generate();
+            if (report.length() > 0) {
+                try {
+                    // If the file exists, append a new report to it.
+                    FileOutputStream fos = new FileOutputStream(file, true);
+                    PrintStream ps = new PrintStream(fos);
 
-                String report = new Report(html).generate();
-                ps.print(report);
-                ps.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
+                    ps.print(report);
+                    ps.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
