@@ -1264,7 +1264,9 @@ public class TBLoaderCore {
         if (mForceFirmware) {
             mProgressListenerListener.log("Forcing firmware refresh");
             TbFile firmware = mTalkingBookRoot.open(mNewDeploymentInfo.getFirmwareRevision() + ".img");
-            firmware.renameTo("system.img");
+            TbFile newFirmware = mTalkingBookRoot.open("system.img");
+            firmware.renameTo(newFirmware.getAbsolutePath());
+            //firmware.renameTo("system.img");
         }
     }
 

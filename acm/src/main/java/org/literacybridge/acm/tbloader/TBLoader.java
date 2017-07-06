@@ -274,6 +274,7 @@ public class TBLoader extends JFrame {
         });
         currentLocationList = new JComboBox<String>(currentLocation);
         forceFirmware = new JCheckBox();
+        forceFirmware.setSelected(true);
         updateButton = new JButton("Update TB");
         updateButton.addActionListener(new ActionListener() {
             @Override
