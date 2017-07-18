@@ -20,13 +20,17 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -39,6 +43,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.utils.OsUtils;
 import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.fs.FsFile;
+import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.tbloader.ProgressListener;
 import org.literacybridge.core.tbloader.DeploymentInfo;
@@ -51,6 +56,10 @@ import org.literacybridge.core.tbloader.TBLoaderUtils;
 @SuppressWarnings("serial")
 public class TBLoader extends JFrame {
     private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
+
+    private JFrame applicationWindow;
+    private OperationLogImpl opLogImpl;
+
     // This string must match firmware code to generate special dings on startup
     // as reminder that specific name has not been set.
     private static final String NO_COMMUNITY_SELECTED = "Non-specific";
@@ -95,10 +104,12 @@ public class TBLoader extends JFrame {
 
     // All content is relative to this.
     private File baseDirectory;
+    private File logsDir;
 
     class WindowEventHandler extends WindowAdapter {
         @Override
         public void windowClosing(WindowEvent evt) {
+            OperationLog.logEvent("TbLoaderShutdown");
             LOG.log(Level.INFO, "closing app");
             System.exit(0);
         }
@@ -124,6 +135,7 @@ public class TBLoader extends JFrame {
 
     public TBLoader(String project, String srnPrefix) throws IOException {
         project = ACMConfiguration.cannonicalProjectName(project);
+        applicationWindow = this;
         this.newProject = project;
         this.oldProject = project; // until we have a better value...
         if (srnPrefix != null) {
@@ -139,8 +151,39 @@ public class TBLoader extends JFrame {
         this.addWindowListener(new WindowEventHandler());
         setDeviceIdAndPaths();
 
+        // Set up the program log. For debugging the execution of the TBLoader application.
+
+        // Put log output into the ~/Dropbox/tbcd1234/log directory
+        // - rotate through 10 files
+        // - up to 4MB per file
+        // - Keep appending to a file until it reaches the limit.
+        // If there is no format set, use this one-line format.
+        String format = System.getProperty("java.util.logging.SimpleFormatter.format");
+        if (format==null || format.length()==0) {
+            System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %2$s %5$s%6$s%n");
+        }
+        Path relativeLogPath = Paths.get(System.getProperty("user.home")).relativize(Paths.get(logsDir.getAbsolutePath()));
+        String logPattern = "%h/" + relativeLogPath.toString() + "/tbloaderlog.%g";
+        Logger rootLogger = Logger.getLogger("");
+        FileHandler logHandler = new FileHandler(logPattern,
+                16*1024*1024,
+                10, true);
+        logHandler.setFormatter(new SimpleFormatter());
+        logHandler.setLevel(Level.INFO);
+        rootLogger.removeHandler(rootLogger.getHandlers()[0]);
+        rootLogger.setLevel(Level.INFO);
+        rootLogger.addHandler(logHandler);
+        LOG.log(Level.INFO, "\n\n********************************************************************************");
+        LOG.log(Level.INFO, "WindowsTBLoaderStart\n");
+
+        // Set up the operation log. Tracks what is done, by whom.
+        opLogImpl = new OperationLogImpl(logsDir, tbLoaderConfig.getTbLoaderId());
+        OperationLog.setImplementation(opLogImpl);
+        OperationLog.Operation opLog = OperationLog.log("WindowsTBLoaderStart")
+            .put("tbcdid", tbLoaderConfig.getTbLoaderId())
+            .put("project", newProject);
+
         // get image revision
-        // TODO: fix assumption about current working directory. (It's assumed to be ~/LiteracyBridge/TB-Loaders/{PROJECT} )
         File[] files = baseDirectory.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
@@ -161,7 +204,7 @@ public class TBLoader extends JFrame {
                 }
             }
             if (!unpublished) {
-                JOptionPane.showMessageDialog(null,
+                JOptionPane.showMessageDialog(applicationWindow,
                                               "Revision conflict. Please click OK to shutdown.\nThen restart the TB-Loader to get the latest published version.");
                 System.exit(NORMAL);
             }
@@ -172,18 +215,22 @@ public class TBLoader extends JFrame {
         setTitle("TB-Loader " + Constants.ACM_VERSION + "/" + imageRevision);
         if (imageRevision.startsWith(TBLoaderConstants.UNPUBLISHED_REV)) {
             Object[] options = { "Yes-refresh from published", "No-keep unpublished" };
-            int answer = JOptionPane.showOptionDialog(null,
+            int answer = JOptionPane.showOptionDialog(this,
                                                       "This TB Loader is running an unpublished version.\nWould you like to delete the unpublished version and use the latest published version?",
                                                       "Unpublished", JOptionPane.YES_NO_OPTION,
                                                       JOptionPane.QUESTION_MESSAGE, null, options,
                                                       options[1]);
             if (answer == JOptionPane.YES_OPTION) {
                 files[0].delete();
-                JOptionPane.showMessageDialog(null,
+                JOptionPane.showMessageDialog(applicationWindow,
                                               "Click OK to shutdown. Then restart to get the latest published version of the TB Loader.");
+                opLog.put("MultipleVersions", "CleanAndRestart")
+                    .finish();
                 System.exit(NORMAL);
             }
+            opLog.put("MultipleVersions", "KeepUnpublished");
         }
+        opLog.finish();
 
         JPanel panel = new JPanel();
         JLabel warning;
@@ -232,7 +279,8 @@ public class TBLoader extends JFrame {
         oldImageText.setEditable(false);
         newImageText = new JTextField();
         newImageText.setEditable(false);
-        final JXDatePicker datePicker = new JXDatePicker();
+        final JXDatePicker datePicker = new JXDatePicker(new Date());
+        dateRotation = datePicker.getDate().toString();
         datePicker.getEditor().setEditable(false);
         datePicker.setFormats("yyyy/MM/dd"); //dd MMM yyyy
         datePicker.addActionListener(new ActionListener() {
@@ -390,13 +438,13 @@ public class TBLoader extends JFrame {
         fillDeploymentList();
         resetUI(true);
         setVisible(true);
+        JOptionPane.showMessageDialog(applicationWindow,
+                                      "Remember to power Talking Book with batteries before connecting with USB.",
+                                      "Use Batteries!", JOptionPane.DEFAULT_OPTION);
         LOG.log(Level.INFO, "set visibility - starting drive monitoring");
         deviceMonitorThread.setDaemon(true);
         deviceMonitorThread.start();
         startUpDone = true;
-        JOptionPane.showMessageDialog(null,
-                                      "Remember to power Talking Book with batteries before connecting with USB.",
-                                      "Use Batteries!", JOptionPane.DEFAULT_OPTION);
     }
 
     private void setDeviceIdAndPaths() throws IOException {
@@ -410,12 +458,12 @@ public class TBLoader extends JFrame {
 
             File dropboxDir = ACMConfiguration.getInstance().getGlobalShareDir();
             if (!dropboxDir.exists()) {
-                JOptionPane.showMessageDialog(null, dropboxDir.getAbsolutePath()
+                JOptionPane.showMessageDialog(applicationWindow, dropboxDir.getAbsolutePath()
                                                       + " does not exist; cannot find the Dropbox path. Please contact ICT staff.",
                                               "Cannot Find Dropbox!", JOptionPane.DEFAULT_OPTION);
                 System.exit(ERROR);
             }
-            TbFile dropboxFile = new FsFile(dropboxDir);
+            //TbFile dropboxFile = new FsFile(dropboxDir);
 
             // Look for ~/LiteracyBridge/1234.dev file.
             File[] files = applicationHomeDirectory.listFiles(new FilenameFilter() {
@@ -431,17 +479,19 @@ public class TBLoader extends JFrame {
                         .toUpperCase();
 
                 // Like "~/Dropbox/tbcd1234"
-                TbFile tbLoaderDir = dropboxFile.open(
-                        TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
+                File tbLoaderDir = new File(dropboxDir, TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
+                logsDir = new File(tbLoaderDir, "log");
+                //TbFile tbLoaderDir = dropboxFile.open(
+                //        TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
                 if (!tbLoaderDir.exists()) {
-                    JOptionPane.showMessageDialog(null, tbLoaderDir.toString()
+                    JOptionPane.showMessageDialog(applicationWindow, tbLoaderDir.toString()
                                                           + " does not exist; cannot find the Dropbox collected data path. Please contact ICT staff.",
                                                   "Cannot Find Dropbox Collected Data Folder!",
                                                   JOptionPane.DEFAULT_OPTION);
                     System.exit(ERROR);
                 }
                 // Like ~/Dropbox/tbcd1234/collected-data
-                TbFile collectedDataDir = tbLoaderDir.open(
+                TbFile collectedDataDir = new FsFile(tbLoaderDir).open(
                         TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME);
 
                 TbFile tempDir = new FsFile(Files.createTempDirectory("tbloader-tmp").toFile());
@@ -455,7 +505,7 @@ public class TBLoader extends JFrame {
                         .withWindowsUtilsDirectory(softwareDir)
                         .build();
             } else {
-                JOptionPane.showMessageDialog(null,
+                JOptionPane.showMessageDialog(applicationWindow,
                                               "This computer does not appear to be configured to use the TB Loader yet.  It needs a unique device tbSrn. Please contact ICT staff to get this.",
                                               "This Computer has no ID!",
                                               JOptionPane.DEFAULT_OPTION);
@@ -627,8 +677,9 @@ public class TBLoader extends JFrame {
                     label.contains("Macintosh")) {
                 continue;
             }
-            // Ignore drives shared by Parallels. Value determined empirically.
-            if (OsUtils.WINDOWS && label.contains(" on 'Mac' (")) {
+            // Ignore network drives. Includes host drives shared by Parallels.
+            String typeDescr = FileSystemView.getFileSystemView().getSystemTypeDescription(root);
+            if (typeDescr != null && typeDescr.equalsIgnoreCase("network drive")) {
                 continue;
             }
             driveList.addItem(new TBDeviceInfo(new FsFile(root), label, srnPrefix));
@@ -703,6 +754,7 @@ public class TBLoader extends JFrame {
                         fillDriveList(roots);
                         if (!driveList.getItemAt(0).getLabel().equals(TBLoaderConstants.NO_DRIVE)) {
                             statusLeft.setText("");
+                            statusLeft.setForeground(Color.BLACK);
                         }
                         try {
                             populatePreviousValuesFromCurrentDrive();
@@ -759,7 +811,7 @@ public class TBLoader extends JFrame {
         if (!driveLabel.equals(TBLoaderConstants.NO_DRIVE) && !isSerialNumberFormatGood(srnPrefix,
                                                                                         driveLabel)) {
             // could not find flashStats file -- but TB should save flashstats on normal shutdown and on *-startup.
-            JOptionPane.showMessageDialog(null,
+            JOptionPane.showMessageDialog(applicationWindow,
                                           "The TB's statistics cannot be found. Please follow these steps:\n 1. Unplug the TB\n 2. Hold down the * while turning on the TB\n "
                                                   + "3. Observe the solid red light.\n 4. Now plug the TB into the laptop.\n 5. If you see this message again, please continue with the loading -- you tried your best.",
                                           "Cannot find the statistics!",
@@ -771,12 +823,12 @@ public class TBLoader extends JFrame {
         if (!isSerialNumberFormatGood(srnPrefix, sn)) {
             if (sn.substring(1, 2).equals("-")) {
                 if (sn.compareToIgnoreCase("b-") < 0) {
-                    JOptionPane.showMessageDialog(null,
+                    JOptionPane.showMessageDialog(applicationWindow,
                                                   "This appears to be an OLD TB.  If so, please close this program and open the TB Loader for old TBs.",
                                                   "OLD TB!", JOptionPane.WARNING_MESSAGE);
                     return;
                 } else if (sn.compareToIgnoreCase("b-") > 0) {
-                    JOptionPane.showMessageDialog(null,
+                    JOptionPane.showMessageDialog(applicationWindow,
                                                   "This appears to be a NEW TB.  If so, please close this program and open the TB Loader for new TBs.",
                                                   "NEW TB!", JOptionPane.WARNING_MESSAGE);
                     return;
@@ -826,7 +878,7 @@ public class TBLoader extends JFrame {
                     populatePreviousValuesFromCurrentDrive();
                 } catch (Exception e1) {
                     // TODO Auto-generated catch block
-                    JOptionPane.showMessageDialog(this, e1.toString(), "Error",
+                    JOptionPane.showMessageDialog(applicationWindow, e1.toString(), "Error",
                                                   JOptionPane.ERROR_MESSAGE);
                     e1.printStackTrace();
                 }
@@ -907,7 +959,7 @@ public class TBLoader extends JFrame {
 
             if (isUpdate) {
                 if (dateRotation == null || currentLocationList.getSelectedIndex() == 0) {
-                    JOptionPane.showMessageDialog(null,
+                    JOptionPane.showMessageDialog(applicationWindow,
                                                   "You must first select a rotation date and a location.",
                                                   "Need Date and Location!",
                                                   JOptionPane.DEFAULT_OPTION);
@@ -947,13 +999,14 @@ public class TBLoader extends JFrame {
             LOG.log(Level.INFO, "ID:" + di.getSerialNumber());
             statusRight.setText("STATUS: Starting\n");
             statusLeft.setText("");
+            statusLeft.setForeground(Color.BLACK);
 
             CopyThread t = new CopyThread(devicePath, operation);
             t.start();
 
         } catch (Exception ex) {
             LOG.log(Level.WARNING, ex.toString(), ex);
-            JOptionPane.showMessageDialog(this, "An error occured.", "Error",
+            JOptionPane.showMessageDialog(applicationWindow, "An error occured.", "Error",
                                           JOptionPane.ERROR_MESSAGE);
             fillDeploymentList();
             resetUI(false);
@@ -976,10 +1029,10 @@ public class TBLoader extends JFrame {
 
     private void onCopyFinished(final String endMsg, final String endTitle) {
         SwingUtilities.invokeLater(() -> {
+            JOptionPane.showMessageDialog(applicationWindow, endMsg, endTitle, JOptionPane.DEFAULT_OPTION);
             updatingTB = false;
             resetUI(true);
             LOG.log(Level.INFO, endMsg);
-            JOptionPane.showMessageDialog(null, endMsg, endTitle, JOptionPane.DEFAULT_OPTION);
         });
     }
 
@@ -1037,9 +1090,7 @@ public class TBLoader extends JFrame {
         grabStatsOnlyButton.setEnabled(false);
     }
 
-    public enum Operation {Update, CollectStats}
-
-    ;
+    public enum Operation {Update, CollectStats};
 
     // TODO: Move this to its own file.
     public class CopyThread extends Thread {
@@ -1047,7 +1098,7 @@ public class TBLoader extends JFrame {
         final Operation operation;
         final String devicePath;
         boolean criticalError = false;
-        boolean alert = false;
+        boolean alert = true;
         ProgressListener progressListenerListener = new ProgressListener() {
             ProgressListener.Steps currentStep = ProgressListener.Steps.ready;
 
@@ -1055,16 +1106,19 @@ public class TBLoader extends JFrame {
             public void step(ProgressListener.Steps step) {
                 currentStep = step;
                 statusRight.setText(step.description());
+                LOG.log(Level.INFO, "STEP: " + step.description());
             }
 
             @Override
             public void detail(String value) {
                 statusRight.setText(currentStep.description() + "\n\n" + value);
+                LOG.log(Level.INFO, "DETAIL: " + value);
             }
 
             @Override
             public void log(String value) {
                 statusLeft.setText(value + "\n" + statusLeft.getText());
+                LOG.log(Level.INFO, "PROGRESS: " + value);
             }
 
             @Override
@@ -1072,6 +1126,7 @@ public class TBLoader extends JFrame {
                 if (!append) {
                     log(value);
                 } else {
+                    LOG.log(Level.INFO, "PROGRESS: " + value);
                     String oldValue = statusLeft.getText();
                     int nl = oldValue.indexOf("\n");
                     if (nl > 0) {
@@ -1083,6 +1138,12 @@ public class TBLoader extends JFrame {
                     }
                 }
             }
+
+            public void error(String value) {
+                log(value);
+                statusLeft.setForeground(Color.RED);
+                LOG.log(Level.SEVERE, "SEVERE: " + value);
+            }
         };
 
         CopyThread(String devicePath, Operation operation) {
@@ -1091,6 +1152,13 @@ public class TBLoader extends JFrame {
         }
 
         private void grabStatsOnly(DeploymentInfo newDeploymentInfo) {
+            OperationLog.Operation opLog = OperationLog.startOperation("TbLoaderGrabStats");
+            opLog.put("serialno", oldDeploymentInfo.getSerialNumber())
+                    .put("project", oldDeploymentInfo.getProjectName())
+                    .put("deployment", oldDeploymentInfo.getDeploymentName())
+                    .put("package", oldDeploymentInfo.getPackageName())
+                    .put("community", oldDeploymentInfo.getCommunity());
+
             TBLoaderCore.Result result = null;
             try {
 
@@ -1105,9 +1173,12 @@ public class TBLoader extends JFrame {
                         .withProgressListener(progressListenerListener)
                         .build();
                 result = tbLoader.update();
+
+                opLog.put("success", result.gotStatistics);
             } finally {
+                opLog.finish();
                 String endMsg, endTitle;
-                if (result.success) {
+                if (result.gotStatistics) {
                     endMsg = "Got Stats!";
                     endTitle = "Success";
                 } else {
@@ -1121,6 +1192,21 @@ public class TBLoader extends JFrame {
         private void update(DeploymentInfo newDeploymentInfo) {
             String endMsg = "";
             String endTitle = "";
+            OperationLog.Operation opLog = OperationLog.startOperation("TbLoaderUpdate");
+            opLog.put("serialno", newDeploymentInfo.getSerialNumber())
+                .put("project", newDeploymentInfo.getProjectName())
+                .put("deployment", newDeploymentInfo.getDeploymentName())
+                .put("package", newDeploymentInfo.getPackageName())
+                .put("community", newDeploymentInfo.getCommunity());
+            if (!newDeploymentInfo.getProjectName().equals(oldDeploymentInfo.getProjectName())) {
+                opLog.put("oldProject", oldDeploymentInfo.getProjectName());
+            }
+            if (!newDeploymentInfo.getCommunity().equals(oldDeploymentInfo.getCommunity())) {
+                opLog.put("oldCommunity", oldDeploymentInfo.getCommunity());
+            }
+            if (!newDeploymentInfo.getSerialNumber().equals(oldDeploymentInfo.getSerialNumber())) {
+                opLog.put("oldSerialno", oldDeploymentInfo.getSerialNumber());
+            }
 
             File newDeploymentContentDir = new File(baseDirectory, TBLoaderConstants.CONTENT_SUBDIR
                     + File.separator + newDeploymentInfo.getDeploymentName());
@@ -1142,32 +1228,40 @@ public class TBLoader extends JFrame {
                         .build();
                 result = tbLoader.update();
 
-                if (!result.success) {
+                opLog.put("gotstatistics", result.gotStatistics)
+                    .put("corrupted", result.corrupted)
+                    .put("reformatfailed", result.reformatFailed)
+                    .put("verified", result.verified);
+
+                if (!result.gotStatistics) {
+                    LOG.log(Level.SEVERE, "Could not get statistics!");
+                    progressListenerListener.error("Could not get statistics.");
                     if (result.corrupted) {
                         if (!OSChecker.WINDOWS) {
                             LOG.log(Level.INFO,
                                     "Reformatting memory card is not supported on this platform.\nTry using TBLoader for Windows.");
-                            JOptionPane.showMessageDialog(null,
+                            JOptionPane.showMessageDialog(applicationWindow,
                                                           "Reformatting memory card is not supported on this platform.\nTry using TBLoader for Windows.",
                                                           "Failure!", JOptionPane.ERROR_MESSAGE);
                         }
 
                         if (result.reformatFailed) {
-                            LOG.log(Level.INFO, "STATUS:Reformat Failed");
-                            LOG.log(Level.INFO,
+                            LOG.log(Level.SEVERE, "STATUS:Reformat Failed");
+                            LOG.log(Level.SEVERE,
                                     "Could not reformat memory card.\nMake sure you have a good USB connection\nand that the Talking Book is powered with batteries, then try again.\n\nIf you still cannot reformat, replace the memory card.");
-                            JOptionPane.showMessageDialog(null,
+                            JOptionPane.showMessageDialog(applicationWindow,
                                                           "Could not reformat memory card.\nMake sure you have a good USB connection\nand that the Talking Book is powered with batteries, then try again.\n\nIf you still cannot reformat, replace the memory card.",
                                                           "Failure!", JOptionPane.ERROR_MESSAGE);
                         }
                     }
                 }
 
-                for (int i = 1; i <= (result.success ? 3 : 6); i++)
+                for (int i = 1; i <= (result.gotStatistics ? 3 : 6); i++)
                     Toolkit.getDefaultToolkit().beep();
             } catch (Exception e) {
+                opLog.put("exception", e.getMessage());
                 if (alert) {
-                    JOptionPane.showMessageDialog(null, e.getMessage(), "Error",
+                    JOptionPane.showMessageDialog(applicationWindow, e.getMessage(), "Error",
                                                   JOptionPane.ERROR_MESSAGE);
                     criticalError = true;
                     LOG.log(Level.SEVERE, "CRITICAL ERROR:", e);
@@ -1176,6 +1270,7 @@ public class TBLoader extends JFrame {
                 endMsg = String.format("Exception updating TB-Loader: %s", e.getMessage());
                 endTitle = "An Exception Occurred";
             } finally {
+                opLog.finish();
                 if (result.verified) {
                     endMsg = "Talking Book has been updated and verified\nin " + result.duration
                             + ".";

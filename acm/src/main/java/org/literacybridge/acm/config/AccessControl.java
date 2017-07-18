@@ -216,6 +216,7 @@ public class AccessControl {
             success = true;
         } catch (IOException e) {
             e.printStackTrace();
+            // TODO: Notify the user so they have some slim chance of getting around the problem.
         }
         return success;
     }
@@ -762,6 +763,7 @@ public class AccessControl {
                             + Calendar.getInstance().get(Calendar.MILLISECOND));
         } catch (Exception e) {
             // Gee, I wonder if it worked? Oh, well, whatever...
+            // TODO: this is probably a fatal error.
             e.printStackTrace();
         }
     }

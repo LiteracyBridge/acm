@@ -8,11 +8,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CommandLineUtils {
   private static final Logger LOG = Logger.getLogger(CommandLineUtils.class.getName());
 
   private static File windowsUtilsDirectory = new File(".");
+
+  private static final Pattern PCT_COMPLETE = Pattern.compile("^(\\d{1,2}) percent completed\\.+$");
 
   static void setUtilsDirectory(File windowsUtilsDirectory) {
     CommandLineUtils.windowsUtilsDirectory = windowsUtilsDirectory;
@@ -31,32 +35,47 @@ public class CommandLineUtils {
     if (!cmd.startsWith("cmd /C ")) cmd = "cmd /C " + cmd;
     Process proc = Runtime.getRuntime().exec(cmd);
 
-    BufferedReader br1 = new BufferedReader(
-            new InputStreamReader(proc.getInputStream()));
-    BufferedReader br2 = new BufferedReader(
-            new InputStreamReader(proc.getErrorStream()));
+    // Stdout is called the "InputStream". Hopefully, someone at Sun was fired for that...
+    BufferedReader br1 = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+    BufferedReader br2 = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
 
-    do {
-      line = br1.readLine();
-      LOG.log(Level.INFO, line);
-      if (line != null && errorLine == null) {
-        errorLine = dosErrorCheck(line);
-      }
-    } while (line != null);
-
-    do {
-      line = br2.readLine();
-      LOG.log(Level.INFO, line);
-      if (line != null && errorLine == null) {
-        errorLine = dosErrorCheck(line);
-      }
-    } while (line != null);
+    // Stdout
+    errorLine = processCommandOutput(errorLine, br1);
+    // Stderr
+    errorLine = processCommandOutput(errorLine, br2);
 
     try {
       proc.waitFor();
     } catch (InterruptedException e) {
       throw new IOException(e);
     }
+    return errorLine;
+  }
+
+  /**
+   * processes either stdout or stderr from a command.
+   * @param errorLine Any errorLine detected so far
+   * @param br A buffered reader with the output
+   * @return The errorLine at the end of processing this outout
+   * @throws IOException if the output file can't be read
+   */
+  private static String processCommandOutput(String errorLine, BufferedReader br) throws IOException {
+    StringBuilder outBuf = new StringBuilder();
+    String line;
+    do {
+      line = br.readLine();
+      if (line != null) {
+        line = line.trim();
+        Matcher matcher = PCT_COMPLETE.matcher(line);
+        if (!matcher.matches()) {
+          outBuf.append(line).append("\n");
+        }
+      }
+      if (line != null && errorLine == null) {
+        errorLine = dosErrorCheck(line);
+      }
+    } while (line != null);
+    LOG.log(Level.INFO, outBuf.toString());
     return errorLine;
   }
 

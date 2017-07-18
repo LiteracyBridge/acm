@@ -77,6 +77,9 @@ public class OperationLog {
             implementation.logEvent(name, info);
         }
     }
+    public synchronized static void logEvent(String name) {
+        logEvent(name, null);
+    }
 
     public static Operation log(String name) {
         return new OperationEvent(name);

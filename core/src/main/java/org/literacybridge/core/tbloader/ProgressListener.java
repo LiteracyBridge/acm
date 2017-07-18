@@ -68,4 +68,10 @@ public abstract class ProgressListener {
      * @param value
      */
     public abstract void log(boolean append, String value);
+
+    /**
+     * Call to log an error value. Implementors can override to provide error UI.
+     * @param value
+     */
+    public void error(String value) {log(value);}
 }

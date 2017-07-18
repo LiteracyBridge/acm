@@ -345,7 +345,7 @@ public class TBLoaderCore {
             DeploymentInfo oldDeployment,
             DeploymentInfo newDeployment,
             String location,
-            int durationSeconds) {
+            int durationSeconds) throws IOException {
 
         OperationLog.Operation opLog = OperationLog.startOperation("LogTbData");
         final String VERSION_TBDATA = "v03";
@@ -408,13 +408,17 @@ public class TBLoaderCore {
             bw.write(mTbDeviceInfo.getLabel() + ",");
             bw.write(mTbDeviceInfo.isCorrupted() + ",");
 
-            opLog.put("project", mTtbLoaderConfig.getProject().toUpperCase())
-                //.put("update_date_time", mUpdateTimestamp.toUpperCase())
+            // With one exception, these are ordered the same as the csv values. Not necessary, of
+            // course, but can help matching them up.
+            // The exception is that, here, qthe action is first, not fifth.
+            opLog
+                .put("action", action)
+                .put("project", mTtbLoaderConfig.getProject().toUpperCase())
+                .put("update_date_time", mUpdateTimestamp.toUpperCase())
                 .put("out_synchdir", mUpdateTimestamp.toUpperCase() + "-" + mTtbLoaderConfig.getTbLoaderId()
                         .toUpperCase())
                 .put("location", location.toUpperCase())
-                .put("action", action)
-                //.put("duration", Integer.toString(durationSeconds))
+                .put("duration", Integer.toString(durationSeconds))
                 .put("out_sn", mTbDeviceInfo.getSerialNumber().toUpperCase())
                 .put("out_deployment", newDeployment.getDeploymentName().toUpperCase())
                 .put("out_package", newDeployment.getPackageName().toUpperCase())
@@ -446,11 +450,11 @@ public class TBLoaderCore {
                 bw.write(mTtbFlashData.getPeriods() + ",");
                 bw.write(mTtbFlashData.getProfileTotalRotations() + ",");
                 bw.write(mTtbFlashData.getTotalMessages() + ",");
+                
                 int totalSecondsPlayed = 0, countStarted = 0, countQuarter = 0, countHalf = 0, countThreequarters = 0, countCompleted = 0, countApplied = 0, countUseless = 0;
+                int numRotations = Math.max(5, mTtbFlashData.getProfileTotalRotations());
                 for (int m = 0; m < mTtbFlashData.getTotalMessages(); m++) {
-                    for (int r = 0; r < (mTtbFlashData.getProfileTotalRotations() < 5 ?
-                                         mTtbFlashData.getProfileTotalRotations() :
-                                         5); r++) {
+                    for (int r = 0; r < numRotations; r++) {
                         totalSecondsPlayed += mTtbFlashData.getStats()[m][r].getTotalSecondsPlayed();
                         countStarted += mTtbFlashData.getStats()[m][r].getCountStarted();
                         countQuarter += mTtbFlashData.getStats()[m][r].getCountQuarter();
@@ -469,15 +473,48 @@ public class TBLoaderCore {
                 bw.write(countCompleted + ",");
                 bw.write(countApplied + ",");
                 bw.write(String.valueOf(countUseless));
-                for (int r = 0; r < (mTtbFlashData.getProfileTotalRotations() < 5 ?
-                                     mTtbFlashData.getProfileTotalRotations() :
-                                     5); r++) {
-                    bw.write(
-                            "," + r + "," + mTtbFlashData.totalPlayedSecondsPerRotation(r) / 60
+                for (int r = 0; r < numRotations; r++) {
+                    bw.write("," + r + "," + mTtbFlashData.totalPlayedSecondsPerRotation(r) / 60
                                     + "," + mTtbFlashData.getRotations()[r].getStartingPeriod() + ",");
                     bw.write(mTtbFlashData.getRotations()[r].getHoursAfterLastUpdate() + ","
                             + mTtbFlashData.getRotations()[r].getInitVoltage());
                 }
+
+                opLog
+                    .put("flash_sn", mTtbFlashData.getSerialNumber().toUpperCase())
+                    .put("flash_reflashes", mTtbFlashData.getCountReflashes())
+                    .put("flash_deployment", mTtbFlashData.getDeploymentNumber().toUpperCase())
+                    .put("flash_package", mTtbFlashData.getImageName().toUpperCase())
+                    .put("flash_community", mTtbFlashData.getLocation().toUpperCase())
+                    .put("flash_last_updated", mTtbFlashData.getUpdateYear() + "/" + mTtbFlashData.getUpdateMonth() + "/"
+                                     + mTtbFlashData.getUpdateDate())
+                    .put("flash_cumulative_days", mTtbFlashData.getCumulativeDays())
+                    .put("flash_corruption_day", mTtbFlashData.getCorruptionDay())
+                    .put("flash_last_initial_v", mTtbFlashData.getLastInitVoltage())
+                    .put("flash_powerups", mTtbFlashData.getPowerups())
+                    .put("flash_periods", mTtbFlashData.getPeriods())
+                    .put("flash_rotations", mTtbFlashData.getProfileTotalRotations())
+                    .put("flash_num_messages", mTtbFlashData.getTotalMessages());
+                
+                opLog
+                    .put("flash_total_seconds", totalSecondsPlayed)
+                    .put("flash_started", countStarted)
+                    .put("flash_one_quarter", countQuarter)
+                    .put("flash_half", countHalf)
+                    .put("flash_three_quarters", countThreequarters)
+                    .put("flash_completed", countCompleted)
+                    .put("flash_applied", countApplied)
+                    .put("flash_useless", countUseless);
+
+                final String N[] = {"0", "1", "2", "3", "4"};
+                for (int r = 0; r < numRotations; r++) {
+                    opLog
+                        .put("flash_seconds_"+N[r], mTtbFlashData.totalPlayedSecondsPerRotation(r))
+                        .put("flash_period_"+N[r], mTtbFlashData.getRotations()[r].getStartingPeriod())
+                        .put("flash_hours_post_update_"+N[r], mTtbFlashData.getRotations()[r].getHoursAfterLastUpdate())
+                        .put("flash_initial_v_"+N[r], mTtbFlashData.getRotations()[r].getInitVoltage());
+                }
+
             }
             bw.write("\n");
             bw.flush();
@@ -493,8 +530,10 @@ public class TBLoaderCore {
         } catch (IOException e) {
             opLog.put("exception", e);
             e.printStackTrace();
+            throw e;
+        } finally {
+            opLog.finish();
         }
-        opLog.finish();
     }
 
     /**
@@ -502,14 +541,14 @@ public class TBLoaderCore {
      * go wrong.
      */
     public class Result {
-        public final boolean success;
+        public final boolean gotStatistics;
         public final boolean corrupted;
         public final boolean reformatFailed;
         public final boolean verified;
         public final String duration;
 
         private Result() {
-            this.success = false;
+            this.gotStatistics = false;
             this.corrupted = false;
             this.reformatFailed = false;
             this.verified = false;
@@ -517,11 +556,11 @@ public class TBLoaderCore {
         }
 
         private Result(long startTime,
-                boolean success,
+                boolean gotStatistics,
                 boolean corrupted,
                 boolean reformatFailed,
                 boolean verified) {
-            this.success = success;
+            this.gotStatistics = gotStatistics;
             this.corrupted = corrupted;
             this.reformatFailed = reformatFailed;
             this.verified = verified;
@@ -595,6 +634,7 @@ public class TBLoaderCore {
             LOG.log(Level.WARNING, "Unable to get stats:", e);
             mProgressListenerListener.log("Unable to gather statistics");
             mProgressListenerListener.log(getStackTrace(e));
+            // gotStatistics remains false; we'll log the failure later.
         }
 
         boolean verified = false;
@@ -1266,20 +1306,22 @@ public class TBLoaderCore {
             TbFile firmware = mTalkingBookRoot.open(mNewDeploymentInfo.getFirmwareRevision() + ".img");
             TbFile newFirmware = mTalkingBookRoot.open("system.img");
             firmware.renameTo(newFirmware.getAbsolutePath());
-            //firmware.renameTo("system.img");
         }
     }
 
     /**
      * Writes the TB data log file.
      *
+     * @param gotStatistics Did we successfully collect stats from the TB?
      * @param verified Did the Talking Book seem good after the update?
      */
-    private void writeTbLog(boolean gotStatistics, boolean verified) {
+    private void writeTbLog(boolean gotStatistics, boolean verified) throws IOException {
         String action = null;
         if (mStatsOnly) {
             if (gotStatistics) {
                 action = "stats-only";
+            } else {
+                action = "stats-error";
             }
         } else {
             if (verified) {
@@ -1291,13 +1333,14 @@ public class TBLoaderCore {
             } else {
                 action = "update-failed verification";
             }
+            if (!gotStatistics) {
+                action += "-stats-error";
+            }
         }
 
-        if (action != null) {
-            mProgressListenerListener.log("Logging TB data");
-            logTBData(action, mOldDeploymentInfo,
-                    mNewDeploymentInfo, mLocation, getDurationInSeconds(mUpdateStartTime));
-        }
+        mProgressListenerListener.log("Logging TB data");
+        logTBData(action, mOldDeploymentInfo,
+                mNewDeploymentInfo, mLocation, getDurationInSeconds(mUpdateStartTime));
     }
 
     /**

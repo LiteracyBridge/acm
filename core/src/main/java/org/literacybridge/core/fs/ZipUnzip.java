@@ -28,16 +28,15 @@ public class ZipUnzip {
     if (!includeChildren)
       return;
     File[] files = fileSource.listFiles();
-    for (int i = 0; i < files.length; i++) {
-      if (files[i].isDirectory()) {
-        addDirectory(zout, files[i], false, true);
+    for (File file : files) {
+      if (file.isDirectory()) {
+        addDirectory(zout, file, false, true);
         continue;
       }
       try {
-        String relativeFileName = baseInDir.toURI().relativize(files[i].toURI())
-            .getPath();
+        String relativeFileName = baseInDir.toURI().relativize(file.toURI()).getPath();
         byte[] buffer = new byte[1024];
-        FileInputStream fin = new FileInputStream(files[i]);
+        FileInputStream fin = new FileInputStream(file);
         zout.putNextEntry(new ZipEntry(relativeFileName));
         int length;
         while ((length = fin.read(buffer)) > 0) {
@@ -46,7 +45,13 @@ public class ZipUnzip {
         zout.closeEntry();
         fin.close();
       } catch (IOException ioe) {
-        System.out.println("IOException :" + ioe);
+        try {
+            System.out.println("IOException adding file in ZipUnzip: " + file.getAbsolutePath());
+        } catch (Exception ex) {
+            // Ignore any exception printing exception message.
+            System.out.println("IOException in ZipUnzip.addDirectory: "+ioe.getMessage());
+        }
+        throw ioe;
       }
     }
   }
