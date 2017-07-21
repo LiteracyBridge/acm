@@ -959,17 +959,32 @@ public class TBLoader extends JFrame {
 
             if (isUpdate) {
                 if (dateRotation == null || currentLocationList.getSelectedIndex() == 0) {
+                    StringBuilder text = new StringBuilder("You must first select ");
+                    StringBuilder heading = new StringBuilder("Need ");
+                    String joiner = "";
+                    if (dateRotation == null) {
+                        text.append("a rotation date");
+                        heading.append("Date");
+                        joiner = " and ";
+                    }
+                    if (currentLocationList.getSelectedIndex() == 0) {
+                        text.append(joiner).append("your location");
+                        heading.append(joiner).append("Location");
+                    }
+                    text.append(".");
+                    heading.append("!");
                     JOptionPane.showMessageDialog(applicationWindow,
-                                                  "You must first select a rotation date and a location.",
-                                                  "Need Date and Location!",
-                                                  JOptionPane.DEFAULT_OPTION);
+                                                  text.toString(),
+                                                  heading.toString(),
+                                                  JOptionPane.PLAIN_MESSAGE);
                     refreshUI();
                     return;
                 }
 
                 if (community.equals(NO_COMMUNITY_SELECTED)) {
                     int response = JOptionPane.showConfirmDialog(this,
-                                                                 "No community selected.\nAre you sure?",
+                                                                 "No community selected. This will prevent us from "+
+                                                                         "generating accurate usage statistics.\nAre you sure?",
                                                                  "Confirm",
                                                                  JOptionPane.YES_NO_OPTION);
                     if (response != JOptionPane.YES_OPTION) {
