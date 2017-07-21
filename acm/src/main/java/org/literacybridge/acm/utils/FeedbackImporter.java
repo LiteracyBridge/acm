@@ -311,25 +311,36 @@ public class FeedbackImporter {
      * category 92-8, "Unknown length".
      * @param item The audio item to adjust.
      */
-    private static void adjustCategoriesForDuration(AudioItem item) {
+    private static ImportResults.TWEAKS adjustCategoriesForDuration(AudioItem item) {
         // Tweak category based on play time.
+        Pattern durationPattern = Pattern.compile("^(\\d\\d+):(\\d\\d).*$");
         MetadataValue<String> metaString = item.getMetadata().getMetadataValue(
                 MetadataSpecification.LB_DURATION);
         int seconds = 0;
+        ImportResults.TWEAKS result = ImportResults.TWEAKS.NO_CHANGE;
         String newCategory = null;
         if (metaString != null) {
             String duration = metaString.getValue();
             try {
-                seconds = Integer.parseInt(duration.substring(0, 2)) * 60;
-                seconds += Integer.parseInt(duration.substring(3, 5));
-                if (seconds <= too_short_duration) {
-                    newCategory = TOO_SHORT_FEEDBACK;
-                } else if (seconds >= too_long_duration) {
-                    newCategory = TOO_LONG_FEEDBACK;
+                Matcher matcher = durationPattern.matcher(duration);
+                if (matcher.matches()) {
+                    seconds = Integer.parseInt(matcher.group(1)) * 60;
+                    seconds += Integer.parseInt(matcher.group(2));
+                    if (seconds <= too_short_duration) {
+                        newCategory = TOO_SHORT_FEEDBACK;
+                        result = ImportResults.TWEAKS.TOO_SHORT;
+                    } else if (seconds >= too_long_duration) {
+                        newCategory = TOO_LONG_FEEDBACK;
+                        result = ImportResults.TWEAKS.TOO_LONG;
+                    }
+                } else {
+                    newCategory = UNKNOWN_LENGTH_FEEDBACK;
+                    result = ImportResults.TWEAKS.INDETERMINATE;
                 }
             } catch (NumberFormatException ex) {
                 // can't read this audio item
                 newCategory = UNKNOWN_LENGTH_FEEDBACK;
+                result = ImportResults.TWEAKS.INDETERMINATE;
             }
             if (newCategory != null) {
                 Taxonomy taxonomy = ACMConfiguration.getInstance()
@@ -340,6 +351,7 @@ public class FeedbackImporter {
                 item.addCategory(taxonomy.getCategory(newCategory));
             }
         }
+        return result;
     }
 
   /**
@@ -350,6 +362,8 @@ public class FeedbackImporter {
   private ImportResults importFiles(Set<File> filesToImport) {
     ImportResults results = new ImportResults();
     int count = 0;
+    // Array hack because the variable must final. Not the contents, though.
+    final ImportResults.TWEAKS[] tweaks = new ImportResults.TWEAKS[1];
     Metadata metadata = new Metadata();
     logger.info(String.format("      Importing %d files", filesToImport.size()));
 
@@ -364,14 +378,16 @@ public class FeedbackImporter {
           System.out.println(String.format("Importing %d of %d: %s", ++count, filesToImport.size(), file.getName()));
           logger.info(String.format("        Importing %d of %d: %s", ++count, filesToImport.size(), file.getName()));
         }
+        // Reset the value, because the lambda may not be called, if the file is already in DB.
+        tweaks[0] = ImportResults.TWEAKS.NO_CHANGE;
         metadata.setMetadataField(MetadataSpecification.LB_CORRELATION_ID, new MetadataValue<>(id++));
         importer.importFile(store,
                             file,
                             (item)->{
                                 item.getMetadata().addValuesFrom(metadata);
-                                adjustCategoriesForDuration(item);
+                                tweaks[0] = adjustCategoriesForDuration(item);
                             });
-        results.fileImported(file.getName());
+        results.fileImported(file.getName(), tweaks[0]);
       } catch (Exception e) {
         System.err.println(String.format("Failed to import '%s': %s", file.getName(), e.getMessage()));
         logger.info(String.format("Failed to import '%s': %s", file.getName(), e.getMessage()));
@@ -482,7 +498,12 @@ public class FeedbackImporter {
    * individual and aggregate results.
    */
   private static class ImportResults {
+    public enum TWEAKS {NO_CHANGE, TOO_SHORT, TOO_LONG, INDETERMINATE};
+
     List<String> filesImported = new ArrayList<>();
+    int filesTooShort = 0;
+    int filesTooLong = 0;
+    int filesIndeterminate = 0;
     List<String> filesFailedToImport = new ArrayList<>();
     List<String> updatesImportedNoErrors = new ArrayList<>();
     List<String> updatesImportedWithErrors = new ArrayList<>();
@@ -491,7 +512,23 @@ public class FeedbackImporter {
     List<String> updatesSkipped = new ArrayList<>();
     
     void fileImported(String filename) {
-      filesImported.add(filename);
+      fileImported(filename, TWEAKS.NO_CHANGE);
+    }
+    void fileImported(String filename, TWEAKS tweaks) {
+        filesImported.add(filename);
+        switch (tweaks) {
+        case NO_CHANGE:
+            break;
+        case TOO_SHORT:
+            filesTooShort++;
+            break;
+        case TOO_LONG:
+            filesTooLong++;
+            break;
+        case INDETERMINATE:
+            filesIndeterminate++;
+            break;
+        }
     }
     void fileFailedToImport(String filename) {
       filesFailedToImport.add(filename);
@@ -520,6 +557,9 @@ public class FeedbackImporter {
       updatesFailedToImport.addAll(moreResults.updatesFailedToImport);
       projectsSkipped.addAll(moreResults.projectsSkipped);
       updatesSkipped.addAll(moreResults.updatesSkipped);
+      filesTooShort += moreResults.filesTooShort;
+      filesTooLong += moreResults.filesTooLong;
+      filesIndeterminate += moreResults.filesIndeterminate;
       return this;
     }
     public boolean isSuccess() {
@@ -584,6 +624,9 @@ public class FeedbackImporter {
           ps.print("<ul style=\"font-family:monospace; list-style:none\">");
         }
         reportLine(String.format("%4d file(s) imported", filesImported.size()));
+        if (filesTooShort>0) reportLine(String.format("%4d file(s) were too short, < %d seconds", filesTooShort, too_short_duration));
+        if (filesTooLong>0) reportLine(String.format("%4d file(s) were too long, > %d seconds", filesTooLong, too_long_duration));
+        if (filesIndeterminate>0) reportLine(String.format("%4d file(s) were of indeterminate length", filesIndeterminate));
         reportDetailLine("file(s) failed to import", filesFailedToImport);
         reportDetailLine("update(s) imported with no file errors",
                 updatesImportedNoErrors);
