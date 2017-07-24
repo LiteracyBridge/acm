@@ -14,7 +14,7 @@ import org.literacybridge.androidtbloader.util.CountUpTimer;
 import org.literacybridge.core.fs.OperationLog;
 
 public class TalkingBookConnectionSetupActivity extends Activity {
-    private static final String TAG = TalkingBookConnectionSetupActivity.class.getSimpleName();
+    private static final String TAG = "TBL!:" + TalkingBookConnectionSetupActivity.class.getSimpleName();
     private static final int READ_REQUEST_CODE = 1001;
     /**
      * This extra value is used to signal that the activity has been started from the preference

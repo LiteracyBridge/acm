@@ -17,7 +17,7 @@ import java.util.Map;
  */
 
 class LocationsCsvFile {
-    private static final String TAG = LocationsCsvFile.class.getSimpleName();
+    private static final String TAG = "TBL!:" + LocationsCsvFile.class.getSimpleName();
 
     private File inputFile;
 

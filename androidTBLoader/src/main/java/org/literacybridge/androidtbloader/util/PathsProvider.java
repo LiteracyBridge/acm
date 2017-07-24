@@ -15,7 +15,7 @@ import java.io.File;
  */
 
 public class PathsProvider {
-    private static final String TAG = "PathsProvider";
+    private static final String TAG = "TBL!:" + "PathsProvider";
 
     private static TBLoaderAppContext sTbLoaderAppContext;
     public static void init(TBLoaderAppContext applicationContext) {

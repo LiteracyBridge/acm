@@ -16,12 +16,11 @@ import java.util.ArrayList;
  */
 
 public class MainActivity extends SingleFragmentActivity {
-    private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String TAG = "TBL!:" + MainActivity.class.getSimpleName();
 
     @Override
     protected Fragment createFragment() {
-        String project = getIntent().getStringExtra("project");
-        Log.d(TAG, String.format("Create fragment for project %s", project));
+        Log.d(TAG, String.format("Create fragment"));
         return new MainFragment();
     }
 

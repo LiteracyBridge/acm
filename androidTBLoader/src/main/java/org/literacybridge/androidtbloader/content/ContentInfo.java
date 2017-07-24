@@ -19,7 +19,7 @@ import java.util.Map;
  * Description of a Content Update.
  */
 public class ContentInfo {
-    private static final String TAG = "ContentInfo";
+    private static final String TAG = "TBL!:" + "ContentInfo";
 
     public enum DownloadStatus {
         NEVER_DOWNLOADED,

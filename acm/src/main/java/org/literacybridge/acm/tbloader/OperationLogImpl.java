@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Log operations of the applications. Uploaded to server, to extract app metrics, usage, and updates.
@@ -23,28 +24,27 @@ public class OperationLogImpl implements OperationLog.Implementation{
     // This log is, of course, the application log, where we log debugging information about the
     // operation log (this class' function).
     private static final Logger LOG = Logger.getLogger(OperationLogImpl.class.getName());
-    private static final String TAG = OperationLogImpl.class.getSimpleName();
 
-    private static int ZIP_THRESHOLD = 20000;
-    private static int UPLOAD_WAIT_TIME = 10 * 60 * 1000; // 10 minutes in ms
+    private static final Pattern NEWLINE = Pattern.compile("\n");
+    private static final Pattern COMMA = Pattern.compile(",");
 
-    private String tbcdId;
     private File logDir;
     private File logFile;
     private DateFormat filenameFormat;
-    private DateFormat logFormat;
-    public OperationLogImpl(File logDir, String tbcdId) {
+    private DateFormat timestampFormat;
+
+    OperationLogImpl(File logDir) {
         this.logDir = logDir;
-        this.tbcdId = tbcdId;
         if (!logDir.exists()) {
-            logDir.mkdirs();
+            if (!logDir.mkdirs()) {
+                LOG.log(Level.WARNING, String.format("Failed to create directory %s", logDir.getAbsolutePath()));
+            }
         }
-        uploadExistingLogs();
         TimeZone UTC = TimeZone.getTimeZone("UTC");
         filenameFormat = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
         filenameFormat.setTimeZone(UTC);
-        logFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
-        logFormat.setTimeZone(UTC);
+        timestampFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
+        timestampFormat.setTimeZone(UTC);
     }
 
     private synchronized File getLogFile() {
@@ -55,20 +55,25 @@ public class OperationLogImpl implements OperationLog.Implementation{
         return logFile;
     }
 
+    /**
+     * Replaces newlines with spaces and commas with semicolons.
+     * @param rawString String that may have problematic characters.
+     * @return String with those characters removed.↵
+     */
     private String enquote(String rawString) {
-        if (rawString.indexOf(',') >= 0) {
-            return String.format("\"%s\"", rawString);
-        }
+        rawString = NEWLINE.matcher(rawString).replaceAll("↵");
+        rawString = COMMA.matcher(rawString).replaceAll(";");
         return rawString;
     }
 
-    public synchronized void logEvent(String name, Map<String, String> info) {
+    public synchronized void logEvent(OperationLog.Operation operation) {
+        String name = operation.getName();
+        Map<String, String> info = operation.getInfo();
         StringBuilder builder = new StringBuilder();
-        builder.append(String.format("%s,%s", logFormat.format(new Date()), name));
+        builder.append(String.format("%s,%s", timestampFormat.format(new Date()), name));
         if (info != null) {
             for (Map.Entry<String, String> entry : info.entrySet()) {
                 builder.append(',').append(entry.getKey()).append(':');
-                // TODO: check for new lines.
                 builder.append(enquote(entry.getValue()));
             }
         }
@@ -83,32 +88,8 @@ public class OperationLogImpl implements OperationLog.Implementation{
 
     public synchronized void closeLogFile() {
         if (logFile != null) {
-            try {
-                uploadLog(logFile);
-            } catch (Exception e) {
-                LOG.log(Level.INFO, String.format("Exception closing log file: %s", logFile), e);
-                // Not much we can do about this...
-            } finally {
-                logFile = null;
-            }
+            logFile = null;
         }
-    }
-
-    private void uploadExistingLogs() {
-        File [] existingLogs = logDir.listFiles();
-        for (File logFile : existingLogs) {
-            uploadLog(logFile);
-        }
-    }
-
-    private void uploadLog(File logFile) {
-        //LOG.log(Level.INFO, String.format("Upload log file %s", logFile));
-        // Like "log/tbcd000c/20170718T110600.000Z"
-        String logName = "log/tbcd" + tbcdId + "/" + logFile.getName();
-        if (logFile.length() > ZIP_THRESHOLD) {
-            //TODO Zip it.
-        }
-        //TBLoaderAppContext.getInstance().getUploadManager().uploadFileAsName(logFile, logName);
     }
 
 }

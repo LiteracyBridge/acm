@@ -8,12 +8,11 @@ import java.util.Map;
  */
 
 public class OperationLog {
-
     /**
      * OperationLog's required implementation. Applications implement this, then call 'setImplementation()'
      */
     public interface Implementation {
-        void logEvent(String name, Map<String, String> info);
+        void logEvent(Operation operation);
         void closeLogFile();
     }
 
@@ -21,7 +20,7 @@ public class OperationLog {
      * For an operation with a time (ie, not simply a point in time), an application can get one of
      * these when the operation starts, put properties as they become available, and end it when it finishes.
      */
-    public interface Operation {
+    public static abstract class Operation {
         /**
          * Put a key:value pair. Anything with a toString() for the value
          * @param key The key; any name that's meaningful to the application. Note that another
@@ -29,7 +28,7 @@ public class OperationLog {
          * @param value Anything with a toString() as the value.
          * @return this so that calls can be chained.
          */
-        <T> Operation put(String key, T value);
+        public abstract <T> Operation put(String key, T value);
 
         /**
          * Marks the time, by recording the value of the elapsed milliseconds as key. Note: only
@@ -37,19 +36,33 @@ public class OperationLog {
          * @param key The name of the timer.
          * @return The Operation, so this can be chained with put()
          */
-        Operation split(String key);
+        public abstract Operation split(String key);
 
         /**
          * End the operation, and provide more info.
          * @param info A Map<String, String> of additional key:value pairs. Any keys here will overwrite
          *             any keys set through 'put()'.
          */
-        void finish(Map<String,String> info);
+        public abstract void finish(Map<String,String> info);
 
         /**
          * Ends any timer, and saves the event.
          */
-        void finish();
+        public abstract void finish();
+
+        /**
+         * Implementations specific options for the Operation. May or may not affect how the log is
+         * handled.
+         * @param key Name of the option
+         * @param value Value of the option
+         * @return The Operation, so this can be chained.
+         */
+        public abstract <T> Operation option(String key, T value);
+
+        public abstract Map<String, String> getInfo();
+        public abstract String getName();
+        public abstract boolean hasOption(String optionName);
+        public abstract String getOption(String optionName);
     }
 
     /**
@@ -72,13 +85,14 @@ public class OperationLog {
     /**
      * And application can call this and if there is an implementation, we'll forward the call.
      */
-    public synchronized static void logEvent(String name, Map<String, String> info) {
+    public synchronized static void logEvent(Operation operation) {
         if (implementation != null) {
-            implementation.logEvent(name, info);
+            implementation.logEvent(operation);
         }
     }
-    public synchronized static void logEvent(String name) {
-        logEvent(name, null);
+    public synchronized static void logEvent(String name, Map<String, String> info) {
+        OperationEvent opEvent = new OperationEvent(name);
+        opEvent.finish(info);
     }
 
     public static Operation log(String name) {
@@ -97,7 +111,8 @@ public class OperationLog {
     /**
      * Implementation of Operation.
      */
-    private static class OperationEvent implements Operation {
+    private static class OperationEvent extends Operation {
+        private Map<String, String> options = new LinkedHashMap<>();
         private Map<String, String> info = new LinkedHashMap<>();
         private String name;
 
@@ -128,15 +143,51 @@ public class OperationLog {
             this.info.putAll(info);
             finish();
         }
+
         @Override
         public void finish() {
             // Only record once.
             if (name != null) {
-                OperationLog.logEvent(name, info);
+                OperationLog.logEvent(this);
                 name = null;
             }
         }
+
+        /**
+         * Implementations specific options for the Operation. May or may not affect how the log is
+         * handled.
+         *
+         * @param key   Name of the option
+         * @param value Value of the option
+         * @return The Operation, so this can be chained.
+         */
+        @Override
+        public <T> Operation option(String key, T value) {
+            options.put(key, value.toString());
+            return this;
+        }
+
+        @Override
+        public Map<String, String> getInfo() {
+            return info;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public boolean hasOption(String optionName) {
+            return options.containsKey(optionName);
+        }
+
+        @Override
+        public String getOption(String optionName) {
+            return options.get(optionName);
+        }
     }
+
     private static class TimedOperationEvent extends OperationEvent {
         private static final String ELAPSED = "elapsedTime";
         private long startTime;

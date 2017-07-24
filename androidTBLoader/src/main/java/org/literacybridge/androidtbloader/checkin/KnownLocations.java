@@ -36,7 +36,7 @@ import static org.literacybridge.androidtbloader.util.Constants.LOCATION_FILE_EX
  */
 
 public class KnownLocations {
-    private static final String TAG = KnownLocations.class.getSimpleName();
+    private static final String TAG = "TBL!:" + KnownLocations.class.getSimpleName();
     //private static final String TAG = KnownLocations.class.getSimpleName();
 
     // Cached list of {project name => {community name => community info} }

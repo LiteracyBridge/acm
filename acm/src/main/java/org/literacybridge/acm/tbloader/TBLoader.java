@@ -109,7 +109,7 @@ public class TBLoader extends JFrame {
     class WindowEventHandler extends WindowAdapter {
         @Override
         public void windowClosing(WindowEvent evt) {
-            OperationLog.logEvent("TbLoaderShutdown");
+            OperationLog.log("TbLoaderShutdown").finish();
             LOG.log(Level.INFO, "closing app");
             System.exit(0);
         }
@@ -177,7 +177,7 @@ public class TBLoader extends JFrame {
         LOG.log(Level.INFO, "WindowsTBLoaderStart\n");
 
         // Set up the operation log. Tracks what is done, by whom.
-        opLogImpl = new OperationLogImpl(logsDir, tbLoaderConfig.getTbLoaderId());
+        opLogImpl = new OperationLogImpl(logsDir);
         OperationLog.setImplementation(opLogImpl);
         OperationLog.Operation opLog = OperationLog.log("WindowsTBLoaderStart")
             .put("tbcdid", tbLoaderConfig.getTbLoaderId())
@@ -1167,7 +1167,7 @@ public class TBLoader extends JFrame {
             this.operation = operation;
         }
 
-        private void grabStatsOnly(DeploymentInfo newDeploymentInfo) {
+        private void grabStatsOnly() {
             OperationLog.Operation opLog = OperationLog.startOperation("TbLoaderGrabStats");
             opLog.put("serialno", oldDeploymentInfo.getSerialNumber())
                     .put("project", oldDeploymentInfo.getProjectName())
@@ -1182,13 +1182,12 @@ public class TBLoader extends JFrame {
                         tbLoaderConfig)
                         .withTbDeviceInfo(currentTbDevice)
                         .withOldDeploymentInfo(oldDeploymentInfo)
-                        .withNewDeploymentInfo(newDeploymentInfo)
                         .withLocation(currentLocationList.getSelectedItem().toString())
                         .withRefreshFirmware(false)
                         .withStatsOnly()
                         .withProgressListener(progressListenerListener)
                         .build();
-                result = tbLoader.update();
+                result = tbLoader.collectStatistics();
 
                 opLog.put("success", result.gotStatistics);
             } finally {
@@ -1315,7 +1314,7 @@ public class TBLoader extends JFrame {
             if (this.operation == Operation.Update) {
                 update(newDeploymentInfo);
             } else if (this.operation == Operation.CollectStats) {
-                grabStatsOnly(newDeploymentInfo);
+                grabStatsOnly();
             }
         }
     }

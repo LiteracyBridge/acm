@@ -10,7 +10,7 @@ import android.widget.Toast;
 
 import org.literacybridge.androidtbloader.content.ContentManager;
 import org.literacybridge.androidtbloader.talkingbook.TalkingBookConnectionManager;
-import org.literacybridge.androidtbloader.uploader.UploadManager;
+import org.literacybridge.androidtbloader.uploader.UploadService;
 import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.OperationLogImpl;
 import org.literacybridge.androidtbloader.util.PathsProvider;
@@ -33,7 +33,7 @@ public class TBLoaderAppContext extends Application {
 
     private TalkingBookConnectionManager mTalkingBookConnectionManager;
     private ContentManager mContentManager;
-    private UploadManager mUploadManager;
+    private UploadService mUploadService;
     private Config mConfig;
 
     @Override
@@ -58,10 +58,10 @@ public class TBLoaderAppContext extends Application {
         PathsProvider.init(this);
         mTalkingBookConnectionManager = new TalkingBookConnectionManager(this);
         mContentManager = new ContentManager(this);
-        mUploadManager = new UploadManager();
+        mUploadService = new UploadService();
         mConfig = new Config(this);
 
-        OperationLog.setImplementation(new OperationLogImpl());
+        OperationLog.setImplementation(OperationLogImpl.getInstance());
     }
 
     public boolean isDebug() {
@@ -76,8 +76,8 @@ public class TBLoaderAppContext extends Application {
         return mContentManager;
     }
 
-    public UploadManager getUploadManager() {
-        return mUploadManager;
+    public UploadService getUploadService() {
+        return mUploadService;
     }
 
     public boolean isCurrentlyConnected() {

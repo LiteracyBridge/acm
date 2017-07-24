@@ -810,6 +810,10 @@ public class MoveStats {
                     result.append(makeList("Skipped", 2, () -> tbcdsSkipped,
                                            "style=\"font-family:monospace; list-style:none\""));
                 }
+                if (tbcdsProcessed.size() > 0) {
+                    result.append(makeList("Processed", 2, () -> tbcdsProcessed,
+                                           "style=\"font-family:monospace; list-style:none\""));
+                }
                 for (String tbcdId : tbcdIds) {
                     result.append(generate(tbcdId));
                 }

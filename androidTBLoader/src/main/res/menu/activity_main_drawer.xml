@@ -4,6 +4,10 @@
     <group
         android:id="@+id/group_user_add_attribute"
         android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/nav_show_upload_status"
+            android:title="@string/show_upload_status" />
         <item
             android:id="@+id/nav_user_edit_greeting"
             android:title="@string/edit_greeting" />

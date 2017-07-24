@@ -40,7 +40,7 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.SignUpHan
 import org.literacybridge.androidtbloader.R;
 
 public class RegisterUser extends AppCompatActivity {
-    private final String TAG = "SignUp";
+    private final String TAG = "TBL!:" + "SignUp";
 
     private EditText username;
     private EditText password;

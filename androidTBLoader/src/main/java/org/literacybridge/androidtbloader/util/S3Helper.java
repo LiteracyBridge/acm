@@ -14,7 +14,7 @@ import org.literacybridge.androidtbloader.signin.UserHelper;
  */
 
 public class S3Helper {
-    private static final String TAG = "S3Helper";
+    private static final String TAG = "TBL!:" + "S3Helper";
 
     // We only need one instance of the clients and credentials provider
     private static AmazonS3Client sS3Client;

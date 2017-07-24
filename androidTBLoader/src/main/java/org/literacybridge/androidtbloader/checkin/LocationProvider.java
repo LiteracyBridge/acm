@@ -23,14 +23,13 @@ import java.util.Map;
  */
 @SuppressWarnings("MissingPermission")
 public class LocationProvider {
-    private static final String TAG = LocationProvider.class.getSimpleName();
+    private static final String TAG = "TBL!:" + LocationProvider.class.getSimpleName();
     private static final float UNKNOWN_DISTANCE = (float) 1e12; // a bit past the orbit of Jupiter, in meters.
     private static Map<CommunityInfo, Float> sCachedDistances = new HashMap<>();
     private static Location sLatestLocation = null;
 
     /**
-     * Returns the most recently acquired GPS location.
-     * @return
+     * @return the most recently acquired GPS location.
      */
     public static Location getLatestLocation() {
         return sLatestLocation;
@@ -92,11 +91,11 @@ public class LocationProvider {
     }
 
 
-    interface LocationCallback {
+    private interface LocationListenerInternal {
         void onNewLocationAvailable(Location location, String provider, long nanos);
     }
 
-    static void getLocation(final MyLocationListener locationListener) {
+    static void getCurrentLocation(final MyLocationListener clientLocationListener) {
         // Uncomment these lines to get location updates.
 //        int LOCATION_REFRESH_TIME = 1000; // ms
 //        int LOCATION_REFRESH_DISTANCE = 5; // m
@@ -108,7 +107,7 @@ public class LocationProvider {
 
         final OperationLog.Operation op = OperationLog.startOperation("GetLocation");
         requestSingleUpdate(TBLoaderAppContext.getInstance(),
-                new LocationCallback() {
+                new LocationListenerInternal() {
                     @Override
                     public void onNewLocationAvailable(Location location,
                             String provider,
@@ -117,7 +116,7 @@ public class LocationProvider {
                         op.put("latitude", location.getLatitude());
                         op.put("longitude", location.getLongitude());
                         op.finish();
-                        locationListener.onLocationChanged(location, provider, nanos);
+                        clientLocationListener.onLocationChanged(location, provider, nanos);
                     }
                 });
     }
@@ -125,8 +124,8 @@ public class LocationProvider {
     // calls back to calling thread, note this is for low granularity: if you want higher precision, swap the
     // contents of the else and if. Also be sure to check gps permission/settings are allowed.
     // call usually takes <10ms
-    static void requestSingleUpdate(final Context context,
-            final LocationCallback callback) {
+    private static void requestSingleUpdate(final Context context,
+                                            final LocationListenerInternal callback) {
         final LocationManager locationManager = (LocationManager) context.getSystemService(
                 Context.LOCATION_SERVICE);
         boolean preferNetwork = PreferenceManager.getDefaultSharedPreferences(TBLoaderAppContext.getInstance()).getBoolean("pref_prefer_network_location", false);
@@ -162,7 +161,22 @@ public class LocationProvider {
         }
     }
 
-    interface MyLocationListener extends LocationListener {
-        void onLocationChanged(Location location, String provider, long nanos);
+    /**
+     * Helper because we generally don't care about status changed, provider dis-/enabled.
+     */
+    public static class MyLocationListener implements LocationListener {
+        public void onLocationChanged(Location location, String provider, long nanos) { }
+
+        @Override
+        public void onLocationChanged(Location location) { }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) { }
+
+        @Override
+        public void onProviderEnabled(String provider) { }
+
+        @Override
+        public void onProviderDisabled(String provider) { }
     }
 }

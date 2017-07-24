@@ -1,17 +1,27 @@
 package org.literacybridge.androidtbloader.main;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
@@ -28,13 +38,11 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttributes;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDeliveryDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GetDetailsHandler;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.UpdateAttributesHandler;
-
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.SettingsActivity;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
@@ -43,11 +51,13 @@ import org.literacybridge.androidtbloader.checkin.KnownLocations;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.content.ContentManager;
 import org.literacybridge.androidtbloader.content.ManageContentActivity;
-import org.literacybridge.androidtbloader.tbloader.TbLoaderActivity;
 import org.literacybridge.androidtbloader.signin.AboutApp;
 import org.literacybridge.androidtbloader.signin.ChangePasswordActivity;
+import org.literacybridge.androidtbloader.signin.SigninActivity;
 import org.literacybridge.androidtbloader.signin.UserHelper;
-import org.literacybridge.androidtbloader.uploader.UploadManager;
+import org.literacybridge.androidtbloader.tbloader.TbLoaderActivity;
+import org.literacybridge.androidtbloader.uploader.UploadService;
+import org.literacybridge.androidtbloader.uploader.UploadStatusActivity;
 import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.Errors;
 import org.literacybridge.androidtbloader.util.Util;
@@ -59,17 +69,19 @@ import java.util.List;
 import java.util.Map;
 
 import static android.app.Activity.RESULT_OK;
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
 /**
  * Implements the main screen. From here, the signed-in user can choose what they want to do.
  */
 
 public class MainFragment extends Fragment {
-    private static final String TAG = MainFragment.class.getSimpleName();
+    private static final String TAG = "TBL!:" + MainFragment.class.getSimpleName();
 
     private static final String CANT_LAUNCH_TITLE = "Can't Start TB-Loader";
     private static final String NO_CONFIG_ERROR = "TB-Loader can not load a configuration file from server, and has no cached configuration. " +
         "This is probably a network or connectivity error. Sadly, TB-Loader must exit. ";
+    private ContentManager mContentManager;
 
     private String configErrorMessage(Errors error) {
         return NO_CONFIG_ERROR + String.format(" Please note this error code: [%d].", error.errorNo);
@@ -78,6 +90,7 @@ public class MainFragment extends Fragment {
     private static final int REQUEST_CODE_MANAGE_CONTENT = 101;
     private static final int REQUEST_CODE_CHECKIN = 102;
     private static final int REQUEST_CODE_UPDATE_TBS = 103;
+    private static final int REQUEST_CODE_UPDATE_UPLOAD_STATUS = 104;
 
     private TBLoaderAppContext mApplicationContext;
 
@@ -89,10 +102,11 @@ public class MainFragment extends Fragment {
     private ViewGroup mManageGroup;
     private ViewGroup mCheckinGroup;
     private ViewGroup mUpdateGroup;
+    private ViewGroup mGetStatsGroup;
 
     private boolean mHaveConfig = false;
     private boolean mHaveContentList = false;
-    private String mUser;
+    private String mUserid;
     private String mProject;
 
     private String mCheckinLocation;
@@ -100,6 +114,7 @@ public class MainFragment extends Fragment {
 
     private TextView mUploadCountTextView;
     private TextView mUploadSizeTextView;
+    private TextView mUploadNextTextView;
 
     private AlertDialog userDialog;
     private ProgressDialog waitDialog;
@@ -107,48 +122,24 @@ public class MainFragment extends Fragment {
 
     private boolean awaitingUserDetails = true;
     private boolean awaitingUserConfig = true;
+    private boolean awaitingLocationPermission = true;
 
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mApplicationContext = (TBLoaderAppContext)getActivity().getApplicationContext();
-        ContentManager mContentManager = mApplicationContext.getContentManager();
-        Intent intent = getActivity().getIntent();
-        mUser = intent.getStringExtra("user");
-        mContentManager.refreshContentList(new ContentManager.ContentManagerListener() {
-            @Override
-            public void contentListChanged() {
-                mHaveContentList = true;
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        setButtonState();
-                    }
-                });
-            }
-        });
-
-        KnownLocations.refreshCommunityLocations(new Config.Listener() {
-            @Override
-            public void onSuccess() {
-                Log.d(TAG, "Got location config");
-            }
-
-            @Override
-            public void onError() {
-                Log.d(TAG, "No location config");
-            }
-        });
+        mContentManager = mApplicationContext.getContentManager();
+        mUserid = UserHelper.getUserId();
 
         OperationLog.log("MainFragment.onCreate")
-                .put("externalStorageAvailable",
-                     Util.getBytesString(new StatFs(Environment.getExternalStorageDirectory().getAbsolutePath()).getAvailableBytes()))
-                .put("internalStorageAvailable",
-                     Util.getBytesString(new StatFs(Environment.getDataDirectory().getAbsolutePath()).getAvailableBytes()))
-                .put("tempStorageAvailable",
-                     Util.getBytesString(new StatFs(Environment.getDownloadCacheDirectory().getAbsolutePath()).getAvailableBytes()))
-                .finish();
+            .put("externalStorageAvailable",
+                 Util.getBytesString(new StatFs(Environment.getExternalStorageDirectory().getAbsolutePath()).getAvailableBytes()))
+            .put("internalStorageAvailable",
+                 Util.getBytesString(new StatFs(Environment.getDataDirectory().getAbsolutePath()).getAvailableBytes()))
+            .put("tempStorageAvailable",
+                 Util.getBytesString(new StatFs(Environment.getDownloadCacheDirectory().getAbsolutePath()).getAvailableBytes()))
+            .finish();
     }
 
     @Nullable
@@ -156,20 +147,31 @@ public class MainFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_main, container, false);
 
+        // No user id. Go back to SigninActivity.
+        if (mUserid == null || mUserid.length() == 0) {
+            Log.d(TAG, "No user id, activating signin.");
+            activateSignin();
+            return null;
+        }
+
         mGreetingName = (TextView)view.findViewById(R.id.main_greeting_name);
         mGreetingEmail = (TextView)view.findViewById(R.id.main_greeting_email);
 
         mManageGroup = (ViewGroup)view.findViewById(R.id.main_manage_content_group);
         mCheckinGroup = (ViewGroup)view.findViewById(R.id.main_checkin_group);
         mUpdateGroup = (ViewGroup)view.findViewById(R.id.main_update_talking_books_group);
-
+        mGetStatsGroup = (ViewGroup)view.findViewById(R.id.main_get_stats_talking_books_group);
 
         mManageGroup.setOnClickListener(manageListener);
         mCheckinGroup.setOnClickListener(checkinListener);
         mUpdateGroup.setOnClickListener(updateListener);
+        mGetStatsGroup.setOnClickListener(getStatsListener);
 
         mUploadCountTextView = (TextView)view.findViewById(R.id.main_count_uploads);
         mUploadSizeTextView = (TextView)view.findViewById(R.id.main_size_uploads);
+        mUploadNextTextView = (TextView)view.findViewById(R.id.main_next_upload);
+
+        mUploadCountTextView.setOnClickListener(uploadListener);
 
         // Set toolbar for this screen. By default, has a title from the application manifest
         // application.label property.
@@ -201,9 +203,35 @@ public class MainFragment extends Fragment {
         getUserConfig();
         getUserDetails();
 
-        mApplicationContext.getUploadManager().restartUploads();
         fillUploadValues();
         updateGreeting();
+
+        mContentManager.refreshContentList(new ContentManager.ContentManagerListener() {
+            @Override
+            public void contentListChanged() {
+                mHaveContentList = true;
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setButtonState();
+                    }
+                });
+            }
+        });
+
+        KnownLocations.refreshCommunityLocations(new Config.Listener() {
+            @Override
+            public void onSuccess() {
+                Log.d(TAG, "Got location config");
+            }
+
+            @Override
+            public void onError() {
+                Log.d(TAG, "No location config");
+            }
+        });
+
+        getLocationPermission();
 
         return view;
     }
@@ -217,23 +245,15 @@ public class MainFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        mApplicationContext.getUploadManager().setUpdateListener(null);
+        LocalBroadcastManager.getInstance(mApplicationContext).unregisterReceiver(mMessageReceiver);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        mApplicationContext.getUploadManager().setUpdateListener(new UploadManager.UploadListener() {
-            @Override
-            public void onUploadActivity(final int fileCount, final long bytesRemaining) {
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        fillUploadValues(fileCount, bytesRemaining);
-                    }
-                });
-            }
-        });
+        fillUploadValues();
+        LocalBroadcastManager.getInstance(mApplicationContext).registerReceiver(
+                mMessageReceiver, new IntentFilter(UploadService.UPLOADER_STATUS_EVENT));
     }
 
     @Override
@@ -241,30 +261,10 @@ public class MainFragment extends Fragment {
         super.onActivityResult(requestCode, resultCode, data);
 
         switch (requestCode) {
-            case REQUEST_CODE_MANAGE_CONTENT:
-                if (resultCode == RESULT_OK) {
-                    if (data.hasExtra("selected")) {
-                        mProject = data.getStringExtra("selected");
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                setButtonState();
-                            }
-                        });
-                    }
-                }
-                break;
-            case REQUEST_CODE_CHECKIN:
-                if (resultCode == RESULT_OK) {
-                    if (data.hasExtra("project")) {
-                        mProject = data.getStringExtra("project");
-                    }
-                    if (data.hasExtra("location")) {
-                        mCheckinLocation = data.getStringExtra("location");
-                    }
-                    if (data.hasExtra("communities")) {
-                        mCheckinCommunities = CommunityInfo.parseExtra(data.getStringArrayListExtra("communities"));
-                    }
+        case REQUEST_CODE_MANAGE_CONTENT:
+            if (resultCode == RESULT_OK) {
+                if (data.hasExtra("selected")) {
+                    mProject = data.getStringExtra("selected");
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -272,13 +272,53 @@ public class MainFragment extends Fragment {
                         }
                     });
                 }
-                break;
-            case REQUEST_CODE_UPDATE_TBS:
-                fillUploadValues();
-                break;
-            default:
-                break;
+            }
+            break;
+        case REQUEST_CODE_CHECKIN:
+            if (resultCode == RESULT_OK) {
+                if (data.hasExtra("project")) {
+                    mProject = data.getStringExtra("project");
+                }
+                if (data.hasExtra("location")) {
+                    mCheckinLocation = data.getStringExtra("location");
+                }
+                if (data.hasExtra("communities")) {
+                    mCheckinCommunities = CommunityInfo.parseExtra(
+                        data.getStringArrayListExtra("communities"));
+                }
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setButtonState();
+                    }
+                });
+            }
+            break;
+        case REQUEST_CODE_UPDATE_TBS:
+            fillUploadValues();
+            break;
+        case REQUEST_CODE_UPDATE_UPLOAD_STATUS:
+            if (resultCode == RESULT_OK && data.hasExtra("configure")) {
+                promptForStatusBarSettingsPage();
+            }
+            break;
+        default:
+            break;
         }
+    }
+
+    private void checkStartupInformationComplete() {
+        if (awaitingUserConfig || awaitingUserDetails || awaitingLocationPermission) {
+            return;
+        }
+        closeWaitDialog();
+        final Config config = TBLoaderAppContext.getInstance().getConfig();
+        if (!config.isStatusBarPromptDone()) {
+            promptForStatusBarSettingsPage();
+            config.setStatusBarPromptDone();
+        }
+        // The UI is all set up, so now let the upload service start.
+        UploadService.startUploadService();
     }
 
     @SuppressLint("SetTextI18n")
@@ -303,13 +343,19 @@ public class MainFragment extends Fragment {
         // Find which item was selected
         switch(item.getItemId()) {
             case R.id.nav_user_sign_out:
-                UserHelper.getPool().getUser(mUser).signOut();
+                UserHelper.getPool().getUser(mUserid).signOut();
                 UserHelper.getCredentialsProvider(getActivity().getApplicationContext()).clear();
                 TBLoaderAppContext.getInstance().getConfig().onSignOut();
                 Intent intent = new Intent();
                 intent.putExtra("signout", true);
                 getActivity().setResult(RESULT_OK, intent);
                 getActivity().finish();
+                break;
+
+            case R.id.nav_show_upload_status:
+                Intent userActivity = new Intent(getActivity(), UploadStatusActivity.class);
+                userActivity.putExtra("userid", mUserid);
+                startActivityForResult(userActivity, REQUEST_CODE_UPDATE_UPLOAD_STATUS);
                 break;
 
             case R.id.nav_user_change_password:
@@ -336,6 +382,13 @@ public class MainFragment extends Fragment {
 
 
         }
+    }
+
+    private void activateSignin() {
+        Intent startNewIntent = new Intent(mApplicationContext, SigninActivity.class);
+        startNewIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(startNewIntent);
+        getActivity().finish();
     }
 
     /**
@@ -368,9 +421,7 @@ public class MainFragment extends Fragment {
                 });
                 Log.d(TAG, "User Attributes: " + mUserDetails.toString());
                 awaitingUserDetails = false;
-                if (!awaitingUserConfig) {
-                    closeWaitDialog();
-                }
+                checkStartupInformationComplete();
             }
 
             @Override
@@ -378,9 +429,7 @@ public class MainFragment extends Fragment {
                 // Probably a network issue.
                 awaitingUserDetails = false;
                 opLog.put("failed", true).finish();
-                if (!awaitingUserConfig) {
-                    closeWaitDialog();
-                }
+                checkStartupInformationComplete();
             }
         };
 
@@ -412,9 +461,7 @@ public class MainFragment extends Fragment {
                     prefsMap.put(entry.getKey(), v);
                 }
                 opLog.finish(prefsMap);
-                if (!awaitingUserDetails) {
-                    closeWaitDialog();
-                }
+                checkStartupInformationComplete();
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -442,21 +489,6 @@ public class MainFragment extends Fragment {
         }
     }
 
-    ContentManager.ContentManagerListener contentManagerListener = new ContentManager.ContentManagerListener() {
-
-        @Override
-        public void contentListChanged() {
-            mHaveContentList = true;
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    setButtonState();
-                }
-            });
-        }
-    };
-
-
     private OnClickListener manageListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -464,8 +496,9 @@ public class MainFragment extends Fragment {
         }
     };
 
-    private void doManage() {Intent userActivity = new Intent(getActivity(), ManageContentActivity.class);
-        userActivity.putExtra("name", mUser);
+    private void doManage() {
+        Intent userActivity = new Intent(getActivity(), ManageContentActivity.class);
+        userActivity.putExtra("name", mUserid);
         startActivityForResult(userActivity, REQUEST_CODE_MANAGE_CONTENT);
     }
 
@@ -473,47 +506,119 @@ public class MainFragment extends Fragment {
         @Override
         public void onClick(View v) {
             Intent userActivity = new Intent(getActivity(), CheckinActivity.class);
-            userActivity.putExtra("name", mUser);
+            userActivity.putExtra("name", mUserid);
             userActivity.putExtra("project", mProject);
             startActivityForResult(userActivity, REQUEST_CODE_CHECKIN);
+        }
+    };
 
+    private OnClickListener uploadListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent userActivity = new Intent(getActivity(), UploadStatusActivity.class);
+            userActivity.putExtra("userid", mUserid);
+//            userActivity.putExtra("project", mProject);
+            startActivityForResult(userActivity, REQUEST_CODE_UPDATE_UPLOAD_STATUS);
         }
     };
 
     private OnClickListener updateListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            doUpdate();
+            doUpdate(false);
         }
     };
 
-    private void doUpdate() {
+    private OnClickListener getStatsListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            doUpdate(true);
+        }
+    };
+
+    private void doUpdate(boolean statsOnly) {
         Intent userActivity = new Intent(getActivity(), TbLoaderActivity.class);
-        userActivity.putExtra("name", mUser);
+        userActivity.putExtra("name", mUserid);
         userActivity.putExtra("project", mProject);
-        userActivity.putExtra("location", mCheckinLocation);
-        userActivity.putExtra("communities", CommunityInfo.makeExtra(mCheckinCommunities));
+        userActivity.putExtra("statsonly", statsOnly);
+        if (statsOnly) {
+            userActivity.putExtra("location", "other");
+        } else {
+            userActivity.putExtra("communities", CommunityInfo.makeExtra(mCheckinCommunities));
+            userActivity.putExtra("location", mCheckinLocation);
+        }
         startActivityForResult(userActivity, REQUEST_CODE_UPDATE_TBS);
     }
 
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Get extra data included in the Intent
+            String name = intent.getStringExtra("name");
+            int count = intent.getIntExtra("count", 0);
+            long size = intent.getLongExtra("size", 0);
+            Log.d(TAG, String.format("got updateProgress, count:%d, size:%d, name:%s", count, size, name));
+            fillUploadValues(count, size, name);
+        }
+    };
+
     private void fillUploadValues() {
-        UploadManager uploadManager = mApplicationContext.getUploadManager();
-        int count = uploadManager.getCountQueuedFiles();
-        long size = uploadManager.getSizeQueuedFiles();
-        fillUploadValues(count, size);
+        UploadService uploadService = mApplicationContext.getUploadService();
+        int count = uploadService.getUploadCount();
+        long size = uploadService.getUploadSize();
+        String name = mApplicationContext.getUploadService().getUploadName();
+        fillUploadValues(count, size, name);
     }
 
-    private void fillUploadValues(int count, long size) {
+    private void fillUploadValues(int count, long size, String name) {
         if (count > 0) {
-            mUploadCountTextView.setText(String.format(getString(R.string.main_n_stats_files_to_upload), count));
-            mUploadSizeTextView.setText(String.format(getString(R.string.main_n_bytes_to_upload), Util.getBytesString(size)));
-            mUploadSizeTextView.setVisibility(View.VISIBLE);
+            mUploadCountTextView.setText(String.format(getString(R.string.main_n_stats_files_to_upload), Util.getBytesString(size), count));
+            //mUploadSizeTextView.setText(String.format(getString(R.string.main_n_bytes_to_upload), Util.getBytesString(size)));
+            mUploadSizeTextView.setVisibility(View.GONE);
+            //mUploadNextTextView.setText(name);
+            mUploadNextTextView.setVisibility(View.GONE);
         } else {
             mUploadCountTextView.setText(getString(R.string.main_no_stats_files_to_upload));
             mUploadSizeTextView.setVisibility(View.GONE);
+            mUploadNextTextView.setVisibility(View.GONE);
         }
     }
 
+    /**
+     * Prompts the user that when they tap OK, the App Notifications settings page
+     * will open.
+     */
+    private void promptForStatusBarSettingsPage() {
+        showDialogMessage(getString(R.string.main_open_app_notifications_title),
+                          getString(R.string.main_open_app_notifications_body),
+                          openStatusBarSettingsPage,
+                          new Runnable(){public void run(){}});
+    }
+
+    /**
+     * Callback for showDialogMessage. Opens the App Notifications setting page.
+     */
+    private Runnable openStatusBarSettingsPage = new Runnable(){
+        @Override
+        public void run() {
+            Intent intent = new Intent();
+            if (android.os.Build.VERSION.SDK_INT > 24) {
+                intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
+                intent.putExtra("android.provider.extra.APP_PACKAGE", mApplicationContext.getPackageName());
+            } else if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
+                intent.putExtra("app_package", mApplicationContext.getPackageName());
+                intent.putExtra("app_uid", mApplicationContext.getApplicationInfo().uid);
+            } else {
+                intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.addCategory(Intent.CATEGORY_DEFAULT);
+                intent.setData(Uri.parse("package:" + mApplicationContext.getPackageName()));
+            }
+            intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
+
+            mApplicationContext.startActivity(intent);
+        }
+    };
 
     private void setButtonState() {
         boolean canManage = mHaveConfig;
@@ -528,6 +633,9 @@ public class MainFragment extends Fragment {
 
         mUpdateGroup.setAlpha(canUpdate ? 1.0f : 0.33f);
         mUpdateGroup.setEnabled(canUpdate);
+
+        mGetStatsGroup.setAlpha(canCheckin ? 1.0f : 0.33f);
+        mGetStatsGroup.setEnabled(canCheckin);
     }
 
     private void editPreferredGreeting(final String attributeValue) {
@@ -559,6 +667,8 @@ public class MainFragment extends Fragment {
                 }
             }
         });
+        builder.setNegativeButton("CANCEL",
+                                  new DialogInterface.OnClickListener() {public void onClick(DialogInterface dialog, int which) {}});
         userDialog = builder.create();
         userDialog.show();
     }
@@ -575,7 +685,7 @@ public class MainFragment extends Fragment {
         UserHelper.getPool().getUser(UserHelper.getUserId()).updateAttributesInBackground(updatedUserAttributes, updateHandler);
     }
 
-    UpdateAttributesHandler updateHandler = new UpdateAttributesHandler() {
+    private UpdateAttributesHandler updateHandler = new UpdateAttributesHandler() {
         @Override
         public void onSuccess(List<CognitoUserCodeDeliveryDetails> attributesVerificationList) {
             // Update successful
@@ -600,29 +710,59 @@ public class MainFragment extends Fragment {
         userDialog = null;
     }
 
-    private void showDialogMessage(String title, String body, final boolean exit) {
+    private void showDialogMessage(String title, String body, final Runnable okCallback, final Runnable cancelCallback) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle(title).setMessage(body).setNeutralButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                try {
-                    closeUserDialog();
-                } catch (Exception e) {
-                    // Log failure
-                    Log.e(TAG,"Dialog dismiss failed");
-                } finally {
-                    if (exit) {
-                        Intent intent = new Intent();
-                        intent.putExtra("forceExit", true);
-                        getActivity().setResult(RESULT_OK, intent);
-                        getActivity().finish();
+        builder.setTitle(title)
+            .setMessage(body)
+            .setNeutralButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    try {
+                        closeUserDialog();
+                    } catch (Exception e) {
+                        // Log failure
+                        Log.e(TAG,"Dialog dismiss failed");
+                    } finally {
+                        okCallback.run();
                     }
                 }
-            }
-        });
+            });
+        if (cancelCallback != null) {
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    try {
+                        closeUserDialog();
+                    } catch (Exception e) {
+                        // Log failure
+                        Log.e(TAG,"Dialog dismiss failed");
+                    } finally {
+                        cancelCallback.run();
+                    }
+                }
+            });
+        }
         closeWaitDialog();
         userDialog = builder.create();
         userDialog.show();
+    }
+
+    private void showDialogMessage(String title, String body, Runnable okCallback) {
+        showDialogMessage(title, body, okCallback, null);
+    }
+
+    private void showDialogMessage(String title, String body, final boolean exit) {
+        showDialogMessage(title, body, new Runnable(){
+            @Override
+            public void run() {
+                if (exit) {
+                    Intent intent = new Intent();
+                    intent.putExtra("forceExit", true);
+                    getActivity().setResult(RESULT_OK, intent);
+                    getActivity().finish();
+                }
+            }
+        });
     }
 
     private void closeWaitDialog() {
@@ -641,5 +781,43 @@ public class MainFragment extends Fragment {
         waitDialog.show();
     }
 
+    final private int REQUEST_CODE_ASK_LOCATION_PERMISSIONS = 123;
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        switch (requestCode) {
+        case REQUEST_CODE_ASK_LOCATION_PERMISSIONS:
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                //Accepted
+                awaitingLocationPermission = false;
+                checkStartupInformationComplete();
+            } else {
+                // Denied
+                showDialogMessage("Location Permission Required", "The TB-Loader requires Location permission to run.", true);
+            }
+            break;
+        default:
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+
+    private void getLocationPermission() {
+        Log.v(TAG, "handlePermissionsAndGetLocation");
+        int hasWriteContactsPermission;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            hasWriteContactsPermission = getActivity().checkSelfPermission(
+                Manifest.permission.ACCESS_FINE_LOCATION);
+            if (hasWriteContactsPermission != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                   REQUEST_CODE_ASK_LOCATION_PERMISSIONS);
+                return;
+            }
+        }
+        awaitingLocationPermission = false;
+        checkStartupInformationComplete();
+    }
 
 }

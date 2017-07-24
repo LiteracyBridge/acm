@@ -426,7 +426,6 @@ public class SigninActivity extends AppCompatActivity {
 
     private void launchMainActivity() {
         Intent userActivity = new Intent(this, MainActivity.class);
-        userActivity.putExtra("name", username);
         startActivityForResult(userActivity, MAIN_ACTIVITY_CODE);
     }
 

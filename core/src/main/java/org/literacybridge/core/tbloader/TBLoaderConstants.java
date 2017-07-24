@@ -11,7 +11,7 @@ public class TBLoaderConstants {
   //public static String TEMP_COLLECTION_DIR = "";
   public static final String SOFTWARE_SUBDIR = "software";
   public static final String CONTENT_SUBDIR = "content";
-  public static final RelativePath CONTENT_BASIC_SUBDIR = RelativePath.parse("basic");
+  public static final String CONTENT_BASIC_SUBDIR = "basic";
   public static final RelativePath COMMUNITIES_SUBDIR = RelativePath.parse("communities");
   public static final RelativePath IMAGES_SUBDIR = RelativePath.parse("images");
   //public static final String SCRIPT_SUBDIR = SW_SUBDIR + "scripts/";

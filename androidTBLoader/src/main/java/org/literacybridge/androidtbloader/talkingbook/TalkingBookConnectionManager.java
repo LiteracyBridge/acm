@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class TalkingBookConnectionManager {
-    private static final String TAG = TalkingBookConnectionManager.class.getSimpleName();
+    private static final String TAG = "TBL!:" + TalkingBookConnectionManager.class.getSimpleName();
     private static final String TB_FS_DEFAULT_SERIAL_NUMBER = "9285-F050";
     private static Integer [] GEN_PLUS_VENDOR_ID_LIST = {6975, 5325};
     private static Integer [] GEN_PLUS_PRODUCT_ID_LIST = {8194, 4636};

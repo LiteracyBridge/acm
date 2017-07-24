@@ -9,7 +9,7 @@ import org.literacybridge.androidtbloader.SingleFragmentActivity;
  */
 
 public class ChooseCommunityActivity extends SingleFragmentActivity {
-    private static final String TAG = ChooseCommunityActivity.class.getSimpleName();
+    private static final String TAG = "TBL!:" + ChooseCommunityActivity.class.getSimpleName();
 
     @Override
     protected Fragment createFragment() {

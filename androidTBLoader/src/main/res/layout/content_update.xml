@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:background="#eff"
-              android:orientation="vertical"
-              android:padding="4dp">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#eff"
+    android:orientation="vertical"
+    android:padding="4dp">
 
     <!-- Project name -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Project"
-        android:textSize="10sp"/>
+        android:textSize="10sp" />
 
     <TextView
         android:id="@+id/update_project_name"
@@ -21,29 +21,61 @@
         android:text="Project"
         android:textSize="24sp"
         tools:text="Project"
-        android:layout_marginLeft="5dp"/>
+        android:layout_marginLeft="5dp" />
+
+    <!-- Community display, when gathering stats -->
+    <LinearLayout
+        android:id="@+id/loader_display_community"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Community"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/content_update_display_community"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dp"
+            android:text=""
+            tools:text="Community Name" />
+
+    </LinearLayout>
 
     <!-- Content update name, aka deployment name -->
-    <TextView
+    <LinearLayout
+        android:id="@+id/loader_deployment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Content Update Name"
-        android:textSize="10sp"/>
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/content_update_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Content update"
-        tools:text="Content update"
-        android:layout_marginLeft="5dp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Content Update Name"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/content_update_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Content update"
+            tools:text="Content update"
+            android:layout_marginLeft="5dp" />
+
+    </LinearLayout>
 
     <!-- Talking Book ID -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Talking Book Serial Number"
-        android:textSize="10sp"/>
+        android:textSize="10sp" />
 
     <TextView
         android:id="@+id/talking_book_id"
@@ -51,7 +83,7 @@
         android:layout_height="wrap_content"
         android:text="Talking Book ID"
         tools:text="Talking Book ID"
-        android:layout_marginLeft="5dp"/>
+        android:layout_marginLeft="5dp" />
 
     <!-- Warning messages -->
     <TextView
@@ -61,7 +93,7 @@
         android:text="Danger, Will Robinson!"
         android:textColor="@color/alert"
         android:textSize="14sp"
-        tools:text="Danger, Will Robinson!"/>
+        tools:text="Danger, Will Robinson!" />
 
     <!-- community name -->
     <LinearLayout
@@ -76,14 +108,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Updating Talking Book for Community"
-            android:textSize="14sp"/>
+            android:textSize="14sp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Tap to change"
             android:textSize="10sp"
-            android:textStyle="normal|italic"/>
+            android:textStyle="normal|italic" />
 
         <TextView
             android:id="@+id/community_name"
@@ -96,7 +128,7 @@
             android:text="Please set the Community name"
             android:textSize="30sp"
             tools:ellipsize="marquee"
-            tools:text="Please set the Community name"/>
+            tools:text="Please set the Community name" />
 
     </LinearLayout>
 
@@ -122,7 +154,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Refresh firmware?"
-                tools:text="Refresh firmware?"/>
+                tools:text="Refresh firmware?" />
         </LinearLayout>
 
         <ProgressBar
@@ -133,15 +165,15 @@
             android:layout_centerHorizontal="true"
             android:indeterminate="true"
             android:indeterminateDuration="16000"
-            android:visibility="invisible"/>
+            android:visibility="invisible" />
 
         <TextView
-            android:id="@+id/textView11"
+            android:id="@+id/update_step_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Update Step:"
+            android:text="@string/update_step_label"
             android:textSize="10sp"
-            tools:text="Update Step:"/>
+            tools:text="Update Step:" />
 
         <TextView
             android:id="@+id/update_step"
@@ -149,7 +181,7 @@
             android:layout_height="wrap_content"
             android:paddingLeft="10dp"
             android:text=""
-            tools:text="Step 1 of N: Getting started."/>
+            tools:text="Step 1 of N: Getting started." />
 
         <TextView
             android:id="@+id/textView12"
@@ -157,7 +189,7 @@
             android:layout_height="wrap_content"
             android:text="Detail"
             android:textSize="10sp"
-            tools:text="Detail"/>
+            tools:text="Detail" />
 
         <TextView
             android:id="@+id/update_detail"
@@ -166,7 +198,7 @@
             android:ellipsize="marquee"
             android:paddingLeft="10dp"
             android:text=""
-            tools:text="The details..."/>
+            tools:text="The details..." />
 
         <TextView
             android:id="@+id/textView14"
@@ -174,13 +206,14 @@
             android:layout_height="wrap_content"
             android:text="Log"
             android:textSize="10sp"
-            tools:text="Log"/>
+            tools:text="Log" />
 
-        <ScrollView android:id="@+id/ScrollView01"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:fillViewport="true"
-                    android:scrollbars="none">
+        <ScrollView
+            android:id="@+id/ScrollView01"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:scrollbars="none">
 
             <TextView
                 android:id="@+id/update_log"
@@ -189,7 +222,7 @@
                 android:background="#efe"
                 android:paddingLeft="10dp"
                 android:text=""
-                tools:text="Log..."/>
+                tools:text="Log..." />
 
         </ScrollView>
 
@@ -203,6 +236,6 @@
         android:background="@android:color/holo_red_light"
         android:text="Go!"
         android:textSize="18sp"
-        tools:text="Go!"/>
+        tools:text="Go!" />
 
 </LinearLayout>

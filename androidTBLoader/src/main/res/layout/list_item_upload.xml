@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+    <!-- File name -->
+    <TextView
+        android:id="@+id/list_item_file_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:elegantTextHeight="false"
+        android:linksClickable="false"
+        android:padding="4dp"
+        android:textAppearance="@android:style/TextAppearance.Material.Menu"
+        tools:text="20170725T130808.123Z.zip"
+        />
+
+    <!-- File size -->
+    <TextView
+        android:id="@+id/list_item_file_size"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/list_item_file_name"
+        android:paddingStart="4dp"
+        tools:text="123 KiB"/>
+
+    <TextView
+        android:id="@+id/list_item_transfer_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/list_item_file_name"
+        android:layout_toEndOf="@id/list_item_file_size"
+        android:paddingStart="4dp"
+        android:textColor="@color/success"
+        tools:text="✔️" />
+
+    <TextView
+        android:id="@+id/list_item_transfer_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/list_item_transfer_status"
+        android:layout_below="@id/list_item_file_name"
+        android:paddingStart="4dp"
+        tools:text="0.234 s"/>
+
+    <!-- Date -->
+    <TextView
+        android:id="@+id/list_item_file_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/list_item_transfer_time"
+        android:layout_below="@id/list_item_file_name"
+        android:paddingStart="10dp"
+        tools:text="2017-07-07 13:08:08.123"/>
+
+    <!-- dividing line -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/list_item_file_size"
+        android:background="?android:attr/listDivider"/>
+
+</RelativeLayout>

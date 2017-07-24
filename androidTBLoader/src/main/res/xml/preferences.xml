@@ -39,6 +39,10 @@
             android:title="@string/pref_title_simulate_device"/>
 
         <CheckBoxPreference
+            android:key="pref_disable_uploads"
+            android:title="@string/pref_title_disable_uploads"/>
+
+        <CheckBoxPreference
             android:key="pref_show_unpublished"
             android:title="@string/pref_title_show_unpublished"/>
 

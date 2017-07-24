@@ -75,6 +75,7 @@
     <string name="title_activity_verify">VerifyActivity</string>
     <string name="title_activity_device_settings">DeviceSettings</string>
     <string name="title_activity_new_password">NewPassword</string>
+    <string name="pref_title_disable_uploads">Disable uploading statistics and User Feedback.</string>
     <string name="pref_title_simulate_device">Simulate Talking Book device.</string>
     <string name="pref_summary_simulate_device">Simulate a Talking Book using storage on the SD card.</string>
     <string name="pref_summary_physical_device">Use only a physical Talking Book device.</string>
@@ -96,6 +97,11 @@
 
     <string name="edit_greeting">Edit preferred greeting</string>
     <string name="main_greeting_label">Hello, </string>
+    <string name="main_open_app_notifications_body">TB-Loader can display a notification icon in the status bar whenever there are statistics or user feedback waiting to be uploaded. To enable this feature, turn on the \'Important Notice\' setting for TB-Loader.\n\nIf you choose not to enable the feature, notifications will be displayed in a secondary area, indicated by \'…\' in the status bar.\n\nTap Ok to open the \'App notifications\' settings. Then choose \'Set to important notice.\'</string>
+    <string name="main_open_app_notifications_title">Open App Notifications</string>
+    <string name="main_no_stats_files_to_upload">No statistics files to upload.</string>
+    <string name="main_n_stats_files_to_upload">%1$s in %2$d stats file(s) to upload.</string>
+    <string name="main_n_bytes_to_upload">%s left to upload.</string>
 
     <string name="filtered_chooser_sort_distance_checkbox">Sort by distance</string>
     <string name="filtered_chooser_project_label">Project</string>
@@ -104,10 +110,18 @@
     <string name="checkin_project_label">Project</string>
     <string name="checkin_n_projects_format">%d projects</string>
     <string name="checkin_tap_to_choose_project_label">Tap to choose project.</string>
-    <string name="main_no_stats_files_to_upload">No statistics files to upload.</string>
-    <string name="main_n_stats_files_to_upload">%d statistics file(s) to upload.</string>
-    <string name="main_n_bytes_to_upload">%s left to upload.</string>
     <string name="do_not_disconnect">Do not disconnect the Talking Book!</string>
     <string name="establishing_connection">Establishing connection to Talking Book [%d]...</string>
+    <string name="pref_summary_uploads_disabled">Uploads are disabled.</string>
+    <string name="pref_summary_uploads_enabled">Uploads are enabled.</string>
+    <string name="upload_user_id">Upload User ID</string>
+    <string name="show_upload_status">Show upload status</string>
+    <string name="main_label_get_statistics_only">Collect Statistics Only</string>
+    <string name="main_label_update_talking_books">Update Talking Books</string>
+    <string name="main_label_check_in">Check In</string>
+    <string name="main_label_manage_content">Manage Content</string>
+    <string name="updater_collect_stats_title">Collect Statistics</string>
+    <string name="update_step_label">Update Step:</string>
+    <string name="statistics_step_label">Statistics Step</string>
 
 </resources>

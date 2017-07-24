@@ -197,7 +197,7 @@ public class TBLoaderCore {
                 if (deploymentDirectory == null) missing.add("deploymentDirectory");
             }
             if (!missing.isEmpty()) {
-                throw new IllegalStateException("TBLoaderConfig not initialized with " + missing.toString());
+                throw new IllegalStateException("TBLoaderCore.Builder not initialized with " + missing.toString());
             }
             return new TBLoaderCore(tbLoaderConfig,
                     tbDeviceInfo,
@@ -246,7 +246,10 @@ public class TBLoaderCore {
         }
 
         public Builder withStatsOnly() {
-            this.statsOnly = true;
+            return withStatsOnly(true);
+        }
+        public Builder withStatsOnly(boolean statsOnly) {
+            this.statsOnly = statsOnly;
             return this;
         }
 
@@ -328,7 +331,7 @@ public class TBLoaderCore {
                 mOldDeploymentInfo.getDeploymentName(),   // like "DEMO-2016-1"
                 tbLoaderConfig.getTbLoaderId(),           // like "000c"
                 mOldDeploymentInfo.getCommunity(),        // like "demo-seattle"
-                tbDeviceInfo.getSerialNumber());     // like "B-000C1234"
+                tbDeviceInfo.getSerialNumber());          // like "B-000C1234"
         // like TalkingBookData/{content update name}/{tbloader id}/{community name}/{tb serial no}/{timestamp}-{tbloader id}
         // like "2016y12m25d01h23m45s-000c"
         mTalkingBookDataDirectoryPath = new RelativePath(
@@ -392,11 +395,11 @@ public class TBLoaderCore {
             bw.write(action + ",");
             bw.write(Integer.toString(durationSeconds) + ",");
             bw.write(mTbDeviceInfo.getSerialNumber().toUpperCase() + ",");
-            bw.write(newDeployment.getDeploymentName().toUpperCase() + ",");
-            bw.write(newDeployment.getPackageName().toUpperCase() + ",");
-            bw.write(newDeployment.getFirmwareRevision() + ",");
-            bw.write(newDeployment.getCommunity().toUpperCase() + ",");
-            bw.write(newDeployment.getUpdateTimestamp() + ",");
+            bw.write(mStatsOnly?"":newDeployment.getDeploymentName().toUpperCase() + ",");
+            bw.write(mStatsOnly?"":newDeployment.getPackageName().toUpperCase() + ",");
+            bw.write(mStatsOnly?"":newDeployment.getFirmwareRevision() + ",");
+            bw.write(mStatsOnly?"":newDeployment.getCommunity().toUpperCase() + ",");
+            bw.write(mStatsOnly?"":newDeployment.getUpdateTimestamp() + ",");
             bw.write(oldDeployment.getSerialNumber().toUpperCase() + ",");
             bw.write(oldDeployment.getDeploymentName().toUpperCase() + ",");
             bw.write(oldDeployment.getPackageName().toUpperCase() + ",");
@@ -419,12 +422,16 @@ public class TBLoaderCore {
                         .toUpperCase())
                 .put("location", location.toUpperCase())
                 .put("duration", Integer.toString(durationSeconds))
-                .put("out_sn", mTbDeviceInfo.getSerialNumber().toUpperCase())
-                .put("out_deployment", newDeployment.getDeploymentName().toUpperCase())
-                .put("out_package", newDeployment.getPackageName().toUpperCase())
-                .put("out_firmware", newDeployment.getFirmwareRevision())
-                .put("out_community", newDeployment.getCommunity().toUpperCase())
-                .put("out_rotation", newDeployment.getUpdateTimestamp())
+                .put("out_sn", mTbDeviceInfo.getSerialNumber().toUpperCase());
+            if (!mStatsOnly) {
+                opLog
+                    .put("out_deployment", newDeployment.getDeploymentName().toUpperCase())
+                    .put("out_package", newDeployment.getPackageName().toUpperCase())
+                    .put("out_firmware", newDeployment.getFirmwareRevision())
+                    .put("out_community", newDeployment.getCommunity().toUpperCase())
+                    .put("out_rotation", newDeployment.getUpdateTimestamp());
+            }
+            opLog
                 .put("in_sn", oldDeployment.getSerialNumber().toUpperCase())
                 .put("in_deployment", oldDeployment.getDeploymentName().toUpperCase())
                 .put("in_package", oldDeployment.getPackageName().toUpperCase())
@@ -569,19 +576,36 @@ public class TBLoaderCore {
     }
 
     /**
+     * Gathers statics from the Talking Book.
+     *
+     * @return a Result object.
+     */
+    public Result collectStatistics() {
+        if (!mStatsOnly) {
+            throw new IllegalStateException("collectStatistics called without setting 'statsOnly'.");
+        }
+        return performOperation();
+    }
+
+    /**
      * Perform the update. See above for definitions of the directory structures.
      *
      * @return a Result object
      */
     public Result update() {
-        mStepsLog = OperationLog.startOperation("CoreTalkingBookUpdate");
-        if (mOldDeploymentInfo == null) {
-            mOldDeploymentInfo = new DeploymentInfo.DeploymentInfoBuilder().build();
+        if (mStatsOnly) {
+            throw new IllegalStateException("update called with 'statsOnly' set.");
         }
-        System.out.println("oldDeploymentInfo:\n" + mOldDeploymentInfo.toString());
-        System.out.println("newDeploymentInfo:\n" + mNewDeploymentInfo.toString());
-        System.out.println("location: " + mLocation);
+        return performOperation();
+    }
 
+    /**
+     * The setup and evaluation and statistics gathering are all in common between stats-only
+     * and update.
+     * @return
+     */
+    private Result performOperation() {
+        mStepsLog = OperationLog.startOperation(mStatsOnly ? "CorTalkingBookCollectStatistics" : "CoreTalkingBookUpdate");
         mProgressListenerListener.step(starting);
 
         mCopyListener = new TbFile.CopyProgress() {
@@ -806,6 +830,7 @@ public class TBLoaderCore {
         for (TbFile child : children) {
             myCount.add(child);
             listDirectoryEntry(child, buffer);
+            mProgressListenerListener.detail(child.getName());
         }
         // Print the summary line
         buffer.append(String.format(Locale.US, "%11c%5d File(s)%,15d bytes\n\n",
@@ -833,9 +858,11 @@ public class TBLoaderCore {
                 counts.files,
                 counts.size));
         builder.append(String.format(Locale.US, "%10c%6d Dir(s)", ' ', counts.dirs));
+        mProgressListenerListener.log(String.format("%d files, %d dirs, %,d bytes", counts.files, counts.dirs, counts.size));
         long free = mTalkingBookRoot.getFreeSpace();
         if (free > 0) {
             builder.append(String.format(Locale.US, " %,15d bytes free", free));
+            mProgressListenerListener.log(true, String.format("%,d bytes free", free));
         }
         builder.append("\n");
         return builder.toString();
@@ -906,7 +933,7 @@ public class TBLoaderCore {
                 if (excludedNames.contains(name)) {
                     return false;
                 }
-                // Hiden file? Skip them.
+                // Hidden file? Skip them.
                 if (name.charAt(0) == '.') {
                     return false;
                 }
@@ -1126,15 +1153,29 @@ public class TBLoaderCore {
             @Override
             public boolean accept(TbFile parent, String name) {
                 name = name.toLowerCase();
-                return name.endsWith(".img") ||
-                        name.endsWith(".rtc");
+                // Files with a particular extension.
+                if (name.endsWith(".img") || name.endsWith(".rtc")) {
+                    return true;
+                }
+                // Anything starting with ".", but not "." or ".." (!)
+                if (name.startsWith(".")) {
+                    if (name.length() > 2 ||
+                        (name.length() == 2 && name.charAt(1) != '.')) {
+                        return true;
+                    }
+                }
+                // Directories that Android and Windows like to spew wherever possible. (macOS's files all
+                // start with ".", so handled above.)
+                if (name.equals("android") || name.equals("music") || name.equals("system volume information")) {
+                    return true;
+                }
+                return false;
             }
         });
         if (names != null) {
             for (String name : names) {
                 mProgressListenerListener.detail(name);
-                mTalkingBookRoot.open(name).delete();
-                mStepFileCount++;
+                mStepFileCount += mTalkingBookRoot.open(name).delete(TbFile.Flags.recursive);
             }
         }
 

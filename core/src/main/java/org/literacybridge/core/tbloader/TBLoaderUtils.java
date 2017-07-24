@@ -171,19 +171,18 @@ public class TBLoaderUtils {
      * @param deploymentDirectory The Content Update directory.
      * @return A string with "(No firmware)", a version like "r1216", or "(Multiple Firmwares!)".
      */
-    public static String getFirmwareVersionNumbers(TbFile deploymentDirectory) {
+    public static String getFirmwareVersionNumbers(File deploymentDirectory) {
         String version = "(No firmware)";
 
         try {
             // get Package
-            String[] files = deploymentDirectory.open(TBLoaderConstants.CONTENT_BASIC_SUBDIR)
-                    .list(new TbFile.FilenameFilter() {
-                        @Override
-                        public boolean accept(TbFile parent, String name) {
-                            String lowercase = name.toLowerCase();
-                            return lowercase.endsWith(".img");
-                        }
-                    });
+            String[] files = new File(deploymentDirectory, TBLoaderConstants.CONTENT_BASIC_SUBDIR)
+                .list(new FilenameFilter() {
+                    public boolean accept(File dir, String name) {
+                        String lowercase = name.toLowerCase();
+                        return lowercase.endsWith(".img");
+                    }
+                });
             if (files.length > 1) {
                 version = "(Multiple Firmwares!)";
             } else if (files.length == 1) {

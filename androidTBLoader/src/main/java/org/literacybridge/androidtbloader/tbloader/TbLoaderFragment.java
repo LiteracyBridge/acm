@@ -1,6 +1,7 @@
 package org.literacybridge.androidtbloader.tbloader;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,6 +11,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -25,6 +27,7 @@ import android.widget.Toast;
 
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
+import org.literacybridge.androidtbloader.checkin.CheckinActivity;
 import org.literacybridge.androidtbloader.community.ChooseCommunityActivity;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.content.ContentInfo;
@@ -55,7 +58,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone;
 import java.util.concurrent.Executors;
 
 import static android.app.Activity.RESULT_OK;
@@ -68,7 +70,7 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_
  * This implements the UI of the Loader portion of the application.
  */
 public class TbLoaderFragment extends Fragment {
-    private static final String TAG = TbLoaderFragment.class.getSimpleName();
+    private static final String TAG = "TBL!:" + TbLoaderFragment.class.getSimpleName();
 
     private final int REQUEST_CODE_GET_COMMUNITY = 101;
 
@@ -76,6 +78,7 @@ public class TbLoaderFragment extends Fragment {
     private TalkingBookConnectionManager.TalkingBook mConnectedDevice;
     private TBDeviceInfo mConnectedDeviceInfo;
     private String mProject;
+    private boolean mStatsOnly;
     private List<CommunityInfo> mCommunities;
     private CommunityInfo mCommunity;
     private String mLocation;
@@ -97,17 +100,21 @@ public class TbLoaderFragment extends Fragment {
     private ProgressBar mSpinner;
 
     private boolean mUpdateInProgress = false;
+    private TextView mProjectNameTextView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getActivity().getIntent();
         mProject = intent.getStringExtra("project");
+        mStatsOnly = intent.getBooleanExtra("statsonly", false);
         mLocation = intent.getStringExtra("location");
-        mCommunities = CommunityInfo.parseExtra(intent.getStringArrayListExtra("communities"));
-        // If only one community, don't prompt the user to select it.
-        if (mCommunities != null && mCommunities.size() == 1) {
-            mCommunity = mCommunities.get(0);
+        if (!mStatsOnly) {
+            mCommunities = CommunityInfo.parseExtra(intent.getStringArrayListExtra("communities"));
+            // If only one community, don't prompt the user to select it.
+            if (mCommunities != null && mCommunities.size() == 1) {
+                mCommunity = mCommunities.get(0);
+            }
         }
         mTalkingBookConnectionManager = ((TBLoaderAppContext) getActivity().getApplicationContext()).getTalkingBookConnectionManager();
         ContentManager mContentManager = ((TBLoaderAppContext) getActivity().getApplicationContext())
@@ -152,6 +159,10 @@ public class TbLoaderFragment extends Fragment {
         // from the AndroidManifest file. Here, we make the toolbar work like an action bar.
         Toolbar toolbar = (Toolbar) view.findViewById(R.id.main_toolbar);
         ((AppCompatActivity)getActivity()).setSupportActionBar(toolbar);
+        if (mStatsOnly) {
+            ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(
+                            R.string.updater_collect_stats_title);
+        }
         // The toolbar also *contains* a TextView with an id of main_toolbar_title.
         TextView main_title = (TextView) view.findViewById(R.id.main_toolbar_title);
         main_title.setText("");
@@ -162,17 +173,24 @@ public class TbLoaderFragment extends Fragment {
         toolbar.setNavigationOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                getActivity().finish();
+                if (shouldDoBackPressed()) {
+                    getActivity().finish();
+                }
             }
         });
 
         // Project name and initial value.
-        TextView mProjectNameTextView = (TextView) view.findViewById(R.id.update_project_name);
+        mProjectNameTextView = (TextView) view.findViewById(R.id.update_project_name);
         mProjectNameTextView.setText(mProject);
-        TextView mContentUpdateNameTextView = (TextView) view.findViewById(
+
+        if (mStatsOnly) {
+            view.findViewById(R.id.loader_deployment).setVisibility(View.GONE);
+        } else {
+            TextView mContentUpdateNameTextView = (TextView) view.findViewById(
                 R.id.content_update_name);
-        File contentUpdateDirectory = PathsProvider.getLocalContentUpdateDirectory(mProject);
-        mContentUpdateNameTextView.setText(contentUpdateDirectory.getName());
+            File contentUpdateDirectory = PathsProvider.getLocalContentUpdateDirectory(mProject);
+            mContentUpdateNameTextView.setText(contentUpdateDirectory.getName());
+        }
 
         // Talking Book ID, aka serial number, and initial value.
         mTalkingBookIdTextView = (TextView)view.findViewById(R.id.talking_book_id);
@@ -181,13 +199,26 @@ public class TbLoaderFragment extends Fragment {
         mTalkingBookWarningsTextView = (TextView)view.findViewById(R.id.talking_book_warnings);
         mTalkingBookWarningsTextView.setText("");
 
-        // Community. Show the values if we already know them.
-        mCommunityNameTextView = (TextView)view.findViewById(R.id.community_name);
-        LinearLayout mCommunityGroup = (LinearLayout) view.findViewById(R.id.loader_community);
-        mCommunityNameTextView.setSelected(true);
-        mCommunityGroup.setOnClickListener(setCommunityListener);
+        if (mStatsOnly) {
+            mCommunityNameTextView = (TextView) view.findViewById(R.id.content_update_display_community);
+            // Community selection is irrelevant for stats only; for that we just want to display the name
+            // found on the Talking Book.
+            view.findViewById(R.id.loader_community).setVisibility(View.GONE);
+            view.findViewById(R.id.loader_display_community).setVisibility(View.VISIBLE);
+        } else {
+            // Community. Show the values if we already know them.
+            mCommunityNameTextView = (TextView) view.findViewById(R.id.community_name);
+            LinearLayout mCommunityGroup = (LinearLayout) view.findViewById(R.id.loader_community);
+            mCommunityNameTextView.setSelected(true);
+            mCommunityGroup.setOnClickListener(setCommunityListener);
+        }
 
         mRefreshFirmwareCheckBox = (CheckBox)view.findViewById(R.id.refresh_firmware);
+        if (mStatsOnly) {
+            mRefreshFirmwareCheckBox.setVisibility(View.GONE);
+            ((TextView)view.findViewById(R.id.update_step_label)).setText(getString(
+                R.string.statistics_step_label));
+        }
 
         // ProgressListener display
         mUpdateStepTextView = (TextView)view.findViewById(R.id.update_step);
@@ -205,6 +236,11 @@ public class TbLoaderFragment extends Fragment {
 
         return view;
     }
+
+    boolean shouldDoBackPressed() {
+        return !mUpdateInProgress;
+    }
+
 
     @Override
     public void onPause() {
@@ -281,7 +317,7 @@ public class TbLoaderFragment extends Fragment {
                 @Override
                 public void run() {
                     try {
-                        installContentUpdate();
+                        performOperation();
                     } catch (Exception e) {
                         Log.d(TAG, "Unexpected exception updating Talking Book", e);
                         /*
@@ -342,7 +378,8 @@ public class TbLoaderFragment extends Fragment {
         @Override
         public void onClick(View v) {
             if (mCommunities != null && mCommunities.size() == 1) { return; }
-            List<CommunityInfo> list = mCommunities != null ? mCommunities : new ArrayList(mContentInfo.getCommunities().values());
+            List<CommunityInfo> list = mCommunities != null ? mCommunities :
+                                       new ArrayList<>(mContentInfo.getCommunities().values());
             Intent intent = new Intent(getActivity(), ChooseCommunityActivity.class);
             intent.putExtra("communities", CommunityInfo.makeExtra(list));
             startActivityForResult(intent, REQUEST_CODE_GET_COMMUNITY);
@@ -355,7 +392,7 @@ public class TbLoaderFragment extends Fragment {
     private void setButtonState() {
         // Enable the Go button if we have a TB connected, have a location & a community,
         // and aren't already updating.
-        boolean goEnabled = (mCommunity != null) &&
+        boolean goEnabled = (mStatsOnly || mCommunity != null) &&
                 (mConnectedDevice != null) &&
                 !mUpdateInProgress;
         mGoButton.setAlpha(goEnabled ? 1 : 0.5f);
@@ -372,16 +409,22 @@ public class TbLoaderFragment extends Fragment {
         if (mConnectedDeviceInfo != null) {
             String deviceCommunity = mConnectedDeviceInfo.getCommunityName();
             String deviceProject = mConnectedDeviceInfo.getProjectName();
-            boolean projectMismatch =  !deviceProject.equalsIgnoreCase(mProject) &&
+            if (!mStatsOnly) {
+                boolean projectMismatch = !deviceProject.equalsIgnoreCase(mProject) &&
                     !deviceProject.equalsIgnoreCase("UNKNOWN");
-            boolean communityMismatch = mCommunity != null && !deviceCommunity.equalsIgnoreCase(mCommunity.getName()) &&
-                    !deviceCommunity.equalsIgnoreCase("UNKNOWN");
-            if (projectMismatch || communityMismatch) {
-                message = "Warning: This Talking Book was previously part of";
-                if (projectMismatch) message += " project " + deviceProject;
-                if (mCommunity != null) {
-                    if (projectMismatch && communityMismatch) message += " and";
-                    if (communityMismatch) message += " community " + deviceCommunity;
+                boolean communityMismatch =
+                    mCommunity != null && !deviceCommunity.equalsIgnoreCase(mCommunity.getName()) &&
+                        !deviceCommunity.equalsIgnoreCase("UNKNOWN");
+                if (projectMismatch || communityMismatch) {
+                    message = "Warning: This Talking Book was previously part of";
+                    if (projectMismatch)
+                        message += " project " + deviceProject;
+                    if (mCommunity != null) {
+                        if (projectMismatch && communityMismatch)
+                            message += " and";
+                        if (communityMismatch)
+                            message += " community " + deviceCommunity;
+                    }
                 }
             }
         }
@@ -440,6 +483,16 @@ public class TbLoaderFragment extends Fragment {
                     mSrnPrefix);
         }
         mTalkingBookIdTextView.setText(srn);
+
+        if (mStatsOnly) {
+            String deviceCommunity = mConnectedDeviceInfo.getCommunityName();
+            String deviceProject = mConnectedDeviceInfo.getProjectName();
+            if (mProject == null || !deviceProject.equalsIgnoreCase("unknown")) {
+                mProject = deviceProject;
+            }
+            mProjectNameTextView.setText(deviceProject);
+            mCommunityNameTextView.setText(deviceCommunity);
+        }
         // This could be a place to update the srn prefix.
     }
 
@@ -455,7 +508,15 @@ public class TbLoaderFragment extends Fragment {
         private String mStep;
         private String mDetail;
         private String mLog;
+        private Activity mActivity = null;
 
+        private Activity activity() {
+            if (mActivity == null) {
+                mActivity = getActivity();
+            }
+            return mActivity;
+        }
+        
         public void clear() {
             mStep = mDetail = mLog = "";
             refresh();
@@ -474,7 +535,7 @@ public class TbLoaderFragment extends Fragment {
         public void extraStep(String step) {
             mStep = step;
             mDetail = "";
-            getActivity().runOnUiThread(new Runnable() {
+            activity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     mUpdateStepTextView.setText(mStep);
@@ -487,7 +548,7 @@ public class TbLoaderFragment extends Fragment {
         public void step(final Steps step) {
             mStep = step.description();
             mDetail = "";
-            getActivity().runOnUiThread(new Runnable() {
+            activity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     mUpdateStepTextView.setText(mStep);
@@ -499,7 +560,7 @@ public class TbLoaderFragment extends Fragment {
         @Override
         public void detail(final String detail) {
             mDetail = detail;
-            getActivity().runOnUiThread(new Runnable() {
+            activity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     mUpdateDetailTextView.setText(mDetail);
@@ -510,7 +571,7 @@ public class TbLoaderFragment extends Fragment {
         @Override
         public void log(final String line) {
             mLog = line + "\n" + mLog;
-            getActivity().runOnUiThread(new Runnable() {
+            activity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     mUpdateLogTextView.setText(mLog);
@@ -535,7 +596,7 @@ public class TbLoaderFragment extends Fragment {
                     mLog = mLog + line;
                 }
             }
-            getActivity().runOnUiThread(new Runnable() {
+            activity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     mUpdateLogTextView.setText(mLog);
@@ -547,19 +608,15 @@ public class TbLoaderFragment extends Fragment {
     /**
      * Updates the Talking Book
      */
-    private void installContentUpdate() {
-        OperationLog.Operation opLog = OperationLog.startOperation("UpdateTalkingBook");
+    private void performOperation() {
+        OperationLog.Operation opLog = OperationLog.startOperation(
+            mStatsOnly ? "CollectStatistics" : "UpdateTalkingBook");
         Config config = TBLoaderAppContext.getInstance().getConfig();
         TBDeviceInfo tbDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
-                    mConnectedDevice.getDeviceLabel(),
-                    mSrnPrefix);
+                                                     mConnectedDevice.getDeviceLabel(),
+                                                     mSrnPrefix);
 
         long startTime = System.currentTimeMillis();
-
-        // The directory with images. {project}/content/{deployment}
-        File contentUpdateDirectory = PathsProvider.getLocalContentUpdateDirectory(mProject);
-        String contentUpdateName = contentUpdateDirectory.getName();
-        TbFile contentUpdateTbFile = new FsFile(contentUpdateDirectory);
 
         // Where to gather the statistics and user recordings, to be uploaded.
 //        TbFile collectionTbFile = new FsFile(PathsProvider.getUploadDirectory());
@@ -569,43 +626,24 @@ public class TbLoaderFragment extends Fragment {
         df.setTimeZone(UTC);
         String todaysDate = df.format(new Date());
 
-        File collectedDataDirectory = new File(PathsProvider.getLocalTempDirectory(), COLLECTED_DATA_SUBDIR_NAME + File.separator + collectionTimestamp);
+        File collectedDataDirectory = new File(PathsProvider.getLocalTempDirectory(),
+                                               COLLECTED_DATA_SUBDIR_NAME + File.separator
+                                                   + collectionTimestamp);
         TbFile collectedDataTbFile = new FsFile(collectedDataDirectory);
 
         // Working storage.
         TbFile tempTbFile = new FsFile(PathsProvider.getLocalTempDirectory()).open("temp");
         tempTbFile.getParent().mkdirs();
 
-        // Find the image with the community's language and/or group (such as a/b test group).
-        String imageName = TBLoaderUtils.getImageForCommunity(contentUpdateDirectory, mCommunity.getName());
-
-        // What firmware comes with this content update?
-        String firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(contentUpdateTbFile);
-
         TBLoaderConfig tbLoaderConfig = new TBLoaderConfig.Builder()
-                .withTbLoaderId(config.getTbcdid())
-                .withProject(mProject)
-                .withSrnPrefix(mSrnPrefix)
-                .withCollectedDataDirectory(collectedDataTbFile)
-                .withTempDirectory(tempTbFile)
-                .build();
+            .withTbLoaderId(config.getTbcdid())
+            .withProject(mProject)
+            .withSrnPrefix(mSrnPrefix)
+            .withCollectedDataDirectory(collectedDataTbFile)
+            .withTempDirectory(tempTbFile)
+            .build();
 
         DeploymentInfo oldDeploymentInfo = tbDeviceInfo.createDeploymentInfo(mProject);
-        String deviceSerialNumber = tbDeviceInfo.getSerialNumber();
-        if (tbDeviceInfo.needNewSerialNumber()) {
-            deviceSerialNumber = getNewDeviceSerialNumber();
-        }
-
-        DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
-                .withSerialNumber(deviceSerialNumber)
-                .withProjectName(mProject)
-                .withDeploymentName(contentUpdateName)
-                .withPackageName(imageName)
-                .withUpdateDirectory(collectedDataDirectory.getName())
-                .withUpdateTimestamp(todaysDate) // TODO: this should be the "deployment date", the first date the new content is deployed.
-                .withFirmwareRevision(firmwareRevision)
-                .withCommunity(mCommunity.getName());
-        DeploymentInfo newDeploymentInfo = builder.build();
 
         getActivity().runOnUiThread(new Runnable() {
             @Override
@@ -614,26 +652,32 @@ public class TbLoaderFragment extends Fragment {
             }
         });
 
-        opLog.put("project", mProject)
-            .put("deployment", contentUpdateName)
-            .put("package", imageName)
-            .put("community", mCommunity.getName())
-            .put("sn", deviceSerialNumber)
-            .put("tbloaderId", config.getTbcdid())
-            .put("username", config.getUsername())
-            .put("timestamp", collectionTimestamp);
-        
-        TBLoaderCore core = new TBLoaderCore.Builder()
-                .withTbLoaderConfig(tbLoaderConfig)
-                .withTbDeviceInfo(tbDeviceInfo)
-                .withDeploymentDirectory(contentUpdateTbFile)
-                .withOldDeploymentInfo(oldDeploymentInfo)
+        TBLoaderCore.Builder builder = new TBLoaderCore.Builder()
+            .withTbLoaderConfig(tbLoaderConfig)
+            .withTbDeviceInfo(tbDeviceInfo)
+            .withOldDeploymentInfo(oldDeploymentInfo)
+            .withLocation(mLocation)
+            .withRefreshFirmware(mRefreshFirmwareCheckBox.isChecked())
+            .withProgressListener(mProgressListener)
+            .withStatsOnly(mStatsOnly);
+
+        TBLoaderCore.Result result;
+        if (mStatsOnly) {
+            result = builder.build().collectStatistics();
+        } else {
+            // The directory with images. {project}/content/{deployment}
+            File contentUpdateDirectory = PathsProvider.getLocalContentUpdateDirectory(mProject);
+            DeploymentInfo newDeploymentInfo = getUpdateDeploymentInfo(opLog, tbDeviceInfo,
+                                                        collectionTimestamp, todaysDate,
+                                                        collectedDataDirectory,
+                                                        contentUpdateDirectory
+                                                        );
+            // Add in the update specific data, then go!
+            result = builder
+                .withDeploymentDirectory(new FsFile(contentUpdateDirectory))
                 .withNewDeploymentInfo(newDeploymentInfo)
-                .withLocation(mLocation)
-                .withRefreshFirmware(mRefreshFirmwareCheckBox.isChecked())
-                .withProgressListener(mProgressListener)
-                .build();
-        TBLoaderCore.Result result = core.update();
+                .build().update();
+        }
 
         // Zip up the files, and give the .zip to the uploader.
         try {
@@ -647,7 +691,7 @@ public class TbLoaderFragment extends Fragment {
             ZipUnzip.zip(collectedDataDirectory, uploadableZipFile, true);
             collectedDataTbFile.deleteDirectory();
 
-            ((TBLoaderAppContext)getActivity().getApplicationContext()).getUploadManager().uploadFileAsName(uploadableZipFile, collectedDataZipName);
+            ((TBLoaderAppContext)getActivity().getApplicationContext()).getUploadService().uploadFileAsName(uploadableZipFile, collectedDataZipName);
             String message = String.format("Zipped statistics and user feedback in %s", formatElapsedTime(System.currentTimeMillis()-zipStart));
             mProgressListener.log(message);
             message = String.format("TB-Loader completed in %s", formatElapsedTime(System.currentTimeMillis()-startTime));
@@ -660,6 +704,45 @@ public class TbLoaderFragment extends Fragment {
             opLog.put("zipException", e);
         }
         opLog.finish();
+    }
+
+    private DeploymentInfo getUpdateDeploymentInfo(OperationLog.Operation opLog,
+                                                   TBDeviceInfo tbDeviceInfo,
+                                                   String collectionTimestamp, String todaysDate,
+                                                   File collectedDataDirectory,
+                                                   File contentUpdateDirectory) {
+        Config config = TBLoaderAppContext.getInstance().getConfig();
+        // Find the image with the community's language and/or group (such as a/b test group).
+        String imageName = TBLoaderUtils.getImageForCommunity(contentUpdateDirectory, mCommunity.getName());
+
+        // What firmware comes with this content update?
+        String firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(contentUpdateDirectory);
+
+        String deviceSerialNumber = tbDeviceInfo.getSerialNumber();
+        if (tbDeviceInfo.needNewSerialNumber()) {
+            deviceSerialNumber = getNewDeviceSerialNumber();
+        }
+
+        DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
+                .withSerialNumber(deviceSerialNumber)
+                .withProjectName(mProject)
+                .withDeploymentName(contentUpdateDirectory.getName())
+                .withPackageName(imageName)
+                .withUpdateDirectory(collectedDataDirectory.getName())
+                .withUpdateTimestamp(todaysDate) // TODO: this should be the "deployment date", the first date the new content is deployed.
+                .withFirmwareRevision(firmwareRevision)
+                .withCommunity(mCommunity.getName());
+        DeploymentInfo newDeploymentInfo = builder.build();
+
+        opLog.put("project", mProject)
+            .put("deployment", contentUpdateDirectory.getName())
+            .put("package", imageName)
+            .put("community", mCommunity.getName())
+            .put("sn", deviceSerialNumber)
+            .put("tbloaderId", config.getTbcdid())
+            .put("username", config.getUsername())
+            .put("timestamp", collectionTimestamp);
+        return newDeploymentInfo;
     }
 
     @SuppressLint("DefaultLocale")
@@ -685,7 +768,6 @@ public class TbLoaderFragment extends Fragment {
      */
     private String getNewDeviceSerialNumber() {
         final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
-        int intSrn = sharedPreferences.getInt(Config.SERIAL_NUMBER_COUNTER_KEY, 0);
         int tbcdid = Integer.parseInt(TBLoaderAppContext.getInstance().getConfig().getTbcdid(), 16);
         tbcdid |= 0x8000;
 

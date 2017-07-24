@@ -27,7 +27,7 @@ import android.widget.TextView;
 import org.literacybridge.androidtbloader.R;
 
 public class FirstTimeLoginAttributesDisplayAdapter extends BaseAdapter {
-    private String TAG = "FirstTimeLoginDetails";
+    private String TAG = "TBL!:" + "FirstTimeLoginDetails";
     private Context context;
     private int count;
     private static LayoutInflater layoutInflater;

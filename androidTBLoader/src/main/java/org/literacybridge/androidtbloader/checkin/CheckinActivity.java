@@ -13,7 +13,7 @@ import org.literacybridge.androidtbloader.main.MainFragment;
  */
 
 public class CheckinActivity extends SingleFragmentActivity {
-    private static final String TAG = CheckinActivity.class.getSimpleName();
+    private static final String TAG = "TBL!:" + CheckinActivity.class.getSimpleName();
 
     @Override
     protected Fragment createFragment() {

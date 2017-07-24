@@ -1,14 +1,11 @@
 package org.literacybridge.androidtbloader.checkin;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -25,7 +22,6 @@ import android.widget.ImageButton;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
@@ -33,14 +29,12 @@ import org.literacybridge.androidtbloader.community.ChooseCommunityActivity;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.community.CommunityInfoAdapter;
 import org.literacybridge.androidtbloader.content.ContentManager;
-import org.literacybridge.core.fs.OperationLog;
+import org.literacybridge.androidtbloader.tbloader.TbLoaderActivity;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static android.app.Activity.RESULT_OK;
@@ -55,7 +49,7 @@ import static android.app.Activity.RESULT_OK;
  */
 
 public class CheckinFragment extends Fragment {
-    private static final String TAG = CheckinFragment.class.getSimpleName();
+    private static final String TAG = "TBL!:" + CheckinFragment.class.getSimpleName();
 
     private final static int REQUEST_CODE_ADD_GPS_TO_COMMUNITY = 102;
     private final static int REQUEST_CODE_UPDATE_TODAY_COMMUNITY = 103;
@@ -98,7 +92,7 @@ public class CheckinFragment extends Fragment {
         mNearbyCommunitiesList = new ArrayList<>();
         mUpdateTodayCommunitiesList = new ArrayList<>();
 
-        setupLocation();
+        LocationProvider.getCurrentLocation(mLocationListener);//if already has permission
     }
 
     @Nullable
@@ -445,63 +439,6 @@ public class CheckinFragment extends Fragment {
             }
             mGpsLocationTimeTextView.setText(strTime);
         }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-            Log.d(TAG,
-                    String.format("Location provider status changed: %s, %d, %s",
-                            provider,
-                            status,
-                            extras.toString()));
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-            Log.d(TAG, String.format("Location provider enabled: %s", provider));
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-            Log.d(TAG, String.format("Location provider disabled: %s", provider));
-        }
     };
-
-
-    final private int REQUEST_CODE_ASK_PERMISSIONS = 123;
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-            @NonNull String[] permissions,
-            @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_CODE_ASK_PERMISSIONS:
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    //Accepted
-                    LocationProvider.getLocation(mLocationListener);
-                } else {
-                    // Denied
-                    Toast.makeText(getActivity(), "LOCATION Denied", Toast.LENGTH_SHORT)
-                            .show();
-                }
-                break;
-            default:
-                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        }
-    }
-
-
-    private void setupLocation() {
-        Log.v(TAG, "handlePermissionsAndGetLocation");
-        int hasWriteContactsPermission;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            hasWriteContactsPermission = getActivity().checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
-            if (hasWriteContactsPermission != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        REQUEST_CODE_ASK_PERMISSIONS);
-                return;
-            }
-        }
-        LocationProvider.getLocation(mLocationListener);//if already has permission
-    }
 
 }

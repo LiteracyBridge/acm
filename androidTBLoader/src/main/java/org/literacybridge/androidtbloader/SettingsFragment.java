@@ -99,6 +99,13 @@ public class SettingsFragment extends PreferenceFragment
             } else {
                 preference.setSummary(R.string.pref_summary_physical_device);
             }
+
+            preference = findPreference(("pref_disable_uploads"));
+            if (mSharedPreferences.getBoolean(preference.getKey(), false)) {
+                preference.setSummary(R.string.pref_summary_uploads_disabled);
+            } else {
+                preference.setSummary(R.string.pref_summary_uploads_enabled);
+            }
             // Debug code
             ////////////////////////////////////////////////////////////////////////////////
 

@@ -26,14 +26,13 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.SettingsActivity;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
-import org.literacybridge.core.fs.OperationLog;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
 public class ManageContentFragment extends Fragment {
-    private static final String TAG = ManageContentFragment.class.getSimpleName();
+    private static final String TAG = "TBL!:" + ManageContentFragment.class.getSimpleName();
 
     @SuppressLint("SimpleDateFormat")
     private static final SimpleDateFormat EXPIRATION_DATE_FORMAT = new SimpleDateFormat("dd.MM.yyyy", Locale.US);
@@ -70,7 +69,9 @@ public class ManageContentFragment extends Fragment {
         toolbar.setNavigationOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                getActivity().finish();
+                if (shouldDoBackPressed()) {
+                    getActivity().finish();
+                }
             }
         });
 
@@ -158,6 +159,13 @@ public class ManageContentFragment extends Fragment {
         }
     };
 
+    public boolean isDownloadInProgress() {
+        return mAdapter.isDownloadInProgress();
+    }
+    public boolean shouldDoBackPressed() {
+        return !isDownloadInProgress();
+    }
+
     private class ContentInfoHolder extends RecyclerView.ViewHolder {
         // This gets set when the holder is bound.
         private ContentInfo mContentInfo;
@@ -239,13 +247,13 @@ public class ManageContentFragment extends Fragment {
                     case NEVER_DOWNLOADED:
                         mReadyToUse.setVisibility(View.INVISIBLE);
                         mDownloadButton.setVisibility(View.VISIBLE);
-                        mDownloadButton.setEnabled(true);
+                        mDownloadButton.setEnabled(!isDownloadInProgress());
                         mDownloadButton.setText(getString(R.string.deployment_package_download));
                         break;
                     case DOWNLOAD_FAILED:
                         mReadyToUse.setVisibility(View.INVISIBLE);
                         mDownloadButton.setVisibility(View.VISIBLE);
-                        mDownloadButton.setEnabled(true);
+                        mDownloadButton.setEnabled(!isDownloadInProgress());
                         mDownloadButton.setText(getString(R.string.deployment_package_download_retry));
                         break;
                     case DOWNLOADED:
@@ -256,7 +264,7 @@ public class ManageContentFragment extends Fragment {
                         } else {
                             mReadyToUse.setVisibility(View.INVISIBLE);
                             mDownloadButton.setVisibility(View.VISIBLE);
-                            mDownloadButton.setEnabled(true);
+                            mDownloadButton.setEnabled(!isDownloadInProgress());
                             mDownloadButton.setText(getString(R.string.deployment_package_download_update));
                         }
                         break;
@@ -288,6 +296,14 @@ public class ManageContentFragment extends Fragment {
 
         private void setContentInfos(List<ContentInfo> deploymentPackages) {
             mContentInfos = deploymentPackages;
+        }
+
+        private boolean isDownloadInProgress() {
+            for (ContentInfo info: mContentInfos) {
+                if (info.isDownloading())
+                    return true;
+            }
+            return false;
         }
 
         @Override

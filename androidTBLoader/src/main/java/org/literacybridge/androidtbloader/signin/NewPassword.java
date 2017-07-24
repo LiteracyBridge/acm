@@ -38,7 +38,7 @@ import android.widget.TextView;
 import org.literacybridge.androidtbloader.R;
 
 public class NewPassword extends AppCompatActivity {
-    private String TAG = "NewPassword";
+    private String TAG = "TBL!:" + "NewPassword";
     private EditText newPassword;
 
     private Button continueSignIn;

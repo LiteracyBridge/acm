@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:padding="4dp">
+
+    <!-- Content update name, aka deployment name -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/upload_user_id"
+        android:textSize="10sp"/>
+
+    <TextView
+        android:id="@+id/content_upload_userid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:text="User ID"
+        android:layout_marginStart="5dp"/>
+
+
+    <!-- Warning messages -->
+    <TextView
+        android:id="@+id/upload_warnings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/alert"
+        android:textSize="14sp"
+        tools:text="Danger, Will Robinson!"/>
+
+    <!-- Pending uploads display -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="5dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/pending_heading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pending"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/pending_none"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="No Items"
+            />
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/pending_uploads_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_weight="0.5"
+            android:scrollbars="vertical" />
+
+        <TextView
+            android:id="@+id/completed_heading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Completed"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/completed_none"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="No Items"
+            />
+
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/completed_uploads_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_weight="0.5"
+            android:scrollbars="vertical" />
+
+    </LinearLayout>
+
+     <!-- The Big Red Switch (updates the TB) -->
+    <Button
+        android:id="@+id/button_configure_icon"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tap to configure Status Bar Icon"
+        android:textSize="14sp"
+        />
+
+</LinearLayout>

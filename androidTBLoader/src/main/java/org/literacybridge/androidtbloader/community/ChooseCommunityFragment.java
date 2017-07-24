@@ -56,7 +56,7 @@ import static android.view.View.GONE;
  */
 
 public class ChooseCommunityFragment extends Fragment {
-    private static final String TAG = ChooseCommunityFragment.class.getSimpleName();
+    private static final String TAG = "TBL!:" + ChooseCommunityFragment.class.getSimpleName();
 
     private ContentManager mContentManager;
     private List<String> mProjectList;
