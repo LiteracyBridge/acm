@@ -481,6 +481,7 @@ public class TBLoader extends JFrame {
                 // Like "~/Dropbox/tbcd1234"
                 File tbLoaderDir = new File(dropboxDir, TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
                 logsDir = new File(tbLoaderDir, "log");
+                logsDir.mkdirs();
                 //TbFile tbLoaderDir = dropboxFile.open(
                 //        TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
                 if (!tbLoaderDir.exists()) {
