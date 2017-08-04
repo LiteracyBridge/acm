@@ -432,20 +432,24 @@ public class CategoryView extends ACMContainer implements Observer {
       languagesList.add(new LanguageLabel(locale));
     }
 
-    for (LanguageLabel currLable : languagesList) {
-      languageRootNode.add(new DefaultMutableTreeNode(currLable));
-    }
+    SwingUtilities.invokeLater(() -> {
 
-    languageTree.setRootVisible(false);
-    languageTree.expandPath(new TreePath(languageRootNode.getPath()));
+      for (LanguageLabel currLable : languagesList) {
+          languageRootNode.add(new DefaultMutableTreeNode(currLable));
+      }
 
-    languageTree.addTreeCheckingListener(new TreeCheckingListener() {
-      @Override
-      public void valueChanged(TreeCheckingEvent e) {
-        clearTagSelection();
-        pumpLanguageFilter();
-      };
+      languageTree.setRootVisible(false);
+      languageTree.expandPath(new TreePath(languageRootNode.getPath()));
+
+      languageTree.addTreeCheckingListener(new TreeCheckingListener() {
+          @Override
+          public void valueChanged(TreeCheckingEvent e) {
+              clearTagSelection();
+              pumpLanguageFilter();
+          }
+      });
     });
+
   }
 
   private void pumpLanguageFilter() {
