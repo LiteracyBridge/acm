@@ -188,6 +188,7 @@ public class ContentInfo {
 
         @Override
         public void onError(int id, Exception ex) {
+            if (mOpLog != null) mOpLog.put("exception", ex.getMessage());
             if (mListener != null) mListener.onError(id, ex);
         }
     };

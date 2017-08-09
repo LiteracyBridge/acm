@@ -43,6 +43,7 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDel
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GetDetailsHandler;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.UpdateAttributesHandler;
+import org.literacybridge.androidtbloader.BuildConfig;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.SettingsActivity;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
@@ -132,14 +133,18 @@ public class MainFragment extends Fragment {
         mContentManager = mApplicationContext.getContentManager();
         mUserid = UserHelper.getUserId();
 
-        OperationLog.log("MainFragment.onCreate")
+        OperationLog.Operation opLog = OperationLog.log("MainFragment.onCreate")
             .put("externalStorageAvailable",
                  Util.getBytesString(new StatFs(Environment.getExternalStorageDirectory().getAbsolutePath()).getAvailableBytes()))
             .put("internalStorageAvailable",
                  Util.getBytesString(new StatFs(Environment.getDataDirectory().getAbsolutePath()).getAvailableBytes()))
             .put("tempStorageAvailable",
-                 Util.getBytesString(new StatFs(Environment.getDownloadCacheDirectory().getAbsolutePath()).getAvailableBytes()))
-            .finish();
+                 Util.getBytesString(new StatFs(Environment.getDownloadCacheDirectory().getAbsolutePath()).getAvailableBytes()));
+        opLog.put("phonemake", Build.MANUFACTURER)
+            .put("phonemodel", Build.MODEL)
+            .put("android", Build.VERSION.RELEASE)
+            .put("tbloader", BuildConfig.VERSION_NAME);
+        opLog.finish();
     }
 
     @Nullable
