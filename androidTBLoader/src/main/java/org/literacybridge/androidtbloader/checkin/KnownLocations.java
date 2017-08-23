@@ -58,6 +58,7 @@ public class KnownLocations {
 
     private List<String> projects = new ArrayList<>();
     private Map<String, Map<String, CommunityInfo>> communities = new HashMap<>();
+
     KnownLocations(List<String> projects) {
         for (String p : projects) {
             this.projects.add(p.toUpperCase());
@@ -190,7 +191,7 @@ public class KnownLocations {
         final SharedPreferences locationPrefs = TBLoaderAppContext.getInstance().getSharedPreferences("community.locations", MODE_PRIVATE);
         // Query new location info from s3.
         ListObjectsV2Request request = new ListObjectsV2Request()
-                .withBucketName(Constants.CONTENT_UPDATES_BUCKET_NAME)
+                .withBucketName(Constants.DEPLOYMENTS_BUCKET_NAME)
                 .withPrefix("locations/");
 
         Log.d(TAG, String.format("Fetching community location file info"));
@@ -290,7 +291,7 @@ public class KnownLocations {
         }
         Log.d(TAG, "about to call transferUtility.download");
         final TransferUtility transferUtility = S3Helper.getTransferUtility();
-        final TransferObserver observer = transferUtility.download(Constants.CONTENT_UPDATES_BUCKET_NAME, summary.getKey(), tempFile);
+        final TransferObserver observer = transferUtility.download(Constants.DEPLOYMENTS_BUCKET_NAME, summary.getKey(), tempFile);
         Log.d(TAG, "back from call to transferUtility.download");
 
         observer.setTransferListener(new TransferListener() {

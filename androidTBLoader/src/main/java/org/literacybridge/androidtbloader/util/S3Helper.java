@@ -2,6 +2,8 @@ package org.literacybridge.androidtbloader.util;
 
 import android.os.AsyncTask;
 import android.util.Log;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
@@ -34,7 +36,12 @@ public class S3Helper {
      */
     private static AmazonS3Client getS3Client() {
         if (sS3Client == null) {
-            sS3Client = new AmazonS3Client(UserHelper.getCredentialsProvider(sApplicationContext));
+            ClientConfiguration config = new ClientConfiguration();
+            config.setConnectionTimeout(60 * 1000);
+            config.setSocketTimeout(60 * 1000);
+            config.setMaxErrorRetry(4);
+            AWSCredentialsProvider credentialsProvider = UserHelper.getCredentialsProvider(sApplicationContext);
+            sS3Client = new AmazonS3Client(credentialsProvider, config);
         }
         return sS3Client;
     }

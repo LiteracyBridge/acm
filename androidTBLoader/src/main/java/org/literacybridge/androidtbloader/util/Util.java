@@ -17,6 +17,8 @@ package org.literacybridge.androidtbloader.util;
 
 import android.annotation.SuppressLint;
 
+import java.util.Collection;
+
 /*
  * Handles basic helper functions used throughout the app.
  */
@@ -45,5 +47,13 @@ public class Util {
         }
     }
 
+    public static String join(Collection toJoin, String with) {
+        StringBuilder result = new StringBuilder();
+        for (Object o : toJoin) {
+            if (result.length() > 0) { result.append(with); }
+            result.append(o.toString());
+        }
+        return result.toString();
+    }
 
 }

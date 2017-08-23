@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class UserHelper {
+    private static final String TAG= "TBL!:" + "UserHelper";
     // App settings
 
     private static List<String> attributeDisplaySeq;
@@ -182,18 +183,16 @@ public class UserHelper {
 
             @Override
             protected Void doInBackground(Void... params) {
-                Log.d("AUTH", "Calling refresh()");
+                Log.d(TAG, "Refreshing credentials in background.");
                 try {
                     credentialsProvider.refresh();
                 } catch (Exception ex) {
-                    Log.d("AUTH", "Caught exception in refresh", ex);
+                    Log.d(TAG, "Caught exception in refresh", ex);
                 }
-                Log.d("AUTH", "Return from refresh()");
                 return null;
             }
             @Override
             protected void onPostExecute(Void result) {
-                Log.d("AUTH", "Back from refresh()");
                 getUsernameFromSession(done);
             }
         }.execute();
@@ -211,7 +210,7 @@ public class UserHelper {
             }
             @Override
             protected void onPostExecute(Void result) {
-                Log.d("AUTH", "Back from refresh()");
+                Log.d(TAG, String.format("Retrieved user name: %s", username));
                 done.run();
             }
         }.execute();
@@ -294,7 +293,7 @@ public class UserHelper {
 
     public static String formatException(Exception exception) {
         String formattedString = "Internal Error";
-        Log.e("App Error",exception.toString());
+        Log.e(TAG, exception.toString());
         Log.getStackTraceString(exception);
 
         String temp = exception.getMessage();

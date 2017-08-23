@@ -25,7 +25,8 @@ public class SettingsActivity extends AppCompatActivity {
 
         // We want a "back" button (sometimes called "up"), but we don't want back navigation, but
         // to simply end this activity without setting project or community.
-        toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
         toolbar.setNavigationOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){

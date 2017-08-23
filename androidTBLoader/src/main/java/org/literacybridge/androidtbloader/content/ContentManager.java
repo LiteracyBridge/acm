@@ -1,16 +1,21 @@
 package org.literacybridge.androidtbloader.content;
 
+import android.content.Intent;
 import android.os.AsyncTask;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
+import android.widget.Toast;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession;
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GenericHandler;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-
+import org.literacybridge.androidtbloader.BuildConfig;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
+import org.literacybridge.androidtbloader.signin.UnattendedAuthenticator;
+import org.literacybridge.androidtbloader.signin.UserHelper;
 import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.androidtbloader.util.S3Helper;
@@ -26,13 +31,17 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Manages lists of Content Updates for projects.
+ * Manages lists of available Deployments for projects.
  */
 
 public class ContentManager {
     private static final String TAG = "TBL!:" + "ContentManager";
     private static final String UNKNOWN_LOCAL_VERSION = "--";
     private static final String NO_LOCAL_VERSION = "";
+    private static final long CONTENT_UPDATE_FRESH = 60 * 1000; // Fresh if newer than 60 seconds.
+
+    public static final String CONTENT_LIST_CHANGED_EVENT = "ContentListChanged";
+
 
     public enum Flags {
         ForUser,    // Only for the current user (generally the default)
@@ -50,13 +59,9 @@ public class ContentManager {
     }
 
 
-    public interface ContentManagerListener {
-        void contentListChanged();
-    }
-
     private static abstract class ListContentListener {
         public abstract void onSuccess(List<ContentInfo> projects);
-        public void onFailure(Exception ex) {};
+        public void onFailure(Exception ex) {}
     }
 
     private TBLoaderAppContext applicationContext;
@@ -65,21 +70,24 @@ public class ContentManager {
     private Map<String, ContentInfo> mProjects = new HashMap<>();
 
     private List<ContentInfo> mContentList = new ArrayList<>();
+    private long mContentListTime = 0;  // To determine freshness.
 
-    // A cache of community names for projects, as contained in the Content Updates.
+    // A cache of community names for projects, as contained in the Deployments.
     private Map<String, Map<String, CommunityInfo>> mProjectCommunitiesCache = null;
 
     public ContentManager(TBLoaderAppContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
-    public void startDownload(ContentInfo info, final TransferListener listener) {
-        info.startDownload(applicationContext, new TransferListener() {
+    void startDownload(ContentInfo info, final ContentDownloader.DownloadListener listener) {
+        info.startDownload(applicationContext, new ContentDownloader.DownloadListener() {
+            @Override
+            public void onUnzipProgress(int id, long current, long total) {
+                listener.onUnzipProgress(id, current, total);
+            }
+
             @Override
             public void onStateChanged(int id, TransferState state) {
-                if (state == TransferState.COMPLETED) {
-                    // Move from cloud to downloaded.
-                }
                 mProjectCommunitiesCache = null;
                 listener.onStateChanged(id, state);
             }
@@ -129,16 +137,27 @@ public class ContentManager {
         return result;
     }
 
-    public List<ContentInfo> getContentList(Flags... flags) {
-        List<ContentInfo> result = new ArrayList<>();
-        for (String projectName : getProjectNames(flags)) {
-            result.add(mProjects.get(projectName));
-        }
-        return result;
+    /**
+     * Is there content info?
+     * @return true if so.
+     */
+    public boolean haveContentInfo() {
+        return mContentList.size() > 0;
+    }
+
+    List<ContentInfo> getContentList() {
+        return mContentList;
+// Add (Flags... flags) argument, and the following allows getting projects for this user,
+// all users, downloaded, cloud, or all.
+//        List<ContentInfo> result = new ArrayList<>();
+//        for (String projectName : getProjectNames(flags)) {
+//            result.add(mProjects.get(projectName));
+//        }
+//        return result;
     }
 
 
-    public synchronized Map<String, Map<String, CommunityInfo>> getCommunitiesForProjects() {
+    private synchronized Map<String, Map<String, CommunityInfo>> getCommunitiesForProjects() {
         if (mProjectCommunitiesCache == null) {
             Map<String, Map<String, CommunityInfo>> projectCommunities = new HashMap<>();
             for (ContentInfo info : mContentList) {
@@ -171,7 +190,7 @@ public class ContentManager {
         return null;
     }
 
-    public void removeLocalContent(final ContentInfo info, final ContentManagerListener listener) {
+    void removeLocalContent(final ContentInfo info) {
         List<String> toClear = new ArrayList<>();
         List<String> toRemove = new ArrayList<>();
         toRemove.add(info.getProjectName());
@@ -181,12 +200,17 @@ public class ContentManager {
                 // Move from cloud list to local list.
                 info.setDownloadStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED);
                 mProjectCommunitiesCache = null;
-                listener.contentListChanged();
+                onContentListChanged();
             }
         });
     }
 
 
+    private void onContentListChanged() {
+        mContentListTime = System.currentTimeMillis();
+        Intent intent = new Intent(CONTENT_LIST_CHANGED_EVENT);
+        LocalBroadcastManager.getInstance(TBLoaderAppContext.getInstance()).sendBroadcast(intent);
+    }
 
 
     /**
@@ -203,9 +227,54 @@ public class ContentManager {
      * -- updating the cloud version for any that have changed.
      * -- marking as stale any projects not up to date (delete content?)
      */
-    public void refreshContentList(final ContentManagerListener listener) {
+    public void fetchContentList() {
+        authenticateAndFetchContentList(false);
+    }
+    public void refreshContentList() {
+        authenticateAndFetchContentList(true);
+    }
+
+    private void authenticateAndFetchContentList(final boolean force) {
+        CognitoUserSession session = UserHelper.getCurrSession();
+        if (session == null || !session.isValid()) {
+            Log.d(TAG, String.format("authenticateAndFetchContentList: %s session, trying to authenticate", session==null?"no":"invalid"));
+
+            new UnattendedAuthenticator(new GenericHandler() {
+                @Override
+                public void onSuccess() {
+                    Log.d(TAG, "authenticateAndFetchContentList: authentication success");
+                    fetchContentList(force);
+                }
+
+                @Override
+                public void onFailure(Exception exception) {
+                    Log.d(TAG, "authenticateAndFetchContentList: authentication failure");
+                    if (force) {
+                        Toast mToast = Toast.makeText(TBLoaderAppContext.getInstance(),
+                            "Authentication Failure", Toast.LENGTH_SHORT);
+                        mToast.show();
+                    }
+                    fetchContentList(force);
+                }
+            }).authenticate();
+        } else {
+            fetchContentList(force);
+        }
+
+    }
+
+    /**
+     * Implementation of fetchContentList
+     * @param forceUpdate If true refresh even if the data is "fresh".
+     */
+    private void fetchContentList(final boolean forceUpdate) {
         final OperationLog.Operation opLog = OperationLog.startOperation("RefreshContentList");
         final Map<String,ContentInfo> localVersions = findLocalContent();
+
+        // If the data is already "fresh", we may avoid some work.
+        if (!forceUpdate && System.currentTimeMillis() <= mContentListTime+CONTENT_UPDATE_FRESH) {
+            return;
+        }
 
         // Reconcile with cloud (if we can).
         findCloudContent(new ListContentListener() {
@@ -230,7 +299,7 @@ public class ContentManager {
                     public void run() {
                         addProjectsToLog();
                         opLog.finish();
-                        listener.contentListChanged();
+                        onContentListChanged();
                     }
                 });
             }
@@ -249,13 +318,12 @@ public class ContentManager {
                 addProjectsToLog();
                 opLog.put("exception", ex)
                     .finish();
-                listener.contentListChanged();
+                onContentListChanged();
             }
         });
     }
 
     private void reconcileCloudVersions(Map<String,ContentInfo> localVersions, List<ContentInfo> cloudInfo, final Runnable onFinished) {
-        boolean deleteAll = false;
         final List<String> projectsToRemove = new ArrayList<>();
         final List<String> projectsToClear = new ArrayList<>();
         Map<String, ContentInfo> cloudVersions = new HashMap<>();
@@ -279,21 +347,21 @@ public class ContentManager {
             // Local version, if we have one.
             ContentInfo localItem = localVersions.get(project);
             String localVersion = localItem == null ? null : localItem.getVersion();
-            if (localVersion == null) {
+            if (localVersion == null || localVersion.equals(NO_LOCAL_VERSION)) {
                 // No local version, so a cloud item.
-                assert(cloudItem.getDownloadStatus() == ContentInfo.DownloadStatus.NEVER_DOWNLOADED);
+                if (BuildConfig.DEBUG && (cloudItem.getDownloadStatus() != ContentInfo.DownloadStatus.NEVER_DOWNLOADED)) {
+                    throw new AssertionError("download status is not NEVER_DOWNLOADED");
+                }
                 mContentList.add(cloudItem);
                 mProjects.put(cloudItem.getProjectName(), cloudItem);
-            } else if (deleteAll || !cloudItem.getVersion().equalsIgnoreCase(localVersion) &&
-                    !localVersion.equals(NO_LOCAL_VERSION)) {
-                // Stale local version, remove it; a cloud item.
+            } else if (!cloudItem.getVersion().equalsIgnoreCase(localVersion)) {
+                // Stale local version, or unknown local version. Remove it; a cloud item.
                 projectsToClear.add(project);
                 cloudItem.setDownloadStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED);
                 mContentList.add(cloudItem);
                 mProjects.put(cloudItem.getProjectName(), cloudItem);
             } else {
                 // have a local, up-to-date version
-                assert (cloudItem.getVersion().equalsIgnoreCase(localVersion));
                 cloudItem.setDownloadStatus(ContentInfo.DownloadStatus.DOWNLOADED);
                 mContentList.add(cloudItem);
                 mProjects.put(cloudItem.getProjectName(), cloudItem);
@@ -315,7 +383,7 @@ public class ContentManager {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                Log.d(TAG, "Removing obsolete projects and content");
+                Log.i(TAG, "Removing obsolete projects and content");
                 File projectsDir = PathsProvider.getLocalContentDirectory();
                 try {
                     // Projects
@@ -338,7 +406,7 @@ public class ContentManager {
                     opLog.put("exception", e);
                     Log.d(TAG, "Exception removing files", e);
                 }
-                Log.d(TAG, "Done removing files");
+                Log.i(TAG, "Done removing files");
                 return null;
             }
             @Override
@@ -380,12 +448,12 @@ public class ContentManager {
     }
 
     /**
-     * Retrieves a list of the projects and current content updates, from the S3 bucket.
+     * Retrieves a list of the projects and current Deployments, from the S3 bucket.
      * @param projectsListener Callback to receive results.
      */
     private void findCloudContent(final ListContentListener projectsListener) {
         ListObjectsV2Request request = new ListObjectsV2Request()
-                .withBucketName(Constants.CONTENT_UPDATES_BUCKET_NAME)
+                .withBucketName(Constants.DEPLOYMENTS_BUCKET_NAME)
                 .withPrefix("projects/");
 
         // Get the list of objects
@@ -397,7 +465,8 @@ public class ContentManager {
 
                 // Examine all the objects, and figure out the projects, their sizes, and current update.
 
-                // First, look for all of the ".current" files.
+                // First, look for all of the ".current" files. This will let us know what versions
+                // we are current in s3.
                 for (S3ObjectSummary summary : s3ObjectSummaries) {
                     String [] parts = summary.getKey().split("/");
                     if (parts.length == 3 && parts[2].endsWith(".current")) {
@@ -409,9 +478,9 @@ public class ContentManager {
                     }
                 }
 
-                // Knowing the current content updates, gather their sizes.
+                // Knowing the current Deployments (in s3), gather their sizes.
                 for (S3ObjectSummary summary : s3ObjectSummaries) {
-                    Log.d(TAG, String.format("project item (%d) %s", summary.getSize(), summary.getKey()));
+                    Log.i(TAG, String.format("project item (%d) %s", summary.getSize(), summary.getKey()));
 
                     // The S3 key is like projects/CARE/software-2016-4-d.zip
                     String [] parts = summary.getKey().split("/");
@@ -419,7 +488,7 @@ public class ContentManager {
                         String project = parts[1];
                         ContentInfo info = projects.get(project);
 
-                        // What are the .zip files in the content update?
+                        // What are the .zip files in the Deployment?
                         String contentZip = "content-" + info.getVersion() + ".zip";
                         // Is this file one of them?
                         if (parts[2].equalsIgnoreCase(contentZip)) {
@@ -469,11 +538,14 @@ public class ContentManager {
                         String localVersion = fileName.substring(0, fileName.indexOf('.'));
                         ContentInfo info = new ContentInfo(projectName).withVersion(localVersion).withStatus(ContentInfo.DownloadStatus.DOWNLOADED);
                         localVersions.put(projectName, info);
-                        Log.d(TAG, String.format("Found version data for %s: %s", project, localVersion));
+                        Log.i(TAG, String.format("Found version data for %s: %s", project, localVersion));
                         // We'll keep this one even if we can't connect to the network.
                         mProjects.put(projectName, info);
+                    } else if (versionFile.length == 0) {
+                        localVersions.put(projectName, new ContentInfo(projectName).withVersion(NO_LOCAL_VERSION).withStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED));
+                        Log.i(TAG, String.format("No content, but empty directory for %s", project));
                     } else {
-                        // Too many, too few: can't determine version.
+                        // Too many: can't determine version.
                         localVersions.put(projectName, new ContentInfo(projectName).withVersion(UNKNOWN_LOCAL_VERSION).withStatus(ContentInfo.DownloadStatus.DOWNLOAD_FAILED));
                         Log.d(TAG, String.format("Found content, but no version data for %s", project));
                     }

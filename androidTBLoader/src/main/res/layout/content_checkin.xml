@@ -177,16 +177,16 @@
             tools:text="Add communities to be current tab..."/>
 
         <!-- Do the check in -->
-        <ImageButton
+        <!-- ImageButton
             android:id="@+id/checkin_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone"
             app:srcCompat="@drawable/check"
-            />
+            / -->
 
         <Button
-            android:id="@+id/checkin_button_2"
+            android:id="@+id/checkin_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"

@@ -25,9 +25,6 @@ import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.signin.UserHelper;
 import org.literacybridge.androidtbloader.util.Util;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.LinkedList;
@@ -51,6 +48,8 @@ public class UploadStatusFragment extends Fragment {
     private int alertColor = ContextCompat.getColor(context, R.color.alert);
 
     private String mUserid;
+
+    private TextView mUserNameTextView;
     private TextView mUploadWarningsTextView;
     private TextView mPendingUploadsNoneTextView;
     private TextView mCompletedUploadsNoneTextView;
@@ -94,7 +93,8 @@ public class UploadStatusFragment extends Fragment {
 
         // We want a "back" button (sometimes called "up"), but we don't want back navigation, but
         // to simply end this activity without setting project or community.
-        toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setDisplayShowHomeEnabled(true);
         toolbar.setNavigationOnClickListener(new OnClickListener(){
             @Override
             public void onClick(View view){
@@ -103,8 +103,8 @@ public class UploadStatusFragment extends Fragment {
         });
 
         // User name
-        TextView userNameTextView = (TextView) view.findViewById(R.id.content_upload_userid);
-        userNameTextView.setText(mUserid);
+        mUserNameTextView = (TextView) view.findViewById(R.id.content_upload_userid);
+        mUserNameTextView.setText(mUserid);
         
         // Field for any warning text.
         mUploadWarningsTextView = (TextView)view.findViewById(R.id.upload_warnings);
@@ -127,9 +127,17 @@ public class UploadStatusFragment extends Fragment {
         mPendingUploadsRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         mPendingUploadsRecyclerView.getRecycledViewPool().setMaxRecycledViews(0, 0);
 
+        mPendingItemsAdapter = new QueuedUploadItemAdapter();
+        mPendingItemsAdapter.setQueuedUploadItems(mQueuedItems);
+        mPendingUploadsRecyclerView.setAdapter(mPendingItemsAdapter);
+
         mCompletedUploadsRecyclerView = (RecyclerView) view.findViewById(R.id.completed_uploads_recycler);
         mCompletedUploadsRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         mCompletedUploadsRecyclerView.getRecycledViewPool().setMaxRecycledViews(0, 0);
+
+        mCompletedItemsAdapter = new QueuedUploadItemAdapter();
+        mCompletedItemsAdapter.setQueuedUploadItems(mCompletedItems);
+        mCompletedUploadsRecyclerView.setAdapter(mCompletedItemsAdapter);
 
         return view;
     }
@@ -145,7 +153,6 @@ public class UploadStatusFragment extends Fragment {
     public void onResume() {
         super.onResume();
         Log.d(TAG, "UploadStatus Fragment resumed");
-        updateUI();
         LocalBroadcastManager.getInstance(context).registerReceiver(
             mMessageReceiver, new IntentFilter(UploadService.UPLOADER_STATUS_EVENT));
     }
@@ -181,47 +188,24 @@ public class UploadStatusFragment extends Fragment {
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d(TAG, "Dataset changed");
-            mQueuedItems.clear();
-            mQueuedItems.addAll(UploadService.getUploadQueue());
-            mPendingUploadsNoneTextView.setVisibility(mQueuedItems.size() == 0 ? View.VISIBLE : View.GONE);
-            mCompletedUploadsNoneTextView.setVisibility(mCompletedItems.size() == 0 ? View.VISIBLE : View.GONE);
+            if (intent.getAction().equals(UploadService.UPLOADER_STATUS_EVENT)) {
+                Log.d(TAG, "Dataset changed");
+                mQueuedItems.clear();
+                mQueuedItems.addAll(UploadService.getUploadQueue());
+                mPendingUploadsNoneTextView.setVisibility(
+                    mQueuedItems.size() == 0 ? View.VISIBLE : View.GONE);
+                mCompletedUploadsNoneTextView.setVisibility(
+                    mCompletedItems.size() == 0 ? View.VISIBLE : View.GONE);
 
-            mPendingItemsAdapter.notifyDataSetChanged();
-            mCompletedItemsAdapter.notifyDataSetChanged();
+                mPendingItemsAdapter.notifyDataSetChanged();
+                mCompletedItemsAdapter.notifyDataSetChanged();
+                if (mUserid == null || mUserid.length() == 0) {
+                    mUserid = UserHelper.getUserId();
+                    mUserNameTextView.setText(mUserid);
+                }
+            }
         }
     };
-
-
-    private static String getStackTrace(Throwable aThrowable) {
-        Writer result = new StringWriter();
-        PrintWriter printWriter = new PrintWriter(result);
-        aThrowable.printStackTrace(printWriter);
-        return result.toString();
-    }
-
-    /**
-     * Sets any appropriate warning messages regarding mismatches between the selected community
-     * and project vs the connected Talking Book's previous community and project.
-     */
-    private void setMessages() {
-        String message = "";
-        mUploadWarningsTextView.setText(message);
-    }
-
-
-    private void updateUI() {
-        if (mPendingItemsAdapter == null) {
-            mPendingItemsAdapter = new QueuedUploadItemAdapter();
-            mPendingItemsAdapter.setQueuedUploadItems(mQueuedItems);
-            mPendingUploadsRecyclerView.setAdapter(mPendingItemsAdapter);
-        }
-        if (mCompletedItemsAdapter == null) {
-            mCompletedItemsAdapter = new QueuedUploadItemAdapter();
-            mCompletedItemsAdapter.setQueuedUploadItems(mCompletedItems);
-            mCompletedUploadsRecyclerView.setAdapter(mCompletedItemsAdapter);
-        }
-    }
 
     private class QueuedUploadItemHolder extends RecyclerView.ViewHolder {
         private TextView mFileNameTextView;
@@ -233,11 +217,11 @@ public class UploadStatusFragment extends Fragment {
         QueuedUploadItemHolder(View itemView) {
             super(itemView);
 
-            mFileNameTextView = (TextView) itemView.findViewById(R.id.list_item_file_name);
-            mFileSizeTextView = (TextView) itemView.findViewById(R.id.list_item_file_size);
-            mFileStatusTextView = (TextView) itemView.findViewById(R.id.list_item_transfer_status);
-            mFileTimeTextView = (TextView) itemView.findViewById(R.id.list_item_transfer_time);
-            mFileDateTextView = (TextView) itemView.findViewById(R.id.list_item_file_date);
+            mFileNameTextView = (TextView) itemView.findViewById(R.id.list_item_update_file_name);
+            mFileSizeTextView = (TextView) itemView.findViewById(R.id.list_item_update_file_size);
+            mFileStatusTextView = (TextView) itemView.findViewById(R.id.list_item_update_transfer_status);
+            mFileTimeTextView = (TextView) itemView.findViewById(R.id.list_item_update_transfer_time);
+            mFileDateTextView = (TextView) itemView.findViewById(R.id.list_item_upload_timestamp);
         }
 
         private void bindQueuedUploadItem(final UploadItem uploadItem) {
@@ -245,7 +229,7 @@ public class UploadStatusFragment extends Fragment {
             mFileSizeTextView.setText(Util.getBytesString(uploadItem.size));
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.US);
             df.setTimeZone(UTC);
-            String filesDate = df.format(uploadItem.file.lastModified());
+            String filesDate = df.format(uploadItem.timestamp);
             mFileDateTextView.setText(filesDate);
             if (uploadItem.elapsedMillis > 0) {
                 mFileTimeTextView.setText(String.format("%01.3f s", uploadItem.elapsedMillis/1000.0));
@@ -256,6 +240,9 @@ public class UploadStatusFragment extends Fragment {
                     mFileStatusTextView.setText("✗");
                     mFileStatusTextView.setTextColor(alertColor);
                 }
+            } else {
+                mFileStatusTextView.setText("⌛︎");
+                mFileStatusTextView.setTextColor(alertColor);
             }
         }
     }

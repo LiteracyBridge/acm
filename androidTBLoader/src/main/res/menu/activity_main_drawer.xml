@@ -6,25 +6,22 @@
         android:checkableBehavior="single">
 
         <item
+            android:id="@+id/nav_user_settings"
+            android:title="Settings" />
+
+        <item
             android:id="@+id/nav_show_upload_status"
             android:title="@string/show_upload_status" />
+    </group>
+
+    <group
+        android:id="@+id/group_user_info"
+        android:checkableBehavior="single">
+
         <item
             android:id="@+id/nav_user_edit_greeting"
             android:title="@string/edit_greeting" />
 
-        <item
-            android:id="@+id/nav_user_verify_attribute"
-            android:title="Verify attribute" />
-
-        <item
-            android:id="@+id/nav_user_settings"
-            android:title="Settings" />
-
-    </group>
-
-    <group
-        android:id="@+id/group_user_change_password"
-        android:checkableBehavior="single">
         <item
             android:id="@+id/nav_user_change_password"
             android:title="Change password" />
@@ -37,6 +34,7 @@
     <group
         android:id="@+id/group_user_about"
         android:checkableBehavior="single">
+
         <item
             android:id="@+id/nav_main_about"
             android:title="About" />

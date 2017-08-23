@@ -49,10 +49,11 @@ public class TbLoaderActivity extends SingleFragmentActivity {
         Log.d(TAG, "onKeyDown");
         //replaces the default 'Back' button action
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (mTbLoaderFragment == null || mTbLoaderFragment.shouldDoBackPressed()) {
-                return false;
+            if (mTbLoaderFragment != null && !mTbLoaderFragment.shouldDoBackPressed()) {
+                Log.d(TAG, "Back Key Ignored");
+                return true;
             }
         }
-        return true;
+        return super.onKeyDown(keyCode, event);
     }
 }

@@ -8,10 +8,10 @@ import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import java.io.File;
 
 /**
- * The content updates are stored locallin in a directory structure like this:
- * {externalFilesDirectory}/localrepository/{project}/content/{content update name}/basic/{image}.img
- * {externalFilesDirectory}/localrepository/{project}/content/{content update name}/communities/{... community names ...}/...
- * {externalFilesDirectory}/localrepository/{project}/content/{content update name}/images/{... image names ...}/...
+ * The Deployments are stored locallin in a directory structure like this:
+ * {externalFilesDirectory}/localrepository/{project}/content/{Deployment name}/basic/{image}.img
+ * {externalFilesDirectory}/localrepository/{project}/content/{Deployment name}/communities/{... community names ...}/...
+ * {externalFilesDirectory}/localrepository/{project}/content/{Deployment name}/images/{... image names ...}/...
  */
 
 public class PathsProvider {
@@ -23,7 +23,8 @@ public class PathsProvider {
     }
 
     /**
-     * Gets a File object that represents a directory containing all projects with their downloaded Content Updates.
+     * Gets a File object that represents a directory containing all projects with their downloaded
+     * Deployments.
      * @return the directory's File.
      */
     public static File getLocalContentDirectory() {
@@ -48,11 +49,11 @@ public class PathsProvider {
     }
 
     /**
-     * Gets the {externalFilesDirectory}/localrepository/{project}/content/{content update name} directory
-     * for a specific project. There should be only one {content update name}, and this returns null if
+     * Gets the {externalFilesDirectory}/localrepository/{project}/content/{Deployment name} directory
+     * for a specific project. There should be only one {Deployment name}, and this returns null if
      * there is not exactly one.
      * @param project The desired project.
-     * @return The content update directory for the project.
+     * @return The Deployment directory for the project.
      */
     public static File getLocalContentUpdateDirectory(String project) {
         File projectDir = getLocalContentProjectDirectory(project);

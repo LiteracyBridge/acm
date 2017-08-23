@@ -4,7 +4,8 @@
      ManageContentActivity, so it is "content_" "manage_content" -->
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical"
     >
@@ -27,5 +28,15 @@
         </android.support.v7.widget.RecyclerView>
     </android.support.v4.widget.SwipeRefreshLayout>
 
+    <!-- A cancel button, visible when a download is in progress. -->
+    <Button
+        android:id="@+id/manage_content_button_cancel"
+        style="@android:style/Widget.Material.Button.Borderless.Colored"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:enabled="true"
+        android:textSize="18sp"
+        android:visibility="gone"
+        tools:text="Cancel Download" />
 
 </LinearLayout>

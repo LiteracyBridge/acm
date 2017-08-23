@@ -1,8 +1,6 @@
 package org.literacybridge.androidtbloader.content;
 
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
-
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.checkin.KnownLocations;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
@@ -16,13 +14,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Description of a Content Update.
+ * Description of a Deployment.
  */
 public class ContentInfo {
     private static final String TAG = "TBL!:" + "ContentInfo";
 
     public enum DownloadStatus {
         NEVER_DOWNLOADED,
+        WAITING,
+        DOWNLOADING,
+        PROCESSING,
         DOWNLOADED,
         DOWNLOAD_FAILED,
 
@@ -34,25 +35,30 @@ public class ContentInfo {
     // Like "DEMO-2017-2-a"
     private String mVersion;
 
-    // Date that the Content Update expires, if any
+    // Date that the Deployment expires, if any
     private Date mExpiration;
 
     // Size of the download, the "content-DEMO-2016-2.zip" file
     private long mSize;
+
+    // Track the size and progress of unzipping.
+    private long mUnzipTotal = 0;
+    private long mUnzipProgress = 0;
 
     private DownloadStatus mDownloadStatus;
 
     // If currently downloading, will be non-null
     private ContentDownloader mContentDownloader = null;
     // A client that wants to listen to download state.
-    private TransferListener mListener = null;
+    private ContentDownloader.DownloadListener mListener = null;
     // Logger for the download perf.
     private OperationLog.Operation mOpLog;
 
-    // Community list built from the communities in the actual content update
+    // Community list built from the communities in the actual Deployment
     private Map<String, CommunityInfo> mCommunitiesCache = null;
 
     ContentInfo(String projectName) {
+        this.mDownloadStatus = DownloadStatus.NONE;
         this.mProjectName = projectName;
         this.mVersion = "";
     }
@@ -82,7 +88,7 @@ public class ContentInfo {
         return String.format("%s: %s (%d)", mProjectName, mVersion, mSize);
     }
 
-    public String getProjectName() {
+    String getProjectName() {
         return mProjectName;
     }
 
@@ -90,10 +96,10 @@ public class ContentInfo {
         return mVersion;
     }
 
-    public Date getExpiration() {
+    Date getExpiration() {
         return mExpiration;
     }
-    public boolean hasExpiration() {
+    boolean hasExpiration() {
         return mExpiration != null && mExpiration.getTime() != 0;
     }
 
@@ -106,7 +112,7 @@ public class ContentInfo {
         return this.mSize;
     }
 
-    public DownloadStatus getDownloadStatus() {
+    DownloadStatus getDownloadStatus() {
         return mDownloadStatus;
     }
 
@@ -114,19 +120,26 @@ public class ContentInfo {
         this.mDownloadStatus = status;
     }
 
-    public void setDownloader(ContentDownloader contentDownloader) {
-        this.mContentDownloader = contentDownloader;
-    }
-
     /**
      * Returns the current progress of any current download, as a percentage.
      * @return The percentage, as an integer.
      */
-    public int getProgress() {
+    int getProgress() {
         int progress = 0;
-        if (mContentDownloader != null && mSize != 0) {
+        switch (mDownloadStatus) {
+        case PROCESSING:
+            progress = (int) ((double) mUnzipProgress * 100 / mUnzipTotal);
+            break;
+        case DOWNLOADING:
             long bytesProgress = mContentDownloader.getBytesTransferred();
             progress = (int) ((double) bytesProgress * 100 / mSize);
+            break;
+        case DOWNLOADED:
+            progress = 100;
+            break;
+        default:
+            // leave it at zero
+            break;
         }
         return progress;
     }
@@ -135,39 +148,57 @@ public class ContentInfo {
      * Is a download currently in progress?
      * @return true if so
      */
-    public boolean isDownloading() {
+    boolean isDownloading() {
         return mContentDownloader != null;
     }
 
-    public boolean isUpdateAvailable() {
+    boolean isUpdateAvailable() {
         // If we want to allow the user to manually choose when to download updates,
         // implement this.
         return false;
     }
 
     /**
-     * Starts a download of this Content Update
+     * Cancels any active download.
+     */
+    public void cancel() {
+        if (mContentDownloader != null) {
+            mContentDownloader.cancel();
+        }
+    }
+
+    /**
+     * Starts a download of this Deployment
      * @param applicationContext The application's context
      * @param listener Listener on s3 progress
      * @return true if a download was started, false if one was already in progress
      */
-    boolean startDownload(TBLoaderAppContext applicationContext, TransferListener listener) {
+    boolean startDownload(TBLoaderAppContext applicationContext, ContentDownloader.DownloadListener listener) {
         if (mContentDownloader != null) return false;
         mListener = listener;
         mOpLog = OperationLog.startOperation("DownloadContent")
             .put("projectname", getProjectName())
             .put("version", getVersion())
             .put("bytesToDownload", getSize());
-        mContentDownloader = new ContentDownloader(this, myTransferListener);
+        mContentDownloader = new ContentDownloader(this, myDownloadListener);
         mContentDownloader.start();
+        mDownloadStatus = DownloadStatus.WAITING;
         return true;
     }
 
-    public void setTransferListener(TransferListener transferListener) {
-        mListener = transferListener;
+    void setTransferListener(ContentDownloader.DownloadListener downloadListener) {
+        mListener = downloadListener;
     }
 
-    private TransferListener myTransferListener = new TransferListener() {
+    private ContentDownloader.DownloadListener myDownloadListener = new ContentDownloader.DownloadListener() {
+        @Override
+        public void onUnzipProgress(int id, long current, long total) {
+            mDownloadStatus = DownloadStatus.PROCESSING;
+            mUnzipTotal = total;
+            mUnzipProgress = current;
+            if (mListener != null) mListener.onUnzipProgress(id, current, total);
+        }
+
         @Override
         public void onStateChanged(int id, TransferState state) {
             if (state == TransferState.COMPLETED ||
@@ -177,6 +208,17 @@ public class ContentInfo {
                     .finish();
                 mOpLog = null;
                 mContentDownloader = null;
+                if (state == TransferState.COMPLETED) {
+                    mDownloadStatus = DownloadStatus.DOWNLOADED;
+                } else if (state == TransferState.CANCELED) {
+                    mDownloadStatus = DownloadStatus.NEVER_DOWNLOADED;
+                } else {
+                    mDownloadStatus = DownloadStatus.DOWNLOAD_FAILED;
+                }
+            } else if (state == TransferState.IN_PROGRESS) {
+                mDownloadStatus = DownloadStatus.DOWNLOADING;
+            } else if (state == TransferState.WAITING_FOR_NETWORK) {
+                mDownloadStatus = DownloadStatus.WAITING;
             }
             if (mListener != null) mListener.onStateChanged(id, state);
         }
@@ -194,7 +236,7 @@ public class ContentInfo {
     };
 
     /**
-     * Gets a list of the communities in the content update.
+     * Gets a list of the communities in the Deployment.
      * @return A Set of CommunityInfo.
      */
     public Map<String, CommunityInfo> getCommunities() {

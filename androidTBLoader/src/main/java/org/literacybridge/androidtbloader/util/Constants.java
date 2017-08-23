@@ -36,8 +36,8 @@ public class Constants {
     public static final String COGNITO_APP_CLIENT_ID = "5h9tg11mb73p4j2ca1oii7bhkn";
     public static final String COGNITO_APP_SECRET = null;
 
-    // Content updates come from here.
-    public static final String CONTENT_UPDATES_BUCKET_NAME = "acm-content-updates";
+    // Deployments come from here.
+    public static final String DEPLOYMENTS_BUCKET_NAME = "acm-content-updates";
     // Statistics, logs get uploaded to here.
     public static final String COLLECTED_DATA_BUCKET_NAME = "acm-stats";
 

@@ -14,6 +14,22 @@ import java.util.zip.ZipOutputStream;
 public class ZipUnzip {
   File baseInDir;
 
+    /**
+     * Simple status of the unzip operation. Accumulates the uncompressed sizes of the files as
+     * 'current', and the size of the .zip as 'total'. This is inaccurate, because it ignores
+     * directories and the entries themselves. For many directories, or small files, it may be way
+     * off, but for zips with large files, it is fairly accurate.
+     */
+  public interface UnzipListener {
+        /**
+         * Called with progress of the unzip operation.
+         * @param current Bytes unzipped so far.
+         * @param total Size of the zip file.
+         * @return false if the operation should cancel; true to continue.
+         */
+      public boolean progress(long current, long total);
+  }
+
   private ZipUnzip(File baseDirectory) {
     baseInDir = baseDirectory;
   }
@@ -99,12 +115,30 @@ public class ZipUnzip {
   }
 
   public static void unzip(File inFile, File outDir) throws IOException {
+    unzip(inFile, outDir, null);
+  }
+
+    /**
+     * Unzip the given file into the given directory. If a listener is provided,
+     * call it with status updates.
+     * @param inFile The .zip file.
+     * @param outDir Where to unzip the files.
+     * @param listener Optional callback for status.
+     * @throws IOException if can't write to a file.
+     */
+  public static void unzip(File inFile, File outDir, UnzipListener listener) throws IOException {
     File parentDir;
+    long current=0;
+    long total=inFile.length();
+    boolean cancelled = false;
 
     parentDir = outDir;
     ZipFile zfile = new ZipFile(inFile);
     Enumeration<? extends ZipEntry> entries = zfile.entries();
-    while (entries.hasMoreElements()) {
+    if (listener != null) {
+        listener.progress(current, total);
+    }
+    while (entries.hasMoreElements() && !cancelled) {
       ZipEntry entry = entries.nextElement();
       File file = new File(parentDir, entry.getName());
       if (entry.isDirectory()) {
@@ -125,6 +159,10 @@ public class ZipUnzip {
         } finally {
           in.close();
         }
+      }
+      if (listener != null) {
+          current += entry.getCompressedSize();
+          cancelled = !listener.progress(current, total);
       }
     }
   }

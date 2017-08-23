@@ -106,7 +106,6 @@ public class MainFragment extends Fragment {
     private ViewGroup mGetStatsGroup;
 
     private boolean mHaveConfig = false;
-    private boolean mHaveContentList = false;
     private String mUserid;
     private String mProject;
 
@@ -211,18 +210,7 @@ public class MainFragment extends Fragment {
         fillUploadValues();
         updateGreeting();
 
-        mContentManager.refreshContentList(new ContentManager.ContentManagerListener() {
-            @Override
-            public void contentListChanged() {
-                mHaveContentList = true;
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        setButtonState();
-                    }
-                });
-            }
-        });
+        mContentManager.fetchContentList();
 
         KnownLocations.refreshCommunityLocations(new Config.Listener() {
             @Override
@@ -257,8 +245,11 @@ public class MainFragment extends Fragment {
     public void onResume() {
         super.onResume();
         fillUploadValues();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(UploadService.UPLOADER_STATUS_EVENT);
+        filter.addAction(ContentManager.CONTENT_LIST_CHANGED_EVENT);
         LocalBroadcastManager.getInstance(mApplicationContext).registerReceiver(
-                mMessageReceiver, new IntentFilter(UploadService.UPLOADER_STATUS_EVENT));
+                mMessageReceiver, filter);
     }
 
     @Override
@@ -558,12 +549,23 @@ public class MainFragment extends Fragment {
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            // Get extra data included in the Intent
-            String name = intent.getStringExtra("name");
-            int count = intent.getIntExtra("count", 0);
-            long size = intent.getLongExtra("size", 0);
-            Log.d(TAG, String.format("got updateProgress, count:%d, size:%d, name:%s", count, size, name));
-            fillUploadValues(count, size, name);
+            if (intent.getAction().equals(UploadService.UPLOADER_STATUS_EVENT)) {
+                // Get extra data included in the Intent
+                String name = intent.getStringExtra("name");
+                int count = intent.getIntExtra("count", 0);
+                long size = intent.getLongExtra("size", 0);
+                Log.d(TAG,
+                    String.format("got updateProgress, count:%d, size:%d, name:%s", count, size,
+                        name));
+                fillUploadValues(count, size);
+            } else if (intent.getAction().equals(ContentManager.CONTENT_LIST_CHANGED_EVENT)) {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setButtonState();
+                    }
+                });
+            }
         }
     };
 
@@ -571,11 +573,10 @@ public class MainFragment extends Fragment {
         UploadService uploadService = mApplicationContext.getUploadService();
         int count = uploadService.getUploadCount();
         long size = uploadService.getUploadSize();
-        String name = mApplicationContext.getUploadService().getUploadName();
-        fillUploadValues(count, size, name);
+        fillUploadValues(count, size);
     }
 
-    private void fillUploadValues(int count, long size, String name) {
+    private void fillUploadValues(int count, long size) {
         if (count > 0) {
             mUploadCountTextView.setText(String.format(getString(R.string.main_n_stats_files_to_upload), Util.getBytesString(size), count));
             //mUploadSizeTextView.setText(String.format(getString(R.string.main_n_bytes_to_upload), Util.getBytesString(size)));
@@ -627,8 +628,8 @@ public class MainFragment extends Fragment {
 
     private void setButtonState() {
         boolean canManage = mHaveConfig;
-        boolean canCheckin = mHaveConfig && mHaveContentList;
-        boolean canUpdate = mHaveConfig && mHaveContentList && mProject != null && mProject.length() > 0;
+        boolean canCheckin = mHaveConfig && mContentManager.haveContentInfo();
+        boolean canUpdate = canCheckin && mProject != null && mProject.length() > 0;
 
         mManageGroup.setAlpha(canManage ? 1.0f : 0.33f);
         mManageGroup.setEnabled(canManage);

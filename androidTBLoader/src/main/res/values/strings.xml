@@ -32,7 +32,8 @@
     <string name="pref_summary_allow_install_outdated_not_allowed">It is only allowed to install the latest revision of a Deployment Package on a Talking Book.</string>
     <string name="pref_summary_allow_install_outdated_allowed">Outdated Deployment Packages may be installed on a Talking Book.</string>
 
-    <string name="deployment_package_revision">Revision: %s</string>
+    <string name="deployment_version">Version: %s</string>
+    <string name="deployment_size">Size: %s</string>
     <string name="deployment_package_expiration">Expires: %s</string>
     <string name="deployment_package_expiration_never">Never</string>
 
@@ -106,7 +107,7 @@
     <string name="filtered_chooser_sort_distance_checkbox">Sort by distance</string>
     <string name="filtered_chooser_project_label">Project</string>
 
-    <string name="content_update_ready_to_use">Ready to use</string>
+    <string name="deployment_ready_to_use">Ready to use</string>
     <string name="checkin_project_label">Project</string>
     <string name="checkin_n_projects_format">%d projects</string>
     <string name="checkin_tap_to_choose_project_label">Tap to choose project.</string>
@@ -123,5 +124,8 @@
     <string name="updater_collect_stats_title">Collect Statistics</string>
     <string name="update_step_label">Update Step:</string>
     <string name="statistics_step_label">Statistics Step</string>
+    <string name="list_item_deployment_downloading">Downloading...</string>
+    <string name="list_item_deployment_unzipping">Processing...</string>
+    <string name="list_item_deployment_waiting">Waiting...</string>
 
 </resources>

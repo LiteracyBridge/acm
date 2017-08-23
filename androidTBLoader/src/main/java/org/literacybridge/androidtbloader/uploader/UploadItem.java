@@ -2,12 +2,14 @@ package org.literacybridge.androidtbloader.uploader;
 
 import java.io.File;
 import java.util.Comparator;
+import java.util.Date;
 
 /**
  * Class to describe an item in the upload queue. Used in a PriorityQueue.
  */
 class UploadItem {
     File file;
+    Date timestamp;
     long size;
     long startTime;
     long elapsedMillis=-1;
@@ -15,6 +17,7 @@ class UploadItem {
 
     UploadItem(File file) {
         this.file = file;
+        this.timestamp = new Date(file.lastModified());
         this.size = file.length();
     }
 
@@ -22,6 +25,7 @@ class UploadItem {
         startTime = System.currentTimeMillis();
     }
     private void uploadEnded(boolean success) {
+        this.timestamp = new Date(System.currentTimeMillis());
         elapsedMillis = Math.max(System.currentTimeMillis() - startTime, 0);
         this.success = success;
     }

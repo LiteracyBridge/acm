@@ -61,7 +61,9 @@ public class UploadService extends JobService {
     private static final int NOTIFICATION_ID = 43;
     public static final String UPLOADER_STATUS_EVENT = "uploader_status_change";
 
-    private static final int PERIOD = 10 * 60 * 1000; // 10 minutes between polls.
+    private static final int PERIOD = 10 * 60 * 1000;   // 10 minutes between polls.
+    // Allow only at most this many consecutive transfer errors before waiting for the next job.
+    private static final int MAX_CONSECUTIVE_ERRORS = 2;
 
     // If we have any current error / warning messages we'd like to display in the service.
     private static String sErrorMessage;
@@ -78,17 +80,20 @@ public class UploadService extends JobService {
     private long mActiveUploadProgress = 0;
     private boolean mCancelRequested = false;
     private int mTransferId;
+    private int mConsecutiveErrors;
+    private boolean mAnySuccessThisJob;
 
     private String mPendingUploadName = "";
     private int mPendingUploadCount = 0;
     private long mPendingUploadSize = 0;
+    private Toast mToast = null;
 
     /**
      * Starts the upload service. Files will be uploaded when we're connected, smallest first.
      */
     public static synchronized void startUploadService() {
         Log.d(TAG, "startUploadService: scheduling job");
-        int period = TBLoaderAppContext.getInstance().isDebug() ? 20 * 1000 : PERIOD;
+        int period = TBLoaderAppContext.getInstance().isDebug() ? 60 * 1000 : PERIOD;
         JobScheduler jobScheduler = (JobScheduler) TBLoaderAppContext.getInstance().getSystemService(Context.JOB_SCHEDULER_SERVICE);
         // Always just start the job. It appears that we don't get duplicates, and trying to avoid
         // extra jobs has proven unreliable.
@@ -156,15 +161,6 @@ public class UploadService extends JobService {
      */
     public long getUploadSize() {
         return mPendingUploadSize;
-    }
-
-    /**
-     * Gets the name of the current file uploading, or the next file to be
-     * uploaded if there is no current upload.
-     * @return The file's name.
-     */
-    public String getUploadName() {
-        return mPendingUploadName;
     }
 
     /**
@@ -272,7 +268,7 @@ public class UploadService extends JobService {
             mPendingUploadName = name;
             mPendingUploadCount = count;
             mPendingUploadSize = size;
-            Log.d(TAG, String.format("updateProgress, count:%d, size:%d, name:%s", mPendingUploadCount, mPendingUploadSize, mPendingUploadName));
+            Log.d(TAG, String.format("updateStatus, count:%d, size:%d, name:%s", mPendingUploadCount, mPendingUploadSize, mPendingUploadName));
 
             Intent intent = new Intent(UPLOADER_STATUS_EVENT);
             intent.putExtra("count", mPendingUploadCount);
@@ -285,19 +281,33 @@ public class UploadService extends JobService {
     }
 
     /**
+     * Helper to show Toast messages. Cancels any existing or queued toasts, to prevent a long
+     * stack of Toasts.
+     * @param text to show
+     */
+    private void showToast(CharSequence text) {
+        Context context = TBLoaderAppContext.getInstance();
+        int duration = Toast.LENGTH_SHORT;
+        if (mToast != null) {
+            mToast.cancel();
+        }
+        mToast = Toast.makeText(context, text, duration);
+        mToast.show();
+    }
+
+    /**
      * Starts the process of uploading statistics, user feedback, and log files.
      */
     private void startUploads() {
         // Uncomment for debugging.
-//        Context context = TBLoaderAppContext.getInstance();
 //        CharSequence text = "Starting Upload Service.";
-//        int duration = Toast.LENGTH_SHORT;
-//        Toast toast = Toast.makeText(context, text, duration);
-//        toast.show();
+//        showToast(text);
+        mConsecutiveErrors = 0;
+        mAnySuccessThisJob = false; // so far
 
         CognitoUserSession session = UserHelper.getCurrSession();
-        if (session == null) {
-            Log.d(TAG, "startUploads: no session, trying to authenticate");
+        if (session == null || !session.isValid()) {
+            Log.d(TAG, String.format("startUploads: %s session, trying to authenticate", session==null?"no":"invalid"));
 
             new UnattendedAuthenticator(new GenericHandler() {
                 @Override
@@ -309,11 +319,7 @@ public class UploadService extends JobService {
                 @Override
                 public void onFailure(Exception exception) {
                     Log.d(TAG, "startUploads: authentication failure");
-                    Context context = TBLoaderAppContext.getInstance();
-                    CharSequence text = "Authentication Failure!";
-                    int duration = Toast.LENGTH_SHORT;
-                    Toast toast = Toast.makeText(context, text, duration);
-                    toast.show();
+                    showToast("Authentication Failure!");
                     sErrorMessage = "Authentication Failure!";
                 }
             }).authenticate();
@@ -346,6 +352,15 @@ public class UploadService extends JobService {
             return;
         }
 
+        // Too many errors? Quit for a while.
+        if (mConsecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+            return;
+        }
+        // Empty work queue, and no progress? Quit for a while
+        if (sUploadQueue.size() == 0 && !mAnySuccessThisJob) {
+            return;
+        }
+
         if (sUploadQueue.size() > 0 || checkForUploads() > 0) {
             updateStatus();
             transferOne(sUploadQueue.peek());
@@ -357,6 +372,12 @@ public class UploadService extends JobService {
     }
     private void transferDone(UploadItem previous) {
         if (previous != null) {
+            if (previous.success) {
+                mConsecutiveErrors = 0;
+                mAnySuccessThisJob = true;
+            } else {
+                mConsecutiveErrors++;
+            }
             sUploadQueue.remove(previous);
             sUploadHistory.add(0, previous);
         }
@@ -411,11 +432,8 @@ public class UploadService extends JobService {
                     queuedItem.uploadSucceeded();
                     transferDone(queuedItem);
                 } else if (state == TransferState.FAILED) {
-                    Context context = TBLoaderAppContext.getInstance();
                     CharSequence text = "Error uploading "+file.getName();
-                    int duration = Toast.LENGTH_SHORT;
-                    Toast toast = Toast.makeText(context, text, duration);
-                    toast.show();
+                    showToast(text);
 
                     mSuccess = false;
                     transferUtility.deleteTransferRecord(id);

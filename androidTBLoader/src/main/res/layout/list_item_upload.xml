@@ -6,7 +6,7 @@
 
     <!-- File name -->
     <TextView
-        android:id="@+id/list_item_file_name"
+        android:id="@+id/list_item_update_file_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:elegantTextHeight="false"
@@ -18,39 +18,39 @@
 
     <!-- File size -->
     <TextView
-        android:id="@+id/list_item_file_size"
+        android:id="@+id/list_item_update_transfer_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/list_item_file_name"
+        android:layout_below="@id/list_item_update_file_name"
+        android:paddingStart="4dp"
+        android:textColor="@color/success"
+        tools:text="⌛︎✓" />
+
+    <TextView
+        android:id="@+id/list_item_update_file_size"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/list_item_update_file_name"
+        android:layout_toEndOf="@id/list_item_update_transfer_status"
         android:paddingStart="4dp"
         tools:text="123 KiB"/>
 
     <TextView
-        android:id="@+id/list_item_transfer_status"
+        android:id="@+id/list_item_update_transfer_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/list_item_file_name"
-        android:layout_toEndOf="@id/list_item_file_size"
-        android:paddingStart="4dp"
-        android:textColor="@color/success"
-        tools:text="✔️" />
-
-    <TextView
-        android:id="@+id/list_item_transfer_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_toEndOf="@id/list_item_transfer_status"
-        android:layout_below="@id/list_item_file_name"
+        android:layout_toEndOf="@id/list_item_update_file_size"
+        android:layout_below="@id/list_item_update_file_name"
         android:paddingStart="4dp"
         tools:text="0.234 s"/>
 
     <!-- Date -->
     <TextView
-        android:id="@+id/list_item_file_date"
+        android:id="@+id/list_item_upload_timestamp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_toEndOf="@id/list_item_transfer_time"
-        android:layout_below="@id/list_item_file_name"
+        android:layout_toEndOf="@id/list_item_update_transfer_time"
+        android:layout_below="@id/list_item_update_file_name"
         android:paddingStart="10dp"
         tools:text="2017-07-07 13:08:08.123"/>
 
@@ -58,7 +58,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_below="@id/list_item_file_size"
+        android:layout_below="@id/list_item_update_file_size"
         android:background="?android:attr/listDivider"/>
 
 </RelativeLayout>

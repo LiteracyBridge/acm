@@ -18,18 +18,16 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
-
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
+import org.literacybridge.androidtbloader.checkin.LocationProvider.MyLocationListener;
 import org.literacybridge.androidtbloader.community.ChooseCommunityActivity;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.community.CommunityInfoAdapter;
 import org.literacybridge.androidtbloader.content.ContentManager;
-import org.literacybridge.androidtbloader.tbloader.TbLoaderActivity;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,8 +70,7 @@ public class CheckinFragment extends Fragment {
     private TextView mGpsCoordinatesTextView;
     private TextView mGpsLocationTimeTextView;
 
-    private ImageButton mGoButton;
-    private Button mGoButton2;
+    private Button mCheckinButton;
 
     private Button mAddCommunityToButton;
     private TabHost mTabHost;
@@ -112,7 +109,8 @@ public class CheckinFragment extends Fragment {
 
         // We want an "up" button (that is, one that points "back"), but we don't want back navigation, rather
         // to simply end this activity without setting project or community.
-        toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setDisplayShowHomeEnabled(true);
         toolbar.setNavigationOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
@@ -152,10 +150,8 @@ public class CheckinFragment extends Fragment {
                 mUpdateTodayCommunitiesList);
         mUpdateTodayRecyclerView.setAdapter(mUpdateTodayCommunitiesAdapter);
 
-        mGoButton = (ImageButton) view.findViewById(R.id.checkin_button);
-        mGoButton.setOnClickListener(mCheckinListener);
-        mGoButton2 = (Button) view.findViewById(R.id.checkin_button_2);
-        mGoButton2.setOnClickListener(mCheckinListener);
+        mCheckinButton = (Button) view.findViewById(R.id.checkin_button);
+        mCheckinButton.setOnClickListener(mCheckinListener);
 
         // Set up tabs between "add gps" and "today" views.
         mTabHost = (TabHost)view.findViewById(R.id.checkin_tabHost);
@@ -331,17 +327,18 @@ public class CheckinFragment extends Fragment {
         // Enable the "Add Community To..." button if...
         boolean enabled = false;
         if (mTabHost.getCurrentTabTag().equals(NEARBY_TAB_TAG) && mGpsLocation != null) {
-            // GPS tab, and we have GPS location.
+            // ...GPS tab, and we have GPS location.
             enabled = true;
         } else if (mTabHost.getCurrentTabTag().equals(TODAY_TAB_TAG) && mChosenProject != null){
-            // Today tab, and we have chosen a project
+            // ...Today tab, and we have chosen a project
             enabled = true;
         }
         mAddCommunityToButton.setEnabled(enabled);
 
         //mUpdateTodayAddButton.setEnabled(mChosenProject != null);
-        mGoButton.setEnabled(mChosenProject != null);
-        mGoButton2.setEnabled(mChosenProject != null);
+        // Enable the "Checkin" button if we have a project and one or more communities.
+        enabled = mChosenProject != null && mUpdateTodayCommunitiesList.size() > 0;
+        mCheckinButton.setEnabled(enabled);
     }
 
     /**
@@ -411,7 +408,7 @@ public class CheckinFragment extends Fragment {
         }
     }
 
-    private final LocationProvider.MyLocationListener mLocationListener = new LocationProvider.MyLocationListener() {
+    private final MyLocationListener mLocationListener = new MyLocationListener() {
         @Override
         public void onLocationChanged(final Location location) {
             Log.d(TAG, String.format("Location changed: %s", location.toString()));

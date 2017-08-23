@@ -169,7 +169,8 @@ public class TbLoaderFragment extends Fragment {
 
         // We want a "back" button (sometimes called "up"), but we don't want back navigation, but
         // to simply end this activity without setting project or community.
-        toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setDisplayShowHomeEnabled(true);
         toolbar.setNavigationOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
@@ -665,7 +666,7 @@ public class TbLoaderFragment extends Fragment {
         if (mStatsOnly) {
             result = builder.build().collectStatistics();
         } else {
-            // The directory with images. {project}/content/{deployment}
+            // The directory with images. {project}/content/{Deployment}
             File contentUpdateDirectory = PathsProvider.getLocalContentUpdateDirectory(mProject);
             DeploymentInfo newDeploymentInfo = getUpdateDeploymentInfo(opLog, tbDeviceInfo,
                                                         collectionTimestamp, todaysDate,
@@ -715,7 +716,7 @@ public class TbLoaderFragment extends Fragment {
         // Find the image with the community's language and/or group (such as a/b test group).
         String imageName = TBLoaderUtils.getImageForCommunity(contentUpdateDirectory, mCommunity.getName());
 
-        // What firmware comes with this content update?
+        // What firmware comes with this Deployment?
         String firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(contentUpdateDirectory);
 
         String deviceSerialNumber = tbDeviceInfo.getSerialNumber();
@@ -729,7 +730,7 @@ public class TbLoaderFragment extends Fragment {
                 .withDeploymentName(contentUpdateDirectory.getName())
                 .withPackageName(imageName)
                 .withUpdateDirectory(collectedDataDirectory.getName())
-                .withUpdateTimestamp(todaysDate) // TODO: this should be the "deployment date", the first date the new content is deployed.
+                .withUpdateTimestamp(todaysDate) // TODO: this should be the "Deployment date", the first date the new content is deployed.
                 .withFirmwareRevision(firmwareRevision)
                 .withCommunity(mCommunity.getName());
         DeploymentInfo newDeploymentInfo = builder.build();
@@ -767,7 +768,6 @@ public class TbLoaderFragment extends Fragment {
      * @return The serial number string.
      */
     private String getNewDeviceSerialNumber() {
-        final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
         int tbcdid = Integer.parseInt(TBLoaderAppContext.getInstance().getConfig().getTbcdid(), 16);
         tbcdid |= 0x8000;
 

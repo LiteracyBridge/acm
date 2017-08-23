@@ -28,14 +28,17 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import org.literacybridge.androidtbloader.BuildConfig;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.checkin.LocationProvider;
 import org.literacybridge.androidtbloader.content.ContentManager;
 import org.literacybridge.androidtbloader.util.PathsProvider;
+import org.literacybridge.androidtbloader.util.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -45,6 +48,7 @@ import java.util.regex.Pattern;
 
 import static android.app.Activity.RESULT_OK;
 import static android.view.View.GONE;
+import static java.lang.Math.min;
 
 /**
  * Choose a community from a list.
@@ -131,6 +135,13 @@ public class ChooseCommunityFragment extends Fragment {
             throw new IllegalStateException("No communities from which to choose");
         }
 
+        if (BuildConfig.DEBUG) {
+            String orgList = Util.join(mOriginalList.subList(0, min(mOriginalList.size(), 3)), ", ");
+            List<String> excluded = intent.getStringArrayListExtra("excluded");
+            String exclList = Util.join(excluded.subList(0, min(excluded.size(), 3)), ", ");
+            Log.d(TAG, String.format("Get community for %s, list: %s, excl: ", mProject, orgList, exclList));
+        }
+
         // Caller can exclude some communities from the display, if desired.
         List<String> excluded = intent.getStringArrayListExtra("excluded");
         if (excluded != null && excluded.size() > 0) {
@@ -160,7 +171,8 @@ public class ChooseCommunityFragment extends Fragment {
 
         // We want a "back" button (sometimes called "up"), but we don't want back navigation, rather
         // to simply end this activity without setting project or community.
-        toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setDisplayShowHomeEnabled(true);
         toolbar.setNavigationOnClickListener(new OnClickListener(){
             @Override
             public void onClick(View view){

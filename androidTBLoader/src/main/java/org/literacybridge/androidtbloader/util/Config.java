@@ -226,7 +226,7 @@ public class Config {
 
         // Query settings from s3.
         ListObjectsV2Request request = new ListObjectsV2Request()
-                .withBucketName(Constants.CONTENT_UPDATES_BUCKET_NAME)
+                .withBucketName(Constants.DEPLOYMENTS_BUCKET_NAME)
                 .withPrefix("users/" + username + ".config");
 
         Log.d(TAG, String.format("Fetching config file info for %s", UserHelper.getUserId()));
@@ -273,7 +273,7 @@ public class Config {
         // Initiate the download
         Log.d(TAG, "about to call transferUtility.download");
         final TransferUtility transferUtility = S3Helper.getTransferUtility();
-        final TransferObserver observer = transferUtility.download(Constants.CONTENT_UPDATES_BUCKET_NAME, key, file);
+        final TransferObserver observer = transferUtility.download(Constants.DEPLOYMENTS_BUCKET_NAME, key, file);
         Log.d(TAG, "back from call to transferUtility.download");
 
         observer.setTransferListener(new TransferListener() {

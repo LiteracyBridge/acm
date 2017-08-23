@@ -62,6 +62,7 @@ public class TBLoaderAppContext extends Application {
         mConfig = new Config(this);
 
         OperationLog.setImplementation(OperationLogImpl.getInstance());
+        OperationLog.log("ApplicationStart").finish();
     }
 
     public boolean isDebug() {

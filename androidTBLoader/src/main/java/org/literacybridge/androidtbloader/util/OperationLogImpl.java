@@ -13,8 +13,10 @@ import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Queue;
 import java.util.regex.Pattern;
 
 import static org.literacybridge.androidtbloader.util.Constants.ISO8601;
@@ -54,6 +56,9 @@ public class OperationLogImpl implements OperationLog.Implementation{
     private File logFile;
     private DateFormat filenameFormat;
     private DateFormat logFormat;
+
+    private Queue<File> mPendingFiles = null;
+
     @SuppressLint("SimpleDateFormat")
     private OperationLogImpl() {
         File logDir = PathsProvider.getLogDirectory();
@@ -66,6 +71,8 @@ public class OperationLogImpl implements OperationLog.Implementation{
         logFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
         logFormat.setTimeZone(UTC);
 
+        handleExistingLogFiles();
+
         runnable = new Runnable() {
             @Override
             public void run() {
@@ -73,6 +80,37 @@ public class OperationLogImpl implements OperationLog.Implementation{
             }
         };
     }
+
+    /**
+     * At startup we find any log files lying around. Take the latest one and append to it,
+     * and schedule any others for uploading as soon as we start uploading.
+     */
+    private void handleExistingLogFiles() {
+        File [] existing = PathsProvider.getLogDirectory().listFiles();
+        if (existing != null && existing.length > 0) {
+            // Find the newest. We'll append to it. The rest, we'll schedule for upload.
+            File newestFile = existing[0];
+            long newestTime = newestFile.lastModified();
+            for (File f : existing) {
+                if (f.lastModified() > newestTime) {
+                    newestTime = f.lastModified();
+                    newestFile = f;
+                }
+            }
+            logFile = newestFile;
+            if (existing.length > 1) {
+                // To have existing log files, we should generally have our tbcdid. But, in case
+                // not, queue them, and upload when we know we have it.
+                mPendingFiles = new LinkedList<>();
+                for (File f : existing) {
+                    if (f != newestFile) {
+                        mPendingFiles.add(f);
+                    }
+                }
+            }
+        }
+    }
+
 
     private synchronized File getLogFile() {
         if (logFile == null) {
@@ -83,9 +121,9 @@ public class OperationLogImpl implements OperationLog.Implementation{
     }
 
     /**
-     * Replaces newlines with spaces and commas with semicolons.
+     * Replaces newlines with "↵" and commas with semicolons.
      * @param rawString String that may have problematic characters.
-     * @return String with those characters removed.↵
+     * @return String with those characters removed.
      */
     private String enquote(String rawString) {
         rawString = NEWLINE.matcher(rawString).replaceAll("↵");
@@ -130,10 +168,24 @@ public class OperationLogImpl implements OperationLog.Implementation{
             try {
                 logFile = null;
                 uploadLog(prevLogFile);
+                uploadPendingLogs();
             } catch (Exception e) {
                 Log.d(TAG, String.format("Exception closing log file: %s", prevLogFile), e);
                 // Not much we can do about this...
             }
+        }
+    }
+
+    private void uploadPendingLogs() {
+        // If there are any pending files, send them now. This will be rare.
+        if (mPendingFiles != null) {
+            File f = mPendingFiles.poll();
+            while (f != null) {
+                Log.d(TAG, String.format("Uploading orphaned log file: %s", f.getName()));
+                uploadLog(f);
+                f = mPendingFiles.poll();
+            }
+            mPendingFiles = null;
         }
     }
 
