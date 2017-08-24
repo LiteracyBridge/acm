@@ -1,10 +1,10 @@
 package org.literacybridge.acm.store;
 
+import com.google.common.collect.Lists;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import com.google.common.collect.Lists;
 
 public class Category {
   private final String id;
@@ -48,26 +48,17 @@ public class Category {
     this.parent = parent;
   }
 
-  public void addChild(Category childCategory) {
+  void addChild(Category childCategory) {
     children.add(childCategory);
   }
 
-  public void clearChildren() {
-    children.clear();
-  }
-
-  public Iterable<Category> getChildren() {
+  Iterable<Category> getChildren() {
     return children;
   }
 
   public Iterable<Category> getSortedChildren() {
     List<Category> sorted = Lists.newArrayList(children);
-    Collections.sort(sorted, new Comparator<Category>() {
-      @Override
-      public int compare(Category c1, Category c2) {
-        return c1.getOrder() - c2.getOrder();
-      }
-    });
+    sorted.sort((c1, c2) -> c1.getOrder() - c2.getOrder());
 
     return sorted;
   }
@@ -76,8 +67,12 @@ public class Category {
     return !children.isEmpty();
   }
 
+  @Deprecated // This is not really a uuid. Use getId
   public String getUuid() {
     return id;
+  }
+  public String getId() {
+      return id;
   }
 
   @Override
@@ -89,7 +84,7 @@ public class Category {
         return nonAssignable;
     }
 
-    public void setNonAssignable(boolean nonAssignable) {
+    void setNonAssignable(boolean nonAssignable) {
         this.nonAssignable = nonAssignable;
     }
 }

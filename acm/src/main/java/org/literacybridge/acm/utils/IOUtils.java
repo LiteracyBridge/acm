@@ -308,9 +308,9 @@ public class IOUtils {
      * Places the lines into a set, so this is really good for whitelists, blacklists, etc.
      * @param lines File of lines
      * @param set Place lines into this set.
-     * @throws IOException
+     * @throws IOException if there is an error reading the file.
      */
-    static void readLines(File lines, Set<String> set) throws IOException {
+    public static void readLines(File lines, Set<String> set) throws IOException {
         //read file into stream, try-with-resources
         try (BufferedReader br = new BufferedReader(new FileReader(lines))) {
             String line;

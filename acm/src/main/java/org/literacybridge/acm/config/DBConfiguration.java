@@ -48,6 +48,7 @@ public class DBConfiguration extends Properties {
 
   private AudioItemRepository repository;
   private MetadataStore store;
+  private CategoryFilter categoryFilter = null;
 
   private boolean sandboxed;
 
@@ -196,6 +197,17 @@ public class DBConfiguration extends Properties {
       if (!tbLoaders.exists())
           tbLoaders.mkdirs();
       return tbLoaders;
+  }
+
+    /**
+     * The CategoryFilter is used to determine which categories to be shown to the user.
+     * @return The category filter for this project.
+     */
+  public synchronized CategoryFilter getCategoryFilter() {
+    if (categoryFilter == null) {
+        categoryFilter = new CategoryFilter(getSharedACMDirectory());
+    }
+    return categoryFilter;
   }
 
   public boolean isSandboxed() {

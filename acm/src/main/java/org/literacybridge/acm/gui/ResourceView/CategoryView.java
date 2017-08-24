@@ -50,6 +50,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.CategoryFilter;
 import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.core.MessageBus.Message;
 import org.literacybridge.acm.device.DeviceConnectEvent;
@@ -83,6 +84,7 @@ public class CategoryView extends ACMContainer implements Observer {
   private SearchResult result = null;
   // categories
   private CheckboxTree categoryTree = null;
+  private CategoryFilter categoryFilter = null;
   // tags
   private JList<TagLabel> tagsList = null;
   private JButton addTagButton = null;
@@ -111,7 +113,7 @@ public class CategoryView extends ACMContainer implements Observer {
   // list of available languages
   private List<LanguageLabel> languagesList = new ArrayList<LanguageLabel>();
 
-  public CategoryView(SearchResult result) {
+  CategoryView(SearchResult result) {
     this.result = result;
     categoryRootNode = new DefaultMutableTreeNode();
     deviceRootNode = new DefaultMutableTreeNode(LabelProvider.getLabel(
@@ -144,10 +146,11 @@ public class CategoryView extends ACMContainer implements Observer {
     // add all categories
     Category rootCategory = ACMConfiguration.getInstance().getCurrentDB()
         .getMetadataStore().getTaxonomy().getRootCategory();
+    categoryFilter = ACMConfiguration.getInstance().getCurrentDB().getCategoryFilter();
     if (rootCategory.hasChildren()) {
       for (Category c : rootCategory.getSortedChildren()) {
-          // If a category can't have messages assigned to it, don't show it.
-          if (!c.isNonAssignable()) {
+          // Only show categories that are are whitelisted and can be assigned to.
+          if (categoryFilter.isIncluded(c.getId()) && !c.isNonAssignable()) {
               addChildNodes(categoryRootNode, c);
           }
       }
@@ -337,7 +340,7 @@ public class CategoryView extends ACMContainer implements Observer {
   private class LanguageLabel implements FacetCountProvider {
     private Locale locale;
 
-    public LanguageLabel(Locale locale) {
+    LanguageLabel(Locale locale) {
       this.locale = locale;
     }
 
@@ -508,7 +511,8 @@ public class CategoryView extends ACMContainer implements Observer {
     parent.add(child);
     if (category.hasChildren()) {
       for (Category c : category.getSortedChildren()) {
-          if (!c.isNonAssignable()) {
+          // Only show categories that are are whitelisted and can be assigned to.
+          if (categoryFilter.isIncluded(c.getId()) && !c.isNonAssignable()) {
               addChildNodes(child, c);
           }
       }
@@ -577,7 +581,7 @@ public class CategoryView extends ACMContainer implements Observer {
   public class CategoryTreeNodeObject implements FacetCountProvider {
     private Category category;
 
-    public CategoryTreeNodeObject(Category category) {
+    CategoryTreeNodeObject(Category category) {
       this.category = category;
     }
 
@@ -600,8 +604,7 @@ public class CategoryView extends ACMContainer implements Observer {
           displayLabel += " [" + count + "]";
         }
       } else {
-        displayLabel = LabelProvider.getLabel("ERROR",
-            LanguageUtil.getUILanguage());
+        displayLabel = LabelProvider.getLabel("ERROR");
       }
 
       return displayLabel;
@@ -638,7 +641,7 @@ public class CategoryView extends ACMContainer implements Observer {
     }
   }
 
-  public void updateTagsTable() {
+  private void updateTagsTable() {
     if (!clearingSelections) {
       MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
           .getMetadataStore();
@@ -646,7 +649,7 @@ public class CategoryView extends ACMContainer implements Observer {
     }
   }
 
-  public void addNewTag() {
+  private void addNewTag() {
     String tagName = (String) JOptionPane.showInputDialog(this,
         "Enter playlist name:", "Add new playlist", JOptionPane.PLAIN_MESSAGE,
         null, null, "");
@@ -794,6 +797,6 @@ public class CategoryView extends ACMContainer implements Observer {
     }
   };
 
-  public static class TagsListChanged {
+  static class TagsListChanged {
   }
 }

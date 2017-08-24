@@ -40,6 +40,7 @@ public class ACMConfiguration {
     private String title;
     private boolean disableUI = false;
     private boolean forceSandbox = false;
+    private boolean allCategories = false;
     private boolean verbose = false; // TODO: some means to set it true.
     private final Properties UsersConfigurationProperties = new Properties();
     private File globalShareDir;
@@ -101,6 +102,7 @@ public class ACMConfiguration {
 
         disableUI = params.disableUI;
         forceSandbox = params.sandbox;
+        allCategories = params.allCategories;
 
         setupACMGlobalPaths();
 
@@ -388,6 +390,10 @@ public class ACMConfiguration {
 
     public boolean isForceSandbox() {
         return forceSandbox;
+    }
+
+    public boolean isAllCategories() {
+        return allCategories;
     }
 
     public File getGlobalShareDir() {

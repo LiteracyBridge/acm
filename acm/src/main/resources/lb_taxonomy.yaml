@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 53
+  revision: 54
   categories:
     '0' : 
       name: Other Messages
@@ -358,9 +358,16 @@ taxonomy:
         '10-2':
           name: Gender
           order: 10
-        '12-13' :
+        '10-3':
           name: Early Marriage
+          order: 6
+        '12-13' :
+          nonassignable: true
+          name: Early Marriage (old cat)
           order: 5
+        '10-4' :
+          name: Corporal Punishment
+          order: 30
     '11':
       name: Environment
       order: 88
@@ -1252,4 +1259,6 @@ taxonomy:
          '100-6':
            name: malariya isuku n' isukura
            order: 6
-
+         '100-7':
+           name: Social Protection
+           order: 7
