@@ -235,7 +235,7 @@ public class TBLoader extends JFrame {
         JPanel panel = new JPanel();
         JLabel warning;
         //@TODO: this should be a tbloaderconfig propery
-        if (tbLoaderConfig.getSrnPrefix().equals("a-")) {
+        if (srnPrefix.equals("a-")) {
             panel.setBackground(Color.CYAN);
             warning = new JLabel("Use with OLD TBS only");
             warning.setForeground(Color.RED);
@@ -499,8 +499,6 @@ public class TBLoader extends JFrame {
 
                 tbLoaderConfig = new TBLoaderConfig.Builder()
                         .withTbLoaderId(deviceId)
-                        .withProject(newProject)
-                        .withSrnPrefix(srnPrefix)
                         .withCollectedDataDirectory(collectedDataDir)
                         .withTempDirectory(tempDir)
                         .withWindowsUtilsDirectory(softwareDir)
@@ -1002,7 +1000,7 @@ public class TBLoader extends JFrame {
                 if (newSrnText.getText().equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER)) {
                     int intSrn = allocateNextSerialNumberFromTbLoader();
                     String lowerSrn = String.format("%04x", intSrn);
-                    String srn = (tbLoaderConfig.getSrnPrefix() + tbLoaderConfig.getTbLoaderId()
+                    String srn = (srnPrefix + tbLoaderConfig.getTbLoaderId()
                             + lowerSrn).toUpperCase();
                     di.setSerialNumber(srn);
                     newSrnText.setText(srn);

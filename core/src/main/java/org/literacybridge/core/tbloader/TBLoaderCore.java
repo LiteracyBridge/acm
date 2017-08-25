@@ -362,7 +362,7 @@ public class TBLoaderCore {
                                         mTtbLoaderConfig.getTbLoaderId());
 
         TbFile logFile = mCollectedDataDirectory         // like /Users/alice/Dropbox/tbcd000c
-                .open(mTtbLoaderConfig.getProject())      // {tbloaderConfig.project}
+                .open(oldDeployment.getProjectName())      // {tbloaderConfig.project}
                 .open("OperationalData")                // "OperationalData"
                 .open(mTtbLoaderConfig.getTbLoaderId())   // {tbloaderConfig.tbLoaderId}
                 .open("tbData")                         // "tbData"
@@ -387,7 +387,7 @@ public class TBLoaderCore {
                 }
                 bw.write("\n");
             }
-            bw.write(mTtbLoaderConfig.getProject().toUpperCase() + ",");
+            bw.write(oldDeployment.getProjectName().toUpperCase() + ",");
             bw.write(mUpdateTimestamp.toUpperCase() + ",");
             bw.write(mUpdateTimestamp.toUpperCase() + "-" + mTtbLoaderConfig.getTbLoaderId()
                     .toUpperCase() + ",");
@@ -416,7 +416,7 @@ public class TBLoaderCore {
             // The exception is that, here, qthe action is first, not fifth.
             opLog
                 .put("action", action)
-                .put("project", mTtbLoaderConfig.getProject().toUpperCase())
+                .put("project", oldDeployment.getProjectName().toUpperCase())
                 .put("update_date_time", mUpdateTimestamp.toUpperCase())
                 .put("out_synchdir", mUpdateTimestamp.toUpperCase() + "-" + mTtbLoaderConfig.getTbLoaderId()
                         .toUpperCase())
@@ -429,7 +429,8 @@ public class TBLoaderCore {
                     .put("out_package", newDeployment.getPackageName().toUpperCase())
                     .put("out_firmware", newDeployment.getFirmwareRevision())
                     .put("out_community", newDeployment.getCommunity().toUpperCase())
-                    .put("out_rotation", newDeployment.getUpdateTimestamp());
+                    .put("out_rotation", newDeployment.getUpdateTimestamp())
+                    .put("out_project", newDeployment.getProjectName());
             }
             opLog
                 .put("in_sn", oldDeployment.getSerialNumber().toUpperCase())
@@ -437,6 +438,7 @@ public class TBLoaderCore {
                 .put("in_package", oldDeployment.getPackageName().toUpperCase())
                 .put("in_firmware", oldDeployment.getFirmwareRevision())
                 .put("in_community", oldDeployment.getCommunity().toUpperCase())
+                .put("in_project", oldDeployment.getProjectName())
                 .put("in_update_timestamp", oldDeployment.getUpdateTimestamp())
                 .put("in_synchdir", (lastSynchDir != null ? lastSynchDir.toUpperCase() : ""))
                 .put("in_disk_label", mTbDeviceInfo.getLabel())

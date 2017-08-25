@@ -11,7 +11,6 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -22,12 +21,8 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
-
-
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
-import org.literacybridge.androidtbloader.checkin.CheckinActivity;
 import org.literacybridge.androidtbloader.community.ChooseCommunityActivity;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.content.ContentInfo;
@@ -638,8 +633,6 @@ public class TbLoaderFragment extends Fragment {
 
         TBLoaderConfig tbLoaderConfig = new TBLoaderConfig.Builder()
             .withTbLoaderId(config.getTbcdid())
-            .withProject(mProject)
-            .withSrnPrefix(mSrnPrefix)
             .withCollectedDataDirectory(collectedDataTbFile)
             .withTempDirectory(tempTbFile)
             .build();
