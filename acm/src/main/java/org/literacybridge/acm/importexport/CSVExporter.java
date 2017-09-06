@@ -75,11 +75,11 @@ public class CSVExporter {
     private static final int NUMBER_OF_COLUMNS = columns.length;
 
     public static void export(Iterable<AudioItem> audioItems, File targetFile) throws IOException {
-        export(audioItems, targetFile, false);
+        export(audioItems, targetFile, false, false);
     }
 
     public static void export(Iterable<AudioItem> audioItems, File targetFile,
-                              boolean categoryCodes) throws IOException {
+                              boolean categoryCodes, boolean fullNames) throws IOException {
         String project = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
         if (project.toLowerCase().startsWith("acm-")) {
             project = project.substring(4);
@@ -127,7 +127,7 @@ public class CSVExporter {
                 }
             }
             values[CATEGORY_COLUMN_INDEX] = categoryCodes ? UIUtils.getCategoryCodesAsString(
-                    audioItem) : UIUtils.getCategoryListAsString(audioItem);
+                    audioItem) : UIUtils.getCategoryNamesAsString(audioItem, fullNames);
             values[QUALITY_COLUMN_INDEX] = quality;
             values[PROJECT_COLUMN_INDEX] = project;
             writer.writeNext(values);
@@ -241,7 +241,7 @@ public class CSVExporter {
                     .getTaxonomy()
                     .getRootCategory();
             for (Category child : root.getSortedChildren()) {
-                exportCategoryCodes(writer, child, "");
+                exportCategoryCodes(writer, child);
             }
 
             writer.close();
@@ -251,18 +251,16 @@ public class CSVExporter {
          * Writes one node to the .csv file, then recurses on any children.
          * @param writer Where to write
          * @param node   What to write
-         * @param prefix If writing full names, construct by prefixing name with this.
          */
-        private void exportCategoryCodes(CSVWriter writer, Category node, String prefix) {
-            String fullName = prefix + node.getCategoryName();
+        private void exportCategoryCodes(CSVWriter writer, Category node) {
             values[0] = node.getUuid();
             values[1] = node.getCategoryName();
             if (listFullCategories) {
-                values[2] = fullName;
+                values[2] = node.getFullName();
             }
             writer.writeNext(values);
             for (Category child : node.getSortedChildren()) {
-                exportCategoryCodes(writer, child, fullName+":");
+                exportCategoryCodes(writer, child);
             }
         }
     }

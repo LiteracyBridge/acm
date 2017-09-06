@@ -119,7 +119,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
       @Override
       public String getValue(AudioItem audioItem) {
-        return UIUtils.getCategoryListAsString(audioItem);
+        return UIUtils.getCategoryNamesAsString(audioItem);
       }
 
       @Override

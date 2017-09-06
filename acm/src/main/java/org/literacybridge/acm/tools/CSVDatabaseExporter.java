@@ -46,7 +46,7 @@ public class CSVDatabaseExporter {
             CSVExporter.exportCategoryCodes(csvFile, params.listFullCategories);
         } else {
             CSVExporter.export(ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getAudioItems(),
-                               csvFile, params.categoryCodes);
+                               csvFile, params.categoryCodes, params.categoryFullNames);
         }
     }
 
@@ -64,6 +64,9 @@ public class CSVDatabaseExporter {
 
         @Option(name = "--categorycodes", aliases = "-c", usage = "Export category codes instead of names.")
         boolean categoryCodes;
+
+        @Option(name = "--categoryfullnames", aliases = "-n", usage = "Export category full names.")
+        boolean categoryFullNames;
 
         @Option(name = "--listcategories", aliases = "-l", usage = "List all of the category codes with short category names.")
         boolean listCategories;

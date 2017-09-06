@@ -54,7 +54,7 @@ public class AudioItemTableModel extends AbstractTableModel
           ColumnInfo.WIDTH_NOT_SET, 140, new ValueProvider<String>(true) {
             @Override
             protected AudioItemNode<String> getValue(AudioItem audioItem) {
-              String value = UIUtils.getCategoryListAsString(audioItem);
+              String value = UIUtils.getCategoryNamesAsString(audioItem);
               return new AudioItemNode<String>(audioItem, value);
             }
           });

@@ -61,7 +61,11 @@ public class UIUtils {
     }
   }
 
-  public static String getCategoryListAsString(AudioItem audioItem) {
+  public static String getCategoryNamesAsString(AudioItem audioItem) {
+      return getCategoryNamesAsString(audioItem, false);
+  }
+
+  public static String getCategoryNamesAsString(AudioItem audioItem, boolean fullName) {
     StringBuilder builder = new StringBuilder();
 
     for (Category cat : audioItem.getCategoryList()) {
@@ -69,7 +73,7 @@ public class UIUtils {
         if (builder.length() > 0) {
           builder.append(", ");
         }
-        builder.append(cat.getCategoryName());
+        builder.append(fullName ? cat.getFullName() : cat.getCategoryName());
       }
     }
     return builder.toString();

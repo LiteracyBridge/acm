@@ -31,6 +31,15 @@ public class Category {
   public String getCategoryName() {
     return name;
   }
+  public String getFullName() {
+      // If no parent, it's the root; we don't care that the root has a name of "root".
+      if (parent == null) return "";
+      // Name, if any, of the parent.
+      String parentName = parent.getFullName();
+      if (parentName.length() == 0) return name;
+      // Append this node's name with the parent.
+      return parentName + ":" + name;
+  }
 
   public int getOrder() {
     return order;
