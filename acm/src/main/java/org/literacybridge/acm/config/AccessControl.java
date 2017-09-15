@@ -554,27 +554,38 @@ public class AccessControl {
         request.put("computername", computerName);
         //request.put("comment", comment);   for possible future use, allows any string input
 
+        HttpUtility httpUtility = new HttpUtility();
+        JSONObject jsonResponse = null;
         try {
-            HttpUtility.sendPostRequest(requestURL, request);
-            response = HttpUtility.readSingleLineResponse();
-            System.out.println(response);
+            httpUtility.sendPostRequest(requestURL, request);
+            jsonResponse = httpUtility.readJSONObject();
+            System.out.printf("%s: %s\n          %s\n", action, request.toString(), jsonResponse.toString());
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        HttpUtility.disconnect();
+        httpUtility.disconnect();
+
         // parse response
-        Scanner scan = new Scanner(response).useDelimiter("\"");
-        while (scan.hasNext()) {
-            String s = scan.next();
-            if (s.startsWith("key="))
-                key_aws = s.substring(s.indexOf('=') + 1);
-            else if (s.startsWith("filename="))
-                filename_aws = s.substring(s.indexOf('=') + 1);
-            else if (s.startsWith("possessor=")) {
-                possessor_aws = s.substring(s.indexOf('=') + 1);
-                status_aws = false;
+        if (jsonResponse != null) {
+            Object o = jsonResponse.get("status");
+            if (o instanceof String) {
+                String str = (String)o;
+                status_aws = str.equalsIgnoreCase("ok");
+            }
+            o = jsonResponse.get("key");
+            if (o instanceof String) {
+                key_aws = (String)o;
+            }
+            o = jsonResponse.get("filename");
+            if (o instanceof String) {
+                filename_aws = (String)o;
+            }
+            o = jsonResponse.get("openby");
+            if (o instanceof String) {
+                possessor_aws = (String)o;
             }
         }
+
         if (status_aws) {
             if (key_aws != null) {
                 setAWSKey(key_aws);
@@ -691,10 +702,13 @@ public class AccessControl {
         request.put("version", Constants.ACM_VERSION);
         request.put("computername", computerName);
         //request.put("comment", comment); for possible future use, allows string input
+        
+        HttpUtility httpUtility = new HttpUtility();
+        JSONObject jsonResponse = null;
         try {
-            HttpUtility.sendPostRequest(requestURL, request);
-            response = HttpUtility.readSingleLineResponse();
-            System.out.println(response);
+            httpUtility.sendPostRequest(requestURL, request);
+            jsonResponse = httpUtility.readJSONObject();
+            System.out.printf("%s: %s\n          %s\n", action, request.toString(), jsonResponse.toString());
         } catch (IOException ex) {
             ex.printStackTrace();
             // If this is the only locking, rethrow the exception, so caller knows we can't get to server.
@@ -702,16 +716,13 @@ public class AccessControl {
                 throw ex;
             }
         }
-        HttpUtility.disconnect();
+        httpUtility.disconnect();
 
-        if (response != null) {
-            Scanner scan = new Scanner(response).useDelimiter("\"");
-            while (scan.hasNext()) {
-                s = scan.next();
-                if (s.startsWith("ok"))
-                    status_aws = true;
-                else if (s.startsWith("denied"))
-                    status_aws = false;
+        if (jsonResponse != null) {
+            Object o = jsonResponse.getOrDefault("status", "");
+            if (o instanceof String) {
+                String str = (String) o;
+                status_aws = str.equalsIgnoreCase("ok");
             }
         }
 

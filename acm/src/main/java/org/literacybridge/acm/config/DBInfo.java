@@ -67,8 +67,10 @@ public class DBInfo extends Properties {
 
   public void setCheckedOut(boolean checkedOut) {
     this.checkedOut = checkedOut;
-    if (checkedOut)
-      writeProps(); // this is the only time we need to write properties to disk
+    if (checkedOut) {
+        writeProps(); // this is the only time we need to write properties to disk
+        System.out.printf("Wrote checkout marker file.\n");
+    }
   }
 
   public void writeProps() {
@@ -90,6 +92,7 @@ public class DBInfo extends Properties {
   public void deleteCheckoutFile() {
     File f = getCheckedOutPropertiesFile();
     f.delete();
+    System.out.printf("Deleted checkout marker file.\n");
   }
 
   private File getCheckedOutPropertiesFile() {
@@ -107,10 +110,11 @@ public class DBInfo extends Properties {
             new FileInputStream(f));
         load(in);
         in.close();
-        checkedOut = true; // using the setter would cause an immediate rewrite
-                           // of the same file
+        checkedOut = true; // using the setter would cause an immediate rewrite of the same file
+          System.out.printf("Checkout marker file exists, db is checked out.\n");
       } catch (IOException e) {
         checkedOut = false;
+          System.out.printf("Can't read checkout marker file, but it exists; db is NOT checked out.\n");
       }
     }
   }

@@ -59,7 +59,7 @@ public class GuiAccessControl extends AccessControl {
             case noNetworkNoDbError:
                 msg = "Cannot connect to Literacy Bridge server and no available database. Shutting down.";
                 JOptionPane.showMessageDialog(null, msg);
-                stackTraceExit(0);
+                stackTraceExit(1);
                 break;
             case noDbError:
                 msg = "There is no copy of this ACM database on this computer.\nIt may be that the database has not been uploaded and downloaded yet.\nShutting down.";
@@ -110,7 +110,7 @@ public class GuiAccessControl extends AccessControl {
                 switch (buttonIx) {
                 case JOptionPane.CLOSED_OPTION:
                 case JOptionPane.YES_OPTION:
-                    stackTraceExit(0);
+                    stackTraceExit(1);
                     break;
                 case JOptionPane.NO_OPTION:
                     useSandbox = true;
@@ -159,7 +159,7 @@ public class GuiAccessControl extends AccessControl {
                             + "\nAfter clicking OK, the ACM will shut down.",
                     accessControl.getPosessor());
             JOptionPane.showMessageDialog(null, msg);
-            stackTraceExit(0);
+            stackTraceExit(1);
             break;
         case opened:
             break;

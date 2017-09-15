@@ -256,7 +256,7 @@ public class Application extends JXFrame {
       e.printStackTrace();
       JOptionPane.showMessageDialog(null,
           "Unable to connect to database. Please try restarting the ACM.");
-      System.exit(0);
+      System.exit(1);
     }
 
     if (showUI) {

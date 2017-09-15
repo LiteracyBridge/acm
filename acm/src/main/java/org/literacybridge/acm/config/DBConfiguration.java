@@ -363,7 +363,7 @@ public class DBConfiguration extends Properties {
    */
   boolean useAwsLocking() {
     String awsLocking = getProperty(Constants.USE_AWS_LOCKING);
-    return awsLocking != null && awsLocking.equalsIgnoreCase("TRUE");
+    return awsLocking == null || !awsLocking.equalsIgnoreCase("false");
   }
 
     /**
@@ -436,7 +436,7 @@ public class DBConfiguration extends Properties {
       JOptionPane.showMessageDialog(null, "ACM database " + getSharedACMname()
               + " is not found within Dropbox.\n\nBe sure that you have accepted the Dropbox invitation\nto share the folder"
               + " by logging into your account at\nhttp://dropbox.com and click on the 'Sharing' link.\n\nShutting down.");
-      System.exit(0);
+      System.exit(1);
     }
 
     // Create the cache directory before it's actually needed, to trigger any security exceptions.

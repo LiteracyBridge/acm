@@ -348,7 +348,7 @@ public class ACMConfiguration {
         if (globalShareDir == null || !globalShareDir.exists() || !globalShareDir.isDirectory()) {
             LOG.warning("Unable to find shared global directory. Shutting down");
             JOptionPane.showMessageDialog(null,"Dropbox directory has not been identified. Shutting down.");
-            System.exit(0);
+            System.exit(1);
         }
         if (dirUpdated) {
             UsersConfigurationProperties.put(Constants.GLOBAL_SHARE_PATH, globalShareDir.getAbsolutePath());

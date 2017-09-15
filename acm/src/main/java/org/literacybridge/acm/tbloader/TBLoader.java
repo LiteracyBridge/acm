@@ -206,7 +206,7 @@ public class TBLoader extends JFrame {
             if (!unpublished) {
                 JOptionPane.showMessageDialog(applicationWindow,
                                               "Revision conflict. Please click OK to shutdown.\nThen restart the TB-Loader to get the latest published version.");
-                System.exit(NORMAL);
+                System.exit(1);
             }
         } else if (files.length == 1) {
             imageRevision = files[0].getName();
@@ -226,7 +226,7 @@ public class TBLoader extends JFrame {
                                               "Click OK to shutdown. Then restart to get the latest published version of the TB Loader.");
                 opLog.put("MultipleVersions", "CleanAndRestart")
                     .finish();
-                System.exit(NORMAL);
+                System.exit(1);
             }
             opLog.put("MultipleVersions", "KeepUnpublished");
         }
@@ -461,7 +461,7 @@ public class TBLoader extends JFrame {
                 JOptionPane.showMessageDialog(applicationWindow, dropboxDir.getAbsolutePath()
                                                       + " does not exist; cannot find the Dropbox path. Please contact ICT staff.",
                                               "Cannot Find Dropbox!", JOptionPane.DEFAULT_OPTION);
-                System.exit(ERROR);
+                System.exit(1);
             }
             //TbFile dropboxFile = new FsFile(dropboxDir);
 
@@ -489,7 +489,7 @@ public class TBLoader extends JFrame {
                                                           + " does not exist; cannot find the Dropbox collected data path. Please contact ICT staff.",
                                                   "Cannot Find Dropbox Collected Data Folder!",
                                                   JOptionPane.DEFAULT_OPTION);
-                    System.exit(ERROR);
+                    System.exit(1);
                 }
                 // Like ~/Dropbox/tbcd1234/collected-data
                 TbFile collectedDataDir = new FsFile(tbLoaderDir).open(
@@ -508,7 +508,7 @@ public class TBLoader extends JFrame {
                                               "This computer does not appear to be configured to use the TB Loader yet.  It needs a unique device tbSrn. Please contact ICT staff to get this.",
                                               "This Computer has no ID!",
                                               JOptionPane.DEFAULT_OPTION);
-                System.exit(ERROR);
+                System.exit(1);
             }
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Exception while setting DeviceId and paths", e);

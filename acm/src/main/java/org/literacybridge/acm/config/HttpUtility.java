@@ -8,7 +8,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+
+import static com.ibm.media.codec.audio.g723.G723Tables.s;
 
 /**
  * This class encapsulates methods for requesting a server via HTTP GET/POST and
@@ -23,7 +29,7 @@ public class HttpUtility {
     /**
      * Represents an HTTP connection
      */
-    private static HttpURLConnection httpConn;
+    private HttpURLConnection httpConn;
     /**
      * Makes an HTTP request using POST method to the specified URL.
      *
@@ -35,7 +41,7 @@ public class HttpUtility {
      * @throws IOException
      *             thrown if any I/O error occurred
      */
-    public static HttpURLConnection sendPostRequest(String requestURL,
+    public HttpURLConnection sendPostRequest(String requestURL,
                                                     JSONObject params) throws IOException {
 
         URL url = new URL(requestURL);
@@ -59,6 +65,17 @@ public class HttpUtility {
 
         return httpConn;
     }
+
+    private InputStream getInputStream() throws IOException {
+        InputStream inputStream = null;
+        if (httpConn != null) {
+            inputStream = httpConn.getInputStream();
+        } else {
+            throw new IOException("Connection is not established.");
+        }
+        return inputStream;
+    }
+
     /**
      * Returns only one line from the server's response. This method should be
      * used if the server returns only a single line of String.
@@ -67,15 +84,9 @@ public class HttpUtility {
      * @throws IOException
      *             thrown if any I/O error occurred
      */
-    public static String readSingleLineResponse() throws IOException {
-        InputStream inputStream = null;
-        if (httpConn != null) {
-            inputStream = httpConn.getInputStream();
-        } else {
-            throw new IOException("Connection is not established.");
-        }
+    public String readSingleLineResponse() throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(
-                inputStream));
+                getInputStream()));
 
         String response = reader.readLine();
         reader.close();
@@ -90,16 +101,9 @@ public class HttpUtility {
      * @throws IOException
      *             thrown if any I/O error occurred
      */
-    public static String[] readMultipleLinesRespone() throws IOException {
-        InputStream inputStream = null;
-        if (httpConn != null) {
-            inputStream = httpConn.getInputStream();
-        } else {
-            throw new IOException("Connection is not established.");
-        }
-
+    public String[] readMultipleLinesRespone() throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(
-                inputStream));
+                getInputStream()));
         List<String> response = new ArrayList<String>();
 
         String line = "";
@@ -110,10 +114,26 @@ public class HttpUtility {
 
         return (String[]) response.toArray(new String[0]);
     }
+
+    public Object readJson() throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(
+            getInputStream()));
+        Object o = JSONValue.parse(reader);
+        return o;
+    }
+
+    public JSONObject readJSONObject() throws IOException {
+        Object o = readJson();
+        if (o instanceof JSONObject) {
+            return (JSONObject) o;
+        }
+        return null;
+    }
+
     /**
      * Closes the connection if opened
      */
-    public static void disconnect() {
+    public void disconnect() {
         if (httpConn != null) {
             httpConn.disconnect();
         }

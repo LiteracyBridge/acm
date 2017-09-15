@@ -93,6 +93,7 @@ def lambda_handler(event, context):
         logger(event, 'denied', action_name='unknownAction')
         return {
             'data': 'denied',
+            'status': 'denied',
             'response': 'Unknown action requested'
         }
     except Exception as err:
@@ -100,6 +101,7 @@ def lambda_handler(event, context):
         return {
             'response': 'Unexpected Error',
             'data': 'denied',
+            'status': 'denied',
             'error': str(err)
         }
 
@@ -148,7 +150,8 @@ def check_in(event, acm):
         logger(event, 'denied')
         return {
             'response': 'Create new ACM',
-            'data': 'denied'
+            'data': 'denied',
+            'status': 'denied'
         }
 
     # early return if ACM not checked-out
@@ -156,7 +159,8 @@ def check_in(event, acm):
         logger(event, 'denied')
         return {
             'response': 'ACM is already checked-in',
-            'data': 'denied'
+            'data': 'denied',
+            'status': 'denied'
         }
 
     # passed into AWS update table item function: delete check-out info from entry and update check-in info
@@ -176,8 +180,8 @@ def check_in(event, acm):
 
     # JSON response parameters
     json_resp = {
-        'success': {'response': 'SUCCESS. Checked in by ' + str(user_name), 'data': 'ok'},
-        'failure': {'response': 'FAILED. Do not have permission to perform check-in', 'data': 'denied'}
+        'success': {'response': 'SUCCESS. Checked in by ' + str(user_name), 'data': 'ok', 'status': 'ok'},
+        'failure': {'response': 'FAILED. Do not have permission to perform check-in', 'data': 'denied', 'status': 'denied'}
     }
 
     # update dynamodb
@@ -200,7 +204,8 @@ def new_check_in(event, acm):
         logger(event, 'denied')
         return {
             'response': 'ACM already exists',
-            'data': 'denied'
+            'data': 'denied',
+            'status': 'denied'
         }
 
     # parameters received from HTTPS POST request
@@ -224,8 +229,9 @@ def new_check_in(event, acm):
 
     # JSON response parameters
     json_resp = {
-        'success': {'response': 'SUCCESS. Created new ACM', 'data': 'ok'},
-        'failure': {'response': 'FAILED. Do not have permission to perform check-in', 'data': 'denied'}
+        'success': {'response': 'SUCCESS. Created new ACM', 'data': 'ok', 'status': 'ok'},
+        'failure': {'response': 'FAILED. Do not have permission to perform check-in', 'data': 'denied',
+            'status': 'denied'}
     }
 
     return update_dynamo(event, update_exp, condition_exp, exp_values, json_resp)
@@ -259,8 +265,9 @@ def discard(event, acm):
 
     # JSON response parameters
     json_resp = {
-        'success': {'response': 'SUCCESS. Discarded check-out info', 'data': 'ok'},
-        'failure': {'response': 'FAILED. Do not have permission to perform discard', 'data': 'denied'}
+        'success': {'response': 'SUCCESS. Discarded check-out info', 'data': 'ok', 'status': 'ok'},
+        'failure': {'response': 'FAILED. Do not have permission to perform discard', 'data': 'denied',
+            'status': 'denied'}
     }
 
     return update_dynamo(event, update_exp, condition_exp, exp_values, json_resp)
@@ -321,9 +328,14 @@ def check_out(event, acm):
     json_resp = {
         'success': {'response': 'SUCCESS. Checked out to ' + str(user_name),
                     'data': {'1': 'key=' + new_key,
-                             '2': 'filename=' + str(acm.get('last_in_file_name'))}
+                             '2': 'filename=' + str(acm.get('last_in_file_name'))},
+                    'key': new_key,
+                    'filename': str(acm.get('last_in_file_name')),
+                    'status': 'ok'
                     },
-        'failure': {'response': 'Your transaction was intercepted.', 'data': 'denied'}
+        'failure': {'response': 'Your transaction was intercepted.',
+                    'data': 'denied',
+                    'status': 'denied'}
         # data: to be updated with interceptor's name & new file_name in update_dynamo function
     }
 
@@ -349,8 +361,12 @@ def revoke_check_out(event, acm):
 
     # JSON response parameters
     json_resp = {
-        'success': {'response': 'Deleted check out entry', 'data': 'ok'},
-        'failure': {'response': 'Unexpected Error', 'data': 'denied'}
+        'success': {'response': 'Deleted check out entry',
+                    'data': 'ok',
+                    'status': 'ok'},
+        'failure': {'response': 'Unexpected Error',
+                    'data': 'denied',
+                    'status': 'denied'}
         # data: updated with interceptor's name & new file_name in update_dynamo function
     }
 
@@ -383,14 +399,24 @@ def status_check(acm):
             'data': {'1': 'possessor=' + str(acm.get('now_out_name')),
                      '2': 'filename=' + str(acm.get('last_in_file_name')),
                      '3': 'contact=' + str(acm.get('now_out_contact')),
-                     '4': 'date=' + str(acm.get('now_out_date'))}
+                     '4': 'date=' + str(acm.get('now_out_date'))},
+            'openby': str(acm.get('now_out_name')),
+            'contact': str(acm.get('now_out_contact')),
+            'filename': str(acm.get('last_in_file_name')),
+            'opendate': str(acm.get('now_out_date')),
+            'status': 'denied'
         }
     return {
         'response': 'ACM available',
         'data': {'1': 'filename='+str(acm.get('last_in_file_name')),
                  '2': 'updater=' + str(acm.get('last_in_name')),
                  '3': 'contact=' + str(acm.get('last_in_contact')),
-                 '4': 'date=' + str(acm.get('last_in_date'))}
+                 '4': 'date=' + str(acm.get('last_in_date'))},
+        'filename': str(acm.get('last_in_file_name')),
+        'saveby': str(acm.get('last_in_name')),
+        'contact':  str(acm.get('last_in_contact')),
+        'savedate': str(acm.get('last_in_date')),
+        'status': 'ok'
     }
 
 
@@ -418,10 +444,7 @@ def update_dynamo(event, update_exp, condition_exp, exp_values, json_resp):
             ExpressionAttributeValues= exp_values
         )
         logger(event, 'ok')
-        return{
-            'response': json_resp['success']['response'],
-            'data': json_resp['success']['data']
-        }
+        return json_resp['success']
     except Exception as err:
         # transaction intercepted: unexpected error or conditional check failed
         if 'ConditionalCheckFailedException' in str(err):
@@ -432,24 +455,23 @@ def update_dynamo(event, update_exp, condition_exp, exp_values, json_resp):
             acm = query_acm.get('Item')
             if acm:
                 if not acm.get('now_out_name'):   # no check-out info exists
-                    if action == 'discard':    # interceptor deleted check-out for us - consider it success!
+                    if action == 'discard':     # interceptor deleted check-out for us - consider it success!
                         logger(event, 'nop')    # log as no operation
-                        return {
-                            'response': json_resp['success']['response'],
-                            'data': json_resp['success']['data']
-                        }
+                        return json_resp['success']
+
                 logger(event, 'denied')
                 if action == 'checkOut':    # update with interceptor name & new filename
                     json_resp['failure']['data'] = {'1': 'possessor='+str(acm.get('now_out_name')),
                                                     '2': 'filename='+str(acm.get('last_in_file_name'))}
-                return {
-                    'response': json_resp['failure']['response'],
-                    'data': json_resp['failure']['data']
-                }
+                    json_resp['failure']['openby'] = str(acm.get('now_out_name'))
+                    json_resp['failure']['contact'] = str(acm.get('now_out_contact'))
+                    json_resp['failure']['filename'] = str(acm.get('last_in_file_name'))
+                return json_resp['failure']
         logger(event, 'denied')
         return {
             'response': 'Unexpected Error',
             'data': 'denied',
+            'status': 'denied',
             'error': str(err)
         }
 
