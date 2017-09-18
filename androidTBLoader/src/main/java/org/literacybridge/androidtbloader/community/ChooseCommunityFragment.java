@@ -138,6 +138,9 @@ public class ChooseCommunityFragment extends Fragment {
         if (BuildConfig.DEBUG) {
             String orgList = Util.join(mOriginalList.subList(0, min(mOriginalList.size(), 3)), ", ");
             List<String> excluded = intent.getStringArrayListExtra("excluded");
+            if (excluded == null) {
+                excluded = Collections.singletonList("-none-");
+            }
             String exclList = Util.join(excluded.subList(0, min(excluded.size(), 3)), ", ");
             Log.d(TAG, String.format("Get community for %s, list: %s, excl: ", mProject, orgList, exclList));
         }
