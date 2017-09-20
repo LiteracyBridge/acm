@@ -361,11 +361,6 @@ public class TBBuilder {
     File targetCommunitiesDir = new File(targetDeploymentDir, "communities");
     FileUtils.copyDirectory(sourceCommunitiesDir, targetCommunitiesDir);
 
-    File localSoftware = new File(targetTempDir, "software");
-    FileUtils.deleteDirectory(localSoftware);
-    FileUtils.copyDirectory(new File(dropboxTbLoadersDir, "software"),
-        localSoftware);
-
     deleteRevFiles(targetTempDir);
     String revision;
     revision = TBLoaderConstants.UNPUBLISHED_REV + "_"
@@ -374,7 +369,7 @@ public class TBBuilder {
     newRev.createNewFile();
 
     System.out.println(
-        "\nDone with deployment of software and basic/community content.");
+        "\nDone with deployment of basic/community content.");
   }
 
   private static char getLatestDistributionRevision(File publishTbLoadersDir,
@@ -500,8 +495,6 @@ public class TBBuilder {
     new DBExporter(ACM_PREFIX+project, metadataDir).export();
 
     deleteRevFiles(targetTempDir);
-    ZipUnzip.zip(new File(dropboxTbLoadersDir, "software"),
-        new File(publishDistributionDir, "software-" + zipSuffix), true);
   }
 
   private static void deleteRevFiles(File dir) {
