@@ -454,7 +454,7 @@ public class TBLoader extends JFrame {
             baseDirectory = new File(applicationHomeDirectory,
                                      Constants.TBLoadersHomeDir + File.separator + newProject);
             baseDirectory.mkdirs();
-            TbFile softwareDir = new FsFile(baseDirectory).open(TBLoaderConstants.SOFTWARE_SUBDIR);
+            TbFile softwareDir = new FsFile(ACMConfiguration.getInstance().getSoftwareDir());
 
             File dropboxDir = ACMConfiguration.getInstance().getGlobalShareDir();
             if (!dropboxDir.exists()) {
