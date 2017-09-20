@@ -1,6 +1,5 @@
 package org.literacybridge.core.tbloader;
 
-import org.literacybridge.core.fs.RelativePath;
 import org.literacybridge.core.fs.TbFile;
 
 import java.io.BufferedReader;
@@ -8,41 +7,68 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.literacybridge.core.tbloader.TBLoaderConstants.NO_SERIAL_NUMBER;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.COMMUNITY_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_PROPERTIES_NAME;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.PACKAGE_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.PROJECT_FILE_EXTENSION;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.PROJECT_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TALKING_BOOK_ID_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
 public final class TBDeviceInfo {
     private static final Logger LOG = Logger.getLogger(TBDeviceInfo.class.getName());
 
+    private final TbFile tbRoot;
+    private final String label;
     private final String tbPrefix;
 
-    private final TbFile tbRoot;
+    // Computed or cached properties.
     private final TbFile tbSystem;
-    private final String label;
-    private String serialNumber;
-    private boolean needNewSerialNumber;
-    private boolean corrupted;
     private TbFlashData tbFlashData;
+    private Properties tbDeploymentProperties;
+    private boolean corrupted = false;
+
+    // Properties that are read from the Talking Book and provided to clients of the class.
+    private String serialNumber = null;
+    private boolean needNewSerialNumber = false;
+    private Boolean testDeployment = null;
+    private String projectName = null;
+    private String deploymentName = null;
+    private String packageName = null;
+    private String communityName = null;
+
+
+    public static TBDeviceInfo getNullDeviceInfo() {
+        return new TBDeviceInfo(TBLoaderConstants.NO_DRIVE, null);
+    }
 
     public TBDeviceInfo(TbFile tbRoot, String label, String prefix) {
+        if (tbRoot == null) {
+            throw new IllegalArgumentException("Root may not be null");
+        }
         this.tbRoot = tbRoot;
         this.label = label.trim();
-        this.corrupted = false;
-        this.serialNumber = "";
         tbPrefix = prefix;
-        if (tbRoot != null) {
-            tbSystem = tbRoot.open(TBLoaderConstants.TB_SYSTEM_PATH);
-            tbFlashData = loadFlashData(tbRoot);
-        } else {
-            tbSystem = null;
-            tbFlashData = null;
-        }
+        tbSystem = tbRoot.open(TBLoaderConstants.TB_SYSTEM_PATH);
+        tbFlashData = loadFlashData(tbRoot);
+        loadDeploymentProperties();
         loadSerialNumber();
+    }
+
+    private TBDeviceInfo(String label, String prefix) {
+        this.tbRoot = null;
+        this.tbPrefix = prefix;
+        this.label = label;
+        tbSystem = null;
+        tbFlashData = null;
     }
 
     public TbFile getRootFile() {
@@ -68,14 +94,6 @@ public final class TBDeviceInfo {
 
     boolean isCorrupted() {
         return corrupted;
-    }
-
-    public void setSerialNumber(String serialNumber) {
-        this.serialNumber = serialNumber;
-    }
-
-    public String getSerialNumber() {
-        return serialNumber;
     }
 
     public boolean needNewSerialNumber() { return needNewSerialNumber; }
@@ -139,7 +157,7 @@ public final class TBDeviceInfo {
     }
 
     private void loadSerialNumber() {
-        serialNumber = getSerialNumber(tbPrefix).toUpperCase();
+        getSerialNumber();
         // See if we need to allocate a new serial number. If we do, just mark it, don't actually
         // allocate one until we're sure we'll use it.
         if (!TBLoaderUtils.isSerialNumberFormatGood(tbPrefix, serialNumber) ||
@@ -148,6 +166,10 @@ public final class TBDeviceInfo {
             // We will allocate a new-style serial number before we update the tbDeviceInfo.
             serialNumber = TBLoaderConstants.NEED_SERIAL_NUMBER;
         }
+    }
+
+    public void setSerialNumber(String serialNumber) {
+        this.serialNumber = serialNumber;
     }
 
     /**
@@ -165,16 +187,27 @@ public final class TBDeviceInfo {
      *
      * @return The file's name found (minus extension), or null if no file found.
      */
-    public String getSerialNumber(String prefix) {
-        String sn;
+    public String getSerialNumber() {
+        if (serialNumber == null) {
+            serialNumber = getProperty(TALKING_BOOK_ID_PROPERTY, UNKNOWN);
+            String src = "properties";
 
-        if (getFlashData() != null && isSerialNumberFormatGood(prefix, getFlashData().getSerialNumber())
-                && isSerialNumberFormatGood2(getFlashData().getSerialNumber())) {
-            sn = getFlashData().getSerialNumber();
-        } else {
-            sn = getSerialNumberFromFileSystem(tbRoot);
+            // If we didn't have it in properties, look for the flash data or marker file(s).
+            if (serialNumber.equalsIgnoreCase(UNKNOWN)) {
+                if (getFlashData() != null
+                    && isSerialNumberFormatGood(tbPrefix, getFlashData().getSerialNumber())
+                    && isSerialNumberFormatGood2(getFlashData().getSerialNumber())) {
+                    serialNumber = getFlashData().getSerialNumber();
+                    src = "flash";
+                } else {
+                    serialNumber = getSerialNumberFromFileSystem(tbRoot);
+                    src = "marker";
+                }
+            }
+            serialNumber = serialNumber.toUpperCase();
+            LOG.log(Level.INFO, String.format("TBL!: Got serial number (%s) from %s.", serialNumber, src));
         }
-        return sn;
+        return serialNumber;
     }
 
     /**
@@ -187,38 +220,43 @@ public final class TBDeviceInfo {
      * @TODO: Is that really necessary?
      *
      * @param tbRoot The root of the Talking Book file system.
-     * @return The file's name found (minus extension), or "UNKNOWN"
+     * @return The file's name found (minus extension), or UNKNOWN
      */
     public static String getSerialNumberFromFileSystem(TbFile tbRoot) {
-        String sn = NO_SERIAL_NUMBER;
+        String sn = UNKNOWN;
         if (tbRoot == null) {
             return sn;
         }
         TbFile tbSystem = tbRoot.open(TBLoaderConstants.TB_SYSTEM_PATH);
-        String[] files;
+        Properties props = loadDeploymentProperties(tbSystem);
 
-        if (tbSystem.exists()) {
-            files = tbSystem.list(new TbFile.FilenameFilter() {
-                @Override
-                public boolean accept(TbFile parent, String name) {
-                    String lowercase = name.toLowerCase();
-                    return lowercase.endsWith(".srn") && !lowercase.startsWith("-erase");
+        sn = props.getProperty(TALKING_BOOK_ID_PROPERTY, UNKNOWN);
+
+        if (sn.equalsIgnoreCase(UNKNOWN)) {
+            String[] files;
+
+            if (tbSystem.exists()) {
+                files = tbSystem.list(new TbFile.FilenameFilter() {
+                    @Override
+                    public boolean accept(TbFile parent, String name) {
+                        String lowercase = name.toLowerCase();
+                        return lowercase.endsWith(".srn") && !lowercase.startsWith("-erase");
+                    }
+                });
+                if (files.length > 0) {
+                    String tsnFileName = files[0];
+                    sn = tsnFileName.substring(0, tsnFileName.length() - 4);
                 }
-            });
-            if (files.length > 0) {
-                String tsnFileName = files[0];
-                sn = tsnFileName.substring(0, tsnFileName.length() - 4);
-            }
-            if (sn.equals("")) { // Can only happen if file is named ".srn"
-                sn = NO_SERIAL_NUMBER;
-            }
-            if (!sn.equals(NO_SERIAL_NUMBER)) {
-                LOG.log(Level.INFO, "No stats SRN. Found *.srn file:" + sn);
-            } else {
-                LOG.log(Level.INFO, "No stats SRN and no good *.srn file found.");
+                if (sn.equals("")) { // Can only happen if file is named ".srn"
+                    sn = UNKNOWN;
+                }
+                if (!sn.equals(UNKNOWN)) {
+                    LOG.log(Level.INFO, "TBL!: No stats SRN. Found *.srn file:" + sn);
+                } else {
+                    LOG.log(Level.INFO, "TBL!: No stats SRN and no good *.srn file found.");
+                }
             }
         }
-
         return sn;
     }
 
@@ -231,23 +269,33 @@ public final class TBDeviceInfo {
      * found.
      */
     public String getProjectName() {
-        String project = "UNKNOWN";
-        String [] prjFiles;
-        if (tbSystem.exists()) {
-            prjFiles = tbSystem.list(new TbFile.FilenameFilter() {
-                @Override
-                public boolean accept(TbFile parent, String name) {
-                    String lowercase = name.toLowerCase();
-                    return lowercase.endsWith(PROJECT_FILE_EXTENSION);
+        if (projectName == null) {
+            projectName = getProperty(PROJECT_PROPERTY, UNKNOWN);
+            String src = "properties";
+
+            // If we didn't have it in properties, look for marker file(s).
+            if (projectName.equalsIgnoreCase(UNKNOWN)) {
+
+                String[] prjFiles;
+                if (tbSystem.exists()) {
+                    prjFiles = tbSystem.list(new TbFile.FilenameFilter() {
+                        @Override
+                        public boolean accept(TbFile parent, String name) {
+                            String lowercase = name.toLowerCase();
+                            return lowercase.endsWith(PROJECT_FILE_EXTENSION);
+                        }
+                    });
+                    // Pick one at random, get the name, drop the extension.
+                    if (prjFiles.length > 0) {
+                        String fn = prjFiles[0];
+                        projectName = fn.substring(0, fn.length() - PROJECT_FILE_EXTENSION.length());
+                        src = "marker";
+                    }
                 }
-            });
-            // Pick one at random, get the name, drop the extension.
-            if (prjFiles.length > 0) {
-                String fn = prjFiles[0];
-                project = fn.substring(0, fn.length()-PROJECT_FILE_EXTENSION.length());
             }
+            LOG.log(Level.INFO, String.format("TBL!: Got project name (%s) from %s.", projectName, src));
         }
-        return project;
+        return projectName;
     }
 
     /**
@@ -255,11 +303,11 @@ public final class TBDeviceInfo {
      * are found, returns the name (without extension) of the first .rev file found, else the name of the first .img file
      * found (ie, chosen somewhat at random.).
      *
-     * @return The file's name found (minus extension), or "UNKNOWN" if no file found, or if the file name consists
-     * only of the extension (eg, a file named ".img" will return "UNKNOWN").
+     * @return The file's name found (minus extension), or UNKNOWN if no file found, or if the file name consists
+     * only of the extension (eg, a file named ".img" will return UNKNOWN).
      */
-    String getFirmwareVersion() {
-        String rev = "UNKNOWN";
+    private String getFirmwareVersion() {
+        String rev = UNKNOWN;
         String revFileName = null;
         String imgFileName = null;
         String[] files;
@@ -295,30 +343,39 @@ public final class TBDeviceInfo {
      * look in the TalkingBook's system directory for a file with a ".pkg" extension. If there is exactly
      * one such file, returns the file's name, sans extension.
      *
-     * @return The file's name found (minus extension), or "UNKNOWN" if no file found.
+     * @return The file's name found (minus extension), or UNKNOWN if no file found.
      */
-    String getPackageName() {
-        String pkg = "UNKNOWN";
-        String[] files;
+    private String getPackageName() {
+        if (packageName == null) {
+            packageName = getProperty(PACKAGE_PROPERTY, UNKNOWN);
+            String src = "properties";
 
-        if (getFlashData() != null && getFlashData().getImageName() != null
-                && !getFlashData().getImageName().equals("")) {
-            pkg = getFlashData().getImageName();
-        } else if (tbSystem.exists()) {
-            files = tbSystem.list(new TbFile.FilenameFilter() {
-                @Override
-                public boolean accept(TbFile parent, String name) {
-                    String lowercase = name.toLowerCase();
-                    return lowercase.endsWith(".pkg");
+            // If we didn't have it in properties, look for the flash data or marker file(s).
+            if (packageName.equalsIgnoreCase(UNKNOWN)) {
+                String[] files;
+
+                if (getFlashData() != null && getFlashData().getImageName() != null
+                    && !getFlashData().getImageName().equals("")) {
+                    packageName = getFlashData().getImageName();
+                    src = "flash";
+                } else if (tbSystem.exists()) {
+                    files = tbSystem.list(new TbFile.FilenameFilter() {
+                        @Override
+                        public boolean accept(TbFile parent, String name) {
+                            String lowercase = name.toLowerCase();
+                            return lowercase.endsWith(".pkg");
+                        }
+                    });
+
+                    if (files.length == 1) {
+                        packageName = files[0].substring(0, files[0].length() - 4);
+                        src = "marker";
+                    }
                 }
-            });
-
-            if (files.length == 1) {
-                pkg = files[0].substring(0, files[0].length() - 4);
             }
+            LOG.log(Level.INFO, String.format("TBL!: Got package name (%s) from %s.", packageName, src));
         }
-
-        return pkg;
+        return packageName;
     }
 
     /**
@@ -326,29 +383,38 @@ public final class TBDeviceInfo {
      * look in the TalkingBook's system directory for a file with a ".dep" extension. If there is exactly
      * one such file, returns the file's name, sans extension.
      *
-     * @return The file's name found (minus extension), or "UNKNOWN" if no file found.
+     * @return The file's name found (minus extension), or UNKNOWN if no file found.
      */
-    String getDeploymentName() {
-        String depl = "UNKNOWN";
-        String[] files;
+    private String getDeploymentName() {
+        if (deploymentName == null) {
+            deploymentName = getProperty(DEPLOYMENT_PROPERTY, UNKNOWN);
+            String src = "properties";
 
-        if (getFlashData() != null && getFlashData().getDeploymentNumber() != null
-                && !getFlashData().getDeploymentNumber().equals("")) {
-            depl = getFlashData().getDeploymentNumber();
-        } else if (tbSystem.exists()) {
-            files = tbSystem.list(new TbFile.FilenameFilter() {
-                @Override
-                public boolean accept(TbFile parent, String name) {
-                    String lowercase = name.toLowerCase();
-                    return lowercase.endsWith(".dep");
+            // If we didn't have it in properties, look for the flash data or marker file(s).
+            if (deploymentName.equalsIgnoreCase(UNKNOWN)) {
+                String[] files;
+
+                if (getFlashData() != null && getFlashData().getDeploymentNumber() != null
+                    && !getFlashData().getDeploymentNumber().equals("")) {
+                    deploymentName = getFlashData().getDeploymentNumber();
+                    src = "flash";
+                } else if (tbSystem.exists()) {
+                    files = tbSystem.list(new TbFile.FilenameFilter() {
+                        @Override
+                        public boolean accept(TbFile parent, String name) {
+                            String lowercase = name.toLowerCase();
+                            return lowercase.endsWith(".dep");
+                        }
+                    });
+                    if (files.length == 1) {
+                        deploymentName = files[0].substring(0, files[0].length() - 4);
+                        src = "marker";
+                    }
                 }
-            });
-            if (files.length == 1) {
-                depl = files[0].substring(0, files[0].length() - 4);
             }
+            LOG.log(Level.INFO, String.format("TBL!: Got deployment name (%s) from %s.", deploymentName, src));
         }
-
-        return depl;
+        return deploymentName;
     }
 
     /**
@@ -357,7 +423,7 @@ public final class TBDeviceInfo {
      *
      * @return The "last synch dir", which has the update date and time encoded into it.
      */
-    String getSynchDir() {
+    private String getSynchDir() {
         String lastSynchDir = null;
 
         TbFile lastUpdate = tbSystem.open("last_updated.txt");
@@ -385,55 +451,123 @@ public final class TBDeviceInfo {
      * If there is exactly one such file, returns the file's name, sans extension,
      * if no such file in the root, checks in the system directory.
      *
-     * @return The community name, or "UNKNOWN" if it can not be determined.
+     * @return The community name, or UNKNOWN if it can not be determined.
      */
     public String getCommunityName() {
-        String communityName = "UNKNOWN";
-        if (tbRoot == null) {
-            return communityName;
-        }
-        if (getFlashData() != null && getFlashData().getLocation() != null && !getFlashData().getLocation().equals(
-                "")) {
-            communityName = getFlashData().getLocation();
-        } else {
-            try {
-                String[] files;
-                // get Location file info
-                // check root first, in case tbDeviceInfo was just assigned a new community (e.g. from this app)
-                files = tbRoot.list(new TbFile.FilenameFilter() {
-                    @Override
-                    public boolean accept(TbFile parent, String name) {
-                        String lowercase = name.toLowerCase();
-                        return lowercase.endsWith(".loc");
-                    }
-                });
-                if (files == null) {
-                    LOG.log(Level.INFO, "This does not look like a TB: " + tbRoot.toString());
+        if (communityName == null) {
+            communityName = getProperty(COMMUNITY_PROPERTY, UNKNOWN);
+            String src = "properties";
 
-                } else if (files.length == 1) {
-                    String locFileName = files[0];
-                    communityName = locFileName.substring(0, locFileName.length() - 4);
-                } else if (files.length == 0 && tbSystem.exists()) {
-                    // get Location file info
-                    files = tbSystem.list(new TbFile.FilenameFilter() {
-                        @Override
-                        public boolean accept(TbFile parent, String name) {
-                            String lowercase = name.toLowerCase();
-                            return lowercase.endsWith(".loc");
+            // If we didn't have it in properties, look for the flash data or marker file(s).
+            if (communityName.equalsIgnoreCase(UNKNOWN)) {
+                if (getFlashData() != null && getFlashData().getLocation() != null
+                    && !getFlashData().getLocation().equals(
+                    "")) {
+                    communityName = getFlashData().getLocation();
+                    src = "flash";
+                } else {
+                    try {
+                        String[] files;
+                        // get Location file info
+                        // check root first, in case tbDeviceInfo was just assigned a new community (e.g. from this app)
+                        files = tbRoot.list(new TbFile.FilenameFilter() {
+                            @Override
+                            public boolean accept(TbFile parent, String name) {
+                                String lowercase = name.toLowerCase();
+                                return lowercase.endsWith(".loc");
+                            }
+                        });
+                        if (files == null) {
+                            LOG.log(Level.INFO,
+                                "TBL!: This does not look like a TB: " + tbRoot.toString());
+
+                        } else if (files.length == 1) {
+                            String locFileName = files[0];
+                            communityName = locFileName.substring(0, locFileName.length() - 4);
+                            src = "root marker";
+                        } else if (files.length == 0 && tbSystem.exists()) {
+                            // get Location file info
+                            files = tbSystem.list(new TbFile.FilenameFilter() {
+                                @Override
+                                public boolean accept(TbFile parent, String name) {
+                                    String lowercase = name.toLowerCase();
+                                    return lowercase.endsWith(".loc");
+                                }
+                            });
+                            if (files.length == 1) {
+                                String locFileName = files[0];
+                                communityName = locFileName.substring(0, locFileName.length() - 4);
+                                src = "system marker";
+                            }
                         }
-                    });
-                    if (files.length == 1) {
-                        String locFileName = files[0];
-                        communityName = locFileName.substring(0, locFileName.length() - 4);
+                    } catch (Exception ignore) {
+                        LOG.log(Level.WARNING, "TBL!: Exception while reading community", ignore);
+                        // ignore and keep going with empty string
+                        src = "nowhere";
                     }
                 }
-            } catch (Exception ignore) {
-                LOG.log(Level.WARNING, "Exception while reading community", ignore);
-                // ignore and keep going with empty string
+            }
+            LOG.log(Level.INFO, String.format("TBL!: Got community name (%s) from %s.", communityName, src));
+        }
+        return communityName;
+    }
+
+    public boolean isTestDeployment() {
+        if (testDeployment == null) {
+            testDeployment = false;
+            Properties properties = loadDeploymentProperties();
+            if (properties != null) {
+                String testDeploymentStr = properties.getProperty(TEST_DEPLOYMENT_PROPERTY, Boolean.FALSE.toString());
+                testDeployment = Boolean.parseBoolean(testDeploymentStr);
+                LOG.log(Level.INFO, String.format("TBL!: isTestDeployment: %b (%s)", testDeployment, testDeploymentStr));
+            } else {
+                LOG.log(Level.INFO, String.format("TBL!: isTestDeployment: %b (no deployment.properties)", testDeployment));
             }
         }
-        LOG.log(Level.INFO, "TB's current community name is " + communityName);
-        return communityName;
+        return testDeployment;
+    }
+
+    /**
+     * If there is a deployment.properties file (already loaded), and it has a value for the
+     * desired property, return that value. Otherwise return the default value.
+     * @param name of the desired property.
+     * @param defaultValue if there is no properties file, or if it does not contain the property.
+     * @return the property, or the default value.
+     */
+    private String getProperty(String name, String defaultValue) {
+        if (tbDeploymentProperties != null) {
+            return tbDeploymentProperties.getProperty(name, defaultValue);
+        }
+        return defaultValue;
+    }
+
+    /**
+     * If there is a "deployment.properties" file in the system directory, loads it.
+     * @return The Properties, or null if not found or unreadable.
+     */
+    private Properties loadDeploymentProperties() {
+        if (tbDeploymentProperties == null) {
+            tbDeploymentProperties = loadDeploymentProperties(tbSystem);
+        }
+        return tbDeploymentProperties;
+    }
+
+    private static Properties loadDeploymentProperties(TbFile tbSystem) {
+        Properties props = new Properties();
+        if (tbSystem != null && tbSystem.exists()) {
+            TbFile propsFile = tbSystem.open(DEPLOYMENT_PROPERTIES_NAME);
+            if (propsFile.exists()) {
+                try (InputStream istream = propsFile.openFileInputStream();
+                ) {
+                    props.load(istream);
+                    istream.close();
+                } catch (Exception e) { //Catch and ignore exception if any
+                    System.err.println("Ignoring error: " + e.getMessage());
+                }
+            }
+        }
+
+        return props;
     }
 
     /**
@@ -447,7 +581,6 @@ public final class TBDeviceInfo {
         if (tbRoot == null) {
             return null;
         }
-        RelativePath systemPath = TBLoaderConstants.TB_SYSTEM_PATH;
 
         try {
             String  community = getCommunityName();
@@ -477,11 +610,12 @@ public final class TBDeviceInfo {
                     .withUpdateTimestamp(lastUpdate)
                     .withFirmwareRevision(firmwareVersion)
                     .withCommunity(community)
-                    .withFallbackProjectName(fallbackProjectName);
+                    .withFallbackProjectName(fallbackProjectName)
+                    .asTestDeployment(isTestDeployment());
             deploymentInfo = builder.build();
 
         } catch (Exception ignore) {
-            LOG.log(Level.WARNING, "exception - ignore and keep going with empty strings", ignore);
+            LOG.log(Level.WARNING, "TBL!: exception - ignore and keep going with empty strings", ignore);
         }
 
         return deploymentInfo;
@@ -490,10 +624,10 @@ public final class TBDeviceInfo {
     /**
      * Look in the tbstats structure for updateDate. If none, parse the synchDir, if there is one.
      *
-     * @return The last sync date, or "UNKNOWN" if not available.
+     * @return The last sync date, or UNKNOWN if not available.
      */
     private String getLastUpdateDate(String synchDir) {
-        String lastUpdate = "UNKNOWN";
+        String lastUpdate = UNKNOWN;
 
         if (tbFlashData != null && tbFlashData.getUpdateDate() != -1)
             lastUpdate = tbFlashData.getUpdateYear() + "/" + tbFlashData.getUpdateMonth() + "/"
@@ -515,6 +649,17 @@ public final class TBDeviceInfo {
 
     @Override
     public String toString() {
+        if (label.isEmpty()) {
+            return tbRoot.toString();
+        }
+        return label;
+    }
+
+    public String getDescription() {
+        DeploymentInfo info = createDeploymentInfo("");
+        if (info != null) {
+            return info.toString();
+        }
         if (label.isEmpty()) {
             return tbRoot.toString();
         }

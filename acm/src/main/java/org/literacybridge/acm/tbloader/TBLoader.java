@@ -3,6 +3,7 @@ package org.literacybridge.acm.tbloader;
 import static javax.swing.GroupLayout.Alignment.BASELINE;
 import static javax.swing.GroupLayout.Alignment.LEADING;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
+import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -97,6 +98,7 @@ public class TBLoader extends JFrame {
     private String syncSubPath;
 
     private JCheckBox forceFirmware;
+    private JCheckBox testDeployment;
 
     private DeploymentInfo oldDeploymentInfo;
 
@@ -261,6 +263,7 @@ public class TBLoader extends JFrame {
         JLabel revisionLabel = new JLabel("Firmware:");
         JLabel imageLabel = new JLabel("Content:");
         JLabel forceFirmwareText = new JLabel("Refresh?");
+        JLabel testDeploymentText = new JLabel("Only testing the Deployment?");
         statusRight = new JTextArea(2, 40);
         statusRight.setEditable(false);
         statusRight.setLineWrap(true);
@@ -322,7 +325,12 @@ public class TBLoader extends JFrame {
         });
         currentLocationList = new JComboBox<String>(currentLocation);
         forceFirmware = new JCheckBox();
-        forceFirmware.setSelected(true);
+        forceFirmware.setSelected(false);
+        testDeployment = new JCheckBox();
+        testDeployment.setSelected(false);
+        testDeployment.setToolTipText("Check if only testing the Deployment. Uncheck if sending the Deployment out to the field.");
+        testDeploymentText.setToolTipText("Check if only testing the Deployment. Uncheck if sending the Deployment out to the field.");
+
         updateButton = new JButton("Update TB");
         updateButton.addActionListener(new ActionListener() {
             @Override
@@ -354,7 +362,9 @@ public class TBLoader extends JFrame {
                                                             .addComponent(dateLabel)
                                                             .addComponent(revisionLabel)
                                                             .addComponent(idLabel)
-                                                            .addComponent(forceFirmwareText))
+                                                            .addComponent(forceFirmwareText)
+                                                            .addComponent(testDeploymentText)
+                                                   )
                                           .addGroup(layout.createParallelGroup(LEADING)
                                                             .addComponent(warning)
                                                             .addComponent(driveList)
@@ -368,8 +378,10 @@ public class TBLoader extends JFrame {
                                                             .addComponent(newFirmwareRevisionText)
                                                             .addComponent(newSrnText)
                                                             .addComponent(forceFirmware)
+                                                            .addComponent(testDeployment)
                                                             .addComponent(updateButton)
-                                                            .addComponent(statusLeft))
+                                                            .addComponent(statusLeft)
+                                                   )
                                           .addGroup(layout.createParallelGroup(LEADING)
                                                             .addComponent(oldValue)
                                                             .addComponent(oldDeploymentText)
@@ -380,55 +392,74 @@ public class TBLoader extends JFrame {
                                                             .addComponent(oldSrnText)
                                                             .addComponent(forceFirmwareText)
                                                             .addComponent(grabStatsOnlyButton)
-                                                            .addComponent(statusRight)));
+                                                            .addComponent(statusRight)
+                                                   )
+                                 );
 
         layout.setVerticalGroup(layout.createSequentialGroup()
                                         .addComponent(warning)
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(deviceLabel)
-                                                          .addComponent(driveList))
+                                                          .addComponent(driveList)
+                                                 )
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(currentLocationLabel)
                                                           .addComponent(currentLocationList))
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(newValue)
-                                                          .addComponent(oldValue))
+                                                          .addComponent(oldValue)
+                                                 )
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(packageLabel)
                                                           .addComponent(newDeploymentList)
-                                                          .addComponent(oldDeploymentText))
+                                                          .addComponent(oldDeploymentText)
+                                                 )
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(communityFilterLabel)
-                                                          .addComponent(newCommunityFilter))
+                                                          .addComponent(newCommunityFilter)
+                                                 )
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(communityLabel)
                                                           .addComponent(newCommunityList)
-                                                          .addComponent(oldCommunityText))
+                                                          .addComponent(oldCommunityText)
+                                                 )
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(imageLabel)
                                                           .addComponent(newImageText)
-                                                          .addComponent(oldImageText))
+                                                          .addComponent(oldImageText)
+                                                 )
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(dateLabel)
                                                           .addComponent(datePicker)
-                                                          .addComponent(lastUpdatedText))
+                                                          .addComponent(lastUpdatedText)
+                                                 )
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(revisionLabel)
                                                           .addComponent(newFirmwareRevisionText)
-                                                          .addComponent(oldFirmwareRevisionText))
+                                                          .addComponent(oldFirmwareRevisionText)
+                                                 )
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(idLabel)
                                                           .addComponent(oldSrnText)
-                                                          .addComponent(newSrnText))
+                                                          .addComponent(newSrnText)
+                                                 )
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(forceFirmwareText)
-                                                          .addComponent(forceFirmware))
+                                                          .addComponent(forceFirmware)
+                                                 )
+                                        .addGroup(layout.createParallelGroup(BASELINE)
+                                                          .addComponent(testDeploymentText)
+                                                          .addComponent(testDeployment)
+                                                 )
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(updateButton)
-                                                          .addComponent(grabStatsOnlyButton))
+                                                          .addComponent(grabStatsOnlyButton)
+                                                 )
                                         .addGroup(layout.createParallelGroup(BASELINE)
                                                           .addComponent(statusLeft)
-                                                          .addComponent(statusRight)));
+                                                          .addComponent(statusRight)
+                                                 )
+                               );
 
         setSize(700, 550);
         add(panel, BorderLayout.CENTER);
@@ -498,11 +529,12 @@ public class TBLoader extends JFrame {
                 TbFile tempDir = new FsFile(Files.createTempDirectory("tbloader-tmp").toFile());
 
                 tbLoaderConfig = new TBLoaderConfig.Builder()
-                        .withTbLoaderId(deviceId)
-                        .withCollectedDataDirectory(collectedDataDir)
-                        .withTempDirectory(tempDir)
-                        .withWindowsUtilsDirectory(softwareDir)
-                        .build();
+                    .withTbLoaderId(deviceId)
+                    .withCollectedDataDirectory(collectedDataDir)
+                    .withTempDirectory(tempDir)
+                    .withWindowsUtilsDirectory(softwareDir)
+                    .withUserName(ACMConfiguration.getInstance().getUserName())
+                    .build();
             } else {
                 JOptionPane.showMessageDialog(applicationWindow,
                                               "This computer does not appear to be configured to use the TB Loader yet.  It needs a unique device tbSrn. Please contact ICT staff to get this.",
@@ -513,6 +545,15 @@ public class TBLoader extends JFrame {
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Exception while setting DeviceId and paths", e);
             throw e;
+        }
+    }
+
+    private void updateForceFirmware() {
+        String oldFirmware = oldFirmwareRevisionText.getText();
+        String newFirmware = newFirmwareRevisionText.getText();
+        if (oldFirmware.length() > 0 && newFirmware.length() > 0 &&
+                !oldFirmware.equalsIgnoreCase(newFirmware)) {
+            forceFirmware.setSelected(true);
         }
     }
 
@@ -542,6 +583,7 @@ public class TBLoader extends JFrame {
                     revision = revision.substring(0, revision.length() - 4);
                 }
                 newFirmwareRevisionText.setText(revision);
+                updateForceFirmware();
             }
         } catch (Exception ignore) {
             LOG.log(Level.WARNING, "exception - ignore and keep going with default string", ignore);
@@ -692,7 +734,7 @@ public class TBLoader extends JFrame {
         }
         if (driveList.getItemCount() == 0) {
             LOG.log(Level.INFO, "No drives");
-            driveList.addItem(new TBDeviceInfo(null, TBLoaderConstants.NO_DRIVE, srnPrefix));
+            driveList.addItem(TBDeviceInfo.getNullDeviceInfo());
             index = 0;
         }
 
@@ -817,16 +859,16 @@ public class TBLoader extends JFrame {
                                           JOptionPane.DEFAULT_OPTION);
         }
 
-        String sn = currentTbDevice.getSerialNumber(srnPrefix);
+        String sn = currentTbDevice.getSerialNumber();
 
         if (!isSerialNumberFormatGood(srnPrefix, sn)) {
-            if (sn.substring(1, 2).equals("-")) {
-                if (sn.compareToIgnoreCase("b-") < 0) {
+            if (sn != null && sn.length() > 2 && sn.substring(1, 2).equals("-")) {
+                if (sn.compareToIgnoreCase("a-") == 0) {
                     JOptionPane.showMessageDialog(applicationWindow,
                                                   "This appears to be an OLD TB.  If so, please close this program and open the TB Loader for old TBs.",
                                                   "OLD TB!", JOptionPane.WARNING_MESSAGE);
                     return;
-                } else if (sn.compareToIgnoreCase("b-") > 0) {
+                } else if (sn.compareToIgnoreCase("b-") == 0) {
                     JOptionPane.showMessageDialog(applicationWindow,
                                                   "This appears to be a NEW TB.  If so, please close this program and open the TB Loader for new TBs.",
                                                   "NEW TB!", JOptionPane.WARNING_MESSAGE);
@@ -839,6 +881,7 @@ public class TBLoader extends JFrame {
         if (oldDeploymentInfo != null) {
             oldSrnText.setText(oldDeploymentInfo.getSerialNumber());
             oldFirmwareRevisionText.setText(oldDeploymentInfo.getFirmwareRevision());
+            updateForceFirmware();
             oldImageText.setText(oldDeploymentInfo.getPackageName());
             oldDeploymentText.setText(oldDeploymentInfo.getDeploymentName());
             lastUpdatedText.setText(oldDeploymentInfo.getUpdateTimestamp());
@@ -847,8 +890,13 @@ public class TBLoader extends JFrame {
             newSrnText.setText(oldDeploymentInfo.getSerialNumber());
 
             oldCommunityText.setText(oldDeploymentInfo.getCommunity());
-            // If we want to do this...
-            // oldProjectText.setTExt(oldDeploymentInfo.getProjectName());
+            // If we want to do this, we need to add a display for old project (and new one, as well).
+            // oldProjectText.setText(oldDeploymentInfo.getProjectName());
+
+            // If the TB was previously used for testing, likely it is again.
+            if (oldDeploymentInfo.isTestDeployment()) {
+                testDeployment.setSelected(true);
+            }
         } else {
             newSrnText.setText(TBLoaderConstants.NEED_SERIAL_NUMBER);
         }
@@ -997,11 +1045,13 @@ public class TBLoader extends JFrame {
 
                 // If the Talking Book needs a new serial number, allocate one. We did not do it before this to
                 // avoid wasting allocations.
-                if (newSrnText.getText().equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER)) {
+                String srn = newSrnText.getText();
+                if (srn.equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER) ||
+                        !isSerialNumberFormatGood(srnPrefix, srn) ||
+                        !isSerialNumberFormatGood2(srn)) {
                     int intSrn = allocateNextSerialNumberFromTbLoader();
                     String lowerSrn = String.format("%04x", intSrn);
-                    String srn = (srnPrefix + tbLoaderConfig.getTbLoaderId()
-                            + lowerSrn).toUpperCase();
+                    srn = (srnPrefix + tbLoaderConfig.getTbLoaderId() + lowerSrn).toUpperCase();
                     di.setSerialNumber(srn);
                     newSrnText.setText(srn);
                 }
@@ -1081,6 +1131,7 @@ public class TBLoader extends JFrame {
                 oldDeploymentText.setText("");
                 oldCommunityText.setText("");
                 oldFirmwareRevisionText.setText("");
+                forceFirmware.setSelected(false);
                 oldImageText.setText("");
                 newSrnText.setText("");
                 oldSrnText.setText("");
@@ -1176,15 +1227,15 @@ public class TBLoader extends JFrame {
             TBLoaderCore.Result result = null;
             try {
 
-                TBLoaderCore tbLoader = new TBLoaderCore.Builder().withTbLoaderConfig(
-                        tbLoaderConfig)
-                        .withTbDeviceInfo(currentTbDevice)
-                        .withOldDeploymentInfo(oldDeploymentInfo)
-                        .withLocation(currentLocationList.getSelectedItem().toString())
-                        .withRefreshFirmware(false)
-                        .withStatsOnly()
-                        .withProgressListener(progressListenerListener)
-                        .build();
+                TBLoaderCore tbLoader = new TBLoaderCore.Builder()
+                    .withTbLoaderConfig(tbLoaderConfig)
+                    .withTbDeviceInfo(currentTbDevice)
+                    .withOldDeploymentInfo(oldDeploymentInfo)
+                    .withLocation(currentLocationList.getSelectedItem().toString())
+                    .withRefreshFirmware(false)
+                    .withStatsOnly()
+                    .withProgressListener(progressListenerListener)
+                    .build();
                 result = tbLoader.collectStatistics();
 
                 opLog.put("success", result.gotStatistics);
@@ -1229,16 +1280,16 @@ public class TBLoader extends JFrame {
             TBLoaderCore.Result result = null;
             try {
 
-                TBLoaderCore tbLoader = new TBLoaderCore.Builder().withTbLoaderConfig(
-                        tbLoaderConfig)
-                        .withTbDeviceInfo(currentTbDevice)
-                        .withDeploymentDirectory(sourceImage)
-                        .withOldDeploymentInfo(oldDeploymentInfo)
-                        .withNewDeploymentInfo(newDeploymentInfo)
-                        .withLocation(currentLocationList.getSelectedItem().toString())
-                        .withRefreshFirmware(forceFirmware.isSelected())
-                        .withProgressListener(progressListenerListener)
-                        .build();
+                TBLoaderCore tbLoader = new TBLoaderCore.Builder()
+                    .withTbLoaderConfig(tbLoaderConfig)
+                    .withTbDeviceInfo(currentTbDevice)
+                    .withDeploymentDirectory(sourceImage)
+                    .withOldDeploymentInfo(oldDeploymentInfo)
+                    .withNewDeploymentInfo(newDeploymentInfo)
+                    .withLocation(currentLocationList.getSelectedItem().toString())
+                    .withRefreshFirmware(forceFirmware.isSelected())
+                    .withProgressListener(progressListenerListener)
+                    .build();
                 result = tbLoader.update();
 
                 opLog.put("gotstatistics", result.gotStatistics)
@@ -1307,7 +1358,8 @@ public class TBLoader extends JFrame {
                     .withUpdateDirectory(null)
                     .withUpdateTimestamp(dateRotation)
                     .withFirmwareRevision(newFirmwareRevisionText.getText())
-                    .withCommunity(newCommunityList.getSelectedItem().toString());
+                    .withCommunity(newCommunityList.getSelectedItem().toString())
+                    .asTestDeployment(testDeployment.isSelected());
             DeploymentInfo newDeploymentInfo = builder.build();
             if (this.operation == Operation.Update) {
                 update(newDeploymentInfo);

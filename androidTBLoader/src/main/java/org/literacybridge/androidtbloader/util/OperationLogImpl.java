@@ -35,8 +35,6 @@ public class OperationLogImpl implements OperationLog.Implementation{
 
     private static final int UPLOAD_WAIT_TIME = 10 * 60 * 1000; // 10 minutes in ms
     private static final int UPLOAD_WAIT_TIME_DEBUG = 30 * 1000;
-    private static final Pattern NEWLINE = Pattern.compile("\n");
-    private static final Pattern COMMA = Pattern.compile(",");
 
     private static int getUploadWaitTime() {
         return TBLoaderAppContext.getInstance().isDebug() ? UPLOAD_WAIT_TIME_DEBUG : UPLOAD_WAIT_TIME;
@@ -54,8 +52,7 @@ public class OperationLogImpl implements OperationLog.Implementation{
     private Runnable runnable;
 
     private File logFile;
-    private DateFormat filenameFormat;
-    private DateFormat logFormat;
+    private DateFormat filenameFormat = ISO8601;
 
     private Queue<File> mPendingFiles = null;
 
@@ -67,10 +64,6 @@ public class OperationLogImpl implements OperationLog.Implementation{
                 Log.d(TAG, String.format("Failed to create directory %s", logDir.getAbsolutePath()));
             }
         }
-        filenameFormat = ISO8601;
-        logFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
-        logFormat.setTimeZone(UTC);
-
         handleExistingLogFiles();
 
         runnable = new Runnable() {
@@ -120,31 +113,11 @@ public class OperationLogImpl implements OperationLog.Implementation{
         return logFile;
     }
 
-    /**
-     * Replaces newlines with "↵" and commas with semicolons.
-     * @param rawString String that may have problematic characters.
-     * @return String with those characters removed.
-     */
-    private String enquote(String rawString) {
-        rawString = NEWLINE.matcher(rawString).replaceAll("↵");
-        rawString = COMMA.matcher(rawString).replaceAll(";");
-        return rawString;
-    }
-
     public void logEvent(OperationLog.Operation operation) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(String.format("%s,%s", logFormat.format(new Date()), operation.getName()));
-        Map<String, String> info = operation.getInfo();
-        // Convert Map<String,String> to string of key:value,key:value.
-        // Note that \n is munged to ↵ and , to ;
-        for (Map.Entry<String, String> entry : info.entrySet()) {
-            builder.append(',').append(entry.getKey()).append(':');
-            builder.append(enquote(entry.getValue()));
-        }
-        builder.append("\n");
+        String logData = operation.formatLog();
         File outFile = getLogFile();
         try (OutputStream fos = new FileOutputStream(outFile, true)) {
-            fos.write(builder.toString().getBytes());
+            fos.write(logData.getBytes());
         } catch (IOException e) {
             Log.d(TAG, String.format("Exception writing to log file: %s", logFile), e);
         }

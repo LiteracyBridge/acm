@@ -31,7 +31,7 @@ public class CommandLineUtils {
   public static String execute(String cmd) throws IOException {
     String line;
     String errorLine = null;
-    LOG.log(Level.INFO, "Executing:" + cmd);
+    LOG.log(Level.INFO, "TBL!: Executing:" + cmd);
     if (!cmd.startsWith("cmd /C ")) cmd = "cmd /C " + cmd;
     Process proc = Runtime.getRuntime().exec(cmd);
 

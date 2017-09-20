@@ -656,10 +656,12 @@ public class SigninActivity extends AppCompatActivity {
 
     private void closeWaitDialog() {
         try {
-            waitDialog.dismiss();
+            if (waitDialog != null)
+                waitDialog.dismiss();
         }
         catch (Exception e) {
             //
         }
+        waitDialog = null;
     }
 }

@@ -92,8 +92,8 @@ public class UploadService extends JobService {
      * Starts the upload service. Files will be uploaded when we're connected, smallest first.
      */
     public static synchronized void startUploadService() {
-        Log.d(TAG, "startUploadService: scheduling job");
-        int period = TBLoaderAppContext.getInstance().isDebug() ? 60 * 1000 : PERIOD;
+        int period = TBLoaderAppContext.getInstance().isDebug() ? 6 * 1000 : PERIOD;
+        Log.d(TAG, String.format("startUploadService: scheduling job with period %d", period));
         JobScheduler jobScheduler = (JobScheduler) TBLoaderAppContext.getInstance().getSystemService(Context.JOB_SCHEDULER_SERVICE);
         // Always just start the job. It appears that we don't get duplicates, and trying to avoid
         // extra jobs has proven unreliable.

@@ -20,9 +20,12 @@ public class TBLoaderUtils {
     private static final Logger LOG = Logger.getLogger(TBLoaderUtils.class.getName());
 
     public static String getDateTime() {
+        return getDateTime(new Date());
+    }
+    public static String getDateTime(Date date) {
         SimpleDateFormat sdfDate = new SimpleDateFormat(
                 "yyyy'y'MM'm'dd'd'HH'h'mm'm'ss's'", Locale.US);
-        String dateTime = sdfDate.format(new Date());
+        String dateTime = sdfDate.format(date);
         return dateTime;
     }
 
@@ -42,7 +45,7 @@ public class TBLoaderUtils {
             isGood = true;
         else {
             isGood = false;
-            LOG.log(Level.INFO, "***Incorrect Serial Number Format:" + srn + "***");
+            LOG.log(Level.INFO, "TBL!: ***Incorrect Serial Number Format:" + srn + "***");
         }
         return isGood;
     }
@@ -189,7 +192,7 @@ public class TBLoaderUtils {
                 version = files[0].substring(0, files[0].length() - 4);
             }
         } catch (Exception ignore) {
-            LOG.log(Level.WARNING, "exception - ignore and keep going with default string", ignore);
+            LOG.log(Level.WARNING, "TBL!: exception - ignore and keep going with default string", ignore);
         }
         return version;
     }

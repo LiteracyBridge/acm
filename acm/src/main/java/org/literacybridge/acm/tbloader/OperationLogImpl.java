@@ -16,6 +16,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
+
 /**
  * Log operations of the applications. Uploaded to server, to extract app metrics, usage, and updates.
  */
@@ -25,13 +27,9 @@ public class OperationLogImpl implements OperationLog.Implementation{
     // operation log (this class' function).
     private static final Logger LOG = Logger.getLogger(OperationLogImpl.class.getName());
 
-    private static final Pattern NEWLINE = Pattern.compile("\n");
-    private static final Pattern COMMA = Pattern.compile(",");
-
     private File logDir;
     private File logFile;
-    private DateFormat filenameFormat;
-    private DateFormat timestampFormat;
+    private DateFormat filenameFormat = ISO8601;
 
     OperationLogImpl(File logDir) {
         this.logDir = logDir;
@@ -40,11 +38,6 @@ public class OperationLogImpl implements OperationLog.Implementation{
                 LOG.log(Level.WARNING, String.format("Failed to create directory %s", logDir.getAbsolutePath()));
             }
         }
-        TimeZone UTC = TimeZone.getTimeZone("UTC");
-        filenameFormat = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
-        filenameFormat.setTimeZone(UTC);
-        timestampFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
-        timestampFormat.setTimeZone(UTC);
     }
 
     private synchronized File getLogFile() {
@@ -55,32 +48,11 @@ public class OperationLogImpl implements OperationLog.Implementation{
         return logFile;
     }
 
-    /**
-     * Replaces newlines with spaces and commas with semicolons.
-     * @param rawString String that may have problematic characters.
-     * @return String with those characters removed.↵
-     */
-    private String enquote(String rawString) {
-        rawString = NEWLINE.matcher(rawString).replaceAll("↵");
-        rawString = COMMA.matcher(rawString).replaceAll(";");
-        return rawString;
-    }
-
     public synchronized void logEvent(OperationLog.Operation operation) {
-        String name = operation.getName();
-        Map<String, String> info = operation.getInfo();
-        StringBuilder builder = new StringBuilder();
-        builder.append(String.format("%s,%s", timestampFormat.format(new Date()), name));
-        if (info != null) {
-            for (Map.Entry<String, String> entry : info.entrySet()) {
-                builder.append(',').append(entry.getKey()).append(':');
-                builder.append(enquote(entry.getValue()));
-            }
-        }
-        builder.append("\n");
+        String logData = operation.formatLog();
         File outFile = getLogFile();
         try (OutputStream fos = new FileOutputStream(outFile, true)) {
-            fos.write(builder.toString().getBytes());
+            fos.write(logData.getBytes());
         } catch (IOException e) {
             LOG.log(Level.INFO, String.format("Exception writing to log file: %s", logFile), e);
         }

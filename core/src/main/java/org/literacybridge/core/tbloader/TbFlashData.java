@@ -272,7 +272,7 @@ public class TbFlashData {
       }
     }
     f.close();
-    LOG.log(Level.INFO, "FOUND FLASH STATS\n" + this.toString());
+    LOG.log(Level.INFO, "TBL!: FOUND FLASH STATS\n" + this.toString());
   }
 
   private short readShort() throws IOException {

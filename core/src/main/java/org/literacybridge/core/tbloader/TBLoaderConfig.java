@@ -18,11 +18,15 @@ public class TBLoaderConfig {
     // A directory that can contain dos utilities. (In particular, RemoveDrive.exe.)
     private final TbFile windowsUtilsDirectory;
 
+    // The user name, if known.
+    private final String userName;
+
     private TBLoaderConfig(Builder builder) {
         this.tbLoaderId = builder.tbLoaderId;
         this.collectedDataDirectory = builder.collectedDataDirectory;
         this.tempDirectory = builder.tempDirectory;
         this.windowsUtilsDirectory = builder.windowsUtilsDirectory;
+        this.userName = builder.userName;
     }
 
     public String getTbLoaderId() {
@@ -41,11 +45,16 @@ public class TBLoaderConfig {
         return windowsUtilsDirectory;
     }
 
+    String getUserName() {
+        return userName;
+    }
+
     public static class Builder {
         private String tbLoaderId;
         private TbFile collectedDataDirectory;
         private TbFile tempDirectory;
         private TbFile windowsUtilsDirectory = null;
+        private String userName = null;
 
         public final TBLoaderConfig build() {
             List<String> missing = new ArrayList<>();
@@ -80,6 +89,11 @@ public class TBLoaderConfig {
 
         public Builder withWindowsUtilsDirectory(TbFile windowsUtilsDirectory) {
             this.windowsUtilsDirectory = windowsUtilsDirectory;
+            return this;
+        }
+
+        public Builder withUserName(String userName) {
+            this.userName = userName;
             return this;
         }
     }

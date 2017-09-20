@@ -1,19 +1,45 @@
 package org.literacybridge.core.fs;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
+
+import static org.literacybridge.core.tbloader.TBLoaderConstants.UTC;
 
 /**
  * Log operations of the applications. Uploaded to server, to extract app metrics, usage, and updates.
  */
 
 public class OperationLog {
+    private static final Pattern NEWLINE = Pattern.compile("\n");
+    private static final Pattern COMMA = Pattern.compile(",");
+    private static final DateFormat logFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
+    static {
+        logFormat.setTimeZone(UTC);
+    }
+
     /**
      * OperationLog's required implementation. Applications implement this, then call 'setImplementation()'
      */
     public interface Implementation {
         void logEvent(Operation operation);
         void closeLogFile();
+    }
+
+    /**
+     * This is mostly for convenience of adding any object with a toString() to the map of
+     * values.
+     */
+    public static class Info {
+        private Map<String, String> info = new LinkedHashMap<>();
+        public <T> Info put(String key, T value) {
+            info.put(key, value.toString());
+            return this;
+        }
     }
 
     /**
@@ -29,6 +55,13 @@ public class OperationLog {
          * @return this so that calls can be chained.
          */
         public abstract <T> Operation put(String key, T value);
+
+        /**
+         * Put key:value pairs.
+         * @param info object with key:value pairs.
+         * @return this, for chaining.
+         */
+        public abstract Operation put(Info info);
 
         /**
          * Marks the time, by recording the value of the elapsed milliseconds as key. Note: only
@@ -63,6 +96,8 @@ public class OperationLog {
         public abstract String getName();
         public abstract boolean hasOption(String optionName);
         public abstract String getOption(String optionName);
+
+        public abstract String formatLog();
     }
 
     /**
@@ -127,6 +162,11 @@ public class OperationLog {
             return this;
         }
 
+        public Operation put(Info info) {
+            this.info.putAll(info.info);
+            return this;
+        }
+
         /**
          * Marks the time, by recording the value of the elapsed milliseconds as key.
          *
@@ -185,6 +225,32 @@ public class OperationLog {
         @Override
         public String getOption(String optionName) {
             return options.get(optionName);
+        }
+
+        /**
+         * Replaces newlines with "↵" and commas with semicolons.
+         * @param rawString String that may have problematic characters.
+         * @return String with those characters removed.
+         */
+        private String enquote(String rawString) {
+            rawString = NEWLINE.matcher(rawString).replaceAll("↵");
+            rawString = COMMA.matcher(rawString).replaceAll(";");
+            return rawString;
+        }
+
+        @Override
+        public String formatLog() {
+            StringBuilder builder = new StringBuilder();
+            builder.append(String.format("%s,%s", logFormat.format(new Date()), getName()));
+            Map<String, String> info = getInfo();
+            // Convert Map<String,String> to string of key:value,key:value.
+            // Note that \n is munged to ↵ and , to ;
+            for (Map.Entry<String, String> entry : info.entrySet()) {
+                builder.append(',').append(entry.getKey()).append(':');
+                builder.append(enquote(entry.getValue()));
+            }
+            builder.append("\n");
+            return builder.toString();
         }
     }
 

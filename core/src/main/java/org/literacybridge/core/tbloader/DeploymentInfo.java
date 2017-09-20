@@ -27,6 +27,9 @@ public class DeploymentInfo {
     // The name of the community in which the Talking Book was last deployed.
     private final String community;
 
+    // Was (or will) the deployment for testing purposes.
+    private final boolean testDeployment;
+
     public static class DeploymentInfoBuilder {
         private static final String UNKNOWN = "UNKNOWN";
         private String serialNumber = UNKNOWN;
@@ -37,6 +40,7 @@ public class DeploymentInfo {
         private String updateTimestamp = null;
         private String firmwareRevision = UNKNOWN;
         private String community = UNKNOWN;
+        private boolean testDeployment = false;
 
         public DeploymentInfoBuilder withSerialNumber(String serialNumber) {
             this.serialNumber = serialNumber;
@@ -78,6 +82,11 @@ public class DeploymentInfo {
             return this;
         }
 
+        public DeploymentInfoBuilder asTestDeployment(boolean testDeployment) {
+            this.testDeployment = testDeployment;
+            return this;
+        }
+
         // Build from an existing DeploymentInfo
         public DeploymentInfoBuilder fromDeploymentInfo(DeploymentInfo di) {
             serialNumber = di.serialNumber;
@@ -88,6 +97,7 @@ public class DeploymentInfo {
             updateTimestamp = di.updateTimestamp;
             firmwareRevision = di.firmwareRevision;
             community = di.community;
+            testDeployment = di.testDeployment;
             return this;
         }
 
@@ -100,25 +110,21 @@ public class DeploymentInfo {
         }
 
         public DeploymentInfo build() {
-            return new DeploymentInfo(serialNumber, projectName, deploymentName, packageName,
-                                      updateDirectory, updateTimestamp, firmwareRevision,
-                                      community);
+            return new DeploymentInfo(this);
         }
     }
-
-    private DeploymentInfo(String serialNumber, String projectName, String deploymentName,
-                           String packageName, String updateDirectory, String updateTimestamp,
-                           String firmwareRevision, String community) {
-        this.serialNumber = serialNumber;
-        this.projectName = projectName;
-        this.deploymentName = deploymentName;
-        this.packageName = packageName;
-        this.updateDirectory = updateDirectory;
-        this.updateTimestamp = updateTimestamp;
-        this.firmwareRevision = firmwareRevision;
-        this.community = community;
+    private DeploymentInfo(DeploymentInfoBuilder builder) {
+        this.serialNumber = builder.serialNumber;
+        this.projectName = builder.projectName;
+        this.deploymentName = builder.deploymentName;
+        this.packageName = builder.packageName;
+        this.updateDirectory = builder.updateDirectory;
+        this.updateTimestamp = builder.updateTimestamp;
+        this.firmwareRevision = builder.firmwareRevision;
+        this.community = builder.community;
+        this.testDeployment = builder.testDeployment;
     }
-
+    
     public String getSerialNumber() {
         return serialNumber;
     }
@@ -151,6 +157,8 @@ public class DeploymentInfo {
         return community;
     }
 
+    public boolean isTestDeployment() { return testDeployment; }
+
     @Override
     public String toString() {
         return "Serial number: " + serialNumber
@@ -159,6 +167,7 @@ public class DeploymentInfo {
                 + "\nPackage name: " + packageName
                 + "\nupdated timestamp: " + updateTimestamp
                 + "\nFirmware revision: " + firmwareRevision
-                + "\nCommunity: " + community;
+                + "\nCommunity: " + community
+                + "\nTest: " + (Boolean)testDeployment;
     }
 }

@@ -50,6 +50,7 @@ import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateComm
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateContent;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateSystem;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_AUDIO_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
 
@@ -170,6 +171,9 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
 public class TBLoaderCore {
     private static final Logger LOG = Logger.getLogger(TBLoaderCore.class.getName());
 
+    // The Talking Book is hard coded to expect the MS-DOS line ending.
+    public static final String MSDOS_LINE_ENDING = new String(new byte[] { 0x0d, 0x0a });
+
     public static class Builder {
         private TBLoaderConfig tbLoaderConfig;
         private TBDeviceInfo tbDeviceInfo;
@@ -199,15 +203,7 @@ public class TBLoaderCore {
             if (!missing.isEmpty()) {
                 throw new IllegalStateException("TBLoaderCore.Builder not initialized with " + missing.toString());
             }
-            return new TBLoaderCore(tbLoaderConfig,
-                    tbDeviceInfo,
-                    oldDeploymentInfo,
-                    newDeploymentInfo,
-                    location,
-                    statsOnly,
-                    refreshFirmware,
-                    deploymentDirectory,
-                    progressListenerListener);
+            return new TBLoaderCore(this);
         }
 
         public Builder withTbLoaderConfig(TBLoaderConfig tbLoaderConfig) {
@@ -260,8 +256,9 @@ public class TBLoaderCore {
 
     }
 
+    private final Builder mConfig;
 
-    private final TBLoaderConfig mTtbLoaderConfig;
+    private final TBLoaderConfig mTbLoaderConfig;
     private final TBDeviceInfo mTbDeviceInfo;
 
     private DeploymentInfo mOldDeploymentInfo;
@@ -285,6 +282,7 @@ public class TBLoaderCore {
     private RelativePath mTalkingBookDataZipPath;
 
     private final TbFile mCollectedDataDirectory;
+    private final String mUpdateTimestampISO;
     private final String mUpdateTimestamp;
     private final String mCollectionTempName;
 
@@ -294,34 +292,39 @@ public class TBLoaderCore {
     private TbFile mTalkingBookDataRoot;
     private long mUpdateStartTime;
 
-    private TBLoaderCore(TBLoaderConfig tbLoaderConfig,
-            TBDeviceInfo tbDeviceInfo,
-            DeploymentInfo oldDeploymentInfo,
-            DeploymentInfo newDeploymentInfo,
-            String location,
-            boolean grabStatsOnly,
-            boolean forceFirmware,
-            TbFile deploymentDirectory,
-            ProgressListener progressListenerListener) {
-        this.mTbDeviceInfo = tbDeviceInfo;
-        this.mTtbLoaderConfig = tbLoaderConfig;
-        this.mTtbFlashData = tbDeviceInfo.getFlashData();
+    private TBLoaderCore(Builder builder) {
+//        TBLoaderConfig tbLoaderConfig,
+//        TBDeviceInfo tbDeviceInfo,
+//        DeploymentInfo oldDeploymentInfo,
+//        DeploymentInfo newDeploymentInfo,
+//        String location,
+//        boolean grabStatsOnly,
+//        boolean forceFirmware,
+//        TbFile deploymentDirectory,
+//        ProgressListener progressListenerListener
+        this.mConfig = builder;
+
+        this.mTbDeviceInfo = builder.tbDeviceInfo;
+        this.mTbLoaderConfig = builder.tbLoaderConfig;
+        this.mTtbFlashData = builder.tbDeviceInfo.getFlashData();
 
         // Like "tbcd1234/collected-data"
-        mCollectedDataDirectory = tbLoaderConfig.getCollectedDataDirectory();
+        mCollectedDataDirectory = builder.tbLoaderConfig.getCollectedDataDirectory();
 
         // Roughly when an update starts.
-        mUpdateTimestamp = TBLoaderUtils.getDateTime();
+        Date now = new Date();
+        mUpdateTimestampISO = ISO8601.format(now);
+        mUpdateTimestamp = TBLoaderUtils.getDateTime(now);
         // Like 2016y12m25d01h23m45s-000c. Also known as the "synch" directory.
-        mCollectionTempName = mUpdateTimestamp + "-" + tbLoaderConfig.getTbLoaderId();
+        mCollectionTempName = mUpdateTimestamp + "-" + builder.tbLoaderConfig.getTbLoaderId();
 
-        mOldDeploymentInfo = oldDeploymentInfo;
-        mNewDeploymentInfo = newDeploymentInfo;
-        mLocation = location;
-        mStatsOnly = grabStatsOnly;
-        mForceFirmware = forceFirmware;
-        mDeploymentDirectory = deploymentDirectory;
-        mProgressListenerListener = progressListenerListener;
+        mOldDeploymentInfo = builder.oldDeploymentInfo;
+        mNewDeploymentInfo = builder.newDeploymentInfo;
+        mLocation = builder.location;
+        mStatsOnly = builder.statsOnly;
+        mForceFirmware = builder.refreshFirmware;
+        mDeploymentDirectory = builder.deploymentDirectory;
+        mProgressListenerListener = builder.progressListenerListener;
 
         // This is the path name for the "TalkingBookData" from this TB. In particular, this is the path
         // name for the directory that will contain the collected data, and then the .zip file of that data.
@@ -329,9 +332,9 @@ public class TBLoaderCore {
         RelativePath talkingBookDataParentPath = new RelativePath(
                 TBLoaderConstants.TB_DATA_PATH,           // "TalkingBookData"
                 mOldDeploymentInfo.getDeploymentName(),   // like "DEMO-2016-1"
-                tbLoaderConfig.getTbLoaderId(),           // like "000c"
+                builder.tbLoaderConfig.getTbLoaderId(),   // like "000c"
                 mOldDeploymentInfo.getCommunity(),        // like "demo-seattle"
-                tbDeviceInfo.getSerialNumber());          // like "B-000C1234"
+                builder.tbDeviceInfo.getSerialNumber());  // like "B-000C1234"
         // like TalkingBookData/{content update name}/{tbloader id}/{community name}/{tb serial no}/{timestamp}-{tbloader id}
         // like "2016y12m25d01h23m45s-000c"
         mTalkingBookDataDirectoryPath = new RelativePath(
@@ -344,6 +347,30 @@ public class TBLoaderCore {
 
     }
 
+    /**
+     * Helper to append the contents of an OperationLog.Operation to a file.
+     * @param logData The Operation to be appended.
+     * @param logFile The file to which the Operation is to be appended.
+     * @throws IOException If there is an error writing to the file.
+     */
+    private void writeLogDataToFile(OperationLog.Operation logData, TbFile logFile) throws IOException {
+        // Copy the k=v .log file next to the .csv file.
+        InputStream logContent = new ByteArrayInputStream(logData.formatLog().getBytes());
+        boolean isNewLogFile = !logFile.exists();
+        TbFile.Flags logFlag = isNewLogFile ? nil : append;
+        logFile.createNew(logContent, logFlag);
+        logContent.close();
+    }
+
+    /**
+     * Writes the log files that the statistics processing will use to analyze deployments and usage.
+     * @param action The TB-Loader action, "update", "update-fw", "stats-only", etc.
+     * @param oldDeployment The Deployment, if any, found on the Talking Book.
+     * @param newDeployment The Deployment being put onto the Talking Book (if not stats-only).
+     * @param location Where the stats gathering and Deployment took place.
+     * @param durationSeconds How long it took to collect any stats and perform any Deployment.
+     * @throws IOException if there is an error writing any of the log files.
+     */
     private void logTBData(String action,
             DeploymentInfo oldDeployment,
             DeploymentInfo newDeployment,
@@ -351,27 +378,34 @@ public class TBLoaderCore {
             int durationSeconds) throws IOException {
 
         OperationLog.Operation opLog = OperationLog.startOperation("LogTbData");
+        OperationLog.Operation statsLog = OperationLog.startOperation("statsdata");
+        OperationLog.Operation deploymentLog = OperationLog.startOperation("deployment");
+        OperationLog.Info operationInfo = new OperationLog.Info();
+        OperationLog.Info statsInfo = new OperationLog.Info();
+
+        
         final String VERSION_TBDATA = "v03";
         BufferedWriter bw;
 
         SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy'y'MM'm'dd'd'", Locale.US);
         String strDate = sdfDate.format(new Date());
-        String filename = String.format("tbData-%s-%s-%s.csv",
+        String csvFilename = String.format("tbData-%s-%s-%s.csv",
                                         VERSION_TBDATA,
                                         strDate,
-                                        mTtbLoaderConfig.getTbLoaderId());
+                                        mTbLoaderConfig.getTbLoaderId());
 
-        TbFile logFile = mCollectedDataDirectory         // like /Users/alice/Dropbox/tbcd000c
-                .open(oldDeployment.getProjectName())      // {tbloaderConfig.project}
-                .open("OperationalData")                // "OperationalData"
-                .open(mTtbLoaderConfig.getTbLoaderId())   // {tbloaderConfig.tbLoaderId}
-                .open("tbData")                         // "tbData"
-                .open(filename);                        // like "tbData-v03-2016y12m25d-000c"
+        TbFile logDir = mCollectedDataDirectory             // like /Users/alice/Dropbox/tbcd000c
+                .open(oldDeployment.getProjectName())       // {tbloaderConfig.project}
+                .open("OperationalData")                    // "OperationalData"
+                .open(mTbLoaderConfig.getTbLoaderId())      // {tbloaderConfig.tbLoaderId}
+                .open("tbData");                            // "tbData"
 
+        // like /Users/alice/Dropbox/tbcd000c/{PROJECT}/OperationalData/{TBCDID}/tbdata-v03-{YYYYyMMmDDd}-{TBCDID}.csv
+        TbFile csvFile = logDir.open(csvFilename);
 
         try {
-            logFile.getParent().mkdirs();
-            boolean isNewFile = !logFile.exists();
+            csvFile.getParent().mkdirs();
+            boolean isNewFile = !csvFile.exists();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             bw = new BufferedWriter(new OutputStreamWriter(baos));
             if (isNewFile) {
@@ -389,7 +423,7 @@ public class TBLoaderCore {
             }
             bw.write(oldDeployment.getProjectName().toUpperCase() + ",");
             bw.write(mUpdateTimestamp.toUpperCase() + ",");
-            bw.write(mUpdateTimestamp.toUpperCase() + "-" + mTtbLoaderConfig.getTbLoaderId()
+            bw.write(mUpdateTimestamp.toUpperCase() + "-" + mTbLoaderConfig.getTbLoaderId()
                     .toUpperCase() + ",");
             bw.write(location.toUpperCase() + ",");
             bw.write(action + ",");
@@ -414,25 +448,47 @@ public class TBLoaderCore {
             // With one exception, these are ordered the same as the csv values. Not necessary, of
             // course, but can help matching them up.
             // The exception is that, here, qthe action is first, not fifth.
-            opLog
+            operationInfo
                 .put("action", action)
+                .put("tbcdid", mTbLoaderConfig.getTbLoaderId())
+                .put("username", mTbLoaderConfig.getUserName())
                 .put("project", oldDeployment.getProjectName().toUpperCase())
                 .put("update_date_time", mUpdateTimestamp.toUpperCase())
-                .put("out_synchdir", mUpdateTimestamp.toUpperCase() + "-" + mTtbLoaderConfig.getTbLoaderId()
+                .put("out_synchdir", mUpdateTimestamp.toUpperCase() + "-" + mTbLoaderConfig.getTbLoaderId()
                         .toUpperCase())
                 .put("location", location.toUpperCase())
-                .put("duration", Integer.toString(durationSeconds))
-                .put("out_sn", mTbDeviceInfo.getSerialNumber().toUpperCase());
+                .put("duration", Integer.toString(durationSeconds));
+            opLog.put(operationInfo);
+            statsLog.put(operationInfo);
+
             if (!mStatsOnly) {
                 opLog
+                    .put("out_sn", mTbDeviceInfo.getSerialNumber().toUpperCase())
                     .put("out_deployment", newDeployment.getDeploymentName().toUpperCase())
                     .put("out_package", newDeployment.getPackageName().toUpperCase())
                     .put("out_firmware", newDeployment.getFirmwareRevision())
                     .put("out_community", newDeployment.getCommunity().toUpperCase())
                     .put("out_rotation", newDeployment.getUpdateTimestamp())
-                    .put("out_project", newDeployment.getProjectName());
+                    .put("out_project", newDeployment.getProjectName())
+                    .put("out_testing", newDeployment.isTestDeployment());
+
+                // Everything there is to know about a deployment to a Talking Book should be here.
+                deploymentLog
+                    .put("action", action)
+                    .put("tbcdid", mTbLoaderConfig.getTbLoaderId())
+                    .put("username", mTbLoaderConfig.getUserName())
+                    .put("project", newDeployment.getProjectName().toUpperCase())
+                    .put("deployment", newDeployment.getDeploymentName().toUpperCase())
+                    .put("package", newDeployment.getPackageName().toUpperCase())
+                    .put("community", newDeployment.getCommunity().toUpperCase())
+                    .put("sn", mTbDeviceInfo.getSerialNumber().toUpperCase())
+                    .put("firmware", newDeployment.getFirmwareRevision())
+                    .put("location", location.toUpperCase())
+                    .put("timestamp", mUpdateTimestampISO)
+                    .put("duration", Integer.toString(durationSeconds));
             }
-            opLog
+
+            statsInfo
                 .put("in_sn", oldDeployment.getSerialNumber().toUpperCase())
                 .put("in_deployment", oldDeployment.getDeploymentName().toUpperCase())
                 .put("in_package", oldDeployment.getPackageName().toUpperCase())
@@ -489,14 +545,14 @@ public class TBLoaderCore {
                             + mTtbFlashData.getRotations()[r].getInitVoltage());
                 }
 
-                opLog
+                statsInfo
                     .put("flash_sn", mTtbFlashData.getSerialNumber().toUpperCase())
                     .put("flash_reflashes", mTtbFlashData.getCountReflashes())
                     .put("flash_deployment", mTtbFlashData.getDeploymentNumber().toUpperCase())
                     .put("flash_package", mTtbFlashData.getImageName().toUpperCase())
                     .put("flash_community", mTtbFlashData.getLocation().toUpperCase())
                     .put("flash_last_updated", mTtbFlashData.getUpdateYear() + "/" + mTtbFlashData.getUpdateMonth() + "/"
-                                     + mTtbFlashData.getUpdateDate())
+                        + mTtbFlashData.getUpdateDate())
                     .put("flash_cumulative_days", mTtbFlashData.getCumulativeDays())
                     .put("flash_corruption_day", mTtbFlashData.getCorruptionDay())
                     .put("flash_last_initial_v", mTtbFlashData.getLastInitVoltage())
@@ -504,8 +560,8 @@ public class TBLoaderCore {
                     .put("flash_periods", mTtbFlashData.getPeriods())
                     .put("flash_rotations", mTtbFlashData.getProfileTotalRotations())
                     .put("flash_num_messages", mTtbFlashData.getTotalMessages());
-                
-                opLog
+
+                statsInfo
                     .put("flash_total_seconds", totalSecondsPlayed)
                     .put("flash_started", countStarted)
                     .put("flash_one_quarter", countQuarter)
@@ -517,7 +573,7 @@ public class TBLoaderCore {
 
                 final String N[] = {"0", "1", "2", "3", "4"};
                 for (int r = 0; r < numRotations; r++) {
-                    opLog
+                    statsInfo
                         .put("flash_seconds_"+N[r], mTtbFlashData.totalPlayedSecondsPerRotation(r))
                         .put("flash_period_"+N[r], mTtbFlashData.getRotations()[r].getStartingPeriod())
                         .put("flash_hours_post_update_"+N[r], mTtbFlashData.getRotations()[r].getHoursAfterLastUpdate())
@@ -525,6 +581,12 @@ public class TBLoaderCore {
                 }
 
             }
+            statsInfo.put("in_testing", oldDeployment.isTestDeployment());
+
+            opLog.put(statsInfo);
+            statsLog.put(statsInfo);
+            statsLog.put("statsonly", mStatsOnly);
+
             bw.write("\n");
             bw.flush();
             bw.close();
@@ -533,15 +595,30 @@ public class TBLoaderCore {
             TbFile.Flags flag = isNewFile ? nil : append;
             opLog.put("append", !isNewFile);
 
-            logFile.createNew(content, flag);
+            csvFile.createNew(content, flag);
             content.close();
             baos.close();
-        } catch (IOException e) {
+
+            // Copy the k=v .log files next to the .csv file.
+            String logSuffix = String.format("-%s-%s.log",
+                strDate,
+                mTbLoaderConfig.getTbLoaderId());
+            writeLogDataToFile(opLog, logDir.open("tbData"+logSuffix));
+            writeLogDataToFile(statsLog, logDir.open("statsData"+logSuffix));
+            if (!mStatsOnly) {
+                writeLogDataToFile(deploymentLog, logDir.open("deployments" + logSuffix));
+            }
+
+        } catch (Exception e) {
             opLog.put("exception", e);
             e.printStackTrace();
             throw e;
         } finally {
             opLog.finish();
+            statsLog.finish();
+            if (!mStatsOnly) {
+                deploymentLog.finish();
+            }
         }
     }
 
@@ -607,6 +684,8 @@ public class TBLoaderCore {
      * @return
      */
     private Result performOperation() {
+        LOG.log(Level.INFO, "TBL!: performOperation");
+
         mStepsLog = OperationLog.startOperation(mStatsOnly ? "CorTalkingBookCollectStatistics" : "CoreTalkingBookUpdate");
         mProgressListenerListener.step(starting);
 
@@ -622,7 +701,7 @@ public class TBLoaderCore {
 
         // Get the roots for the Talking Book, the Temp directory, and the Staging Directory.
         mTalkingBookRoot = mTbDeviceInfo.getRootFile();
-        mTempDirectory = mTtbLoaderConfig.getTempDirectory();
+        mTempDirectory = mTbLoaderConfig.getTempDirectory();
         mTalkingBookDataRoot = mTempDirectory.open(mTalkingBookDataDirectoryPath);
         mTalkingBookDataRoot.mkdirs();
         // mkdir "${syncpath}"
@@ -631,7 +710,7 @@ public class TBLoaderCore {
 
         // Like tbcd1234/collected-data/XYZ
         TbFile projectCollectedData = mCollectedDataDirectory.open(mOldDeploymentInfo.getProjectName());
-        LOG.log(Level.INFO, "copy stats To:" + projectCollectedData.toString());
+        LOG.log(Level.INFO, "TBL!: copy stats To:" + projectCollectedData.toString());
 
         boolean gotStatistics = false;
         try {
@@ -657,7 +736,7 @@ public class TBLoaderCore {
 
             gotStatistics = true;
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Unable to get stats:", e);
+            LOG.log(Level.WARNING, "TBL!: Unable to get stats:", e);
             mProgressListenerListener.log("Unable to gather statistics");
             mProgressListenerListener.log(getStackTrace(e));
             // gotStatistics remains false; we'll log the failure later.
@@ -692,7 +771,7 @@ public class TBLoaderCore {
             disconnectDevice();
 
         } catch (Throwable e) {
-            LOG.log(Level.WARNING, "Unable to update Talking Book:", e);
+            LOG.log(Level.WARNING, "TBL!: Unable to update Talking Book:", e);
             mProgressListenerListener.log("Unable to update Talking Book");
             mProgressListenerListener.log(getStackTrace(e));
         }
@@ -814,7 +893,7 @@ public class TBLoaderCore {
      * @param buffer    Build the listing here.
      * @return A DirectoryCount with counts for this directory and any children.
      */
-    private DirectoryCount listDirectory(TbFile directory, StringBuilder buffer) {
+    private DirectoryCount listDirectory(String rootPath, TbFile directory, StringBuilder buffer) {
         DirectoryCount myCount = new DirectoryCount();
         TbFile[] children = directory.listFiles();
         Arrays.sort(children, new Comparator<TbFile>() {
@@ -843,7 +922,8 @@ public class TBLoaderCore {
         // List the child directories.
         for (TbFile child : children) {
             if (child.isDirectory()) {
-                myCount.add(listDirectory(child, buffer));
+                mProgressListenerListener.detail(child.getAbsolutePath().substring(rootPath.length())+"/*");
+                myCount.add(listDirectory(rootPath, child, buffer));
             }
         }
 
@@ -852,7 +932,7 @@ public class TBLoaderCore {
 
     private String getDeviceFileList() {
         StringBuilder builder = new StringBuilder();
-        DirectoryCount counts = listDirectory(mTalkingBookRoot, builder);
+        DirectoryCount counts = listDirectory(mTalkingBookRoot.getAbsolutePath(), mTalkingBookRoot, builder);
 
         // Add the summary.
         builder.append(String.format(Locale.US, "%5cTotal Files Listed:\n%1$10c%6d File(s)%,15d bytes\n",
@@ -971,7 +1051,7 @@ public class TBLoaderCore {
         TbFile recordingsDst = projectCollectedData           // like .../"tbcd1234/collected-data/UWR"
                 .open(TBLoaderConstants.USER_RECORDINGS_PATH) // "UserRecordings"
                 .open(mOldDeploymentInfo.getDeploymentName())  // like "UNICEF-2016-14"
-                .open(mTtbLoaderConfig.getTbLoaderId())         // like "000C"
+                .open(mTbLoaderConfig.getTbLoaderId())         // like "000C"
                 .open(mOldDeploymentInfo.getCommunity());      // like "VING VING"
 
         TbFile.CopyFilter copyRecordingsFilter = new TbFile.CopyFilter() {
@@ -1187,11 +1267,13 @@ public class TBLoaderCore {
             @Override
             public boolean accept(TbFile parent, String name) {
                 name = name.toLowerCase();
-                return name.endsWith(".srn") ||
+                return name.endsWith(".dep") ||
+                        name.endsWith(".grp") ||
                         name.endsWith(".loc") ||
+                        name.endsWith(".pkg") ||
                         name.endsWith(".prj") ||
-                        name.endsWith(".dep") ||
-                        name.endsWith(".pkg");
+                        name.endsWith(".srn") ||
+                        name.endsWith(".txt");
             }
         });
         if (names != null) {
@@ -1252,9 +1334,6 @@ public class TBLoaderCore {
         String dateInMonth = String.valueOf(cal.get(Calendar.DAY_OF_MONTH));
         String year = String.valueOf(cal.get(Calendar.YEAR));
 
-        // The Talking Book is hard coded to expect the MS-DOS line ending.
-        String MSDOS_LINE_ENDING = new String(new byte[] { 0x0d, 0x0a });
-
         String projectName = mNewDeploymentInfo.getProjectName().toUpperCase();
         String communityName = mNewDeploymentInfo.getCommunity().toUpperCase();
         String srn = mNewDeploymentInfo.getSerialNumber().toUpperCase();
@@ -1285,7 +1364,29 @@ public class TBLoaderCore {
         eraseAndOverwriteFile(system.open(projectName + ".prj"), projectName);
         eraseAndOverwriteFile(system.open("notest.pcb"), ".");
 
+        // 'properties' format file, with useful information for statistics gathering (next time around).
+        DeploymentProperties props = new DeploymentProperties();
+        props.append(TBLoaderConstants.PROJECT_PROPERTY, mNewDeploymentInfo.getProjectName())
+            .append(TBLoaderConstants.DEPLOYMENT_PROPERTY, mNewDeploymentInfo.getDeploymentName())
+            .append(TBLoaderConstants.PACKAGE_PROPERTY, mNewDeploymentInfo.getPackageName())
+            .append(TBLoaderConstants.COMMUNITY_PROPERTY, mNewDeploymentInfo.getCommunity())
+            .append(
+                TBLoaderConstants.TALKING_BOOK_ID_PROPERTY, mNewDeploymentInfo.getSerialNumber())
+            .append(TBLoaderConstants.TIMESTAMP_PROPERTY, mUpdateTimestampISO)
+            .append(
+                TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY, mNewDeploymentInfo.isTestDeployment());
+        eraseAndOverwriteFile(system.open(TBLoaderConstants.DEPLOYMENT_PROPERTIES_NAME), props.toString());
+
         finishStep();
+    }
+
+    private static class DeploymentProperties {
+        private StringBuilder props = new StringBuilder();
+        public String toString() { return props.toString(); }
+        public DeploymentProperties append(String name, Object value) {
+            props.append(name).append('=').append(value.toString()).append(MSDOS_LINE_ENDING);
+            return this;
+        }
     }
 
     /**
@@ -1394,7 +1495,7 @@ public class TBLoaderCore {
      */
     private void disconnectDevice() throws IOException {
         if (OSChecker.WINDOWS) {
-            String fn = mTtbLoaderConfig.getWindowsUtilsDirectory().getAbsolutePath();
+            String fn = mTbLoaderConfig.getWindowsUtilsDirectory().getAbsolutePath();
             CommandLineUtils.setUtilsDirectory(new File(fn));
             mProgressListenerListener.log("Disconnecting TB");
             CommandLineUtils.disconnectDrive(mTbDeviceInfo.getRootFile().getAbsolutePath());

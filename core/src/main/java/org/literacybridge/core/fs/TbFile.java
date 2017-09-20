@@ -34,7 +34,7 @@ public abstract class TbFile {
     private static final ThreadLocal<byte[]> copyBuffers = new ThreadLocal<byte[]>() {
         @Override
         protected byte[] initialValue() {
-            LOG.log(Level.INFO, "Allocating a copy buffer");
+            LOG.log(Level.INFO, "TBL!: Allocating a copy buffer");
             return new byte[COPY_BUFFER_SIZE];
         }
     };

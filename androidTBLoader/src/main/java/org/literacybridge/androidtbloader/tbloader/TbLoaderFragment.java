@@ -86,6 +86,7 @@ public class TbLoaderFragment extends Fragment {
     private TextView mCommunityNameTextView;
 
     private CheckBox mRefreshFirmwareCheckBox;
+    private CheckBox mTestDeploymentCheckBox;
 
     private TextView mUpdateStepTextView;
     private TextView mUpdateDetailTextView;
@@ -96,6 +97,7 @@ public class TbLoaderFragment extends Fragment {
 
     private boolean mUpdateInProgress = false;
     private TextView mProjectNameTextView;
+    private String mUserName;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -104,6 +106,7 @@ public class TbLoaderFragment extends Fragment {
         mProject = intent.getStringExtra("project");
         mStatsOnly = intent.getBooleanExtra("statsonly", false);
         mLocation = intent.getStringExtra("location");
+        mUserName = intent.getStringExtra("username");
         if (!mStatsOnly) {
             mCommunities = CommunityInfo.parseExtra(intent.getStringArrayListExtra("communities"));
             // If only one community, don't prompt the user to select it.
@@ -210,8 +213,10 @@ public class TbLoaderFragment extends Fragment {
         }
 
         mRefreshFirmwareCheckBox = (CheckBox)view.findViewById(R.id.refresh_firmware);
+        mTestDeploymentCheckBox = (CheckBox)view.findViewById(R.id.test_deployment);
         if (mStatsOnly) {
             mRefreshFirmwareCheckBox.setVisibility(View.GONE);
+            mTestDeploymentCheckBox.setVisibility(View.GONE);
             ((TextView)view.findViewById(R.id.update_step_label)).setText(getString(
                 R.string.statistics_step_label));
         }
@@ -477,8 +482,16 @@ public class TbLoaderFragment extends Fragment {
             mConnectedDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
                     mConnectedDevice.getDeviceLabel(),
                     mSrnPrefix);
+            Log.d(TAG, String.format("Now connected to %s", mConnectedDeviceInfo.getDescription()));
+        } else {
+            Log.d(TAG, "Now disconnected from device");
         }
         mTalkingBookIdTextView.setText(srn);
+
+        // If the old deployment was for testing, the new one probably is as well.
+        if (mConnectedDeviceInfo != null && mConnectedDeviceInfo.isTestDeployment()) {
+            mTestDeploymentCheckBox.setChecked(true);
+        }
 
         if (mStatsOnly) {
             String deviceCommunity = mConnectedDeviceInfo.getCommunityName();
@@ -635,6 +648,7 @@ public class TbLoaderFragment extends Fragment {
             .withTbLoaderId(config.getTbcdid())
             .withCollectedDataDirectory(collectedDataTbFile)
             .withTempDirectory(tempTbFile)
+            .withUserName(mUserName)
             .build();
 
         DeploymentInfo oldDeploymentInfo = tbDeviceInfo.createDeploymentInfo(mProject);
@@ -725,7 +739,8 @@ public class TbLoaderFragment extends Fragment {
                 .withUpdateDirectory(collectedDataDirectory.getName())
                 .withUpdateTimestamp(todaysDate) // TODO: this should be the "Deployment date", the first date the new content is deployed.
                 .withFirmwareRevision(firmwareRevision)
-                .withCommunity(mCommunity.getName());
+                .withCommunity(mCommunity.getName())
+                .asTestDeployment(mTestDeploymentCheckBox.isChecked());
         DeploymentInfo newDeploymentInfo = builder.build();
 
         opLog.put("project", mProject)

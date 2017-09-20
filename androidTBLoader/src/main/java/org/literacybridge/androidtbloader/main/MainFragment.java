@@ -106,6 +106,7 @@ public class MainFragment extends Fragment {
     private ViewGroup mGetStatsGroup;
 
     private boolean mHaveConfig = false;
+    private String mUserName;
     private String mUserid;
     private String mProject;
 
@@ -131,6 +132,7 @@ public class MainFragment extends Fragment {
         mApplicationContext = (TBLoaderAppContext)getActivity().getApplicationContext();
         mContentManager = mApplicationContext.getContentManager();
         mUserid = UserHelper.getUserId();
+        mUserName = UserHelper.getUsername();
 
         OperationLog.Operation opLog = OperationLog.log("MainFragment.onCreate")
             .put("externalStorageAvailable",
@@ -534,7 +536,7 @@ public class MainFragment extends Fragment {
 
     private void doUpdate(boolean statsOnly) {
         Intent userActivity = new Intent(getActivity(), TbLoaderActivity.class);
-        userActivity.putExtra("name", mUserid);
+        userActivity.putExtra("username", mUserName);
         userActivity.putExtra("project", mProject);
         userActivity.putExtra("statsonly", statsOnly);
         if (statsOnly) {
@@ -773,7 +775,8 @@ public class MainFragment extends Fragment {
 
     private void closeWaitDialog() {
         try {
-            waitDialog.dismiss();
+            if (waitDialog != null)
+                waitDialog.dismiss();
         }
         catch (Exception e) {
             //
