@@ -361,13 +361,16 @@ taxonomy:
         '10-3':
           name: Early Marriage
           order: 6
-        '12-13' :
+        '12-13':
           nonassignable: true
           name: Early Marriage (old cat)
           order: 5
-        '10-4' :
+        '10-4':
           name: Corporal Punishment
           order: 30
+        '10-5':
+          name: Child Protection
+          order: 40
     '11':
       name: Environment
       order: 88
@@ -1262,3 +1265,6 @@ taxonomy:
          '100-7':
            name: Social Protection
            order: 7
+         '100-8':
+           name: WASH
+           order: 8
