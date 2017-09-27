@@ -41,7 +41,7 @@ class LocationsCsvFile {
             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
             String csvLine;
             while ((csvLine = reader.readLine()) != null) {
-                String[] row = csvLine.split(",");
+                String[] row = csvLine.split(",", 5);
                 // Allow comments as another field.
                 if (row.length < 4) {
                     Log.d(TAG, String.format("Invalid location line: %s", csvLine));
@@ -49,6 +49,11 @@ class LocationsCsvFile {
                 }
                 String community = row[0].toUpperCase();
                 String project = row[1].toUpperCase();
+                // If a coordinate is missing, fill it in with values that have a low chance of
+                // a collision. 90 north is, of course, the north pole, and 180 east is the
+                // anti-meridian. Only Fiji is located on the anti-meridian.
+                if (row[2].length() == 0) row[2] = "90";
+                if (row[3].length() == 0) row[3] = "180";
                 double latitude = Double.parseDouble(row[2]);
                 double longitude = Double.parseDouble(row[3]);
                 resultList.put(community, new CommunityInfo(community, project, latitude, longitude));

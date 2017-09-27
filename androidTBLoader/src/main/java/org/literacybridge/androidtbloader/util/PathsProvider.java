@@ -55,14 +55,14 @@ public class PathsProvider {
      * @param project The desired project.
      * @return The Deployment directory for the project.
      */
-    public static File getLocalContentUpdateDirectory(String project) {
+    public static File getLocalDeploymentDirectory(String project) {
         File projectDir = getLocalContentProjectDirectory(project);
         File contentDir = new File(projectDir, "content");
-        File [] contentUpdates = null;
+        File [] deployments = null;
         if (contentDir.exists() && contentDir.isDirectory()) {
-            contentUpdates = contentDir.listFiles();
-            if (contentUpdates != null && contentUpdates.length == 1) {
-                return contentUpdates[0];
+            deployments = contentDir.listFiles();
+            if (deployments != null && deployments.length == 1) {
+                return deployments[0];
             }
         }
         return null;

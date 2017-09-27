@@ -185,10 +185,10 @@ public class TbLoaderFragment extends Fragment {
         if (mStatsOnly) {
             view.findViewById(R.id.loader_deployment).setVisibility(View.GONE);
         } else {
-            TextView mContentUpdateNameTextView = (TextView) view.findViewById(
+            TextView mDeploymentNameTextView = (TextView) view.findViewById(
                 R.id.content_update_name);
-            File contentUpdateDirectory = PathsProvider.getLocalContentUpdateDirectory(mProject);
-            mContentUpdateNameTextView.setText(contentUpdateDirectory.getName());
+            File deploymentDirectory = PathsProvider.getLocalDeploymentDirectory(mProject);
+            mDeploymentNameTextView.setText(deploymentDirectory.getName());
         }
 
         // Talking Book ID, aka serial number, and initial value.
@@ -674,15 +674,15 @@ public class TbLoaderFragment extends Fragment {
             result = builder.build().collectStatistics();
         } else {
             // The directory with images. {project}/content/{Deployment}
-            File contentUpdateDirectory = PathsProvider.getLocalContentUpdateDirectory(mProject);
+            File deploymentDirectory = PathsProvider.getLocalDeploymentDirectory(mProject);
             DeploymentInfo newDeploymentInfo = getUpdateDeploymentInfo(opLog, tbDeviceInfo,
                                                         collectionTimestamp, todaysDate,
                                                         collectedDataDirectory,
-                                                        contentUpdateDirectory
+                                                        deploymentDirectory
                                                         );
             // Add in the update specific data, then go!
             result = builder
-                .withDeploymentDirectory(new FsFile(contentUpdateDirectory))
+                .withDeploymentDirectory(new FsFile(deploymentDirectory))
                 .withNewDeploymentInfo(newDeploymentInfo)
                 .build().update();
         }
@@ -718,13 +718,13 @@ public class TbLoaderFragment extends Fragment {
                                                    TBDeviceInfo tbDeviceInfo,
                                                    String collectionTimestamp, String todaysDate,
                                                    File collectedDataDirectory,
-                                                   File contentUpdateDirectory) {
+                                                   File deploymentDirectory) {
         Config config = TBLoaderAppContext.getInstance().getConfig();
         // Find the image with the community's language and/or group (such as a/b test group).
-        String imageName = TBLoaderUtils.getImageForCommunity(contentUpdateDirectory, mCommunity.getName());
+        String imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, mCommunity.getName());
 
         // What firmware comes with this Deployment?
-        String firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(contentUpdateDirectory);
+        String firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(deploymentDirectory);
 
         String deviceSerialNumber = tbDeviceInfo.getSerialNumber();
         if (tbDeviceInfo.needNewSerialNumber()) {
@@ -734,7 +734,7 @@ public class TbLoaderFragment extends Fragment {
         DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
                 .withSerialNumber(deviceSerialNumber)
                 .withProjectName(mProject)
-                .withDeploymentName(contentUpdateDirectory.getName())
+                .withDeploymentName(deploymentDirectory.getName())
                 .withPackageName(imageName)
                 .withUpdateDirectory(collectedDataDirectory.getName())
                 .withUpdateTimestamp(todaysDate) // TODO: this should be the "Deployment date", the first date the new content is deployed.
@@ -744,7 +744,7 @@ public class TbLoaderFragment extends Fragment {
         DeploymentInfo newDeploymentInfo = builder.build();
 
         opLog.put("project", mProject)
-            .put("deployment", contentUpdateDirectory.getName())
+            .put("deployment", deploymentDirectory.getName())
             .put("package", imageName)
             .put("community", mCommunity.getName())
             .put("sn", deviceSerialNumber)

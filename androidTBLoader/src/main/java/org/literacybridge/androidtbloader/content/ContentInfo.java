@@ -236,7 +236,9 @@ public class ContentInfo {
     };
 
     /**
-     * Gets a list of the communities in the Deployment.
+     * Gets a list of the communities in the Deployment. Look for directories, each of which is
+     * a community, like this:
+     * {project}/content/{Deployment}/communities/{COMMUNITY...}
      * @return A Set of CommunityInfo.
      */
     public Map<String, CommunityInfo> getCommunities() {
@@ -245,9 +247,9 @@ public class ContentInfo {
             Map<String, CommunityInfo> result = new HashMap<>();
             File projectDir = PathsProvider.getLocalContentProjectDirectory(mProjectName);
             File contentDir = new File(projectDir, "content");
-            File[] contentUpdates = contentDir.listFiles();
-            if (contentUpdates != null && contentUpdates.length == 1) {
-                File communitiesDir = new File(contentUpdates[0], "communities");
+            File[] deploymentsDirs = contentDir.listFiles();
+            if (deploymentsDirs != null && deploymentsDirs.length == 1) {
+                File communitiesDir = new File(deploymentsDirs[0], "communities");
                 File[] communities = communitiesDir.listFiles();
                 if (communities != null) {
                     for (File community : communities) {
