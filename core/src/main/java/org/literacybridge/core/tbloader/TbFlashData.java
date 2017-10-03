@@ -18,7 +18,7 @@ public class TbFlashData {
   private String serialNumber;
   private String deploymentNumber;
   private short countReflashes;
-  private String location;
+  private String community;
   private String imageName;
   private short updateDate = -1;
   private short updateMonth = -1;
@@ -50,8 +50,8 @@ public class TbFlashData {
     return countReflashes;
   }
 
-  public String getLocation() {
-    return location;
+  public String getCommunity() {
+    return community;
   }
 
   public String getDeploymentNumber() {
@@ -234,7 +234,7 @@ public class TbFlashData {
     this.countReflashes = readShort();
     this.serialNumber = readString(12);
     this.deploymentNumber = readString(20);
-    this.location = readString(40);
+    this.community = readString(40);
     this.imageName = readString(20);
     this.updateDate = readShort();
     this.updateMonth = readShort();
@@ -345,7 +345,7 @@ public class TbFlashData {
     s.append("Deployment    : " + this.deploymentNumber + NEW_LINE);
     s.append("Image         : " + this.imageName + NEW_LINE);
     s.append("Profile       : " + this.profileName + NEW_LINE);
-    s.append("Location      : " + this.location + NEW_LINE);
+    s.append("Community     : " + this.community + NEW_LINE);
     s.append("Last Updated  : " + this.updateYear + "/" + this.updateMonth + "/"
         + this.updateDate + NEW_LINE);
     s.append("Powered Days  : " + this.cumulativeDays + NEW_LINE);

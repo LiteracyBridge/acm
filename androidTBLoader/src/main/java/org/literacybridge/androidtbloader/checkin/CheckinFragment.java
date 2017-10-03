@@ -207,8 +207,8 @@ public class CheckinFragment extends Fragment {
                 Log.d(TAG,
                         String.format("Community '%s' reported at %5.2f %5.2f; now have %d here",
                                 community,
-                                mGpsLocation.getLongitude(),
                                 mGpsLocation.getLatitude(),
+                                mGpsLocation.getLongitude(),
                                 mNearbyCommunitiesList.size()+1));
                 KnownLocations.setLocationInfoFor(mGpsLocation, community);
                 addNewToList(community, mNearbyCommunitiesList, mNearbyCommunitiesAdapter);
@@ -413,8 +413,8 @@ public class CheckinFragment extends Fragment {
         public void onLocationChanged(final Location location) {
             Log.d(TAG, String.format("Location changed: %s", location.toString()));
             @SuppressLint("DefaultLocale")
-            String locstr = String.format("%4.4f⦿%4.4f, %5.2f, %4.0f☼",
-                    location.getLongitude(), location.getLatitude(),
+            String locstr = String.format("%4.4f %4.4f, %5.2f, %4.0f☼",
+                    location.getLatitude(), location.getLongitude(),
                     location.getAltitude(), location.getBearing());
             mGpsLocation = location;
             if (mGpsCoordinatesTextView != null) {

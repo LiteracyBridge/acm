@@ -27,18 +27,14 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import org.literacybridge.androidtbloader.BuildConfig;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.checkin.LocationProvider;
 import org.literacybridge.androidtbloader.content.ContentManager;
-import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.androidtbloader.util.Util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -142,7 +138,7 @@ public class ChooseCommunityFragment extends Fragment {
                 excluded = Collections.singletonList("-none-");
             }
             String exclList = Util.join(excluded.subList(0, min(excluded.size(), 3)), ", ");
-            Log.d(TAG, String.format("Get community for %s, list: %s, excl: ", mProject, orgList, exclList));
+            Log.d(TAG, String.format("Get community for %s, list: %s, excl: %s", mProject, orgList, exclList));
         }
 
         // Caller can exclude some communities from the display, if desired.
@@ -236,7 +232,7 @@ public class ChooseCommunityFragment extends Fragment {
     /**
      * This is to hide the keyboard when the user scrolls the list. Shows more list.
      */
-    OnTouchListener listViewTouchListener = new OnTouchListener() {
+    private OnTouchListener listViewTouchListener = new OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -271,7 +267,7 @@ public class ChooseCommunityFragment extends Fragment {
     /**
      * Watches for changes to the filter TextEdit, and updates the filtering appropriately.
      */
-    TextWatcher filterTextListener = new TextWatcher() {
+    private TextWatcher filterTextListener = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
         @Override
@@ -299,19 +295,13 @@ public class ChooseCommunityFragment extends Fragment {
 
     private void setProject(String project) {
         Map<String, Map<String, CommunityInfo>> projects = mContentManager.getCommunitiesForProjects(
-                Arrays.asList(project));
+            Collections.singletonList(project));
         if (projects.containsKey(project)) {
             mProject = project;
             mOriginalList = new ArrayList<>(projects.get(mProject).values());
             sortList();
             filterList();
         }
-    }
-
-    private void setNewList(List<CommunityInfo> newList) {
-        mOriginalList = newList;
-        sortList();
-        filterList();
     }
 
     /**

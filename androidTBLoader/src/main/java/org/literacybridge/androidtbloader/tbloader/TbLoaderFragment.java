@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.Location;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -23,6 +24,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
+import org.literacybridge.androidtbloader.checkin.LocationProvider;
 import org.literacybridge.androidtbloader.community.ChooseCommunityActivity;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.content.ContentInfo;
@@ -77,6 +79,7 @@ public class TbLoaderFragment extends Fragment {
     private List<CommunityInfo> mCommunities;
     private CommunityInfo mCommunity;
     private String mLocation;
+    private String mCoordinates;
     private ContentInfo mContentInfo;
     private String mSrnPrefix = "b-";
 
@@ -106,6 +109,10 @@ public class TbLoaderFragment extends Fragment {
         mProject = intent.getStringExtra("project");
         mStatsOnly = intent.getBooleanExtra("statsonly", false);
         mLocation = intent.getStringExtra("location");
+        Location currentCoordinates = LocationProvider.getLatestLocation();
+        if (currentCoordinates != null) {
+            mCoordinates = String.format("%+03.5f %+03.5f", currentCoordinates.getLatitude(), currentCoordinates.getLongitude());
+        }
         mUserName = intent.getStringExtra("username");
         if (!mStatsOnly) {
             mCommunities = CommunityInfo.parseExtra(intent.getStringArrayListExtra("communities"));
@@ -665,6 +672,7 @@ public class TbLoaderFragment extends Fragment {
             .withTbDeviceInfo(tbDeviceInfo)
             .withOldDeploymentInfo(oldDeploymentInfo)
             .withLocation(mLocation)
+            .withCoordinates(mCoordinates) // May be null; ok because it's optional anyway.
             .withRefreshFirmware(mRefreshFirmwareCheckBox.isChecked())
             .withProgressListener(mProgressListener)
             .withStatsOnly(mStatsOnly);
@@ -733,6 +741,7 @@ public class TbLoaderFragment extends Fragment {
 
         DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
                 .withSerialNumber(deviceSerialNumber)
+                .withNewSerialNumber(tbDeviceInfo.needNewSerialNumber())
                 .withProjectName(mProject)
                 .withDeploymentName(deploymentDirectory.getName())
                 .withPackageName(imageName)

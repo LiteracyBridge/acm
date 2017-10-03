@@ -460,10 +460,10 @@ public final class TBDeviceInfo {
 
             // If we didn't have it in properties, look for the flash data or marker file(s).
             if (communityName.equalsIgnoreCase(UNKNOWN)) {
-                if (getFlashData() != null && getFlashData().getLocation() != null
-                    && !getFlashData().getLocation().equals(
+                if (getFlashData() != null && getFlashData().getCommunity() != null
+                    && !getFlashData().getCommunity().equals(
                     "")) {
-                    communityName = getFlashData().getLocation();
+                    communityName = getFlashData().getCommunity();
                     src = "flash";
                 } else {
                     try {

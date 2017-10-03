@@ -171,34 +171,41 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
 public class TBLoaderCore {
     private static final Logger LOG = Logger.getLogger(TBLoaderCore.class.getName());
 
+    public static enum Action {
+        DEPLOY,
+        STATSONLY,
+        FINALIZE
+    }
+
     // The Talking Book is hard coded to expect the MS-DOS line ending.
-    public static final String MSDOS_LINE_ENDING = new String(new byte[] { 0x0d, 0x0a });
+    static final String MSDOS_LINE_ENDING = new String(new byte[] { 0x0d, 0x0a });
 
     public static class Builder {
-        private TBLoaderConfig tbLoaderConfig;
-        private TBDeviceInfo tbDeviceInfo;
-        private DeploymentInfo oldDeploymentInfo;
-        private DeploymentInfo newDeploymentInfo;
-        private TbFile deploymentDirectory;
-        private String location;
-        private ProgressListener progressListenerListener;
-        private boolean statsOnly = false;
-        private boolean refreshFirmware = false;
+        private TBLoaderConfig mTbLoaderConfig;
+        private TBDeviceInfo mTbDeviceInfo;
+        private DeploymentInfo mOldDeploymentInfo;
+        private DeploymentInfo mNewDeploymentInfo;
+        private TbFile mDeploymentDirectory;
+        private String mLocation;
+        private String mCoordinates;
+        private ProgressListener mProgressListener;
+        private boolean mStatsOnly = false;
+        private boolean mRefreshFirmware = false;
 
         public Builder() {}
 
         public TBLoaderCore build() {
             List<String> missing = new ArrayList<>();
 
-            if (tbLoaderConfig == null) missing.add("tbLoaderConfig");
-            if (tbDeviceInfo == null) missing.add("tbDeviceInfo");
-            if (oldDeploymentInfo == null) missing.add("oldDeploymentInfo");
-            if (location == null) missing.add("location");
-            if (progressListenerListener == null) missing.add("progressListenerListener");
-            if (!statsOnly) {
+            if (mTbLoaderConfig == null) missing.add("tbLoaderConfig");
+            if (mTbDeviceInfo == null) missing.add("tbDeviceInfo");
+            if (mOldDeploymentInfo == null) missing.add("oldDeploymentInfo");
+            if (mLocation == null) missing.add("location");
+            if (mProgressListener == null) missing.add("progressListener");
+            if (!mStatsOnly) {
                 // Just getting stats doesn't use any new deployment.
-                if (newDeploymentInfo == null) missing.add("newDeploymentInfo");
-                if (deploymentDirectory == null) missing.add("deploymentDirectory");
+                if (mNewDeploymentInfo == null) missing.add("newDeploymentInfo");
+                if (mDeploymentDirectory == null) missing.add("deploymentDirectory");
             }
             if (!missing.isEmpty()) {
                 throw new IllegalStateException("TBLoaderCore.Builder not initialized with " + missing.toString());
@@ -207,37 +214,48 @@ public class TBLoaderCore {
         }
 
         public Builder withTbLoaderConfig(TBLoaderConfig tbLoaderConfig) {
-            this.tbLoaderConfig = tbLoaderConfig;
+            this.mTbLoaderConfig = tbLoaderConfig;
             return this;
         }
 
         public Builder withTbDeviceInfo(TBDeviceInfo tbDeviceInfo) {
-            this.tbDeviceInfo = tbDeviceInfo;
+            this.mTbDeviceInfo = tbDeviceInfo;
             return this;
         }
 
         public Builder withNewDeploymentInfo(DeploymentInfo newDeploymentInfo) {
-            this.newDeploymentInfo = newDeploymentInfo;
+            this.mNewDeploymentInfo = newDeploymentInfo;
             return this;
         }
 
         public Builder withOldDeploymentInfo(DeploymentInfo oldDeploymentInfo) {
-            this.oldDeploymentInfo = oldDeploymentInfo;
+            this.mOldDeploymentInfo = oldDeploymentInfo;
             return this;
         }
 
         public Builder withDeploymentDirectory(TbFile deploymentDirectory) {
-            this.deploymentDirectory = deploymentDirectory;
+            this.mDeploymentDirectory = deploymentDirectory;
             return this;
         }
 
+        /**
+         * Note that this is like "Community", "WA Office", or "Other". NOT lat/long,
+         * which is "coordinates".
+         * @param location where the update is being performed.
+         * @return this object, for chaining.
+         */
         public Builder withLocation(String location) {
-            this.location = location;
+            this.mLocation = location;
             return this;
         }
 
-        public Builder withProgressListener(ProgressListener progressListenerListener) {
-            this.progressListenerListener = progressListenerListener;
+        public Builder withCoordinates(String coordinates) {
+            this.mCoordinates = coordinates;
+            return this;
+        }
+
+        public Builder withProgressListener(ProgressListener progressListener) {
+            this.mProgressListener = progressListener;
             return this;
         }
 
@@ -245,29 +263,32 @@ public class TBLoaderCore {
             return withStatsOnly(true);
         }
         public Builder withStatsOnly(boolean statsOnly) {
-            this.statsOnly = statsOnly;
+            this.mStatsOnly = statsOnly;
             return this;
         }
 
         public Builder withRefreshFirmware(boolean refreshFirmware) {
-            this.refreshFirmware = refreshFirmware;
+            this.mRefreshFirmware = refreshFirmware;
             return this;
         }
 
     }
 
-    private final Builder mConfig;
+    //private final Builder mConfig;
 
     private final TBLoaderConfig mTbLoaderConfig;
     private final TBDeviceInfo mTbDeviceInfo;
 
     private DeploymentInfo mOldDeploymentInfo;
     private DeploymentInfo mNewDeploymentInfo;
+    // A description of the location, like "Community", "WA Office", "Other".
     private String mLocation;
+    // latitude longitude
+    private String mCoordinates;
     private boolean mStatsOnly;
     private boolean mForceFirmware;
     private TbFile mDeploymentDirectory;
-    private ProgressListener mProgressListenerListener;
+    private ProgressListener mProgressListener;
 
     // For tracking the progress of individual update steps.
     private ProgressListener.Steps mCurrentStep;
@@ -293,38 +314,28 @@ public class TBLoaderCore {
     private long mUpdateStartTime;
 
     private TBLoaderCore(Builder builder) {
-//        TBLoaderConfig tbLoaderConfig,
-//        TBDeviceInfo tbDeviceInfo,
-//        DeploymentInfo oldDeploymentInfo,
-//        DeploymentInfo newDeploymentInfo,
-//        String location,
-//        boolean grabStatsOnly,
-//        boolean forceFirmware,
-//        TbFile deploymentDirectory,
-//        ProgressListener progressListenerListener
-        this.mConfig = builder;
-
-        this.mTbDeviceInfo = builder.tbDeviceInfo;
-        this.mTbLoaderConfig = builder.tbLoaderConfig;
-        this.mTtbFlashData = builder.tbDeviceInfo.getFlashData();
+        this.mTbDeviceInfo = builder.mTbDeviceInfo;
+        this.mTbLoaderConfig = builder.mTbLoaderConfig;
+        this.mTtbFlashData = builder.mTbDeviceInfo.getFlashData();
 
         // Like "tbcd1234/collected-data"
-        mCollectedDataDirectory = builder.tbLoaderConfig.getCollectedDataDirectory();
+        mCollectedDataDirectory = builder.mTbLoaderConfig.getCollectedDataDirectory();
 
         // Roughly when an update starts.
         Date now = new Date();
-        mUpdateTimestampISO = ISO8601.format(now);
-        mUpdateTimestamp = TBLoaderUtils.getDateTime(now);
+        mUpdateTimestampISO = ISO8601.format(now);          // 20170928T223152.123Z
+        mUpdateTimestamp = TBLoaderUtils.getDateTime(now);  // 2017Y09M28D22H31M52S
         // Like 2016y12m25d01h23m45s-000c. Also known as the "synch" directory.
-        mCollectionTempName = mUpdateTimestamp + "-" + builder.tbLoaderConfig.getTbLoaderId();
+        mCollectionTempName = mUpdateTimestamp + "-" + builder.mTbLoaderConfig.getTbLoaderId();
 
-        mOldDeploymentInfo = builder.oldDeploymentInfo;
-        mNewDeploymentInfo = builder.newDeploymentInfo;
-        mLocation = builder.location;
-        mStatsOnly = builder.statsOnly;
-        mForceFirmware = builder.refreshFirmware;
-        mDeploymentDirectory = builder.deploymentDirectory;
-        mProgressListenerListener = builder.progressListenerListener;
+        mOldDeploymentInfo = builder.mOldDeploymentInfo;
+        mNewDeploymentInfo = builder.mNewDeploymentInfo;
+        mLocation = builder.mLocation;
+        mCoordinates = builder.mCoordinates;
+        mStatsOnly = builder.mStatsOnly;
+        mForceFirmware = builder.mRefreshFirmware;
+        mDeploymentDirectory = builder.mDeploymentDirectory;
+        mProgressListener = builder.mProgressListener;
 
         // This is the path name for the "TalkingBookData" from this TB. In particular, this is the path
         // name for the directory that will contain the collected data, and then the .zip file of that data.
@@ -332,9 +343,9 @@ public class TBLoaderCore {
         RelativePath talkingBookDataParentPath = new RelativePath(
                 TBLoaderConstants.TB_DATA_PATH,           // "TalkingBookData"
                 mOldDeploymentInfo.getDeploymentName(),   // like "DEMO-2016-1"
-                builder.tbLoaderConfig.getTbLoaderId(),   // like "000c"
+                builder.mTbLoaderConfig.getTbLoaderId(),   // like "000c"
                 mOldDeploymentInfo.getCommunity(),        // like "demo-seattle"
-                builder.tbDeviceInfo.getSerialNumber());  // like "B-000C1234"
+                builder.mTbDeviceInfo.getSerialNumber());  // like "B-000C1234"
         // like TalkingBookData/{content update name}/{tbloader id}/{community name}/{tb serial no}/{timestamp}-{tbloader id}
         // like "2016y12m25d01h23m45s-000c"
         mTalkingBookDataDirectoryPath = new RelativePath(
@@ -365,17 +376,12 @@ public class TBLoaderCore {
     /**
      * Writes the log files that the statistics processing will use to analyze deployments and usage.
      * @param action The TB-Loader action, "update", "update-fw", "stats-only", etc.
-     * @param oldDeployment The Deployment, if any, found on the Talking Book.
-     * @param newDeployment The Deployment being put onto the Talking Book (if not stats-only).
-     * @param location Where the stats gathering and Deployment took place.
      * @param durationSeconds How long it took to collect any stats and perform any Deployment.
      * @throws IOException if there is an error writing any of the log files.
      */
-    private void logTBData(String action,
-            DeploymentInfo oldDeployment,
-            DeploymentInfo newDeployment,
-            String location,
-            int durationSeconds) throws IOException {
+    private void logTBData(
+        String action,
+        int durationSeconds) throws IOException {
 
         OperationLog.Operation opLog = OperationLog.startOperation("LogTbData");
         OperationLog.Operation statsLog = OperationLog.startOperation("statsdata");
@@ -395,7 +401,7 @@ public class TBLoaderCore {
                                         mTbLoaderConfig.getTbLoaderId());
 
         TbFile logDir = mCollectedDataDirectory             // like /Users/alice/Dropbox/tbcd000c
-                .open(oldDeployment.getProjectName())       // {tbloaderConfig.project}
+                .open(mOldDeploymentInfo.getProjectName())       // {tbloaderConfig.project}
                 .open("OperationalData")                    // "OperationalData"
                 .open(mTbLoaderConfig.getTbLoaderId())      // {tbloaderConfig.tbLoaderId}
                 .open("tbData");                            // "tbData"
@@ -421,26 +427,26 @@ public class TBLoaderCore {
                 }
                 bw.write("\n");
             }
-            bw.write(oldDeployment.getProjectName().toUpperCase() + ",");
+            bw.write(mOldDeploymentInfo.getProjectName().toUpperCase() + ",");
             bw.write(mUpdateTimestamp.toUpperCase() + ",");
             bw.write(mUpdateTimestamp.toUpperCase() + "-" + mTbLoaderConfig.getTbLoaderId()
                     .toUpperCase() + ",");
-            bw.write(location.toUpperCase() + ",");
+            bw.write(mLocation.toUpperCase() + ",");
             bw.write(action + ",");
             bw.write(Integer.toString(durationSeconds) + ",");
             bw.write(mTbDeviceInfo.getSerialNumber().toUpperCase() + ",");
-            bw.write(mStatsOnly?"":newDeployment.getDeploymentName().toUpperCase() + ",");
-            bw.write(mStatsOnly?"":newDeployment.getPackageName().toUpperCase() + ",");
-            bw.write(mStatsOnly?"":newDeployment.getFirmwareRevision() + ",");
-            bw.write(mStatsOnly?"":newDeployment.getCommunity().toUpperCase() + ",");
-            bw.write(mStatsOnly?"":newDeployment.getUpdateTimestamp() + ",");
-            bw.write(oldDeployment.getSerialNumber().toUpperCase() + ",");
-            bw.write(oldDeployment.getDeploymentName().toUpperCase() + ",");
-            bw.write(oldDeployment.getPackageName().toUpperCase() + ",");
-            bw.write(oldDeployment.getFirmwareRevision() + ",");
-            bw.write(oldDeployment.getCommunity().toUpperCase() + ",");
-            bw.write(oldDeployment.getUpdateTimestamp() + ",");
-            String lastSynchDir = oldDeployment.getUpdateDirectory();
+            bw.write(mStatsOnly?"":mNewDeploymentInfo.getDeploymentName().toUpperCase() + ",");
+            bw.write(mStatsOnly?"":mNewDeploymentInfo.getPackageName().toUpperCase() + ",");
+            bw.write(mStatsOnly?"":mNewDeploymentInfo.getFirmwareRevision() + ",");
+            bw.write(mStatsOnly?"":mNewDeploymentInfo.getCommunity().toUpperCase() + ",");
+            bw.write(mStatsOnly?"":mNewDeploymentInfo.getUpdateTimestamp() + ",");
+            bw.write(mOldDeploymentInfo.getSerialNumber().toUpperCase() + ",");
+            bw.write(mOldDeploymentInfo.getDeploymentName().toUpperCase() + ",");
+            bw.write(mOldDeploymentInfo.getPackageName().toUpperCase() + ",");
+            bw.write(mOldDeploymentInfo.getFirmwareRevision() + ",");
+            bw.write(mOldDeploymentInfo.getCommunity().toUpperCase() + ",");
+            bw.write(mOldDeploymentInfo.getUpdateTimestamp() + ",");
+            String lastSynchDir = mOldDeploymentInfo.getUpdateDirectory();
             bw.write((lastSynchDir != null ? lastSynchDir.toUpperCase() : "") + ",");
             bw.write(mTbDeviceInfo.getLabel() + ",");
             bw.write(mTbDeviceInfo.isCorrupted() + ",");
@@ -452,50 +458,60 @@ public class TBLoaderCore {
                 .put("action", action)
                 .put("tbcdid", mTbLoaderConfig.getTbLoaderId())
                 .put("username", mTbLoaderConfig.getUserName())
-                .put("project", oldDeployment.getProjectName().toUpperCase())
+                .put("project", mOldDeploymentInfo.getProjectName().toUpperCase())
                 .put("update_date_time", mUpdateTimestamp.toUpperCase())
-                .put("out_synchdir", mUpdateTimestamp.toUpperCase() + "-" + mTbLoaderConfig.getTbLoaderId()
+                .put("out_synch_dir", mUpdateTimestamp.toUpperCase() + "-" + mTbLoaderConfig.getTbLoaderId()
                         .toUpperCase())
-                .put("location", location.toUpperCase())
-                .put("duration", Integer.toString(durationSeconds));
+                .put("location", mLocation.toUpperCase());
+            if (mCoordinates != null && mCoordinates.length() > 0) {
+                operationInfo.put("coordinates", mCoordinates);
+            }
+            operationInfo
+                .put("duration_sec", Integer.toString(durationSeconds));
             opLog.put(operationInfo);
             statsLog.put(operationInfo);
 
             if (!mStatsOnly) {
                 opLog
                     .put("out_sn", mTbDeviceInfo.getSerialNumber().toUpperCase())
-                    .put("out_deployment", newDeployment.getDeploymentName().toUpperCase())
-                    .put("out_package", newDeployment.getPackageName().toUpperCase())
-                    .put("out_firmware", newDeployment.getFirmwareRevision())
-                    .put("out_community", newDeployment.getCommunity().toUpperCase())
-                    .put("out_rotation", newDeployment.getUpdateTimestamp())
-                    .put("out_project", newDeployment.getProjectName())
-                    .put("out_testing", newDeployment.isTestDeployment());
+                    .put("out_deployment", mNewDeploymentInfo.getDeploymentName().toUpperCase())
+                    .put("out_package", mNewDeploymentInfo.getPackageName().toUpperCase())
+                    .put("out_firmware", mNewDeploymentInfo.getFirmwareRevision())
+                    .put("out_community", mNewDeploymentInfo.getCommunity().toUpperCase())
+                    .put("out_rotation", mNewDeploymentInfo.getUpdateTimestamp())
+                    .put("out_project", mNewDeploymentInfo.getProjectName())
+                    .put("out_testing", mNewDeploymentInfo.isTestDeployment());
 
                 // Everything there is to know about a deployment to a Talking Book should be here.
                 deploymentLog
                     .put("action", action)
                     .put("tbcdid", mTbLoaderConfig.getTbLoaderId())
                     .put("username", mTbLoaderConfig.getUserName())
-                    .put("project", newDeployment.getProjectName().toUpperCase())
-                    .put("deployment", newDeployment.getDeploymentName().toUpperCase())
-                    .put("package", newDeployment.getPackageName().toUpperCase())
-                    .put("community", newDeployment.getCommunity().toUpperCase())
                     .put("sn", mTbDeviceInfo.getSerialNumber().toUpperCase())
-                    .put("firmware", newDeployment.getFirmwareRevision())
-                    .put("location", location.toUpperCase())
+                    .put("newsn", mNewDeploymentInfo.isNewSerialNumber())
+                    .put("project", mNewDeploymentInfo.getProjectName().toUpperCase())
+                    .put("deployment", mNewDeploymentInfo.getDeploymentName().toUpperCase())
+                    .put("package", mNewDeploymentInfo.getPackageName().toUpperCase())
+                    .put("community", mNewDeploymentInfo.getCommunity().toUpperCase())
+                    .put("firmware", mNewDeploymentInfo.getFirmwareRevision())
+                    .put("location", mLocation.toUpperCase())
                     .put("timestamp", mUpdateTimestampISO)
-                    .put("duration", Integer.toString(durationSeconds));
+                    .put("duration", Integer.toString(durationSeconds))
+                    .put("testing", mNewDeploymentInfo.isTestDeployment());
+                if (mCoordinates != null && mCoordinates.length() > 0) {
+                    deploymentLog.put("coordinates", mCoordinates);
+                }
+
             }
 
             statsInfo
-                .put("in_sn", oldDeployment.getSerialNumber().toUpperCase())
-                .put("in_deployment", oldDeployment.getDeploymentName().toUpperCase())
-                .put("in_package", oldDeployment.getPackageName().toUpperCase())
-                .put("in_firmware", oldDeployment.getFirmwareRevision())
-                .put("in_community", oldDeployment.getCommunity().toUpperCase())
-                .put("in_project", oldDeployment.getProjectName())
-                .put("in_update_timestamp", oldDeployment.getUpdateTimestamp())
+                .put("in_sn", mOldDeploymentInfo.getSerialNumber().toUpperCase())
+                .put("in_deployment", mOldDeploymentInfo.getDeploymentName().toUpperCase())
+                .put("in_package", mOldDeploymentInfo.getPackageName().toUpperCase())
+                .put("in_firmware", mOldDeploymentInfo.getFirmwareRevision())
+                .put("in_community", mOldDeploymentInfo.getCommunity().toUpperCase())
+                .put("in_project", mOldDeploymentInfo.getProjectName())
+                .put("in_update_timestamp", mOldDeploymentInfo.getUpdateTimestamp())
                 .put("in_synchdir", (lastSynchDir != null ? lastSynchDir.toUpperCase() : ""))
                 .put("in_disk_label", mTbDeviceInfo.getLabel())
                 .put("disk_corrupted", mTbDeviceInfo.isCorrupted());
@@ -505,7 +521,7 @@ public class TBLoaderCore {
                 bw.write(mTtbFlashData.getCountReflashes() + ",");
                 bw.write(mTtbFlashData.getDeploymentNumber().toUpperCase() + ",");
                 bw.write(mTtbFlashData.getImageName().toUpperCase() + ",");
-                bw.write(mTtbFlashData.getLocation().toUpperCase() + ",");
+                bw.write(mTtbFlashData.getCommunity().toUpperCase() + ",");
                 bw.write(mTtbFlashData.getUpdateYear() + "/" + mTtbFlashData.getUpdateMonth() + "/"
                         + mTtbFlashData.getUpdateDate() + ",");
                 bw.write(mTtbFlashData.getCumulativeDays() + ",");
@@ -550,7 +566,7 @@ public class TBLoaderCore {
                     .put("flash_reflashes", mTtbFlashData.getCountReflashes())
                     .put("flash_deployment", mTtbFlashData.getDeploymentNumber().toUpperCase())
                     .put("flash_package", mTtbFlashData.getImageName().toUpperCase())
-                    .put("flash_community", mTtbFlashData.getLocation().toUpperCase())
+                    .put("flash_community", mTtbFlashData.getCommunity().toUpperCase())
                     .put("flash_last_updated", mTtbFlashData.getUpdateYear() + "/" + mTtbFlashData.getUpdateMonth() + "/"
                         + mTtbFlashData.getUpdateDate())
                     .put("flash_cumulative_days", mTtbFlashData.getCumulativeDays())
@@ -581,7 +597,7 @@ public class TBLoaderCore {
                 }
 
             }
-            statsInfo.put("in_testing", oldDeployment.isTestDeployment());
+            statsInfo.put("in_testing", mOldDeploymentInfo.isTestDeployment());
 
             opLog.put(statsInfo);
             statsLog.put(statsInfo);
@@ -681,19 +697,19 @@ public class TBLoaderCore {
     /**
      * The setup and evaluation and statistics gathering are all in common between stats-only
      * and update.
-     * @return
+     * @return a Result object that describes the result.
      */
     private Result performOperation() {
         LOG.log(Level.INFO, "TBL!: performOperation");
 
         mStepsLog = OperationLog.startOperation(mStatsOnly ? "CorTalkingBookCollectStatistics" : "CoreTalkingBookUpdate");
-        mProgressListenerListener.step(starting);
+        mProgressListener.step(starting);
 
         mCopyListener = new TbFile.CopyProgress() {
             @Override
             public void copying(String filename) {
                 mStepFileCount++;
-                mProgressListenerListener.detail(filename);
+                mProgressListener.detail(filename);
             }
         };
 
@@ -706,7 +722,7 @@ public class TBLoaderCore {
         mTalkingBookDataRoot.mkdirs();
         // mkdir "${syncpath}"
         // at the end, this gets zipped up into the copyTo (Dropbox dir)
-        mProgressListenerListener.detail("Creating syncdirPath: " + mTalkingBookDataDirectoryPath);
+        mProgressListener.detail("Creating syncdirPath: " + mTalkingBookDataDirectoryPath);
 
         // Like tbcd1234/collected-data/XYZ
         TbFile projectCollectedData = mCollectedDataDirectory.open(mOldDeploymentInfo.getProjectName());
@@ -737,8 +753,8 @@ public class TBLoaderCore {
             gotStatistics = true;
         } catch (Exception e) {
             LOG.log(Level.WARNING, "TBL!: Unable to get stats:", e);
-            mProgressListenerListener.log("Unable to gather statistics");
-            mProgressListenerListener.log(getStackTrace(e));
+            mProgressListener.log("Unable to gather statistics");
+            mProgressListener.log(getStackTrace(e));
             // gotStatistics remains false; we'll log the failure later.
         }
 
@@ -756,7 +772,7 @@ public class TBLoaderCore {
 
                 updateCommunity();
 
-                mProgressListenerListener.step(finishing);
+                mProgressListener.step(finishing);
 
                 verified = verifyTalkingBook();
 
@@ -772,16 +788,16 @@ public class TBLoaderCore {
 
         } catch (Throwable e) {
             LOG.log(Level.WARNING, "TBL!: Unable to update Talking Book:", e);
-            mProgressListenerListener.log("Unable to update Talking Book");
-            mProgressListenerListener.log(getStackTrace(e));
+            mProgressListener.log("Unable to update Talking Book");
+            mProgressListener.log(getStackTrace(e));
         }
 
         if (mStatsOnly) {
-            mProgressListenerListener.log("Get Stats " + (gotStatistics?"successful.":"failed."));
+            mProgressListener.log("Get Stats " + (gotStatistics ? "successful." : "failed."));
         } else if (gotStatistics && verified) {
-            mProgressListenerListener.log("Update complete.");
+            mProgressListener.log("Update complete.");
         } else {
-            mProgressListenerListener.log("Update failed.");
+            mProgressListener.log("Update failed.");
         }
 
         Result result = new Result(mUpdateStartTime,
@@ -789,8 +805,8 @@ public class TBLoaderCore {
                 false,
                 verified);
         String completionMessage = String.format("TB-Loader updated in %s", result.duration);
-        mProgressListenerListener.detail("");
-        mProgressListenerListener.log(completionMessage);
+        mProgressListener.detail("");
+        mProgressListener.log(completionMessage);
         LOG.log(Level.INFO, completionMessage);
         mStepsLog.finish();
         return result;
@@ -819,7 +835,7 @@ public class TBLoaderCore {
                     .getAbsolutePath());
             if (mTbHasDiskCorruption) {
                 mTbDeviceInfo.setCorrupted();
-                mProgressListenerListener.log("Storage corrupted, attempting repair.");
+                mProgressListener.log("Storage corrupted, attempting repair.");
                 CommandLineUtils.checkDisk(mTbDeviceInfo.getRootFile().getAbsolutePath(),
                                            new RelativePath(mTalkingBookDataDirectoryPath,
                                 "chkdsk-reformat.txt").asString());
@@ -828,7 +844,7 @@ public class TBLoaderCore {
                 finishStep("storage good");
             }
         } else {
-            mProgressListenerListener.log("chkdsk not supported on this OS");
+            mProgressListener.log("chkdsk not supported on this OS");
         }
         return true;
     }
@@ -911,7 +927,7 @@ public class TBLoaderCore {
         for (TbFile child : children) {
             myCount.add(child);
             listDirectoryEntry(child, buffer);
-            mProgressListenerListener.detail(child.getName());
+            mProgressListener.detail(child.getName());
         }
         // Print the summary line
         buffer.append(String.format(Locale.US, "%11c%5d File(s)%,15d bytes\n\n",
@@ -922,7 +938,7 @@ public class TBLoaderCore {
         // List the child directories.
         for (TbFile child : children) {
             if (child.isDirectory()) {
-                mProgressListenerListener.detail(child.getAbsolutePath().substring(rootPath.length())+"/*");
+                mProgressListener.detail(child.getAbsolutePath().substring(rootPath.length())+"/*");
                 myCount.add(listDirectory(rootPath, child, buffer));
             }
         }
@@ -940,11 +956,11 @@ public class TBLoaderCore {
                 counts.files,
                 counts.size));
         builder.append(String.format(Locale.US, "%10c%6d Dir(s)", ' ', counts.dirs));
-        mProgressListenerListener.log(String.format("%d files, %d dirs, %,d bytes", counts.files, counts.dirs, counts.size));
+        mProgressListener.log(String.format("%d files, %d dirs, %,d bytes", counts.files, counts.dirs, counts.size));
         long free = mTalkingBookRoot.getFreeSpace();
         if (free > 0) {
             builder.append(String.format(Locale.US, " %,15d bytes free", free));
-            mProgressListenerListener.log(true, String.format("%,d bytes free", free));
+            mProgressListener.log(true, String.format("%,d bytes free", free));
         }
         builder.append("\n");
         return builder.toString();
@@ -1185,7 +1201,7 @@ public class TBLoaderCore {
     private Result reformatRelabel() throws IOException {
         boolean goodCard;
         if (mTbHasDiskCorruption) {
-            mProgressListenerListener.step(reformatting);
+            mProgressListener.step(reformatting);
             if (!OSChecker.WINDOWS) {
                 // distinction without a difference... has corruption, reformat didn't fail because
                 // no reformat was attempted.
@@ -1194,19 +1210,19 @@ public class TBLoaderCore {
             goodCard = CommandLineUtils.formatDisk(mTbDeviceInfo.getRootFile().getAbsolutePath(),
                                                    mTbDeviceInfo.getSerialNumber().toUpperCase());
             if (!goodCard) {
-                mProgressListenerListener.log("Reformat failed");
+                mProgressListener.log("Reformat failed");
                 return new Result(0, false, true, true, false);
             } else {
-                mProgressListenerListener.log(String.format("Reformatted card, %s", getStepTime()));
+                mProgressListener.log(String.format("Reformatted card, %s", getStepTime()));
             }
         } else {
             if (!mNewDeploymentInfo.getSerialNumber()
                     .equalsIgnoreCase(
                             mTbDeviceInfo.getLabelWithoutDriveLetter())) {
                 if (!OSChecker.WINDOWS) {
-                    mProgressListenerListener.log("Skipping relabeling; not supported on this OS.");
+                    mProgressListener.log("Skipping relabeling; not supported on this OS.");
                 } else {
-                    mProgressListenerListener.step(relabelling);
+                    mProgressListener.step(relabelling);
                     CommandLineUtils.relabel(mTbDeviceInfo.getRootFile().getAbsolutePath(),
                                              mNewDeploymentInfo.getSerialNumber());
                 }
@@ -1248,15 +1264,13 @@ public class TBLoaderCore {
                 }
                 // Directories that Android and Windows like to spew wherever possible. (macOS's files all
                 // start with ".", so handled above.)
-                if (name.equals("android") || name.equals("music") || name.equals("system volume information")) {
-                    return true;
-                }
-                return false;
+                return name.equals("android") || name.equals("music") || name.equals(
+                    "system volume information");
             }
         });
         if (names != null) {
             for (String name : names) {
-                mProgressListenerListener.detail(name);
+                mProgressListener.detail(name);
                 mStepFileCount += mTalkingBookRoot.open(name).delete(TbFile.Flags.recursive);
             }
         }
@@ -1278,21 +1292,21 @@ public class TBLoaderCore {
         });
         if (names != null) {
             for (String name : names) {
-                mProgressListenerListener.detail(name);
+                mProgressListener.detail(name);
                 system.open(name).delete();
                 mStepFileCount++;
             }
         }
 
         // These two files will be rebuilt upon first boot of the Talking Book.
-        mProgressListenerListener.detail("config.bin");
+        mProgressListener.detail("config.bin");
         TbFile toDelete = system.open("config.bin");
         if (toDelete.exists()) {
             toDelete.delete();
             mStepFileCount++;
         }
 
-        mProgressListenerListener.detail("control.bin");
+        mProgressListener.detail("control.bin");
         toDelete = mTalkingBookRoot.open(TBLoaderConstants.TB_LANGUAGES_PATH).open("control.bin");
         if (toDelete.exists()) {
             toDelete.delete();
@@ -1366,15 +1380,23 @@ public class TBLoaderCore {
 
         // 'properties' format file, with useful information for statistics gathering (next time around).
         DeploymentProperties props = new DeploymentProperties();
-        props.append(TBLoaderConstants.PROJECT_PROPERTY, mNewDeploymentInfo.getProjectName())
+        props
+            .append(TBLoaderConstants.TALKING_BOOK_ID_PROPERTY, mNewDeploymentInfo.getSerialNumber())
+            .append(TBLoaderConstants.PROJECT_PROPERTY, mNewDeploymentInfo.getProjectName())
             .append(TBLoaderConstants.DEPLOYMENT_PROPERTY, mNewDeploymentInfo.getDeploymentName())
             .append(TBLoaderConstants.PACKAGE_PROPERTY, mNewDeploymentInfo.getPackageName())
             .append(TBLoaderConstants.COMMUNITY_PROPERTY, mNewDeploymentInfo.getCommunity())
-            .append(
-                TBLoaderConstants.TALKING_BOOK_ID_PROPERTY, mNewDeploymentInfo.getSerialNumber())
+            .append(TBLoaderConstants.FIRMWARE_PROPERTY, mNewDeploymentInfo.getFirmwareRevision())
             .append(TBLoaderConstants.TIMESTAMP_PROPERTY, mUpdateTimestampISO)
             .append(
-                TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY, mNewDeploymentInfo.isTestDeployment());
+                TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY, mNewDeploymentInfo.isTestDeployment())
+            .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserName())
+            .append(TBLoaderConstants.TBCDID_PROPERTY, mTbLoaderConfig.getTbLoaderId())
+            .append(TBLoaderConstants.NEW_SERIAL_NUMBER_PROPERTY, mNewDeploymentInfo.isNewSerialNumber())
+            .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation);
+        if (mCoordinates != null && mCoordinates.length() > 0) {
+            props.append(TBLoaderConstants.COORDINATES_PROPERTY, mCoordinates);
+        }
         eraseAndOverwriteFile(system.open(TBLoaderConstants.DEPLOYMENT_PROPERTIES_NAME), props.toString());
 
         finishStep();
@@ -1446,7 +1468,7 @@ public class TBLoaderCore {
      */
     private void forceFirmwareRefresh() {// rename firmware at root to system.img to force TB to update itself
         if (mForceFirmware) {
-            mProgressListenerListener.log("Forcing firmware refresh");
+            mProgressListener.log("Forcing firmware refresh");
             TbFile firmware = mTalkingBookRoot.open(mNewDeploymentInfo.getFirmwareRevision() + ".img");
             TbFile newFirmware = mTalkingBookRoot.open("system.img");
             firmware.renameTo(newFirmware.getAbsolutePath());
@@ -1460,7 +1482,7 @@ public class TBLoaderCore {
      * @param verified Did the Talking Book seem good after the update?
      */
     private void writeTbLog(boolean gotStatistics, boolean verified) throws IOException {
-        String action = null;
+        String action;
         if (mStatsOnly) {
             if (gotStatistics) {
                 action = "stats-only";
@@ -1482,9 +1504,9 @@ public class TBLoaderCore {
             }
         }
 
-        mProgressListenerListener.log("Logging TB data");
-        logTBData(action, mOldDeploymentInfo,
-                mNewDeploymentInfo, mLocation, getDurationInSeconds(mUpdateStartTime));
+        mProgressListener.log("Logging TB data");
+        logTBData(action,
+            getDurationInSeconds(mUpdateStartTime));
     }
 
     /**
@@ -1497,7 +1519,7 @@ public class TBLoaderCore {
         if (OSChecker.WINDOWS) {
             String fn = mTbLoaderConfig.getWindowsUtilsDirectory().getAbsolutePath();
             CommandLineUtils.setUtilsDirectory(new File(fn));
-            mProgressListenerListener.log("Disconnecting TB");
+            mProgressListener.log("Disconnecting TB");
             CommandLineUtils.disconnectDrive(mTbDeviceInfo.getRootFile().getAbsolutePath());
         }
     }
@@ -1512,7 +1534,7 @@ public class TBLoaderCore {
         mCurrentStep = step;
         mStepFileCount = 0;
         mStepStartTime = System.currentTimeMillis();
-        mProgressListenerListener.step(step);
+        mProgressListener.step(step);
     }
 
     /**
@@ -1532,7 +1554,7 @@ public class TBLoaderCore {
         }
         builder.append(getStepTime());
 
-        mProgressListenerListener.log(builder.toString());
+        mProgressListener.log(builder.toString());
     }
     /**
      * Returns a nicely formatted string of a step's elapsed time.
@@ -1564,7 +1586,7 @@ public class TBLoaderCore {
     }
 
     private void eraseAndOverwriteFile(TbFile file, String content) throws IOException {
-        mProgressListenerListener.detail(file.getName());
+        mProgressListener.detail(file.getName());
         mStepFileCount++;
         if (file.getParent().exists()) {
             file.getParent().mkdirs();

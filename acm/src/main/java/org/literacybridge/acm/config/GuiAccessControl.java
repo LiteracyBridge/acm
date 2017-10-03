@@ -219,7 +219,7 @@ public class GuiAccessControl extends AccessControl {
                 checkinOk = true;
                 break checkinLoop;
             case denied:
-                msg = "Someone has forced control of this ACM, so you cannot check-in your changes.\nIf you are worried about losing a lot of work, contact Cliff and he may be able to save you and your work.";
+                msg = "Someone has forced control of this ACM, so you cannot check-in your changes.\nIf you are worried about losing a lot of work, contact techsupport@literacybridge.org for assistance.";
                 JOptionPane.showMessageDialog(null, msg);
                 // To indicate that work was not saved. Will prevent deleting old .zip files, which we may need later.
                 // There is really nothing more we can do here, however.

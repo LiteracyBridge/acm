@@ -105,7 +105,7 @@
                         android:text="@string/checkin_community_groups_at_this_location_label"
                         android:textSize="10sp"
                         tools:ignore="SmallSp"
-                        tools:text="Community Groups at this location"
+                        tools:text="Community Groups near here"
                         />
 
                     <android.support.v7.widget.RecyclerView

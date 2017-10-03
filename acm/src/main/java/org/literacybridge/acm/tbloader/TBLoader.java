@@ -59,7 +59,6 @@ public class TBLoader extends JFrame {
     private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
 
     private JFrame applicationWindow;
-    private OperationLogImpl opLogImpl;
 
     // This string must match firmware code to generate special dings on startup
     // as reminder that specific name has not been set.
@@ -69,12 +68,13 @@ public class TBLoader extends JFrame {
     private String dateRotation;
     private JComboBox<String> newDeploymentList;
     private JTextField newCommunityFilter;
-    private FilteringComboBoxModel newCommunityModel;
+    private FilteringComboBoxModel<String> newCommunityModel;
     private JComboBox<String> newCommunityList;
     private JComboBox<String> currentLocationList;
     private JComboBox<TBDeviceInfo> driveList;
     private JTextField oldSrnText;
     private JTextField newSrnText;
+    private boolean isNewSerialNumber;
     private JTextField oldFirmwareRevisionText;
     private JTextField newFirmwareRevisionText;
     private JTextField oldImageText;
@@ -135,7 +135,7 @@ public class TBLoader extends JFrame {
         new TBLoader(project, srnPrefix).runApplication();
     }
 
-    public TBLoader(String project, String srnPrefix) throws IOException {
+    private TBLoader(String project, String srnPrefix) throws IOException {
         project = ACMConfiguration.cannonicalProjectName(project);
         applicationWindow = this;
         this.newProject = project;
@@ -149,7 +149,7 @@ public class TBLoader extends JFrame {
 
     private void runApplication() throws Exception {
         OsUtils.enableOSXQuitStrategy();
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.addWindowListener(new WindowEventHandler());
         setDeviceIdAndPaths();
 
@@ -179,7 +179,7 @@ public class TBLoader extends JFrame {
         LOG.log(Level.INFO, "WindowsTBLoaderStart\n");
 
         // Set up the operation log. Tracks what is done, by whom.
-        opLogImpl = new OperationLogImpl(logsDir);
+        OperationLogImpl opLogImpl = new OperationLogImpl(logsDir);
         OperationLog.setImplementation(opLogImpl);
         OperationLog.Operation opLog = OperationLog.log("WindowsTBLoaderStart")
             .put("tbcdid", tbLoaderConfig.getTbLoaderId())
@@ -300,7 +300,7 @@ public class TBLoader extends JFrame {
                 comboBoxActionPerformed(e);
             }
         });
-        newCommunityModel = new FilteringComboBoxModel();
+        newCommunityModel = new FilteringComboBoxModel<>();
         newCommunityFilter = new JTextField("", 40);
         newCommunityFilter.getDocument().addDocumentListener(new DocumentListener() {
             // Listen for any change to the text
@@ -309,7 +309,7 @@ public class TBLoader extends JFrame {
             public void insertUpdate(DocumentEvent e) { common(); }
             void common() { newCommunityModel.setFilterString(newCommunityFilter.getText()); }
         });
-        newCommunityList = new JComboBox(newCommunityModel);
+        newCommunityList = new JComboBox<>(newCommunityModel);
         newCommunityList.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -471,7 +471,7 @@ public class TBLoader extends JFrame {
         setVisible(true);
         JOptionPane.showMessageDialog(applicationWindow,
                                       "Remember to power Talking Book with batteries before connecting with USB.",
-                                      "Use Batteries!", JOptionPane.DEFAULT_OPTION);
+                                      "Use Batteries!", JOptionPane.PLAIN_MESSAGE);
         LOG.log(Level.INFO, "set visibility - starting drive monitoring");
         deviceMonitorThread.setDaemon(true);
         deviceMonitorThread.start();
@@ -491,7 +491,7 @@ public class TBLoader extends JFrame {
             if (!dropboxDir.exists()) {
                 JOptionPane.showMessageDialog(applicationWindow, dropboxDir.getAbsolutePath()
                                                       + " does not exist; cannot find the Dropbox path. Please contact ICT staff.",
-                                              "Cannot Find Dropbox!", JOptionPane.DEFAULT_OPTION);
+                                              "Cannot Find Dropbox!", JOptionPane.PLAIN_MESSAGE);
                 System.exit(1);
             }
             //TbFile dropboxFile = new FsFile(dropboxDir);
@@ -519,7 +519,7 @@ public class TBLoader extends JFrame {
                     JOptionPane.showMessageDialog(applicationWindow, tbLoaderDir.toString()
                                                           + " does not exist; cannot find the Dropbox collected data path. Please contact ICT staff.",
                                                   "Cannot Find Dropbox Collected Data Folder!",
-                                                  JOptionPane.DEFAULT_OPTION);
+                                                  JOptionPane.PLAIN_MESSAGE);
                     System.exit(1);
                 }
                 // Like ~/Dropbox/tbcd1234/collected-data
@@ -539,7 +539,7 @@ public class TBLoader extends JFrame {
                 JOptionPane.showMessageDialog(applicationWindow,
                                               "This computer does not appear to be configured to use the TB Loader yet.  It needs a unique device tbSrn. Please contact ICT staff to get this.",
                                               "This Computer has no ID!",
-                                              JOptionPane.DEFAULT_OPTION);
+                                              JOptionPane.PLAIN_MESSAGE);
                 System.exit(1);
             }
         } catch (Exception e) {
@@ -557,7 +557,7 @@ public class TBLoader extends JFrame {
         }
     }
 
-    void getFirmwareRevisionNumbers() {
+    private void getFirmwareRevisionNumbers() {
         revision = "(No firmware)";
 
         File basicContentPath = new File(baseDirectory,
@@ -830,7 +830,7 @@ public class TBLoader extends JFrame {
         }
     };
 
-    private String getImageFromCommunity(String community) throws Exception {
+    private void getImageFromCommunity(String community) throws Exception {
 //    File imagesDir = new File(
 //        CONTENT_SUBDIR + File.separator + newDeploymentList.getSelectedItem().toString() + "/"
 //            + IMAGES_SUBDIR + "/");
@@ -841,7 +841,6 @@ public class TBLoader extends JFrame {
 //    TBFileSystem imagesTbFs = DefaultTBFileSystem.open(imagesDir);
         String imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, community);
         newImageText.setText(imageName);
-        return imageName;
     }
 
     /**
@@ -856,7 +855,7 @@ public class TBLoader extends JFrame {
                                           "The TB's statistics cannot be found. Please follow these steps:\n 1. Unplug the TB\n 2. Hold down the * while turning on the TB\n "
                                                   + "3. Observe the solid red light.\n 4. Now plug the TB into the laptop.\n 5. If you see this message again, please continue with the loading -- you tried your best.",
                                           "Cannot find the statistics!",
-                                          JOptionPane.DEFAULT_OPTION);
+                                          JOptionPane.PLAIN_MESSAGE);
         }
 
         String sn = currentTbDevice.getSerialNumber();
@@ -1046,10 +1045,12 @@ public class TBLoader extends JFrame {
                 // If the Talking Book needs a new serial number, allocate one. We did not do it before this to
                 // avoid wasting allocations.
                 String srn = newSrnText.getText();
+                isNewSerialNumber = false;
                 if (srn.equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER) ||
                         !isSerialNumberFormatGood(srnPrefix, srn) ||
                         !isSerialNumberFormatGood2(srn)) {
                     int intSrn = allocateNextSerialNumberFromTbLoader();
+                    isNewSerialNumber = true;
                     String lowerSrn = String.format("%04x", intSrn);
                     srn = (srnPrefix + tbLoaderConfig.getTbLoaderId() + lowerSrn).toUpperCase();
                     di.setSerialNumber(srn);
@@ -1093,7 +1094,7 @@ public class TBLoader extends JFrame {
 
     private void onCopyFinished(final String endMsg, final String endTitle) {
         SwingUtilities.invokeLater(() -> {
-            JOptionPane.showMessageDialog(applicationWindow, endMsg, endTitle, JOptionPane.DEFAULT_OPTION);
+            JOptionPane.showMessageDialog(applicationWindow, endMsg, endTitle, JOptionPane.PLAIN_MESSAGE);
             updatingTB = false;
             resetUI(true);
             LOG.log(Level.INFO, endMsg);
@@ -1242,7 +1243,7 @@ public class TBLoader extends JFrame {
             } finally {
                 opLog.finish();
                 String endMsg, endTitle;
-                if (result.gotStatistics) {
+                if (result != null && result.gotStatistics) {
                     endMsg = "Got Stats!";
                     endTitle = "Success";
                 } else {
@@ -1335,7 +1336,7 @@ public class TBLoader extends JFrame {
                 endTitle = "An Exception Occurred";
             } finally {
                 opLog.finish();
-                if (result.verified) {
+                if (result != null && result.verified) {
                     endMsg = "Talking Book has been updated and verified\nin " + result.duration
                             + ".";
                     endTitle = "Success";
@@ -1352,6 +1353,7 @@ public class TBLoader extends JFrame {
         public void run() {
             DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
                     .withSerialNumber(newSrnText.getText())
+                    .withNewSerialNumber(isNewSerialNumber)
                     .withProjectName(newProject)
                     .withDeploymentName(newDeploymentList.getSelectedItem().toString())
                     .withPackageName(newImageText.getText())

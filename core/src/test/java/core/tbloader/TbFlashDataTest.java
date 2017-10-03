@@ -18,6 +18,6 @@ public class TbFlashDataTest {
     TbFlashData info = new TbFlashData(flashData);
 
     assertEquals("B-000C02CA", info.getSerialNumber());
-    assertEquals("DEMO-SEATTLE", info.getLocation());
+    assertEquals("DEMO-SEATTLE", info.getCommunity());
   }
 }

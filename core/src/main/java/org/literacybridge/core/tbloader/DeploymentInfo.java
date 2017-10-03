@@ -1,5 +1,7 @@
 package org.literacybridge.core.tbloader;
 
+import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
+
 /**
  * A class to hold information about a deployment on a Talking Book.
  */
@@ -7,6 +9,8 @@ public class DeploymentInfo {
     // The Talking Book's "serial number".  This, of course, has nothing to do with a given
     // deployment, but it is convenient to have it with the rest of the data.
     private final String serialNumber;
+    // If true, this serial was just allocated.
+    private final boolean newSerialNumber;
     // The name of the project previously deployed to the Talking Book. This may not be knowable
     // from the Talking Book, in which case the *new* deployment's project may be substituted.
     private final String projectName;
@@ -31,8 +35,8 @@ public class DeploymentInfo {
     private final boolean testDeployment;
 
     public static class DeploymentInfoBuilder {
-        private static final String UNKNOWN = "UNKNOWN";
         private String serialNumber = UNKNOWN;
+        private boolean newSerialNumber = false;
         private String projectName = UNKNOWN;
         private String deploymentName = UNKNOWN;
         private String packageName = UNKNOWN;
@@ -44,6 +48,11 @@ public class DeploymentInfo {
 
         public DeploymentInfoBuilder withSerialNumber(String serialNumber) {
             this.serialNumber = serialNumber;
+            return this;
+        }
+
+        public DeploymentInfoBuilder withNewSerialNumber(boolean isNewSerialNumber) {
+            this.newSerialNumber = isNewSerialNumber;
             return this;
         }
 
@@ -90,6 +99,7 @@ public class DeploymentInfo {
         // Build from an existing DeploymentInfo
         public DeploymentInfoBuilder fromDeploymentInfo(DeploymentInfo di) {
             serialNumber = di.serialNumber;
+            newSerialNumber = di.newSerialNumber;
             projectName = di.projectName;
             deploymentName = di.deploymentName;
             packageName = di.packageName;
@@ -115,6 +125,7 @@ public class DeploymentInfo {
     }
     private DeploymentInfo(DeploymentInfoBuilder builder) {
         this.serialNumber = builder.serialNumber;
+        this.newSerialNumber = builder.newSerialNumber;
         this.projectName = builder.projectName;
         this.deploymentName = builder.deploymentName;
         this.packageName = builder.packageName;
@@ -127,6 +138,10 @@ public class DeploymentInfo {
     
     public String getSerialNumber() {
         return serialNumber;
+    }
+
+    public boolean isNewSerialNumber() {
+        return newSerialNumber;
     }
 
     public String getProjectName() {
@@ -162,6 +177,7 @@ public class DeploymentInfo {
     @Override
     public String toString() {
         return "Serial number: " + serialNumber
+                + (newSerialNumber ? " (new)" : "")
                 + "\nProject name: " + projectName
                 + "\nDeployment name: " + deploymentName
                 + "\nPackage name: " + packageName
