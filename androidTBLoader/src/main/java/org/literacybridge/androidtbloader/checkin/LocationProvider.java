@@ -113,8 +113,8 @@ public class LocationProvider {
                             String provider,
                             long nanos) {
                         op.put("provider", provider);
-                        op.put("latitude", location.getLatitude());
-                        op.put("longitude", location.getLongitude());
+                        op.put("latitude", String.format("%+3.5f", location.getLatitude()));
+                        op.put("longitude", String.format("%+3.5f", location.getLongitude()));
                         op.finish();
                         clientLocationListener.onLocationChanged(location, provider, nanos);
                     }

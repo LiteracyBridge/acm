@@ -125,8 +125,8 @@ public class KnownLocations {
         Map<String,String> logInfo = new HashMap<>();
         logInfo.put("community", community.getName());
         logInfo.put("project", community.getProject());
-        logInfo.put("longitude", Double.toString(mGpsLocation.getLongitude()));
-        logInfo.put("latitude", Double.toString(mGpsLocation.getLatitude()));
+        logInfo.put("longitude", String.format("%+3.5f", mGpsLocation.getLongitude()));
+        logInfo.put("latitude", String.format("%+3.5f", mGpsLocation.getLatitude()));
         OperationLog.logEvent("SetLocation", logInfo);
 
         // Also record it locally.

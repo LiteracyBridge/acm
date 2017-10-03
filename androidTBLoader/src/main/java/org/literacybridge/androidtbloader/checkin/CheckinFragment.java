@@ -205,7 +205,7 @@ public class CheckinFragment extends Fragment {
             if (data.hasExtra("selected")) {
                 CommunityInfo community = CommunityInfo.parseExtra(data.getStringExtra("selected"));
                 Log.d(TAG,
-                        String.format("Community '%s' reported at %5.2f %5.2f; now have %d here",
+                        String.format("Community '%s' reported at %+3.5f %+3.5f; now have %d here",
                                 community,
                                 mGpsLocation.getLatitude(),
                                 mGpsLocation.getLongitude(),
@@ -413,7 +413,7 @@ public class CheckinFragment extends Fragment {
         public void onLocationChanged(final Location location) {
             Log.d(TAG, String.format("Location changed: %s", location.toString()));
             @SuppressLint("DefaultLocale")
-            String locstr = String.format("%4.4f %4.4f, %5.2f, %4.0f☼",
+            String locstr = String.format("%+3.5f %+3.5f, %5.2f, %4.0f☼",
                     location.getLatitude(), location.getLongitude(),
                     location.getAltitude(), location.getBearing());
             mGpsLocation = location;

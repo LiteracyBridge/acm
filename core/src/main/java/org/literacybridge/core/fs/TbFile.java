@@ -155,7 +155,6 @@ public abstract class TbFile {
 
     public static long copy(TbFile src, TbFile dst) throws IOException {
         long bytesCopied = src.length();
-//            LOG.log(Level.INFO, String.format("Copying file from %s to %s", src.getName(), dst.getName()));
         try (InputStream content = src.openFileInputStream() ) {
             dst.createNew(content);
         }
@@ -173,11 +172,9 @@ public abstract class TbFile {
     public static long copyDir(TbFile src, TbFile dst, CopyFilter filter, CopyProgress progress) throws IOException {
         long bytesCopied = 0;
         if (src.isDirectory()) {
-            dst.mkdirs();
             String[] children = src.list();
             int numCopied = 0;
             long startTime = System.nanoTime();
-//            LOG.log(Level.INFO, String.format("Copying directory (%d items) from %s to %s", children.length, src.getName(), dst.getName()));
             for (String child : children) {
                 TbFile srcChild = src.open(child);
                 if (filter == null || filter.accept(srcChild)) {
@@ -186,19 +183,16 @@ public abstract class TbFile {
                 }
             }
             double seconds = (System.nanoTime()-startTime)/1e9;
-//            LOG.log(Level.INFO, String.format("Copied directory (%d items, %d bytes, %.0f B/s) in %.3fs from %s to %s",
-//                    numCopied, bytesCopied, bytesCopied/seconds, seconds, src.getName(), dst.getName()));
         } else {
+            // Ensure there's a directory in which to create the file.
+            dst.getParent().mkdirs();
             bytesCopied = src.length();
             long startTime = System.nanoTime();
-//            LOG.log(Level.INFO, String.format("Copying file from %s to %s", src.getName(), dst.getName()));
             if (progress != null) progress.copying(dst.getName());
             try (InputStream content = src.openFileInputStream() ) {
                 dst.createNew(content);
             }
             double seconds = (System.nanoTime()-startTime)/1e9;
-//            LOG.log(Level.INFO, String.format("Copied file (%d bytes, %.0f B/s) in %.3fs from %s to %s",
-//                    bytesCopied, bytesCopied/seconds, seconds, src.getName(), dst.getName()));
         }
         return bytesCopied;
     }
