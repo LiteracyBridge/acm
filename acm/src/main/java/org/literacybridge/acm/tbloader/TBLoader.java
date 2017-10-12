@@ -66,40 +66,47 @@ public class TBLoader extends JFrame {
 
     private String imageRevision = "(no rev)";
     private String dateRotation;
-    private JComboBox<String> newDeploymentList;
-    private JTextField newCommunityFilter;
-    private FilteringComboBoxModel<String> newCommunityModel;
-    private JComboBox<String> newCommunityList;
-    private JComboBox<String> currentLocationList;
-    private JComboBox<TBDeviceInfo> driveList;
-    private JTextField oldSrnText;
-    private JTextField newSrnText;
-    private boolean isNewSerialNumber;
-    private JTextField oldFirmwareRevisionText;
-    private JTextField newFirmwareRevisionText;
-    private JTextField oldImageText;
-    private JTextField newImageText;
-    private JTextField oldDeploymentText;
-    private JTextField oldCommunityText;
-    private JTextField lastUpdatedText;
-    private JLabel oldValue;
-    private JLabel newValue;
-    private JTextArea statusRight;
-    private JTextArea statusLeft;
-    private JButton updateButton;
-    private JButton grabStatsOnlyButton;
-    private String revision;
 
-    private int durationSeconds;
-    private TBDeviceInfo currentTbDevice;
-    private String srnPrefix;
-    private String newProject;
-    private String oldProject;
-    private String syncSubPath;
+    // Global swing components.
+    private JComboBox<TBDeviceInfo> driveList;
+
+    private JComboBox<String> currentLocationList;
+
+    private JComboBox<String> newDeploymentList;
+    private JTextField oldDeploymentText;
+
+    private FilteringComboBoxModel<String> newCommunityModel;
+    private JTextField newCommunityFilter;
+    private JComboBox<String> newCommunityList;
+    private JTextField oldCommunityText;
+
+    private JTextField newImageText;
+    private JTextField oldImageText;
+
+    private JTextField lastUpdatedText;
+
+    private JTextField newFirmwareVersionText;
+    private JTextField oldFirmwareVersionText;
+
+    private JTextField newSrnText;
+    private JTextField oldSrnText;
 
     private JCheckBox forceFirmware;
     private JCheckBox testDeployment;
 
+    private JButton updateButton;
+    private JButton grabStatsOnlyButton;
+
+    private JTextArea statusRight;
+    private JTextArea statusLeft;
+
+    private boolean isNewSerialNumber;
+    private TBDeviceInfo currentTbDevice;
+    private String srnPrefix;
+    private String newProject;
+    private String oldProject;
+
+    // Deployment info read from Talking Book.
     private DeploymentInfo oldDeploymentInfo;
 
     private TBLoaderConfig tbLoaderConfig;
@@ -234,54 +241,164 @@ public class TBLoader extends JFrame {
         }
         opLog.finish();
 
+        initializeGui();
+        JOptionPane.showMessageDialog(applicationWindow,
+                                      "Remember to power Talking Book with batteries before connecting with USB.",
+                                      "Use Batteries!", JOptionPane.PLAIN_MESSAGE);
+        LOG.log(Level.INFO, "set visibility - starting drive monitoring");
+        deviceMonitorThread.setDaemon(true);
+        deviceMonitorThread.start();
+        startUpDone = true;
+    }
+
+    private void setDeviceIdAndPaths() throws IOException {
+        try {
+            File applicationHomeDirectory = ACMConfiguration.getInstance()
+                .getApplicationHomeDirectory();
+            baseDirectory = new File(applicationHomeDirectory,
+                Constants.TBLoadersHomeDir + File.separator + newProject);
+            baseDirectory.mkdirs();
+            TbFile softwareDir = new FsFile(ACMConfiguration.getInstance().getSoftwareDir());
+
+            File dropboxDir = ACMConfiguration.getInstance().getGlobalShareDir();
+            if (!dropboxDir.exists()) {
+                JOptionPane.showMessageDialog(applicationWindow, dropboxDir.getAbsolutePath()
+                        + " does not exist; cannot find the Dropbox path. Please contact ICT staff.",
+                    "Cannot Find Dropbox!", JOptionPane.PLAIN_MESSAGE);
+                System.exit(1);
+            }
+            //TbFile dropboxFile = new FsFile(dropboxDir);
+
+            // Look for ~/LiteracyBridge/1234.dev file.
+            File[] files = applicationHomeDirectory.listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    String lowercase = name.toLowerCase();
+                    return lowercase.endsWith(TBLoaderConstants.DEVICE_FILE_EXTENSION);
+                }
+            });
+            if (files.length == 1) {
+                String deviceId = files[0].getName()
+                    .substring(0, files[0].getName().length() - 4)
+                    .toUpperCase();
+
+                // Like "~/Dropbox/tbcd1234"
+                File tbLoaderDir = new File(dropboxDir, TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
+                // Like collected-data/{PROJECT}/OperationalData/{tbcdid}/logs
+                String logsPath = TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME + File.separator + newProject + File.separator +
+                    TBLoaderConstants.OPERATIONAL_DATA_SUBDIR_NAME + File.separator + deviceId + File.separator + "logs";
+                logsDir = new File(tbLoaderDir, logsPath);
+                logsDir.mkdirs();
+                if (!tbLoaderDir.exists()) {
+                    JOptionPane.showMessageDialog(applicationWindow, tbLoaderDir.toString()
+                            + " does not exist; cannot find the Dropbox collected data path. Please contact ICT staff.",
+                        "Cannot Find Dropbox Collected Data Folder!",
+                        JOptionPane.PLAIN_MESSAGE);
+                    System.exit(1);
+                }
+                // Like ~/Dropbox/tbcd1234/collected-data
+                TbFile collectedDataDir = new FsFile(tbLoaderDir).open(
+                    TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME);
+
+                TbFile tempDir = new FsFile(Files.createTempDirectory("tbloader-tmp").toFile());
+
+                tbLoaderConfig = new TBLoaderConfig.Builder()
+                    .withTbLoaderId(deviceId)
+                    .withCollectedDataDirectory(collectedDataDir)
+                    .withTempDirectory(tempDir)
+                    .withWindowsUtilsDirectory(softwareDir)
+                    .withUserName(ACMConfiguration.getInstance().getUserName())
+                    .build();
+            } else {
+                JOptionPane.showMessageDialog(applicationWindow,
+                    "This computer does not appear to be configured to use the TB Loader yet.  It needs a unique device tbSrn. Please contact ICT staff to get this.",
+                    "This Computer has no ID!",
+                    JOptionPane.PLAIN_MESSAGE);
+                System.exit(1);
+            }
+        } catch (Exception e) {
+            LOG.log(Level.SEVERE, "Exception while setting DeviceId and paths", e);
+            throw e;
+        }
+    }
+
+    private void initializeGui() {
         JPanel panel = new JPanel();
+
+        // "Use with NEW TBs only" / "Use with OLD TBs only"
         JLabel warning;
-        //@TODO: this should be a tbloaderconfig propery
         if (srnPrefix.equals("a-")) {
             panel.setBackground(Color.CYAN);
-            warning = new JLabel("Use with OLD TBS only");
+            warning = new JLabel("Use with OLD TBs only");
             warning.setForeground(Color.RED);
         } else {
-            warning = new JLabel("Use with NEW TBS only");
+            warning = new JLabel("Use with NEW TBs only");
             warning.setForeground(Color.RED);
         }
-        JLabel packageLabel = new JLabel("Update:");
-        JLabel communityFilterLabel = new JLabel("Community filter:");
-        JLabel communityLabel = new JLabel("Community:");
+
+        // Windows drive letter and volume name.
+        JLabel deviceLabel = new JLabel("Talking Book Device:");
+        driveList = new JComboBox<TBDeviceInfo>();
+        driveList.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                comboBoxActionPerformed(e);
+            }
+        });
+
+        // Select "Community", "LBG Office", "Other"
         JLabel currentLocationLabel = new JLabel("Current Location:");
-        JLabel dateLabel = new JLabel("First Rotation Date:");
+        currentLocationList = new JComboBox<String>(currentLocation);
+
+        // Headings for "Next", "Previous"
+        JLabel newValue = new JLabel("Next");
+        JLabel oldValue = new JLabel("Previous");
+
+        // Deployment name / version.
+        JLabel packageLabel = new JLabel("Update:");
+        newDeploymentList = new JComboBox<String>();
+        newDeploymentList.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                comboBoxActionPerformed(e);
+            }
+        });
         oldDeploymentText = new JTextField();
         oldDeploymentText.setEditable(false);
-        oldValue = new JLabel("Previous");
-        newValue = new JLabel("Next");
-        lastUpdatedText = new JTextField();
-        lastUpdatedText.setEditable(false);
+
+        // Community filter. (Type desired filter into text field.)
+        JLabel communityFilterLabel = new JLabel("Community filter:");
+        newCommunityModel = new FilteringComboBoxModel<>();
+        newCommunityFilter = new JTextField("", 40);
+        newCommunityFilter.getDocument().addDocumentListener(new DocumentListener() {
+            // Listen for any change to the text
+            public void changedUpdate(DocumentEvent e) { common(); }
+            public void removeUpdate(DocumentEvent e) { common(); }
+            public void insertUpdate(DocumentEvent e) { common(); }
+            void common() { newCommunityModel.setFilterString(newCommunityFilter.getText()); }
+        });
+
+        // Select community.
+        JLabel communityLabel = new JLabel("Community:");
+        newCommunityList = new JComboBox<>(newCommunityModel);
+        newCommunityList.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                comboBoxActionPerformed(e);
+            }
+        });
         oldCommunityText = new JTextField();
         oldCommunityText.setEditable(false);
-        JLabel deviceLabel = new JLabel("Talking Book Device:");
-        JLabel idLabel = new JLabel("Serial number:");
-        JLabel revisionLabel = new JLabel("Firmware:");
-        JLabel imageLabel = new JLabel("Content:");
-        JLabel forceFirmwareText = new JLabel("Refresh?");
-        JLabel testDeploymentText = new JLabel("Only testing the Deployment?");
-        statusRight = new JTextArea(2, 40);
-        statusRight.setEditable(false);
-        statusRight.setLineWrap(true);
-        statusLeft = new JTextArea(2, 40);
-        statusLeft.setEditable(false);
-        statusLeft.setLineWrap(true);
-        oldSrnText = new JTextField();
-        oldSrnText.setEditable(false);
-        newSrnText = new JTextField();
-        newSrnText.setEditable(false);
-        oldFirmwareRevisionText = new JTextField();
-        oldFirmwareRevisionText.setEditable(false);
-        newFirmwareRevisionText = new JTextField();
-        newFirmwareRevisionText.setEditable(false);
-        oldImageText = new JTextField();
-        oldImageText.setEditable(false);
+
+        // Show Content Package name.
+        JLabel contentPackageLabel = new JLabel("Content:");
         newImageText = new JTextField();
         newImageText.setEditable(false);
+        oldImageText = new JTextField();
+        oldImageText.setEditable(false);
+
+        // Select "First Rotation Date", default today.
+        JLabel dateLabel = new JLabel("First Rotation Date:");
         final JXDatePicker datePicker = new JXDatePicker(new Date());
         dateRotation = datePicker.getDate().toString();
         datePicker.getEditor().setEditable(false);
@@ -292,45 +409,36 @@ public class TBLoader extends JFrame {
                 dateRotation = datePicker.getDate().toString();
             }
         });
+        lastUpdatedText = new JTextField();
+        lastUpdatedText.setEditable(false);
 
-        newDeploymentList = new JComboBox<String>();
-        newDeploymentList.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                comboBoxActionPerformed(e);
-            }
-        });
-        newCommunityModel = new FilteringComboBoxModel<>();
-        newCommunityFilter = new JTextField("", 40);
-        newCommunityFilter.getDocument().addDocumentListener(new DocumentListener() {
-            // Listen for any change to the text
-            public void changedUpdate(DocumentEvent e) { common(); }
-            public void removeUpdate(DocumentEvent e) { common(); }
-            public void insertUpdate(DocumentEvent e) { common(); }
-            void common() { newCommunityModel.setFilterString(newCommunityFilter.getText()); }
-        });
-        newCommunityList = new JComboBox<>(newCommunityModel);
-        newCommunityList.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                comboBoxActionPerformed(e);
-            }
-        });
-        driveList = new JComboBox<TBDeviceInfo>();
-        driveList.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                comboBoxActionPerformed(e);
-            }
-        });
-        currentLocationList = new JComboBox<String>(currentLocation);
+        // Show firmware version.
+        JLabel firmwareVersionLabel = new JLabel("Firmware:");
+        newFirmwareVersionText = new JTextField();
+        newFirmwareVersionText.setEditable(false);
+        oldFirmwareVersionText = new JTextField();
+        oldFirmwareVersionText.setEditable(false);
+
+        // Show serial number.
+        JLabel srnLabel = new JLabel("Serial number:");
+        newSrnText = new JTextField();
+        newSrnText.setEditable(false);
+        oldSrnText = new JTextField();
+        oldSrnText.setEditable(false);
+
+        // Select force firmware refresh.
+        JLabel forceFirmwareText = new JLabel("Refresh?");
         forceFirmware = new JCheckBox();
         forceFirmware.setSelected(false);
+
+        // Select "only testing".
+        JLabel testDeploymentText = new JLabel("Only testing the Deployment?");
         testDeployment = new JCheckBox();
         testDeployment.setSelected(false);
         testDeployment.setToolTipText("Check if only testing the Deployment. Uncheck if sending the Deployment out to the field.");
         testDeploymentText.setToolTipText("Check if only testing the Deployment. Uncheck if sending the Deployment out to the field.");
 
+        // Update / gather statistics buttons.
         updateButton = new JButton("Update TB");
         updateButton.addActionListener(new ActionListener() {
             @Override
@@ -346,6 +454,15 @@ public class TBLoader extends JFrame {
             }
         });
 
+        // Show status.
+        statusLeft = new JTextArea(2, 40);
+        statusLeft.setEditable(false);
+        statusLeft.setLineWrap(true);
+        statusRight = new JTextArea(2, 40);
+        statusRight.setEditable(false);
+        statusRight.setLineWrap(true);
+
+        // Set the layout.
         GroupLayout layout = new GroupLayout(panel);
         panel.setLayout(layout);
         layout.setAutoCreateGaps(true);
@@ -358,10 +475,10 @@ public class TBLoader extends JFrame {
                                                             .addComponent(packageLabel)
                                                             .addComponent(communityFilterLabel)
                                                             .addComponent(communityLabel)
-                                                            .addComponent(imageLabel)
+                                                            .addComponent(contentPackageLabel)
                                                             .addComponent(dateLabel)
-                                                            .addComponent(revisionLabel)
-                                                            .addComponent(idLabel)
+                                                            .addComponent(firmwareVersionLabel)
+                                                            .addComponent(srnLabel)
                                                             .addComponent(forceFirmwareText)
                                                             .addComponent(testDeploymentText)
                                                    )
@@ -375,7 +492,7 @@ public class TBLoader extends JFrame {
                                                             .addComponent(newCommunityList)
                                                             .addComponent(newImageText)
                                                             .addComponent(datePicker)
-                                                            .addComponent(newFirmwareRevisionText)
+                                                            .addComponent(newFirmwareVersionText)
                                                             .addComponent(newSrnText)
                                                             .addComponent(forceFirmware)
                                                             .addComponent(testDeployment)
@@ -388,7 +505,7 @@ public class TBLoader extends JFrame {
                                                             .addComponent(oldCommunityText)
                                                             .addComponent(oldImageText)
                                                             .addComponent(lastUpdatedText)
-                                                            .addComponent(oldFirmwareRevisionText)
+                                                            .addComponent(oldFirmwareVersionText)
                                                             .addComponent(oldSrnText)
                                                             .addComponent(forceFirmwareText)
                                                             .addComponent(grabStatsOnlyButton)
@@ -424,7 +541,7 @@ public class TBLoader extends JFrame {
                                                           .addComponent(oldCommunityText)
                                                  )
                                         .addGroup(layout.createParallelGroup(BASELINE)
-                                                          .addComponent(imageLabel)
+                                                          .addComponent(contentPackageLabel)
                                                           .addComponent(newImageText)
                                                           .addComponent(oldImageText)
                                                  )
@@ -434,12 +551,12 @@ public class TBLoader extends JFrame {
                                                           .addComponent(lastUpdatedText)
                                                  )
                                         .addGroup(layout.createParallelGroup(BASELINE)
-                                                          .addComponent(revisionLabel)
-                                                          .addComponent(newFirmwareRevisionText)
-                                                          .addComponent(oldFirmwareRevisionText)
+                                                          .addComponent(firmwareVersionLabel)
+                                                          .addComponent(newFirmwareVersionText)
+                                                          .addComponent(oldFirmwareVersionText)
                                                  )
                                         .addGroup(layout.createParallelGroup(BASELINE)
-                                                          .addComponent(idLabel)
+                                                          .addComponent(srnLabel)
                                                           .addComponent(oldSrnText)
                                                           .addComponent(newSrnText)
                                                  )
@@ -469,96 +586,10 @@ public class TBLoader extends JFrame {
         fillDeploymentList();
         resetUI(true);
         setVisible(true);
-        JOptionPane.showMessageDialog(applicationWindow,
-                                      "Remember to power Talking Book with batteries before connecting with USB.",
-                                      "Use Batteries!", JOptionPane.PLAIN_MESSAGE);
-        LOG.log(Level.INFO, "set visibility - starting drive monitoring");
-        deviceMonitorThread.setDaemon(true);
-        deviceMonitorThread.start();
-        startUpDone = true;
-    }
-
-    private void setDeviceIdAndPaths() throws IOException {
-        try {
-            File applicationHomeDirectory = ACMConfiguration.getInstance()
-                    .getApplicationHomeDirectory();
-            baseDirectory = new File(applicationHomeDirectory,
-                                     Constants.TBLoadersHomeDir + File.separator + newProject);
-            baseDirectory.mkdirs();
-            TbFile softwareDir = new FsFile(ACMConfiguration.getInstance().getSoftwareDir());
-
-            File dropboxDir = ACMConfiguration.getInstance().getGlobalShareDir();
-            if (!dropboxDir.exists()) {
-                JOptionPane.showMessageDialog(applicationWindow, dropboxDir.getAbsolutePath()
-                                                      + " does not exist; cannot find the Dropbox path. Please contact ICT staff.",
-                                              "Cannot Find Dropbox!", JOptionPane.PLAIN_MESSAGE);
-                System.exit(1);
-            }
-            //TbFile dropboxFile = new FsFile(dropboxDir);
-
-            // Look for ~/LiteracyBridge/1234.dev file.
-            File[] files = applicationHomeDirectory.listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    String lowercase = name.toLowerCase();
-                    return lowercase.endsWith(TBLoaderConstants.DEVICE_FILE_EXTENSION);
-                }
-            });
-            if (files.length == 1) {
-                String deviceId = files[0].getName()
-                        .substring(0, files[0].getName().length() - 4)
-                        .toUpperCase();
-
-                // Like "~/Dropbox/tbcd1234"
-                File tbLoaderDir = new File(dropboxDir, TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
-                logsDir = new File(tbLoaderDir, "log");
-                logsDir.mkdirs();
-                //TbFile tbLoaderDir = dropboxFile.open(
-                //        TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
-                if (!tbLoaderDir.exists()) {
-                    JOptionPane.showMessageDialog(applicationWindow, tbLoaderDir.toString()
-                                                          + " does not exist; cannot find the Dropbox collected data path. Please contact ICT staff.",
-                                                  "Cannot Find Dropbox Collected Data Folder!",
-                                                  JOptionPane.PLAIN_MESSAGE);
-                    System.exit(1);
-                }
-                // Like ~/Dropbox/tbcd1234/collected-data
-                TbFile collectedDataDir = new FsFile(tbLoaderDir).open(
-                        TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME);
-
-                TbFile tempDir = new FsFile(Files.createTempDirectory("tbloader-tmp").toFile());
-
-                tbLoaderConfig = new TBLoaderConfig.Builder()
-                    .withTbLoaderId(deviceId)
-                    .withCollectedDataDirectory(collectedDataDir)
-                    .withTempDirectory(tempDir)
-                    .withWindowsUtilsDirectory(softwareDir)
-                    .withUserName(ACMConfiguration.getInstance().getUserName())
-                    .build();
-            } else {
-                JOptionPane.showMessageDialog(applicationWindow,
-                                              "This computer does not appear to be configured to use the TB Loader yet.  It needs a unique device tbSrn. Please contact ICT staff to get this.",
-                                              "This Computer has no ID!",
-                                              JOptionPane.PLAIN_MESSAGE);
-                System.exit(1);
-            }
-        } catch (Exception e) {
-            LOG.log(Level.SEVERE, "Exception while setting DeviceId and paths", e);
-            throw e;
-        }
-    }
-
-    private void updateForceFirmware() {
-        String oldFirmware = oldFirmwareRevisionText.getText();
-        String newFirmware = newFirmwareRevisionText.getText();
-        if (oldFirmware.length() > 0 && newFirmware.length() > 0 &&
-                !oldFirmware.equalsIgnoreCase(newFirmware)) {
-            forceFirmware.setSelected(true);
-        }
     }
 
     private void getFirmwareRevisionNumbers() {
-        revision = "(No firmware)";
+        String firmwareVersion = "(No firmware)";
 
         File basicContentPath = new File(baseDirectory,
                                          TBLoaderConstants.CONTENT_SUBDIR + File.separator
@@ -577,13 +608,12 @@ public class TBLoader extends JFrame {
                     }
                 });
                 if (files.length > 1)
-                    revision = "(Multiple Firmwares!)";
+                    firmwareVersion = "(Multiple Firmwares!)";
                 else if (files.length == 1) {
-                    revision = files[0].getName();
-                    revision = revision.substring(0, revision.length() - 4);
+                    firmwareVersion = files[0].getName();
+                    firmwareVersion = firmwareVersion.substring(0, firmwareVersion.length() - 4);
                 }
-                newFirmwareRevisionText.setText(revision);
-                updateForceFirmware();
+                newFirmwareVersionText.setText(firmwareVersion);
             }
         } catch (Exception ignore) {
             LOG.log(Level.WARNING, "exception - ignore and keep going with default string", ignore);
@@ -879,8 +909,7 @@ public class TBLoader extends JFrame {
         oldDeploymentInfo = currentTbDevice.createDeploymentInfo(newProject);
         if (oldDeploymentInfo != null) {
             oldSrnText.setText(oldDeploymentInfo.getSerialNumber());
-            oldFirmwareRevisionText.setText(oldDeploymentInfo.getFirmwareRevision());
-            updateForceFirmware();
+            oldFirmwareVersionText.setText(oldDeploymentInfo.getFirmwareRevision());
             oldImageText.setText(oldDeploymentInfo.getPackageName());
             oldDeploymentText.setText(oldDeploymentInfo.getDeploymentName());
             lastUpdatedText.setText(oldDeploymentInfo.getUpdateTimestamp());
@@ -1033,10 +1062,21 @@ public class TBLoader extends JFrame {
                                                                          "generating accurate usage statistics.\nAre you sure?",
                                                                  "Confirm",
                                                                  JOptionPane.YES_NO_OPTION);
+                    if (response == JOptionPane.YES_OPTION) {
+                        // Give them a second chance to do the right thing.
+                        response = JOptionPane.showConfirmDialog(this,
+                            "Without the community, we can not properly track deployments and usage.\n"+
+                                "If the community is missing, please quit and ask that a correct Deployment be generated.\n"+
+                                "Are you absolutely sure you want to continue with no community?",
+                            "Please Select Community",
+                            JOptionPane.YES_NO_OPTION);
+                    }
                     if (response != JOptionPane.YES_OPTION) {
-                        LOG.log(Level.INFO, "No community selected. Are you sure? NO");
-                        refreshUI();
-                        return;
+                        if (response != JOptionPane.YES_OPTION) {
+                            LOG.log(Level.INFO, "No community selected. Are you sure? NO");
+                            refreshUI();
+                            return;
+                        }
                     } else
                         LOG.log(Level.INFO, "No community selected. Are you sure? YES");
                 } else
@@ -1131,7 +1171,7 @@ public class TBLoader extends JFrame {
             if (!connected) {
                 oldDeploymentText.setText("");
                 oldCommunityText.setText("");
-                oldFirmwareRevisionText.setText("");
+                oldFirmwareVersionText.setText("");
                 forceFirmware.setSelected(false);
                 oldImageText.setText("");
                 newSrnText.setText("");
@@ -1359,7 +1399,7 @@ public class TBLoader extends JFrame {
                     .withPackageName(newImageText.getText())
                     .withUpdateDirectory(null)
                     .withUpdateTimestamp(dateRotation)
-                    .withFirmwareRevision(newFirmwareRevisionText.getText())
+                    .withFirmwareRevision(newFirmwareVersionText.getText())
                     .withCommunity(newCommunityList.getSelectedItem().toString())
                     .asTestDeployment(testDeployment.isSelected());
             DeploymentInfo newDeploymentInfo = builder.build();

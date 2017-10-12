@@ -427,6 +427,9 @@ public class TBLoaderCore {
                 }
                 bw.write("\n");
             }
+            // If the TB is moving between projects, the old project and new project are different.
+            // This single value can then be correct for stats, or for deployment. Go for stats;
+            // the deployment is tracked more easily in the deploymentLog.
             bw.write(mOldDeploymentInfo.getProjectName().toUpperCase() + ",");
             bw.write(mUpdateTimestamp.toUpperCase() + ",");
             bw.write(mUpdateTimestamp.toUpperCase() + "-" + mTbLoaderConfig.getTbLoaderId()

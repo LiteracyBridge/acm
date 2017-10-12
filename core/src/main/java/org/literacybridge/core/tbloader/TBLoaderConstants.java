@@ -45,6 +45,7 @@ public class TBLoaderConstants {
   public static final RelativePath DIRS_POST_TXT = RelativePath.parse("dir_post.txt");
 
   public static final String TB_DATA_PATH = "TalkingBookData";
+  public static final String OPERATIONAL_DATA_SUBDIR_NAME = "OperationalData";
   public static final String USER_RECORDINGS_PATH = "UserRecordings";
 
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
