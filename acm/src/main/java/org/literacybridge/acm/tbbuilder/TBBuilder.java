@@ -6,7 +6,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
@@ -221,6 +220,8 @@ public class TBBuilder {
       System.exit(1);
     }
 
+    checkPackageForLanguage(sourceListsDir, languageCode);
+
     File targetMessagesDir = new File(targetImageDir, "messages");
     FileUtils.copyDirectory(sourceMessagesDir, targetMessagesDir);
 
@@ -308,7 +309,63 @@ public class TBBuilder {
 
   }
 
-  public void createDeployment(String deployment) throws Exception {
+    /**
+     * Checks the exported package for the given language. Checks that the system prompt
+     * recordings exist in TB-Loaders/TB_Options/languages/{language}/cat, and that the
+     * playlist's list file exists.
+     *
+     * If any file is missing, prints an error message and exits.
+     * @param sourceListsDir The directory (TB-Loaders/packages/{package}/messages/lists/1/)
+     *                       containing the _activeLists.txt and individual playlist .txt
+     *                       list files.
+     * @param languageCode The language for which the package is being exported.
+     * @throws IOException if any files can't be read.
+     */
+    private void checkPackageForLanguage(
+        File sourceListsDir, String languageCode)
+        throws IOException {
+        // Read the source _activeLists.txt file.
+        String languagesPath = "TB_Options" + File.separator + "languages";
+        File languagesDir = new File(dropboxTbLoadersDir, languagesPath);
+        File languageDir = IOUtils.FileIgnoreCase(languagesDir, languageCode);
+        File promptsDir = new File(languageDir, "cat");
+        File activeList = new File(sourceListsDir, "_activeLists.txt");
+        if (!activeList.exists()) {
+            System.err.println("File not found: " + activeList.getAbsolutePath());
+            System.exit(1);
+        }
+        //read file into stream, try-with-resources
+        try (BufferedReader br = new BufferedReader(new FileReader(activeList))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                // '!' means subject is locked.
+                if (line.charAt(0) == '!') line = line.substring(1);
+                line = line.trim();
+                if (line.length() < 1) continue;
+                // We have the category, ensure the system prompt exists.
+                File p1 = new File(promptsDir, line+".a18");
+                File p2 = new File(promptsDir, "i"+line+".a18");
+                if (!p1.exists()) {
+                    System.err.println(String.format("Missing system prompt for %s in language %s.", line, languageCode));
+                    System.exit(1);
+                }
+                if (!p2.exists()) {
+                    System.err.println(String.format("Missing long system prompt for %s in language %s.", line, languageCode));
+                    System.exit(1);
+                }
+                // Be sure there is a list for the category.
+                if (!line.equals("9-0") && !line.equals("$0-1")) {
+                    File pList = new File(sourceListsDir, line+".txt");
+                    if (!pList.exists()) {
+                        System.err.println(String.format("Missing playlist for category %s in language %s.", line, languageCode));
+                        System.exit(1);
+                    }
+                }
+            }
+        }
+    }
+
+    public void createDeployment(String deployment) throws Exception {
     deploymentNumber = deployment;
     targetDeploymentDir = new File(targetTempDir,
         "content/" + deploymentNumber);

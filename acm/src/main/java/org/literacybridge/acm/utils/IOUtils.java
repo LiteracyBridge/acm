@@ -267,7 +267,7 @@ public class IOUtils {
    *          TalkingBookData vs talkingbookdata.
    * @return A File representing the child.
    */
-  static final File FileIgnoreCase(File parentDirectory, final String child) {
+  public static final File FileIgnoreCase(File parentDirectory, final String child) {
     File retval = new File(parentDirectory, child);
     // If the file doesn't exist as-cased, search for a spelling that does match.
     if (!retval.exists()) {
