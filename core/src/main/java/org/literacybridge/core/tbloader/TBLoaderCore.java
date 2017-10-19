@@ -438,11 +438,11 @@ public class TBLoaderCore {
             bw.write(action + ",");
             bw.write(Integer.toString(durationSeconds) + ",");
             bw.write(mTbDeviceInfo.getSerialNumber().toUpperCase() + ",");
-            bw.write(mStatsOnly?"":mNewDeploymentInfo.getDeploymentName().toUpperCase() + ",");
-            bw.write(mStatsOnly?"":mNewDeploymentInfo.getPackageName().toUpperCase() + ",");
-            bw.write(mStatsOnly?"":mNewDeploymentInfo.getFirmwareRevision() + ",");
-            bw.write(mStatsOnly?"":mNewDeploymentInfo.getCommunity().toUpperCase() + ",");
-            bw.write(mStatsOnly?"":mNewDeploymentInfo.getUpdateTimestamp() + ",");
+            bw.write(mStatsOnly?",":mNewDeploymentInfo.getDeploymentName().toUpperCase() + ",");
+            bw.write(mStatsOnly?",":mNewDeploymentInfo.getPackageName().toUpperCase() + ",");
+            bw.write(mStatsOnly?",":mNewDeploymentInfo.getFirmwareRevision() + ",");
+            bw.write(mStatsOnly?",":mNewDeploymentInfo.getCommunity().toUpperCase() + ",");
+            bw.write(mStatsOnly?",":mNewDeploymentInfo.getUpdateTimestamp() + ",");
             bw.write(mOldDeploymentInfo.getSerialNumber().toUpperCase() + ",");
             bw.write(mOldDeploymentInfo.getDeploymentName().toUpperCase() + ",");
             bw.write(mOldDeploymentInfo.getPackageName().toUpperCase() + ",");
