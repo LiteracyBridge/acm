@@ -23,6 +23,7 @@ public class TBLoaderConstants {
   public static final RelativePath IMAGES_SUBDIR = RelativePath.parse("images");
   //public static final String SCRIPT_SUBDIR = SW_SUBDIR + "scripts/";
   public static final String NEED_SERIAL_NUMBER = "-- to be assigned --";
+  public static final String MISSING_PACKAGE = "ERROR!  MISSING CONTENT IMAGE!";
   public static final String NO_DRIVE = "(nothing connected)";
   //public static final String TRIGGER_FILE_CHECK = "checkdir";
   public static final int STARTING_SERIALNUMBER = 0;

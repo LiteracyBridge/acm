@@ -64,7 +64,7 @@ function updateLibs() {
 
             rmcmd=(rm "${acmDir}/lib/${f}")
 
-            $verbose && echo "${rmcmd[@]}">>${report}
+            #$verbose && echo "${rmcmd[@]}">>${report}
             $execute && "${rmcmd[@]}"
         fi
     done

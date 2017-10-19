@@ -1,7 +1,5 @@
 package org.literacybridge.core.tbloader;
 
-import org.literacybridge.core.fs.TbFile;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
@@ -91,7 +89,8 @@ public class TBLoaderUtils {
      * Given a Content Update directory with one or more images (packages), and a community, find
      * the package that matches the community.
      *
-     * @param deploymentDirectory The Content Update directory, with one or more images.
+     * @param deploymentDirectory The Content Update directory, with one or more images, like
+     *                            ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}
      * @param community           The community name for which the image name is desired. Like "vingving - jirapa"
      * @return The name of the image that matches, like "demo-2017-3-dga".
      */
@@ -101,9 +100,10 @@ public class TBLoaderUtils {
         }
         String imageName = "";
         String defaultImageName = "";
-        String groupName = "";
+        String groupName;
         File[] images;
 
+        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/images
         File imagesDir = new File(deploymentDirectory, IMAGES_SUBDIR.asString());
         images = imagesDir.listFiles(new FileFilter() {
             @Override
@@ -119,8 +119,8 @@ public class TBLoaderUtils {
             File communityDir = new File(deploymentDirectory,
                     "communities" + File.separator + community + File.separator + "system");
 
-            if (communityDir.exists()) {
-                // get groups in community
+            if (communityDir.exists() && communityDir.isDirectory()) {
+                // get groups in community; ie get list of '*.grp' marker files
                 String[] groups = communityDir.list(new FilenameFilter() {
                     @Override
                     public boolean accept(File dir, String name) {
@@ -134,7 +134,9 @@ public class TBLoaderUtils {
                     // look for a match in each of images's group listing
                     groupName = group.substring(0, group.length() - 4);
                     for (File image : images) {
+                        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/images/{image}/system
                         File systemDir = new File(image, "system");
+                        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/images/{image}/system/*.grp
                         String[] imageGroups = systemDir.list(new FilenameFilter() {
                             @Override
                             public boolean accept(File dir, String name) {
@@ -142,6 +144,9 @@ public class TBLoaderUtils {
                                 return lowercase.endsWith(GROUP_FILE_EXTENSION);
                             }
                         });
+                        if (imageGroups == null) {
+                            continue;
+                        }
                         for (String imageGroup : imageGroups) {
                             String imageGroupName = imageGroup.substring(0,
                                     imageGroup.length() - 4);
@@ -163,7 +168,7 @@ public class TBLoaderUtils {
             }
         }
         if (imageName.length() == 0) {
-            imageName = "ERROR!  MISSING CONTENT IMAGE!";
+            imageName = TBLoaderConstants.MISSING_PACKAGE;
         }
         return imageName;
     }

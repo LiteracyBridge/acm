@@ -861,9 +861,7 @@ public class TBLoader extends JFrame {
     };
 
     private void getImageFromCommunity(String community) throws Exception {
-//    File imagesDir = new File(
-//        CONTENT_SUBDIR + File.separator + newDeploymentList.getSelectedItem().toString() + "/"
-//            + IMAGES_SUBDIR + "/");
+        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}
         File deploymentDirectory = new File(baseDirectory,
                                             TBLoaderConstants.CONTENT_SUBDIR + File.separator
                                                     + newDeploymentList.getSelectedItem()
@@ -1052,6 +1050,18 @@ public class TBLoader extends JFrame {
                                                   text.toString(),
                                                   heading.toString(),
                                                   JOptionPane.PLAIN_MESSAGE);
+                    refreshUI();
+                    return;
+                }
+                
+                if (newImageText.getText().equalsIgnoreCase(TBLoaderConstants.MISSING_PACKAGE)) {
+                    StringBuilder text = new StringBuilder("Can not update a Talking Book for this Community,\n"+
+                        "because there is no Content Package.");
+                    StringBuilder heading = new StringBuilder("Missing Package");
+                    JOptionPane.showMessageDialog(applicationWindow,
+                        text.toString(),
+                        heading.toString(),
+                        JOptionPane.PLAIN_MESSAGE);
                     refreshUI();
                     return;
                 }

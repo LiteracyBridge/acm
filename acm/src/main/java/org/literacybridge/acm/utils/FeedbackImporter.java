@@ -175,6 +175,10 @@ public class FeedbackImporter {
         
         // Accumulate results from the project
         dirResults.add(projectResults);
+
+        // We've updated the project. If the directory is empty, we can remove it. If it doesn't
+        // remove, that's fine.
+        projectDir.delete();
       }
       // Make a per command line import directory report, in the import directory.
       dirResults.makeReport(new File(dirName, FEEDBACK_IMPORT_REPORT));
@@ -222,7 +226,7 @@ public class FeedbackImporter {
         FileUtils.moveDirectoryToDirectory(sourceDir, targetDir, true);
       } catch (FileExistsException e) {
         // Already exists (from a different tbloader's feedback), so copy & delete.
-        FileUtils.copyDirectory(sourceDir, targetDir);
+        FileUtils.copyDirectoryToDirectory(sourceDir, targetDir);
         FileUtils.deleteDirectory(sourceDir);
       }
     } catch (IOException ie) {

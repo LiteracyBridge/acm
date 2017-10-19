@@ -371,8 +371,8 @@ public class MoveStats {
     /**
      * Move userrecordings out of the statistics and into their own subdirectory. Don't bother
      * zipping them because the audio files are compressed, and mostly do not compress at all.
-     * Files are moved from: collected-data / {project} / UserRecordings / {update} / --- files ---
-     * to: {timestamp} / UserRecordings / {project} / {update} / --- files ---
+     * Files are moved from: collected-data / {project} / UserRecordings / {deployment} / --- files ---
+     * to: {timestamp} / UserRecordings / {project} / {deployment} / --- files ---
      *
      * @param collectedDataDir Directory with user recordings.
      * @param targetUserRecordingsDir Directory where user recordings should go.
@@ -393,20 +393,20 @@ public class MoveStats {
             if (!userrecordings.exists())
                 continue;
 
-            // Target directory for any {UPDATE} found within this {PROJECT}
+            // Target directory for any {DEPLOYMENT} found within this {PROJECT}
             File targetProjDir = new File(targetUserRecordingsDir,
                                           projectDir.getName().toLowerCase());
             logger.info(String.format("  processing %s into %s", projectDir.getName(),
                                       targetProjDir.getAbsolutePath()));
 
             // We have a userrecordings subdirectory, within some project subdirectory.
-            // Enumerate the contained {UPDATE} directories.
+            // Enumerate the contained {DEPLOYMENT} directories.
             File[] updateDirs = userrecordings.listFiles(
                     (fn) -> fn.isDirectory() && !fn.isHidden() && !fn.getName().startsWith("."));
             for (File updateDir : updateDirs) {
                 logger.info(String.format("    moving %s", updateDir.getName()));
 
-                // Move the {UPDATE} directory to the target
+                // Move the {DEPLOYMENT} directory to the target
                 try {
                     FileUtils.moveDirectoryToDirectory(updateDir, targetProjDir, true);
                 } catch (FileExistsException e) {
