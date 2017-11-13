@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.ResourceView.audioItems;
 
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -12,10 +13,10 @@ import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.SearchResult;
 
 public class AudioItemViewMouseListener extends MouseAdapter {
-  public AudioItemView adaptee;
-  public SearchResult currentResult;
+  private AudioItemView adaptee;
+  private SearchResult currentResult;
 
-  public AudioItemViewMouseListener(AudioItemView adaptee) {
+  AudioItemViewMouseListener(AudioItemView adaptee) {
     this.adaptee = adaptee;
   }
 
@@ -30,72 +31,50 @@ public class AudioItemViewMouseListener extends MouseAdapter {
 
   @Override
   public void mouseClicked(MouseEvent e) {
-    boolean leftButtonClicked = e.getButton() == MouseEvent.BUTTON1;
-    boolean rightButtonClicked = e.getButton() == MouseEvent.BUTTON3;
-    boolean shiftKeyPressed = e.isShiftDown();
+      boolean rightButtonClicked = e.getButton() == MouseEvent.BUTTON3;
 
-    if (rightButtonClicked && !shiftKeyPressed) {
-      selectRowUnderCursor(e);
-    } else if (shiftKeyPressed && rightButtonClicked) {
-      int startRow = adaptee.audioItemTable.rowAtPoint(e.getPoint());
-      int[] selectedRows = adaptee.audioItemTable.getSelectedRows();
-      int endRow = startRow; // use as default
-      if (selectedRows.length > 0) {
-        endRow = selectedRows[selectedRows.length - 1]; // value of last item
-      }
-      selectRange(startRow, endRow);
-    } else {
-      selectRowIfNoneIs(e);
-    }
-    showAudioItemDlg(e);
-  }
+      // Was the click on the info icon?
+      int col = adaptee.audioItemTable.columnAtPoint(e.getPoint());
+      boolean infoIconClicked = col == AudioItemTableModel.infoIconColumn.getColumnIndex();
 
-  private void selectRange(int rowStart, int rowEnd) {
-    adaptee.selectTableRow(rowStart, rowEnd);
-  }
-
-  private void selectRowIfNoneIs(MouseEvent e) {
-    if (!adaptee.hasSelectedRows()) {
+      // Was the click on a selected row?
       int row = adaptee.audioItemTable.rowAtPoint(e.getPoint());
-      adaptee.selectTableRow(row);
-    }
-  }
-
-  private void selectRowUnderCursor(MouseEvent e) {
-    int row = adaptee.audioItemTable.rowAtPoint(e.getPoint());
-    adaptee.selectTableRow(row);
-  }
-
-  private void showAudioItemDlg(MouseEvent e) {
-    int col = adaptee.audioItemTable.columnAtPoint(e.getPoint());
-
-    // trigger if right button was clicked, or if the settings icon
-    // was clicked with the left mouse button
-    if (col == AudioItemTableModel.infoIconColumn.getColumnIndex()
-        || e.getButton() != MouseEvent.BUTTON1) {
-
-      AudioItem clickedAudioItem = adaptee.getCurrentAudioItem(); // always the
-                                                                  // first item
-                                                                  // of a
-                                                                  // selection!!
-      if (clickedAudioItem != null) {
-
-        int[] selectedRows = adaptee.audioItemTable.getSelectedRows();
-        AudioItem[] selectedAudioItems = new AudioItem[selectedRows.length];
-        for (int i = 0; i < selectedRows.length; i++) {
-          selectedAudioItems[i] = adaptee
-              .getAudioItemAtTableRow(selectedRows[i]);
-        }
-
-        UIUtils.showDialog(
-            new AudioItemContextMenuDialog(Application.getApplication(),
-                clickedAudioItem, selectedAudioItems, adaptee, currentResult),
-            e.getXOnScreen() + 2, e.getYOnScreen());
+      boolean selectedRowClicked = false;
+      for (int selected: adaptee.audioItemTable.getSelectedRows()) {
+          selectedRowClicked |= (row == selected);
       }
-    }
+
+      // If either right mouse button, or info icon was clicked, then show the dialog, if
+      // the click was on a selected row.
+      // If not on a selected row, beep.
+      if (rightButtonClicked || infoIconClicked) {
+          if (selectedRowClicked)
+                showAudioItemDlg(e);
+          else
+              Toolkit.getDefaultToolkit().beep();
+      }
   }
 
-  public void setCurrentResult(SearchResult currentResult) {
+    private void showAudioItemDlg(MouseEvent e) {
+        // always the first item of a selection.
+        AudioItem clickedAudioItem = adaptee.getCurrentAudioItem();
+        if (clickedAudioItem != null) {
+
+            int[] selectedRows = adaptee.audioItemTable.getSelectedRows();
+            AudioItem[] selectedAudioItems = new AudioItem[selectedRows.length];
+            for (int i = 0; i < selectedRows.length; i++) {
+                selectedAudioItems[i] = adaptee
+                    .getAudioItemAtTableRow(selectedRows[i]);
+            }
+
+            UIUtils.showDialog(
+                new AudioItemContextMenuDialog(Application.getApplication(),
+                    clickedAudioItem, selectedAudioItems, adaptee, currentResult),
+                e.getXOnScreen() + 2, e.getYOnScreen());
+        }
+    }
+
+  void setCurrentResult(SearchResult currentResult) {
     this.currentResult = currentResult;
   }
 

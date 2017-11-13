@@ -223,7 +223,7 @@ class TagsListPopupMenu extends JPopupMenu {
      *
      * @param playlist to be exported.
      * @param category The category code that is being used as the Playlist name. Note that this
-     *                 has nothing whatesoever to do with the category of any message in the playlist.
+     *                 has nothing whatsoever to do with the category of any message in the playlist.
      *                 We use the same list of "category names" to categorized messages, and to name
      *                 playlists.
      * @param dir      The directory into which the list of message ids will be written.
