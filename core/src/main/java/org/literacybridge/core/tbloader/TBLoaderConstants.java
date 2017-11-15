@@ -56,6 +56,7 @@ public class TBLoaderConstants {
     public static final String DEPLOYMENT_PROPERTY = "DEPLOYMENT";
     public static final String PACKAGE_PROPERTY = "PACKAGE";
     public static final String COMMUNITY_PROPERTY = "COMMUNITY";
+    public static final String RECIPIENTID_PROPERTY = "RECIPIENTID";
     public static final String TALKING_BOOK_ID_PROPERTY = "TALKINGBOOKID";
     public static final String TIMESTAMP_PROPERTY = "TIMESTAMP";
     public static final String TEST_DEPLOYMENT_PROPERTY = "TESTDEPLOYMENT";

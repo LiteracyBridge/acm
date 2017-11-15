@@ -6,8 +6,12 @@ import org.literacybridge.androidtbloader.checkin.KnownLocations;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.core.fs.OperationLog;
+import org.literacybridge.core.tbloader.TBLoaderConstants;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;

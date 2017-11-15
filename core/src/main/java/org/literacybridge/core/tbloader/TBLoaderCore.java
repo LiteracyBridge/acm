@@ -501,6 +501,10 @@ public class TBLoaderCore {
                     .put("timestamp", mUpdateTimestampISO)
                     .put("duration", Integer.toString(durationSeconds))
                     .put("testing", mNewDeploymentInfo.isTestDeployment());
+                if (mNewDeploymentInfo.getRecipientid() != null) {
+                    opLog.put("out_recipientid", mNewDeploymentInfo.getRecipientid());
+                    deploymentLog.put("recipientid", mNewDeploymentInfo.getRecipientid());
+                }
                 if (mCoordinates != null && mCoordinates.length() > 0) {
                     deploymentLog.put("coordinates", mCoordinates);
                 }
@@ -518,6 +522,10 @@ public class TBLoaderCore {
                 .put("in_synchdir", (lastSynchDir != null ? lastSynchDir.toUpperCase() : ""))
                 .put("in_disk_label", mTbDeviceInfo.getLabel())
                 .put("disk_corrupted", mTbDeviceInfo.isCorrupted());
+            if (mOldDeploymentInfo.getRecipientid() != null) {
+                statsInfo.put("in_recipientid", mOldDeploymentInfo.getRecipientid());
+                opLog.put("in_recipientid", mOldDeploymentInfo.getRecipientid());
+            }
 
             if (mTtbFlashData != null) {
                 bw.write(mTtbFlashData.getSerialNumber().toUpperCase() + ",");
@@ -1400,6 +1408,9 @@ public class TBLoaderCore {
         if (mCoordinates != null && mCoordinates.length() > 0) {
             props.append(TBLoaderConstants.COORDINATES_PROPERTY, mCoordinates);
         }
+        if (mNewDeploymentInfo.getRecipientid() != null) {
+            props.append(TBLoaderConstants.RECIPIENTID_PROPERTY, mNewDeploymentInfo.getRecipientid());
+        }
         eraseAndOverwriteFile(system.open(TBLoaderConstants.DEPLOYMENT_PROPERTIES_NAME), props.toString());
 
         finishStep();
@@ -1442,11 +1453,20 @@ public class TBLoaderCore {
      */
     private void updateCommunity() throws IOException {
         startStep(updateCommunity);
+        // Keep 10.a18 and foo.grp files; skip recipient.id
+        TbFile.CopyFilter filter = new TbFile.CopyFilter() {
+            @Override
+            public boolean accept(TbFile file) {
+                String name = file.getName().toLowerCase();
+                return name.endsWith(".a18") || name.endsWith("*.grp");
+            }
+        };
 
         TbFile communityPath = mDeploymentDirectory.open(TBLoaderConstants.COMMUNITIES_SUBDIR).open(
                 mNewDeploymentInfo.getCommunity());
         if (communityPath.exists()) {
-            TbFile.copyDir(communityPath, mTalkingBookRoot, null, mCopyListener);
+            TbFile.copyDir(communityPath,
+                mTalkingBookRoot, filter, mCopyListener);
         }
 
         finishStep();

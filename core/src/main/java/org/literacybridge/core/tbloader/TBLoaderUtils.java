@@ -1,8 +1,11 @@
 package org.literacybridge.core.tbloader;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileReader;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -12,6 +15,7 @@ import java.util.logging.Logger;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEFAULT_GROUP_LABEL;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.GROUP_FILE_EXTENSION;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENTID_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.STARTING_SERIALNUMBER;
 
 public class TBLoaderUtils {
@@ -201,4 +205,34 @@ public class TBLoaderUtils {
         }
         return version;
     }
+
+    /**
+     *
+     * @param deploymentDirectory The directory with images. {project}/content/{Deployment}
+     * @param communityName The community (directory) name.
+     * @return The recipient id, if it can be determined, otherwise null.
+     */
+    public static String getRecipientIdForCommunity(File deploymentDirectory, String communityName) {
+        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/communities/{communitydir}
+        File communitiesDir = new File(deploymentDirectory, "communities");
+        File communityDir = new File(communitiesDir, communityName);
+        File recipientidFile = new File(communityDir, "recipient.id");
+
+        if (recipientidFile.exists()) {
+            try (BufferedReader br = new BufferedReader(new FileReader(recipientidFile))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    line = line.trim();
+                    String[] parts = line.split("=", 2);
+                    if (parts[0].equalsIgnoreCase(RECIPIENTID_PROPERTY)) {
+                        return parts[1].trim();
+                    }
+                }
+            } catch (IOException e) {
+                // Ignore
+            }
+        }
+        return null;
+    }
+
 }

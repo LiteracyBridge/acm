@@ -43,7 +43,9 @@ import org.literacybridge.core.tbloader.TBLoaderConfig;
 import org.literacybridge.core.tbloader.TBLoaderCore;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -738,6 +740,7 @@ public class TbLoaderFragment extends Fragment {
         if (tbDeviceInfo.needNewSerialNumber()) {
             deviceSerialNumber = getNewDeviceSerialNumber();
         }
+        String recipientid = TBLoaderUtils.getRecipientIdForCommunity(deploymentDirectory, mCommunity.getName());
 
         DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
                 .withSerialNumber(deviceSerialNumber)
@@ -749,6 +752,7 @@ public class TbLoaderFragment extends Fragment {
                 .withUpdateTimestamp(todaysDate) // TODO: this should be the "Deployment date", the first date the new content is deployed.
                 .withFirmwareRevision(firmwareRevision)
                 .withCommunity(mCommunity.getName())
+                .withRecipientid(recipientid)
                 .asTestDeployment(mTestDeploymentCheckBox.isChecked());
         DeploymentInfo newDeploymentInfo = builder.build();
 

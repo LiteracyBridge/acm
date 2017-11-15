@@ -149,8 +149,8 @@ public abstract class TbFile {
         void copying(String filename);
     }
 
-    public abstract static class CopyFilter {
-        public abstract boolean accept(TbFile file);
+    public interface CopyFilter {
+        boolean accept(TbFile file);
     }
 
     public static long copy(TbFile src, TbFile dst) throws IOException {

@@ -12,12 +12,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -666,6 +669,15 @@ public class TBLoader extends JFrame {
         newCommunityModel.setFilterString(filter);
     }
 
+    private String getRecipientIdForCommunity(String communityDirName) {
+        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/communities/{communitydir}
+        File deploymentDirectory = new File(baseDirectory,
+            TBLoaderConstants.CONTENT_SUBDIR + File.separator
+                + newDeploymentList.getSelectedItem().toString());
+
+        return TBLoaderUtils.getRecipientIdForCommunity(deploymentDirectory, communityDirName);
+    }
+
     private synchronized void setCommunityList() throws IOException {
         if (prevSelectedCommunity != -1)
             newCommunityList.setSelectedIndex(prevSelectedCommunity);
@@ -1304,7 +1316,22 @@ public class TBLoader extends JFrame {
             }
         }
 
-        private void update(DeploymentInfo newDeploymentInfo) {
+        private void update() {
+            String community = newCommunityList.getSelectedItem().toString();
+            DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
+                .withSerialNumber(newSrnText.getText())
+                .withNewSerialNumber(isNewSerialNumber)
+                .withProjectName(newProject)
+                .withDeploymentName(newDeploymentList.getSelectedItem().toString())
+                .withPackageName(newImageText.getText())
+                .withUpdateDirectory(null)
+                .withUpdateTimestamp(dateRotation)
+                .withFirmwareRevision(newFirmwareVersionText.getText())
+                .withCommunity(community)
+                .withRecipientid(getRecipientIdForCommunity(community))
+                .asTestDeployment(testDeployment.isSelected());
+            DeploymentInfo newDeploymentInfo = builder.build();
+
             String endMsg = "";
             String endTitle = "";
             OperationLog.Operation opLog = OperationLog.startOperation("TbLoaderUpdate");
@@ -1401,20 +1428,8 @@ public class TBLoader extends JFrame {
 
         @Override
         public void run() {
-            DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
-                    .withSerialNumber(newSrnText.getText())
-                    .withNewSerialNumber(isNewSerialNumber)
-                    .withProjectName(newProject)
-                    .withDeploymentName(newDeploymentList.getSelectedItem().toString())
-                    .withPackageName(newImageText.getText())
-                    .withUpdateDirectory(null)
-                    .withUpdateTimestamp(dateRotation)
-                    .withFirmwareRevision(newFirmwareVersionText.getText())
-                    .withCommunity(newCommunityList.getSelectedItem().toString())
-                    .asTestDeployment(testDeployment.isSelected());
-            DeploymentInfo newDeploymentInfo = builder.build();
             if (this.operation == Operation.Update) {
-                update(newDeploymentInfo);
+                update();
             } else if (this.operation == Operation.CollectStats) {
                 grabStatsOnly();
             }

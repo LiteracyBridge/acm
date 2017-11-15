@@ -11,13 +11,22 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.literacybridge.core.tbloader.TBLoaderConstants.BINARY_STATS_ALTERNATIVE_PATH;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.BINARY_STATS_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.COMMUNITY_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_PROPERTIES_NAME;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.NEED_SERIAL_NUMBER;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.NO_DRIVE;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.PACKAGE_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.PROJECT_FILE_EXTENSION;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.PROJECT_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENTID_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TALKING_BOOK_ID_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_AUDIO_PATH;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LANGUAGES_PATH;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_SYSTEM_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
@@ -47,7 +56,7 @@ public final class TBDeviceInfo {
 
 
     public static TBDeviceInfo getNullDeviceInfo() {
-        return new TBDeviceInfo(TBLoaderConstants.NO_DRIVE, null);
+        return new TBDeviceInfo(NO_DRIVE, null);
     }
 
     public TBDeviceInfo(TbFile tbRoot, String label, String prefix) {
@@ -57,7 +66,7 @@ public final class TBDeviceInfo {
         this.tbRoot = tbRoot;
         this.label = label.trim();
         tbPrefix = prefix;
-        tbSystem = tbRoot.open(TBLoaderConstants.TB_SYSTEM_PATH);
+        tbSystem = tbRoot.open(TB_SYSTEM_PATH);
         tbFlashData = loadFlashData(tbRoot);
         loadDeploymentProperties();
         loadSerialNumber();
@@ -122,10 +131,10 @@ public final class TBDeviceInfo {
             return false;
         }
 
-        return tbRoot.open(TBLoaderConstants.TB_SYSTEM_PATH).exists()
-                && tbRoot.open(TBLoaderConstants.TB_LANGUAGES_PATH).exists()
-                && tbRoot.open(TBLoaderConstants.TB_LISTS_PATH).exists()
-                && tbRoot.open(TBLoaderConstants.TB_AUDIO_PATH).exists();
+        return tbRoot.open(TB_SYSTEM_PATH).exists()
+                && tbRoot.open(TB_LANGUAGES_PATH).exists()
+                && tbRoot.open(TB_LISTS_PATH).exists()
+                && tbRoot.open(TB_AUDIO_PATH).exists();
     }
 
     /**
@@ -135,11 +144,11 @@ public final class TBDeviceInfo {
     private static TbFlashData loadFlashData(TbFile tbRoot) {
         TbFlashData tbFlashData = null;
         try {
-            TbFile flashDataBin = tbRoot.open(TBLoaderConstants.BINARY_STATS_PATH);
+            TbFile flashDataBin = tbRoot.open(BINARY_STATS_PATH);
             if (flashDataBin.exists()) {
                 tbFlashData = new TbFlashData(flashDataBin);
             } else {
-                flashDataBin = tbRoot.open(TBLoaderConstants.BINARY_STATS_ALTERNATIVE_PATH);
+                flashDataBin = tbRoot.open(BINARY_STATS_ALTERNATIVE_PATH);
                 if (flashDataBin.exists()) {
                     tbFlashData = new TbFlashData(flashDataBin);
                 }
@@ -164,7 +173,7 @@ public final class TBDeviceInfo {
                 !TBLoaderUtils.isSerialNumberFormatGood2(serialNumber)) {
             needNewSerialNumber = true;
             // We will allocate a new-style serial number before we update the tbDeviceInfo.
-            serialNumber = TBLoaderConstants.NEED_SERIAL_NUMBER;
+            serialNumber = NEED_SERIAL_NUMBER;
         }
     }
 
@@ -227,7 +236,7 @@ public final class TBDeviceInfo {
         if (tbRoot == null) {
             return sn;
         }
-        TbFile tbSystem = tbRoot.open(TBLoaderConstants.TB_SYSTEM_PATH);
+        TbFile tbSystem = tbRoot.open(TB_SYSTEM_PATH);
         Properties props = loadDeploymentProperties(tbSystem);
 
         sn = props.getProperty(TALKING_BOOK_ID_PROPERTY, UNKNOWN);
@@ -512,6 +521,24 @@ public final class TBDeviceInfo {
         return communityName;
     }
 
+    /**
+     * Reads the recipient id from the deployment properties file. There is no other location
+     * for this datum.
+     * @return The recipient id, or null if it can not be determines.
+     */
+    public String getRecipientid() {
+        String recipientid = null;
+        Properties properties = loadDeploymentProperties();
+        if (properties != null) {
+            recipientid = properties.getProperty(RECIPIENTID_PROPERTY, null);
+            LOG.log(Level.INFO, String.format("TBL!: recipientid: %s", recipientid));
+        } else {
+            LOG.log(Level.INFO, String.format("TBL!: recipientid: (null) (no deployment.properties)"));
+        }
+
+        return recipientid;
+    }
+
     public boolean isTestDeployment() {
         if (testDeployment == null) {
             testDeployment = false;
@@ -584,6 +611,7 @@ public final class TBDeviceInfo {
 
         try {
             String  community = getCommunityName();
+            String recipientid = getRecipientid();
 
             String firmwareVersion = getFirmwareVersion();
 
@@ -610,6 +638,7 @@ public final class TBDeviceInfo {
                     .withUpdateTimestamp(lastUpdate)
                     .withFirmwareRevision(firmwareVersion)
                     .withCommunity(community)
+                    .withRecipientid(recipientid)
                     .withFallbackProjectName(fallbackProjectName)
                     .asTestDeployment(isTestDeployment());
             deploymentInfo = builder.build();
