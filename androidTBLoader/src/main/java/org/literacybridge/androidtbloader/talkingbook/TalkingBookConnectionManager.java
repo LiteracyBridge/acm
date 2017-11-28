@@ -34,8 +34,9 @@ import java.util.Set;
 public class TalkingBookConnectionManager {
     private static final String TAG = "TBL!:" + TalkingBookConnectionManager.class.getSimpleName();
     private static final String TB_FS_DEFAULT_SERIAL_NUMBER = "9285-F050";
-    private static Integer [] GEN_PLUS_VENDOR_ID_LIST = {6975, 5325};
-    private static Integer [] GEN_PLUS_PRODUCT_ID_LIST = {8194, 4636};
+    // Genplus, sdAdapter, armKeil
+    private static Integer [] GEN_PLUS_VENDOR_ID_LIST = {6975, 5325, 1003};
+    private static Integer [] GEN_PLUS_PRODUCT_ID_LIST = {8194, 4636, 9252};
     private static Set<Integer> GEN_PLUS_VENDOR_IDS = new HashSet<>(Arrays.asList(GEN_PLUS_VENDOR_ID_LIST));
     private static Set<Integer> GEN_PLUS_PRODUCT_IDS = new HashSet<>(Arrays.asList(GEN_PLUS_PRODUCT_ID_LIST));
 

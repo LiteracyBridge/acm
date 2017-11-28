@@ -64,7 +64,7 @@ public final class TBDeviceInfo {
             throw new IllegalArgumentException("Root may not be null");
         }
         this.tbRoot = tbRoot;
-        this.label = label.trim();
+        this.label = label==null?"":label.trim();
         tbPrefix = prefix;
         tbSystem = tbRoot.open(TB_SYSTEM_PATH);
         tbFlashData = loadFlashData(tbRoot);
