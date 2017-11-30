@@ -4,7 +4,7 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 
 public class CommandLineParams {
-  @Option(name = "--sandbox", aliases = {"-s"}, usage = "to enter sandbox mode")
+  @Option(name = "--sandbox", aliases = {"-s", "--demo", "-d"}, usage = "to enter demo mode")
   public boolean sandbox;
 
   @Option(name = "--title", aliases = {"-title"}, usage = "to set name of ACM to be displayed in title bar")

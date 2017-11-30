@@ -123,6 +123,9 @@ public class GuiAccessControl extends AccessControl {
                 useSandbox = true;
                 break statusLoop;
             case available: {
+                if (useSandbox) {
+                    break statusLoop;
+                }
                 Object[] options = { "Update Shared Database", "Use Demo Mode" };
                 msg = "Do you want to update the shared database?";
                 String title = "Update or Demo Mode?";
