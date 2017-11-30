@@ -316,7 +316,7 @@ taxonomy:
       order: 900
       children:
         '9-0':
-          name: General Feedback
+          name: Uncategorized Feedback
           order: 0 
         '9-1':
           name: Needs review
@@ -324,16 +324,16 @@ taxonomy:
         '9-2':
           name: Useless
           order: 10
-        '9-3':
+        '9-3':  # May not be desirable in User Feedback ACMs
           name: Health Questions
           order: 40
-        '9-4':
+        '9-4':  # May not be desirable in User Feedback ACMs
           name: Agric Questions
           order: 30
-        '9-5':
+        '9-5':  # May not be desirable in User Feedback ACMs
           name: General Questions
           order: 50
-        '9-6':
+        '9-6':  # May not be desirable in User Feedback ACMs
           name: Endorsements
           order: 60
         '9-8':
@@ -342,7 +342,7 @@ taxonomy:
         '9-9':
           name: Nice Singing
           order: 80
-        '9-10':
+        '9-10':  # May not be desirable in User Feedback ACMs
           name: Entertaining Messages
           order: 90
     '10':
@@ -1228,6 +1228,7 @@ taxonomy:
           order: 910
     '92':
       name: Ignored Feedback
+      nonassignable: true
       order: 1000
       children:
         '92-2':
