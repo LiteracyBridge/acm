@@ -58,8 +58,7 @@ public abstract class MetadataStore {
   public abstract SearchResult search(String searchFilter,
       List<Category> categories, List<Locale> locales);
 
-  public abstract SearchResult search(String searchFilter,
-      Playlist selectedTag);
+  public abstract SearchResult search(String searchFilter, Playlist selectedPlaylist);
 
   public final void commit(Committable... objects) throws IOException {
     for (Committable c : objects) {

@@ -120,9 +120,10 @@ public class AudioItemContextMenuDialog extends JDialog
     ImageIcon deleteImageIcon = new ImageIcon(
             UIConstants.getResource(UIConstants.ICON_DELETE_16_PX));
     final String selectedTitle = getMetadataTitle(selectedAudioItems[0]);
-    final Playlist selectedTag = Application.getFilterState().getSelectedPlaylist();
-    String buttonLabel = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__REMOVE_TAG"),
-            labelPostfix, selectedTag.getName());
+    final Playlist selectedPlaylist = Application.getFilterState().getSelectedPlaylist();
+    String buttonLabel = String.format(LabelProvider.getLabel(
+        "AUDIO_ITEM_CONTEXT_MENU_DIALOG__REMOVE_PLAYLIST"),
+            labelPostfix, selectedPlaylist.getName());
 
     FlatButton removeFromPlaylistButton = new FlatButton(buttonLabel, deleteImageIcon, backgroundColor, highlightedColor) {
       @Override
@@ -131,13 +132,13 @@ public class AudioItemContextMenuDialog extends JDialog
 
         for (AudioItem a : selectedAudioItems) {
           try {
-            a.removePlaylist(selectedTag);
-            selectedTag.removeAudioItem(a.getUuid());
+            a.removePlaylist(selectedPlaylist);
+            selectedPlaylist.removeAudioItem(a.getUuid());
             ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
                     .commit(a);
           } catch (Exception e) {
             LOG.log(Level.WARNING, "Unable to remove audioitem id="
-                    + a.getUuid() + " from tag " + selectedTag.getName(), e);
+                    + a.getUuid() + " from playlist " + selectedPlaylist.getName(), e);
           }
         }
         Application.getFilterState().updateResult(true);

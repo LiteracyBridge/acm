@@ -26,9 +26,9 @@ import org.literacybridge.acm.store.Category;
 
 import com.google.common.collect.Lists;
 
-public class CategoriesAndTagsEditDialog extends ACMDialog {
+public class CategoriesAndPlaylistsEditDialog extends ACMDialog {
   private static final Logger LOG = Logger
-      .getLogger(CategoriesAndTagsEditDialog.class.getName());
+      .getLogger(CategoriesAndPlaylistsEditDialog.class.getName());
 
   private final AudioItem audioItem;
   private final JList categories;
@@ -36,7 +36,7 @@ public class CategoriesAndTagsEditDialog extends ACMDialog {
   // TODO: support removing tags in this dialog too
   // private final JList tags;
 
-  public CategoriesAndTagsEditDialog(Frame owner, final AudioItem audioItem) {
+  public CategoriesAndPlaylistsEditDialog(Frame owner, final AudioItem audioItem) {
     super(owner, "Edit categories and labels", true);
     this.audioItem = audioItem;
     setMinimumSize(new Dimension(200, 100));

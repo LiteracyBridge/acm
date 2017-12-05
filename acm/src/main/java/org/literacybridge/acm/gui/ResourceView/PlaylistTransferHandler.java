@@ -10,12 +10,12 @@ import javax.swing.TransferHandler;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
+import org.literacybridge.acm.gui.ResourceView.PlaylistListModel.PlaylistLabel;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
 
-public class TagsTransferHandler extends TransferHandler {
+public class PlaylistTransferHandler extends TransferHandler {
   static DataFlavor[] supportedFlavors = new DataFlavor[] {
       AudioItemView.AudioItemDataFlavor };
 
@@ -49,8 +49,8 @@ public class TagsTransferHandler extends TransferHandler {
     // Extract transfer data.
     try {
       if (support.isDataFlavorSupported(AudioItemView.AudioItemDataFlavor)) {
-        assignTag(support,
-            ((TagLabel) target.getModel().getElementAt(index)).getTag());
+        assignPlaylist(support,
+            ((PlaylistLabel) target.getModel().getElementAt(index)).getPlaylist());
         return true;
       }
 
@@ -61,20 +61,20 @@ public class TagsTransferHandler extends TransferHandler {
     return false;
   }
 
-  private void assignTag(TransferHandler.TransferSupport support,
-      final Playlist tag) throws IOException, UnsupportedFlavorException {
+  private void assignPlaylist(TransferHandler.TransferSupport support,
+      final Playlist playlist) throws IOException, UnsupportedFlavorException {
     Transferable t = support.getTransferable();
 
     final AudioItem[] audioItems = (AudioItem[]) t
         .getTransferData(AudioItemView.AudioItemDataFlavor);
 
     for (AudioItem item : audioItems) {
-      if (!item.hasPlaylist(tag)) {
+      if (!item.hasPlaylist(playlist)) {
         try {
-          item.addPlaylist(tag);
-          tag.addAudioItem(item.getUuid());
+          item.addPlaylist(playlist);
+          playlist.addAudioItem(item.getUuid());
           ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
-              .commit(item, tag);
+              .commit(item, playlist);
         } catch (Exception e) {
           e.printStackTrace();
         }

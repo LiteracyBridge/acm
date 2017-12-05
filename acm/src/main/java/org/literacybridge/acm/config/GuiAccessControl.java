@@ -3,6 +3,7 @@ package org.literacybridge.acm.config;
 import org.literacybridge.acm.config.AccessControl.AccessStatus;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.logging.Logger;
 
 import static javax.swing.JOptionPane.NO_OPTION;
@@ -173,8 +174,10 @@ public class GuiAccessControl extends AccessControl {
             JOptionPane.showMessageDialog(null, msg);
             break;
         case openedSandboxed:
-            msg = "The ACM is running in demonstration mode.\nPlease remember that your changes will not be saved.";
-            JOptionPane.showMessageDialog(null, msg);
+            if (!ACMConfiguration.getInstance().isForceSandbox()) {
+                msg = "The ACM is running in demonstration mode.\nPlease remember that your changes will not be saved.";
+                JOptionPane.showMessageDialog(null, msg);
+            }
             break;
         }
         return openStatus.isOpen();

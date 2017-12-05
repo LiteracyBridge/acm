@@ -5,8 +5,8 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.CategoryView.TagsListChanged;
-import org.literacybridge.acm.gui.ResourceView.TagsListModel.TagLabel;
+import org.literacybridge.acm.gui.ResourceView.CategoryView.PlaylistsChanged;
+import org.literacybridge.acm.gui.ResourceView.PlaylistListModel.PlaylistLabel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
@@ -40,19 +40,19 @@ import java.util.logging.Logger;
 /**
  * Playlists are still called "Tags". This is the context menu for playlists.
  */
-class TagsListPopupMenu extends JPopupMenu {
+class PlaylistPopupMenu extends JPopupMenu {
     private static final Logger LOG = Logger
-        .getLogger(TagsListPopupMenu.class.getName());
+        .getLogger(PlaylistPopupMenu.class.getName());
 
     private static String previousPackageName = "";
-    private final TagLabel selectedPlaylist;
+    private final PlaylistLabel selectedPlaylist;
 
-    TagsListPopupMenu(final TagLabel selectedPlaylist) {
+    PlaylistPopupMenu(final PlaylistLabel selectedPlaylist) {
         this.selectedPlaylist = selectedPlaylist;
-        String tag = selectedPlaylist.getTag().getName();
-        JMenuItem deletePlaylist = new JMenuItem("Delete '" + tag + "' ...");
-        JMenuItem renamePlaylist = new JMenuItem("Rename '" + tag + "' ...");
-        JMenuItem exportPlaylist = new JMenuItem("Export '" + tag + "' ...");
+        String playlist = selectedPlaylist.getPlaylist().getName();
+        JMenuItem deletePlaylist = new JMenuItem("Delete '" + playlist + "' ...");
+        JMenuItem renamePlaylist = new JMenuItem("Rename '" + playlist + "' ...");
+        JMenuItem exportPlaylist = new JMenuItem("Export '" + playlist + "' ...");
 
         add(deletePlaylist);
         add(renamePlaylist);
@@ -82,20 +82,20 @@ class TagsListPopupMenu extends JPopupMenu {
             if (n == 1) {
                 try {
                     List<String> audioItems = Lists
-                        .newLinkedList(selectedPlaylist.getTag().getAudioItemList());
+                        .newLinkedList(selectedPlaylist.getPlaylist().getAudioItemList());
                     for (String audioItemUuid : audioItems) {
                         AudioItem audioItem = ACMConfiguration.getInstance()
                             .getCurrentDB().getMetadataStore()
                             .getAudioItem(audioItemUuid);
-                        audioItem.removePlaylist(selectedPlaylist.getTag());
+                        audioItem.removePlaylist(selectedPlaylist.getPlaylist());
                         ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
                             .commit(audioItem);
                     }
                     ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
-                        .deletePlaylist(selectedPlaylist.getTag().getUuid());
+                        .deletePlaylist(selectedPlaylist.getPlaylist().getUuid());
                     ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
-                        .commit(selectedPlaylist.getTag());
-                    Application.getMessageService().pumpMessage(new TagsListChanged());
+                        .commit(selectedPlaylist.getPlaylist());
+                    Application.getMessageService().pumpMessage(new PlaylistsChanged());
                 } catch (Exception ex) {
                     LOG.log(Level.WARNING,
                         "Unable to remove playlist " + selectedPlaylist.toString());
@@ -112,16 +112,16 @@ class TagsListPopupMenu extends JPopupMenu {
     private ActionListener renameListener = new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            String tagName = (String) JOptionPane.showInputDialog(
-                TagsListPopupMenu.this, "Enter playlist name:", "Edit playlist",
-                JOptionPane.PLAIN_MESSAGE, null, null, selectedPlaylist.getTag().getName());
-            if (!StringUtils.isEmpty(tagName)) {
+            String playlistName = (String) JOptionPane.showInputDialog(
+                PlaylistPopupMenu.this, "Enter playlist name:", "Edit playlist",
+                JOptionPane.PLAIN_MESSAGE, null, null, selectedPlaylist.getPlaylist().getName());
+            if (!StringUtils.isEmpty(playlistName)) {
                 try {
-                    selectedPlaylist.getTag().setName(tagName);
+                    selectedPlaylist.getPlaylist().setName(playlistName);
                     ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
-                        .commit(selectedPlaylist.getTag());
+                        .commit(selectedPlaylist.getPlaylist());
 
-                    Application.getMessageService().pumpMessage(new TagsListChanged());
+                    Application.getMessageService().pumpMessage(new PlaylistsChanged());
                 } catch (Exception ex) {
                     LOG.log(Level.WARNING,
                         "Unable to rename playlist " + selectedPlaylist.toString());
@@ -205,7 +205,7 @@ class TagsListPopupMenu extends JPopupMenu {
                         "Export playlist", JOptionPane.PLAIN_MESSAGE, null, names, "");
 
                     if (!StringUtils.isEmpty(categoryName)) {
-                        export(selectedPlaylist.getTag(), categories.get(categoryName), packageMessagesListsDir);
+                        export(selectedPlaylist.getPlaylist(), categories.get(categoryName), packageMessagesListsDir);
                     }
                 }
 

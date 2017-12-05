@@ -106,10 +106,10 @@ public class AudioItemTableModel extends AbstractTableModel
           ColumnInfo.WIDTH_NOT_SET, 60, new ValueProvider<Integer>(false) {
             @Override
             protected AudioItemNode<Integer> getValue(AudioItem audioItem) {
-              Playlist tag = Application.getFilterState().getSelectedPlaylist();
+              Playlist playlist = Application.getFilterState().getSelectedPlaylist();
               int position = 0;
-              if (tag != null) {
-                position = tag.getAudioItemPosition(audioItem.getUuid()) + 1;
+              if (playlist != null) {
+                position = playlist.getAudioItemPosition(audioItem.getUuid()) + 1;
               }
               return new AudioItemNode<Integer>(audioItem, position);
             }

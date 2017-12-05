@@ -108,7 +108,7 @@ public class AudioItemPropertiesTable extends JXTable {
         if (col == AudioItemPropertiesModel.EDIT_COL
             && getAudioItemPropertiesModel().showEditIcon(row)) {
           UIUtils.showDialog(Application.getApplication(),
-              new CategoriesAndTagsEditDialog(Application.getApplication(),
+              new CategoriesAndPlaylistsEditDialog(Application.getApplication(),
                   getAudioItemPropertiesModel().getSelectedAudioItem()));
         }
 
@@ -119,7 +119,7 @@ public class AudioItemPropertiesTable extends JXTable {
   private void searchRequest(String query) {
     Application.getFilterState().setFilterCategories(null);
     Application.getFilterState().setFilterLanguages(null);
-    Application.getFilterState().setSelectedTag(null);
+    Application.getFilterState().setSelectedPlaylist(null);
     Application.getFilterState().setFilterString(query);
     Application.getMessageService()
         .pumpMessage(new SearchRequestMessage(query));

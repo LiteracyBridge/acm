@@ -104,9 +104,9 @@ public class LuceneMetadataStore extends MetadataStore {
   }
 
   @Override
-  public SearchResult search(String query, Playlist playlist) {
+  public SearchResult search(String query, Playlist selectedPlaylist) {
     try {
-      return index.search(query, playlist);
+      return index.search(query, selectedPlaylist);
     } catch (IOException e) {
       LOG.log(Level.SEVERE, "IOException while searching Lucene index.", e);
       return null;

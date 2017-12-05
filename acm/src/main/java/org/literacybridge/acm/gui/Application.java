@@ -344,7 +344,7 @@ public class Application extends JXFrame {
       updateResult();
     }
 
-    public synchronized void setSelectedTag(Playlist selectedPlaylist) {
+    public synchronized void setSelectedPlaylist(Playlist selectedPlaylist) {
       this.selectedPlaylist = selectedPlaylist;
       updateResult();
     }

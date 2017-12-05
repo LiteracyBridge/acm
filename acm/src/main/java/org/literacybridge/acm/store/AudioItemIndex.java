@@ -481,12 +481,12 @@ public class AudioItemIndex {
     }
   }
 
-  public SearchResult search(String filterString, Playlist selectedTag)
+  public SearchResult search(String filterString, Playlist selectedPlaylist)
       throws IOException {
     BooleanQuery.Builder bq = new BooleanQuery.Builder();
     addTextQuery(bq, filterString);
-    if (selectedTag != null) {
-      bq.add(new TermQuery(new Term(PLAYLISTS_FIELD, selectedTag.getUuid())),
+    if (selectedPlaylist != null) {
+      bq.add(new TermQuery(new Term(PLAYLISTS_FIELD, selectedPlaylist.getUuid())),
           Occur.MUST);
     }
     return search(bq.build());

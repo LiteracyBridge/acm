@@ -26,11 +26,11 @@ import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.SearchResult;
 
-public class TagContextMenuDialog extends JDialog implements WindowListener {
+public class PlaylistContextMenuDialog extends JDialog implements WindowListener {
   private static final Logger LOG = Logger
-      .getLogger(TagContextMenuDialog.class.getName());
+      .getLogger(PlaylistContextMenuDialog.class.getName());
 
-  public TagContextMenuDialog(final JFrame parent, final Playlist clickedTag,
+  public PlaylistContextMenuDialog(final JFrame parent, final Playlist clickedTag,
       final SearchResult data) {
     super(parent, "", false);
 
@@ -47,14 +47,14 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
 
     GridLayout grid = new GridLayout(3, 1);
 
-    final Playlist selectedTag = Application.getFilterState()
+    final Playlist selectedPlaylist = Application.getFilterState()
         .getSelectedPlaylist();
-    final String selectedTitle = selectedTag.getName();
+    final String selectedTitle = selectedPlaylist.getName();
 
     String labelPostfix;
     final FlatButton deleteButton;
 
-    if (selectedTag == null) {
+    if (selectedPlaylist == null) {
       final String deleteMessage;
 
       labelPostfix = selectedTitle;
@@ -71,7 +71,7 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
           deleteImageIcon, backgroundColor, highlightedColor) {
         @Override
         public void click() {
-          TagContextMenuDialog.this.setVisible(false);
+          PlaylistContextMenuDialog.this.setVisible(false);
 
           Object[] options = {
               LabelProvider.getLabel("CANCEL", LanguageUtil.getUILanguage()),
@@ -101,20 +101,20 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
       deleteButton = new FlatButton(
           String.format(
               LabelProvider.getLabel(
-                  "AUDIO_ITEM_CONTEXT_MENU_DIALOG__REMOVE_TAG",
+                  "AUDIO_ITEM_CONTEXT_MENU_DIALOG__REMOVE_PLAYLIST",
                   LanguageUtil.getUILanguage()),
-              labelPostfix, selectedTag.getName()),
+              labelPostfix, selectedPlaylist.getName()),
           deleteImageIcon, backgroundColor, highlightedColor) {
         @Override
         public void click() {
-          TagContextMenuDialog.this.setVisible(false);
+          PlaylistContextMenuDialog.this.setVisible(false);
 
           try {
             // a.removeTag(selectedTag);
             // a.commit();
           } catch (Exception e) {
             // LOG.log(Level.WARNING, "Unable to remove audioitem id=" +
-            // a.getUuid() + " from tag " + selectedTag.getName(), e);
+            // a.getUuid() + " from playlist " + selectedTag.getName(), e);
           }
           Application.getFilterState().updateResult(true);
 
@@ -132,7 +132,7 @@ public class TagContextMenuDialog extends JDialog implements WindowListener {
         backgroundColor, highlightedColor) {
       @Override
       public void click() {
-        TagContextMenuDialog.this.setVisible(false);
+        PlaylistContextMenuDialog.this.setVisible(false);
         // Call add new playlist dialog but relabel it and use it for edit
         // Also populate the text field with current name
       }
