@@ -51,6 +51,7 @@ import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateCont
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateSystem;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.OPERATIONAL_DATA;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_AUDIO_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
 
@@ -341,7 +342,7 @@ public class TBLoaderCore {
         // name for the directory that will contain the collected data, and then the .zip file of that data.
         // like TalkingBookData/{content update name}/{tbloader id}/{community name}/{tb serial no}
         RelativePath talkingBookDataParentPath = new RelativePath(
-                TBLoaderConstants.TB_DATA_PATH,           // "TalkingBookData"
+                TBLoaderConstants.TALKING_BOOK_DATA,           // "TalkingBookData"
                 mOldDeploymentInfo.getDeploymentName(),   // like "DEMO-2016-1"
                 builder.mTbLoaderConfig.getTbLoaderId(),   // like "000c"
                 mOldDeploymentInfo.getCommunity(),        // like "demo-seattle"
@@ -401,8 +402,8 @@ public class TBLoaderCore {
                                         mTbLoaderConfig.getTbLoaderId());
 
         TbFile logDir = mCollectedDataDirectory             // like /Users/alice/Dropbox/tbcd000c
-                .open(mOldDeploymentInfo.getProjectName())       // {tbloaderConfig.project}
-                .open("OperationalData")                    // "OperationalData"
+                .open(mOldDeploymentInfo.getProjectName())  // {tbloaderConfig.project}
+                .open(OPERATIONAL_DATA)         // "OperationalData"
                 .open(mTbLoaderConfig.getTbLoaderId())      // {tbloaderConfig.tbLoaderId}
                 .open("tbData");                            // "tbData"
 
@@ -1076,7 +1077,7 @@ public class TBLoaderCore {
         TbFile recordingsSrc = mTalkingBookRoot.open(TBLoaderConstants.TB_AUDIO_PATH);  // "messages/audio"
         // Build the user recordings destination path.
         TbFile recordingsDst = projectCollectedData           // like .../"tbcd1234/collected-data/UWR"
-                .open(TBLoaderConstants.USER_RECORDINGS_PATH) // "UserRecordings"
+                .open(TBLoaderConstants.USER_RECORDINGS) // "UserRecordings"
                 .open(mOldDeploymentInfo.getDeploymentName())  // like "UNICEF-2016-14"
                 .open(mTbLoaderConfig.getTbLoaderId())         // like "000C"
                 .open(mOldDeploymentInfo.getCommunity());      // like "VING VING"

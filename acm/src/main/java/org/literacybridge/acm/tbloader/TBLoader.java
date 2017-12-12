@@ -12,15 +12,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -289,7 +286,7 @@ public class TBLoader extends JFrame {
                 File tbLoaderDir = new File(dropboxDir, TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
                 // Like collected-data/{PROJECT}/OperationalData/{tbcdid}/logs
                 String logsPath = TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME + File.separator + newProject + File.separator +
-                    TBLoaderConstants.OPERATIONAL_DATA_SUBDIR_NAME + File.separator + deviceId + File.separator + "logs";
+                    TBLoaderConstants.OPERATIONAL_DATA + File.separator + deviceId + File.separator + "logs";
                 logsDir = new File(tbLoaderDir, logsPath);
                 logsDir.mkdirs();
                 if (!tbLoaderDir.exists()) {

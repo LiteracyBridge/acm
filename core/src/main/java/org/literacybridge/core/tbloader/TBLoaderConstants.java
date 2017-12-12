@@ -45,9 +45,9 @@ public class TBLoaderConstants {
   public static final RelativePath DIRS_TXT = RelativePath.parse("dir.txt");
   public static final RelativePath DIRS_POST_TXT = RelativePath.parse("dir_post.txt");
 
-  public static final String TB_DATA_PATH = "TalkingBookData";
-  public static final String OPERATIONAL_DATA_SUBDIR_NAME = "OperationalData";
-  public static final String USER_RECORDINGS_PATH = "UserRecordings";
+  public static final String TALKING_BOOK_DATA = "TalkingBookData";
+  public static final String OPERATIONAL_DATA = "OperationalData";
+  public static final String USER_RECORDINGS = "UserRecordings";
 
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
     public static final DateFormat ISO8601 = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset

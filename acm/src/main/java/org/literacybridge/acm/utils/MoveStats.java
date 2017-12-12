@@ -29,6 +29,9 @@ import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TALKING_BOOK_DATA;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.USER_RECORDINGS;
+
 /**
  * Moves stats and user feedback to a directory for processing.
  * The arguments are two paths, an input directory, an output directory, and a timestamp. Any
@@ -54,8 +57,6 @@ import org.slf4j.LoggerFactory;
  */
 public class MoveStats {
     private static final Logger logger = LoggerFactory.getLogger(MoveStats.class);
-    private static final String TALKING_BOOK_DATA = "TalkingBookData";
-    private static final String USER_RECORDINGS = "userrecordings";
 
     private final Params params;
     private Set<String> whitelistedIds = null;
@@ -273,7 +274,7 @@ public class MoveStats {
         if (hasTbData || hasUfData) {
             if (hasUfData) {
                 //File targetUfParentDir = new File(targetDir, userFeedbackTimeStamp);
-                //File targetUfDataDir = new File(targetUfParentDir, USER_RECORDINGS);
+                //File targetUfDataDir = new File(targetUfParentDir, USER_RECORDINGS_PATH);
                 File targetUfDataDir = new File(targetDir, USER_RECORDINGS);
                 try {
                     moveUserRecordings(collectedDataDir, targetUfDataDir);
