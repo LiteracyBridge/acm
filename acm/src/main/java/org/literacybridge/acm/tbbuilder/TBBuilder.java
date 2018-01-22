@@ -60,10 +60,12 @@ public class TBBuilder {
     private String deploymentNumber;
     private List<String> errorMessages = new ArrayList<>();
     private List<String> warningMessages = new ArrayList<>();
+    private Set<String> errorCommunities = new HashSet<>();
+    private Set<String> errorLanguages = new HashSet<>();
     public String project;
 
     public static void main(String[] args) throws Exception {
-        System.out.println("TB-Builder version " + Constants.ACM_VERSION);
+        System.out.println(String.format("TB-Builder version %s", Constants.ACM_VERSION));
         if (args.length == 0) {
             printUsage();
             System.exit(1);
@@ -230,7 +232,7 @@ public class TBBuilder {
         File newRev = new File(targetStagingDir, revision + ".rev");
         newRev.createNewFile();
 
-        System.out.println("\nDone with deployment of basic/community content.");
+        System.out.printf("%nDone with deployment of basic/community content.%n");
     }
 
     /**
@@ -245,7 +247,7 @@ public class TBBuilder {
         throws Exception {
         boolean hasIntro = false;
         int groupCount = groups.length;
-        System.out.println("\n\nExporting package " + packageName);
+        System.out.printf("%n%nExporting package %s%n", packageName);
 
         File sourcePackageDir = new File(sourceTbLoadersDir, "packages/" + packageName);
         File sourceMessagesDir = new File(sourcePackageDir, "messages");
@@ -258,10 +260,10 @@ public class TBBuilder {
         targetImageDir.mkdirs();
 
         if (!sourceListsDir.exists() || !sourceListsDir.isDirectory()) {
-            System.err.println("Directory not found: " + sourceListsDir);
+            System.err.printf("Directory not found: %s%n", sourceListsDir);
             System.exit(1);
         } else if (sourceListsDir.listFiles().length == 0) {
-            System.err.println("No lists found in " + sourceListsDir);
+            System.err.printf("No lists found in %s%n", sourceListsDir);
             System.exit(1);
         }
 
@@ -278,17 +280,17 @@ public class TBBuilder {
         File targetWelcomeMessageDir = targetLanguageDir;
 
         if (!targetAudioDir.exists() && !targetAudioDir.mkdirs()) {
-            System.err.println("Unable to create directory: " + targetAudioDir);
+            System.err.printf("Unable to create directory: %s%n", targetAudioDir);
             System.exit(1);
         }
 
         if (!targetLanguageDir.exists() && !targetLanguageDir.mkdirs()) {
-            System.err.println("Unable to create directory: " + targetLanguageDir);
+            System.err.printf("Unable to create directory: %s%n", targetLanguageDir);
             System.exit(1);
         }
 
         if (!targetWelcomeMessageDir.exists() && !targetWelcomeMessageDir.mkdirs()) {
-            System.err.println("Unable to create directory: " + targetWelcomeMessageDir);
+            System.err.printf("Unable to create directory: %s%n", targetWelcomeMessageDir);
             System.exit(1);
         }
 
@@ -378,7 +380,7 @@ public class TBBuilder {
                 }
             }
             if (!found) {
-                errorMessages.add(String.format("'%s' is not a valid deployment for %s", args[2], args[1]));
+                errorMessages.add(String.format("'%s' is not a valid deployment for ACM '%s'", args[2], args[1]));
             }
         }
 
@@ -405,22 +407,40 @@ public class TBBuilder {
         // If there are errors or warnings, print them and let user decide whether to continue.
         if (errorMessages.size() > 0 || warningMessages.size() > 0) {
             if (errorMessages.size() > 0) {
-                System.err.println("Errors found in Deployment:");
+                System.err.printf("%n%n********************************************************************************%n");
+                System.err.printf("%d Error(s) found in Deployment:%n", errorMessages.size());
                 for (String msg : errorMessages)
                     System.err.println(msg);
+                if (errorCommunities.size() > 0) {
+                    System.err.printf("%nThe following communities may not work properly with this Deployment:%n");
+                    for (String community : errorCommunities) {
+                        System.err.printf("'%s' ", community);
+                    }
+                    System.err.printf("%n");
+                }
+                if (errorLanguages.size() > 0) {
+                    System.err.printf("%nThe following languages may not work properly with this Deployment:%n");
+                    for (String community : errorLanguages) {
+                        System.err.printf("'%s' ", community);
+                    }
+                    System.err.printf("%n");
+                }
             }
             if (warningMessages.size() > 0) {
-                System.err.println("Warnings found in Deployment:");
+                System.err.printf("%n%n--------------------------------------------------------------------------------%n");
+                System.err.printf("%d Warning(s) found in Deployment:%n", warningMessages.size());
                 for (String msg : warningMessages)
                     System.err.println(msg);
             }
-            System.err.print("Do you want to continue (y/N)? ");
+            System.err.printf("%n%nDo you want to continue (y/N)? ");
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             String response = br.readLine().trim();
             if (response.length() == 0 || response.toLowerCase().charAt(0) != 'y') {
                 System.err.println("Exiting.");
                 System.exit(1);
             }
+            System.err.printf("%nContinuing with %s.%n%n", errorMessages.size()>0? "errors" : "warnings");
+
         }
     }
 
@@ -455,7 +475,7 @@ public class TBBuilder {
         File activeList = new File(sourceListsDir, "_activeLists.txt");
         if (!activeList.exists()) {
             errorMessages.add(
-                String.format("File '%s' not found for Package %s", activeList.getName(),
+                String.format("File '%s' not found for Package '%s'", activeList.getName(),
                     packageName));
         } else {
             //read file into stream, try-with-resources
@@ -476,11 +496,13 @@ public class TBBuilder {
                         errorMessages.add(
                             String.format("Missing system prompt for %s in language %s.", line,
                                 languageCode));
+                        errorLanguages.add(languageCode);
                     }
                     if (!p2.exists()) {
                         errorMessages.add(
                             String.format("Missing long system prompt for %s in language %s.", line,
                                 languageCode));
+                        errorLanguages.add(languageCode);
                     }
 
                     // Be sure there is a list for the category.
@@ -488,15 +510,17 @@ public class TBBuilder {
                         File pList = new File(sourceListsDir, line + ".txt");
                         if (!pList.exists()) {
                             errorMessages.add(
-                                String.format("Missing playlist file '%s.txt', for Package %s.",
-                                    line, packageName));
+                                String.format("Missing playlist file '%s.txt', for Package '%s', language '%s'.",
+                                    line, packageName, languageCode));
+                            errorLanguages.add(languageCode);
                         }
                     }
                 }
             } catch (Exception ex) {
                 errorMessages.add(
-                    String.format("Exception reading _activeLists.txt for Package '%s': %s",
-                        packageName, ex.getMessage()));
+                    String.format("Exception reading _activeLists.txt for Package '%s' language '%s': %s",
+                        packageName, languageCode, ex.getMessage()));
+                errorLanguages.add(languageCode);
             }
         }
     }
@@ -535,7 +559,8 @@ public class TBBuilder {
                 // But, if the custom greeting is missing, we still have the default 10.a18.
                 File languagesDir = new File(c, "languages");
                 if (!languagesDir.exists() || !languagesDir.isDirectory()) {
-                    errorMessages.add("Missing or empty 'languages' directory for " + c.getName());
+                    errorMessages.add(String.format("Missing or empty 'languages' directory for community '%s'", c.getName()));
+                    errorCommunities.add(c.getName());
                 } else {
                     // Look for individual language directories, 'en', 'dga', ...
                     File[] langs = languagesDir.listFiles(path -> path.isDirectory());
@@ -554,7 +579,8 @@ public class TBBuilder {
                 // We *must* find system / {group}.grp
                 File systemDir = new File(c, "system");
                 if (!systemDir.exists() || !systemDir.isDirectory()) {
-                    errorMessages.add("Missing or empty 'system' directory for " + c.getName());
+                    errorMessages.add(String.format("Missing or empty 'system' directory for community '%s'", c.getName()));
+                    errorCommunities.add(c.getName());
                 } else {
                     // Look for .grp files.
                     File[] grps = systemDir.listFiles((dir, name) -> name.toLowerCase()
@@ -569,6 +595,7 @@ public class TBBuilder {
                     errorMessages.add(
                         String.format("Community '%s' does not have any language in the Deployment",
                             c.getName()));
+                    errorCommunities.add(c.getName());
                 } else {
                     if (!foundGreeting) {
                         warningMessages.add(
@@ -583,6 +610,7 @@ public class TBBuilder {
                     errorMessages.add(
                         String.format("Community '%s' is not in any group in the Deployment",
                             c.getName()));
+                    errorCommunities.add(c.getName());
                 }
             }
         }
@@ -791,7 +819,7 @@ public class TBBuilder {
                 String uuid = reader.readLine();
                 AudioItem audioItem = ACMConfiguration.getInstance().getCurrentDB()
                     .getMetadataStore().getAudioItem(uuid);
-                System.out.println("    Exporting audioitem " + uuid + " to " + targetDirectory);
+                System.out.println(String.format("    Exporting audioitem %s to %s", uuid, targetDirectory));
                 if (filename == null) {
                     repository.exportA18WithMetadata(audioItem, targetDirectory);
                 } else {
