@@ -1,18 +1,10 @@
 package org.literacybridge.acm.store;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
-
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
@@ -56,11 +48,19 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 public class AudioItemIndex {
   private static final Logger LOG = Logger
@@ -371,7 +371,7 @@ public class AudioItemIndex {
     return doc != null ? loadAudioItem(doc) : null;
   }
 
-  public Iterable<AudioItem> getAudioItems() throws IOException {
+  public Collection<AudioItem> getAudioItems() throws IOException {
     final List<AudioItem> results = Lists.newArrayList();
     final IndexSearcher searcher = searcherManager.acquire();
     try {

@@ -1,9 +1,6 @@
 package org.literacybridge.acm.config;
 
-import org.literacybridge.acm.config.AccessControl.AccessStatus;
-
 import javax.swing.*;
-import java.awt.*;
 import java.util.logging.Logger;
 
 import static javax.swing.JOptionPane.NO_OPTION;
@@ -18,13 +15,12 @@ import static javax.swing.JOptionPane.YES_OPTION;
 public class GuiAccessControl extends AccessControl {
     private static final Logger LOG = Logger.getLogger(GuiAccessControl.class.getName());
 
-    public GuiAccessControl(DBConfiguration config) {
+    GuiAccessControl(DBConfiguration config) {
         super(config);
     }
 
     @Override
-    public boolean initDb() {
-        AccessControl accessControl = dbConfiguration.getAccessControl();
+    public void initDb() {
         boolean useSandbox = ACMConfiguration.getInstance().isForceSandbox();
         int buttonIx;
         AccessStatus accessStatus = AccessStatus.none;
@@ -38,7 +34,7 @@ public class GuiAccessControl extends AccessControl {
         // Some of these try again, hence the loop.
         statusLoop:
         while (true) {
-            accessStatus = accessControl.init();
+            accessStatus = super.init();
             switch (accessStatus) {
             case none:
                 throw new IllegalStateException("Should not happen");
@@ -101,7 +97,7 @@ public class GuiAccessControl extends AccessControl {
                     msg = "The latest version of the ACM database has not yet downloaded to this computer.\nYou may shutdown and wait or begin demonstration mode with the previous version.";
                 } else {
                     msg = String.format("Another user currently has write access to the ACM.\n%s\n",
-                                        accessControl.getPosessor());
+                                        super.getPosessor());
                 }
                 String title = "Cannot Get Write Access";
                 buttonIx = JOptionPane.showOptionDialog(null, msg, title,
@@ -148,7 +144,7 @@ public class GuiAccessControl extends AccessControl {
         }
 
         // If we're here, we're going to try to open the database.
-        AccessControl.OpenStatus openStatus = accessControl.open(useSandbox);
+        AccessControl.OpenStatus openStatus = super.open(useSandbox);
         switch (openStatus) {
         case none:
             throw new IllegalStateException("Should not happen");
@@ -161,7 +157,7 @@ public class GuiAccessControl extends AccessControl {
             msg = String.format(
                     "Sorry, but another user must have just checked out this ACM a moment ago!\nTry contacting %s\n"
                             + "\nAfter clicking OK, the ACM will shut down.",
-                    accessControl.getPosessor());
+                    super.getPosessor());
             JOptionPane.showMessageDialog(null, msg);
             stackTraceExit(1);
             break;
@@ -180,18 +176,17 @@ public class GuiAccessControl extends AccessControl {
             }
             break;
         }
-        return openStatus.isOpen();
+        openStatus.isOpen();
     }
 
     /**
-     * Calls AccessControl updateDB, with appropriate dialogs before and after. This function
-     * doesn't actually DO anything, that's all deferred to AccessControl.
+     * Calls AccessControl commitDbChanges or discardDbChanges, with appropriate dialogs before and
+     * after. This function doesn't actually DO anything, that's all deferred to AccessControl.
      *
      * @return True if the update was successful.
      */
     @Override
-    public boolean updateDb() {
-        AccessControl accessControl = dbConfiguration.getAccessControl();
+    public void updateDb() {
         boolean checkinOk = false;
         boolean saveWork = true;
         int buttonIx;
@@ -219,7 +214,7 @@ public class GuiAccessControl extends AccessControl {
 
         checkinLoop:
         while (true) {
-            AccessControl.UpdateDbStatus updateStatus = accessControl.updateDb(!saveWork);
+            AccessControl.UpdateDbStatus updateStatus = saveWork ? super.commitDbChanges() : super.discardDbChanges();
             switch (updateStatus) {
             case ok:
                 checkinOk = true;
@@ -278,7 +273,6 @@ public class GuiAccessControl extends AccessControl {
         }
         JOptionPane.showMessageDialog(null, msg);
 
-        return checkinOk;
     }
 
     /**

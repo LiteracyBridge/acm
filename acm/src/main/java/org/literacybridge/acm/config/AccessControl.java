@@ -12,16 +12,13 @@ import org.literacybridge.core.fs.ZipUnzip;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
-import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,15 +46,15 @@ public class AccessControl {
         private final boolean okWithSandbox;
         private final boolean mayBeOutdated;
 
-        private AccessStatus() {
+        AccessStatus() {
             this(false, false);
         }
 
-        private AccessStatus(boolean okWithSandbox) {
+        AccessStatus(boolean okWithSandbox) {
             this(okWithSandbox, false);
         }
 
-        private AccessStatus(boolean okWithSandbox, boolean mayBeOutdated) {
+        AccessStatus(boolean okWithSandbox, boolean mayBeOutdated) {
             this.okWithSandbox = okWithSandbox;
             this.mayBeOutdated = mayBeOutdated;
         }
@@ -90,13 +87,18 @@ public class AccessControl {
     }
 
     /**
-     * These are the values that can be returned by updateDb(boolean).
+     * These are the values that can be returned by commitDbChanges().
      */
     public enum UpdateDbStatus {
         ok,                             // Saved locally, checked in status on server.
         denied,                         // Server denied checkin.
         networkError,                   // Can't access server to checkin.
         zipError                        // Error zipping the database (metadata).
+    }
+
+    public enum CloseDisposition {
+        save,
+        discard
     }
 
     private static final Logger LOG = Logger.getLogger(AccessControl.class.getName());
@@ -109,7 +111,7 @@ public class AccessControl {
     private final static String DB_DOES_NOT_EXIST = "NULL";
     private final static String DB_KEY_OVERRIDE = "force";
 
-    final DBConfiguration dbConfiguration;
+    private final DBConfiguration dbConfiguration;
 
     private AccessStatus accessStatus = AccessStatus.none;
     private String possessor;
@@ -143,6 +145,10 @@ public class AccessControl {
         return possessor;
     }
 
+    public AccessStatus getAccessStatus() {
+        return accessStatus;
+    }
+
     /**
      * Given a dbNN.zip file name (from Dropbox), determine the NN+1 filename, and store both
      * for later use. If the NN can't be parsed, or there is no filename (ie, null), then
@@ -155,9 +161,8 @@ public class AccessControl {
      * necessarily the latest filename, when we are unable to access the server.
      *
      * @param currentFilename a string like "dbNN.zip", or "NULL"
-     * @return True if the name was well formed, and the names were stored.
      */
-    private boolean setZipFilenames(String currentFilename) {
+    private void setZipFilenames(String currentFilename) {
         String nextFilename = null;
 
         if (currentFilename != null) {
@@ -181,7 +186,6 @@ public class AccessControl {
             }
         }
         dbInfo.setFilenames(currentFilename, nextFilename);
-        return currentFilename != null;
     }
 
     public String getCurrentZipFilename() {
@@ -202,10 +206,8 @@ public class AccessControl {
 
     /**
      * Cleans up the temp directory for this ACM
-     * @return true if the files were deleted, false if there was some exception cleaning.
      */
-    private boolean deleteLocalDB() {
-        boolean success = false;
+    private void deleteLocalDB() {
         try {
             // deleting old local DB so that next startup knows everything shutdown
             // normally
@@ -213,12 +215,10 @@ public class AccessControl {
             File oldDB = new File(dbConfiguration.getTempACMsDirectory(),
                                   dbConfiguration.getSharedACMname());
             FileUtils.deleteDirectory(oldDB);
-            success = true;
         } catch (IOException e) {
             e.printStackTrace();
             // TODO: Notify the user so they have some slim chance of getting around the problem.
         }
-        return success;
     }
 
     /**
@@ -227,9 +227,8 @@ public class AccessControl {
      */
     static boolean isOnline() {
         boolean result = false;
-        URLConnection connection = null;
         try {
-            connection = new URL("http://literacybridge.org").openConnection();
+            URLConnection connection = new URL("http://literacybridge.org").openConnection();
             connection.connect();
             result = true;
         } catch (MalformedURLException e) {
@@ -244,9 +243,8 @@ public class AccessControl {
     /**
      * Non-interactive version of initDb. Either works or not, with current setting of
      * isForceSandbox() config item.
-     * @return True if the database was opened, the way the caller wanted it.
      */
-    public boolean initDb() {
+    public void initDb() {
         boolean useSandbox = ACMConfiguration.getInstance().isForceSandbox();
         AccessStatus accessStatus = init();
         if (accessStatus == AccessStatus.available ||
@@ -254,18 +252,8 @@ public class AccessControl {
                 accessStatus == AccessStatus.newDatabase ||
                 accessStatus.isOkWithSandbox() && useSandbox) {
             OpenStatus openStatus = open(useSandbox);
-            return openStatus.isOpen();
+            openStatus.isOpen();
         }
-        return false;
-    }
-
-    /**
-     * Non-interactive version of updateDb. Either works or not, no messages.
-     * @return True if the database was closed and checked in successfully.
-     */
-    public boolean updateDb() {
-        UpdateDbStatus updateStatus = updateDb(false);
-        return updateStatus == AccessControl.UpdateDbStatus.ok;
     }
 
     /**
@@ -320,7 +308,7 @@ public class AccessControl {
      * @return The OpenStatus.
      */
     OpenStatus open(boolean useSandbox) {
-        OpenStatus openStatus = OpenStatus.none;
+        OpenStatus openStatus;
         if (!LockACM.isLocked() || dbInfo == null) {
             throw new IllegalStateException("Call to open() without call to init()");
         }
@@ -402,13 +390,19 @@ public class AccessControl {
 
             // Checked out, create the repository object.
             String user = ACMConfiguration.getInstance().getUserName();
-            System.out.println("  Repository:                     "
-                                       + dbConfiguration.getRepositoryDirectory());
-            System.out.println("  Temp Database:                  "
-                                       + dbConfiguration.getTempDatabaseDirectory());
-            System.out.println("  Temp Repository (sandbox mode): " + dbConfiguration.getSandboxDirectory());
-            System.out.println("  UserRWAccess:                   " + dbConfiguration.userHasWriteAccess(user));
-            System.out.println("  online:                         " + isOnline());
+            LOG.info(String.format(
+                "  Repository:                     %s\n" +
+                "  Temp Database:                  %s\n" +
+                "  Temp Repository (sandbox mode): %s\n" +
+                "  user:                           %s\n" +
+                "  UserRWAccess:                   %s\n" +
+                "  online:                         %s\n",
+                dbConfiguration.getRepositoryDirectory(),
+                dbConfiguration.getTempDatabaseDirectory(),
+                dbConfiguration.getSandboxDirectory(),
+                user,
+                dbConfiguration.userHasWriteAccess(user),
+                isOnline()));
 
             String wavExt = "." + AudioFormat.WAV.getFileExtension();
             FileSystemRepository.FileSystemGarbageCollector fsgc = new FileSystemRepository.FileSystemGarbageCollector(
@@ -476,6 +470,18 @@ public class AccessControl {
         return AccessStatus.available;
     }
 
+    public void updateDb() {
+        throw new IllegalStateException("Only valid in sub-classes");
+    }
+
+    public UpdateDbStatus commitDbChanges() {
+        return commitOrDiscard(CloseDisposition.save);
+    }
+
+    public UpdateDbStatus discardDbChanges() {
+        return commitOrDiscard(CloseDisposition.discard);
+    }
+
     /**
      * This should be called "writeBackDb" or "commitChanges" or something like that.
      * <p>
@@ -488,11 +494,8 @@ public class AccessControl {
      * .networkError if we could not reach the server,
      * .zipError if there was an error zipping up the database
      */
-    UpdateDbStatus updateDb(boolean discard) {
-        boolean checkedInOk = false;
-        boolean saveWork = !discard;
-        // The key by which the server tracks our checkout. The server key is 'truth'.
-        String key = getDBKey();
+    private UpdateDbStatus commitOrDiscard(CloseDisposition disposition) {
+        boolean saveWork = disposition == CloseDisposition.save;
         String filename = null;
 
         if (saveWork) {
@@ -502,6 +505,7 @@ public class AccessControl {
             }
         }
 
+        boolean checkedInOk;
         try {
             checkedInOk = checkInDB(dbConfiguration.getSharedACMname(), filename);
         } catch (IOException ex) {
@@ -522,14 +526,18 @@ public class AccessControl {
         return UpdateDbStatus.ok;
     }
 
+    @SuppressWarnings("unchecked")
     boolean checkOutDB(String db, String action) throws IOException {
-        boolean status = true;
-        String filename = null, key = null, possessor = null;
-        URL url;
         String computerName;
-        // TESTING: for AWS parallel integration tests
         boolean status_aws = true;
-        String filename_aws = null, key_aws = null, possessor_aws = null, response = null;
+        String filename_aws = null, key_aws = null, possessor_aws = null;
+
+        if (ACMConfiguration.getInstance().isNoDbCheckout()) {
+            if (!setNewestModifiedZipFileAsCurrent()) {
+                setZipFilenames(DB_DOES_NOT_EXIST);
+            }
+            return true;
+        }
 
         try {
             computerName = InetAddress.getLocalHost().getHostName();
@@ -537,7 +545,6 @@ public class AccessControl {
             computerName = "UNKNOWN";
         }
 
-        // TESTING: AWS check-out
         // send POST request to AWS API gateway to invoke acmCheckOut lambda function
         String requestURL = "https://7z4pu4vzqk.execute-api.us-west-2.amazonaws.com/prod";
         JSONObject request = new JSONObject();
@@ -555,35 +562,34 @@ public class AccessControl {
         //request.put("comment", comment);   for possible future use, allows any string input
 
         HttpUtility httpUtility = new HttpUtility();
-        JSONObject jsonResponse = null;
+        JSONObject jsonResponse;
         try {
             httpUtility.sendPostRequest(requestURL, request);
             jsonResponse = httpUtility.readJSONObject();
-            System.out.printf("%s: %s\n          %s\n", action, request.toString(), jsonResponse.toString());
+            LOG.info(String.format("%s: %s\n          %s\n", action, request.toString(), jsonResponse.toString()));
         } catch (IOException ex) {
             ex.printStackTrace();
+            throw ex;
         }
         httpUtility.disconnect();
 
         // parse response
-        if (jsonResponse != null) {
-            Object o = jsonResponse.get("status");
-            if (o instanceof String) {
-                String str = (String)o;
-                status_aws = str.equalsIgnoreCase("ok");
-            }
-            o = jsonResponse.get("key");
-            if (o instanceof String) {
-                key_aws = (String)o;
-            }
-            o = jsonResponse.get("filename");
-            if (o instanceof String) {
-                filename_aws = (String)o;
-            }
-            o = jsonResponse.get("openby");
-            if (o instanceof String) {
-                possessor_aws = (String)o;
-            }
+        Object o = jsonResponse.get("status");
+        if (o instanceof String) {
+            String str = (String)o;
+            status_aws = str.equalsIgnoreCase("ok");
+        }
+        o = jsonResponse.get("key");
+        if (o instanceof String) {
+            key_aws = (String)o;
+        }
+        o = jsonResponse.get("filename");
+        if (o instanceof String) {
+            filename_aws = (String)o;
+        }
+        o = jsonResponse.get("openby");
+        if (o instanceof String) {
+            possessor_aws = (String)o;
         }
 
         if (status_aws) {
@@ -591,58 +597,19 @@ public class AccessControl {
                 setAWSKey(key_aws);
             }
         }
-        //UNCOMMENT FOR FULL INTEGRATION
-        if (dbConfiguration.useAwsLocking()) {
-            if (filename_aws != null)
-                setZipFilenames(filename_aws);
-            if (status_aws) {
-                if (key_aws != null) {
-                    setDBKey(key_aws);
-                    dbInfo.setCheckedOut(true);
-                }
-            } else if (possessor_aws != null) {
-                setPossessor(possessor_aws);
-            }
-            return status_aws;
-        }
 
-        // From here on can be removed once we've completely cut over to AWS locking.
-        url = new URL(
-                "http://literacybridge.org/checkout.php?db=" + db + "&action=" + action + "&name="
-                        + ACMConfiguration.getInstance().getUserName() + "&contact="
-                        + ACMConfiguration.getInstance().getUserContact() + "&version="
-                        + Constants.ACM_VERSION + "&computername=" + computerName);
-        InputStream in;
-        in = url.openStream();
-        Scanner scanner = new Scanner(in);
-        // scanner.useDelimiter(END_OF_INPUT);
-        while (scanner.hasNext()) {
-            String s = scanner.next();
-            if (s.startsWith("key="))
-                key = s.substring(s.indexOf('=') + 1);
-            else if (s.startsWith("filename="))
-                filename = s.substring(s.indexOf('=') + 1);
-            else if (s.startsWith("possessor=")) {
-                possessor = s.substring(s.indexOf('=') + 1);
-                status = false;
-            }
-        }
-        if (filename != null)
-            setZipFilenames(filename);
-        if (status) {
-            if (key != null) {
-                setDBKey(key);
+        if (filename_aws != null)
+            setZipFilenames(filename_aws);
+        if (status_aws) {
+            if (key_aws != null) {
+                setDBKey(key_aws);
                 dbInfo.setCheckedOut(true);
             }
-        } else if (possessor != null) {
-            setPossessor(possessor);
+        } else if (possessor_aws != null) {
+            setPossessor(possessor_aws);
         }
-        System.out.println(
-                "ORIGINAL SYSTEM: " + getDBKey() + " " + filename + " " + possessor + " " + status);
-        System.out.println(
-                "AWS SYSTEM: " + getAWSKey() + " " + filename_aws + " " + possessor_aws + " "
-                        + status_aws);
-        return status;
+        return status_aws;
+
     }
 
     /**
@@ -653,20 +620,20 @@ public class AccessControl {
      * @param db       The ACM name, like "ACM-DEMO".
      * @param filename The name of the file, dbNN.zip, or null to discard checkout
      * @return true if
-     * @throws IOException
+     * @throws IOException if server is inaccessible
      */
+    @SuppressWarnings("unchecked")
     private boolean checkInDB(String db, String filename) throws IOException {
-        boolean status = false;
-        final String END_OF_INPUT = "\\Z";
-        String s = null;
         String computerName;
-        URL url;
         String action;
         String key = getDBKey();
 
+        if (ACMConfiguration.getInstance().isNoDbCheckout()) {
+            return true;
+        }
+
         // for AWS parallel integration tests
         boolean status_aws = false;
-        String response = null;
 
         if (filename == null) {
             action = "discard";
@@ -681,7 +648,7 @@ public class AccessControl {
             computerName = "UNKNOWN";
         }
 
-        // AWS check-in
+        // AWS check-in, configured in AWS Application Gateway
         String requestURL = "https://7z4pu4vzqk.execute-api.us-west-2.amazonaws.com/prod";
         JSONObject request = new JSONObject();
 
@@ -708,7 +675,7 @@ public class AccessControl {
         try {
             httpUtility.sendPostRequest(requestURL, request);
             jsonResponse = httpUtility.readJSONObject();
-            System.out.printf("%s: %s\n          %s\n", action, request.toString(), jsonResponse.toString());
+            LOG.info(String.format("%s: %s\n          %s\n", action, request.toString(), jsonResponse.toString()));
         } catch (IOException ex) {
             ex.printStackTrace();
             // If this is the only locking, rethrow the exception, so caller knows we can't get to server.
@@ -726,29 +693,7 @@ public class AccessControl {
             }
         }
 
-        if (dbConfiguration.useAwsLocking()) {
-            return status_aws;
-        }
-
-        // From here on can be removed once we've completely cut over to AWS locking.
-        url = new URL(
-                "http://literacybridge.org/checkin.php?db=" + db + "&action=" + action + "&key="
-                        + key + "&filename=" + filename + "&name=" + ACMConfiguration.getInstance()
-                        .getUserName() + "&contact=" + ACMConfiguration.getInstance()
-                        .getUserContact() + "&version=" + Constants.ACM_VERSION + "&computername="
-                        + computerName);
-        InputStream in;
-        in = url.openStream();
-        Scanner scanner = new Scanner(in);
-        scanner.useDelimiter(END_OF_INPUT);
-        s = scanner.next();
-
-        if (s != null) {
-            status = s.trim().equals("ok");
-        }
-        System.out.println("ORIGINAL SYSTEM: " + status + " " + getDBKey());
-        System.out.println("AWS SYSTEM: " + status_aws + " " + getAWSKey());
-        return status;
+        return status_aws;
     }
 
     /**
@@ -763,15 +708,17 @@ public class AccessControl {
         try {
             File outDirectory = dbConfiguration.getTempDatabaseDirectory();
             File inZipFile = new File(dbConfiguration.getSharedACMDirectory(), zipFileName);
-            System.out.println(
-                    "Started DB Mirror:" + Calendar.getInstance().get(Calendar.MINUTE) + ":"
-                            + Calendar.getInstance().get(Calendar.SECOND) + ":"
-                            + Calendar.getInstance().get(Calendar.MILLISECOND));
+            Calendar cal = Calendar.getInstance();
+            LOG.info(String.format("Started DB Mirror: %2d:%02d.%03d\n",
+                    cal.get(Calendar.MINUTE),
+                    cal.get(Calendar.SECOND),
+                    cal.get(Calendar.MILLISECOND)));
             ZipUnzip.unzip(inZipFile, outDirectory);
-            System.out.println(
-                    "Completed DB Mirror:" + Calendar.getInstance().get(Calendar.MINUTE) + ":"
-                            + Calendar.getInstance().get(Calendar.SECOND) + ":"
-                            + Calendar.getInstance().get(Calendar.MILLISECOND));
+            cal = Calendar.getInstance();
+            LOG.info(String.format("Completed DB Mirror: %2d:%02d.%03d\n",
+                cal.get(Calendar.MINUTE),
+                cal.get(Calendar.SECOND),
+                cal.get(Calendar.MILLISECOND)));
         } catch (Exception e) {
             // Gee, I wonder if it worked? Oh, well, whatever...
             // TODO: this is probably a fatal error.
@@ -812,8 +759,7 @@ public class AccessControl {
                 }));
 
         // sort files from old to new
-        Collections.sort(files,
-                         (o1, o2) -> new Long(o1.lastModified()).compareTo(o2.lastModified()));
+        files.sort((o1, o2) -> Long.compare(o1.lastModified(), o2.lastModified()));
 
         int numToDelete = files.size() - numFilesToKeep;
         for (int i = 0; i < numToDelete; i++) {
@@ -850,15 +796,15 @@ public class AccessControl {
      * Searches the ACM-XYZ directory for the latest modified .zip file. If one is found
      * that is set as the current file.
      *
-     * @return
      */
     private boolean setNewestModifiedZipFileAsCurrent() {
         File lastModifiedFile = findNewestModifiedZipFile();
 
         if (lastModifiedFile != null) {
             setZipFilenames(lastModifiedFile.getName());
+            return true;
         }
-        return lastModifiedFile != null;
+        return false;
     }
 
     /**

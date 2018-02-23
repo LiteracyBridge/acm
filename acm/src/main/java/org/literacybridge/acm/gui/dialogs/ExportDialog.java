@@ -5,7 +5,10 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -139,7 +142,7 @@ public class ExportDialog extends JDialog implements ActionListener {
     }
   }
 
-  private void export(final File target) {
+  private void export(final File selectedFileOrDirectory) {
     final Runnable job;
     final int numItems = ExportDialog.this.selectedAudioItems.length;
 
@@ -148,7 +151,8 @@ public class ExportDialog extends JDialog implements ActionListener {
         @Override
         public void run() {
           try {
-            CSVExporter.export(Lists.newArrayList(ExportDialog.this.selectedAudioItems), target);
+            Writer targetWriter = new FileWriter(selectedFileOrDirectory);
+            CSVExporter.exportMessages(Lists.newArrayList(ExportDialog.this.selectedAudioItems), targetWriter);
             Application.getApplication().setStatusMessage(String.format("%d Item(s) exported.", numItems));
           } catch (IOException e) {
             Application.getApplication().setStatusMessage(String.format("Exporting %d audio item(s) failed.", numItems));
@@ -181,8 +185,8 @@ public class ExportDialog extends JDialog implements ActionListener {
               new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK",
                   LanguageUtil.getUILanguage()), app));
           try {
-            FileSystemExporter.export(ExportDialog.this.selectedAudioItems,
-                target, targetFormat, titleInFilename, idInFilename);
+            FileSystemExporter.export(Arrays.asList(ExportDialog.this.selectedAudioItems),
+                selectedFileOrDirectory, targetFormat, titleInFilename, idInFilename);
             Application.getApplication().setStatusMessage(String.format("%d Item(s) exported.", numItems));
           } catch (IOException e) {
             LOG.log(Level.WARNING, "Exporting audio items failed", e);

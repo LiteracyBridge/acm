@@ -1,6 +1,7 @@
 package org.literacybridge.acm.store;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
@@ -21,7 +22,7 @@ public abstract class MetadataStore {
 
   public abstract void deleteAudioItem(String uid);
 
-  public abstract Iterable<AudioItem> getAudioItems();
+  public abstract Collection<AudioItem> getAudioItems();
 
   public abstract Playlist newPlaylist(String name);
 

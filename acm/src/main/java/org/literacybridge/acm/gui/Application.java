@@ -1,22 +1,5 @@
 package org.literacybridge.acm.gui;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
-import java.util.Locale;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.LookAndFeel;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-
 import org.jdesktop.swingx.JXFrame;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -36,7 +19,19 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.SearchResult;
+import org.literacybridge.acm.utils.LogHelper;
 import org.literacybridge.acm.utils.OsUtils;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Application extends JXFrame {
   private static final Logger LOG = Logger
@@ -112,7 +107,7 @@ public class Application extends JXFrame {
     } else if (ACMConfiguration.getInstance().getCurrentDB().getSharedACMname() != null) {
         title += "                   " + ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
     }
-    String dbVersion = ACMConfiguration.getInstance().getCurrentDB().getAccessControl().getCurrentZipFilename();
+    String dbVersion = ACMConfiguration.getInstance().getCurrentDB().getCurrentZipFilename();
     dbVersion = dbVersion.replaceAll("db", "");
     dbVersion = dbVersion.replaceAll(".zip", "");
     title += " (v" + dbVersion + ")";
@@ -173,6 +168,7 @@ public class Application extends JXFrame {
   }
 
   public static void main(String[] args) throws Exception {
+      new LogHelper().withName("ACM.log").initialize();
     // We can use this to put the menu in the right place on MacOS. When we have a menu.
     //System.setProperty("apple.laf.useScreenMenuBar", "true");
     // This doesn't work because somehow the property has already been read by this point.
@@ -193,17 +189,7 @@ public class Application extends JXFrame {
     startUp(params);
   }
 
-  public static void startUp(CommandLineParams params) throws Exception {
-    // TODO: This method is mostly about setting up the GUI, with a little bit
-    // of
-    // reading configuration and opening the database. That's fine, but the
-    // method
-    // is called by non-GUI utilities, just for the side effect of getting the
-    // database
-    // open. After Michael checks in his major database migration, we should
-    // factor out
-    // the configuration and database code, so the non-GUI utilities don't call
-    // this.
+  private static void startUp(CommandLineParams params) throws Exception {
     boolean showUI = !params.disableUI;
     SplashScreen splash = null;
 

@@ -1,12 +1,19 @@
 package org.literacybridge.acm.config;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.commons.io.FileUtils;
+import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.gui.CommandLineParams;
+import org.literacybridge.acm.utils.DropboxFinder;
+
+import javax.swing.*;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -14,18 +21,6 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
-
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-
-import org.apache.commons.io.FileUtils;
-import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.gui.CommandLineParams;
-import org.literacybridge.acm.utils.DropboxFinder;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 public class ACMConfiguration {
     private static final Logger LOG = Logger.getLogger(ACMConfiguration.class.getName());
@@ -35,13 +30,17 @@ public class ACMConfiguration {
     //   using any of the 'compareAnd...' operations. All we're getting (that I can see -- b.e.)
     //   is a wrapper around a 'volatile currentDB'.
     private final AtomicReference<DBConfiguration> currentDB = new AtomicReference<DBConfiguration>();
-    final File LB_HOME_DIR = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
+    private final File LB_HOME_DIR = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
 
     private String title;
     private boolean disableUI = false;
     private boolean forceSandbox = false;
+    // If true, show all categories in the category browser. Default is a filtered view.
     private boolean allCategories = false;
     private boolean verbose = false; // TODO: some means to set it true.
+    // If true, don't lock (or unlock) the database. For testing purposes.
+    private boolean noDbCheckout;
+
     private final Properties UsersConfigurationProperties = new Properties();
     private File globalShareDir;
 
@@ -167,6 +166,7 @@ public class ACMConfiguration {
     public synchronized void closeCurrentDB() {
         DBConfiguration oldDB = currentDB.get();
         if (oldDB != null) {
+            oldDB.closeDb();
             LockACM.unlockDb();
             currentDB.set(null);
         }
@@ -260,11 +260,11 @@ public class ACMConfiguration {
         return UsersConfigurationProperties.getProperty(Constants.USER_CONTACT_INFO);
     }
 
-    public String getRecordingCounter() {
+    private String getRecordingCounter() {
         return UsersConfigurationProperties.getProperty(Constants.RECORDING_COUNTER_PROP);
     }
 
-    public void setRecordingCounter(String counter) {
+    private void setRecordingCounter(String counter) {
         UsersConfigurationProperties.setProperty(Constants.RECORDING_COUNTER_PROP, counter);
         writeProps();
     }
@@ -283,7 +283,7 @@ public class ACMConfiguration {
         return uuid;
     }
 
-    public String getDeviceID() throws IOException {
+    private String getDeviceID() throws IOException {
         String value = UsersConfigurationProperties.getProperty(Constants.DEVICE_ID_PROP);
         if (value == null) {
             final int n = 10;
@@ -317,7 +317,9 @@ public class ACMConfiguration {
         String override = System.getenv("dropbox");
         if (override != null && override.length() > 0) {
             globalShareDir = new File(override);
+            noDbCheckout = true;
             LOG.info(String.format("Using override for shared global directory: %s", override));
+            LOG.info("No database checkout will be performed (because of dropbox override).");
         } else {
             String globalSharePath = UsersConfigurationProperties.getProperty(Constants.GLOBAL_SHARE_PATH);
             if (globalSharePath != null) {
@@ -395,6 +397,8 @@ public class ACMConfiguration {
     public boolean isAllCategories() {
         return allCategories;
     }
+
+    public boolean isNoDbCheckout() { return noDbCheckout; }
 
     public File getGlobalShareDir() {
         return globalShareDir;

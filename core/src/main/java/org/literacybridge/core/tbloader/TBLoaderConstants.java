@@ -47,7 +47,7 @@ public class TBLoaderConstants {
 
   public static final String TALKING_BOOK_DATA = "TalkingBookData";
   public static final String OPERATIONAL_DATA = "OperationalData";
-  public static final String USER_RECORDINGS = "UserRecordings";
+  public static final String USER_RECORDINGS = "userrecordings";
 
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
     public static final DateFormat ISO8601 = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset

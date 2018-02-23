@@ -1,5 +1,9 @@
 package org.literacybridge.acm.config;
 
+import org.literacybridge.acm.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -8,10 +12,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-import org.literacybridge.acm.Constants;
-
 @SuppressWarnings("serial")
 public class DBInfo extends Properties {
+  private static final Logger LOG = LoggerFactory.getLogger(DBInfo.class);
+
   private boolean checkedOut;
   private final static String DB_NAME = "DB_NAME";
   private final static String DB_KEY = "DB_KEY";
@@ -92,7 +96,7 @@ public class DBInfo extends Properties {
   public void deleteCheckoutFile() {
     File f = getCheckedOutPropertiesFile();
     f.delete();
-    System.out.printf("Deleted checkout marker file.\n");
+    LOG.info("Deleted checkout marker file.");
   }
 
   private File getCheckedOutPropertiesFile() {

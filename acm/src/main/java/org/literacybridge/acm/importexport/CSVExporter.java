@@ -1,27 +1,24 @@
 package org.literacybridge.acm.importexport;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.logging.Logger;
-
+import au.com.bytecode.opencsv.CSVWriter;
+import com.google.common.collect.Sets;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.LBMetadataIDs;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataValue;
-
-import com.google.common.collect.Lists;
-
-import au.com.bytecode.opencsv.CSVWriter;
 import org.literacybridge.acm.utils.B26RotatingEncoding;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.util.Set;
+import java.util.logging.Logger;
 
 import static org.literacybridge.acm.store.LBMetadataIDs.FieldToIDMap;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
@@ -47,6 +44,13 @@ import static org.literacybridge.acm.store.MetadataSpecification.LB_TIMING;
 
 public class CSVExporter {
     private static final Logger LOG = Logger.getLogger(CSVExporter.class.getName());
+
+    public enum OPTION {
+        NONE,
+        CATEGORIES_AS_CODES,
+        CATEGORY_AS_FULL_NAME,
+        NO_HEADER,
+    }
 
     private final static String CATEGORY_COLUMN_NAME = "CATEGORIES";
     private final static String QUALITY_COLUMN_NAME = "QUALITY";
@@ -74,12 +78,11 @@ public class CSVExporter {
 
     private static final int NUMBER_OF_COLUMNS = columns.length;
 
-    public static void export(Iterable<AudioItem> audioItems, File targetFile) throws IOException {
-        export(audioItems, targetFile, false, false);
-    }
-
-    public static void export(Iterable<AudioItem> audioItems, File targetFile,
-                              boolean categoryCodes, boolean fullNames) throws IOException {
+    public static void exportMessages(Iterable<AudioItem> audioItems, Writer targetWriter, OPTION... options) throws IOException {
+        Set<OPTION> opts = Sets.newHashSet(options);
+        boolean categoriesAsCodes = opts.contains(OPTION.CATEGORIES_AS_CODES);
+        boolean categoryFullNames = opts.contains(OPTION.CATEGORY_AS_FULL_NAME);
+        boolean noHeader = opts.contains(OPTION.NO_HEADER);
         String project = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
         if (project.toLowerCase().startsWith("acm-")) {
             project = project.substring(4);
@@ -94,20 +97,22 @@ public class CSVExporter {
             throw new IllegalStateException("missing columns");
         }
 
-        CSVWriter writer = new CSVWriter(new FileWriter(targetFile), ',');
+        CSVWriter writer = new CSVWriter(targetWriter, ',');
 
         String[] values = new String[NUMBER_OF_COLUMNS];
 
-        // first write header (column names)
-        for (int i = 0; i < NUMBER_OF_COLUMNS; i++) {
-            if (columns[i] != null)
-                values[i] = columns[i].getName();
-        }
-        values[CATEGORY_COLUMN_INDEX] = CATEGORY_COLUMN_NAME;
-        values[QUALITY_COLUMN_INDEX] = QUALITY_COLUMN_NAME;
-        values[PROJECT_COLUMN_INDEX] = PROJECT_COLUMN_NAME;
+        if (!noHeader) {
+            // first write header (column names)
+            for (int i = 0; i < NUMBER_OF_COLUMNS; i++) {
+                if (columns[i] != null)
+                    values[i] = columns[i].getName();
+            }
+            values[CATEGORY_COLUMN_INDEX] = CATEGORY_COLUMN_NAME;
+            values[QUALITY_COLUMN_INDEX] = QUALITY_COLUMN_NAME;
+            values[PROJECT_COLUMN_INDEX] = PROJECT_COLUMN_NAME;
 
-        writer.writeNext(values);
+            writer.writeNext(values);
+        }
 
         for (AudioItem audioItem : audioItems) {
             Metadata metadata = audioItem.getMetadata();
@@ -126,8 +131,8 @@ public class CSVExporter {
                     values[i] = value;
                 }
             }
-            values[CATEGORY_COLUMN_INDEX] = categoryCodes ? UIUtils.getCategoryCodesAsString(
-                    audioItem) : UIUtils.getCategoryNamesAsString(audioItem, fullNames);
+            values[CATEGORY_COLUMN_INDEX] = categoriesAsCodes ? UIUtils.getCategoryCodesAsString(
+                    audioItem) : UIUtils.getCategoryNamesAsString(audioItem, categoryFullNames);
             values[QUALITY_COLUMN_INDEX] = quality;
             values[PROJECT_COLUMN_INDEX] = project;
             writer.writeNext(values);
@@ -139,11 +144,11 @@ public class CSVExporter {
     /**
      * Create a .csv file of category ids and names.
      * @param targetFile Where to write the .csv
-     * @param listFullCategories If true, include full names, like "Health:Nutrition"
+     * @param options Options from OPTION.
      * @throws IOException
      */
-    public static void exportCategoryCodes(File targetFile, boolean listFullCategories) throws IOException {
-        CategoryExporter exporter = new CategoryExporter(targetFile, listFullCategories);
+    public static void exportCategoryCodes(Writer targetWriter, OPTION... options) throws IOException {
+        CategoryExporter exporter = new CategoryExporter(targetWriter, options);
         exporter.export();
     }
 
@@ -215,9 +220,13 @@ public class CSVExporter {
         String [] values;
         boolean listFullCategories;
 
-        CategoryExporter(File targetFile, boolean listFullCategories) throws IOException {
-            writer = new CSVWriter(new FileWriter(targetFile), ',');
-            this.listFullCategories = listFullCategories;
+        CategoryExporter(Writer targetWriter, OPTION... options) throws IOException {
+            Set<OPTION> opts = Sets.newHashSet(options);
+            boolean noheader = opts.contains(OPTION.NO_HEADER);
+
+            writer = new CSVWriter(targetWriter, ',');
+            this.listFullCategories = opts.contains(OPTION.CATEGORY_AS_FULL_NAME);
+
             // If listFullCategories, we have 3 columns; otherwise only 2
             if (listFullCategories) {
                 values = new String[3];
@@ -227,7 +236,9 @@ public class CSVExporter {
             }
             values[0] = "ID";
             values[1] = "NAME";
-            writer.writeNext(values);
+            if (!noheader) {
+                writer.writeNext(values);
+            }
         }
 
         /**

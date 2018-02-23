@@ -1,26 +1,32 @@
 package org.literacybridge.acm.tools;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
 import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.importexport.CSVExporter;
-import org.literacybridge.acm.utils.FeedbackImporter;
+import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.utils.LogHelper;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CSVDatabaseExporter {
     public static void main(String[] args) throws Exception {
+        new LogHelper().inDirectory("logs").withName("CSVDatabaseExporter.log").initialize();
         Params params = new Params();
         CmdLineParser parser = new CmdLineParser(params);
-        parser.parseArgument(args);
-
-        if (params.args.size() != 2) {
-            printUsage();
+        try {
+            parser.parseArgument(args);
+        } catch (CmdLineException e) {
+            printUsage(parser);
             System.exit(1);
         }
 
@@ -37,22 +43,38 @@ public class CSVDatabaseExporter {
         configParams.disableUI = true;
         configParams.sandbox = true;
         ACMConfiguration.initialize(configParams);
-        ACMConfiguration.getInstance().setCurrentDB(ACMConfiguration.cannonicalAcmDirectoryName(params.args.get(0)));
+        String acmName = ACMConfiguration.cannonicalAcmDirectoryName(params.acmName);
+        ACMConfiguration.getInstance().setCurrentDB(acmName);
     }
 
     private void export() throws IOException {
-        File csvFile = new File(params.args.get(1));
+        Writer csvWriter = (params.csvName == null) ?
+                           new PrintWriter(System.out) :
+                           new FileWriter(new File(params.csvName));
         if (params.listCategories || params.listFullCategories) {
-            CSVExporter.exportCategoryCodes(csvFile, params.listFullCategories);
+            CSVExporter.exportCategoryCodes(csvWriter, optionsFromParams());
         } else {
-            CSVExporter.export(ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getAudioItems(),
-                               csvFile, params.categoryCodes, params.categoryFullNames);
+            Iterable<AudioItem> items = ACMConfiguration.getInstance()
+                .getCurrentDB()
+                .getMetadataStore()
+                .getAudioItems();
+            CSVExporter.exportMessages(items, csvWriter, optionsFromParams());
         }
     }
 
-    private static void printUsage() {
-        System.out.println(
-                "Usage: java -cp acm.jar:lib/* org.literacybridge.acm.tools.CSVDatabaseExporter <acm_name> <csv_file>");
+    private CSVExporter.OPTION[] optionsFromParams() {
+        List<CSVExporter.OPTION> opts = new ArrayList<>();
+        if (params.listFullCategories
+            || params.categoryAsFullNames) opts.add(CSVExporter.OPTION.CATEGORY_AS_FULL_NAME);
+        if (params.noheader) opts.add(CSVExporter.OPTION.NO_HEADER);
+        if (params.categoryAsCodes) opts.add(CSVExporter.OPTION.CATEGORIES_AS_CODES);
+        return opts.toArray(new CSVExporter.OPTION[0]);
+    }
+
+    private static void printUsage(CmdLineParser parser) {
+        System.err.println(String.format("java -cp acm.jar:lib/* %s ",
+            CSVDatabaseExporter.class.getName()));
+        parser.printUsage(System.err);
     }
 
     /**
@@ -63,19 +85,25 @@ public class CSVDatabaseExporter {
         boolean verbose;
 
         @Option(name = "--categorycodes", aliases = "-c", usage = "Export category codes instead of names.")
-        boolean categoryCodes;
+        boolean categoryAsCodes;
 
         @Option(name = "--categoryfullnames", aliases = "-n", usage = "Export category full names.")
-        boolean categoryFullNames;
+        boolean categoryAsFullNames;
 
         @Option(name = "--listcategories", aliases = "-l", usage = "List all of the category codes with short category names.")
         boolean listCategories;
 
-        @Option(name = "--listfullcategories", aliases = "-f", usage = "List all of the category codes with full category names.")
+        @Option(name = "--listfullcategories", aliases = "-f", usage = "List all of the category codes with short and full category names.")
         boolean listFullCategories;
 
-        @Argument(usage = "ACM to export, csv file name.")
-        List<String> args;
+        @Option(name = "--noheader", usage = "Do not put headers in the exported files.")
+        boolean noheader = false;
+
+        @Argument(usage = "Project or ACM name to export.", index = 0, required = true, metaVar = "ACM")
+        String acmName;
+
+        @Argument(usage = "CSV file name, default stdout.", index = 1, metaVar = "CSVFILE")
+        String csvName;
     }
 
 }

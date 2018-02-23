@@ -14,7 +14,7 @@ import org.literacybridge.acm.utils.IOUtils;
 public class FileSystemExporter {
   public static final String FILENAME_SEPARATOR = "___";
 
-  public static void export(AudioItem[] selectedAudioItems, File targetDir,
+  public static void export(Iterable<AudioItem> audioItems, File targetDirectory,
       AudioFormat targetFormat, boolean titleInFilename, boolean idInFilename)
       throws IOException {
 
@@ -22,7 +22,7 @@ public class FileSystemExporter {
       AudioItemRepository repository = ACMConfiguration.getInstance()
           .getCurrentDB().getRepository();
 
-      for (AudioItem audioItem : selectedAudioItems) {
+      for (AudioItem audioItem : audioItems) {
         // first: check which formats we have
         File sourceFile = repository.convert(audioItem, targetFormat);
 
@@ -43,10 +43,10 @@ public class FileSystemExporter {
           int counter = 0;
           do {
             if (counter == 0) {
-              targetFile = new File(targetDir,
+              targetFile = new File(targetDirectory,
                   title + "." + targetFormat.getFileExtension());
             } else {
-              targetFile = new File(targetDir, title + "-" + counter + "."
+              targetFile = new File(targetDirectory, title + "-" + counter + "."
                   + targetFormat.getFileExtension());
             }
             counter++;

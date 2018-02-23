@@ -1,6 +1,7 @@
 package org.literacybridge.acm.store;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,6 +60,11 @@ public class AudioItem extends Committable {
       }
       category = category.getParent();
     } while (category != null);
+  }
+
+  public final void addCategories(Collection<Category> categories) {
+      for (Category category : categories)
+          addCategory(category);
   }
 
   public final boolean hasCategory(Category category) {
@@ -148,5 +154,15 @@ public class AudioItem extends Committable {
     playlists.clear();
     metadata.clear();
     t.getIndex().refresh(this);
+  }
+
+  // Convenience functions. Rational getters for the ridiculously over-engineered metadata values.
+  public String getLanguageCode() {
+      if (!metadata.hasMetadataField(MetadataSpecification.DC_LANGUAGE)) return null;
+      return metadata.getMetadataValue(MetadataSpecification.DC_LANGUAGE).toString();
+  }
+
+  public String getTitle() {
+      return metadata.getMetadataValue(MetadataSpecification.DC_TITLE).getValue();
   }
 }

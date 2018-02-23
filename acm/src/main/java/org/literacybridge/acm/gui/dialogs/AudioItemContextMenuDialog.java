@@ -195,17 +195,21 @@ public class AudioItemContextMenuDialog extends JDialog
                       .commit(a);
               // TODO: It is NOT OKAY to not delete from the file system. It is simply harder
               // to do it right. But, unless we delete the file system, we accumulate obsolete
-              // cruft forever.
+              // cruft forever. However, we would need to defer the actual deletions until the
+              // db is committed. So, let them accumulate.
+
+              // TODO: implement a "sweep files" function.
 
               // it's okay to delete from DB but cannot delete the .a18 file
               // since that's in the shared (dropbox) repository
-              if (!ACMConfiguration.getInstance()
-                      .getCurrentDB()
-                      .isSandboxed())
-                ACMConfiguration.getInstance()
-                        .getCurrentDB()
-                        .getRepository()
-                        .delete(a);
+//              if (!ACMConfiguration.getInstance()
+//                      .getCurrentDB()
+//                      .isSandboxed()) {
+//                  ACMConfiguration.getInstance()
+//                      .getCurrentDB()
+//                      .getRepository()
+//                      .delete(a);
+//              }
             } catch (Exception e) {
               // TODO: fix all of these silently ignored exceptions
               LOG.log(Level.WARNING,

@@ -1,20 +1,20 @@
 package org.literacybridge.acm.tools;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
-
+import au.com.bytecode.opencsv.CSVWriter;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.CSVExporter;
+import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 
-import au.com.bytecode.opencsv.CSVWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.List;
+import java.util.Locale;
 
 public class DBExporter {
   private String project;
@@ -86,8 +86,9 @@ public class DBExporter {
   private void metadataExporter() {
     File exportFile = new File(exportDirectory, filenamePrefix + "metadata.csv");
     try {
-      CSVExporter.export(ACMConfiguration.getInstance().getCurrentDB()
-          .getMetadataStore().getAudioItems(), exportFile);
+      Writer exportWriter = new FileWriter(exportFile);
+      Iterable<AudioItem> items = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getAudioItems();
+      CSVExporter.exportMessages(items, exportWriter);
     } catch (IOException e) {
       System.out.println("==========>Could not export metadata!");
       e.printStackTrace();

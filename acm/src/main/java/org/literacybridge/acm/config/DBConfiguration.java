@@ -318,12 +318,25 @@ public class DBConfiguration extends Properties {
     }
   }
 
-  public boolean updateDb() {
-      return accessControl.updateDb();
+  public void updateDb() {
+      accessControl.updateDb();
   }
 
-  public AccessControl getAccessControl() {
-    return accessControl;
+  public boolean commitDbChanges() {
+      return accessControl.commitDbChanges() == AccessControl.UpdateDbStatus.ok;
+  }
+
+  public void closeDb() {
+      if (!initialized) {
+          throw new IllegalStateException("Can't close an un-opened database");
+      }
+      if (accessControl.getAccessStatus() != AccessControl.AccessStatus.none) {
+          accessControl.discardDbChanges();
+      }
+  }
+
+  public String getCurrentZipFilename() {
+      return accessControl.getCurrentZipFilename();
   }
 
   long getCacheSizeInBytes() {

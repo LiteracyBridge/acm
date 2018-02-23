@@ -36,7 +36,10 @@ import java.util.regex.Pattern;
 
 public class FeedbackImporter {
   private static final Logger logger = LoggerFactory.getLogger(FeedbackImporter.class);
-  private static final String GENERAL_FEEDBACK = "9-0";
+
+  // Note public
+  public static final String GENERAL_FEEDBACK = "9-0";
+
     private static final String TOO_SHORT_FEEDBACK = "92-2";
     private static final String TOO_LONG_FEEDBACK = "92-6";
     private static final String UNKNOWN_LENGTH_FEEDBACK = "92-8";
@@ -254,7 +257,7 @@ public class FeedbackImporter {
     }
 
     results = importFiles(filesToImport);
-    ACMConfiguration.getInstance().getCurrentDB().updateDb();
+    ACMConfiguration.getInstance().getCurrentDB().commitDbChanges();
     ACMConfiguration.getInstance().closeCurrentDB();
     if (results.isSuccess()) {
       results.updateImportedNoErrors(projectDir.getName(), updateDir.getName(),
