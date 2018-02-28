@@ -1458,6 +1458,7 @@ public class TBLoaderCore {
         TbFile.CopyFilter filter = new TbFile.CopyFilter() {
             @Override
             public boolean accept(TbFile file) {
+                if (file.isDirectory()) return true;
                 String name = file.getName().toLowerCase();
                 return name.endsWith(".a18") || name.endsWith("*.grp");
             }
