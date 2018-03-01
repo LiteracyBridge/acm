@@ -12,10 +12,7 @@ import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.utils.B26RotatingEncoding;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -143,9 +140,9 @@ public class CSVExporter {
 
     /**
      * Create a .csv file of category ids and names.
-     * @param targetFile Where to write the .csv
+     * @param targetWriter Where to write the .csv
      * @param options Options from OPTION.
-     * @throws IOException
+     * @throws IOException if the data can't be written
      */
     public static void exportCategoryCodes(Writer targetWriter, OPTION... options) throws IOException {
         CategoryExporter exporter = new CategoryExporter(targetWriter, options);
@@ -220,7 +217,7 @@ public class CSVExporter {
         String [] values;
         boolean listFullCategories;
 
-        CategoryExporter(Writer targetWriter, OPTION... options) throws IOException {
+        CategoryExporter(Writer targetWriter, OPTION... options) {
             Set<OPTION> opts = Sets.newHashSet(options);
             boolean noheader = opts.contains(OPTION.NO_HEADER);
 
@@ -243,7 +240,7 @@ public class CSVExporter {
 
         /**
          * Starts the export process.
-         * @throws IOException
+         * @throws IOException if the data can't be written
          */
         void export() throws IOException {
             Category root = ACMConfiguration.getInstance()

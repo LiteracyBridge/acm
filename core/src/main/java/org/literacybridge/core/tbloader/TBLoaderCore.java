@@ -712,7 +712,7 @@ public class TBLoaderCore {
      * @return a Result object that describes the result.
      */
     private Result performOperation() {
-        LOG.log(Level.INFO, "TBL!: performOperation");
+        LOG.log(Level.FINE, "TBL!: performOperation");
 
         mStepsLog = OperationLog.startOperation(mStatsOnly ? "CorTalkingBookCollectStatistics" : "CoreTalkingBookUpdate");
         mProgressListener.step(starting);
@@ -738,7 +738,7 @@ public class TBLoaderCore {
 
         // Like tbcd1234/collected-data/XYZ
         TbFile projectCollectedData = mCollectedDataDirectory.open(mOldDeploymentInfo.getProjectName());
-        LOG.log(Level.INFO, "TBL!: copy stats To:" + projectCollectedData.toString());
+        LOG.log(Level.FINE, "TBL!: copy stats To:" + projectCollectedData.toString());
 
         boolean gotStatistics = false;
         try {

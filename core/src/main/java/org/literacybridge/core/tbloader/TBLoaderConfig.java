@@ -33,15 +33,15 @@ public class TBLoaderConfig {
         return tbLoaderId;
     }
 
-    TbFile getTempDirectory() {
+    public TbFile getTempDirectory() {
         return tempDirectory;
     }
 
-    TbFile getCollectedDataDirectory() {
+    public TbFile getCollectedDataDirectory() {
         return collectedDataDirectory;
     }
 
-    TbFile getWindowsUtilsDirectory() {
+    public TbFile getWindowsUtilsDirectory() {
         return windowsUtilsDirectory;
     }
 

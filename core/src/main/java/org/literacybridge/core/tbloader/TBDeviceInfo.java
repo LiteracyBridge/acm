@@ -214,7 +214,7 @@ public final class TBDeviceInfo {
                 }
             }
             serialNumber = serialNumber.toUpperCase();
-            LOG.log(Level.INFO, String.format("TBL!: Got serial number (%s) from %s.", serialNumber, src));
+            LOG.log(Level.FINE, String.format("TBL!: Got serial number (%s) from %s.", serialNumber, src));
         }
         return serialNumber;
     }
@@ -260,7 +260,7 @@ public final class TBDeviceInfo {
                     sn = UNKNOWN;
                 }
                 if (!sn.equals(UNKNOWN)) {
-                    LOG.log(Level.INFO, "TBL!: No stats SRN. Found *.srn file:" + sn);
+                    LOG.log(Level.FINE, "TBL!: No stats SRN. Found *.srn file:" + sn);
                 } else {
                     LOG.log(Level.INFO, "TBL!: No stats SRN and no good *.srn file found.");
                 }
@@ -302,7 +302,7 @@ public final class TBDeviceInfo {
                     }
                 }
             }
-            LOG.log(Level.INFO, String.format("TBL!: Got project name (%s) from %s.", projectName, src));
+            LOG.log(Level.FINE, String.format("TBL!: Got project name (%s) from %s.", projectName, src));
         }
         return projectName;
     }
@@ -382,7 +382,7 @@ public final class TBDeviceInfo {
                     }
                 }
             }
-            LOG.log(Level.INFO, String.format("TBL!: Got package name (%s) from %s.", packageName, src));
+            LOG.log(Level.FINE, String.format("TBL!: Got package name (%s) from %s.", packageName, src));
         }
         return packageName;
     }
@@ -421,7 +421,7 @@ public final class TBDeviceInfo {
                     }
                 }
             }
-            LOG.log(Level.INFO, String.format("TBL!: Got deployment name (%s) from %s.", deploymentName, src));
+            LOG.log(Level.FINE, String.format("TBL!: Got deployment name (%s) from %s.", deploymentName, src));
         }
         return deploymentName;
     }
@@ -447,7 +447,7 @@ public final class TBDeviceInfo {
                 }
                 in.close();
             } catch (Exception e) { //Catch and ignore exception if any
-                System.err.println("Ignoring error: " + e.getMessage());
+                LOG.log(Level.WARNING, "Ignoring error: ", e.getMessage());
             }
         }
 
@@ -516,7 +516,7 @@ public final class TBDeviceInfo {
                     }
                 }
             }
-            LOG.log(Level.INFO, String.format("TBL!: Got community name (%s) from %s.", communityName, src));
+            LOG.log(Level.FINE, String.format("TBL!: Got community name (%s) from %s.", communityName, src));
         }
         return communityName;
     }
@@ -531,9 +531,9 @@ public final class TBDeviceInfo {
         Properties properties = loadDeploymentProperties();
         if (properties != null) {
             recipientid = properties.getProperty(RECIPIENTID_PROPERTY, null);
-            LOG.log(Level.INFO, String.format("TBL!: recipientid: %s", recipientid));
+            LOG.log(Level.FINE, String.format("TBL!: recipientid: %s", recipientid));
         } else {
-            LOG.log(Level.INFO, String.format("TBL!: recipientid: (null) (no deployment.properties)"));
+            LOG.log(Level.FINE, String.format("TBL!: recipientid: (null) (no deployment.properties)"));
         }
 
         return recipientid;
@@ -546,9 +546,9 @@ public final class TBDeviceInfo {
             if (properties != null) {
                 String testDeploymentStr = properties.getProperty(TEST_DEPLOYMENT_PROPERTY, Boolean.FALSE.toString());
                 testDeployment = Boolean.parseBoolean(testDeploymentStr);
-                LOG.log(Level.INFO, String.format("TBL!: isTestDeployment: %b (%s)", testDeployment, testDeploymentStr));
+                LOG.log(Level.FINE, String.format("TBL!: isTestDeployment: %b (%s)", testDeployment, testDeploymentStr));
             } else {
-                LOG.log(Level.INFO, String.format("TBL!: isTestDeployment: %b (no deployment.properties)", testDeployment));
+                LOG.log(Level.FINE, String.format("TBL!: isTestDeployment: %b (no deployment.properties)", testDeployment));
             }
         }
         return testDeployment;
@@ -589,7 +589,7 @@ public final class TBDeviceInfo {
                     props.load(istream);
                     istream.close();
                 } catch (Exception e) { //Catch and ignore exception if any
-                    System.err.println("Ignoring error: " + e.getMessage());
+                    LOG.log(Level.WARNING, "Ignoring error: ", e.getMessage());
                 }
             }
         }

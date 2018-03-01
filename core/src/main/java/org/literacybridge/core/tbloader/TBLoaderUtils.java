@@ -47,7 +47,7 @@ public class TBLoaderUtils {
             isGood = true;
         else {
             isGood = false;
-            LOG.log(Level.INFO, "TBL!: ***Incorrect Serial Number Format:" + srn + "***");
+            LOG.log(Level.FINE, "TBL!: ***Incorrect Serial Number Format:" + srn + "***");
         }
         return isGood;
     }

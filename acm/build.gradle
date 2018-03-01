@@ -39,7 +39,7 @@ task copyLibs(type: Sync) {
     into "$distDir/lib"
 }
 
-task copyJars(type: Copy, dependsOn: build) {
+task copyJars(type: Copy, dependsOn: [':core:build', build]) {
     // libsDir is "build/libs". Copies acm.jar from "build/libs" to "dist".
     from libsDir
     into distDir

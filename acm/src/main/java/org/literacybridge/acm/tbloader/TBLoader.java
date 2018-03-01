@@ -979,9 +979,12 @@ public class TBLoader extends JFrame {
             // oldProjectText.setText(oldDeploymentInfo.getProjectName());
 
             // If the TB was previously used for testing, likely it is again.
-            if (oldDeploymentInfo.isTestDeployment()) {
-                testDeployment.setSelected(true);
-            }
+            // TODO: If TB was previously used in testing, ask user if it still is.
+//            if (oldDeploymentInfo.isTestDeployment()) {
+//                testDeployment.setSelected(true);
+//            }
+            testDeployment.setSelected(false);
+
         } else {
             newSrnText.setText(TBLoaderConstants.NEED_SERIAL_NUMBER);
         }
