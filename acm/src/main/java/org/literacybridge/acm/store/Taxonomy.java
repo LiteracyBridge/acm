@@ -4,45 +4,33 @@ import java.io.File;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
+import org.literacybridge.acm.store.TaxonomyLoader.TaxonomyData;
 
 public class Taxonomy {
-
-  private static String rootUUID = DefaultLiteracyBridgeTaxonomy.LB_TAXONOMY_UID;
-
   private final Category mRootCategory;
-
+  // Map of categoryId : Category. Maps every categoryid in the Taxonomy to its Category object.
   private final Map<String, Category> categories;
 
   private Taxonomy(Category root) {
     categories = Maps.newHashMap();
     this.mRootCategory = root;
-    categories.put(root.getUuid(), root);
+    categories.put(root.getId(), root);
   }
 
+    /**
+     * Loads the latest of the built-in, or project taxonomy.
+     * @param acmDirectory with possibly updated taxonomy.
+     * @return the latest taxonomy.
+     */
   public static Taxonomy createTaxonomy(File acmDirectory) {
-    return getTaxonomy(DefaultLiteracyBridgeTaxonomy.LB_TAXONOMY_UID,
-        acmDirectory);
-  }
-
-  private static Taxonomy getTaxonomy(String uuid, File acmDirectory) {
-    DefaultLiteracyBridgeTaxonomy.TaxonomyRevision latestRevision = DefaultLiteracyBridgeTaxonomy
-        .loadLatestTaxonomy(acmDirectory);
-
-    Category root = new Category(uuid);
-    root.setName("root");
-    return createNewTaxonomy(latestRevision, null);
-  }
-
-  private static Taxonomy createNewTaxonomy(
-      DefaultLiteracyBridgeTaxonomy.TaxonomyRevision revision,
-      final Map<String, Category> existingCategories) {
-    Category root = new Category(rootUUID);
+    Category root = new Category(TaxonomyLoader.LB_TAXONOMY_UID);
     root.setName("root");
     root.setOrder(0);
 
     Taxonomy taxonomy = new Taxonomy(root);
 
-    revision.createTaxonomy(taxonomy, existingCategories);
+    TaxonomyData latestTaxonomy = TaxonomyLoader.loadLatestTaxonomy(acmDirectory);
+    latestTaxonomy.createTaxonomy(taxonomy);
     return taxonomy;
   }
 
@@ -50,8 +38,8 @@ public class Taxonomy {
     return mRootCategory;
   }
 
-  public Category getCategory(String uuid) {
-    return categories.get(uuid);
+  public Category getCategory(String categoryId) {
+    return categories.get(categoryId);
   }
 
   public Iterable<Category> getCategoryList() {
@@ -62,10 +50,9 @@ public class Taxonomy {
     return category == this.mRootCategory;
   }
 
-  public boolean addChild(Category parent, Category newChild) {
+  public void addChild(Category parent, Category newChild) {
     parent.addChild(newChild);
     newChild.setParent(parent);
-    categories.put(newChild.getUuid(), newChild);
-    return true;
+    categories.put(newChild.getId(), newChild);
   }
 }

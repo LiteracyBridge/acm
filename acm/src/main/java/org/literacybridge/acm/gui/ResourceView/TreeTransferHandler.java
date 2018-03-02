@@ -17,7 +17,7 @@ import javax.swing.tree.TreePath;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.CategoryView.CategoryTreeNodeObject;
+import org.literacybridge.acm.gui.ResourceView.SidebarView.CategoryTreeNodeObject;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.BusyDialog;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;

@@ -33,7 +33,7 @@ public class ResourceView extends ACMContainer {
 
     // Tree with categories
     // Create at the end, because this is the main selection provider
-    CategoryView categoryView = new CategoryView(result);
+    SidebarView categoryView = new SidebarView(result);
 
     JSplitPane sp = new JSplitPane();
     // left-side

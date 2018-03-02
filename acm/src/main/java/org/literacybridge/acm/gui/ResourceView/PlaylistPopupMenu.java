@@ -5,7 +5,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.CategoryView.PlaylistsChanged;
+import org.literacybridge.acm.gui.ResourceView.SidebarView.PlaylistsChanged;
 import org.literacybridge.acm.gui.ResourceView.PlaylistListModel.PlaylistLabel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.store.AudioItem;

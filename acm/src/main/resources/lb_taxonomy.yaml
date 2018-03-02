@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 54
+  revision: 55
   categories:
     '0' : 
       name: Other Messages
@@ -1220,6 +1220,44 @@ taxonomy:
               '90-23-5':
                   name: Comment
                   order: 5
+        '90-24':
+          name: Corporal Punishment
+          order: 122
+          children:
+              '90-23-1':
+                  name: Question
+                  order: 1
+              '90-23-2':
+                  name: Endorsement
+                  order: 2
+              '90-23-3':
+                  name: Suggestion
+                  order: 3
+              '90-23-4':
+                  name: Complaint
+                  order: 4
+              '90-23-5':
+                  name: Comment
+                  order: 5
+        '90-25':
+          name: Completion of Basic Education
+          order: 124
+          children:
+              '90-23-1':
+                  name: Question
+                  order: 1
+              '90-23-2':
+                  name: Endorsement
+                  order: 2
+              '90-23-3':
+                  name: Suggestion
+                  order: 3
+              '90-23-4':
+                  name: Complaint
+                  order: 4
+              '90-23-5':
+                  name: Comment
+                  order: 5
         '90-90':
           name: TB
           order: 909
@@ -1269,3 +1307,18 @@ taxonomy:
          '100-8':
            name: WASH
            order: 8
+         '100-21': #Being brave is taking care of your wife
+           name: Ushujaa ni Kumjali mama
+           order: 1
+         '100-22': #Being brave is taking care of your child
+           name: Ushujaa ni kumlinda mtoto
+           order: 2
+         '100-23': #being brave is ensuring your wife and child have proper nutrition/
+           name: Ushujaa ni kuwapea lishe bora
+           order: 3
+         '100-24': #being brave is maintaining cleanliness
+           name: Ushujaa ni kuzingatia usafi
+           order: 4
+         '100-25': #being brave is practicing family planing
+           name: Ushujaa ni kupanga uzazi
+           order: 5

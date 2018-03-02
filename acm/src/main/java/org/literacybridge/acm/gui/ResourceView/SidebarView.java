@@ -51,14 +51,14 @@ import java.util.Observer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class CategoryView extends ACMContainer implements Observer {
+public class SidebarView extends ACMContainer implements Observer {
     private static final Logger LOG = Logger
-        .getLogger(CategoryView.class.getName());
+        .getLogger(SidebarView.class.getName());
 
     private static final long serialVersionUID = 5551716856269051991L;
 
     // model
-    private SearchResult result = null;
+    private SearchResult result;
     // categories
     private CheckboxTree categoryTree = null;
     private CategoryFilter categoryFilter = null;
@@ -87,20 +87,20 @@ public class CategoryView extends ACMContainer implements Observer {
         }
         Dimension preferredSize;
         boolean initiallyCollapsed;
-    };
+    }
 
     private Locale currLocale = null;
 
     private Cursor defaultCursor = new Cursor(Cursor.DEFAULT_CURSOR);
     private Cursor resizingCursor = new Cursor(Cursor.S_RESIZE_CURSOR);
-    Border resizingBorder = null;
+    private Border resizingBorder = null;
 
     // list of available devices
     private Map<String, DefaultMutableTreeNode> deviceUidtoTreeNodeMap = new HashMap<>();
     // list of available languages
     private List<LanguageLabel> languageList = new ArrayList<>();
 
-    CategoryView(SearchResult result) {
+    SidebarView(SearchResult result) {
         this.result = result;
         categoryRootNode = new DefaultMutableTreeNode();
         deviceRootNode = new DefaultMutableTreeNode(LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL));
