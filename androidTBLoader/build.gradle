@@ -73,7 +73,7 @@ android {
         targetSdkVersion 23
         versionCode code
         versionName "0.9.5 (${code})"
-    }
+        buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"    }
     buildTypes {
         release {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

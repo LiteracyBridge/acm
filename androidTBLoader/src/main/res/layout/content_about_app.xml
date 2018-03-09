@@ -79,16 +79,34 @@
         <Space
             android:id="@+id/space_about_3"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/activity_inter_group_separation"
+            android:layout_height="5dp"
             android:layout_alignParentStart="true"
             android:layout_below="@+id/about_version_name"
+            />
+
+        <!-- Version line -->
+        <TextView
+            android:id="@+id/about_version_timestamp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/space_about_3"
+            android:text="Built"
+            tools:text="Built on ..."/>
+
+        <Space
+            android:id="@+id/space_about_4"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/activity_inter_group_separation"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/about_version_timestamp"
             />
 
         <Button
             android:id="@+id/aboutBack"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/space_about_3"
+            android:layout_below="@+id/space_about_4"
             android:layout_centerHorizontal="true"
             android:background="@drawable/button_selector"
             android:text="Back"

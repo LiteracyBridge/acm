@@ -28,6 +28,8 @@ import android.widget.TextView;
 import org.literacybridge.androidtbloader.BuildConfig;
 import org.literacybridge.androidtbloader.R;
 
+import java.util.Date;
+
 public class AboutApp extends AppCompatActivity {
 
     @Override
@@ -42,6 +44,11 @@ public class AboutApp extends AppCompatActivity {
         title.setText("About");
         TextView version =(TextView) findViewById(R.id.about_version_name);
         version.setText(String.format("Version %s", BuildConfig.VERSION_NAME));
+
+        Date buildDate = new Date(BuildConfig.TIMESTAMP);
+        TextView buildDateText = (TextView) findViewById(R.id.about_version_timestamp);
+        buildDateText.setText(String.format("%sBuild time %s", BuildConfig.DEBUG?"D":"", buildDate.toString()));
+
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);

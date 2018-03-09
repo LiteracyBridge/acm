@@ -3,6 +3,7 @@ package org.literacybridge.acm.config;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.utils.DropboxFinder;
@@ -112,14 +113,14 @@ public class ACMConfiguration {
             }
         }
 
-        if (!UsersConfigurationProperties.containsKey(Constants.USER_NAME)) {
+        if (StringUtils.isEmpty(UsersConfigurationProperties.getProperty(Constants.USER_NAME))) {
             String username = JOptionPane.showInputDialog(null, "Enter Username:",
                                                           "Missing Username",
                                                           JOptionPane.PLAIN_MESSAGE);
             UsersConfigurationProperties.put(Constants.USER_NAME, username);
             // propsChanged = true;
         }
-        if (!UsersConfigurationProperties.containsKey(Constants.USER_CONTACT_INFO)) {
+        if (StringUtils.isEmpty(UsersConfigurationProperties.getProperty(Constants.USER_CONTACT_INFO))) {
             String contactinfo = JOptionPane.showInputDialog(null, "Enter Phone #:",
                                                              "Missing Contact Info",
                                                              JOptionPane.PLAIN_MESSAGE);
