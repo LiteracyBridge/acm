@@ -177,7 +177,8 @@ public class SidebarView extends ACMContainer implements Observer {
         languageTaskPane.setTitle(LabelProvider.getLabel(LabelProvider.LANGUAGES_ROOT_LABEL));
         languageTree = new CheckboxTree(languageRootNode);
         languageTree.setSelectionModel(NO_SELECTION_MODEL);
-        languageTree.setCellRenderer(new FacetCountCellRenderer());
+        languageTree.setCellRenderer(new LanguageCellRenderer());
+        ToolTipManager.sharedInstance().registerComponent(languageTree);
         JScrollPane languageScrollPane = new JScrollPane(languageTree);
         languageTaskPane.add(languageScrollPane);
 
@@ -557,8 +558,8 @@ public class SidebarView extends ACMContainer implements Observer {
 
         SwingUtilities.invokeLater(() -> {
 
-            for (LanguageLabel currLable : languageList) {
-                languageRootNode.add(new DefaultMutableTreeNode(currLable));
+            for (LanguageLabel curLabel : languageList) {
+                languageRootNode.add(new DefaultMutableTreeNode(curLabel));
             }
 
             languageTree.setRootVisible(false);
@@ -724,16 +725,16 @@ public class SidebarView extends ACMContainer implements Observer {
             JTree tree, Object object,
             boolean selected, boolean expanded, boolean leaf, int row,
             boolean hasFocus) {
-            DefaultMutableTreeNode cat = (DefaultMutableTreeNode) object;
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) object;
             DefaultCheckboxTreeCellRenderer cell = (DefaultCheckboxTreeCellRenderer) super.getTreeCellRendererComponent(
                 tree, object, selected, expanded, leaf, row, hasFocus);
 
-            if (cat.getUserObject() != null
-                && cat.getUserObject() instanceof FacetCountProvider) {
-                FacetCountProvider node = (FacetCountProvider) cat.getUserObject();
+            if (node.getUserObject() != null
+                && node.getUserObject() instanceof FacetCountProvider) {
+                FacetCountProvider countProvider = (FacetCountProvider) node.getUserObject();
                 // make label bold
                 Font f = super.label.getFont();
-                int count = node.getFacetCount();
+                int count = countProvider.getFacetCount();
                 // System.out.println("Node: " + node.toString() + " - Count= " +
                 // count);
                 if (count > 0) {
@@ -745,6 +746,39 @@ public class SidebarView extends ACMContainer implements Observer {
             }
 
             return cell;
+        }
+    }
+
+    /**
+     * Renderer to add tooltips for the language panel. Tooltips contain ISO-639 codes.
+     */
+    private static class LanguageCellRenderer extends FacetCountCellRenderer {
+        @Override
+        public Component getTreeCellRendererComponent(JTree tree,
+            Object object,
+            boolean selected,
+            boolean expanded,
+            boolean leaf,
+            int row,
+            boolean hasFocus)
+        {
+            Component component = super.getTreeCellRendererComponent(tree,
+                object,
+                selected,
+                expanded,
+                leaf,
+                row,
+                hasFocus);
+            if (component != null) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) object;
+                if (node.getUserObject() != null
+                    && node.getUserObject() instanceof LanguageLabel) {
+                    Locale locale = ((LanguageLabel)node.getUserObject()).getLocale();
+                    String tip = LanguageUtil.getLanguageNameWithCode(locale);
+                    setToolTipText(tip);
+                }
+            }
+            return component;
         }
     }
 

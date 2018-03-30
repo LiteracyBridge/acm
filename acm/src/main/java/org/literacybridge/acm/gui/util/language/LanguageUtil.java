@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.store.Category;
@@ -65,6 +66,15 @@ public class LanguageUtil {
       }
     }
     return label;
+  }
+
+  public static String getLanguageNameWithCode(Locale locale) {
+      String label = getLocalizedLanguageName(locale);
+      String iso639 = locale.getLanguage();
+      if (StringUtils.isNotEmpty(iso639)) {
+          label += " ("+iso639+")";
+      }
+      return label;
   }
 
 }

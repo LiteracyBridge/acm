@@ -1,14 +1,8 @@
 package org.literacybridge.acm.gui.ResourceView.audioItems;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import javax.swing.table.AbstractTableModel;
-
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.audioItems.ColumnInfo.ValueProvider;
@@ -23,115 +17,143 @@ import org.literacybridge.acm.store.Committable;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataStore.DataChangeListener;
-import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.Playlist;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.literacybridge.acm.utils.B26RotatingEncoding;
+
+import javax.swing.table.AbstractTableModel;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class AudioItemTableModel extends AbstractTableModel
     implements DataChangeListener {
   private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
       "yyyy-MM-dd");
 
-  public static final ColumnInfo<String> infoIconColumn = ColumnInfo
-      .newColumnInfo("", 25, ColumnInfo.WIDTH_NOT_SET,
-          new ValueProvider<String>(true) {
+    public static final ColumnInfo<String> infoIconColumn = ColumnInfo.newColumnInfo("",
+        25,
+        ColumnInfo.WIDTH_NOT_SET,
+        new ValueProvider<String>(true) {
             @Override
             protected AudioItemNode<String> getValue(AudioItem audioItem) {
-              return new AudioItemNode<String>(audioItem, "");
+                return new AudioItemNode<>(audioItem, "");
             }
-          });
-  public static final ColumnInfo<String> titleColumn = ColumnInfo
-      .newMetadataColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE,
-          ColumnInfo.WIDTH_NOT_SET, 230, MetadataSpecification.DC_TITLE);
-  public static final ColumnInfo<String> durationColumn = ColumnInfo
-      .newMetadataColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DURATION,
-          ColumnInfo.WIDTH_NOT_SET, 65, MetadataSpecification.LB_DURATION);
-  public static final ColumnInfo<String> categoriesColumn = ColumnInfo
-      .newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES,
-          ColumnInfo.WIDTH_NOT_SET, 140, new ValueProvider<String>(true) {
-            @Override
-            protected AudioItemNode<String> getValue(AudioItem audioItem) {
-              String value = UIUtils.getCategoryNamesAsString(audioItem);
-              return new AudioItemNode<String>(audioItem, value);
-            }
-          });
-  public static final ColumnInfo<String> sourceColumn = ColumnInfo
-      .newMetadataColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SOURCE,
-          ColumnInfo.WIDTH_NOT_SET, 140, MetadataSpecification.DC_SOURCE);
-  public static final ColumnInfo<String> languagesColumn = ColumnInfo
-      .newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE,
-          ColumnInfo.WIDTH_NOT_SET, 140, new ValueProvider<String>(true) {
-            @Override
-            protected AudioItemNode<String> getValue(AudioItem audioItem) {
-              String value = LanguageUtil.getLocalizedLanguageName(
-                  AudioItemPropertiesModel.getLanguage(audioItem,
-                      MetadataSpecification.DC_LANGUAGE));
-              return new AudioItemNode<String>(audioItem, value);
-            }
-          });
-  public static final ColumnInfo<String> dateFileModifiedColumn = ColumnInfo
-      .newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED,
-          ColumnInfo.WIDTH_NOT_SET, 140, new ValueProvider<String>(true) {
-            @Override
-            protected AudioItemNode<String> getValue(AudioItem audioItem) {
-              String value = "";
-              File file = ACMConfiguration.getInstance().getCurrentDB()
-                  .getRepository().getAudioFile(audioItem, AudioFormat.A18);
-              if (file != null) {
-                Date date = new Date(file.lastModified());
-                value = DATE_FORMAT.format(date);
-              }
+        });
 
-              return new AudioItemNode<String>(audioItem, value);
-            }
-          });
-  public static final ColumnInfo<String> correlationIdColumn = ColumnInfo
-      .newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CORRELATION_ID,
-          ColumnInfo.WIDTH_NOT_SET, 140, new ValueProvider<String>(true) {
+    private static final ColumnInfo<String> titleColumn = ColumnInfo.newMetadataColumnInfo(
+        LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE,
+        ColumnInfo.WIDTH_NOT_SET,
+        230,
+        MetadataSpecification.DC_TITLE);
+
+    private static final ColumnInfo<String> durationColumn = ColumnInfo.newMetadataColumnInfo(
+        LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DURATION,
+        ColumnInfo.WIDTH_NOT_SET,
+        65,
+        MetadataSpecification.LB_DURATION);
+
+    private static final ColumnInfo<String> categoriesColumn = ColumnInfo.newColumnInfo(
+        LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CATEGORIES,
+        ColumnInfo.WIDTH_NOT_SET,
+        140,
+        new ValueProvider<String>(true) {
             @Override
-              protected AudioItemNode<String> getValue(AudioItem audioItem) {
+            protected AudioItemNode<String> getValue(AudioItem audioItem) {
+                String value = UIUtils.getCategoryNamesAsString(audioItem);
+                return new AudioItemNode<>(audioItem, value);
+            }
+        });
+
+    private static final ColumnInfo<String> sourceColumn = ColumnInfo.newMetadataColumnInfo(
+        LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SOURCE,
+        ColumnInfo.WIDTH_NOT_SET,
+        140,
+        MetadataSpecification.DC_SOURCE);
+
+    public static final ColumnInfo<String> languagesColumn = ColumnInfo.newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_LANGUAGE,
+        ColumnInfo.WIDTH_NOT_SET,
+        140,
+        new ValueProvider<String>(true) {
+            @Override
+            protected AudioItemNode<String> getValue(AudioItem audioItem) {
+                Locale locale = AudioItemPropertiesModel.getLanguage(audioItem,
+                    MetadataSpecification.DC_LANGUAGE);
+                String label = LanguageUtil.getLocalizedLanguageName(locale);
+
+                return new AudioItemNode<>(audioItem, label);
+            }
+        });
+
+    public static final ColumnInfo<String> dateFileModifiedColumn = ColumnInfo.newColumnInfo(
+        LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED,
+        ColumnInfo.WIDTH_NOT_SET,
+        140,
+        new ValueProvider<String>(true) {
+            @Override
+            protected AudioItemNode<String> getValue(AudioItem audioItem) {
                 String value = "";
-                if (audioItem.getMetadata().hasMetadataField(MetadataSpecification.LB_CORRELATION_ID)) {
-                  Integer integerValue = audioItem.getMetadata().getMetadataValue(MetadataSpecification.LB_CORRELATION_ID).getValue();
-                  value = B26RotatingEncoding.encode(integerValue);
+                File file = ACMConfiguration.getInstance()
+                    .getCurrentDB()
+                    .getRepository()
+                    .getAudioFile(audioItem, AudioFormat.A18);
+                if (file != null) {
+                    Date date = new Date(file.lastModified());
+                    value = DATE_FORMAT.format(date);
                 }
-                return new AudioItemNode<String>(audioItem, value);
-              }
-          });
-  public static final ColumnInfo<Integer> playlistOrderColumn = ColumnInfo
-      .newColumnInfo(LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER,
-          ColumnInfo.WIDTH_NOT_SET, 60, new ValueProvider<Integer>(false) {
+
+                return new AudioItemNode<>(audioItem, value);
+            }
+        });
+
+    public static final ColumnInfo<String> correlationIdColumn = ColumnInfo.newColumnInfo(
+        LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CORRELATION_ID,
+        ColumnInfo.WIDTH_NOT_SET,
+        140,
+        new ValueProvider<String>(true) {
+            @Override
+            protected AudioItemNode<String> getValue(AudioItem audioItem) {
+                String value = "";
+                if (audioItem.getMetadata()
+                    .hasMetadataField(MetadataSpecification.LB_CORRELATION_ID)) {
+                    Integer integerValue = audioItem.getMetadata()
+                        .getMetadataValue(MetadataSpecification.LB_CORRELATION_ID)
+                        .getValue();
+                    value = B26RotatingEncoding.encode(integerValue);
+                }
+                return new AudioItemNode<>(audioItem, value);
+            }
+        });
+
+    public static final ColumnInfo<Integer> playlistOrderColumn = ColumnInfo.newColumnInfo(
+        LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER,
+        ColumnInfo.WIDTH_NOT_SET,
+        60,
+        new ValueProvider<Integer>(false) {
             @Override
             protected AudioItemNode<Integer> getValue(AudioItem audioItem) {
-              Playlist playlist = Application.getFilterState().getSelectedPlaylist();
-              int position = 0;
-              if (playlist != null) {
-                position = playlist.getAudioItemPosition(audioItem.getUuid()) + 1;
-              }
-              return new AudioItemNode<Integer>(audioItem, position);
+                // If there is a playlist selected, return this item's position in it. Will be
+                // -1 if the item is not in the playlist.
+                Playlist playlist = Application.getFilterState().getSelectedPlaylist();
+                int position = 0;
+                if (playlist != null) {
+                    position = playlist.getAudioItemPosition(audioItem.getUuid()) + 1;
+                }
+                return new AudioItemNode<>(audioItem, position);
             }
-          })
-      .setComparator(new Comparator<AudioItemNode<Integer>>() {
-        @Override
-        public int compare(AudioItemNode<Integer> o1,
-            AudioItemNode<Integer> o2) {
-          return Integer.compare(o1.getValue(), o2.getValue());
-        }
-      });
+        }).setComparator(Comparator.comparingInt(AudioItemNode::getValue));
 
-  private final MetadataStore store;
-
-  private final Map<String, Integer> uuidToRowIndexMap;
+    private final Map<String, Integer> uuidToRowIndexMap;
   private final List<AudioItemNodeRow> rowIndexToUuidMap;
 
   private final ColumnInfo<?>[] columns;
 
-  public AudioItemTableModel() {
-    this.store = ACMConfiguration.getInstance().getCurrentDB()
-        .getMetadataStore();
+  AudioItemTableModel() {
+      MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
+          .getMetadataStore();
     this.uuidToRowIndexMap = Maps.newHashMap();
     this.rowIndexToUuidMap = Lists.newArrayList();
 
@@ -143,7 +165,7 @@ public class AudioItemTableModel extends AbstractTableModel
       addNewAudioItem(item);
     }
 
-    this.store.addDataChangeListener(this);
+    store.addDataChangeListener(this);
   }
 
   private ColumnInfo<?>[] initializeColumnInfoArray(ColumnInfo<?>... infos) {

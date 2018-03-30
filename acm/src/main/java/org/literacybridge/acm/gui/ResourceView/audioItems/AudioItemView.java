@@ -15,12 +15,7 @@ import java.util.Locale;
 import java.util.Observable;
 import java.util.Observer;
 
-import javax.swing.DropMode;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.ListSelectionModel;
-import javax.swing.RowFilter;
-import javax.swing.SortOrder;
+import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumn;
@@ -49,7 +44,8 @@ public class AudioItemView extends Container implements Observer {
 
   public static final DataFlavor AudioItemDataFlavor = new DataFlavor(
       AudioItem.class, "LocalizedAudioItem");
-  protected SearchResult currResult = null;
+    private static final int FAST_TOOLTIP_DELAY = 100;
+    protected SearchResult currResult = null;
   public JXTable audioItemTable = null;
 
   private AudioItemViewMouseListener mouseListener;
@@ -369,11 +365,14 @@ public class AudioItemView extends Container implements Observer {
     });
 
     audioItemTable.addMouseListener(new MouseListener() {
-      @Override
+        public int defaultDelay;
+
+        @Override
       public void mouseExited(MouseEvent e) {
         JTable table = (JTable) e.getSource();
         renderer.highlightedRow = -1;
         table.repaint();
+        ToolTipManager.sharedInstance().setInitialDelay(defaultDelay);
       }
 
       @Override
@@ -386,6 +385,8 @@ public class AudioItemView extends Container implements Observer {
 
       @Override
       public void mouseEntered(MouseEvent e) {
+          defaultDelay = ToolTipManager.sharedInstance().getInitialDelay();
+          ToolTipManager.sharedInstance().setInitialDelay(FAST_TOOLTIP_DELAY);
       }
 
       @Override

@@ -2,6 +2,12 @@ package org.literacybridge.acm.gui.util;
 
 import org.literacybridge.acm.store.AudioItem;
 
+/**
+ * Associates a random, arbitrary, unknown object with an AudioItem (of which it is a property).
+ *
+ * Sadly, this is pretty useless, because
+ * @param <T>
+ */
 public class AudioItemNode<T> {
   private final AudioItem audioItem;
   private final T value;
