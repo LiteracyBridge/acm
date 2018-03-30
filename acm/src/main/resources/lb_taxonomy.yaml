@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 55
+  revision: 56
   categories:
     '0' : 
       name: Other Messages
@@ -1224,38 +1224,38 @@ taxonomy:
           name: Corporal Punishment
           order: 122
           children:
-              '90-23-1':
+              '90-24-1':
                   name: Question
                   order: 1
-              '90-23-2':
+              '90-24-2':
                   name: Endorsement
                   order: 2
-              '90-23-3':
+              '90-24-3':
                   name: Suggestion
                   order: 3
-              '90-23-4':
+              '90-24-4':
                   name: Complaint
                   order: 4
-              '90-23-5':
+              '90-24-5':
                   name: Comment
                   order: 5
         '90-25':
           name: Completion of Basic Education
           order: 124
           children:
-              '90-23-1':
+              '90-25-1':
                   name: Question
                   order: 1
-              '90-23-2':
+              '90-25-2':
                   name: Endorsement
                   order: 2
-              '90-23-3':
+              '90-25-3':
                   name: Suggestion
                   order: 3
-              '90-23-4':
+              '90-25-4':
                   name: Complaint
                   order: 4
-              '90-23-5':
+              '90-25-5':
                   name: Comment
                   order: 5
         '90-90':
