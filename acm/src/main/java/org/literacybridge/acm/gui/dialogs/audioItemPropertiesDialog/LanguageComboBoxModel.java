@@ -19,7 +19,7 @@ public class LanguageComboBoxModel extends DefaultComboBoxModel {
 
   @Override
   public Object getElementAt(int index) {
-    return LanguageUtil.getLocalizedLanguageName(supportedLanguages.get(index));
+    return LanguageUtil.getLanguageNameWithCode(supportedLanguages.get(index));
   }
 
   @Override

@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
-import org.literacybridge.acm.store.TaxonomyLoader.TaxonomyData;
 
 public class Taxonomy {
   private final Category mRootCategory;
@@ -28,9 +27,7 @@ public class Taxonomy {
     root.setOrder(0);
 
     Taxonomy taxonomy = new Taxonomy(root);
-
-    TaxonomyData latestTaxonomy = TaxonomyLoader.loadLatestTaxonomy(acmDirectory);
-    latestTaxonomy.createTaxonomy(taxonomy);
+    TaxonomyLoader.loadLatestTaxonomy(acmDirectory, taxonomy);
     return taxonomy;
   }
 

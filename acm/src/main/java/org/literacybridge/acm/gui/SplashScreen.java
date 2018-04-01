@@ -13,7 +13,7 @@ import javax.swing.JProgressBar;
 import javax.swing.SwingConstants;
 
 public class SplashScreen extends JFrame {
-  private JLabel progressLable = new JLabel("Starting...");
+  private JLabel progressLabel = new JLabel("Starting...");
 
   public SplashScreen() {
     setSize(500, 525);
@@ -29,10 +29,10 @@ public class SplashScreen extends JFrame {
     }
 
     JProgressBar bar = new JProgressBar();
-    progressLable.setPreferredSize(new Dimension(500, 25));
-    progressLable.setHorizontalAlignment(SwingConstants.CENTER);
-    progressLable.setVerticalAlignment(SwingConstants.CENTER);
-    add(progressLable, BorderLayout.SOUTH);
+    progressLabel.setPreferredSize(new Dimension(500, 25));
+    progressLabel.setHorizontalAlignment(SwingConstants.CENTER);
+    progressLabel.setVerticalAlignment(SwingConstants.CENTER);
+    add(progressLabel, BorderLayout.SOUTH);
   }
 
   public void showSplashScreen() {
@@ -49,6 +49,6 @@ public class SplashScreen extends JFrame {
   }
 
   public void setProgressLabel(String text) {
-    this.progressLable.setText(text);
+    this.progressLabel.setText(text);
   }
 }

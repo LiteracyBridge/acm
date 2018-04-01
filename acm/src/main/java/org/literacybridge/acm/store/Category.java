@@ -17,11 +17,15 @@ public class Category {
   // TODO: A better and more general solution will be to make the visible categories configurable by
   // project.
   private boolean nonAssignable;
+  // Should this category be shown to the user? If not, a message won't be able to be assigned
+  // to the category.
+  private boolean visible;
 
   Category(String id) {
     this.id = id;
     this.children = Lists.newLinkedList();
     this.nonAssignable = false;
+    this.visible = true;
   }
 
   public void setName(String name) {
@@ -95,5 +99,20 @@ public class Category {
 
     void setNonAssignable(boolean nonAssignable) {
         this.nonAssignable = nonAssignable;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
+
+    public boolean hasVisibleChildren() {
+        for (Category child : children) {
+            if (child.isVisible() || child.hasVisibleChildren()) return true;
+        }
+        return false;
     }
 }

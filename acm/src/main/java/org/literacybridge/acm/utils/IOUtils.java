@@ -315,8 +315,9 @@ public class IOUtils {
         try (BufferedReader br = new BufferedReader(new FileReader(lines))) {
             String line;
             while ((line = br.readLine()) != null) {
-                line = line.split("#")[0];
-                line = line.trim();
+                String[] parts = line.split("#");
+                if (parts==null || parts.length<1) continue;
+                line = parts[0].trim();
                 if (line.length() < 1) continue;
                 set.add(line.toLowerCase());
             }

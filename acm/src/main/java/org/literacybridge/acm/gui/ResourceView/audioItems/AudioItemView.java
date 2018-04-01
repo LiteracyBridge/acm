@@ -44,7 +44,7 @@ public class AudioItemView extends Container implements Observer {
 
   public static final DataFlavor AudioItemDataFlavor = new DataFlavor(
       AudioItem.class, "LocalizedAudioItem");
-    private static final int FAST_TOOLTIP_DELAY = 100;
+    private static final int FAST_TOOLTIP_DELAY = 50;
     protected SearchResult currResult = null;
   public JXTable audioItemTable = null;
 

@@ -6,7 +6,6 @@ import org.apache.commons.lang.StringUtils;
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.CategoryFilter;
 import org.literacybridge.acm.core.MessageBus;
 import org.literacybridge.acm.core.MessageBus.Message;
 import org.literacybridge.acm.device.DeviceConnectEvent;
@@ -61,7 +60,6 @@ public class SidebarView extends ACMContainer implements Observer {
     private SearchResult result;
     // categories
     private CheckboxTree categoryTree = null;
-    private CategoryFilter categoryFilter = null;
     // playlists
     private JList<PlaylistLabel> playlistList = null;
     // Languages
@@ -141,11 +139,10 @@ public class SidebarView extends ACMContainer implements Observer {
         // add all categories
         Category rootCategory = ACMConfiguration.getInstance().getCurrentDB()
             .getMetadataStore().getTaxonomy().getRootCategory();
-        categoryFilter = ACMConfiguration.getInstance().getCurrentDB().getCategoryFilter();
         if (rootCategory.hasChildren()) {
             for (Category c : rootCategory.getSortedChildren()) {
                 // Only show categories that are are whitelisted and can be assigned to.
-                if (categoryFilter.isIncluded(c.getId()) && !c.isNonAssignable()) {
+                if ((c.isVisible() || c.hasVisibleChildren()) && !c.isNonAssignable()) {
                     addChildCategories(categoryRootNode, c);
                 }
             }
@@ -622,7 +619,7 @@ public class SidebarView extends ACMContainer implements Observer {
         if (category.hasChildren()) {
             for (Category c : category.getSortedChildren()) {
                 // Only show categories that are are whitelisted and can be assigned to.
-                if (categoryFilter.isIncluded(c.getId()) && !c.isNonAssignable()) {
+                if ((c.isVisible() || c.hasVisibleChildren()) && !c.isNonAssignable()) {
                     addChildCategories(child, c);
                 }
             }

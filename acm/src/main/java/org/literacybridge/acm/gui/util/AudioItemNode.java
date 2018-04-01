@@ -5,7 +5,8 @@ import org.literacybridge.acm.store.AudioItem;
 /**
  * Associates a random, arbitrary, unknown object with an AudioItem (of which it is a property).
  *
- * Sadly, this is pretty useless, because
+ * It is not clear how this is useful. Any holder of one of these objects must already know
+ * the type of the object, and how to deal with it.
  * @param <T>
  */
 public class AudioItemNode<T> {
