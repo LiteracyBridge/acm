@@ -6,6 +6,8 @@ import java.util.Map;
 import com.google.common.collect.Maps;
 
 public class Taxonomy {
+  private Integer revision;
+
   private final Category mRootCategory;
   // Map of categoryId : Category. Maps every categoryid in the Taxonomy to its Category object.
   private final Map<String, Category> categories;
@@ -51,5 +53,13 @@ public class Taxonomy {
     parent.addChild(newChild);
     newChild.setParent(parent);
     categories.put(newChild.getId(), newChild);
+  }
+
+  public Integer getRevision() {
+    return revision;
+  }
+  public void setRevision(int revision) {
+    if (this.revision != null) throw new IllegalStateException("Revision has already been set.");
+    this.revision = revision;
   }
 }

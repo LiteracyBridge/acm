@@ -21,7 +21,7 @@ public class CategoryFilter {
         }
     }
 
-    private static final String WHITELIST_FILENAME = "category.whitelist";
+    public static final String WHITELIST_FILENAME = "category.whitelist";
 
     private CaseInsensitiveSet<String> whitelistedIds = null;
     private CaseInsensitiveSet<String> blacklistedIds = null;

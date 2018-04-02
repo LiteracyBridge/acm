@@ -1,5 +1,8 @@
 package org.literacybridge.acm.store;
 
+import org.literacybridge.acm.config.CategoryFilter;
+import org.yaml.snakeyaml.Yaml;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -7,9 +10,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.literacybridge.acm.config.CategoryFilter;
-import org.yaml.snakeyaml.Yaml;
 // @formatter:off
 /**
  * Loads a literacy bridge taxonomy from a YAML file. The file is structured as follows:
@@ -68,7 +68,9 @@ public class TaxonomyLoader {
         Category rootCategory = taxonomy.getRootCategory();
         categoryFilter.setVisibilityFor(rootCategory);
 
-        Map<String, Object> categories = findLatest().categories;
+        VersionedTaxonomyData taxonomyData = findLatest();
+        taxonomy.setRevision(taxonomyData.revision);
+        Map<String, Object> categories = taxonomyData.categories;
         parseYamlData(taxonomy, categories, rootCategory);
     }
 
@@ -85,6 +87,11 @@ public class TaxonomyLoader {
         }
     }
 
+    /**
+     * Get's the latest of a) the built in taxonomy or b) an (optional) lb_taxonomy.yaml in
+     * the project directory.
+     * @return The latest taxonomy data.
+     */
     private VersionedTaxonomyData findLatest() {
         // Load the built-in taxonomy
         VersionedTaxonomyData versionedTaxonomyData = loadYamlFromStream(TaxonomyLoader.class.getResourceAsStream(
