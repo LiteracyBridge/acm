@@ -40,7 +40,16 @@ public class TaxonomyLoader {
     private final static String YAML_CAT_NAME_FIELD = "name";
     private final static String YAML_CAT_ORDER_FIELD = "order";
     private final static String YAML_CAT_NON_ASSIGNABLE_FIELD = "nonassignable"; // Can a message be assigned to this category?
+    private final static String YAML_CAT_USERFEEDBACK_BUCKETS = "feedbackbuckets"; // Add UF buckets?
     private final static String YAML_CAT_CHILDREN_FIELD = "children";
+
+    private final static String[][] FEEDBACK_BUCKETS = {
+        {"-1", "Question"},
+        {"-2", "Endorsement"},
+        {"-3", "Suggestion"},
+        {"-4", "Complaint"},
+        {"-5", "Comment"}
+    };
 
     /**
      * Find the highest-versioned of the built-in taxonomy and a lb_taxonomy.yaml that may
@@ -136,15 +145,28 @@ public class TaxonomyLoader {
     }
 
     /**
+     * Helper to add the default "addFeedbackBuckets=false" parameter.
+     * @param taxonomy object to be populated
+     * @param subCategories map of id: category to be parsed into the taxonomy.
+     * @param parent category under which to place the parsed categories.
+     */
+    private void parseYamlData(Taxonomy taxonomy,
+        Map<String, Object> subCategories,
+        Category parent) {
+        parseYamlData(taxonomy, subCategories, parent, false);
+    }
+    /**
      * Parses the nested object maps loaded from a Taxonomy YAML into a Taxonomy object.
      *
      * @param taxonomy      object to be populated.
      * @param subCategories map of id: category to be parsed into the Taxonomy.
      * @param parent        category under which to place the parsed categories.
+     * @param addFeedbackBuckets If true, add feedback buckets to the leaf nodes.
      */
     private void parseYamlData(Taxonomy taxonomy,
         Map<String, Object> subCategories,
-        Category parent)
+        Category parent,
+        boolean addFeedbackBuckets)
     {
 
         Integer nextOrder = 0;
@@ -177,6 +199,16 @@ public class TaxonomyLoader {
                 // ignore.
             }
 
+            boolean addBuckets = addFeedbackBuckets;
+            field = catData.get(YAML_CAT_USERFEEDBACK_BUCKETS);
+            try {
+                if (field != null) {
+                    addBuckets = (Boolean) field;
+                }
+            } catch (Exception ex) {
+                // Ignore, and use passed-in value.
+            }
+
             Category cat = addCategoryToTaxonomy(taxonomy,
                 parent,
                 catID,
@@ -185,8 +217,25 @@ public class TaxonomyLoader {
                 nonAssignable);
             Object children = catData.get(YAML_CAT_CHILDREN_FIELD);
             if (children != null) {
-                parseYamlData(taxonomy, (Map<String, Object>) children, cat);
+                parseYamlData(taxonomy, (Map<String, Object>) children, cat, addBuckets);
+            } else if (addBuckets) {
+                addFeedbackBuckets(taxonomy, cat);
             }
+        }
+    }
+
+    /**
+     * Adds the feedback buckets to a taxonomy node. Removes much boilerplate from the taxonomy
+     * file.
+     * @param taxonomy The taxonomy containing the category node.
+     * @param cat Category node to get buckets.
+     */
+    private void addFeedbackBuckets(Taxonomy taxonomy, Category cat) {
+        int order = 1;
+        boolean nonAssignable = cat.isNonAssignable();
+        for (String[] fb : FEEDBACK_BUCKETS) {
+            String id = cat.getId() + fb[0];
+            addCategoryToTaxonomy(taxonomy, cat, id, fb[1], order++, nonAssignable);
         }
     }
 

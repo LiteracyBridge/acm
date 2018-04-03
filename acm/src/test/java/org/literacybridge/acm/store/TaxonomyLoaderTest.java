@@ -194,12 +194,53 @@ public class TaxonomyLoaderTest {
         assertFalse("Expected '0-3-1' to not be visible", cat.isVisible());
     }
 
-    /**
-     * Creates a dummy taxonomy with a very high version number.
-     *
-     * @param tempDir Where to create the lb_taxonomy.yaml file
-     * @throws IOException if the file can't be created or written
-     */
+    @Test
+    public void testFeedbackBuckets() throws IOException {
+        File tempDir = tmp.newFolder();
+        writePrivateYaml(tempDir);
+        writeMixedlist(tempDir);
+        Taxonomy override = Taxonomy.createTaxonomy(tempDir);
+        assertNotNull("Expected to load override Taxonomy", override);
+        assertEquals("Expected to find Taxonomy Root",
+            TaxonomyLoader.LB_TAXONOMY_UID,
+            override.getRootCategory().getId());
+        assertEquals("Expected to find TEST_REVISION", TEST_REVISION, (int) override.getRevision());
+
+        Category cat = override.getCategory("90-1-1");
+        assertNotNull("Expected to find '90-1-1'", cat);
+        cat = override.getCategory("90-1-1-1");
+        assertNotNull("Expected to find '90-1-1-1'", cat);
+        assertEquals("Expected 90-1-1-1 to be 'Question'", "Question", cat.getCategoryName());
+
+        cat = override.getCategory("90-1-1-2");
+        assertNotNull("Expected to find '90-1-1-2'", cat);
+        assertEquals("Expected 90-1-1-2 to be 'Question'", "Endorsement", cat.getCategoryName());
+
+        cat = override.getCategory("90-1-1-3");
+        assertNotNull("Expected to find '90-1-1-3'", cat);
+        assertEquals("Expected 90-1-1-3 to be 'Question'", "Suggestion", cat.getCategoryName());
+
+        cat = override.getCategory("90-1-1-4");
+        assertNotNull("Expected to find '90-1-1-4'", cat);
+        assertEquals("Expected 90-1-1-4 to be 'Question'", "Complaint", cat.getCategoryName());
+
+        cat = override.getCategory("90-1-1-5");
+        assertNotNull("Expected to find '90-1-1-5'", cat);
+        assertEquals("Expected 90-1-1-5 to be 'Question'", "Comment", cat.getCategoryName());
+
+        // Test turning feedbackbuckets off:
+        cat = override.getCategory("90-1-2");
+        assertNotNull("Expected to find '90-1-2'", cat);
+        cat = override.getCategory("90-1-2-1");
+        assertNull("Expected to not find '90-1-2-1'", cat);
+    }
+
+        /**
+         * Creates a dummy taxonomy with a very high version number.
+         *
+         * @param tempDir Where to create the lb_taxonomy.yaml file
+         * @throws IOException if the file can't be created or written
+         */
     private void writePrivateYaml(File tempDir) throws IOException {
         File taxonomyFile = new File(tempDir, TaxonomyLoader.YAML_FILE_NAME);
         try (PrintWriter out = new PrintWriter(taxonomyFile)) {
@@ -242,6 +283,18 @@ public class TaxonomyLoaderTest {
             out.println("          children:");
             out.println("            '0-3-1' :");
             out.println("              name: zero-three-one");
+            out.println("    '90' :");
+            out.println("      name: UF");
+            out.println("      feedbackbuckets: true");
+            out.println("      children:");
+            out.println("        '90-1' :");
+            out.println("          name: ninety-one");
+            out.println("          children:");
+            out.println("            '90-1-1' :");
+            out.println("              name: ninety-one-one");
+            out.println("            '90-1-2' :");
+            out.println("              name: ninety-one-two");
+            out.println("              feedbackbuckets: false");
         }
     }
 
