@@ -57,7 +57,7 @@ public class MoveStatsTest {
         File notTalkingBookData = new File(projectDir2, "nottalkingbookdata");
         notTalkingBookData.mkdirs();
         File[] statsDirs = sourceDir.listFiles(new MoveStats.TalkingBookDataFilter());
-        assertEquals("Size of statsDirs should equal 0", 0, statsDirs.length);
+        assertEquals("Size of statsDirs should equal 1", 1, statsDirs.length);
     }
 
     @Test

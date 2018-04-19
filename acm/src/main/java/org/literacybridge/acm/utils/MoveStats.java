@@ -48,9 +48,9 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.USER_RECORDINGS
  * given a directory with these subdirectories:
  * {TBLOADER-ID} / collected-data / {PROJECT} / talkingbookdata / --- files ---
  * {TBLOADER-ID} / collected-data / {PROJECT} / operationaldata / --- files ---
- * {TBLOADER-ID} / collected-data / {PROJECT} / userrecordings / {UPDATE-ID} / --- files ---
+ * {TBLOADER-ID} / collected-data / {PROJECT} / userrecordings / {DEPLOYMENT} / --- files ---
  * the files in userrecordings are moved to
- * {TARGET} / {TIMESTAMP} / userrecordings / {PROJECT} / {UPDATE-ID} / ...
+ * {TARGET} / {TIMESTAMP} / userrecordings / {PROJECT} / {DEPLOYMENT} / ...
  * and the files in talkingbookdata, operationaldata, and any additional (possibly extraneous
  * files and/or directories) are moved to a .zip file
  * {TARGET} / {TIMESTAMP} / {TBLOADER-ID}.zip
@@ -251,8 +251,9 @@ public class MoveStats {
      * and talkingbookdata & operationaldata to the targetDir / timestamp / tbcd9999
      * (tbcd9999 is the name of the parent of collectedDataDir)
      *
-     * @param collectedDataDir {tbcd id} / collected-data or {tbcd id} / {timestamp}
-     * @param targetDir output directory from arguments, like Dropbox / collected-data-processed
+     * @param collectedDataDir {tbcd id} / collected-data or {tbcd id} / {timestamp}, with
+     *                         subdirectories like / {PROJ1},  / {PROJ2},  ...
+     * @param targetDir output directory from arguments, like Dropbox/collected-data-processed/2018/04/18
      * @param statsTimeStamp timestamp under which to collect statistics, 2017y06m19d13h20m20s or
      *                       20170619T132020.123
      * @param userFeedbackTimeStamp timestamp under which to collect user feedback, 2017y06m19d13h20m20s
@@ -433,7 +434,6 @@ public class MoveStats {
                                   targetTbDataDir.getAbsolutePath()));
         File zipFile = new File(targetTbDataDir, tbLoaderDir.getName() + ".zip");
         ZipUnzip.zip(tbLoaderDir, zipFile, true /* include base dir */, zipDirs);
-        FileUtils.cleanDirectory(collectedDataDir);
     }
 
     /**
@@ -458,8 +458,8 @@ public class MoveStats {
             File tbdata = IOUtils.FileIgnoreCase(projectDir, TALKING_BOOK_DATA);
             if (!tbdata.exists() || !tbdata.isDirectory()) {
                 logger.warn(
-                        String.format("The 'project' directory %s has no expected %s subdirectory.",
-                                      projectDir.getName(), TALKING_BOOK_DATA));
+                        String.format("Directory %s has no expected %s subdirectory (in %s).",
+                                      projectDir.getName(), TALKING_BOOK_DATA, collectedDataDir.getAbsolutePath()));
                 foundProjectWithoutTbData = true;
                 break;
             } else {
@@ -467,7 +467,12 @@ public class MoveStats {
             }
         }
 
-        return (foundProjectWithTbData && !foundProjectWithoutTbData);
+        // For many years the code was like this. If any subdirectory existed in the tbcd000c/collected-data
+        // directory, and that subdirectory did not itself have a 'talkingbookdata' subdirectory, then
+        // the entire tbcd000c/collected-data directory was ignored for purposes of statistics.
+        //return (foundProjectWithTbData && !foundProjectWithoutTbData);
+
+        return foundProjectWithTbData;
     }
 
     /**
@@ -512,7 +517,7 @@ public class MoveStats {
                     }
                 } else {
                     String name = child.getName().toLowerCase();
-                    if (name.endsWith(".a18") || name.endsWith(".mp3")) {
+                    if (name.endsWith(".a18") || name.endsWith(".mp3") || name.endsWith(".ogg")) {
                         return true;
                     }
                 }
