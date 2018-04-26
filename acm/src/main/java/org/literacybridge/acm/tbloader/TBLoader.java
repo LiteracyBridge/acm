@@ -69,6 +69,7 @@ public class TBLoader extends JFrame {
     private String dateRotation;
 
     // Global swing components.
+    private JLabel greeting;
     private JLabel warning;
 
     private JLabel deviceLabel;
@@ -417,94 +418,100 @@ public class TBLoader extends JFrame {
         panel.setLayout(layout);
         GridBagConstraints c;
 
+        int y=0;
+        // Greeting.
+        c = gbc(0, y++);
+        c.gridwidth = 3;
+        panel.add(greeting, c);
+
         // Warning.
-        c = gbc(1, 0);
+        c = gbc(1, y++);
         c.gridwidth = 2;
         panel.add(warning, c);
         
         // TB Drive letter / volume label.
-        c = gbc(0, 1);
+        c = gbc(0, y++);
         panel.add(deviceLabel, c);
         c.gridx = RELATIVE;
         panel.add(driveList, c);
 
         // Current location
-        c = gbc(0, 2);
+        c = gbc(0, y++);
         panel.add(currentLocationLabel, c);
         c.gridx = RELATIVE;
         panel.add(currentLocationList, c);
 
         // Next / Previous
-        c = gbc(1, 3);
+        c = gbc(1, y++);
         c.weightx = 1;
         panel.add(nextLabel, c);
         c.gridx = RELATIVE;
         panel.add(prevLabel, c);
 
         // Deployment.
-        c = gbc(0, 4);
+        c = gbc(0, y++);
         panel.add(deploymentLabel, c);
         c.gridx = RELATIVE;
         panel.add(newDeploymentList, c);
         panel.add(oldDeploymentText, c);
 
         // Community Filter
-        c = gbc(0, 5);
+        c = gbc(0, y++);
         panel.add(communityFilterLabel, c);
         c.gridx = RELATIVE;
         panel.add(newCommunityFilter, c);
         
         // Community.
-        c = gbc(0, 6);
+        c = gbc(0, y++);
         panel.add(communityLabel, c);
         c.gridx = RELATIVE;
         panel.add(newCommunityList, c);
         panel.add(oldCommunityText, c);
         
         // Package (aka 'Content', aka 'image')
-        c = gbc(0, 7);
+        c = gbc(0, y++);
         panel.add(contentPackageLabel, c);
         c.gridx = RELATIVE;
         panel.add(newImageText, c);
         panel.add(oldImageText, c);
         
         // Deployment date.
-        c = gbc(0, 8);
+        c = gbc(0, y++);
         panel.add(dateLabel, c);
         c.gridx = RELATIVE;
         panel.add(datePicker, c);
         panel.add(lastUpdatedText, c);
         
         // Firmware version.
-        c = gbc(0, 9);
+        c = gbc(0, y++);
         panel.add(firmwareVersionLabel, c);
         c.gridx = RELATIVE;
         panel.add(newFirmwareVersionText, c);
         panel.add(oldFirmwareVersionText, c);
         
         // TB Serial Number.
-        c = gbc(0, 10);
+        c = gbc(0, y++);
         panel.add(srnLabel, c);
         c.gridx = RELATIVE;
         panel.add(newSrnText, c);
         panel.add(oldSrnText, c);
         
         // Options
-        c = gbc(0, 11);
+        c = gbc(0, y++);
         panel.add(optionsLabel, c);
         c.gridx = RELATIVE;
         panel.add(forceFirmware, c);
         panel.add(testDeployment, c);
 
         // Buttons.
-        c = gbc(1, 13);
+        c = gbc(1, y++);
         c.fill = NONE;
         panel.add(updateButton, c);
         c.gridx = RELATIVE;
         panel.add(getStatsButton, c);
 
         // Status display
-        c = gbc(0, 14);
+        c = gbc(0, y++);
         c.gridwidth = 3;
         panel.add(statusCurrent, c);
         c.gridy= RELATIVE;
@@ -524,6 +531,11 @@ public class TBLoader extends JFrame {
 
     private JPanel createComponents() {
         JPanel panel = new JPanel();
+
+        String greetingString = String.format("<html>Hello <b>%s!</b> <i><span style='font-size:0.85em;color:gray'>(TB-Loader ID: %s)</span></i></html>",
+            ACMConfiguration.getInstance().getUserName(),
+            tbLoaderConfig.getTbLoaderId());
+        greeting = new JLabel(greetingString);
 
         // "Use with NEW TBs only" / "Use with OLD TBs only"
         if (srnPrefix.equals("a-")) {

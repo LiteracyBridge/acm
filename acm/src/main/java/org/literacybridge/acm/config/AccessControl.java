@@ -188,6 +188,17 @@ public class AccessControl {
         dbInfo.setFilenames(currentFilename, nextFilename);
     }
 
+    public int getCurrentDbVersion() {
+        String currentFilename = getCurrentZipFilename();
+        String currentFileNumber = currentFilename.substring(
+            DB_ZIP_FILENAME_PREFIX.length(), currentFilename.lastIndexOf('.'));
+        try {
+            return Integer.parseInt(currentFileNumber);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
     public String getCurrentZipFilename() {
         return dbInfo.getCurrentFilename();
     }
@@ -488,7 +499,7 @@ public class AccessControl {
      * Writes the current temporary database back to a .zip file in the global shared
      * directory, ie, Dropbox.
      *
-     * @param discard If true, just discard the checkin.
+     * @param disposition 'save' or 'discard'
      * @return UpdateDbStatus.ok if the checkin was performed (or discard was successful),
      * .denied if there was a key mismatch on the server,
      * .networkError if we could not reach the server,

@@ -99,21 +99,17 @@ public class Application extends JXFrame {
       }
     });
 
-    String title = new String(LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM",
-        LanguageUtil.getUILanguage()));
-    title += " (" + Constants.ACM_VERSION + ")";
-    if (ACMConfiguration.getInstance().getTitle() != null) {
-        title += "                   " + ACMConfiguration.getInstance().getTitle();
-    } else if (ACMConfiguration.getInstance().getCurrentDB().getSharedACMname() != null) {
-        title += "                   " + ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
-    }
-    String dbVersion = ACMConfiguration.getInstance().getCurrentDB().getCurrentZipFilename();
-    dbVersion = dbVersion.replaceAll("db", "");
-    dbVersion = dbVersion.replaceAll(".zip", "");
-    title += " (v" + dbVersion + ")";
-    if (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) {
-        title += "               CHANGES WILL *NOT* BE SAVED!   ";
-    }
+    String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
+        "               CHANGES WILL *NOT* BE SAVED!   ":"";
+
+    String title = String.format("%s (%s)   User: '%s'    %s (v%d)%s",
+        LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
+        Constants.ACM_VERSION,
+        ACMConfiguration.getInstance().getUserName(),
+        ACMConfiguration.getInstance().getTitle(),
+        ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion(),
+        sandboxWarning);
+
     setTitle(title);
     // toolbar view on top
     ResourceView resourceView = new ResourceView();

@@ -383,7 +383,9 @@ public class ACMConfiguration {
     }
 
     public String getTitle() {
-        return title;
+        if (title != null)
+            return title;
+        return ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
     }
 
     public boolean isDisableUI() {

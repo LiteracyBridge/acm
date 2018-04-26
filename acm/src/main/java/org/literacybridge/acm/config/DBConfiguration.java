@@ -323,6 +323,10 @@ public class DBConfiguration extends Properties {
       }
   }
 
+  public int getCurrentDbVersion() {
+    return accessControl.getCurrentDbVersion();
+  }
+
   public String getCurrentZipFilename() {
       return accessControl.getCurrentZipFilename();
   }
