@@ -11,6 +11,7 @@ import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.tools.DBExporter;
 import org.literacybridge.acm.utils.IOUtils;
+import org.literacybridge.acm.utils.LogHelper;
 import org.literacybridge.core.fs.ZipUnzip;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
@@ -45,19 +46,36 @@ public class TBBuilder {
     private static final String CONTENT_IN_PACKAGES_CSV_FILE_NAME = "contentinpackages.csv";
     private static final String CATEGORIES_IN_PACKAGES_CSV_FILE_NAME = "categoriesinpackages.csv";
     private static final String PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME = "packagesindeployment.csv";
+
+    private final static String [] REQUIRED_SYSTEM_MESSAGES_UF = {
+     "0", "1", "2", "3", "4", "5", "6", "9", "10", "11",
+        "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "28", "29",
+        "33", "37", "38", "41", "53", "54", "61", "62", "63", "65", "80"
+    };
+    private final static String [] REQUIRED_SYSTEM_MESSAGES_NO_UF = {
+        "0", "1", "2", "4", "5", "6", "7", "9", "10", "11",
+        "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "28", "29",
+        "33", "37", "38", "41", "53", "54", "61", "62", "63", "65", "80"
+    };
+    private final static String MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE = "r1220.img";
+
     public static String firstMessageListName = "1";
     public static String IntroMessageID = "0-5";
     private static String IntroMessageListFilename = IntroMessageID + ".txt";
+    private static final String FEEDBACK_FROM_USERS = "9-0";
     public static final String ACM_PREFIX = "ACM-";
     private final static int MAX_DEPLOYMENTS = 5;
+
     private File sourceTbLoadersDir;
+    private File sourceTbOptionsDir;
+
     private File targetDeploymentDir;
     private CSVWriter contentInPackageCSVWriter;
     private CSVWriter categoriesInPackageCSVWriter;
     private CSVWriter packagesInDeploymentCSVWriter;
-    private File sourceTbOptionsDir;
     private File targetStagingDir;
     private String deploymentNumber;
+    private List<String> fatalMessages = new ArrayList<>();
     private List<String> errorMessages = new ArrayList<>();
     private List<String> warningMessages = new ArrayList<>();
     private Set<String> errorCommunities = new HashSet<>();
@@ -65,6 +83,10 @@ public class TBBuilder {
     public String project;
 
     public static void main(String[] args) throws Exception {
+        File lbDir = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
+        File logDir = new File(lbDir, "logs");
+        new LogHelper().inDirectory(logDir).withName("TBBuilder.log").absolute().initialize();
+
         System.out.println(String.format("TB-Builder version %s", Constants.ACM_VERSION));
         if (args.length == 0) {
             printUsage();
@@ -114,6 +136,7 @@ public class TBBuilder {
         ACMConfiguration.getInstance().setCurrentDB(params.sharedACM);
         // Like ~/Dropbox/ACM-UWR/TB-Loaders
         sourceTbLoadersDir = ACMConfiguration.getInstance().getTbLoaderDirFor(sharedACM);
+        sourceTbOptionsDir = new File(sourceTbLoadersDir, "TB_Options");
         project = sharedACM.substring(ACM_PREFIX.length());
         // ~/LiteracyBridge/TB-Loaders
         File localTbLoadersDir = new File(
@@ -179,8 +202,6 @@ public class TBBuilder {
         targetDeploymentDir = new File(targetStagingDir, "content/" + deploymentNumber);
         File targetMetadataDir = new File(targetStagingDir, "metadata/" + deploymentNumber);
 
-        sourceTbOptionsDir = new File(sourceTbLoadersDir, "TB_Options");
-
         // use LB Home Dir to create folder, then zip to Dropbox and delete the
         // folder
         IOUtils.deleteRecursive(targetDeploymentDir);
@@ -207,17 +228,7 @@ public class TBBuilder {
         packagesInDeploymentCSVWriter.writeNext(CSV_COLUMNS_PACKAGES_IN_DEPLOYMENT);
 
         // Find the lexically greatest filename of firmware. Works because we'll never exceed 4 digits.
-        File sourceFirmware = null;
-        File[] firmwareOptions = new File(sourceTbOptionsDir, "firmware")
-            .listFiles();
-        for (File f : firmwareOptions) {
-            if (sourceFirmware == null) {
-                sourceFirmware = f;
-            } else if (sourceFirmware.getName()
-                .compareToIgnoreCase(f.getName()) < 0) {
-                sourceFirmware = f;
-            }
-        }
+        File sourceFirmware = latestFirmwareImage();
         File targetBasicDir = new File(targetDeploymentDir, "basic");
         FileUtils.copyFileToDirectory(sourceFirmware, targetBasicDir);
 
@@ -235,6 +246,22 @@ public class TBBuilder {
         System.out.printf("%nDone with deployment of basic/community content.%n");
     }
 
+    private File latestFirmwareImage() {
+        // Find the lexically greatest filename of firmware. Works because we'll never exceed 4 digits.
+        File sourceFirmware = null;
+        File[] firmwareOptions = new File(sourceTbOptionsDir, "firmware")
+            .listFiles();
+        for (File f : firmwareOptions) {
+            if (sourceFirmware == null) {
+                sourceFirmware = f;
+            } else if (sourceFirmware.getName()
+                .compareToIgnoreCase(f.getName()) < 0) {
+                sourceFirmware = f;
+            }
+        }
+        return sourceFirmware;
+    }
+
     /**
      * Adds a Content Package to a Deployment. Copies the files to the staging directory.
      *
@@ -245,6 +272,7 @@ public class TBBuilder {
      */
     private void addImage(String packageName, String languageCode, String... groups)
         throws Exception {
+        Set<String> exportedCategories = null;
         boolean hasIntro = false;
         int groupCount = groups.length;
         System.out.printf("%n%nExporting package %s%n", packageName);
@@ -301,7 +329,7 @@ public class TBBuilder {
                 list.delete();
                 hasIntro = true;
             } else if (list.getName().equalsIgnoreCase("_activeLists.txt")) {
-                exportCategoriesInPackage(packageName, list);
+                exportedCategories = exportCategoriesInPackage(packageName, list);
             } else {
                 exportList(packageName, list, targetAudioDir, true);
             }
@@ -317,12 +345,17 @@ public class TBBuilder {
         File sourceLanguage = new File(sourceTbOptionsDir, "languages/" + languageCode);
         FileUtils.copyDirectory(sourceLanguage, targetLanguageDir);
 
-        File sourceControlFile;
-        if (hasIntro) {
-            sourceControlFile = new File(sourceTbOptionsDir, "system_menus/control-with_intro.txt");
-        } else {
-            sourceControlFile = new File(sourceTbOptionsDir, "system_menus/control-no_intro.txt");
-        }
+        // If there is no category "9-0" in the _activeLists.txt file, then the user feedback
+        // should not be playable. In that case, use the "_nofb" versions of control.txt.
+        // Those have a "UFH", User Feedback Hidden, in the control file, which prevents the
+        // Talking Book from *adding* a "9-0" to the _activeLists.txt file when user feedback
+        // is recorded. If the 9-0 is already there, then the users can already hear other
+        // users' feedback.
+        boolean hasNoUf = !exportedCategories.contains(FEEDBACK_FROM_USERS);
+        String sourceControlFilename = String.format("system_menus/control-%s_intro%s.txt",
+            hasIntro?"with":"no",
+            hasNoUf?"_no_fb":"");
+        File sourceControlFile = new File(sourceTbOptionsDir, sourceControlFilename);
         FileUtils.copyFile(sourceControlFile, new File(targetLanguageDir, "control.txt"));
 
         // create profile.txt
@@ -380,7 +413,7 @@ public class TBBuilder {
                 }
             }
             if (!found) {
-                errorMessages.add(String.format("'%s' is not a valid deployment for ACM '%s'", args[2], args[1]));
+                fatalMessages.add(String.format("'%s' is not a valid deployment for ACM '%s'.", args[2], args[1]));
             }
         }
 
@@ -405,9 +438,15 @@ public class TBBuilder {
         validateCommunities(new File(sourceTbLoadersDir, "communities"), languages, groups);
 
         // If there are errors or warnings, print them and let user decide whether to continue.
-        if (errorMessages.size() > 0 || warningMessages.size() > 0) {
-            if (errorMessages.size() > 0) {
+        if (fatalMessages.size() > 0 || errorMessages.size() > 0 || warningMessages.size() > 0) {
+            if (fatalMessages.size() > 0) {
                 System.err.printf("%n%n********************************************************************************%n");
+                System.err.printf("%d Fatal Error(s) found in Deployment:%n", fatalMessages.size());
+                for (String msg : fatalMessages)
+                    System.err.println(msg);
+            }
+            if (errorMessages.size() > 0) {
+                System.err.printf("%n%n================================================================================%n");
                 System.err.printf("%d Error(s) found in Deployment:%n", errorMessages.size());
                 for (String msg : errorMessages)
                     System.err.println(msg);
@@ -431,6 +470,11 @@ public class TBBuilder {
                 System.err.printf("%d Warning(s) found in Deployment:%n", warningMessages.size());
                 for (String msg : warningMessages)
                     System.err.println(msg);
+            }
+
+            if (fatalMessages.size() > 0) {
+                System.err.printf("%n%nCannot continue, aborting.%n");
+                System.exit(1);
             }
             System.err.printf("%n%nDo you want to continue (y/N)? ");
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -470,17 +514,20 @@ public class TBBuilder {
         File languagesDir = new File(sourceTbLoadersDir, languagesPath);
         File languageDir = IOUtils.FileIgnoreCase(languagesDir, languageCode);
         File promptsDir = new File(languageDir, "cat");
+        String firmwarePath = "TB_Options" + File.separator + "firmware";
+        File firmwareDir = new File(sourceTbLoadersDir, firmwarePath);
 
         // Read the source _activeLists.txt file.
         File activeList = new File(sourceListsDir, "_activeLists.txt");
         if (!activeList.exists()) {
-            errorMessages.add(
-                String.format("File '%s' not found for Package '%s'", activeList.getName(),
+            fatalMessages.add(
+                String.format("File '%s' not found for Package '%s'.", activeList.getName(),
                     packageName));
         } else {
             //read file into stream, try-with-resources
             try (BufferedReader br = new BufferedReader(new FileReader(activeList))) {
                 String line;
+                boolean foundUserFeedback = false;
                 while ((line = br.readLine()) != null) {
                     // '!' means subject is locked.
                     if (line.charAt(0) == '!')
@@ -489,18 +536,22 @@ public class TBBuilder {
                     if (line.length() < 1)
                         continue;
 
+                    if (line.equals(FEEDBACK_FROM_USERS)) {
+                        foundUserFeedback = true;
+                    }
+
                     // We have the category, ensure the system prompt exists.
                     File p1 = new File(promptsDir, line + ".a18");
                     File p2 = new File(promptsDir, "i" + line + ".a18");
                     if (!p1.exists()) {
                         errorMessages.add(
-                            String.format("Missing system prompt for %s in language %s.", line,
+                            String.format("Missing category prompt for %s in language %s.", line,
                                 languageCode));
                         errorLanguages.add(languageCode);
                     }
                     if (!p2.exists()) {
                         errorMessages.add(
-                            String.format("Missing long system prompt for %s in language %s.", line,
+                            String.format("Missing long category prompt for %s in language %s.", line,
                                 languageCode));
                         errorLanguages.add(languageCode);
                     }
@@ -515,6 +566,30 @@ public class TBBuilder {
                             errorLanguages.add(languageCode);
                         }
                     }
+                }
+                String[] required_messages = foundUserFeedback ? REQUIRED_SYSTEM_MESSAGES_UF : REQUIRED_SYSTEM_MESSAGES_NO_UF;
+                for (String prompt : required_messages) {
+                    File p1 = new File(languageDir, prompt + ".a18");
+                    if (!p1.exists()) {
+                        errorMessages.add(
+                            String.format("Missing system message for %s in language %s.", prompt,
+                                languageCode));
+                        errorLanguages.add(languageCode);
+                    }
+                }
+                // A firmware update may be required to support hidden user feedback. Check the
+                // version currently in the project.
+                if (!foundUserFeedback) {
+                    String image = latestFirmwareImage().getName().toLowerCase();
+                    if (image.compareTo(MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE) < 0) {
+                        fatalMessages.add(String.format("Minimum firmware image for hidden user feedback is %s, but found %s.", MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE, image));
+                    }
+                }
+
+                // If User Feedback will be hidden, warn the user of that fact, in case it is unexpected.
+                if (!foundUserFeedback) {
+                    warningMessages.add(String.format("User Feedback WILL BE HIDDEN for Package '%s' language '%s'.",
+                        packageName, languageCode));
                 }
             } catch (Exception ex) {
                 errorMessages.add(
@@ -559,7 +634,7 @@ public class TBBuilder {
                 // But, if the custom greeting is missing, we still have the default 10.a18.
                 File languagesDir = new File(c, "languages");
                 if (!languagesDir.exists() || !languagesDir.isDirectory()) {
-                    errorMessages.add(String.format("Missing or empty 'languages' directory for community '%s'", c.getName()));
+                    errorMessages.add(String.format("Missing or empty 'languages' directory for community '%s'.", c.getName()));
                     errorCommunities.add(c.getName());
                 } else {
                     // Look for individual language directories, 'en', 'dga', ...
@@ -579,7 +654,7 @@ public class TBBuilder {
                 // We *must* find system / {group}.grp
                 File systemDir = new File(c, "system");
                 if (!systemDir.exists() || !systemDir.isDirectory()) {
-                    errorMessages.add(String.format("Missing or empty 'system' directory for community '%s'", c.getName()));
+                    errorMessages.add(String.format("Missing or empty 'system' directory for community '%s'.", c.getName()));
                     errorCommunities.add(c.getName());
                 } else {
                     // Look for .grp files.
@@ -593,22 +668,22 @@ public class TBBuilder {
                 }
                 if (!foundLanguage) {
                     errorMessages.add(
-                        String.format("Community '%s' does not have any language in the Deployment",
+                        String.format("Community '%s' does not have any language in the Deployment.",
                             c.getName()));
                     errorCommunities.add(c.getName());
                 } else {
                     if (!foundGreeting) {
                         warningMessages.add(
-                            String.format("No custom greeting is for community '%s'", c.getName()));
+                            String.format("No custom greeting is for community '%s'.", c.getName()));
                     }
                     if (!oneLanguage) {
                         warningMessages.add(
-                            String.format("Community '%s' has multiple languages", c.getName()));
+                            String.format("Community '%s' has multiple languages.", c.getName()));
                     }
                 }
                 if (!foundGroup) {
                     errorMessages.add(
-                        String.format("Community '%s' is not in any group in the Deployment",
+                        String.format("Community '%s' is not in any group in the Deployment.",
                             c.getName()));
                     errorCommunities.add(c.getName());
                 }
@@ -771,9 +846,10 @@ public class TBBuilder {
         packagesInDeploymentCSVWriter.writeNext(csvColumns);
     }
 
-    private void exportCategoriesInPackage(
+    private Set<String> exportCategoriesInPackage(
         String contentPackage,
         File activeLists) throws IOException {
+        Set<String> categoriesInPackage = new HashSet<>();
         String[] csvColumns = new String[4];
         csvColumns[0] = project.toUpperCase();
         csvColumns[1] = contentPackage.toUpperCase();
@@ -795,8 +871,10 @@ public class TBBuilder {
                 csvColumns[3] = Integer.toString(order);
                 categoriesInPackageCSVWriter.writeNext(csvColumns);
                 order++;
+                categoriesInPackage.add(categoryID);
             }
         }
+        return categoriesInPackage;
     }
 
     private void exportList(

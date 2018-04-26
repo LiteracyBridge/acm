@@ -138,16 +138,18 @@ class PlaylistPopupMenu extends JPopupMenu {
     private ActionListener exportListener = new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent event) {
-            LinkedHashMap<String, Category> categories = new LinkedHashMap();
+            LinkedHashMap<String, Category> categories = new LinkedHashMap<>();
             try {
+                // Prompt the user for the name of the exported package. If we've exported a
+                // package previously in this invocation of the ACM, use that package name as
+                // an initial value; user can leave that alone to continue exporting playlists
+                // into the package, or can enter a new name, to start a new package.
                 String packageName = promptWithMaxLength("Export Playlist",
                     "Enter Content Package name:", MAX_PACKAGE_NAME_LENGTH, previousPackageName);
 
                 if (!StringUtils.isEmpty(packageName)) {
+                    // If the user actually entered anything, create the directory for the package.
                     previousPackageName = packageName;
-                    // TODO: need to accommodate multiple message lists (or profiles) in
-                    // a single package/image
-                    // TODO: each new message list would be numbered
                     File packageMessagesListsDir = new File(
                         ACMConfiguration.getInstance().getCurrentDB()
                             .getTBLoadersDirectory(),
@@ -157,7 +159,13 @@ class PlaylistPopupMenu extends JPopupMenu {
                         packageMessagesListsDir.mkdirs();
                     }
 
-                    // If not already existing, copy the _activeLists.txt file from a template.
+                    // If this is the first time that a playlist has been exported into this package,
+                    // there will be no _activeLists.txt file. In that case, prompt the user for
+                    // which _activeLists.txt they want. The files reside in the ACM directory, in
+                    // TB-Loaders / TB_Options / activeLists.
+                    // The contents of these files must be actual, valid _activeLists.txt files.
+                    // By convention, the files are named as "Health_Farming_....txt", where
+                    // the words are suggestive of the categories, in order, in the file.
                     File targetActiveListsFile;
                     targetActiveListsFile = new File(packageMessagesListsDir, "_activeLists.txt");
                     if (!targetActiveListsFile.exists()) {
