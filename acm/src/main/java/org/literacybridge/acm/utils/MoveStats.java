@@ -461,9 +461,9 @@ public class MoveStats {
                         String.format("Directory %s has no expected %s subdirectory (in %s).",
                                       projectDir.getName(), TALKING_BOOK_DATA, collectedDataDir.getAbsolutePath()));
                 foundProjectWithoutTbData = true;
-                break;
             } else {
                 foundProjectWithTbData = true; // found at least with TBData
+                break;
             }
         }
 
