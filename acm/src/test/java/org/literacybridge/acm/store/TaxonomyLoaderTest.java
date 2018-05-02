@@ -7,6 +7,7 @@ import org.literacybridge.acm.config.CategoryFilter;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -33,6 +34,14 @@ public class TaxonomyLoaderTest {
             builtin.getRootCategory().getId());
         assertNotNull("Expected to find '9-0'", builtin.getCategory("9-0"));
     }
+
+// Enable this "test" to print out a more human-readable version of the taxonomy.
+//    @Test
+//    public void saveFriendlyVersion() throws IOException {
+//        File tempDir = tmp.newFolder();
+//        Taxonomy builtin = Taxonomy.createTaxonomy(tempDir);
+//        printTaxonomy(builtin);
+//    }
 
     @Test
     public void testLoadingOverride() throws IOException {
@@ -315,6 +324,20 @@ public class TaxonomyLoaderTest {
         try (PrintWriter out = new PrintWriter(taxonomyFile)) {
             out.println("~ 0-1");
             out.println("0-1-1");
+        }
+    }
+
+    private void printTaxonomy(Taxonomy tax) throws FileNotFoundException {
+        File taxonomyFile = new File("src/main/resources/taxonomy.txt");
+        try (PrintWriter out = new PrintWriter(taxonomyFile)) {
+            printCategory(tax.getRootCategory(), "", out);
+        }
+    }
+    private void printCategory(Category cat, String prefix, PrintWriter out) {
+        out.print(prefix);
+        out.println(cat.getCategoryName());
+        for (Category child : cat.getSortedChildren()) {
+            printCategory(child, prefix+"  ", out);
         }
     }
 

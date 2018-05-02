@@ -22,13 +22,13 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -42,7 +42,7 @@ public class TBBuilder {
         "contentpackage", "categoryid", "order" };
     private static final String[] CSV_COLUMNS_PACKAGES_IN_DEPLOYMENT = {
         "project", "deployment", "contentpackage", "packagename", "startDate",
-        "endDate", "languageCode", "groups", "distribution" };
+        "endDate", "languageCode", "grouplangs", "distribution" };
     private static final String CONTENT_IN_PACKAGES_CSV_FILE_NAME = "contentinpackages.csv";
     private static final String CATEGORIES_IN_PACKAGES_CSV_FILE_NAME = "categoriesinpackages.csv";
     private static final String PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME = "packagesindeployment.csv";
@@ -81,6 +81,25 @@ public class TBBuilder {
     private Set<String> errorCommunities = new HashSet<>();
     private Set<String> errorLanguages = new HashSet<>();
     public String project;
+
+    /**
+     * Class to hold the name, language, and groups of a single package.
+     */
+    private static class PackageInfo {
+        final String name;
+        final String language;
+        final String[] groups;
+
+        PackageInfo(String name, String language, String... groups) {
+            this.name = name;
+            this.language = language.toLowerCase();
+            this.groups = new String[groups.length];
+            for (int ix=0; ix<groups.length; ix++) {
+                this.groups[ix] = groups[ix].toLowerCase();
+            }
+        }
+    }
+
 
     public static void main(String[] args) throws Exception {
         File lbDir = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
@@ -146,6 +165,28 @@ public class TBBuilder {
         targetStagingDir = new File(localTbLoadersDir, project);
     }
 
+    private List<PackageInfo> getePackageInfoForCreate(String[] args) {
+        List<PackageInfo> packages = new ArrayList<>();
+        if (args.length == 5) {
+            // one package with only default group
+            packages.add(new PackageInfo(args[3], args[4], TBLoaderConstants.DEFAULT_GROUP_LABEL));
+        } else {
+            // one or more packages with specified group
+            int argIx = 3;
+            while (argIx < args.length) {
+                // First package is also the default, for communities with no other group defined.
+                if (argIx == 3) {
+                    packages.add(new PackageInfo(args[argIx], args[argIx + 1], TBLoaderConstants.DEFAULT_GROUP_LABEL,
+                        args[argIx + 2]));
+                } else {
+                    packages.add(new PackageInfo(args[argIx], args[argIx + 1], args[argIx + 2]));
+                }
+                argIx += 3;
+            }
+        }
+        return packages;
+    }
+
     /**
      * Gathers the files that will make a deployment, into the directory
      * ~/LiteracyBridge/TB-Loaders/PROJ/.
@@ -163,26 +204,15 @@ public class TBBuilder {
      * @throws Exception if one of the packages encounters an IO error.
      */
     private void doCreate(String[] args) throws Exception {
-        validateDeployment(args);
+        List<PackageInfo> packages = getePackageInfoForCreate(args);
+        String acmName = args[1];
+        String deployment = args[2];
+        validateDeployment(acmName, deployment, packages);
 
         createDeployment(args[2]);
 
-        if (args.length == 5) {
-            // one package with only default group
-            addImage(args[3], args[4], TBLoaderConstants.DEFAULT_GROUP_LABEL);
-        } else {
-            // one or more packages with specified group
-            int argIx = 3;
-            while (argIx < args.length) {
-                // First package is also for default group
-                if (argIx == 3) {
-                    addImage(args[argIx], args[argIx + 1], TBLoaderConstants.DEFAULT_GROUP_LABEL,
-                        args[argIx + 2]);
-                } else {
-                    addImage(args[argIx], args[argIx + 1], args[argIx + 2]);
-                }
-                argIx += 3;
-            }
+        for (PackageInfo pi : packages) {
+            addImage(pi);
         }
 
         contentInPackageCSVWriter.close();
@@ -197,7 +227,7 @@ public class TBBuilder {
      * @param deployment name to be created.
      * @throws Exception if there is an IO error.
      */
-    public void createDeployment(String deployment) throws Exception {
+    private void createDeployment(String deployment) throws Exception {
         deploymentNumber = deployment;
         targetDeploymentDir = new File(targetStagingDir, "content/" + deploymentNumber);
         File targetMetadataDir = new File(targetStagingDir, "metadata/" + deploymentNumber);
@@ -248,41 +278,37 @@ public class TBBuilder {
 
     private File latestFirmwareImage() {
         // Find the lexically greatest filename of firmware. Works because we'll never exceed 4 digits.
-        File sourceFirmware = null;
-        File[] firmwareOptions = new File(sourceTbOptionsDir, "firmware")
+        File latestFirmware = null;
+        File[] firmwareVersions = new File(sourceTbOptionsDir, "firmware")
             .listFiles();
-        for (File f : firmwareOptions) {
-            if (sourceFirmware == null) {
-                sourceFirmware = f;
-            } else if (sourceFirmware.getName()
-                .compareToIgnoreCase(f.getName()) < 0) {
-                sourceFirmware = f;
+        for (File f : firmwareVersions) {
+            if (latestFirmware == null) {
+                latestFirmware = f;
+            } else if (latestFirmware.getName().compareToIgnoreCase(f.getName()) < 0) {
+                latestFirmware = f;
             }
         }
-        return sourceFirmware;
+        return latestFirmware;
     }
 
     /**
      * Adds a Content Package to a Deployment. Copies the files to the staging directory.
      *
-     * @param packageName  being added to the Deployment.
-     * @param languageCode of the content in the Package.
-     * @param groups       that should receive the Package.
+     * @param pi Information about the package: name, language, groups.
      * @throws Exception if there is an error creating or reading a file.
      */
-    private void addImage(String packageName, String languageCode, String... groups)
-        throws Exception {
+    private void addImage(PackageInfo pi) throws Exception {
         Set<String> exportedCategories = null;
         boolean hasIntro = false;
-        int groupCount = groups.length;
-        System.out.printf("%n%nExporting package %s%n", packageName);
+        int groupCount = pi.groups.length;
+        System.out.printf("%n%nExporting package %s%n", pi.name);
 
-        File sourcePackageDir = new File(sourceTbLoadersDir, "packages/" + packageName);
+        File sourcePackageDir = new File(sourceTbLoadersDir, "packages/" + pi.name);
         File sourceMessagesDir = new File(sourcePackageDir, "messages");
         File sourceListsDir = new File(sourceMessagesDir,
             "lists/" + TBBuilder.firstMessageListName);
         File targetImagesDir = new File(targetDeploymentDir, "images");
-        File targetImageDir = new File(targetImagesDir, packageName);
+        File targetImageDir = new File(targetImagesDir, pi.name);
 
         IOUtils.deleteRecursive(targetImageDir);
         targetImageDir.mkdirs();
@@ -295,7 +321,7 @@ public class TBBuilder {
             System.exit(1);
         }
 
-        validatePackageForLanguage(packageName, languageCode);
+        validatePackageForLanguage(pi);
 
         File targetMessagesDir = new File(targetImageDir, "messages");
         FileUtils.copyDirectory(sourceMessagesDir, targetMessagesDir);
@@ -304,7 +330,7 @@ public class TBBuilder {
         File targetListsDir = new File(targetMessagesDir,
             "lists/" + TBBuilder.firstMessageListName);
         File targetLanguagesDir = new File(targetImageDir, "languages");
-        File targetLanguageDir = new File(targetLanguagesDir, languageCode);
+        File targetLanguageDir = new File(targetLanguagesDir, pi.language);
         File targetWelcomeMessageDir = targetLanguageDir;
 
         if (!targetAudioDir.exists() && !targetAudioDir.mkdirs()) {
@@ -325,13 +351,13 @@ public class TBBuilder {
         File[] lists = targetListsDir.listFiles();
         for (File list : lists) {
             if (list.getName().equals(TBBuilder.IntroMessageListFilename)) {
-                exportList(packageName, list, targetWelcomeMessageDir, "intro.a18", false);
+                exportList(pi.name, list, targetWelcomeMessageDir, "intro.a18", false);
                 list.delete();
                 hasIntro = true;
             } else if (list.getName().equalsIgnoreCase("_activeLists.txt")) {
-                exportedCategories = exportCategoriesInPackage(packageName, list);
+                exportedCategories = exportCategoriesInPackage(pi.name, list);
             } else {
-                exportList(packageName, list, targetAudioDir, true);
+                exportList(pi.name, list, targetAudioDir, true);
             }
         }
 
@@ -342,7 +368,7 @@ public class TBBuilder {
         File targetSystemDir = new File(targetImageDir, "system");
         FileUtils.copyFileToDirectory(sourceConfigFile, targetSystemDir);
 
-        File sourceLanguage = new File(sourceTbOptionsDir, "languages/" + languageCode);
+        File sourceLanguage = new File(sourceTbOptionsDir, "languages/" + pi.language);
         FileUtils.copyDirectory(sourceLanguage, targetLanguageDir);
 
         // If there is no category "9-0" in the _activeLists.txt file, then the user feedback
@@ -359,34 +385,33 @@ public class TBBuilder {
         FileUtils.copyFile(sourceControlFile, new File(targetLanguageDir, "control.txt"));
 
         // create profile.txt
-        String profileString = packageName.toUpperCase() + "," + languageCode + ","
+        String profileString = pi.name.toUpperCase() + "," + pi.language + ","
             + TBBuilder.firstMessageListName + ",menu\n";
         File profileFile = new File(targetSystemDir, "profiles.txt");
         BufferedWriter out = new BufferedWriter(new FileWriter(profileFile));
         out.write(profileString);
         out.close();
 
-        for (String group : groups) {
+        for (String group : pi.groups) {
             File f = new File(targetSystemDir, group + TBLoaderConstants.GROUP_FILE_EXTENSION);
             f.createNewFile();
         }
 
-        File f = new File(targetSystemDir, packageName + ".pkg");
+        File f = new File(targetSystemDir, pi.name + ".pkg");
         f.createNewFile();
 
-        exportPackagesInDeployment(packageName, languageCode, groups);
+        exportPackagesInDeployment(pi.name, pi.language, pi.groups);
         System.out.println(
-            String.format("Done with adding image for %s and %s.", packageName, languageCode));
+            String.format("Done with adding image for %s and %s.", pi.name, pi.language));
     }
 
     /**
      * Validates that the packages and communities pass certain sanity tests. (See individual
      * verifications for details.)
      *
-     * @param args to the program, containing package names, languages, and groups.
      * @throws IOException if a file can't be read.
      */
-    private void validateDeployment(String[] args) throws IOException {
+    private void validateDeployment(String acmName, String deployment, List<PackageInfo> packages) throws IOException {
         // Validate that the deployment is listed in the deployments.csv file.
         File deploymentsList = new File(sourceTbLoadersDir, "deployments.csv");
         if (deploymentsList.exists()) {
@@ -406,14 +431,14 @@ public class TBBuilder {
                         }
                     }
                 } else {
-                    if (line[deploymentIx].equalsIgnoreCase(args[2])) {
+                    if (line[deploymentIx].equalsIgnoreCase(deployment)) {
                         found = true;
                         break;
                     }
                 }
             }
             if (!found) {
-                fatalMessages.add(String.format("'%s' is not a valid deployment for ACM '%s'.", args[2], args[1]));
+                fatalMessages.add(String.format("'%s' is not a valid deployment for ACM '%s'.", deployment, acmName));
             }
         }
 
@@ -422,17 +447,10 @@ public class TBBuilder {
         Set<String> groups = new HashSet<>();
         Set<String> languages = new HashSet<>();
 
-        validatePackageForLanguage(args[3], args[4]);
-
-        languages.add(args[4].toLowerCase());
-        groups.add(TBLoaderConstants.DEFAULT_GROUP_LABEL);
-        if (args.length > 5)
-            groups.add(args[5].toLowerCase());
-        for (int argIx = 6; argIx < args.length; argIx += 3) {
-            languages.add(args[argIx + 1].toLowerCase());
-            groups.add(args[argIx + 2].toLowerCase());
-
-            validatePackageForLanguage(args[argIx], args[argIx + 1]);
+        for (PackageInfo pi : packages) {
+            validatePackageForLanguage(pi);
+            languages.add(pi.language);
+            Collections.addAll(groups, pi.groups);
         }
 
         validateCommunities(new File(sourceTbLoadersDir, "communities"), languages, groups);
@@ -495,34 +513,33 @@ public class TBBuilder {
      * <p>
      * If any file is missing, prints an error message and exits.
      *
-     * @param packageName  The name of the package, used to construct the directory
-     *                     (TB-Loaders/packages/{package}/messages/lists/1/)
+     *
+     * @param pi Information about the package: name, language, groups
+     *                     (TB-Loaders/packages/{name}/messages/lists/1/)
      *                     containing the _activeLists.txt and individual playlist .txt
      *                     list files.
-     * @param languageCode The language for which the package is being exported.
      * @throws IOException if any files can't be read.
      */
-    private void validatePackageForLanguage(String packageName, String languageCode)
+    private void validatePackageForLanguage(PackageInfo pi)
         throws IOException {
         // Get the directory containing the _activeLists.txt file plus the playlist files (like "2-0.txt")
         String listsPath =
-            "packages/" + packageName + "/messages/lists/" + TBBuilder.firstMessageListName;
+            "packages/" + pi.name + "/messages/lists/" + TBBuilder.firstMessageListName;
         File sourceListsDir = new File(sourceTbLoadersDir, listsPath);
 
         // Get the directory with the system prompt recordings for the language.
         String languagesPath = "TB_Options" + File.separator + "languages";
         File languagesDir = new File(sourceTbLoadersDir, languagesPath);
-        File languageDir = IOUtils.FileIgnoreCase(languagesDir, languageCode);
+        File languageDir = IOUtils.FileIgnoreCase(languagesDir, pi.language);
         File promptsDir = new File(languageDir, "cat");
         String firmwarePath = "TB_Options" + File.separator + "firmware";
-        File firmwareDir = new File(sourceTbLoadersDir, firmwarePath);
 
         // Read the source _activeLists.txt file.
         File activeList = new File(sourceListsDir, "_activeLists.txt");
         if (!activeList.exists()) {
             fatalMessages.add(
                 String.format("File '%s' not found for Package '%s'.", activeList.getName(),
-                    packageName));
+                    pi.name));
         } else {
             //read file into stream, try-with-resources
             try (BufferedReader br = new BufferedReader(new FileReader(activeList))) {
@@ -546,14 +563,14 @@ public class TBBuilder {
                     if (!p1.exists()) {
                         errorMessages.add(
                             String.format("Missing category prompt for %s in language %s.", line,
-                                languageCode));
-                        errorLanguages.add(languageCode);
+                                pi.language));
+                        errorLanguages.add(pi.language);
                     }
                     if (!p2.exists()) {
                         errorMessages.add(
                             String.format("Missing long category prompt for %s in language %s.", line,
-                                languageCode));
-                        errorLanguages.add(languageCode);
+                                pi.language));
+                        errorLanguages.add(pi.language);
                     }
 
                     // Be sure there is a list for the category.
@@ -562,8 +579,8 @@ public class TBBuilder {
                         if (!pList.exists()) {
                             errorMessages.add(
                                 String.format("Missing playlist file '%s.txt', for Package '%s', language '%s'.",
-                                    line, packageName, languageCode));
-                            errorLanguages.add(languageCode);
+                                    line, pi.name, pi.language));
+                            errorLanguages.add(pi.language);
                         }
                     }
                 }
@@ -573,8 +590,8 @@ public class TBBuilder {
                     if (!p1.exists()) {
                         errorMessages.add(
                             String.format("Missing system message for %s in language %s.", prompt,
-                                languageCode));
-                        errorLanguages.add(languageCode);
+                                pi.language));
+                        errorLanguages.add(pi.language);
                     }
                 }
                 // A firmware update may be required to support hidden user feedback. Check the
@@ -589,13 +606,13 @@ public class TBBuilder {
                 // If User Feedback will be hidden, warn the user of that fact, in case it is unexpected.
                 if (!foundUserFeedback) {
                     warningMessages.add(String.format("User Feedback WILL BE HIDDEN for Package '%s' language '%s'.",
-                        packageName, languageCode));
+                        pi.name, pi.language));
                 }
             } catch (Exception ex) {
                 errorMessages.add(
                     String.format("Exception reading _activeLists.txt for Package '%s' language '%s': %s",
-                        packageName, languageCode, ex.getMessage()));
-                errorLanguages.add(languageCode);
+                        pi.name, pi.language, ex.getMessage()));
+                errorLanguages.add(pi.language);
             }
         }
     }
@@ -823,7 +840,8 @@ public class TBBuilder {
 
     private void exportPackagesInDeployment(
         String contentPackage,
-        String languageCode, String[] groups) throws IOException {
+        String languageCode, String[] groups)
+    {
         String groupsconcat = StringUtils.join(groups, ',');
         String[] csvColumns = new String[9];
         csvColumns[0] = project.toUpperCase();
