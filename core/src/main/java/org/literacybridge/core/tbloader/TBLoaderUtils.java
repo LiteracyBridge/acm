@@ -235,4 +235,26 @@ public class TBLoaderUtils {
         return null;
     }
 
+    /**
+     * Converts number of bytes into proper scale.
+     *
+     * @param bytes number of bytes to be converted.
+     * @return A string that represents the bytes in a proper scale.
+     */
+    //@SuppressLint("DefaultLocale")
+    public static String getBytesString(long bytes) {
+        String[] quantifiers = new String[] {
+                "KiB", "MiB", "GiB", "TiB"
+        };
+        double sizeNum = bytes;
+        for (int i = 0;; i++) {
+            if (i >= quantifiers.length) {
+                return "Too Much";
+            }
+            sizeNum /= 1024;
+            if (sizeNum <= 999) {
+                return String.format("%.2f %s", sizeNum, quantifiers[i]);
+            }
+        }
+    }
 }

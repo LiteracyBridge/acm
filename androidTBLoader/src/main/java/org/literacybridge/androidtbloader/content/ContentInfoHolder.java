@@ -1,6 +1,8 @@
 package org.literacybridge.androidtbloader.content;
 
 import android.annotation.SuppressLint;
+import android.content.DialogInterface;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
@@ -11,7 +13,7 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import org.literacybridge.androidtbloader.BuildConfig;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
-import org.literacybridge.androidtbloader.util.Util;
+import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -72,17 +74,19 @@ class ContentInfoHolder extends RecyclerView.ViewHolder {
         mStatusLabel = (TextView) itemView.findViewById(R.id.list_item_deployment_status_label);
         mProgressBar = (ProgressBar) itemView.findViewById(R.id.list_item_deployment_progress_bar);
 
-        // Developer testing code -- long press to delete local content.
-        if (TBLoaderAppContext.getInstance().getConfig().isAdvanced()) {
-            itemView.setLongClickable(true);
-            itemView.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    mManageContentActivity.mContentManager.removeLocalContent(mContentInfo);
-                    return true;
+        // Long press to delete local content.
+        itemView.setLongClickable(true);
+        itemView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                // Dev can always remove; but probably not a good idea if a download
+                // is in progress, so disable that for normal use.
+                if (!mManageContentActivity.isDownloadInProgress() || TBLoaderAppContext.getInstance().getConfig().isAdvanced()) {
+                    mManageContentActivity.maybeRemoveContent(mContentInfo);
                 }
-            });
-        }
+                return true;
+            }
+        });
     }
 
     /**
@@ -99,6 +103,9 @@ class ContentInfoHolder extends RecyclerView.ViewHolder {
         return TBLoaderAppContext.getInstance().getString(resId, formatArgs);
     }
 
+    public void update() {
+        updateView();
+    }
     /**
      * Listener for the progress of downloads.
      */
@@ -254,7 +261,7 @@ class ContentInfoHolder extends RecyclerView.ViewHolder {
 //        }
 //        mExpirationTextView.setText(
 //            getString(R.string.deployment_package_expiration, expiration));
-        final String size = Util.getBytesString(contentInfo.getSize());
+        final String size = TBLoaderUtils.getBytesString(contentInfo.getSize());
         mExpirationTextView.setText(getString(R.string.deployment_size, size));
 
         // Update the dynamic parts of the view.

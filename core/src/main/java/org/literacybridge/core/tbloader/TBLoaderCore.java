@@ -53,7 +53,10 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.OPERATIONAL_DATA;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_AUDIO_PATH;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LANGUAGES_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_MESSAGES_PATH;
+import static org.literacybridge.core.tbloader.TBLoaderUtils.getBytesString;
 
 
 /*
@@ -295,6 +298,7 @@ public class TBLoaderCore {
     private ProgressListener.Steps mCurrentStep;
     private long mStepStartTime;
     private int mStepFileCount;
+    private long mStepBytesCount;
     private OperationLog.Operation mStepsLog;
     private TbFile.CopyProgress mCopyListener;
 
@@ -1055,7 +1059,7 @@ public class TBLoaderCore {
             }
         };
 
-        TbFile.copyDir(mTalkingBookRoot, mTalkingBookDataRoot, copyFilesFilter, mCopyListener);
+        mStepBytesCount += TbFile.copyDir(mTalkingBookRoot, mTalkingBookDataRoot, copyFilesFilter, mCopyListener);
         finishStep();
     }
 
@@ -1091,7 +1095,7 @@ public class TBLoaderCore {
             }
         };
         if (recordingsSrc.exists()) {
-            TbFile.copyDir(recordingsSrc, recordingsDst, copyRecordingsFilter, mCopyListener);
+            mStepBytesCount += TbFile.copyDir(recordingsSrc, recordingsDst, copyRecordingsFilter, mCopyListener);
         }
 
         finishStep();
@@ -1195,7 +1199,7 @@ public class TBLoaderCore {
                 .open(mTalkingBookDataZipPath);
 
         outputZip.getParent().mkdirs();
-        TbFile.copy(tempZip, outputZip);
+        mStepBytesCount += TbFile.copy(tempZip, outputZip);
 
         // Clean out everything we put in the temp directory. Any other cruft that was there, as well.
         mTempDirectory.delete(contentRecursive);
@@ -1255,8 +1259,8 @@ public class TBLoaderCore {
 
         mStepFileCount += mTalkingBookRoot.open("archive").delete(TbFile.Flags.recursive);
         mStepFileCount += mTalkingBookRoot.open("LOST.DIR").delete(TbFile.Flags.recursive);
-        mStepFileCount += mTalkingBookRoot.open(TB_LISTS_PATH).delete(TbFile.Flags.recursive);
-        mStepFileCount += mTalkingBookRoot.open(TB_AUDIO_PATH).delete(TbFile.Flags.recursive);
+        mStepFileCount += mTalkingBookRoot.open(TB_MESSAGES_PATH).delete(TbFile.Flags.recursive);
+        mStepFileCount += mTalkingBookRoot.open(TB_LANGUAGES_PATH).delete(TbFile.Flags.recursive);
 
         // Delete files from /
         String[] names = mTalkingBookRoot.list(new TbFile.FilenameFilter() {
@@ -1298,6 +1302,7 @@ public class TBLoaderCore {
                         name.endsWith(".loc") ||
                         name.endsWith(".pkg") ||
                         name.endsWith(".prj") ||
+                        name.endsWith(".rtc") ||
                         name.endsWith(".srn") ||
                         name.endsWith(".txt");
             }
@@ -1319,7 +1324,7 @@ public class TBLoaderCore {
         }
 
         mProgressListener.detail("control.bin");
-        toDelete = mTalkingBookRoot.open(TBLoaderConstants.TB_LANGUAGES_PATH).open("control.bin");
+        toDelete = mTalkingBookRoot.open(TB_LANGUAGES_PATH).open("control.bin");
         if (toDelete.exists()) {
             toDelete.delete();
             mStepFileCount++;
@@ -1351,7 +1356,7 @@ public class TBLoaderCore {
                 return !name.endsWith(".srn") && !name.endsWith(".rev");
             }
         };
-        TbFile.copyDir(mDeploymentDirectory.open(TBLoaderConstants.CONTENT_BASIC_SUBDIR),
+        mStepBytesCount += TbFile.copyDir(mDeploymentDirectory.open(TBLoaderConstants.CONTENT_BASIC_SUBDIR),
                        mTalkingBookRoot, basicFilter,
                        mCopyListener);
 
@@ -1439,7 +1444,7 @@ public class TBLoaderCore {
         TbFile imagePath = mDeploymentDirectory.open(IMAGES_SUBDIR)
                 .open(mNewDeploymentInfo.getPackageName());
         if (imagePath.exists()) {
-            TbFile.copyDir(imagePath, mTalkingBookRoot, null, mCopyListener);
+            mStepBytesCount += TbFile.copyDir(imagePath, mTalkingBookRoot, null, mCopyListener);
         }
 
         finishStep();
@@ -1467,7 +1472,7 @@ public class TBLoaderCore {
         TbFile communityPath = mDeploymentDirectory.open(TBLoaderConstants.COMMUNITIES_SUBDIR).open(
                 mNewDeploymentInfo.getCommunity());
         if (communityPath.exists()) {
-            TbFile.copyDir(communityPath,
+            mStepBytesCount += TbFile.copyDir(communityPath,
                 mTalkingBookRoot, filter, mCopyListener);
         }
 
@@ -1558,6 +1563,7 @@ public class TBLoaderCore {
     private void startStep(ProgressListener.Steps step) {
         mCurrentStep = step;
         mStepFileCount = 0;
+        mStepBytesCount = 0;
         mStepStartTime = System.currentTimeMillis();
         mProgressListener.step(step);
     }
@@ -1576,6 +1582,9 @@ public class TBLoaderCore {
         if (mCurrentStep.hasFiles) {
             mStepsLog.put(mCurrentStep.toString() + ".files", mStepFileCount);
             builder.append(String.format(Locale.US, "%d file(s), ", mStepFileCount));
+            if (mStepBytesCount>0) {
+                builder.append(String.format(Locale.US, "%s, ", getBytesString(mStepBytesCount)));
+            }
         }
         builder.append(getStepTime());
 
@@ -1613,10 +1622,12 @@ public class TBLoaderCore {
     private void eraseAndOverwriteFile(TbFile file, String content) throws IOException {
         mProgressListener.detail(file.getName());
         mStepFileCount++;
+        byte[] contentBytes = content.getBytes();
+        mStepBytesCount += contentBytes.length;
         if (file.getParent().exists()) {
             file.getParent().mkdirs();
         }
-        InputStream is = new ByteArrayInputStream(content.getBytes());
+        InputStream is = new ByteArrayInputStream(contentBytes);
         file.createNew(is);
     }
 

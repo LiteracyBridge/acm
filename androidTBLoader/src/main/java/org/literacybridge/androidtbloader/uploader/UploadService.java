@@ -30,8 +30,8 @@ import org.literacybridge.androidtbloader.signin.UserHelper;
 import org.literacybridge.androidtbloader.util.OperationLogImpl;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.androidtbloader.util.S3Helper;
-import org.literacybridge.androidtbloader.util.Util;
 import org.literacybridge.core.fs.OperationLog;
+import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -218,11 +218,11 @@ public class UploadService extends JobService {
             // If there is an error message, add it, and turn the icon red.
             if (sErrorMessage != null) {
                 title = sErrorMessage;
-                content = String.format("%s in %d files waiting to upload.", Util.getBytesString(mPendingUploadSize), mPendingUploadCount);
+                content = String.format("%s in %d files waiting to upload.", TBLoaderUtils.getBytesString(mPendingUploadSize), mPendingUploadCount);
                 icon = R.drawable.talking_book_outline_red;
             } else {
                 title = "Pending Statistics Uploads";
-                content = String.format("%s in %d files to be uploaded.", Util.getBytesString(mPendingUploadSize), mPendingUploadCount);
+                content = String.format("%s in %d files to be uploaded.", TBLoaderUtils.getBytesString(mPendingUploadSize), mPendingUploadCount);
             }
 
             NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)

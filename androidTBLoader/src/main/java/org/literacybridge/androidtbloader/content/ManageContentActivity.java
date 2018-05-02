@@ -134,6 +134,30 @@ public class ManageContentActivity extends AppCompatActivity {
             mUserDialog = null;
         }
     }
+    public void maybeRemoveContent(final ContentInfo mContentInfo) {
+        String title = "Really remove content?";
+        String body = String.format("Deployment:  %1$s\nProject:  %2$s",
+            mContentInfo.getVersion(), mContentInfo.getProjectName());
+        closeUserDialog();
+        final AlertDialog.Builder builder = new AlertDialog.Builder(ManageContentActivity.this);
+        builder.setTitle(title)
+            .setMessage(body)
+            .setNeutralButton("Remove content", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    closeUserDialog();
+                    mContentManager.removeLocalContent(mContentInfo);
+                }
+            })
+            .setNegativeButton("Don't remove", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    closeUserDialog();
+                }
+            });
+        mUserDialog = builder.show();
+    }
+
 
     /**
      * Listener for the cancel button. When clicked, prompt the user for confirmation, then

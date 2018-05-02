@@ -23,7 +23,7 @@ import android.widget.TextView;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.signin.UserHelper;
-import org.literacybridge.androidtbloader.util.Util;
+import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -226,7 +226,7 @@ public class UploadStatusFragment extends Fragment {
 
         private void bindQueuedUploadItem(final UploadItem uploadItem) {
             mFileNameTextView.setText(uploadItem.file.getName());
-            mFileSizeTextView.setText(Util.getBytesString(uploadItem.size));
+            mFileSizeTextView.setText(TBLoaderUtils.getBytesString(uploadItem.size));
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.US);
             df.setTimeZone(UTC);
             String filesDate = df.format(uploadItem.timestamp);

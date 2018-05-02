@@ -61,8 +61,8 @@ import org.literacybridge.androidtbloader.uploader.UploadService;
 import org.literacybridge.androidtbloader.uploader.UploadStatusActivity;
 import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.Errors;
-import org.literacybridge.androidtbloader.util.Util;
 import org.literacybridge.core.fs.OperationLog;
+import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -136,11 +136,11 @@ public class MainFragment extends Fragment {
 
         OperationLog.Operation opLog = OperationLog.log("MainFragment.onCreate")
             .put("externalStorageAvailable",
-                 Util.getBytesString(new StatFs(Environment.getExternalStorageDirectory().getAbsolutePath()).getAvailableBytes()))
+                 TBLoaderUtils.getBytesString(new StatFs(Environment.getExternalStorageDirectory().getAbsolutePath()).getAvailableBytes()))
             .put("internalStorageAvailable",
-                 Util.getBytesString(new StatFs(Environment.getDataDirectory().getAbsolutePath()).getAvailableBytes()))
+                 TBLoaderUtils.getBytesString(new StatFs(Environment.getDataDirectory().getAbsolutePath()).getAvailableBytes()))
             .put("tempStorageAvailable",
-                 Util.getBytesString(new StatFs(Environment.getDownloadCacheDirectory().getAbsolutePath()).getAvailableBytes()));
+                 TBLoaderUtils.getBytesString(new StatFs(Environment.getDownloadCacheDirectory().getAbsolutePath()).getAvailableBytes()));
         opLog.put("phonemake", Build.MANUFACTURER)
             .put("phonemodel", Build.MODEL)
             .put("android", Build.VERSION.RELEASE)
@@ -580,7 +580,8 @@ public class MainFragment extends Fragment {
 
     private void fillUploadValues(int count, long size) {
         if (count > 0) {
-            mUploadCountTextView.setText(String.format(getString(R.string.main_n_stats_files_to_upload), Util.getBytesString(size), count));
+            mUploadCountTextView.setText(String.format(getString(R.string.main_n_stats_files_to_upload), TBLoaderUtils
+                .getBytesString(size), count));
             //mUploadSizeTextView.setText(String.format(getString(R.string.main_n_bytes_to_upload), Util.getBytesString(size)));
             mUploadSizeTextView.setVisibility(View.GONE);
             //mUploadNextTextView.setText(name);

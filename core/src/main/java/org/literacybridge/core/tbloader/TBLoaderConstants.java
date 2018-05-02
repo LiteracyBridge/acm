@@ -37,6 +37,7 @@ public class TBLoaderConstants {
 
   public static final RelativePath TB_SYSTEM_PATH = RelativePath.parse("system");
   public static final RelativePath TB_LANGUAGES_PATH = RelativePath.parse("languages");
+  public static final RelativePath TB_MESSAGES_PATH = RelativePath.parse("messages");
   public static final RelativePath TB_LISTS_PATH = RelativePath.parse("messages/lists");
   public static final RelativePath TB_AUDIO_PATH = RelativePath.parse("messages/audio");
 
