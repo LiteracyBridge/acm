@@ -2,8 +2,11 @@ package org.literacybridge.acm.config;
 
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.LuceneMetadataStore;
+import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.store.Taxonomy;
 
@@ -19,6 +22,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +37,8 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
 @SuppressWarnings("serial")
 public class DBConfiguration extends Properties {
@@ -302,6 +308,9 @@ public class DBConfiguration extends Properties {
       this.store = new LuceneMetadataStore(taxonomy, getLuceneIndexDirectory());
 
       parseLanguageLabels();
+
+      fixupLanguageCodes();
+
       initialized = true;
     }
   }
@@ -500,4 +509,44 @@ public class DBConfiguration extends Properties {
           "Unable to initialize log file. Will be logging to stdout instead.");
     }
   }
+
+  /**
+   * A number of years ago (I write this on 2018-05-10), we needed a new language, Tumu Sisaala.
+   * The person implementing the language did not know the ISO 639-3 code, nor did he know that
+   * he should strictly restrict the codes to that well-known list. He just made up "ssl1", as
+   * a modification of Lambussie Sisaala, "ssl". But the correct code should have been "sil".
+   *
+   * We've lived with this, as I say, for years. But today the pain of keeping the non-standard
+   * language code exceeds the cost of fixing it, and so, here we are. This code translates
+   * "ssl1" => "sil". It's only needed once per ACM, after which it adds perhaps 1ms to start
+   * up time.
+   */
+  private void fixupLanguageCodes() {
+    long timer = -System.currentTimeMillis();
+
+    // Hack to fix ssl1->sil. If we ever have more, abstract this a bit more.
+    String from = "ssl1";
+    String to = "sil";
+    RFC3066LanguageCode abstractLanguageCode = new RFC3066LanguageCode(to);
+    MetadataValue<RFC3066LanguageCode> abstractMetadataLanguageCode = new MetadataValue(abstractLanguageCode);
+
+    // Build list of items matching the extract criteria
+    List<AudioItem> toExtract = new ArrayList<>();
+    Collection<AudioItem> items = this.store.getAudioItems();
+
+    for (AudioItem item : items) {
+      if (item.getLanguageCode().equalsIgnoreCase(from)) {
+        item.getMetadata().setMetadataField(DC_LANGUAGE, abstractMetadataLanguageCode);
+        try {
+          this.store.commit(item);
+        } catch (IOException e1) {
+          e1.printStackTrace();
+        }
+      }
+    }
+
+    timer += System.currentTimeMillis();
+    System.out.printf("Munge time %d ms%n", timer);
+  }
+
 }
