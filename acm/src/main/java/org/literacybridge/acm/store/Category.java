@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 public class Category {
   private final String id;
@@ -115,4 +116,31 @@ public class Category {
         }
         return false;
     }
+
+    public boolean isChildOf(Category cat) {
+        Category test = this;
+        while (test != null) {
+            if (cat.equals(test)) {
+                return true;
+            }
+            test = test.getParent();
+        }
+        return false;
+
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Category category = (Category) o;
+        return Objects.equals(id, category.id) && Objects.equals(name, category.name)
+            && Objects.equals(parent, category.parent);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, parent);
+    }
+
 }

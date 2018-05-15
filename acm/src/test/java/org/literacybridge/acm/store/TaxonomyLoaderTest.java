@@ -36,12 +36,12 @@ public class TaxonomyLoaderTest {
     }
 
 // Enable this "test" to print out a more human-readable version of the taxonomy.
-//    @Test
-//    public void saveFriendlyVersion() throws IOException {
-//        File tempDir = tmp.newFolder();
-//        Taxonomy builtin = Taxonomy.createTaxonomy(tempDir);
-//        printTaxonomy(builtin);
-//    }
+    @Test
+    public void saveFriendlyVersion() throws IOException {
+        File tempDir = tmp.newFolder();
+        Taxonomy builtin = Taxonomy.createTaxonomy(tempDir);
+        printTaxonomy(builtin);
+    }
 
     @Test
     public void testLoadingOverride() throws IOException {
@@ -329,15 +329,19 @@ public class TaxonomyLoaderTest {
 
     private void printTaxonomy(Taxonomy tax) throws FileNotFoundException {
         File taxonomyFile = new File("src/main/resources/taxonomy.txt");
+        Category uf = tax.getCategory("90");
         try (PrintWriter out = new PrintWriter(taxonomyFile)) {
-            printCategory(tax.getRootCategory(), "", out);
+            printCategory(tax.getRootCategory(), "", out, uf);
         }
     }
-    private void printCategory(Category cat, String prefix, PrintWriter out) {
-        out.print(prefix);
-        out.println(cat.getCategoryName());
-        for (Category child : cat.getSortedChildren()) {
-            printCategory(child, prefix+"  ", out);
+    private void printCategory(Category cat, String prefix, PrintWriter out, Category uf) {
+        // Don't print leaf nodes of Categorized Feedback. They're generated. Yes, this is hacky.
+        // Hey, this is a pseudo-test to generate a human readable listing of categories.
+        if (cat.hasChildren() || !cat.isChildOf(uf)) {
+            out.printf("%s%s  (%s)%n", prefix, cat.getCategoryName(), cat.getId());
+            for (Category child : cat.getSortedChildren()) {
+                printCategory(child, prefix + "  ", out, uf);
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 57
+  revision: 58
   categories:
     '0' : 
       name: Other Messages
@@ -471,6 +471,8 @@ taxonomy:
                 name: purpose
             '90-19-2':
                 name: timing
+            '90-19-3':
+                name: accessibility
         '90-20':
           name: Agriculture
           order: 110
@@ -515,6 +517,11 @@ taxonomy:
         '90-24':
           name: Corporal Punishment
           order: 122
+          children:
+            '90-24-1':
+              name: In School
+            '90-24-2':
+              name: At Home
         '90-25':
           name: Completion of Basic Education
           order: 124
