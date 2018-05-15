@@ -533,12 +533,14 @@ public class DBConfiguration extends Properties {
     // Build list of items matching the extract criteria
     List<AudioItem> toExtract = new ArrayList<>();
     Collection<AudioItem> items = this.store.getAudioItems();
+    int itemsFixed = 0;
 
     for (AudioItem item : items) {
       if (item.getLanguageCode().equalsIgnoreCase(from)) {
         item.getMetadata().setMetadataField(DC_LANGUAGE, abstractMetadataLanguageCode);
         try {
           this.store.commit(item);
+          itemsFixed++;
         } catch (IOException e1) {
           e1.printStackTrace();
         }
@@ -546,7 +548,7 @@ public class DBConfiguration extends Properties {
     }
 
     timer += System.currentTimeMillis();
-    System.out.printf("Munge time %d ms%n", timer);
+    System.out.printf("Took %d ms to fix %d language codes%n", timer, itemsFixed);
   }
 
 }
