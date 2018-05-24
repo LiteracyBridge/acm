@@ -38,22 +38,22 @@ import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.SearchResult;
 
-public class AudioItemView extends Container implements Observer {
+public class AudioItemView extends Container {
 
   private static final long serialVersionUID = -2886958461177831842L;
 
   public static final DataFlavor AudioItemDataFlavor = new DataFlavor(
       AudioItem.class, "LocalizedAudioItem");
     private static final int FAST_TOOLTIP_DELAY = 50;
-    protected SearchResult currResult = null;
-  public JXTable audioItemTable = null;
+    private SearchResult currResult = null;
+  JXTable audioItemTable = null;
 
   private AudioItemViewMouseListener mouseListener;
   private final AudioItemTableModel tableModel;
 
   private TableColumn playlistOrderColumn;
   private TableColumn correlationIdColumn;
-  protected boolean firstDataSet = false;
+  private boolean firstDataSet = false;
   private boolean showCorrelationId = ACMConfiguration.getInstance().getCurrentDB().getNextCorrelationId() > 0;
 
   public AudioItemView() {
@@ -64,8 +64,8 @@ public class AudioItemView extends Container implements Observer {
     addToMessageService();
   }
 
-  protected void addToMessageService() {
-    Application.getMessageService().addObserver(this);
+  private void addToMessageService() {
+    Application.getMessageService().addObserver(applicationMessageObserver);
   }
 
   private void createTable() {
@@ -135,7 +135,7 @@ public class AudioItemView extends Container implements Observer {
         audioItemTable.setRowFilter(new RowFilter<Object, Object>() {
           @Override
           public boolean include(
-              javax.swing.RowFilter.Entry<? extends Object, ? extends Object> entry) {
+              javax.swing.RowFilter.Entry<?, ?> entry) {
             return false;
           }
         });
@@ -155,7 +155,7 @@ public class AudioItemView extends Container implements Observer {
       audioItemTable.setRowFilter(new RowFilter<Object, Object>() {
         @Override
         public boolean include(
-            javax.swing.RowFilter.Entry<? extends Object, ? extends Object> entry) {
+            javax.swing.RowFilter.Entry<?, ?> entry) {
           return currResult.getAudioItems().contains(
               tableModel.getAudioItemUuid((Integer) entry.getIdentifier()));
         }
@@ -166,54 +166,54 @@ public class AudioItemView extends Container implements Observer {
   /**
    * Central message handler for the audio item view
    */
-  @Override
-  public void update(Observable o, Object arg) {
-    if (arg instanceof SearchResult) {
-      currResult = (SearchResult) arg;
-      updateTable();
-    }
-
-    if (arg instanceof UILanguageChanged) {
-      UILanguageChanged newLocale = (UILanguageChanged) arg;
-      updateControlLanguage(newLocale.getNewLocale());
-    }
-
-    if (arg instanceof AudioItemTableSortOrderMessage) {
-      AudioItemTableSortOrderMessage message = (AudioItemTableSortOrderMessage) arg;
-      audioItemTable.setSortOrder(message.getIdentifier(),
-          message.getSortOrder());
-    }
-
-    if (arg instanceof RequestAudioItemMessage) {
-      RequestAudioItemMessage requestAudioItemMessage = (RequestAudioItemMessage) arg;
-
-      AudioItem audioItem = null;
-      switch (requestAudioItemMessage.getRequestType()) {
-      case Current:
-        audioItem = getCurrentAudioItem();
-        break;
-      case Next:
-        audioItem = getNextAudioItem();
-        break;
-      case Previews:
-        audioItem = getPreviousAudioItem();
-        break;
+  private Observer applicationMessageObserver = new Observer() {
+    @Override
+    public void update(Observable o, Object arg) {
+      if (arg instanceof SearchResult) {
+        currResult = (SearchResult) arg;
+        updateTable();
       }
 
-      if (audioItem != null) {
-        selectAudioItem(audioItem);
+      if (arg instanceof UILanguageChanged) {
+        UILanguageChanged newLocale = (UILanguageChanged) arg;
+        updateControlLanguage(newLocale.getNewLocale());
+      }
 
-        if (arg instanceof RequestAndSelectAudioItemMessage) {
-          RequestedAudioItemMessage newMsg = new RequestedAudioItemMessage(
-              audioItem);
-          Application.getMessageService().pumpMessage(newMsg);
-        } else if (arg instanceof RequestAudioItemToPlayMessage) {
-          PlayAudioItemMessage newMsg = new PlayAudioItemMessage(audioItem);
-          Application.getMessageService().pumpMessage(newMsg);
+      if (arg instanceof AudioItemTableSortOrderMessage) {
+        AudioItemTableSortOrderMessage message = (AudioItemTableSortOrderMessage) arg;
+        audioItemTable.setSortOrder(message.getIdentifier(), message.getSortOrder());
+      }
+
+      if (arg instanceof RequestAudioItemMessage) {
+        RequestAudioItemMessage requestAudioItemMessage = (RequestAudioItemMessage) arg;
+
+        AudioItem audioItem = null;
+        switch (requestAudioItemMessage.getRequestType()) {
+        case Current:
+          audioItem = getCurrentAudioItem();
+          break;
+        case Next:
+          audioItem = getNextAudioItem();
+          break;
+        case Previews:
+          audioItem = getPreviousAudioItem();
+          break;
+        }
+
+        if (audioItem != null) {
+          selectAudioItem(audioItem);
+
+          if (arg instanceof RequestAndSelectAudioItemMessage) {
+            RequestedAudioItemMessage newMsg = new RequestedAudioItemMessage(audioItem);
+            Application.getMessageService().pumpMessage(newMsg);
+          } else if (arg instanceof RequestAudioItemToPlayMessage) {
+            PlayAudioItemMessage newMsg = new PlayAudioItemMessage(audioItem);
+            Application.getMessageService().pumpMessage(newMsg);
+          }
         }
       }
     }
-  }
+  };
 
   private void updateControlLanguage(Locale newLocale) {
     for (ColumnInfo<?> columnInfo : tableModel.getColumnInfos()) {

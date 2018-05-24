@@ -1,6 +1,8 @@
 package org.literacybridge.acm.config;
 
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.LuceneMetadataStore;
@@ -9,6 +11,7 @@ import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.store.Taxonomy;
+import org.literacybridge.acm.store.Transaction;
 
 import javax.swing.*;
 import java.io.BufferedInputStream;
@@ -42,6 +45,9 @@ import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
 @SuppressWarnings("serial")
 public class DBConfiguration extends Properties {
+  private static final Logger LOG = Logger
+      .getLogger(DBConfiguration.class.getName());
+
   private boolean initialized = false;
   private File repositoryDirectory;
   private File cacheDirectory;
@@ -510,45 +516,59 @@ public class DBConfiguration extends Properties {
     }
   }
 
-  /**
-   * A number of years ago (I write this on 2018-05-10), we needed a new language, Tumu Sisaala.
-   * The person implementing the language did not know the ISO 639-3 code, nor did he know that
-   * he should strictly restrict the codes to that well-known list. He just made up "ssl1", as
-   * a modification of Lambussie Sisaala, "ssl". But the correct code should have been "sil".
-   *
-   * We've lived with this, as I say, for years. But today the pain of keeping the non-standard
-   * language code exceeds the cost of fixing it, and so, here we are. This code translates
-   * "ssl1" => "sil". It's only needed once per ACM, after which it adds perhaps 1ms to start
-   * up time.
-   */
-  private void fixupLanguageCodes() {
-    long timer = -System.currentTimeMillis();
+    /**
+     * A number of years ago (I write this on 2018-05-10), we needed a new language, Tumu Sisaala.
+     * The person implementing the language did not know the ISO 639-3 code, nor did he know that
+     * he should strictly restrict the codes to that well-known list. He just made up "ssl1", as
+     * a modification of Lambussie Sisaala, "ssl". But the correct code should have been "sil".
+     * <p>
+     * We've lived with this, as I say, for years. But today the pain of keeping the non-standard
+     * language code exceeds the cost of fixing it, and so, here we are. This code translates
+     * "ssl1" => "sil". It's only needed once per ACM, after which it adds perhaps 1ms to start
+     * up time.
+     */
+    private void fixupLanguageCodes() {
+        long timer = -System.currentTimeMillis();
 
-    // Hack to fix ssl1->sil. If we ever have more, abstract this a bit more.
-    String from = "ssl1";
-    String to = "sil";
-    RFC3066LanguageCode abstractLanguageCode = new RFC3066LanguageCode(to);
-    MetadataValue<RFC3066LanguageCode> abstractMetadataLanguageCode = new MetadataValue(abstractLanguageCode);
+        // Hack to fix ssl1->sil. If we ever have more, abstract this a bit more.
+        String from = "ssl1";
+        String to = "sil";
+        RFC3066LanguageCode abstractLanguageCode = new RFC3066LanguageCode(to);
+        MetadataValue<RFC3066LanguageCode> abstractMetadataLanguageCode = new MetadataValue(
+            abstractLanguageCode);
 
-    // Build list of items matching the extract criteria
-    List<AudioItem> toExtract = new ArrayList<>();
-    Collection<AudioItem> items = this.store.getAudioItems();
-    int itemsFixed = 0;
+        Transaction transaction = this.store.newTransaction();
+        Collection<AudioItem> items = this.store.getAudioItems();
+        int itemsFixed = 0;
 
-    for (AudioItem item : items) {
-      if (item.getLanguageCode().equalsIgnoreCase(from)) {
-        item.getMetadata().setMetadataField(DC_LANGUAGE, abstractMetadataLanguageCode);
+        boolean success = false;
         try {
-          this.store.commit(item);
-          itemsFixed++;
+            for (AudioItem audioItem : items) {
+                if (audioItem.getLanguageCode().equalsIgnoreCase(from)) {
+                    audioItem.getMetadata().setMetadataField(DC_LANGUAGE, abstractMetadataLanguageCode);
+                    transaction.add(audioItem);
+                    itemsFixed++;
+                }
+            }
+            transaction.commit();
+            success = true;
         } catch (IOException e1) {
-          e1.printStackTrace();
+            e1.printStackTrace();
+        } finally {
+            if (!success) {
+                try {
+                    transaction.rollback();
+                } catch (IOException e) {
+                    LOG.log(Level.SEVERE, "Unable to rollback transaction.", e);
+                }
+            }
         }
-      }
-    }
 
-    timer += System.currentTimeMillis();
-    System.out.printf("Took %d ms to fix %d language codes%n", timer, itemsFixed);
-  }
+        timer += System.currentTimeMillis();
+        // If we did anything, or if the delay was perceptable (1/10th second), show the time.
+        if (itemsFixed > 0 || timer > 100) {
+            System.out.printf("Took %d ms to fix %d language codes%n", timer, itemsFixed);
+        }
+    }
 
 }

@@ -29,8 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class AudioItemTableModel extends AbstractTableModel
-    implements DataChangeListener {
+public class AudioItemTableModel extends AbstractTableModel {
   private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
       "yyyy-MM-dd");
 
@@ -151,7 +150,7 @@ public class AudioItemTableModel extends AbstractTableModel
 
   private final ColumnInfo<?>[] columns;
 
-  AudioItemTableModel() {
+    AudioItemTableModel() {
       MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
           .getMetadataStore();
     this.uuidToRowIndexMap = Maps.newHashMap();
@@ -165,8 +164,40 @@ public class AudioItemTableModel extends AbstractTableModel
       addNewAudioItem(item);
     }
 
-    store.addDataChangeListener(this);
+    store.addDataChangeListener(storeChangedListener);
   }
+
+    private final DataChangeListener storeChangedListener = new DataChangeListener() {
+        @Override
+        public void dataChanged(Committable item, DataChangeEventType eventType) {
+            if (item instanceof AudioItem) {
+                AudioItem audioItem = (AudioItem) item;
+                if (eventType == DataChangeEventType.ITEM_ADDED) {
+                    int row = addNewAudioItem(audioItem);
+                    fireTableRowsInserted(row, row);
+                } else {
+                    int row = uuidToRowIndexMap.get(audioItem.getUuid());
+
+                    if (eventType == DataChangeEventType.ITEM_MODIFIED) {
+                        // I don't think we need to do this, because the callers all
+                        // force a refresh anyway. This causes horrific performance
+                        // from inside Swing; something like O(n^2) on # items selected,
+                        // which kills when setting many items.
+                        //
+                        // But, if it turns out that updates aren't shown on the screen,
+                        // this is an option to fix. The other option is
+                        //             Application.getFilterState().updateResult(true);
+                        //rowIndexToUuidMap.set(row, convertToAudioItemNodeRow(audioItem));
+                        //fireTableRowsUpdated(row, row);
+                    } else if (eventType == DataChangeEventType.ITEM_DELETED) {
+                        removeAudioItem(audioItem);
+                        fireTableRowsDeleted(row, row);
+                    }
+                }
+            }
+        }
+    };
+
 
   private ColumnInfo<?>[] initializeColumnInfoArray(ColumnInfo<?>... infos) {
     for (int columnIndex = 0; columnIndex < infos.length; columnIndex++) {
@@ -261,24 +292,4 @@ public class AudioItemTableModel extends AbstractTableModel
     }
   }
 
-  @Override
-  public void dataChanged(Committable item, DataChangeEventType eventType) {
-    if (item instanceof AudioItem) {
-      AudioItem audioItem = (AudioItem) item;
-      if (eventType == DataChangeEventType.ITEM_ADDED) {
-        int row = addNewAudioItem(audioItem);
-        fireTableRowsInserted(row, row);
-      } else {
-        int row = uuidToRowIndexMap.get(audioItem.getUuid());
-
-        if (eventType == DataChangeEventType.ITEM_MODIFIED) {
-          rowIndexToUuidMap.set(row, convertToAudioItemNodeRow(audioItem));
-          fireTableRowsUpdated(row, row);
-        } else if (eventType == DataChangeEventType.ITEM_DELETED) {
-          removeAudioItem(audioItem);
-          fireTableRowsDeleted(row, row);
-        }
-      }
-    }
-  }
 }

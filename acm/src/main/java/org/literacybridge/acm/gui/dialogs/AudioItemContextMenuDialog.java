@@ -300,17 +300,20 @@ public class AudioItemContextMenuDialog extends JDialog
    * @param labelPostfix String to label the item(s)
    * @return
    */
-  private FlatButton makeLanguageButton(final AudioItem[] selectedAudioItems, final String labelPostfix) {
-    ImageIcon setLanguageImageIcon = new ImageIcon(
-            UIConstants.getResource(UIConstants.ICON_LANGUAGE_24_PX));
+  private FlatButton makeLanguageButton(final AudioItem[] selectedAudioItems,
+      final String labelPostfix)
+  {
+    ImageIcon setLanguageImageIcon = new ImageIcon(UIConstants.getResource(UIConstants.ICON_LANGUAGE_24_PX));
     Color backgroundColor = Application.getApplication().getBackground();
     Color highlightedColor = SystemColor.textHighlight;
 
-    String setLanguageLabel = String.format(
-            LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__SET_LANGUAGE"),
-            labelPostfix);
+    String setLanguageLabel = String.format(LabelProvider.getLabel(
+        "AUDIO_ITEM_CONTEXT_MENU_DIALOG__SET_LANGUAGE"), labelPostfix);
 
-    FlatButton languageButton = new FlatButton(setLanguageLabel, setLanguageImageIcon, backgroundColor, highlightedColor) {
+    FlatButton languageButton = new FlatButton(setLanguageLabel,
+        setLanguageImageIcon,
+        backgroundColor,
+        highlightedColor) {
       @Override
       public void click() {
         String dialogTitle = LabelProvider.getLabel("AUDIO_ITEM_LANGUAGE_MENU_SELECT_LANGUAGE");
@@ -320,24 +323,47 @@ public class AudioItemContextMenuDialog extends JDialog
         languageBox.setSelectedIndex(0);
 
         AudioItemContextMenuDialog.this.setVisible(false);
-        int result = JOptionPane.showOptionDialog(null, languageBox, dialogTitle, JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, null, null);
+        int result = JOptionPane.showOptionDialog(null,
+            languageBox,
+            dialogTitle,
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            null,
+            null);
 
-        if (result == JOptionPane.OK_OPTION ) {
+        if (result == JOptionPane.OK_OPTION) {
           int index = languageBox.getSelectedIndex();
           Locale locale = languageComboBoxModel.getLocalForIndex(index);
           String languageCode = locale.getLanguage();
           RFC3066LanguageCode abstractLanguageCode = new RFC3066LanguageCode(languageCode);
-          MetadataValue<RFC3066LanguageCode> abstractMetadataLanguageCode = new MetadataValue(abstractLanguageCode);
-          MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+          MetadataValue<RFC3066LanguageCode> abstractMetadataLanguageCode = new MetadataValue(
+              abstractLanguageCode);
 
-          for (AudioItem audioItem : selectedAudioItems) {
-            audioItem.getMetadata()
-                    .setMetadataField(DC_LANGUAGE, abstractMetadataLanguageCode);
-            try {
-              store.commit(audioItem);
-            } catch (IOException e1) {
-              e1.printStackTrace();
+          Transaction transaction = ACMConfiguration.getInstance()
+              .getCurrentDB()
+              .getMetadataStore()
+              .newTransaction();
+
+          boolean success = false;
+          try {
+            for (AudioItem audioItem : selectedAudioItems) {
+              audioItem.getMetadata().setMetadataField(DC_LANGUAGE, abstractMetadataLanguageCode);
+              transaction.add(audioItem);
             }
+            transaction.commit();
+            success = true;
+          } catch (IOException e1) {
+            e1.printStackTrace();
+          } finally {
+            if (!success) {
+              try {
+                transaction.rollback();
+              } catch (IOException e) {
+                LOG.log(Level.SEVERE, "Unable to rollback transaction.", e);
+              }
+            }
+            Application.getFilterState().updateResult(true);
           }
         }
 
