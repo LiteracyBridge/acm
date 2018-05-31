@@ -45,7 +45,7 @@ public class AudioItemDocumentFactory {
     Document doc = new Document();
     Metadata metadata = audioItem.getMetadata();
     for (MetadataField<String> field : PREFIX_SEARCH_COLUMNS) {
-      if (metadata.hasMetadataField(field)) {
+      if (metadata.containsField(field)) {
         MetadataValue<String> value = metadata.getMetadataValue(field);
         doc.add(new TextField(AudioItemIndex.TEXT_FIELD,
             new StringReader(value.getValue())));
@@ -68,7 +68,7 @@ public class AudioItemDocumentFactory {
           AudioItemIndex.PLAYLISTS_FACET_FIELD, playlist.getUuid()));
     }
 
-    if (metadata.hasMetadataField(MetadataSpecification.DC_LANGUAGE)) {
+    if (metadata.containsField(MetadataSpecification.DC_LANGUAGE)) {
       MetadataValue<RFC3066LanguageCode> code = metadata
           .getMetadataValue(MetadataSpecification.DC_LANGUAGE);
       doc.add(new StringField(AudioItemIndex.LOCALES_FIELD,
@@ -78,7 +78,7 @@ public class AudioItemDocumentFactory {
 
     }
 
-    if (metadata.hasMetadataField(MetadataSpecification.DTB_REVISION)) {
+    if (metadata.containsField(MetadataSpecification.DTB_REVISION)) {
       doc.add(new StringField(
           AudioItemIndex.REVISION_FIELD, metadata
               .getMetadataValue(MetadataSpecification.DTB_REVISION).getValue(),

@@ -6,7 +6,7 @@ import java.awt.Frame;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
@@ -15,14 +15,14 @@ import org.literacybridge.acm.store.Playlist;
 import com.google.common.collect.Lists;
 
 public class UIUtils {
-  public static Container showDialog(Frame parent, final Container dialog) {
+  public static <T extends Container> T showDialog(Frame parent, final T dialog) {
     final Dimension frameSize = parent.getSize();
     final int x = (frameSize.width - dialog.getWidth()) / 2;
     final int y = (frameSize.height - dialog.getHeight()) / 2;
     return showDialog(dialog, x, y);
   }
 
-  public static Container showDialog(final Container dialog, int x, int y) {
+  public static <T extends Container> T showDialog(final T dialog, int x, int y) {
 
     dialog.setLocation(x, y);
     setVisible(dialog, true);
@@ -33,17 +33,24 @@ public class UIUtils {
     setVisible(dialog, false);
   }
 
-  private static void setVisible(final Container dialog,
-      final boolean visible) {
+  private static void setVisible(final Container dialog, final boolean visible) {
     if (!SwingUtilities.isEventDispatchThread()) {
-      SwingUtilities.invokeLater(new Runnable() {
-        @Override
-        public void run() {
-          dialog.setVisible(visible);
-        }
-      });
+      SwingUtilities.invokeLater(() -> dialog.setVisible(visible));
     } else {
       dialog.setVisible(visible);
+    }
+  }
+
+  /**
+   * Helper to update the text of a label on the proper thread.
+   * @param label The label to be updated.
+   * @param text The text with which to be updated.
+   */
+  public static void setLabelText(final JLabel label, final String text) {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      SwingUtilities.invokeLater(() -> label.setText(text));
+    } else {
+      label.setText(text);
     }
   }
 
@@ -54,9 +61,7 @@ public class UIUtils {
       } else {
         SwingUtilities.invokeAndWait(runnable);
       }
-    } catch (InvocationTargetException e) {
-      throw new RuntimeException(e);
-    } catch (InterruptedException e) {
+    } catch (InvocationTargetException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
@@ -87,8 +92,7 @@ public class UIUtils {
                 if (builder.length() > 0) {
                     builder.append(", ");
                 }
-                // Not a UUID, just the category code, like "1-2"
-                builder.append(cat.getUuid());
+                builder.append(cat.getId());
             }
         }
         return builder.toString();

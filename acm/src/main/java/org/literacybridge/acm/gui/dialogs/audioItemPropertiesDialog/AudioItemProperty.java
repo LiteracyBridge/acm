@@ -54,7 +54,7 @@ public abstract class AudioItemProperty<V> {
 
     @Override
     public String getValue(AudioItem audioItem) {
-      if (audioItem.getMetadata().hasMetadataField(field)) {
+      if (audioItem.getMetadata().containsField(field)) {
         return audioItem.getMetadata().getMetadataValue(field).getValue();
       } else {
         return "";

@@ -328,7 +328,8 @@ public class TaxonomyLoaderTest {
     }
 
     private void printTaxonomy(Taxonomy tax) throws FileNotFoundException {
-        File taxonomyFile = new File("src/main/resources/taxonomy.txt");
+        String s = File.separator;
+        File taxonomyFile = new File("src"+s+"main"+s+"resources"+s+"taxonomy.txt");
         Category uf = tax.getCategory("90");
         try (PrintWriter out = new PrintWriter(taxonomyFile)) {
             printCategory(tax.getRootCategory(), "", out, uf);

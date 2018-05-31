@@ -16,6 +16,9 @@ public class CommandLineParams {
   @Option(name = "--allcategories", usage = "show all categories, regardless of whitelisting")
   public boolean allCategories;
 
+  @Option(name = "--clean", usage = "Clean up referenced audio files")
+  public boolean cleanUnreferenced;
+
   @Argument
   public String sharedACM;
 }

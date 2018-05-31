@@ -7,7 +7,6 @@ import static org.literacybridge.acm.store.MetadataSpecification.DC_RELATION;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_SOURCE;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_BENEFICIARY;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_CORRELATION_ID;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_DATE_RECORDED;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_DURATION;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_ENGLISH_TRANSCRIPTION;
@@ -34,7 +33,6 @@ import javax.swing.table.AbstractTableModel;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
-import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
@@ -101,7 +99,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
       @Override
       public void setValue(AudioItem audioItem, Object newValue) {
-        audioItem.getMetadata().setMetadataField(
+        audioItem.getMetadata().putMetadataField(
             MetadataSpecification.LB_STATUS, new MetadataValue<Integer>(
                 STATUS_VALUES_MAP.get(newValue.toString())));
       }
@@ -239,7 +237,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
       @Override
       public String getValue(AudioItem audioItem) {
         String value = "";
-        if (audioItem.getMetadata().hasMetadataField(MetadataSpecification.LB_CORRELATION_ID)) {
+        if (audioItem.getMetadata().containsField(MetadataSpecification.LB_CORRELATION_ID)) {
           Integer integerValue = audioItem.getMetadata().getMetadataValue(MetadataSpecification.LB_CORRELATION_ID).getValue();
           value = String.format("%s (%d)", B26RotatingEncoding.encode(integerValue), integerValue);
         }
@@ -372,7 +370,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
   protected static void setStringValue(MetadataField<String> field,
       Metadata metadata, String value) {
-    metadata.setMetadataField(field, new MetadataValue<String>(value));
+    metadata.putMetadataField(field, new MetadataValue<String>(value));
   }
 
   protected static void setLocaleValue(MetadataField<RFC3066LanguageCode> field,
@@ -380,7 +378,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
     MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
         .getMetadataStore();
     Metadata metadata = audioItem.getMetadata();
-    metadata.setMetadataField(field, new MetadataValue<RFC3066LanguageCode>(
+    metadata.putMetadataField(field, new MetadataValue<RFC3066LanguageCode>(
         new RFC3066LanguageCode(newLocale.getLanguage())));
     try {
       store.commit(audioItem);

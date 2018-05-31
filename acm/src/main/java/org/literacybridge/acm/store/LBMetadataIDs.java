@@ -1,27 +1,9 @@
 package org.literacybridge.acm.store;
 
-import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_PUBLISHER;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_RELATION;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_SOURCE;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
-import static org.literacybridge.acm.store.MetadataSpecification.DTB_REVISION;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_BENEFICIARY;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_DATE_RECORDED;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_DURATION;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_ENGLISH_TRANSCRIPTION;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_GOAL;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_KEYWORDS;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_MESSAGE_FORMAT;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_NOTES;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_PRIMARY_SPEAKER;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_STATUS;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_TARGET_AUDIENCE;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_TIMING;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_CORRELATION_ID;
-
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableMap;
+
+import static org.literacybridge.acm.store.MetadataSpecification.*;
 
 public class LBMetadataIDs {
   public static final int CATEGORY_FIELD_ID = 0;
@@ -72,4 +54,30 @@ public class LBMetadataIDs {
           .put(LB_STATUS, LB_STATUS.getName())
           .put(LB_CORRELATION_ID, LB_CORRELATION_ID.getName())
           .build();
+
+  public static final ImmutableBiMap<String, MetadataField<?>> NameToFieldMap = FieldToNameMap.inverse();
+
+  public static final ImmutableMap<MetadataField<?>, Class> FieldToValueClassMap = new ImmutableMap.Builder<MetadataField<?>, Class>()
+          .put(DC_TITLE, String.class)
+          .put(DC_PUBLISHER, String.class)
+          .put(DC_IDENTIFIER, String.class)
+          .put(DC_SOURCE, String.class)
+          .put(DC_LANGUAGE, RFC3066LanguageCode.class)
+          .put(DC_RELATION, String.class)
+          .put(DTB_REVISION, String.class)
+          .put(LB_DURATION, String.class)
+          .put(LB_MESSAGE_FORMAT, String.class)
+          .put(LB_TARGET_AUDIENCE, String.class)
+          .put(LB_DATE_RECORDED, String.class)
+          .put(LB_KEYWORDS, String.class)
+          .put(LB_TIMING, String.class)
+          .put(LB_PRIMARY_SPEAKER, String.class)
+          .put(LB_GOAL, String.class)
+          .put(LB_ENGLISH_TRANSCRIPTION, String.class)
+          .put(LB_NOTES, String.class)
+          .put(LB_BENEFICIARY, String.class)
+          .put(LB_STATUS, Integer.class)
+          .put(LB_CORRELATION_ID, Integer.class)
+          .build();
+
 }

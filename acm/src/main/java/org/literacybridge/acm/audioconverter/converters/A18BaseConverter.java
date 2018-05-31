@@ -16,8 +16,7 @@ public abstract class A18BaseConverter extends BaseAudioConverter {
   // extracted conversion result
   private Pattern pattern = getPattern();
 
-  public A18BaseConverter(String targetFormatExtension)
-      throws AudioConverterInitializationException {
+  public A18BaseConverter(String targetFormatExtension) {
     super(targetFormatExtension);
   }
 

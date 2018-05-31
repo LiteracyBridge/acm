@@ -10,7 +10,7 @@ public class AnyToA18Converter extends BaseAudioConverter {
   public static final String USE_HEADER = "useHeader";
   public static final String ALGORITHM = "algorithm";
 
-  public AnyToA18Converter() throws AudioConverterInitializationException {
+  public AnyToA18Converter() {
     super(".a18");
   }
 

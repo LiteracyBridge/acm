@@ -4,9 +4,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -73,8 +72,6 @@ public class AudioItem extends Committable {
 
   public final void removeCategory(Category category) {
     categories.remove(category.getUuid());
-
-    // remove orphaned non-leaves
     while (removeOrphanedNonLeafCategories())
       ;
   }
@@ -109,17 +106,12 @@ public class AudioItem extends Committable {
     categories.clear();
   }
 
-  public final Iterable<Category> getCategoryList() {
+  public final Collection<Category> getCategoryList() {
     return categories.values();
   }
 
-  public final Iterable<Category> getCategoryLeavesList() {
-    return Iterables.filter(getCategoryList(), new Predicate<Category>() {
-      @Override
-      public boolean apply(Category cat) {
-        return !cat.hasChildren();
-      }
-    });
+  public final Collection<Category> getCategoryLeavesList() {
+    return getCategoryList().stream().filter(cat -> !cat.hasChildren()).collect(Collectors.toList());
   }
 
   public final void addPlaylist(Playlist playlist) {
@@ -158,7 +150,7 @@ public class AudioItem extends Committable {
 
   // Convenience functions. Rational getters for the ridiculously over-engineered metadata values.
   public String getLanguageCode() {
-      if (!metadata.hasMetadataField(MetadataSpecification.DC_LANGUAGE)) return null;
+      if (!metadata.containsField(MetadataSpecification.DC_LANGUAGE)) return null;
       return metadata.getMetadataValue(MetadataSpecification.DC_LANGUAGE).toString();
   }
 

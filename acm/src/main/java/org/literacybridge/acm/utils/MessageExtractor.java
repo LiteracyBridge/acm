@@ -4,7 +4,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
-import org.literacybridge.acm.importexport.FileSystemExporter;
+import org.literacybridge.acm.importexport.AudioExporter;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
@@ -258,7 +258,7 @@ public class MessageExtractor {
                 if (params.verbose) {
                     System.out.println(String.format("%s item %d of %d: %s", announcement, count, maxToExtract, item.getUuid()));
                 }
-                FileSystemExporter.export(oneItem,
+                AudioExporter.getInstance().export(oneItem,
                     destinationDirectory,
                     AudioItemRepository.AudioFormat.A18,
                     false /*title*/,

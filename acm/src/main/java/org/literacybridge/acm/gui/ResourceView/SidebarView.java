@@ -717,6 +717,15 @@ public class SidebarView extends ACMContainer implements Observer {
 
     private static class FacetCountCellRenderer
         extends DefaultCheckboxTreeCellRenderer {
+        /**
+         * This hack prevents the D&D cursor flickering when hovering over a drop target.
+         * @return false, always.
+         */
+        @Override
+        public boolean isVisible() {
+            return false;
+        }
+
         @Override
         public Component getTreeCellRendererComponent(
             JTree tree, Object object,

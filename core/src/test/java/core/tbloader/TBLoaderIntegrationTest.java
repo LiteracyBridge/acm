@@ -41,6 +41,8 @@ import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberForma
  * Created by bill on 5/11/16.
  */
 public class TBLoaderIntegrationTest {
+    private final static String FS = File.separator;
+
     private static final String location = "Other";
     private static final String testUser = "tester";
     private static final String tbcdId = "1234";
@@ -120,9 +122,9 @@ public class TBLoaderIntegrationTest {
         String s = currentRelativePath.toAbsolutePath().toString();
         File cwd = new File(s);
         FsFile sourceImage = new FsFile(new File(cwd,
-            "testData/TB-Loaders/DEMO/content/DEMO-2016-2"));
-        File tbRootImage = new File(cwd, "testData/tbImages/DEMObefore");
-        File tbExpectedAfterImage = new File(cwd, "testData/tbImages/DEMOafter");
+            "testData"+FS+"TB-Loaders"+FS+"DEMO"+FS+"content"+FS+"DEMO-2016-2"));
+        File tbRootImage = new File(cwd, "testData"+FS+"tbImages"+FS+"DEMObefore");
+        File tbExpectedAfterImage = new File(cwd, "testData"+FS+"tbImages"+FS+"DEMOafter");
 
         File testRoot = tmp.newFolder();
         File tbRoot = new File(testRoot, "tbroot");
@@ -176,7 +178,7 @@ public class TBLoaderIntegrationTest {
 
     private void checkDeploymentProperties(File tbRoot, String srn) {
         Properties props = new Properties();
-        File propsFile = new File(tbRoot, "system/deployment.properties");
+        File propsFile = new File(tbRoot, "system"+FS+"deployment.properties");
         try (InputStream is = new FileInputStream(propsFile)) {
             props.load(is);
             assertEquals("Expect TB SRN to match.", srn, props.getProperty(TBLoaderConstants.TALKING_BOOK_ID_PROPERTY));
@@ -221,18 +223,18 @@ public class TBLoaderIntegrationTest {
     }
 
     private String[] excludedFilesList = {
-        "system/last_updated.txt",          // 2018y03m01d15h15m33s-1234
-        "system/deployment.properties",     // java properties file regarding deployment
-        "system/DEMO-SEATTLE.loc",          // DEMO-SEATTLE
+        "system"+FS+"last_updated.txt",          // 2018y03m01d15h15m33s-1234
+        "system"+FS+"deployment.properties",     // java properties file regarding deployment
+        "system"+FS+"DEMO-SEATTLE.loc",          // DEMO-SEATTLE
         "inspect",                          // presence is all that matters
         "0h1m0s.rtc",
         // I have a suspicion this is supposed to be somethign else
-        "system/PROJ2-18-2.dep",            // presence
-        "system/B-000C035A.srn",            // presence
-        "system/notest.pcb",                // presence
+        "system"+FS+"PROJ2-18-2.dep",            // presence
+        "system"+FS+"B-000C035A.srn",            // presence
+        "system"+FS+"notest.pcb",                // presence
         "sysdata.txt",
         // harder to parse, less complete version of deployment.properties
-        "system/PROJ2.prj"                  // presence
+        "system"+FS+"PROJ2.prj"                  // presence
     };
 
     private Set<String> excludedFiles = null;

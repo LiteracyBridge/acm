@@ -5,9 +5,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 public class DeviceContents {
   public final static String CONFIG_FILE = "config.txt";
@@ -79,27 +77,19 @@ public class DeviceContents {
   private File pathToDevice;
   private Properties deviceConfig;
 
-  public DeviceContents(File pathToDevice) throws IOException {
+  DeviceContents(File pathToDevice) throws IOException {
     this.pathToDevice = pathToDevice;
     loadDeviceInfos();
   }
 
-  public List<File> loadAudioItems() throws IOException {
-    List<File> audioItems = new ArrayList<File>();
-    String userPath = cleanPath(
-        deviceConfig.getProperty(USER_SUBFOLDER_PROPERTY_NAME));
+  public List<File> loadAudioFiles() throws IOException {
+    List<File> audioFiles = new ArrayList<>();
+    String userPath = cleanPath(deviceConfig.getProperty(USER_SUBFOLDER_PROPERTY_NAME));
     File userFolder = new File(pathToDevice, userPath);
 
-    for (File f : userFolder.listFiles(new FileFilter() {
-      @Override
-      public boolean accept(File file) {
-        return file.getName().toLowerCase().endsWith(".a18");
-      }
-    })) {
-      audioItems.add(f);
-    }
+    Collections.addAll(audioFiles, Objects.requireNonNull(userFolder.listFiles(file -> file.getName().toLowerCase().endsWith(".a18"))));
 
-    return audioItems;
+    return audioFiles;
   }
 
   private void loadDeviceInfos() throws IOException {
@@ -149,7 +139,7 @@ public class DeviceContents {
     System.out.println(contents.deviceConfig);
     System.out.println();
     System.out.println();
-    System.out.println(contents.loadAudioItems());
+    System.out.println(contents.loadAudioFiles());
   }
 
   private static final String cleanPath(String path) {

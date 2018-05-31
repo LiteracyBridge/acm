@@ -1,84 +1,104 @@
 package org.literacybridge.acm.importexport;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Locale;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.cmc.music.common.ID3ReadException;
+import org.apache.commons.io.FilenameUtils;
 import org.cmc.music.metadata.IMusicMetadata;
 import org.cmc.music.metadata.MusicMetadataSet;
+import org.cmc.music.metadata.UnknownUserTextValue;
 import org.cmc.music.myid3.MyID3;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.importexport.FileImporter.Importer;
-import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.repository.AudioItemRepository.DuplicateItemException;
-import org.literacybridge.acm.repository.AudioItemRepository.UnsupportedFormatException;
-import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.LBMetadataIDs;
 import org.literacybridge.acm.store.Metadata;
-import org.literacybridge.acm.store.MetadataField;
-import org.literacybridge.acm.store.MetadataSpecification;
-import org.literacybridge.acm.store.MetadataStore;
-import org.literacybridge.acm.store.MetadataValue;
-import org.literacybridge.acm.store.RFC3066LanguageCode;
+import org.literacybridge.acm.store.Taxonomy;
 
-public class MP3Importer extends FileImporter.Importer {
+import static org.literacybridge.acm.store.MetadataSpecification.DC_PUBLISHER;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_DATE_RECORDED;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_PRIMARY_SPEAKER;
 
-    @Override
-    protected void importSingleFile(MetadataStore store, File file,
-                                    FileImporter.AudioItemProcessor processor) throws IOException {
-        try {
-            MusicMetadataSet musicMetadataSet = new MyID3().read(file);
-            IMusicMetadata musicMetadata = musicMetadataSet.getSimplified();
+public class MP3Importer extends AudioFileImporter {
+    private Metadata metadata = null;
+    private Set<Category> categories = null;
 
-            AudioItem audioItem = store
-                    .newAudioItem(ACMConfiguration.getInstance().getNewAudioItemUID());
-
-            Metadata metadata = audioItem.getMetadata();
-            String title = musicMetadata.getSongTitle();
-            if (title == null || title.trim().isEmpty()) {
-                title = file.getName().substring(0, file.getName().length() - 4);
-            }
-            metadata.setMetadataField(MetadataSpecification.DC_IDENTIFIER,
-                                      new MetadataValue<String>(audioItem.getUuid()));
-            metadata.setMetadataField(MetadataSpecification.DC_TITLE,
-                                      new MetadataValue<String>(title));
-            metadata.setMetadataField(MetadataSpecification.LB_PRIMARY_SPEAKER,
-                                      new MetadataValue<String>(musicMetadata.getArtist()));
-            metadata.setMetadataField(MetadataSpecification.DTB_REVISION,
-                                      new MetadataValue<String>("1"));
-            Number year = musicMetadata.getYear();
-            if (year != null) {
-                metadata.setMetadataField(MetadataSpecification.LB_DATE_RECORDED,
-                                          new MetadataValue<String>(year.toString()));
-            }
-            metadata.setMetadataField(MetadataSpecification.DC_LANGUAGE,
-                                      new MetadataValue<RFC3066LanguageCode>(
-                                              new RFC3066LanguageCode(Locale.ENGLISH.getLanguage())));
-
-            AudioItemRepository repository = ACMConfiguration.getInstance()
-                    .getCurrentDB().getRepository();
-            repository.storeAudioFile(audioItem, file);
-            // let caller tweak audio item
-            if (processor != null) {
-                processor.process(audioItem);
-            }
-
-            store.commit(audioItem);
-        } catch (ID3ReadException e) {
-            throw new IOException(e);
-        } catch (UnsupportedFormatException e) {
-            throw new IOException(e);
-        } catch (DuplicateItemException e) {
-            throw new IOException(e);
-        }
+    MP3Importer(File audioFile) {
+        super(audioFile);
     }
 
+    @Override
+    protected Metadata getMetadata() {
+        if (metadata == null) {
+            Metadata loadedMetadata = new Metadata();
 
-  @Override
-  protected String[] getSupportedFileExtensions() {
-    return new String[] { ".mp3" };
+            try {
+                // Get the ID3 tags, convert to a more friendly format.
+                MusicMetadataSet musicMetadataSet = new MyID3().read(audioFile);
+                IMusicMetadata musicMetadata = musicMetadataSet.getSimplified();
+                
+                // Import any LB defined metadata fields that exist in the OGG file.
+                List<UnknownUserTextValue> privateTags = (List<UnknownUserTextValue>)musicMetadata.getUnknownUserTextValues();
+                Map<String, String> mp3Metadata = new HashMap<>();
+                for (UnknownUserTextValue utv : privateTags) {
+                    String value = utv.value;
+                    // Support multiple by joining with semicolon; we may revisit this in the future.
+                    if (mp3Metadata.containsKey(utv.key)) {
+                        value = mp3Metadata.get(utv.key) + ";" + value;
+                    }
+                    mp3Metadata.put(utv.key, value);
+                }
+                setMetadataFromMap(loadedMetadata, mp3Metadata);
+
+                // If no DC_TITLE, use the MP3 title. If no MP3 title, super class will parse filename.
+                if (!loadedMetadata.containsField(DC_TITLE) && !isEmpty(musicMetadata.getSongTitle())) {
+                    loadedMetadata.put(DC_TITLE, musicMetadata.getSongTitle());
+                }
+
+                if (!loadedMetadata.containsField(LB_PRIMARY_SPEAKER) && !isEmpty(musicMetadata.getArtist())) {
+                    loadedMetadata.put(LB_PRIMARY_SPEAKER, musicMetadata.getArtist());
+                }
+                if (!loadedMetadata.containsField(DC_PUBLISHER) && !isEmpty(musicMetadata.getPublisher())) {
+                    loadedMetadata.put(DC_PUBLISHER, musicMetadata.getPublisher());
+                }
+                if (!loadedMetadata.containsField(LB_DATE_RECORDED)) {
+                    Number year = musicMetadata.getYear();
+                    if (year != null && year.intValue() >= 1970) {
+                        String date = String.format("%04d", year.intValue());
+                        loadedMetadata.put(LB_DATE_RECORDED, date);
+                    }
+                }
+
+                // See if there is a CATEGORIES comment.
+                Taxonomy taxonomy = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getTaxonomy();
+                String categoriesString = mp3Metadata.get("CATEGORIES");
+                Set<Category> loadedCategories = Arrays.stream(categoriesString.split(";"))
+                    .map(taxonomy::getCategory)
+                    .collect(Collectors.toSet());
+
+
+                metadata = loadedMetadata;
+                categories = loadedCategories;
+            } catch (Exception e) {
+                // Ignore, return null
+            }
+        }
+        return metadata;
+    }
+
+    @Override
+    protected Set<Category> getCategories() {
+        if (categories == null) {
+            getMetadata(); // categories is a side effect
+        }
+        return categories;
+    }
+
+  static String[] getSupportedFileExtensions() {
+    return new String[] { "mp3" };
   }
 }

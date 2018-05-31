@@ -56,11 +56,11 @@ public class LuceneMetadataStoreTest {
     AudioItem a2 = store.newAudioItem("2");
     AudioItem a3 = store.newAudioItem("3");
 
-    a1.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a1.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem"));
-    a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum"));
-    a3.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a3.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum dolor"));
 
     assertNumItems(store.getAudioItems(), 0);
@@ -69,7 +69,7 @@ public class LuceneMetadataStoreTest {
 
     assertNumSearchResults(store, "lorem", 3);
 
-    a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lrem ipsum"));
     store.commit(a2);
     assertNumItems(store.getAudioItems(), 3);
@@ -104,11 +104,11 @@ public class LuceneMetadataStoreTest {
     AudioItem a2 = store.newAudioItem("2");
     AudioItem a3 = store.newAudioItem("3");
 
-    a1.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a1.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem"));
-    a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum"));
-    a3.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a3.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum dolor"));
 
     store.commit(a1, a2, a3);
@@ -152,11 +152,11 @@ public class LuceneMetadataStoreTest {
     AudioItem a2 = store.newAudioItem("2");
     AudioItem a3 = store.newAudioItem("3");
 
-    a1.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a1.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem"));
-    a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum"));
-    a3.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a3.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum dolor"));
 
     assertNumSearchResults(store, "lor", 0);
@@ -208,11 +208,11 @@ public class LuceneMetadataStoreTest {
     assertNumSearchResults(store, "lor", Lists.newArrayList(cat1), null, 1);
     assertNumSearchResults(store, "lor", Lists.newArrayList(cat1_1), null, 1);
 
-    a1.getMetadata().setMetadataField(MetadataSpecification.DC_LANGUAGE,
+    a1.getMetadata().putMetadataField(MetadataSpecification.DC_LANGUAGE,
         MetadataValue.newValue(new RFC3066LanguageCode("en-us")));
-    a2.getMetadata().setMetadataField(MetadataSpecification.DC_LANGUAGE,
+    a2.getMetadata().putMetadataField(MetadataSpecification.DC_LANGUAGE,
         MetadataValue.newValue(new RFC3066LanguageCode("en-us")));
-    a3.getMetadata().setMetadataField(MetadataSpecification.DC_LANGUAGE,
+    a3.getMetadata().putMetadataField(MetadataSpecification.DC_LANGUAGE,
         MetadataValue.newValue(new RFC3066LanguageCode("de-de")));
     store.commit(a1, a2, a3);
 
@@ -236,20 +236,20 @@ public class LuceneMetadataStoreTest {
     AudioItem a2 = store.newAudioItem("2");
     AudioItem a3 = store.newAudioItem("3");
 
-    a1.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a1.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem"));
-    a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum"));
-    a3.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a3.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum dolor"));
 
     store.commit(a1, a2, a3);
     assertNumSearchResults(store, "lor", 3);
 
     // test rollback
-    a1.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a1.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem 123"));
-    a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lxyzorem ipsum"));
     Exception expectedException = null;
     try {
@@ -270,9 +270,9 @@ public class LuceneMetadataStoreTest {
     assertNumSearchResults(store, "123", 0);
 
     // try making the same changes again, this time without an exception
-    a1.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a1.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem 123"));
-    a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lxyzorem ipsum"));
 
     store.commit(a1, a2);
@@ -284,7 +284,7 @@ public class LuceneMetadataStoreTest {
     // before the commit a2 should still be returned
     assertEquals(a1, store.getAudioItem(a1.getUuid()));
 
-    a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum"));
 
     try {
@@ -312,7 +312,7 @@ public class LuceneMetadataStoreTest {
     // before the commit a2 should still be returned
     assertEquals(a1, store.getAudioItem(a1.getUuid()));
 
-    a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum"));
 
     expectedException = null;
@@ -347,11 +347,11 @@ public class LuceneMetadataStoreTest {
     a2 = store.newAudioItem("2");
     a3 = store.newAudioItem("3");
 
-    a1.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a1.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem"));
-    a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum"));
-    a3.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a3.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum dolor"));
 
     assertNumSearchResults(store, "lor", 0);
@@ -377,7 +377,7 @@ public class LuceneMetadataStoreTest {
     store.commit(p1, p2, p3);
 
     store.deletePlaylist(p2.getUuid());
-    a2.getMetadata().setMetadataField(MetadataSpecification.DC_TITLE,
+    a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lxyzorem ipsum"));
     expectedException = null;
     try {

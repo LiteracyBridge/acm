@@ -17,11 +17,18 @@ public abstract class AudioConversionFormat extends AudioFormat {
 
   }
 
+  public String getFileExtension() {
+    return String.format(".%s", mFileEnding).toLowerCase();
+  }
+
   public String getFileEnding() {
     return mFileEnding;
   }
 
   public void setFileEnding(String passFileEnding) {
+    if (passFileEnding.charAt(0) == '.') {
+      throw new IllegalArgumentException("File 'ending' is like extension, but without the leading period.");
+    }
     mFileEnding = passFileEnding;
   }
 

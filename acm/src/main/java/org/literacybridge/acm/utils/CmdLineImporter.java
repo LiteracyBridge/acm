@@ -1,7 +1,6 @@
 package org.literacybridge.acm.utils;
 
 import com.google.common.collect.Sets;
-import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.FileUtils;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -9,7 +8,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
-import org.literacybridge.acm.importexport.FileImporter;
+import org.literacybridge.acm.importexport.AudioImporter;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Taxonomy;
@@ -152,7 +151,7 @@ public class CmdLineImporter {
      */
     private boolean importFiles() {
         boolean success = true;
-        FileImporter importer = FileImporter.getInstance();
+        AudioImporter importer = AudioImporter.getInstance();
         MetadataStore metadataStore = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         long count = 0;
 
@@ -161,7 +160,7 @@ public class CmdLineImporter {
                 System.out.println(String.format("%sImporting file %d of %d: %s" , params.dryrun?"NOT ":"", ++count, filesToImport.size(), file));
                 if (params.dryrun) continue;
 
-                importer.importFile(metadataStore, file, (item) -> {
+                importer.importFile(file, (item) -> {
                     if (categories != null) {
                         item.removeAllCategories();
                         item.addCategories(categories);

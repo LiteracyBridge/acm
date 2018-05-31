@@ -1,6 +1,5 @@
 package org.literacybridge.acm.gui.ResourceView;
 
-import java.awt.Container;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
@@ -18,92 +17,104 @@ import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.BusyDialog;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
-import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.A18DeviceExporter;
 import org.literacybridge.acm.store.AudioItem;
 
 public class ExportToDeviceTransferHandler extends TransferHandler {
-  private static final long serialVersionUID = 1L;
-  private static final Logger LOG = Logger
-      .getLogger(ExportToDeviceTransferHandler.class.getName());
+    private static final long serialVersionUID = 1L;
+    private static final Logger LOG = Logger
+            .getLogger(ExportToDeviceTransferHandler.class.getName());
 
-  @Override
-  public boolean canImport(TransferHandler.TransferSupport support) {
-    if (!support.isDrop()) {
-      return false;
-    }
-
-    if (!support.isDataFlavorSupported(AudioItemView.AudioItemDataFlavor)) {
-      return false;
-    }
-
-    support.setShowDropLocation(true);
-
-    return true;
-  }
-
-  @Override
-  public boolean importData(TransferHandler.TransferSupport support) {
-    if (!canImport(support)) {
-      return false;
-    }
-
-    // Get drop location info.
-    JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
-    TreePath dest = dl.getPath();
-    DefaultMutableTreeNode parent = (DefaultMutableTreeNode) dest
-        .getLastPathComponent();
-    final DeviceInfo device = (DeviceInfo) parent.getUserObject();
-
-    Transferable transferable = support.getTransferable();
-
-    try {
-      final AudioItem[] audioItems = (AudioItem[]) transferable
-          .getTransferData(AudioItemView.AudioItemDataFlavor);
-      // don't piggyback on the drag&drop thread
-      Runnable job = new Runnable() {
-
-        @Override
-        public void run() {
-          Application app = Application.getApplication();
-          Container dialog = UIUtils.showDialog(app,
-              new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK",
-                  LanguageUtil.getUILanguage()), app));
-          try {
-            for (AudioItem item : audioItems) {
-              try {
-                A18DeviceExporter.exportToDevice(item, device);
-              } catch (Exception e) {
-                LOG.log(Level.WARNING,
-                    "Unable to export AudioItem with id=" + item.getUuid(), e);
-              }
-            }
-          } finally {
-            UIUtils.hideDialog(dialog);
-          }
+    @Override
+    public boolean canImport(TransferHandler.TransferSupport support) {
+        if (!support.isDrop()) {
+            return false;
         }
-      };
 
-      new Thread(job).start();
+        if (!support.isDataFlavorSupported(AudioItemView.AudioItemDataFlavor)) {
+            return false;
+        }
 
-    } catch (IOException e) {
-      LOG.log(Level.WARNING, "Exporting audioitems failed.", e);
-      return false;
-    } catch (UnsupportedFlavorException e) {
-      return false;
+        support.setShowDropLocation(true);
+
+        return true;
     }
 
-    // don't piggyback on the drag&drop thread
-    Runnable job = new Runnable() {
+    @Override
+    public boolean importData(TransferHandler.TransferSupport support) {
+        if (!canImport(support)) {
+            return false;
+        }
 
-      @Override
-      public void run() {
-        // A18Exporter.export(audioItem, device);
-      }
-    };
+        // Get drop location info.
+        JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
+        TreePath dest = dl.getPath();
+        DefaultMutableTreeNode parent = (DefaultMutableTreeNode) dest.getLastPathComponent();
+        final DeviceInfo device = (DeviceInfo) parent.getUserObject();
+        if (!A18DeviceExporter.canExportToDevice(device)) {
+            Application.getApplication().setStatusMessage("Can not export to this device.");
+            return false;
+        }
 
-    new Thread(job).start();
+        Transferable transferable = support.getTransferable();
 
-    return true;
-  }
+        try {
+            final AudioItem[] audioItems = (AudioItem[]) transferable
+                    .getTransferData(AudioItemView.AudioItemDataFlavor);
+            // don't piggyback on the drag&drop thread
+            Runnable job = new Runnable() {
+
+                private boolean onProgress(Integer n, Integer m) {
+                    // Exported n of m...
+                    dialog.update(String.format(template, n, m));
+                    return !dialog.isStopRequested();
+                }
+                String template = LabelProvider.getLabel("EXPORTED_N_OF_M");
+                BusyDialog dialog;
+
+                @Override
+                public void run() {
+                    Application app = Application.getApplication();
+                    dialog = UIUtils.showDialog(app,
+                            new BusyDialog(LabelProvider.getLabel("EXPORTING_TO_TALKINGBOOK"), app, true));
+                    try {
+                        int count = 0;
+                        for (AudioItem item : audioItems) {
+                            try {
+                                A18DeviceExporter.exportToDevice(item, device);
+                            } catch (Exception e) {
+                                LOG.log(Level.WARNING, "Unable to export AudioItem with id=" + item.getUuid(), e);
+                            }
+                            if (!onProgress(++count, audioItems.length)) {
+                                break;
+                            }
+                        }
+                    } finally {
+                        UIUtils.hideDialog(dialog);
+                    }
+                }
+            };
+
+            new Thread(job).start();
+
+        } catch (IOException e) {
+            LOG.log(Level.WARNING, "Exporting audioitems failed.", e);
+            return false;
+        } catch (UnsupportedFlavorException e) {
+            return false;
+        }
+
+        // don't piggyback on the drag&drop thread
+        Runnable job = new Runnable() {
+
+            @Override
+            public void run() {
+                // A18Exporter.export(audioItem, device);
+            }
+        };
+
+        new Thread(job).start();
+
+        return true;
+    }
 }

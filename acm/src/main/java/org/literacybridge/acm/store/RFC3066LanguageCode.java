@@ -67,4 +67,24 @@ public class RFC3066LanguageCode {
       MetadataValue<RFC3066LanguageCode> value) throws IOException {
     IOUtils.writeAsUTF8(out, value.toString());
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (!(obj instanceof RFC3066LanguageCode)) {
+      return false;
+    }
+    RFC3066LanguageCode other = (RFC3066LanguageCode) obj;
+    if (codes.length != other.codes.length) {
+      return false;
+    }
+    for (int ix = 0; ix < codes.length; ix++) {
+      if (!codes[ix].equals(other.codes[ix]))
+        return false;
+    }
+
+    return true;
+  }
 }

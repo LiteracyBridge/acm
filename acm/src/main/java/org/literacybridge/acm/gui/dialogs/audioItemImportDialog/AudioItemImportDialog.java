@@ -1,8 +1,6 @@
 package org.literacybridge.acm.gui.dialogs.audioItemImportDialog;
 
-import java.awt.BorderLayout;
-import java.awt.Container;
-import java.awt.GridLayout;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -18,7 +16,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.device.DeviceContents;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.gui.Application;
@@ -26,19 +23,17 @@ import org.literacybridge.acm.gui.dialogs.BusyDialog;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
-import org.literacybridge.acm.importexport.FileImporter;
+import org.literacybridge.acm.importexport.AudioImporter;
 
 @SuppressWarnings("serial")
 public class AudioItemImportDialog extends JDialog {
-  private static final Logger LOG = Logger
-      .getLogger(AudioItemImportDialog.class.getName());
+  private static final Logger LOG = Logger.getLogger(AudioItemImportDialog.class.getName());
 
   private AudioItemImportView childDialog;
   private DeviceContents device;
 
   public AudioItemImportDialog(JFrame parent, DeviceInfo deviceInfo) {
-    super(parent, LabelProvider.getLabel("AUDIO_ITEM_IMPORT_DIALOG_TITLE",
-        LanguageUtil.getUILanguage()), ModalityType.APPLICATION_MODAL);
+    super(parent, LabelProvider.getLabel("AUDIO_ITEM_IMPORT_DIALOG_TITLE"), ModalityType.APPLICATION_MODAL);
     createControls();
 
     setSize(800, 500);
@@ -53,39 +48,23 @@ public class AudioItemImportDialog extends JDialog {
   }
 
   private void initialize() {
-    // don't piggyback on the UI thread
+    // TB file system can be very slow -- use a thread to read it.
     Runnable job = new Runnable() {
 
       @Override
       public void run() {
-        Application parent = Application.getApplication();
-        // TODO: show "Import statistics" instead of "Import files" in busy
-        // dialog
-        final Container busy = UIUtils.showDialog(parent,
-            new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES",
-                LanguageUtil.getUILanguage()), parent));
         try {
-          final List<File> audioItems = device.loadAudioItems();
-          // load statistics
-          // device.importStats();
-          // device.importOtherDeviceStats();
+          final List<File> audioItems = device.loadAudioFiles();
           childDialog.setData(audioItems);
         } catch (IOException e) {
-          LOG.log(Level.WARNING, "Importing stats from device failed.", e);
+          LOG.log(Level.WARNING, "Examining files on device failed.", e);
         } finally {
-          if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(new Runnable() {
-
-              @Override
-              public void run() {
-                UIUtils.hideDialog(busy);
-              }
-            });
-          }
+          setCursor(Cursor.getDefaultCursor());
         }
       }
     };
 
+    setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
     new Thread(job).start();
 
   }
@@ -154,38 +133,33 @@ public class AudioItemImportDialog extends JDialog {
         // don't piggyback on the drag&drop thread
         Runnable job = new Runnable() {
 
+          private boolean onProgress(Integer n, Integer m) {
+            // Exported n of m...
+            dialog.update(String.format(template, n, m));
+            return !dialog.isStopRequested();
+          }
+          String template = LabelProvider.getLabel("IMPORTED_N_OF_M");
+
+          BusyDialog dialog;
           @Override
           public void run() {
             Application parent = Application.getApplication();
-            final Container busy = UIUtils.showDialog(parent,
-                new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES",
-                    LanguageUtil.getUILanguage()), parent));
+            dialog = UIUtils.showDialog(parent,
+                new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES"), parent, true));
             try {
-              for (File f : files) {
+              int count = 0;
+              for (File file : files) {
                 try {
-                  FileImporter.getInstance().importFile(ACMConfiguration
-                      .getInstance().getCurrentDB().getMetadataStore(), f, null);
+                  AudioImporter.getInstance().importFile(file);
                 } catch (Exception e) {
-                  LOG.log(Level.WARNING, "Importing file '" + f + "' failed.",
-                      e);
+                  LOG.log(Level.WARNING, "Importing file '" + file + "' failed.", e);
+                }
+                if (!onProgress(++count, files.size())) {
+                  break;
                 }
               }
-              // also refresh all statistics
-              // device.importStats();
-              // device.importOtherDeviceStats();
-            } catch (Exception e) {
-              LOG.log(Level.WARNING, "Importing stats from device failed.", e);
             } finally {
-              if (!SwingUtilities.isEventDispatchThread()) {
-                SwingUtilities.invokeLater(new Runnable() {
-
-                  @Override
-                  public void run() {
-                    UIUtils.hideDialog(busy);
-                    Application.getFilterState().updateResult(true);
-                  }
-                });
-              }
+              UIUtils.hideDialog(dialog);
             }
           }
         };

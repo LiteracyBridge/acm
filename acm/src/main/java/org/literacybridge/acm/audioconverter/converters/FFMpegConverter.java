@@ -25,7 +25,7 @@ public class FFMpegConverter extends BaseAudioConverter {
       File targetFile, File tmpDir, Map<String, String> parameters)
       throws ConversionException {
     String cmd = getConverterEXEPath() + " -i \"" + audioFile.getAbsolutePath()
-        + "\"" + " -ab 16" + " -ar 16000" // 16000 sampling rate
+        + "\"" + " -ab 16k" + " -ar 16000" // 16000 sampling rate
         + " -ac 1" // 1 channel = mono
         + " -y" // overwrite output file
         + " \"" + targetFile.getAbsolutePath() + "\"";

@@ -14,7 +14,7 @@ public class MetadataStringField extends MetadataField<String> {
   @Override
   public MetadataValue<String> deserialize(DataInput in) throws IOException {
     String value = IOUtils.readUTF8(in);
-    return new MetadataValue<String>(value);
+    return new MetadataValue<>(value);
   }
 
   @Override

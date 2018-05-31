@@ -262,7 +262,7 @@ public class GuiAccessControl extends AccessControl {
             if (saveWork) {
                 msg = "Your changes have been checked in.\n\nPlease stay online for a few minutes so your changes\ncan be uploaded (until Dropbox is 'Up to date').";
             } else {
-                msg = "Your changes have been discarded.";
+                msg = null; // "Your changes have been discarded.";
             }
         } else {
             if (saveWork) {
@@ -271,7 +271,8 @@ public class GuiAccessControl extends AccessControl {
                 msg = "Could not release your checkout.  Please try again later so that others can checkout this ACM.";
             }
         }
-        JOptionPane.showMessageDialog(null, msg);
+        if (msg != null)
+            JOptionPane.showMessageDialog(null, msg);
 
     }
 

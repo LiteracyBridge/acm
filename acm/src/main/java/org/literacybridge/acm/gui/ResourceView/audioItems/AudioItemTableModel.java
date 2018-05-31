@@ -2,7 +2,6 @@ package org.literacybridge.acm.gui.ResourceView.audioItems;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.audioItems.ColumnInfo.ValueProvider;
@@ -117,7 +116,7 @@ public class AudioItemTableModel extends AbstractTableModel {
             protected AudioItemNode<String> getValue(AudioItem audioItem) {
                 String value = "";
                 if (audioItem.getMetadata()
-                    .hasMetadataField(MetadataSpecification.LB_CORRELATION_ID)) {
+                    .containsField(MetadataSpecification.LB_CORRELATION_ID)) {
                     Integer integerValue = audioItem.getMetadata()
                         .getMetadataValue(MetadataSpecification.LB_CORRELATION_ID)
                         .getValue();

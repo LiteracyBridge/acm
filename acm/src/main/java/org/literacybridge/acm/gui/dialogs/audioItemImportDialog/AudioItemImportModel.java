@@ -7,7 +7,6 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
-import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.importexport.A18Importer;
@@ -67,9 +66,7 @@ public class AudioItemImportModel extends AbstractTableModel {
 
     for (int i = 0; i < filesToImport.size(); ++i) {
       File file = filesToImport.get(i);
-      AudioItem audioItem = A18Importer.loadMetadata(
-          ACMConfiguration.getInstance().getCurrentDB().getMetadataStore(),
-          file);
+      AudioItem audioItem = new A18Importer(file).createAudioItem();
       rowIndex2audioItem[i] = new AudioItemNode(audioItem, "");
 
     }

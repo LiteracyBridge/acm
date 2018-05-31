@@ -5,12 +5,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class A18ToMP3Converter extends BaseAudioConverter {
+public class A18ToAnyConverter extends BaseAudioConverter {
   private FFMpegConverter ffmpegConverter = new FFMpegConverter();
   private A18ToWavConverter a18ToWavConverter = new A18ToWavConverter();
 
-  public A18ToMP3Converter() throws AudioConverterInitializationException {
-    super(".mp3");
+  public A18ToAnyConverter(String extension) {
+    super(extension);
   }
 
   @Override

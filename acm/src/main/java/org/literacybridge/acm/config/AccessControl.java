@@ -6,6 +6,7 @@ import org.json.simple.JSONObject;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.repository.CachingRepository;
+import org.literacybridge.acm.repository.FileSystemGarbageCollector;
 import org.literacybridge.acm.repository.FileSystemRepository;
 import org.literacybridge.core.fs.ZipUnzip;
 
@@ -398,36 +399,6 @@ public class AccessControl {
                     setDBKey(DB_KEY_OVERRIDE);
                 }
             }
-
-            // Checked out, create the repository object.
-            String user = ACMConfiguration.getInstance().getUserName();
-            LOG.info(String.format(
-                "  Repository:                     %s\n" +
-                "  Temp Database:                  %s\n" +
-                "  Temp Repository (sandbox mode): %s\n" +
-                "  user:                           %s\n" +
-                "  UserRWAccess:                   %s\n" +
-                "  online:                         %s\n",
-                dbConfiguration.getRepositoryDirectory(),
-                dbConfiguration.getTempDatabaseDirectory(),
-                dbConfiguration.getSandboxDirectory(),
-                user,
-                dbConfiguration.userHasWriteAccess(user),
-                isOnline()));
-
-            String wavExt = "." + AudioFormat.WAV.getFileExtension();
-            FileSystemRepository.FileSystemGarbageCollector fsgc = new FileSystemRepository.FileSystemGarbageCollector(
-                    dbConfiguration.getCacheSizeInBytes(),
-                    (file, name) -> name.toLowerCase().endsWith(wavExt));
-            FileSystemRepository localCacheRepository = new FileSystemRepository(
-                    dbConfiguration.getCacheDirectory(), fsgc);
-            FileSystemRepository sharedRepository = new FileSystemRepository(
-                    dbConfiguration.getRepositoryDirectory());
-            FileSystemRepository sandboxRepository = isSandboxed() ? new FileSystemRepository(
-                    dbConfiguration.getSandboxDirectory()) : null;
-            dbConfiguration.setRepository(
-                    new CachingRepository(localCacheRepository, sharedRepository,
-                                          sandboxRepository));
         }
         return openStatus;
     }

@@ -50,23 +50,26 @@ public class AudioItemContextMenuDialog extends JDialog
     setResizable(false);
     setUndecorated(true);
 
-    GridLayout grid = new GridLayout(4, 1);
+    GridLayout grid = new GridLayout(5, 1);
 
     final String labelPostfix = getPostfixLabel(selectedAudioItems);
 
     FlatButton deleteButton = makeDeleteButton(selectedAudioItems, labelPostfix);
     FlatButton editButton = makeEditButton(selectedAudioItems);
-    FlatButton exportButton = makeExportButton(selectedAudioItems, labelPostfix);
+    FlatButton exportAudioButton = makeExportButton(selectedAudioItems, labelPostfix, ExportDialog.TYPE.Audio);
+    FlatButton exportMetadataButton = makeExportButton(selectedAudioItems, labelPostfix, ExportDialog.TYPE.Metadata);
     FlatButton languageButton = makeLanguageButton(selectedAudioItems, labelPostfix);
 
     setLayout(grid);
 
     editButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     deleteButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-    exportButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    exportAudioButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    exportMetadataButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     languageButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     add(editButton);
-    add(exportButton);
+    add(exportAudioButton);
+    add(exportMetadataButton);
     add(deleteButton);
     add(languageButton);
 
@@ -77,11 +80,11 @@ public class AudioItemContextMenuDialog extends JDialog
 
   /**
    * Helper to get the string "N Audio Items" or <audio item name>
-   * @param selectedAudioItems
+   * @param selectedAudioItems Build a string for this many items.
    * @return The string to be displayed
    */
   private String getPostfixLabel(final AudioItem[] selectedAudioItems) {
-    String labelPostfix = "";
+    String labelPostfix;
     int numSelected = selectedAudioItems.length;
 
     if (numSelected > 1) {
@@ -97,7 +100,7 @@ public class AudioItemContextMenuDialog extends JDialog
    * Makes a delete button. If there is a playlist selected, it will be "delete items
    * from playlist". If no playlist, it will be "delete items".
    * TODO: address usability
-   * @param selectedAudioItems
+   * @param selectedAudioItems Audio item(s) to delete.
    * @param labelPostfix String to label the item(s)
    * @return The button
    */
@@ -110,7 +113,7 @@ public class AudioItemContextMenuDialog extends JDialog
 
   /**
    * Makes a button to remove audio items from a playlist.
-   * @param selectedAudioItems
+   * @param selectedAudioItems Audio item(s) to remove from playlist
    * @param labelPostfix String to label the item(s)
    * @return The button.
    */
@@ -151,7 +154,7 @@ public class AudioItemContextMenuDialog extends JDialog
 
   /**
    * Makes a button to delete audio items from the database.
-   * @param selectedAudioItems
+   * @param selectedAudioItems The audio item(s) to be deleted.
    * @param labelPostfix String to label the item(s)
    * @return The button
    */
@@ -166,6 +169,9 @@ public class AudioItemContextMenuDialog extends JDialog
     FlatButton deleteButton = new FlatButton(buttonLabel, deleteImageIcon, backgroundColor, highlightedColor) {
       @Override
       public void click() {
+        deleteSelectedAudioItems();
+      }
+      private void deleteSelectedAudioItems() {
         final String deleteMessage;
         int numSelected = selectedAudioItems.length;
         if (numSelected > 1) {
@@ -227,7 +233,8 @@ public class AudioItemContextMenuDialog extends JDialog
 
   /**
    * Makes the button to handle editing one audio item
-   * @param selectedAudioItems
+   * @param selectedAudioItems The audio item to be edited. If multiple, just notify that multi-edit
+   *                           is not supported.
    * @return the button
    */
   private FlatButton makeEditButton(final AudioItem[] selectedAudioItems) {
@@ -268,23 +275,29 @@ public class AudioItemContextMenuDialog extends JDialog
 
   /**
    * Creates the button to handle exporting audio items
-   * @param selectedAudioItems
+   * @param selectedAudioItems The audio item(s) to be exported
    * @param labelPostfix String to label the item(s)
+   * @param type Whether Audio or Metadata
    * @return The button control
    */
-  private FlatButton makeExportButton(final AudioItem[] selectedAudioItems, final String labelPostfix) {
+  private FlatButton makeExportButton(final AudioItem[] selectedAudioItems,
+      final String labelPostfix,
+      ExportDialog.TYPE type) {
     Color backgroundColor = Application.getApplication().getBackground();
     Color highlightedColor = SystemColor.textHighlight;
-    ImageIcon exportImageIcon = new ImageIcon(
-            UIConstants.getResource(UIConstants.ICON_EXPORT_16_PX));
-    String buttonLabel = String.format(LabelProvider.getLabel(
-            "AUDIO_ITEM_CONTEXT_MENU_DIALOG__EXPORT_TITLE"), labelPostfix);
+    ImageIcon exportImageIcon = new ImageIcon(UIConstants.getResource((type == ExportDialog.TYPE.Audio)
+                                ? UIConstants.ICON_EXPORT_16_PX
+                                : UIConstants.ICON_GRID_16_PX));
+    String title = LabelProvider.getLabel((type == ExportDialog.TYPE.Audio)
+                  ? "AUDIO_ITEM_CONTEXT_MENU_DIALOG__EXPORT_AUDIO_TITLE"
+                  : "AUDIO_ITEM_CONTEXT_MENU_DIALOG__EXPORT_METADATA_TITLE");
+    String buttonLabel = String.format(title, labelPostfix);
 
     FlatButton exportButton = new FlatButton(buttonLabel, exportImageIcon, backgroundColor, highlightedColor) {
       @Override
       public void click() {
         AudioItemContextMenuDialog.this.setVisible(false);
-        ExportDialog dialog = new ExportDialog(selectedAudioItems);
+        ExportDialog dialog = new ExportDialog(selectedAudioItems, type);
         // Place the new dialog within the application frame.
         dialog.setLocation(Application.getApplication().getX()+20, Application.getApplication().getY()+20);
         dialog.setVisible(true);
@@ -296,9 +309,9 @@ public class AudioItemContextMenuDialog extends JDialog
 
   /**
    * Creates the button ta handle setting the language on one or more audio items.
-   * @param selectedAudioItems
+   * @param selectedAudioItems Audio item(s) for which to set language.
    * @param labelPostfix String to label the item(s)
-   * @return
+   * @return the constructed button.
    */
   private FlatButton makeLanguageButton(final AudioItem[] selectedAudioItems,
       final String labelPostfix)
@@ -348,7 +361,7 @@ public class AudioItemContextMenuDialog extends JDialog
           boolean success = false;
           try {
             for (AudioItem audioItem : selectedAudioItems) {
-              audioItem.getMetadata().setMetadataField(DC_LANGUAGE, abstractMetadataLanguageCode);
+              audioItem.getMetadata().putMetadataField(DC_LANGUAGE, abstractMetadataLanguageCode);
               transaction.add(audioItem);
             }
             transaction.commit();
@@ -383,19 +396,12 @@ public class AudioItemContextMenuDialog extends JDialog
     private Color backgroundColor;
     private Color highlightedColor;
 
-    public FlatButton(String label, Color backgroundColor,
-        Color highlightedColor) {
-      super(label);
-      init(backgroundColor, highlightedColor);
-    }
-
-    public FlatButton(String label, Icon icon, Color backgroundColor,
-        Color highlightedColor) {
+    FlatButton(String label, Icon icon, Color backgroundColor, Color highlightedColor) {
       super(label, icon, SwingConstants.LEFT);
       init(backgroundColor, highlightedColor);
     }
 
-    private final void init(Color backgroundColor, Color highlightedColor) {
+    private void init(Color backgroundColor, Color highlightedColor) {
       this.backgroundColor = backgroundColor;
       this.highlightedColor = highlightedColor;
       setOpaque(true);

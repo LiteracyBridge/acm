@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 public class A18ToWavConverter extends A18BaseConverter {
-    public A18ToWavConverter() throws AudioConverterInitializationException {
+    public A18ToWavConverter() {
         super(".wav");
     }
 

@@ -1,140 +1,119 @@
 package org.literacybridge.acm.repository;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang.mutable.MutableLong;
+import org.apache.commons.io.FileUtils;
+import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.utils.IOUtils;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Lists;
+public class FileSystemRepository implements FileRepositoryInterface {
 
-public class FileSystemRepository extends AudioItemRepository {
-  public static class FileSystemGarbageCollector {
-    private final long maxSizeInBytes;
-    private final FilenameFilter filesToDelete;
+    private final File baseDir;
+    private final FileSystemGarbageCollector garbageCollector;
 
-    public FileSystemGarbageCollector(long maxSizeInBytes,
-        FilenameFilter filesToDelete) {
-      this.maxSizeInBytes = maxSizeInBytes;
-      this.filesToDelete = filesToDelete;
+    public FileSystemRepository(File baseDir) {
+        this(baseDir, null);
     }
 
-    private long calculateCurrentSizeInBytes(File repositoryRoot)
-        throws IOException {
-      final MutableLong sizeInBytes = new MutableLong();
-      IOUtils.visitFiles(repositoryRoot, filesToDelete, new Predicate<File>() {
-        @Override
-        public boolean apply(File file) {
-          sizeInBytes.add(file.length());
-          return true;
-        }
-      });
-      return sizeInBytes.longValue();
+    public FileSystemRepository(File baseDir, FileSystemGarbageCollector garbageCollector) {
+        this.baseDir = baseDir;
+        this.garbageCollector = garbageCollector;
     }
 
-    public GCInfo needsGc(File repositoryRoot) throws IOException {
-      long currentSize = calculateCurrentSizeInBytes(repositoryRoot);
-      return new GCInfo(currentSize > maxSizeInBytes, currentSize,
-          maxSizeInBytes);
+    /**
+     * Creates a File in which may be stored, or to store an audio file. The directory path is
+     * constructed by resolveDirectory, and the complete path name will be like:
+     * org/literacybridge/{file-id}/{file-id}.a18
+     *
+     * @param audioItem   The audio item for which to construct the path to the File.
+     * @param format      The audio format, like A18 or MP3
+     * @param writeAccess (unused) If write access is desired.
+     * @return A File object representing the physical file.
+     */
+    public File resolveFile(AudioItem audioItem, AudioFormat format, boolean writeAccess) {
+        return new File(resolveDirectory(audioItem.getUuid()),
+            audioItem.getUuid() + "." + format.getFileExtension());
     }
 
-    public void gc(File repositoryRoot) throws IOException {
-      GCInfo gcInfo = needsGc(repositoryRoot);
-      long sizeInBytes = gcInfo.getCurrentSizeInBytes();
+    /**
+     * Creates a path under which to store a file, in the baseDir directory. The baseDir may be like
+     * ~/Dropbox/ACM-FOO/content/ (globalSharedRepository)
+     * ~/LiteracyBridge/ACM/cache/ACM-FOO/ (localCacheRepository)
+     * ~/LiteracyBridge/ACM/temp/ACM-FOO/content/ (sandboxRepository
+     * <p>
+     * The path will be like
+     * org/literacybridge/{file-id}
+     *
+     * @param id The id of the audio item for which to construct the path to the containing directory.
+     * @return A File representing the containing directory.
+     */
+    private File resolveDirectory(String id) {
+        // TODO: For now we just use the unique ID of the audio item; in the future,
+        // we might want to use
+        // a different way to construct the path
 
-      if (gcInfo.isGcRecommended()) {
-        final List<File> allFiles = Lists.newArrayList();
-        IOUtils.visitFiles(repositoryRoot, filesToDelete,
-            new Predicate<File>() {
-              @Override
-              public boolean apply(File file) {
-                allFiles.add(file);
-                return true;
-              }
-            });
+        StringBuilder builder = new StringBuilder();
+        builder.append(baseDir.getAbsolutePath());
+        builder.append(File.separator);
+        builder.append("org");
+        builder.append(File.separator);
+        builder.append("literacybridge");
+        builder.append(File.separator);
+        builder.append(id);
 
-        Collections.sort(allFiles, new Comparator<File>() {
-          @Override
-          public int compare(File f1, File f2) {
-            return new Long(f1.lastModified()).compareTo(f2.lastModified());
-          }
-        });
+        String path = builder.toString();
+        File dir = new File(path);
 
-        // make sure never to delete the most recent file
-        for (int i = 0; i < allFiles.size() - 1; i++) {
-          File file = allFiles.get(i);
-          long size = file.length();
-          if (file.delete()) {
-            sizeInBytes -= size;
-            if (sizeInBytes <= maxSizeInBytes) {
-              break;
+        return dir;
+    }
+
+    public List<String> getAudioItemIds(Repository repo) {
+        List<String> result = new ArrayList<>();
+        File contentDir = new File(baseDir, "org" + File.separator + "literacybridge");
+        if (contentDir.exists() && contentDir.isDirectory()) {
+            for (File audioDir : contentDir.listFiles()) {
+                if (audioDir.exists() && audioDir.isDirectory()) {
+                    String[] audioFiles = audioDir.list();
+                    if (audioFiles != null && audioFiles.length > 0) {
+                        result.add(audioDir.getName());
+                    }
+                }
             }
-          }
-
         }
-      }
-    }
-  }
-
-  private final File baseDir;
-  private final FileSystemGarbageCollector garbageCollector;
-
-  public FileSystemRepository(File baseDir) {
-    this(baseDir, null);
-  }
-
-  public FileSystemRepository(File baseDir,
-      FileSystemGarbageCollector garbageCollector) {
-    this.baseDir = baseDir;
-    this.garbageCollector = garbageCollector;
-  }
-
-  @Override
-  protected File resolveFile(AudioItem audioItem, AudioFormat format,
-      boolean writeAccess) {
-    return new File(resolveDirectory(audioItem, format),
-        audioItem.getUuid() + "." + format.getFileExtension());
-  }
-
-  private File resolveDirectory(AudioItem audioItem, AudioFormat format) {
-    // TODO: For now we just use the unique ID of the audio item; in the future,
-    // we might want to use
-    // a different way to construct the path
-
-    StringBuilder builder = new StringBuilder();
-    builder.append(baseDir.getAbsolutePath());
-    builder.append(File.separator);
-    builder.append("org");
-    builder.append(File.separator);
-    builder.append("literacybridge");
-    builder.append(File.separator);
-    builder.append(audioItem.getUuid());
-
-    String path = builder.toString();
-    File dir = new File(path);
-
-    return dir;
-  }
-
-  @Override
-  public GCInfo needsGc() throws IOException {
-    if (garbageCollector == null) {
-      return new GCInfo(false, 0, 0);
+        return result;
     }
 
-    return garbageCollector.needsGc(baseDir);
-  }
-
-  @Override
-  public void gc() throws IOException {
-    if (garbageCollector != null) {
-      garbageCollector.gc(baseDir);
+    @Override
+    public void delete(String id) {
+        File audioDir = resolveDirectory(id);
+        FileUtils.deleteQuietly(audioDir);
     }
-  }
+
+    @Override
+    public long size(String id) {
+        File audioDir = resolveDirectory(id);
+        long total = 0;
+        if (audioDir.exists() && audioDir.isDirectory()) {
+            for (File f : audioDir.listFiles())
+                total += f.length();
+        }
+        return total;
+    }
+
+    public FileSystemGarbageCollector.GCInfo getGcInfo() throws IOException {
+        if (garbageCollector == null) {
+            return new FileSystemGarbageCollector.GCInfo(false, 0, 0);
+        }
+
+        return garbageCollector.getGcInfo(baseDir);
+    }
+
+    public void gc() throws IOException {
+        if (garbageCollector != null) {
+            garbageCollector.gc(baseDir);
+        }
+    }
 }

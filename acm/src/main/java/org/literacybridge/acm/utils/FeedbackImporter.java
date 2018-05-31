@@ -9,7 +9,7 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
-import org.literacybridge.acm.importexport.FileImporter;
+import org.literacybridge.acm.importexport.AudioImporter;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataSpecification;
@@ -374,7 +374,7 @@ public class FeedbackImporter {
     Metadata metadata = new Metadata();
     logger.info(String.format("      Importing %d files", filesToImport.size()));
 
-    FileImporter importer = FileImporter.getInstance();
+    AudioImporter importer = AudioImporter.getInstance();
     MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
     int id = ACMConfiguration.getInstance().getCurrentDB().getNextCorrelationId() + 1;
     ACMConfiguration.getInstance().getCurrentDB().setNextCorrelationId(id + filesToImport.size());
@@ -387,13 +387,14 @@ public class FeedbackImporter {
         }
         // Reset the value, because the lambda may not be called, if the file is already in DB.
         tweaks[0] = ImportResults.TWEAKS.NO_CHANGE;
-        metadata.setMetadataField(MetadataSpecification.LB_CORRELATION_ID, new MetadataValue<>(id++));
-        importer.importFile(store,
-                            file,
+        metadata.putMetadataField(MetadataSpecification.LB_CORRELATION_ID, new MetadataValue<>(id++));
+        importer.importFile(file,
                             (item)->{
+                                // TODO: item.getMetadata().put(LB_CORRELATION_ID, (id++))
                                 item.getMetadata().addValuesFrom(metadata);
                                 tweaks[0] = adjustCategoriesForDuration(item);
-                            });
+                            },
+                            AudioImporter.Option.addNewOnly);
         results.fileImported(file.getName(), tweaks[0]);
       } catch (Exception e) {
         System.err.println(String.format("Failed to import '%s': %s", file.getName(), e.getMessage()));

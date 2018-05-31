@@ -70,14 +70,14 @@ public class LBMetadataSerializer {
     int numValues = (in.readByte() & 0xff);
     for (int i = 0; i < numValues; i++) {
       MetadataValue<T> value = field.deserialize(in);
-      metadata.setMetadataField(field, value);
+      metadata.putMetadataField(field, value);
     }
   }
 
   public void serialize(Collection<Category> categories, Metadata metadata,
       DataOutput headerOut) throws IOException {
     IOUtils.writeLittleEndian32(headerOut, METADATA_VERSION_CURRENT);
-    IOUtils.writeLittleEndian32(headerOut, 1 + metadata.getNumberOfFields());
+    IOUtils.writeLittleEndian32(headerOut, 1 + metadata.size());
 
     // first encode categories
     IOUtils.writeLittleEndian16(headerOut, LBMetadataIDs.CATEGORY_FIELD_ID);

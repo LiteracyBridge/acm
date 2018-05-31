@@ -12,9 +12,8 @@ import org.literacybridge.acm.gui.ResourceView.ToolbarView;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
-import org.literacybridge.acm.gui.util.language.LanguageUtil;
-import org.literacybridge.acm.repository.AudioItemRepository.GCInfo;
-import org.literacybridge.acm.repository.WavCaching;
+import org.literacybridge.acm.repository.FileSystemGarbageCollector.GCInfo;
+import org.literacybridge.acm.repository.WavFilePreCaching;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
@@ -183,6 +182,9 @@ public class Application extends JXFrame {
       return;
     }
     startUp(params);
+    if (params.cleanUnreferenced) {
+      ACMConfiguration.getInstance().getCurrentDB().getRepository().cleanUnreferencedFiles();
+    }
   }
 
   private static void startUp(CommandLineParams params) throws Exception {
@@ -263,9 +265,8 @@ public class Application extends JXFrame {
       }
 
       LOG.log(Level.INFO, "ACM successfully started.");
-      WavCaching caching = new WavCaching();
-      GCInfo gcInfo = ACMConfiguration.getInstance().getCurrentDB()
-          .getRepository().needsGc();
+      WavFilePreCaching caching = new WavFilePreCaching();
+      GCInfo gcInfo = ACMConfiguration.getInstance().getCurrentDB().getRepository().getGcInfo();
 
       if (gcInfo.isGcRecommended()) {
         long sizeMB = gcInfo.getCurrentSizeInBytes() / 1024 / 1024;

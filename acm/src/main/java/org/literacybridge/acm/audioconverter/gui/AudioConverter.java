@@ -45,7 +45,7 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import org.literacybridge.acm.audioconverter.converters.A18ToMP3Converter;
+import org.literacybridge.acm.audioconverter.converters.A18ToMp3Converter;
 import org.literacybridge.acm.audioconverter.converters.A18ToWavConverter;
 import org.literacybridge.acm.audioconverter.converters.AnyToA18Converter;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
@@ -119,7 +119,7 @@ public class AudioConverter extends JFrame
   static {
     ConverterClasses.add(A18ToWavConverter.class);
     ConverterClasses.add(AnyToA18Converter.class);
-    ConverterClasses.add(A18ToMP3Converter.class);
+    ConverterClasses.add(A18ToMp3Converter.class);
   }
 
   public AudioConverter() {

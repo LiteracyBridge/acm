@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.Set;
 
 import com.google.common.base.Predicate;
+import org.apache.commons.io.FilenameUtils;
 
 public class IOUtils {
   public static final int UNI_SUR_HIGH_START = 0xD800;
@@ -169,10 +170,7 @@ public class IOUtils {
   }
 
   public static String getFileExtension(File file) {
-    String name = file.getName();
-    int extensionStart = name.lastIndexOf(".") + 1;
-    return extensionStart < name.length()
-        ? name.substring(extensionStart, name.length()) : "";
+    return FilenameUtils.getExtension(file.getName());
   }
 
   public static void copy(File fromFile, File toFile, boolean keepLastModified)

@@ -1,12 +1,12 @@
 package org.literacybridge.acm.config;
 
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel;
 import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.repository.CachingRepository;
+import org.literacybridge.acm.repository.FileSystemGarbageCollector;
+import org.literacybridge.acm.repository.FileSystemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.LuceneMetadataStore;
-import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
@@ -49,8 +49,8 @@ public class DBConfiguration extends Properties {
       .getLogger(DBConfiguration.class.getName());
 
   private boolean initialized = false;
-  private File repositoryDirectory;
-  private File cacheDirectory;
+  private File globalRepositoryDirectory;
+  private File localCacheDirectory;
   private File dbDirectory;
   private File tbLoadersDirectory;
   private File sharedACMDirectory;
@@ -123,22 +123,12 @@ public class DBConfiguration extends Properties {
    * @return ~/LiteracyBridge/ACM/temp
    */
   String getTempACMsDirectory() {
-    // ~/LiteracyBridge/temp
+    // ~/LiteracyBridge/ACM/temp
     File temp = new File(getHomeAcmDirectory(), Constants.TempDir);
     if (!temp.exists())
       temp.mkdirs();
     return temp.getAbsolutePath();
   }
-
-    File getSandboxDirectory() {
-        File fSandbox = null;
-        if (isSandboxed()) {
-            fSandbox = new File(getTempACMsDirectory(),
-                                getSharedACMname() + "/"
-                                        + Constants.RepositoryHomeDir);
-        }
-        return fSandbox;
-    }
 
     /**
    * Gets a File representing the temporary database directory.
@@ -163,25 +153,45 @@ public class DBConfiguration extends Properties {
   }
 
   /**
-   * Gets a File representing the location of the content repository.
+   * Gets a File representing the location of the content repository, like
+   * ~/Dropbox/ACM-FOO/content
    * @return The File object for the content directory.
    */
-  File getRepositoryDirectory() {
-    if (repositoryDirectory == null) {
+  File getGlobalRepositoryDirectory() {
+    if (globalRepositoryDirectory == null) {
       // ~/Dropbox/ACM-DEMO/content
-      repositoryDirectory = new File(getSharedACMDirectory(), Constants.RepositoryHomeDir);
+      globalRepositoryDirectory = new File(getSharedACMDirectory(), Constants.RepositoryHomeDir);
     }
-    return repositoryDirectory;
+    return globalRepositoryDirectory;
   }
 
-  File getCacheDirectory() {
-    if (cacheDirectory == null) {
+    /**
+     * Gets a file representing the location of the local non-a18 content cache, like
+     * ~/LiteracyBridge/ACM/cache/ACM-FOO
+     * @return
+     */
+  File getLocalCacheDirectory() {
+    if (localCacheDirectory == null) {
       // ~/LiteracyBridge/ACM/cache/ACM-DEMO
-      cacheDirectory = new File(getHomeAcmDirectory(),
+      localCacheDirectory = new File(getHomeAcmDirectory(),
               Constants.CACHE_DIR_NAME + "/" + getSharedACMname());
     }
-    return cacheDirectory;
+    return localCacheDirectory;
   }
+
+    /**
+     * Gets a file representing a temporary, "scratch" area, the "Sandbox". Like
+     * ~/LiteracyBridge/ACM/temp/ACM-FOO/content
+     * @return The File object for the sandbox directory.
+     */
+    File getSandboxDirectory() {
+        File fSandbox = null;
+        if (isSandboxed()) {
+            fSandbox = new File(getTempACMsDirectory(),
+                getSharedACMname() + "/" + Constants.RepositoryHomeDir);
+        }
+        return fSandbox;
+    }
 
     /**
      * The global TB-Loaders directory, where content updates are published.
@@ -310,6 +320,8 @@ public class DBConfiguration extends Properties {
       accessControl = (ACMConfiguration.getInstance().isDisableUI()) ? new AccessControl(this) : new GuiAccessControl(this);
       accessControl.initDb();
 
+      initializeRepositories();
+      
       final Taxonomy taxonomy = Taxonomy.createTaxonomy(sharedACMDirectory);
       this.store = new LuceneMetadataStore(taxonomy, getLuceneIndexDirectory());
 
@@ -329,7 +341,7 @@ public class DBConfiguration extends Properties {
       return accessControl.commitDbChanges() == AccessControl.UpdateDbStatus.ok;
   }
 
-  public void closeDb() {
+  void closeDb() {
       if (!initialized) {
           throw new IllegalStateException("Can't close an un-opened database");
       }
@@ -460,7 +472,7 @@ public class DBConfiguration extends Properties {
     }
 
     // Create the cache directory before it's actually needed, to trigger any security exceptions.
-    getCacheDirectory().mkdirs();
+    getLocalCacheDirectory().mkdirs();
 
     // like ~/Dropbox/ACM-UWR/config.properties
     if (getConfigurationPropertiesFile().exists()) {
@@ -516,6 +528,49 @@ public class DBConfiguration extends Properties {
     }
   }
 
+    private void initializeRepositories() {
+        // Checked out, create the repository object.
+        String user = ACMConfiguration.getInstance().getUserName();
+        LOG.info(String.format(
+            "  Repository:                     %s\n" +
+                "  Temp Database:                  %s\n" +
+                "  Temp Repository (sandbox mode): %s\n" +
+                "  user:                           %s\n" +
+                "  UserRWAccess:                   %s\n" +
+                "  online:                         %s\n",
+            getGlobalRepositoryDirectory(),
+            getTempDatabaseDirectory(),
+            getSandboxDirectory(),
+            user,
+            userHasWriteAccess(user),
+            AccessControl.isOnline()));
+
+        String wavExt = "." + AudioItemRepository.AudioFormat.WAV.getFileExtension();
+        FileSystemGarbageCollector fsgc = new FileSystemGarbageCollector(
+            getCacheSizeInBytes(),
+            (file, name) -> name.toLowerCase().endsWith(wavExt));
+        // The localCacheRepository lives in ~/LiteracyBridge/ACM/cache/ACM-FOO. It is used for all
+        // non-A18 files. When .wav files (but not, say, mp3s) exceed max cache size, they'll be gc-ed.
+        FileSystemRepository localCacheRepository = new FileSystemRepository(getLocalCacheDirectory(), fsgc);
+        // If there is no sandbox directory, all A18s are read from and written to this directory. If there
+        // IS a sandbox directory, then A18s are written there, and read from here if they're not in the
+        // sandbox. (That behaviour is broken because there is no mechanism to clean out stale items from
+        // the sandbox.)
+        FileSystemRepository globalSharedRepository = new FileSystemRepository(getGlobalRepositoryDirectory());
+        // If the ACM is opened in "sandbox" mode, all A18s are written here. A18s are read from here if
+        // present, but read from the global shared repository if absent from the sandbox. Note that
+        // if not sandboxed, this one will be null.
+        FileSystemRepository sandboxRepository
+            = isSandboxed() ? new FileSystemRepository(getSandboxDirectory()) : null;
+
+        // The caching repository directs resolve requests to one of the three above file based
+        // repositories.
+        CachingRepository cachingRepository
+            = new CachingRepository(localCacheRepository, globalSharedRepository, sandboxRepository);
+        setRepository(new AudioItemRepository(cachingRepository));
+    }
+
+    
     /**
      * A number of years ago (I write this on 2018-05-10), we needed a new language, Tumu Sisaala.
      * The person implementing the language did not know the ISO 639-3 code, nor did he know that
@@ -545,7 +600,7 @@ public class DBConfiguration extends Properties {
         try {
             for (AudioItem audioItem : items) {
                 if (audioItem.getLanguageCode().equalsIgnoreCase(from)) {
-                    audioItem.getMetadata().setMetadataField(DC_LANGUAGE, abstractMetadataLanguageCode);
+                    audioItem.getMetadata().putMetadataField(DC_LANGUAGE, abstractMetadataLanguageCode);
                     transaction.add(audioItem);
                     itemsFixed++;
                 }
