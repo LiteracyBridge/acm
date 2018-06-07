@@ -195,8 +195,9 @@ public class ACMConfiguration {
      * @param newDbName      The name of the new database, to be created. Must not exist.
      */
     public synchronized void createNewDb(String templateDbName, String newDbName) throws Exception {
-        final String[] templateFileNames = new String[] { "config.properties", "lb_taxonomy.yaml",
+        final String[] templateFilenames = new String[] { "config.properties",
                 "accessList.txt", "Install-ACM.bat" };
+        final String[] optionalFilenames = new String[] {"category.whitelist", "lb_taxonomy.yaml"};
 
         // Validate the arguments.
         if (allDBs.get(newDbName) != null) {
@@ -215,9 +216,15 @@ public class ACMConfiguration {
         File templateDbDir = templateDbConfiguration.getSharedACMDirectory();
         try {
             newDbDir.mkdirs();
-            for (String name : templateFileNames) {
+            for (String name : templateFilenames) {
                 File templateFile = new File(templateDbDir, name);
                 FileUtils.copyFileToDirectory(templateFile, newDbDir);
+            }
+            for (String name : optionalFilenames) {
+                File optionalFile = new File(templateDbDir, name);
+                if (optionalFile.exists()) {
+                    FileUtils.copyFileToDirectory(optionalFile, newDbDir);
+                }
             }
         } catch (IOException e) {
             // Could not create or copy something. Try to clean up.

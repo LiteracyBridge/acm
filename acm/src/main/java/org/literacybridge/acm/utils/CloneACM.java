@@ -37,6 +37,7 @@ public class CloneACM {
             System.exit(100);
         }
 
+        System.out.println(String.format("ACM Cloner..."));
         boolean result = cloner.doClone();
 
         System.exit(result ? 0 : 4);
@@ -79,6 +80,9 @@ public class CloneACM {
     private boolean doClone() {
         boolean ok = false;
         try {
+            if (params.verbose) {
+                System.out.println(String.format("Attempting clone from %s to %s", fromACM, toACM));
+            }
             ACMConfiguration.getInstance().createNewDb(fromACM, toACM);
             ACMConfiguration.getInstance().getCurrentDB().commitDbChanges();
             ok = true;
@@ -87,7 +91,10 @@ public class CloneACM {
                 System.out.println(String.format("Cloned from %s to %s", fromACM, toACM));
             }
         } catch (Exception ex) {
-
+            System.out.printf("Exception attempting database clone: %s\n", ex.getMessage());
+            if (params.verbose) {
+                ex.printStackTrace();
+            }
         } finally {
             ACMConfiguration.getInstance().closeCurrentDB();
         }
