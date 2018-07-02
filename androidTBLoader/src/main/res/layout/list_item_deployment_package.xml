@@ -44,8 +44,9 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"
         android:enabled="false"
-        android:visibility="invisible"
-        android:text="@string/deployment_package_download"/>
+        android:text="@string/deployment_package_download"
+        android:textColor="@color/TB_RED"
+        android:visibility="invisible" />
 
     <TextView
         android:id="@+id/list_item_deployment_status_label"

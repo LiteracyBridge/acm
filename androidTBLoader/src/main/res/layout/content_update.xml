@@ -239,7 +239,7 @@
         android:id="@+id/button_go"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/holo_red_light"
+        android:background="@color/TB_RED"
         android:text="Go!"
         android:textSize="18sp"
         tools:text="Go!" />

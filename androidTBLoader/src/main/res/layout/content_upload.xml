@@ -89,13 +89,4 @@
 
     </LinearLayout>
 
-     <!-- The Big Red Switch (updates the TB) -->
-    <Button
-        android:id="@+id/button_configure_icon"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Tap to configure Status Bar Icon"
-        android:textSize="14sp"
-        />
-
 </LinearLayout>

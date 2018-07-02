@@ -46,7 +46,6 @@ public class Config {
     public static final String ADVANCED_FLAG_KEY = "advanced";
     public static final String USERNAME_KEY = "username";
     public static final String ETAG_KEY = "etag";
-    public static final String STATUS_BAR_PROMPT_DONE_KEY = "status_bar_prompted";
 
     public static final String DEVICE_ID_DEFAULT = "";
     public static final String PROJECTS_FILTER_DEFAULT = ".*";
@@ -76,27 +75,6 @@ public class Config {
     public boolean isAdvanced() { return mIsAdvanced; }
 
     public String getUsername() { return mUsername; }
-
-    /**
-     * Reads the value of STATUS_BAR_PROMPT_DONE. Used to record whether the user has been
-     * prompted to turn on "Important Notice" in the application settings, in order to put
-     * the notification icon directly onto the status bar.
-     * @return true or false.
-     */
-    public boolean isStatusBarPromptDone() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mApplicationContext);
-        return prefs.getBoolean(STATUS_BAR_PROMPT_DONE_KEY, false);
-    }
-
-    /**
-     * Sets teh value of STATUS_BAR_PROMPT_DONE to true. There's no reason to ever set it to false.
-     */
-    public void setStatusBarPromptDone() {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mApplicationContext);
-        SharedPreferences.Editor sharedPreferencesEditor = sharedPreferences.edit();
-        sharedPreferencesEditor.putBoolean(Config.STATUS_BAR_PROMPT_DONE_KEY, true);
-        sharedPreferencesEditor.apply();
-    }
 
     public boolean haveCachedConfig() {
         SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(

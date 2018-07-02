@@ -296,9 +296,6 @@ public class MainFragment extends Fragment {
             fillUploadValues();
             break;
         case REQUEST_CODE_UPDATE_UPLOAD_STATUS:
-            if (resultCode == RESULT_OK && data.hasExtra("configure")) {
-                promptForStatusBarSettingsPage();
-            }
             break;
         default:
             break;
@@ -310,11 +307,6 @@ public class MainFragment extends Fragment {
             return;
         }
         closeWaitDialog();
-        final Config config = TBLoaderAppContext.getInstance().getConfig();
-        if (!config.isStatusBarPromptDone()) {
-            promptForStatusBarSettingsPage();
-            config.setStatusBarPromptDone();
-        }
         // The UI is all set up, so now let the upload service start.
         UploadService.startUploadService();
     }
@@ -592,42 +584,6 @@ public class MainFragment extends Fragment {
             mUploadNextTextView.setVisibility(View.GONE);
         }
     }
-
-    /**
-     * Prompts the user that when they tap OK, the App Notifications settings page
-     * will open.
-     */
-    private void promptForStatusBarSettingsPage() {
-        showDialogMessage(getString(R.string.main_open_app_notifications_title),
-                          getString(R.string.main_open_app_notifications_body),
-                          openStatusBarSettingsPage,
-                          new Runnable(){public void run(){}});
-    }
-
-    /**
-     * Callback for showDialogMessage. Opens the App Notifications setting page.
-     */
-    private Runnable openStatusBarSettingsPage = new Runnable(){
-        @Override
-        public void run() {
-            Intent intent = new Intent();
-            if (android.os.Build.VERSION.SDK_INT > 24) {
-                intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
-                intent.putExtra("android.provider.extra.APP_PACKAGE", mApplicationContext.getPackageName());
-            } else if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
-                intent.putExtra("app_package", mApplicationContext.getPackageName());
-                intent.putExtra("app_uid", mApplicationContext.getApplicationInfo().uid);
-            } else {
-                intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.addCategory(Intent.CATEGORY_DEFAULT);
-                intent.setData(Uri.parse("package:" + mApplicationContext.getPackageName()));
-            }
-            intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
-
-            mApplicationContext.startActivity(intent);
-        }
-    };
 
     private void setButtonState() {
         boolean canManage = mHaveConfig;

@@ -57,8 +57,6 @@ public class UploadStatusFragment extends Fragment {
     private RecyclerView mCompletedUploadsRecyclerView;
     private QueuedUploadItemAdapter mPendingItemsAdapter;
     private QueuedUploadItemAdapter mCompletedItemsAdapter;
-    private Button mConfigureIconButton;
-    private boolean mHideConfigureButton;
 
     private List<UploadItem> mQueuedItems = new LinkedList<>();
     private List<UploadItem> mCompletedItems;
@@ -71,7 +69,6 @@ public class UploadStatusFragment extends Fragment {
         if (mUserid == null || mUserid.length() == 0) {
             mUserid = UserHelper.getUserId();
         }
-        mHideConfigureButton = intent.getBooleanExtra("hide_configure_button", false);
 
         mCompletedItems = UploadService.getUploadHistory();
         // We must manually refresh the mQueuedItems, because it's a priority queue, with no itemAt()
@@ -110,13 +107,6 @@ public class UploadStatusFragment extends Fragment {
         mUploadWarningsTextView = (TextView)view.findViewById(R.id.upload_warnings);
         String error = UploadService.getErrorMessage();
         mUploadWarningsTextView.setText(error);
-
-        mConfigureIconButton = (Button) view.findViewById(R.id.button_configure_icon);
-        if (mHideConfigureButton) {
-            mConfigureIconButton.setVisibility(View.GONE);
-        } else {
-            mConfigureIconButton.setOnClickListener(configureIconListener);
-        }
 
         mPendingUploadsNoneTextView = (TextView) view.findViewById(R.id.pending_none);
         mCompletedUploadsNoneTextView = (TextView) view.findViewById(R.id.completed_none);

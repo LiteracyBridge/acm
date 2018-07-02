@@ -72,7 +72,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 23
         versionCode code
-        versionName "0.9.5 (${code})"
+        versionName "1.0.0 (${code})"
         buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"    }
     buildTypes {
         release {

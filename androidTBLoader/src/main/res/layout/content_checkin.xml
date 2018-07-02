@@ -190,10 +190,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
-            android:background="@android:color/holo_red_light"
+            android:background="@color/TB_RED"
             android:scaleType="fitCenter"
             android:text="Check In!"
-            tools:text="Check In!"/>
+            tools:text="Check In!" />
 
 
     </LinearLayout>
