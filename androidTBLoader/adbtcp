@@ -3,10 +3,11 @@
 echo Current devices:
 adb devices
 
-echo Current netcfg
-adb shell netcfg
+echo Current ip route
+adb -d shell ip route
 
-ip="$(adb shell netcfg|awk 'BEGIN{FS=" +|/"}/wlan/{print $3}'):5556"
+#ip="$(adb shell netcfg|awk 'BEGIN{FS=" +|/"}/wlan/{print $3}'):5556"
+ip="$(adb -d shell ip route|awk '{print $9}'):5556"
 
 echo Setting to tcp
 adb tcpip 5556
