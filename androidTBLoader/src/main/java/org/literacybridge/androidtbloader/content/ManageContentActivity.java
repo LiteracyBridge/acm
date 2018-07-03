@@ -33,6 +33,7 @@ public class ManageContentActivity extends AppCompatActivity {
     private Button mCancelButton;
     private RecyclerView mContentInfoRecyclerView;
     private AlertDialog mUserDialog;
+    private TextView mNoContentText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,6 +94,9 @@ public class ManageContentActivity extends AppCompatActivity {
 
         mCancelButton = (Button) findViewById(R.id.manage_content_button_cancel);
         mCancelButton.setOnClickListener(mOnCancelListener);
+
+        mNoContentText = (TextView) findViewById(R.id.manage_content_no_content);
+        setMessageVisibility();
     }
 
     @Override
@@ -120,6 +124,7 @@ public class ManageContentActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        setMessageVisibility();
                         mAdapter.notifyDataSetChanged();
                         mSwipeRefreshLayout.setRefreshing(false);
                     }
@@ -127,6 +132,12 @@ public class ManageContentActivity extends AppCompatActivity {
             }
         }
     };
+
+    private void setMessageVisibility() {
+        boolean haveContent = mContentManager.getContentList().size() > 0;
+        mNoContentText.setVisibility(haveContent ? View.GONE : View.VISIBLE);
+        mSwipeRefreshLayout.setVisibility(haveContent ? View.VISIBLE : View.GONE);
+    }
 
     private void closeUserDialog() {
         if (mUserDialog != null) {

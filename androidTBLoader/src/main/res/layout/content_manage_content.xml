@@ -17,7 +17,7 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_gravity="fill_vertical"
-        android:layout_weight="1">
+        android:layout_weight=".5">
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/deployment_package_recycler_view"
@@ -27,6 +27,19 @@
             >
         </android.support.v7.widget.RecyclerView>
     </android.support.v4.widget.SwipeRefreshLayout>
+
+    <TextView
+        android:id="@+id/manage_content_no_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:paddingBottom="20dp"
+        android:paddingEnd="10dp"
+        android:paddingStart="10dp"
+        android:paddingTop="20dp"
+        android:text="No Content is Available."
+        android:textSize="24sp"
+        android:textStyle="italic" />
 
     <!-- A cancel button, visible when a download is in progress. -->
     <Button
