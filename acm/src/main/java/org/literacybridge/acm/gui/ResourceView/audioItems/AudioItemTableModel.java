@@ -178,16 +178,13 @@ public class AudioItemTableModel extends AbstractTableModel {
                     int row = uuidToRowIndexMap.get(audioItem.getUuid());
 
                     if (eventType == DataChangeEventType.ITEM_MODIFIED) {
-                        // I don't think we need to do this, because the callers all
+                        // Unfortunately, we need to do this, even though the callers all
                         // force a refresh anyway. This causes horrific performance
                         // from inside Swing; something like O(n^2) on # items selected,
                         // which kills when setting many items.
                         //
-                        // But, if it turns out that updates aren't shown on the screen,
-                        // this is an option to fix. The other option is
-                        //             Application.getFilterState().updateResult(true);
-                        //rowIndexToUuidMap.set(row, convertToAudioItemNodeRow(audioItem));
-                        //fireTableRowsUpdated(row, row);
+                        rowIndexToUuidMap.set(row, convertToAudioItemNodeRow(audioItem));
+                        fireTableRowsUpdated(row, row);
                     } else if (eventType == DataChangeEventType.ITEM_DELETED) {
                         removeAudioItem(audioItem);
                         fireTableRowsDeleted(row, row);
