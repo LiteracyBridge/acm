@@ -170,6 +170,13 @@
         android:layout_alignParentStart="true"
         android:orientation="vertical">
 
+        <CheckBox
+            android:id="@+id/deploying_for_testing"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/deploying_for_testing"
+            tools:text="Deploying today for testing only." />
+
         <Button
             android:id="@+id/checkin_add_community"
             android:layout_width="match_parent"
@@ -177,15 +184,7 @@
             tools:text="Add communities to be current tab..."/>
 
         <!-- Do the check in -->
-        <!-- ImageButton
-            android:id="@+id/checkin_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            app:srcCompat="@drawable/check"
-            / -->
-
-        <Button
+         <Button
             android:id="@+id/checkin_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

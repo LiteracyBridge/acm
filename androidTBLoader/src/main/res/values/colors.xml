@@ -15,10 +15,11 @@
     <color name="warning">#e94700</color>
     <color name="white">#FFFFFF</color>
     <color name="grey_100">#F5F7F7</color>
-    <color name="grey_300">#8D9496</color>
+    <color name="grey_300">#8d9496</color>
     <color name="grey_400">#5A5D5E</color>
     <color name="grey_500">#404142</color>
     <color name="grey_600">#303232</color>
     <color name="grey_700">#1D1E1E</color>
     <color name="TB_RED">#e00000</color>
+    <color name="TB_CONNECTED_FIELD">#edfdbc</color>
 </resources>

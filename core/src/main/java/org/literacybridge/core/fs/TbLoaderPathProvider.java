@@ -14,7 +14,7 @@ public interface TbLoaderPathProvider {
     File getTbDevice();
 
     /**
-     * Gets a File object that represents a directory containing downloaded Content Updates.
+     * Gets a File object that represents a directory containing downloaded Deployments.
      * @return the directory's File.
      */
     File getLocalContentRepository();

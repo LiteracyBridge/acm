@@ -23,6 +23,7 @@ public abstract class ProgressListener {
         updateContent("Updating TB content", true),
         updateCommunity("Updating community content", true),
         listDeviceFiles2("Listing device files after update"),
+        delay("Finalizing", false),
         finishing("Finished");
 
         public final String description;

@@ -27,8 +27,7 @@ public class TBLoaderUtils {
     public static String getDateTime(Date date) {
         SimpleDateFormat sdfDate = new SimpleDateFormat(
                 "yyyy'y'MM'm'dd'd'HH'h'mm'm'ss's'", Locale.US);
-        String dateTime = sdfDate.format(date);
-        return dateTime;
+        return sdfDate.format(date);
     }
 
     /**
@@ -90,10 +89,10 @@ public class TBLoaderUtils {
     }
 
     /**
-     * Given a Content Update directory with one or more images (packages), and a community, find
+     * Given a Deployment directory with one or more images (packages), and a community, find
      * the package that matches the community.
      *
-     * @param deploymentDirectory The Content Update directory, with one or more images, like
+     * @param deploymentDirectory The Deployment directory, with one or more images, like
      *                            ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}
      * @param community           The community name for which the image name is desired. Like "vingving - jirapa"
      * @return The name of the image that matches, like "demo-2017-3-dga".
@@ -178,9 +177,9 @@ public class TBLoaderUtils {
     }
 
     /**
-     * Find the firmware version number or numbers in a Content Update.
+     * Find the firmware version number or numbers in a Deployment.
      *
-     * @param deploymentDirectory The Content Update directory.
+     * @param deploymentDirectory The Deployment directory.
      * @return A string with "(No firmware)", a version like "r1216", or "(Multiple Firmwares!)".
      */
     public static String getFirmwareVersionNumbers(File deploymentDirectory) {
@@ -200,8 +199,8 @@ public class TBLoaderUtils {
             } else if (files.length == 1) {
                 version = files[0].substring(0, files[0].length() - 4);
             }
-        } catch (Exception ignore) {
-            LOG.log(Level.WARNING, "TBL!: exception - ignore and keep going with default string", ignore);
+        } catch (Exception ex) {
+            LOG.log(Level.WARNING, "TBL!: exception - ignore and keep going with default string", ex);
         }
         return version;
     }

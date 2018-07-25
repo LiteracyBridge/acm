@@ -18,6 +18,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
@@ -28,6 +29,7 @@ import org.literacybridge.androidtbloader.community.ChooseCommunityActivity;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.community.CommunityInfoAdapter;
 import org.literacybridge.androidtbloader.content.ContentManager;
+import org.literacybridge.androidtbloader.util.Constants;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,6 +72,7 @@ public class CheckinFragment extends Fragment {
     private TextView mGpsCoordinatesTextView;
     private TextView mGpsLocationTimeTextView;
 
+    private CheckBox mTestDeploymentCheckBox;
     private Button mCheckinButton;
 
     private Button mAddCommunityToButton;
@@ -79,7 +82,7 @@ public class CheckinFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getActivity().getIntent();
-        mChosenProject = intent.getStringExtra("project");
+        mChosenProject = intent.getStringExtra(Constants.PROJECT);
         ContentManager mContentManager = ((TBLoaderAppContext) getActivity().getApplicationContext())
                 .getContentManager();
 
@@ -149,6 +152,8 @@ public class CheckinFragment extends Fragment {
         mUpdateTodayCommunitiesAdapter = new CommunityInfoAdapter(getActivity(),
                 mUpdateTodayCommunitiesList);
         mUpdateTodayRecyclerView.setAdapter(mUpdateTodayCommunitiesAdapter);
+
+        mTestDeploymentCheckBox = (CheckBox)view.findViewById(R.id.deploying_for_testing);
 
         mCheckinButton = (Button) view.findViewById(R.id.checkin_button);
         mCheckinButton.setOnClickListener(mCheckinListener);
@@ -303,14 +308,19 @@ public class CheckinFragment extends Fragment {
     private OnClickListener mCheckinListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            Intent intent = new Intent();
-            intent.putExtra("location", "Other");
-            intent.putExtra("project", mChosenProject);
-            intent.putStringArrayListExtra("communities", CommunityInfo.makeExtra(mUpdateTodayCommunitiesList));
-            getActivity().setResult(RESULT_OK, intent);
-            getActivity().finish();
+            doCheckin();
         }
     };
+
+    private void doCheckin() {
+        Intent intent = new Intent();
+        intent.putExtra("location", "Other");
+        intent.putExtra(Constants.PROJECT, mChosenProject);
+        intent.putExtra(Constants.TESTING_DEPLOYMENT, mTestDeploymentCheckBox.isChecked());
+        intent.putStringArrayListExtra(Constants.COMMUNITIES, CommunityInfo.makeExtra(mUpdateTodayCommunitiesList));
+        getActivity().setResult(RESULT_OK, intent);
+        getActivity().finish();
+    }
 
     /**
      * Enables and disables buttons based on state; information retrieved so far.

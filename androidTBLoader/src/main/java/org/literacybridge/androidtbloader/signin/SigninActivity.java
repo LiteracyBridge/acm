@@ -24,6 +24,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
@@ -52,6 +53,7 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.ForgotPas
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.main.MainActivity;
+import org.literacybridge.androidtbloader.util.Constants;
 
 import java.util.Locale;
 import java.util.Map;
@@ -80,6 +82,7 @@ public class SigninActivity extends AppCompatActivity {
     // Screen fields
     private EditText inUsername;
     private EditText inPassword;
+    private TextInputLayout inPasswordLayout;
 
     //Continuations
     private MultiFactorAuthenticationContinuation multiFactorAuthenticationContinuation;
@@ -192,18 +195,15 @@ public class SigninActivity extends AppCompatActivity {
                     // Not sure about this. If one signs in, then goes back, should credentials still be there?
                     // If so, remove this.
                     clearInput();
-                    String name = data.getStringExtra("TODO");
-                    boolean forceExit = data.getBooleanExtra("forceExit", false);
-                    if(forceExit || name != null) {
-                        if (forceExit || (!name.isEmpty() && name.equals("exit"))) {
-                            Log.d(TAG, String.format("Got a TODO:exit, explicit signin: %b", mExplicitSignIn));
-                            // If we signed in implicitly, just do another BackPressed, because the user never saw this page.
-                            if (forceExit || !mExplicitSignIn) {
-                                onBackPressed();
-                            }
-                        }
+                    // Did the "main" activity want us to exit the application?
+                    boolean exitApplication = data.getBooleanExtra(Constants.EXIT_APPLICATION, false);
+                    if(exitApplication) {
+                        Log.d(TAG, String.format("Got an 'exitApplication'."));
+                        onBackPressed();
                     }
-                    boolean signout = data.getBooleanExtra("signout", false);
+                    // No, need to sign in again.
+                    // Sign out first?
+                    boolean signout = data.getBooleanExtra(Constants.SIGNOUT, false);
                     if (signout) {
                         clearInput();
                         UserHelper.getPool().getCurrentUser().signOut();
@@ -249,7 +249,7 @@ public class SigninActivity extends AppCompatActivity {
             case NEW_PASSWORD_ACTIVITY_CODE:
                 //New password
                 closeWaitDialog();
-                Boolean continueSignIn = false;
+                boolean continueSignIn = false;
                 if (resultCode == RESULT_OK) {
                    continueSignIn = data.getBooleanExtra("continueSignIn", false);
                 }
@@ -267,7 +267,7 @@ public class SigninActivity extends AppCompatActivity {
 
     /**
      * Called implicitly from "Sign in" button
-     * @param view
+     * @param view - unused
      */
     public void logIn(View view) {
         signInUser();
@@ -325,7 +325,7 @@ public class SigninActivity extends AppCompatActivity {
     }
 
     private void signInUser() {
-        username = inUsername.getText().toString();
+        username = inUsername.getText().toString().trim();
         if(username == null || username.length() < 1) {
             TextView label = (TextView) findViewById(R.id.textViewUserIdMessage);
             label.setText(inUsername.getHint()+" cannot be empty");
@@ -335,7 +335,7 @@ public class SigninActivity extends AppCompatActivity {
 
         UserHelper.setUserId(username);
 
-        password = inPassword.getText().toString();
+        password = inPassword.getText().toString().trim();
         if(password == null || password.length() < 1) {
             TextView label = (TextView) findViewById(R.id.textViewUserPasswordMessage);
             label.setText(inPassword.getHint()+" cannot be empty");
@@ -437,7 +437,7 @@ public class SigninActivity extends AppCompatActivity {
             UserHelper.setUserId(username);
             inUsername.setText(user.getUserId());
             if (((TBLoaderAppContext)getApplicationContext()).isCurrentlyConnected()) {
-                showWaitDialog("Attempting signin...");
+                showWaitDialog("Attempting sign in...");
                 user.getSessionInBackground(authenticationHandler);
             } else {
                 Log.d(TAG, "Offline; continuing with cached user id");
@@ -504,6 +504,9 @@ public class SigninActivity extends AppCompatActivity {
                 }
             }
         });
+
+        inPasswordLayout = (TextInputLayout) findViewById(R.id.password_layout);
+        inPasswordLayout.setHintEnabled(false);
 
         inPassword = (EditText) findViewById(R.id.editTextUserPassword);
         inPassword.addTextChangedListener(new TextWatcher() {

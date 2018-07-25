@@ -7,6 +7,7 @@ import android.util.Log;
 
 import org.literacybridge.androidtbloader.SingleFragmentActivity;
 import org.literacybridge.androidtbloader.main.MainFragment;
+import org.literacybridge.androidtbloader.util.Constants;
 
 /**
  * Created by bill on 12/23/16.
@@ -17,7 +18,7 @@ public class CheckinActivity extends SingleFragmentActivity {
 
     @Override
     protected Fragment createFragment() {
-        String project = getIntent().getStringExtra("project");
+        String project = getIntent().getStringExtra(Constants.PROJECT);
         Log.d(TAG, String.format("Create fragment for project %s", project));
         return new CheckinFragment();
     }

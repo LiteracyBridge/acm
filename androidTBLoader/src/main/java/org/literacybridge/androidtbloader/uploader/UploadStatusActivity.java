@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import org.literacybridge.androidtbloader.SingleFragmentActivity;
 import org.literacybridge.androidtbloader.tbloader.TbLoaderFragment;
+import org.literacybridge.androidtbloader.util.Constants;
 
 /**
  * Created by bill on 12/20/16. Many people like single-fragment activities, because
@@ -17,7 +18,7 @@ public class UploadStatusActivity extends SingleFragmentActivity {
 
     @Override
     protected Fragment createFragment() {
-        String userid = getIntent().getStringExtra("userid");
+        String userid = getIntent().getStringExtra(Constants.USERID);
         Log.d(TAG, String.format("Create fragment for user %s", userid));
         return new UploadStatusFragment();
     }

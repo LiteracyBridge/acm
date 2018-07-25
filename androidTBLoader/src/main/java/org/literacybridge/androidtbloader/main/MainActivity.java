@@ -7,6 +7,7 @@ import android.util.Log;
 
 import org.literacybridge.androidtbloader.SingleFragmentActivity;
 import org.literacybridge.androidtbloader.signin.UserHelper;
+import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.core.fs.OperationLog;
 
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ public class MainActivity extends SingleFragmentActivity {
     public void onBackPressed() {
         Intent intent = new Intent();
         intent.putExtra("TODO", "exit");
+        intent.putExtra(Constants.EXIT_APPLICATION, true);
         setResult(RESULT_OK, intent);
         finish();
     }

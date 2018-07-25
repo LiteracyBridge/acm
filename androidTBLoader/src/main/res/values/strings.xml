@@ -67,7 +67,7 @@
     <string name="Password">Password</string>
     <string name="Menu">Menu</string>
     <string name="title_activity_about_app">AboutApp</string>
-    <string name="about">Copyright 2016, 2017 Literacy Bridge. Talking Book Loader application, for use by Literacy Bridge and partner organizations.</string>
+    <string name="about">Copyright 2016-2018 Literacy Bridge. Talking Book Loader application, for use by Literacy Bridge and partner organizations.</string>
     <string name="more_info">This is a highly portable Talking Book Loader.</string>
     <string name="title_activity_sign_up_confirm">SignUpConfirm</string>
     <string name="title_activity_mfa">MFAActivity</string>
@@ -127,5 +127,8 @@
     <string name="list_item_deployment_downloading">Downloading...</string>
     <string name="list_item_deployment_unzipping">Processing...</string>
     <string name="list_item_deployment_waiting">Waiting...</string>
+    <string name="prompt_password">Password</string>
+    <string name="deploying_for_testing">Deploying today for testing only.</string>
+    <string name="no_talking_book_connected">No Talking Book connected.</string>
 
 </resources>

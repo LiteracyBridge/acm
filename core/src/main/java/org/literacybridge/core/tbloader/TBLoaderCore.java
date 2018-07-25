@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,6 +39,7 @@ import static org.literacybridge.core.tbloader.ProgressListener.Steps.clearStats
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.clearSystem;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.clearUserRecordings;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.copyStatsAndFiles;
+import static org.literacybridge.core.tbloader.ProgressListener.Steps.delay;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.finishing;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.gatherDeviceFiles;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.gatherUserRecordings;
@@ -52,7 +54,6 @@ import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateSyst
 import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.OPERATIONAL_DATA;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_AUDIO_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LANGUAGES_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_MESSAGES_PATH;
@@ -175,7 +176,7 @@ import static org.literacybridge.core.tbloader.TBLoaderUtils.getBytesString;
 public class TBLoaderCore {
     private static final Logger LOG = Logger.getLogger(TBLoaderCore.class.getName());
 
-    public static enum Action {
+    public enum Action {
         DEPLOY,
         STATSONLY,
         FINALIZE
@@ -195,6 +196,7 @@ public class TBLoaderCore {
         private ProgressListener mProgressListener;
         private boolean mStatsOnly = false;
         private boolean mRefreshFirmware = false;
+        private int mPostUpdateDelayMillis = 0;
 
         public Builder() {}
 
@@ -276,9 +278,14 @@ public class TBLoaderCore {
             return this;
         }
 
+        public Builder withPostUpdateDelay(int postUpdateDelayMillis) {
+            this.mPostUpdateDelayMillis = postUpdateDelayMillis;
+            return this;
+        }
+
     }
 
-    //private final Builder mConfig;
+    private final Builder mBuilder;
 
     private final TBLoaderConfig mTbLoaderConfig;
     private final TBDeviceInfo mTbDeviceInfo;
@@ -319,6 +326,7 @@ public class TBLoaderCore {
     private long mUpdateStartTime;
 
     private TBLoaderCore(Builder builder) {
+        this.mBuilder = builder;
         this.mTbDeviceInfo = builder.mTbDeviceInfo;
         this.mTbLoaderConfig = builder.mTbLoaderConfig;
         this.mTtbFlashData = builder.mTbDeviceInfo.getFlashData();
@@ -344,14 +352,14 @@ public class TBLoaderCore {
 
         // This is the path name for the "TalkingBookData" from this TB. In particular, this is the path
         // name for the directory that will contain the collected data, and then the .zip file of that data.
-        // like TalkingBookData/{content update name}/{tbloader id}/{community name}/{tb serial no}
+        // like TalkingBookData/{Deployment name}/{tbloader id}/{community name}/{tb serial no}
         RelativePath talkingBookDataParentPath = new RelativePath(
                 TBLoaderConstants.TALKING_BOOK_DATA,           // "TalkingBookData"
                 mOldDeploymentInfo.getDeploymentName(),   // like "DEMO-2016-1"
                 builder.mTbLoaderConfig.getTbLoaderId(),   // like "000c"
                 mOldDeploymentInfo.getCommunity(),        // like "demo-seattle"
                 builder.mTbDeviceInfo.getSerialNumber());  // like "B-000C1234"
-        // like TalkingBookData/{content update name}/{tbloader id}/{community name}/{tb serial no}/{timestamp}-{tbloader id}
+        // like TalkingBookData/{Deployment name}/{tbloader id}/{community name}/{tb serial no}/{timestamp}-{tbloader id}
         // like "2016y12m25d01h23m45s-000c"
         mTalkingBookDataDirectoryPath = new RelativePath(
                 talkingBookDataParentPath, mCollectionTempName);
@@ -795,6 +803,8 @@ public class TBLoaderCore {
                 forceFirmwareRefresh();
 
                 listDeviceFilesPostUpdate();
+
+                delayForAndroid();
 
             }
 
@@ -1477,6 +1487,26 @@ public class TBLoaderCore {
         }
 
         finishStep();
+    }
+
+    private void delayForAndroid() {
+        if (mBuilder.mPostUpdateDelayMillis > 0) {
+            long elapsed = 0;
+            int n = 0;
+            Random r = new Random();
+            startStep(delay);
+            while (elapsed < mBuilder.mPostUpdateDelayMillis) {
+                mProgressListener.detail(String.format("Finalizing part %d", ++n));
+                int interval = 500 + r.nextInt(1000);
+                elapsed += interval;
+                try {
+                    Thread.sleep(interval);
+                } catch (InterruptedException e) {
+                    // Ignore and continue
+                }
+            }
+            finishStep();
+        }
     }
 
     /**

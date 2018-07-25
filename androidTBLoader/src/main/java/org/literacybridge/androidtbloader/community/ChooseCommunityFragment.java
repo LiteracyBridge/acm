@@ -32,6 +32,7 @@ import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.checkin.LocationProvider;
 import org.literacybridge.androidtbloader.content.ContentManager;
+import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.Util;
 
 import java.util.ArrayList;
@@ -86,7 +87,7 @@ public class ChooseCommunityFragment extends Fragment {
         // Get the arguments; a project or projects, or a list of communities.
         Intent intent = getActivity().getIntent();
         List<String> projectsList = intent.getStringArrayListExtra("projects");
-        mProject = intent.getStringExtra("project");
+        mProject = intent.getStringExtra(Constants.PROJECT);
 
 
         if (projectsList != null && projectsList.size() > 0) {
@@ -120,7 +121,7 @@ public class ChooseCommunityFragment extends Fragment {
             setProject(mProject);
         } else {
             // No project(s) passed, we need to have communities passed.
-            List<String> communities = intent.getStringArrayListExtra("communities");
+            List<String> communities = intent.getStringArrayListExtra(Constants.COMMUNITIES);
             if (communities != null) {
                 mOriginalList = CommunityInfo.parseExtra(communities);
             }

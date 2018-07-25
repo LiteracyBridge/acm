@@ -31,6 +31,7 @@ import org.literacybridge.androidtbloader.content.ContentInfo;
 import org.literacybridge.androidtbloader.content.ContentManager;
 import org.literacybridge.androidtbloader.talkingbook.TalkingBookConnectionManager;
 import org.literacybridge.androidtbloader.util.Config;
+import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.core.fs.FsFile;
 import org.literacybridge.core.fs.OperationLog;
@@ -43,9 +44,7 @@ import org.literacybridge.core.tbloader.TBLoaderConfig;
 import org.literacybridge.core.tbloader.TBLoaderCore;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -85,13 +84,14 @@ public class TbLoaderFragment extends Fragment {
     private ContentInfo mContentInfo;
     private String mSrnPrefix = "b-";
 
+    private boolean mTestingDeployment;
+
     private TextView mTalkingBookIdTextView;
     private TextView mTalkingBookWarningsTextView;
 
     private TextView mCommunityNameTextView;
 
     private CheckBox mRefreshFirmwareCheckBox;
-    private CheckBox mTestDeploymentCheckBox;
 
     private TextView mUpdateStepTextView;
     private TextView mUpdateDetailTextView;
@@ -108,16 +108,17 @@ public class TbLoaderFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getActivity().getIntent();
-        mProject = intent.getStringExtra("project");
+        mProject = intent.getStringExtra(Constants.PROJECT);
         mStatsOnly = intent.getBooleanExtra("statsonly", false);
         mLocation = intent.getStringExtra("location");
+        mTestingDeployment = intent.getBooleanExtra(Constants.TESTING_DEPLOYMENT, false);
         Location currentCoordinates = LocationProvider.getLatestLocation();
         if (currentCoordinates != null) {
             mCoordinates = String.format("%+03.5f %+03.5f", currentCoordinates.getLatitude(), currentCoordinates.getLongitude());
         }
         mUserName = intent.getStringExtra("username");
         if (!mStatsOnly) {
-            mCommunities = CommunityInfo.parseExtra(intent.getStringArrayListExtra("communities"));
+            mCommunities = CommunityInfo.parseExtra(intent.getStringArrayListExtra(Constants.COMMUNITIES));
             // If only one community, don't prompt the user to select it.
             if (mCommunities != null && mCommunities.size() == 1) {
                 mCommunity = mCommunities.get(0);
@@ -222,12 +223,12 @@ public class TbLoaderFragment extends Fragment {
         }
 
         mRefreshFirmwareCheckBox = (CheckBox)view.findViewById(R.id.refresh_firmware);
-        mTestDeploymentCheckBox = (CheckBox)view.findViewById(R.id.test_deployment);
         if (mStatsOnly) {
             mRefreshFirmwareCheckBox.setVisibility(View.GONE);
-            mTestDeploymentCheckBox.setVisibility(View.GONE);
             ((TextView)view.findViewById(R.id.update_step_label)).setText(getString(
                 R.string.statistics_step_label));
+        } else if (mTestingDeployment) {
+            ((TextView)view.findViewById(R.id.test_deployment)).setVisibility(View.VISIBLE);
         }
 
         // ProgressListener display
@@ -391,7 +392,7 @@ public class TbLoaderFragment extends Fragment {
             List<CommunityInfo> list = mCommunities != null ? mCommunities :
                                        new ArrayList<>(mContentInfo.getCommunities().values());
             Intent intent = new Intent(getActivity(), ChooseCommunityActivity.class);
-            intent.putExtra("communities", CommunityInfo.makeExtra(list));
+            intent.putExtra(Constants.COMMUNITIES, CommunityInfo.makeExtra(list));
             startActivityForResult(intent, REQUEST_CODE_GET_COMMUNITY);
         }
     };
@@ -496,11 +497,6 @@ public class TbLoaderFragment extends Fragment {
             Log.d(TAG, "Now disconnected from device");
         }
         mTalkingBookIdTextView.setText(srn);
-
-        // If the old deployment was for testing, the new one probably is as well.
-        if (mConnectedDeviceInfo != null && mConnectedDeviceInfo.isTestDeployment()) {
-            mTestDeploymentCheckBox.setChecked(true);
-        }
 
         if (mStatsOnly) {
             String deviceCommunity = mConnectedDeviceInfo.getCommunityName();
@@ -677,7 +673,8 @@ public class TbLoaderFragment extends Fragment {
             .withCoordinates(mCoordinates) // May be null; ok because it's optional anyway.
             .withRefreshFirmware(mRefreshFirmwareCheckBox.isChecked())
             .withProgressListener(mProgressListener)
-            .withStatsOnly(mStatsOnly);
+            .withStatsOnly(mStatsOnly)
+            .withPostUpdateDelay(Constants.androidPostUpdateSleepTime);
 
         TBLoaderCore.Result result;
         if (mStatsOnly) {
@@ -753,7 +750,7 @@ public class TbLoaderFragment extends Fragment {
                 .withFirmwareRevision(firmwareRevision)
                 .withCommunity(mCommunity.getName())
                 .withRecipientid(recipientid)
-                .asTestDeployment(mTestDeploymentCheckBox.isChecked());
+                .asTestDeployment(mTestingDeployment);
         DeploymentInfo newDeploymentInfo = builder.build();
 
         opLog.put("project", mProject)

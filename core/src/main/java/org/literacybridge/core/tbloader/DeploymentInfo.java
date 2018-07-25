@@ -14,7 +14,7 @@ public class DeploymentInfo {
     // The name of the project previously deployed to the Talking Book. This may not be knowable
     // from the Talking Book, in which case the *new* deployment's project may be substituted.
     private final String projectName;
-    // The name of the content update previously deployed to the Talking Book.
+    // The name of the deployment previously deployed to the Talking Book.
     private final String deploymentName;
     // The name of the content package previously deployed to the Talking Book.
     private final String packageName;

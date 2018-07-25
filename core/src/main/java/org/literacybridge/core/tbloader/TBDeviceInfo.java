@@ -394,7 +394,7 @@ public final class TBDeviceInfo {
      *
      * @return The file's name found (minus extension), or UNKNOWN if no file found.
      */
-    private String getDeploymentName() {
+    public String getDeploymentName() {
         if (deploymentName == null) {
             deploymentName = getProperty(DEPLOYMENT_PROPERTY, UNKNOWN);
             String src = "properties";

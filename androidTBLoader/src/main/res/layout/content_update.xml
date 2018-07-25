@@ -47,7 +47,7 @@
 
     </LinearLayout>
 
-    <!-- Content update name, aka deployment name -->
+    <!-- Deployment name, sometimes called content update -->
     <LinearLayout
         android:id="@+id/loader_deployment"
         android:layout_width="match_parent"
@@ -64,8 +64,8 @@
             android:id="@+id/content_update_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Content update"
-            tools:text="Content update"
+            android:text="Deployment"
+            tools:text="Deployment"
             android:layout_marginLeft="5dp" />
 
     </LinearLayout>
@@ -156,12 +156,16 @@
                 android:text="Refresh firmware?"
                 tools:text="Refresh firmware?" />
         </LinearLayout>
-        <CheckBox
+
+        <TextView
             android:id="@+id/test_deployment"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Only testing the Deployment?"
-            tools:text="Only testing the Deployment?" />
+            android:text="This Deployment is for testing purposes."
+            android:textStyle="italic"
+            android:visibility="gone"
+            tools:text="This Deployment is for testing purposes."
+            tools:visibility="visible" />
 
         <ProgressBar
             android:id="@+id/progressBar1"

@@ -45,7 +45,24 @@ public class Constants {
 
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
     public static final DateFormat ISO8601 = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
+
+    // "extra" names for intents
+    public static final String TESTING_DEPLOYMENT = "testing_deployment";
+    public static final String STATSONLY = "statsonly";
+    public static final String USERNAME = "username";
+    public static final String PROJECT = "project";
+    public static final String USERID = "userid";
+    public static final String NAME = "name";
+    public static final String LOCATION = "location";
+    public static final String COMMUNITIES = "communities";
+    public static final String SELECTED = "selected";
+    public static final String SIGNOUT = "signout";
+    public static final String EXIT_APPLICATION = "exitApplication";
+
     static {
         ISO8601.setTimeZone(UTC);
     }
+
+    // Time to sit twiddling thumbs on Android, because we can't flush files on USB storage.
+    public static final int androidPostUpdateSleepTime = 5000; // millis
 }

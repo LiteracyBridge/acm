@@ -11,8 +11,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.net.Uri;
-import android.os.IBinder;
 import android.os.storage.StorageManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 
@@ -22,8 +22,6 @@ import org.literacybridge.androidtbloader.db.TalkingBookDbSchema.KnownTalkingBoo
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.tbloader.TBDeviceInfo;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +32,8 @@ import java.util.Set;
 public class TalkingBookConnectionManager {
     private static final String TAG = "TBL!:" + TalkingBookConnectionManager.class.getSimpleName();
     private static final String TB_FS_DEFAULT_SERIAL_NUMBER = "9285-F050";
+    public static final String TB_CONNECTION_STATUS = "tb_connection_status";
+
     // Genplus, sdAdapter, armKeil
     private static Integer [] GEN_PLUS_VENDOR_ID_LIST = {6975, 5325, 1003};
     private static Integer [] GEN_PLUS_PRODUCT_ID_LIST = {8194, 4636, 9252};
@@ -173,6 +173,9 @@ public class TalkingBookConnectionManager {
                                 Log.d(TAG,
                                         "Not sending Talking Book connection event; no listener");
                             }
+
+                            Intent intent = new Intent(TB_CONNECTION_STATUS);
+                            LocalBroadcastManager.getInstance(TBLoaderAppContext.getInstance()).sendBroadcast(intent);
                         }
 
                         Log.d(TAG, "root exists ");
@@ -339,6 +342,9 @@ public class TalkingBookConnectionManager {
                 mTalkingBookConnectionEventListener.onTalkingBookDisConnectEvent();
             }
             mConnectedTalkingBook = null;
+
+            Intent intent = new Intent(TB_CONNECTION_STATUS);
+            LocalBroadcastManager.getInstance(TBLoaderAppContext.getInstance()).sendBroadcast(intent);
         }
     }
 

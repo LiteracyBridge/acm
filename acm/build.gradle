@@ -98,7 +98,9 @@ dependencies {
     compile 'com.googlecode.json-simple:json-simple:1.1.1'
     compile 'com.google.collections:google-collections:1.0-rc5'
     compile 'org.yaml:snakeyaml:1.6'
-    compile 'it.cnr.imaa.essi:lablib-checkboxtree:3.1.1'
+    // This site has become inaccessible; they don't have a valid certificate. Copied
+    // jar file to 3rdparty directory.
+    // compile 'it.cnr.imaa.essi:lablib-checkboxtree:3.1.1'
     compile 'org.netbeans.external:swing-layout-1.0.4:RELEASE68'
     compile 'org.swinglabs:swingx:1.6.1'
     compile 'args4j:args4j:2.0.16'

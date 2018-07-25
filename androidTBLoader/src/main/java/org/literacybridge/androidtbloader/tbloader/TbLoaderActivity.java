@@ -6,6 +6,7 @@ import android.util.Log;
 
 import android.view.KeyEvent;
 import org.literacybridge.androidtbloader.SingleFragmentActivity;
+import org.literacybridge.androidtbloader.util.Constants;
 
 /**
  * Created by bill on 12/20/16. Many people like single-fragment activities, because
@@ -19,7 +20,7 @@ public class TbLoaderActivity extends SingleFragmentActivity {
 
     @Override
     protected Fragment createFragment() {
-        String project = getIntent().getStringExtra("project");
+        String project = getIntent().getStringExtra(Constants.PROJECT);
         Log.d(TAG, String.format("Create fragment for project %s", project));
         mTbLoaderFragment = new TbLoaderFragment();
         return mTbLoaderFragment;

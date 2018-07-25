@@ -18,11 +18,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.signin.UserHelper;
+import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import java.text.DateFormat;
@@ -65,7 +65,7 @@ public class UploadStatusFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getActivity().getIntent();
-        mUserid = intent.getStringExtra("userid");
+        mUserid = intent.getStringExtra(Constants.USERID);
         if (mUserid == null || mUserid.length() == 0) {
             mUserid = UserHelper.getUserId();
         }
@@ -100,7 +100,7 @@ public class UploadStatusFragment extends Fragment {
         });
 
         // User name
-        mUserNameTextView = (TextView) view.findViewById(R.id.content_upload_userid);
+        mUserNameTextView = (TextView) view.findViewById(R.id.upload_userid);
         mUserNameTextView.setText(mUserid);
         
         // Field for any warning text.

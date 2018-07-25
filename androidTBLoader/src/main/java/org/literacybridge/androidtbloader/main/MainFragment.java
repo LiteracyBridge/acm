@@ -11,13 +11,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.net.Uri;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
 import android.preference.PreferenceManager;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
@@ -27,6 +26,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Layout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -56,12 +56,15 @@ import org.literacybridge.androidtbloader.signin.AboutApp;
 import org.literacybridge.androidtbloader.signin.ChangePasswordActivity;
 import org.literacybridge.androidtbloader.signin.SigninActivity;
 import org.literacybridge.androidtbloader.signin.UserHelper;
+import org.literacybridge.androidtbloader.talkingbook.TalkingBookConnectionManager;
 import org.literacybridge.androidtbloader.tbloader.TbLoaderActivity;
 import org.literacybridge.androidtbloader.uploader.UploadService;
 import org.literacybridge.androidtbloader.uploader.UploadStatusActivity;
 import org.literacybridge.androidtbloader.util.Config;
+import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.Errors;
 import org.literacybridge.core.fs.OperationLog;
+import org.literacybridge.core.tbloader.TBDeviceInfo;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import java.util.ArrayList;
@@ -70,7 +73,6 @@ import java.util.List;
 import java.util.Map;
 
 import static android.app.Activity.RESULT_OK;
-import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
 /**
  * Implements the main screen. From here, the signed-in user can choose what they want to do.
@@ -117,6 +119,11 @@ public class MainFragment extends Fragment {
     private TextView mUploadSizeTextView;
     private TextView mUploadNextTextView;
 
+    private ViewGroup mTbGroup;
+    private TextView mTbStatus;
+    private TextView mTbId;
+    private TextView mTbContent;
+
     private AlertDialog userDialog;
     private ProgressDialog waitDialog;
     private Map<String, String> mUserDetails;
@@ -124,6 +131,8 @@ public class MainFragment extends Fragment {
     private boolean awaitingUserDetails = true;
     private boolean awaitingUserConfig = true;
     private boolean awaitingLocationPermission = true;
+
+    private boolean mTestingDeployment = false;
 
 
     @Override
@@ -133,6 +142,7 @@ public class MainFragment extends Fragment {
         mContentManager = mApplicationContext.getContentManager();
         mUserid = UserHelper.getUserId();
         mUserName = UserHelper.getUsername();
+        mApplicationContext.getTalkingBookConnectionManager().canAccessConnectedDevice();
 
         OperationLog.Operation opLog = OperationLog.log("MainFragment.onCreate")
             .put("externalStorageAvailable",
@@ -156,7 +166,7 @@ public class MainFragment extends Fragment {
         // No user id. Go back to SigninActivity.
         if (mUserid == null || mUserid.length() == 0) {
             Log.d(TAG, "No user id, activating signin.");
-            activateSignin();
+            backToSignin();
             return null;
         }
 
@@ -172,6 +182,11 @@ public class MainFragment extends Fragment {
         mCheckinGroup.setOnClickListener(checkinListener);
         mUpdateGroup.setOnClickListener(updateListener);
         mGetStatsGroup.setOnClickListener(getStatsListener);
+
+        mTbGroup = (ViewGroup) view.findViewById(R.id.main_tb_status_group);
+        mTbStatus = (TextView)view.findViewById(R.id.main_tb_status);
+        mTbId = (TextView)view.findViewById(R.id.main_tb_id);
+        mTbContent = (TextView)view.findViewById(R.id.main_tb_content);
 
         mUploadCountTextView = (TextView)view.findViewById(R.id.main_count_uploads);
         mUploadSizeTextView = (TextView)view.findViewById(R.id.main_size_uploads);
@@ -250,8 +265,10 @@ public class MainFragment extends Fragment {
         IntentFilter filter = new IntentFilter();
         filter.addAction(UploadService.UPLOADER_STATUS_EVENT);
         filter.addAction(ContentManager.CONTENT_LIST_CHANGED_EVENT);
+        filter.addAction(TalkingBookConnectionManager.TB_CONNECTION_STATUS);
         LocalBroadcastManager.getInstance(mApplicationContext).registerReceiver(
                 mMessageReceiver, filter);
+        updateTBStatus();
     }
 
     @Override
@@ -261,8 +278,8 @@ public class MainFragment extends Fragment {
         switch (requestCode) {
         case REQUEST_CODE_MANAGE_CONTENT:
             if (resultCode == RESULT_OK) {
-                if (data.hasExtra("selected")) {
-                    mProject = data.getStringExtra("selected");
+                if (data.hasExtra(Constants.SELECTED)) {
+                    mProject = data.getStringExtra(Constants.SELECTED);
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -274,15 +291,18 @@ public class MainFragment extends Fragment {
             break;
         case REQUEST_CODE_CHECKIN:
             if (resultCode == RESULT_OK) {
-                if (data.hasExtra("project")) {
-                    mProject = data.getStringExtra("project");
+                if (data.hasExtra(Constants.PROJECT)) {
+                    mProject = data.getStringExtra(Constants.PROJECT);
                 }
-                if (data.hasExtra("location")) {
-                    mCheckinLocation = data.getStringExtra("location");
+                if (data.hasExtra(Constants.LOCATION)) {
+                    mCheckinLocation = data.getStringExtra(Constants.LOCATION);
                 }
-                if (data.hasExtra("communities")) {
+                if (data.hasExtra(Constants.COMMUNITIES)) {
                     mCheckinCommunities = CommunityInfo.parseExtra(
-                        data.getStringArrayListExtra("communities"));
+                        data.getStringArrayListExtra(Constants.COMMUNITIES));
+                }
+                if (data.hasExtra(Constants.TESTING_DEPLOYMENT)) {
+                    mTestingDeployment = data.getBooleanExtra(Constants.TESTING_DEPLOYMENT, false);
                 }
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -337,14 +357,14 @@ public class MainFragment extends Fragment {
                 UserHelper.getCredentialsProvider(getActivity().getApplicationContext()).clear();
                 TBLoaderAppContext.getInstance().getConfig().onSignOut();
                 Intent intent = new Intent();
-                intent.putExtra("signout", true);
+                intent.putExtra(Constants.SIGNOUT, true);
                 getActivity().setResult(RESULT_OK, intent);
                 getActivity().finish();
                 break;
 
             case R.id.nav_show_upload_status:
                 Intent userActivity = new Intent(getActivity(), UploadStatusActivity.class);
-                userActivity.putExtra("userid", mUserid);
+                userActivity.putExtra(Constants.USERID, mUserid);
                 startActivityForResult(userActivity, REQUEST_CODE_UPDATE_UPLOAD_STATUS);
                 break;
 
@@ -374,7 +394,7 @@ public class MainFragment extends Fragment {
         }
     }
 
-    private void activateSignin() {
+    private void backToSignin() {
         Intent startNewIntent = new Intent(mApplicationContext, SigninActivity.class);
         startNewIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(startNewIntent);
@@ -488,7 +508,7 @@ public class MainFragment extends Fragment {
 
     private void doManage() {
         Intent userActivity = new Intent(getActivity(), ManageContentActivity.class);
-        userActivity.putExtra("name", mUserid);
+        userActivity.putExtra(Constants.NAME, mUserid);
         startActivityForResult(userActivity, REQUEST_CODE_MANAGE_CONTENT);
     }
 
@@ -496,8 +516,8 @@ public class MainFragment extends Fragment {
         @Override
         public void onClick(View v) {
             Intent userActivity = new Intent(getActivity(), CheckinActivity.class);
-            userActivity.putExtra("name", mUserid);
-            userActivity.putExtra("project", mProject);
+            userActivity.putExtra(Constants.NAME, mUserid);
+            userActivity.putExtra(Constants.PROJECT, mProject);
             startActivityForResult(userActivity, REQUEST_CODE_CHECKIN);
         }
     };
@@ -506,8 +526,8 @@ public class MainFragment extends Fragment {
         @Override
         public void onClick(View v) {
             Intent userActivity = new Intent(getActivity(), UploadStatusActivity.class);
-            userActivity.putExtra("userid", mUserid);
-//            userActivity.putExtra("project", mProject);
+            userActivity.putExtra(Constants.USERID, mUserid);
+//            userActivity.putExtra(Constants.PROJECT, mProject);
             startActivityForResult(userActivity, REQUEST_CODE_UPDATE_UPLOAD_STATUS);
         }
     };
@@ -528,14 +548,15 @@ public class MainFragment extends Fragment {
 
     private void doUpdate(boolean statsOnly) {
         Intent userActivity = new Intent(getActivity(), TbLoaderActivity.class);
-        userActivity.putExtra("username", mUserName);
-        userActivity.putExtra("project", mProject);
-        userActivity.putExtra("statsonly", statsOnly);
+        userActivity.putExtra(Constants.USERNAME, mUserName);
+        userActivity.putExtra(Constants.PROJECT, mProject);
+        userActivity.putExtra(Constants.STATSONLY, statsOnly);
+        userActivity.putExtra(Constants.TESTING_DEPLOYMENT, mTestingDeployment);
         if (statsOnly) {
-            userActivity.putExtra("location", "other");
+            userActivity.putExtra(Constants.LOCATION, "other");
         } else {
-            userActivity.putExtra("communities", CommunityInfo.makeExtra(mCheckinCommunities));
-            userActivity.putExtra("location", mCheckinLocation);
+            userActivity.putExtra(Constants.COMMUNITIES, CommunityInfo.makeExtra(mCheckinCommunities));
+            userActivity.putExtra(Constants.LOCATION, mCheckinLocation);
         }
         startActivityForResult(userActivity, REQUEST_CODE_UPDATE_TBS);
     }
@@ -545,7 +566,7 @@ public class MainFragment extends Fragment {
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(UploadService.UPLOADER_STATUS_EVENT)) {
                 // Get extra data included in the Intent
-                String name = intent.getStringExtra("name");
+                String name = intent.getStringExtra(Constants.NAME);
                 int count = intent.getIntExtra("count", 0);
                 long size = intent.getLongExtra("size", 0);
                 Log.d(TAG,
@@ -557,6 +578,13 @@ public class MainFragment extends Fragment {
                     @Override
                     public void run() {
                         setButtonState();
+                    }
+                });
+            } else if (intent.getAction().equals(TalkingBookConnectionManager.TB_CONNECTION_STATUS)) {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateTBStatus();
                     }
                 });
             }
@@ -601,6 +629,30 @@ public class MainFragment extends Fragment {
 
         mGetStatsGroup.setAlpha(canCheckin ? 1.0f : 0.33f);
         mGetStatsGroup.setEnabled(canCheckin);
+    }
+
+    private void updateTBStatus() {
+        TalkingBookConnectionManager.TalkingBook talkingBook = mApplicationContext.getTalkingBookConnectionManager().getConnectedTalkingBook();
+        if (talkingBook == null) {
+            mTbStatus.setText(getString(R.string.no_talking_book_connected));
+            mTbId.setVisibility(View.GONE);
+            mTbContent.setVisibility(View.GONE);
+            mTbGroup.setBackgroundColor(getResources().getColor(R.color.white));
+        } else {
+            TBDeviceInfo deviceInfo = new TBDeviceInfo(talkingBook.getTalkingBookRoot(),
+                talkingBook.getDeviceLabel(),
+                "b-");
+            String recipientidStr = "";
+            if (deviceInfo.getRecipientid()!=null) {
+                recipientidStr = String.format("(id: %s)", deviceInfo.getRecipientid());
+            }
+            mTbStatus.setText(String.format("%s connected, currently:", talkingBook.getSerialNumber()));
+            mTbId.setText(String.format(" Community: %s %s", deviceInfo.getCommunityName(), recipientidStr));
+            mTbContent.setText(String.format(" Deployment: %s / %s", deviceInfo.getProjectName(), deviceInfo.getDeploymentName()));
+            mTbId.setVisibility(View.VISIBLE);
+            mTbContent.setVisibility(View.VISIBLE);
+            mTbGroup.setBackgroundColor(getResources().getColor(R.color.TB_CONNECTED_FIELD));
+        }
     }
 
     private void editPreferredGreeting(final String attributeValue) {
@@ -722,7 +774,7 @@ public class MainFragment extends Fragment {
             public void run() {
                 if (exit) {
                     Intent intent = new Intent();
-                    intent.putExtra("forceExit", true);
+                    intent.putExtra(Constants.EXIT_APPLICATION, true);
                     getActivity().setResult(RESULT_OK, intent);
                     getActivity().finish();
                 }
