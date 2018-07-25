@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.ResourceView;
+package org.literacybridge.acm.gui.MainWindow;
 
 import java.awt.BorderLayout;
 
@@ -6,17 +6,17 @@ import javax.swing.JSplitPane;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
+import org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.util.ACMContainer;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.SearchResult;
 
-public class ResourceView extends ACMContainer {
+public class MainView extends ACMContainer {
   private static final long serialVersionUID = 1464102221036629153L;
 
   public AudioItemView audioItemView;
 
-  public ResourceView() {
+  public MainView() {
     createViewComponents();
   }
 

@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.ResourceView.audioItems;
+package org.literacybridge.acm.gui.MainWindow.audioItems;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -11,7 +11,7 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
 
-import org.literacybridge.acm.gui.ResourceView.TreeTransferHandler;
+import org.literacybridge.acm.gui.MainWindow.TreeTransferHandler;
 import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.store.AudioItem;
 

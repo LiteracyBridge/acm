@@ -14,7 +14,6 @@ import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.acm.utils.LogHelper;
 import org.literacybridge.core.fs.ZipUnzip;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
-import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -24,6 +23,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +33,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 public class TBBuilder {
@@ -48,7 +49,7 @@ public class TBBuilder {
     private static final String PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME = "packagesindeployment.csv";
 
     private final static String [] REQUIRED_SYSTEM_MESSAGES_UF = {
-     "0", "1", "2", "3", "4", "5", "6", "9", "10", "11",
+        "0", "1", "2", "3", "4", "5", "6", "9", "10", "11",
         "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "28", "29",
         "33", "37", "38", "41", "53", "54", "61", "62", "63", "65", "80"
     };
@@ -66,15 +67,16 @@ public class TBBuilder {
     public static final String ACM_PREFIX = "ACM-";
     private final static int MAX_DEPLOYMENTS = 5;
 
-    private File sourceTbLoadersDir;
-    private File sourceTbOptionsDir;
+    private File sharedTbLoadersDir;
+    private File sharedTbOptionsDir;
 
-    private File targetDeploymentDir;
     private CSVWriter contentInPackageCSVWriter;
     private CSVWriter categoriesInPackageCSVWriter;
     private CSVWriter packagesInDeploymentCSVWriter;
-    private File targetStagingDir;
-    private String deploymentNumber;
+    private File localProjectDir; // ~/LiteracyBridge/TB-Loaders/{project}
+    private File localContentDir;       // {localProjectDir}/content
+    private File localDeploymentDir;    // {localContentDir}/{deployment}
+    private String deploymentName;
     private List<String> fatalMessages = new ArrayList<>();
     private List<String> errorMessages = new ArrayList<>();
     private List<String> warningMessages = new ArrayList<>();
@@ -154,15 +156,16 @@ public class TBBuilder {
         ACMConfiguration.initialize(params);
         ACMConfiguration.getInstance().setCurrentDB(params.sharedACM);
         // Like ~/Dropbox/ACM-UWR/TB-Loaders
-        sourceTbLoadersDir = ACMConfiguration.getInstance().getTbLoaderDirFor(sharedACM);
-        sourceTbOptionsDir = new File(sourceTbLoadersDir, "TB_Options");
+        sharedTbLoadersDir = ACMConfiguration.getInstance().getTbLoaderDirFor(sharedACM);
+        sharedTbOptionsDir = new File(sharedTbLoadersDir, "TB_Options");
         project = sharedACM.substring(ACM_PREFIX.length());
         // ~/LiteracyBridge/TB-Loaders
         File localTbLoadersDir = new File(
             ACMConfiguration.getInstance().getApplicationHomeDirectory(),
             Constants.TBLoadersHomeDir);
         // Like ~/LiteracyBridge/TB-Loaders/UWR
-        targetStagingDir = new File(localTbLoadersDir, project);
+        localProjectDir = new File(localTbLoadersDir, project);
+        localContentDir = new File(localProjectDir, "content");
     }
 
     private List<PackageInfo> getePackageInfoForCreate(String[] args) {
@@ -228,28 +231,33 @@ public class TBBuilder {
      * @throws Exception if there is an IO error.
      */
     private void createDeployment(String deployment) throws Exception {
-        deploymentNumber = deployment;
-        targetDeploymentDir = new File(targetStagingDir, "content/" + deploymentNumber);
-        File targetMetadataDir = new File(targetStagingDir, "metadata/" + deploymentNumber);
+        DateFormat ISO8601time = new SimpleDateFormat("HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
+        ISO8601time.setTimeZone(TBLoaderConstants.UTC);
+        String timeStr = ISO8601time.format(new Date());
+        String revFileName = String.format("%s_%s.rev", TBLoaderConstants.UNPUBLISHED_REV, timeStr);
+
+        deploymentName = deployment;
+        localDeploymentDir = new File(localContentDir, deploymentName);
+        File localMetadataDir = new File(localProjectDir, "metadata/" + deploymentName);
 
         // use LB Home Dir to create folder, then zip to Dropbox and delete the
         // folder
-        IOUtils.deleteRecursive(targetDeploymentDir);
-        targetDeploymentDir.mkdirs();
-        IOUtils.deleteRecursive(targetMetadataDir);
-        targetMetadataDir.mkdirs();
+        IOUtils.deleteRecursive(localDeploymentDir);
+        localDeploymentDir.mkdirs();
+        IOUtils.deleteRecursive(localMetadataDir);
+        localMetadataDir.mkdirs();
 
         contentInPackageCSVWriter = new CSVWriter(
             new FileWriter(
-                new File(targetMetadataDir, CONTENT_IN_PACKAGES_CSV_FILE_NAME)),
+                new File(localMetadataDir, CONTENT_IN_PACKAGES_CSV_FILE_NAME)),
             ',');
         categoriesInPackageCSVWriter = new CSVWriter(
             new FileWriter(
-                new File(targetMetadataDir, CATEGORIES_IN_PACKAGES_CSV_FILE_NAME)),
+                new File(localMetadataDir, CATEGORIES_IN_PACKAGES_CSV_FILE_NAME)),
             ',');
         packagesInDeploymentCSVWriter = new CSVWriter(
             new FileWriter(
-                new File(targetMetadataDir, PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME)),
+                new File(localMetadataDir, PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME)),
             ',');
 
         // write column headers
@@ -259,18 +267,21 @@ public class TBBuilder {
 
         // Find the lexically greatest filename of firmware. Works because we'll never exceed 4 digits.
         File sourceFirmware = latestFirmwareImage();
-        File targetBasicDir = new File(targetDeploymentDir, "basic");
+        File targetBasicDir = new File(localDeploymentDir, "basic");
         FileUtils.copyFileToDirectory(sourceFirmware, targetBasicDir);
 
-        File sourceCommunitiesDir = new File(sourceTbLoadersDir, "communities");
-        File targetCommunitiesDir = new File(targetDeploymentDir, "communities");
+        File sourceCommunitiesDir = new File(sharedTbLoadersDir, "communities");
+        File targetCommunitiesDir = new File(localDeploymentDir, "communities");
         FileUtils.copyDirectory(sourceCommunitiesDir, targetCommunitiesDir);
 
-        deleteRevFiles(targetStagingDir);
-        String revision;
-        revision = TBLoaderConstants.UNPUBLISHED_REV + "_"
-            + TBLoaderUtils.getDateTime().substring(8, 17);
-        File newRev = new File(targetStagingDir, revision + ".rev");
+        // Leave a marker to indicate that there exists an unpublished deployment here.
+        deleteRevFiles(localProjectDir);
+        File newRev = new File(localProjectDir, revFileName);
+        newRev.createNewFile();
+        // Put a marker inside the unpublished content, so that we will be able to tell which of
+        // possibly several is the unpublished one.
+        deleteRevFiles(localDeploymentDir);
+        newRev = new File(localDeploymentDir, revFileName);
         newRev.createNewFile();
 
         System.out.printf("%nDone with deployment of basic/community content.%n");
@@ -279,7 +290,7 @@ public class TBBuilder {
     private File latestFirmwareImage() {
         // Find the lexically greatest filename of firmware. Works because we'll never exceed 4 digits.
         File latestFirmware = null;
-        File[] firmwareVersions = new File(sourceTbOptionsDir, "firmware")
+        File[] firmwareVersions = new File(sharedTbOptionsDir, "firmware")
             .listFiles();
         for (File f : firmwareVersions) {
             if (latestFirmware == null) {
@@ -300,14 +311,13 @@ public class TBBuilder {
     private void addImage(PackageInfo pi) throws Exception {
         Set<String> exportedCategories = null;
         boolean hasIntro = false;
-        int groupCount = pi.groups.length;
         System.out.printf("%n%nExporting package %s%n", pi.name);
 
-        File sourcePackageDir = new File(sourceTbLoadersDir, "packages/" + pi.name);
+        File sourcePackageDir = new File(sharedTbLoadersDir, "packages/" + pi.name);
         File sourceMessagesDir = new File(sourcePackageDir, "messages");
         File sourceListsDir = new File(sourceMessagesDir,
             "lists/" + TBBuilder.firstMessageListName);
-        File targetImagesDir = new File(targetDeploymentDir, "images");
+        File targetImagesDir = new File(localDeploymentDir, "images");
         File targetImageDir = new File(targetImagesDir, pi.name);
 
         IOUtils.deleteRecursive(targetImageDir);
@@ -361,14 +371,14 @@ public class TBBuilder {
             }
         }
 
-        File sourceBasic = new File(sourceTbOptionsDir, "basic");
+        File sourceBasic = new File(sharedTbOptionsDir, "basic");
         FileUtils.copyDirectory(sourceBasic, targetImageDir);
 
-        File sourceConfigFile = new File(sourceTbOptionsDir, "config_files/config.txt");
+        File sourceConfigFile = new File(sharedTbOptionsDir, "config_files/config.txt");
         File targetSystemDir = new File(targetImageDir, "system");
         FileUtils.copyFileToDirectory(sourceConfigFile, targetSystemDir);
 
-        File sourceLanguage = new File(sourceTbOptionsDir, "languages/" + pi.language);
+        File sourceLanguage = new File(sharedTbOptionsDir, "languages/" + pi.language);
         FileUtils.copyDirectory(sourceLanguage, targetLanguageDir);
 
         // If there is no category "9-0" in the _activeLists.txt file, then the user feedback
@@ -381,7 +391,7 @@ public class TBBuilder {
         String sourceControlFilename = String.format("system_menus/control-%s_intro%s.txt",
             hasIntro?"with":"no",
             hasNoUf?"_no_fb":"");
-        File sourceControlFile = new File(sourceTbOptionsDir, sourceControlFilename);
+        File sourceControlFile = new File(sharedTbOptionsDir, sourceControlFilename);
         FileUtils.copyFile(sourceControlFile, new File(targetLanguageDir, "control.txt"));
 
         // create profile.txt
@@ -413,7 +423,7 @@ public class TBBuilder {
      */
     private void validateDeployment(String acmName, String deployment, List<PackageInfo> packages) throws IOException {
         // Validate that the deployment is listed in the deployments.csv file.
-        File deploymentsList = new File(sourceTbLoadersDir, "deployments.csv");
+        File deploymentsList = new File(sharedTbLoadersDir, "deployments.csv");
         if (deploymentsList.exists()) {
             boolean found = false;
             FileReader fileReader = new FileReader(deploymentsList);
@@ -453,7 +463,7 @@ public class TBBuilder {
             Collections.addAll(groups, pi.groups);
         }
 
-        validateCommunities(new File(sourceTbLoadersDir, "communities"), languages, groups);
+        validateCommunities(new File(sharedTbLoadersDir, "communities"), languages, groups);
 
         // If there are errors or warnings, print them and let user decide whether to continue.
         if (fatalMessages.size() > 0 || errorMessages.size() > 0 || warningMessages.size() > 0) {
@@ -525,11 +535,11 @@ public class TBBuilder {
         // Get the directory containing the _activeLists.txt file plus the playlist files (like "2-0.txt")
         String listsPath =
             "packages/" + pi.name + "/messages/lists/" + TBBuilder.firstMessageListName;
-        File sourceListsDir = new File(sourceTbLoadersDir, listsPath);
+        File sourceListsDir = new File(sharedTbLoadersDir, listsPath);
 
         // Get the directory with the system prompt recordings for the language.
         String languagesPath = "TB_Options" + File.separator + "languages";
-        File languagesDir = new File(sourceTbLoadersDir, languagesPath);
+        File languagesDir = new File(sharedTbLoadersDir, languagesPath);
         File languageDir = IOUtils.FileIgnoreCase(languagesDir, pi.language);
         File promptsDir = new File(languageDir, "cat");
         String firmwarePath = "TB_Options" + File.separator + "firmware";
@@ -655,7 +665,7 @@ public class TBBuilder {
                     errorCommunities.add(c.getName());
                 } else {
                     // Look for individual language directories, 'en', 'dga', ...
-                    File[] langs = languagesDir.listFiles(path -> path.isDirectory());
+                    File[] langs = languagesDir.listFiles(File::isDirectory);
                     oneLanguage = langs != null && langs.length == 1;
                     for (File lang : langs) {
                         // Look for a greeting in the language.
@@ -708,24 +718,24 @@ public class TBBuilder {
         }
     }
 
-    private static char getLatestDistributionRevision(
+    private static char getLatestDeploymentRevision(
         File publishTbLoadersDir,
-        final String distribution) throws Exception {
+        final String deployment) throws Exception {
         char revision = 'a';
         File[] files = publishTbLoadersDir.listFiles((dir, name) ->
-            name.toLowerCase().endsWith(".rev") && name.toLowerCase().startsWith(distribution.toLowerCase()));
+            name.toLowerCase().endsWith(".rev") && name.toLowerCase().startsWith(deployment.toLowerCase()));
         if (files.length > 1)
             throw new Exception("Too many *rev files.  There can only be one.");
         else if (files.length == 1) {
             // Assuming distribution-X.rev, pick the next higher than 'X'
-            char foundRevision = files[0].getName().charAt(distribution.length() + 1);
+            char foundRevision = files[0].getName().charAt(deployment.length() + 1);
             if (foundRevision >= revision) {
                 revision = ++foundRevision;
                 // If there's already a directory (or file) of the new name, keep looking.
-                File probe = new File(publishTbLoadersDir, distribution + '-' + revision);
+                File probe = new File(publishTbLoadersDir, deployment + '-' + revision);
                 while (probe.exists() && Character.isLetter(revision)) {
                     revision++;
-                    probe = new File(publishTbLoadersDir, distribution + '-' + revision);
+                    probe = new File(publishTbLoadersDir, deployment + '-' + revision);
                 }
                 // If no un-used name found, keep the original one.
                 if (!Character.isLetter(revision)) {
@@ -737,12 +747,14 @@ public class TBBuilder {
                 }
             }
         }
-        // Delete *.rev, then create our distribution-revision.rev marker file.
+        // Delete *.rev, then create our deployment-revision.rev marker file.
+        deleteRevFiles(publishTbLoadersDir);
         files = publishTbLoadersDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".rev"));
         for (File f : files) {
             f.delete();
         }
-        File newRev = new File(publishTbLoadersDir, distribution + "-" + revision + ".rev");
+
+        File newRev = new File(publishTbLoadersDir, deployment + "-" + revision + ".rev");
         newRev.createNewFile();
         return revision;
     }
@@ -756,35 +768,36 @@ public class TBBuilder {
      */
     private void publish(final String[] deployments) throws Exception {
         // e.g. 'ACM-UWR/TB-Loaders/published/'
-        final File publishBaseDir = new File(sourceTbLoadersDir, "published");
+        final File publishBaseDir = new File(sharedTbLoadersDir, "published");
         publishBaseDir.mkdirs();
-        String distribution = deployments[0]; // assumes first deployment is most
-        // recent and should be name of
-        // distribution
-        char revision = getLatestDistributionRevision(publishBaseDir, distribution
-                                                     );
-        final String publishDistributionName = distribution + "-" + revision; // e.g.
-        // '2015-6-c'
+        // assumes first deployment is most recent and should be name of deployment
+        String deploymentName = deployments[0];
+        localDeploymentDir = new File(localContentDir, deploymentName);
+        char revisionLetter = getLatestDeploymentRevision(publishBaseDir, deploymentName);
+        final String publishDeploymentName = deploymentName + "-" + revisionLetter; // e.g. '2015-6-c'
 
         // e.g. 'ACM-UWR/TB-Loaders/published/2015-6-c'
-        final File publishDistributionDir = new File(publishBaseDir,
-            publishDistributionName);
-        publishDistributionDir.mkdirs();
+        final File publishDeploymentDir = new File(publishBaseDir, publishDeploymentName);
+        publishDeploymentDir.mkdirs();
 
-        String zipSuffix = distribution + "-" + revision + ".zip";
-        File localContent = new File(targetStagingDir, "content");
-        ZipUnzip.zip(localContent,
-            new File(publishDistributionDir, "content-" + zipSuffix), true,
-            deployments);
+        // Place a marker in the content before it is zipped. Created as
+        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/{deployment}-{revisionLetter}.rev
+        deleteRevFiles(localDeploymentDir);
+        File localMarkerFile = new File(localDeploymentDir, publishDeploymentName + ".rev");
+        localMarkerFile.createNewFile();
+
+        String zipFileName = String.format("content-%s-%s.zip", deploymentName, revisionLetter);
+        File zipFile = new File(publishDeploymentDir, zipFileName);
+        ZipUnzip.zip(localContentDir, zipFile, true, deployments);
 
         // merge csv files
-        File localMetadata = new File(targetStagingDir, "metadata");
+        File localMetadata = new File(localProjectDir, "metadata");
         List<String> deploymentsList = Arrays.asList(deployments);
         File[] deploymentDirs = localMetadata.listFiles(f -> f.isDirectory()
             && deploymentsList.contains(f.getName()));
-        final List<File> inputContentCSVFiles = new LinkedList<File>();
-        final List<File> inputCategoriesCSVFiles = new LinkedList<File>();
-        final List<File> inputPackagesCSVFiles = new LinkedList<File>();
+        final List<File> inputContentCSVFiles = new LinkedList<>();
+        final List<File> inputCategoriesCSVFiles = new LinkedList<>();
+        final List<File> inputPackagesCSVFiles = new LinkedList<>();
         for (File deploymentDir : deploymentDirs) {
             deploymentDir.listFiles(new FileFilter() {
                 @Override
@@ -803,7 +816,7 @@ public class TBBuilder {
                 }
             });
         }
-        File metadataDir = new File(publishDistributionDir, "metadata");
+        File metadataDir = new File(publishDeploymentDir, "metadata");
         if (!metadataDir.exists())
             metadataDir.mkdir();
         File mergedCSVFile = new File(metadataDir, CONTENT_IN_PACKAGES_CSV_FILE_NAME);
@@ -817,7 +830,8 @@ public class TBBuilder {
 
         new DBExporter(ACM_PREFIX + project, metadataDir).export();
 
-        deleteRevFiles(targetStagingDir);
+        // This will remove the "UNPUBLISHED*.rev" file from the local staging area.
+        deleteRevFiles(localProjectDir);
     }
 
     /**
@@ -845,7 +859,7 @@ public class TBBuilder {
         String groupsconcat = StringUtils.join(groups, ',');
         String[] csvColumns = new String[9];
         csvColumns[0] = project.toUpperCase();
-        csvColumns[1] = deploymentNumber.toUpperCase();
+        csvColumns[1] = deploymentName.toUpperCase();
         csvColumns[2] = contentPackage.toUpperCase();
         csvColumns[3] = contentPackage.toUpperCase();
         Calendar cal = Calendar.getInstance();

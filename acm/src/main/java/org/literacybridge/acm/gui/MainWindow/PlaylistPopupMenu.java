@@ -1,12 +1,12 @@
-package org.literacybridge.acm.gui.ResourceView;
+package org.literacybridge.acm.gui.MainWindow;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.SidebarView.PlaylistsChanged;
-import org.literacybridge.acm.gui.ResourceView.PlaylistListModel.PlaylistLabel;
+import org.literacybridge.acm.gui.MainWindow.SidebarView.PlaylistsChanged;
+import org.literacybridge.acm.gui.MainWindow.PlaylistListModel.PlaylistLabel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;

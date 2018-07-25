@@ -1,6 +1,11 @@
 package org.literacybridge.acm.tbloader;
 
+import org.apache.commons.io.FilenameUtils;
 import org.jdesktop.swingx.JXDatePicker;
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.utils.OsUtils;
@@ -8,6 +13,7 @@ import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.fs.FsFile;
 import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
+import org.literacybridge.core.fs.ZipUnzip;
 import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbloader.ProgressListener;
 import org.literacybridge.core.tbloader.TBDeviceInfo;
@@ -39,8 +45,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -52,6 +61,7 @@ import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.LINE_START;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.RELATIVE;
+import static org.apache.commons.io.comparator.LastModifiedFileComparator.LASTMODIFIED_REVERSE;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
@@ -124,11 +134,27 @@ public class TBLoader extends JFrame {
     private TBDeviceInfo currentTbDevice;
     private String srnPrefix;
     private String newProject;
+    // Let user choose deployment, or just use the latest?
+    private boolean chooseDeployment;
 
     // Deployment info read from Talking Book.
     private DeploymentInfo oldDeploymentInfo;
 
     private TBLoaderConfig tbLoaderConfig;
+
+    private static class TbLoaderParams {
+        @Option(name = "--oldtbs", aliases = "-o", usage = "Target OLD Talking Books.")
+        boolean oldTbs = false;
+
+        @Option(name = "--choose", aliases = "-c", usage = "Choose Deployment from list.")
+        boolean chooseDepl = false;
+
+        @Argument(usage = "Project or ACM name to export.", index = 0, required = true, metaVar = "ACM")
+        String project;
+
+        @Argument(usage = "Serial number prefix, default '-b'.", index = 1, metaVar = "SRN_PREFIX")
+        String srnPrefix = null;
+    }
 
     // All content is relative to this.
     private File baseDirectory;
@@ -159,17 +185,31 @@ public class TBLoader extends JFrame {
     private boolean updatingTB = false;
 
     public static void main(String[] args) throws Exception {
-        String project = args[0];
-        String srnPrefix = "b-"; // for latest Talking Book hardware
+        System.out.println("starting main()");
 
-        if (args.length == 2) {
-            srnPrefix = args[1];
+        TbLoaderParams params = new TbLoaderParams();
+        CmdLineParser parser = new CmdLineParser(params);
+        try {
+            parser.parseArgument(args);
+        } catch (CmdLineException e) {
+            System.err.println(e.getMessage());
+            System.err.println(
+                "java -cp acm.jar;lib/* org.literacybridge.acm.tbloader.TBLoader [options...]");
+            parser.printUsage(System.err);
+            return;
         }
 
-        new TBLoader(project, srnPrefix).runApplication();
+        String project = params.project;
+        String srnPrefix = "b-"; // for latest Talking Book hardware
+        if (params.srnPrefix != null)
+            srnPrefix = params.srnPrefix.toLowerCase();
+        else if (params.oldTbs)
+            srnPrefix = "a-";
+
+        new TBLoader(project, srnPrefix, params.chooseDepl).runApplication();
     }
 
-    private TBLoader(String project, String srnPrefix) {
+    private TBLoader(String project, String srnPrefix, boolean chooseDeployment) {
         project = ACMConfiguration.cannonicalProjectName(project);
         applicationWindow = this;
         this.newProject = project;
@@ -178,6 +218,7 @@ public class TBLoader extends JFrame {
         } else {
             this.srnPrefix = "b-"; // for latest Talking Book hardware
         }
+        this.chooseDeployment = chooseDeployment;
     }
 
     private void runApplication() throws Exception {
@@ -186,6 +227,145 @@ public class TBLoader extends JFrame {
         this.addWindowListener(new WindowEventHandler());
         setDeviceIdAndPaths();
 
+        // Initialized java logging, as well as operational logging.
+        initializeLogging();
+        OperationLog.log("WindowsTBLoaderStart")
+            .put("tbcdid", tbLoaderConfig.getTbLoaderId())
+            .put("project", newProject)
+            .finish();
+                                                                                    
+        // Looks in Dropbox and in ~/LiteracyBridge for deployments
+        getCurrentDeployments();
+
+        initializeGui();
+        JOptionPane.showMessageDialog(applicationWindow,
+                                      "Remember to power Talking Book with batteries before connecting with USB.",
+                                      "Use Batteries!", JOptionPane.PLAIN_MESSAGE);
+        LOG.log(Level.INFO, "set visibility - starting drive monitoring");
+        deviceMonitorThread.setDaemon(true);
+        deviceMonitorThread.start();
+        startUpDone = true;
+    }
+
+    /**
+     * Determines the most recent deployment in ~/LiteracyBridge.
+     */
+    private void getCurrentDeployments() throws IOException {
+        if (chooseDeployment) {
+            Map<String,File> deployments = getAvailableDeployments();
+
+            ManageDeploymentsDialog dialog = new ManageDeploymentsDialog(deployments);
+            dialog.setVisible(true);
+//            String name = "CARE-17-6-UC2-1";
+//            File dir = deployments.get(name);
+//            fetchDeployment(name, dir);
+        }
+
+        // Assuming that it has been copied to ~/LiteracyBridge/TB-Loaders/{project},
+        // get the name of the most recent Deployment for the project, stored as
+        // {deployment}.rev. If not exactly 1 *.rev file, somethings not right.
+        File[] files = baseDirectory.listFiles((dir, name) -> {
+            String lowercase = name.toLowerCase();
+            return lowercase.endsWith(".rev");
+        });
+        if (files.length > 1) {
+            // Multiple Image Revisions! -- Delete all to go back to published version, unless one marks it as UNPUBLISHED
+            boolean haveUnpublished = false;
+            for (File f : files) {
+                if (f.getName().startsWith(TBLoaderConstants.UNPUBLISHED_REV)) {
+                    haveUnpublished = true;
+                    imageRevision = FilenameUtils.removeExtension(f.getName());
+                } else {
+                    f.delete();
+                }
+            }
+            if (!haveUnpublished) {
+                JOptionPane.showMessageDialog(applicationWindow,
+                                              "Revision conflict. Please click OK to shutdown.\nThen restart the TB-Loader to get the latest published version.");
+                System.exit(1);
+            }
+        } else if (files.length == 1) {
+            imageRevision = FilenameUtils.removeExtension(files[0].getName());
+        }
+        setTitle("TB-Loader " + Constants.ACM_VERSION + "/" + imageRevision);
+        if (imageRevision.startsWith(TBLoaderConstants.UNPUBLISHED_REV)) {
+            Object[] options = { "Yes-refresh from published", "No-keep unpublished" };
+            int answer = JOptionPane.showOptionDialog(this,
+                                                      "This TB Loader is running an unpublished version.\nWould you like to delete the unpublished version and use the latest published version?",
+                                                      "Unpublished", JOptionPane.YES_NO_OPTION,
+                                                      JOptionPane.QUESTION_MESSAGE, null, options,
+                                                      options[1]);
+            OperationLog.Operation opLog = OperationLog.log("MultipleRevisionsFound");
+            if (answer == JOptionPane.YES_OPTION) {
+                files[0].delete();
+                JOptionPane.showMessageDialog(applicationWindow,
+                                              "Click OK to shutdown. Then restart to get the latest published version of the TB Loader.");
+                opLog.put("MultipleVersions", "CleanAndRestart")
+                    .finish();
+                System.exit(1);
+            }
+            opLog.put("MultipleVersions", "KeepUnpublished")
+                .finish();
+        }
+    }
+
+    private void fetchDeployment(String name, File directory) throws IOException {
+        //    7z x -y -o"%userprofile%\LiteracyBridge\TB-Loaders\%project%" "..\ACM-%project%\TB-Loaders\published\%latestUpdate%\content-%latestUpdate%.zip"
+        String zipFileName = String.format("content-%s.zip", directory.getName());
+        File zipFile = new File(directory, zipFileName);
+        ZipUnzip.unzip(zipFile, baseDirectory);
+        
+    }
+    /**
+     * Returns a list of all available deployments, in a map of deployment name to deployment directory.
+     * Enumerating the map returns the names in newest to oldest order.
+     */
+    private Map<String, File> getAvailableDeployments() {
+        // Map deployment name (w/o the -x suffix) to File for the directory.
+        Map<String, File> orderedDeployments = new LinkedHashMap<>();
+        String latestPublished;
+        String ACMName = ACMConfiguration.cannonicalAcmDirectoryName(newProject);
+        File publishedDir = new File(ACMConfiguration.getInstance().getTbLoaderDirFor(ACMName),
+            "published");
+        File[] publishedFiles = publishedDir.listFiles();
+        if (publishedFiles != null) {
+            Map<String, File> deployments = new HashMap<>();
+            // Get the deployments, and their latest versions (based on the -x suffix).
+            for (File pf: publishedFiles) {
+                if (pf.isHidden() || pf.getName().startsWith(".")) {
+                    continue;
+                } else if (pf.isFile() && pf.getName().endsWith(".rev")) {
+                    // Found the marker for the most recent TB-Builder PUBLISH. It SHOULD match
+                    // the name of the file ~/LiteracyBridge/TB-Loaders/{project}/*.rev
+                    String fn = FilenameUtils.removeExtension(pf.getName());
+                    latestPublished = fn.substring(0, fn.length()-2);
+                } else if (pf.isDirectory() && pf.getName().matches(".*-[a-zA-Z]$")){
+                    // Found a published directory. Based on the -x suffix, keep the latest one.
+                    String depl = pf.getName();
+                    depl = depl.substring(0, depl.length()-2);
+                    if (deployments.containsKey(depl)) {
+                        // Compare file names. If new name is greater, store file.
+                        int cmp = pf.getName().compareTo(deployments.get(depl).getName());
+                        if (cmp > 0) {
+                            deployments.put(depl, pf);
+                        }
+                    } else {
+                        deployments.put(depl, pf);
+                    }
+                }
+            }
+            // Sort newest to oldest.
+            List<String> deploymentNames = new ArrayList<>(deployments.keySet());
+            deploymentNames.sort((a,b)->{return LASTMODIFIED_REVERSE.compare(deployments.get(a), deployments.get(b));});
+            // Build a new map, preserving order.
+            for (String n: deploymentNames) {
+                orderedDeployments.put(n, deployments.get(n));
+            }
+        }
+        return orderedDeployments;
+    }
+
+    private void initializeLogging() throws IOException {
         // Set up the program log. For debugging the execution of the TBLoader application.
 
         // Put log output into the ~/Dropbox/tbcd1234/log directory
@@ -214,66 +394,13 @@ public class TBLoader extends JFrame {
         // Set up the operation log. Tracks what is done, by whom.
         OperationLogImpl opLogImpl = new OperationLogImpl(logsDir);
         OperationLog.setImplementation(opLogImpl);
-        OperationLog.Operation opLog = OperationLog.log("WindowsTBLoaderStart")
-            .put("tbcdid", tbLoaderConfig.getTbLoaderId())
-            .put("project", newProject);
-
-        // get image revision
-        File[] files = baseDirectory.listFiles((dir, name) -> {
-            String lowercase = name.toLowerCase();
-            return lowercase.endsWith(".rev");
-        });
-        if (files.length > 1) {
-            // Multiple Image Revisions! -- Delete all to go back to published version, unless one marks it as UNPUBLISHED
-            boolean unpublished = false;
-            for (File f : files) {
-                if (!f.getName().startsWith(TBLoaderConstants.UNPUBLISHED_REV)) {
-                    f.delete();
-                } else {
-                    unpublished = true;
-                    imageRevision = f.getName();
-                    imageRevision = imageRevision.substring(0, imageRevision.length() - 4);
-                }
-            }
-            if (!unpublished) {
-                JOptionPane.showMessageDialog(applicationWindow,
-                                              "Revision conflict. Please click OK to shutdown.\nThen restart the TB-Loader to get the latest published version.");
-                System.exit(1);
-            }
-        } else if (files.length == 1) {
-            imageRevision = files[0].getName();
-            imageRevision = imageRevision.substring(0, imageRevision.length() - 4);
-        }
-        setTitle("TB-Loader " + Constants.ACM_VERSION + "/" + imageRevision);
-        if (imageRevision.startsWith(TBLoaderConstants.UNPUBLISHED_REV)) {
-            Object[] options = { "Yes-refresh from published", "No-keep unpublished" };
-            int answer = JOptionPane.showOptionDialog(this,
-                                                      "This TB Loader is running an unpublished version.\nWould you like to delete the unpublished version and use the latest published version?",
-                                                      "Unpublished", JOptionPane.YES_NO_OPTION,
-                                                      JOptionPane.QUESTION_MESSAGE, null, options,
-                                                      options[1]);
-            if (answer == JOptionPane.YES_OPTION) {
-                files[0].delete();
-                JOptionPane.showMessageDialog(applicationWindow,
-                                              "Click OK to shutdown. Then restart to get the latest published version of the TB Loader.");
-                opLog.put("MultipleVersions", "CleanAndRestart")
-                    .finish();
-                System.exit(1);
-            }
-            opLog.put("MultipleVersions", "KeepUnpublished");
-        }
-        opLog.finish();
-
-        initializeGui();
-        JOptionPane.showMessageDialog(applicationWindow,
-                                      "Remember to power Talking Book with batteries before connecting with USB.",
-                                      "Use Batteries!", JOptionPane.PLAIN_MESSAGE);
-        LOG.log(Level.INFO, "set visibility - starting drive monitoring");
-        deviceMonitorThread.setDaemon(true);
-        deviceMonitorThread.start();
-        startUpDone = true;
     }
 
+    /**
+     * Reads the TB-Loader id of this computer.
+     * Determines where files come from, and where they go.
+     * @throws IOException if any file errors.
+     */
     private void setDeviceIdAndPaths() throws IOException {
         try {
             File applicationHomeDirectory = ACMConfiguration.getInstance()

@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.ResourceView.audioItems;
+package org.literacybridge.acm.gui.MainWindow.audioItems;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
