@@ -1,10 +1,10 @@
-package org.literacybridge.acm.gui.ResourceView.audioItems;
+package org.literacybridge.acm.gui.MainWindow.audioItems;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.audioItems.ColumnInfo.ValueProvider;
+import org.literacybridge.acm.gui.MainWindow.audioItems.ColumnInfo.ValueProvider;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesModel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.AudioItemNode;

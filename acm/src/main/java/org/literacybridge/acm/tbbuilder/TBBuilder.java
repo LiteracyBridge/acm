@@ -36,10 +36,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENTID_PROPERTY;
 
@@ -56,7 +56,7 @@ public class TBBuilder {
     private static final String PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME = "packagesindeployment.csv";
 
     private final static String [] REQUIRED_SYSTEM_MESSAGES_UF = {
-     "0", "1", "2", "3", "4", "5", "6", "9", "10", "11",
+        "0", "1", "2", "3", "4", "5", "6", "9", "10", "11",
         "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "28", "29",
         "33", "37", "38", "41", "53", "54", "61", "62", "63", "65", "80"
     };
@@ -75,7 +75,7 @@ public class TBBuilder {
     private final static int MAX_DEPLOYMENTS = 5;
 
     private File sourceProgramspecDir;
-    
+
     private File sourceTbLoadersDir;
     private File sourceTbOptionsDir;
 
@@ -124,6 +124,7 @@ public class TBBuilder {
 
         if (args[0].equalsIgnoreCase("CREATE")) {
             if (args.length < 5 || (args.length > 5 && ((args.length % 3) != 0))) {
+                System.out.print("Unexpected number of arguments for CREATE.\n");
                 printUsage();
                 System.exit(1);
             }
@@ -132,6 +133,7 @@ public class TBBuilder {
             tbb.doCreate(args);
         } else if (args[0].equalsIgnoreCase("PUBLISH")) {
             if (args.length < 3) {
+                System.out.print("Unexpected number of arguments for PUBLISH.\n");
                 printUsage();
                 System.exit(1);
             }
@@ -140,10 +142,10 @@ public class TBBuilder {
             int deploymentCount = args.length - 2;
             if (deploymentCount > MAX_DEPLOYMENTS)
                 deploymentCount = MAX_DEPLOYMENTS;
-            List<String> argsList = Arrays.asList(args);
-            List<String> deploymentList = argsList.subList(2, argsList.size());
+            List<String> deploymentList = Arrays.asList(args).subList(2, deploymentCount+2);
             tbb.publish(deploymentList);
         } else {
+            System.out.printf("Unknown operation '%s'. Operations are CREATE and PUBLISH\n", args[0]);
             printUsage();
             System.exit(1);
         }
@@ -250,6 +252,10 @@ public class TBBuilder {
         stagedDeploymentDir = new File(stagingDir, "content" + File.separator + this.deployment);
         File stagedMetadataDir = new File(stagingDir, "metadata" + File.separator + this.deployment);
         File stagedProgramspecDir = new File(stagedDeploymentDir, Constants.ProgramSpecDir);
+        DateFormat ISO8601time = new SimpleDateFormat("HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
+        ISO8601time.setTimeZone(TBLoaderConstants.UTC);
+        String timeStr = ISO8601time.format(new Date());
+        String revFileName = String.format("%s_%s.rev", TBLoaderConstants.UNPUBLISHED_REV, timeStr);
 
         // use LB Home Dir to create folder, then zip to Dropbox and delete the
         // folder
@@ -292,10 +298,13 @@ public class TBBuilder {
         }
         
         deleteRevFiles(stagingDir);
-        String revision;
-        revision = TBLoaderConstants.UNPUBLISHED_REV + "_"
-            + TBLoaderUtils.getDateTime().substring(8, 17);
-        File newRev = new File(stagingDir, revision + ".rev");
+        // Leave a marker to indicate that there exists an unpublished deployment here.
+        File newRev = new File(stagingDir, revFileName);
+        newRev.createNewFile();
+        // Put a marker inside the unpublished content, so that we will be able to tell which of
+        // possibly several is the unpublished one.
+        deleteRevFiles(stagedDeploymentDir);
+        newRev = new File(stagedDeploymentDir, revFileName);
         newRev.createNewFile();
 
         System.out.printf("%nDone with deployment of basic/community content.%n");
@@ -569,13 +578,18 @@ public class TBBuilder {
      * If any file is missing, prints an error message and exits.
      *
      * @param pi Information about the package: name, language, groups
+<<<<<<< HEAD
      *           (TB-Loaders/packages/{name}/messages/lists/1/)
      *           containing the _activeLists.txt and individual playlist .txt
      *           list files.
      * @throws IOException if any files can't be read.
+=======
+     *                     (TB-Loaders/packages/{name}/messages/lists/1/)
+     *                     containing the _activeLists.txt and individual playlist .txt
+     *                     list files.
+>>>>>>> e114a9e... Cleanup from rebase.
      */
-    private void validatePackageForLanguage(PackageInfo pi)
-        throws IOException {
+    private void validatePackageForLanguage(PackageInfo pi) {
         // Get the directory containing the _activeLists.txt file plus the playlist files (like "2-0.txt")
         String listsPath =
             "packages/" + pi.name + "/messages/lists/" + TBBuilder.firstMessageListName;
@@ -710,7 +724,7 @@ public class TBBuilder {
                     errorCommunities.add(c.getName());
                 } else {
                     // Look for individual language directories, 'en', 'dga', ...
-                    File[] langs = languagesDir.listFiles(path -> path.isDirectory());
+                    File[] langs = languagesDir.listFiles(File::isDirectory);
                     oneLanguage = langs != null && langs.length == 1;
                     for (File lang : langs) {
                         // Look for a greeting in the language.
@@ -783,24 +797,24 @@ public class TBBuilder {
         }
     }
 
-    private static char getLatestDistributionRevision(
+    private static char getLatestDeploymentRevision(
         File publishTbLoadersDir,
-        final String distribution) throws Exception {
+        final String deployment) throws Exception {
         char revision = 'a';
         File[] files = publishTbLoadersDir.listFiles((dir, name) ->
-            name.toLowerCase().endsWith(".rev") && name.toLowerCase().startsWith(distribution.toLowerCase()));
+            name.toLowerCase().endsWith(".rev") && name.toLowerCase().startsWith(deployment.toLowerCase()));
         if (files.length > 1)
             throw new Exception("Too many *rev files.  There can only be one.");
         else if (files.length == 1) {
             // Assuming distribution-X.rev, pick the next higher than 'X'
-            char foundRevision = files[0].getName().charAt(distribution.length() + 1);
+            char foundRevision = files[0].getName().charAt(deployment.length() + 1);
             if (foundRevision >= revision) {
                 revision = ++foundRevision;
                 // If there's already a directory (or file) of the new name, keep looking.
-                File probe = new File(publishTbLoadersDir, distribution + '-' + revision);
+                File probe = new File(publishTbLoadersDir, deployment + '-' + revision);
                 while (probe.exists() && Character.isLetter(revision)) {
                     revision++;
-                    probe = new File(publishTbLoadersDir, distribution + '-' + revision);
+                    probe = new File(publishTbLoadersDir, deployment + '-' + revision);
                 }
                 // If no un-used name found, keep the original one.
                 if (!Character.isLetter(revision)) {
@@ -812,12 +826,14 @@ public class TBBuilder {
                 }
             }
         }
-        // Delete *.rev, then create our distribution-revision.rev marker file.
+        // Delete *.rev, then create our deployment-revision.rev marker file.
+        deleteRevFiles(publishTbLoadersDir);
         files = publishTbLoadersDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".rev"));
         for (File f : files) {
             f.delete();
         }
-        File newRev = new File(publishTbLoadersDir, distribution + "-" + revision + ".rev");
+
+        File newRev = new File(publishTbLoadersDir, deployment + "-" + revision + ".rev");
         newRev.createNewFile();
         return revision;
     }
@@ -840,10 +856,12 @@ public class TBBuilder {
         this.deployment = distribution;
         // recent and should be name of
         // distribution
-        char revision = getLatestDistributionRevision(publishBaseDir, distribution);
+        char revision = getLatestDeploymentRevision(publishBaseDir, distribution);
         final String publishDistributionName = distribution + "-" + revision; // e.g.
         // '2015-6-c'
         stagedDeploymentDir = new File(stagingDir, "content" + File.separator + this.deployment);
+        // Remove any .rev file that we had left to mark the deployment as unpublished.
+        deleteRevFiles(stagedDeploymentDir);
 
         // e.g. 'ACM-UWR/TB-Loaders/published/2015-6-c'
         final File publishDistributionDir = new File(publishBaseDir, publishDistributionName);
@@ -902,7 +920,10 @@ public class TBBuilder {
 
         new DBExporter(ACM_PREFIX + project, publishedMetadataDir).export();
 
+        // Note that what we've just published is the latest on this computer.
         deleteRevFiles(stagingDir);
+        File newRev = new File(stagingDir, distribution + "-" + revision + ".rev");
+        newRev.createNewFile();
     }
 
     /**
@@ -919,8 +940,8 @@ public class TBBuilder {
 
     private void exportList(
         String contentPackage, File list,
-        File exportDirectory, boolean writeToCSV) throws Exception {
-        exportList(contentPackage, list, exportDirectory, null, writeToCSV);
+        File targetDirectory, boolean writeToCSV) throws Exception {
+        exportList(contentPackage, list, targetDirectory, null, writeToCSV);
     }
 
     private void exportPackagesInDeployment(
@@ -982,7 +1003,7 @@ public class TBBuilder {
 
     private void exportList(
         String contentPackage, File list,
-        File exportDirectory, String filename, boolean writeToCSV)
+        File targetDirectory, String filename, boolean writeToCSV)
         throws Exception {
         System.out.println("  Exporting list " + list);
         String[] csvColumns = new String[5];
@@ -1000,12 +1021,12 @@ public class TBBuilder {
                 String uuid = reader.readLine();
                 AudioItem audioItem = ACMConfiguration.getInstance().getCurrentDB()
                     .getMetadataStore().getAudioItem(uuid);
-                System.out.println(String.format("    Exporting audioitem %s to %s", uuid, exportDirectory));
+                System.out.println(String.format("    Exporting audioitem %s to %s", uuid, targetDirectory));
                 if (filename == null) {
-                    repository.exportA18WithMetadata(audioItem, exportDirectory);
+                    repository.exportA18WithMetadata(audioItem, targetDirectory);
                 } else {
                     repository.exportA18WithMetadataToFile(audioItem,
-                        new File(exportDirectory, filename));
+                        new File(targetDirectory, filename));
                 }
 
                 if (writeToCSV) {

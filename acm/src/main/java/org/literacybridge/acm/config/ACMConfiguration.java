@@ -7,6 +7,7 @@ import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.utils.DropboxFinder;
+import org.literacybridge.acm.utils.Version;
 
 import javax.swing.*;
 import java.io.BufferedInputStream;
@@ -52,6 +53,12 @@ public class ACMConfiguration {
 
     private final static String NON_FILE_CHARS = "[\\\\/~;:*?'\"]";
 
+    /**
+     * Given a name, either ACM-{project} or {project, return the cannonical, uppercased acm
+     * directory name.
+     * @param acmName The name to be cannonicalized.
+     * @return the upper-cased ACM directory name.
+     */
     public static String cannonicalAcmDirectoryName(String acmName) {
         acmName = acmName.toUpperCase().replaceAll(NON_FILE_CHARS, "");
         if (!acmName.startsWith(ACM_PREFIX)) {
@@ -60,6 +67,12 @@ public class ACMConfiguration {
         return acmName;
     }
 
+    /**
+     * Given a name, either ACM-{project} or {project, return the cannonical, uppercased project
+     * name.
+     * @param projectName The name to be cannonicalized.
+     * @return the upper-cased project name.
+     */
     public static String cannonicalProjectName(String projectName) {
         projectName = projectName.toUpperCase().replaceAll(NON_FILE_CHARS, "");
         if (projectName.startsWith(ACM_PREFIX)) {
@@ -455,6 +468,35 @@ public class ACMConfiguration {
             }
         }
         return acmDir;
+    }
+
+    /**
+     * ~/LiteracyBridge/TB-Loaders/{project}
+     * This directory may contain a *.rev file, marking the locally installed deployment,
+     * a content directory with deployments, a metadata directory with metadata, and/or a
+     * batch file to run the TB-Loader for the project.
+     * @param project The project for which to get the local project directory.
+     * @return The directory.
+     */
+    public File getLocalTbLoaderDirFor(String project) {
+        project = cannonicalProjectName(project);
+        return new File(getApplicationHomeDirectory(),
+            Constants.TBLoadersHomeDir + File.separator + project);
+    }
+
+    public File getSharedAcmDirectoryFor(String acmName) {
+        acmName = cannonicalAcmDirectoryName(acmName);
+        return new File(globalShareDir, acmName);
+    }
+
+    /**
+     * Gets a File containing the configuration properties for the given ACM database.
+     * @param acmName The ACM for which the configuration file is desired.
+     * @return The File.
+     */
+    public File getSharedConfigurationFileFor(String acmName) {
+        // ~/Dropbox/ACM-DEMO/config.properties
+        return new File(getSharedAcmDirectoryFor(acmName), Constants.CONFIG_PROPERTIES);
     }
 
     public File getTbLoaderDirFor(String acmName) {

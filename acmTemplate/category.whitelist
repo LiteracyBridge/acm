@@ -1,0 +1,44 @@
+# Allows selecting which categories to make available to the ACM user. Messages may only be assigned to
+# those categories; any messages already in another category will continue to show those other categories.
+#
+# This file can define a blacklist and/or a whitelist.
+# To place a category into a whitelist, simply list the category id, one per line.
+# To place a category into a blacklist, list the category id, preceeded by '!', '~', or '-' on the line.
+#
+# The whitelist and blacklist, and the taxonomy property 'nonassignable' govern which categories
+# are shown in the category pane in the ACM.
+#
+# The determination of whether to show a category is made as follows:
+#  - If the category is 'nonAssignable', it is not visible.
+#  - If the category's id is blacklisted, it is not visible.
+#  - If there is a whitelist, then:
+#  --  If the category's id is in the whitelist, it is visible.
+#  --  If the category has a parent, and the parent is visible, it is visible (by inheritance).
+#  --  Otherwise the category is not visible.
+#  - Otherwise there is no whitelist, and:
+#  --  If the category has a parent, it inherits the parent's visibility.
+#  --  Otherwise this is the root category, and it is visible.
+#
+# Note that any child categories of a 'nonAssignable' category are not shown, either.
+#
+# Blank lines are ignored. The '#' character introduces a comment, which is ignored. Leading and
+# trailing spaces are ignored.
+#
+# Examples:
+# Hide "Categorized Feedback":
+# ! 90   # Categorized Feedback
+# Show only "Health":
+# 2      # Health
+# Show "Agriculture", but hide "Fish":
+# 1      # Agriculture
+# ~ 1-5  # Fish
+#
+# The root category id is 'LB_TAX_1.0'. This is only useful or necessary if you wish to blacklist
+# some category, then whitelist (ie, un-blacklist) a child within that category. In that case, the
+# presence of the whitelist will cause everything to be hidden, unless you also whitelist the root.
+#
+# LB_TAX_1.0  # Taxonomy root
+# ~ 90        # Categorized Feedback (excluded)
+# 90-13       # Hand Washing (re-included)
+#
+# Place whitelist / blacklist items here. Please comment groups and individual categories.

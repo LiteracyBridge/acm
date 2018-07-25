@@ -296,7 +296,7 @@ public class DBConfiguration extends Properties {
    */
   File getConfigurationPropertiesFile() {
     // ~/Dropbox/ACM-DEMO/config.properties
-    return new File(getSharedACMDirectory(), Constants.CONFIG_PROPERTIES);
+    return ACMConfiguration.getInstance().getSharedConfigurationFileFor(getSharedACMname());
   }
 
   public boolean writeCategoryFilter(Taxonomy taxonomy) {

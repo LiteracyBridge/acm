@@ -41,6 +41,7 @@ public class Constants {
   public final static String STRICT_DEPLOYMENT_NAMING = "STRICT_DEPLOYMENT_NAMING";
   public final static String CONFIGURATION_DIALOG = "CONFIGURATION_DIALOG";
   public final static String USE_AWS_LOCKING = "USE_AWS_LOCKING";
+  public final static String DEPLOYMENT_CHOICE = "DEPLOYMENT_CHOICE";
   public final static String BATCH_RECORD = "record.log";
   public final static String S3_BUCKET = "acm-logging";
 }

@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.ResourceView;
+package org.literacybridge.acm.gui.MainWindow;
 
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -13,7 +13,7 @@ import javax.swing.tree.TreePath;
 
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
+import org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.BusyDialog;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;

@@ -1,9 +1,9 @@
-package org.literacybridge.acm.gui.ResourceView;
+package org.literacybridge.acm.gui.MainWindow;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.SidebarView.CategoryTreeNodeObject;
-import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
+import org.literacybridge.acm.gui.MainWindow.SidebarView.CategoryTreeNodeObject;
+import org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.BusyDialog;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;

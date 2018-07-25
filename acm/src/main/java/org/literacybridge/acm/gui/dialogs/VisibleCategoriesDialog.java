@@ -78,7 +78,7 @@ public class VisibleCategoriesDialog extends JDialog {
             .clone();
 
         originalExpanded = Application.getApplication()
-            .getResourceView()
+            .getMainView()
             .getSidebarView()
             .getExpandedCategories();
     }
@@ -203,7 +203,7 @@ public class VisibleCategoriesDialog extends JDialog {
         // simply winds up in a funny place. Unfortunately, Swing only lets us get the location of a
         // component relative to its parent.
         Point pAudio = getApplicationRelativeLocation(Application.getApplication()
-            .getResourceView()
+            .getMainView()
             .getAudioItemView());
         dialog.setLocation(pAudio);
         dialog.setVisible(true);

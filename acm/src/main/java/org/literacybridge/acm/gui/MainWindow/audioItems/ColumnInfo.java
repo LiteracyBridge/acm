@@ -1,9 +1,8 @@
-package org.literacybridge.acm.gui.ResourceView.audioItems;
+package org.literacybridge.acm.gui.MainWindow.audioItems;
 
 import java.util.Comparator;
 import java.util.Locale;
 
-import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.store.AudioItem;

@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.ResourceView;
+package org.literacybridge.acm.gui.MainWindow;
 
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.DefaultCheckboxTreeCellRenderer;
@@ -11,7 +11,7 @@ import org.literacybridge.acm.core.MessageBus.Message;
 import org.literacybridge.acm.device.DeviceConnectEvent;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.PlaylistListModel.PlaylistLabel;
+import org.literacybridge.acm.gui.MainWindow.PlaylistListModel.PlaylistLabel;
 import org.literacybridge.acm.gui.dialogs.audioItemImportDialog.AudioItemImportDialog;
 import org.literacybridge.acm.gui.messages.AudioItemTableSortOrderMessage;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;

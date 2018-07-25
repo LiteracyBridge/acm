@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.ResourceView;
+package org.literacybridge.acm.gui.MainWindow;
 
 import org.literacybridge.acm.gui.util.SortedListModel;
 import org.literacybridge.acm.store.Playlist;

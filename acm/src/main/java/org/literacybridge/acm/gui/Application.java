@@ -7,8 +7,8 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
-import org.literacybridge.acm.gui.ResourceView.ResourceView;
-import org.literacybridge.acm.gui.ResourceView.ToolbarView;
+import org.literacybridge.acm.gui.MainWindow.MainView;
+import org.literacybridge.acm.gui.MainWindow.ToolbarView;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
@@ -43,10 +43,10 @@ public class Application extends JXFrame {
 
   public static double JAVA_VERSION = getJavaVersion();
 
-  private final ResourceView resourceView;
+  private final MainView mainView;
 
-  public ResourceView getResourceView() {
-    return resourceView;
+  public MainView getMainView() {
+    return mainView;
   }
 
   static double getJavaVersion() {
@@ -121,10 +121,10 @@ public class Application extends JXFrame {
 
     setTitle(title);
     // toolbar view on top
-    resourceView = new ResourceView();
-    ToolbarView toolbarView = new ToolbarView(resourceView.audioItemView);
+    mainView = new MainView();
+    ToolbarView toolbarView = new ToolbarView(mainView.audioItemView);
     add(toolbarView, BorderLayout.PAGE_START);
-    add(resourceView, BorderLayout.CENTER);
+    add(mainView, BorderLayout.CENTER);
 
     statusBar = new ACMStatusBar();
     setStatusBar(statusBar);
@@ -290,7 +290,7 @@ public class Application extends JXFrame {
         caching.cacheNewA18Files();
       }
 
-      application.resourceView.audioItemView.requestFocusInWindow();
+      application.mainView.audioItemView.requestFocusInWindow();
   }
 
   public static class FilterState {

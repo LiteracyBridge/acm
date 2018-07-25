@@ -19,6 +19,48 @@ allprojects {
     }
 }
 
+task updateVersion() {
+    group = 'build setup'
+    def versionPropsFile = file('src/main/resources/version.properties')
+    def Properties versionProps = new Properties()
+    def timestamp = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+    def buildDate = new Date().format("yyMMdd")
+    def buildNumber = 1
+    def versionCounter = 0
+    def versionDate = buildDate
+
+    if (versionPropsFile.canRead()) {
+        versionProps.load(new FileInputStream(versionPropsFile))
+
+        def versionString = versionProps['BUILD_VERSION']
+        buildNumber = versionProps['BUILD_NUMBER'].toInteger() + 1
+
+        versionDate = versionString.substring(0, 6)
+        versionCounter = versionString.substring(6)
+        if (versionDate != buildDate) {
+            println "It's a new day"
+            versionDate = buildDate
+            versionCounter = 0
+        } else {
+            def nextCounter = versionCounter.toInteger() + 1
+            versionCounter = nextCounter.toString()
+        }
+    } else {
+        println("Creating a new version.properties file.")
+    }
+
+    def versionString = versionDate + versionCounter
+    
+    versionProps['BUILD_NUMBER'] = buildNumber.toString()
+    versionProps['BUILD_TIMESTAMP'] = timestamp
+    versionProps['BUILD_DATE'] = buildDate
+    versionProps['BUILD_VERSION'] = versionString
+    versionProps.store(versionPropsFile.newWriter(), null)
+
+}
+
+build.dependsOn('updateVersion')
+
 // Put the :core projects build artifacts in our own directory. Prevents us pulling in stale
 // Android artifacts.
 project(':core') {
@@ -51,10 +93,13 @@ task copyUpdateScript(type: Copy, dependsOn: copyJars) {
     from "$projectDir/scripts/acm.sh"
     from "$projectDir/scripts/builder.sh"
     from "$projectDir/scripts/tb.sh"
+    from "$projectDir/scripts/tbutil.sh"
+    from "$projectDir/src/main/resources/version.properties"
     into distDir
+    rename("version.properties", "build.properties")
 }
 
-task dist(dependsOn: [copyJars, copyLibs, copyUpdateScript]) {
+task dist(dependsOn: [copyJars, copyLibs, copyUpdateScript, updateVersion]) {
     description = 'This is the actual build. Ignore anything with \'assemble\'.'
     group = 'build'
 }

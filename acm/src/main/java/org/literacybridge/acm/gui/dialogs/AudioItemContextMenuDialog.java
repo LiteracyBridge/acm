@@ -20,7 +20,7 @@ import javax.swing.*;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
-import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
+import org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.AudioItemPropertiesDialog;
 import org.literacybridge.acm.gui.dialogs.audioItemPropertiesDialog.LanguageComboBoxModel;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;

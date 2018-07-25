@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.ResourceView.audioItems;
+package org.literacybridge.acm.gui.MainWindow.audioItems;
 
 import org.jdesktop.swingx.JXTableHeader;
 import org.literacybridge.acm.gui.Application;

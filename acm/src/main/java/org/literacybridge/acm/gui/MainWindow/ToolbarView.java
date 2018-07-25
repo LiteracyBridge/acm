@@ -1,11 +1,11 @@
-package org.literacybridge.acm.gui.ResourceView;
+package org.literacybridge.acm.gui.MainWindow;
 
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.dialogs.VisibleCategoriesDialog;
+import org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.messages.PlayAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemToPlayMessage;
