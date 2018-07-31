@@ -76,6 +76,7 @@ public class TBBuilder {
     private File localProjectDir; // ~/LiteracyBridge/TB-Loaders/{project}
     private File localContentDir;       // {localProjectDir}/content
     private File localDeploymentDir;    // {localContentDir}/{deployment}
+    private File localMetadataDir;      // {localProjectDir}/metadata
     private String deploymentName;
     private List<String> fatalMessages = new ArrayList<>();
     private List<String> errorMessages = new ArrayList<>();
@@ -116,6 +117,7 @@ public class TBBuilder {
 
         if (args[0].equalsIgnoreCase("CREATE")) {
             if (args.length < 5 || (args.length > 5 && ((args.length % 3) != 0))) {
+                System.out.print("Unexpected number of arguments for CREATE.\n");
                 printUsage();
                 System.exit(1);
             }
@@ -124,6 +126,7 @@ public class TBBuilder {
             tbb.doCreate(args);
         } else if (args[0].equalsIgnoreCase("PUBLISH")) {
             if (args.length < 3) {
+                System.out.print("Unexpected number of arguments for PUBLISH.\n");
                 printUsage();
                 System.exit(1);
             }
@@ -136,6 +139,7 @@ public class TBBuilder {
             System.arraycopy(args, 2, deployments, 0, deploymentCount);
             tbb.publish(deployments);
         } else {
+            System.out.printf("Unknown operation '%s'. Operations are CREATE and PUBLISH\n", args[0]);
             printUsage();
             System.exit(1);
         }
@@ -166,6 +170,7 @@ public class TBBuilder {
         // Like ~/LiteracyBridge/TB-Loaders/UWR
         localProjectDir = new File(localTbLoadersDir, project);
         localContentDir = new File(localProjectDir, "content");
+        localMetadataDir = new File(localProjectDir, "metadata");
     }
 
     private List<PackageInfo> getePackageInfoForCreate(String[] args) {
@@ -237,27 +242,31 @@ public class TBBuilder {
         String revFileName = String.format("%s_%s.rev", TBLoaderConstants.UNPUBLISHED_REV, timeStr);
 
         deploymentName = deployment;
+        // Like ~/LiteracyBridge/TB-Loaders/{proj}/content/{deployment}
         localDeploymentDir = new File(localContentDir, deploymentName);
-        File localMetadataDir = new File(localProjectDir, "metadata/" + deploymentName);
+        // Like ~/LiteracyBridge/TB-Loaders/{proj}/metadata/{deployment}
+        File localMetadataDeploymentDir = new File(localMetadataDir, deploymentName);
 
-        // use LB Home Dir to create folder, then zip to Dropbox and delete the
-        // folder
-        IOUtils.deleteRecursive(localDeploymentDir);
-        localDeploymentDir.mkdirs();
+        // Clean up in the ~/LiteracyBridge/TB-Loaders/{proj} directory
+        IOUtils.deleteRecursive(localContentDir);
         IOUtils.deleteRecursive(localMetadataDir);
-        localMetadataDir.mkdirs();
+        deleteRevFiles(localProjectDir);
+
+        // Create deployment in ~/LB/TB-Loaders/{proj} directory. When published, we'll zip to dropbox
+        localDeploymentDir.mkdirs();
+        localMetadataDeploymentDir.mkdirs();
 
         contentInPackageCSVWriter = new CSVWriter(
             new FileWriter(
-                new File(localMetadataDir, CONTENT_IN_PACKAGES_CSV_FILE_NAME)),
+                new File(localMetadataDeploymentDir, CONTENT_IN_PACKAGES_CSV_FILE_NAME)),
             ',');
         categoriesInPackageCSVWriter = new CSVWriter(
             new FileWriter(
-                new File(localMetadataDir, CATEGORIES_IN_PACKAGES_CSV_FILE_NAME)),
+                new File(localMetadataDeploymentDir, CATEGORIES_IN_PACKAGES_CSV_FILE_NAME)),
             ',');
         packagesInDeploymentCSVWriter = new CSVWriter(
             new FileWriter(
-                new File(localMetadataDir, PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME)),
+                new File(localMetadataDeploymentDir, PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME)),
             ',');
 
         // write column headers
@@ -275,13 +284,7 @@ public class TBBuilder {
         FileUtils.copyDirectory(sourceCommunitiesDir, targetCommunitiesDir);
 
         // Leave a marker to indicate that there exists an unpublished deployment here.
-        deleteRevFiles(localProjectDir);
         File newRev = new File(localProjectDir, revFileName);
-        newRev.createNewFile();
-        // Put a marker inside the unpublished content, so that we will be able to tell which of
-        // possibly several is the unpublished one.
-        deleteRevFiles(localDeploymentDir);
-        newRev = new File(localDeploymentDir, revFileName);
         newRev.createNewFile();
 
         System.out.printf("%nDone with deployment of basic/community content.%n");
@@ -830,7 +833,9 @@ public class TBBuilder {
 
         new DBExporter(ACM_PREFIX + project, metadataDir).export();
 
-        // This will remove the "UNPUBLISHED*.rev" file from the local staging area.
+        // Clean up in the staging area, ~/LiteracyBridge/TB-Loaders/{proj} directory
+        IOUtils.deleteRecursive(localContentDir);
+        IOUtils.deleteRecursive(localMetadataDir);
         deleteRevFiles(localProjectDir);
     }
 

@@ -1,0 +1,183 @@
+VERSION:1.85
+TIME-PRECISION:128
+---
+P
+      A!:[welcome]
+      Ah:<%>
+      Ah_:H
+      A+_:I[faster] S+
+      A-_:I[slower] S-
+      A+:I[short-bell] V+
+      A-:I[short-bell] V-
+      Ap:P
+      Ap_:H
+      A^:L-[title-list]
+      Av:L+[title-list]
+      A<:L+[subject-list]
+      A>:L-[subject-list]
+      A>_:T+60000
+      A<_:T-7000
+      A*:Em
+      Ao:[context-msg]
+      Ao_:<%+>
+  F:0
+    B:0-1000. [short-bell]
+  F:10
+    B:0- [welcome]
+      A$:[intro]
+      A>:L-[subject-list]
+      A<:L+[subject-list]
+      A^:~
+      Av:~
+      Ao:~
+      Ao_:<%+>
+      A*:[rotate]
+      A^_:~
+  F:11
+    B:0- [right-subjects]
+      A>:L-[subject-list]
+      A<:L+[subject-list]
+      A^:~
+      Av:~
+      Ao:~
+      Ao_:<%+>
+      A*:~
+  F:41
+    B:0- [right-for-different]
+  F:37
+    B:0- [faster]    
+  F:38
+    B:0- [slower]
+  F:1
+    B:0- [record prompt]
+  F:2
+    B:0- [recording paused]
+  F:3
+    B:0- [recording complete found in-]
+  F:4
+   B:0-  [batts almost dead]
+  F:5
+   B:0- [empty-list]
+  F:6
+   B:0- [file now deleted]
+  F:9
+   B:0- [up for msg,right for else]
+  F:53
+    B:0- [system update-thinking]
+  F:80
+    B:0- [sorry-locked subject]
+  L:L [subject-list]
+     A$:I[right-for-different]
+     Ah:<%>
+     A>:L-[subject-list]
+     A<:L+[subject-list]
+     Ao:~
+     A*:Em
+  L:P/{[subject-list]} [title-list]
+     A^:L-[title-list]
+     Av:L+[title-list]
+     A*:~
+  F:29
+    B:0- [context-msg]
+      A>:[record ideas about msg, circle]
+      A<:[context-delete]
+  F:65
+    B:0- [record ideas about msg, circle]
+      A>:[to take survey, circle]
+      A<:[context-msg]
+      Ao:Ef{[title-list]}
+  F:63
+    B:0- [to take survey, circle]
+      A>:[context-delete]
+      A<:[record ideas about msg, circle] 
+      Ao:Yt {[title-list]} [up for apply;down for useless;or home]
+  F:62
+    B:0- [up for apply;down for useless;or home]
+      A>:[context-delete]
+      A<:[record ideas about msg, circle]
+      A^:Ya {[title-list]} [thanks for feedback]
+      Av:Yu {[title-list]} [thanks for feedback]
+  F:61
+    B:0- [thanks for feedback]
+      A$:<%+>
+  F:33
+    B:0- [context-delete]
+      A<:[to take survey, circle]
+      A>:[context-msg]
+      Ao:D{[title-list]} [subject-list]
+  F:17
+    B:0- [stop start w/center]
+  F:16
+    B:0- [wake with center]
+  F:28
+    B:0- [to sleep]
+  F:26
+    B:0- [black circle when playing a msg]
+  F:20
+    B:0- [to quiet]
+  F:21
+    B:0- [to loud] 
+  F:24
+    B:0- [batts quickly used when loud]
+  F:18 
+    B:0- [to record]
+  F:19
+    B:0- [pause record]
+  F:22
+    B:0- [to slower]
+  F:23
+    B:0- [to faster]
+  F:25
+    B:0- [hold left to repeat]
+  F:54
+    B:0- [skip-right]
+  F:cat/1
+    B:0-
+  F:cat/i1
+    B:0-
+  F:cat/1-2
+    B:0-
+  F:cat/i1-2
+    B:0-
+  F:cat/2
+    B:0-
+  F:cat/i2
+    B:0-
+  F:cat/$0-1
+    B:0-
+  F:cat/i$0-1
+    B:0-
+  F:cat/0
+    B:0-
+  F:cat/i0
+    B:0-
+  F:cat/4
+    B:0-
+  F:cat/i4
+    B:0-
+  F:cat/9
+    B:0-
+  F:cat/i9
+    B:0-
+  F:intro
+    B:0- [rotate]
+      A$:[right-subjects]
+      A>:L-[subject-list]
+      A<:L+[subject-list]
+      A^:~
+      Av:~
+      Ao:~
+      Ao_:<%+>
+      A*:J
+      A^_:~
+  F:intro
+    B:0- [intro]
+      A$:[right-subjects]
+      A>:L-[subject-list]
+      A<:L+[subject-list]
+      A^:~
+      Av:~
+      Ao:~
+      Ao_:<%+>
+      A*:[rotate]
+      A^_:~

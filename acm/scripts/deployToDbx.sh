@@ -37,6 +37,7 @@ function main() {
 
     updateLibs
     updateJar
+    updateBuildProps
     $updated && updateMarker
 }
 
@@ -82,6 +83,17 @@ function updateJar() {
             $execute && "${cpcmd[@]}"
         fi
     done
+}
+
+# Update the build.properties file. 
+function updateBuildProps() {
+    if ! cmp -s "build.properties" "${acmDir}/build.properties" ; then
+        updated=true
+        cpcmd=(cp -v "build.properties" "${acmDir}/build.properties")
+
+        $verbose && echo "${cpcmd[@]}">>${report}
+        $execute && "${cpcmd[@]}"
+    fi
 }
 
 # The marker file changes to let scripts know to update the .jar & libs

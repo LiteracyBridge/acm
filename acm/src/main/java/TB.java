@@ -1,7 +1,9 @@
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -60,6 +62,12 @@ public class TB {
             }
             return null;
         }
+
+        static void print() {
+            for (Util u: Util.values()) {
+                System.out.printf("%s: %s\n", u.clazz.toString(), u.aliases.toString());
+            }
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -74,6 +82,7 @@ public class TB {
             util.invoke(args);
         } else {
             System.err.printf("Unknown Util: %s\n", utilName);
+            Util.print();
         }
 
     }
