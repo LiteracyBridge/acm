@@ -44,11 +44,11 @@ class DeploymentsManager {
                 state = State.Missing_Latest;
             } else if (ld.errorMessage != null) {
                 state = State.Bad_Local;
-            } else if (ld.localRev == null) {
+            } else if (ld.localDeploymentRev == null) {
                 state = State.No_Deployment;
             } else if (ld.isUnpublished) {
                 state = State.OK_Unpublished;
-            } else if (ld.localRev.equalsIgnoreCase(ad.latestPublishedRev)) {
+            } else if (ld.localDeploymentRev.equalsIgnoreCase(ad.latestPublishedRev)) {
                 state = State.OK_Latest;
             } else {
                 state = State.Not_Latest;
@@ -82,9 +82,10 @@ class DeploymentsManager {
             return new LocalDeployment(null, null);
         }
         if (revFiles.length==1 && (contentDirs != null && contentDirs.length==1)) {
-            String localRev = FilenameUtils.removeExtension(revFiles[0].getName()).toUpperCase();
-            String localContent = contentDirs[0].getName().toUpperCase();
-            if (localRev.startsWith(localContent) || localRev.startsWith(TBLoaderConstants.UNPUBLISHED_REV)) {
+            String localRev = FilenameUtils.removeExtension(revFiles[0].getName());
+            String localContent = contentDirs[0].getName();
+            if (localRev.toUpperCase().startsWith(localContent.toUpperCase()) ||
+                    localRev.toUpperCase().startsWith(TBLoaderConstants.UNPUBLISHED_REV)) {
                 return new LocalDeployment(localRev, contentDirs[0]);
             } else {
                 return new LocalDeployment("Local content doesn't match local revision.");
@@ -108,6 +109,7 @@ class DeploymentsManager {
         // Map deployment name (w/o the -x suffix) to File for the directory.
         Map<String, File> orderedDeployments = new LinkedHashMap<>();
         String latestPublishedRev = null;
+        boolean multiPublishedRev = false;
         String ACMName = ACMConfiguration.cannonicalAcmDirectoryName(project);
         File publishedDir = new File(ACMConfiguration.getInstance().getTbLoaderDirFor(ACMName),
             "published");
@@ -122,6 +124,7 @@ class DeploymentsManager {
                     if (pf.isFile() && pf.getName().endsWith(".rev")) {
                         // Found the marker for the most recent TB-Builder PUBLISH. It SHOULD match
                         // the name of the file ~/LiteracyBridge/TB-Loaders/{project}/*.rev
+                        multiPublishedRev = latestPublishedRev != null;
                         latestPublishedRev = FilenameUtils.removeExtension(pf.getName());
                     } else if (pf.isDirectory() && pf.getName().matches(".*-[a-zA-Z]$")){
                         // Found a published directory. Ensure it contains the expected zip file.
@@ -142,6 +145,10 @@ class DeploymentsManager {
                         }
                     }
                 }
+            }
+            // If there is more than one, we don't know which is real.
+            if (multiPublishedRev) {
+                latestPublishedRev = null;
             }
             // Sort newest to oldest.
             List<String> deploymentNames = new ArrayList<>(deployments.keySet());
@@ -188,10 +195,11 @@ class DeploymentsManager {
 
     /**
      * Retrieves the Deployment from the given directory.
-     * @param directory with Deployment
+     * @param desired Name of desired Deployment
      * @throws IOException if the Deployment can't be unzipped.
      */
-    void getDeployment(File directory) throws IOException {
+    void getDeployment(String desired) throws IOException {
+        File directory = availableDeployments.deployments.get(desired);
         clearLocalDeployments();
         fetchDeployment(directory);
     }
@@ -220,26 +228,27 @@ class DeploymentsManager {
      * Class to describe the local Deployment, if any.
      */
     static class LocalDeployment {
-        String local;
-        String localRev;
+        String localDeployment;
+        String localDeploymentRev;
         boolean isUnpublished;
         File localContent;
         String errorMessage;
 
         /**
          * Constructor for the case when there is no error.
-         * @param localRev Local rev file name, without extension (but with -a, -b, etc).
+         * @param localDeploymentRev Local rev file name, without extension (but with -a, -b, etc).
          * @param localContent Local directory containing Deployment content. Named as the
          *                     Deployment name, without any -a, -b, ...
          *
          * NOTE: BOTH of localRec and localContent can be null, if there is no local Deployment.
          */
-        private LocalDeployment(String localRev, File localContent) {
-            this.localRev = localRev;
+        private LocalDeployment(String localDeploymentRev, File localContent) {
+            this.localDeploymentRev = localDeploymentRev;
             this.localContent = localContent;
-            this.isUnpublished = localRev!=null && localRev.toUpperCase().startsWith(TBLoaderConstants.UNPUBLISHED_REV);
-            if (localRev!=null && !isUnpublished) {
-                this.local = localRev.substring(0, localRev.length()-2);
+            this.isUnpublished = localDeploymentRev
+                !=null && localDeploymentRev.toUpperCase().startsWith(TBLoaderConstants.UNPUBLISHED_REV);
+            if (localDeploymentRev !=null && !isUnpublished) {
+                this.localDeployment = localDeploymentRev.substring(0, localDeploymentRev.length()-2);
             }
         }
 

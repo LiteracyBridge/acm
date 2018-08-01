@@ -346,21 +346,20 @@ public class TBLoader extends JFrame {
         String desired = available.latestPublished;
 
         if (deploymentChoice) {
-            ManageDeploymentsDialog dialog = new ManageDeploymentsDialog(this, available.deployments, localDeployment.local);
+            ManageDeploymentsDialog dialog = new ManageDeploymentsDialog(this, available.deployments, localDeployment.localDeployment);
             // Place the new dialog within the application frame.
             dialog.setLocation(this.getX()+20, this.getY()+20);
             dialog.setVisible(true);
             desired = dialog.selection;
         }
         // If we don't have what we want, get it from Dropbox.
-        if (!desired.equals(localDeployment.local)) {
-            File dir = available.deployments.get(desired);
+        if (!desired.equals(localDeployment.localDeployment)) {
             Cursor waitCursor = new Cursor(Cursor.WAIT_CURSOR);
             Cursor defaultCursor = new Cursor(Cursor.DEFAULT_CURSOR);
             try {
                 this.setCursor(waitCursor);
                 Thread.sleep(1);
-                dm.getDeployment(dir);
+                dm.getDeployment(desired);
             } catch (Exception ignored) {
                 // Do nothing.
             } finally {
