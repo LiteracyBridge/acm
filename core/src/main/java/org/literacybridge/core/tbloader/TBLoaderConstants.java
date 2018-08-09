@@ -67,6 +67,7 @@ public class TBLoaderConstants {
     public static final String TBCDID_PROPERTY = "TBCDID";
     public static final String NEW_SERIAL_NUMBER_PROPERTY = "NEWTBID";
     public static final String FIRMWARE_PROPERTY = "FIRMWARE";
+    public static final String DEPLOYMENT_UUID_PROPERTY = "UUID";
 
     static {
         ISO8601.setTimeZone(UTC);

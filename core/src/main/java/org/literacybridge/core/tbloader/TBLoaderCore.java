@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -319,6 +320,8 @@ public class TBLoaderCore {
     private final String mUpdateTimestamp;
     private final String mCollectionTempName;
 
+    private final UUID mDeploymentUUID;
+
     private boolean mTbHasDiskCorruption = false;
     private TbFile mTalkingBookRoot;
     private TbFile mTempDirectory;
@@ -330,6 +333,7 @@ public class TBLoaderCore {
         this.mTbDeviceInfo = builder.mTbDeviceInfo;
         this.mTbLoaderConfig = builder.mTbLoaderConfig;
         this.mTtbFlashData = builder.mTbDeviceInfo.getFlashData();
+        this.mDeploymentUUID = UUID.randomUUID();
 
         // Like "tbcd1234/collected-data"
         mCollectedDataDirectory = builder.mTbLoaderConfig.getCollectedDataDirectory();
@@ -467,9 +471,9 @@ public class TBLoaderCore {
             bw.write(mTbDeviceInfo.getLabel() + ",");
             bw.write(mTbDeviceInfo.isCorrupted() + ",");
 
-            // With one exception, these are ordered the same as the csv values. Not necessary, of
-            // course, but can help matching them up.
-            // The exception is that, here, qthe action is first, not fifth.
+            // With one exception, the stats are ordered the same as the csv values. Not necessary,
+            // of course, but can help matching them up.
+            // The exception is that, here, the action is first, not fifth.
             operationInfo
                 .put("action", action)
                 .put("tbcdid", mTbLoaderConfig.getTbLoaderId())
@@ -626,6 +630,17 @@ public class TBLoaderCore {
             opLog.put(statsInfo);
             statsLog.put(statsInfo);
             statsLog.put("statsonly", mStatsOnly);
+
+            String inUUID = mTbDeviceInfo.getDeploymentUUID();
+            if (inUUID != null) {
+                statsLog.put("in_uuid", inUUID);
+                opLog.put("in_uuid", inUUID);
+                deploymentLog.put("in_uuid", inUUID);
+            }
+            if (!mStatsOnly) {
+                opLog.put("out_uuid", mDeploymentUUID);
+                deploymentLog.put("uuid", mDeploymentUUID);
+            }
 
             bw.write("\n");
             bw.flush();
@@ -1420,7 +1435,8 @@ public class TBLoaderCore {
             .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserName())
             .append(TBLoaderConstants.TBCDID_PROPERTY, mTbLoaderConfig.getTbLoaderId())
             .append(TBLoaderConstants.NEW_SERIAL_NUMBER_PROPERTY, mNewDeploymentInfo.isNewSerialNumber())
-            .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation);
+            .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation)
+            .append(TBLoaderConstants.DEPLOYMENT_UUID_PROPERTY, mDeploymentUUID);
         if (mCoordinates != null && mCoordinates.length() > 0) {
             props.append(TBLoaderConstants.COORDINATES_PROPERTY, mCoordinates);
         }

@@ -16,6 +16,7 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.BINARY_STATS_PA
 import static org.literacybridge.core.tbloader.TBLoaderConstants.COMMUNITY_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_PROPERTIES_NAME;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_UUID_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.NEED_SERIAL_NUMBER;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.NO_DRIVE;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.PACKAGE_PROPERTY;
@@ -23,12 +24,14 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.PROJECT_FILE_EX
 import static org.literacybridge.core.tbloader.TBLoaderConstants.PROJECT_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENTID_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TALKING_BOOK_ID_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TBCDID_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_AUDIO_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LANGUAGES_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_SYSTEM_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.USERNAME_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
@@ -537,6 +540,63 @@ public final class TBDeviceInfo {
         }
 
         return recipientid;
+    }
+
+    /**
+     * Reads the deployment UUID from the deployment properties file. There is no other location
+     * for this datum. Note that this is the deployment UUID assigned at the time of the most
+     * recent previous Deployment.
+     * @return The deployment UUID, or null if it can not be determines.
+     */
+    public String getDeploymentUUID() {
+        String uuid = null;
+        Properties properties = loadDeploymentProperties();
+        if (properties != null) {
+            uuid = properties.getProperty(DEPLOYMENT_UUID_PROPERTY, null);
+            LOG.log(Level.FINE, String.format("TBL!: deployment UUID: %s", uuid));
+        } else {
+            LOG.log(Level.FINE, String.format("TBL!: deployment UUID: (null) (no deployment.properties)"));
+        }
+
+        return uuid;
+    }
+
+    /**
+     * Reads the deploying user's name from the deployment properties file. There is no other
+     * location for this datum. Note that this is the user who performed the most
+     * recent previous Deployment.
+     * @return The deploying user's name, or null if it can not be determines.
+     */
+    public String getDeploymentUsername() {
+        String username = null;
+        Properties properties = loadDeploymentProperties();
+        if (properties != null) {
+            username = properties.getProperty(USERNAME_PROPERTY, null);
+            LOG.log(Level.FINE, String.format("TBL!: deployment username: %s", username));
+        } else {
+            LOG.log(Level.FINE, String.format("TBL!: deployment username: (null) (no deployment.properties)"));
+        }
+
+        return username;
+    }
+
+    /**
+     * Reads the deployment tbcdid from the deployment properties file. There is no other location
+     * for this datum. Note that this is the tbcd id of the laptop/phone that performed the most
+     * recent previous Deployment.
+     * @return The deployment tbcd id, or null if it can not be determines.
+     */
+    public String getDeploymentTbcdid() {
+        String tbcdid = null;
+        Properties properties = loadDeploymentProperties();
+        if (properties != null) {
+            tbcdid = properties.getProperty(TBCDID_PROPERTY, null);
+            LOG.log(Level.FINE, String.format("TBL!: deployment tbcdid: %s", tbcdid));
+        } else {
+            LOG.log(Level.FINE, String.format("TBL!: deployment tbcdid: (null) (no deployment.properties)"));
+        }
+
+        return tbcdid;
     }
 
     public boolean isTestDeployment() {
