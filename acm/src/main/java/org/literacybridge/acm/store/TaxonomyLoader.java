@@ -2,6 +2,7 @@ package org.literacybridge.acm.store;
 
 import org.literacybridge.acm.config.CategoryFilter;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.MarkedYAMLException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -115,10 +116,15 @@ public class TaxonomyLoader {
                 if (localTaxonomy.revision > versionedTaxonomyData.revision) {
                     versionedTaxonomyData = localTaxonomy;
                 }
+            } catch (MarkedYAMLException e) {
+                System.out.println(e.toString());
+                // ignore and use the packaged taxonomy
             } catch (Exception e) {
                 Exception ex = e;
+                System.out.println(e.getMessage());
                 // ignore and use the packaged taxonomy
             }
+
         }
 
         return versionedTaxonomyData;
