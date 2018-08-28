@@ -321,6 +321,7 @@ public class TBLoaderCore {
     private final String mCollectionTempName;
 
     private final UUID mDeploymentUUID;
+    private final UUID mStatsCollectedUUID;
 
     private boolean mTbHasDiskCorruption = false;
     private TbFile mTalkingBookRoot;
@@ -334,6 +335,7 @@ public class TBLoaderCore {
         this.mTbLoaderConfig = builder.mTbLoaderConfig;
         this.mTtbFlashData = builder.mTbDeviceInfo.getFlashData();
         this.mDeploymentUUID = UUID.randomUUID();
+        this.mStatsCollectedUUID = UUID.randomUUID();
 
         // Like "tbcd1234/collected-data"
         mCollectedDataDirectory = builder.mTbLoaderConfig.getCollectedDataDirectory();
@@ -631,16 +633,18 @@ public class TBLoaderCore {
             statsLog.put(statsInfo);
             statsLog.put("statsonly", mStatsOnly);
 
-            String inUUID = mTbDeviceInfo.getDeploymentUUID();
-            if (inUUID != null) {
-                statsLog.put("in_uuid", inUUID);
-                opLog.put("in_uuid", inUUID);
-                deploymentLog.put("in_uuid", inUUID);
+            String inDeploymentUUID = mTbDeviceInfo.getDeploymentUUID();
+            if (inDeploymentUUID != null) {
+                statsLog.put("deployment_uuid", inDeploymentUUID);
+                opLog.put("in_deployment_uuid", inDeploymentUUID);
+                deploymentLog.put("prev_deployment_uuid", inDeploymentUUID);
             }
             if (!mStatsOnly) {
-                opLog.put("out_uuid", mDeploymentUUID);
-                deploymentLog.put("uuid", mDeploymentUUID);
+                opLog.put("out_deployment_uuid", mDeploymentUUID);
+                deploymentLog.put("deployment_uuid", mDeploymentUUID);
             }
+            statsLog.put("stats_uuid", mStatsCollectedUUID);
+            opLog.put("stats_uuid", mStatsCollectedUUID);
 
             bw.write("\n");
             bw.flush();
@@ -1085,6 +1089,27 @@ public class TBLoaderCore {
         };
 
         mStepBytesCount += TbFile.copyDir(mTalkingBookRoot, mTalkingBookDataRoot, copyFilesFilter, mCopyListener);
+
+        // Create statsCollected.properties in the mTalkingBookDataRoot directory.
+        // Include a newly allocated UUID, which will be written to tbData.log,
+        // action, tbcdid, username, update_date_time, location, coordinates (if we have them)
+        // Objective is to leave the mTalkingBookDataRoot with everythign known about the stats
+        // collection, so that it can be processed without needing tbData.
+
+        // 'properties' format file, with useful information for statistics processing.
+        PropsWriter props = new PropsWriter();
+        props
+            .append(TBLoaderConstants.ACTION_PROPERTY, mStatsOnly?"stats":"update")
+            .append(TBLoaderConstants.TIMESTAMP_PROPERTY, mUpdateTimestampISO)
+            .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserName())
+            .append(TBLoaderConstants.TBCDID_PROPERTY, mTbLoaderConfig.getTbLoaderId())
+            .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation)
+            .append(TBLoaderConstants.STATS_COLLECTED_UUID_PROPERTY, mStatsCollectedUUID);
+        if (mCoordinates != null && mCoordinates.length() > 0) {
+            props.append(TBLoaderConstants.COORDINATES_PROPERTY, mCoordinates);
+        }
+        eraseAndOverwriteFile(mTalkingBookDataRoot.open(TBLoaderConstants.STATS_COLLECTED_PROPERTIES_NAME), props.toString());
+
         finishStep();
     }
 
@@ -1421,7 +1446,7 @@ public class TBLoaderCore {
         eraseAndOverwriteFile(system.open("notest.pcb"), ".");
 
         // 'properties' format file, with useful information for statistics gathering (next time around).
-        DeploymentProperties props = new DeploymentProperties();
+        PropsWriter props = new PropsWriter();
         props
             .append(TBLoaderConstants.TALKING_BOOK_ID_PROPERTY, mNewDeploymentInfo.getSerialNumber())
             .append(TBLoaderConstants.PROJECT_PROPERTY, mNewDeploymentInfo.getProjectName())
@@ -1448,10 +1473,13 @@ public class TBLoaderCore {
         finishStep();
     }
 
-    private static class DeploymentProperties {
+    /**
+     * Creates a file like a properties file.
+     */
+    private static class PropsWriter {
         private StringBuilder props = new StringBuilder();
         public String toString() { return props.toString(); }
-        public DeploymentProperties append(String name, Object value) {
+        public PropsWriter append(String name, Object value) {
             props.append(name).append('=').append(value.toString()).append(MSDOS_LINE_ENDING);
             return this;
         }

@@ -43,6 +43,7 @@ public class TBLoaderConstants {
 
   public static final RelativePath SYS_DATA_TXT = RelativePath.parse("sysdata.txt");
   public static final RelativePath DEPLOYMENT_PROPERTIES_NAME = RelativePath.parse("deployment.properties");
+  public static final RelativePath STATS_COLLECTED_PROPERTIES_NAME = RelativePath.parse("stats_collected.properties");
   public static final RelativePath DIRS_TXT = RelativePath.parse("dir.txt");
   public static final RelativePath DIRS_POST_TXT = RelativePath.parse("dir_post.txt");
 
@@ -53,6 +54,7 @@ public class TBLoaderConstants {
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
     public static final DateFormat ISO8601 = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
 
+    public static final String ACTION_PROPERTY = "ACTION";
     public static final String PROJECT_PROPERTY = "PROJECT";
     public static final String DEPLOYMENT_PROPERTY = "DEPLOYMENT";
     public static final String PACKAGE_PROPERTY = "PACKAGE";
@@ -67,7 +69,8 @@ public class TBLoaderConstants {
     public static final String TBCDID_PROPERTY = "TBCDID";
     public static final String NEW_SERIAL_NUMBER_PROPERTY = "NEWTBID";
     public static final String FIRMWARE_PROPERTY = "FIRMWARE";
-    public static final String DEPLOYMENT_UUID_PROPERTY = "UUID";
+    public static final String DEPLOYMENT_UUID_PROPERTY = "DEPLOYEDUUID";
+    public static final String STATS_COLLECTED_UUID_PROPERTY = "STATSUUID";
 
     static {
         ISO8601.setTimeZone(UTC);

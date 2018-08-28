@@ -6,9 +6,11 @@ import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -255,5 +257,33 @@ public class TBLoaderUtils {
                 return String.format("%.2f %s", sizeNum, quantifiers[i]);
             }
         }
+    }
+
+    public static UUID uuidFromName(UUID namespace, byte[] nameBytes) {
+        byte[] namespaceBytes = getBytesFromUUID(namespace);
+        byte[] bytes = new byte[namespaceBytes.length + nameBytes.length];
+        System.arraycopy(namespaceBytes, 0, bytes, 0, namespaceBytes.length);
+        System.arraycopy(nameBytes, 0, bytes, namespaceBytes.length, nameBytes.length);
+        UUID result = UUID.nameUUIDFromBytes(bytes);
+        return result;
+    }
+    public static UUID uuidFromName(UUID namespace, String name) {
+        return uuidFromName(namespace, name.getBytes());
+    }
+
+    private static byte[] getBytesFromUUID(UUID uuid) {
+        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+        bb.putLong(uuid.getMostSignificantBits());
+        bb.putLong(uuid.getLeastSignificantBits());
+
+        return bb.array();
+    }
+
+    private static UUID getUUIDFromBytes(byte[] bytes) {
+        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+        Long high = byteBuffer.getLong();
+        Long low = byteBuffer.getLong();
+
+        return new UUID(high, low);
     }
 }
