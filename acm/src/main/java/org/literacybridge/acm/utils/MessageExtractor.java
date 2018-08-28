@@ -107,6 +107,7 @@ public class MessageExtractor {
     }
 
     private void addItemToList(String item, Set<String> blacklist, Set<String> whitelist) {
+        item = item.toLowerCase();
         if (item.charAt(0) == '!') {
             // blacklist
             blacklist.add(item.substring(1));
@@ -164,6 +165,23 @@ public class MessageExtractor {
 //        }
         acmDirectoryName = ACMConfiguration.cannonicalAcmDirectoryName(params.acmName);
 
+        if (ok && params.verbose) {
+            System.out.println(String.format("Extract from %s to %s, %f, %s files after export",
+                acmDirectoryName, destinationDirectory, params.maxFiles, params.keep?"keep":"delete"));
+            if (languageWhitelist.size()>0) {
+                System.out.println(String.format("Include languages: %s", languageWhitelist));
+            }
+            if (languageBlacklist.size()>0) {
+                System.out.println(String.format("Exclude languages: %s", languageBlacklist));
+            }
+            if (categoryIdWhitelist.size()>0) {
+                System.out.println(String.format("Include categoryIds: %s", categoryIdWhitelist));
+            }
+            if (categoryIdBlacklist.size()>0) {
+                System.out.println(String.format("Exclude categoryIds: %s", categoryIdBlacklist));
+            }
+        }
+        
         return ok;
     }
 
@@ -176,6 +194,8 @@ public class MessageExtractor {
         // "no language" can't be in either list. So it isn't blacklisted, but also isn't whitelisted.
         // So, "no language" is included if there is no whitelist.
         if (language == null) return languageWhitelist.size()==0;
+        
+        language = language.toLowerCase();
 
         // If there's a blacklist, and this language is in it, don't include the language.
         if (languageBlacklist.contains(language)) {
@@ -248,6 +268,10 @@ public class MessageExtractor {
                     maxToExtract = (int)params.maxFiles;
                 }
             }
+            if (params.verbose) {
+                System.out.println(String.format("Extracting %d of %d available", maxToExtract, toExtract.size()));
+            }
+
 
             // Perform the extraction
             int count = 0;
