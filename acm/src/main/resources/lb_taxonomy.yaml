@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 58
+  revision: 59
   categories:
     '0' : 
       name: Other Messages
@@ -168,6 +168,14 @@ taxonomy:
         '1-6' :
           name: Sustainable Agriculture
           order: 60
+        '1-10':
+          name: Income from natural resources
+        '1-11':
+          name: Food and nutritional security
+        '1-12':
+          name: Natural resources access and control
+        '1-13':
+          name: Environmental stewardship
     '1-2' :
       name: Livestock
       order: 30
