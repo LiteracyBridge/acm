@@ -190,12 +190,12 @@ public class AccessControl {
     }
 
     public int getCurrentDbVersion() {
-        String currentFilename = getCurrentZipFilename();
-        String currentFileNumber = currentFilename.substring(
-            DB_ZIP_FILENAME_PREFIX.length(), currentFilename.lastIndexOf('.'));
         try {
+            String currentFilename = getCurrentZipFilename();
+            String currentFileNumber = currentFilename.substring(
+                DB_ZIP_FILENAME_PREFIX.length(), currentFilename.lastIndexOf('.'));
             return Integer.parseInt(currentFileNumber);
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             return -1;
         }
     }
