@@ -65,7 +65,7 @@ class MP3Exporter extends AudioFileExporter {
         comments.add(metadata.get(LB_GOAL));
         comments.add(metadata.get(LB_NOTES));
         comments.add(metadata.get(LB_KEYWORDS));
-        Vector<String> vector = comments.stream().filter(str -> !isEmpty(str)).collect(Collectors.toCollection((Supplier<Vector>) Vector::new));
+        Vector<String> vector = (Vector<String>) comments.stream().filter(str -> !isEmpty(str)).collect(Collectors.toCollection((Supplier<Vector>) Vector::new));
         metadataToWrite.setComments(vector);
 
         MyID3 tagWriter = new MyID3();
