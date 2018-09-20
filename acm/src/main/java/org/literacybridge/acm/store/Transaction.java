@@ -1,13 +1,12 @@
 package org.literacybridge.acm.store;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import org.apache.lucene.index.IndexWriter;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-
-import org.apache.lucene.index.IndexWriter;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 public class Transaction {
   private final Set<Committable> objects;
@@ -60,9 +59,11 @@ public class Transaction {
           success2 = true;
         } finally {
           if (success2) {
+            List<MetadataStore.DataChangeEvent> dataChangeEvents = Lists.newArrayListWithCapacity(objects.size());
             for (Committable o : objects) {
-              o.afterCommit(store);
+              dataChangeEvents.add(o.afterCommit(store));
             }
+            store.fireChangeEvent(dataChangeEvents);
             active = false;
           } else {
             rollback();

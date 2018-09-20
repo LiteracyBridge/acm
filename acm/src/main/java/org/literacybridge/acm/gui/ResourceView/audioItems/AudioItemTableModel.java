@@ -168,26 +168,30 @@ public class AudioItemTableModel extends AbstractTableModel {
 
     private final DataChangeListener storeChangedListener = new DataChangeListener() {
         @Override
-        public void dataChanged(Committable item, DataChangeEventType eventType) {
-            if (item instanceof AudioItem) {
-                AudioItem audioItem = (AudioItem) item;
-                if (eventType == DataChangeEventType.ITEM_ADDED) {
-                    int row = addNewAudioItem(audioItem);
-                    fireTableRowsInserted(row, row);
-                } else {
-                    int row = uuidToRowIndexMap.get(audioItem.getUuid());
+        public void dataChanged(List <MetadataStore.DataChangeEvent> events) {
+            if (events.size() > 1) {
+                // bulk update
+                fireTableDataChanged();
+            } else {
+                // optimized case for single row update
+                Committable item = events.get(0).getItem();
+                MetadataStore.DataChangeEventType eventType = events.get(0).getEventType();
 
-                    if (eventType == DataChangeEventType.ITEM_MODIFIED) {
-                        // Unfortunately, we need to do this, even though the callers all
-                        // force a refresh anyway. This causes horrific performance
-                        // from inside Swing; something like O(n^2) on # items selected,
-                        // which kills when setting many items.
-                        //
-                        rowIndexToUuidMap.set(row, convertToAudioItemNodeRow(audioItem));
-                        fireTableRowsUpdated(row, row);
-                    } else if (eventType == DataChangeEventType.ITEM_DELETED) {
-                        removeAudioItem(audioItem);
-                        fireTableRowsDeleted(row, row);
+                if (item instanceof AudioItem) {
+                    AudioItem audioItem = (AudioItem) item;
+                    if (eventType == MetadataStore.DataChangeEventType.ITEM_ADDED) {
+                        int row = addNewAudioItem(audioItem);
+                        fireTableRowsInserted(row, row);
+                    } else {
+                        int row = uuidToRowIndexMap.get(audioItem.getUuid());
+
+                        if (eventType == MetadataStore.DataChangeEventType.ITEM_MODIFIED) {
+                            rowIndexToUuidMap.set(row, convertToAudioItemNodeRow(audioItem));
+                            fireTableRowsUpdated(row, row);
+                        } else if (eventType == MetadataStore.DataChangeEventType.ITEM_DELETED) {
+                            removeAudioItem(audioItem);
+                            fireTableRowsDeleted(row, row);
+                        }
                     }
                 }
             }

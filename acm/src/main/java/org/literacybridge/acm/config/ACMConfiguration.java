@@ -319,6 +319,11 @@ public class ACMConfiguration {
      * exits.
      */
     private void setupACMGlobalPaths() {
+        File appHomeDir = getApplicationHomeDirectory();
+        if (!appHomeDir.exists()) {
+            appHomeDir.mkdirs();
+        }
+
         boolean dirUpdated = false;
         // If there is an environment override for 'dropbox', use that for the
         // global directory.
