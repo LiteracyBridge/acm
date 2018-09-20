@@ -5,8 +5,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
-import org.literacybridge.acm.store.MetadataStore.DataChangeListener.DataChangeEventType;
-
 import com.google.common.collect.Lists;
 
 public abstract class MetadataStore {
@@ -49,10 +47,9 @@ public abstract class MetadataStore {
     this.dataChangeListeners.add(listener);
   }
 
-  protected final void fireChangeEvent(Committable item,
-      DataChangeEventType eventType) {
+  protected final void fireChangeEvent(List<DataChangeEvent> events) {
     for (DataChangeListener listener : dataChangeListeners) {
-      listener.dataChanged(item, eventType);
+      listener.dataChanged(events);
     }
   }
 
@@ -71,11 +68,29 @@ public abstract class MetadataStore {
     t.commit();
   }
 
-  public interface DataChangeListener {
-    public static enum DataChangeEventType {
-      ITEM_ADDED, ITEM_MODIFIED, ITEM_DELETED
+  public static class DataChangeEvent {
+    private final Committable item;
+    private final DataChangeEventType eventType;
+
+    public DataChangeEvent(Committable item, DataChangeEventType eventType) {
+      this.item = item;
+      this.eventType = eventType;
     }
 
-    public void dataChanged(Committable item, DataChangeEventType eventType);
+    public Committable getItem() {
+      return item;
+    }
+
+    public DataChangeEventType getEventType() {
+      return eventType;
+    }
+  }
+
+  public static enum DataChangeEventType {
+    ITEM_ADDED, ITEM_MODIFIED, ITEM_DELETED
+  }
+
+  public interface DataChangeListener {
+    public void dataChanged(List<DataChangeEvent> events);
   }
 }

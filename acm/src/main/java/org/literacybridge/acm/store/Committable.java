@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.literacybridge.acm.store.MetadataStore.DataChangeListener.DataChangeEventType;
+import org.literacybridge.acm.store.MetadataStore.DataChangeEventType;
 
 public abstract class Committable {
   private static enum CommitState {
@@ -114,7 +114,7 @@ public abstract class Committable {
     }
   }
 
-  final void afterCommit(MetadataStore store) {
+  final MetadataStore.DataChangeEvent afterCommit(MetadataStore store) {
     DataChangeEventType dataChangeEventType = DataChangeEventType.ITEM_MODIFIED;
 
     if (deleteState == DeleteState.DELETE_REQUESTED) {
@@ -125,7 +125,7 @@ public abstract class Committable {
       dataChangeEventType = DataChangeEventType.ITEM_ADDED;
     }
 
-    store.fireChangeEvent(this, dataChangeEventType);
+    return new MetadataStore.DataChangeEvent(this, dataChangeEventType);
   }
 
   final void afterRollback() {

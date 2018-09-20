@@ -4,11 +4,7 @@ import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,25 +57,27 @@ public class LuceneMetadataStore extends MetadataStore {
 
     addDataChangeListener(new DataChangeListener() {
       @Override
-      public void dataChanged(Committable item, DataChangeEventType eventType) {
-        if (item instanceof Playlist) {
-          Playlist playlist = (Playlist) item;
-          if (eventType == DataChangeEventType.ITEM_DELETED) {
-            playlistCache.remove(playlist.getUuid());
-          } else {
-            playlistCache.put(playlist.getUuid(), playlist);
+      public void dataChanged(List<DataChangeEvent> events) {
+        for (DataChangeEvent event : events) {
+          Committable item = event.getItem();
+          if (item instanceof Playlist) {
+            Playlist playlist = (Playlist) item;
+            if (event.getEventType() == DataChangeEventType.ITEM_DELETED) {
+              playlistCache.remove(playlist.getUuid());
+            } else {
+              playlistCache.put(playlist.getUuid(), playlist);
+            }
           }
-        }
-        if (item instanceof AudioItem) {
-          AudioItem audioItem = (AudioItem) item;
-          if (eventType == DataChangeEventType.ITEM_DELETED) {
-            audioItemCache.remove(audioItem.getUuid());
-          } else {
-            audioItemCache.put(audioItem.getUuid(), audioItem);
+          if (item instanceof AudioItem) {
+            AudioItem audioItem = (AudioItem) item;
+            if (event.getEventType() == DataChangeEventType.ITEM_DELETED) {
+              audioItemCache.remove(audioItem.getUuid());
+            } else {
+              audioItemCache.put(audioItem.getUuid(), audioItem);
+            }
           }
         }
       }
-
     });
   }
 
