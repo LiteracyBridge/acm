@@ -11,14 +11,22 @@ import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
-import org.literacybridge.acm.store.*;
+import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Committable;
+import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataStore.DataChangeListener;
+import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.utils.B26RotatingEncoding;
 
 import javax.swing.table.AbstractTableModel;
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class AudioItemTableModel extends AbstractTableModel {
   private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
@@ -178,11 +186,6 @@ public class AudioItemTableModel extends AbstractTableModel {
                         int row = uuidToRowIndexMap.get(audioItem.getUuid());
 
                         if (eventType == MetadataStore.DataChangeEventType.ITEM_MODIFIED) {
-                            // Unfortunately, we need to do this, even though the callers all
-                            // force a refresh anyway. This causes horrific performance
-                            // from inside Swing; something like O(n^2) on # items selected,
-                            // which kills when setting many items.
-                            //
                             rowIndexToUuidMap.set(row, convertToAudioItemNodeRow(audioItem));
                             fireTableRowsUpdated(row, row);
                         } else if (eventType == MetadataStore.DataChangeEventType.ITEM_DELETED) {
