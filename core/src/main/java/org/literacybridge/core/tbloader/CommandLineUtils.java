@@ -93,11 +93,16 @@ public class CommandLineUtils {
             "The volume does not contain a recognized file system.")) {
       errorMsg = "Either bad memory card or USB connection problem.  Try again.";
     } else if (line.contains("Windows found problems with the file system") /* || line.startsWith("File Not Found") */
-            || line.startsWith("The system cannot find the file")) {
+            || line.startsWith("The system cannot find the file")
+            || line.startsWith("Windows found errors on the disk")) {
       // checkdisk shows corruption
       errorMsg = "File system corrupted";
     } else if (line.startsWith("The system cannot find the path specified.")) {
       errorMsg = "TB not found.  Unplug/replug USB and try again.";
+    }
+    if (errorMsg != null) {
+      LOG.log(Level.SEVERE, line);
+      LOG.log(Level.SEVERE, errorMsg);
     }
     return errorMsg;
   }

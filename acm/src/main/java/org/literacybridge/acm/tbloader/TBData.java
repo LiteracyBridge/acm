@@ -32,7 +32,7 @@ public class TBData {
         String deviceId = f.getName()
             .substring(f.getName().lastIndexOf("-") + 1);
         deviceId = deviceId.substring(0, 8);
-        // System.out.println(f.getName());
+        // System.out.println(f.getNameOfLevel());
         // System.out.println(deviceId);
         long lDeviceId = Long.parseLong(deviceId, 16);
 

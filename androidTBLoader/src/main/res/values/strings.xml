@@ -130,5 +130,11 @@
     <string name="prompt_password">Password</string>
     <string name="deploying_for_testing">Deploying today for testing only.</string>
     <string name="no_talking_book_connected">No Talking Book connected.</string>
+    <string name="recipient_chooser_preselection_prompt">Preselect as much (or as little) as convenient of the Geographic and Organizational location of the Talking Books to be installed today. Later, when you "Choose Community", the selection will start with whatever you chose here.</string>
+    \
+    \
+    \
+
+    <string name="recipient_chooser_project_label">Selecting recipient(s) for project</string>
 
 </resources>

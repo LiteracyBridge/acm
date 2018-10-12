@@ -16,6 +16,11 @@ import org.literacybridge.androidtbloader.util.OperationLogImpl;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.androidtbloader.util.S3Helper;
 import org.literacybridge.core.fs.OperationLog;
+import org.literacybridge.core.spec.ProgramSpec;
+
+import java.io.File;
+
+import static org.literacybridge.androidtbloader.util.PathsProvider.getProgramSpecDir;
 
 /**
  * An "Application" class. Used to hold long lifetime objects.
@@ -35,6 +40,9 @@ public class TBLoaderAppContext extends Application {
     private ContentManager mContentManager;
     private UploadService mUploadService;
     private Config mConfig;
+
+    private String mProject;
+    private ProgramSpec mProgramSpec;
 
     @Override
     public void onCreate() {
@@ -90,5 +98,22 @@ public class TBLoaderAppContext extends Application {
 
     public Config getConfig() {
         return mConfig;
+    }
+
+    public void setProject(String project) {
+        if (project==null || !project.equals(mProject)) {
+            mProject = project;
+            mProgramSpec = null;
+        }
+    }
+    public String getProject() {
+        return mProject;
+    }
+    public ProgramSpec getProgramSpec() {
+        if (mProgramSpec == null) {
+            File progspecDir = getProgramSpecDir(mProject);
+            mProgramSpec = new ProgramSpec(progspecDir);
+        }
+        return mProgramSpec;
     }
 }

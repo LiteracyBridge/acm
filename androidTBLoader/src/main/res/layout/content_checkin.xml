@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:app="http://schemas.android.com/apk/res-auto"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="#ffe"
-                android:orientation="vertical"
-                android:padding="4dp">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ffe"
+    android:orientation="vertical"
+    android:padding="4dp">
 
     <!-- GPS Coordinates -->
 
@@ -23,144 +23,76 @@
             android:layout_height="wrap_content"
             android:text="@string/checkin_gps_coordinates_label"
             android:textSize="10sp"
-            tools:ignore="SmallSp"/>
+            tools:ignore="SmallSp" />
 
         <TextView
             android:id="@+id/checkin_gps_coordinates"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/checkin_waiting_for_gps_label"
-            android:textSize="18sp"/>
+            android:textSize="18sp" />
 
         <TextView
             android:id="@+id/checkin_gps_elapsed_time"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="10sp"
-            tools:ignore="SmallSp"/>
+            tools:ignore="SmallSp" />
 
     </LinearLayout>
 
-    <!-- Project name -->
-    <TextView
-        android:id="@+id/checkin_project_label"
+    <LinearLayout
+        android:id="@+id/checkin_project_group"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/checkin_gps_group"
-        android:textSize="10sp"
-        tools:ignore="SmallSp"
-        tools:text="Tap to choose -or- Auto chosen"/>
+        android:layout_margin="4dp"
+        android:background="#ffffc8"
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/checkin_project_name"
+
+        <!-- Project name -->
+        <TextView
+            android:id="@+id/checkin_project_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="10sp"
+            tools:ignore="SmallSp"
+            tools:text="Tap to choose -or- Auto chosen" />
+
+        <TextView
+            android:id="@+id/checkin_project_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:textSize="18sp"
+            tools:text="DEMO" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/checkin_recipient_group"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/checkin_project_label"
-        android:layout_marginBottom="10dp"
-        android:textSize="18sp"
-        tools:text="DEMO"/>
+        android:layout_below="@+id/checkin_project_group"
+        android:layout_margin="4dp"
+        android:background="#f0ffff"
+        android:orientation="vertical">
 
-    <!-- Tabs for Nearby / Today -->
-    <TabHost
-        android:id="@+id/checkin_tabHost"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@+id/checkin_bottom_button_group"
-        android:layout_below="@+id/checkin_project_name"
-        android:layout_centerHorizontal="true"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:layout_marginTop="10dp"
-        android:background="#eee">
-
-        <LinearLayout
+        <TextView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:textSize="10sp"
+            tools:ignore="SmallSp"
+            tools:text="Preselected recipients (tap to edit)"></TextView>
 
-            <TabWidget
-                android:id="@android:id/tabs"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-            </TabWidget>
+        <TextView
+            android:id="@+id/checkin_recipient_display"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="Ghana\n  UWR\n    Jirapa\n      Ving-Ving"/>
 
-            <FrameLayout
-                android:id="@android:id/tabcontent"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-                <!-- Communities "At This Location" -->
-                <RelativeLayout
-                    android:id="@+id/checkin_tab_nearby"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="#fef"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/checkin_nearby_label"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentStart="true"
-                        android:text="@string/checkin_community_groups_at_this_location_label"
-                        android:textSize="10sp"
-                        tools:ignore="SmallSp"
-                        tools:text="Community Groups near here"
-                        />
-
-                    <android.support.v7.widget.RecyclerView
-                        android:id="@+id/checkin_nearby_community_groups"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_alignParentBottom="true"
-                        android:layout_below="@+id/checkin_nearby_label"
-                        android:fadeScrollbars="false"
-                        android:paddingLeft="10dp"
-                        android:paddingRight="10dp"
-                        android:scrollbars="vertical"
-                        tools:layout_height="130dp"
-                        tools:text="List"
-                        />
-
-                </RelativeLayout>
-
-                <!-- communities "Updating Today" -->
-                <RelativeLayout
-                    android:id="@+id/checkin_tab_update_today"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="#eff"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/checkin_update_today_label"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentStart="true"
-                        android:text="@string/checkin_community_groups_to_update_today_label"
-                        android:textSize="10sp"
-                        tools:ignore="SmallSp"
-                        tools:text="Community Groups to update today"/>
-
-                    <android.support.v7.widget.RecyclerView
-                        android:id="@+id/checkin_update_today_communities"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_alignParentBottom="true"
-                        android:layout_below="@+id/checkin_update_today_label"
-                        android:fadeScrollbars="false"
-                        android:paddingLeft="10dp"
-                        android:paddingRight="10dp"
-                        android:scrollbars="vertical"
-                        tools:layout_height="130dp"
-                        tools:text="List"
-                        />
-
-                </RelativeLayout>
-
-            </FrameLayout>
-        </LinearLayout>
-    </TabHost>
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/checkin_bottom_button_group"
@@ -177,14 +109,8 @@
             android:text="@string/deploying_for_testing"
             tools:text="Deploying today for testing only." />
 
-        <Button
-            android:id="@+id/checkin_add_community"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            tools:text="Add communities to be current tab..."/>
-
         <!-- Do the check in -->
-         <Button
+        <Button
             android:id="@+id/checkin_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

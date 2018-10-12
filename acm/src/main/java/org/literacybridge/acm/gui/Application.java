@@ -20,6 +20,7 @@ import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.SearchResult;
 import org.literacybridge.acm.utils.LogHelper;
 import org.literacybridge.acm.utils.OsUtils;
+import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -196,22 +197,7 @@ public class Application extends JXFrame {
       splash = new SplashScreen();
 
       // set look & feel
-
-      // Not sure why, but making this call before setting the seaglass look and
-      // feel
-      // prevents an UnsatisfiedLinkError to be thrown
-      final LookAndFeel defaultLAF = UIManager.getLookAndFeel();
-      try {
-        UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
-      } catch (Exception e) {
-        try {
-          LOG.log(Level.WARNING, "Unable to set look and feel.", e);
-          UIManager.setLookAndFeel(defaultLAF);
-        } catch (Exception e1) {
-          LOG.log(Level.WARNING, "Unable to set look and feel.", e1);
-        }
-      }
-
+      SwingUtils.setLookAndFeel("");
       splash.showSplashScreen();
 
       if (Runtime.getRuntime().maxMemory() < 400 * 1024 * 1024) {

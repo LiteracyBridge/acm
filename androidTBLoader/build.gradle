@@ -84,6 +84,12 @@ android {
             signingConfig signingConfigs.Release
         }
     }
+
+        compileOptions {
+            sourceCompatibility 1.8
+            targetCompatibility 1.8
+        }
+
 }
 
 clean.doLast  {

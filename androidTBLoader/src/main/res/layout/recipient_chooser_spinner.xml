@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+    <!-- One level in Hierarchy -->
+    <Spinner  xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/list_item_hierarchy_item"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:textAppearance="@android:style/TextAppearance.Material.Menu" />
+

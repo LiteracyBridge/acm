@@ -25,10 +25,7 @@ import android.widget.Toast;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.checkin.LocationProvider;
-import org.literacybridge.androidtbloader.community.ChooseCommunityActivity;
-import org.literacybridge.androidtbloader.community.CommunityInfo;
-import org.literacybridge.androidtbloader.content.ContentInfo;
-import org.literacybridge.androidtbloader.content.ContentManager;
+import org.literacybridge.androidtbloader.recipient.RecipientChooserActivity;
 import org.literacybridge.androidtbloader.talkingbook.TalkingBookConnectionManager;
 import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.Constants;
@@ -37,6 +34,7 @@ import org.literacybridge.core.fs.FsFile;
 import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.fs.ZipUnzip;
+import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbloader.ProgressListener;
 import org.literacybridge.core.tbloader.TBDeviceInfo;
@@ -54,14 +52,15 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 import static android.app.Activity.RESULT_OK;
 import static android.text.TextUtils.TruncateAt.MARQUEE;
 import static org.literacybridge.androidtbloader.util.Constants.ISO8601;
 import static org.literacybridge.androidtbloader.util.Constants.UTC;
+import static org.literacybridge.androidtbloader.util.PathsProvider.getLocalDeploymentDirectory;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME;
 
 /**
@@ -70,18 +69,21 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_
 public class TbLoaderFragment extends Fragment {
     private static final String TAG = "TBL!:" + TbLoaderFragment.class.getSimpleName();
 
-    private final int REQUEST_CODE_GET_COMMUNITY = 101;
+    private final int REQUEST_CODE_SELECT_RECIPIENT = 101;
+
+    private TBLoaderAppContext mAppContext;
 
     private TalkingBookConnectionManager mTalkingBookConnectionManager;
     private TalkingBookConnectionManager.TalkingBook mConnectedDevice;
     private TBDeviceInfo mConnectedDeviceInfo;
     private String mProject;
     private boolean mStatsOnly;
-    private List<CommunityInfo> mCommunities;
-    private CommunityInfo mCommunity;
+    private ArrayList<String> mPreselectedRecipients;
+    private Recipient mRecipient;
+    private String mCommunityDirectory;
+
     private String mLocation;
     private String mCoordinates;
-    private ContentInfo mContentInfo;
     private String mSrnPrefix = "b-";
 
     private boolean mTestingDeployment;
@@ -101,14 +103,16 @@ public class TbLoaderFragment extends Fragment {
     private ProgressBar mSpinner;
 
     private boolean mUpdateInProgress = false;
+    private boolean mCollapseCommunityName = false;
     private TextView mProjectNameTextView;
     private String mUserName;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mAppContext = (TBLoaderAppContext) getActivity().getApplicationContext();
         Intent intent = getActivity().getIntent();
-        mProject = intent.getStringExtra(Constants.PROJECT);
+        mProject = mAppContext.getProject();
         mStatsOnly = intent.getBooleanExtra("statsonly", false);
         mLocation = intent.getStringExtra("location");
         mTestingDeployment = intent.getBooleanExtra(Constants.TESTING_DEPLOYMENT, false);
@@ -118,22 +122,20 @@ public class TbLoaderFragment extends Fragment {
         }
         mUserName = intent.getStringExtra("username");
         if (!mStatsOnly) {
-            mCommunities = CommunityInfo.parseExtra(intent.getStringArrayListExtra(Constants.COMMUNITIES));
-            // If only one community, don't prompt the user to select it.
-            if (mCommunities != null && mCommunities.size() == 1) {
-                mCommunity = mCommunities.get(0);
+            if (intent.hasExtra(Constants.PRESELECTED_RECIPIENTS)) {
+                mPreselectedRecipients = intent.getStringArrayListExtra(Constants.PRESELECTED_RECIPIENTS);
+            } else {
+                mPreselectedRecipients = new ArrayList<>();
             }
+            // Will be null, if there is no recipient at the path 'mPreselectedRecipients'.
+            mRecipient = mAppContext.getProgramSpec().getRecipients().getRecipient(mPreselectedRecipients);
         }
-        mTalkingBookConnectionManager = ((TBLoaderAppContext) getActivity().getApplicationContext()).getTalkingBookConnectionManager();
-        ContentManager mContentManager = ((TBLoaderAppContext) getActivity().getApplicationContext())
-                .getContentManager();
-        mContentInfo = mContentManager.getContentInfo(mProject);
+        mTalkingBookConnectionManager = mAppContext.getTalkingBookConnectionManager();
 
         ////////////////////////////////////////////////////////////////////////////////
         // Debug code
-        SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
-        TBLoaderAppContext tbLoaderAppContext = (TBLoaderAppContext) getActivity().getApplicationContext();
-        boolean isDebug = tbLoaderAppContext.isDebug();
+        SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(mAppContext);
+        boolean isDebug = mAppContext.isDebug();
         boolean mSimulateDevice = userPrefs.getBoolean("pref_simulate_device", false);
         if (isDebug && mSimulateDevice) {
             InputStream tbStream = getResources().openRawResource(R.raw.demotbbackupzip);
@@ -165,84 +167,84 @@ public class TbLoaderFragment extends Fragment {
 
         // The actionbar has a "title" property that is set from the activity's "label=" property
         // from the AndroidManifest file. Here, we make the toolbar work like an action bar.
-        Toolbar toolbar = (Toolbar) view.findViewById(R.id.main_toolbar);
+        Toolbar toolbar = view.findViewById(R.id.main_toolbar);
         ((AppCompatActivity)getActivity()).setSupportActionBar(toolbar);
         if (mStatsOnly) {
             ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(
                             R.string.updater_collect_stats_title);
         }
         // The toolbar also *contains* a TextView with an id of main_toolbar_title.
-        TextView main_title = (TextView) view.findViewById(R.id.main_toolbar_title);
+        TextView main_title = view.findViewById(R.id.main_toolbar_title);
         main_title.setText("");
 
         // We want a "back" button (sometimes called "up"), but we don't want back navigation, but
         // to simply end this activity without setting project or community.
         ((AppCompatActivity)getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         ((AppCompatActivity)getActivity()).getSupportActionBar().setDisplayShowHomeEnabled(true);
-        toolbar.setNavigationOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view){
-                if (shouldDoBackPressed()) {
-                    getActivity().finish();
-                }
+        toolbar.setNavigationOnClickListener(view1 -> {
+            if (shouldDoBackPressed()) {
+                getActivity().finish();
             }
         });
 
         // Project name and initial value.
-        mProjectNameTextView = (TextView) view.findViewById(R.id.update_project_name);
+        mProjectNameTextView = view.findViewById(R.id.update_project_name);
         mProjectNameTextView.setText(mProject);
 
         if (mStatsOnly) {
             view.findViewById(R.id.loader_deployment).setVisibility(View.GONE);
         } else {
-            TextView mDeploymentNameTextView = (TextView) view.findViewById(
+            TextView mDeploymentNameTextView = view.findViewById(
                 R.id.content_update_name);
-            File deploymentDirectory = PathsProvider.getLocalDeploymentDirectory(mProject);
+            File deploymentDirectory = getLocalDeploymentDirectory(mProject);
             mDeploymentNameTextView.setText(deploymentDirectory.getName());
         }
 
         // Talking Book ID, aka serial number, and initial value.
-        mTalkingBookIdTextView = (TextView)view.findViewById(R.id.talking_book_id);
+        mTalkingBookIdTextView = view.findViewById(R.id.talking_book_id);
 
         // Field for any warning text.
-        mTalkingBookWarningsTextView = (TextView)view.findViewById(R.id.talking_book_warnings);
+        mTalkingBookWarningsTextView = view.findViewById(R.id.talking_book_warnings);
         mTalkingBookWarningsTextView.setText("");
 
         if (mStatsOnly) {
-            mCommunityNameTextView = (TextView) view.findViewById(R.id.content_update_display_community);
+            mCommunityNameTextView = view.findViewById(R.id.content_update_display_community);
             // Community selection is irrelevant for stats only; for that we just want to display the name
             // found on the Talking Book.
             view.findViewById(R.id.loader_community).setVisibility(View.GONE);
             view.findViewById(R.id.loader_display_community).setVisibility(View.VISIBLE);
         } else {
             // Community. Show the values if we already know them.
-            mCommunityNameTextView = (TextView) view.findViewById(R.id.community_name);
-            LinearLayout mCommunityGroup = (LinearLayout) view.findViewById(R.id.loader_community);
+            mCommunityNameTextView = view.findViewById(R.id.community_name);
+            LinearLayout mCommunityGroup = view.findViewById(R.id.loader_community);
             mCommunityNameTextView.setSelected(true);
             mCommunityGroup.setOnClickListener(setCommunityListener);
         }
+        mCommunityNameTextView.setEllipsize(MARQUEE);
+        mCommunityNameTextView.setSingleLine(false);
+        mCommunityNameTextView.setMarqueeRepeatLimit(-1);
 
-        mRefreshFirmwareCheckBox = (CheckBox)view.findViewById(R.id.refresh_firmware);
+        mRefreshFirmwareCheckBox = view.findViewById(R.id.refresh_firmware);
         if (mStatsOnly) {
             mRefreshFirmwareCheckBox.setVisibility(View.GONE);
             ((TextView)view.findViewById(R.id.update_step_label)).setText(getString(
                 R.string.statistics_step_label));
         } else if (mTestingDeployment) {
-            ((TextView)view.findViewById(R.id.test_deployment)).setVisibility(View.VISIBLE);
+            view.findViewById(R.id.test_deployment).setVisibility(View.VISIBLE);
         }
 
         // ProgressListener display
-        mUpdateStepTextView = (TextView)view.findViewById(R.id.update_step);
-        mUpdateDetailTextView = (TextView)view.findViewById(R.id.update_detail);
-        mUpdateLogTextView = (TextView)view.findViewById(R.id.update_log);
+        mUpdateStepTextView = view.findViewById(R.id.update_step);
+        mUpdateDetailTextView = view.findViewById(R.id.update_detail);
+        mUpdateLogTextView = view.findViewById(R.id.update_log);
 
-        mSpinner = (ProgressBar)view.findViewById(R.id.progressBar1);
+        mSpinner = view.findViewById(R.id.progressBar1);
         mSpinner.setVisibility(View.GONE);
-        mGoButton = (Button)view.findViewById(R.id.button_go);
+        mGoButton = view.findViewById(R.id.button_go);
         mGoButton.setOnClickListener(goClickListener);
 
-        if (mCommunity != null) {
-            setCommunityName(mCommunity);
+        if (mRecipient != null) {
+            setCommunityName(mRecipient);
         }
 
         return view;
@@ -283,7 +285,7 @@ public class TbLoaderFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
-            case REQUEST_CODE_GET_COMMUNITY:
+            case REQUEST_CODE_SELECT_RECIPIENT:
                 onGotCommunity(resultCode, data);
                 break;
         }
@@ -291,23 +293,23 @@ public class TbLoaderFragment extends Fragment {
 
     private void onGotCommunity(int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
-            if (data.hasExtra("selected")) {
-                final CommunityInfo community = CommunityInfo.parseExtra(data.getStringExtra("selected"));
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        setCommunityName(community);
-                    }
-                });
+            if (data != null && data.hasExtra(Constants.SELECTED_RECIPIENT)) {
+                ArrayList<String> selectedRecipient = data.getStringArrayListExtra(Constants.SELECTED_RECIPIENT);
+                final Recipient recipient = mAppContext.getProgramSpec().getRecipients().getRecipient(selectedRecipient);
+                getActivity().runOnUiThread(() -> setCommunityName(recipient));
             }
         }
     }
 
-    private void setCommunityName(CommunityInfo community) {
-        mCommunity = community;
-        mCommunityNameTextView.setText(mCommunity.getName());
+    private void setCommunityName(Recipient recipient) {
+        mRecipient = recipient;
+        Map<String,String> recipientsMap = mAppContext.getProgramSpec().getRecipientsMap();
+        if (recipientsMap != null) {
+            mCommunityDirectory = recipientsMap.get(recipient.recipientid);
+        }
+        mCollapseCommunityName = false;
+        mCommunityNameTextView.setText(mRecipient.getName());
         mCommunityNameTextView.setEllipsize(MARQUEE);
-        mCommunityNameTextView.setSingleLine(true);
         mCommunityNameTextView.setMarqueeRepeatLimit(-1);
         mCommunityNameTextView.setSelected(true);
         setButtonState();
@@ -322,43 +324,38 @@ public class TbLoaderFragment extends Fragment {
             mProgressListener.clear();
             mSpinner.setVisibility(View.VISIBLE);
             mUpdateInProgress = true;
+            mCollapseCommunityName = true;
             setButtonState();
 
-            Executors.newSingleThreadExecutor().submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        performOperation();
-                    } catch (Exception e) {
-                        Log.d(TAG, "Unexpected exception updating Talking Book", e);
-                        /*
-                         * It's not the friendliest thing to display an exception stack trace to the user.
-                         * However, while the app is young, they'll happen, and we need to get the
-                         * information back to the developer. And when the app is mature, and these
-                         * no longer happen, well, we'll no longer show them to the user. And if, somehow,
-                         * an exception DOES occur, we *really* need to get that back to the developer.
-                         */
-                        mProgressListener.log(getStackTrace(e));
-                        mProgressListener.log("Unexpected exception:");
-                    } finally {
-                        mConnectedDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
-                                mConnectedDevice.getDeviceLabel(),
-                                mSrnPrefix);
-                        final String srn = mConnectedDeviceInfo.getSerialNumber();
-                        // We always want to turn off the spinner, and re-enable the Go button.
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mSpinner.setVisibility(View.INVISIBLE);
-                                mUpdateInProgress = false;
-                                mTalkingBookIdTextView.setText(srn);
-                                setButtonState();
-                                setMessages();
-                                Toast.makeText(getActivity(), "It is now safe to disconnect the Talking Book.", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                        unmount();
-                    }
+            Executors.newSingleThreadExecutor().submit(() -> {
+                try {
+                    performOperation();
+                } catch (Exception e) {
+                    Log.d(TAG, "Unexpected exception updating Talking Book", e);
+                    /*
+                     * It's not the friendliest thing to display an exception stack trace to the user.
+                     * However, while the app is young, they'll happen, and we need to get the
+                     * information back to the developer. And when the app is mature, and these
+                     * no longer happen, well, we'll no longer show them to the user. And if, somehow,
+                     * an exception DOES occur, we *really* need to get that back to the developer.
+                     */
+                    mProgressListener.log(getStackTrace(e));
+                    mProgressListener.log("Unexpected exception:");
+                } finally {
+                    mConnectedDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
+                            mConnectedDevice.getDeviceLabel(),
+                            mSrnPrefix);
+                    final String srn = mConnectedDeviceInfo.getSerialNumber();
+                    // We always want to turn off the spinner, and re-enable the Go button.
+                    getActivity().runOnUiThread(() -> {
+                        mSpinner.setVisibility(View.INVISIBLE);
+                        mUpdateInProgress = false;
+                        mTalkingBookIdTextView.setText(srn);
+                        setButtonState();
+                        setMessages();
+                        Toast.makeText(getActivity(), "It is now safe to disconnect the Talking Book.", Toast.LENGTH_SHORT).show();
+                    });
+                    unmount();
                 }
             });
         }
@@ -388,12 +385,9 @@ public class TbLoaderFragment extends Fragment {
     private OnClickListener setCommunityListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            if (mCommunities != null && mCommunities.size() == 1) { return; }
-            List<CommunityInfo> list = mCommunities != null ? mCommunities :
-                                       new ArrayList<>(mContentInfo.getCommunities().values());
-            Intent intent = new Intent(getActivity(), ChooseCommunityActivity.class);
-            intent.putExtra(Constants.COMMUNITIES, CommunityInfo.makeExtra(list));
-            startActivityForResult(intent, REQUEST_CODE_GET_COMMUNITY);
+            Intent intent = new Intent(getActivity(), RecipientChooserActivity.class);
+            intent.putStringArrayListExtra(Constants.PRESELECTED_RECIPIENTS, mPreselectedRecipients);
+            startActivityForResult(intent, REQUEST_CODE_SELECT_RECIPIENT);
         }
     };
 
@@ -403,11 +397,13 @@ public class TbLoaderFragment extends Fragment {
     private void setButtonState() {
         // Enable the Go button if we have a TB connected, have a location & a community,
         // and aren't already updating.
-        boolean goEnabled = (mStatsOnly || mCommunity != null) &&
+        boolean goEnabled = (mStatsOnly || mRecipient != null) &&
                 (mConnectedDevice != null) &&
                 !mUpdateInProgress;
         mGoButton.setAlpha(goEnabled ? 1 : 0.5f);
         mGoButton.setEnabled(goEnabled);
+        mCommunityNameTextView.setSingleLine(mCollapseCommunityName);
+
         setMessages();
     }
 
@@ -424,13 +420,13 @@ public class TbLoaderFragment extends Fragment {
                 boolean projectMismatch = !deviceProject.equalsIgnoreCase(mProject) &&
                     !deviceProject.equalsIgnoreCase("UNKNOWN");
                 boolean communityMismatch =
-                    mCommunity != null && !deviceCommunity.equalsIgnoreCase(mCommunity.getName()) &&
+                    mRecipient != null && !deviceCommunity.equalsIgnoreCase(mRecipient.getName()) &&
                         !deviceCommunity.equalsIgnoreCase("UNKNOWN");
                 if (projectMismatch || communityMismatch) {
                     message = "Warning: This Talking Book was previously part of";
                     if (projectMismatch)
                         message += " project " + deviceProject;
-                    if (mCommunity != null) {
+                    if (mRecipient != null) {
                         if (projectMismatch && communityMismatch)
                             message += " and";
                         if (communityMismatch)
@@ -450,26 +446,20 @@ public class TbLoaderFragment extends Fragment {
             @Override
             public void onTalkingBookConnectEvent(final TalkingBookConnectionManager.TalkingBook connectedDevice) {
                 Log.d(TAG, String.format("Saw new Talking Book: %s", connectedDevice));
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        updateTbConnectionStatus(connectedDevice);
-                        // New TB connected, so clear any results from updating a previous TB.
-                        mProgressListener.clear();
-                        setButtonState();
-                    }
+                getActivity().runOnUiThread(() -> {
+                    updateTbConnectionStatus(connectedDevice);
+                    // New TB connected, so clear any results from updating a previous TB.
+                    mProgressListener.clear();
+                    setButtonState();
                 });
             }
 
             @Override
             public void onTalkingBookDisConnectEvent() {
                 Log.d(TAG, "Disconnected Talking Book");
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        updateTbConnectionStatus(null);
-                        setButtonState();
-                    }
+                getActivity().runOnUiThread(() -> {
+                    updateTbConnectionStatus(null);
+                    setButtonState();
                 });
             }
         };
@@ -549,12 +539,9 @@ public class TbLoaderFragment extends Fragment {
         public void extraStep(String step) {
             mStep = step;
             mDetail = "";
-            activity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mUpdateStepTextView.setText(mStep);
-                    mUpdateDetailTextView.setText(mDetail);
-                }
+            activity().runOnUiThread(() -> {
+                mUpdateStepTextView.setText(mStep);
+                mUpdateDetailTextView.setText(mDetail);
             });
         }
 
@@ -562,35 +549,22 @@ public class TbLoaderFragment extends Fragment {
         public void step(final Steps step) {
             mStep = step.description();
             mDetail = "";
-            activity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mUpdateStepTextView.setText(mStep);
-                    mUpdateDetailTextView.setText(mDetail);
-                }
+            activity().runOnUiThread(() -> {
+                mUpdateStepTextView.setText(mStep);
+                mUpdateDetailTextView.setText(mDetail);
             });
         }
 
         @Override
         public void detail(final String detail) {
             mDetail = detail;
-            activity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mUpdateDetailTextView.setText(mDetail);
-                }
-            });
+            activity().runOnUiThread(() -> mUpdateDetailTextView.setText(mDetail));
         }
 
         @Override
         public void log(final String line) {
             mLog = line + "\n" + mLog;
-            activity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mUpdateLogTextView.setText(mLog);
-                }
-            });
+            activity().runOnUiThread(() -> mUpdateLogTextView.setText(mLog));
         }
 
         @Override
@@ -610,12 +584,7 @@ public class TbLoaderFragment extends Fragment {
                     mLog = mLog + line;
                 }
             }
-            activity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mUpdateLogTextView.setText(mLog);
-                }
-            });
+            activity().runOnUiThread(() -> mUpdateLogTextView.setText(mLog));
         }
     };
 
@@ -658,12 +627,7 @@ public class TbLoaderFragment extends Fragment {
 
         DeploymentInfo oldDeploymentInfo = tbDeviceInfo.createDeploymentInfo(mProject);
 
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mTalkingBookWarningsTextView.setText(getString(R.string.do_not_disconnect));
-            }
-        });
+        getActivity().runOnUiThread(() -> mTalkingBookWarningsTextView.setText(getString(R.string.do_not_disconnect)));
 
         TBLoaderCore.Builder builder = new TBLoaderCore.Builder()
             .withTbLoaderConfig(tbLoaderConfig)
@@ -681,7 +645,7 @@ public class TbLoaderFragment extends Fragment {
             result = builder.build().collectStatistics();
         } else {
             // The directory with images. {project}/content/{Deployment}
-            File deploymentDirectory = PathsProvider.getLocalDeploymentDirectory(mProject);
+            File deploymentDirectory = getLocalDeploymentDirectory(mProject);
             DeploymentInfo newDeploymentInfo = getUpdateDeploymentInfo(opLog, tbDeviceInfo,
                                                         collectionTimestamp, todaysDate,
                                                         collectedDataDirectory,
@@ -693,6 +657,7 @@ public class TbLoaderFragment extends Fragment {
                 .withNewDeploymentInfo(newDeploymentInfo)
                 .build().update();
         }
+        opLog.put("gotstatistics", result.gotStatistics);
 
         // Zip up the files, and give the .zip to the uploader.
         try {
@@ -706,7 +671,7 @@ public class TbLoaderFragment extends Fragment {
             ZipUnzip.zip(collectedDataDirectory, uploadableZipFile, true);
             collectedDataTbFile.deleteDirectory();
 
-            ((TBLoaderAppContext)getActivity().getApplicationContext()).getUploadService().uploadFileAsName(uploadableZipFile, collectedDataZipName);
+            mAppContext.getUploadService().uploadFileAsName(uploadableZipFile, collectedDataZipName);
             String message = String.format("Zipped statistics and user feedback in %s", formatElapsedTime(System.currentTimeMillis()-zipStart));
             mProgressListener.log(message);
             message = String.format("TB-Loader completed in %s", formatElapsedTime(System.currentTimeMillis()-startTime));
@@ -728,7 +693,7 @@ public class TbLoaderFragment extends Fragment {
                                                    File deploymentDirectory) {
         Config config = TBLoaderAppContext.getInstance().getConfig();
         // Find the image with the community's language and/or group (such as a/b test group).
-        String imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, mCommunity.getName());
+        String imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, mCommunityDirectory);
 
         // What firmware comes with this Deployment?
         String firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(deploymentDirectory);
@@ -737,7 +702,7 @@ public class TbLoaderFragment extends Fragment {
         if (tbDeviceInfo.needNewSerialNumber()) {
             deviceSerialNumber = getNewDeviceSerialNumber();
         }
-        String recipientid = TBLoaderUtils.getRecipientIdForCommunity(deploymentDirectory, mCommunity.getName());
+        String recipientid = mRecipient.recipientid;
 
         DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
                 .withSerialNumber(deviceSerialNumber)
@@ -748,7 +713,7 @@ public class TbLoaderFragment extends Fragment {
                 .withUpdateDirectory(collectedDataDirectory.getName())
                 .withUpdateTimestamp(todaysDate) // TODO: this should be the "Deployment date", the first date the new content is deployed.
                 .withFirmwareRevision(firmwareRevision)
-                .withCommunity(mCommunity.getName())
+                .withCommunity(mCommunityDirectory)
                 .withRecipientid(recipientid)
                 .asTestDeployment(mTestingDeployment);
         DeploymentInfo newDeploymentInfo = builder.build();
@@ -756,7 +721,8 @@ public class TbLoaderFragment extends Fragment {
         opLog.put("project", mProject)
             .put("deployment", deploymentDirectory.getName())
             .put("package", imageName)
-            .put("community", mCommunity.getName())
+            .put("recipientid", mRecipient.recipientid)
+            .put("community", mCommunityDirectory)
             .put("sn", deviceSerialNumber)
             .put("tbloaderId", config.getTbcdid())
             .put("username", config.getUsername())

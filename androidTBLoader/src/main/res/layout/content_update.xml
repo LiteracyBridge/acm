@@ -124,9 +124,9 @@
             android:layout_weight="1"
             android:ellipsize="marquee"
             android:marqueeRepeatLimit="marquee_forever"
-            android:maxLines="1"
+            android:singleLine="true"
             android:text="Please set the Community name"
-            android:textSize="30sp"
+            android:textSize="24sp"
             tools:ellipsize="marquee"
             tools:text="Please set the Community name" />
 

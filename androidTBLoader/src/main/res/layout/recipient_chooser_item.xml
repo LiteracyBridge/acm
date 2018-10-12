@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- label describing what the spinner is -->
+    <TextView
+        android:id="@+id/hierarchy_spinner_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="10sp" />
+
+    <!-- Spinner item -->
+    <TextView
+        android:id="@+id/hierarchy_spinner_choice_text"
+        style="?android:attr/spinnerItemStyle"
+        android:singleLine="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/hierarchy_spinner_label"
+        android:ellipsize="marquee"
+        android:textAlignment="inherit"
+        tools:text="Choose me!" />
+
+    <!-- Message item -->
+    <TextView
+        android:id="@+id/hierarchy_spinner_choice_message"
+        style="?android:attr/spinnerItemStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/hierarchy_spinner_label"
+        android:textStyle="italic"
+        android:visibility="gone" />
+
+</RelativeLayout>

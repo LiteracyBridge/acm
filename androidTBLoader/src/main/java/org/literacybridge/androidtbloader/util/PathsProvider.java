@@ -68,6 +68,11 @@ public class PathsProvider {
         return null;
     }
 
+    public static File getProgramSpecDir(String project) {
+        File deploymentDir = getLocalDeploymentDirectory(project);
+        return new File(deploymentDir, "programspec");
+    }
+
     /**
      * Gets a File object that represents a temporary directory into which files from
      * the Talking Book can be copied (or zipped).

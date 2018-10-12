@@ -11,7 +11,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -26,7 +25,6 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.Layout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -43,13 +41,13 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDel
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GetDetailsHandler;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.UpdateAttributesHandler;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.androidtbloader.BuildConfig;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.SettingsActivity;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.checkin.CheckinActivity;
 import org.literacybridge.androidtbloader.checkin.KnownLocations;
-import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.content.ContentManager;
 import org.literacybridge.androidtbloader.content.ManageContentActivity;
 import org.literacybridge.androidtbloader.signin.AboutApp;
@@ -110,10 +108,9 @@ public class MainFragment extends Fragment {
     private boolean mHaveConfig = false;
     private String mUserName;
     private String mUserid;
-    private String mProject;
 
     private String mCheckinLocation;
-    private ArrayList<CommunityInfo> mCheckinCommunities;
+    private ArrayList<String> mPreselectedRecipients = new ArrayList<>();
 
     private TextView mUploadCountTextView;
     private TextView mUploadSizeTextView;
@@ -170,49 +167,49 @@ public class MainFragment extends Fragment {
             return null;
         }
 
-        mGreetingName = (TextView)view.findViewById(R.id.main_greeting_name);
-        mGreetingEmail = (TextView)view.findViewById(R.id.main_greeting_email);
+        mGreetingName = view.findViewById(R.id.main_greeting_name);
+        mGreetingEmail = view.findViewById(R.id.main_greeting_email);
 
-        mManageGroup = (ViewGroup)view.findViewById(R.id.main_manage_content_group);
-        mCheckinGroup = (ViewGroup)view.findViewById(R.id.main_checkin_group);
-        mUpdateGroup = (ViewGroup)view.findViewById(R.id.main_update_talking_books_group);
-        mGetStatsGroup = (ViewGroup)view.findViewById(R.id.main_get_stats_talking_books_group);
+        mManageGroup = view.findViewById(R.id.main_manage_content_group);
+        mCheckinGroup = view.findViewById(R.id.main_checkin_group);
+        mUpdateGroup = view.findViewById(R.id.main_update_talking_books_group);
+        mGetStatsGroup = view.findViewById(R.id.main_get_stats_talking_books_group);
 
         mManageGroup.setOnClickListener(manageListener);
         mCheckinGroup.setOnClickListener(checkinListener);
         mUpdateGroup.setOnClickListener(updateListener);
         mGetStatsGroup.setOnClickListener(getStatsListener);
 
-        mTbGroup = (ViewGroup) view.findViewById(R.id.main_tb_status_group);
-        mTbStatus = (TextView)view.findViewById(R.id.main_tb_status);
-        mTbId = (TextView)view.findViewById(R.id.main_tb_id);
-        mTbContent = (TextView)view.findViewById(R.id.main_tb_content);
+        mTbGroup = view.findViewById(R.id.main_tb_status_group);
+        mTbStatus = view.findViewById(R.id.main_tb_status);
+        mTbId = view.findViewById(R.id.main_tb_id);
+        mTbContent = view.findViewById(R.id.main_tb_content);
 
-        mUploadCountTextView = (TextView)view.findViewById(R.id.main_count_uploads);
-        mUploadSizeTextView = (TextView)view.findViewById(R.id.main_size_uploads);
-        mUploadNextTextView = (TextView)view.findViewById(R.id.main_next_upload);
+        mUploadCountTextView = view.findViewById(R.id.main_count_uploads);
+        mUploadSizeTextView = view.findViewById(R.id.main_size_uploads);
+        mUploadNextTextView = view.findViewById(R.id.main_next_upload);
 
         mUploadCountTextView.setOnClickListener(uploadListener);
 
         // Set toolbar for this screen. By default, has a title from the application manifest
         // application.label property.
-        Toolbar toolbar = (Toolbar) view.findViewById(R.id.main_toolbar);
+        Toolbar toolbar = view.findViewById(R.id.main_toolbar);
         // This title is independent of the default title, defined in the main_tool_bar.xml file
-        TextView main_title = (TextView) view.findViewById(R.id.main_toolbar_title);
+        TextView main_title = view.findViewById(R.id.main_toolbar_title);
         main_title.setText("");
         ((AppCompatActivity)getActivity()).setSupportActionBar(toolbar);
 
         // Set navigation drawer for this screen.  Note that R.id.main_drawer_layout is in the
         // $.layout.activity_main (.xml) file.
-        mDrawer = (DrawerLayout) view.findViewById(R.id.main_drawer_layout);
+        mDrawer = view.findViewById(R.id.main_drawer_layout);
         ActionBarDrawerToggle mDrawerToggle = new ActionBarDrawerToggle(getActivity(), mDrawer,
                 toolbar, R.string.nav_drawer_open, R.string.nav_drawer_close);
         mDrawer.addDrawerListener(mDrawerToggle);
         mDrawerToggle.syncState();
-        NavigationView nDrawer = (NavigationView) view.findViewById(R.id.nav_view);
+        NavigationView nDrawer = view.findViewById(R.id.nav_view);
         nDrawer.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
-            public boolean onNavigationItemSelected(MenuItem item) {
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 Log.d(TAG, String.format("Perform action for %s", item.toString()));
                 performAction(item);
                 return true;
@@ -278,38 +275,28 @@ public class MainFragment extends Fragment {
         switch (requestCode) {
         case REQUEST_CODE_MANAGE_CONTENT:
             if (resultCode == RESULT_OK) {
-                if (data.hasExtra(Constants.SELECTED)) {
-                    mProject = data.getStringExtra(Constants.SELECTED);
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            setButtonState();
-                        }
-                    });
-                }
-            }
-            break;
-        case REQUEST_CODE_CHECKIN:
-            if (resultCode == RESULT_OK) {
-                if (data.hasExtra(Constants.PROJECT)) {
-                    mProject = data.getStringExtra(Constants.PROJECT);
-                }
-                if (data.hasExtra(Constants.LOCATION)) {
-                    mCheckinLocation = data.getStringExtra(Constants.LOCATION);
-                }
-                if (data.hasExtra(Constants.COMMUNITIES)) {
-                    mCheckinCommunities = CommunityInfo.parseExtra(
-                        data.getStringArrayListExtra(Constants.COMMUNITIES));
-                }
-                if (data.hasExtra(Constants.TESTING_DEPLOYMENT)) {
-                    mTestingDeployment = data.getBooleanExtra(Constants.TESTING_DEPLOYMENT, false);
-                }
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         setButtonState();
                     }
                 });
+            }
+            break;
+        case REQUEST_CODE_CHECKIN:
+            if (resultCode == RESULT_OK) {
+                if (data.hasExtra(Constants.LOCATION)) {
+                    mCheckinLocation = data.getStringExtra(Constants.LOCATION);
+                }
+                if (data != null && data.hasExtra(Constants.PRESELECTED_RECIPIENTS)) {
+                    mPreselectedRecipients = data.getStringArrayListExtra(Constants.PRESELECTED_RECIPIENTS);
+                } else {
+                    mPreselectedRecipients = new ArrayList<>();
+                }
+                if (data.hasExtra(Constants.TESTING_DEPLOYMENT)) {
+                    mTestingDeployment = data.getBooleanExtra(Constants.TESTING_DEPLOYMENT, false);
+                }
+                getActivity().runOnUiThread(this::setButtonState);
             }
             break;
         case REQUEST_CODE_UPDATE_TBS:
@@ -516,8 +503,8 @@ public class MainFragment extends Fragment {
         @Override
         public void onClick(View v) {
             Intent userActivity = new Intent(getActivity(), CheckinActivity.class);
+            userActivity.putStringArrayListExtra(Constants.PRESELECTED_RECIPIENTS, (ArrayList<String>) mPreselectedRecipients);
             userActivity.putExtra(Constants.NAME, mUserid);
-            userActivity.putExtra(Constants.PROJECT, mProject);
             startActivityForResult(userActivity, REQUEST_CODE_CHECKIN);
         }
     };
@@ -527,7 +514,6 @@ public class MainFragment extends Fragment {
         public void onClick(View v) {
             Intent userActivity = new Intent(getActivity(), UploadStatusActivity.class);
             userActivity.putExtra(Constants.USERID, mUserid);
-//            userActivity.putExtra(Constants.PROJECT, mProject);
             startActivityForResult(userActivity, REQUEST_CODE_UPDATE_UPLOAD_STATUS);
         }
     };
@@ -549,13 +535,12 @@ public class MainFragment extends Fragment {
     private void doUpdate(boolean statsOnly) {
         Intent userActivity = new Intent(getActivity(), TbLoaderActivity.class);
         userActivity.putExtra(Constants.USERNAME, mUserName);
-        userActivity.putExtra(Constants.PROJECT, mProject);
         userActivity.putExtra(Constants.STATSONLY, statsOnly);
         userActivity.putExtra(Constants.TESTING_DEPLOYMENT, mTestingDeployment);
         if (statsOnly) {
             userActivity.putExtra(Constants.LOCATION, "other");
         } else {
-            userActivity.putExtra(Constants.COMMUNITIES, CommunityInfo.makeExtra(mCheckinCommunities));
+            userActivity.putStringArrayListExtra(Constants.PRESELECTED_RECIPIENTS, (ArrayList<String>) mPreselectedRecipients);
             userActivity.putExtra(Constants.LOCATION, mCheckinLocation);
         }
         startActivityForResult(userActivity, REQUEST_CODE_UPDATE_TBS);
@@ -616,7 +601,7 @@ public class MainFragment extends Fragment {
     private void setButtonState() {
         boolean canManage = mHaveConfig;
         boolean canCheckin = mHaveConfig && mContentManager.haveContentInfo();
-        boolean canUpdate = canCheckin && mProject != null && mProject.length() > 0;
+        boolean canUpdate = canCheckin && StringUtils.isNotEmpty(mApplicationContext.getProject());
 
         mManageGroup.setAlpha(canManage ? 1.0f : 0.33f);
         mManageGroup.setEnabled(canManage);

@@ -4,6 +4,8 @@
  */
 package org.literacybridge.acm.utils;
 
+import org.literacybridge.acm.config.ACMConfiguration;
+
 import java.awt.Component;
 import java.awt.Container;
 import java.lang.reflect.InvocationTargetException;
@@ -15,9 +17,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.swing.JComponent;
-import javax.swing.UIDefaults;
-import javax.swing.UIManager;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.*;
 
 /**
  * A collection of utility methods for Swing.
@@ -30,6 +32,7 @@ import javax.swing.UIManager;
  *
  */
 public final class SwingUtils {
+    private static final Logger LOG = Logger.getLogger(SwingUtils.class.getName());
 
     private SwingUtils() {
         throw new Error("SwingUtils is just a container for static methods");
@@ -387,6 +390,70 @@ public final class SwingUtils {
         setExclude.add("getColorModel");
         setExclude.add("getGraphics");
         setExclude.add("getGraphicsConfiguration");
+    }
+
+    /**
+     * Common code to set L&F.
+     * @param laf Short name of desired L&F.
+     */
+    public static void setLookAndFeel(String laf) {
+        /*
+         * Add this to your application level JPanel derivative:
+                @Override
+                public void setBackground(Color bgColor) {
+                    // Workaround for weird bug in seaglass look&feel that causes a
+                    // java.awt.IllegalComponentStateException when e.g. a combo box
+                    // in this dialog is clicked on
+                    if (bgColor.getAlpha() == 0) {
+                        super.setBackground(backgroundColor);
+                    } else {
+                        super.setBackground(bgColor);
+                        backgroundColor = bgColor;
+                    }
+                }
+         */
+
+        // Not sure why, but making this call before setting the seaglass look and
+        // feel
+        // prevents an UnsatisfiedLinkError to be thrown
+        final LookAndFeel defaultLAF = UIManager.getLookAndFeel();
+        if (laf.equalsIgnoreCase("nimbus")) {
+            try {
+                for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                    if ("Nimbus".equals(info.getName())) {
+                        UIManager.setLookAndFeel(info.getClassName());
+                        System.out.println("Set l&f to Nimbus.");
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                // If Nimbus is not available, you can set the GUI to another look and feel.
+            }
+        }
+        if (laf.equalsIgnoreCase("metal")) {
+            //"javax.swing.plaf.metal.MetalLookAndFeel"
+            try {
+                // select Look and Feel
+                UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+                // start application
+                System.out.println("Set l&f to metal.");
+                return;
+            }
+            catch (Exception ex) {
+            }
+        }
+
+        // Fall back to SeaGlass
+        try {
+            UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
+        } catch (Exception e) {
+            try {
+                LOG.log(Level.WARNING, "Unable to set look and feel.", e);
+                UIManager.setLookAndFeel(defaultLAF);
+            } catch (Exception e1) {
+                LOG.log(Level.WARNING, "Unable to set look and feel.", e1);
+            }
+        }
     }
 
     /**

@@ -4,7 +4,7 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
     <color name="toolbar_background">#404142</color>
-    <color name="toolbar_items">#CBCBCB</color>
+    <color name="toolbar_items">#cbcbcb</color>
     <color name="alert">#ac1600</color>
     <color name="success">#37a51c</color>
     <color name="button_default">#329AD6</color>
@@ -22,4 +22,8 @@
     <color name="grey_700">#1D1E1E</color>
     <color name="TB_RED">#e00000</color>
     <color name="TB_CONNECTED_FIELD">#edfdbc</color>
+    <color name="text_disabled">#c0c0c0</color>
+    <color name="text_autoselect">#409740</color>
+    <color name="text_normal">#000000</color>
+    <color name="text_attention">#0000aa</color>
 </resources>

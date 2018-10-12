@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ACMConfiguration {
@@ -94,7 +95,7 @@ public class ACMConfiguration {
     }
 
     private ACMConfiguration(CommandLineParams params) {
-        loadProps();
+        loadUserProps();
 
         if (params.titleACM != null) {
             title = params.titleACM;
@@ -128,7 +129,7 @@ public class ACMConfiguration {
             // propsChanged = true;
         }
 
-        writeProps();
+        writeUserProps();
     }
 
     /**
@@ -264,7 +265,7 @@ public class ACMConfiguration {
 
     private void setRecordingCounter(String counter) {
         UsersConfigurationProperties.setProperty(Constants.RECORDING_COUNTER_PROP, counter);
-        writeProps();
+        writeUserProps();
     }
 
     public String getNewAudioItemUID() throws IOException {
@@ -276,7 +277,7 @@ public class ACMConfiguration {
 
         // make sure we remember that this uuid was already used
         setRecordingCounter(value);
-        // writeProps();
+        // writeUserProps();
 
         return uuid;
     }
@@ -294,7 +295,7 @@ public class ACMConfiguration {
             }
             value = builder.toString();
             UsersConfigurationProperties.setProperty(Constants.DEVICE_ID_PROP, value);
-            writeProps();
+            writeUserProps();
         }
 
         return value;
@@ -486,7 +487,36 @@ public class ACMConfiguration {
         return whitelistFile;
     }
 
-    private void loadProps() {
+    public File getConfigFileFor(String acmName) {
+        File configFile = null;
+        File acmDir = getAcmDirFor(acmName);
+
+        if (acmDir != null) {
+            configFile = new File(acmDir, Constants.CONFIG_PROPERTIES);
+            if (!configFile.exists() || !configFile.isFile()) {
+                configFile = null;
+            }
+        }
+        return configFile;
+    }
+
+    public Properties getConfigPropertiesFor(String acmName) {
+        Properties properties = null;
+        File configFile = getConfigFileFor(acmName);
+        if (configFile != null) {
+            try {
+                properties = new Properties();
+                BufferedInputStream in = new BufferedInputStream(new FileInputStream(
+                    configFile));
+                properties.load(in);
+            } catch (IOException ignored) {
+                System.err.printf("Unable to load configuration file: %s\n", configFile.getName());
+            }
+        }
+        return properties;
+    }
+
+    private void loadUserProps() {
         if (getUsersConfigurationPropertiesFile().exists()) {
             try {
                 BufferedInputStream in = new BufferedInputStream(
@@ -499,7 +529,7 @@ public class ACMConfiguration {
         }
     }
 
-    private void writeProps() {
+    private void writeUserProps() {
         try {
             BufferedOutputStream out = new BufferedOutputStream(
                     new FileOutputStream(getUsersConfigurationPropertiesFile()));

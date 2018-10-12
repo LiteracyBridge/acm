@@ -89,6 +89,11 @@ S
             android:screenOrientation="portrait"/>
 
         <activity
+            android:name=".recipient.RecipientChooserActivity"
+            android:label="Choose Recipient"
+            android:screenOrientation="portrait"/>
+
+        <activity
             android:name=".SettingsActivity"
             android:label="Settings"
             android:parentActivityName=".content.ManageContentActivity"

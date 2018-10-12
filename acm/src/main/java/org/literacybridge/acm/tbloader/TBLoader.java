@@ -1,13 +1,18 @@
 package org.literacybridge.acm.tbloader;
 
+import org.apache.commons.lang.StringUtils;
 import org.jdesktop.swingx.JXDatePicker;
+import org.jdesktop.swingx.prompt.PromptSupport;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.utils.OsUtils;
+import org.literacybridge.acm.utils.SwingUtils;
 import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.fs.FsFile;
 import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
+import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbloader.ProgressListener;
 import org.literacybridge.core.tbloader.TBDeviceInfo;
@@ -17,12 +22,16 @@ import org.literacybridge.core.tbloader.TBLoaderCore;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import javax.swing.*;
+import javax.swing.border.AbstractBorder;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ItemEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.DataInputStream;
@@ -41,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -48,10 +58,13 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 import static java.awt.GridBagConstraints.BOTH;
+import static java.awt.GridBagConstraints.CENTER;
+import static java.awt.GridBagConstraints.FIRST_LINE_START;
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.LINE_START;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.RELATIVE;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
@@ -64,19 +77,21 @@ public class TBLoader extends JFrame {
     // This string must match firmware code to generate special dings on startup
     // as reminder that specific name has not been set.
     private static final String NO_COMMUNITY_SELECTED = "Non-specific";
+    private static final String NON_SPECIFIC = NO_COMMUNITY_SELECTED;
 
     private String imageRevision = "(no rev)";
     private String dateRotation;
 
     // Global swing components.
     private JLabel greeting;
-    private JLabel warning;
+    private Box greetingBox;
 
+    private Box deviceBox;
     private JLabel deviceLabel;
     private JComboBox<TBDeviceInfo> driveList;
 
     private JLabel currentLocationLabel;
-    private JComboBox<String> currentLocationList;
+    private JComboBox<String> currentLocationChooser;
 
     private JLabel nextLabel;
     private JLabel prevLabel;
@@ -92,9 +107,11 @@ public class TBLoader extends JFrame {
     private JComboBox<String> newCommunityList;
     private JTextField oldCommunityText;
 
+    private JRecipientChooser recipientChooser;
+
     private JLabel contentPackageLabel;
-    private JTextField newImageText;
-    private JTextField oldImageText;
+    private JTextField newPackageText;
+    private JTextField oldPackageText;
 
     private JLabel dateLabel;
     private JXDatePicker datePicker;
@@ -103,6 +120,7 @@ public class TBLoader extends JFrame {
     private JLabel firmwareVersionLabel;
     private JTextField newFirmwareVersionText;
     private JTextField oldFirmwareVersionText;
+    private Box newFirmwareBox;
 
     private JLabel srnLabel;
     private JTextField newSrnText;
@@ -114,6 +132,10 @@ public class TBLoader extends JFrame {
 
     private JButton updateButton;
     private JButton getStatsButton;
+    private JComboBox<String> actionChooser;
+    private JButton goButton;
+    private Color defaultButtonBackgroundColor;
+    private Box actionBox;
 
     private JTextArea statusCurrent;
     private JTextArea statusFilename;
@@ -133,6 +155,14 @@ public class TBLoader extends JFrame {
     // All content is relative to this.
     private File baseDirectory;
     private File logsDir;
+
+    // Metadata about the project. Optional, may be null.
+    private ProgramSpec programSpec = null;
+
+    // Options.
+    private boolean forceOldStyleCommunityChooser = false;
+    private boolean forceOldStyleGoButtons = false;
+
     // Document change listener, listens for changes to filter text box, updates the filter.
     private DocumentListener filterChangeListener = new DocumentListener() {
         // Listen for any change to the text
@@ -151,8 +181,11 @@ public class TBLoader extends JFrame {
         }
     }
 
-    private String currentLocation[] = new String[] { "Select location", "Community",
-            "Jirapa office", "Wa office", "Other" };
+    private String[] currentLocationList = new String[] { "Select location...", "Community",
+        "Jirapa office", "Wa office", "Other" };
+
+    private static final String UPDATE_TB = "Update TB";
+    private String[] actionList = new String[] {UPDATE_TB, "Collect Stats"};
 
     private boolean startUpDone = false;
     private boolean refreshingDriveInfo = false;
@@ -184,6 +217,12 @@ public class TBLoader extends JFrame {
         OsUtils.enableOSXQuitStrategy();
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.addWindowListener(new WindowEventHandler());
+
+        // Set options that are controlled by project config file.
+        Properties config = ACMConfiguration.getInstance().getConfigPropertiesFor(newProject);
+        String valStr = config.getProperty("OLD_COMMUNITY_CHOOSER", "false");
+        forceOldStyleCommunityChooser = Boolean.parseBoolean(valStr);
+
         setDeviceIdAndPaths();
 
         // Set up the program log. For debugging the execution of the TBLoader application.
@@ -218,13 +257,13 @@ public class TBLoader extends JFrame {
             .put("tbcdid", tbLoaderConfig.getTbLoaderId())
             .put("project", newProject);
 
-        // get image revision
+        // Get Deployment version
         File[] files = baseDirectory.listFiles((dir, name) -> {
             String lowercase = name.toLowerCase();
             return lowercase.endsWith(".rev");
         });
         if (files.length > 1) {
-            // Multiple Image Revisions! -- Delete all to go back to published version, unless one marks it as UNPUBLISHED
+            // Multiple Deployment versions! -- Delete all to go back to published version, unless one marks it as UNPUBLISHED
             boolean unpublished = false;
             for (File f : files) {
                 if (!f.getName().startsWith(TBLoaderConstants.UNPUBLISHED_REV)) {
@@ -244,7 +283,11 @@ public class TBLoader extends JFrame {
             imageRevision = files[0].getName();
             imageRevision = imageRevision.substring(0, imageRevision.length() - 4);
         }
-        setTitle("TB-Loader " + Constants.ACM_VERSION + "/" + imageRevision);
+        String title = String.format("TB-Loader %s/%s -- Use with %s TBs only",
+            Constants.ACM_VERSION, imageRevision,
+            (srnPrefix.equals("a-")) ? "OLD" : "NEW");
+        setTitle(title);
+
         if (imageRevision.startsWith(TBLoaderConstants.UNPUBLISHED_REV)) {
             Object[] options = { "Yes-refresh from published", "No-keep unpublished" };
             int answer = JOptionPane.showOptionDialog(this,
@@ -265,13 +308,16 @@ public class TBLoader extends JFrame {
         opLog.finish();
 
         initializeGui();
-        JOptionPane.showMessageDialog(applicationWindow,
-                                      "Remember to power Talking Book with batteries before connecting with USB.",
-                                      "Use Batteries!", JOptionPane.PLAIN_MESSAGE);
+//        JOptionPane.showMessageDialog(applicationWindow,
+//                                      "Remember to power Talking Book with batteries before connecting with USB.",
+//                                      "Use Batteries!", JOptionPane.PLAIN_MESSAGE);
+        startUpDone = true;
+        // Simulate firing the event again, because the first time it fired was when adding the
+        // Deployments to the list, and we weren't initialized enough to handle it then.
+        onDeploymentChanged(new ItemEvent(newDeploymentList, 0, null, ItemEvent.SELECTED));
         LOG.log(Level.INFO, "set visibility - starting drive monitoring");
         deviceMonitorThread.setDaemon(true);
         deviceMonitorThread.start();
-        startUpDone = true;
     }
 
     private void setDeviceIdAndPaths() throws IOException {
@@ -290,7 +336,6 @@ public class TBLoader extends JFrame {
                     "Cannot Find Dropbox!", JOptionPane.PLAIN_MESSAGE);
                 System.exit(1);
             }
-            //TbFile dropboxFile = new FsFile(dropboxDir);
 
             // Look for ~/LiteracyBridge/1234.dev file.
             File[] files = applicationHomeDirectory.listFiles((dir, name) -> {
@@ -342,12 +387,31 @@ public class TBLoader extends JFrame {
         }
     }
 
+
+    private Color backgroundColor;
+    @Override
+    public void setBackground(Color bgColor) {
+        // Workaround for weird bug in seaglass look&feel that causes a
+        // java.awt.IllegalComponentStateException when e.g. a combo box
+        // in this dialog is clicked on
+        if (bgColor.getAlpha() == 0) {
+            super.setBackground(backgroundColor);
+        } else {
+            super.setBackground(bgColor);
+            backgroundColor = bgColor;
+        }
+    }
+
     private void initializeGui() {
+        this.backgroundColor = getBackground();
+
+        SwingUtils.setLookAndFeel("seaglass");
+
         JPanel panel = createComponents();
 
         layoutComponents(panel);
 
-        setSize(700, 600);
+        setSize(700, 700);
         add(panel, BorderLayout.CENTER);
         setLocationRelativeTo(null);
 
@@ -371,34 +435,32 @@ public class TBLoader extends JFrame {
                 // spanning multiple columns.
                 // This list need not contain prevLabel or nextLabel; we assume that those two
                 // are "small-ish", and won't actually provide the maximimum minimum width.
-                driveList,
-                currentLocationList,
                 newDeploymentList,
                 oldDeploymentText,
                 newCommunityFilter,
                 newCommunityList,
-                oldCommunityText,
-                newImageText,
-                oldImageText,
+                recipientChooser,
+                oldCommunityText, newPackageText, oldPackageText,
                 datePicker,
                 lastUpdatedText,
                 newFirmwareVersionText,
                 oldFirmwareVersionText,
                 newSrnText,
                 oldSrnText,
-                forceFirmware,
-                testDeployment,
+                newFirmwareBox,
                 updateButton,
                 getStatsButton
             };
         }
         int maxMinWidth = 0;
-        for (JComponent c : columnComponents) maxMinWidth = Math.max(maxMinWidth, c.getMinimumSize().width);
+        for (JComponent c : columnComponents) {
+            if (c != null)
+                maxMinWidth = Math.max(maxMinWidth, c.getMinimumSize().width);
+        }
         Dimension d = nextLabel.getMinimumSize();
         d.width = maxMinWidth;
         nextLabel.setMinimumSize(d);
         prevLabel.setMinimumSize(d);
-
     }
 
     /**
@@ -408,7 +470,7 @@ public class TBLoader extends JFrame {
      * @return the new GridBagConstraint
      */
     private GridBagConstraints gbc(int x, int y) {
-        Insets zi = new Insets(3,3,3,2);
+        Insets zi = new Insets(0,3,2,2);
         return new GridBagConstraints(x, y, 1, 1, 0, 0, LINE_START, HORIZONTAL, zi, 0, 0);
     }
     
@@ -422,24 +484,16 @@ public class TBLoader extends JFrame {
         // Greeting.
         c = gbc(0, y++);
         c.gridwidth = 3;
-        panel.add(greeting, c);
+        c.fill = NONE;
+        panel.add(greetingBox, c);
 
-        // Warning.
-        c = gbc(1, y++);
-        c.gridwidth = 2;
-        panel.add(warning, c);
-        
         // TB Drive letter / volume label.
+        // Greeting.
         c = gbc(0, y++);
-        panel.add(deviceLabel, c);
-        c.gridx = RELATIVE;
-        panel.add(driveList, c);
-
-        // Current location
-        c = gbc(0, y++);
-        panel.add(currentLocationLabel, c);
-        c.gridx = RELATIVE;
-        panel.add(currentLocationList, c);
+        c.gridwidth = 3;
+        c.fill = NONE;
+        panel.add(deviceBox, c);
+        //layoutLine(panel, y++, deviceLabel, driveList, testDeployment);
 
         // Next / Previous
         c = gbc(1, y++);
@@ -449,66 +503,53 @@ public class TBLoader extends JFrame {
         panel.add(prevLabel, c);
 
         // Deployment.
-        c = gbc(0, y++);
-        panel.add(deploymentLabel, c);
-        c.gridx = RELATIVE;
-        panel.add(newDeploymentList, c);
-        panel.add(oldDeploymentText, c);
+        layoutLine(panel, y++, deploymentLabel, newDeploymentList, oldDeploymentText);
 
-        // Community Filter
-        c = gbc(0, y++);
-        panel.add(communityFilterLabel, c);
-        c.gridx = RELATIVE;
-        panel.add(newCommunityFilter, c);
-        
-        // Community.
-        c = gbc(0, y++);
-        panel.add(communityLabel, c);
-        c.gridx = RELATIVE;
-        panel.add(newCommunityList, c);
-        panel.add(oldCommunityText, c);
-        
+        // The option to force the old-style chooser is in case there is some error in the
+        // new recipient chooser widget. Set OLD_COMMUNITY_CHOOSER=TRUE in the config file
+        // to force.
+        if (forceOldStyleCommunityChooser) {
+            // Community Filter text box & community dropdown.
+            layoutLine(panel, y++, communityFilterLabel, newCommunityFilter, null);
+            layoutLine(panel, y++, communityLabel, newCommunityList, oldCommunityText);
+
+        } else {
+            // Recipient Chooser.
+            c = gbc(0, y++);
+            c.anchor = FIRST_LINE_START;
+            panel.add(communityLabel, c);
+            c.gridx = RELATIVE;
+            panel.add(recipientChooser, c);
+            panel.add(oldCommunityText, c);
+        }
+
         // Package (aka 'Content', aka 'image')
-        c = gbc(0, y++);
-        panel.add(contentPackageLabel, c);
-        c.gridx = RELATIVE;
-        panel.add(newImageText, c);
-        panel.add(oldImageText, c);
+        layoutLine(panel, y++, contentPackageLabel, newPackageText, oldPackageText);
         
         // Deployment date.
-        c = gbc(0, y++);
-        panel.add(dateLabel, c);
-        c.gridx = RELATIVE;
-        panel.add(datePicker, c);
-        panel.add(lastUpdatedText, c);
+        layoutLine(panel, y++, dateLabel, datePicker, lastUpdatedText);
         
         // Firmware version.
-        c = gbc(0, y++);
-        panel.add(firmwareVersionLabel, c);
-        c.gridx = RELATIVE;
-        panel.add(newFirmwareVersionText, c);
-        panel.add(oldFirmwareVersionText, c);
+        layoutLine(panel, y++, firmwareVersionLabel, newFirmwareBox, oldFirmwareVersionText);
         
         // TB Serial Number.
-        c = gbc(0, y++);
-        panel.add(srnLabel, c);
-        c.gridx = RELATIVE;
-        panel.add(newSrnText, c);
-        panel.add(oldSrnText, c);
-        
-        // Options
-        c = gbc(0, y++);
-        panel.add(optionsLabel, c);
-        c.gridx = RELATIVE;
-        panel.add(forceFirmware, c);
-        panel.add(testDeployment, c);
+        layoutLine(panel, y++, srnLabel, newSrnText, oldSrnText);
 
-        // Buttons.
-        c = gbc(1, y++);
-        c.fill = NONE;
-        panel.add(updateButton, c);
-        c.gridx = RELATIVE;
-        panel.add(getStatsButton, c);
+        // Buttons. Reverse the boolean to go back to the old "Update" / "Grab" buttons.
+        if (forceOldStyleGoButtons) {
+            c = gbc(1, y++);
+            c.fill = NONE;
+            panel.add(updateButton, c);
+            c.gridx = RELATIVE;
+            panel.add(getStatsButton, c);
+        } else {
+            // Action chooser and Go! button.
+            c = gbc(0, y++);
+            c.fill = NONE;
+            c.anchor = CENTER;
+            c.gridwidth = 3;
+            panel.add(actionBox, c);
+        }
 
         // Status display
         c = gbc(0, y++);
@@ -527,65 +568,120 @@ public class TBLoader extends JFrame {
         forceFirmware.setMinimumSize(new Dimension(forceFirmware.getMinimumSize().width, checkboxHeight));
 
         setGridColumnWidths();
+        currentLocationChooser.doLayout();
+    }
+
+    private void layoutLine(JPanel panel, int lineNo, JComponent label, JComponent newValue, JComponent oldValue) {
+        GridBagConstraints c = gbc(0, lineNo);
+        panel.add(label, c);
+        c.gridx = RELATIVE;
+        panel.add(newValue, c);
+        if (oldValue != null) {
+            panel.add(oldValue, c);
+        }
     }
 
     private JPanel createComponents() {
         JPanel panel = new JPanel();
 
-        String greetingString = String.format("<html>Hello <b>%s!</b> <i><span style='font-size:0.85em;color:gray'>(TB-Loader ID: %s)</span></i></html>",
+        if (srnPrefix.equals("a-")) {
+            panel.setBackground(Color.CYAN);
+        } else {
+        }
+
+        greetingBox = Box.createHorizontalBox();
+        String greetingString = String.format("<html><nobr>Hello <b>%s!</b> <i><span style='font-size:0.85em;color:gray'>(TB-Loader ID: %s)</span></i></nobr></html>",
             ACMConfiguration.getInstance().getUserName(),
             tbLoaderConfig.getTbLoaderId());
         greeting = new JLabel(greetingString);
+        greetingBox.add(greeting);
+        greetingBox.add(Box.createHorizontalStrut(10));
+        // Select "Community", "LBG Office", "Other"
+        currentLocationLabel = new JLabel("Updating from:");
+        currentLocationChooser = new JComboBox<>(currentLocationList);
+        currentLocationChooser.setBorder(new LineBorder(Color.RED, 1, true));
+        currentLocationChooser.addActionListener(e -> {
+            Border border;
+            if (currentLocationChooser.getSelectedIndex() == 0) {
+                border = new LineBorder(Color.RED, 1, true);
+            } else {
+                border = new LineBorder(new Color(0, 0, 0, 0), 1, true);
+            }
+            currentLocationChooser.setBorder(border);
+            setEnabledStates();
+        });
+        greetingBox.add(currentLocationLabel);
+        greetingBox.add(Box.createHorizontalStrut(10));
+        greetingBox.add(currentLocationChooser);
 
         // "Use with NEW TBs only" / "Use with OLD TBs only"
-        if (srnPrefix.equals("a-")) {
-            panel.setBackground(Color.CYAN);
-            warning = new JLabel("Use with OLD TBs only");
-            warning.setForeground(Color.RED);
-        } else {
-            warning = new JLabel("Use with NEW TBs only");
-            warning.setForeground(Color.RED);
-        }
+        // Options
+        optionsLabel = new JLabel("Options:");
+        forceFirmware = new JCheckBox();
+        forceFirmware.setText("Force refresh");
+        forceFirmware.setSelected(false);
+        forceFirmware.setToolTipText("Check to force a re-flash of the firmware. This should almost never be needed.");
+
+        testDeployment = new JCheckBox();
+        testDeployment.setText("Deploying today for testing only.");
+        testDeployment.setSelected(false);
+        testDeployment.setToolTipText("Check if only testing the Deployment. Uncheck if sending the Deployment out to the field.");
 
         // Windows drive letter and volume name.
+        deviceBox = Box.createHorizontalBox();
         deviceLabel = new JLabel("Talking Book Device:");
+        deviceBox.add(deviceLabel);
+        deviceBox.add(Box.createHorizontalStrut(10));
         driveList = new JComboBox<>();
-        driveList.addActionListener(this::driveListActionPerformed);
-
-        // Select "Community", "LBG Office", "Other"
-        currentLocationLabel = new JLabel("Current Location:");
-        currentLocationList = new JComboBox<>(currentLocation);
+        deviceBox.add(driveList);
+        deviceBox.add(Box.createHorizontalStrut(10));
+        driveList.addItemListener(this::onTbDeviceChanged);
+        deviceBox.add(testDeployment);
 
         // Headings for "Next", "Previous"
         nextLabel = new JLabel("Next");
         prevLabel = new JLabel("Previous");
 
         // Deployment name / version.
-        deploymentLabel = new JLabel("Update:");
+        deploymentLabel = new JLabel("Deployment:");
         newDeploymentList = new JComboBox<>();
-        newDeploymentList.addActionListener(this::newDeploymentListActionPerformed);
+        newDeploymentList.addItemListener(this::onDeploymentChanged);
         oldDeploymentText = new JTextField();
         oldDeploymentText.setEditable(false);
+
+        //============================================================================
+        communityLabel = new JLabel("Community:");
+        // Note that only one of these will be added to the GUI. The new JRecipientChooser
+        // *should* perform the full function, including falling back to directory name
+        // operation. But the config option OLD_COMMUNITY_CHOOSER=TRUE will force the
+        // old style operation.
 
         // Community filter. (Type desired filter into text field.)
         communityFilterLabel = new JLabel("Community filter:");
         newCommunityModel = new FilteringComboBoxModel<>();
         newCommunityFilter = new JTextField("", 40);
         newCommunityFilter.getDocument().addDocumentListener(filterChangeListener);
+        PromptSupport.setPrompt("Community Filter", newCommunityFilter);
 
         // Select community.
-        communityLabel = new JLabel("Community:");
         newCommunityList = new JComboBox<>(newCommunityModel);
-        newCommunityList.addActionListener(this::newCommunityListActionPerformed);
+        newCommunityList.addActionListener(this::onCommunitySelected);
+
+        //----------------------------------------------------------------------------
+        recipientChooser = new JRecipientChooser();
+        recipientChooser.addActionListener(this::onCommunitySelected);
+
+        // Old-style and new-style both have this.
         oldCommunityText = new JTextField();
         oldCommunityText.setEditable(false);
+        //============================================================================
 
         // Show Content Package name.
-        contentPackageLabel = new JLabel("Content:");
-        newImageText = new JTextField();
-        newImageText.setEditable(false);
-        oldImageText = new JTextField();
-        oldImageText.setEditable(false);
+        contentPackageLabel = new JLabel("Content Package:");
+        newPackageText = new JTextField();
+        newPackageText.setEditable(false);
+        oldPackageText = new JTextField();
+        oldPackageText.setEditable(false);
 
         // Select "First Rotation Date", default today.
         dateLabel = new JLabel("First Rotation Date:");
@@ -601,6 +697,11 @@ public class TBLoader extends JFrame {
         firmwareVersionLabel = new JLabel("Firmware:");
         newFirmwareVersionText = new JTextField();
         newFirmwareVersionText.setEditable(false);
+        newFirmwareBox = Box.createHorizontalBox();
+        newFirmwareBox.add(newFirmwareVersionText);
+        newFirmwareBox.add(Box.createHorizontalStrut(10));
+        newFirmwareBox.add(forceFirmware);
+
         oldFirmwareVersionText = new JTextField();
         oldFirmwareVersionText.setEditable(false);
 
@@ -611,18 +712,6 @@ public class TBLoader extends JFrame {
         oldSrnText = new JTextField();
         oldSrnText.setEditable(false);
 
-        // Options
-        optionsLabel = new JLabel("Options:");
-        forceFirmware = new JCheckBox();
-        forceFirmware.setText("Force firmware refresh");
-        forceFirmware.setSelected(false);
-        forceFirmware.setToolTipText("Check to force a re-flash of the firmware. This should almost never be needed.");
-
-        testDeployment = new JCheckBox();
-        testDeployment.setText("Only testing the deployment");
-        testDeployment.setSelected(false);
-        testDeployment.setToolTipText("Check if only testing the Deployment. Uncheck if sending the Deployment out to the field.");
-
         // Update / gather statistics buttons.
         updateButton = new JButton("Update TB");
         updateButton.setEnabled(false);
@@ -630,6 +719,23 @@ public class TBLoader extends JFrame {
         getStatsButton = new JButton("Get Stats");
         getStatsButton.setEnabled(false);
         getStatsButton.addActionListener(this::buttonActionPerformed);
+
+        actionChooser = new JComboBox<String>(actionList);
+        goButton = new JButton("Go!");
+        defaultButtonBackgroundColor = goButton.getBackground();
+        goButton.setEnabled(false);
+        goButton.setForeground(Color.GRAY);
+        goButton.setOpaque(true);
+        goButton.addActionListener(this::buttonActionPerformed);
+        actionBox = Box.createHorizontalBox();
+        actionBox.add(Box.createHorizontalGlue());
+        actionBox.add(actionChooser);
+        actionBox.add(goButton);
+        actionBox.add(Box.createHorizontalGlue());
+
+        // This will paint the face of the button, but then clicking has no visual effect.
+//        goButton.setBorderPainted(false);
+
 
         // Show status.
         statusCurrent = new JTextArea(1, 80);
@@ -660,7 +766,7 @@ public class TBLoader extends JFrame {
      *
      * Populates the newFirmwareVersionText field.
      */
-    private void getFirmwareRevisionNumbers() {
+    private void fillFirmwareVersion() {
         String firmwareVersion = "(No firmware)";
 
         // Like ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/basic
@@ -719,16 +825,29 @@ public class TBLoader extends JFrame {
 
         File fCommunityDir = new File(baseDirectory,
                                       TBLoaderConstants.CONTENT_SUBDIR + File.separator
-                                              + newDeploymentList.getSelectedItem().toString() + "/"
+                                              + newDeploymentList.getSelectedItem().toString() + File.separator
                                               + TBLoaderConstants.COMMUNITIES_SUBDIR);
 
         files = fCommunityDir.listFiles((dir, name) -> dir.isDirectory());
-        newCommunityList.addItem(NO_COMMUNITY_SELECTED);
-        for (File f : files) {
-            newCommunityList.addItem(f.getName());
+
+        if (forceOldStyleCommunityChooser) {
+            newCommunityList.addItem(NO_COMMUNITY_SELECTED);
+            for (File f : files) {
+                newCommunityList.addItem(f.getName());
+            }
+            setCommunityList();
+            newCommunityModel.setFilterString(filter);
+        } else {
+            File programspecDir = new File(baseDirectory,
+                TBLoaderConstants.CONTENT_SUBDIR + File.separator + newDeploymentList.getSelectedItem().toString() + File.separator
+                    + Constants.ProgramSpecDir);
+            try {
+                programSpec = new ProgramSpec(programspecDir);
+                recipientChooser.populate(programSpec, files);
+                validate();
+            } catch (Exception ignored) {
+            }
         }
-        setCommunityList();
-        newCommunityModel.setFilterString(filter);
     }
 
     private String getRecipientIdForCommunity(String communityDirName) {
@@ -738,6 +857,44 @@ public class TBLoader extends JFrame {
                 + newDeploymentList.getSelectedItem().toString());
 
         return TBLoaderUtils.getRecipientIdForCommunity(deploymentDirectory, communityDirName);
+    }
+
+    private String getSelectedCommunity() {
+        String communityDir = null;
+        if (forceOldStyleCommunityChooser) {
+            Object item = newCommunityList.getSelectedItem();
+            if (item != null) communityDir = item.toString();
+        } else {
+            communityDir = recipientChooser.getCommunityDirectory();
+        }
+        return communityDir;
+    }
+
+    private void selectCommunityFromCurrentDrive() {
+        String community = oldCommunityText.getText();
+        if (forceOldStyleCommunityChooser) {
+            if (prevSelectedCommunity != -1)
+                newCommunityList.setSelectedIndex(prevSelectedCommunity);
+            else {
+                int count = newCommunityList.getItemCount();
+                for (int i = 0; i < count; i++) {
+                    if (newCommunityList.getItemAt(i).equalsIgnoreCase(community)) {
+                        newCommunityList.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
+        } else {
+            String recipientid = null;
+            if (community != null && community.length() == 0) {
+                // Select "no community".
+                recipientid = "";
+            } else if (oldDeploymentInfo != null) {
+                recipientid = oldDeploymentInfo.getRecipientid();
+            }
+            recipientChooser.setSelectedCommunity(community, recipientid);
+        }
+        fillPackageFromCommunity(community);
     }
 
     private synchronized void setCommunityList() {
@@ -752,7 +909,7 @@ public class TBLoader extends JFrame {
                 }
             }
         }
-        getImageFromCommunity(newCommunityList.getSelectedItem().toString());
+        fillPackageFromCommunity(newCommunityList.getSelectedItem().toString());
     }
 
     /**
@@ -764,11 +921,8 @@ public class TBLoader extends JFrame {
         int serialnumber = TBLoaderConstants.STARTING_SERIALNUMBER;
         String deviceId = tbLoaderConfig.getTbLoaderId();
         String devFilename = deviceId + TBLoaderConstants.DEVICE_FILE_EXTENSION; // xxxx.dev
-        String txtFilename = deviceId + ".txt";
         File fDev = new File(ACMConfiguration.getInstance().getApplicationHomeDirectory(),
                           devFilename);
-        File fTxt = new File(ACMConfiguration.getInstance().getApplicationHomeDirectory(),
-            txtFilename);
 
         // Get the most recent serial number assigned.
         if (fDev.exists()) {
@@ -794,29 +948,33 @@ public class TBLoader extends JFrame {
         // The number we're assigning now...
         serialnumber++;
 
-        try (DataOutputStream os = new DataOutputStream(new FileOutputStream(fDev))) {
-            os.writeInt(serialnumber);
-        }
-        try (FileWriter fw = new FileWriter(fTxt);
-            PrintWriter pw = new PrintWriter(fw)) {
-            pw.printf("%04x", serialnumber);
-        }
+        saveSerialNumber(serialnumber, ACMConfiguration.getInstance().getApplicationHomeDirectory());
 
         // Back up the file in case of loss.
         File dropboxDir = ACMConfiguration.getInstance().getGlobalShareDir();
         File backupDir = new File(dropboxDir,
                                   TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
-        File backupFile = new File(backupDir, devFilename);
-        try (DataOutputStream os = new DataOutputStream(new FileOutputStream(backupFile))) {
+        saveSerialNumber(serialnumber, backupDir);
+
+        return serialnumber;
+    }
+
+    private void saveSerialNumber(int serialnumber, File backupDir)
+        throws IOException
+    {
+        String deviceId = tbLoaderConfig.getTbLoaderId();
+        String binaryFilename = deviceId + TBLoaderConstants.DEVICE_FILE_EXTENSION; // xxxx.dev
+        String textFilename = deviceId + ".txt";
+        File binaryFile = new File(backupDir, binaryFilename);
+        File textFile = new File(backupDir, textFilename);
+
+        try (DataOutputStream os = new DataOutputStream(new FileOutputStream(binaryFile))) {
             os.writeInt(serialnumber);
         }
-        File backupText = new File(backupDir, txtFilename);
-        try (FileWriter fw = new FileWriter(backupText);
+        try (FileWriter fw = new FileWriter(textFile);
             PrintWriter pw = new PrintWriter(fw)) {
             pw.printf("%04x", serialnumber);
         }
-
-        return serialnumber;
     }
 
     private synchronized void fillDriveList(File[] roots) {
@@ -857,6 +1015,7 @@ public class TBLoader extends JFrame {
             driveList.setSelectedIndex(index);
             currentTbDevice = (TBDeviceInfo) driveList.getSelectedItem();
         }
+        driveList.doLayout();
     }
 
     private synchronized File[] getRoots() {
@@ -904,14 +1063,15 @@ public class TBLoader extends JFrame {
                     if (needRefresh) {
                         refreshingDriveInfo = true;
                         LOG.log(Level.INFO, "deviceMonitor sees new drive");
-                        fillDriveList(roots);
-                        if (!driveList.getItemAt(0).getLabel().equals(TBLoaderConstants.NO_DRIVE)) {
-                            statusDisplay.clearLog();
-                        }
-                        populatePreviousValuesFromCurrentDrive();
-                        fillCommunityList();
-                        getFirmwareRevisionNumbers();
-                        refreshUI();
+                        UIUtils.invokeAndWait(() -> {
+                            fillDriveList(roots);
+                            if (!driveList.getItemAt(0).getLabel().equals(TBLoaderConstants.NO_DRIVE)) {
+                                statusDisplay.clearLog();
+                            }
+                            populatePreviousValuesFromCurrentDrive();
+                            selectCommunityFromCurrentDrive();
+                            refreshUI();
+                        });
                         oldList.clear();
                         for (File root : roots) {
                             oldList.add(root.getAbsolutePath());
@@ -931,15 +1091,18 @@ public class TBLoader extends JFrame {
         }
     };
 
-    private void getImageFromCommunity(String community) {
-        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}
-        File deploymentDirectory = new File(baseDirectory,
-                                            TBLoaderConstants.CONTENT_SUBDIR + File.separator
-                                                    + newDeploymentList.getSelectedItem()
-                                                    .toString());
-//    TBFileSystem imagesTbFs = DefaultTBFileSystem.open(imagesDir);
-        String imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, community);
-        newImageText.setText(imageName);
+    private void fillPackageFromCommunity(String community) {
+        String imageName = "";
+        if (StringUtils.isNotEmpty(community) && !community.equals(UNKNOWN)) {
+            // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}
+            File deploymentDirectory = new File(baseDirectory,
+                TBLoaderConstants.CONTENT_SUBDIR + File.separator + newDeploymentList.getSelectedItem().toString());
+            imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, community);
+            if (StringUtils.isEmpty(imageName)) {
+                imageName = TBLoaderConstants.MISSING_PACKAGE;
+            }
+        }
+        newPackageText.setText(imageName);
     }
 
     /**
@@ -979,7 +1142,7 @@ public class TBLoader extends JFrame {
         if (oldDeploymentInfo != null) {
             oldSrnText.setText(oldDeploymentInfo.getSerialNumber());
             oldFirmwareVersionText.setText(oldDeploymentInfo.getFirmwareRevision());
-            oldImageText.setText(oldDeploymentInfo.getPackageName());
+            oldPackageText.setText(oldDeploymentInfo.getPackageName());
             oldDeploymentText.setText(oldDeploymentInfo.getDeploymentName());
             lastUpdatedText.setText(oldDeploymentInfo.getUpdateTimestamp());
 
@@ -999,6 +1162,13 @@ public class TBLoader extends JFrame {
 
         } else {
             newSrnText.setText(TBLoaderConstants.NEED_SERIAL_NUMBER);
+
+            oldSrnText.setText("");
+            oldFirmwareVersionText.setText("");
+            oldPackageText.setText("");
+            oldDeploymentText.setText("");
+            lastUpdatedText.setText("");
+            oldCommunityText.setText("");
         }
     }
 
@@ -1013,21 +1183,21 @@ public class TBLoader extends JFrame {
      *
      * @param e The combo selection event.
      */
-    private void driveListActionPerformed(ActionEvent e) {
-        TBDeviceInfo di;
+    private void onTbDeviceChanged(ItemEvent e) {
+        // Is this a new value?
+        if (e.getStateChange() != ItemEvent.SELECTED)
+            return;
         if (refreshingDriveInfo || !startUpDone)
             return;
 
         oldSrnText.setText("");
         newSrnText.setText("");
-        di = (TBDeviceInfo) ((JComboBox<String>) e.getSource()).getSelectedItem();
-        currentTbDevice = di;
-        if (di != null && di.getRootFile() != null) {
+        currentTbDevice = (TBDeviceInfo) driveList.getSelectedItem();
+        if (currentTbDevice != null && currentTbDevice.getRootFile() != null) {
             LOG.log(Level.INFO,
-                "Drive changed: " + di.getRootFile().toString() + di.getLabel());
+                "Drive changed: " + currentTbDevice.getRootFile().toString() + currentTbDevice.getLabel());
             populatePreviousValuesFromCurrentDrive();
-            fillCommunityList();
-            getFirmwareRevisionNumbers();
+            selectCommunityFromCurrentDrive();
         }
     }
     /**
@@ -1035,27 +1205,34 @@ public class TBLoader extends JFrame {
      *
      * @param e The combo selection event.
      */
-    private void newCommunityListActionPerformed(ActionEvent e) {
+    private void onCommunitySelected(ActionEvent e) {
         if (refreshingDriveInfo || !startUpDone)
             return;
 
-        JComboBox<String> cl = (JComboBox<String>) e.getSource();
-        if (cl.getSelectedItem() != null) {
-            getImageFromCommunity(cl.getSelectedItem().toString());
+        String dir = recipientChooser.getCommunityDirectory();
+        if (dir != null) {
+            fillPackageFromCommunity(dir);
+        } else {
+            newPackageText.setText("");
         }
+        setEnabledStates();
     }
     /**
-     * Handles combo box selections for the Deployment List.
+     * Handles combo box changes for the Deployment List.
      *
-     * @param e The combo selection event.
+     * @param e The ItemEvent.
      */
-    private void newDeploymentListActionPerformed(ActionEvent e) {
+    private void onDeploymentChanged(ItemEvent e) {
+        // Is this a new value?
+        if (e.getStateChange() != ItemEvent.SELECTED)
+            return;
+        // Can we handle this right now?
         if (refreshingDriveInfo || !startUpDone)
             return;
 
-        getFirmwareRevisionNumbers();
+        fillCommunityList();
+        fillFirmwareVersion();
         refreshUI();
-        getImageFromCommunity(newCommunityList.getSelectedItem().toString());
     }
 
     /**
@@ -1064,30 +1241,28 @@ public class TBLoader extends JFrame {
      * @param e The button press event.
      */
     private void buttonActionPerformed(ActionEvent e) {
-        TBDeviceInfo di;
-        Operation operation;
-        boolean isUpdate = false;
-        JButton b = (JButton) e.getSource();
+        Operation operation = Operation.Update;
+        JButton theButton = (JButton) e.getSource();
 
         if (refreshingDriveInfo || !startUpDone)
             return;
 
-        if (b == updateButton) {
-            isUpdate = true;
+        if (theButton == updateButton) {
             operation = Operation.Update;
-        } else if (b == getStatsButton) {
+        } else if (theButton == getStatsButton) {
             operation = Operation.CollectStats;
-        } else {
+        } else if (theButton == goButton) {
+            boolean isUpdate = actionChooser.getSelectedItem().toString().equalsIgnoreCase(UPDATE_TB);
+            operation = isUpdate ? Operation.Update : Operation.CollectStats;
+        } else{
             throw new IllegalArgumentException("'buttonActionPerformed' called for unknown button");
         }
 
-        disableAll();
+        setEnabledStates();
         try {
-            LOG.log(Level.INFO, "ACTION: " + b.getText());
+            LOG.log(Level.INFO, "ACTION: " + theButton.getText());
 
-            di = currentTbDevice;
-
-            TbFile drive = di.getRootFile();
+            TbFile drive = currentTbDevice.getRootFile();
             if (drive == null) {
                 refreshUI();
                 return;
@@ -1095,39 +1270,34 @@ public class TBLoader extends JFrame {
             String devicePath = drive.getAbsolutePath();
             prevSelected = new File(devicePath);
 
-            if (oldCommunityText.getText().trim().length() == 0)
-                oldCommunityText.setText("UNKNOWN");
-            if (oldDeploymentText.getText().trim().length() == 0)
-                oldDeploymentText.setText("UNKNOWN");
-
-            String community = newCommunityList.getSelectedItem().toString();
+            String community = getSelectedCommunity();
             LOG.log(Level.INFO, "Community: " + community);
 
-            if (isUpdate) {
-                if (dateRotation == null || currentLocationList.getSelectedIndex() == 0) {
-                    StringBuilder text = new StringBuilder("You must first select ");
-                    StringBuilder heading = new StringBuilder("Need ");
-                    String joiner = "";
-                    if (dateRotation == null) {
-                        text.append("a rotation date");
-                        heading.append("Date");
-                        joiner = " and ";
-                    }
-                    if (currentLocationList.getSelectedIndex() == 0) {
-                        text.append(joiner).append("your location");
-                        heading.append(joiner).append("Location");
-                    }
-                    text.append(".");
-                    heading.append("!");
-                    JOptionPane.showMessageDialog(applicationWindow,
-                                                  text.toString(),
-                                                  heading.toString(),
-                                                  JOptionPane.PLAIN_MESSAGE);
-                    refreshUI();
-                    return;
-                }
+            if (operation == Operation.Update) {
+//                if (dateRotation == null || currentLocationChooser.getSelectedIndex() == 0) {
+//                    StringBuilder text = new StringBuilder("You must first select ");
+//                    StringBuilder heading = new StringBuilder("Need ");
+//                    String joiner = "";
+//                    if (dateRotation == null) {
+//                        text.append("a rotation date");
+//                        heading.append("Date");
+//                        joiner = " and ";
+//                    }
+//                    if (currentLocationChooser.getSelectedIndex() == 0) {
+//                        text.append(joiner).append("your location");
+//                        heading.append(joiner).append("Location");
+//                    }
+//                    text.append(".");
+//                    heading.append("!");
+//                    JOptionPane.showMessageDialog(applicationWindow,
+//                                                  text.toString(),
+//                                                  heading.toString(),
+//                                                  JOptionPane.PLAIN_MESSAGE);
+//                    refreshUI();
+//                    return;
+//                }
                 
-                if (newImageText.getText().equalsIgnoreCase(TBLoaderConstants.MISSING_PACKAGE)) {
+                if (newPackageText.getText().equalsIgnoreCase(TBLoaderConstants.MISSING_PACKAGE)) {
                     String text = "Can not update a Talking Book for this Community,\n" +
                         "because there is no Content Package.";
                     String heading = "Missing Package";
@@ -1139,7 +1309,7 @@ public class TBLoader extends JFrame {
                     return;
                 }
 
-                if (community.equals(NO_COMMUNITY_SELECTED)) {
+                if (community.equals(NON_SPECIFIC)) {
                     int response = JOptionPane.showConfirmDialog(this,
                                                                  "No community selected. This will prevent us from "+
                                                                          "generating accurate usage statistics.\nAre you sure?",
@@ -1174,17 +1344,19 @@ public class TBLoader extends JFrame {
                     isNewSerialNumber = true;
                     String lowerSrn = String.format("%04x", intSrn);
                     srn = (srnPrefix + tbLoaderConfig.getTbLoaderId() + lowerSrn).toUpperCase();
-                    di.setSerialNumber(srn);
+                    currentTbDevice.setSerialNumber(srn);
                     newSrnText.setText(srn);
                 }
             }
-            if (!isUpdate && dateRotation == null) {
+            if (operation != Operation.Update && dateRotation == null) {
                 dateRotation = new Date().toString();
             }
 
-            LOG.log(Level.INFO, "ID:" + di.getSerialNumber());
+            LOG.log(Level.INFO, "ID:" + currentTbDevice.getSerialNumber());
             statusDisplay.clear("STATUS: Starting");
 
+            updatingTB = true;
+            setEnabledStates();
             CopyThread t = new CopyThread(devicePath, operation);
             t.start();
 
@@ -1234,40 +1406,46 @@ public class TBLoader extends JFrame {
 
     private void refreshUI() {
         boolean connected;
-        disableAll();
-        
+
         setGridColumnWidths();
+        setEnabledStates();
 
         connected = isDriveConnected();
         if (connected && !updatingTB) {
-            updateButton.setEnabled(true);
-            getStatsButton.setEnabled(true);
             statusDisplay.setStatus("STATUS: Ready");
             LOG.log(Level.INFO, "STATUS: Ready");
         } else {
-            updateButton.setEnabled(false);
-            getStatsButton.setEnabled(false);
             if (!connected) {
                 oldDeploymentText.setText("");
                 oldCommunityText.setText("");
                 oldFirmwareVersionText.setText("");
                 forceFirmware.setSelected(false);
-                oldImageText.setText("");
+                oldPackageText.setText("");
                 newSrnText.setText("");
                 oldSrnText.setText("");
                 lastUpdatedText.setText("");
                 LOG.log(Level.INFO, "STATUS: " + TBLoaderConstants.NO_DRIVE);
                 statusDisplay.setStatus("STATUS: " + TBLoaderConstants.NO_DRIVE);
             }
-            if (newCommunityList.getSelectedItem() != null) {
-                getImageFromCommunity(newCommunityList.getSelectedItem().toString());
+            if (getSelectedCommunity() != null) {
+                fillPackageFromCommunity(getSelectedCommunity());
             }
         }
     }
 
-    private void disableAll() {
-        updateButton.setEnabled(false);
-        getStatsButton.setEnabled(false);
+    private void setEnabledStates() {
+        // Must have device. Update must not be in progress.
+        boolean enabled = isDriveConnected() && !updatingTB;
+        // Must have set location.
+        enabled = enabled && (currentLocationChooser.getSelectedIndex() != 0);
+        // Must have community.
+        enabled = enabled && (getSelectedCommunity() != null);
+        updateButton.setEnabled(enabled);
+        goButton.setEnabled(enabled);
+        goButton.setBackground(enabled?Color.GREEN:defaultButtonBackgroundColor);
+        goButton.setForeground(enabled?new Color(0, 192, 0):Color.GRAY);
+
+        getStatsButton.setEnabled(enabled);
     }
 
     StatusDisplay statusDisplay = new StatusDisplay();
@@ -1364,7 +1542,7 @@ public class TBLoader extends JFrame {
                     .withTbLoaderConfig(tbLoaderConfig)
                     .withTbDeviceInfo(currentTbDevice)
                     .withOldDeploymentInfo(oldDeploymentInfo)
-                    .withLocation(currentLocationList.getSelectedItem().toString())
+                    .withLocation(currentLocationChooser.getSelectedItem().toString())
                     .withRefreshFirmware(false)
                     .withStatsOnly()
                     .withProgressListener(statusDisplay)
@@ -1387,13 +1565,13 @@ public class TBLoader extends JFrame {
         }
 
         private void update() {
-            String community = newCommunityList.getSelectedItem().toString();
+            String community = getSelectedCommunity();
             DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
                 .withSerialNumber(newSrnText.getText())
                 .withNewSerialNumber(isNewSerialNumber)
                 .withProjectName(newProject)
                 .withDeploymentName(newDeploymentList.getSelectedItem().toString())
-                .withPackageName(newImageText.getText())
+                .withPackageName(newPackageText.getText())
                 .withUpdateDirectory(null)
                 .withUpdateTimestamp(dateRotation)
                 .withFirmwareRevision(newFirmwareVersionText.getText())
@@ -1434,7 +1612,7 @@ public class TBLoader extends JFrame {
                     .withDeploymentDirectory(sourceImage)
                     .withOldDeploymentInfo(oldDeploymentInfo)
                     .withNewDeploymentInfo(newDeploymentInfo)
-                    .withLocation(currentLocationList.getSelectedItem().toString())
+                    .withLocation(currentLocationChooser.getSelectedItem().toString())
                     .withRefreshFirmware(forceFirmware.isSelected())
                     .withProgressListener(statusDisplay)
                     .build();
@@ -1509,5 +1687,4 @@ public class TBLoader extends JFrame {
             }
         }
     }
-
 }

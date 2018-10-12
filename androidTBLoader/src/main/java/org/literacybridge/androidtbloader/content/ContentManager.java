@@ -156,7 +156,7 @@ public class ContentManager {
 //        return result;
     }
 
-
+    @Deprecated
     private synchronized Map<String, Map<String, CommunityInfo>> getCommunitiesForProjects() {
         if (mProjectCommunitiesCache == null) {
             Map<String, Map<String, CommunityInfo>> projectCommunities = new HashMap<>();
@@ -170,6 +170,7 @@ public class ContentManager {
         return mProjectCommunitiesCache;
     }
 
+    @Deprecated
     public Map<String, Map<String, CommunityInfo>> getCommunitiesForProjects(List<String> projects) {
         Map<String, Map<String, CommunityInfo>> pc = getCommunitiesForProjects();
         Map<String, Map<String, CommunityInfo>> resultSet = new HashMap<>();

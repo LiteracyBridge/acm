@@ -18,7 +18,7 @@ public class CommunityInfoHolder extends RecyclerView.ViewHolder implements View
     // This gets set every time the holder is bound.
     private CommunityInfo mCommunityInfo;
 
-    // These persist
+    // These persist                 
     private TextView mCommunityTextView;
     private TextView mProjectTextView;
     private TextView mDistanceTextView;

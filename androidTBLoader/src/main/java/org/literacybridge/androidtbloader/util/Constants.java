@@ -55,6 +55,8 @@ public class Constants {
     public static final String NAME = "name";
     public static final String LOCATION = "location";
     public static final String COMMUNITIES = "communities";
+    public static final String PRESELECTED_RECIPIENTS = "preselected_recipients";
+    public static final String SELECTED_RECIPIENT = "selected_recipient";
     public static final String SELECTED = "selected";
     public static final String SIGNOUT = "signout";
     public static final String EXIT_APPLICATION = "exitApplication";

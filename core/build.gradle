@@ -3,8 +3,8 @@ apply plugin: 'java'
 
 // We have to target this ancient Java because Google can't keep up with modern Java. Perhaps
 // when the get OpenJDK for Android...
-targetCompatibility = '1.7'
-sourceCompatibility = '1.7'
+targetCompatibility = '1.8'
+sourceCompatibility = '1.8'
 
 repositories {
     mavenCentral()
@@ -15,4 +15,5 @@ repositories {
 dependencies {
   testCompile 'commons-io:commons-io:2.4'
   testCompile 'junit:junit:4.12'
+  compile 'com.opencsv:opencsv:4.3.1'
 }
