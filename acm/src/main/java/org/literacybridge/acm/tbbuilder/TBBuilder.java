@@ -34,6 +34,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TBBuilder {
     private static final String[] CSV_COLUMNS_CONTENT_IN_PACKAGE = { "project",
@@ -66,15 +68,17 @@ public class TBBuilder {
     public static final String ACM_PREFIX = "ACM-";
     private final static int MAX_DEPLOYMENTS = 5;
 
+    private File sourceProgramspecDir;
+    
     private File sourceTbLoadersDir;
     private File sourceTbOptionsDir;
 
-    private File targetDeploymentDir;
+    private File stagedDeploymentDir;
     private CSVWriter contentInPackageCSVWriter;
     private CSVWriter categoriesInPackageCSVWriter;
     private CSVWriter packagesInDeploymentCSVWriter;
-    private File targetStagingDir;
-    private String deploymentNumber;
+    private File stagingDir;
+    private String deployment;
     private List<String> fatalMessages = new ArrayList<>();
     private List<String> errorMessages = new ArrayList<>();
     private List<String> warningMessages = new ArrayList<>();
@@ -130,9 +134,9 @@ public class TBBuilder {
             int deploymentCount = args.length - 2;
             if (deploymentCount > MAX_DEPLOYMENTS)
                 deploymentCount = MAX_DEPLOYMENTS;
-            String[] deployments = new String[deploymentCount];
-            System.arraycopy(args, 2, deployments, 0, deploymentCount);
-            tbb.publish(deployments);
+            List<String> argsList = Arrays.asList(args);
+            List<String> deploymentList = argsList.subList(2, argsList.size());
+            tbb.publish(deploymentList);
         } else {
             printUsage();
             System.exit(1);
@@ -156,15 +160,21 @@ public class TBBuilder {
         // Like ~/Dropbox/ACM-UWR/TB-Loaders
         sourceTbLoadersDir = ACMConfiguration.getInstance().getTbLoaderDirFor(sharedACM);
         sourceTbOptionsDir = new File(sourceTbLoadersDir, "TB_Options");
-        project = sharedACM.substring(ACM_PREFIX.length());
+        sourceProgramspecDir = ACMConfiguration.getInstance().getProgramSpecDirFor(sharedACM);
+        project = ACMConfiguration.cannonicalProjectName(sharedACM);
         // ~/LiteracyBridge/TB-Loaders
         File localTbLoadersDir = new File(
             ACMConfiguration.getInstance().getApplicationHomeDirectory(),
             Constants.TBLoadersHomeDir);
         // Like ~/LiteracyBridge/TB-Loaders/UWR
-        targetStagingDir = new File(localTbLoadersDir, project);
+        stagingDir = new File(localTbLoadersDir, project);
     }
 
+    /**
+     * From the main(String[] args) parameter, build a list of packages, their language, and groups.
+     * @param args from main(), as described with doCreate()
+     * @return List of PackageInfo objects as specified in the args.
+     */
     private List<PackageInfo> getePackageInfoForCreate(String[] args) {
         List<PackageInfo> packages = new ArrayList<>();
         if (args.length == 5) {
@@ -193,14 +203,16 @@ public class TBBuilder {
      * Existing content in the /content/DEPLOYMENT and /metadata/DEPLOYMENT
      * subdirectories of that directory will be deleted.
      *
-     * @param args Command line args to the program.
-     *             The first arg is "CREATE" (or we wouldn't be here)
-     *             The second is the ACM name _with_ ACM- prefix
-     *             Next is the deployment name. By convention project-year-name-sequence
-     *             Then there is either:
-     *             package-name language
-     *             Or one or more instances of:
-     *             (package-name language group) ...
+     * @param args from main(), as follows:
+     *             args[0] operation, CREATE (not PUBLISH)
+     *             args[1] the ACM upon which to operate
+     *             args[2] the Deployment name
+     *             args[3] the first package name
+     *             args[4] the first package language
+     *             args[5] (optional) the first package group (DEFAULT is always assigned to first pkg)
+     *             args[6..8] (optional) second package name, language, group
+     *             args[9..11] (optional) third package name, language, group
+     *             . . . optional triples of (package name, language, group)
      * @throws Exception if one of the packages encounters an IO error.
      */
     private void doCreate(String[] args) throws Exception {
@@ -228,28 +240,31 @@ public class TBBuilder {
      * @throws Exception if there is an IO error.
      */
     private void createDeployment(String deployment) throws Exception {
-        deploymentNumber = deployment;
-        targetDeploymentDir = new File(targetStagingDir, "content/" + deploymentNumber);
-        File targetMetadataDir = new File(targetStagingDir, "metadata/" + deploymentNumber);
+        this.deployment = deployment.toUpperCase();
+        stagedDeploymentDir = new File(stagingDir, "content" + File.separator + this.deployment);
+        File stagedMetadataDir = new File(stagingDir, "metadata" + File.separator + this.deployment);
+        File stagedProgramspecDir = new File(stagedDeploymentDir, Constants.ProgramSpecDir);
 
         // use LB Home Dir to create folder, then zip to Dropbox and delete the
         // folder
-        IOUtils.deleteRecursive(targetDeploymentDir);
-        targetDeploymentDir.mkdirs();
-        IOUtils.deleteRecursive(targetMetadataDir);
-        targetMetadataDir.mkdirs();
+        IOUtils.deleteRecursive(stagedDeploymentDir);
+        stagedDeploymentDir.mkdirs();
+        IOUtils.deleteRecursive(stagedMetadataDir);
+        stagedMetadataDir.mkdirs();
+        IOUtils.deleteRecursive(stagedProgramspecDir);
+        stagedProgramspecDir.mkdirs();
 
         contentInPackageCSVWriter = new CSVWriter(
             new FileWriter(
-                new File(targetMetadataDir, CONTENT_IN_PACKAGES_CSV_FILE_NAME)),
+                new File(stagedMetadataDir, CONTENT_IN_PACKAGES_CSV_FILE_NAME)),
             ',');
         categoriesInPackageCSVWriter = new CSVWriter(
             new FileWriter(
-                new File(targetMetadataDir, CATEGORIES_IN_PACKAGES_CSV_FILE_NAME)),
+                new File(stagedMetadataDir, CATEGORIES_IN_PACKAGES_CSV_FILE_NAME)),
             ',');
         packagesInDeploymentCSVWriter = new CSVWriter(
             new FileWriter(
-                new File(targetMetadataDir, PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME)),
+                new File(stagedMetadataDir, PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME)),
             ',');
 
         // write column headers
@@ -259,18 +274,20 @@ public class TBBuilder {
 
         // Find the lexically greatest filename of firmware. Works because we'll never exceed 4 digits.
         File sourceFirmware = latestFirmwareImage();
-        File targetBasicDir = new File(targetDeploymentDir, "basic");
-        FileUtils.copyFileToDirectory(sourceFirmware, targetBasicDir);
+        File stagedBasicDir = new File(stagedDeploymentDir, "basic");
+        FileUtils.copyFileToDirectory(sourceFirmware, stagedBasicDir);
 
         File sourceCommunitiesDir = new File(sourceTbLoadersDir, "communities");
-        File targetCommunitiesDir = new File(targetDeploymentDir, "communities");
-        FileUtils.copyDirectory(sourceCommunitiesDir, targetCommunitiesDir);
+        File stagedCommunitiesDir = new File(stagedDeploymentDir, "communities");
+        FileUtils.copyDirectory(sourceCommunitiesDir, stagedCommunitiesDir);
 
-        deleteRevFiles(targetStagingDir);
+        FileUtils.copyDirectory(sourceProgramspecDir, stagedProgramspecDir);
+        
+        deleteRevFiles(stagingDir);
         String revision;
         revision = TBLoaderConstants.UNPUBLISHED_REV + "_"
             + TBLoaderUtils.getDateTime().substring(8, 17);
-        File newRev = new File(targetStagingDir, revision + ".rev");
+        File newRev = new File(stagingDir, revision + ".rev");
         newRev.createNewFile();
 
         System.out.printf("%nDone with deployment of basic/community content.%n");
@@ -307,11 +324,11 @@ public class TBBuilder {
         File sourceMessagesDir = new File(sourcePackageDir, "messages");
         File sourceListsDir = new File(sourceMessagesDir,
             "lists/" + TBBuilder.firstMessageListName);
-        File targetImagesDir = new File(targetDeploymentDir, "images");
-        File targetImageDir = new File(targetImagesDir, pi.name);
+        File stagedImagesDir = new File(stagedDeploymentDir, "images");
+        File stagedImageDir = new File(stagedImagesDir, pi.name);
 
-        IOUtils.deleteRecursive(targetImageDir);
-        targetImageDir.mkdirs();
+        IOUtils.deleteRecursive(stagedImageDir);
+        stagedImageDir.mkdirs();
 
         if (!sourceListsDir.exists() || !sourceListsDir.isDirectory()) {
             System.err.printf("Directory not found: %s%n", sourceListsDir);
@@ -323,53 +340,53 @@ public class TBBuilder {
 
         validatePackageForLanguage(pi);
 
-        File targetMessagesDir = new File(targetImageDir, "messages");
-        FileUtils.copyDirectory(sourceMessagesDir, targetMessagesDir);
+        File stagedMessagesDir = new File(stagedImageDir, "messages");
+        FileUtils.copyDirectory(sourceMessagesDir, stagedMessagesDir);
 
-        File targetAudioDir = new File(targetMessagesDir, "audio");
-        File targetListsDir = new File(targetMessagesDir,
+        File stagedAudioDir = new File(stagedMessagesDir, "audio");
+        File stagedListsDir = new File(stagedMessagesDir,
             "lists/" + TBBuilder.firstMessageListName);
-        File targetLanguagesDir = new File(targetImageDir, "languages");
-        File targetLanguageDir = new File(targetLanguagesDir, pi.language);
-        File targetWelcomeMessageDir = targetLanguageDir;
+        File stagedLanguagesDir = new File(stagedImageDir, "languages");
+        File stagedLanguageDir = new File(stagedLanguagesDir, pi.language);
+        File stagedWelcomeMessageDir = stagedLanguageDir;
 
-        if (!targetAudioDir.exists() && !targetAudioDir.mkdirs()) {
-            System.err.printf("Unable to create directory: %s%n", targetAudioDir);
+        if (!stagedAudioDir.exists() && !stagedAudioDir.mkdirs()) {
+            System.err.printf("Unable to create directory: %s%n", stagedAudioDir);
             System.exit(1);
         }
 
-        if (!targetLanguageDir.exists() && !targetLanguageDir.mkdirs()) {
-            System.err.printf("Unable to create directory: %s%n", targetLanguageDir);
+        if (!stagedLanguageDir.exists() && !stagedLanguageDir.mkdirs()) {
+            System.err.printf("Unable to create directory: %s%n", stagedLanguageDir);
             System.exit(1);
         }
 
-        if (!targetWelcomeMessageDir.exists() && !targetWelcomeMessageDir.mkdirs()) {
-            System.err.printf("Unable to create directory: %s%n", targetWelcomeMessageDir);
+        if (!stagedWelcomeMessageDir.exists() && !stagedWelcomeMessageDir.mkdirs()) {
+            System.err.printf("Unable to create directory: %s%n", stagedWelcomeMessageDir);
             System.exit(1);
         }
 
-        File[] lists = targetListsDir.listFiles();
+        File[] lists = stagedListsDir.listFiles();
         for (File list : lists) {
             if (list.getName().equals(TBBuilder.IntroMessageListFilename)) {
-                exportList(pi.name, list, targetWelcomeMessageDir, "intro.a18", false);
+                exportList(pi.name, list, stagedWelcomeMessageDir, "intro.a18", false);
                 list.delete();
                 hasIntro = true;
             } else if (list.getName().equalsIgnoreCase("_activeLists.txt")) {
                 exportedCategories = exportCategoriesInPackage(pi.name, list);
             } else {
-                exportList(pi.name, list, targetAudioDir, true);
+                exportList(pi.name, list, stagedAudioDir, true);
             }
         }
 
         File sourceBasic = new File(sourceTbOptionsDir, "basic");
-        FileUtils.copyDirectory(sourceBasic, targetImageDir);
+        FileUtils.copyDirectory(sourceBasic, stagedImageDir);
 
         File sourceConfigFile = new File(sourceTbOptionsDir, "config_files/config.txt");
-        File targetSystemDir = new File(targetImageDir, "system");
-        FileUtils.copyFileToDirectory(sourceConfigFile, targetSystemDir);
+        File stagedSystemDir = new File(stagedImageDir, "system");
+        FileUtils.copyFileToDirectory(sourceConfigFile, stagedSystemDir);
 
         File sourceLanguage = new File(sourceTbOptionsDir, "languages/" + pi.language);
-        FileUtils.copyDirectory(sourceLanguage, targetLanguageDir);
+        FileUtils.copyDirectory(sourceLanguage, stagedLanguageDir);
 
         // If there is no category "9-0" in the _activeLists.txt file, then the user feedback
         // should not be playable. In that case, use the "_nofb" versions of control.txt.
@@ -382,22 +399,22 @@ public class TBBuilder {
             hasIntro?"with":"no",
             hasNoUf?"_no_fb":"");
         File sourceControlFile = new File(sourceTbOptionsDir, sourceControlFilename);
-        FileUtils.copyFile(sourceControlFile, new File(targetLanguageDir, "control.txt"));
+        FileUtils.copyFile(sourceControlFile, new File(stagedLanguageDir, "control.txt"));
 
         // create profile.txt
         String profileString = pi.name.toUpperCase() + "," + pi.language + ","
             + TBBuilder.firstMessageListName + ",menu\n";
-        File profileFile = new File(targetSystemDir, "profiles.txt");
+        File profileFile = new File(stagedSystemDir, "profiles.txt");
         BufferedWriter out = new BufferedWriter(new FileWriter(profileFile));
         out.write(profileString);
         out.close();
 
         for (String group : pi.groups) {
-            File f = new File(targetSystemDir, group + TBLoaderConstants.GROUP_FILE_EXTENSION);
+            File f = new File(stagedSystemDir, group + TBLoaderConstants.GROUP_FILE_EXTENSION);
             f.createNewFile();
         }
 
-        File f = new File(targetSystemDir, pi.name + ".pkg");
+        File f = new File(stagedSystemDir, pi.name + ".pkg");
         f.createNewFile();
 
         exportPackagesInDeployment(pi.name, pi.language, pi.groups);
@@ -413,7 +430,7 @@ public class TBBuilder {
      */
     private void validateDeployment(String acmName, String deployment, List<PackageInfo> packages) throws IOException {
         // Validate that the deployment is listed in the deployments.csv file.
-        File deploymentsList = new File(sourceTbLoadersDir, "deployments.csv");
+        File deploymentsList = new File(sourceProgramspecDir,"deployments.csv");
         if (deploymentsList.exists()) {
             boolean found = false;
             FileReader fileReader = new FileReader(deploymentsList);
@@ -438,7 +455,7 @@ public class TBBuilder {
                 }
             }
             if (!found) {
-                fatalMessages.add(String.format("'%s' is not a valid deployment for ACM '%s'.", deployment, acmName));
+                errorMessages/*fatalMessages*/.add(String.format("'%s' is not a valid deployment for ACM '%s'.", deployment, acmName));
             }
         }
 
@@ -751,42 +768,52 @@ public class TBBuilder {
      * Zips up a Deployment, and places it in a Dropbox/{ACM-NAME}/TB-Loaders/published/{Deployment}-{counter}
      * directory. Creates a marker file named {Deployment}-{counter}.rev
      *
-     * @param deployments List of deployments. Effectively, always exactly one.
+     * @param deploymentList List of deployments. Effectively, always exactly one.
      * @throws Exception if a file can't be read.
      */
-    private void publish(final String[] deployments) throws Exception {
+    private void publish(List<String> deploymentList) throws Exception {
+        // Make a local copy so we can munge it.
+        List<String> deployments = new ArrayList<>(deploymentList).stream().map(String::toUpperCase).collect(Collectors.toList());
+
         // e.g. 'ACM-UWR/TB-Loaders/published/'
         final File publishBaseDir = new File(sourceTbLoadersDir, "published");
         publishBaseDir.mkdirs();
-        String distribution = deployments[0]; // assumes first deployment is most
+        String distribution = deployments.get(0); // assumes first deployment is most
+        this.deployment = distribution;
         // recent and should be name of
         // distribution
-        char revision = getLatestDistributionRevision(publishBaseDir, distribution
-                                                     );
+        char revision = getLatestDistributionRevision(publishBaseDir, distribution);
         final String publishDistributionName = distribution + "-" + revision; // e.g.
         // '2015-6-c'
+        stagedDeploymentDir = new File(stagingDir, "content" + File.separator + this.deployment);
 
         // e.g. 'ACM-UWR/TB-Loaders/published/2015-6-c'
-        final File publishDistributionDir = new File(publishBaseDir,
-            publishDistributionName);
+        final File publishDistributionDir = new File(publishBaseDir, publishDistributionName);
         publishDistributionDir.mkdirs();
 
+        // Copy the program spec to a directory outside of the .zip file.
+        File stagedProgramspecDir = new File(stagedDeploymentDir, Constants.ProgramSpecDir);
+        if (stagedProgramspecDir.exists() && stagedProgramspecDir.isDirectory()) {
+            File publishedProgramSpecDir = new File(publishDistributionDir, Constants.ProgramSpecDir);
+            FileUtils.copyDirectory(stagedProgramspecDir, publishedProgramSpecDir);
+        }
+
         String zipSuffix = distribution + "-" + revision + ".zip";
-        File localContent = new File(targetStagingDir, "content");
+        File localContent = new File(stagingDir, "content");
         ZipUnzip.zip(localContent,
             new File(publishDistributionDir, "content-" + zipSuffix), true,
-            deployments);
+            deployments.toArray(new String[deployments.size()]));
 
         // merge csv files
-        File localMetadata = new File(targetStagingDir, "metadata");
-        List<String> deploymentsList = Arrays.asList(deployments);
-        File[] deploymentDirs = localMetadata.listFiles(f -> f.isDirectory()
-            && deploymentsList.contains(f.getName()));
+        File stagedMetadata = new File(stagingDir, "metadata");
+        //List<String> deploymentsList = Arrays.asList(deployments);
+        File[] metadataDirs = stagedMetadata.listFiles(f -> f.isDirectory()
+            && deployments.contains(f.getName()));
         final List<File> inputContentCSVFiles = new LinkedList<File>();
         final List<File> inputCategoriesCSVFiles = new LinkedList<File>();
         final List<File> inputPackagesCSVFiles = new LinkedList<File>();
-        for (File deploymentDir : deploymentDirs) {
-            deploymentDir.listFiles(new FileFilter() {
+        for (File metadataDir : metadataDirs) {
+            metadataDir.listFiles(new FileFilter() {
                 @Override
                 public boolean accept(File f) {
                     if (f.getName().endsWith(CONTENT_IN_PACKAGES_CSV_FILE_NAME)) {
@@ -803,21 +830,21 @@ public class TBBuilder {
                 }
             });
         }
-        File metadataDir = new File(publishDistributionDir, "metadata");
-        if (!metadataDir.exists())
-            metadataDir.mkdir();
-        File mergedCSVFile = new File(metadataDir, CONTENT_IN_PACKAGES_CSV_FILE_NAME);
+        File publishedMetadataDir = new File(publishDistributionDir, "metadata");
+        if (!publishedMetadataDir.exists())
+            publishedMetadataDir.mkdir();
+        File mergedCSVFile = new File(publishedMetadataDir, CONTENT_IN_PACKAGES_CSV_FILE_NAME);
         mergeCSVFiles(inputContentCSVFiles, mergedCSVFile, CSV_COLUMNS_CONTENT_IN_PACKAGE);
 
-        mergedCSVFile = new File(metadataDir, CATEGORIES_IN_PACKAGES_CSV_FILE_NAME);
+        mergedCSVFile = new File(publishedMetadataDir, CATEGORIES_IN_PACKAGES_CSV_FILE_NAME);
         mergeCSVFiles(inputCategoriesCSVFiles, mergedCSVFile, CSV_COLUMNS_CATEGORIES_IN_PACKAGE);
 
-        mergedCSVFile = new File(metadataDir, PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME);
+        mergedCSVFile = new File(publishedMetadataDir, PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME);
         mergeCSVFiles(inputPackagesCSVFiles, mergedCSVFile, CSV_COLUMNS_PACKAGES_IN_DEPLOYMENT);
 
-        new DBExporter(ACM_PREFIX + project, metadataDir).export();
+        new DBExporter(ACM_PREFIX + project, publishedMetadataDir).export();
 
-        deleteRevFiles(targetStagingDir);
+        deleteRevFiles(stagingDir);
     }
 
     /**
@@ -834,8 +861,8 @@ public class TBBuilder {
 
     private void exportList(
         String contentPackage, File list,
-        File targetDirectory, boolean writeToCSV) throws Exception {
-        exportList(contentPackage, list, targetDirectory, null, writeToCSV);
+        File exportDirectory, boolean writeToCSV) throws Exception {
+        exportList(contentPackage, list, exportDirectory, null, writeToCSV);
     }
 
     private void exportPackagesInDeployment(
@@ -845,7 +872,7 @@ public class TBBuilder {
         String groupsconcat = StringUtils.join(groups, ',');
         String[] csvColumns = new String[9];
         csvColumns[0] = project.toUpperCase();
-        csvColumns[1] = deploymentNumber.toUpperCase();
+        csvColumns[1] = deployment.toUpperCase();
         csvColumns[2] = contentPackage.toUpperCase();
         csvColumns[3] = contentPackage.toUpperCase();
         Calendar cal = Calendar.getInstance();
@@ -897,7 +924,7 @@ public class TBBuilder {
 
     private void exportList(
         String contentPackage, File list,
-        File targetDirectory, String filename, boolean writeToCSV)
+        File exportDirectory, String filename, boolean writeToCSV)
         throws Exception {
         System.out.println("  Exporting list " + list);
         String[] csvColumns = new String[5];
@@ -915,12 +942,12 @@ public class TBBuilder {
                 String uuid = reader.readLine();
                 AudioItem audioItem = ACMConfiguration.getInstance().getCurrentDB()
                     .getMetadataStore().getAudioItem(uuid);
-                System.out.println(String.format("    Exporting audioitem %s to %s", uuid, targetDirectory));
+                System.out.println(String.format("    Exporting audioitem %s to %s", uuid, exportDirectory));
                 if (filename == null) {
-                    repository.exportA18WithMetadata(audioItem, targetDirectory);
+                    repository.exportA18WithMetadata(audioItem, exportDirectory);
                 } else {
                     repository.exportA18WithMetadataToFile(audioItem,
-                        new File(targetDirectory, filename));
+                        new File(exportDirectory, filename));
                 }
 
                 if (writeToCSV) {

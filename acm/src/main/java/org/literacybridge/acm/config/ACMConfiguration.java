@@ -248,18 +248,6 @@ public class ACMConfiguration {
         setCurrentDB(newDbName);
     }
 
-    public File dirACM(String acmName) {
-        File f = null;
-
-        if (globalShareDir != null) {
-            f = new File(globalShareDir, acmName + File.separator + Constants.TBLoadersHomeDir);
-            if (!f.exists()) {
-                f = null;
-            }
-        }
-        return f;
-    }
-
     public String getUserName() {
         return UsersConfigurationProperties.getProperty("USER_NAME");
     }
@@ -444,16 +432,43 @@ public class ACMConfiguration {
         return new File(getApplicationHomeDirectory(), Constants.USERS_APPLICATION_PROPERTIES);
     }
 
-    public File getTbLoaderDirFor(String acmName) {
-        File f = null;
+    public File getAcmDirFor(String acmName) {
+        File acmDir = null;
+        acmName = ACMConfiguration.cannonicalAcmDirectoryName(acmName);
 
         if (globalShareDir != null) {
-            f = new File(globalShareDir, acmName + File.separator + Constants.TBLoadersHomeDir);
-            if (!f.exists()) {
-                f = null;
+            acmDir = new File(globalShareDir, acmName);
+            if (!acmDir.exists() || !acmDir.isDirectory()) {
+                acmDir = null;
             }
         }
-        return f;
+        return acmDir;
+    }
+
+    public File getTbLoaderDirFor(String acmName) {
+        File tbLoaderDir = null;
+        File acmDir = getAcmDirFor(acmName);
+
+        if (acmDir != null) {
+            tbLoaderDir = new File(acmDir, Constants.TBLoadersHomeDir);
+            if (!tbLoaderDir.exists() || !tbLoaderDir.isDirectory()) {
+                tbLoaderDir = null;
+            }
+        }
+        return tbLoaderDir;
+    }
+
+    public File getProgramSpecDirFor(String acmName) {
+        File progspecDir = null;
+        File acmDir = getAcmDirFor(acmName);
+
+        if (acmDir != null) {
+            progspecDir = new File(acmDir, Constants.ProgramSpecDir);
+            if (!progspecDir.exists() || !progspecDir.isDirectory()) {
+                progspecDir = null;
+            }
+        }
+        return progspecDir;
     }
 
     private void loadProps() {

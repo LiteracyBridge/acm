@@ -3,7 +3,7 @@ package org.literacybridge.acm;
 import java.io.File;
 
 public class Constants {
-  public final static String ACM_VERSION = "r1808080"; // yy mm dd n
+  public final static String ACM_VERSION = "r1810150"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String ACM_DIR_NAME = "ACM";
   public final static String CACHE_DIR_NAME = "cache";
@@ -12,6 +12,7 @@ public class Constants {
   public final static String RepositoryHomeDir = "content";
   public final static String LuceneIndexDir = "index";
   public final static String TBLoadersHomeDir = "TB-Loaders";
+  public final static String ProgramSpecDir = "programspec";
   public final static String DefaultSharedDB = "ACM-test/" + DBHomeDir;
   public final static String DefaultSharedRepository = "ACM-test/"
       + RepositoryHomeDir;
