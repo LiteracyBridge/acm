@@ -73,7 +73,7 @@ public class DBInfo extends Properties {
     this.checkedOut = checkedOut;
     if (checkedOut) {
         writeProps(); // this is the only time we need to write properties to disk
-        System.out.printf("Wrote checkout marker file.\n");
+    LOG.info("Wrote checkout marker file.");
     }
   }
 

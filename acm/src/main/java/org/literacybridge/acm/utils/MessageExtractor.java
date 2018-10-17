@@ -3,6 +3,7 @@ package org.literacybridge.acm.utils;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.AccessControl;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.importexport.AudioExporter;
 import org.literacybridge.acm.repository.AudioItemRepository;
@@ -238,6 +239,11 @@ public class MessageExtractor {
             acmConfigParams.sandbox = this.params.keep;
             ACMConfiguration.initialize(acmConfigParams);
             ACMConfiguration.getInstance().setCurrentDB(acmDirectoryName);
+            if (!ACMConfiguration.getInstance().setCurrentDB(acmDirectoryName)) {
+                AccessControl.AccessStatus status = ACMConfiguration.getInstance().getCurrentDB().getDbAccessStatus();
+                System.out.printf("Can't open db '%s': %s.\n", acmDirectoryName, status);
+                return false;
+            }
         } catch (Exception e) {
             return false;
         }

@@ -83,7 +83,7 @@ public class CmdLineImporter {
             ACMConfiguration.initialize(acmParams);
             ACMConfiguration.getInstance().setCurrentDB(acmParams.sharedACM);
 
-            if (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) {
+            if (!ACMConfiguration.getInstance().getCurrentDB().isWritable()) {
                 System.err.println("Unable to open ACM for write.");
                 System.exit(3);
             }

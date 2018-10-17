@@ -114,7 +114,8 @@ public class AccessControl {
 
     private final DBConfiguration dbConfiguration;
 
-    private AccessStatus accessStatus = AccessStatus.none;
+    protected AccessStatus accessStatus = AccessStatus.none;
+    protected OpenStatus openStatus = OpenStatus.none;
     private String possessor;
     private DBInfo dbInfo;
 
@@ -148,6 +149,9 @@ public class AccessControl {
 
     public AccessStatus getAccessStatus() {
         return accessStatus;
+    }
+    public OpenStatus getOpenStatus() {
+        return openStatus;
     }
 
     /**
@@ -258,12 +262,12 @@ public class AccessControl {
      */
     public void initDb() {
         boolean useSandbox = ACMConfiguration.getInstance().isForceSandbox();
-        AccessStatus accessStatus = init();
+        accessStatus = init();
         if (accessStatus == AccessStatus.available ||
                 accessStatus == AccessStatus.checkedOut ||
                 accessStatus == AccessStatus.newDatabase ||
                 accessStatus.isOkWithSandbox() && useSandbox) {
-            OpenStatus openStatus = open(useSandbox);
+            openStatus = open(useSandbox);
             openStatus.isOpen();
         }
     }

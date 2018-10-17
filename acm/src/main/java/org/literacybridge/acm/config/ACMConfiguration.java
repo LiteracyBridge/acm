@@ -137,21 +137,21 @@ public class ACMConfiguration {
      * @param dbName
      * @throws Exception
      */
-    public void setCurrentDB(String dbName) throws Exception {
-        setCurrentDB(dbName, false);
+    public boolean setCurrentDB(String dbName) throws Exception {
+        return setCurrentDB(dbName, false);
     }
 
     // TODO: when we have a homescreen this method needs to be split up into
     // different steps,
     // e.g. close DB, open new DB, etc.
-    public synchronized void setCurrentDB(String dbName, boolean createEmptyDB) throws Exception {
-        DBConfiguration config = allDBs.get(dbName);
-        if (config == null) {
+    public synchronized boolean setCurrentDB(String dbName, boolean createEmptyDB) throws Exception {
+        DBConfiguration dbConfig = allDBs.get(dbName);
+        if (dbConfig == null) {
             if (!createEmptyDB) {
                 throw new IllegalArgumentException("DB '" + dbName + "' not known.");
             } else {
-                config = new DBConfiguration(dbName);
-                allDBs.put(dbName, config);
+                dbConfig = new DBConfiguration(dbName);
+                allDBs.put(dbName, dbConfig);
             }
         }
 
@@ -160,8 +160,9 @@ public class ACMConfiguration {
             LockACM.unlockDb();
         }
 
-        currentDB.set(config);
-        config.init();
+        boolean initialized = dbConfig.init();
+        currentDB.set(dbConfig);
+        return initialized;
     }
 
     public synchronized void closeCurrentDB() {

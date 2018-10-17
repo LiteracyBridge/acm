@@ -7,6 +7,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.AccessControl;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.importexport.AudioImporter;
@@ -301,7 +302,15 @@ public class FeedbackImporter {
       logger.info(String.format("    Opening feedback project %s", feedbackProject));
 
       // Throws an exception to indicate "not found".
-      ACMConfiguration.getInstance().setCurrentDB(feedbackProject);
+      if (!ACMConfiguration.getInstance().setCurrentDB(feedbackProject)) {
+        AccessControl.AccessStatus status = ACMConfiguration.getInstance().getCurrentDB().getDbAccessStatus();
+        if (status == AccessControl.AccessStatus.noDbError) {
+          // This error is worthwhile to retry -- the db doesn't exist, so create it!
+          ACMConfiguration.getInstance().createNewDb(mainProject, feedbackProject);
+        } else {
+          throw new Exception(String.format("Couldn't open or create DB '%s': %s", feedbackProject, status));
+        }
+      }
     } catch (Exception setEx) {
       try {
         ACMConfiguration.getInstance().createNewDb(mainProject, feedbackProject);

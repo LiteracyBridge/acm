@@ -73,7 +73,7 @@ public class DBConfiguration extends Properties {
     return repository;
   }
 
-  void setRepository(AudioItemRepository newRepository) {
+  private void setRepository(AudioItemRepository newRepository) {
     repository = newRepository;
   }
 
@@ -227,6 +227,16 @@ public class DBConfiguration extends Properties {
       this.sandboxed = sandboxed;
   }
 
+    /**
+     * This is slightly different than sandboxed. If the database isn't open, it won't be
+     * sandboxed, but it won't be writable, either.
+     * @return true if database is writable.
+     */
+    public boolean isWritable() {
+        return accessControl != null && accessControl.getOpenStatus().isOpen() && !sandboxed;
+    }
+
+
     private File getDBAccessListFile() {
         return new File(getSharedACMDirectory(), Constants.DB_ACCESS_FILENAME);
     }
@@ -312,7 +322,7 @@ public class DBConfiguration extends Properties {
     }
   }
 
-  void init() throws Exception {
+  boolean init() throws Exception {
     if (!initialized) {
       InitializeAcmConfiguration();
       initializeLogger();
@@ -320,17 +330,20 @@ public class DBConfiguration extends Properties {
       accessControl = (ACMConfiguration.getInstance().isDisableUI()) ? new AccessControl(this) : new GuiAccessControl(this);
       accessControl.initDb();
 
-      initializeRepositories();
-      
-      final Taxonomy taxonomy = Taxonomy.createTaxonomy(sharedACMDirectory);
-      this.store = new LuceneMetadataStore(taxonomy, getLuceneIndexDirectory());
+      if (accessControl.openStatus.isOpen()) {
+          initializeRepositories();
 
-      parseLanguageLabels();
+          final Taxonomy taxonomy = Taxonomy.createTaxonomy(sharedACMDirectory);
+          this.store = new LuceneMetadataStore(taxonomy, getLuceneIndexDirectory());
 
-      fixupLanguageCodes();
+          parseLanguageLabels();
 
-      initialized = true;
+          fixupLanguageCodes();
+
+          initialized = true;
+      }
     }
+    return initialized;
   }
 
   public void updateDb() {
@@ -341,7 +354,7 @@ public class DBConfiguration extends Properties {
       return accessControl.commitDbChanges() == AccessControl.UpdateDbStatus.ok;
   }
 
-  void closeDb() {
+  public void closeDb() {
       if (!initialized) {
           throw new IllegalStateException("Can't close an un-opened database");
       }
@@ -356,6 +369,14 @@ public class DBConfiguration extends Properties {
 
   public String getCurrentZipFilename() {
       return accessControl.getCurrentZipFilename();
+  }
+
+  public boolean isDbOpen() {
+      return accessControl != null && accessControl.getOpenStatus().isOpen();
+  }
+
+  public AccessControl.AccessStatus getDbAccessStatus() {
+      return accessControl != null ? accessControl.getAccessStatus() : AccessControl.AccessStatus.none;
   }
 
   long getCacheSizeInBytes() {

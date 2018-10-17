@@ -23,7 +23,7 @@ public class GuiAccessControl extends AccessControl {
     public void initDb() {
         boolean useSandbox = ACMConfiguration.getInstance().isForceSandbox();
         int buttonIx;
-        AccessStatus accessStatus = AccessStatus.none;
+        accessStatus = AccessStatus.none;
 
         if (ACMConfiguration.getInstance().isDisableUI()) {
             throw new IllegalStateException("Can't call this function without UI");
@@ -144,7 +144,7 @@ public class GuiAccessControl extends AccessControl {
         }
 
         // If we're here, we're going to try to open the database.
-        AccessControl.OpenStatus openStatus = super.open(useSandbox);
+        openStatus = super.open(useSandbox);
         switch (openStatus) {
         case none:
             throw new IllegalStateException("Should not happen");

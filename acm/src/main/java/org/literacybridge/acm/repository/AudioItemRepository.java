@@ -373,18 +373,35 @@ public class AudioItemRepository {
         return EXTENSION_TO_FORMAT.get(extension);
     }
 
-    public void cleanUnreferencedFiles() {
+    public static class CleanResult {
+        public int files;
+        public long bytes;
+
+        CleanResult(int files, long bytes) {
+            this.files = files;
+            this.bytes = bytes;
+        }
+    }
+
+    public CleanResult cleanUnreferencedFiles() {
+        // This gets the list of directory names, which should correspond to item ids.
         List<String> ids = audioFileRepository.getAudioItemIds(Repository.global);
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+        // Calculates the cumulative size of all of the files that will be removed.
+        // For all ids, take the ones with no backing audio item, get the size, and sum.
         Long size = ids.stream()
             .filter(id->store.getAudioItem(id)==null)
             .map(this.audioFileRepository::size)
             .reduce((long) 0, (a,b)-> a+b);
+        // For all ids, if there is no audio item, delete from the repository.
+        int n = 0;
         for (String id: ids) {
             AudioItem item = store.getAudioItem(id);
             if (item == null) {
                 audioFileRepository.delete(id);
+                n++;
             }
         }
+        return new CleanResult(n, size);
     }
 }
