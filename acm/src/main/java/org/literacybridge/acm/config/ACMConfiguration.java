@@ -179,6 +179,7 @@ public class ACMConfiguration {
     }
 
     public synchronized DBConfiguration getDb(String acmName) {
+        acmName = ACMConfiguration.cannonicalAcmDirectoryName(acmName);
         return allDBs.get(acmName);
     }
 
@@ -470,6 +471,19 @@ public class ACMConfiguration {
             }
         }
         return progspecDir;
+    }
+
+    public File getUserFeedbackWhitelistFileFor(String acmName) {
+        File whitelistFile = null;
+        File acmDir = getAcmDirFor(acmName);
+
+        if (acmDir != null) {
+            whitelistFile = new File(acmDir, Constants.USER_FEEDBACK_WHITELIST_FILENAME);
+            if (!whitelistFile.exists() || !whitelistFile.isFile()) {
+                whitelistFile = null;
+            }
+        }
+        return whitelistFile;
     }
 
     private void loadProps() {

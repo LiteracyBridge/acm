@@ -52,7 +52,7 @@ public class FeedbackImporter {
   private static final String FEEDBACK_IMPORT_REPORT = "feedbackImport.txt";
   private final Params params;
   // Cache for whitelisted content updates (only whitelisted updates are to be imported).
-  private Map<String, Set<String>> deferredUpdatesCache = new HashMap<>();
+  private Map<String, Whitelister> deploymentsWhitelistCache = new HashMap<>();
 
   public static void main(String[] args) throws Exception {
     Params params = new Params();
@@ -446,66 +446,30 @@ public class FeedbackImporter {
    * Checks whether user feedback for an update within a project should be
    * skipped or imported. It should be skipped if it is in the deferred list.
    * @param project The project with updates.
-   * @param update The update.
+   * @param deployment The update.
    * @return True if the update should be skipped, False if it should be imported.
    */
-  private boolean shouldUpdateBeSkipped(String project, String update) {
-    Set<String> deferred = getDeferredUpdateListForProject(project);
-    update = update.toUpperCase();
-    // Short circuit if the update is listed literally. Also eases manual debugging.
-    if (deferred.contains(update)) {
-      return true;
-    }
-    // Treat the list as regular expressions, and see if any match. This lets
-    // us write "([a-z]*-)?201[3-5]-.*" to match 2013-, 14-, 15-, with or
-    // without a prefix.
-    for (String d : deferred) {
-      // Make the test case insensitive
-      if (update.matches("(?i)"+d)) {
-        return true;
-      }
-    }
-    return false;
+  private boolean shouldUpdateBeSkipped(String project, String deployment) {
+    Whitelister whitelister = getDeploymentsWhitelistForProject(project);
+    // Function is "isSkipped", opposite of "isIncluded"
+    return ! whitelister.isIncluded(deployment);
   }
 
   /**
-   * Content updates for which the user feedback should not be imported at this
-   * time are listed in a per-project file named "userfeedback.deferred".
-   *
-   * Gets the list of deferred updates for a project.
-   *
-   * If the project does not exist, or has no such file, or if the file is
-   * empty, the list will be empty.
-   *
-   * # is treated as the start of a comment. Comments and leading/trailing
-   * whitespace are trimmed. Blank lines are ignored.
-   *
-   * @param project The name of the project.
-   * @return A Set<String> of deferred content update names.
+   * Gets the whitelist of deployments for which user feedback should be processed.
+   * @param project The project name.
+   * @return a Whitelist object that will filter deployments.
    */
-  private Set<String> getDeferredUpdateListForProject(String project) {
-    // May already be cached.
+  private Whitelister getDeploymentsWhitelistForProject(String project) {
     project = project.toUpperCase();
-    Set<String> deferredUpdates = deferredUpdatesCache.get(project);
-    if (deferredUpdates == null) {
-      // No cache, so create.
-      deferredUpdates = new HashSet<>();
-      // Try to load from file in shared ACM directory.
-      String acmName = Constants.ACM_DIR_NAME + "-" + project;
-      DBConfiguration config = ACMConfiguration.getInstance().getDb(acmName);
-      if (config != null) {
-        File deferredUpdatesFile = config.getUserFeedbackDeferredUpdatesFile();
-        //read file into stream, try-with-resources
-        try {
-            IOUtils.readLines(deferredUpdatesFile, deferredUpdates);
-        } catch (IOException e) {
-           // Ignore exception and continue without file.
-        }
-      }
-      // Save for next time.
-      deferredUpdatesCache.put(project, deferredUpdates);
+    Whitelister whitelister = deploymentsWhitelistCache.get(project);
+    if (whitelister == null) {
+      File whitelistFile = ACMConfiguration.getInstance().getUserFeedbackWhitelistFileFor(project);
+      // Create, and save for next time.
+      whitelister = new Whitelister(whitelistFile, Whitelister.OPTIONS.regex);
+      deploymentsWhitelistCache.put(project, whitelister);
     }
-    return deferredUpdates;
+    return whitelister;
   }
 
   /**

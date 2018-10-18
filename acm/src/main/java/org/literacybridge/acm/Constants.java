@@ -3,7 +3,7 @@ package org.literacybridge.acm;
 import java.io.File;
 
 public class Constants {
-  public final static String ACM_VERSION = "r1810170"; // yy mm dd n
+  public final static String ACM_VERSION = "r1810171"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String ACM_DIR_NAME = "ACM";
   public final static String CACHE_DIR_NAME = "cache";
@@ -22,7 +22,7 @@ public class Constants {
   public final static String CHECKOUT_PROPERTIES_SUFFIX = "-checkedOut.properties";
   public final static String USER_WRITE_LOCK_FILENAME = "locked.txt";
   public final static String DB_ACCESS_FILENAME = "accessList.txt";
-  public final static String USER_FEEDBACK_DEFERRED_UPDATES_FILENAME = "userfeedback.deferred";
+  public final static String USER_FEEDBACK_WHITELIST_FILENAME = "userfeedback.whitelist";
 
   public final static File USER_HOME_DIR = new File(
       System.getProperty("user.home", "."));
