@@ -79,11 +79,36 @@ public class WhitelisterTest {
     }
 
     @Test
+    public void testWhitelistCaseSensitive() throws IOException {
+        File tempDir = tmp.newFolder();
+        File whitelistFile = writeFile(tempDir, "line-one", "LiNe-OnE");
+
+        Whitelister whitelister = new Whitelister(whitelistFile, OPTIONS.caseSensitive);
+        assertFalse("Expected 'LINE-ONE' to NOT match", whitelister.isIncluded("LINE-ONE"));
+        assertTrue("Expected 'line-one' to match", whitelister.isIncluded("line-one"));
+        assertTrue("Expected 'LiNe-OnE' to match", whitelister.isIncluded("LiNe-OnE"));
+        assertFalse("Expected 'LINE-THREE' to NOT match", whitelister.isIncluded("LINE-THREE"));
+    }
+
+    @Test
     public void testWhitelistRegex() throws IOException {
         File tempDir = tmp.newFolder();
         File whitelistFile = writeFile(tempDir, "line-[a-zA-Z]*", "number-[0-9]*$");
 
         Whitelister whitelister = new Whitelister(whitelistFile, OPTIONS.regex);
+        assertTrue("Expected 'line-one' to match", whitelister.isIncluded("line-one"));
+        assertTrue("Expected 'line-qwerty' to match", whitelister.isIncluded("line-qwerty"));
+        assertFalse("Expected 'line-3-a' to  NOT match", whitelister.isIncluded("line-3-a"));
+        assertTrue("Expected 'number-3' to  match", whitelister.isIncluded("number-3"));
+        assertFalse("Expected 'number-3-a' to  NOT match", whitelister.isIncluded("number-3-a"));
+    }
+
+    @Test
+    public void testWhitelistRegexCaseSensitive() throws IOException {
+        File tempDir = tmp.newFolder();
+        File whitelistFile = writeFile(tempDir, "line-[a-zA-Z]*", "number-[0-9]*$");
+
+        Whitelister whitelister = new Whitelister(whitelistFile, OPTIONS.regex, OPTIONS.caseSensitive);
         assertTrue("Expected 'line-one' to match", whitelister.isIncluded("line-one"));
         assertTrue("Expected 'line-qwerty' to match", whitelister.isIncluded("line-qwerty"));
         assertFalse("Expected 'line-3-a' to  NOT match", whitelister.isIncluded("line-3-a"));

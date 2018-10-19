@@ -121,6 +121,7 @@ public class MoveStats {
             whitelistedIds = new HashSet<>();
             try {
                 IOUtils.readLines(params.whiteListFile, whitelistedIds);
+                whitelistedIds = whitelistedIds.stream().map(String::toLowerCase).collect(Collectors.toSet());
             } catch (IOException e) {
                 System.err.println(String.format("Can't read whitelist file: %s", e.getMessage()));
                 filesOk = false;
@@ -132,6 +133,7 @@ public class MoveStats {
             blacklistedIds = new HashSet<>();
             try  {
                 IOUtils.readLines(params.blackListFile, blacklistedIds);
+                blacklistedIds = blacklistedIds.stream().map(String::toLowerCase).collect(Collectors.toSet());
             } catch (IOException e) {
                 System.err.println(String.format("Can't read blacklist file: %s", e.getMessage()));
                 filesOk = false;

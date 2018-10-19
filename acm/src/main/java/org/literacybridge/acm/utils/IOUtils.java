@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Set;
 
 import com.google.common.base.Predicate;
@@ -303,21 +304,21 @@ public class IOUtils {
 
     /**
      * Reads a file, line by line. '#' introduces a comment. comments & whitespace are trimmed.
-     * Places the lines into a set, so this is really good for whitelists, blacklists, etc.
-     * @param lines File of lines
-     * @param set Place lines into this set.
+     * Places the lines into a collection, so this is really good for whitelists, blacklists, etc.
+     * @param file File of lines
+     * @param lines Place lines into this collection.
      * @throws IOException if there is an error reading the file.
      */
-    public static void readLines(File lines, Set<String> set) throws IOException {
+    public static void readLines(File file, Collection<String> lines) throws IOException {
         //read file into stream, try-with-resources
-        try (BufferedReader br = new BufferedReader(new FileReader(lines))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split("#");
                 if (parts==null || parts.length<1) continue;
                 line = parts[0].trim();
                 if (line.length() < 1) continue;
-                set.add(line.toLowerCase());
+                lines.add(line);
             }
         }
     }

@@ -21,7 +21,8 @@ import java.util.TreeSet;
  */
 public class Whitelister {
     public enum OPTIONS {
-        regex       // treat values as regular expressions
+        regex,          // treat values as regular expressions
+        caseSensitive   // Values are case sensitive. Default case-insensitive.
     };
 
     /**
@@ -34,8 +35,8 @@ public class Whitelister {
         }
     }
 
-    protected final Whitelister.CaseInsensitiveSet<String> whitelistedItems;
-    protected final Whitelister.CaseInsensitiveSet<String> blacklistedItems;
+    protected final Set<String> whitelistedItems;
+    protected final Set<String> blacklistedItems;
     protected final Set<OPTIONS> options;
 
     /**
@@ -44,8 +45,8 @@ public class Whitelister {
      */
     public Whitelister(File whitelistFile, OPTIONS... options) {
         this.options = new HashSet<OPTIONS>(Arrays.asList(options));
-        Whitelister.CaseInsensitiveSet<String> wl = null;
-        Whitelister.CaseInsensitiveSet<String> bl = null;
+        Set<String> wl = null;
+        Set<String> bl = null;
         if (whitelistFile != null && whitelistFile.exists()) {
             Set<String> idStrings = new HashSet<>();
             try {
@@ -57,6 +58,11 @@ public class Whitelister {
                     } else {
                         wl = addToList(wl, item);
                     }
+                }
+                // If there were no whitelist lines and no blacklist lines, treat this as an
+                // empty whitelist. That is, nothing will be included.
+                if (wl == null && bl == null) {
+                    wl = new TreeSet<>();
                 }
             } catch (IOException ex) {
                 // If we can't read the whitelist file, include everything, exclude nothing.
@@ -76,9 +82,13 @@ public class Whitelister {
         return whitelistedItems != null || blacklistedItems != null;
     }
 
-    private CaseInsensitiveSet<String> addToList(CaseInsensitiveSet<String> items, String item) {
+    private Set<String> addToList(Set<String> items, String item) {
         if (items == null) {
-            items = new CaseInsensitiveSet<>();
+            if (options.contains(OPTIONS.caseSensitive)) {
+                items = new TreeSet<>();
+            } else {
+                items = new CaseInsensitiveSet<>();
+            }
         }
         items.add(item);
         return items;
@@ -102,14 +112,15 @@ public class Whitelister {
         return whitelistedItems == null || isMatch(whitelistedItems, item);
     }
 
-    private boolean isMatch(CaseInsensitiveSet<String> items, String candidate) {
+    private boolean isMatch(Set<String> items, String candidate) {
         if (options.contains(OPTIONS.regex)) {
             // Treat the list as regular expressions, and see if any match. This lets
             // us write "([a-z]*-)?201[3-5]-.*" to match 2013-, 14-, 15-, with or
             // without a prefix.
             for (String item : items) {
+                String regex = (options.contains(OPTIONS.caseSensitive) ? "" : "(?i)") + item;
                 // Make the test case insensitive
-                if (candidate.matches("(?i)" + item)) {
+                if (candidate.matches(regex)) {
                     return true;
                 }
             }
