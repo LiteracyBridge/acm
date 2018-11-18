@@ -662,40 +662,30 @@ taxonomy:
        children:
          '100-1':
            name: Breastfeeding and immunization
-           order: 1
          '100-2':
            name: Children's songs
-           order: 2
          '100-3':
            name: Diarrhea
-           order: 3
          '100-4':
            name: ITETERO programme for children and their parents
-           order: 4
          '100-5':
            name: Menstrual hygiene and SIDA
-           order: 5
          '100-6':
            name: malariya isuku n' isukura
-           order: 6
          '100-7':
            name: Social Protection
-           order: 7
          '100-8':
            name: WASH
-           order: 8
+         '100-9':
+           name: Child Welfare Clinics
+           
          '100-21': #Being brave is taking care of your wife
            name: Ushujaa ni Kumjali mama
-           order: 1
          '100-22': #Being brave is taking care of your child
            name: Ushujaa ni kumlinda mtoto
-           order: 2
          '100-23': #being brave is ensuring your wife and child have proper nutrition/
            name: Ushujaa ni kuwapea lishe bora
-           order: 3
          '100-24': #being brave is maintaining cleanliness
            name: Ushujaa ni kuzingatia usafi
-           order: 4
          '100-25': #being brave is practicing family planing
            name: Ushujaa ni kupanga uzazi
-           order: 5
