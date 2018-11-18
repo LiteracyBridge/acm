@@ -24,6 +24,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -429,33 +431,63 @@ public class TBBuilder {
      * @throws IOException if a file can't be read.
      */
     private void validateDeployment(String acmName, String deployment, List<PackageInfo> packages) throws IOException {
-        // Validate that the deployment is listed in the deployments.csv file.
-        File deploymentsList = new File(sourceProgramspecDir,"deployments.csv");
-        if (deploymentsList.exists()) {
-            boolean found = false;
-            FileReader fileReader = new FileReader(deploymentsList);
-            CSVReader csvReader = new CSVReader(fileReader);
+        boolean strictNaming = ACMConfiguration.getInstance().getCurrentDB().strictDeploymentNaming();
+        if (strictNaming) {
+            // Validate that the deployment is listed in the deployments.csv file.
+            File deploymentsList = new File(sourceProgramspecDir, "deployments.csv");
+            if (deploymentsList.exists()) {
+                boolean found = false;
+                FileReader fileReader = new FileReader(deploymentsList);
+                CSVReader csvReader = new CSVReader(fileReader);
 
-            List<String[]> lines = csvReader.readAll();
-            int count = 0;
-            int deploymentIx = -1;
-            for (String[] line : lines) {
-                if (count++ == 0) {
-                    for (int ix=0; ix<line.length; ix++) {
-                        if (line[ix].equalsIgnoreCase("deployment")) {
-                            deploymentIx = ix;
+                List<String[]> lines = csvReader.readAll();
+                String nextDeploymentName = null;
+                String prevDeploymentName = null;
+                int count = 0;
+                int deploymentIx = -1;
+                int startDateIx = -1;
+                for (String[] line : lines) {
+                    if (count++ == 0) {
+                        for (int ix = 0; ix < line.length; ix++) {
+                            if (line[ix].equalsIgnoreCase("deployment")) {
+                                deploymentIx = ix;
+                            } else if (line[ix].equalsIgnoreCase("startdate")) {
+                                startDateIx = ix;
+                            }
+                        }
+                    } else {
+                        // Look for the given deployment in the deployments.csv. Also look for a
+                        // likely deployment name, either the next deployment after today, or the
+                        // last deployment in the list. This won't be the right one when re-building
+                        // the current deployment, but the prompt should give a good hint as to what
+                        // the name should be.
+                        if (line[deploymentIx].equalsIgnoreCase(deployment)) {
+                            found = true;
                             break;
+                        } else if (StringUtils.isEmpty(nextDeploymentName)){
+                            DateFormat df1 = new SimpleDateFormat("yyyy-MM-dd");
+                            try {
+                                Date startDate = df1.parse(line[startDateIx]);
+                                if (startDate.after(new Date())) {
+                                    nextDeploymentName = line[deploymentIx];
+                                } else {
+                                    prevDeploymentName = line[deploymentIx];
+                                }
+                            } catch (ParseException e) {
+                                // Not a valid iso8601 string. Ignore it.
+                            }
                         }
                     }
-                } else {
-                    if (line[deploymentIx].equalsIgnoreCase(deployment)) {
-                        found = true;
-                        break;
-                    }
                 }
-            }
-            if (!found) {
-                errorMessages/*fatalMessages*/.add(String.format("'%s' is not a valid deployment for ACM '%s'.", deployment, acmName));
+                if (!found) {
+                    String invalidMessage = String.format( "'%s' is not a valid deployment for ACM '%s'.",
+                        deployment, ACMConfiguration.cannonicalProjectName(acmName));
+                    if (StringUtils.isNotEmpty(nextDeploymentName) || StringUtils.isNotEmpty(prevDeploymentName)) {
+                        String name = StringUtils.defaultIfEmpty(nextDeploymentName, prevDeploymentName);
+                        invalidMessage += " (Did you mean '" + name + "'?)";
+                    }
+                    fatalMessages.add(invalidMessage);
+                }
             }
         }
 
@@ -530,11 +562,10 @@ public class TBBuilder {
      * <p>
      * If any file is missing, prints an error message and exits.
      *
-     *
      * @param pi Information about the package: name, language, groups
-     *                     (TB-Loaders/packages/{name}/messages/lists/1/)
-     *                     containing the _activeLists.txt and individual playlist .txt
-     *                     list files.
+     *           (TB-Loaders/packages/{name}/messages/lists/1/)
+     *           containing the _activeLists.txt and individual playlist .txt
+     *           list files.
      * @throws IOException if any files can't be read.
      */
     private void validatePackageForLanguage(PackageInfo pi)

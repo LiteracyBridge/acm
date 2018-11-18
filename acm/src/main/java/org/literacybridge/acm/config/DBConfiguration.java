@@ -409,6 +409,12 @@ public class DBConfiguration extends Properties {
     return awsLocking == null || !awsLocking.equalsIgnoreCase("false");
   }
 
+
+   public boolean strictDeploymentNaming() {
+        String strictNaming = getProperty(Constants.STRICT_DEPLOYMENT_NAMING);
+        return strictNaming == null || !strictNaming.equalsIgnoreCase("false");
+    }
+
     /**
    * Parses the language labels from the 'AUDIO_LANGUAGES' String property
    * contained in the config.properties file. The appropriate line in the file

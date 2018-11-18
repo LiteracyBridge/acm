@@ -3,7 +3,7 @@ package org.literacybridge.acm;
 import java.io.File;
 
 public class Constants {
-  public final static String ACM_VERSION = "r1810180"; // yy mm dd n
+  public final static String ACM_VERSION = "r1811170"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String ACM_DIR_NAME = "ACM";
   public final static String CACHE_DIR_NAME = "cache";
@@ -38,6 +38,7 @@ public class Constants {
   public final static String AUDIO_LANGUAGES = "AUDIO_LANGUAGES";
   public final static String PRE_CACHE_WAV = "PRE_CACHE_WAV";
   public final static String CACHE_SIZE_PROP_NAME = "CACHE_SIZE_IN_BYTES";
+  public final static String STRICT_DEPLOYMENT_NAMING = "STRICT_DEPLOYMENT_NAMING";
   public final static String USE_AWS_LOCKING = "USE_AWS_LOCKING";
   public final static String BATCH_RECORD = "record.log";
   public final static String S3_BUCKET = "acm-logging";
