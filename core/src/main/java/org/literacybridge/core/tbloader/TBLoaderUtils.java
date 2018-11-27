@@ -217,6 +217,11 @@ public class TBLoaderUtils {
         // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/communities/{communitydir}
         File communitiesDir = new File(deploymentDirectory, "communities");
         File communityDir = new File(communitiesDir, communityName);
+
+        return getRecipientProperty(communityDir, RECIPIENTID_PROPERTY);
+    }
+
+    public static String getRecipientProperty(File communityDir, String propertyName) {
         File recipientidFile = new File(communityDir, "recipient.id");
 
         if (recipientidFile.exists()) {
@@ -225,7 +230,7 @@ public class TBLoaderUtils {
                 while ((line = br.readLine()) != null) {
                     line = line.trim();
                     String[] parts = line.split("=", 2);
-                    if (parts[0].equalsIgnoreCase(RECIPIENTID_PROPERTY)) {
+                    if (parts[0].equalsIgnoreCase(propertyName)) {
                         return parts[1].trim();
                     }
                 }

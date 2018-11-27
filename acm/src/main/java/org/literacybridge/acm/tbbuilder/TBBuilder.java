@@ -32,12 +32,16 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENTID_PROPERTY;
 
 public class TBBuilder {
     private static final String[] CSV_COLUMNS_CONTENT_IN_PACKAGE = { "project",
@@ -683,6 +687,7 @@ public class TBBuilder {
      */
     private void validateCommunities(
         File communitiesDir, Set<String> languages, Set<String> groups) {
+        Map<String, List<String>> foundRecipientIds = new HashMap<>();
         File[] communities = communitiesDir.listFiles();
         if (communities == null || communities.length == 0) {
             errorMessages.add("Missing or empty directory: " + communitiesDir.getAbsolutePath());
@@ -731,6 +736,16 @@ public class TBBuilder {
                         foundGroup |= groups.contains(groupName);
                     }
                 }
+                // Validate recipientid, if present, is unique.
+                String recipientid = TBLoaderUtils.getRecipientProperty(c, RECIPIENTID_PROPERTY);
+                if (recipientid != null) {
+                    List<String> recips = foundRecipientIds.get(recipientid);
+                    if (recips == null) {
+                        recips = new ArrayList<>();
+                        foundRecipientIds.put(recipientid, recips);
+                    }
+                    recips.add(c.getName());
+                }
                 if (!foundLanguage) {
                     errorMessages.add(
                         String.format("Community '%s' does not have any language in the Deployment.",
@@ -752,6 +767,16 @@ public class TBBuilder {
                             c.getName()));
                     errorCommunities.add(c.getName());
                 }
+            }
+        }
+        for (Map.Entry<String, List<String>> e : foundRecipientIds.entrySet()) {
+            if (e.getValue().size() > 1) {
+                String dirs = e.getValue()
+                    .stream()
+                    .collect(Collectors.joining(", "));
+                String msg = String.format("Recipientid %s found in multiple communities: %s",
+                    e.getKey(), dirs);
+                fatalMessages.add(msg);
             }
         }
     }
