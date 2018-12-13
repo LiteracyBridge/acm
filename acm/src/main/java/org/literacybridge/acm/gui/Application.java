@@ -175,6 +175,7 @@ public class Application extends JXFrame {
     CmdLineParser parser = new CmdLineParser(params);
     try {
       parser.parseArgument(args);
+      params.sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(params.sharedACM);
     } catch (CmdLineException e) {
       System.err.println(e.getMessage());
       System.err.println(
