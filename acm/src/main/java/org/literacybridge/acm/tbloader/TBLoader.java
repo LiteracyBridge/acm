@@ -3,9 +3,14 @@ package org.literacybridge.acm.tbloader;
 import org.apache.commons.lang.StringUtils;
 import org.jdesktop.swingx.JXDatePicker;
 import org.jdesktop.swingx.prompt.PromptSupport;
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.util.UIUtils;
+import org.literacybridge.acm.utils.LogHelper;
+import org.literacybridge.acm.utils.MessageExtractor;
 import org.literacybridge.acm.utils.OsUtils;
 import org.literacybridge.acm.utils.SwingUtils;
 import org.literacybridge.core.OSChecker;
@@ -181,6 +186,18 @@ public class TBLoader extends JFrame {
         }
     }
 
+    private static class TbLoaderArgs {
+        @Option(name = "--oldchooser", usage = "Force old community chooser")
+        boolean oldChooser = false;
+
+        @Argument
+        String project;
+
+        @Argument(index=1, usage="Talking Book SRN prefix")
+        String tbPrefix;
+    }
+    static private TbLoaderArgs tbArgs = new TbLoaderArgs();
+
     private String[] currentLocationList = new String[] { "Select location...", "Community",
         "Jirapa office", "Wa office", "Other" };
 
@@ -192,11 +209,18 @@ public class TBLoader extends JFrame {
     private boolean updatingTB = false;
 
     public static void main(String[] args) throws Exception {
-        String project = args[0];
+        CmdLineParser parser = new CmdLineParser(tbArgs);
+        try {
+            parser.parseArgument(args);
+        } catch (Exception e) {
+            System.exit(100);
+        }
+
+        String project = tbArgs.project;
         String srnPrefix = "b-"; // for latest Talking Book hardware
 
-        if (args.length == 2) {
-            srnPrefix = args[1];
+        if (tbArgs.tbPrefix != null) {
+            srnPrefix = tbArgs.tbPrefix;
         }
 
         new TBLoader(project, srnPrefix).runApplication();
@@ -214,40 +238,28 @@ public class TBLoader extends JFrame {
     }
 
     private void runApplication() throws Exception {
+        long startupTimer = -System.currentTimeMillis();
+
         OsUtils.enableOSXQuitStrategy();
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.addWindowListener(new WindowEventHandler());
 
         // Set options that are controlled by project config file.
-        Properties config = ACMConfiguration.getInstance().getConfigPropertiesFor(newProject);
-        String valStr = config.getProperty("OLD_COMMUNITY_CHOOSER", "false");
-        forceOldStyleCommunityChooser = Boolean.parseBoolean(valStr);
+        if (tbArgs.oldChooser) {
+            forceOldStyleCommunityChooser = true;
+        } else {
+            Properties config = ACMConfiguration.getInstance().getConfigPropertiesFor(newProject);
+            String valStr = config.getProperty("OLD_COMMUNITY_CHOOSER", null);
+            if (valStr != null) {
+                forceOldStyleCommunityChooser = Boolean.parseBoolean(valStr);
+            }
+        }
 
         setDeviceIdAndPaths();
 
         // Set up the program log. For debugging the execution of the TBLoader application.
 
-        // Put log output into the ~/Dropbox/tbcd1234/log directory
-        // - rotate through 10 files
-        // - up to 4MB per file
-        // - Keep appending to a file until it reaches the limit.
-        // If there is no format set, use this one-line format.
-        String format = System.getProperty("java.util.logging.SimpleFormatter.format");
-        if (format==null || format.length()==0) {
-            System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %2$s %5$s%6$s%n");
-        }
-        Path relativeLogPath = Paths.get(System.getProperty("user.home")).relativize(Paths.get(logsDir.getAbsolutePath()));
-        String logPattern = "%h/" + relativeLogPath.toString() + "/tbloaderlog.%g";
-        Logger rootLogger = Logger.getLogger("");
-        FileHandler logHandler = new FileHandler(logPattern,
-                16*1024*1024,
-                10, true);
-        logHandler.setFormatter(new SimpleFormatter());
-        logHandler.setLevel(Level.INFO);
-        rootLogger.removeHandler(rootLogger.getHandlers()[0]);
-        rootLogger.setLevel(Level.INFO);
-        rootLogger.addHandler(logHandler);
-        LOG.log(Level.INFO, "\n\n********************************************************************************");
+        new LogHelper().inDirectory(logsDir).absolute().withName("tbloaderlog.%g").absolute().initialize();
         LOG.log(Level.INFO, "WindowsTBLoaderStart\n");
 
         // Set up the operation log. Tracks what is done, by whom.
@@ -318,6 +330,10 @@ public class TBLoader extends JFrame {
         LOG.log(Level.INFO, "set visibility - starting drive monitoring");
         deviceMonitorThread.setDaemon(true);
         deviceMonitorThread.start();
+
+        startupTimer += System.currentTimeMillis();
+        System.out.printf("Startup in %d ms, with %s community chooser.\n", startupTimer,
+            forceOldStyleCommunityChooser?"old":"new");
     }
 
     private void setDeviceIdAndPaths() throws IOException {
