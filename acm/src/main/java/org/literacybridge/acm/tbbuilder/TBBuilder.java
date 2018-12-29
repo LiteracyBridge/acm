@@ -287,7 +287,9 @@ public class TBBuilder {
         File stagedCommunitiesDir = new File(stagedDeploymentDir, "communities");
         FileUtils.copyDirectory(sourceCommunitiesDir, stagedCommunitiesDir);
 
-        FileUtils.copyDirectory(sourceProgramspecDir, stagedProgramspecDir);
+        if (sourceProgramspecDir != null) {
+            FileUtils.copyDirectory(sourceProgramspecDir, stagedProgramspecDir);
+        }
         
         deleteRevFiles(stagingDir);
         String revision;
