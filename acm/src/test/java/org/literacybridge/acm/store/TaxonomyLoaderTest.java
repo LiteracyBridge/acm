@@ -5,12 +5,11 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.literacybridge.acm.config.CategoryFilter;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
@@ -133,6 +132,10 @@ public class TaxonomyLoaderTest {
         cat = override.getCategory("0-3-1");
         assertNotNull("Expected to find '0-3-1'", cat);
         assertFalse("Expected '0-3-1' to not be visible", cat.isVisible());
+
+        assertTrue("Should require whitelist semantics", CategoryFilter.requiresWhitelistSemantics(override));
+        List<String> wlData = CategoryFilter.buildWhitelistFile(override);
+        System.out.println(wlData);
     }
 
     @Test
@@ -167,6 +170,10 @@ public class TaxonomyLoaderTest {
         cat = override.getCategory("0-3-1");
         assertNotNull("Expected to find '0-3-1'", cat);
         assertFalse("Expected '0-3-1' to not be visible", cat.isVisible());
+
+        assertFalse("Shouldn't require whitelist semantics", CategoryFilter.requiresWhitelistSemantics(override));
+        List<String> wlData = CategoryFilter.buildWhitelistFile(override);
+        System.out.println(wlData);
     }
 
     @Test
@@ -183,10 +190,13 @@ public class TaxonomyLoaderTest {
 
         Category cat = override.getCategory("0-1");
         assertNotNull("Expected to find '0-1'", cat);
-        assertFalse("Expected '0-1' to not be visible", cat.isVisible());
+        assertTrue("Expected '0-1' to be visible", cat.isVisible());
         cat = override.getCategory("0-1-1");
         assertNotNull("Expected to find '0-1-1'", cat);
-        assertTrue("Expected '0-1-1' to be visible", cat.isVisible());
+        assertFalse("Expected '0-1-1' to be not visible", cat.isVisible());
+        cat = override.getCategory("0-1-2");
+        assertNotNull("Expected to find '0-1-2'", cat);
+        assertTrue("Expected '0-1-2' to be visible", cat.isVisible());
 
         cat = override.getCategory("0-2");
         assertNotNull("Expected to find '0-2'", cat);
@@ -201,6 +211,10 @@ public class TaxonomyLoaderTest {
         cat = override.getCategory("0-3-1");
         assertNotNull("Expected to find '0-3-1'", cat);
         assertFalse("Expected '0-3-1' to not be visible", cat.isVisible());
+
+        assertTrue("Should require whitelist semantics", CategoryFilter.requiresWhitelistSemantics(override));
+        List<String> wlData = CategoryFilter.buildWhitelistFile(override);
+        System.out.println(wlData);
     }
 
     @Test
@@ -281,6 +295,8 @@ public class TaxonomyLoaderTest {
             out.println("          children:");
             out.println("            '0-1-1' :");
             out.println("              name: zero-one-one");
+            out.println("            '0-1-2' :");
+            out.println("              name: zero-one-two");
             out.println("        '0-2' :");
             out.println("          name: zero-two");
             out.println("          children:");
@@ -322,8 +338,8 @@ public class TaxonomyLoaderTest {
     private void writeMixedlist(File tempDir) throws IOException {
         File taxonomyFile = new File(tempDir, CategoryFilter.WHITELIST_FILENAME);
         try (PrintWriter out = new PrintWriter(taxonomyFile)) {
-            out.println("~ 0-1");
-            out.println("0-1-1");
+            out.println("0-1");
+            out.println("~ 0-1-1");
         }
     }
 

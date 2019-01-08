@@ -76,7 +76,7 @@ public class TaxonomyLoader {
         // Note that if there is a whitelist, and it does not have "LB_TAX_1.0" in it,
         // then anything that is to be visible must be explicitly whitelisted.
         Category rootCategory = taxonomy.getRootCategory();
-        categoryFilter.setVisibilityFor(rootCategory);
+        rootCategory.setVisible(categoryFilter.getVisibilityFor(rootCategory, null));
 
         VersionedTaxonomyData taxonomyData = findLatest();
         taxonomy.setRevision(taxonomyData.revision);
@@ -266,9 +266,8 @@ public class TaxonomyLoader {
         cat.setName(name);
         cat.setOrder(order);
         cat.setNonAssignable(nonAssignable);
+        cat.setVisible(categoryFilter.getVisibilityFor(cat, parent));
         taxonomy.addChild(parent, cat);
-        // setting visibility requires the category to be in the hierarchy
-        categoryFilter.setVisibilityFor(cat);
         return cat;
     }
 

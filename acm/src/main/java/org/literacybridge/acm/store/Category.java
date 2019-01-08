@@ -2,8 +2,6 @@ package org.literacybridge.acm.store;
 
 import com.google.common.collect.Lists;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -66,7 +64,7 @@ public class Category {
     children.add(childCategory);
   }
 
-  Iterable<Category> getChildren() {
+  public Iterable<Category> getChildren() {
     return children;
   }
 
