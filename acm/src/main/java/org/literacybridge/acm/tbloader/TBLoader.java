@@ -10,7 +10,6 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.utils.LogHelper;
-import org.literacybridge.acm.utils.MessageExtractor;
 import org.literacybridge.acm.utils.OsUtils;
 import org.literacybridge.acm.utils.SwingUtils;
 import org.literacybridge.core.OSChecker;
@@ -27,7 +26,6 @@ import org.literacybridge.core.tbloader.TBLoaderCore;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import javax.swing.*;
-import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -39,28 +37,25 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 import static java.awt.GridBagConstraints.BOTH;
 import static java.awt.GridBagConstraints.CENTER;
@@ -69,6 +64,7 @@ import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.LINE_START;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.RELATIVE;
+import static java.lang.Math.max;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
@@ -480,7 +476,7 @@ public class TBLoader extends JFrame {
         int maxMinWidth = 0;
         for (JComponent c : columnComponents) {
             if (c != null)
-                maxMinWidth = Math.max(maxMinWidth, c.getMinimumSize().width);
+                maxMinWidth = max(maxMinWidth, c.getMinimumSize().width);
         }
         Dimension d = nextLabel.getMinimumSize();
         d.width = maxMinWidth;
@@ -943,27 +939,12 @@ public class TBLoader extends JFrame {
      * @return The next serial number.
      */
     private int allocateNextSerialNumberFromTbLoader() throws Exception {
-        int serialnumber = TBLoaderConstants.STARTING_SERIALNUMBER;
-        String deviceId = tbLoaderConfig.getTbLoaderId();
-        String devFilename = deviceId + TBLoaderConstants.DEVICE_FILE_EXTENSION; // xxxx.dev
-        File fDev = new File(ACMConfiguration.getInstance().getApplicationHomeDirectory(),
-                          devFilename);
+        int serialnumber = loadSerialNumber();
 
-        // Get the most recent serial number assigned.
-        if (fDev.exists()) {
-            try (DataInputStream in = new DataInputStream(new FileInputStream(fDev))) {
-                serialnumber = in.readInt();
-            } catch (EOFException e) {
-                // No counter yet; normal for new device pc. Starting serial number is the right thing, in that case.
-            } catch (IOException e) {
-                // This shoudn't happen since we checked f.exists()
-                LOG.log(Level.WARNING, "Unexpected IOException reading " + devFilename
-                        + "; ignoring and using default serial number", e);
-            }
-            if (serialnumber >= 0xFFFF) {
-                throw new Exception("SRN out of bounds for this TB Loader device.");
-            }
-            fDev.delete();
+        if (serialnumber >= 0xFFFF) {
+            throw new Exception("SRN out of bounds for this TB Loader device. (Too many assigned.)");
+        } else if (serialnumber < 0) {
+            serialnumber = TBLoaderConstants.STARTING_SERIALNUMBER;
         }
         if (serialnumber == TBLoaderConstants.STARTING_SERIALNUMBER) {
             // if file doesn't exist, use the SRN = STARTING_SERIALNUMBER
@@ -973,32 +954,109 @@ public class TBLoader extends JFrame {
         // The number we're assigning now...
         serialnumber++;
 
-        saveSerialNumber(serialnumber, ACMConfiguration.getInstance().getApplicationHomeDirectory());
-
-        // Back up the file in case of loss.
-        File dropboxDir = ACMConfiguration.getInstance().getGlobalShareDir();
-        File backupDir = new File(dropboxDir,
-                                  TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
-        saveSerialNumber(serialnumber, backupDir);
+        // Save into the local directory, and to Dropbox.
+        saveSerialNumber(serialnumber);
 
         return serialnumber;
     }
 
-    private void saveSerialNumber(int serialnumber, File backupDir)
+    /**
+     * Loads the most recently assigned "serial number". Looks in the local directory, and in the
+     * ~/Dropbox/tbcd1234 directory. Looks for a binary file named "1234.dev", and for ascii text
+     * files with the number encoded as a 4-digit hex string, in "1234.txt" and "1234.hex". The
+     * name "1234.txt" is deprecated.
+     * @return The serial number read, or -1 if none read.
+     */
+    private int loadSerialNumber() {
+        String deviceId = tbLoaderConfig.getTbLoaderId();
+        File tbloaderIdDir = new File(ACMConfiguration.getInstance().getGlobalShareDir(),
+            TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
+
+        int localSn = loadSerialNumber(deviceId, ACMConfiguration.getInstance().getApplicationHomeDirectory());
+        int backupSn = loadSerialNumber(deviceId, tbloaderIdDir);
+
+        return max(localSn, backupSn);
+    }
+
+    static int loadSerialNumber(String deviceId, File backupDir) {
+//        String deviceId = tbLoaderConfig.getTbLoaderId();
+        String binaryFilename = deviceId + TBLoaderConstants.DEVICE_FILE_EXTENSION; // xxxx.dev
+        File binaryFile = new File(backupDir, binaryFilename);
+        File textFile = new File(backupDir, deviceId + ".txt");
+        File hexFile = new File(backupDir, deviceId + ".hex");
+
+        int binarySn = -1;
+        int textSn = readHexSn(textFile);
+        int hexSn = readHexSn(hexFile);
+
+        if (binaryFile.exists()) {
+            try (DataInputStream is = new DataInputStream(new FileInputStream(binaryFile))) {
+                binarySn = is.readInt();
+            } catch (IOException e) {
+                String msg = String.format("Unexpected Exception reading %s in directory %s. Ignoring this file.",
+                    binaryFile.getName(), binaryFile.getParentFile().getName());
+                LOG.log(Level.WARNING, msg, e);
+            }
+        }
+        return max(binarySn, max(textSn, hexSn));
+    }
+
+    private static int readHexSn(File file) {
+        int result = -1;
+        if (file.exists()) {
+            try (FileReader fr = new FileReader(file);
+                BufferedReader br = new BufferedReader(fr)) {
+                String line = br.readLine().trim();
+                if (line.length() == 4) {
+                    result = Integer.parseInt(line, 16);
+                }
+            } catch (Exception e) {
+                String msg = String.format("Unexpected Exception reading or parsing %s in directory %s. Ignoring this file.",
+                    file.getName(), file.getParentFile().getName());
+                LOG.log(Level.WARNING, msg, e);
+            }
+        }
+        return result;
+    }
+
+    private void saveSerialNumber(int serialnumber) throws IOException {
+        String deviceId = tbLoaderConfig.getTbLoaderId();
+        File tbloaderIdDir = new File(ACMConfiguration.getInstance().getGlobalShareDir(),
+            TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
+
+        saveSerialNumber(deviceId, serialnumber, ACMConfiguration.getInstance().getApplicationHomeDirectory());
+        saveSerialNumber(deviceId, serialnumber, tbloaderIdDir);
+    }
+
+    /**
+     * Save the given "serial number" into the given directory. The file is saved in binary, to
+     * a file named 1234.dev (where "1234" is the user's tb-loader id), and as a 4-digit hex
+     * string to 1234.hex. If a file named 1234.txt exists, it will be deleted.
+     *
+     * @param serialnumber The serial number to be saved.
+     * @param backupDir Directory into which to write the files.
+     * @throws IOException if one of the files can't be written.
+     */
+    static void saveSerialNumber(String deviceId, int serialnumber, File backupDir)
         throws IOException
     {
-        String deviceId = tbLoaderConfig.getTbLoaderId();
+//        String deviceId = tbLoaderConfig.getTbLoaderId();
         String binaryFilename = deviceId + TBLoaderConstants.DEVICE_FILE_EXTENSION; // xxxx.dev
         String textFilename = deviceId + ".txt";
+        String hexFilename = deviceId + ".hex";
         File binaryFile = new File(backupDir, binaryFilename);
         File textFile = new File(backupDir, textFilename);
+        File hexFile = new File(backupDir, hexFilename);
 
         try (DataOutputStream os = new DataOutputStream(new FileOutputStream(binaryFile))) {
             os.writeInt(serialnumber);
         }
-        try (FileWriter fw = new FileWriter(textFile);
+        try (FileWriter fw = new FileWriter(hexFile);
             PrintWriter pw = new PrintWriter(fw)) {
             pw.printf("%04x", serialnumber);
+        }
+        if (textFile.exists()) {
+            textFile.delete();
         }
     }
 
