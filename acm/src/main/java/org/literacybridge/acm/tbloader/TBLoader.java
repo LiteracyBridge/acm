@@ -363,6 +363,15 @@ public class TBLoader extends JFrame {
                     .substring(0, files[0].getName().length() - 4)
                     .toUpperCase();
 
+                if (!deviceId.matches("[a-fA-F0-9]{4}")) {
+                    String msg = String.format("The TB-Loader uses a '*.dev' file to uniquely identify every TB-Loader laptop.\n" +
+                                              "The file named '%s' is not a valid .dev file. Please contact Amplio\n to request "
+                                            + "a TB-Loader id.", files[0].getName());
+                    JOptionPane.showMessageDialog(applicationWindow, msg, "Invalid .dev File Name", JOptionPane.ERROR_MESSAGE);
+                    LOG.log(Level.SEVERE, msg);
+                    System.exit(1);
+                }
+
                 // Like "~/Dropbox/tbcd1234"
                 File tbLoaderDir = new File(dropboxDir, TBLoaderConstants.COLLECTED_DATA_DROPBOXDIR_PREFIX + deviceId);
                 // Like collected-data/{PROJECT}/OperationalData/{tbcdid}/logs
@@ -374,7 +383,7 @@ public class TBLoader extends JFrame {
                     JOptionPane.showMessageDialog(applicationWindow, tbLoaderDir.toString()
                             + " does not exist; cannot find the Dropbox collected data path. Please contact ICT staff.",
                         "Cannot Find Dropbox Collected Data Folder!",
-                        JOptionPane.PLAIN_MESSAGE);
+                        JOptionPane.ERROR_MESSAGE);
                     System.exit(1);
                 }
                 // Like ~/Dropbox/tbcd1234/collected-data
@@ -394,7 +403,7 @@ public class TBLoader extends JFrame {
                 JOptionPane.showMessageDialog(applicationWindow,
                     "This computer does not appear to be configured to use the TB Loader yet.  It needs a unique device tbSrn. Please contact ICT staff to get this.",
                     "This Computer has no ID!",
-                    JOptionPane.PLAIN_MESSAGE);
+                    JOptionPane.ERROR_MESSAGE);
                 System.exit(1);
             }
         } catch (Exception e) {
