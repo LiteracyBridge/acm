@@ -273,7 +273,7 @@ public class ACMConfiguration {
         return UsersConfigurationProperties.getProperty("USER_NAME");
     }
 
-    public String getUserContact() {
+    String getUserContact() {
         return UsersConfigurationProperties.getProperty(Constants.USER_CONTACT_INFO);
     }
 
@@ -414,15 +414,15 @@ public class ACMConfiguration {
         return disableUI;
     }
 
-    public boolean isForceSandbox() {
+    boolean isForceSandbox() {
         return forceSandbox;
     }
 
-    public boolean isAllCategories() {
+    boolean isAllCategories() {
         return allCategories;
     }
 
-    public boolean isNoDbCheckout() { return noDbCheckout; }
+    boolean isNoDbCheckout() { return noDbCheckout; }
 
     public boolean isShowConfiguration() {
         return showConfiguration;
@@ -457,7 +457,7 @@ public class ACMConfiguration {
         return new File(getApplicationHomeDirectory(), Constants.USERS_APPLICATION_PROPERTIES);
     }
 
-    public File getAcmDirFor(String acmName) {
+    private File getAcmDirFor(String acmName) {
         File acmDir = null;
         acmName = ACMConfiguration.cannonicalAcmDirectoryName(acmName);
 
@@ -484,7 +484,7 @@ public class ACMConfiguration {
             Constants.TBLoadersHomeDir + File.separator + project);
     }
 
-    public File getSharedAcmDirectoryFor(String acmName) {
+    private File getSharedAcmDirectoryFor(String acmName) {
         acmName = cannonicalAcmDirectoryName(acmName);
         return new File(globalShareDir, acmName);
     }
@@ -494,7 +494,7 @@ public class ACMConfiguration {
      * @param acmName The ACM for which the configuration file is desired.
      * @return The File.
      */
-    public File getSharedConfigurationFileFor(String acmName) {
+    File getSharedConfigurationFileFor(String acmName) {
         // ~/Dropbox/ACM-DEMO/config.properties
         return new File(getSharedAcmDirectoryFor(acmName), Constants.CONFIG_PROPERTIES);
     }
@@ -538,7 +538,7 @@ public class ACMConfiguration {
         return whitelistFile;
     }
 
-    public File getConfigFileFor(String acmName) {
+    private File getConfigFileFor(String acmName) {
         File configFile = null;
         File acmDir = getAcmDirFor(acmName);
 

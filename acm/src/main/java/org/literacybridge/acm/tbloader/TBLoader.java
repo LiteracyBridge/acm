@@ -37,7 +37,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -65,8 +64,6 @@ import static java.awt.GridBagConstraints.LINE_START;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.RELATIVE;
 import static java.lang.Math.max;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
-import static org.apache.commons.io.comparator.LastModifiedFileComparator.LASTMODIFIED_REVERSE;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
@@ -103,17 +100,15 @@ public class TBLoader extends JFrame {
     private JTextField newDeploymentText;
     private JTextField oldDeploymentText;
 
-    private JLabel communityFilterLabel;
-    private FilteringComboBoxModel<String> newCommunityModel;
-    private JTextField newCommunityFilter;
     private JLabel communityLabel;
-    private JComboBox<String> newCommunityList;
+    private JRecipientChooser recipientChooser;
     private JTextField oldCommunityText;
 
-    private JRecipientChooser recipientChooser;
 
     private JLabel contentPackageLabel;
+    private JComponent newPackageComponent;
     private JTextField newPackageText;
+    private JComboBox<String> newPackageChooser;
     private JTextField oldPackageText;
 
     private JLabel dateLabel;
@@ -158,14 +153,11 @@ public class TBLoader extends JFrame {
     private TBLoaderConfig tbLoaderConfig;
 
     private static class TbLoaderArgs {
-        @Option(name = "--oldchooser", usage = "Force old community chooser")
-        boolean oldChooser = false;
-
         @Option(name = "--oldtbs", aliases = "-o", usage = "Target OLD Talking Books.")
         boolean oldTbs = false;
 
-        @Option(name = "--choose", aliases = "-c", usage = "Choose Deployment from list.")
-        boolean deploymentChoice = false;
+        @Option(name = "--choose", aliases = "-c", usage = "Choose Deployment and/or Package.")
+        boolean choices = false;
 
         @Argument(usage = "Project or ACM name to export.", index = 0, required = true, metaVar = "ACM")
         String project;
@@ -173,27 +165,19 @@ public class TBLoader extends JFrame {
         @Argument(usage = "Serial number prefix, default '-b'.", index = 1, metaVar = "SRN_PREFIX")
         String srnPrefix = null;
     }
-    static private TbLoaderArgs tbArgs = new TbLoaderArgs();
 
     // All content is relative to this.
-    private File baseDirectory;
+    private File localTbLoaderDir;
+    private File localDeploymentDir;
     private File logsDir;
+
+    private String[] packagesInDeployment;
 
     // Metadata about the project. Optional, may be null.
     private ProgramSpec programSpec = null;
 
     // Options.
-    private boolean forceOldStyleCommunityChooser = false;
-    private boolean forceOldStyleGoButtons = false;
-
-    // Document change listener, listens for changes to filter text box, updates the filter.
-    private DocumentListener filterChangeListener = new DocumentListener() {
-        // Listen for any change to the text
-        public void changedUpdate(DocumentEvent e) { common(); }
-        public void removeUpdate(DocumentEvent e) { common(); }
-        public void insertUpdate(DocumentEvent e) { common(); }
-        void common() { newCommunityModel.setFilterString(newCommunityFilter.getText()); }
-    };
+    private boolean allowPackageChoice = false;
 
     class WindowEventHandler extends WindowAdapter {
         @Override
@@ -217,6 +201,7 @@ public class TBLoader extends JFrame {
     public static void main(String[] args) throws Exception {
         System.out.println("starting main()");
 
+        TbLoaderArgs tbArgs = new TbLoaderArgs();
         CmdLineParser parser = new CmdLineParser(tbArgs);
         try {
             parser.parseArgument(args);
@@ -228,31 +213,24 @@ public class TBLoader extends JFrame {
             System.exit(100);
         }
 
-        String project = tbArgs.project;
-        String srnPrefix = "b-"; // for latest Talking Book hardware
+        new TBLoader(tbArgs).runApplication();
+    }
+
+    private TBLoader(TbLoaderArgs tbArgs) {
+        // String project, String srnPrefix, boolean deploymentChoice) {
+        this.newProject = ACMConfiguration.cannonicalProjectName(tbArgs.project);
+
+        applicationWindow = this;
 
         if (tbArgs.srnPrefix != null)
             srnPrefix = tbArgs.srnPrefix.toLowerCase();
         else if (tbArgs.oldTbs)
             srnPrefix = "a-";
-
-        new TBLoader(project, srnPrefix, tbArgs.deploymentChoice).runApplication();
-    }
-
-    private TBLoader(String project, String srnPrefix, boolean deploymentChoice) {
-        project = ACMConfiguration.cannonicalProjectName(project);
-        applicationWindow = this;
-        this.newProject = project;
-        if (srnPrefix != null) {
-            this.srnPrefix = srnPrefix;
-        } else {
+        else
             this.srnPrefix = "b-"; // for latest Talking Book hardware
-        }
 
-        this.deploymentChoice = deploymentChoice;
-
-        // like ~/Dropbox/ACM-UWR/config.properties
-        File configFile = ACMConfiguration.getInstance().getSharedConfigurationFileFor(project);
+        this.deploymentChoice = tbArgs.choices;
+        this.allowPackageChoice = tbArgs.choices;
     }
 
     private void runApplication() throws Exception {
@@ -265,10 +243,11 @@ public class TBLoader extends JFrame {
         // Set options that are controlled by project config file.
         Properties config = ACMConfiguration.getInstance().getConfigPropertiesFor(newProject);
         if (config != null){
-            String valStr = config.getProperty("OLD_COMMUNITY_CHOOSER", "FALSE");
-            forceOldStyleCommunityChooser |= Boolean.parseBoolean(valStr);
-            valStr = config.getProperty(Constants.DEPLOYMENT_CHOICE, "FALSE");
+            String valStr = config.getProperty(Constants.DEPLOYMENT_CHOICE, "FALSE");
             this.deploymentChoice |= Boolean.parseBoolean(valStr);
+
+            valStr = config.getProperty("PACKAGE_CHOICE", "FALSE");
+            this.allowPackageChoice |= Boolean.parseBoolean(valStr);
         }
 
         setDeviceIdAndPaths();
@@ -279,27 +258,29 @@ public class TBLoader extends JFrame {
             .put("tbcdid", tbLoaderConfig.getTbLoaderId())
             .put("project", newProject)
             .finish();
-                                                                                    
+
+        // Looks in Dropbox and in ~/LiteracyBridge for deployments. May prompt user for which
+        // Deployment version, or update to latest.
+        getCurrentDeployments();
+
         initializeGui();
 
-        // Looks in Dropbox and in ~/LiteracyBridge for deployments
-        getCurrentDeployments();
+        // Populate various fields, choices.
         fillDeploymentList();
+        fillCommunityList();
+        fillFirmwareVersion();
 
 //        JOptionPane.showMessageDialog(applicationWindow,
 //                                      "Remember to power Talking Book with batteries before connecting with USB.",
 //                                      "Use Batteries!", JOptionPane.PLAIN_MESSAGE);
         startUpDone = true;
-        // Simulate firing the event again, because the first time it fired was when adding the
-        // Deployments to the list, and we weren't initialized enough to handle it then.
-//        onDeploymentChanged(new ItemEvent(newDeploymentList, 0, null, ItemEvent.SELECTED));
+
         LOG.log(Level.INFO, "set visibility - starting drive monitoring");
         deviceMonitorThread.setDaemon(true);
         deviceMonitorThread.start();
 
         startupTimer += System.currentTimeMillis();
-        System.out.printf("Startup in %d ms, with %s community chooser.\n", startupTimer,
-            forceOldStyleCommunityChooser?"old":"new");
+        System.out.printf("Startup in %d ms.\n", startupTimer);
     }
 
     /**
@@ -368,6 +349,9 @@ public class TBLoader extends JFrame {
             newDeployment = selectDeployment(dm);
             newDeploymentDescription = newDeployment;
         }
+        localDeploymentDir = new File(localTbLoaderDir, TBLoaderConstants.CONTENT_SUBDIR + File.separator
+            + newDeployment);
+        fillPackageList();
     }
 
     /**
@@ -427,8 +411,8 @@ public class TBLoader extends JFrame {
         try {
             File applicationHomeDirectory = ACMConfiguration.getInstance()
                 .getApplicationHomeDirectory();
-            baseDirectory = ACMConfiguration.getInstance().getLocalTbLoaderDirFor(newProject);
-            baseDirectory.mkdirs();
+            localTbLoaderDir = ACMConfiguration.getInstance().getLocalTbLoaderDirFor(newProject);
+            localTbLoaderDir.mkdirs();
             TbFile softwareDir = new FsFile(ACMConfiguration.getInstance().getSoftwareDir());
 
             File dropboxDir = ACMConfiguration.getInstance().getGlobalShareDir();
@@ -544,18 +528,13 @@ public class TBLoader extends JFrame {
                 // This list need not contain prevLabel or nextLabel; we assume that those two
                 // are "small-ish", and won't actually provide the maximimum minimum width.
                 driveList,
-                currentLocationChooser, newDeploymentText,
-                oldDeploymentText,
-                newCommunityFilter,
-                newCommunityList,
-                recipientChooser,
-                oldCommunityText, newPackageText, oldPackageText,
-                datePicker,
-                lastUpdatedText,
-                newFirmwareVersionText,
-                oldFirmwareVersionText,
-                newSrnText,
-                oldSrnText,
+                currentLocationChooser,
+                newDeploymentText, oldDeploymentText,
+                recipientChooser, oldCommunityText,
+                newPackageComponent, oldPackageText,
+                datePicker, lastUpdatedText,
+                newFirmwareVersionText, oldFirmwareVersionText,
+                newSrnText, oldSrnText,
                 newFirmwareBox,
                 updateButton,
                 getStatsButton
@@ -611,26 +590,13 @@ public class TBLoader extends JFrame {
         c.gridx = RELATIVE;
         panel.add(prevLabel, c);
 
-        // Deployment.
-//        layoutLine(panel, y++, deploymentLabel, newDeploymentList, oldDeploymentText);
-
-        // The option to force the old-style chooser is in case there is some error in the
-        // new recipient chooser widget. Set OLD_COMMUNITY_CHOOSER=TRUE in the config file
-        // to force.
-        if (forceOldStyleCommunityChooser) {
-            // Community Filter text box & community dropdown.
-            layoutLine(panel, y++, communityFilterLabel, newCommunityFilter, null);
-            layoutLine(panel, y++, communityLabel, newCommunityList, oldCommunityText);
-
-        } else {
-            // Recipient Chooser.
-            c = gbc(0, y++);
-            c.anchor = FIRST_LINE_START;
-            panel.add(communityLabel, c);
-            c.gridx = RELATIVE;
-            panel.add(recipientChooser, c);
-            panel.add(oldCommunityText, c);
-        }
+        // Recipient Chooser.
+        c = gbc(0, y++);
+        c.anchor = FIRST_LINE_START;
+        panel.add(communityLabel, c);
+        c.gridx = RELATIVE;
+        panel.add(recipientChooser, c);
+        panel.add(oldCommunityText, c);
 
         c = gbc(0, y++);
         panel.add(deploymentLabel, c);
@@ -639,7 +605,7 @@ public class TBLoader extends JFrame {
         panel.add(oldDeploymentText, c);
 
         // Package (aka 'Content', aka 'image')
-        layoutLine(panel, y++, contentPackageLabel, newPackageText, oldPackageText);
+        layoutLine(panel, y++, contentPackageLabel, newPackageComponent, oldPackageText);
         
         // Deployment date.
         layoutLine(panel, y++, dateLabel, datePicker, lastUpdatedText);
@@ -650,21 +616,12 @@ public class TBLoader extends JFrame {
         // TB Serial Number.
         layoutLine(panel, y++, srnLabel, newSrnText, oldSrnText);
 
-        // Buttons. Reverse the boolean to go back to the old "Update" / "Grab" buttons.
-        if (forceOldStyleGoButtons) {
-            c = gbc(1, y++);
-            c.fill = NONE;
-            panel.add(updateButton, c);
-            c.gridx = RELATIVE;
-            panel.add(getStatsButton, c);
-        } else {
-            // Action chooser and Go! button.
-            c = gbc(0, y++);
-            c.fill = NONE;
-            c.anchor = CENTER;
-            c.gridwidth = 3;
-            panel.add(actionBox, c);
-        }
+        // Action Buttons.
+        c = gbc(0, y++);
+        c.fill = NONE;
+        c.anchor = CENTER;
+        c.gridwidth = 3;
+        panel.add(actionBox, c);
 
         // Status display
         c = gbc(0, y++);
@@ -763,37 +720,22 @@ public class TBLoader extends JFrame {
         oldDeploymentText = new JTextField();
         oldDeploymentText.setEditable(false);
 
-        //============================================================================
         communityLabel = new JLabel("Community:");
-        // Note that only one of these will be added to the GUI. The new JRecipientChooser
-        // *should* perform the full function, including falling back to directory name
-        // operation. But the config option OLD_COMMUNITY_CHOOSER=TRUE will force the
-        // old style operation.
-
-        // Community filter. (Type desired filter into text field.)
-        communityFilterLabel = new JLabel("Community filter:");
-        newCommunityModel = new FilteringComboBoxModel<>();
-        newCommunityFilter = new JTextField("", 40);
-        newCommunityFilter.getDocument().addDocumentListener(filterChangeListener);
-        PromptSupport.setPrompt("Community Filter", newCommunityFilter);
-
-        // Select community.
-        newCommunityList = new JComboBox<>(newCommunityModel);
-        newCommunityList.addActionListener(this::onCommunitySelected);
-
-        //----------------------------------------------------------------------------
         recipientChooser = new JRecipientChooser();
         recipientChooser.addActionListener(this::onCommunitySelected);
-
-        // Old-style and new-style both have this.
         oldCommunityText = new JTextField();
         oldCommunityText.setEditable(false);
-        //============================================================================
 
         // Show Content Package name.
         contentPackageLabel = new JLabel("Content Package:");
-        newPackageText = new JTextField();
-        newPackageText.setEditable(false);
+        if (usePackageChooser()) {
+            newPackageChooser = new JComboBox<>(packagesInDeployment);
+            newPackageComponent = newPackageChooser;
+        } else {
+            newPackageText = new JTextField();
+            newPackageText.setEditable(false);
+            newPackageComponent = newPackageText;
+        }
         oldPackageText = new JTextField();
         oldPackageText.setEditable(false);
 
@@ -884,7 +826,7 @@ public class TBLoader extends JFrame {
         String firmwareVersion = "(No firmware)";
 
         // Like ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/basic
-        File basicContentPath = new File(baseDirectory,
+        File basicContentPath = new File(localTbLoaderDir,
                                          TBLoaderConstants.CONTENT_SUBDIR + File.separator
                                              + newDeployment
                                              + File.separator + TBLoaderConstants.CONTENT_BASIC_SUBDIR);
@@ -919,40 +861,29 @@ public class TBLoader extends JFrame {
     }
 
     private synchronized void fillCommunityList() {
-        String filter = newCommunityModel.setFilterString(null);
-        newCommunityList.removeAllItems();
         File[] files;
 
-        File fCommunityDir = new File(baseDirectory,
+        File fCommunityDir = new File(localTbLoaderDir,
                                       TBLoaderConstants.CONTENT_SUBDIR + File.separator
                                               + newDeployment + File.separator
                                               + TBLoaderConstants.COMMUNITIES_SUBDIR);
 
         files = fCommunityDir.listFiles((dir, name) -> dir.isDirectory());
 
-        if (forceOldStyleCommunityChooser) {
-            newCommunityList.addItem(NO_COMMUNITY_SELECTED);
-            for (File f : files) {
-                newCommunityList.addItem(f.getName());
-            }
-            setCommunityList();
-            newCommunityModel.setFilterString(filter);
-        } else {
-            File programspecDir = new File(baseDirectory,
-                TBLoaderConstants.CONTENT_SUBDIR + File.separator + newDeploymentText.getText().toString() + File.separator
-                    + Constants.ProgramSpecDir);
-            try {
-                programSpec = new ProgramSpec(programspecDir);
-                recipientChooser.populate(programSpec, files);
-                validate();
-            } catch (Exception ignored) {
-            }
+        File programspecDir = new File(localTbLoaderDir,
+            TBLoaderConstants.CONTENT_SUBDIR + File.separator + newDeploymentText.getText().toString() + File.separator
+                + Constants.ProgramSpecDir);
+        try {
+            programSpec = new ProgramSpec(programspecDir);
+            recipientChooser.populate(programSpec, files);
+            validate();
+        } catch (Exception ignored) {
         }
     }
 
     private String getRecipientIdForCommunity(String communityDirName) {
         // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/communities/{communitydir}
-        File deploymentDirectory = new File(baseDirectory,
+        File deploymentDirectory = new File(localTbLoaderDir,
             TBLoaderConstants.CONTENT_SUBDIR + File.separator
                 + newDeployment);
 
@@ -961,55 +892,42 @@ public class TBLoader extends JFrame {
 
     private String getSelectedCommunity() {
         String communityDir = null;
-        if (forceOldStyleCommunityChooser) {
-            Object item = newCommunityList.getSelectedItem();
-            if (item != null) communityDir = item.toString();
-        } else {
-            communityDir = recipientChooser.getCommunityDirectory();
-        }
+        communityDir = recipientChooser.getCommunityDirectory();
         return communityDir;
     }
 
     private void selectCommunityFromCurrentDrive() {
         String community = oldCommunityText.getText();
-        if (forceOldStyleCommunityChooser) {
-            if (prevSelectedCommunity != -1)
-                newCommunityList.setSelectedIndex(prevSelectedCommunity);
-            else {
-                int count = newCommunityList.getItemCount();
-                for (int i = 0; i < count; i++) {
-                    if (newCommunityList.getItemAt(i).equalsIgnoreCase(community)) {
-                        newCommunityList.setSelectedIndex(i);
-                        break;
-                    }
-                }
-            }
-        } else {
-            String recipientid = null;
-            if (community != null && community.length() == 0) {
-                // Select "no community".
-                recipientid = "";
-            } else if (oldDeploymentInfo != null) {
-                recipientid = oldDeploymentInfo.getRecipientid();
-            }
-            recipientChooser.setSelectedCommunity(community, recipientid);
+        String recipientid = null;
+        if (community != null && community.length() == 0) {
+            // Select "no community".
+            recipientid = "";
+        } else if (oldDeploymentInfo != null) {
+            recipientid = oldDeploymentInfo.getRecipientid();
         }
+        recipientChooser.setSelectedCommunity(community, recipientid);
         fillPackageFromCommunity(community);
     }
 
-    private synchronized void setCommunityList() {
-        if (prevSelectedCommunity != -1)
-            newCommunityList.setSelectedIndex(prevSelectedCommunity);
-        else {
-            int count = newCommunityList.getItemCount();
-            for (int i = 0; i < count; i++) {
-                if (newCommunityList.getItemAt(i).equalsIgnoreCase(oldCommunityText.getText())) {
-                    newCommunityList.setSelectedIndex(i);
-                    break;
-                }
-            }
+    private void fillPackageList() {
+        packagesInDeployment = TBLoaderUtils.getPackagesInDeployment(localDeploymentDir);
+    }
+    private boolean usePackageChooser() {
+        return allowPackageChoice && packagesInDeployment != null && packagesInDeployment.length > 1;
+    }
+    private void setNewPackage(String newPackage) {
+        if (usePackageChooser()) {
+            newPackageChooser.setSelectedItem(newPackage);
+        } else {
+            newPackageText.setText(newPackage);
         }
-        fillPackageFromCommunity(newCommunityList.getSelectedItem().toString());
+    }
+    private String getNewPackage() {
+        if (usePackageChooser()) {
+            return newPackageChooser.getSelectedItem().toString();
+        } else {
+            return newPackageText.getText();
+        }
     }
 
     /**
@@ -1255,12 +1173,12 @@ public class TBLoader extends JFrame {
 
     private void fillPackageFromCommunity(String community) {
         // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}
-        File deploymentDirectory = new File(baseDirectory,
+        File deploymentDirectory = new File(localTbLoaderDir,
                                             TBLoaderConstants.CONTENT_SUBDIR + File.separator
                                                     + newDeployment);
 //    TBFileSystem imagesTbFs = DefaultTBFileSystem.open(imagesDir);
         String imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, community);
-        newPackageText.setText(imageName);
+        setNewPackage(imageName);
     }
 
     /**
@@ -1371,7 +1289,7 @@ public class TBLoader extends JFrame {
         if (dir != null) {
             fillPackageFromCommunity(dir);
         } else {
-            newPackageText.setText("");
+            setNewPackage("");
         }
         setEnabledStates();
     }
@@ -1438,7 +1356,7 @@ public class TBLoader extends JFrame {
 //                    return;
 //                }
                 
-                if (newPackageText.getText().equalsIgnoreCase(TBLoaderConstants.MISSING_PACKAGE)) {
+                if (getNewPackage().equalsIgnoreCase(TBLoaderConstants.MISSING_PACKAGE)) {
                     String text = "Can not update a Talking Book for this Community,\n" +
                         "because there is no Content Package.";
                     String heading = "Missing Package";
@@ -1471,9 +1389,8 @@ public class TBLoader extends JFrame {
                         return;
                     } else
                         LOG.log(Level.INFO, "No community selected. Are you sure? YES");
-                } else
-                    prevSelectedCommunity = newCommunityList.getSelectedIndex();
-
+                }
+                
                 // If the Talking Book needs a new serial number, allocate one. We did not do it before this to
                 // avoid wasting allocations.
                 String srn = newSrnText.getText();
@@ -1715,7 +1632,7 @@ public class TBLoader extends JFrame {
                 .withNewSerialNumber(isNewSerialNumber)
                 .withProjectName(newProject)
                 .withDeploymentName(newDeployment)
-                .withPackageName(newPackageText.getText())
+                .withPackageName(getNewPackage())
                 .withUpdateDirectory(null)
                 .withUpdateTimestamp(dateRotation)
                 .withFirmwareRevision(newFirmwareVersionText.getText())
@@ -1743,7 +1660,7 @@ public class TBLoader extends JFrame {
                 opLog.put("oldSerialno", oldDeploymentInfo.getSerialNumber());
             }
 
-            File newDeploymentContentDir = new File(baseDirectory, TBLoaderConstants.CONTENT_SUBDIR
+            File newDeploymentContentDir = new File(localTbLoaderDir, TBLoaderConstants.CONTENT_SUBDIR
                     + File.separator + newDeploymentInfo.getDeploymentName());
 
             TbFile sourceImage = new FsFile(newDeploymentContentDir);

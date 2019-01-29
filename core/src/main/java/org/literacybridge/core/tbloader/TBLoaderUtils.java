@@ -8,7 +8,9 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -93,6 +95,20 @@ public class TBLoaderUtils {
         return isGood;
     }
 
+    /**
+     * Gets the list of packages in a Deployment.
+     * @param deploymentDirectory with the deployment.
+     * @return a String[] of the packages in the deployment. Empty array if no packages found.
+     */
+    public static String[] getPackagesInDeployment(File deploymentDirectory) {
+        // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/images
+        File imagesDir = new File(deploymentDirectory, IMAGES_SUBDIR.asString());
+        String[] packages = imagesDir.list( (dir, name) -> new File(dir, name).isDirectory() );
+        if (packages == null) {
+            packages = new String[0];
+        }
+        return packages;
+    }
     /**
      * Given a Deployment directory with one or more images (packages), and a community, find
      * the package that matches the community.
