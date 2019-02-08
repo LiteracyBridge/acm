@@ -52,7 +52,7 @@ function updateLibs() {
             # Make the commands, so that they can be displayed and/or executed
             cpcmd=(cp -v "lib/${f}" "${acmDir}/lib/${f}")
 
-            $verbose && echo "${cpcmd[@]}">>${report}
+            $verbose && echo $prefix "${cpcmd[@]}">>${report}
             $execute && "${cpcmd[@]}"
         fi
     done
@@ -64,7 +64,7 @@ function updateLibs() {
 
             rmcmd=(rm "${acmDir}/lib/${f}")
 
-            #$verbose && echo "${rmcmd[@]}">>${report}
+            #$verbose && echo $prefix "${rmcmd[@]}">>${report}
             $execute && "${rmcmd[@]}"
         fi
     done
@@ -78,25 +78,42 @@ function updateJar() {
             updated=true
             cpcmd=(cp -v "acm.jar" "$f")
 
-            $verbose && echo "${cpcmd[@]}">>${report}
+            $verbose && echo $prefix "${cpcmd[@]}">>${report}
             $execute && "${cpcmd[@]}"
         fi
     done
+    # Here in bizarro-world, we need an empty echo to keep going.
+    echo >/dev/null
 }
 
 # The marker file changes to let scripts know to update the .jar & libs
 function updateMarker() {
-    revision=$(ls ${installDir}/*.rev)
-    # strip .rev, leading path and '/r'
-    revision=${revision%.rev}
-    revision=${revision##*/r}
-    let newRevision=revision+1
-    mvcmd=(mv "${installDir}/r${revision}.rev" "${installDir}/r${newRevision}.rev")
+    if $nomarker ; then
+        printf "\nNo-marker option (-m) specified, not updating marker file.\n"
+    else
+        revision=$(ls ${installDir}/*.rev)
+        # strip .rev, leading path and '/r'
+        revision=${revision%.rev}
+        revision=${revision##*/r}
+        let newRevision=revision+1
+        mvcmd=(mv "${installDir}/r${revision}.rev" "${installDir}/r${newRevision}.rev")
 
-    $verbose && echo "${mvcmd[@]}">>${report}
-    $execute && "${mvcmd[@]}"
+        $verbose && echo $prefix "${mvcmd[@]}">>${report}
+        $execute && "${mvcmd[@]}"
+
+    fi
     # without this echo, execution seems to just stop here.
     echo >/dev/null
+}
+
+function usage() {
+    printf "\nUsage: deployToDbx [options]"
+    printf "\n  -m  Do not update marker file. Overrides -u."
+    printf "\n  -n  Dry run. Do not update anything."
+    printf "\n  -q  Quiet."
+    printf "\n  -u  Operate as though updates were detected, and update marker file."
+    printf "\n"
+    exit 1
 }
 
 declare -a remainingArgs=()
@@ -105,19 +122,23 @@ function readArguments() {
     quiet=false
 	dryrun=false
     updated=false
+    nomarker=false
 	
-    # limit:, no-execute, quiet, summary, trace, verbose, input-dir:, output-dir:
-    opts=nqu
+    # limit:, no-Marker, No-execute, Quiet, Summary, Updated:
+    opts=mnquh?
 
     # Enumerating options
     while eval $readopt
     do
         #echo OPT:$opt ${OPTARG+OPTARG:$OPTARG}
         case "${opt}" in
+        m) nomarker=true;;
 	    n) dryrun=true;;
         q) quiet=true;;
         u) updated=true;;
-        *) printf "OPT:$opt ${OPTARG+OPTARG:$OPTARG}" >&2;;
+        h) usage;;
+        ?) usage;;
+        *) printf "OPT:$opt ${OPTARG+OPTARG:$OPTARG}" >&2; usage;;
         esac
    done
    
@@ -134,6 +155,8 @@ function readArguments() {
     execute=true
     $dryrun && execute=false
     $dryrun && echo "Dry run, no files will be changed."
+    $execute && prefix="Ex: "
+    $dryrun && prefix="No-ex: "
 
     verbose=true
     $quiet && verbose=false
