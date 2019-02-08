@@ -48,7 +48,7 @@ public class ACMConfiguration {
 
     private static final String ACM_PREFIX = Constants.ACM_DIR_NAME + "-";
 
-    private final static String NON_FILE_CHARS = "[\\\\/~.;:*?'\"]";
+    private final static String NON_FILE_CHARS = "[\\\\/~;:*?'\"]";
 
     public static String cannonicalAcmDirectoryName(String acmName) {
         acmName = acmName.toUpperCase().replaceAll(NON_FILE_CHARS, "");
