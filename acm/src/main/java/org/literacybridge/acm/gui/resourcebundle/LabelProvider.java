@@ -30,7 +30,7 @@ public class LabelProvider {
   public static final String DEVICES_ROOT_LABEL = "DEVICES_ROOT_LABEL";
   public static final String OPTIONS_ROOT_LABEL = "OPTIONS_ROOT_LABEL";
   public static final String OPTIONS_USER_LANGUAGE = "OPTIONS_USER_LANGUAGE";
-  public static final String WATERMARK_SEARCH = "WATERMARK_SEARCH";
+  public static final String PLACEHOLDER_TEXT = "WATERMARK_SEARCH";
 
   public static final String AUDIO_ITEM_TABLE_COLUMN_TITLE = "AUDIO_ITEM_TABLE_COLUMN_TITLE";
   public static final String AUDIO_ITEM_TABLE_COLUMN_DURATION = "AUDIO_ITEM_TABLE_COLUMN_DURATION";

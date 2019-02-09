@@ -1,11 +1,26 @@
 package org.literacybridge.acm.gui.ResourceView;
 
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Font;
+import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
+import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
+import org.literacybridge.acm.gui.UIConstants;
+import org.literacybridge.acm.gui.messages.PlayAudioItemMessage;
+import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
+import org.literacybridge.acm.gui.messages.RequestAudioItemToPlayMessage;
+import org.literacybridge.acm.gui.messages.SearchRequestMessage;
+import org.literacybridge.acm.gui.playerAPI.PlayerStateDetails;
+import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+import org.literacybridge.acm.gui.util.language.UILanguageChanged;
+import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
+import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.utils.OsUtils;
+
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyAdapter;
@@ -16,45 +31,21 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Observable;
-import java.util.Observer;
 
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.JTextField;
-import javax.swing.JToolBar;
-import javax.swing.Timer;
-
-import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
-import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.UIConstants;
-import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
-import org.literacybridge.acm.gui.messages.PlayAudioItemMessage;
-import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
-import org.literacybridge.acm.gui.messages.RequestAudioItemToPlayMessage;
-import org.literacybridge.acm.gui.messages.SearchRequestMessage;
-import org.literacybridge.acm.gui.playerAPI.PlayerStateDetails;
-import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
-import org.literacybridge.acm.gui.util.language.LanguageUtil;
-import org.literacybridge.acm.gui.util.language.UILanguageChanged;
-import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.MetadataSpecification;
-import org.literacybridge.acm.utils.OsUtils;
-
-public class ToolbarView extends JToolBar implements ActionListener, Observer {
+public class ToolbarView extends JToolBar  {
 
   private static final long serialVersionUID = -1827563460140622507L;
+
+  private static final int TOOLBAR_HEIGHT = 45;
+  private static final int CONTROL_HEIGHT = 30;
+
+  private static final Dimension ICON_SIZE = new Dimension(40, 32);
 
   // Player (will run in a different thread!)
   private SimpleSoundPlayer player;
   private PlayerStateDetails currPlayerDetails = null;
-  private double durtation = 0.0;
-  private Timer updatePlayerStateTimer = new Timer(100, this);
+  private double durtation = 0.1;
+  private Timer updatePlayerStateTimer = new Timer(100, this::onUpdateTimerTick);
 
   private ImageIcon backwardImageIcon = new ImageIcon(
       UIConstants.getResource(UIConstants.ICON_BACKWARD_24_PX));
@@ -64,11 +55,12 @@ public class ToolbarView extends JToolBar implements ActionListener, Observer {
       UIConstants.getResource(UIConstants.ICON_PAUSE_24_PX));
   private ImageIcon forwardImageIcon = new ImageIcon(
       UIConstants.getResource(UIConstants.ICON_FORWARD_24_PX));
+  private ImageIcon searchImageIcon = new ImageIcon(
+      UIConstants.getResource("search-glass-24px.png"));
 
   private JButton backwardBtn;
   private JButton forwardBtn;
-  private JLabel jLabel1;
-  private JPanel jPanel1;
+  private JLabel searchLabel;
   private JSlider positionSlider;
   private boolean positionSliderGrapped = false;
   private JButton playBtn;
@@ -80,9 +72,8 @@ public class ToolbarView extends JToolBar implements ActionListener, Observer {
   private final AudioItemView audioItemView;
 
   // Textfield Search
-  private String searchFieldWatermarkText = LabelProvider
-      .getLabel(LabelProvider.WATERMARK_SEARCH, LanguageUtil.getUILanguage());
-  private Font watermarkTextfieldFont = new Font("Verdana", Font.ITALIC, 16);
+  private String placeholderText = LabelProvider.getLabel(LabelProvider.PLACEHOLDER_TEXT);
+  private Font placeholderFont = new Font("Verdana", Font.ITALIC, 14);
   private Font defaultTextfieldFont = null;
 
   public ToolbarView(AudioItemView audioItemView) {
@@ -92,7 +83,7 @@ public class ToolbarView extends JToolBar implements ActionListener, Observer {
     addPositionSliderHandler();
     addSearchTFListener();
 
-    Application.getMessageService().addObserver(this);
+    Application.getMessageService().addObserver(this::onApplicationUpdate);
   }
 
   private boolean initPlayer(File audioFile) {
@@ -124,16 +115,13 @@ public class ToolbarView extends JToolBar implements ActionListener, Observer {
           Application.getMessageService().pumpMessage(msg);
         } else {
           PlayerStateDetails psd = player.getPlayerStateDetails();
-          if (psd
-              .getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
+          if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
             player.play();
             updatePlayerStateTimer.start();
-          } else if (psd
-              .getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
+          } else if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
             player.stop();
             updatePlayerStateTimer.stop();
-            playBtn.setIcon(playImageIcon); // call explicit to avoid missing
-                                            // updates
+            playBtn.setIcon(playImageIcon); // call explicit to avoid missing updates
           }
         }
       }
@@ -183,8 +171,7 @@ public class ToolbarView extends JToolBar implements ActionListener, Observer {
       public void mouseReleased(MouseEvent e) {
         PlayerStateDetails psd = player.getPlayerStateDetails();
         // handle only if player is running
-        if (psd
-            .getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
+        if (psd.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
           int value = positionSlider.getValue();
           player.play(value);
         }
@@ -195,37 +182,30 @@ public class ToolbarView extends JToolBar implements ActionListener, Observer {
 
   private void mirrorPlayerState(PlayerStateDetails newState) {
     currPlayerDetails = newState;
-    if (currPlayerDetails
-        .getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
+    if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
       playBtn.setIcon(playImageIcon);
-    } else if (currPlayerDetails
-        .getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
+    } else if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
       playBtn.setIcon(pauseImageIcon);
       durtation = player.getDurationInSecs();
 
       // update only if slide is not moved by user
       if (!positionSliderGrapped) {
         positionSlider.setMaximum((int) durtation);
-        positionSlider
-            .setValue((int) currPlayerDetails.getCurrentPoitionInSecs());
+        positionSlider.setValue((int) currPlayerDetails.getCurrentPoitionInSecs());
 
-        int playedTimeInSecs = (int) currPlayerDetails
-            .getCurrentPoitionInSecs();
+        int playedTimeInSecs = (int) currPlayerDetails.getCurrentPoitionInSecs();
         playedTimeLbl.setText(secondsToTimeString(playedTimeInSecs));
-        remainingTimeLbl
-            .setText(secondsToTimeString((int) (durtation - playedTimeInSecs)));
+        remainingTimeLbl.setText(secondsToTimeString((int) (durtation - playedTimeInSecs)));
       }
     }
   }
 
   private void updatePlayerTimes(int currPosInSecs) {
     playedTimeLbl.setText(secondsToTimeString(currPosInSecs));
-    remainingTimeLbl
-        .setText(secondsToTimeString((int) (durtation - currPosInSecs)));
+    remainingTimeLbl.setText(secondsToTimeString((int) (durtation - currPosInSecs)));
   }
 
-  @Override
-  public void actionPerformed(ActionEvent e) {
+  public void onUpdateTimerTick(ActionEvent e) {
     PlayerStateDetails details = player.getPlayerStateDetails();
     mirrorPlayerState(details);
   }
@@ -238,15 +218,15 @@ public class ToolbarView extends JToolBar implements ActionListener, Observer {
         String currText = searchTF.getText();
         if (currText.equals("")) {
           searchTF.setForeground(Color.GRAY);
-          searchTF.setFont(watermarkTextfieldFont);
-          searchTF.setText(searchFieldWatermarkText);
+          searchTF.setFont(placeholderFont);
+          searchTF.setText(placeholderText);
         }
       }
 
       @Override
       public void focusGained(FocusEvent e) {
         String currText = searchTF.getText();
-        if (currText.equals(searchFieldWatermarkText)) {
+        if (currText.equals(placeholderText)) {
           searchTF.setFont(defaultTextfieldFont);
           searchTF.setForeground(Color.BLACK);
           searchTF.setText("");
@@ -265,13 +245,13 @@ public class ToolbarView extends JToolBar implements ActionListener, Observer {
 
   private void updateControlsLanguage(Locale newLocale) {
     String currText = searchTF.getText();
-    if (currText.equals(searchFieldWatermarkText)) {
-      searchFieldWatermarkText = LabelProvider
-          .getLabel(LabelProvider.WATERMARK_SEARCH, newLocale);
-      searchTF.setText(searchFieldWatermarkText);
+    if (currText.equals(placeholderText)) {
+      placeholderText = LabelProvider
+          .getLabel(LabelProvider.PLACEHOLDER_TEXT, newLocale);
+      searchTF.setText(placeholderText);
     } else {
-      searchFieldWatermarkText = LabelProvider
-          .getLabel(LabelProvider.WATERMARK_SEARCH, newLocale);
+      placeholderText = LabelProvider
+          .getLabel(LabelProvider.PLACEHOLDER_TEXT, newLocale);
     }
   }
 
@@ -301,8 +281,7 @@ public class ToolbarView extends JToolBar implements ActionListener, Observer {
     }
   }
 
-  @Override
-  public void update(Observable o, Object arg) {
+  public void onApplicationUpdate(Observable o, Object arg) {
     if (arg instanceof UILanguageChanged) {
       UILanguageChanged newLocale = (UILanguageChanged) arg;
       updateControlsLanguage(newLocale.getNewLocale());
@@ -318,150 +297,98 @@ public class ToolbarView extends JToolBar implements ActionListener, Observer {
     }
   }
 
-  //
-  // Created with NetBeans 6.8
-  //
   private void initComponents() {
 
-    setPreferredSize(new Dimension(300, 80));
-    setBorder(javax.swing.BorderFactory.createEtchedBorder());
+    setPreferredSize(new Dimension(300, TOOLBAR_HEIGHT));
+    // I (bill) think the toolbar looks better without this:
+    // setBorder(javax.swing.BorderFactory.createEtchedBorder());
     setFloatable(false);
+    setRollover(false);
 
-    backwardBtn = new javax.swing.JButton();
-    playBtn = new javax.swing.JButton();
-    forwardBtn = new javax.swing.JButton();
-    searchTF = new javax.swing.JTextField();
-    searchTF.setPreferredSize(new Dimension(100, 30));
-    jLabel1 = new javax.swing.JLabel();
-    jLabel1.setPreferredSize(new Dimension(200, 30));
-    jPanel1 = new javax.swing.JPanel();
-    jPanel1.setPreferredSize(new Dimension(100, 30));
-    positionSlider = new javax.swing.JSlider();
-    playedTimeLbl = new javax.swing.JLabel();
-    remainingTimeLbl = new javax.swing.JLabel();
-    titleInfoLbl = new javax.swing.JLabel();
+    // Create components
+    backwardBtn = new JButton();
+    playBtn = new JButton();
+    forwardBtn = new JButton();
 
+    positionSlider = new JSlider();
+    playedTimeLbl = new JLabel();
+    remainingTimeLbl = new JLabel();
+    titleInfoLbl = new JLabel();
+
+    searchLabel = new JLabel();
+    searchTF = new JTextField();
+
+    // Additional component initialization.
     backwardBtn.setIcon(backwardImageIcon); // NOI18N
-    backwardBtn.setMargin(new java.awt.Insets(0, 0, 0, 0));
-
     playBtn.setIcon(playImageIcon); // NOI18N
-    playBtn.setMargin(new java.awt.Insets(0, 0, 0, 0));
-    playBtn.setPreferredSize(new java.awt.Dimension(44, 44));
-
     forwardBtn.setIcon(forwardImageIcon); // NOI18N
-    forwardBtn.setMargin(new java.awt.Insets(0, 0, 0, 0));
 
-    defaultTextfieldFont = searchTF.getFont();
-    searchTF.setFont(watermarkTextfieldFont);
-    searchTF.setText(searchFieldWatermarkText);
-    searchTF.setForeground(Color.GRAY);
-
-    jLabel1.setIcon(new javax.swing.ImageIcon(
-        getClass().getResource("/search-glass-24px.png")));
-
-    jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
-    jPanel1.setMinimumSize(new java.awt.Dimension(300, 65));
-
-    positionSlider
-        .setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-
+    positionSlider.setValue(0);
     playedTimeLbl.setText("00:00:00");
     playedTimeLbl.setName("null"); // NOI18N
-
     remainingTimeLbl.setText("00:00:00");
-
     titleInfoLbl.setText(" ");
-    titleInfoLbl.setHorizontalAlignment(CENTER);
     Font f = titleInfoLbl.getFont();
-    titleInfoLbl.setFont(f.deriveFont(f.getStyle() ^ Font.BOLD));
+    titleInfoLbl.setFont(f.deriveFont(f.getStyle() | Font.BOLD));
 
-    org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(
-        jPanel1);
-    jPanel1.setLayout(jPanel1Layout);
-    jPanel1Layout.setHorizontalGroup(jPanel1Layout
-        .createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-        .add(jPanel1Layout.createSequentialGroup().add(playedTimeLbl)
-            .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-            .add(jPanel1Layout
-                .createParallelGroup(org.jdesktop.layout.GroupLayout.CENTER)
-                .add(positionSlider,
-                    org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 386,
-                    Short.MAX_VALUE)
-                .add(titleInfoLbl, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                    386, Short.MAX_VALUE))
-            .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-            .add(remainingTimeLbl)));
-    jPanel1Layout.setVerticalGroup(jPanel1Layout
-        .createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-        .add(jPanel1Layout.createSequentialGroup().add(titleInfoLbl)
-            .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-            .add(jPanel1Layout
-                .createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                .add(playedTimeLbl,
-                    org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 40,
-                    Short.MAX_VALUE)
-                .add(remainingTimeLbl,
-                    org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 40,
-                    Short.MAX_VALUE)
-                .add(positionSlider,
-                    org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 40,
-                    Short.MAX_VALUE))
-            .addContainerGap()));
+    defaultTextfieldFont = searchTF.getFont();
+    searchLabel.setIcon(searchImageIcon);
+    searchTF.setFont(placeholderFont);
+    searchTF.setText(placeholderText);
+    searchTF.setForeground(Color.GRAY);
 
+    // Accessibility. This is probably just what happened by accident in the Netbeans 6 GUI builder.
     playedTimeLbl.getAccessibleContext().setAccessibleName("");
-
-    org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(
-        this);
-    this.setLayout(layout);
-    layout.setHorizontalGroup(layout
-        .createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-        .add(layout.createSequentialGroup().addContainerGap().add(backwardBtn)
-            .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-            .add(playBtn, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE,
-                org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-            .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-            .add(forwardBtn).add(18, 18, 18)
-            .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-            .add(jLabel1).add(2, 2, 2)
-            .add(searchTF, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 151,
-                org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-            .addContainerGap()));
-    layout.setVerticalGroup(
-        layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup().add(layout
-                .createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                .add(layout.createSequentialGroup().add(18, 18, 18).add(layout
-                    .createParallelGroup(
-                        org.jdesktop.layout.GroupLayout.LEADING, false)
-                    .add(forwardBtn,
-                        org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                        org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                        Short.MAX_VALUE)
-                    .add(playBtn, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                        org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                        Short.MAX_VALUE)
-                    .add(backwardBtn,
-                        org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                        org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                        Short.MAX_VALUE)
-                    .add(searchTF, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                        44, Short.MAX_VALUE)
-                    .add(jLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                        org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                        Short.MAX_VALUE)))
-                .add(layout.createSequentialGroup().addContainerGap().add(
-                    jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 65,
-                    org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE,
-                    Short.MAX_VALUE)));
-
-    layout.linkSize(new java.awt.Component[] { forwardBtn, jLabel1, searchTF },
-        org.jdesktop.layout.GroupLayout.VERTICAL);
-
     playBtn.getAccessibleContext().setAccessibleName("Play");
-  }// </editor-fold>
+
+    // Layout -- sizes
+    backwardBtn.setPreferredSize(ICON_SIZE);
+    playBtn.setPreferredSize(ICON_SIZE);
+    forwardBtn.setPreferredSize(ICON_SIZE);
+    backwardBtn.setMaximumSize(ICON_SIZE);
+    playBtn.setMaximumSize(ICON_SIZE);
+    forwardBtn.setMaximumSize(ICON_SIZE);
+
+    positionSlider.setMinimumSize(new Dimension(120, CONTROL_HEIGHT));
+
+    searchLabel.setPreferredSize(new Dimension(30, CONTROL_HEIGHT));
+    searchTF.setPreferredSize(new Dimension(300, CONTROL_HEIGHT));
+
+    // Layout -- grouping
+    Box playBox = Box.createHorizontalBox();
+    playBox.add(backwardBtn);
+    playBox.add(playBtn);
+    playBox.add(forwardBtn);
+    playBox.setMaximumSize(playBox.getPreferredSize());
+
+    Box positionBox = Box.createVerticalBox();
+    positionBox.add(titleInfoLbl);
+    titleInfoLbl.setHorizontalAlignment(CENTER);
+
+    Box sliderBox = Box.createHorizontalBox();
+    sliderBox.add(Box.createHorizontalStrut(10));
+    sliderBox.add(playedTimeLbl);
+    sliderBox.add(Box.createHorizontalStrut(10));
+    sliderBox.add(positionSlider);
+    sliderBox.add(Box.createHorizontalStrut(10));
+    sliderBox.add(remainingTimeLbl);
+    sliderBox.add(Box.createHorizontalStrut(10));
+    
+    positionBox.add(sliderBox);
+
+    Box searchBox = Box.createHorizontalBox();
+    searchBox.add(searchLabel);
+    searchBox.add(searchTF);
+
+    // Layout -- finally, layout the toolbar
+    setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+
+    add(playBox);
+    add(new JToolBar.Separator(new Dimension(5,0)));
+    add(positionBox);
+    add(new JToolBar.Separator(new Dimension(10,0)));
+    add(searchBox);
+
+  }
 
 }
