@@ -134,7 +134,7 @@ public class TaxonomyLoaderTest {
         assertFalse("Expected '0-3-1' to not be visible", cat.isVisible());
 
         assertTrue("Should require whitelist semantics", CategoryFilter.requiresWhitelistSemantics(override));
-        List<String> wlData = CategoryFilter.buildWhitelistFile(override);
+        List<String> wlData = CategoryFilter.buildWhitelistData(override);
         System.out.println(wlData);
     }
 
@@ -172,7 +172,7 @@ public class TaxonomyLoaderTest {
         assertFalse("Expected '0-3-1' to not be visible", cat.isVisible());
 
         assertFalse("Shouldn't require whitelist semantics", CategoryFilter.requiresWhitelistSemantics(override));
-        List<String> wlData = CategoryFilter.buildWhitelistFile(override);
+        List<String> wlData = CategoryFilter.buildWhitelistData(override);
         System.out.println(wlData);
     }
 
@@ -213,7 +213,7 @@ public class TaxonomyLoaderTest {
         assertFalse("Expected '0-3-1' to not be visible", cat.isVisible());
 
         assertTrue("Should require whitelist semantics", CategoryFilter.requiresWhitelistSemantics(override));
-        List<String> wlData = CategoryFilter.buildWhitelistFile(override);
+        List<String> wlData = CategoryFilter.buildWhitelistData(override);
         System.out.println(wlData);
     }
 

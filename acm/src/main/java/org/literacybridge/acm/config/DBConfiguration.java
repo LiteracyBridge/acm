@@ -299,6 +299,12 @@ public class DBConfiguration extends Properties {
     return new File(getSharedACMDirectory(), Constants.CONFIG_PROPERTIES);
   }
 
+  public boolean writeCategoryFilter(Taxonomy taxonomy) {
+      // If sandboxed, *pretend* that we wrote it OK.
+      if (isSandboxed()) return true;
+      return CategoryFilter.writeCategoryFilter(sharedACMDirectory, taxonomy);
+  }
+
   private void writeProps() {
     try {
       BufferedOutputStream out = new BufferedOutputStream(
