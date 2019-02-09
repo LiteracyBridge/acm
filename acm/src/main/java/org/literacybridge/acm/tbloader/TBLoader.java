@@ -7,6 +7,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.utils.LogHelper;
 import org.literacybridge.acm.utils.OsUtils;
@@ -46,6 +47,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
@@ -64,6 +66,7 @@ import static java.awt.GridBagConstraints.LINE_START;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.RELATIVE;
 import static java.lang.Math.max;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
@@ -227,7 +230,7 @@ public class TBLoader extends JFrame {
         else if (tbArgs.oldTbs)
             srnPrefix = "a-";
         else
-            this.srnPrefix = "b-"; // for latest Talking Book hardware
+            srnPrefix = "b-"; // for latest Talking Book hardware
 
         this.deploymentChoice = tbArgs.choices;
         this.allowPackageChoice = tbArgs.choices;
@@ -239,6 +242,16 @@ public class TBLoader extends JFrame {
         OsUtils.enableOSXQuitStrategy();
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.addWindowListener(new WindowEventHandler());
+
+        boolean oldTbs = srnPrefix.equalsIgnoreCase("a-");
+        String iconName = oldTbs ? "/tb_loader-OLD-TBs.png" : "/tb_loader.png";
+        URL iconURL = Application.class.getResource(iconName);
+        Image iconImage = new ImageIcon(iconURL).getImage();
+        if (OsUtils.MAC_OS) {
+            OsUtils.setOSXApplicationIcon(iconImage);
+        } else {
+            applicationWindow.setIconImage(iconImage);
+        }
 
         // Set options that are controlled by project config file.
         Properties config = ACMConfiguration.getInstance().getConfigPropertiesFor(newProject);
@@ -1176,8 +1189,12 @@ public class TBLoader extends JFrame {
         File deploymentDirectory = new File(localTbLoaderDir,
                                             TBLoaderConstants.CONTENT_SUBDIR + File.separator
                                                     + newDeployment);
-//    TBFileSystem imagesTbFs = DefaultTBFileSystem.open(imagesDir);
-        String imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, community);
+        String imageName;
+        if (isNotEmpty(community)) {
+            imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, community);
+        } else {
+            imageName = "";
+        }
         setNewPackage(imageName);
     }
 
