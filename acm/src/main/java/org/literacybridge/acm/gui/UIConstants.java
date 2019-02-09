@@ -14,6 +14,10 @@ public abstract class UIConstants {
   public static final String ICON_PAUSE_24_PX = "pause-24px.png";
   public static final String ICON_PLAY_24_PX = "play-24px.png";
   public static final String ICON_FORWARD_24_PX = "forward-24px.png";
+  public static final String ICON_CAT_TREE_32_PX = "cat-tree-32s.png";
+  public static final String ICON_GEAR_32_PX = "gears-32.png";
+  public static final String ICON_SEARCH_24_PX = "search-glass-24px.png";
+  public static final String ICON_SEARCH_32_PX = "search-glass-32px.png";
 
   public static final String SPLASH_SCREEN_IMAGE = "splash-screen.jpg";
 

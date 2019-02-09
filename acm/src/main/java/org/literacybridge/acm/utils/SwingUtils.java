@@ -6,8 +6,7 @@ package org.literacybridge.acm.utils;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 
-import java.awt.Component;
-import java.awt.Container;
+import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -510,4 +509,19 @@ public final class SwingUtils {
 //        }
 //        return clazz;
 //    }
+
+    /**
+     * Given a component, return it's location relative to its root owner.
+     * @param component for which to get the location.
+     * @return the location.
+     */
+    public static Point getApplicationRelativeLocation(Component component) {
+        Point pComponent = component.getLocation();
+        if (component.getParent() != null) {
+            Point pParent = getApplicationRelativeLocation(component.getParent());
+            pComponent.x += pParent.x;
+            pComponent.y += pParent.y;
+        }
+        return pComponent;
+    }
 }

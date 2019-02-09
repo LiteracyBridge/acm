@@ -43,6 +43,7 @@ import java.awt.event.MouseMotionListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -663,6 +664,16 @@ public class SidebarView extends ACMContainer implements Observer {
             }
         }
 
+    }
+
+    public Collection<String> getExpandedCategories() {
+        // Get the ids of the rows that are expanded.
+        Set<String> expanded = IntStream.range(0, categoryTree.getRowCount())
+            .filter(row -> categoryTree.isExpanded(row))
+            .mapToObj(row -> ((CategoryTreeNodeObject) ((DefaultMutableTreeNode) categoryTree.getPathForRow(
+                row).getLastPathComponent()).getUserObject()).getCategory().getId())
+            .collect(Collectors.toSet());
+        return expanded;
     }
 
     private void fillChildCategories(DefaultMutableTreeNode parent, Category category) {

@@ -5,6 +5,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.ResourceView.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.UIConstants;
+import org.literacybridge.acm.gui.dialogs.VisibleCategoriesDialog;
 import org.literacybridge.acm.gui.messages.PlayAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemToPlayMessage;
@@ -38,12 +39,13 @@ public class ToolbarView extends JToolBar  {
 
   private static final int TOOLBAR_HEIGHT = 45;
   private static final int CONTROL_HEIGHT = 30;
+  private static final int SCRUBBER_WIDTH = 200;
+  private static final int SEARCH_FIELD_WIDTH = 300;
 
   private static final Dimension ICON_SIZE = new Dimension(40, 32);
 
   // Player (will run in a different thread!)
   private SimpleSoundPlayer player;
-  private PlayerStateDetails currPlayerDetails = null;
   private double durtation = 0.1;
   private Timer updatePlayerStateTimer = new Timer(100, this::onUpdateTimerTick);
 
@@ -56,11 +58,18 @@ public class ToolbarView extends JToolBar  {
   private ImageIcon forwardImageIcon = new ImageIcon(
       UIConstants.getResource(UIConstants.ICON_FORWARD_24_PX));
   private ImageIcon searchImageIcon = new ImageIcon(
-      UIConstants.getResource("search-glass-24px.png"));
+      UIConstants.getResource(UIConstants.ICON_SEARCH_32_PX));
+
+  private ImageIcon gearImageIcon = new ImageIcon(
+      UIConstants.getResource(UIConstants.ICON_GEAR_32_PX));
+
+  // config icon: configurations by I Putu Kharismayadi from the Noun Project
+  // gears: configuration by Bieutuong Hai from the Noun Project
+  
+  private JButton configureButton;
 
   private JButton backwardBtn;
   private JButton forwardBtn;
-  private JLabel searchLabel;
   private JSlider positionSlider;
   private boolean positionSliderGrapped = false;
   private JButton playBtn;
@@ -69,15 +78,12 @@ public class ToolbarView extends JToolBar  {
   private JTextField searchTF;
   private JLabel titleInfoLbl;
 
-  private final AudioItemView audioItemView;
-
   // Textfield Search
   private String placeholderText = LabelProvider.getLabel(LabelProvider.PLACEHOLDER_TEXT);
   private Font placeholderFont = new Font("Verdana", Font.ITALIC, 14);
   private Font defaultTextfieldFont = null;
 
   public ToolbarView(AudioItemView audioItemView) {
-    this.audioItemView = audioItemView;
     initComponents();
     addEventHandler();
     addPositionSliderHandler();
@@ -86,12 +92,11 @@ public class ToolbarView extends JToolBar  {
     Application.getMessageService().addObserver(this::onApplicationUpdate);
   }
 
-  private boolean initPlayer(File audioFile) {
+  private void initPlayer(File audioFile) {
     if (player == null) {
       this.player = Application.getApplication().getSoundPlayer();
     }
     player.setClip(audioFile);
-    return true;
   }
 
   private String secondsToTimeString(int seconds) {
@@ -102,6 +107,10 @@ public class ToolbarView extends JToolBar  {
 
   private void addEventHandler() {
     addPlayBtnHandler();
+    // Today, we have only one configuration option, the visible categories, so we can
+    // go straight to that dialog. If and when we have more configurations, this will
+    // open some sort of configuration container.
+    configureButton.addActionListener(VisibleCategoriesDialog::showDialog);
   }
 
   private void addPlayBtnHandler() {
@@ -181,19 +190,18 @@ public class ToolbarView extends JToolBar  {
   }
 
   private void mirrorPlayerState(PlayerStateDetails newState) {
-    currPlayerDetails = newState;
-    if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
+    if (newState.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
       playBtn.setIcon(playImageIcon);
-    } else if (currPlayerDetails.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
+    } else if (newState.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
       playBtn.setIcon(pauseImageIcon);
       durtation = player.getDurationInSecs();
 
       // update only if slide is not moved by user
       if (!positionSliderGrapped) {
         positionSlider.setMaximum((int) durtation);
-        positionSlider.setValue((int) currPlayerDetails.getCurrentPoitionInSecs());
+        positionSlider.setValue((int) newState.getCurrentPoitionInSecs());
 
-        int playedTimeInSecs = (int) currPlayerDetails.getCurrentPoitionInSecs();
+        int playedTimeInSecs = (int) newState.getCurrentPoitionInSecs();
         playedTimeLbl.setText(secondsToTimeString(playedTimeInSecs));
         remainingTimeLbl.setText(secondsToTimeString((int) (durtation - playedTimeInSecs)));
       }
@@ -205,7 +213,7 @@ public class ToolbarView extends JToolBar  {
     remainingTimeLbl.setText(secondsToTimeString((int) (durtation - currPosInSecs)));
   }
 
-  public void onUpdateTimerTick(ActionEvent e) {
+  private void onUpdateTimerTick(ActionEvent e) {
     PlayerStateDetails details = player.getPlayerStateDetails();
     mirrorPlayerState(details);
   }
@@ -274,14 +282,12 @@ public class ToolbarView extends JToolBar  {
       updatePlayerStateTimer.start();
       titleInfoLbl.setText(item.getMetadata()
           .getMetadataValue(MetadataSpecification.DC_TITLE).getValue());
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    } catch (ConversionException e) {
+    } catch (IOException | ConversionException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public void onApplicationUpdate(Observable o, Object arg) {
+  private void onApplicationUpdate(Observable o, Object arg) {
     if (arg instanceof UILanguageChanged) {
       UILanguageChanged newLocale = (UILanguageChanged) arg;
       updateControlsLanguage(newLocale.getNewLocale());
@@ -298,6 +304,7 @@ public class ToolbarView extends JToolBar  {
   }
 
   private void initComponents() {
+    boolean showConfigButton = ACMConfiguration.getInstance().getCurrentDB().configurationDialog();
 
     setPreferredSize(new Dimension(300, TOOLBAR_HEIGHT));
     // I (bill) think the toolbar looks better without this:
@@ -306,6 +313,8 @@ public class ToolbarView extends JToolBar  {
     setRollover(false);
 
     // Create components
+    configureButton = new JButton();
+
     backwardBtn = new JButton();
     playBtn = new JButton();
     forwardBtn = new JButton();
@@ -315,13 +324,15 @@ public class ToolbarView extends JToolBar  {
     remainingTimeLbl = new JLabel();
     titleInfoLbl = new JLabel();
 
-    searchLabel = new JLabel();
+    JLabel searchLabel = new JLabel();
     searchTF = new JTextField();
 
     // Additional component initialization.
-    backwardBtn.setIcon(backwardImageIcon); // NOI18N
-    playBtn.setIcon(playImageIcon); // NOI18N
-    forwardBtn.setIcon(forwardImageIcon); // NOI18N
+    configureButton.setIcon(gearImageIcon);
+
+    backwardBtn.setIcon(backwardImageIcon);
+    playBtn.setIcon(playImageIcon);
+    forwardBtn.setIcon(forwardImageIcon);
 
     positionSlider.setValue(0);
     playedTimeLbl.setText("00:00:00");
@@ -342,6 +353,8 @@ public class ToolbarView extends JToolBar  {
     playBtn.getAccessibleContext().setAccessibleName("Play");
 
     // Layout -- sizes
+    configureButton.setPreferredSize(ICON_SIZE);
+
     backwardBtn.setPreferredSize(ICON_SIZE);
     playBtn.setPreferredSize(ICON_SIZE);
     forwardBtn.setPreferredSize(ICON_SIZE);
@@ -349,17 +362,17 @@ public class ToolbarView extends JToolBar  {
     playBtn.setMaximumSize(ICON_SIZE);
     forwardBtn.setMaximumSize(ICON_SIZE);
 
-    positionSlider.setMinimumSize(new Dimension(120, CONTROL_HEIGHT));
+    positionSlider.setPreferredSize(new Dimension(SCRUBBER_WIDTH, CONTROL_HEIGHT));
 
-    searchLabel.setPreferredSize(new Dimension(30, CONTROL_HEIGHT));
-    searchTF.setPreferredSize(new Dimension(300, CONTROL_HEIGHT));
+    searchLabel.setPreferredSize(ICON_SIZE);
+    searchTF.setPreferredSize(new Dimension(SEARCH_FIELD_WIDTH, CONTROL_HEIGHT));
 
     // Layout -- grouping
     Box playBox = Box.createHorizontalBox();
     playBox.add(backwardBtn);
     playBox.add(playBtn);
     playBox.add(forwardBtn);
-    playBox.setMaximumSize(playBox.getPreferredSize());
+//    playBox.setMaximumSize(playBox.getPreferredSize());
 
     Box positionBox = Box.createVerticalBox();
     positionBox.add(titleInfoLbl);
@@ -384,10 +397,18 @@ public class ToolbarView extends JToolBar  {
     setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
 
     add(playBox);
-    add(new JToolBar.Separator(new Dimension(5,0)));
     add(positionBox);
-    add(new JToolBar.Separator(new Dimension(10,0)));
     add(searchBox);
+    if (showConfigButton) {
+      add(configureButton);
+    }
+
+    // Set the minimum size to the preferred size, or it will wind up *larger* than the
+    // preferrred size, and the control will grow as the toolbar gets very narrow.
+    SwingUtilities.invokeLater(() -> {
+      playBox.setMinimumSize(playBox.getPreferredSize());
+      playBox.setMaximumSize(playBox.getPreferredSize());
+    });
 
   }
 

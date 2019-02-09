@@ -9,11 +9,9 @@ import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.ResourceView.ResourceView;
 import org.literacybridge.acm.gui.ResourceView.ToolbarView;
-import org.literacybridge.acm.gui.dialogs.AudioItemContextMenuDialog;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
-import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.repository.FileSystemGarbageCollector.GCInfo;
 import org.literacybridge.acm.repository.WavFilePreCaching;
 import org.literacybridge.acm.store.Category;
@@ -26,7 +24,6 @@ import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -44,10 +41,15 @@ public class Application extends JXFrame {
 
   private static final long serialVersionUID = -7011153239978361786L;
 
-  public static double JAVA_VERSION = getVersion ();
+  public static double JAVA_VERSION = getJavaVersion();
+
   private final ResourceView resourceView;
 
-  static double getVersion () {
+  public ResourceView getResourceView() {
+    return resourceView;
+  }
+
+  static double getJavaVersion() {
     String version = System.getProperty("java.version");
     int pos = version.indexOf('.');
     pos = version.indexOf('.', pos+1);

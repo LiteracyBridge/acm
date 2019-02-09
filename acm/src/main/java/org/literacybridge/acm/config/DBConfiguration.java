@@ -422,6 +422,17 @@ public class DBConfiguration extends Properties {
     }
 
     /**
+     * If true, add a toolbar button for configuration. Default is false; override in properties.config.
+     * @return true if we should add a toolbar button for configuration.
+     */
+    public boolean configurationDialog() {
+        String configurable = getProperty(Constants.CONFIGURATION_DIALOG);
+        return ACMConfiguration.getInstance().isShowConfiguration() ||
+            (configurable != null && configurable.equalsIgnoreCase("true"));
+    }
+
+
+    /**
    * Parses the language labels from the 'AUDIO_LANGUAGES' String property
    * contained in the config.properties file. The appropriate line in the file
    * has the following format:

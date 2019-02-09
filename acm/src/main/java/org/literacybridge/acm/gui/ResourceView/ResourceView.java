@@ -15,6 +15,15 @@ public class ResourceView extends ACMContainer {
   private static final long serialVersionUID = 1464102221036629153L;
 
   public AudioItemView audioItemView;
+  private SidebarView sidebarView;
+
+  public AudioItemView getAudioItemView() {
+    return audioItemView;
+  }
+
+  public SidebarView getSidebarView() {
+    return sidebarView;
+  }
 
   public ResourceView() {
     createViewComponents();
@@ -33,7 +42,7 @@ public class ResourceView extends ACMContainer {
 
     // Tree with categories
     // Create at the end, because this is the main selection provider
-    SidebarView sidebarView = new SidebarView(result);
+    sidebarView = new SidebarView(result);
 
     JSplitPane sp = new JSplitPane();
     // left-side

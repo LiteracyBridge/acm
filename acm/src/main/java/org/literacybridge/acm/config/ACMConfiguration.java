@@ -39,6 +39,8 @@ public class ACMConfiguration {
     private boolean forceSandbox = false;
     // If true, show all categories in the category browser. Default is a filtered view.
     private boolean allCategories = false;
+    // If true, show a configuration dialog.
+    private boolean showConfiguration = false;
     private boolean verbose = false; // TODO: some means to set it true.
     // If true, don't lock (or unlock) the database. For testing purposes.
     private boolean noDbCheckout;
@@ -106,6 +108,7 @@ public class ACMConfiguration {
         disableUI = params.disableUI;
         forceSandbox = params.sandbox;
         allCategories = params.allCategories;
+        showConfiguration = params.config;
 
         setupACMGlobalPaths();
 
@@ -407,6 +410,10 @@ public class ACMConfiguration {
     }
 
     public boolean isNoDbCheckout() { return noDbCheckout; }
+
+    public boolean isShowConfiguration() {
+        return showConfiguration;
+    }
 
     public File getGlobalShareDir() {
         return globalShareDir;

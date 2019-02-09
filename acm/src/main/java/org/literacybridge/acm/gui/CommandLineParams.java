@@ -19,6 +19,9 @@ public class CommandLineParams {
   @Option(name = "--clean", usage = "Clean up referenced audio files")
   public boolean cleanUnreferenced;
 
+  @Option(name="--config", usage="Add toolbar icon to launch configuration dialog.")
+  public boolean config;
+
   @Argument
   public String sharedACM;
 }
