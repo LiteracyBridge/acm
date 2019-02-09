@@ -464,7 +464,7 @@ public class MoveStats {
                                       projectDir.getName(), TALKING_BOOK_DATA, collectedDataDir.getAbsolutePath()));
                 foundProjectWithoutTbData = true;
             } else {
-                foundProjectWithTbData = true; // found at least with TBData
+                foundProjectWithTbData = true; // found at least one with TB Data
                 break;
             }
         }
