@@ -9,9 +9,11 @@ import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.ResourceView.ResourceView;
 import org.literacybridge.acm.gui.ResourceView.ToolbarView;
+import org.literacybridge.acm.gui.dialogs.AudioItemContextMenuDialog;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
+import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.repository.FileSystemGarbageCollector.GCInfo;
 import org.literacybridge.acm.repository.WavFilePreCaching;
 import org.literacybridge.acm.store.Category;
@@ -24,10 +26,13 @@ import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -40,6 +45,8 @@ public class Application extends JXFrame {
   private static final long serialVersionUID = -7011153239978361786L;
 
   public static double JAVA_VERSION = getVersion ();
+  private final ResourceView resourceView;
+
   static double getVersion () {
     String version = System.getProperty("java.version");
     int pos = version.indexOf('.');
@@ -112,7 +119,7 @@ public class Application extends JXFrame {
 
     setTitle(title);
     // toolbar view on top
-    ResourceView resourceView = new ResourceView();
+    resourceView = new ResourceView();
     ToolbarView toolbarView = new ToolbarView(resourceView.audioItemView);
     add(toolbarView, BorderLayout.PAGE_START);
     add(resourceView, BorderLayout.CENTER);
@@ -190,12 +197,18 @@ public class Application extends JXFrame {
   }
 
   private static void startUp(CommandLineParams params) throws Exception {
-    boolean showUI = !params.disableUI;
-    SplashScreen splash = null;
+    SplashScreen splash = new SplashScreen();
 
-    if (showUI) {
-      OsUtils.enableOSXQuitStrategy();
-      splash = new SplashScreen();
+//      URL iconURL = Application.class.getResource("/tb_headset.png");
+    URL iconURL = Application.class.getResource("/tb.png");
+    Image iconImage = new ImageIcon(iconURL).getImage();
+    if (OsUtils.MAC_OS) {
+      OsUtils.setOSXApplicationIcon(iconImage);
+    } else {
+      splash.setIconImage(iconImage);
+    }
+    OsUtils.enableOSXQuitStrategy();
+
 
       // set look & feel
       SwingUtils.setLookAndFeel("");
@@ -207,13 +220,10 @@ public class Application extends JXFrame {
                 + " java command contains the argument -XMX512m (or more).");
         System.exit(0);
       }
-    }
 
     // String dbDirName = null, repositoryDirName= null;
     // initialize config and generate random ID for this acm instance
-    if (showUI) {
-      splash.setProgressLabel("Initializing...");
-    }
+    splash.setProgressLabel("Initializing...");
     ACMConfiguration.initialize(params);
 
     // init database
@@ -230,9 +240,11 @@ public class Application extends JXFrame {
       System.exit(1);
     }
 
-    if (showUI) {
       application = new Application(splash);
       OsUtils.enableOSXFullscreen(application);
+      if (!OsUtils.MAC_OS) {
+        application.setIconImage(iconImage);
+      }
       splash.setProgressLabel("Initialization complete. Launching UI...");
       application.setSize(1000, 725);
 
@@ -275,15 +287,16 @@ public class Application extends JXFrame {
       if (ACMConfiguration.getInstance().getCurrentDB().shouldPreCacheWav()) {
         caching.cacheNewA18Files();
       }
-    }
+
+      application.resourceView.audioItemView.requestFocusInWindow();
   }
 
   public static class FilterState {
     private String previousFilterState = null;
 
     private String filterString;
-    private List<Category> filterCategories;
-    private List<Locale> filterLanguages;
+    private List<Category> filterCategories = new ArrayList<>();
+    private List<Locale> filterLanguages = new ArrayList<>();
     private Playlist selectedPlaylist;
 
     public synchronized String getFilterString() {
