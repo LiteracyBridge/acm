@@ -23,6 +23,7 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.SearchResult;
+import org.literacybridge.acm.store.Taxonomy;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -32,6 +33,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultTreeSelectionModel;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
@@ -40,15 +42,21 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class SidebarView extends ACMContainer implements Observer {
     private static final Logger LOG = Logger
@@ -136,18 +144,6 @@ public class SidebarView extends ACMContainer implements Observer {
     }
 
     private JXTaskPane createCategoryTaskPane() {
-        // add all categories
-        Category rootCategory = ACMConfiguration.getInstance().getCurrentDB()
-            .getMetadataStore().getTaxonomy().getRootCategory();
-        if (rootCategory.hasChildren()) {
-            for (Category c : rootCategory.getSortedChildren()) {
-                // Only show categories that are are whitelisted and can be assigned to.
-                if ((c.isVisible() || c.hasVisibleChildren()) && !c.isNonAssignable()) {
-                    addChildCategories(categoryRootNode, c);
-                }
-            }
-        }
-
         categoryTree = new CheckboxTree(categoryRootNode);
         categoryTree.setRootVisible(false);
         categoryTree.setCellRenderer(new FacetCountCellRenderer());
@@ -159,7 +155,7 @@ public class SidebarView extends ACMContainer implements Observer {
         JScrollPane categoryScrollPane = new JScrollPane(categoryTree);
         categoryTaskPane.add(categoryScrollPane);
 
-        categoryTree.expandPath(new TreePath(deviceRootNode.getPath()));
+        fillCategories();
 
         attachResizers(categoryTaskPane, categoryScrollPane);
 
@@ -350,6 +346,10 @@ public class SidebarView extends ACMContainer implements Observer {
      */
     private void attachResizers(JXTaskPane taskPane, JScrollPane scrollPane) {
         // Debugging code commented out...
+
+        // The default border has insets all around, but we want the space at the bottom to draw
+        // our resizing handle. If we know what the existing border is (compound border, etc.)
+        // replace the existing one with our own, with no inset on the bottom.
         if (resizingBorder == null) {
             Border defaultBorder = ((JComponent) taskPane.getContentPane()).getBorder();
             if (defaultBorder instanceof CompoundBorder) {
@@ -612,15 +612,69 @@ public class SidebarView extends ACMContainer implements Observer {
         addAudioDeviceListener();
     }
 
-    private void addChildCategories(DefaultMutableTreeNode parent, Category category) {
-        DefaultMutableTreeNode child = new DefaultMutableTreeNode(
-            new CategoryTreeNodeObject(category));
+    private void fillCategories() {
+        Taxonomy taxonomy = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getTaxonomy();
+
+        // Save the ids of the rows that are expanded and checked. We'll re-apply those properties later.
+        Set<String> expanded = IntStream.range(0, categoryTree.getRowCount())
+            .filter(row -> categoryTree.isExpanded(row))
+            .mapToObj(row -> ((CategoryTreeNodeObject) ((DefaultMutableTreeNode) categoryTree.getPathForRow(
+                row).getLastPathComponent()).getUserObject()).getCategory().getId())
+            .collect(Collectors.toSet());
+
+        Set<String> checked = Application.getFilterState().getFilterCategories().stream()
+            .map(Category::getId).collect(Collectors.toSet());
+
+        // Clear the old tree.
+        categoryRootNode.removeAllChildren();
+        DefaultTreeModel model = (DefaultTreeModel) categoryTree.getModel();
+        model.reload();
+
+        // (re-)fill with fresh data.
+        Category rootCategory = taxonomy.getRootCategory();
+        for (Category c : rootCategory.getSortedChildren()) {
+            // Only show categories that can be assigned to.
+            if ((c.isVisible() || c.hasVisibleChildren()) && !c.isNonAssignable()) {
+                fillChildCategories(categoryRootNode, c);
+            }
+        }
+
+        // Re-expand the rows that were expanded before. The root is always expanded, and
+        // as it is hidden, it can't be collapsed.
+        // Re-check the rows that were checked before.
+        categoryTree.expandPath(new TreePath(categoryRootNode.getPath()));
+        categoryTree.clearChecking();
+
+        Enumeration en = categoryRootNode.depthFirstEnumeration();
+        while (en.hasMoreElements()) {
+
+            // Unfortunately the enumeration isn't genericised so we need to downcast
+            // when calling nextElement():
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) en.nextElement();
+            CategoryTreeNodeObject obj = (CategoryTreeNodeObject) node.getUserObject();
+            if (obj != null) {
+                String id = obj.getCategory().getId();
+                if (expanded.contains(id)) {
+                    categoryTree.expandPath(new TreePath(node.getPath()));
+                }
+                if (checked.contains(id)) {
+                    categoryTree.addCheckingPath(new TreePath(node.getPath()));
+                }
+            }
+        }
+
+    }
+
+    private void fillChildCategories(DefaultMutableTreeNode parent, Category category) {
+        DefaultMutableTreeNode child = new DefaultMutableTreeNode(new CategoryTreeNodeObject(category));
         parent.add(child);
         if (category.hasChildren()) {
             for (Category c : category.getSortedChildren()) {
-                // Only show categories that are are whitelisted and can be assigned to.
+                // Only show categories that are are user definable. We never let the
+                // "nonassignable" categories be visible, and the autogenerated ones always
+                // inherit from their parents.
                 if ((c.isVisible() || c.hasVisibleChildren()) && !c.isNonAssignable()) {
-                    addChildCategories(child, c);
+                    fillChildCategories(child, c);
                 }
             }
         }
@@ -849,6 +903,10 @@ public class SidebarView extends ACMContainer implements Observer {
 
         if (arg instanceof PlaylistsChanged) {
             updatePlaylistTable();
+        }
+
+        if (arg instanceof Taxonomy.CategoryVisibilitiesUpdated) {
+            fillCategories();
         }
     }
 

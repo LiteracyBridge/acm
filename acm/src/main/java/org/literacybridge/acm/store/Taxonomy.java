@@ -62,4 +62,8 @@ public class Taxonomy {
     if (this.revision != null) throw new IllegalStateException("Revision has already been set.");
     this.revision = revision;
   }
+
+  public static class CategoryVisibilitiesUpdated {
+
+  }
 }
