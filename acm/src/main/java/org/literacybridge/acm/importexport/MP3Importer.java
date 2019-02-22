@@ -1,11 +1,7 @@
 package org.literacybridge.acm.importexport;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FilenameUtils;
@@ -75,10 +71,15 @@ public class MP3Importer extends AudioFileImporter {
 
                 // See if there is a CATEGORIES comment.
                 Taxonomy taxonomy = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getTaxonomy();
+                Set<Category> loadedCategories;
                 String categoriesString = mp3Metadata.get("CATEGORIES");
-                Set<Category> loadedCategories = Arrays.stream(categoriesString.split(";"))
-                    .map(taxonomy::getCategory)
-                    .collect(Collectors.toSet());
+                if (!isEmpty(categoriesString)) {
+                    loadedCategories = Arrays.stream(categoriesString.split(";"))
+                            .map(taxonomy::getCategory)
+                            .collect(Collectors.toSet());
+                } else {
+                    loadedCategories = new HashSet<>();
+                }
 
 
                 metadata = loadedMetadata;
