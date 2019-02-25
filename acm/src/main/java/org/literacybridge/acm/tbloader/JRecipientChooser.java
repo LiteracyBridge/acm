@@ -129,7 +129,7 @@ public class JRecipientChooser extends JPanel {
     }
 
     private void clear() {
-        for (JComboBox<String> chooser : choosers) remove(chooser);
+        removeAll();
         choosers.clear();
         selections.clear();
 
