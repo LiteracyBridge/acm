@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 59
+  revision: 60
   categories:
     '0' : 
       name: Other Messages
@@ -547,6 +547,8 @@ taxonomy:
         '90-27':
           name: Health
           children:
+            '90-27-4':
+              name: General Health
             '90-27-1':
               name: Oral Rehydration Strategy
             '90-27-2':
@@ -568,6 +570,11 @@ taxonomy:
               name: Financial Services
             '90-28-5':
               name: Value Chain
+        '90-29':
+          name: Community Development
+          children:
+            '90-29-1':
+              name: Social Needs
 
         '90-100':
           name: ANC
