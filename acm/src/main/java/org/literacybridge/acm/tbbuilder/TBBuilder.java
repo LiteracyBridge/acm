@@ -55,12 +55,12 @@ public class TBBuilder {
     private static final String CATEGORIES_IN_PACKAGES_CSV_FILE_NAME = "categoriesinpackages.csv";
     private static final String PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME = "packagesindeployment.csv";
 
-    private final static String [] REQUIRED_SYSTEM_MESSAGES_UF = {
+    public final static String [] REQUIRED_SYSTEM_MESSAGES_UF = {
         "0", "1", "2", "3", "4", "5", "6", "9", "10", "11",
         "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "28", "29",
         "33", "37", "38", "41", "53", "54", "61", "62", "63", "65", "80"
     };
-    private final static String [] REQUIRED_SYSTEM_MESSAGES_NO_UF = {
+    public final static String [] REQUIRED_SYSTEM_MESSAGES_NO_UF = {
         "0", "1", "2", "4", "5", "6", "7", "9", "10", "11",
         "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "28", "29",
         "33", "37", "38", "41", "53", "54", "61", "62", "63", "65", "80"

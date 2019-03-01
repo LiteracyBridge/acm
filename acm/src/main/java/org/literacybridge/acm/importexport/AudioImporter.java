@@ -79,9 +79,10 @@ public class AudioImporter {
      * @param processor Optional processor to examine the file after import.
      * @throws IOException If the file can not be read or imported.
      */
-    private void importFileWithOptions(File file, AudioItemProcessor processor, Option... optionsArg)
+    private AudioItem importFileWithOptions(File file, AudioItemProcessor processor, Option... optionsArg)
         throws IOException
     {
+        AudioItem result = null;
         Set<Option> options = new HashSet<>(Arrays.asList(optionsArg));
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
 
@@ -91,54 +92,58 @@ public class AudioImporter {
 
         if (file.isDirectory()) {
             throw new IllegalArgumentException(file.toString() + " is a directory.");
-        } else {
-            AudioFileImporter importer = getImporter(file);
-            if (importer == null) {
-                throw new UnsupportedOperationException(getFileExtension(file) + " not supported.");
-            }
-            String title = FilenameUtils.removeExtension(file.getName());
+        }
 
-            // Determine if this is a new or existing audio item.
-            Metadata metadata = importer.getMetadata();
-            String id = metadata.get(DC_IDENTIFIER);
-            AudioItem item = store.getAudioItem(id);
+        AudioFileImporter importer = getImporter(file);
+        if (importer == null) {
+            throw new UnsupportedOperationException(getFileExtension(file) + " not supported.");
+        }
+        String title = FilenameUtils.removeExtension(file.getName());
 
-            // If the item was not found by id, try filename as title.
+        // Determine if this is a new or existing audio item.
+        Metadata metadata = importer.getMetadata();
+        String id = metadata.get(DC_IDENTIFIER);
+        AudioItem item = store.getAudioItem(id);
+
+        // If the item was not found by id, try filename as title.
+        if (item == null) {
+            item = store.getAudioItem(title);
+            // If still not found, look for an "id" tacked on to the filename.
             if (item == null) {
-                item = store.getAudioItem(title);
-                // If still not found, look for an "id" tacked on to the filename.
-                if (item == null) {
-                    int pos = title.indexOf(AudioExporter.FILENAME_SEPARATOR);
-                    if (pos != -1) {
-                        id = title.substring(pos + AudioExporter.FILENAME_SEPARATOR.length());
-                        item = store.getAudioItem(id);
-                    }
+                int pos = title.indexOf(AudioExporter.FILENAME_SEPARATOR);
+                if (pos != -1) {
+                    id = title.substring(pos + AudioExporter.FILENAME_SEPARATOR.length());
+                    item = store.getAudioItem(id);
                 }
-            }
-
-            // If the audio item already exists, refresh the existing item with new content.
-            if (item != null) {
-                if (options.contains(Option.addNewOnly)) {
-                    // just skip if we have an item with the same id already
-                    System.out.println(String.format("File '%s' is already in database; skipping",
-                        file.getName()));
-                } else {
-                    try {
-                        ACMConfiguration.getInstance()
-                            .getCurrentDB()
-                            .getRepository()
-                            .updateAudioItem(item, file);
-                        store.commit(item);
-                    } catch (Exception e) {
-                        LOG.log(Level.WARNING,
-                            "Unable to update files for audioitem with id=" + title, e);
-                    }
-                }
-            } else {
-                // Otherwise, the item didn't already exist, so import the new audio item
-                importer.importSingleFile(processor);
             }
         }
+
+        // If the audio item already exists, refresh the existing item with new content.
+        if (item != null) {
+            if (options.contains(Option.addNewOnly)) {
+                // just skip if we have an item with the same id already
+                System.out.println(String.format("File '%s' is already in database; skipping",
+                    file.getName()));
+                result = item;
+            } else {
+                try {
+                    ACMConfiguration.getInstance()
+                        .getCurrentDB()
+                        .getRepository()
+                        .updateAudioItem(item, file);
+                    store.commit(item);
+                    result = item;
+                } catch (Exception e) {
+                    LOG.log(Level.WARNING,
+                        "Unable to update files for audioitem with id=" + title, e);
+                }
+            }
+        } else {
+            // Otherwise, the item didn't already exist, so import the new audio item
+            result = importer.importSingleFile(processor);
+        }
+
+        return result;
     }
 
     /**
@@ -147,8 +152,8 @@ public class AudioImporter {
      * @param category Category to be added.
      * @throws IOException If the file can't be read or imported.
      */
-    private void importFile(File file, Category category) throws IOException {
-        importFileWithOptions(file, (item) -> {if (item != null) item.addCategory(category);});
+    private AudioItem importFile(File file, Category category) throws IOException {
+        return importFileWithOptions(file, (item) -> {if (item != null) item.addCategory(category);});
     }
 
     /**
@@ -158,10 +163,10 @@ public class AudioImporter {
      * @param options Zero or more options to modify the import.
      * @throws IOException If the file can't be converted or imported.
      */
-    public void importFile(File file, AudioItemProcessor processor, Option... options)
+    public AudioItem importFile(File file, AudioItemProcessor processor, Option... options)
         throws IOException
     {
-        importFileWithOptions(file, processor, options);
+        return importFileWithOptions(file, processor, options);
     }
 
     /**
@@ -169,8 +174,8 @@ public class AudioImporter {
      * @param file The file to be imported.
      * @throws IOException If the file can't be converted or imported.
      */
-    public void importFile(File file) throws IOException {
-        importFileWithOptions(file, (AudioItemProcessor)null);
+    public AudioItem importFile(File file) throws IOException {
+        return importFileWithOptions(file, (AudioItemProcessor)null);
     }
 
     /**

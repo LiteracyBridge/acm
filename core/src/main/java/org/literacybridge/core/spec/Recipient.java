@@ -8,7 +8,8 @@ public class Recipient {
     private enum columns {
         recipientid, /*project, partner,*/
         communityname,
-        groupname, /*affiliate, component,*/
+        groupname, /*affiliate,*/
+        component,
         country,
         region,
         district, /*numhouseholds, */
@@ -29,6 +30,7 @@ public class Recipient {
     public final String recipientid;
     public final String communityname;
     public final String groupname;
+    public final String component;
     public final String country;
     public final String region;
     public final String district;
@@ -39,6 +41,7 @@ public class Recipient {
     public Recipient(String recipientid,
         String communityname,
         String groupname,
+        String component,
         String country,
         String region,
         String district,
@@ -49,6 +52,7 @@ public class Recipient {
         this.recipientid = recipientid;
         this.communityname = communityname;
         this.groupname = groupname;
+        this.component = component;
         this.country = country;
         this.region = region;
         this.district = district;
@@ -61,6 +65,7 @@ public class Recipient {
         this.recipientid = properties.get(columns.recipientid.name());
         this.communityname = properties.get(columns.communityname.name());
         this.groupname = properties.get(columns.groupname.name());
+        this.component = properties.get(columns.component.name());
         this.country = properties.get(columns.country.name());
         this.region = properties.get(columns.region.name());
         this.district = properties.get(columns.district.name());

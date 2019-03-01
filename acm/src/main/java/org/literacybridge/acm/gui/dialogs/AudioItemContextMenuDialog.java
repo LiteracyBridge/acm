@@ -4,10 +4,12 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.SystemColor;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.IOException;
@@ -388,7 +390,7 @@ public class AudioItemContextMenuDialog extends JDialog {
     return languageButton;
   }
 
-  private KeyListener keyListener = new KeyListener() {
+  private KeyListener keyListener = new KeyAdapter() {
     @Override
     public void keyTyped(KeyEvent e) {
       // escape?
@@ -396,25 +398,9 @@ public class AudioItemContextMenuDialog extends JDialog {
         setVisible(false);
       }
     }
-    @Override
-    public void keyPressed(KeyEvent e) { }
-    @Override
-    public void keyReleased(KeyEvent e) { }
   };
 
-  private WindowListener windowListener = new WindowListener() {
-    @Override
-    public void windowOpened(WindowEvent e) { }
-    @Override
-    public void windowClosing(WindowEvent e) { }
-    @Override
-    public void windowClosed(WindowEvent e) { }
-    @Override
-    public void windowIconified(WindowEvent e) { }
-    @Override
-    public void windowDeiconified(WindowEvent e) { }
-    @Override
-    public void windowActivated(WindowEvent e) { }
+  private WindowListener windowListener = new WindowAdapter() {
     @Override
     public void windowDeactivated(WindowEvent e) {
       setVisible(false);

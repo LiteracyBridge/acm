@@ -48,8 +48,9 @@ abstract class AudioFileImporter {
 
     protected abstract Set<Category> getCategories();
 
-    void importSingleFile(AudioItemProcessor itemProcessor) throws IOException
+    AudioItem importSingleFile(AudioItemProcessor itemProcessor) throws IOException
     {
+        AudioItem result = null;
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         try {
             AudioItem audioItem = createAudioItem();
@@ -58,7 +59,7 @@ abstract class AudioFileImporter {
                 // just skip if we have an item with the same id already
                 System.out.println(String.format("File '%s' is already in database; skipping",
                     audioFile.getName()));
-                return;
+                return audioItem;
             }
 
             // let caller tweak audio item
@@ -72,10 +73,11 @@ abstract class AudioFileImporter {
 
             AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
             repository.storeAudioFile(audioItem, audioFile);
-
+            result = audioItem;
         } catch (AudioItemRepository.UnsupportedFormatException e) {
             throw new IOException(e);
         }
+        return result;
     }
 
 

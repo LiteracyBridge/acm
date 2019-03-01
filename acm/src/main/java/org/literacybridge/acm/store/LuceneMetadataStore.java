@@ -127,8 +127,17 @@ public class LuceneMetadataStore extends MetadataStore {
   }
 
   @Override
-  public Iterable<Playlist> getPlaylists() {
+  public Collection<Playlist> getPlaylists() {
     return playlistCache.values();
+  }
+
+  @Override
+  public Playlist findPlaylistByName(String name) {
+    for (Playlist playlist : playlistCache.values()) {
+      if (playlist.getName().equals(name))
+        return playlist;
+    }
+    return null;
   }
 
   @Override

@@ -1,6 +1,7 @@
 package org.literacybridge.acm.store;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.SortedMap;
 
@@ -45,7 +46,7 @@ public class Playlist extends Committable {
     return audioItems.indexOf(uuid);
   }
 
-  public Iterable<String> getAudioItemList() {
+  public Collection<String> getAudioItemList() {
     return audioItems;
   }
 

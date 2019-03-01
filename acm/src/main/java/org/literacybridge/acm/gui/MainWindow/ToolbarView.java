@@ -4,6 +4,7 @@ import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.Conve
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
+import org.literacybridge.acm.gui.assistants.Chooser;
 import org.literacybridge.acm.gui.dialogs.VisibleCategoriesDialog;
 import org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.messages.PlayAudioItemMessage;
@@ -62,7 +63,10 @@ public class ToolbarView extends JToolBar  {
 
   private ImageIcon gearImageIcon = new ImageIcon(
       UIConstants.getResource(UIConstants.ICON_GEAR_32_PX));
+  private ImageIcon assistantImageIcon = new ImageIcon(
+      UIConstants.getResource(UIConstants.ICON_ASSISTANT_32_PX));
 
+  // Intelligence Assistance by ProSymbols from the Noun Project
   // config icon: configurations by I Putu Kharismayadi from the Noun Project
   // gears: configuration by Bieutuong Hai from the Noun Project
   
@@ -82,6 +86,7 @@ public class ToolbarView extends JToolBar  {
   private String placeholderText = LabelProvider.getLabel(LabelProvider.PLACEHOLDER_TEXT);
   private Font placeholderFont = new Font("Verdana", Font.ITALIC, 14);
   private Font defaultTextfieldFont = null;
+  private JButton assistantButton;
 
   public ToolbarView(AudioItemView audioItemView) {
     initComponents();
@@ -111,6 +116,7 @@ public class ToolbarView extends JToolBar  {
     // go straight to that dialog. If and when we have more configurations, this will
     // open some sort of configuration container.
     configureButton.addActionListener(VisibleCategoriesDialog::showDialog);
+    assistantButton.addActionListener(Chooser::showChooserMenu);
   }
 
   private void addPlayBtnHandler() {
@@ -131,6 +137,7 @@ public class ToolbarView extends JToolBar  {
             player.stop();
             updatePlayerStateTimer.stop();
             playBtn.setIcon(playImageIcon); // call explicit to avoid missing updates
+            playBtn.setToolTipText("Play");
           }
         }
       }
@@ -192,8 +199,10 @@ public class ToolbarView extends JToolBar  {
   private void mirrorPlayerState(PlayerStateDetails newState) {
     if (newState.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.PAUSED) {
       playBtn.setIcon(playImageIcon);
+      playBtn.setToolTipText("Play");
     } else if (newState.getCurrentPlayerState() == SimpleSoundPlayer.PlayerState.RUNNING) {
       playBtn.setIcon(pauseImageIcon);
+      playBtn.setToolTipText("Pause");
       durtation = player.getDurationInSecs();
 
       // update only if slide is not moved by user
@@ -313,6 +322,7 @@ public class ToolbarView extends JToolBar  {
     setRollover(false);
 
     // Create components
+    assistantButton = new JButton();
     configureButton = new JButton();
 
     backwardBtn = new JButton();
@@ -328,11 +338,17 @@ public class ToolbarView extends JToolBar  {
     searchTF = new JTextField();
 
     // Additional component initialization.
+    assistantButton.setIcon(assistantImageIcon);
+    assistantButton.setToolTipText("Assistants");
     configureButton.setIcon(gearImageIcon);
+    configureButton.setToolTipText("Configuration");
 
     backwardBtn.setIcon(backwardImageIcon);
+    backwardBtn.setToolTipText("Previous Track");
     playBtn.setIcon(playImageIcon);
+    playBtn.setToolTipText("Play");
     forwardBtn.setIcon(forwardImageIcon);
+    forwardBtn.setToolTipText("Next Track");
 
     positionSlider.setValue(0);
     playedTimeLbl.setText("00:00:00");
@@ -353,6 +369,7 @@ public class ToolbarView extends JToolBar  {
     playBtn.getAccessibleContext().setAccessibleName("Play");
 
     // Layout -- sizes
+    assistantButton.setPreferredSize(ICON_SIZE);
     configureButton.setPreferredSize(ICON_SIZE);
 
     backwardBtn.setPreferredSize(ICON_SIZE);
@@ -396,6 +413,7 @@ public class ToolbarView extends JToolBar  {
     // Layout -- finally, layout the toolbar
     setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
 
+    add(assistantButton);
     add(playBox);
     add(positionBox);
     add(searchBox);

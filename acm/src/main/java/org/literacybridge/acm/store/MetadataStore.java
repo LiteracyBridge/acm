@@ -26,9 +26,11 @@ public abstract class MetadataStore {
 
   public abstract Playlist getPlaylist(String uid);
 
+  public abstract Playlist findPlaylistByName(String name);
+
   public abstract void deletePlaylist(String uid);
 
-  public abstract Iterable<Playlist> getPlaylists();
+  public abstract Collection<Playlist> getPlaylists();
 
   public MetadataStore(Taxonomy taxonomy) {
     this.taxonomy = taxonomy;
