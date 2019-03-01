@@ -45,22 +45,32 @@ class PlaylistPopupMenu extends JPopupMenu {
         .getLogger(PlaylistPopupMenu.class.getName());
 
     private static String previousPackageName = "";
-    private final PlaylistLabel selectedPlaylist;
+    private final List<PlaylistLabel> selectedPlaylists;
 
-    PlaylistPopupMenu(final PlaylistLabel selectedPlaylist) {
-        this.selectedPlaylist = selectedPlaylist;
-        String playlist = selectedPlaylist.getPlaylist().getName();
-        JMenuItem deletePlaylist = new JMenuItem("Delete '" + playlist + "' ...");
-        JMenuItem renamePlaylist = new JMenuItem("Rename '" + playlist + "' ...");
-        JMenuItem exportPlaylist = new JMenuItem("Export '" + playlist + "' ...");
+    PlaylistPopupMenu(final List<PlaylistLabel> selectedPlaylists) {
+        this.selectedPlaylists = selectedPlaylists;
+        if (this.selectedPlaylists.size() > 1) {
+            String menuString = String.format("Delete %d playlists...", selectedPlaylists.size());
+            JMenuItem deletePlaylist = new JMenuItem(menuString);
 
-        add(deletePlaylist);
-        add(renamePlaylist);
-        add(exportPlaylist);
+            add(deletePlaylist);
 
-        deletePlaylist.addActionListener(deleteListener);
-        renamePlaylist.addActionListener(renameListener);
-        exportPlaylist.addActionListener(exportListener);
+            deletePlaylist.addActionListener(deleteListener);
+        } else {
+            PlaylistLabel selectedPlaylist = selectedPlaylists.get(0);
+            String playlist = selectedPlaylist.getPlaylist().getName();
+            JMenuItem deletePlaylist = new JMenuItem("Delete '" + playlist + "' ...");
+            JMenuItem renamePlaylist = new JMenuItem("Rename '" + playlist + "' ...");
+            JMenuItem exportPlaylist = new JMenuItem("Export '" + playlist + "' ...");
+
+            add(deletePlaylist);
+            add(renamePlaylist);
+            add(exportPlaylist);
+
+            deletePlaylist.addActionListener(deleteListener);
+            renamePlaylist.addActionListener(renameListener);
+            exportPlaylist.addActionListener(exportListener);
+        }
     }
 
     /**
@@ -73,33 +83,44 @@ class PlaylistPopupMenu extends JPopupMenu {
                 LabelProvider.getLabel("CANCEL"),
                 LabelProvider.getLabel("DELETE") };
 
+            String message;
+            if (selectedPlaylists.size() == 1) {
+                message = String.format("Delete playlist '%s'?", selectedPlaylists.get(0));
+            } else {
+                message = String.format("Delete %d playlists?", selectedPlaylists.size());
+            }
             int n = JOptionPane.showOptionDialog(Application.getApplication(),
-                "Delete playlist '" + selectedPlaylist + "'?",
+                message,
                 LabelProvider.getLabel("CONFRIM_DELETE"),
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null,
                 options, options[0]);
 
             if (n == 1) {
                 try {
-                    List<String> audioItems = Lists
-                        .newLinkedList(selectedPlaylist.getPlaylist().getAudioItemList());
-                    for (String audioItemUuid : audioItems) {
-                        AudioItem audioItem = ACMConfiguration.getInstance()
-                            .getCurrentDB().getMetadataStore()
-                            .getAudioItem(audioItemUuid);
-                        audioItem.removePlaylist(selectedPlaylist.getPlaylist());
-                        ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
-                            .commit(audioItem);
+                    for (PlaylistLabel selectedPlaylist : selectedPlaylists) {
+                        try {
+                            List<String> audioItems = Lists.newLinkedList(selectedPlaylist.getPlaylist()
+                                .getAudioItemList());
+                            for (String audioItemUuid : audioItems) {
+                                AudioItem audioItem = ACMConfiguration.getInstance()
+                                    .getCurrentDB()
+                                    .getMetadataStore()
+                                    .getAudioItem(audioItemUuid);
+                                audioItem.removePlaylist(selectedPlaylist.getPlaylist());
+                                ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(audioItem);
+                            }
+                            ACMConfiguration.getInstance()
+                                .getCurrentDB()
+                                .getMetadataStore()
+                                .deletePlaylist(selectedPlaylist.getPlaylist().getUuid());
+                            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(selectedPlaylist.getPlaylist());
+                        } catch (Exception ex) {
+                            LOG.log(Level.WARNING,
+                                "Unable to remove playlist " + selectedPlaylist.toString());
+                        }
                     }
-                    ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
-                        .deletePlaylist(selectedPlaylist.getPlaylist().getUuid());
-                    ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
-                        .commit(selectedPlaylist.getPlaylist());
+                }  finally {
                     Application.getMessageService().pumpMessage(new PlaylistsChanged());
-                } catch (Exception ex) {
-                    LOG.log(Level.WARNING,
-                        "Unable to remove playlist " + selectedPlaylist.toString());
-                } finally {
                     Application.getFilterState().updateResult(true);
                 }
             }
@@ -112,6 +133,7 @@ class PlaylistPopupMenu extends JPopupMenu {
     private ActionListener renameListener = new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent arg0) {
+            PlaylistLabel selectedPlaylist = selectedPlaylists.get(0);
             String playlistName = (String) JOptionPane.showInputDialog(
                 PlaylistPopupMenu.this, "Enter playlist name:", "Edit playlist",
                 JOptionPane.PLAIN_MESSAGE, null, null, selectedPlaylist.getPlaylist().getName());
@@ -139,6 +161,7 @@ class PlaylistPopupMenu extends JPopupMenu {
         @Override
         public void actionPerformed(ActionEvent event) {
             LinkedHashMap<String, Category> categories = new LinkedHashMap<>();
+            PlaylistLabel selectedPlaylist = selectedPlaylists.get(0);
             try {
                 // Prompt the user for the name of the exported package. If we've exported a
                 // package previously in this invocation of the ACM, use that package name as

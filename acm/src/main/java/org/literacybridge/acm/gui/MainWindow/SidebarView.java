@@ -212,12 +212,14 @@ public class SidebarView extends ACMContainer implements Observer {
 
                 if (rightButtonClicked) {
                     int index = playlistList.locationToIndex(e.getPoint());
-                    if (playlistList.getSelectedIndex() != index) {
+                    boolean found = false;
+                    for (int ix : playlistList.getSelectedIndices()) found |= (ix == index);
+                    if (!found) {
                         playlistList.setSelectedIndex(index);
                     }
-                    PlaylistLabel label = playlistList.getSelectedValue();
-                    if (label != null) {
-                        PlaylistPopupMenu menu = new PlaylistPopupMenu(label);
+                    List<PlaylistLabel> labels = playlistList.getSelectedValuesList();
+                    if (labels != null && labels.size() > 0) {
+                        PlaylistPopupMenu menu = new PlaylistPopupMenu(labels);
                         menu.show(e.getComponent(), e.getX(), e.getY());
                     }
                 }
@@ -995,6 +997,6 @@ public class SidebarView extends ACMContainer implements Observer {
         }
     };
 
-    static class PlaylistsChanged {
+    public static class PlaylistsChanged {
     }
 }
