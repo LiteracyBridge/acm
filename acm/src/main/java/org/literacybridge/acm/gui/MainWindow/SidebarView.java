@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.MainWindow;
 
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.DefaultCheckboxTreeCellRenderer;
+import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingModel;
 import org.apache.commons.lang.StringUtils;
 import org.jdesktop.swingx.JXTaskPane;
 import org.jdesktop.swingx.JXTaskPaneContainer;
@@ -150,6 +151,7 @@ public class SidebarView extends ACMContainer implements Observer {
         categoryTree.setCellRenderer(new FacetCountCellRenderer());
         categoryTree.expandPath(new TreePath(categoryRootNode.getPath()));
         categoryTree.setSelectionModel(NO_SELECTION_MODEL);
+        categoryTree.getCheckingModel().setCheckingMode(TreeCheckingModel.CheckingMode.PROPAGATE_PRESERVING_CHECK);
 
         JXTaskPane categoryTaskPane = new JXTaskPane();
         categoryTaskPane.setTitle(LabelProvider.getLabel(LabelProvider.CATEGORY_ROOT_LABEL));
@@ -597,7 +599,9 @@ public class SidebarView extends ACMContainer implements Observer {
                     .getLastPathComponent();
                 CategoryTreeNodeObject obj = (CategoryTreeNodeObject) node
                     .getUserObject();
-                filterCategories.add(obj.getCategory());
+                Category cat = obj.getCategory();
+                if (!cat.hasChildren())
+                    filterCategories.add(obj.getCategory());
             }
 
             Application.getFilterState().setFilterCategories(filterCategories);

@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.dialogs;
 
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingEvent;
+import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingModel;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
@@ -44,6 +45,7 @@ public class VisibleCategoriesDialog extends JDialog {
         // The tree. Note that the root does not hold the taxonomy root. (TODO: why not?)
         categoryRootNode = new DefaultMutableTreeNode();
         categoryTree = new CheckboxTree(categoryRootNode);
+        categoryTree.getCheckingModel().setCheckingMode(TreeCheckingModel.CheckingMode.PROPAGATE_PRESERVING_CHECK);
         categoryTree.setRootVisible(false);
         categoryTree.addTreeCheckingListener(this::categoryCheckedHandler);
         JScrollPane categoryScrollPane = new JScrollPane(categoryTree);

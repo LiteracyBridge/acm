@@ -102,6 +102,15 @@ public final class ColumnInfo<T> {
     // ValueProvider can be cashed until invalidated by a DataChangeEventType,
     // or if
     // ValueProvider#getValue() must be called every time.
+
+    /**
+     * BE: This "cache" is broken. Rather than lazy-populating the values, they're all simply
+     * pre-computed. There is no means to invalidate the cache when large-scale changes
+     * happen. So data is just "stale", not cached. :(
+     * I expect that ripping it out entirely would give the biggest perf boost.
+     * Sigh.
+     * Add it to the list.
+     */
     private final boolean valueCachable;
 
     public ValueProvider(boolean valueCachable) {
@@ -109,7 +118,7 @@ public final class ColumnInfo<T> {
     }
 
     public boolean isValueCachable() {
-      return valueCachable;
+      return false;
     }
 
     protected abstract AudioItemNode<T> getValue(AudioItem audioItem);
