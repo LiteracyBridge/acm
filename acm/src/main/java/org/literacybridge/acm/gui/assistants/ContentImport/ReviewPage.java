@@ -15,49 +15,66 @@ import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 
+import static org.literacybridge.acm.Constants.CATEGORY_GENERAL_OTHER;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
-public class SummaryPage extends AssistantPage<ContentImportContext> {
+public class ImportPage extends AssistantPage<ContentImportContext> {
 
     private ContentImportContext context;
 
-    public SummaryPage(PageHelper listener) {
+    public ImportPage(PageHelper listener) {
         super(listener);
         context = getContext();
-        setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+        setLayout(new GridBagLayout());
+
+        Insets insets = new Insets(0,0,20,0);
+        GridBagConstraints gbc = new GridBagConstraints(0,
+            GridBagConstraints.RELATIVE,
+            1,
+            1,
+            1.0,
+            0.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.HORIZONTAL,
+            insets,
+            1,
+            1);
 
         JLabel welcome = new JLabel(
-            "<html>" + "<span style='font-size:2.5em'>Finished Content Import!</span>"
-                + "<br/><br/><p>Contratulations, you have imported N messages for language ABC.</p>"
-                + "<br/><br/><p>M new playlists were created.</p>"
-                + "<br/>Click \"Finish\" to close. "
+            "<html>" + "<span style='font-size:2.5em'>Perform Import!</span>"
+                + "<br/>When you are satisfied with these imports, click \"Finish\" to perform the import. "
 
                 + "</html>");
-        add(welcome);
+        add(welcome, gbc);
+
+        // Absorb any vertical space.
+        gbc.weighty = 1.0;
+        add(new JLabel(), gbc);
     }
 
     @Override
     protected void onPageEntered(boolean progressing) {
+        setComplete();
+    }
 
-        Timer t = new Timer(1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                setComplete();
-            }
-        });
-        t.setRepeats(false);
-        t.start();
-
-        performUpdate();
+    @Override
+    protected void onPageLeaving(boolean progressing) {
+        if (progressing)
+            performUpdate();
     }
 
     @Override
     protected String getTitle() {
-        return "Summary";
+        return "Import Files";
     }
 
     private void performUpdate() {
@@ -71,7 +88,7 @@ public class SummaryPage extends AssistantPage<ContentImportContext> {
             .getCurrentDB()
             .getMetadataStore()
             .getTaxonomy()
-            .getCategory("0-0");
+            .getCategory(CATEGORY_GENERAL_OTHER);
 
         AudioImporter importer = AudioImporter.getInstance();
 
