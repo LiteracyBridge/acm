@@ -3,6 +3,7 @@ package org.literacybridge.acm.gui.MainWindow;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.MainWindow.SidebarView.PlaylistsChanged;
@@ -200,7 +201,7 @@ class PlaylistPopupMenu extends JPopupMenu {
                         .getMetadataStore();
 
                     // Add "Intro Message" to list of categories. hard coded as "0-5". "Intro Message"
-                    Category category = store.getCategory(TBBuilder.IntroMessageID);
+                    Category category = store.getCategory(Constants.CATEGORY_INTRO_MESSAGE);
                     categories.put(category.getCategoryName(), category);
 
                     // Read the categories from the _activeLists.txt file.

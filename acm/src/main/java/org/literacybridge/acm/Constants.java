@@ -44,4 +44,12 @@ public class Constants {
   public final static String DEPLOYMENT_CHOICE = "DEPLOYMENT_CHOICE";
   public final static String BATCH_RECORD = "record.log";
   public final static String S3_BUCKET = "acm-logging";
+
+  public final static String CATEGORY_GENERAL_OTHER = "0-0";
+  public final static String CATEGORY_TB_CATEGORIES = "0-4-2";
+  public final static String CATEGORY_INTRO_MESSAGE = "0-5";
+  public final static String CATEGORY_UNCATEGORIZED_FEEDBACK = "9-0";
+  public static final String CATEGORY_TOO_SHORT_FEEDBACK = "92-2";
+  public static final String CATEGORY_TOO_LONG_FEEDBACK = "92-6";
+  public static final String CATEGORY_UNKNOWN_LENGTH_FEEDBACK = "92-8";
 }

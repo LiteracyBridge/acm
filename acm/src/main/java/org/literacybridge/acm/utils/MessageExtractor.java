@@ -22,6 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.literacybridge.acm.Constants.CATEGORY_UNCATEGORIZED_FEEDBACK;
+
 /**
  * Utility to extract messages from an ACM database. In the simplest form, uncategorized user
  * feedback messages are extracted. With the argument "--categorized", everything except
@@ -144,9 +146,9 @@ public class MessageExtractor {
                 ok = false;
                 System.err.println("May not specify both --categorized and --uncategorized");
             } else if (params.categorized) {
-                categoryIdBlacklist.add(FeedbackImporter.GENERAL_FEEDBACK);
+                categoryIdBlacklist.add(CATEGORY_UNCATEGORIZED_FEEDBACK);
             } else if (params.uncategorized){
-                categoryIdWhitelist.add(FeedbackImporter.GENERAL_FEEDBACK);
+                categoryIdWhitelist.add(CATEGORY_UNCATEGORIZED_FEEDBACK);
             }
         }
         destinationDirectory = new File(params.destination);

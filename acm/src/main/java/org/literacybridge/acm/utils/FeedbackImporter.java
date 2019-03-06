@@ -8,7 +8,6 @@ import org.kohsuke.args4j.Option;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.AccessControl;
-import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.importexport.AudioImporter;
 import org.literacybridge.acm.store.AudioItem;
@@ -35,16 +34,14 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.literacybridge.acm.Constants.CATEGORY_UNCATEGORIZED_FEEDBACK;
+
 public class FeedbackImporter {
   private static final Logger logger = LoggerFactory.getLogger(FeedbackImporter.class);
 
   // Note public
-  public static final String GENERAL_FEEDBACK = "9-0";
 
-    private static final String TOO_SHORT_FEEDBACK = "92-2";
-    private static final String TOO_LONG_FEEDBACK = "92-6";
-    private static final String UNKNOWN_LENGTH_FEEDBACK = "92-8";
-    private static final int too_short_duration = 5; // anything 5 seconds or less is too short
+  private static final int too_short_duration = 5; // anything 5 seconds or less is too short
     private static final int too_long_duration = 300; // anything 5 minutes or more is too long
 
   private static final Set<String> EXTENSIONS_TO_IMPORT = new HashSet<>(
@@ -343,19 +340,19 @@ public class FeedbackImporter {
                     seconds = Integer.parseInt(matcher.group(1)) * 60;
                     seconds += Integer.parseInt(matcher.group(2));
                     if (seconds <= too_short_duration) {
-                        newCategory = TOO_SHORT_FEEDBACK;
+                        newCategory = Constants.CATEGORY_TOO_SHORT_FEEDBACK;
                         result = ImportResults.TWEAKS.TOO_SHORT;
                     } else if (seconds >= too_long_duration) {
-                        newCategory = TOO_LONG_FEEDBACK;
+                        newCategory = Constants.CATEGORY_TOO_LONG_FEEDBACK;
                         result = ImportResults.TWEAKS.TOO_LONG;
                     }
                 } else {
-                    newCategory = UNKNOWN_LENGTH_FEEDBACK;
+                    newCategory = Constants.CATEGORY_UNKNOWN_LENGTH_FEEDBACK;
                     result = ImportResults.TWEAKS.INDETERMINATE;
                 }
             } catch (NumberFormatException ex) {
                 // can't read this audio item
-                newCategory = UNKNOWN_LENGTH_FEEDBACK;
+                newCategory = Constants.CATEGORY_UNKNOWN_LENGTH_FEEDBACK;
                 result = ImportResults.TWEAKS.INDETERMINATE;
             }
             if (newCategory != null) {
@@ -363,7 +360,7 @@ public class FeedbackImporter {
                         .getCurrentDB()
                         .getMetadataStore()
                         .getTaxonomy();
-                item.removeCategory(taxonomy.getCategory(GENERAL_FEEDBACK));
+                item.removeCategory(taxonomy.getCategory(CATEGORY_UNCATEGORIZED_FEEDBACK));
                 item.addCategory(taxonomy.getCategory(newCategory));
             }
         }

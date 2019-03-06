@@ -68,9 +68,7 @@ public class TBBuilder {
     private final static String MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE = "r1220.img";
 
     public static String firstMessageListName = "1";
-    public static String IntroMessageID = "0-5";
-    private static String IntroMessageListFilename = IntroMessageID + ".txt";
-    private static final String FEEDBACK_FROM_USERS = "9-0";
+    private static String IntroMessageListFilename = Constants.CATEGORY_INTRO_MESSAGE + ".txt";
     public static final String ACM_PREFIX = "ACM-";
     private final static int MAX_DEPLOYMENTS = 5;
 
@@ -411,7 +409,7 @@ public class TBBuilder {
         // Talking Book from *adding* a "9-0" to the _activeLists.txt file when user feedback
         // is recorded. If the 9-0 is already there, then the users can already hear other
         // users' feedback.
-        boolean hasNoUf = !exportedCategories.contains(FEEDBACK_FROM_USERS);
+        boolean hasNoUf = !exportedCategories.contains(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
         String sourceControlFilename = String.format("system_menus/control-%s_intro%s.txt",
             hasIntro?"with":"no",
             hasNoUf?"_no_fb":"");
@@ -621,7 +619,7 @@ public class TBBuilder {
                     if (line.length() < 1)
                         continue;
 
-                    if (line.equals(FEEDBACK_FROM_USERS)) {
+                    if (line.equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK)) {
                         foundUserFeedback = true;
                     }
 
@@ -641,7 +639,10 @@ public class TBBuilder {
                         errorLanguages.add(pi.language);
                     }
 
-                    // Be sure there is a list for the category.
+                    // Be sure there is a .txt list file for the category. We don't check for
+                    // uncategorized feedback because it will be created on demand, and we
+                    // don't check for the TB long description because it is provided in
+                    // the languages directory.
                     if (!line.equals("9-0") && !line.equals("$0-1")) {
                         File pList = new File(sourceListsDir, line + ".txt");
                         if (!pList.exists()) {
