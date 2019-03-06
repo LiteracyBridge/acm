@@ -60,7 +60,7 @@ public class TBLoaderUtils {
      * @return TRUE if the string is a well-formed serial number, FALSE if not.
      */
     public static boolean isSerialNumberFormatGood2(String srn) {
-        final int maxTbId = 0x2f;
+        final int maxTbId = 0x4f;
         boolean isGood = false;
         try {
             if (srn != null && srn.length() == 10 && srn.substring(1, 2).equals("-")
@@ -74,12 +74,15 @@ public class TBLoaderUtils {
                 // missed getting updated as the tbDeviceInfo number(s) increased; an ordinary bug. Does show the value of
                 // burned-in serial numbers.
                 //
-                // The number below needs to be greater than the highest assigned "tbDeviceInfo" (TB Laptop). As of 23-May-16,
-                // that highest assigned tbDeviceInfo number is 0x14. Opening up the range eases maintenance, but lets more
-                // corrupted srns get through. 0x2f is somewhere in the middle.
+                // The number below needs to be greater than the highest assigned "tbDeviceInfo" (TB Laptop). As of 6-March-19,
+                // that highest assigned tbDeviceInfo number is 0x21. Opening up the range eases maintenance, but lets more
+                // corrupted srns get through. 0x4f is somewhere in the middle.
                 if ((highBytes < maxTbId) || (highBytes > 0x8000 && highBytes < (0x8000 | maxTbId))) {
                     int lowBytes = Integer.parseInt(srn.substring(6), 0x10);
-                    if (lowBytes >= STARTING_SERIALNUMBER) {
+                    // A batch of TBs was shipped from the factory with "B-000C036A". Re-allocate those.
+                    if (highBytes == 12 && lowBytes == 874) {
+                        isGood = false;
+                    } else if (lowBytes >= STARTING_SERIALNUMBER) {
                         isGood = true;
                     }
                 }
