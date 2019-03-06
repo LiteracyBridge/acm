@@ -1,37 +1,32 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
-import org.literacybridge.acm.importexport.AudioImporter;
 import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.*;
-import java.awt.Color;
-import java.awt.Component;
+import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 
-import static org.literacybridge.acm.Constants.CATEGORY_GENERAL_OTHER;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
-public class ImportPage extends AssistantPage<ContentImportContext> {
+public class ReviewPage extends AssistantPage<ContentImportContext> {
 
+    private final JLabel importPreviewLabel;
+    private final DefaultListModel<String> importPreviewModel;
+    private final JScrollPane importPreviewScroller;
     private ContentImportContext context;
 
-    public ImportPage(PageHelper listener) {
+    public ReviewPage(PageHelper listener) {
         super(listener);
         context = getContext();
         setLayout(new GridBagLayout());
@@ -56,92 +51,51 @@ public class ImportPage extends AssistantPage<ContentImportContext> {
                 + "</html>");
         add(welcome, gbc);
 
-        // Absorb any vertical space.
+        // Title preview.
+        importPreviewLabel = new JLabel("Files to be imported:");
+        insets = new Insets(0,0,00,0);
+        gbc.insets = insets;
+        add(importPreviewLabel, gbc);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout(0,0));
+        importPreviewModel = new DefaultListModel<>();
+        JList<String> importPreview = new JList<>(importPreviewModel);
+        importPreviewScroller = new JScrollPane(importPreview);
+        panel.add(importPreviewScroller, BorderLayout.CENTER);
+        gbc.ipadx = 10;
         gbc.weighty = 1.0;
-        add(new JLabel(), gbc);
+        gbc.fill = GridBagConstraints.BOTH;
+        insets = new Insets(0,10,20,30);
+        gbc.insets = insets;
+        add(panel, gbc);
+
+        // Absorb any vertical space.
+        //gbc.weighty = 1.0;
+        //add(new JLabel(), gbc);
     }
 
     @Override
     protected void onPageEntered(boolean progressing) {
+        Matcher<ImportableAudioItem, ImportableFile, MatchableImportableAudio> matcher = context.matcher;
+        // For the imports, create a "item from \n file" label, and add to the preview.
+        matcher.matchableItems.stream()
+            .filter(i->i.getMatch().isMatch())
+            .filter(i->!i.getLeft().hasAudioItem())
+            .map(i->"<html><i>" +i.getLeft() + "</i> from"+
+                "<br/>&nbsp;&nbsp;&nbsp;&nbsp;"+i.getRight().getFile().getPath()+"</html>")
+            .forEach(importPreviewModel::addElement);
+
         setComplete();
     }
 
     @Override
     protected void onPageLeaving(boolean progressing) {
-        if (progressing)
-            performUpdate();
     }
 
     @Override
     protected String getTitle() {
-        return "Import Files";
+        return "Review Files to Import";
     }
 
-    private void performUpdate() {
-        int deploymentNo = context.deploymentNo;
-        String languagecode = context.languagecode;
-        ProgramSpec programSpec = context.programSpec;
-        Matcher<ImportableAudioItem, ImportableFile, MatchableImportableAudio> matcher = context.matcher;
-
-        // General Other category.
-        Category category = ACMConfiguration.getInstance()
-            .getCurrentDB()
-            .getMetadataStore()
-            .getTaxonomy()
-            .getCategory(CATEGORY_GENERAL_OTHER);
-
-        AudioImporter importer = AudioImporter.getInstance();
-
-        // Look at all of the matches.
-        for (MatchableImportableAudio matchableItem : matcher.matchableItems) {
-            if (matchableItem.getMatch().isMatch()) {
-                ImportableAudioItem importableAudio = matchableItem.getLeft();
-                // If not already imported, do so, and add to the playlist.
-                if (!importableAudio.hasAudioItem()) {
-                    try {
-                        System.out.println(String.format("Import: %s from %s",
-                            importableAudio,
-                            matchableItem.getRight().getFile().getCanonicalPath()));
-                        AudioItem audioItem = importer.importFile(matchableItem.getRight().getFile(),
-                            (i) -> {
-                                // There really should be an item, but don't NPE if not.
-                                if (i != null) {
-                                    // If there is no category, add to "General Other"
-                                    if (i.getCategoryList().size() == 0)
-                                        i.addCategory(category);
-                                    // If the item didn't know what language it was, add to the selected language.
-                                    // TODO: Warn user if unexpected language.
-                                    if (!i.getMetadata().containsField(MetadataSpecification.DC_LANGUAGE)) {
-                                        i.getMetadata()
-                                            .put(MetadataSpecification.DC_LANGUAGE, languagecode);
-                                    }
-                                    // Force the title.
-                                    i.getMetadata().put(MetadataSpecification.DC_TITLE, importableAudio.getTitle());
-                                }
-                            });
-                        // If the item isn't already in the playlist, add it.
-                        // TODO: that would be an error.
-                        Playlist playlist = importableAudio.getPlaylist();
-                        if (!audioItem.hasPlaylist(playlist)) {
-                            try {
-                                audioItem.addPlaylist(playlist);
-                                playlist.addAudioItem(audioItem);
-                                ACMConfiguration.getInstance()
-                                    .getCurrentDB()
-                                    .getMetadataStore()
-                                    .commit(audioItem, playlist);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-        Application.getFilterState().updateResult(true);
-
-    }
 }

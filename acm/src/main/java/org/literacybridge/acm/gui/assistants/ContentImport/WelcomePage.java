@@ -201,6 +201,9 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
             .collect(Collectors.toSet());
     }
 
+    /**
+     * Based on the selected Deployment fill the title preview.
+     */
     private void fillTitleList() {
         List<Integer> deployments = getSelectedDeployments();
         titlePreviewModel.clear();

@@ -1,11 +1,9 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.gui.Assistant.Assistant;
-import org.literacybridge.acm.gui.Assistant.AssistantPage;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 public class ContentImportAssistant {
 
@@ -20,8 +18,9 @@ public class ContentImportAssistant {
         Map<String, Object> props = new HashMap<>();
         Assistant<ContentImportContext> assistant = new Assistant.Factory<ContentImportContext>()
             .withContext(context)
-            .withPageCtors(WelcomePage::new, FilesPage::new, MatchPage::new, SummaryPage::new)
+            .withPageCtors(WelcomePage::new, FilesPage::new, MatchPage::new, ReviewPage::new, ResultsPage::new)
             .withTitle("Content Import Assistant")
+            .withLastPageSummary()
             .create();
 
         return assistant;

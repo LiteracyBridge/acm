@@ -18,6 +18,7 @@ public class Assistant<Context> extends JDialog {
         private Dimension size;
         private Context context;
         private List<Function<PageHelper, AssistantPage>> pageCtors;
+        private boolean lastPageIsSummary = false;
         private Frame owner = null;
         private boolean modal = true;
         Color background = new Color(0xe0f7ff);
@@ -35,6 +36,7 @@ public class Assistant<Context> extends JDialog {
         public Factory<Context> asModal(boolean modal) { this.modal = modal; return this; }
         public Factory<Context> asModal() { this.modal = true; return this; }
         public Factory<Context> withBackground(Color background) { this.background = background; return this; }
+        public Factory<Context> withLastPageSummary() { this.lastPageIsSummary = true; return this; }
     }
 
 
@@ -58,6 +60,7 @@ public class Assistant<Context> extends JDialog {
     private JButton prevButton;
     private JButton nextButton;
     private JButton finishButton;
+    private JButton closeButton;
     private JButton cancelButton;
 
     private Assistant(Factory<Context> factory) {
@@ -95,11 +98,14 @@ public class Assistant<Context> extends JDialog {
         prevButton = new JButton("<< Prev");
         nextButton = new JButton("Next >>");
         finishButton = new JButton("Finish");
+        closeButton = new JButton("Close");
+        closeButton.setVisible(false);
         cancelButton = new JButton("Cancel");
 
         prevButton.addActionListener((e)->onPrevButton());
         nextButton.addActionListener((e)->onNextButton());
         finishButton.addActionListener((e)->onFinishButton());
+        closeButton.addActionListener((e)->onCloseButton());
         cancelButton.addActionListener((e)->onCancelButton());
 
         hbox.add(Box.createHorizontalGlue());
@@ -107,6 +113,7 @@ public class Assistant<Context> extends JDialog {
         hbox.add(Box.createHorizontalStrut(15));
         hbox.add(nextButton);
         hbox.add(finishButton);
+        hbox.add(closeButton);
         hbox.add(Box.createHorizontalStrut(15));
         hbox.add(cancelButton);
 
@@ -134,7 +141,14 @@ public class Assistant<Context> extends JDialog {
      *  Let the client know that the user is done.
      */
     private void onFinishButton() {
-        finished = true;
+        AssistantPage page = getPage(currentPage);
+        if (factory.lastPageIsSummary)
+            navigate(currentPage + 1);
+        else
+            setVisible(false);
+    }
+    
+    private void onCloseButton() {
         setVisible(false);
     }
 
@@ -178,12 +192,33 @@ public class Assistant<Context> extends JDialog {
         }
     };
 
+    private boolean isFinishPage(int page) {
+        return page == (factory.lastPageIsSummary ? maxPage-1 : maxPage);
+    }
+
+    private boolean isSummaryPage(int page) {
+        return page == (factory.lastPageIsSummary ? maxPage : -2);
+    }
+
+    private boolean isFinalPage(int page) {
+        return page == maxPage;
+    }
+
     private void setNavButtonState() {
         prevButton.setEnabled(currentPage > 0);
-        if (currentPage == maxPage) {
+        if (isFinishPage(currentPage)) {
             finishButton.setVisible(true);
-            finishButton.setEnabled(pages.get(currentPage).isComplete());
             nextButton.setVisible(false);
+        } else if (isSummaryPage(currentPage)) {
+            // Make the next-to-last button be the "Close" button.
+            finishButton.setVisible(false);
+            nextButton.setVisible(false);
+            closeButton.setVisible(true);
+
+            // All this page can do is close, no back, and the job's done, so no cancel.
+            prevButton.setEnabled(false);
+            cancelButton.setEnabled(false);
+            closeButton.setEnabled(pages.get(currentPage).isComplete());
         } else {
             finishButton.setVisible(false);
             nextButton.setVisible(true);

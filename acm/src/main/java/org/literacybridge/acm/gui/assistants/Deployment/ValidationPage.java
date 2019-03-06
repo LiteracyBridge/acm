@@ -4,8 +4,8 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.ContentImport.WelcomePage;
+import org.literacybridge.acm.gui.assistants.Deployment.DeploymentContext.PlaylistPrompts;
 import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
@@ -28,12 +28,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static org.literacybridge.acm.gui.assistants.ContentImport.WelcomePage.qualifiedPlaylistName;
 
@@ -43,14 +43,14 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
     private DeploymentContext context;
 
-    MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+    private MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
 
     private RecipientList recipients;
     private Set<String> languages;
-    private Map<String, List<Content.Playlist>> allContentPlaylists;
+    private Map<String, List<Content.Playlist>> allProgramSpecPlaylists;
     private Map<String, List<Playlist>> allAcmPlaylists;
 
-    public ValidationPage(PageHelper listener) {
+    ValidationPage(PageHelper listener) {
         super(listener);
         context = getContext();
         setLayout(new GridBagLayout());
@@ -94,7 +94,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     /**
      * Called when a selection changes.
      *
-     * @param actionEvent
+     * @param actionEvent is ignored.
      */
     private void onSelection(ActionEvent actionEvent) {
         setComplete();
@@ -126,7 +126,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             .map(r -> r.language)
             .collect(Collectors.toSet());
 
-        allContentPlaylists = getContentPlaylists(deploymentNo, languages);
+        allProgramSpecPlaylists = getProgramSpecPlaylists(deploymentNo, languages);
         allAcmPlaylists = getAcmPlaylists(deploymentNo, languages);
 
     }
@@ -134,6 +134,9 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     private void validateDeployment(int deploymentNo) {
 
         // Get the languages, and playlists for each language.
+        // Check that all languages are a language in the ACM.
+        validateDeploymentLanguages(languages);
+
         // Check that we have all messages in all playlists; check if anything was added.
         validatePlaylists(deploymentNo, languages);
 
@@ -147,6 +150,16 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
     }
 
+    private void validateDeploymentLanguages(Collection<String> languages) {
+        List<Locale> locales = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages();
+        for (String language : languages) {
+            Locale locale = new Locale(language);
+            if (!locales.contains(locale)) {
+                issue("Language '%s' is used in the Deployment, but is not defined in the ACM.", language);
+            }
+        }
+    }
+
     /**
      * Validate the Playlists in a Deployment. Each language is evaluated separately, both because
      * playlists can legitimately differ between languages, and because there will be different
@@ -154,18 +167,18 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      * @param deploymentNo deployment # to be validated.
      * @param languages list of languages in the deployment.
      */
-    private void validatePlaylists(int deploymentNo, Set<String> languages) {
+    private void validatePlaylists(int deploymentNo, Collection<String> languages) {
         // For each language in the Deployment...
         for (String language : languages) {
             // Get the Program Spec playlists, and the ACM playlists (that match by pattern).
-            List<Content.Playlist> contentPlaylists = allContentPlaylists.get(language);
+            List<Content.Playlist> programSpecPlaylists = allProgramSpecPlaylists.get(language);
             List<Playlist> acmPlaylists = allAcmPlaylists.get(language);
 
             // For all the playlists in the Program Spec...
             Set<Playlist> foundPlaylists = new HashSet<>();
-            for (Content.Playlist contentPlaylist : contentPlaylists) {
+            for (Content.Playlist programSpecPlaylist : programSpecPlaylists) {
                 // Get the corresponding ACM playlist, if it exists.
-                String qualifiedPlaylistName = qualifiedPlaylistName(contentPlaylist.getPlaylistTitle(),
+                String qualifiedPlaylistName = qualifiedPlaylistName(programSpecPlaylist.getPlaylistTitle(),
                     deploymentNo,
                     language);
                 Playlist playlist = acmPlaylists.stream()
@@ -179,7 +192,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     foundPlaylists.add(playlist);
                     Set<AudioItem> foundItems = new HashSet<>();
                     // For the messages in the Program Spec...
-                    for (Content.Message message : contentPlaylist.getMessages()) {
+                    for (Content.Message message : programSpecPlaylist.getMessages()) {
                         // Get the corresponding ACM AudioItem.
                         AudioItem audioItem = playlist.getAudioItemList().stream().map(store::getAudioItem)
                             .filter(it -> it.getTitle().equals(message.title))
@@ -231,38 +244,48 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         }
     }
 
+    /**
+     * Validates that the playlist prompts exist (short and long) for all playlists in all
+     * languages.
+     * @param languages to check.
+     */
     private void validatePlaylistPrompts(Collection<String> languages) {
         for (String language : languages) {
             // Here, we care about the actual playlists for the Deployment.
             List<Playlist> acmPlaylists = allAcmPlaylists.get(language);
             for (Playlist playlist : acmPlaylists) {
                 String title = WelcomePage.basePlaylistName(playlist.getName());
-                File promptFile = findClassicPrompt(title, language);
+                title = title.replaceAll("_", " ");
+                PlaylistPrompts prompts = context.new PlaylistPrompts(title, language);
+                prompts.findPrompts();
+
+                File shortFile = prompts.shortPromptFile;
+                File longFile = prompts.longPromptFile;
+                AudioItem shortItem = prompts.shortPromptItem;
+                AudioItem longItem = prompts.longPromptItem;
+
+                if (shortFile == null && shortItem == null) {
+                    issue("Missing short prompt for Playlist %s", title);
+                } else if (shortFile != null && shortItem != null) {
+                    issue("Ambiguous short prompt for Playlist %s", title);
+                }
+
+                if (longFile == null && longItem == null) {
+                    issue("Missing long description for Playlist %s", title);
+                } else if (longFile != null && longItem != null) {
+                    issue("Ambiguous long description for Playlist %s", title);
+                }
+
+                // If there is one of each, are they the same flavor?
+                if ( ((shortFile==null ^ shortItem==null) && (longFile==null ^ longItem==null)) &&
+                    ((shortFile==null) != (longFile==null))) {
+                    issue("Mismatched classic vs content prompts for Playlist %s", title);
+                }
             }
         }
     }
 
-    private File findClassicPrompt(String title, String language) {
-        // We know the taxonomy category names use spaces, not underscores.
-        final String nTitle = title.replaceAll("_", " ");
 
-        String categoryId = StreamSupport.stream(store.getTaxonomy().breadthFirstIterator().spliterator(), false)
-            .filter(c->c.getCategoryName().equalsIgnoreCase(nTitle))
-            .map(Category::getId)
-            .findFirst().orElse(null);
-        if (categoryId != null) {
-            return findPromptForCategory(categoryId, language);
-        }
-        return null;
-    }
-    private File findPromptForCategory(String id, String language) {
-        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
-        String languagesPath = "TB_Options" + File.separator + "languages" + File.separator + language + File.separator + "cat";
-        File categoriesDir = new File(tbLoadersDir, languagesPath);
-        File catFile = new File(categoriesDir, id + ".a18");
-
-        return null;
-    }
 
     /**
      * Gets the playlists defined in the Program Spec for a given Deployment. Note that playlists
@@ -272,20 +295,20 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      * @param languages    of all the Recipients in the Deployment.
      * @return a map of { language : [Content.Playlist ] }
      */
-    private Map<String, List<Content.Playlist>> getContentPlaylists(int deploymentNo,
+    private Map<String, List<Content.Playlist>> getProgramSpecPlaylists(int deploymentNo,
         Set<String> languages)
     {
         Content content = context.programSpec.getContent();
-        Map<String, List<Content.Playlist>> contentPlaylists = new HashMap<>();
+        Map<String, List<Content.Playlist>> programSpecPlaylists = new HashMap<>();
         for (String language : languages) {
-            contentPlaylists.put(language, content.getPlaylists(deploymentNo, language));
+            programSpecPlaylists.put(language, content.getPlaylists(deploymentNo, language));
         }
-        return contentPlaylists;
+        return programSpecPlaylists;
     }
 
     /**
      * Gets the playlists defined in the ACM for a given Deployment. If all content was imported,
-     * and playlists were not manually edited, these will completely match the content playlists.
+     * and playlists were not manually edited, these will completely match the programSpec playlists.
      * Additional playlists may be present, if there were any created with the pattern #-pl-lang.
      *
      * @param deploymentNo of the Deployment.
@@ -309,4 +332,5 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         }
         return acmPlaylists;
     }
+
 }

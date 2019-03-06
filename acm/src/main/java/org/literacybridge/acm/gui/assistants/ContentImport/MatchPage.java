@@ -6,7 +6,12 @@ import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
 import org.literacybridge.acm.gui.assistants.Matcher.MatcherPanel;
+import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.RFC3066LanguageCode;
+import org.literacybridge.acm.store.SearchResult;
 import org.literacybridge.core.spec.Content;
 
 import javax.swing.*;
@@ -14,9 +19,13 @@ import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.literacybridge.acm.Constants.CATEGORY_TB_CATEGORIES;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
 public class MatchPage extends AssistantPage<ContentImportContext> {
@@ -26,6 +35,9 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
     private final MatcherPanel matcherPanel;
 
     private ContentImportContext context;
+    private MetadataStore store = ACMConfiguration.getInstance()
+        .getCurrentDB()
+        .getMetadataStore();
 
     public MatchPage(PageHelper listener) {
         super(listener);
@@ -84,6 +96,7 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
 
         int deploymentNo = Integer.parseInt(deployment.getText());
 
+        // List of titles (left side list)
         List<ImportableAudioItem> titles = new ArrayList<>();
         List<Content.Playlist> contentPlaylists = context.programSpec.getContent()
             .getDeployment(deploymentNo)
@@ -92,9 +105,14 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
             for (Content.Message message : contentPlaylist.getMessages()) {
                 String playlistName = WelcomePage.qualifiedPlaylistName(message.playlistTitle, deploymentNo, languagecode);
                 Playlist playlist = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().findPlaylistByName(playlistName);
-                titles.add(new ImportableAudioItem(message.title, playlist));
+                ImportableAudioItem importableAudio = new ImportableAudioItem(message.title, playlist);
+                // See if we already have this title.
+                AudioItem audioItem = findAudioItemForTitle(message.title, languagecode);
+                importableAudio.setItem(audioItem);
+                titles.add(importableAudio);
             }
         }
+        // List of files (right side list)
         List<ImportableFile> files = context.importableFiles.stream()
             .map(ImportableFile::new)
             .collect(Collectors.toList());
@@ -109,6 +127,21 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         }
 
         setComplete();
+    }
+
+    private AudioItem findAudioItemForTitle(String title, String languagecode) {
+        List<Category> categoryList = new ArrayList<>();
+        List<Locale> localeList = Arrays.asList(new RFC3066LanguageCode(languagecode).getLocale());
+
+        SearchResult searchResult = store.search(title, categoryList, localeList);
+        // Filter because search will return near matches.
+        AudioItem item = searchResult.getAudioItems()
+            .stream()
+            .map(store::getAudioItem)
+            .filter(i->i.getTitle().equals(title))
+            .findAny()
+            .orElse(null);
+        return item;
     }
 
     @Override
