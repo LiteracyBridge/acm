@@ -89,7 +89,7 @@ public class MatcherPanel extends JPanel {
      * Creates the table and sets the model and various renderers, filters, etc.
      */
     private void makeTable() {
-        table = MatcherTable.factory();
+        table = new MatcherTable();
         model = table.getModel();
 
         table.setFilter(this::filter);

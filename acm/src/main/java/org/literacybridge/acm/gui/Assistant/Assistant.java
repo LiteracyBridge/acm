@@ -3,6 +3,9 @@ package org.literacybridge.acm.gui.Assistant;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,7 +20,7 @@ public class Assistant<Context> extends JDialog {
         private String title = "";
         private Dimension size;
         private Context context;
-        private List<Function<PageHelper, AssistantPage>> pageCtors;
+        private List<Function<PageHelper, AssistantPage>> pageFactories;
         private boolean lastPageIsSummary = false;
         private Frame owner = null;
         private boolean modal = true;
@@ -31,7 +34,7 @@ public class Assistant<Context> extends JDialog {
         public Factory<Context> withSize(Dimension size) { this.size = size; return this; }
         public Factory<Context> withContext(Context context) { this.context = context; return this; }
         @SafeVarargs
-        public final Factory<Context> withPageCtors(Function<PageHelper, AssistantPage>... pages) { this.pageCtors = Arrays.asList(pages); return this; }
+        public final Factory<Context> withPageFactories(Function<PageHelper, AssistantPage>... pages) { this.pageFactories = Arrays.asList(pages); return this; }
         public Factory<Context> withOwner(Frame owner) { this.owner = owner; return this; }
         public Factory<Context> asModal(boolean modal) { this.modal = modal; return this; }
         public Factory<Context> asModal() { this.modal = true; return this; }
@@ -79,7 +82,7 @@ public class Assistant<Context> extends JDialog {
         add(buttonsBox, BorderLayout.SOUTH);
         buttonsBox.setBorder(new EmptyBorder(4,10,4,8));
 
-        this.maxPage = factory.pageCtors.size()-1;
+        this.maxPage = factory.pageFactories.size()-1;
 
         context = factory.context;
 
@@ -170,7 +173,7 @@ public class Assistant<Context> extends JDialog {
             throw new IllegalStateException("Accessing page out of order");
         }
 
-        List<Function<PageHelper, AssistantPage>> factories = factory.pageCtors;
+        List<Function<PageHelper, AssistantPage>> factories = factory.pageFactories;
         Function<PageHelper, AssistantPage> ctor = factories.get(pageNumber);
         AssistantPage newPage = ctor.apply(pageHelper);
 

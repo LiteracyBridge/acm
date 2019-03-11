@@ -66,6 +66,8 @@ public class ToolbarView extends JToolBar  {
   private ImageIcon assistantImageIcon = new ImageIcon(
       UIConstants.getResource(UIConstants.ICON_ASSISTANT_32_PX));
 
+  // assistant ("b") <div>Icon made from <a href="http://www.onlinewebfonts.com/icon">Icon Fonts</a> is licensed by CC BY 3.0</div>
+
   // Intelligence Assistance by ProSymbols from the Noun Project
   // config icon: configurations by I Putu Kharismayadi from the Noun Project
   // gears: configuration by Bieutuong Hai from the Noun Project

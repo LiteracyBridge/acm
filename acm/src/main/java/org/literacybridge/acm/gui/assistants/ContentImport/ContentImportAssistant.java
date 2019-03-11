@@ -18,7 +18,7 @@ public class ContentImportAssistant {
         Map<String, Object> props = new HashMap<>();
         Assistant<ContentImportContext> assistant = new Assistant.Factory<ContentImportContext>()
             .withContext(context)
-            .withPageCtors(WelcomePage::new, FilesPage::new, MatchPage::new, ReviewPage::new, ResultsPage::new)
+            .withPageFactories(WelcomePage::new, FilesPage::new, MatchPage::new, ReviewPage::new, ResultsPage::new)
             .withTitle("Content Import Assistant")
             .withLastPageSummary()
             .create();

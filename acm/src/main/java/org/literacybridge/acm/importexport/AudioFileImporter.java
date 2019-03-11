@@ -92,7 +92,8 @@ abstract class AudioFileImporter {
         if (loadedMetadata != null) {
             id = loadedMetadata.get(DC_IDENTIFIER);
         }
-        // If no id from metadata, try to get it from filename.
+        // If no id from metadata, try to get it from filename. When audio is exported as
+        // "title + id", the format is "${title}___${id}"; we can parse that for the id.
         String titleFromFilename = null;
         if (isEmpty(id)) {
             titleFromFilename = FilenameUtils.removeExtension(audioFile.getName());

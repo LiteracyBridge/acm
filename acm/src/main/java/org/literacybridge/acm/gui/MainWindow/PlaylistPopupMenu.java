@@ -122,6 +122,7 @@ class PlaylistPopupMenu extends JPopupMenu {
                     }
                 }  finally {
                     Application.getMessageService().pumpMessage(new PlaylistsChanged());
+                    Application.getFilterState().setSelectedPlaylist(null);
                     Application.getFilterState().updateResult(true);
                 }
             }

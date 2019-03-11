@@ -15,7 +15,7 @@ class MatcherTable extends JTable {
     private TableRowSorter<MatcherTableModel> sorter;
     private MatcherFilter<MatchableImportableAudio> filter;
 
-    private MatcherTable() {
+    MatcherTable() {
         super();
         
         model = new MatcherTableModel(this);
@@ -32,11 +32,6 @@ class MatcherTable extends JTable {
 
         setRowSorter(sorter);
         setPreferredScrollableViewportSize(new Dimension(500, 70));
-//        setAutoResizeMode(JTable.AUTO_RESIZE_NEXT_COLUMN);
-    }
-
-    static MatcherTable factory() {
-        return new MatcherTable();
     }
 
     <T extends MatchableItem<?,?>> void setFilter(Predicate<T> predicate) {

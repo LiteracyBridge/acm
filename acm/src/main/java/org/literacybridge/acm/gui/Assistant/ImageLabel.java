@@ -11,7 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class ImageLabel extends JLabel {
-    private boolean hasMoved = false;
+    // True if we've set the hover color. So we can set it appropriately on a move event.
+    private boolean isHover = false;
     private boolean in = false;
 
     private Color bgColor = getBackground();
@@ -25,6 +26,17 @@ public class ImageLabel extends JLabel {
     private Border normalBorder = new LineBorder(bgColor, 2);
 
     final boolean MAC_OS = System.getProperty("os.name").startsWith("Mac OS");
+
+    int nCh = 0;
+    synchronized void ev(char c) {
+        // Debugging code
+//        System.out.print(c);
+//        if (++nCh >= 80) {
+//            System.out.println();
+//            nCh = 0;
+//        }
+    }
+
     public ImageLabel(ImageIcon icon, String title, Runnable r) {
         super();
         setOpaque(true);
@@ -57,8 +69,9 @@ public class ImageLabel extends JLabel {
         addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
-                if (!hasMoved) {
-                    hasMoved = true;
+                ev('m');
+                if (!isHover) {
+                    isHover = true;
                     setBackground(hoverColor);
                 }
             }
@@ -66,32 +79,37 @@ public class ImageLabel extends JLabel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                ev('c');
                 if (ImageLabel.this.isEnabled()) {
                     setBackground(normalColor);
-                    hasMoved = false;
-                    r.run();
+                    isHover = false;
                 }
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
+                ev('p');
                 if (ImageLabel.this.isEnabled()) {
-                    hasMoved = false;
+                    isHover = false;
                     setBackground(pressedColor);
                 }
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
+                ev('r');
                 if (ImageLabel.this.isEnabled()) {
-                    hasMoved = false;
+                    isHover = in;
                     setBackground(in ? hoverColor : normalColor);
+                    if (in)
+                        r.run();
                 }
             }
 
             @Override
             public void mouseEntered(MouseEvent e) {
-                hasMoved = false;
+                ev('e');
+                isHover = true;
                 in = true;
                 setBackground(hoverColor);
                 setBorder(hoverBorder);
@@ -99,7 +117,8 @@ public class ImageLabel extends JLabel {
 
             @Override
             public void mouseExited(MouseEvent e) {
-                hasMoved = false;
+                ev('x');
+                isHover = false;
                 in = false;
                 setBackground(normalColor);
                 setBorder(normalBorder);

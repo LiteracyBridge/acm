@@ -45,8 +45,11 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 
         JLabel welcome = new JLabel(
-            "<html>" + "<span style='font-size:2em'>Match Files with Content, part 1.</span>"
-                + "<br/><br/><p>This shows the result of automatically matching files with content.</p>"
+            "<html>" + "<span style='font-size:2em'>Match Files with Content.</span>"
+                + "<br/><br/><p>The Assistant has automatically matched files as possible with content. "
+                + "Only high-confidence matches are performed, so manual matching may be required. </p>"
+
+                + "<br/><p>You may now perform any additional matching (or un-matching) as required.</p>"
 
                 + "<br/><p>Click \"Next\" to continue.</p>"
 

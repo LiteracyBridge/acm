@@ -64,7 +64,7 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
             + "<span style='font-size:2.5em'>Welcome to the Content Import Assistant.</span>"
             + "<br/><br/><p>This assistant will guide you through importing audio content into your project. Steps to import audio:</p>"
             + "<ul>"
-            + "<li> You indicate the Deployment, and the language of the content you are importing.</li>"
+            + "<li> You indicate the Deployment #, and the Language of the content you are importing.</li>"
             + "<li> You select the files and folders containing the content.</li>"
             + "<li> The assistant will automatically match as many imported files as it can.</li>"
             + "<li> You manually match any remaining imported files to the titles in the Content Calendar.</li>"

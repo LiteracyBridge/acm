@@ -1,21 +1,26 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
+import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.ContentImport.WelcomePage;
-import org.literacybridge.acm.gui.assistants.Deployment.DeploymentContext.PlaylistPrompts;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.spec.Content;
+import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
@@ -23,7 +28,9 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,12 +41,17 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.literacybridge.acm.gui.assistants.ContentImport.WelcomePage.qualifiedPlaylistName;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.GROUP_FILE_EXTENSION;
 
 public class ValidationPage extends AssistantPage<DeploymentContext> {
 
     private final JLabel deployment;
+    private final Issues.IssueTableModel issuesModel;
+    private final JTable issuesTable;
+    private final TableRowSorter<Issues.IssueTableModel> issuesSorter;
 
     private DeploymentContext context;
 
@@ -50,7 +62,11 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     private Map<String, List<Content.Playlist>> allProgramSpecPlaylists;
     private Map<String, List<Playlist>> allAcmPlaylists;
 
-    ValidationPage(PageHelper listener) {
+    static ValidationPage Factory(PageHelper listener) {
+        return new ValidationPage(listener);
+    }
+
+    private ValidationPage(PageHelper listener) {
         super(listener);
         context = getContext();
         setLayout(new GridBagLayout());
@@ -87,8 +103,19 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(hbox, gbc);
 
+        issuesModel = context.issues.new IssueTableModel();
+        issuesTable = new JTable(issuesModel);
+        JScrollPane issuesScroller = new JScrollPane(issuesTable);
+        issuesTable.setFillsViewportHeight(true);
+        issuesTable.setGridColor(new Color(224, 224, 224));
+        issuesTable.setGridColor(Color.RED);
+        issuesSorter = new TableRowSorter<>(issuesModel);
+        issuesTable.setRowSorter(issuesSorter);
+        sizeColumns();
+
+        gbc.fill = GridBagConstraints.BOTH;
         gbc.weighty = 1.0;
-        add(new JLabel(), gbc);
+        add(issuesScroller, gbc);
     }
 
     /**
@@ -105,6 +132,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         deployment.setText(Integer.toString(context.deploymentNo));
 
         if (progressing) {
+            // Reset issues when we enter with a (possibly) new deployment number.
+            context.issues.clear();
             collectDeploymentInformation(context.deploymentNo);
         }
 
@@ -116,15 +145,9 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         return "Validate the Deployment";
     }
 
-    private void issue(String issue, Object... args) {
-        System.out.println(String.format(issue, args));
-    }
-
     private void collectDeploymentInformation(int deploymentNo) {
         recipients = context.programSpec.getRecipientsForDeployment(deploymentNo);
-        languages = recipients.stream()
-            .map(r -> r.language)
-            .collect(Collectors.toSet());
+        languages = recipients.stream().map(r -> r.language).collect(Collectors.toSet());
 
         allProgramSpecPlaylists = getProgramSpecPlaylists(deploymentNo, languages);
         allAcmPlaylists = getAcmPlaylists(deploymentNo, languages);
@@ -147,6 +170,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         validatePlaylistPrompts(languages);
 
         // Check that we have all recipient prompts for recipients in the deployment.
+        validateRecipients(deploymentNo);
 
     }
 
@@ -155,7 +179,10 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         for (String language : languages) {
             Locale locale = new Locale(language);
             if (!locales.contains(locale)) {
-                issue("Language '%s' is used in the Deployment, but is not defined in the ACM.", language);
+                context.issues.add(Issues.Severity.ERROR,
+                    Issues.Area.LANGUAGES,
+                    "Language '%s' is used in the Deployment, but is not defined in the ACM.",
+                    language);
             }
         }
     }
@@ -164,8 +191,9 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      * Validate the Playlists in a Deployment. Each language is evaluated separately, both because
      * playlists can legitimately differ between languages, and because there will be different
      * errors between languages.
+     *
      * @param deploymentNo deployment # to be validated.
-     * @param languages list of languages in the deployment.
+     * @param languages    list of languages in the deployment.
      */
     private void validatePlaylists(int deploymentNo, Collection<String> languages) {
         // For each language in the Deployment...
@@ -183,10 +211,14 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     language);
                 Playlist playlist = acmPlaylists.stream()
                     .filter(p -> p.getName().equals(qualifiedPlaylistName))
-                    .findFirst().orElse(null);
+                    .findFirst()
+                    .orElse(null);
                 // If the ACM playlist is missing, note the issue.
                 if (playlist == null) {
-                    issue("A Playlist is missing in the ACM: %s", qualifiedPlaylistName);
+                    context.issues.add(Issues.Severity.WARNING,
+                        Issues.Area.PLAYLISTS,
+                        "Playlist '%s' is missing in the ACM.",
+                        qualifiedPlaylistName);
                 } else {
                     // ...otherwise, we have the playlist, so check the contents.
                     foundPlaylists.add(playlist);
@@ -194,39 +226,56 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     // For the messages in the Program Spec...
                     for (Content.Message message : programSpecPlaylist.getMessages()) {
                         // Get the corresponding ACM AudioItem.
-                        AudioItem audioItem = playlist.getAudioItemList().stream().map(store::getAudioItem)
+                        AudioItem audioItem = playlist.getAudioItemList()
+                            .stream()
+                            .map(store::getAudioItem)
                             .filter(it -> it.getTitle().equals(message.title))
-                            .findFirst().orElse(null);
+                            .findFirst()
+                            .orElse(null);
                         // If the ACM AudioItem is missing, note the issue.
                         if (audioItem == null) {
-                            issue("A title is missing in Playlist '%s' in the ACM: %s", playlist.getName(),
-                                message.title);
+                            context.issues.add(Issues.Severity.WARNING,
+                                Issues.Area.CONTENT,
+                                "Title '%s' is missing in playlist '%s' in the ACM.",
+                                message.title,
+                                playlist.getName());
                         } else {
                             foundItems.add(audioItem);
                         }
                     }
                     // We've looked in the ACM for messages in the Program Spec.
                     // Now see if there are messages added to the ACM playlist.
-                    playlist.getAudioItemList().stream().map(store::getAudioItem)
-                        .filter(i->!foundItems.contains(i))
-                        .forEach(i->issue("A title was added to Playlist '%s' in the ACM: %s",
-                            playlist.getName(), i.getTitle()));
+                    playlist.getAudioItemList()
+                        .stream()
+                        .map(store::getAudioItem)
+                        .filter(i -> !foundItems.contains(i))
+                        .forEach(i -> context.issues.add(Issues.Severity.INFO,
+                            Issues.Area.CONTENT,
+                            "Title '%s' was added to playlist '%s' in the ACM.",
+                            i.getTitle(),
+                            playlist.getName()));
                 }
             }
             acmPlaylists.stream()
-                .filter(p->!foundPlaylists.contains(p))
-                .forEach(p->issue("A playlist was added to the ACM: %s", p.getName()));
+                .filter(p -> !foundPlaylists.contains(p))
+                .forEach(p -> context.issues.add(Issues.Severity.INFO,
+                    Issues.Area.PLAYLISTS,
+                    "Playlist '%s' was added to the ACM.",
+                    p.getName()));
         }
 
     }
 
     /**
      * Determines whether we have all required system prompts in all languages for the Deployment.
+     *
      * @param languages to be checked.
      */
     private void validateSystemPrompts(Collection<String> languages) {
         boolean hasUserFeedback = true;
-        String[] required_messages = hasUserFeedback ? TBBuilder.REQUIRED_SYSTEM_MESSAGES_UF : TBBuilder.REQUIRED_SYSTEM_MESSAGES_NO_UF;
+        String[] required_messages = hasUserFeedback ?
+                                     TBBuilder.REQUIRED_SYSTEM_MESSAGES_UF :
+                                     TBBuilder.REQUIRED_SYSTEM_MESSAGES_NO_UF;
 
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
         String languagesPath = "TB_Options" + File.separator + "languages";
@@ -234,12 +283,41 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
         for (String language : languages) {
             File languageDir = IOUtils.FileIgnoreCase(languagesDir, language);
+            List<Integer> missing = new ArrayList<>();
 
             for (String prompt : required_messages) {
                 File p1 = new File(languageDir, prompt + ".a18");
                 if (!p1.exists()) {
-                    issue("The system prompt '%s' is missing for language %s.", prompt, language);
+                    // We know they're short integers.
+                    missing.add(Integer.parseInt(prompt));
                 }
+            }
+            if (!missing.isEmpty()) {
+                StringBuilder msg = new StringBuilder("System prompts are missing for language %s: ");
+                missing.sort(Integer::compareTo);
+                boolean running = false;
+                int prev = Short.MIN_VALUE;
+                for (int ix = 0; ix < missing.size(); ix++) {
+                    int n = missing.get(ix);
+                    if (n == prev + 1) {
+                        running = true;
+                    } else if (running) {
+                        msg.append('-')
+                            .append(Integer.toString(prev))
+                            .append(',')
+                            .append(Integer.toString(n));
+                        running = false;
+                    } else {
+                        if (ix > 0) msg.append(',');
+                        msg.append(Integer.toString(n));
+                        running = false;
+                    }
+                    prev = n;
+                }
+                context.issues.add(Issues.Severity.ERROR,
+                    Issues.Area.SYSTEM_PROMPTS,
+                    msg.toString(),
+                    language);
             }
         }
     }
@@ -247,45 +325,113 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     /**
      * Validates that the playlist prompts exist (short and long) for all playlists in all
      * languages.
+     *
      * @param languages to check.
      */
     private void validatePlaylistPrompts(Collection<String> languages) {
         for (String language : languages) {
+            Map<String, PlaylistPrompts> promptsMap = new HashMap<>();
+            context.prompts.put(language, promptsMap);
+
             // Here, we care about the actual playlists for the Deployment.
             List<Playlist> acmPlaylists = allAcmPlaylists.get(language);
             for (Playlist playlist : acmPlaylists) {
                 String title = WelcomePage.basePlaylistName(playlist.getName());
                 title = title.replaceAll("_", " ");
-                PlaylistPrompts prompts = context.new PlaylistPrompts(title, language);
+                PlaylistPrompts prompts = new PlaylistPrompts(title, language);
                 prompts.findPrompts();
+                promptsMap.put(title, prompts);
 
-                File shortFile = prompts.shortPromptFile;
-                File longFile = prompts.longPromptFile;
-                AudioItem shortItem = prompts.shortPromptItem;
-                AudioItem longItem = prompts.longPromptItem;
+                if (!prompts.hasBothPrompts()) {
+                    StringBuilder msg = new StringBuilder();
+                    if (!prompts.hasShortPrompt() && prompts.hasLongPrompt())
+                        msg.append("The short prompt is");
+                    else if (prompts.hasShortPrompt() && !prompts.hasLongPrompt())
+                        msg.append("The long prompt is");
+                    else msg.append("Both the short and long prompts are");
 
-                if (shortFile == null && shortItem == null) {
-                    issue("Missing short prompt for Playlist %s", title);
-                } else if (shortFile != null && shortItem != null) {
-                    issue("Ambiguous short prompt for Playlist %s", title);
+                    msg.append(" missing in language '%s' for playlist '%s'.");
+
+                    context.issues.add(Issues.Severity.ERROR,
+                        Issues.Area.PLAYLISTS,
+                        msg.toString(),
+                        language,
+                        title);
+
+                } else if (prompts.hasEitherPromptAmbiguity()) {
+                    StringBuilder msg = new StringBuilder(
+                        "There is both an ACM message and a category ");
+                    if (prompts.hasShortPromptAmbiguity() && !prompts.hasLongPromptAmbiguity())
+                        msg.append("short ");
+                    else if (!prompts.hasShortPromptAmbiguity() && prompts.hasLongPromptAmbiguity())
+                        msg.append("long ");
+                    else msg.append("short and long ");
+
+                    msg.append(
+                        " prompt in language '%s' for playlist '%s'. The ACM message will be used.");
+
+                    context.issues.add(Issues.Severity.WARNING,
+                        Issues.Area.PLAYLISTS,
+                        msg.toString(),
+                        language,
+                        title);
+
+                } else if (prompts.hasMixedPrompts()) {
+                    context.issues.add(Issues.Severity.INFO,
+                        Issues.Area.PLAYLISTS,
+                        "One ACM message and one category prompt was found in language '%s' for playlist '%s'.",
+                        language,
+                        title);
                 }
 
-                if (longFile == null && longItem == null) {
-                    issue("Missing long description for Playlist %s", title);
-                } else if (longFile != null && longItem != null) {
-                    issue("Ambiguous long description for Playlist %s", title);
-                }
-
-                // If there is one of each, are they the same flavor?
-                if ( ((shortFile==null ^ shortItem==null) && (longFile==null ^ longItem==null)) &&
-                    ((shortFile==null) != (longFile==null))) {
-                    issue("Mismatched classic vs content prompts for Playlist %s", title);
-                }
             }
         }
     }
 
+    private void validateRecipients(int deploymentNo) {
+        RecipientList recipients = context.programSpec.getRecipientsForDeployment(deploymentNo);
+        Map<String, String> recipientsMap = context.programSpec.getRecipientsMap();
+        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
+        File communitiesDir = IOUtils.FileIgnoreCase(tbLoadersDir, "communities");
+        if (!communitiesDir.exists() || !communitiesDir.isDirectory()) {
+            context.issues.add(Issues.Severity.ERROR, Issues.Area.CUSTOM_GREETINGS, "The 'communities' directory is missing in this project.");
+            return;
+        }
 
+        for (Recipient recipient : recipients) {
+            File recipientDir = IOUtils.FileIgnoreCase(communitiesDir, recipientsMap.get(recipient.recipientid));
+            if (!recipientDir.exists() || !recipientDir.isDirectory()) {
+                context.issues.add(Issues.Severity.WARNING, Issues.Area.CUSTOM_GREETINGS, "Missing directory for recipient '%s'.", recipName(recipient));
+            } else {
+                File languagesDir = IOUtils.FileIgnoreCase(recipientDir, "languages");
+                File languageDir = IOUtils.FileIgnoreCase(languagesDir, recipient.language);
+                File promptFile = IOUtils.FileIgnoreCase(languageDir, "10.a18");
+                if (!languageDir.exists() || !languageDir.isDirectory()) {
+                    context.issues.add(Issues.Severity.WARNING, Issues.Area.CATEGORY_PROMPTS, "Missing 'languages/%s' directory for recipient '%s'.", recipient.language, recipName(recipient));
+                } else if (!promptFile.exists()) {
+                    context.issues.add(Issues.Severity.WARNING, Issues.Area.CATEGORY_PROMPTS, "No custom greeting for recipient '%s'.", recipName(recipient));
+                }
+                
+                File systemDir = new File(recipientDir, "system");
+                File[] groupDirs = systemDir.listFiles((dir, name) -> name.toLowerCase().endsWith(GROUP_FILE_EXTENSION));
+                if (!systemDir.exists() || !systemDir.isDirectory()) {
+                    context.issues.add(Issues.Severity.WARNING, Issues.Area.CATEGORY_PROMPTS, "Missing 'system' directory for recipient '%s'.", recipName(recipient));
+                } else if (groupDirs==null || groupDirs.length==0) {
+                    context.issues.add(Issues.Severity.WARNING, Issues.Area.CATEGORY_PROMPTS, "No '.grp' file for recipient '%s'.", recipName(recipient));
+                }
+            }
+
+        }
+    }
+
+    private String recipName(Recipient recipient) {
+        StringBuilder result = new StringBuilder(recipient.communityname);
+        if (StringUtils.isNotEmpty(recipient.groupname))
+            result.append('-').append(recipient.groupname);
+        if (StringUtils.isEmpty(recipient.groupname) && StringUtils.isNotEmpty(recipient.supportentity))
+            result.append('-').append(recipient.supportentity);
+        return result.toString();
+    }
 
     /**
      * Gets the playlists defined in the Program Spec for a given Deployment. Note that playlists
@@ -331,6 +477,46 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             acmPlaylists.put(language, langPlaylists);
         }
         return acmPlaylists;
+    }
+
+    private void sizeColumns() {
+        int columnCount = issuesTable.getColumnModel().getColumnCount();
+        if (columnCount < 3) return;
+        TableModel model = issuesTable.getModel();
+        TableCellRenderer headerRenderer = issuesTable.getTableHeader().getDefaultRenderer();
+        TableCellRenderer cellRenderer = issuesTable.getDefaultRenderer(String.class);
+        List<Stream<String>> longValues = new ArrayList<>();
+        longValues.add(Arrays.stream(Issues.Severity.values()).map(Issues.Severity::displayName));
+        longValues.add(Arrays.stream(Issues.Area.values()).map(Issues.Area::displayName));
+
+        // Left two columns.
+        for (int i = 0; i < longValues.size(); i++) {
+            final int columnNo = i;
+            TableColumn column = issuesTable.getColumnModel().getColumn(columnNo);
+
+            Component component = headerRenderer.getTableCellRendererComponent(null,
+                column.getHeaderValue(),
+                false,
+                false,
+                0,
+                0);
+            int headerWidth = component.getPreferredSize().width;
+
+            Integer cellWidth = longValues.get(columnNo)
+                .map(str -> cellRenderer.getTableCellRendererComponent(issuesTable,
+                    str,
+                    false,
+                    false,
+                    0,
+                    columnNo).getPreferredSize().width)
+                .max(Integer::compareTo)
+                .orElse(1);
+
+            int w = Math.max(headerWidth, cellWidth) + 2;
+            column.setPreferredWidth(w);
+            column.setMaxWidth(w + 40);
+            column.setWidth(w);
+        }
     }
 
 }

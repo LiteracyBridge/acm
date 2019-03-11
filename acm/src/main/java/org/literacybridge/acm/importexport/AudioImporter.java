@@ -131,6 +131,12 @@ public class AudioImporter {
                         .getCurrentDB()
                         .getRepository()
                         .updateAudioItem(item, file);
+
+                    // let caller tweak audio item
+                    if (processor != null) {
+                        processor.process(item);
+                    }
+
                     store.commit(item);
                     result = item;
                 } catch (Exception e) {

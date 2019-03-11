@@ -32,7 +32,7 @@ public class ResultsPage extends AssistantPage<ContentImportContext> {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 
         JLabel welcome = new JLabel(
-            "<html>" + "<span style='font-size:2.5em'>Finished Content Import!</span>"
+            "<html>" + "<span style='font-size:2.5em'>Finished Content Import</span>"
                 + "<br/><br/><p>Contratulations, you have imported N messages for language ABC.</p>"
                 + "<br/><br/><p>M new playlists were created.</p>"
                 + "<br/>Click \"Close\" to return to the ACM. "
@@ -86,15 +86,19 @@ public class ResultsPage extends AssistantPage<ContentImportContext> {
                                 if (i.getCategoryList().size() == 0) i.addCategory(category);
                                 // If the item didn't know what language it was, add to the selected language.
                                 // TODO: Warn user if unexpected language.
-                                if (!i.getMetadata()
-                                    .containsField(MetadataSpecification.DC_LANGUAGE)) {
+                                String existingLanguage = i.getLanguageCode();
+                                if (!languagecode.equals(existingLanguage)) {
+                                    System.out.println(String.format("Forcing language to '%s' was '%s'.", languagecode, existingLanguage));
                                     i.getMetadata()
                                         .put(MetadataSpecification.DC_LANGUAGE, languagecode);
                                 }
                                 // Force the title.
-                                i.getMetadata()
-                                    .put(MetadataSpecification.DC_TITLE,
-                                        importableAudio.getTitle());
+                                String existingTitle  = i.getTitle();
+                                if (!importableAudio.getTitle().equals(existingTitle)) {
+                                    System.out.println(String.format("Renaming '%s' to '%s'.", existingTitle, importableAudio.getTitle()));
+                                    i.getMetadata()
+                                        .put(MetadataSpecification.DC_TITLE, importableAudio.getTitle());
+                                }
                             }
                         });
                         // If the item isn't already in the playlist, add it.

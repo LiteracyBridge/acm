@@ -284,7 +284,7 @@ public class IOUtils {
         }
       });
       // If candidates contains a file, we know it exists, so use it.
-      if (candidates.length == 1) {
+      if (candidates != null && candidates.length == 1) {
         retval = candidates[0];
       }
     }

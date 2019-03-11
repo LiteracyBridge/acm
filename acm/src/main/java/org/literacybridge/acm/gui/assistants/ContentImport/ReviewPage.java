@@ -45,7 +45,7 @@ public class ReviewPage extends AssistantPage<ContentImportContext> {
             1);
 
         JLabel welcome = new JLabel(
-            "<html>" + "<span style='font-size:2.5em'>Perform Import!</span>"
+            "<html>" + "<span style='font-size:2.5em'>Review & Import</span>"
                 + "<br/>When you are satisfied with these imports, click \"Finish\" to perform the import. "
 
                 + "</html>");
@@ -82,8 +82,10 @@ public class ReviewPage extends AssistantPage<ContentImportContext> {
         matcher.matchableItems.stream()
             .filter(i->i.getMatch().isMatch())
             .filter(i->!i.getLeft().hasAudioItem())
-            .map(i->"<html><i>" +i.getLeft() + "</i> from"+
-                "<br/>&nbsp;&nbsp;&nbsp;&nbsp;"+i.getRight().getFile().getPath()+"</html>")
+            .map(i->"<html>" +i.getLeft() + "&nbsp;&nbsp;&lt;--- <i>import from</i>"
+                + "<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style='font-family:Courier'>"
+                + i.getRight().getFile().getName()
+                + "</span></html>")
             .forEach(importPreviewModel::addElement);
 
         setComplete();

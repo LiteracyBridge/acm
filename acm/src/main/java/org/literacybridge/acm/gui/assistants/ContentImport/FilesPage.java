@@ -66,8 +66,8 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
 
 
         JLabel welcome = new JLabel(
-            "<html>" + "<span style='font-size:2em'>Select Files to Import.</span>"
-                + "<br/><br/><p>Select the files that you wish to import.</p>"
+            "<html>" + "<span style='font-size:2em'>Choose Files to Import.</span>"
+                + "<br/><br/><p>Choose the files that you wish to import.</p>"
                 + "</html>");
         add(welcome, gbc);
 

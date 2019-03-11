@@ -6,21 +6,15 @@ import java.util.List;
 public class MatcherTableModel extends AbstractTableModel {
     public enum Columns {
         Left(String.class),
-//        Match(MATCH.class),
-//        Score(Integer.class),
         Status(String.class),
         Right(String.class);
 
         Columns(Class theClass) { this.theClass = theClass; }
         Class<?> theClass;
 
-//        static String[] names = {Left.name(), Match.name(), Score.name(), Right.name()};
-//        static Class[] classes = {Left.theClass, Match.theClass, Score.theClass, Right.theClass};
         static String[] names = {Left.name(), Status.name(), Right.name()};
         static Class[] classes = {Left.theClass, Status.theClass, Right.theClass};
     };
-//    private static final String[] columnNames = {"Left", "Match", "Score", "Right"};
-//    private static final Class[] columnClasses = {String.class, MATCH.class, Integer.class, String.class};
     private static final String[] columnNames = {"Content Title", "Status", "Audio File"};
     private static final Class[] columnClasses = {String.class, String.class, String.class};
 
@@ -54,8 +48,6 @@ public class MatcherTableModel extends AbstractTableModel {
             return null;
         switch (columnIndex) {
         case 0: return row.getLeft();
-//        case 1: return row.getMatch();
-//        case 2: return row.getScore();
         case 1: return row.getScoredMatch();
         case 2: return row.getRight();
         default: return null;
