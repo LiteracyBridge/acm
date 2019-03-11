@@ -1,7 +1,6 @@
 package org.literacybridge.acm.tbloader;
 
 import org.jdesktop.swingx.JXDatePicker;
-import org.jdesktop.swingx.prompt.PromptSupport;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -29,8 +28,6 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -124,7 +121,9 @@ public class TBLoader extends JFrame {
     private Box newFirmwareBox;
 
     private JLabel srnLabel;
+    private Box newSrnBox;
     private JTextField newSrnText;
+    private JCheckBox forceSrn;
     private JTextField oldSrnText;
 
     private JLabel optionsLabel;
@@ -154,6 +153,7 @@ public class TBLoader extends JFrame {
     private DeploymentInfo oldDeploymentInfo;
 
     private TBLoaderConfig tbLoaderConfig;
+    private String previousSrn;
 
     private static class TbLoaderArgs {
         @Option(name = "--oldtbs", aliases = "-o", usage = "Target OLD Talking Books.")
@@ -547,7 +547,7 @@ public class TBLoader extends JFrame {
                 newPackageComponent, oldPackageText,
                 datePicker, lastUpdatedText,
                 newFirmwareVersionText, oldFirmwareVersionText,
-                newSrnText, oldSrnText,
+                newSrnBox, oldSrnText,
                 newFirmwareBox,
                 updateButton,
                 getStatsButton
@@ -627,7 +627,7 @@ public class TBLoader extends JFrame {
         layoutLine(panel, y++, firmwareVersionLabel, newFirmwareBox, oldFirmwareVersionText);
         
         // TB Serial Number.
-        layoutLine(panel, y++, srnLabel, newSrnText, oldSrnText);
+        layoutLine(panel, y++, srnLabel, newSrnBox, oldSrnText);
 
         // Action Buttons.
         c = gbc(0, y++);
@@ -712,6 +712,14 @@ public class TBLoader extends JFrame {
         testDeployment.setSelected(false);
         testDeployment.setToolTipText("Check if only testing the Deployment. Uncheck if sending the Deployment out to the field.");
 
+        forceSrn = new JCheckBox();
+        forceSrn.setText("Replace");
+        forceSrn.setSelected(false);
+        forceSrn.setToolTipText("Check to force a new Serial Number. DO NOT USE THIS unless "
+            + "you have a good reason to believe that this SRN has been "
+            + "duplicated to multiple Talking Books. This should be exceedingly rare.");
+        forceSrn.addActionListener(this::forceSrnListener);
+
         // Windows drive letter and volume name.
         deviceBox = Box.createHorizontalBox();
         deviceLabel = new JLabel("Talking Book Device:");
@@ -778,6 +786,11 @@ public class TBLoader extends JFrame {
         srnLabel = new JLabel("Serial number:");
         newSrnText = new JTextField();
         newSrnText.setEditable(false);
+        newSrnBox = Box.createHorizontalBox();
+        newSrnBox.add(newSrnText);
+        newSrnBox.add(Box.createHorizontalStrut(10));
+        newSrnBox.add(forceSrn);
+
         oldSrnText = new JTextField();
         oldSrnText.setEditable(false);
 
@@ -825,6 +838,41 @@ public class TBLoader extends JFrame {
         statusScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
         return panel;
+    }
+
+    /**
+     * If user checks the option to allocate a new SRN, this will prompt them to consider their
+     * choice. Switches the display between the old SRN and "-- to be assigned --".
+     * @param actionEvent is unused.
+     */
+    private void forceSrnListener(ActionEvent actionEvent) {
+        if (forceSrn.isSelected()) {
+            List<Object> options = new ArrayList<Object>();
+            Object defaultOption;
+            options.add(UIManager.getString("OptionPane.yesButtonText"));
+            options.add(UIManager.getString("OptionPane.noButtonText"));
+            defaultOption = UIManager.getString("OptionPane.noButtonText");
+
+            String message = "Are you sure that you want to allocate a new Serial Number" + "\nfor this Talking Book? You should not do this unless you have"
+                + "\na very good reason to believe that this SRN is duplicated on" + "\nmore than one Talking Book.";
+            String title = "Really replace SRN?";
+
+            int answer = JOptionPane.showOptionDialog(this,
+                message,
+                title,
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                options.toArray(),
+                defaultOption);
+            if (answer == JOptionPane.YES_OPTION) {
+                newSrnText.setText(TBLoaderConstants.NEED_SERIAL_NUMBER);
+            } else {
+                forceSrn.setSelected(false);
+            }
+        } else {
+            newSrnText.setText(previousSrn);
+        }
     }
 
     /**
@@ -1240,7 +1288,14 @@ public class TBLoader extends JFrame {
             lastUpdatedText.setText(oldDeploymentInfo.getUpdateTimestamp());
 
             //TODO: Better check that this works properly!
-            newSrnText.setText(oldDeploymentInfo.getSerialNumber());
+            previousSrn = oldDeploymentInfo.getSerialNumber();
+            boolean needSrn = (previousSrn.equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER) ||
+                !isSerialNumberFormatGood(srnPrefix, previousSrn) ||
+                !isSerialNumberFormatGood2(previousSrn));
+            if (needSrn) previousSrn = TBLoaderConstants.NEED_SERIAL_NUMBER;
+            newSrnText.setText(previousSrn);
+            forceSrn.setVisible(!needSrn);
+            forceSrn.setSelected(false);
 
             oldCommunityText.setText(oldDeploymentInfo.getCommunity());
             // If we want to do this, we need to add a display for old project (and new one, as well).
@@ -1255,6 +1310,8 @@ public class TBLoader extends JFrame {
 
         } else {
             newSrnText.setText(TBLoaderConstants.NEED_SERIAL_NUMBER);
+            forceSrn.setVisible(false);
+            forceSrn.setSelected(false);
 
             oldSrnText.setText("");
             oldFirmwareVersionText.setText("");
@@ -1285,6 +1342,9 @@ public class TBLoader extends JFrame {
 
         oldSrnText.setText("");
         newSrnText.setText("");
+        previousSrn = "";
+        forceSrn.setVisible(false);
+        forceSrn.setSelected(false); // don't leave stale, invisible value.
         currentTbDevice = (TBDeviceInfo) driveList.getSelectedItem();
         if (currentTbDevice != null && currentTbDevice.getRootFile() != null) {
             LOG.log(Level.INFO,
@@ -1412,7 +1472,8 @@ public class TBLoader extends JFrame {
                 // avoid wasting allocations.
                 String srn = newSrnText.getText();
                 isNewSerialNumber = false;
-                if (srn.equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER) ||
+                if (forceSrn.isSelected() ||
+                        srn.equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER) ||
                         !isSerialNumberFormatGood(srnPrefix, srn) ||
                         !isSerialNumberFormatGood2(srn)) {
                     int intSrn = allocateNextSerialNumberFromTbLoader();
@@ -1448,6 +1509,8 @@ public class TBLoader extends JFrame {
         LOG.log(Level.INFO, "Resetting UI");
         oldSrnText.setText("");
         newSrnText.setText("");
+        forceSrn.setVisible(false);
+        forceSrn.setSelected(false);
         if (resetDrives && !refreshingDriveInfo) {
             LOG.log(Level.INFO, " -fill drives list");
             fillDriveList(getRoots());
@@ -1500,6 +1563,8 @@ public class TBLoader extends JFrame {
                 forceFirmware.setSelected(false);
                 oldPackageText.setText("");
                 newSrnText.setText("");
+                forceSrn.setVisible(false);
+                forceSrn.setSelected(false);
                 oldSrnText.setText("");
                 lastUpdatedText.setText("");
                 LOG.log(Level.INFO, "STATUS: " + TBLoaderConstants.NO_DRIVE);
