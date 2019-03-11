@@ -6,12 +6,12 @@ import java.util.Date;
 import java.util.Map;
 
 public class Deployment {
-    final static String FILENAME = "deployments.csv";
+    final static String FILENAME = "deployment_spec.csv";
 
     public enum columns {
         /*project,*/
         /*deployment, deploymentname,*/
-        deploymentnumber, startdate, enddate, component/*distribution,comment*/
+        deployment_num, startdate, enddate, component/*distribution,comment*/
     };
     static String[] columnNames;
     static {
@@ -41,7 +41,7 @@ public class Deployment {
     }
 
     public Deployment(Map<String, String> properties) throws ParseException {
-        this.deploymentnumber = Integer.parseInt(properties.get(columns.deploymentnumber.name()));
+        this.deploymentnumber = Integer.parseInt(properties.get(columns.deployment_num.name()));
         this.startdate = simpleDateFormat.parse(properties.get(columns.startdate.name()));
         this.enddate = simpleDateFormat.parse(properties.get(columns.enddate.name()));
         this.componentFilter = new StringFilter(properties.get(columns.component.name()));

@@ -17,7 +17,7 @@ public class StringFilter implements Predicate<String> {
             acceptsAll = true;
             return;
         }
-        filter = filter.trim();
+        filter = filter.trim().toLowerCase();
         if (filter.charAt(0) == '!' || filter.charAt(0) == '~') {
             filter = filter.substring(1).trim();
             isWhitelist = false;
@@ -29,6 +29,6 @@ public class StringFilter implements Predicate<String> {
     @Override
     public boolean test(String s) {
         // If the item is present && it's a whitelist, or if the item isn't present and it isn't a whitelist.
-        return acceptsAll || filteredItems.contains(s.trim()) == isWhitelist;
+        return acceptsAll || filteredItems.contains(s.trim().toLowerCase()) == isWhitelist;
     }
 }

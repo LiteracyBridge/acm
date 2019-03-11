@@ -6,6 +6,7 @@ package org.literacybridge.core.spec;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
+import org.apache.commons.io.input.BOMInputStream;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -75,7 +76,8 @@ public class CsvReader {
      */
     static void read(InputStream csvStream, String[] columns, Handler handler) throws IOException {
         List<String[]> entries = null;
-        try (Reader ir = new InputStreamReader(csvStream);
+        BOMInputStream bis = new BOMInputStream(csvStream);
+        try (Reader ir = new InputStreamReader(bis);
             CSVReader reader = new CSVReader(ir)) {
 
             Map<String, Integer> indices = null;
@@ -86,7 +88,10 @@ public class CsvReader {
                 while ((nextLine = reader.readNext()) != null) {
                     Map<String, String> record = new HashMap<>();
                     for (Map.Entry<String, Integer> e : indices.entrySet()) {
-                        String value = nextLine[e.getValue()];
+                        int ix = e.getValue();
+                        String value = "";
+                        if (ix < nextLine.length)
+                            value = nextLine[ix];
                         // If the value is enclosed in quotes, drop the quotes.
                         if (value.length() > 1 && value.startsWith("\"") && value.endsWith("\"")) {
                             value = value.substring(1, value.length() - 1);

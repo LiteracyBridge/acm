@@ -152,38 +152,18 @@ public class Content {
 
 
     public class Message {
-        final int deploymentNumber;
+        public final int deploymentNumber;
         public final String playlistTitle;
         public final String title;
-        final String keyPoints;
+        public final String keyPoints;
         public final String format;
-        final String audience;
-        final String comments;
         /**
          * This is a language *filter*. In which languages is (or is not) the message expected to
          * be present? If no filter, all languages in the deployment.
          */
         public final String language;
+        public final String default_category;
         
-
-        public Message(int deploymentNumber,
-            String playlistTitle,
-            String title,
-            String keyPoints,
-            String format,
-            String audience,
-            String comments,
-            String language)
-        {
-            this.deploymentNumber = deploymentNumber;
-            this.playlistTitle = playlistTitle;
-            this.title = title;
-            this.keyPoints = keyPoints;
-            this.format = format;
-            this.audience = audience;
-            this.comments = comments;
-            this.language = language;
-        }
 
         public Message(Map<String, String> properties) {
             this.deploymentNumber = Integer.parseInt(properties.get(columns.deploymentNumber.externalName));
@@ -191,9 +171,8 @@ public class Content {
             this.title = properties.get(columns.title.externalName);
             this.keyPoints = properties.get(columns.keyPoints.externalName);
             this.format = properties.get(columns.format.externalName);
-            this.audience = properties.get(columns.audience.externalName);
-            this.comments = properties.get(columns.comments.externalName);
             this.language = properties.get(columns.language.externalName);
+            this.default_category = properties.get(columns.default_category.externalName);
         }
 
         public String getName() {
@@ -216,14 +195,13 @@ public class Content {
     }
 
     private enum columns {
-        deploymentNumber("Deployment #"),
-        playlistTitle("Playlist Title"),
-        title("Message Title"),
-        keyPoints("Key Points"),
+        deploymentNumber("deployment_num"),
+        playlistTitle("playlist_title"),
+        title("message_title"),
+        keyPoints("key_points"),
         format,
-        audience,
-        comments,
-        language("Existing recording");
+        language("language"),
+        default_category;
 
         String externalName;
 

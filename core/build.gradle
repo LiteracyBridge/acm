@@ -13,7 +13,7 @@ repositories {
 // This module 'core' gets packed into the Android TBLoader project,
 // so runtime dependencies should be chosen extremely carefully here.
 dependencies {
-  testCompile 'commons-io:commons-io:2.4'
+  compile 'commons-io:commons-io:2.4'
   testCompile 'junit:junit:4.12'
   compile 'com.opencsv:opencsv:4.3.1'
 }
