@@ -20,7 +20,6 @@ public class ContentImportAssistant {
             .withContext(context)
             .withPageFactories(WelcomePage::new, FilesPage::new, MatchPage::new, ReviewPage::new, ResultsPage::new)
             .withTitle("Content Import Assistant")
-            .withLastPageSummary()
             .create();
 
         return assistant;

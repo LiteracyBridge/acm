@@ -71,6 +71,19 @@ public class Issues {
         return result;
     }
 
+    private boolean hasIssue(Severity severity) {
+        return issues.stream().map(Issue::getSeverity).anyMatch(i -> i == severity);
+    }
+
+    public boolean hasWarning() {
+        return hasIssue(Severity.WARNING);
+    }
+
+    public boolean hasError() {
+        return hasIssue(Severity.ERROR);
+    }
+
+
     /**
      * Encapsulates a single issue.
      */
@@ -79,6 +92,10 @@ public class Issues {
         Area area;
         String message;
         Object[] args;
+
+        public Severity getSeverity() {
+            return severity;
+        }
 
         private Issue(Severity severity, Area area, String message, Object... args) {
             this.severity = severity;

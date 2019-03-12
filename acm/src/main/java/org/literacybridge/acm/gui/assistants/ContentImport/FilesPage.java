@@ -5,8 +5,6 @@ import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.border.LineBorder;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -71,19 +69,12 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
                 + "</html>");
         add(welcome, gbc);
 
-        Border greyBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
         Box hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Importing message content for deployment "));
-        deployment = new JLabel();
-        deployment.setOpaque(true);
-        deployment.setBackground(Color.white);
-        deployment.setBorder(greyBorder);
+        deployment = parameterText();
         hbox.add(deployment);
         hbox.add(new JLabel(" and language "));
-        language = new JLabel();
-        language.setOpaque(true);
-        language.setBackground(Color.white);
-        language.setBorder(greyBorder);
+        language = parameterText();
         hbox.add(language);
         hbox.add(Box.createHorizontalGlue());
         hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -99,7 +90,7 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         add(hbox, gbc);
 
         // Title preview.
-        filesPreviewLabel = new JLabel("Files in the Deployment:");
+        filesPreviewLabel = new JLabel("Files chosen to import:");
         insets = new Insets(0,0,00,0);
         gbc.insets = insets;
         add(filesPreviewLabel, gbc);

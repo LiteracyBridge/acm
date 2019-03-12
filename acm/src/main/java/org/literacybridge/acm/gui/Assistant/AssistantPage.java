@@ -1,6 +1,9 @@
 package org.literacybridge.acm.gui.Assistant;
 
+import org.apache.commons.lang.StringUtils;
+
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
@@ -31,6 +34,17 @@ public abstract class AssistantPage<Context> extends JPanel {
         cb.setPreferredSize(size);
     }
 
+    public static JLabel parameterText() { return parameterText(null); }
+    public static JLabel parameterText(String text) {
+        JLabel label = new JLabel();
+        label.setOpaque(true);
+        label.setBackground(Color.white);
+        label.setBorder(greenBorder);
+        if (!StringUtils.isEmpty(text)) label.setText(text);
+        return label;
+    }
+
+    public static final Border greenBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
     protected static final LineBorder redBorder = new LineBorder(Color.RED, 1, true);
     protected static final LineBorder blankBorder = new LineBorder(new Color(0, 0, 0, 0), 1, true);
 
@@ -48,6 +62,7 @@ public abstract class AssistantPage<Context> extends JPanel {
     protected void onPageLeaving(boolean progressing) {}
 
     protected String getTitle() { return ""; }
+    protected boolean isSummaryPage() { return false; }
 
     /**
      * Sets the completed state of the page. The Assistant uses this state to enable/disable

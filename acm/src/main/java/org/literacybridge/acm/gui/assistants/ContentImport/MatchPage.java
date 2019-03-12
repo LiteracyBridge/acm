@@ -15,17 +15,14 @@ import org.literacybridge.acm.store.SearchResult;
 import org.literacybridge.core.spec.Content;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.literacybridge.acm.Constants.CATEGORY_TB_CATEGORIES;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
 public class MatchPage extends AssistantPage<ContentImportContext> {
@@ -59,19 +56,12 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
 
         add(Box.createVerticalStrut(20));
 
-        Border greyBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
         Box hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Importing message content for deployment "));
-        deployment = new JLabel();
-        deployment.setOpaque(true);
-        deployment.setBackground(Color.white);
-        deployment.setBorder(greyBorder);
+        deployment = parameterText();
         hbox.add(deployment);
         hbox.add(new JLabel(" and language "));
-        language = new JLabel();
-        language.setOpaque(true);
-        language.setBackground(Color.white);
-        language.setBorder(greyBorder);
+        language = parameterText();
         hbox.add(language);
         hbox.add(Box.createHorizontalGlue());
         hbox.setAlignmentX(Component.LEFT_ALIGNMENT);

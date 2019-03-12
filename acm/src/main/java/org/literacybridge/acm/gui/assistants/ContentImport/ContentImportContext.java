@@ -9,6 +9,7 @@ import org.literacybridge.core.spec.ProgramSpec;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -61,6 +62,11 @@ public class ContentImportContext {
      * The matcher object. Lets us know how titles were matched against files.
      */
     Matcher<ImportableAudioItem, ImportableFile, MatchableImportableAudio> matcher = new Matcher<>();
+
+    /**
+     * Created playlists, in the ACM.
+     */
+    Set<String> createdPlaylists = new LinkedHashSet<>();
 
 
 }

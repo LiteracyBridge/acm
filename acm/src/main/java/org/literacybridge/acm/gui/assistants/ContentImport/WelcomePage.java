@@ -281,6 +281,7 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
             if (!acmPlaylists.containsKey(plName)) {
                 Playlist playlist = store.newPlaylist(plName);
                 try {
+                    context.createdPlaylists.add(plName);
                     store.commit(playlist);
                     anyAdded = true;
                 } catch (IOException e) {

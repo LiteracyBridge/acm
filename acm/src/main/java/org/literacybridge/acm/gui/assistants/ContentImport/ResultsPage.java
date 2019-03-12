@@ -15,8 +15,11 @@ import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.io.IOException;
 
 import static org.literacybridge.acm.Constants.CATEGORY_GENERAL_OTHER;
@@ -29,16 +32,50 @@ public class ResultsPage extends AssistantPage<ContentImportContext> {
     public ResultsPage(PageHelper listener) {
         super(listener);
         context = getContext();
-        setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+        context = getContext();
+        setLayout(new GridBagLayout());
+
+        Insets insets = new Insets(0,0,20,0);
+        GridBagConstraints gbc = new GridBagConstraints(0,
+            GridBagConstraints.RELATIVE,
+            1,
+            1,
+            1.0,
+            0.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.HORIZONTAL,
+            insets,
+            1,
+            1);
+
 
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2.5em'>Finished Content Import</span>"
-                + "<br/><br/><p>Contratulations, you have imported N messages for language ABC.</p>"
-                + "<br/><br/><p>M new playlists were created.</p>"
-                + "<br/>Click \"Close\" to return to the ACM. "
-
                 + "</html>");
-        add(welcome);
+        add(welcome, gbc);
+
+        Box hbox = Box.createHorizontalBox();
+        hbox.add(new JLabel("Imported message content for deployment "));
+        hbox.add(parameterText(Integer.toString(context.deploymentNo)));
+        hbox.add(new JLabel(" in language "));
+        hbox.add(parameterText(context.languagecode));
+        hbox.add(Box.createHorizontalGlue());
+        hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        add(hbox, gbc);
+
+        hbox = Box.createHorizontalBox();
+        hbox.add(new JLabel("Imported N new messages. Created "));
+        hbox.add(parameterText(Integer.toString(context.createdPlaylists.size())));
+        hbox.add(new JLabel(" new playlists."));
+        hbox.add(Box.createHorizontalGlue());
+        hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        add(hbox, gbc);
+
+        add(new JLabel("Click \"Close\" to return to the ACM."));
+
+        // Absorb any vertical space.
+        gbc.weighty = 1.0;
+        add(new JLabel(), gbc);
     }
 
     @Override
@@ -52,6 +89,9 @@ public class ResultsPage extends AssistantPage<ContentImportContext> {
     protected String getTitle() {
         return "Import Results";
     }
+
+    @Override
+    protected boolean isSummaryPage() { return true; }
 
     private void performUpdate() {
         int deploymentNo = context.deploymentNo;

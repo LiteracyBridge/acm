@@ -15,8 +15,6 @@ import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
 
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.border.LineBorder;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
@@ -28,7 +26,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,6 +49,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     private final Issues.IssueTableModel issuesModel;
     private final JTable issuesTable;
     private final TableRowSorter<Issues.IssueTableModel> issuesSorter;
+    private final JCheckBox deployWithWarnings;
+    private final JCheckBox deployWithErrors;
 
     private DeploymentContext context;
 
@@ -91,17 +90,21 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                 + "</html>");
         add(welcome, gbc);
 
-        Border greyBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
         Box hbox = Box.createHorizontalBox();
-        hbox.add(new JLabel("Importing message content for deployment "));
-        deployment = new JLabel();
-        deployment.setOpaque(true);
-        deployment.setBackground(Color.white);
-        deployment.setBorder(greyBorder);
+        hbox.add(new JLabel("Creating deployment "));
+        deployment = parameterText();
         hbox.add(deployment);
         hbox.add(Box.createHorizontalGlue());
-        hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // TODO: needed?
+//        hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(hbox, gbc);
+
+        deployWithWarnings = new JCheckBox("Create Deployment with warnings. This will not conform to the Program Spec.");
+        add(deployWithWarnings, gbc);
+        deployWithWarnings.addActionListener(this::onSelection);
+        deployWithErrors = new JCheckBox("<html>Create Deployment with errors. <em>This will probably fail on Talking Books</em>.</html>");
+        add(deployWithErrors, gbc);
+        deployWithErrors.addActionListener(this::onSelection);
 
         issuesModel = context.issues.new IssueTableModel();
         issuesTable = new JTable(issuesModel);
@@ -124,7 +127,9 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      * @param actionEvent is ignored.
      */
     private void onSelection(ActionEvent actionEvent) {
-        setComplete();
+        boolean ok = !context.issues.hasError() || deployWithErrors.isSelected();
+        ok = ok && (!context.issues.hasWarning() || deployWithWarnings.isSelected());
+        setComplete(ok);
     }
 
     @Override
@@ -135,6 +140,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             // Reset issues when we enter with a (possibly) new deployment number.
             context.issues.clear();
             collectDeploymentInformation(context.deploymentNo);
+            deployWithWarnings.setSelected(false);
+            deployWithErrors.setSelected(false);
         }
 
         validateDeployment(context.deploymentNo);
@@ -172,6 +179,10 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         // Check that we have all recipient prompts for recipients in the deployment.
         validateRecipients(deploymentNo);
 
+        deployWithWarnings.setVisible(context.issues.hasWarning());
+        deployWithErrors.setVisible(context.issues.hasError());
+
+        onSelection(null);
     }
 
     private void validateDeploymentLanguages(Collection<String> languages) {
@@ -256,6 +267,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                             playlist.getName()));
                 }
             }
+            // Report the playlists in the ACM list but not the Program Specification list.
             acmPlaylists.stream()
                 .filter(p -> !foundPlaylists.contains(p))
                 .forEach(p -> context.issues.add(Issues.Severity.INFO,
