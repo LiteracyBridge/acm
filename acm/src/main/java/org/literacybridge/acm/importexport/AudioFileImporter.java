@@ -135,7 +135,7 @@ abstract class AudioFileImporter {
         // If no DC_LANGUAGE, use the ACM's first language.
         if (isEmpty(metadata.get(DC_LANGUAGE))) {
             List<Locale> languages = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages();
-            String iso639 = languages.size() > 0 ? languages.get(0).getISO3Language() : "en";
+            String iso639 = languages.size() > 0 ? languages.get(0).getLanguage() : "en";
             metadata.put(DC_LANGUAGE, iso639);
         }
         // Date?
