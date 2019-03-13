@@ -96,8 +96,11 @@ public class GuiAccessControl extends AccessControl {
                 if (accessStatus == AccessStatus.outdatedDb) {
                     msg = "The latest version of the ACM database has not yet downloaded to this computer.\nYou may shutdown and wait or begin demonstration mode with the previous version.";
                 } else {
-                    msg = String.format("Another user currently has write access to the ACM.\n%s\n",
-                                        super.getPosessor());
+                    String openby = super.getPosessor().getOrDefault("openby", "unknown user");
+                    String opendate = super.getPosessor().getOrDefault("opendate", "unknown");
+                    String computername = super.getPosessor().getOrDefault("computername", "unknown");
+                    msg = String.format("Another user currently has write access to the ACM.\n%s at %s on computer %s\n",
+                                        openby, opendate, computername);
                 }
                 String title = "Cannot Get Write Access";
                 buttonIx = JOptionPane.showOptionDialog(null, msg, title,
@@ -154,10 +157,16 @@ public class GuiAccessControl extends AccessControl {
             stackTraceExit(1);
             break;
         case notAvailableError:
+            String openby = super.getPosessor().getOrDefault("openby", "unknown user");
+            String opendate = super.getPosessor().getOrDefault("opendate", "unknown");
+            String computername = super.getPosessor().getOrDefault("computername", "unknown");
+            msg = String.format("Another user currently has write access to the ACM.\n%s at %s on computer %s\n",
+                openby, opendate, computername);
             msg = String.format(
                     "Sorry, but another user must have just checked out this ACM a moment ago!\nTry contacting %s\n"
-                            + "\nAfter clicking OK, the ACM will shut down.",
-                    super.getPosessor());
+                            + "\nAfter clicking OK, the ACM will shut down."
+                            + "\nOpen by %s at %s on computer %s.",
+                    openby, openby, opendate, computername);
             JOptionPane.showMessageDialog(null, msg);
             stackTraceExit(1);
             break;

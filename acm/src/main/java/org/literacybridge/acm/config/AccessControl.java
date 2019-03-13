@@ -19,7 +19,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -116,7 +118,7 @@ public class AccessControl {
 
     protected AccessStatus accessStatus = AccessStatus.none;
     protected OpenStatus openStatus = OpenStatus.none;
-    private String possessor;
+    private Map<String,String> possessor;
     private DBInfo dbInfo;
 
     AccessControl(DBConfiguration dbConfiguration) {
@@ -139,11 +141,11 @@ public class AccessControl {
         return dbInfo.getAWSKey();
     }
 
-    private void setPossessor(String name) {
+    private void setPossessor(Map<String,String>  name) {
         possessor = name;
     }
 
-    String getPosessor() {
+    Map<String,String>  getPosessor() {
         return possessor;
     }
 
@@ -560,6 +562,7 @@ public class AccessControl {
         httpUtility.disconnect();
 
         // parse response
+        Map<String,String> posessor = new HashMap<>();
         Object o = jsonResponse.get("status");
         if (o instanceof String) {
             String str = (String)o;
@@ -576,6 +579,15 @@ public class AccessControl {
         o = jsonResponse.get("openby");
         if (o instanceof String) {
             possessor_aws = (String)o;
+            posessor.put("openby", (String)o);
+        }
+        o = jsonResponse.get("opendate");
+        if (o instanceof String) {
+            posessor.put("opendate", (String)o);
+        }
+        o = jsonResponse.get("computername");
+        if (o instanceof String) {
+            posessor.put("computername", (String)o);
         }
 
         if (status_aws) {
@@ -591,8 +603,8 @@ public class AccessControl {
                 setDBKey(key_aws);
                 dbInfo.setCheckedOut(true);
             }
-        } else if (possessor_aws != null) {
-            setPossessor(possessor_aws);
+        } else if (posessor.size() != 0) {
+            setPossessor(posessor);
         }
         return status_aws;
 
