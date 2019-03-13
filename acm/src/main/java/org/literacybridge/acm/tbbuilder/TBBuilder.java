@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
@@ -34,11 +35,14 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENTID_PROPERTY;
@@ -127,8 +131,8 @@ public class TBBuilder {
                 System.exit(1);
             }
 
-            TBBuilder tbb = new TBBuilder(args[1]);
-            tbb.doCreate(args);
+            TBBuilder tbb = new TBBuilder(args[1], true);
+            tbb.create(args);
         } else if (args[0].equalsIgnoreCase("PUBLISH")) {
             if (args.length < 3) {
                 System.out.print("Unexpected number of arguments for PUBLISH.\n");
@@ -136,7 +140,7 @@ public class TBBuilder {
                 System.exit(1);
             }
 
-            TBBuilder tbb = new TBBuilder(args[1]);
+            TBBuilder tbb = new TBBuilder(args[1], true);
             int deploymentCount = args.length - 2;
             if (deploymentCount > MAX_DEPLOYMENTS)
                 deploymentCount = MAX_DEPLOYMENTS;
@@ -149,20 +153,27 @@ public class TBBuilder {
         }
     }
 
+    public TBBuilder(DBConfiguration dbConfig) throws Exception {
+        this(dbConfig.getSharedACMname(), true);
+    }
+
     /**
      * Construct the TBBuilder. Opens the ACM that's being operated upon.
      *
      * @param sharedACM the ACM name.
+     * @param dbOpened
      * @throws Exception if the database can't be initialized.
      */
-    TBBuilder(String sharedACM) throws Exception {
+    private TBBuilder(String sharedACM, boolean dbOpened) throws Exception {
         sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(sharedACM);
-        CommandLineParams params = new CommandLineParams();
-        params.disableUI = true;
-        params.sandbox = true;
-        params.sharedACM = sharedACM;
-        ACMConfiguration.initialize(params);
-        ACMConfiguration.getInstance().setCurrentDB(params.sharedACM);
+        if (!dbOpened) {
+            CommandLineParams params = new CommandLineParams();
+            params.disableUI = true;
+            params.sandbox = true;
+            params.sharedACM = sharedACM;
+            ACMConfiguration.initialize(params);
+            ACMConfiguration.getInstance().setCurrentDB(params.sharedACM);
+        }
         // Like ~/Dropbox/ACM-UWR/TB-Loaders
         sourceTbLoadersDir = ACMConfiguration.getInstance().getTbLoaderDirFor(sharedACM);
         sourceTbOptionsDir = new File(sourceTbLoadersDir, "TB_Options");
@@ -178,10 +189,11 @@ public class TBBuilder {
 
     /**
      * From the main(String[] args) parameter, build a list of packages, their language, and groups.
-     * @param args from main(), as described with doCreate()
+     *
+     * @param args from main(), as described with create()
      * @return List of PackageInfo objects as specified in the args.
      */
-    private List<PackageInfo> getePackageInfoForCreate(String[] args) {
+    private List<PackageInfo> getPackageInfoForCreate(String[] args) {
         List<PackageInfo> packages = new ArrayList<>();
         if (args.length == 5) {
             // one package with only default group
@@ -221,13 +233,22 @@ public class TBBuilder {
      *             . . . optional triples of (package name, language, group)
      * @throws Exception if one of the packages encounters an IO error.
      */
-    private void doCreate(String[] args) throws Exception {
-        List<PackageInfo> packages = getePackageInfoForCreate(args);
+    private void create(String[] args) throws Exception {
+        List<PackageInfo> packages = getPackageInfoForCreate(args);
         String acmName = args[1];
         String deployment = args[2];
         validateDeployment(acmName, deployment, packages);
 
-        createDeployment(args[2]);
+        doCreate(args[2], packages);
+
+    }
+    public void apiCreate(String[] args) throws Exception {
+        List<PackageInfo> packages = getPackageInfoForCreate(args);
+        doCreate(args[2], packages);
+
+    }
+    private void doCreate(String deployment, List<PackageInfo> packages) throws Exception {
+        createDeployment(deployment);
 
         for (PackageInfo pi : packages) {
             addImage(pi);
@@ -335,8 +356,9 @@ public class TBBuilder {
         int groupCount = pi.groups.length;
         System.out.printf("%n%nExporting package %s%n", pi.name);
 
-        File sourcePackageDir = new File(sourceTbLoadersDir, "packages/" + pi.name);
+        File sourcePackageDir = new File(sourceTbLoadersDir, "packages"+File.separator + pi.name);
         File sourceMessagesDir = new File(sourcePackageDir, "messages");
+        File sourceExtraPromptsDir = new File(sourcePackageDir, "prompts"+File.separator+pi.language);
         File sourceListsDir = new File(sourceMessagesDir,
             "lists/" + TBBuilder.firstMessageListName);
         File stagedImagesDir = new File(stagedDeploymentDir, "images");
@@ -352,8 +374,6 @@ public class TBBuilder {
             System.err.printf("No lists found in %s%n", sourceListsDir);
             System.exit(1);
         }
-
-        validatePackageForLanguage(pi);
 
         File stagedMessagesDir = new File(stagedImageDir, "messages");
         FileUtils.copyDirectory(sourceMessagesDir, stagedMessagesDir);
@@ -380,16 +400,20 @@ public class TBBuilder {
             System.exit(1);
         }
 
-        File[] lists = stagedListsDir.listFiles();
-        for (File list : lists) {
-            if (list.getName().equals(TBBuilder.IntroMessageListFilename)) {
-                exportList(pi.name, list, stagedWelcomeMessageDir, "intro.a18", false);
-                list.delete();
+        File[] listFiles = stagedListsDir.listFiles();
+        for (File listFile : listFiles) {
+            // We found a "0-5.txt" file (note that there's no entry in the _activeLists.txt file)
+            // Export the ids listed in the file as languages/intro.txt (last one wins), and
+            // delete the file. Remember that the file existed; we'll use that to select a
+            // control.txt file that plays the intro.a18 at startup.
+            if (listFile.getName().equals(TBBuilder.IntroMessageListFilename)) {
+                exportList(pi.name, listFile, stagedWelcomeMessageDir, "intro.a18", false);
+                listFile.delete();
                 hasIntro = true;
-            } else if (list.getName().equalsIgnoreCase("_activeLists.txt")) {
-                exportedCategories = exportCategoriesInPackage(pi.name, list);
+            } else if (listFile.getName().equalsIgnoreCase("_activeLists.txt")) {
+                exportedCategories = exportCategoriesInPackage(pi.name, listFile);
             } else {
-                exportList(pi.name, list, stagedAudioDir, true);
+                exportList(pi.name, listFile, stagedAudioDir, true);
             }
         }
 
@@ -402,6 +426,11 @@ public class TBBuilder {
 
         File sourceLanguage = new File(sourceTbOptionsDir, "languages/" + pi.language);
         FileUtils.copyDirectory(sourceLanguage, stagedLanguageDir);
+
+        // If the package provides some additional audio prompts, copy them to the staging area.
+        if (sourceExtraPromptsDir.exists() && sourceExtraPromptsDir.isDirectory()) {
+            FileUtils.copyDirectory(sourceExtraPromptsDir, stagedLanguageDir);
+        }
 
         // If there is no category "9-0" in the _activeLists.txt file, then the user feedback
         // should not be playable. In that case, use the "_nofb" versions of control.txt.
@@ -453,31 +482,44 @@ public class TBBuilder {
                 FileReader fileReader = new FileReader(deploymentsList);
                 CSVReader csvReader = new CSVReader(fileReader);
 
-                List<String[]> lines = csvReader.readAll();
+
                 String nextDeploymentName = null;
                 String prevDeploymentName = null;
                 int count = 0;
                 int deploymentIx = -1;
+                int deploymentNumberIx = -1;
                 int startDateIx = -1;
-                for (String[] line : lines) {
-                    if (count++ == 0) {
-                        for (int ix = 0; ix < line.length; ix++) {
-                            if (line[ix].equalsIgnoreCase("deployment")) {
-                                deploymentIx = ix;
-                            } else if (line[ix].equalsIgnoreCase("startdate")) {
-                                startDateIx = ix;
-                            }
+                String[] line = csvReader.readNext();
+                for (int ix = 0; ix < line.length; ix++) {
+                    if (line[ix].equalsIgnoreCase("deployment")) {
+                        deploymentIx = ix;
+                    } else if (line[ix].equalsIgnoreCase("deploymentnumber")) {
+                        deploymentNumberIx = ix;
+                    } else if (line[ix].equalsIgnoreCase("startdate")) {
+                        startDateIx = ix;
+                    }
+                }
+
+                while ((line = csvReader.readNext()) != null) {
+                    // Look for the given deployment in the deployments.csv. Also look for a
+                    // likely deployment name, either the next deployment after today, or the
+                    // last deployment in the list. This won't be the right one when re-building
+                    // the current deployment, but the prompt should give a good hint as to what
+                    // the name should be.
+
+
+                    if (deploymentIx < 0) {
+                        if (deploymentNumberIx >= 0 && isAcceptableNameFor(deployment,
+                            acmName,
+                            line[deploymentNumberIx])) {
+                            found = true;
+                            break;
                         }
                     } else {
-                        // Look for the given deployment in the deployments.csv. Also look for a
-                        // likely deployment name, either the next deployment after today, or the
-                        // last deployment in the list. This won't be the right one when re-building
-                        // the current deployment, but the prompt should give a good hint as to what
-                        // the name should be.
                         if (line[deploymentIx].equalsIgnoreCase(deployment)) {
                             found = true;
                             break;
-                        } else if (StringUtils.isEmpty(nextDeploymentName)){
+                        } else if (StringUtils.isEmpty(nextDeploymentName)) {
                             DateFormat df1 = new SimpleDateFormat("yyyy-MM-dd");
                             try {
                                 Date startDate = df1.parse(line[startDateIx]);
@@ -568,6 +610,25 @@ public class TBBuilder {
         }
     }
 
+    static private Pattern deplPattern = Pattern.compile("(.*)-(\\d+)-(\\d+)");
+    private boolean isAcceptableNameFor(String deployment, String acmName, String deploymentNumberStr) {
+        int deploymentNum = Integer.parseInt(deploymentNumberStr);
+        Calendar rightNow = Calendar.getInstance();
+        int year = rightNow.get(Calendar.YEAR);
+        int shortYear = year % 100;
+        Matcher matcher = deplPattern.matcher(deployment);
+        if (matcher.matches() && matcher.groupCount()==3) {
+            // Our deployment?
+            if (Integer.parseInt(matcher.group(3)) != deploymentNum) return false;
+            // Our ACM?
+            if (!ACMConfiguration.cannonicalProjectName(acmName).equalsIgnoreCase(matcher.group(1))) return false;
+            // This year? Last year? Next year?
+            int deplYear = Integer.parseInt(matcher.group(2));
+            return Math.abs(deplYear - year) <= 1 || Math.abs(deplYear - shortYear) <= 1;
+        }
+        return false;
+    }
+
     /**
      * Checks the exported package for the given language. Checks that the system prompt
      * recordings exist in TB-Loaders/TB_Options/languages/{language}/cat, and that the
@@ -576,16 +637,9 @@ public class TBBuilder {
      * If any file is missing, prints an error message and exits.
      *
      * @param pi Information about the package: name, language, groups
-<<<<<<< HEAD
      *           (TB-Loaders/packages/{name}/messages/lists/1/)
      *           containing the _activeLists.txt and individual playlist .txt
      *           list files.
-     * @throws IOException if any files can't be read.
-=======
-     *                     (TB-Loaders/packages/{name}/messages/lists/1/)
-     *                     containing the _activeLists.txt and individual playlist .txt
-     *                     list files.
->>>>>>> e114a9e... Cleanup from rebase.
      */
     private void validatePackageForLanguage(PackageInfo pi) {
         // Get the directory containing the _activeLists.txt file plus the playlist files (like "2-0.txt")
@@ -846,7 +900,7 @@ public class TBBuilder {
      * @param deploymentList List of deployments. Effectively, always exactly one.
      * @throws Exception if a file can't be read.
      */
-    private void publish(List<String> deploymentList) throws Exception {
+    public void publish(List<String> deploymentList) throws Exception {
         // Make a local copy so we can munge it.
         List<String> deployments = new ArrayList<>(deploymentList).stream().map(String::toUpperCase).collect(Collectors.toList());
 
@@ -939,12 +993,6 @@ public class TBBuilder {
         }
     }
 
-    private void exportList(
-        String contentPackage, File list,
-        File targetDirectory, boolean writeToCSV) throws Exception {
-        exportList(contentPackage, list, targetDirectory, null, writeToCSV);
-    }
-
     private void exportPackagesInDeployment(
         String contentPackage,
         String languageCode, String[] groups)
@@ -974,7 +1022,7 @@ public class TBBuilder {
     private Set<String> exportCategoriesInPackage(
         String contentPackage,
         File activeLists) throws IOException {
-        Set<String> categoriesInPackage = new HashSet<>();
+        Set<String> categoriesInPackage = new LinkedHashSet<>();
         String[] csvColumns = new String[4];
         csvColumns[0] = project.toUpperCase();
         csvColumns[1] = contentPackage.toUpperCase();
@@ -1000,6 +1048,12 @@ public class TBBuilder {
             }
         }
         return categoriesInPackage;
+    }
+
+    private void exportList(
+        String contentPackage, File list,
+        File targetDirectory, boolean writeToCSV) throws Exception {
+        exportList(contentPackage, list, targetDirectory, null, writeToCSV);
     }
 
     private void exportList(

@@ -74,7 +74,7 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
      */
     private void onSelection(ActionEvent actionEvent) {
         int deplIx = deploymentChooser.getSelectedIndex();
-        deploymentChooser.setBorder(deplIx == 0 ? redBorder : blankBorder);
+        deploymentChooser.setBorder(deplIx <= 0 ? redBorder : blankBorder);
 
         setComplete(deplIx >= 1);
     }
@@ -96,6 +96,12 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
             deploymentChooser.setSelectedItem(Integer.toString(deploymentNo));
         }
         onSelection(null);
+    }
+
+    @Override
+    protected void onPageLeaving(boolean progressing) {
+        // Since this is the welcome page, there must be something selected in order to move on.
+        context.deploymentNo = Integer.parseInt(deploymentChooser.getSelectedItem().toString());
     }
 
     @Override

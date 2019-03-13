@@ -201,7 +201,14 @@ class PlaylistPopupMenu extends JPopupMenu {
                     MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
                         .getMetadataStore();
 
-                    // Add "Intro Message" to list of categories. hard coded as "0-5". "Intro Message"
+                    // Add "Intro Message" to list of categories. hard coded as "0-5". "Intro Message".
+                    // Note that this "Intro Message" category is NOT in the template _activeLists.txt
+                    // file. If the user chooses to export a playlist to the category, those message
+                    // ids will be written to a 0-5.txt file, and there will still be no pointer to
+                    // it in the _activeLists.txt file. Still later, at TB-Builder create time, the
+                    // existance of the 0-5.txt file will trigger exporting one of the files whose
+                    // id is in 0-5.txt (as languages/${language}/intro.a18), and a special control.txt
+                    // that plays intro.txt will put into the Deployment.
                     Category category = store.getCategory(Constants.CATEGORY_INTRO_MESSAGE);
                     categories.put(category.getCategoryName(), category);
 

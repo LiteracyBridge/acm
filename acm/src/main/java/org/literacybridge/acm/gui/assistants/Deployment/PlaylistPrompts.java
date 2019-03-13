@@ -43,7 +43,7 @@ class PlaylistPrompts {
     private MetadataStore store = ACMConfiguration.getInstance()
         .getCurrentDB()
         .getMetadataStore();
-    private String categoryId;
+    String categoryId;
 
 
     File shortPromptFile;

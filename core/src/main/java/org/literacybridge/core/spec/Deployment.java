@@ -27,8 +27,8 @@ public class Deployment {
     Date date = simpleDateFormat.parse("2018-09-09");
 
     public final int deploymentnumber;
-    private final Date startdate;
-    private final Date enddate;
+    public final Date startdate;
+    public final Date enddate;
     public final StringFilter componentFilter;
 
     public Deployment(String deploymentnumber, String startdate, String enddate, String component)

@@ -15,12 +15,8 @@ import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
 
 import javax.swing.*;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -31,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -57,9 +54,6 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     private MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
 
     private RecipientList recipients;
-    private Set<String> languages;
-    private Map<String, List<Content.Playlist>> allProgramSpecPlaylists;
-    private Map<String, List<Playlist>> allAcmPlaylists;
 
     static ValidationPage Factory(PageHelper listener) {
         return new ValidationPage(listener);
@@ -154,10 +148,10 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
     private void collectDeploymentInformation(int deploymentNo) {
         recipients = context.programSpec.getRecipientsForDeployment(deploymentNo);
-        languages = recipients.stream().map(r -> r.language).collect(Collectors.toSet());
+        context.languages = recipients.stream().map(r -> r.language).collect(Collectors.toSet());
 
-        allProgramSpecPlaylists = getProgramSpecPlaylists(deploymentNo, languages);
-        allAcmPlaylists = getAcmPlaylists(deploymentNo, languages);
+        context.allProgramSpecPlaylists = getProgramSpecPlaylists(deploymentNo, context.languages);
+        context.allAcmPlaylists = getAcmPlaylists(deploymentNo, context.languages);
 
     }
 
@@ -165,16 +159,16 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
         // Get the languages, and playlists for each language.
         // Check that all languages are a language in the ACM.
-        validateDeploymentLanguages(languages);
+        validateDeploymentLanguages(context.languages);
 
         // Check that we have all messages in all playlists; check if anything was added.
-        validatePlaylists(deploymentNo, languages);
+        validatePlaylists(deploymentNo, context.languages);
 
         // Check that we have all system prompts in all languages.
-        validateSystemPrompts(languages);
+        validateSystemPrompts(context.languages);
 
         // Check that we have all category prompts for categories in each language.
-        validatePlaylistPrompts(languages);
+        validatePlaylistPrompts(context.languages);
 
         // Check that we have all recipient prompts for recipients in the deployment.
         validateRecipients(deploymentNo);
@@ -210,8 +204,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         // For each language in the Deployment...
         for (String language : languages) {
             // Get the Program Spec playlists, and the ACM playlists (that match by pattern).
-            List<Content.Playlist> programSpecPlaylists = allProgramSpecPlaylists.get(language);
-            List<Playlist> acmPlaylists = allAcmPlaylists.get(language);
+            List<Content.Playlist> programSpecPlaylists = context.allProgramSpecPlaylists.get(language);
+            List<Playlist> acmPlaylists = context.allAcmPlaylists.get(language);
 
             // For all the playlists in the Program Spec...
             Set<Playlist> foundPlaylists = new HashSet<>();
@@ -346,7 +340,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             context.prompts.put(language, promptsMap);
 
             // Here, we care about the actual playlists for the Deployment.
-            List<Playlist> acmPlaylists = allAcmPlaylists.get(language);
+            List<Playlist> acmPlaylists = context.allAcmPlaylists.get(language);
             for (Playlist playlist : acmPlaylists) {
                 String title = WelcomePage.basePlaylistName(playlist.getName());
                 title = title.replaceAll("_", " ");
@@ -474,7 +468,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      * @return a map of { language : [ Playlist ] }
      */
     private Map<String, List<Playlist>> getAcmPlaylists(int deploymentNo, Set<String> languages) {
-        Map<String, List<Playlist>> acmPlaylists = new HashMap<>();
+        Map<String, List<Playlist>> acmPlaylists = new LinkedHashMap<>();
         Collection<Playlist> playlists = store.getPlaylists();
         for (String language : languages) {
             List<Playlist> langPlaylists = new ArrayList<>();
@@ -492,43 +486,49 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     }
 
     private void sizeColumns() {
-        int columnCount = issuesTable.getColumnModel().getColumnCount();
-        if (columnCount < 3) return;
-        TableModel model = issuesTable.getModel();
-        TableCellRenderer headerRenderer = issuesTable.getTableHeader().getDefaultRenderer();
-        TableCellRenderer cellRenderer = issuesTable.getDefaultRenderer(String.class);
-        List<Stream<String>> longValues = new ArrayList<>();
-        longValues.add(Arrays.stream(Issues.Severity.values()).map(Issues.Severity::displayName));
-        longValues.add(Arrays.stream(Issues.Area.values()).map(Issues.Area::displayName));
+        Map<Integer, Stream<String>> columnValues = new HashMap<>();
+        columnValues.put(0, Arrays.stream(Issues.Severity.values()).map(Issues.Severity::displayName));
+        columnValues.put(1, Arrays.stream(Issues.Area.values()).map(Issues.Area::displayName));
 
-        // Left two columns.
-        for (int i = 0; i < longValues.size(); i++) {
-            final int columnNo = i;
-            TableColumn column = issuesTable.getColumnModel().getColumn(columnNo);
+        sizeColumns(issuesTable, columnValues);
 
-            Component component = headerRenderer.getTableCellRendererComponent(null,
-                column.getHeaderValue(),
-                false,
-                false,
-                0,
-                0);
-            int headerWidth = component.getPreferredSize().width;
-
-            Integer cellWidth = longValues.get(columnNo)
-                .map(str -> cellRenderer.getTableCellRendererComponent(issuesTable,
-                    str,
-                    false,
-                    false,
-                    0,
-                    columnNo).getPreferredSize().width)
-                .max(Integer::compareTo)
-                .orElse(1);
-
-            int w = Math.max(headerWidth, cellWidth) + 2;
-            column.setPreferredWidth(w);
-            column.setMaxWidth(w + 40);
-            column.setWidth(w);
-        }
+//        int columnCount = issuesTable.getColumnModel().getColumnCount();
+//        if (columnCount < 3) return;
+//        TableModel model = issuesTable.getModel();
+//        TableCellRenderer headerRenderer = issuesTable.getTableHeader().getDefaultRenderer();
+//        TableCellRenderer cellRenderer = issuesTable.getDefaultRenderer(String.class);
+//        List<Stream<String>> longValues = new ArrayList<>();
+//        longValues.add(Arrays.stream(Issues.Severity.values()).map(Issues.Severity::displayName));
+//        longValues.add(Arrays.stream(Issues.Area.values()).map(Issues.Area::displayName));
+//
+//        // Left two columns.
+//        for (int i = 0; i < longValues.size(); i++) {
+//            final int columnNo = i;
+//            TableColumn column = issuesTable.getColumnModel().getColumn(columnNo);
+//
+//            Component component = headerRenderer.getTableCellRendererComponent(null,
+//                column.getHeaderValue(),
+//                false,
+//                false,
+//                0,
+//                0);
+//            int headerWidth = component.getPreferredSize().width;
+//
+//            Integer cellWidth = longValues.get(columnNo)
+//                .map(str -> cellRenderer.getTableCellRendererComponent(issuesTable,
+//                    str,
+//                    false,
+//                    false,
+//                    0,
+//                    columnNo).getPreferredSize().width)
+//                .max(Integer::compareTo)
+//                .orElse(1);
+//
+//            int w = Math.max(headerWidth, cellWidth) + 2;
+//            column.setPreferredWidth(w);
+//            column.setMaxWidth(w + 40);
+//            column.setWidth(w);
+//        }
     }
 
 }

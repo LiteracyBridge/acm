@@ -6,8 +6,12 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableModel;
 import java.awt.*;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * The abstract base class for Assistant pages. Provides access to Assistant properties.
@@ -43,6 +47,44 @@ public abstract class AssistantPage<Context> extends JPanel {
         if (!StringUtils.isEmpty(text)) label.setText(text);
         return label;
     }
+
+    /**
+     * Method to size "small" header columns. This is useful for columns with fairly consistent
+     * and fairly small data. Sizes the column to show every item.
+     * @param table to be sized.
+     * @param columnValues A Map of Integer -> Stream<String> where the integer is the
+     *                     column number, and the Stream is all the items in the column.
+     */
+    public static void sizeColumns(JTable table, Map<Integer, Stream<String>> columnValues) {
+        TableModel model = table.getModel();
+        TableCellRenderer headerRenderer = table.getTableHeader().getDefaultRenderer();
+
+        for (Map.Entry<Integer, Stream<String>> e : columnValues.entrySet()) {
+            final int columnNo = e.getKey();
+            TableColumn column = table.getColumnModel().getColumn(columnNo);
+
+            int headerWidth = headerRenderer.getTableCellRendererComponent(null,
+                column.getHeaderValue(),
+                false,
+                false,
+                0,
+                0).getPreferredSize().width;
+
+            int cellWidth = e.getValue()
+                .map(item -> table.getDefaultRenderer(model.getColumnClass(columnNo))
+                    .getTableCellRendererComponent(table, item, false, false, 0, columnNo)
+                    .getPreferredSize().width)
+                .max(Integer::compareTo)
+                .orElse(1);
+
+            int w = Math.max(headerWidth, cellWidth) + 2;
+            column.setPreferredWidth(w);
+            column.setMaxWidth(w + 40);
+            column.setWidth(w);
+        }
+    }
+
+
 
     public static final Border greenBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
     protected static final LineBorder redBorder = new LineBorder(Color.RED, 1, true);

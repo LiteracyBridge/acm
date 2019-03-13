@@ -12,7 +12,10 @@ public class DeploymentAssistant {
 
         Assistant<DeploymentContext> assistant = new Assistant.Factory<DeploymentContext>()
             .withContext(context)
-            .withPageFactories(WelcomePage::new, ValidationPage::Factory, TweaksPage::Factory)
+            .withPageFactories(WelcomePage::new,
+                ValidationPage::Factory,
+                TweaksPage::Factory,
+                ResultsPage::new)
             .withTitle("Deployment Assistant")
             .create();
 
