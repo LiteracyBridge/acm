@@ -6,13 +6,11 @@ public enum MATCH {
     EXACT,
     FUZZY,
     TOKEN,
+    MANUAL,
 
     LEFT_ONLY,
     RIGHT_ONLY;
 
-    public boolean isMatch() { return ordinal() >= EXACT.ordinal() && ordinal() <= TOKEN.ordinal();}
+    public boolean isMatch() { return ordinal() >= EXACT.ordinal() && ordinal() <= MANUAL.ordinal();}
     boolean isSingle() { return ordinal() >= MATCH.LEFT_ONLY.ordinal();}
-
-    public static MATCH[] matches = new MATCH[] {EXACT, FUZZY, TOKEN, LEFT_ONLY, RIGHT_ONLY};
-    public static String[] matchNames = new String[] {EXACT.toString(), FUZZY.toString(), TOKEN.toString(), LEFT_ONLY.toString(), RIGHT_ONLY.toString()};
 }

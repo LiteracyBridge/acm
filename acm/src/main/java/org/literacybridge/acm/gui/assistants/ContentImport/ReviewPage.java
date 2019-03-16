@@ -21,12 +21,10 @@ import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
 public class ReviewPage extends AssistantPage<ContentImportContext> {
 
-    private final JLabel importPreviewLabel;
     private final DefaultListModel<String> importPreviewModel;
-    private final JScrollPane importPreviewScroller;
     private ContentImportContext context;
 
-    public ReviewPage(PageHelper listener) {
+    ReviewPage(PageHelper listener) {
         super(listener);
         context = getContext();
         setLayout(new GridBagLayout());
@@ -52,7 +50,7 @@ public class ReviewPage extends AssistantPage<ContentImportContext> {
         add(welcome, gbc);
 
         // Title preview.
-        importPreviewLabel = new JLabel("Files to be imported:");
+        JLabel importPreviewLabel = new JLabel("Files to be imported:");
         insets = new Insets(0,0,00,0);
         gbc.insets = insets;
         add(importPreviewLabel, gbc);
@@ -61,7 +59,7 @@ public class ReviewPage extends AssistantPage<ContentImportContext> {
         panel.setLayout(new BorderLayout(0,0));
         importPreviewModel = new DefaultListModel<>();
         JList<String> importPreview = new JList<>(importPreviewModel);
-        importPreviewScroller = new JScrollPane(importPreview);
+        JScrollPane importPreviewScroller = new JScrollPane(importPreview);
         panel.add(importPreviewScroller, BorderLayout.CENTER);
         gbc.ipadx = 10;
         gbc.weighty = 1.0;
@@ -78,17 +76,40 @@ public class ReviewPage extends AssistantPage<ContentImportContext> {
     @Override
     protected void onPageEntered(boolean progressing) {
         Matcher<ImportableAudioItem, ImportableFile, MatchableImportableAudio> matcher = context.matcher;
+        importPreviewModel.clear();
         // For the imports, create a "item from \n file" label, and add to the preview.
         matcher.matchableItems.stream()
-            .filter(i->i.getMatch().isMatch())
-            .filter(i->!i.getLeft().hasAudioItem())
-            .map(i->"<html>" +i.getLeft() + "&nbsp;&nbsp;&lt;--- <i>import from</i>"
-                + "<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style='font-family:Courier'>"
-                + i.getRight().getFile().getName()
-                + "</span></html>")
+            .filter(MatchableImportableAudio::isImportable)
+            .map(this::reviewString)
             .forEach(importPreviewModel::addElement);
 
+        if (importPreviewModel.isEmpty()) {
+            String noItems = "<html><i><span style='font-weight:100;font-family:Helvetica;font-size:2.0em;'>"
+                + "No files selected to import."
+                + "</span></i></html>";
+            importPreviewModel.addElement(noItems);
+        }
+
         setComplete();
+    }
+
+    /**
+     * Formats one import item, with audio name, import operation, and file name.
+     * @param importable the MatchableImportableAudio
+     * @return a string describing the operation.
+     */
+    private String reviewString(MatchableImportableAudio importable) {
+        return String.format("<html>"
+                + "%s"  // audio title
+                + "&nbsp;&nbsp;&lt;--- <i>"
+                + "%s"  // operation (update / import)
+                + " from</i>"
+                + "<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style='font-family:Courier'>"
+                + "%s"  // file name
+                + "</span></html>",
+            importable.getLeft(),
+            importable.getOperation(),
+            importable.getRight().getFile().getName());
     }
 
     @Override

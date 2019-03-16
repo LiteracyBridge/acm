@@ -8,9 +8,7 @@ import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataField;
-import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
-import org.literacybridge.acm.store.MetadataValue;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +17,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import static javax.swing.text.html.parser.DTDConstants.MD;
 import static org.literacybridge.acm.store.MetadataSpecification.*;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
@@ -48,7 +45,7 @@ abstract class AudioFileImporter {
 
     protected abstract Set<Category> getCategories();
 
-    AudioItem importSingleFile(AudioItemProcessor itemProcessor) throws IOException
+    AudioItem importSingleFile(AudioImporter.AudioItemProcessor itemProcessor) throws IOException
     {
         AudioItem result = null;
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
@@ -153,11 +150,4 @@ abstract class AudioFileImporter {
         return string==null || string.trim().length()==0;
     }
 
-    /**
-     * An interface to give import callers an opportunity to examine / tweak an audio file
-     * as it is imported.
-     */
-    public interface AudioItemProcessor {
-        void process(AudioItem item);
-    }
 }

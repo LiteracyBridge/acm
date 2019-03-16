@@ -156,6 +156,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     }
 
     private void validateDeployment(int deploymentNo) {
+        context.issues.clear();
 
         // Get the languages, and playlists for each language.
         // Check that all languages are a language in the ACM.
@@ -491,44 +492,6 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         columnValues.put(1, Arrays.stream(Issues.Area.values()).map(Issues.Area::displayName));
 
         sizeColumns(issuesTable, columnValues);
-
-//        int columnCount = issuesTable.getColumnModel().getColumnCount();
-//        if (columnCount < 3) return;
-//        TableModel model = issuesTable.getModel();
-//        TableCellRenderer headerRenderer = issuesTable.getTableHeader().getDefaultRenderer();
-//        TableCellRenderer cellRenderer = issuesTable.getDefaultRenderer(String.class);
-//        List<Stream<String>> longValues = new ArrayList<>();
-//        longValues.add(Arrays.stream(Issues.Severity.values()).map(Issues.Severity::displayName));
-//        longValues.add(Arrays.stream(Issues.Area.values()).map(Issues.Area::displayName));
-//
-//        // Left two columns.
-//        for (int i = 0; i < longValues.size(); i++) {
-//            final int columnNo = i;
-//            TableColumn column = issuesTable.getColumnModel().getColumn(columnNo);
-//
-//            Component component = headerRenderer.getTableCellRendererComponent(null,
-//                column.getHeaderValue(),
-//                false,
-//                false,
-//                0,
-//                0);
-//            int headerWidth = component.getPreferredSize().width;
-//
-//            Integer cellWidth = longValues.get(columnNo)
-//                .map(str -> cellRenderer.getTableCellRendererComponent(issuesTable,
-//                    str,
-//                    false,
-//                    false,
-//                    0,
-//                    columnNo).getPreferredSize().width)
-//                .max(Integer::compareTo)
-//                .orElse(1);
-//
-//            int w = Math.max(headerWidth, cellWidth) + 2;
-//            column.setPreferredWidth(w);
-//            column.setMaxWidth(w + 40);
-//            column.setWidth(w);
-//        }
     }
 
 }

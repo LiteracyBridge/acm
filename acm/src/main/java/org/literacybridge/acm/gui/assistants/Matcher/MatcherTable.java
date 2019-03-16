@@ -1,5 +1,8 @@
 package org.literacybridge.acm.gui.assistants.Matcher;
 
+import org.literacybridge.acm.gui.Assistant.AssistantPage;
+import org.literacybridge.acm.gui.assistants.Deployment.Issues;
+
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.TableCellRenderer;
@@ -7,7 +10,12 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 class MatcherTable extends JTable {
 
@@ -51,32 +59,16 @@ class MatcherTable extends JTable {
     }
 
     void sizeColumns() {
-        int columnCount = this.getColumnModel().getColumnCount();
-        if (columnCount < 3) return;
-        TableModel model = this.getModel();
-        TableCellRenderer headerRenderer = this.getTableHeader().getDefaultRenderer();
-        String[] longValues = {"", "Import (F:100) from", "100", ""};
-        // All interior columns.
-        for (int i = 1; i < columnCount-1; i++) {
-            TableColumn column = this.getColumnModel().getColumn(i);
+        Map<Integer, Stream<String>> columnValues = new HashMap<>();
+        // Set column 2 width (Status) on header & values.
+        Stream<String> values = IntStream.range(0, this.getRowCount()).mapToObj(r->getValueAt(r,2).toString());
+        columnValues.put(2, values);
 
-            Component component = headerRenderer.getTableCellRendererComponent(
-                null, column.getHeaderValue(),
-                false, false, 0, 0);
-            int headerWidth = component.getPreferredSize().width;
+        // Set column 1 width (Update?) on header only.
+        values = Stream.empty();
+        columnValues.put(1, values);
 
-            component = this.getDefaultRenderer(model.getColumnClass(i)).
-                getTableCellRendererComponent(
-                    this, longValues[i],
-                    false, false, 0, i);
-            int cellWidth = component.getPreferredSize().width;
-
-            int w = Math.max(headerWidth, cellWidth) + 2;
-            column.setMaxWidth(w+20);
-            column.setMinWidth(w);
-            column.setPreferredWidth(w);
-            column.setWidth(w);
-        }
+        AssistantPage.sizeColumns(this, columnValues);
     }
 
     @Override

@@ -1,5 +1,7 @@
 package org.literacybridge.acm.gui.Assistant;
 
+import org.literacybridge.acm.gui.Application;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -18,7 +20,7 @@ public class Assistant<Context> extends JDialog {
         private Dimension size;
         private Context context;
         private List<Function<PageHelper, AssistantPage>> pageFactories;
-        private Frame owner = null;
+        private Frame owner = Application.getApplication();
         private boolean modal = true;
         Color background = new Color(0xe0f7ff);
 
@@ -86,6 +88,7 @@ public class Assistant<Context> extends JDialog {
         navigate(0);
 
         setMinimumSize(factory.size==null ? new Dimension(800,600) : factory.size);
+        setLocation(factory.owner.getX()+20, factory.owner.getY()+20);
     }
 
     /**
@@ -224,7 +227,7 @@ public class Assistant<Context> extends JDialog {
      */
     private void setNavButtonState() {
         prevButton.setEnabled(currentPage > 0 && !isSummaryPage());
-        nextButton.setEnabled(isPageComplete() || isSummaryPage());
+        nextButton.setEnabled(isPageComplete());
         cancelButton.setEnabled(!isSummaryPage());
 
         if (isSummaryPage()) {
@@ -250,7 +253,7 @@ public class Assistant<Context> extends JDialog {
         }
         currentPage = newPage;
         AssistantPage page = getPage(currentPage);
-        page.onPageEntered(progressing);
+//        page.onPageEntered(progressing);
         this.add(page, BorderLayout.CENTER);
 
         String title = page.getTitle();
@@ -261,6 +264,12 @@ public class Assistant<Context> extends JDialog {
         revalidate();
 
         setNavButtonState();
+        // Let the UI settle, then inform the new page that it has been entered.
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                page.onPageEntered(progressing);
+            }
+        });
     }
 
     /**

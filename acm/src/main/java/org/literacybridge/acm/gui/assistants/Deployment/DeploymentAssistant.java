@@ -15,7 +15,7 @@ public class DeploymentAssistant {
             .withPageFactories(WelcomePage::new,
                 ValidationPage::Factory,
                 TweaksPage::Factory,
-                ResultsPage::new)
+                DeployedPage::new)
             .withTitle("Deployment Assistant")
             .create();
 

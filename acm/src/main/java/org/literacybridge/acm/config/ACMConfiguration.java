@@ -17,10 +17,12 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -95,6 +97,20 @@ public class ACMConfiguration {
             instance = new ACMConfiguration(emptyParams);
         }
         return instance;
+    }
+
+    private static Set<String> testAcms = new HashSet<>();
+    static {
+        testAcms.add("ACM-TEST");
+    }
+    public static boolean isTestAcm() {
+        if (instance == null || instance.getCurrentDB() == null) return false;
+        if (instance.isNoDbCheckout()) return true;
+        return testAcms.contains(instance.getCurrentDB().getSharedACMname());
+    }
+    public static boolean isSandbox() {
+        if (instance == null || instance.getCurrentDB() == null) return false;
+        return (instance.getCurrentDB().isSandboxed());
     }
 
     /**

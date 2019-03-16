@@ -3,27 +3,18 @@ package org.literacybridge.acm.gui.assistants.Deployment;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
-import org.literacybridge.acm.gui.assistants.ContentImport.ContentImportContext;
 import org.literacybridge.acm.gui.assistants.ContentImport.WelcomePage;
-import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
-import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
-import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
-import org.literacybridge.acm.importexport.AudioImporter;
+import org.literacybridge.acm.gui.assistants.Deployment.DeploymentContext.AudioItemNode;
+import org.literacybridge.acm.gui.assistants.Deployment.DeploymentContext.LanguageNode;
+import org.literacybridge.acm.gui.assistants.Deployment.DeploymentContext.PlaylistNode;
 import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.spec.Deployment;
-import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.*;
-import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -31,23 +22,24 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static java.util.Calendar.YEAR;
-import static org.literacybridge.acm.Constants.CATEGORY_GENERAL_OTHER;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
-public class ResultsPage extends AssistantPage<DeploymentContext> {
+public class DeployedPage extends AssistantPage<DeploymentContext> {
 
+    private final JLabel publishCommand;
+    private final Box publishNotification;
+    private final JTextPane summary;
     private DeploymentContext context;
 
-    public ResultsPage(PageHelper listener) {
+    public DeployedPage(PageHelper listener) {
         super(listener);
         context = getContext();
         context = getContext();
@@ -72,6 +64,34 @@ public class ResultsPage extends AssistantPage<DeploymentContext> {
                 + "</html>");
         add(welcome, gbc);
 
+        Box hbox = Box.createHorizontalBox();
+        hbox.add(new JLabel("Creating deployment "));
+        JLabel deployment = parameterText(Integer.toString(context.deploymentNo));
+        hbox.add(deployment);
+        hbox.add(Box.createHorizontalGlue());
+        add(hbox, gbc);
+
+        publishNotification = Box.createHorizontalBox();
+        publishCommand = parameterText();
+        publishNotification.add(new JLabel("<html>The Deployment was <u>not</u> published. Use </html>"));
+        publishNotification.add(Box.createHorizontalStrut(5));
+        publishNotification.add(publishCommand);
+        publishNotification.add(new JLabel(" to publish."));
+        publishNotification.add(Box.createHorizontalGlue());
+        GridBagConstraints tmpGbc = (GridBagConstraints) gbc.clone();
+        // Need these fill & anchor values because there are HTML labels in the Box.
+        tmpGbc.fill=GridBagConstraints.NONE;
+        tmpGbc.anchor=GridBagConstraints.LINE_START;
+        add(publishNotification, tmpGbc);
+        publishNotification.setVisible(false);
+
+        summary = new JTextPane();
+        tmpGbc.fill=GridBagConstraints.HORIZONTAL;
+        summary.setEditable(false);
+        summary.setBackground(null);
+        summary.setContentType("text/html");
+
+        add(summary, tmpGbc);
 
         add(new JLabel("Click \"Close\" to return to the ACM."), gbc);
 
@@ -82,9 +102,7 @@ public class ResultsPage extends AssistantPage<DeploymentContext> {
 
     @Override
     protected void onPageEntered(boolean progressing) {
-        if (progressing) performUpdate();
-
-        setComplete();
+        performUpdate();
     }
 
     @Override
@@ -96,7 +114,9 @@ public class ResultsPage extends AssistantPage<DeploymentContext> {
     protected boolean isSummaryPage() { return true; }
 
     private void performUpdate() {
+        // Create the files in TB-Loaders/packages to match exporting playlists.
         Map<String, String> pkgs = exportLists();
+
         try {
             String acmName = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
             TBBuilder tbb = new TBBuilder(ACMConfiguration.getInstance().getCurrentDB());
@@ -111,17 +131,41 @@ public class ResultsPage extends AssistantPage<DeploymentContext> {
             });
             tbb.apiCreate(args.toArray(new String[0]));
 
-            args.clear();
-            args.add(deploymentName());
-            tbb.publish(args);
+            if (!context.noPublish) {
+                args.clear();
+                args.add(deploymentName());
+                tbb.publish(args);
+            } else {
+                publishCommand.setText(publishCommand());
+                publishNotification.setVisible(true);
+            }
+            summary.setText(String.format("Deployment #%d successfully created as %s.",
+                context.deploymentNo, deploymentName()));
         } catch (Exception e) {
-            e.printStackTrace();
+            String message = "An error occurred creating the Deployment:\n"
+                +e.getMessage();
+            String title = "Error creating Deployment";
+            JOptionPane.showMessageDialog(this, message, title, JOptionPane.ERROR_MESSAGE);
+            String summaryMessage = String.format("<html><span style='font-size:1.5em'>An error occurred creating the Deployment:</span>"
+                + "<br/><i>%s</i>", e.getMessage());
+            summary.setText(summaryMessage);
         }
+        setComplete();
+
+    }
+
+    private String publishCommand() {
+        String acmName = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
+        String cmd = String.format("<html><span style='font-family:Lucida Console'>TB-Builder publish %s %s</span></html>",
+            ACMConfiguration.cannonicalProjectName(acmName),
+            deploymentName());
+        return cmd;
     }
 
     /**
      * Builds the lists of content, and the list of lists. Returns a map
-     * of language to package name.
+     * of language to package name. Will extract any content prompts to a
+     * packages/${package}/prompts directory.
      * @return {language : pkgName}
      */
     private Map<String, String> exportLists() {
@@ -129,7 +173,12 @@ public class ResultsPage extends AssistantPage<DeploymentContext> {
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
         File packagesDir = new File(tbLoadersDir, "packages");
         packagesDir.mkdirs();
-        for (String language : context.languages) {
+
+        Enumeration langEnumeration = context.playlistRootNode.children();
+        while (langEnumeration.hasMoreElements()) {
+            LanguageNode languageNode = (LanguageNode)langEnumeration.nextElement();
+            String language = languageNode.languagecode;
+
             // Create the directories.
             String packageName = packageName(language);
             result.put(language, packageName);
@@ -143,10 +192,13 @@ public class ResultsPage extends AssistantPage<DeploymentContext> {
             // Create the list files, and copy the non-predefined prompts.
             File activeLists = new File(listsDir, "_activeLists.txt");
             try (PrintWriter activeListsWriter = new PrintWriter(activeLists)) {
-
                 List<Playlist> acmPlaylists = context.allAcmPlaylists.get(language);
                 Map<String, PlaylistPrompts> playlistsPrompts = context.prompts.get(language);
-                for (Playlist playlist : acmPlaylists) {
+                Enumeration playlistEnumeration = languageNode.children();
+                while (playlistEnumeration.hasMoreElements()) {
+                    PlaylistNode playlistNode = (PlaylistNode)playlistEnumeration.nextElement();
+                    Playlist playlist = playlistNode.playlist;
+
                     String title = WelcomePage.basePlaylistName(playlist.getName());
                     title = title.replaceAll("_", " ");
                     PlaylistPrompts prompts = playlistsPrompts.get(title);
@@ -156,7 +208,7 @@ public class ResultsPage extends AssistantPage<DeploymentContext> {
                     if (!promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE)) {
                         activeListsWriter.println("!"+promptCat);
                     }
-                    createListFile(playlist, promptCat, listsDir);
+                    createListFile(playlistNode, promptCat, listsDir);
                 }
 
                 if (context.includeUfCategory)
@@ -170,12 +222,16 @@ public class ResultsPage extends AssistantPage<DeploymentContext> {
         return result;
     }
 
-    private void createListFile(Playlist playlist, String promptCat, File listsDir)
+    private void createListFile(PlaylistNode playlistNode, String promptCat, File listsDir)
         throws FileNotFoundException
     {
         File listFile = new File(listsDir, promptCat + ".txt");
         try (PrintWriter listWriter = new PrintWriter(listFile)) {
-            for (String audioItemId : playlist.getAudioItemList()) {
+            Enumeration audioItemEnumeration = playlistNode.children();
+            while (audioItemEnumeration.hasMoreElements()) {
+                AudioItemNode audioItemNode = (AudioItemNode)audioItemEnumeration.nextElement();
+                String audioItemId = audioItemNode.item.getUuid();
+
                 listWriter.println(audioItemId);
             }
         }
@@ -212,12 +268,12 @@ public class ResultsPage extends AssistantPage<DeploymentContext> {
         if (prompts.shortPromptFile == null && prompts.shortPromptItem != null) {
             if (!promptsDir.exists()) promptsDir.mkdirs();
             repository.exportA18WithMetadataToFile(prompts.shortPromptItem,
-                new File(promptsDir, promptCat+".i18"));
+                new File(promptsDir, promptCat+".a18"));
         }
         if (prompts.longPromptFile == null && prompts.longPromptItem != null) {
             if (!promptsDir.exists()) promptsDir.mkdirs();
             repository.exportA18WithMetadataToFile(prompts.shortPromptItem,
-                new File(promptsDir, "i"+promptCat+".i18"));
+                new File(promptsDir, "i"+promptCat+".a18"));
         }
 
         return promptCat;

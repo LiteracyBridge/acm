@@ -86,11 +86,11 @@ public abstract class AssistantPage<Context> extends JPanel {
 
 
 
-    public static final Border greenBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
-    protected static final LineBorder redBorder = new LineBorder(Color.RED, 1, true);
-    protected static final LineBorder blankBorder = new LineBorder(new Color(0, 0, 0, 0), 1, true);
+    protected static final Border greenBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
+    protected static final Border redBorder = new LineBorder(Color.RED, 1, true);
+    protected static final Border blankBorder = new LineBorder(new Color(0, 0, 0, 0), 1, true);
 
-    private Assistant.PageHelper<Context> pageHelper;
+    private final Assistant.PageHelper<Context> pageHelper;
     private boolean isComplete = false;
 
     public AssistantPage(Assistant.PageHelper pageHelper) {
@@ -117,5 +117,5 @@ public abstract class AssistantPage<Context> extends JPanel {
     }
     boolean isComplete() { return isComplete; }
 
-    protected Context getContext() { return pageHelper.getContext(); }
+    protected final Context getContext() { return pageHelper.getContext(); }
 }

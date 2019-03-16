@@ -12,8 +12,6 @@ import java.util.logging.Logger;
 
 import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.importexport.AudioFileImporter.AudioItemProcessor;
-import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Metadata;
@@ -241,5 +239,13 @@ public class AudioImporter {
             String extension = getFileExtension(file);
             return extensions.contains(extension);
         };
+    }
+
+    /**
+     * An interface to give import callers an opportunity to examine / tweak an audio file
+     * as it is imported.
+     */
+    public interface AudioItemProcessor {
+        void process(AudioItem item);
     }
 }

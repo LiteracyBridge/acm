@@ -1,6 +1,7 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.apache.commons.io.FilenameUtils;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 
@@ -113,6 +114,14 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
         fileChooser.setMultiSelectionEnabled(true);
         fileChooser.setFileFilter(chooserFilter);
+
+        // Testing code
+        if (ACMConfiguration.isTestAcm()) {
+            List<File> testingFiles = Arrays.asList(new File("/Users/bill/A-test1"));
+            List<File> expandedFiles = expandDirectories(testingFiles);
+            context.importableFiles.addAll(expandedFiles);
+        }
+
     }
 
     /**

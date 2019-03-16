@@ -1,0 +1,13 @@
+recipientid,project,partner,affiliate,component,country,region,district,communityname,groupname,numhouseholds,numtbs,supportentity,model,language,coordinates
+101,TEST,Amplio,Amplio,Terrestrial,HI,HI,Haiku,Point of View,Studio,0,1,Kamehameha,Group,en,
+102,TEST,Amplio,Amplio,Terrestrial,HI,HI,Haiku,Cottage West,Go Farm,0,1,Kaʻahumanu,Group,en,
+103,TEST,Amplio,Amplio,Terrestrial,HI,HI,Haiku,Cottage West,Bugs 'r' Us,0,1,Keōpūolani,Group,haw,
+104,TEST,Amplio,Amplio,Terrestrial,USA,WA,,Global WA,Water Access,0,1,Tinkers,Group,en,
+105,TEST,Amplio,Amplio,Terrestrial,USA,WA,,Global WA,Food Security,0,1,Evers,Group,en,
+106,TEST,Amplio,Amplio,Terrestrial,USA,WA,,Global WA,,0,1,Chance,Group,en,
+107,TEST,Amplio,Amplio,Terrestrial,USA,WA,Seattle,Demo Seattle,,0,1,Chief Seattle,Group,en,
+108,TEST,Amplio,Amplio,Terrestrial,USA,SC,Western,Westchester,Probability Zero,0,1,John Rutledge,Group,en,
+109,TEST,Amplio,Amplio,Space,HI,HI,Haiku,Moonbase,,0,1,D.D. Harriman,Group,en,
+110,TEST,Amplio,Amplio,Space,HI,HI,Haiku,Qonos,,0,1,"Worf, son of Mogh",Group,tlh,
+111,TEST,Amplio,Amplio,Space,USA,WA,Kirkland,Trantor,,0,1,Chase,CHW,en,
+112,TEST,Amplio,Amplio,Space,USA,WA,Kirkland,Trantor,,0,1,Willy,CHW,en,

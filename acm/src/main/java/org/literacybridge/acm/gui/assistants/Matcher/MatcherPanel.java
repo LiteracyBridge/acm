@@ -4,7 +4,10 @@ import org.literacybridge.acm.gui.assistants.Matcher.MatcherTableModel.Columns;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher.MatchStats;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -83,6 +86,9 @@ public class MatcherPanel extends JPanel {
         hbox.add(Box.createHorizontalGlue());
         add(hbox);
 
+        bgColor = Color.white; // table.getBackground();
+        bgSelectionColor = table.getSelectionBackground();
+        bgAlternateColor = new Color(235, 245, 252);
     }
 
     /**
@@ -98,6 +104,7 @@ public class MatcherPanel extends JPanel {
         table.setRenderer(Columns.Left, mr);
 //        table.setRenderer(Columns.Match, new MatchRenderer());
 //        table.setRenderer(Columns.Score, new ScoreRenderer());
+        table.setRenderer(Columns.Update, new BooleanRenderer());
         table.setRenderer(Columns.Status, new StatusRenderer());
         table.setRenderer(Columns.Right, mr);
 
@@ -105,6 +112,10 @@ public class MatcherPanel extends JPanel {
         table.setFillsViewportHeight(true);
         table.setGridColor(new Color(224, 224, 224));
         table.setGridColor(Color.RED);
+
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setRowSelectionAllowed(true);
+        table.setColumnSelectionAllowed(false);
 
         add(scrollPane);
     }
@@ -281,54 +292,63 @@ public class MatcherPanel extends JPanel {
     private static Color leftColor = new Color(0xFFC0CB);
     private static Color rightColor = new Color(0xADD8E6);
 
+    private Color bgColor;
+    private Color bgSelectionColor;
+    private Color bgAlternateColor;
+
+    private Color getBG(int viewRow, int viewColumn, boolean isSelected) {
+        Color bg = (viewRow%2 == 0) ? bgColor : bgAlternateColor;
+        if (!colorCoded.isSelected()) {
+            if (isSelected) bg = bgSelectionColor;
+//                bg = isSelected ? bgSelectionColor : bgColor;
+//                if (viewRow % 2 == 1 && !isSelected) bg = bgAlternateColor; // darken(bg);
+        } else {
+            if (isSelected) bg = selectionColor;
+            else {
+                int row = table.convertRowIndexToModel(viewRow);
+                int column = table.convertColumnIndexToModel(viewColumn);
+                MatchableImportableAudio item = model.getRowAt(row);
+                switch (item.getMatch()) {
+                case EXACT:
+                    bg = exactColor;
+                    break;
+                case FUZZY:
+                    bg = fuzzyColor;
+                    break;
+                case TOKEN:
+                    bg = tokenColor;
+                    break;
+                case LEFT_ONLY:
+                    if (column == Columns.Left.ordinal()) bg = leftColor;
+                    break;
+                case RIGHT_ONLY:
+                    if (column == Columns.Right.ordinal()) bg = rightColor;
+                    break;
+                }
+            }
+            if (viewRow % 2 == 1 && !isSelected) bg = lighten(bg);
+        }
+        return bg;
+    }
+    private Color lighten(Color c) {
+        double FACTOR = 1.04;
+        return new Color(Math.min((int) (c.getRed() * FACTOR), 255),
+            Math.min((int) (c.getGreen() * FACTOR), 255),
+            Math.min((int) (c.getBlue() * FACTOR), 255),
+            c.getAlpha());
+    }
+
     /**
      * General renderer for matchable items. Optionally performs color coding based on
      * the match state of the data.
      */
     private class MatcherRenderer extends DefaultTableCellRenderer {
-        private Color bgColor;
-        private Color bgSelectionColor;
-        private Color bgAlternateColor;
-
         MatcherRenderer() {
             super();
-            bgColor = Color.white; // table.getBackground();
-            bgSelectionColor = table.getSelectionForeground();
-            bgAlternateColor = new Color(235, 245, 252);
         }
 
         private void setBackground(int viewRow, int viewColumn, boolean isSelected) {
-            Color bg = (viewRow%2 == 0) ? bgColor : bgAlternateColor;
-            if (!colorCoded.isSelected()) {
-                if (isSelected) bg = bgSelectionColor;
-//                bg = isSelected ? bgSelectionColor : bgColor;
-//                if (viewRow % 2 == 1 && !isSelected) bg = bgAlternateColor; // darken(bg);
-            } else {
-                if (isSelected) bg = selectionColor;
-                else {
-                    int row = table.convertRowIndexToModel(viewRow);
-                    int column = table.convertColumnIndexToModel(viewColumn);
-                    MatchableImportableAudio item = model.getRowAt(row);
-                    switch (item.getMatch()) {
-                    case EXACT:
-                        bg = exactColor;
-                        break;
-                    case FUZZY:
-                        bg = fuzzyColor;
-                        break;
-                    case TOKEN:
-                        bg = tokenColor;
-                        break;
-                    case LEFT_ONLY:
-                        if (column == Columns.Left.ordinal()) bg = leftColor;
-                        break;
-                    case RIGHT_ONLY:
-                        if (column == Columns.Right.ordinal()) bg = rightColor;
-                        break;
-                    }
-                }
-                if (viewRow % 2 == 1 && !isSelected) bg = lighten(bg);
-            }
+            Color bg = getBG(viewRow, viewColumn, isSelected);
             setBackground(bg);
         }
 
@@ -337,14 +357,6 @@ public class MatcherPanel extends JPanel {
             return new Color(Math.max((int) (c.getRed() * FACTOR), 0),
                 Math.max((int) (c.getGreen() * FACTOR), 0),
                 Math.max((int) (c.getBlue() * FACTOR), 0),
-                c.getAlpha());
-        }
-
-        private Color lighten(Color c) {
-            double FACTOR = 1.04;
-            return new Color(Math.min((int) (c.getRed() * FACTOR), 255),
-                Math.min((int) (c.getGreen() * FACTOR), 255),
-                Math.min((int) (c.getBlue() * FACTOR), 255),
                 c.getAlpha());
         }
 
@@ -439,28 +451,24 @@ public class MatcherPanel extends JPanel {
         {
             int row = table.convertRowIndexToModel(viewRow);
             MatchableImportableAudio item = model.getRowAt(row);
+            value = item.getOperation();
             String tooltip = null;
             switch (item.getMatch()) {
             case NONE:
                 break;
             case EXACT:
-                value = "Import from";
                 tooltip = "Exact match";
                 break;
             case FUZZY:
-                value = "Import from";
                 tooltip = "Fuzzy match @" + item.getScore();
                 break;
             case TOKEN:
-                value = "Import from";
                 tooltip = "Token match @" + item.getScore();
                 break;
             case LEFT_ONLY:
-                value = "Missing Audio";
                 tooltip = "Message is missing audio content";
                 break;
             case RIGHT_ONLY:
-                value = "Audio File";
                 tooltip = "Audio file has no matching message";
                 break;
             }
@@ -472,6 +480,46 @@ public class MatcherPanel extends JPanel {
                 viewColumn);
             label.setToolTipText(tooltip);
             return label;
+        }
+    }
+
+    private class BooleanRenderer extends JCheckBox implements TableCellRenderer {
+        private final Border noFocusBorder = new EmptyBorder(1, 1, 1, 1);
+        private JLabel dummy;
+
+        public BooleanRenderer() {
+            super();
+            dummy = new JLabel();
+            dummy.setOpaque(true);
+            setHorizontalAlignment(JLabel.CENTER);
+            setBorderPainted(true);
+            setOpaque(true);
+        }
+
+        public Component getTableCellRendererComponent(JTable table, Object value,
+            boolean isSelected, boolean hasFocus, int viewRow, int viewColumn) {
+
+            int row = table.convertRowIndexToModel(viewRow);
+            int column = table.convertColumnIndexToModel(viewColumn);
+            MatchableImportableAudio item = MatcherPanel.this.model.getRowAt(row);
+            Component comp = (item.isDoReplaceEditable()) ? this : dummy;
+
+            if (isSelected) {
+                comp.setForeground(table.getSelectionForeground());
+            }
+            else {
+                comp.setForeground(table.getForeground());
+            }
+            setSelected((value != null && ((Boolean)value).booleanValue()));
+
+            if (hasFocus) {
+                setBorder(UIManager.getBorder("Table.focusCellHighlightBorder"));
+            } else {
+                setBorder(noFocusBorder);
+            }
+
+            comp.setBackground(getBG(row, column, isSelected));
+            return comp;
         }
     }
 }

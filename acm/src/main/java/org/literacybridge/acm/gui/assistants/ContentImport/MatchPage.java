@@ -122,6 +122,13 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         setComplete();
     }
 
+    /**
+     * Given a message title (ie, from the Program Spec), see if we already have such an
+     * audio item in the desired language.
+     * @param title The title to search for.
+     * @param languagecode The language in which we want the audio item.
+     * @return the AudioItem if it exists, otherwise null.
+     */
     private AudioItem findAudioItemForTitle(String title, String languagecode) {
         List<Category> categoryList = new ArrayList<>();
         List<Locale> localeList = Arrays.asList(new RFC3066LanguageCode(languagecode).getLocale());
