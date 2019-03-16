@@ -181,6 +181,7 @@ public class TBLoader extends JFrame {
 
     // Options.
     private boolean allowPackageChoice = false;
+    private boolean allowForceSrn = false;
 
     class WindowEventHandler extends WindowAdapter {
         @Override
@@ -261,6 +262,9 @@ public class TBLoader extends JFrame {
 
             valStr = config.getProperty("PACKAGE_CHOICE", "FALSE");
             this.allowPackageChoice |= Boolean.parseBoolean(valStr);
+
+            valStr = config.getProperty("ALLOW_FORCE_SRN", "FALSE");
+            this.allowForceSrn |= Boolean.parseBoolean(valStr);
         }
 
         setDeviceIdAndPaths();
@@ -719,6 +723,7 @@ public class TBLoader extends JFrame {
             + "you have a good reason to believe that this SRN has been "
             + "duplicated to multiple Talking Books. This should be exceedingly rare.");
         forceSrn.addActionListener(this::forceSrnListener);
+        forceSrn.setVisible(allowForceSrn);
 
         // Windows drive letter and volume name.
         deviceBox = Box.createHorizontalBox();
@@ -1294,7 +1299,7 @@ public class TBLoader extends JFrame {
                 !isSerialNumberFormatGood2(previousSrn));
             if (needSrn) previousSrn = TBLoaderConstants.NEED_SERIAL_NUMBER;
             newSrnText.setText(previousSrn);
-            forceSrn.setVisible(!needSrn);
+            forceSrn.setVisible(allowForceSrn && !needSrn);
             forceSrn.setSelected(false);
 
             oldCommunityText.setText(oldDeploymentInfo.getCommunity());
