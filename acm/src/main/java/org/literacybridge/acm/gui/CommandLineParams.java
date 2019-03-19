@@ -4,8 +4,11 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 
 public class CommandLineParams {
-  @Option(name = "--sandbox", aliases = {"-s", "--demo", "-d"}, usage = "to enter demo mode")
+  @Option(name = "--sandbox", aliases = {"-s", "--demo", "-d"}, usage = "To enter demo mode. Overrides --update")
   public boolean sandbox;
+
+  @Option(name = "--update", aliases = {"-u"}, usage = "Don't ask, just update.")
+  public boolean update;
 
   @Option(name = "--title", aliases = {"-title"}, usage = "to set name of ACM to be displayed in title bar")
   public String titleACM;
@@ -16,11 +19,14 @@ public class CommandLineParams {
   @Option(name = "--allcategories", usage = "show all categories, regardless of whitelisting")
   public boolean allCategories;
 
-  @Option(name = "--clean", usage = "Clean up referenced audio files")
+  @Option(name = "--clean", usage = "Clean up un-referenced audio files")
   public boolean cleanUnreferenced;
 
   @Option(name="--config", usage="Add toolbar icon to launch configuration dialog.")
   public boolean config;
+
+  @Option(name="--nosplash", aliases={"--ns", "-n"}, usage="Don't use the internal splash screen." )
+  public boolean noSplash;
 
   @Argument
   public String sharedACM;

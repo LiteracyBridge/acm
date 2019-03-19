@@ -40,6 +40,7 @@ public class ACMConfiguration {
     private String title;
     private boolean disableUI = false;
     private boolean forceSandbox = false;
+    private boolean doUpdate = false; // update without prompting
     // If true, show all categories in the category browser. Default is a filtered view.
     private boolean allCategories = false;
     // If true, show a configuration dialog.
@@ -136,6 +137,7 @@ public class ACMConfiguration {
 
         disableUI = params.disableUI;
         forceSandbox = params.sandbox;
+        doUpdate = params.update;
         allCategories = params.allCategories;
         showConfiguration = params.config;
 
@@ -428,6 +430,10 @@ public class ACMConfiguration {
 
     public boolean isDisableUI() {
         return disableUI;
+    }
+
+    boolean isDoUpdate() {
+        return doUpdate && !forceSandbox;
     }
 
     boolean isForceSandbox() {

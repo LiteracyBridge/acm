@@ -43,6 +43,8 @@ public class Application extends JXFrame {
 
   public static double JAVA_VERSION = getJavaVersion();
 
+  private static boolean OWN_SPLASH = false;
+
   private final MainView mainView;
 
   public MainView getMainView() {
@@ -131,7 +133,8 @@ public class Application extends JXFrame {
     taskManager = new BackgroundTaskManager(statusBar);
 
     try {
-      splashScreen.setProgressLabel("Updating index...");
+      if (OWN_SPLASH)
+        splashScreen.setProgressLabel("Updating index...");
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -192,6 +195,7 @@ public class Application extends JXFrame {
       parser.printUsage(System.err);
       return;
     }
+    if (params.noSplash) OWN_SPLASH = false;
     startUp(params);
     if (params.cleanUnreferenced) {
       ACMConfiguration.getInstance().getCurrentDB().getRepository().cleanUnreferencedFiles();
@@ -199,22 +203,24 @@ public class Application extends JXFrame {
   }
 
   private static void startUp(CommandLineParams params) throws Exception {
-    SplashScreen splash = new SplashScreen();
-
+    SplashScreen splash = null;
+    if (OWN_SPLASH) {
+      splash = new SplashScreen();
+      splash.showSplashScreen();
+    }
 //      URL iconURL = Application.class.getResource("/tb_headset.png");
     URL iconURL = Application.class.getResource("/tb.png");
     Image iconImage = new ImageIcon(iconURL).getImage();
     if (OsUtils.MAC_OS) {
       OsUtils.setOSXApplicationIcon(iconImage);
     } else {
-      splash.setIconImage(iconImage);
+      if (OWN_SPLASH)
+        splash.setIconImage(iconImage);
     }
     OsUtils.enableOSXQuitStrategy();
 
-
-      // set look & feel
+      // set look & feel; we use Sea Glass by default.
       SwingUtils.setLookAndFeel("");
-      splash.showSplashScreen();
 
       if (Runtime.getRuntime().maxMemory() < 400 * 1024 * 1024) {
         JOptionPane.showMessageDialog(null,
@@ -225,7 +231,7 @@ public class Application extends JXFrame {
 
     // String dbDirName = null, repositoryDirName= null;
     // initialize config and generate random ID for this acm instance
-    splash.setProgressLabel("Initializing...");
+//    splash.setProgressLabel("Initializing...");
     ACMConfiguration.initialize(params);
 
     // init database
@@ -242,18 +248,20 @@ public class Application extends JXFrame {
       System.exit(1);
     }
 
-      application = new Application(splash);
+      application = new Application(null);
       OsUtils.enableOSXFullscreen(application);
       if (!OsUtils.MAC_OS) {
         application.setIconImage(iconImage);
       }
-      splash.setProgressLabel("Initialization complete. Launching UI...");
+      if (OWN_SPLASH)
+        splash.setProgressLabel("Initialization complete. Launching UI...");
       application.setSize(1000, 725);
       application.setLocation(20, 20);
 
       application.setVisible(true);
       application.toFront();
-      splash.close();
+      if (OWN_SPLASH)
+        splash.close();
 
       // Prompt the user to update to Java 8.
       if (JAVA_VERSION < 1.8) {

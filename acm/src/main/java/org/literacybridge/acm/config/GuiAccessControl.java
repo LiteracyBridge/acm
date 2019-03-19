@@ -125,6 +125,9 @@ public class GuiAccessControl extends AccessControl {
             case available: {
                 if (useSandbox) {
                     break statusLoop;
+                } else if (ACMConfiguration.getInstance().isDoUpdate()) {
+                    // --update means "Don't ask, just update, if it's OK."
+                    break statusLoop;
                 }
                 Object[] options = { "Update Shared Database", "Use Demo Mode" };
                 msg = "Do you want to update the shared database?";

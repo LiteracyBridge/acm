@@ -95,6 +95,7 @@ task copyUpdateScript(type: Copy, dependsOn: copyJars) {
     from "$projectDir/scripts/tb.sh"
     from "$projectDir/scripts/tbutil.sh"
     from "$projectDir/src/main/resources/version.properties"
+    from "$projectDir/src/main/images/splash-acm.jpg"
     into distDir
     rename("version.properties", "build.properties")
 }
