@@ -37,7 +37,7 @@ public class MatchableItem<L, R> implements Comparable<MatchableItem> {
         return right;
     }
 
-    void setRight(R right) {
+    public void setRight(R right) {
         this.right.set(right);
     }
 
@@ -51,7 +51,7 @@ public class MatchableItem<L, R> implements Comparable<MatchableItem> {
         return match;
     }
 
-    void setMatch(MATCH match) {
+    public void setMatch(MATCH match) {
         this.match.set(match);
     }
 
@@ -65,7 +65,7 @@ public class MatchableItem<L, R> implements Comparable<MatchableItem> {
         return score;
     }
 
-    void setScore(int score) {
+    public void setScore(int score) {
         this.score.set(score);
     }
 
@@ -74,6 +74,10 @@ public class MatchableItem<L, R> implements Comparable<MatchableItem> {
         if (getMatch().isMatch() && getMatch() != MATCH.EXACT)
             sb.append('@').append(Integer.toString(getScore()));
         return sb.toString();
+    }
+
+    protected MatchableItem(L left, R right) {
+        this(left, right, left==null ? MATCH.RIGHT_ONLY : MATCH.LEFT_ONLY);
     }
 
     protected MatchableItem(L left, R right, MATCH match) {
@@ -86,6 +90,13 @@ public class MatchableItem<L, R> implements Comparable<MatchableItem> {
         this.setRight(right);
         this.setMatch(match);
         this.setScore(score);
+    }
+
+    public MatchableItem[] disassociate() {
+        MatchableItem[] result = new MatchableItem[2];
+        result[0] = new MatchableItem(getLeft(), null, MATCH.NONE);
+        result[1] = new MatchableItem(null, getRight(), MATCH.NONE);
+        return result;
     }
 
     @Override

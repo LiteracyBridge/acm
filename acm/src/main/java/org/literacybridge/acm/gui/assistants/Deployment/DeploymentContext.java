@@ -50,6 +50,7 @@ class DeploymentContext {
     // List of issues found in the Deployment.
     Issues issues = new Issues();
 
+    // This is the root of a Deployment's languages / playlists / messages.
     DefaultMutableTreeNode playlistRootNode;
 
 

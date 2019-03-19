@@ -5,7 +5,6 @@ import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
-import org.literacybridge.acm.gui.assistants.Matcher.MatcherPanel;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
@@ -44,12 +43,8 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2em'>Match Files with Content.</span>"
                 + "<br/><br/><p>The Assistant has automatically matched files as possible with content. "
-                + "Only high-confidence matches are performed, so manual matching may be required. </p>"
-
-                + "<br/><p>You may now perform any additional matching (or un-matching) as required.</p>"
-
-                + "<br/><p>Click \"Next\" to continue.</p>"
-
+                + "Only high-confidence matches are performed, so manual matching may be required. "
+                + "Perform any additional matching (or un-matching) as required, then click \"Next\" to continue.</p>"
                 + "</html>");
         welcome.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(welcome);
@@ -71,7 +66,7 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
 
         hbox = Box.createHorizontalBox();
         hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        matcherPanel = new MatcherPanel();
+        matcherPanel = new MatcherPanel(context);
         matcherPanel.setBorder(new LineBorder(Color.lightGray, 1));
         hbox.add(matcherPanel);
         add(hbox);

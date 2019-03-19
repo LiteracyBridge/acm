@@ -1,21 +1,39 @@
-package org.literacybridge.acm.gui.assistants.Matcher;
+package org.literacybridge.acm.gui.assistants.ContentImport;
 
+import org.literacybridge.acm.gui.UIConstants;
+import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
+import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
+import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
+import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
+import org.literacybridge.acm.gui.assistants.Matcher.MatcherTable;
+import org.literacybridge.acm.gui.assistants.Matcher.MatcherTableModel;
 import org.literacybridge.acm.gui.assistants.Matcher.MatcherTableModel.Columns;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher.MatchStats;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MatcherPanel extends JPanel {
-    public static int DEFAULT_THRESHOLD = 90;
-    public static int MINIMUM_THRESHOLD = 80;
+    public static int DEFAULT_THRESHOLD = 80;
+    public static int MINIMUM_THRESHOLD = 60;
+
+    private ContentImportContext context;
 
     private JCheckBox hideMatched;
     private JCheckBox colorCoded;
@@ -24,6 +42,7 @@ public class MatcherPanel extends JPanel {
     private JCheckBox showExact;
     private JCheckBox showFuzzy;
     private JCheckBox showToken;
+    private JCheckBox showManual;
 
     private MatcherTableModel model;
     private MatcherTable /*JTable*/ table;
@@ -33,9 +52,15 @@ public class MatcherPanel extends JPanel {
     private Matcher<ImportableAudioItem, ImportableFile, MatchableImportableAudio> matcher;
     private List<ImportableAudioItem> leftList;
     private List<ImportableFile> rightList;
+    private JButton unMatch;
+    private JButton manualMatch;
+    private JButton importAsIs;
 
-    public MatcherPanel() {
+    private int fuzzyThreshold = DEFAULT_THRESHOLD;
+
+    public MatcherPanel(ContentImportContext context) {
         super();
+        this.context = context;
 
         createComponents();
     }
@@ -61,10 +86,9 @@ public class MatcherPanel extends JPanel {
     public MatchStats autoMatch() {
         MatchStats result = new MatchStats();
         if (matcher != null) {
-            int threshold = (int) this.thresholdModel.getValue();
             result.add(matcher.findExactMatches());
-            result.add(matcher.findFuzzyMatches(threshold));
-            result.add(matcher.findTokenMatches(threshold));
+            result.add(matcher.findFuzzyMatches(fuzzyThreshold));
+            result.add(matcher.findTokenMatches(fuzzyThreshold));
             matcher.sort();
             model.fireTableDataChanged();
             statusBar.setText(result.toString());
@@ -73,35 +97,151 @@ public class MatcherPanel extends JPanel {
     }
 
     private void createComponents() {
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setLayout(new GridBagLayout());
 
-        makeToolbar();
-        makeVisualFilters();
-        makeTable();
+        Insets insets = new Insets(0, 0, 15, 0);
+        Insets tight = new Insets(0, 0, 5, 0);
+        GridBagConstraints gbc = new GridBagConstraints(0,
+            GridBagConstraints.RELATIVE,
+            1,
+            1,
+            1.0,
+            0.0,
+            GridBagConstraints.LINE_START,
+            GridBagConstraints.BOTH,
+            tight,
+            1,
+            1);
+
+        JComponent toolbar = makeToolbar();
+        JComponent filters = makeVisualFilters();
+        if (context.debug) {
+            add(toolbar, gbc);
+            add(filters, gbc);
+        }
+
+        add(makeThresholdControl(), gbc);
+
+        gbc.weighty = 1.0;
+        add(makeTable(), gbc);
+        gbc.weighty = 0;
+
+        add(makeManualMatchButtons(), gbc);
 
         // Status bar
         Box hbox = Box.createHorizontalBox();
         statusBar = new JLabel(" ");
         hbox.add(statusBar);
         hbox.add(Box.createHorizontalGlue());
-        add(hbox);
+        if (context.debug) {
+            add(hbox, gbc);
+        }
 
         bgColor = Color.white; // table.getBackground();
         bgSelectionColor = table.getSelectionBackground();
         bgAlternateColor = new Color(235, 245, 252);
     }
 
+    private Box makeManualMatchButtons() {
+        // Control buttons
+        Box hbox = Box.createHorizontalBox();
+        unMatch = new JButton("Unmatch");
+        unMatch.addActionListener(this::onUnMatch);
+        unMatch.setToolTipText("Unmatch the Audio Item from the File.");
+        hbox.add(unMatch);
+        hbox.add(Box.createHorizontalStrut(5));
+        manualMatch = new JButton("Manual Match");
+        manualMatch.addActionListener(this::onManualMatch);
+        manualMatch.setToolTipText("Manually match this file with an message.");
+        hbox.add(manualMatch);
+        hbox.add(Box.createHorizontalStrut(5));
+        importAsIs = new JButton("Import File");
+        importAsIs.addActionListener(this::onImportAsIs);
+        importAsIs.setToolTipText("Import the file as its name.");
+        hbox.add(importAsIs);
+
+        unMatch.setEnabled(false);
+        manualMatch.setEnabled(false);
+
+        hbox.add(Box.createHorizontalGlue());
+
+        table.getSelectionModel().addListSelectionListener(this::listSelectionListener);
+
+        return hbox;
+    }
+
+    private void listSelectionListener(ListSelectionEvent listSelectionEvent) {
+        enableButtons();
+    }
+
+    private MatchableImportableAudio selectedRow() {
+        MatchableImportableAudio row = null;
+        int viewRow = table.getSelectionModel().getLeadSelectionIndex();
+        if (viewRow >= 0) {
+            int modelRow = table.convertRowIndexToModel(viewRow);
+            row = model.getRowAt(modelRow);
+        }
+        return row;
+    }
+
+    private void onUnMatch(ActionEvent actionEvent) {
+        int viewRow = table.getSelectionModel().getLeadSelectionIndex();
+        if (viewRow >= 0) {
+            int modelRow = table.convertRowIndexToModel(viewRow);
+            MatchableImportableAudio row = model.getRowAt(modelRow);
+            if (row != null && row.getMatch().isMatch()) {
+                matcher.unMatch(modelRow);
+                model.fireTableDataChanged();
+            }
+        }
+    }
+
+    private void onManualMatch(ActionEvent actionEvent) {
+        MatchableImportableAudio row = selectedRow();
+        File audioFile = row.getRight().getFile();
+        Map<String, MatchableImportableAudio> unmatchedItems = new LinkedHashMap<>();
+        matcher.matchableItems
+            .stream()
+            .filter(m->m.getMatch()== MATCH.LEFT_ONLY)
+            .forEach(m->unmatchedItems.put(m.getLeft().getTitle(), m));
+        String[] unmatchedTitles = unmatchedItems.keySet().toArray(new String[0]);
+
+        JList<String> list = new JList<>(unmatchedTitles);
+        String message = new String("<html>Choose the Audio item for file '<i>"+audioFile.getName()+"</i>'.</html>");
+        AudioItemSelectionDialog dialog = new AudioItemSelectionDialog("Choose Message For Import Target",
+            message, list);
+
+        String chosenTitle = dialog.show();
+        if (chosenTitle != null) {
+            MatchableImportableAudio chosenItem = unmatchedItems.get(chosenTitle);
+
+            matcher.setMatch(chosenItem, row);
+            model.fireTableDataChanged();
+        }
+    }
+
+    private void onImportAsIs(ActionEvent actionEvent) {
+        MatchableImportableAudio row = selectedRow();
+    }
+
+    private void enableButtons() {
+        MatchableImportableAudio row = selectedRow();
+        unMatch.setEnabled(row != null && row.getMatch().isMatch());
+        manualMatch.setEnabled(row != null && row.getMatch()==MATCH.RIGHT_ONLY);
+        importAsIs.setEnabled(false); // row != null && row.getMatch()==MATCH.RIGHT_ONLY);
+    }
+
     /**
      * Creates the table and sets the model and various renderers, filters, etc.
      */
-    private void makeTable() {
+    private Component makeTable() {
         table = new MatcherTable();
         model = table.getModel();
 
         table.setFilter(this::filter);
 
         MatcherRenderer mr = new MatcherRenderer();
-        table.setRenderer(Columns.Left, mr);
+        table.setRenderer(Columns.Left, new AudioItemRenderer());
 //        table.setRenderer(Columns.Match, new MatchRenderer());
 //        table.setRenderer(Columns.Score, new ScoreRenderer());
         table.setRenderer(Columns.Update, new BooleanRenderer());
@@ -117,13 +257,13 @@ public class MatcherPanel extends JPanel {
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(false);
 
-        add(scrollPane);
+        return scrollPane;
     }
 
     /**
      * Make the toolbar, with the function buttons.
      */
-    private void makeToolbar() {
+    private Box makeToolbar() {
         Box hbox = Box.createHorizontalBox();
         JButton btn = new JButton("Reset");
         btn.addActionListener(this::onResetAction);
@@ -141,20 +281,21 @@ public class MatcherPanel extends JPanel {
         btn.addActionListener(this::onSortAction);
         hbox.add(btn);
         hbox.add(Box.createHorizontalGlue());
-        add(hbox);
+        return hbox;
     }
 
     /**
      * Make the checkboxes for the visual filters.
      */
-    private void makeVisualFilters() {
+    private Box makeVisualFilters() {
+        Box vbox = Box.createVerticalBox();
         Box hbox = Box.createHorizontalBox();
         hideMatched = new JCheckBox("Hide matched");
         colorCoded = new JCheckBox("Color coded", null, false);
         hbox.add(hideMatched);
         hbox.add(colorCoded);
         hbox.add(Box.createHorizontalGlue());
-        add(hbox);
+        vbox.add(hbox);
 
         hbox = Box.createHorizontalBox();
         showLeft = new JCheckBox("Left", null, true);
@@ -162,6 +303,7 @@ public class MatcherPanel extends JPanel {
         showExact = new JCheckBox("Exact", null, true);
         showFuzzy = new JCheckBox("Fuzzy", null, true);
         showToken = new JCheckBox("Token", null, true);
+        showManual = new JCheckBox("Manual", null, true);
 
         hideMatched.addActionListener(this::onHideMatched);
         colorCoded.addActionListener(actionEvent -> model.fireTableDataChanged());
@@ -171,12 +313,18 @@ public class MatcherPanel extends JPanel {
         showExact.addActionListener(actionEvent -> model.fireTableDataChanged());
         showFuzzy.addActionListener(actionEvent -> model.fireTableDataChanged());
         showToken.addActionListener(actionEvent -> model.fireTableDataChanged());
+        showManual.addActionListener(actionEvent -> model.fireTableDataChanged());
 
         // Spinner to set the fuzzy threshold between MINIMUM_THRESHOLD and 100.
         JSpinner threshold = new JSpinner();
         Dimension size = threshold.getPreferredSize();
         thresholdModel = new SpinnerNumberModel(DEFAULT_THRESHOLD, MINIMUM_THRESHOLD, 100, 1);
         threshold.setModel(thresholdModel);
+        threshold.addChangeListener(e -> {
+            if ((int) this.thresholdModel.getValue() != fuzzyThreshold) {
+                fuzzyThreshold = (int) this.thresholdModel.getValue();
+            }
+        });
         size.width = 75;
         threshold.setPreferredSize(size);
         threshold.setMaximumSize(size);
@@ -187,11 +335,46 @@ public class MatcherPanel extends JPanel {
         hbox.add(showExact);
         hbox.add(showFuzzy);
         hbox.add(showToken);
+        hbox.add(showManual);
         hbox.add(threshold);
         hbox.add(Box.createHorizontalGlue());
-        add(hbox);
+        vbox.add(hbox);
+        return vbox;
     }
 
+    private JComponent makeThresholdControl() {
+        final int STEP = 5;
+        Box hbox = Box.createHorizontalBox();
+        hbox.add(new JLabel("Match strictness: Permissive"));
+        hbox.add(Box.createHorizontalStrut(5));
+
+        JSlider slider = new JSlider(JSlider.HORIZONTAL, MINIMUM_THRESHOLD/STEP, 100/STEP, DEFAULT_THRESHOLD/STEP);
+        slider.setMinorTickSpacing(1);
+        slider.setMajorTickSpacing(2);
+        slider.setPaintTicks(true);
+        slider.addChangeListener(e -> {
+            int newValue = slider.getValue() * STEP;
+            if (newValue != fuzzyThreshold) {
+                int oldValue = fuzzyThreshold;
+                fuzzyThreshold = newValue;
+                onThresholdChanged(oldValue);
+            }
+        });
+        hbox.add(slider);
+
+        hbox.add(Box.createHorizontalStrut(5));
+        hbox.add(new JLabel("Strict"));
+
+        // Hack to always have the "color coded" control.
+        if (!context.debug) {
+            hbox.add(Box.createHorizontalStrut(20));
+            hbox.add(colorCoded);
+        }
+
+        hbox.add(Box.createHorizontalGlue());
+
+        return hbox;
+    }
     /**
      * When the "show/hide matched" is toggled, this propagates the setting to the individual
      * show/hide matched toggles.
@@ -202,6 +385,7 @@ public class MatcherPanel extends JPanel {
         showExact.setSelected(!hideMatched.isSelected());
         showFuzzy.setSelected(!hideMatched.isSelected());
         showToken.setSelected(!hideMatched.isSelected());
+        showManual.setSelected(!hideMatched.isSelected());
         model.fireTableDataChanged();
     }
 
@@ -221,12 +405,32 @@ public class MatcherPanel extends JPanel {
             return showFuzzy.isSelected();
         case TOKEN:
             return showToken.isSelected();
+        case MANUAL:
+            return showManual.isSelected();
         case LEFT_ONLY:
             return showLeft.isSelected();
         case RIGHT_ONLY:
             return showRight.isSelected();
         default:
             return false;
+        }
+    }
+
+    private void onThresholdChanged(int oldValue) {
+        // TODO: handle more-strict differently from less-strict.
+        if (oldValue < fuzzyThreshold) {
+            // Got more strict. Unmatch the fuzzy matches that no longer meet the criteria.
+            List<MatchableImportableAudio> toUnmatch = matcher.matchableItems.stream().filter(i->{
+                return i.getMatch().isNonStrictMatch() &&
+                    i.getScore() < fuzzyThreshold;
+            }).collect(Collectors.toList());
+            toUnmatch.forEach(matcher::unMatch);
+            if (!toUnmatch.isEmpty()) {
+                model.fireTableDataChanged();
+            }
+        } else {
+            // Got less strict
+            autoMatch();
         }
     }
 
@@ -246,8 +450,7 @@ public class MatcherPanel extends JPanel {
      * @param actionEvent ignored.
      */
     private void onTokensAction(ActionEvent actionEvent) {
-        int threshold = (int) this.thresholdModel.getValue();
-        MatchStats result = matcher.findTokenMatches(threshold);
+        MatchStats result = matcher.findTokenMatches(fuzzyThreshold);
         model.fireTableDataChanged();
         statusBar.setText(result.toString());
     }
@@ -258,8 +461,7 @@ public class MatcherPanel extends JPanel {
      * @param actionEvent ignored.
      */
     private void onFuzzyAction(ActionEvent actionEvent) {
-        int threshold = (int) this.thresholdModel.getValue();
-        MatchStats result = matcher.findFuzzyMatches(threshold);
+        MatchStats result = matcher.findFuzzyMatches(fuzzyThreshold);
         model.fireTableDataChanged();
         statusBar.setText(result.toString());
     }
@@ -310,6 +512,7 @@ public class MatcherPanel extends JPanel {
                 MatchableImportableAudio item = model.getRowAt(row);
                 switch (item.getMatch()) {
                 case EXACT:
+                case MANUAL:
                     bg = exactColor;
                     break;
                 case FUZZY:
@@ -374,6 +577,44 @@ public class MatcherPanel extends JPanel {
         }
     }
 
+    ImageIcon soundImage = new ImageIcon(
+        UIConstants.getResource("sound-1.png"));
+    ImageIcon newSoundImage = new ImageIcon(
+        UIConstants.getResource("sound-2.png"));
+    ImageIcon noSoundImage = new ImageIcon(
+        UIConstants.getResource("sound-3.png"));
+    private class AudioItemRenderer extends MatcherRenderer {
+
+        @Override
+        public JLabel getTableCellRendererComponent(JTable table,
+            Object value,
+            boolean isSelected,
+            boolean hasFocus,
+            int viewRow,
+            int viewColumn)
+        {
+            int row = table.convertRowIndexToModel(viewRow);
+            MatchableImportableAudio item = model.getRowAt(row);
+            JLabel comp = super.getTableCellRendererComponent(table,
+                value,
+                isSelected,
+                hasFocus,
+                viewRow,
+                viewColumn);
+            ImageIcon icon = null;
+            if (item != null && item.getLeft() != null) {
+                if (item.getLeft().hasAudioItem()) {
+                    icon = item.isUpdate() ? newSoundImage : soundImage;
+                } else {
+                    icon = item.getMatch().isMatch() ? newSoundImage : noSoundImage;
+                }
+            }
+            comp.setIcon(icon);
+            return comp;
+        }
+
+    }
+
     /**
      * Renderer for the Score -- only prints the score for Token or Fuzzy matches.
      */
@@ -424,6 +665,8 @@ public class MatcherPanel extends JPanel {
             case TOKEN:
                 value = "Token";
                 break;
+            case MANUAL:
+                value = "Manual";
             case LEFT_ONLY:
                 value = "Content";
                 break;
@@ -464,6 +707,9 @@ public class MatcherPanel extends JPanel {
                 break;
             case TOKEN:
                 tooltip = "Token match @" + item.getScore();
+                break;
+            case MANUAL:
+                tooltip = "User match";
                 break;
             case LEFT_ONLY:
                 tooltip = "Message is missing audio content";
@@ -518,7 +764,7 @@ public class MatcherPanel extends JPanel {
                 setBorder(noFocusBorder);
             }
 
-            comp.setBackground(getBG(row, column, isSelected));
+            comp.setBackground(getBG(viewRow, viewColumn, isSelected));
             return comp;
         }
     }

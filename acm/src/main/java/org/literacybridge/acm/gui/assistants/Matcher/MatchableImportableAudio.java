@@ -4,7 +4,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 
 public class MatchableImportableAudio extends MatchableItem<ImportableAudioItem, ImportableFile> {
 
-    SimpleBooleanProperty doUpdate = new SimpleBooleanProperty(false);
+    SimpleBooleanProperty doUpdate = new SimpleBooleanProperty(true);
     public boolean getDoUpdate() {
         return doUpdate.get();
     }
@@ -35,11 +35,24 @@ public class MatchableImportableAudio extends MatchableItem<ImportableAudioItem,
                 status = "Keep";
             }
         } else if (getLeft() != null) {
-            status = "Missing Audio";
+            if (getLeft().hasAudioItem()) {
+                status = "Imported";
+            } else {
+                status = "Missing";
+            }
         } else {
-            status = "Audio File";
+            status = "Extra File";
         }
         return status;
+    }
+
+    /**
+     * If there's a match, and there's an existing AudioItem, and user is OK with it, then the
+     * import operation is an "update". Otherwise, it is not an update.
+     * @return true if the import operation is an update.
+     */
+    public boolean isUpdate() {
+        return getMatch().isMatch() && getLeft().hasAudioItem() && getDoUpdate();
     }
 
     protected MatchableImportableAudio(ImportableAudioItem left, ImportableFile right, MATCH match) {
@@ -47,7 +60,7 @@ public class MatchableImportableAudio extends MatchableItem<ImportableAudioItem,
     }
 
     public MatchableImportableAudio(ImportableAudioItem left, ImportableFile right) {
-        super(left, right, left==null ? MATCH.RIGHT_ONLY : MATCH.LEFT_ONLY);
+        super(left, right);
     }
     protected MatchableImportableAudio(ImportableAudioItem left,
         ImportableFile right,
@@ -55,6 +68,15 @@ public class MatchableImportableAudio extends MatchableItem<ImportableAudioItem,
         int score)
     {
         super(left, right, match, score);
+    }
+
+
+    public MatchableImportableAudio[] disassociate() {
+        MatchableImportableAudio[] result = new MatchableImportableAudio[2];
+        result[0] = new MatchableImportableAudio(getLeft(), null);
+        result[0].setDoUpdate(getDoUpdate());
+        result[1] = new MatchableImportableAudio(null, getRight());
+        return result;
     }
 
     @Override

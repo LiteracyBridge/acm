@@ -29,7 +29,7 @@ public class ReviewPage extends AssistantPage<ContentImportContext> {
         context = getContext();
         setLayout(new GridBagLayout());
 
-        Insets insets = new Insets(0,0,20,0);
+        Insets insets = new Insets(0,0,15,0);
         GridBagConstraints gbc = new GridBagConstraints(0,
             GridBagConstraints.RELATIVE,
             1,
@@ -101,10 +101,11 @@ public class ReviewPage extends AssistantPage<ContentImportContext> {
     private String reviewString(MatchableImportableAudio importable) {
         return String.format("<html>"
                 + "%s"  // audio title
-                + "&nbsp;&nbsp;&lt;--- <i>"
-                + "%s"  // operation (update / import)
-                + " from</i>"
-                + "<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style='font-family:Courier'>"
+                + "<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+                + "<i>%s "  // operation (update / import)
+                + "from </i>"
+                + "---&gt;&nbsp;&nbsp;"
+                + "<span style='font-family:Courier'>"
                 + "%s"  // file name
                 + "</span></html>",
             importable.getLeft(),

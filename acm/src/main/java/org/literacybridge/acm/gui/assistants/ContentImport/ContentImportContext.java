@@ -18,14 +18,15 @@ import java.util.Set;
  * contain all of the data for importing the audio tracks for one language in one deployment.
  */
 public class ContentImportContext {
-
-    // From the Welcome page
+    boolean debug = false;
 
     /**
      * Program Spec for the project.
      */
     ProgramSpec programSpec;
     Set<String> programLanguagecodes;
+
+    // From the Welcome page
 
     /**
      * The deployment for which audio is to be imported.

@@ -20,7 +20,8 @@ public abstract class UIConstants {
   public static final String ICON_SEARCH_24_PX = "search-glass-24px.png";
   public static final String ICON_SEARCH_32_PX = "search-glass-32px.png";
 
-  public static final String SPLASH_SCREEN_IMAGE = "splash-screen.jpg";
+//  public static final String SPLASH_SCREEN_IMAGE = "splash-screen.jpg";
+  public static final String SPLASH_SCREEN_IMAGE = "images/splash-screen-b-g-2.jpg";
 
   public static URL getResource(String resourceName) {
     return UIConstants.class.getResource("/" + resourceName);

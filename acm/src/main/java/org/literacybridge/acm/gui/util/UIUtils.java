@@ -7,7 +7,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 
+import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Playlist;
@@ -52,6 +54,28 @@ public class UIUtils {
     } else {
       label.setText(text);
     }
+  }
+
+  public static void appendLabelText(final JTextComponent textComponent,
+      final String newText,
+      final boolean prepend)
+  {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      SwingUtilities.invokeLater(() -> {
+        doAppendText(textComponent, newText, prepend);
+      });
+    } else {
+      doAppendText(textComponent, newText, prepend);
+    }
+  }
+  private static void doAppendText(final JTextComponent textComponent,
+      final String newText,
+      final boolean prepend)
+  {
+    String oldText = textComponent.getText();
+    if (StringUtils.isNotEmpty(oldText)) oldText = prepend ? "\n"+oldText : oldText+"\n";
+    oldText = prepend ? newText+oldText : oldText+newText;
+    textComponent.setText(oldText);
   }
 
   public static void invokeAndWait(final Runnable runnable) {

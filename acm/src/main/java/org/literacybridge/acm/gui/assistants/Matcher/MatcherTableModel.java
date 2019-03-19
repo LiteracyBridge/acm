@@ -1,14 +1,16 @@
 package org.literacybridge.acm.gui.assistants.Matcher;
 
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableRowSorter;
+import java.util.Comparator;
 import java.util.List;
 
 public class MatcherTableModel extends AbstractTableModel {
     public enum Columns {
-        Left(String.class),
+        Left(ImportableAudioItem.class), // (String.class),
         Update(Boolean.class),
         Status(String.class),
-        Right(String.class);
+        Right(ImportableFile.class); //(String.class);
 
         Columns(Class theClass) { this.theClass = theClass; }
         Class<?> theClass;
@@ -87,15 +89,41 @@ public class MatcherTableModel extends AbstractTableModel {
         super.fireTableDataChanged();
     }
 
-    MatchableImportableAudio getRowAt(int rowIndex) {
+    public MatchableImportableAudio getRowAt(int rowIndex) {
         if (rowIndex < 0 || rowIndex >= data.size())
             return null;
         return data.get(rowIndex);
     }
 
-    void setData(List<MatchableImportableAudio> data) {
+    public void setData(List<MatchableImportableAudio> data) {
         this.data = data;
         fireTableDataChanged();
         table.sizeColumns();
     }
+
+    /**
+     * Set appropriate comparators on rows. The TableSorter will otherwise *cast* the items to
+     * be compared to Strings, which (of course) leads to IllegalCast exceptions.
+     * @param sorter on which to set the comparators.
+     */
+    public void setupSorter(TableRowSorter<MatcherTableModel> sorter) {
+        sorter.setComparator(Columns.Left.ordinal(), (ImportableAudioItem o1, ImportableAudioItem o2) -> {
+            if (o1==null) return 1;
+            if (o2==null) return -1;
+            return o1.getTitle().compareToIgnoreCase(o2.getTitle());
+        });
+        sorter.setComparator(Columns.Right.ordinal(), (ImportableFile o1, ImportableFile o2) -> {
+            if (o1==null) return 1;
+            if (o2==null) return -1;
+            return o1.getFile().getName().compareToIgnoreCase(o2.getFile().getName());
+        });
+        sorter.setComparator(Columns.Update.ordinal(), (Boolean o1, Boolean o2) -> {
+            if (o1==null) return 1;
+            if (o2==null) return -1;
+            return o1.compareTo(o2);
+        });
+
+    }
+
+
 }

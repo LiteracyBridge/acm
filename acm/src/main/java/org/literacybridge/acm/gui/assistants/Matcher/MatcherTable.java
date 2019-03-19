@@ -17,13 +17,13 @@ import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-class MatcherTable extends JTable {
+public class MatcherTable extends JTable {
 
     private MatcherTableModel model;
     private TableRowSorter<MatcherTableModel> sorter;
     private MatcherFilter<MatchableImportableAudio> filter;
 
-    MatcherTable() {
+    public MatcherTable() {
         super();
         
         model = new MatcherTableModel(this);
@@ -39,14 +39,16 @@ class MatcherTable extends JTable {
         });
 
         setRowSorter(sorter);
+        model.setupSorter(sorter);
+
         setPreferredScrollableViewportSize(new Dimension(500, 70));
     }
 
-    <T extends MatchableItem<?,?>> void setFilter(Predicate<T> predicate) {
+    public <T extends MatchableItem<?,?>> void setFilter(Predicate<T> predicate) {
         filter.setPredicate((Predicate) predicate);
     }
 
-    void setRenderer(MatcherTableModel.Columns column, TableCellRenderer renderer) {
+    public void setRenderer(MatcherTableModel.Columns column, TableCellRenderer renderer) {
         TableColumn columnModel = getColumnModel().getColumn(column.ordinal());
         columnModel.setCellRenderer(renderer);
     }

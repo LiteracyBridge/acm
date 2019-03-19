@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant;
 
 public class DeploymentAssistant {
@@ -8,7 +9,10 @@ public class DeploymentAssistant {
 
         // Development debugging
         DeploymentContext context = new DeploymentContext();
-        context.deploymentNo = 1;
+        // Debugging & development:
+        if (ACMConfiguration.isTestAcm()) {
+            context.deploymentNo = 1;
+        }
 
         Assistant<DeploymentContext> assistant = new Assistant.Factory<DeploymentContext>()
             .withContext(context)

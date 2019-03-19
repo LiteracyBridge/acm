@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.TableCellRenderer;
@@ -38,12 +39,17 @@ public abstract class AssistantPage<Context> extends JPanel {
         cb.setPreferredSize(size);
     }
 
+    protected static final Border greenBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
+    protected static final Border redBorder = new LineBorder(Color.RED, 1, true);
+    protected static final Border blankBorder = new LineBorder(new Color(0, 0, 0, 0), 1, true);
+    protected static final Border parameterBorder = new CompoundBorder(greenBorder, new EmptyBorder(2,3,2,4));
+
     public static JLabel parameterText() { return parameterText(null); }
     public static JLabel parameterText(String text) {
         JLabel label = new JLabel();
         label.setOpaque(true);
         label.setBackground(Color.white);
-        label.setBorder(greenBorder);
+        label.setBorder(parameterBorder);
         if (!StringUtils.isEmpty(text)) label.setText(text);
         return label;
     }
@@ -83,12 +89,6 @@ public abstract class AssistantPage<Context> extends JPanel {
             column.setWidth(w);
         }
     }
-
-
-
-    protected static final Border greenBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
-    protected static final Border redBorder = new LineBorder(Color.RED, 1, true);
-    protected static final Border blankBorder = new LineBorder(new Color(0, 0, 0, 0), 1, true);
 
     private final Assistant.PageHelper<Context> pageHelper;
     private boolean isComplete = false;

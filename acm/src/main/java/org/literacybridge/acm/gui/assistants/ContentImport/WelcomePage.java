@@ -47,7 +47,7 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
         context = getContext();
         setLayout(new GridBagLayout());
 
-        Insets insets = new Insets(0,0,20,0);
+        Insets insets = new Insets(0,0,15,0);
         GridBagConstraints gbc = new GridBagConstraints(0,
             GridBagConstraints.RELATIVE,
             1,
@@ -108,7 +108,7 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
         gbc.ipadx = 10;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
-        insets = new Insets(0,10,20,30);
+        insets = new Insets(0,10,0,30);
         gbc.insets = insets;
         add(panel, gbc);
 

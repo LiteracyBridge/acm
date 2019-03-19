@@ -6,6 +6,7 @@ import javafx.collections.ObservableList;
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -62,7 +63,8 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
                 if (item2.getMatch() == MATCH.RIGHT_ONLY) {
                     result.comparisons++;
                     // we have a left and a right. Compare them, and then move on.
-                    if (item1.getLeft().equals(item2.getRight())) {
+                    if (item1.getLeft().toString().equals(item2.getRight().toString())) {
+//                    if (item1.getLeft().equals(item2.getRight())) {
                         result.matches++;
                         recordMatch(item1, item2, MATCH.EXACT, 0);
                     }
@@ -94,33 +96,7 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
     }
 
     private MatchStats fuzzyMatchWorker(int threshold, boolean tokens) {
-        MatchStats result = new MatchStats();
-        // Items are sorted. To the extent that the fuzzily matching strings are similar in their
-        // prefixes, they're likely close together. So, first try to match adjacent items, then
-        // move on to the full o(n^2) matching.
-//        int ix = 0;
-//        while (ix < matchableItems.size() - 1) {
-//            MatchableItem item1 = matchableItems.get(ix);
-//            if (item1.getMatch().isSingle()) {
-//                MatchableItem item2 = matchableItems.get(ix + 1);
-//                if (!item2.getMatch().isSingle()) {
-//                    // The second item won't match anything. Skip on past it.
-//                    ix += 2;
-//                } else {
-//                    result.comparisons++;
-//                    if (doMatch(item1, item2, threshold, tokens)) {
-//                        result.matches++;
-//                        ix += 2;
-//                    } else {
-//                        ix++;
-//                    }
-//                }
-//            } else {
-//                ix++;
-//            }
-//        }
-//        squash();
-        result.add(matrixMatch(threshold, tokens));
+        MatchStats result = matrixMatch(threshold, tokens);
 
         squash();
 
@@ -152,7 +128,7 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
         l.setMatch(match);
         l.setScore(score);
         r.setMatch(MATCH.NONE);
-        if (score != 100) {
+        if (score != MATCH.PERFECT) {
             System.out.println(String.format("Matched %s%n     to %s%n   with %s (%d)",
                 l.getLeft(),
                 l.getRight(),
@@ -163,9 +139,13 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
 
     private int scoreMatch(MatchableItem l, MatchableItem r, boolean tokens) {
         int score = 0;
-        if (tokens) score = FuzzySearch.tokenSortPartialRatio(l.getLeft().toString(),
-            r.getRight().toString());
-        else score = FuzzySearch.ratio(l.getLeft().toString(), r.getRight().toString());
+        String left = l.getLeft().toString();
+        String right = r.getRight().toString();
+        if (tokens) {
+            score = FuzzySearch.tokenSortRatio(left, right);
+        } else {
+            score = FuzzySearch.ratio(left, right);
+        }
         return score;
     }
 
@@ -193,11 +173,11 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
         if (leftList.size() == 0 || rightList.size() == 0) return result;
         // Perform all comparisons, then pick the best ones.
         List<Comparison> comparisons = new ArrayList<>();
-        for (int iLeft = 0; iLeft < leftList.size(); iLeft++) {
-            for (int iRight = 0; iRight < rightList.size(); iRight++) {
+        for (MatchableItem matchableItem1 : leftList) {
+            for (MatchableItem matchableItem : rightList) {
                 result.comparisons++;
-                int score = scoreMatch(leftList.get(iLeft), rightList.get(iRight), tokens);
-                comparisons.add(new Comparison(leftList.get(iLeft), rightList.get(iRight), score));
+                int score = scoreMatch(matchableItem1, matchableItem, tokens);
+                comparisons.add(new Comparison(matchableItem1, matchableItem, score));
             }
         }
         // Sort the best ones to the start of the list.
@@ -218,14 +198,14 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
 
     public void sort() {
 //        Collections.sort(matchableItems);
-        Collections.sort(matchableItems, new Comparator<T>() {
+        matchableItems.sort(new Comparator<T>() {
             @Override
             public int compare(T o1, T o2) {
                 MATCH m1 = o1.getMatch();
                 MATCH m2 = o2.getMatch();
                 // Compare unmatched items against each other.
                 // Compare same-matches against each other.
-                if ((!m1.isMatch() && !m2.isMatch()) || m1==m2) {
+                if ((!m1.isMatch() && !m2.isMatch()) || m1 == m2) {
                     return o1.compareTo(o2);
                 }
                 // Compare unmatched as less than matched.
@@ -247,32 +227,31 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
         matchableItems.removeAll(toRemove);
     }
 
-    private static int[][] removeRow(int[][] array, int rowIx)
-    {
-        int[][] newArray = new int[array.length - 1][];
-
-        System.arraycopy(array, 0, newArray, 0, rowIx);
-        System.arraycopy(array, rowIx + 1, newArray, rowIx, array.length - rowIx - 1);
-
-        return newArray;
-    }
-
-    private static int[][] removeSlice(int[][] array, int sliceIx)
-    {
-        for (int iRow = 0; iRow < array.length; iRow++) {
-            int[] newArray = new int[array[iRow].length - 1];
-
-            System.arraycopy(array[iRow], 0, newArray, 0, sliceIx);
-            System.arraycopy(array[iRow],
-                sliceIx + 1,
-                newArray,
-                sliceIx,
-                array.length - sliceIx - 1);
-
-            array[iRow] = newArray;
+    public void unMatch(int itemIndex) {
+        if (itemIndex >= 0 && itemIndex < matchableItems.size()) {
+            T item = matchableItems.get(itemIndex);
+            if (item.getMatch().isMatch()) {
+                T[] replacements = (T[]) item.disassociate();
+                matchableItems.remove(item);
+                matchableItems.addAll(itemIndex, Arrays.asList(replacements));
+            }
         }
-        return array;
     }
+    public void unMatch(MatchableImportableAudio item) {
+        int itemIndex = matchableItems.indexOf(item);
+        if (item.getMatch().isMatch()) {
+            T[] replacements = (T[]) item.disassociate();
+            matchableItems.remove(item);
+            matchableItems.addAll(itemIndex, Arrays.asList(replacements));
+        }
+    }
+
+    public void setMatch(T left, T right) {
+        recordMatch(left, right, MATCH.MANUAL, 0);
+        squash();
+    }
+
+
 
     public static class MatchStats {
         private long start = System.nanoTime();

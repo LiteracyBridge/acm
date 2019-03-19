@@ -14,11 +14,11 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.*;
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -30,10 +30,20 @@ import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
 public class ImportedPage extends AssistantPage<ContentImportContext> {
 
-    private final JLabel importedMessages;
+    private final JLabel importedMessagesLabel;
     private final JLabel currentMessage;
+    private final JTextPane importedMessagesLog;
+    private final JLabel updatedMessagesLabel;
     private ContentImportContext context;
     private int importCount;
+    private int updateCount;
+
+    Category generalOtherCategory = ACMConfiguration
+        .getInstance()
+        .getCurrentDB()
+        .getMetadataStore()
+        .getTaxonomy()
+        .getCategory(CATEGORY_GENERAL_OTHER);
 
     public ImportedPage(PageHelper listener) {
         super(listener);
@@ -41,7 +51,7 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
         context = getContext();
         setLayout(new GridBagLayout());
 
-        Insets insets = new Insets(0, 0, 20, 0);
+        Insets insets = new Insets(0, 0, 15, 0);
         GridBagConstraints gbc = new GridBagConstraints(0,
             GridBagConstraints.RELATIVE,
             1,
@@ -59,7 +69,7 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
         add(welcome, gbc);
 
         Box hbox = Box.createHorizontalBox();
-        hbox.add(new JLabel("Imported message content for deployment "));
+        hbox.add(new JLabel("Import message content for deployment "));
         hbox.add(parameterText(Integer.toString(context.deploymentNo)));
         hbox.add(new JLabel(" in language "));
         hbox.add(parameterText(context.languagecode));
@@ -69,40 +79,43 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
 
         hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Imported "));
-        importedMessages = parameterText("no");
-        hbox.add(importedMessages);
-        hbox.add(new JLabel(" new messages. Created "));
+        importedMessagesLabel = parameterText("no");
+        hbox.add(importedMessagesLabel);
+        hbox.add(new JLabel(" new and updated "));
+        updatedMessagesLabel = parameterText("no");
+        hbox.add(new JLabel("messages. Created "));
         hbox.add(parameterText(Integer.toString(context.createdPlaylists.size())));
         hbox.add(new JLabel(" new playlists."));
         hbox.add(Box.createHorizontalGlue());
         hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(hbox, gbc);
 
-        currentMessage = parameterText("...");
+        currentMessage = new JLabel("...");
         add(currentMessage, gbc);
-
-        add(new JLabel("Click \"Close\" to return to the ACM."), gbc);
 
         // Absorb any vertical space.
         gbc.weighty = 1.0;
-        add(new JLabel(), gbc);
+        gbc.fill = GridBagConstraints.BOTH;
+        importedMessagesLog = new JTextPane();
+        importedMessagesLog.setText("");
+        importedMessagesLog.setEditable(false);
+        JScrollPane logScroller = new JScrollPane(importedMessagesLog);
+        add(logScroller, gbc);
     }
 
     @Override
     protected void onPageEntered(boolean progressing) {
-        Cursor waitCursor = new Cursor(Cursor.WAIT_CURSOR);
-        Cursor defaultCursor = new Cursor(Cursor.DEFAULT_CURSOR);
-        setCursor(waitCursor);
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         SwingWorker worker = new SwingWorker<Integer, Void>() {
             @Override
             protected Integer doInBackground() throws Exception {
-                performUpdate();
+                performImports();
                 return 0;
             }
 
             @Override
             protected void done() {
-                setCursor(defaultCursor);
+                setCursor(Cursor.getDefaultCursor());
                 setComplete();
             }
         };
@@ -118,71 +131,93 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
     @Override
     protected boolean isSummaryPage() { return true; }
 
-    private void performUpdate() {
-        int deploymentNo = context.deploymentNo;
-        String languagecode = context.languagecode;
-        ProgramSpec programSpec = context.programSpec;
+    private void performImports() {
         Matcher<ImportableAudioItem, ImportableFile, MatchableImportableAudio> matcher = context.matcher;
-        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-
-        // General Other category.
-        Category category = ACMConfiguration
-            .getInstance()
-            .getCurrentDB()
-            .getMetadataStore()
-            .getTaxonomy()
-            .getCategory(CATEGORY_GENERAL_OTHER);
-
-        AudioImporter importer = AudioImporter.getInstance();
 
         // Look at all of the matches.
         importCount = 0;
+        updateCount = 0;
         for (MatchableImportableAudio matchableItem : matcher.matchableItems) {
             if (matchableItem.getMatch().isMatch()) {
-                ImportableAudioItem importableAudio = matchableItem.getLeft();
-                boolean okToImport = !importableAudio.hasAudioItem() || matchableItem.getDoUpdate();
+                // If not already in the ACM DB, or the update switch is on, do the import.
+                boolean okToImport =
+                    !matchableItem.getLeft().hasAudioItem() || matchableItem.getDoUpdate();
                 if (okToImport) {
-                    try {
-                        String msg = String.format("%s: %s from %s",
-                            matchableItem.getOperation(),
-                            importableAudio,
-                            matchableItem.getRight().getFile().getCanonicalPath());
-                        UIUtils.setLabelText(currentMessage, msg);
-
-                        ImportHandler handler = new ImportHandler(category, matchableItem);
-                        File importableFile = matchableItem.getRight().getFile();
-
-                        // Add or update the audio file to the ACM database.
-                        AudioItem audioItem = importer.importFile(importableFile, handler);
-
-                        // If the item isn't already in the playlist, add it.
-                        // TODO: that would be an error.
-                        Playlist playlist = importableAudio.getPlaylist();
-                        if (!audioItem.hasPlaylist(playlist)) {
-                            try {
-                                audioItem.addPlaylist(playlist);
-                                playlist.addAudioItem(audioItem);
-                                store.commit(audioItem, playlist);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        importCount++;
-                        UIUtils.setLabelText(importedMessages, Integer.toString(importCount));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    importOneItem(matchableItem);
                 }
             }
         }
         Application.getFilterState().updateResult(true);
+        UIUtils.setLabelText(currentMessage,"Click \"Close\" to return to the ACM.");
     }
 
+    private void importOneItem(MatchableImportableAudio matchableItem)
+    {
+        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+        AudioImporter importer = AudioImporter.getInstance();
+        ImportableAudioItem importableAudio = matchableItem.getLeft();
+
+        try {
+            String msg = String.format("%s: '%s' from '%s'",
+                matchableItem.getOperation(),
+                importableAudio,
+                matchableItem.getRight().getFile().getCanonicalPath());
+            UIUtils.setLabelText(currentMessage, msg);
+
+            ImportHandler handler = new ImportHandler(generalOtherCategory, matchableItem);
+            File importableFile = matchableItem.getRight().getFile();
+
+            // Add or update the audio file to the ACM database.
+            AudioItem audioItem = importer.importFile(importableFile, handler);
+            UIUtils.appendLabelText(importedMessagesLog, msg, false);
+
+            // If the item isn't already in the playlist, add it.
+            // TODO: that would be an error.
+            Playlist playlist = importableAudio.getPlaylist();
+            if (!audioItem.hasPlaylist(playlist)) {
+                try {
+                    audioItem.addPlaylist(playlist);
+                    playlist.addAudioItem(audioItem);
+                    store.commit(audioItem, playlist);
+                    UIUtils.appendLabelText(importedMessagesLog,
+                        String.format("    and add to playlist '%s'.",
+                            audioItem.getTitle(),
+                            playlist.getName()),
+                        false);
+                } catch (Exception e) {
+                    UIUtils.appendLabelText(importedMessagesLog,
+                        String.format("  Exception adding '%s'\n    to playlist '%s'\n  %s",
+                            importableAudio,
+                            playlist.getName(),
+                            e.getMessage()),
+                        false);
+                    e.printStackTrace();
+                }
+            }
+            if (matchableItem.isUpdate()) {
+                updateCount++;
+                UIUtils.setLabelText(updatedMessagesLabel, Integer.toString(importCount));
+            } else {
+                importCount++;
+                UIUtils.setLabelText(importedMessagesLabel, Integer.toString(importCount));
+            }
+        } catch (IOException e) {
+            UIUtils.appendLabelText(importedMessagesLog,
+                String.format("Exception importing '%s'\n  %s", importableAudio, e.getMessage()),
+                false);
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * ImportHandler for file imports. Sets category, language, and/or title in
+     * the callback handler.
+     */
     private class ImportHandler implements AudioImporter.AudioItemProcessor {
         private final Category category;
         private final MatchableImportableAudio matchableItem;
 
-        public ImportHandler(Category category, MatchableImportableAudio matchableItem) {
+        ImportHandler(Category category, MatchableImportableAudio matchableItem) {
             this.category = category;
             this.matchableItem = matchableItem;
         }
@@ -210,11 +245,13 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
                     System.out.println(String.format("Renaming '%s' to '%s'.",
                         existingTitle,
                         importableAudio.getTitle()));
-                    item.getMetadata().put(MetadataSpecification.DC_TITLE, importableAudio.getTitle());
+                    item
+                        .getMetadata()
+                        .put(MetadataSpecification.DC_TITLE, importableAudio.getTitle());
                 }
 
             }
         }
-
     }
+
 }

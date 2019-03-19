@@ -20,6 +20,7 @@ import java.util.Set;
 public class FilesPage extends AssistantPage<ContentImportContext> {
 
     private final JButton chooseFiles;
+    private final JLabel choosePrompt;
 
     private enum AUDIO_EXTS {
         MP3, OGG, A18, WAV;
@@ -50,7 +51,7 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
 
         setLayout(new GridBagLayout());
 
-        Insets insets = new Insets(0,0,20,0);
+        Insets insets = new Insets(0,0,15,0);
         GridBagConstraints gbc = new GridBagConstraints(0,
             GridBagConstraints.RELATIVE,
             1,
@@ -62,7 +63,6 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
             insets,
             1,
             1);
-
 
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2em'>Choose Files to Import.</span>"
@@ -82,7 +82,8 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         add(hbox, gbc);
 
         hbox = Box.createHorizontalBox();
-        hbox.add(new JLabel("Click here: "));
+        choosePrompt = new JLabel("Click here to choose files: ");
+        hbox.add(choosePrompt);
         chooseFiles = new JButton("Choose File(s)");
         chooseFiles.addActionListener(this::onChooseFiles);
         hbox.add(chooseFiles);
@@ -105,7 +106,7 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         gbc.ipadx = 10;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
-        insets = new Insets(0,10,20,30);
+        insets = new Insets(0,10,0,30);
         gbc.insets = insets;
         add(panel, gbc);
 
@@ -149,6 +150,7 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         context.importableFiles.addAll(expandedFiles);
 
         fillFileList();
+        choosePrompt.setText("Click to choose more files: ");
     }
 
     @Override
@@ -172,7 +174,6 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         filesPreviewModel.clear();
         context.importableFiles.stream()
             .map(File::getName)
-            .map(FilenameUtils::getBaseName)
             .forEach(filesPreviewModel::addElement);
 
         filesPreviewScroller.setVisible(!filesPreviewModel.isEmpty());
