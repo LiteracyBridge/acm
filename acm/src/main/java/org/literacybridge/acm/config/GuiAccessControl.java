@@ -71,6 +71,7 @@ public class GuiAccessControl extends AccessControl {
                 // Nothing to ask.
                 break statusLoop;
             case noServer: {
+                if (useSandbox) break statusLoop;
                 Object[] options = { "Try again", "Use Demo Mode" };
                 msg = "Cannot reach Literacy Bridge web server.  Do you want to get online now and try again or use Demo Mode?";
                 String title = "Cannot Connect to Server";
@@ -90,8 +91,11 @@ public class GuiAccessControl extends AccessControl {
                 }
             }
             break;
-            case outdatedDb:
-            case notAvailable: {
+            case notAvailable:
+                // Another user has the db checked out. If user requested sandbox anyway, just honor that.
+                if (useSandbox) break statusLoop;
+                // fall through to outdatedDB.
+            case outdatedDb: {
                 Object[] options = { "Shutdown", "Use Demo Mode" };
                 if (accessStatus == AccessStatus.outdatedDb) {
                     msg = "The latest version of the ACM database has not yet downloaded to this computer.\nYou may shutdown and wait or begin demonstration mode with the previous version.";
