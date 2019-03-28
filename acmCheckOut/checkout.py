@@ -45,7 +45,6 @@ BUCKET_NAME = 'acm-logging'
 TABLE_NAME = 'acm_check_out'
 CHECKED_IN = 'CHECKED_IN'
 CHECKED_OUT = 'CHECKED_OUT'
-START_TIME = str(datetime.datetime.now())
 
 # specify s3 bucket to store logs
 s3 = boto3.resource('s3', region_name=REGION_NAME)
@@ -56,6 +55,9 @@ dynamodb = boto3.resource('dynamodb', region_name=REGION_NAME)
 table = dynamodb.Table(TABLE_NAME)
 
 
+def now():
+    return str(datetime.datetime.now())
+
 def lambda_handler(event, context):
     """
     :param event: dict -- POST request passed in through API Gateway
@@ -65,8 +67,11 @@ def lambda_handler(event, context):
 
     try:
         # parameters received from HTTPS POST request:
-        acm_name = event.get('db')  # name of ACM (e.g. 'ACM-FB-2013-01') - primary key of dynamoDB table
         action = event.get('action')  # 'checkIn', 'revokeCheckOut', 'checkOut', 'statusCheck', 'discard'
+        if action == 'report':
+            return send_report(event);
+
+        acm_name = event.get('db')  # name of ACM (e.g. 'ACM-FB-2013-01') - primary key of dynamoDB table
         # check_key = event.get('key')  # distinguish between ACM creation (i.e. key = 'new') or standard check-in
 
         # query table to get stored acm entry from db
@@ -171,7 +176,7 @@ def check_in(event, acm):
         ':f': file_name,
         ':n': user_name,
         ':c': contact,
-        ':d': START_TIME
+        ':d': now()
     }
 
     # JSON response parameters
@@ -222,7 +227,7 @@ def new_check_in(event, acm):
         ':f': file_name,
         ':n': user_name,
         ':c': contact,
-        ':d': START_TIME,
+        ':d': now(),
         ':v': comment
     }
 
@@ -317,7 +322,7 @@ def check_out(event, acm):
         ':k': new_key,
         ':v': version,
         ':t': comment,
-        ':d': START_TIME,
+        ':d': now(),
         ':m': computer_name
     }
 
@@ -404,6 +409,7 @@ def status_check(acm):
             'contact': str(acm.get('now_out_contact')),
             'filename': str(acm.get('last_in_file_name')),
             'opendate': str(acm.get('now_out_date')),
+            'computername': str(acm.get('now_out_computername')),
             'status': 'denied'
         }
     return {
@@ -465,6 +471,7 @@ def update_dynamo(event, update_exp, condition_exp, exp_values, json_resp):
                                                     '2': 'filename=' + str(acm.get('last_in_file_name'))}
                     json_resp['failure']['openby'] = str(acm.get('now_out_name'))
                     json_resp['failure']['contact'] = str(acm.get('now_out_contact'))
+                    json_resp['failure']['computername'] = str(acm.get('now_out_computername'))
                     json_resp['failure']['filename'] = str(acm.get('last_in_file_name'))
                 return json_resp['failure']
         logger(event, 'denied')
@@ -517,7 +524,7 @@ def logger(event, response, action_name=None):
     try:
         response = bucket.put_object(
             Body=body,  # timestamp,action,k1:v1,k2:v2,... log entry
-            Key='logs/' + str(date.year) + '/' + str(date.month) + '/' + START_TIME + '_' + str(randint(0, 1000)),
+            Key='logs/' + str(date.year) + '/' + str(date.month) + '/' + now() + '_' + str(randint(0, 1000)),
             # unique filename
             ContentType='text/plain',
         )
@@ -525,6 +532,52 @@ def logger(event, response, action_name=None):
         print ('LOGGING ERROR: ' + str(err))
         pass
 
+
+def send_report(event):
+    fromaddr = event.get('from') or 'ictnotifications@literacybridge.org'
+    subject = event.get('subject')
+    body = event.get('body')
+    recipient = event.get('to') or 'ictnotifications@literacybridge.org'
+    html = event.get('html') or False
+
+    return send_ses(fromaddr, subject, body, recipient, html)
+
+# Format and send an ses message. Options are
+# html    - if true, send as html format
+# dry_run - if true, do not actually send email
+def send_ses(fromaddr,
+             subject,
+             body_text,
+             recipient,
+             html):
+    """Send an email via the Amazon SES service.
+
+    Example:
+      send_ses('me@example.com, 'greetings', "Hi!", 'you@example.com)
+
+    Return:
+      If 'ErrorResponse' appears in the return message from SES,
+      return the message, otherwise return an empty '' string.
+    """
+
+    message = {'Subject': {'Data': subject}}
+    if html:
+        message['Body'] = {'Html': {'Data': body_text}}
+    else:
+        message['Body'] = {'Text': {'Data': body_text}}
+
+    client = boto3.client('ses')
+    response = client.send_email(
+        Source=fromaddr,
+        Destination={
+            'ToAddresses': [
+                recipient
+            ]
+        },
+        Message=message
+    )
+
+    return response
 
 if __name__ == "__main__":
     result = lambda_handler({'action': 'statusCheck', 'db': 'ACM-TEST'}, None)
