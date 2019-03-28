@@ -85,7 +85,8 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
         add(includeTbCategory, gbc);
         includeTbCategory.addActionListener(this::onSelection);
         noPublish = new JCheckBox("Do not publish the Deployment; create only.");
-        // For the time being, do not all publish from production.
+        // Always allow publish from a test database.
+        // Do not allow publish from production if running sandboxed.
         noPublish.setSelected(!ACMConfiguration.isTestAcm() || ACMConfiguration.isSandbox());
         noPublish.addActionListener(this::onSelection);
         add(noPublish, gbc);
@@ -141,6 +142,7 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
     protected void onPageLeaving(boolean progressing) {
         context.includeUfCategory = includeUfCategory.isSelected();
         context.includeTbCategory = includeTbCategory.isSelected();
+        // For time being, "no publish" if not a test database.
         context.noPublish = noPublish.isSelected() || !ACMConfiguration.isTestAcm() || ACMConfiguration.isSandbox();
     }
 
@@ -313,8 +315,10 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
      * @param actionEvent is ignored.
      */
     private void onSelection(ActionEvent actionEvent) {
-        if (!ACMConfiguration.isTestAcm() || ACMConfiguration.isSandbox())
+        boolean okToPublish = ACMConfiguration.isTestAcm() || !ACMConfiguration.isSandbox();
+        if (!okToPublish) {
             noPublish.setSelected(true);
+        }
         setComplete();
     }
 

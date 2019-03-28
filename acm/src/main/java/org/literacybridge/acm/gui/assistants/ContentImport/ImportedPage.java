@@ -14,11 +14,11 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.utils.EmailHelper;
 
 import javax.swing.*;
 import java.awt.Component;
 import java.awt.Cursor;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -116,6 +116,7 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
             @Override
             protected void done() {
                 setCursor(Cursor.getDefaultCursor());
+                sendReport();
                 setComplete();
             }
         };
@@ -131,6 +132,18 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
     @Override
     protected boolean isSummaryPage() { return true; }
 
+    private void sendReport() {
+        try {
+            EmailHelper.sendEmail("ictnotifications@literacybridge.org",
+                "ictnotifications@literacybridge.org",
+                "Content Imported",
+                importedMessagesLog.getText(),
+                false);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void performImports() {
         Matcher<ImportableAudioItem, ImportableFile, MatchableImportableAudio> matcher = context.matcher;
 
@@ -139,12 +152,16 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
         updateCount = 0;
         for (MatchableImportableAudio matchableItem : matcher.matchableItems) {
             if (matchableItem.getMatch().isMatch()) {
-                // If not already in the ACM DB, or the update switch is on, do the import.
+                // If not already in the ACM DB, or the "update item" checkbox is on, do the import.
                 boolean okToImport =
                     !matchableItem.getLeft().hasAudioItem() || matchableItem.getDoUpdate();
                 if (okToImport) {
                     importOneItem(matchableItem);
+                } else if (matchableItem.getLeft().hasAudioItem()) {
+                    ensureAudioInPlaylist(matchableItem);
                 }
+            } else if (matchableItem.getLeft() != null && matchableItem.getLeft().hasAudioItem()) {
+                ensureAudioInPlaylist(matchableItem);
             }
         }
         Application.getFilterState().updateResult(true);
@@ -207,6 +224,35 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
                 false);
             e.printStackTrace();
         }
+    }
+
+    private void ensureAudioInPlaylist(MatchableImportableAudio matchableItem) {
+        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+        ImportableAudioItem importableAudio = matchableItem.getLeft();
+        Playlist playlist = importableAudio.getPlaylist();
+        AudioItem audioItem = matchableItem.getLeft().getItem();
+        if (!audioItem.hasPlaylist(playlist)) {
+            try {
+                audioItem.addPlaylist(playlist);
+                playlist.addAudioItem(audioItem);
+                store.commit(playlist);
+                UIUtils.appendLabelText(importedMessagesLog,
+                    String.format("Add '%s'\n    to playlist '%s'.",
+                        importableAudio,
+                        audioItem.getTitle(),
+                        playlist.getName()),
+                    false);
+            } catch (Exception e) {
+                UIUtils.appendLabelText(importedMessagesLog,
+                    String.format("  Exception adding '%s'\n    to playlist '%s'\n  %s",
+                        importableAudio,
+                        playlist.getName(),
+                        e.getMessage()),
+                    false);
+                e.printStackTrace();
+            }
+        }
+
     }
 
     /**

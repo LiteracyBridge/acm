@@ -13,7 +13,7 @@ public class ContentImportAssistant {
 
         ContentImportContext context = new ContentImportContext();
         // Debugging & development:
-        if (ACMConfiguration.isTestAcm()) {
+        if (ACMConfiguration.isTestData()) {
             context.deploymentNo = 1;
             context.languagecode = "en";
         }

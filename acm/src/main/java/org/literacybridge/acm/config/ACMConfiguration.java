@@ -40,6 +40,7 @@ public class ACMConfiguration {
     private String title;
     private boolean disableUI = false;
     private boolean forceSandbox = false;
+    private boolean testData = false; // to simulate test data for more convenient test iteration
     private boolean doUpdate = false; // update without prompting
     // If true, show all categories in the category browser. Default is a filtered view.
     private boolean allCategories = false;
@@ -113,6 +114,9 @@ public class ACMConfiguration {
         if (instance == null || instance.getCurrentDB() == null) return false;
         return (instance.getCurrentDB().isSandboxed());
     }
+    public static boolean isTestData() {
+        return isTestAcm() && instance != null && instance.testData;
+    }
 
     /**
      * Initialize the shared ACMConfiguration instance. Must not already be
@@ -140,6 +144,7 @@ public class ACMConfiguration {
         doUpdate = params.update;
         allCategories = params.allCategories;
         showConfiguration = params.config;
+        testData = params.testData;
 
         setupACMGlobalPaths();
 
@@ -291,7 +296,7 @@ public class ACMConfiguration {
         return UsersConfigurationProperties.getProperty("USER_NAME");
     }
 
-    String getUserContact() {
+    public String getUserContact() {
         return UsersConfigurationProperties.getProperty(Constants.USER_CONTACT_INFO);
     }
 

@@ -10,7 +10,7 @@ public class DeploymentAssistant {
         // Development debugging
         DeploymentContext context = new DeploymentContext();
         // Debugging & development:
-        if (ACMConfiguration.isTestAcm()) {
+        if (ACMConfiguration.isTestData()) {
             context.deploymentNo = 1;
         }
 

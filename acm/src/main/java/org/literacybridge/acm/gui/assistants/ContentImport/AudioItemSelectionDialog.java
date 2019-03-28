@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
+import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -15,9 +16,11 @@ public class AudioItemSelectionDialog {
     private JButton okButton, cancelButton;
     private ActionListener okEvent, cancelEvent;
     private JDialog dialog;
+    private final JOptionPane optionPane;
 
     public AudioItemSelectionDialog(String title, String message, JList<String> listToDisplay) {
         this.list = listToDisplay;
+        list.addListSelectionListener(this::listSelectionListener);
         label = new JLabel(message);
 
         bgColor = Color.white; // table.getBackground();
@@ -26,7 +29,7 @@ public class AudioItemSelectionDialog {
 
         setupButtons();
         JPanel pane = layoutComponents();
-        JOptionPane optionPane = new JOptionPane(pane);
+        optionPane = new JOptionPane(pane);
         optionPane.setOptions(new Object[] { okButton, cancelButton });
         dialog = optionPane.createDialog(title);
     }
@@ -34,9 +37,13 @@ public class AudioItemSelectionDialog {
     private void setupButtons() {
         okButton = new JButton("Ok");
         okButton.addActionListener(e -> dialog.setVisible(false));
+        okButton.setEnabled(false);
 
         cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(e -> dialog.setVisible(false));
+        cancelButton.addActionListener(e -> {
+            list.clearSelection();
+            dialog.setVisible(false);
+        });
     }
 
     private JPanel layoutComponents() {
@@ -47,6 +54,10 @@ public class AudioItemSelectionDialog {
         panel.add(list, BorderLayout.CENTER);
         list.setBorder(new LineBorder(Color.red, 1));
         return panel;
+    }
+
+    private void listSelectionListener(ListSelectionEvent listSelectionEvent) {
+        okButton.setEnabled(list.getLeadSelectionIndex() >= 0);
     }
 
     private ListCellRenderer listCellRenderer = new DefaultListCellRenderer() {

@@ -3,6 +3,7 @@ package org.literacybridge.acm.gui.MainWindow.audioItems;
 import org.jdesktop.swingx.JXTableHeader;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.dialogs.AudioItemContextMenuDialog;
+import org.literacybridge.acm.gui.dialogs.AudioItemRenameDialog;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemToPlayMessage;
 import org.literacybridge.acm.gui.util.UIUtils;
@@ -41,11 +42,13 @@ public class AudioItemViewMouseListener extends MouseAdapter {
       // Was the click on the info icon?
       int col = adaptee.audioItemTable.columnAtPoint(e.getPoint());
       boolean infoIconClicked = col == AudioItemTableModel.infoIconColumn.getColumnIndex();
+      boolean titleColumnClicked = col == AudioItemTableModel.titleColumn.getColumnIndex();
 
       // Was the click on a selected row?
       int row = headerClick ? -1 : adaptee.audioItemTable.rowAtPoint(e.getPoint());
+      int[] selectedRows = adaptee.audioItemTable.getSelectedRows();
       boolean selectedRowClicked = false;
-      for (int selected: adaptee.audioItemTable.getSelectedRows()) {
+      for (int selected: selectedRows) {
           selectedRowClicked |= (row == selected);
       }
 
@@ -57,8 +60,17 @@ public class AudioItemViewMouseListener extends MouseAdapter {
                 showAudioItemDlg(e);
           else
               Toolkit.getDefaultToolkit().beep();
+      } else if (titleColumnClicked && selectedRows.length == 1 && selectedRowClicked && e.getClickCount()==2) {
+          showRenameDlg(e);
       }
   }
+
+    private void showRenameDlg(MouseEvent e) {
+        AudioItem audioItem = adaptee.getCurrentAudioItem();
+        AudioItemRenameDialog dialog = new AudioItemRenameDialog(Application.getApplication(),
+            audioItem);
+        UIUtils.showDialog(dialog, e.getXOnScreen(), e.getYOnScreen());
+    }
 
     private void showAudioItemDlg(MouseEvent e) {
         // always the first item of a selection.

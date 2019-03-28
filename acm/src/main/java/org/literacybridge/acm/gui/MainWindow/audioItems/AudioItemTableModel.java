@@ -17,16 +17,19 @@ import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataStore.DataChangeListener;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.SearchResult;
 import org.literacybridge.acm.utils.B26RotatingEncoding;
 
 import javax.swing.table.AbstractTableModel;
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class AudioItemTableModel extends AbstractTableModel {
   private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
@@ -42,7 +45,7 @@ public class AudioItemTableModel extends AbstractTableModel {
             }
         });
 
-    private static final ColumnInfo<String> titleColumn = ColumnInfo.newMetadataColumnInfo(
+    public static final ColumnInfo<String> titleColumn = ColumnInfo.newMetadataColumnInfo(
         LabelProvider.AUDIO_ITEM_TABLE_COLUMN_TITLE,
         ColumnInfo.WIDTH_NOT_SET,
         230,
@@ -240,7 +243,7 @@ public class AudioItemTableModel extends AbstractTableModel {
     }
   }
 
-  private AudioItemNodeRow convertToAudioItemNodeRow(AudioItem audioItem) {
+    private AudioItemNodeRow convertToAudioItemNodeRow(AudioItem audioItem) {
     AudioItemNodeRow audioItemNodeRow = new AudioItemNodeRow(audioItem,
         columns.length);
 

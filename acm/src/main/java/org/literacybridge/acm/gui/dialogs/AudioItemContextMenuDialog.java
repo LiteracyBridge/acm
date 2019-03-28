@@ -18,6 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
@@ -53,10 +54,11 @@ public class AudioItemContextMenuDialog extends JDialog {
     setResizable(false);
     setUndecorated(true);
 
-    GridLayout grid = new GridLayout(5, 1);
+    GridLayout grid = new GridLayout(6, 1);
 
     final String labelPostfix = getPostfixLabel(selectedAudioItems);
 
+    FlatButton renameButton = makeRenameButton(selectedAudioItems, labelPostfix);
     FlatButton deleteButton = makeDeleteButton(selectedAudioItems, labelPostfix);
     FlatButton editButton = makeEditButton(selectedAudioItems);
     FlatButton exportAudioButton = makeExportButton(selectedAudioItems, labelPostfix, ExportDialog.TYPE.Audio);
@@ -64,12 +66,15 @@ public class AudioItemContextMenuDialog extends JDialog {
     FlatButton languageButton = makeLanguageButton(selectedAudioItems, labelPostfix);
 
     setLayout(grid);
+    Border border = BorderFactory.createEmptyBorder(10, 10, 10, 10);
 
-    editButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-    deleteButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-    exportAudioButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-    exportMetadataButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-    languageButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    renameButton.setBorder(border);
+    editButton.setBorder(border);
+    deleteButton.setBorder(border);
+    exportAudioButton.setBorder(border);
+    exportMetadataButton.setBorder(border);
+    languageButton.setBorder(border);
+    add(renameButton);
     add(editButton);
     add(exportAudioButton);
     add(exportMetadataButton);
@@ -79,7 +84,7 @@ public class AudioItemContextMenuDialog extends JDialog {
     addWindowListener(windowListener);
     addKeyListener(keyListener);
     setAlwaysOnTop(true);
-    setSize(new Dimension(450, 125));
+    setSize(new Dimension(450, 175));
   }
 
   /**
@@ -233,6 +238,34 @@ public class AudioItemContextMenuDialog extends JDialog {
     };
 
     return deleteButton;
+  }
+
+  /**
+   * Make a button to invoke the rename dialog.
+   * @param selectedAudioItems Audio Items that would be renamed.
+   * @param labelPostfix A description of the item(s).
+   * @return the button.
+   */
+  private FlatButton makeRenameButton(final AudioItem[] selectedAudioItems, String labelPostfix) {
+    Color backgroundColor = Application.getApplication().getBackground();
+    Color highlightedColor = SystemColor.textHighlight;
+    ImageIcon renameImageIcon = new ImageIcon(
+        UIConstants.getResource("rename-16.png"));
+    final String selectedTitle = getMetadataTitle(selectedAudioItems[0]);
+    String buttonLabel = String.format("Rename %s", labelPostfix);
+
+    FlatButton renameButton = new FlatButton(buttonLabel, renameImageIcon, backgroundColor, highlightedColor) {
+      @Override
+      public void click() {
+        AudioItemContextMenuDialog.this.setVisible(false);
+        AudioItemRenameDialog dialog = new AudioItemRenameDialog(
+            Application.getApplication(),  selectedAudioItems);
+        // Place the new dialog within the application frame.
+        dialog.setLocation(Application.getApplication().getX()+20, Application.getApplication().getY()+20);
+        dialog.setVisible(true);
+      }
+    };
+    return renameButton;
   }
 
   /**

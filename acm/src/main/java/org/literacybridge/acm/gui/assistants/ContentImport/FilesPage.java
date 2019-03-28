@@ -117,7 +117,7 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         fileChooser.setFileFilter(chooserFilter);
 
         // Testing code
-        if (ACMConfiguration.isTestAcm()) {
+        if (ACMConfiguration.isTestData()) {
             List<File> testingFiles = Arrays.asList(new File("/Users/bill/A-test1"));
             List<File> expandedFiles = expandDirectories(testingFiles);
             context.importableFiles.addAll(expandedFiles);

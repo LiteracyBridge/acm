@@ -9,4 +9,9 @@ if [ "${prefix}" != "ACM-" ]; then
     acmname="ACM-${acmname}"
 fi
 
-java -cp acm.jar:lib/*:resources/ org.literacybridge.acm.gui.Application $acmname $@
+splash=""
+if [ -e splash-acm.jpg ]; then
+    splash="-splash:splash-acm.jpg"
+fi
+
+java ${splash} -cp acm.jar:lib/*:resources/ org.literacybridge.acm.gui.Application $acmname $@

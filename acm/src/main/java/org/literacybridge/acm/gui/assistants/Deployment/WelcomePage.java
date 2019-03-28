@@ -49,7 +49,7 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
         add(welcome, gbc);
 
         Box hbox = Box.createHorizontalBox();
-        hbox.add(new JLabel("Import for Deployment: "));
+        hbox.add(new JLabel("Create Deployment: "));
         deploymentChooser = new JComboBox<>();
         deploymentChooser.addActionListener(this::onSelection);
         setComboWidth(deploymentChooser, "Choose...");
@@ -85,10 +85,11 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
 
         deploymentChooser.removeAllItems();
         deploymentChooser.addItem("Choose...");
-        IntStream.rangeClosed(1, 5)
-            .boxed()
-            .map(i -> i.toString())
-            .forEach(s -> deploymentChooser.addItem(s));
+        context.programSpec.getDeployments()
+                           .stream()
+                           .map(d -> Integer.toString(d.deploymentnumber))
+                           .forEach(deploymentChooser::addItem);
+
 
         // If previously selected, re-select.
         int deploymentNo = context.deploymentNo;
