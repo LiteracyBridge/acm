@@ -79,7 +79,7 @@ public class ReviewPage extends AssistantPage<ContentImportContext> {
         importPreviewModel.clear();
         // For the imports, create a "item from \n file" label, and add to the preview.
         matcher.matchableItems.stream()
-            .filter(MatchableImportableAudio::isImportable)
+            .filter(item -> item.getMatch().isMatch() && item.getLeft().isImportable())
             .map(this::reviewString)
             .forEach(importPreviewModel::addElement);
 

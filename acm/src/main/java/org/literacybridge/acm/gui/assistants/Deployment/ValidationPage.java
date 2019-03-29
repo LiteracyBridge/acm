@@ -90,7 +90,6 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         hbox.add(deployment);
         hbox.add(Box.createHorizontalGlue());
         // TODO: needed?
-//        hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(hbox, gbc);
 
         deployWithWarnings = new JCheckBox("Create Deployment with warnings. This will not conform to the Program Spec.");

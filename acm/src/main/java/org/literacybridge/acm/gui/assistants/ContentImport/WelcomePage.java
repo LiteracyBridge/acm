@@ -4,15 +4,16 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.MainWindow.SidebarView;
+import org.literacybridge.acm.gui.assistants.util.PSContent;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.Content;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.*;
-import javax.swing.border.LineBorder;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -20,9 +21,9 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -36,11 +37,13 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
 
     private final JComboBox<Object> deploymentChooser;
     private final JComboBox<String> languageChooser;
-    private final DefaultListModel<String> titlePreviewModel = new DefaultListModel<>();
     private final JLabel titlePreviewLabel;
     private final JScrollPane titlePreviewScroller;
 
     private ContentImportContext context;
+    private final DefaultMutableTreeNode progSpecRootNode;
+    private final DefaultTreeModel progSpecTreeModel;
+    private final JTree progSpecTree;
 
     WelcomePage(PageHelper listener) {
         super(listener);
@@ -63,21 +66,17 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
         JLabel welcome = new JLabel("<html>"
             + "<span style='font-size:2.5em'>Welcome to the Content Import Assistant.</span>"
             + "<br/><br/><p>This assistant will guide you through importing audio content into your project. Steps to import audio:</p>"
-            + "<ul>"
-            + "<li> You indicate the Deployment #, and the Language of the content you are importing.</li>"
-            + "<li> You select the files and folders containing the content.</li>"
+            + "<ol>"
+            + "<li> You choose the Deployment #, and the Language of the content you want to import.</li>"
+            + "<li> You choose the files and folders containing the content.</li>"
             + "<li> The assistant will automatically match as many imported files as it can.</li>"
-            + "<li> You manually match any remaining imported files to the titles in the Content Calendar.</li>"
-            + "</ul>"
-            + "<br/><p>Select the Deployment and Language for which you wish to import content. "
-            + "Then click \"Next\" to continue.</p>"
-
+            + "<li> You manually match any remaining files to the titles in the Content Calendar.</li>"
             + "</html>");
         add(welcome, gbc);
 
         // Deployment # and language chooser, in a HorizontalBox.
         Box hbox = Box.createHorizontalBox();
-        hbox.add(new JLabel("Import for Deployment: "));
+        hbox.add(new JLabel("Choose the Deployment: "));
         deploymentChooser = new JComboBox<>();
         deploymentChooser.addActionListener(this::onSelection);
         setComboWidth(deploymentChooser, "Choose...");
@@ -85,7 +84,7 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
         hbox.add(deploymentChooser);
         hbox.add(Box.createHorizontalStrut(10));
 
-        hbox.add(new JLabel("Import for Language: "));
+        hbox.add(new JLabel("and the Language: "));
         languageChooser = new JComboBox<>();
         languageChooser.addActionListener(this::onSelection);
         setComboWidth(languageChooser, "Detect from file path.");
@@ -94,16 +93,23 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
+        add(new JLabel("Click 'Next' when you are ready to continue."), gbc);
+
         // Title preview.
-        titlePreviewLabel = new JLabel("Titles in the Deployment:");
+        titlePreviewLabel = new JLabel("Playlists and Message Titles in the Deployment:");
         insets = new Insets(0,0,00,0);
         gbc.insets = insets;
         add(titlePreviewLabel, gbc);
 
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout(0,0));
-        JList<String> titlePreview = new JList<>(titlePreviewModel);
-        titlePreviewScroller = new JScrollPane(titlePreview);
+
+        progSpecRootNode = new DefaultMutableTreeNode();
+        progSpecTree = new JTree(progSpecRootNode);
+        progSpecTreeModel = (DefaultTreeModel) progSpecTree.getModel();
+        progSpecTree.setRootVisible(false);
+
+        titlePreviewScroller = new JScrollPane(progSpecTree);
         panel.add(titlePreviewScroller, BorderLayout.CENTER);
         gbc.ipadx = 10;
         gbc.weighty = 1.0;
@@ -111,6 +117,9 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
         insets = new Insets(0,10,0,30);
         gbc.insets = insets;
         add(panel, gbc);
+
+        titlePreviewLabel.setVisible(false);
+        titlePreviewScroller.setVisible(false);
 
         getProjectInfo();
     }
@@ -136,7 +145,7 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
     protected void onPageEntered(boolean progressing) {
         // Fill deployments
         deploymentChooser.removeAllItems();
-        deploymentChooser.addItem("Choose...");
+        deploymentChooser.insertItemAt("Choose...", 0);
         // We aspire to be able to import for multiple deployments, but it gets messy with
         // messages repeated across playlists, etc. Initially, let the user specify the
         // exact deployment.
@@ -148,7 +157,7 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
 
         // Fill context.programLanguagecodes
         languageChooser.removeAllItems();
-        languageChooser.addItem("Choose...");
+        languageChooser.insertItemAt("Choose...", 0);
         // We aspire to be able to make an intelligent guess of the language. Initially, we ask
         // the user to tell us in advance.
 //        languageChooser.addItem("Detect from file path.");
@@ -205,20 +214,36 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
      * Based on the selected Deployment fill the title preview.
      */
     private void fillTitleList() {
-        List<Integer> deployments = getSelectedDeployments();
-        titlePreviewModel.clear();
-        for (int deploymentNo : deployments) {
-            List<Content.Playlist> contentPlaylists = context.programSpec.getContent()
-                .getDeployment(deploymentNo)
-                .getPlaylists();
-            for (Content.Playlist contentPlaylist : contentPlaylists) {
-                for (Content.Message message : contentPlaylist.getMessages()) {
-                    titlePreviewModel.addElement(message.title);
-                }
+        progSpecRootNode.removeAllChildren();
+
+        Object deploymentStr = deploymentChooser.getSelectedItem();
+        Object languageStr = languageChooser.getSelectedItem();
+        if (deploymentStr != null && languageStr != null) {
+            int deploymentNo = Integer.parseInt(deploymentStr.toString());
+            String languagecode = languageStr.toString();
+
+            PSContent.fillTreeForDeployment(progSpecRootNode,
+                context.programSpec,
+                deploymentNo,
+                languagecode);
+            progSpecTreeModel.reload();
+            for (int i = 0; i < progSpecTree.getRowCount(); i++) {
+                progSpecTree.expandRow(i);
             }
         }
-        titlePreviewScroller.setVisible(!titlePreviewModel.isEmpty());
-        titlePreviewLabel.setVisible(!titlePreviewModel.isEmpty());
+        
+        boolean hasContent = hasContent(progSpecRootNode);
+        titlePreviewScroller.setVisible(hasContent);
+        titlePreviewLabel.setVisible(hasContent);
+    }
+
+    private boolean hasContent(DefaultMutableTreeNode node) {
+        for (Enumeration e = node.breadthFirstEnumeration(); e.hasMoreElements(); ) {
+            DefaultMutableTreeNode current = (DefaultMutableTreeNode) e.nextElement();
+            if (current instanceof PSContent.MessageNode)
+                return true;
+        }
+        return false;
     }
 
     /**

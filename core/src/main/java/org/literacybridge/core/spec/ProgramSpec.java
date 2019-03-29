@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +58,12 @@ public class ProgramSpec {
             .filter(r -> componentFilter.test(r.component))
             .forEach(filteredRecipients::add);
         return filteredRecipients;
+    }
+
+    public Set<String> getLanguagesForDeployment(int deploymentNumber) {
+        RecipientList recipients = getRecipientsForDeployment(deploymentNumber);
+        Set<String> languages = recipients.stream().map(r -> r.language).collect(Collectors.toSet());
+        return languages;
     }
 
     public Map<String, String> getRecipientsMap() {

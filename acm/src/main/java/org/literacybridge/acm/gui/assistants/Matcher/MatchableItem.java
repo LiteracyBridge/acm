@@ -92,11 +92,12 @@ public class MatchableItem<L, R> implements Comparable<MatchableItem> {
         this.setScore(score);
     }
 
-    public MatchableItem[] disassociate() {
-        MatchableItem[] result = new MatchableItem[2];
-        result[0] = new MatchableItem(getLeft(), null, MATCH.NONE);
-        result[1] = new MatchableItem(null, getRight(), MATCH.NONE);
-        return result;
+    public MatchableItem disassociate() {
+        MatchableItem disassociated = new MatchableItem(null, getRight(), MATCH.RIGHT_ONLY);
+        setRight(null);
+        setMatch(MATCH.LEFT_ONLY);
+        setScore(0);
+        return disassociated;
     }
 
     @Override

@@ -51,7 +51,7 @@ public class MatcherTableModel extends AbstractTableModel {
             return null;
         switch (columnIndex) {
         case 0: return row.getLeft();
-        case 1: return row.getDoUpdate();
+        case 1: return row.getLeft()!=null && row.getLeft().isReplaceOk();
         case 2: return row.getScoredMatch();
         case 3: return row.getRight();
         default: return null;
@@ -60,22 +60,22 @@ public class MatcherTableModel extends AbstractTableModel {
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-        if (columnIndex != 1) return false;
+        if (columnIndex != Columns.Update.ordinal()) return false;
         MatchableImportableAudio row = getRowAt(rowIndex);
         if (row == null) return false;
         // If the row is a match AND has an existing audio item, enable the [ ] Replace checkbox.
-        return (row.isDoReplaceEditable());
+        return row.getMatch().isMatch() && row.getLeft().hasAudioItem();
     }
 
     @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-        if (columnIndex != 1) return;
+        if (columnIndex != Columns.Update.ordinal()) return;
         MatchableImportableAudio row = getRowAt(rowIndex);
         if (row == null) return;
         // If the row is a match AND has an existing audio item, enable the [ ] Replace checkbox.
-        if (!(row.isDoReplaceEditable())) return;
+        if (!(row.getMatch().isMatch() && row.getLeft().hasAudioItem())) return;
         boolean v = (aValue != null && ((Boolean)aValue).booleanValue());
-        row.setDoUpdate(v);
+        row.getLeft().setReplaceOk(v);
         super.fireTableRowsUpdated(rowIndex, rowIndex);
     }
 

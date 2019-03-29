@@ -3,9 +3,9 @@ package org.literacybridge.acm.gui.assistants.Deployment;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
-import org.literacybridge.acm.gui.assistants.Deployment.DeploymentContext.AudioItemNode;
-import org.literacybridge.acm.gui.assistants.Deployment.DeploymentContext.LanguageNode;
-import org.literacybridge.acm.gui.assistants.Deployment.DeploymentContext.PlaylistNode;
+import org.literacybridge.acm.gui.assistants.util.AcmContent.AudioItemNode;
+import org.literacybridge.acm.gui.assistants.util.AcmContent.LanguageNode;
+import org.literacybridge.acm.gui.assistants.util.AcmContent.PlaylistNode;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 

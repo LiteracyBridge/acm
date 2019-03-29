@@ -78,7 +78,6 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         language = parameterText();
         hbox.add(language);
         hbox.add(Box.createHorizontalGlue());
-        hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(hbox, gbc);
 
         hbox = Box.createHorizontalBox();
@@ -88,7 +87,6 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         chooseFiles.addActionListener(this::onChooseFiles);
         hbox.add(chooseFiles);
         hbox.add(Box.createHorizontalGlue());
-        hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(hbox, gbc);
 
         // Title preview.

@@ -57,7 +57,6 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
 
         hbox.add(deploymentChooser);
         hbox.add(Box.createHorizontalGlue());
-        hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(hbox, gbc);
 
         gbc.weighty = 1.0;

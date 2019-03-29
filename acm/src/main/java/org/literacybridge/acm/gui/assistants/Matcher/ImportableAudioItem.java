@@ -7,8 +7,11 @@ import java.util.Objects;
 
 public class ImportableAudioItem {
     private String title;
+    // The ACM Playlist into which the item will be imported.
     private Playlist playlist;
     private AudioItem item;
+    // If there is an audio item AND a matching file, is it OK to replace this item?
+    private boolean replaceOk = false;
 
     public ImportableAudioItem(String title, Playlist playlist) {
         this.title = title;
@@ -18,6 +21,7 @@ public class ImportableAudioItem {
     public String getTitle() {
         return title;
     }
+
     public void setItem(AudioItem item) {
         this.item = item;
     }
@@ -28,8 +32,19 @@ public class ImportableAudioItem {
         return this.item != null;
     }
 
+    public void setReplaceOk(boolean replaceOk) {
+        this.replaceOk = replaceOk;
+    }
+    public boolean isReplaceOk() {
+        return replaceOk;
+    }
+
     public Playlist getPlaylist() {
         return playlist;
+    }
+
+    public boolean isImportable() {
+        return !hasAudioItem() || isReplaceOk();
     }
 
     @Override

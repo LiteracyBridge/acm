@@ -231,18 +231,16 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
         if (itemIndex >= 0 && itemIndex < matchableItems.size()) {
             T item = matchableItems.get(itemIndex);
             if (item.getMatch().isMatch()) {
-                T[] replacements = (T[]) item.disassociate();
-                matchableItems.remove(item);
-                matchableItems.addAll(itemIndex, Arrays.asList(replacements));
+                T disassociated = (T) item.disassociate();
+                matchableItems.add(itemIndex, disassociated);
             }
         }
     }
     public void unMatch(MatchableImportableAudio item) {
         int itemIndex = matchableItems.indexOf(item);
         if (item.getMatch().isMatch()) {
-            T[] replacements = (T[]) item.disassociate();
-            matchableItems.remove(item);
-            matchableItems.addAll(itemIndex, Arrays.asList(replacements));
+            T disassociated = (T) item.disassociate();
+            matchableItems.add(itemIndex, disassociated);
         }
     }
 

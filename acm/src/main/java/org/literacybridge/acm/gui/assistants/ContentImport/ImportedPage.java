@@ -74,7 +74,6 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
         hbox.add(new JLabel(" in language "));
         hbox.add(parameterText(context.languagecode));
         hbox.add(Box.createHorizontalGlue());
-        hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(hbox, gbc);
 
         hbox = Box.createHorizontalBox();
@@ -87,7 +86,6 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
         hbox.add(parameterText(Integer.toString(context.createdPlaylists.size())));
         hbox.add(new JLabel(" new playlists."));
         hbox.add(Box.createHorizontalGlue());
-        hbox.setAlignmentX(Component.LEFT_ALIGNMENT);
         add(hbox, gbc);
 
         currentMessage = new JLabel("...");
@@ -154,7 +152,7 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
             if (matchableItem.getMatch().isMatch()) {
                 // If not already in the ACM DB, or the "update item" checkbox is on, do the import.
                 boolean okToImport =
-                    !matchableItem.getLeft().hasAudioItem() || matchableItem.getDoUpdate();
+                    !matchableItem.getLeft().hasAudioItem() || matchableItem.getLeft().isReplaceOk();
                 if (okToImport) {
                     importOneItem(matchableItem);
                 } else if (matchableItem.getLeft().hasAudioItem()) {
@@ -211,7 +209,7 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
                     e.printStackTrace();
                 }
             }
-            if (matchableItem.isUpdate()) {
+            if (matchableItem.getLeft().hasAudioItem()) {
                 updateCount++;
                 UIUtils.setLabelText(updatedMessagesLabel, Integer.toString(importCount));
             } else {
