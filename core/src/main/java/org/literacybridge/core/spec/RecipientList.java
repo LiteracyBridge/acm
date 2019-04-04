@@ -14,11 +14,12 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
     // Note that the view presented by the parent class may omit some of these. use getNameOfLevel(ix)
     private final static String[] NAMES = {"Country", "Region", "District", "Community", "Group", "Support Entity / Agent"};
     private final static String[] PLURALS = {"Countries", "Regions", "Districts", "Communities", "Groups", "Support Entities / Agents"};
-
+    private final static boolean[] NON_OMITTABLES = {false, false, false, true, false, false};
+    
     private final Map<String, Integer> numTbsCache = new HashMap<>();
 
     RecipientList() {
-        super(new HierarchyInfo<>(NAMES, PLURALS));
+        super(new HierarchyInfo<>(NAMES, PLURALS, NON_OMITTABLES));
     }
 
     public String getSingular(int level) {

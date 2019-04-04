@@ -200,4 +200,7 @@ public class HierarchicalList<T extends IHierarchicalRecord> extends ArrayList<T
         return info.PLURALS[level];
     }
 
+    public boolean isOmittable(int level) {
+        return info.isOmittable(level);
+    }
 }

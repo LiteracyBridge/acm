@@ -42,7 +42,7 @@ public class DelayeredHierarchicalList<T extends IHierarchicalRecord> extends Hi
         omitted = findLevelsWithMultipleChoices();
         for (int ix=0; ix<omitted.length; ix++) {
             // Make the value of omitted[ix] really be "omitted"
-            omitted[ix] = !omitted[ix];
+            omitted[ix] = !omitted[ix] && super.isOmittable(ix);
             if (omitted[ix]) {
                 // Every omitted level reduces the count of levels.
                 delayeredMaxLevel--;

@@ -9,7 +9,9 @@ function setDefaults() {
     if [ -z ${dropbox-} ]; then
         dropbox=$(java -cp acm.jar:lib/* org.literacybridge.acm.utils.DropboxFinder)
         if [ $? -ne 0 ]; then
-            if [ -e ~/Dropbox\ \(Literacy\ Bridge\) ]; then
+            if [ -e ~/Dropbox\ \(Amplio\) ]; then
+                dropbox=~/Dropbox\ \(Amplio\)
+            elif [ -e ~/Dropbox\ \(Literacy\ Bridge\) ]; then
                 dropbox=~/Dropbox\ \(Literacy\ Bridge\)
             elif [ -e ~/Dropbox ]; then
                 dropbox=~/Dropbox
@@ -25,8 +27,15 @@ function setDefaults() {
 
 function configure() {
     # Convenience shortcuts.
-    installDir=$dropbox/LB-software/ACM-install
-    acmDir=$installDir/ACM/software
+    if $beta ; then
+        # all we are going to update is in ~/Dropbox/ACM-beta
+        dropbox=$dropbox/ACM-beta
+        installDir=$dropbox
+        acmDir=$dropbox
+    else
+        installDir=$dropbox/LB-software/ACM-install
+        acmDir=$installDir/ACM/software
+    fi
     report=/dev/stdout
 }
 
@@ -37,6 +46,7 @@ function main() {
 
     updateLibs
     updateJar
+    updateBuildProps
     $updated && updateMarker
 }
 
@@ -73,7 +83,11 @@ function updateLibs() {
 # Update the acm.jar file wherever it exists in Dropbox. By now, really only 1 place.
 function updateJar() {
     # Update the acm.jar. 
-    for f in $(find ${dropbox} -iname acm.jar); do
+    local excludedPath='*/ACM-beta/*'
+    if $beta; then
+        excludedPath="thiswon'tbefound"
+    fi
+    for f in $(find ${dropbox} -not -path ${excludedPath} -iname acm.jar); do
         if ! cmp -s acm.jar "$f" ; then
             updated=true
             cpcmd=(cp -v "acm.jar" "$f")
@@ -86,10 +100,27 @@ function updateJar() {
     echo >/dev/null
 }
 
+# Update the build.properties file. 
+function updateBuildProps() {
+    if [ -e build.properties ]; then
+        if ! cmp -s "build.properties" "${acmDir}/build.properties" ; then
+            updated=true
+            cpcmd=(cp -v "build.properties" "${acmDir}/build.properties")
+
+            $verbose && echo "${cpcmd[@]}">>${report}
+            $execute && "${cpcmd[@]}"
+        fi
+    fi
+}
+
 # The marker file changes to let scripts know to update the .jar & libs
 function updateMarker() {
     if $nomarker ; then
-        printf "\nNo-marker option (-m) specified, not updating marker file.\n"
+        if $beta ; then
+            printf "\nBeta option (-b) specified, not updating marker file.\n"
+        else
+            printf "\nNo-marker option (-m) specified, not updating marker file.\n"
+        fi
     else
         revision=$(ls ${installDir}/*.rev)
         # strip .rev, leading path and '/r'
@@ -112,6 +143,7 @@ function usage() {
     printf "\n  -n  Dry run. Do not update anything."
     printf "\n  -q  Quiet."
     printf "\n  -u  Operate as though updates were detected, and update marker file."
+    printf "\n  -b  Install to ~/Dropbox/ACM-beta/. Will not update marker file."
     printf "\n"
     exit 1
 }
@@ -123,17 +155,19 @@ function readArguments() {
 	dryrun=false
     updated=false
     nomarker=false
+    beta=false
 	
-    # limit:, no-Marker, No-execute, Quiet, Summary, Updated:
-    opts=mnquh?
+    # Beta, no-Marker, No-execute, Quiet, Summary, Updated:
+    opts=bmnquh?
 
     # Enumerating options
     while eval $readopt
     do
         #echo OPT:$opt ${OPTARG+OPTARG:$OPTARG}
         case "${opt}" in
+        b) beta=true;;
         m) nomarker=true;;
-	    n) dryrun=true;;
+        n) dryrun=true;;
         q) quiet=true;;
         u) updated=true;;
         h) usage;;
@@ -143,13 +177,15 @@ function readArguments() {
    done
    
     # Enumerating arguments, collect into an array accessible outside the function
-	remainingArgs=()
+    remainingArgs=()
     for arg
     do
-	    remainingArgs+=("$arg")
+        remainingArgs+=("$arg")
     done
     # When the function returns, the following sets the unprocessed arguments back into $1 .. $9
     # set -- "${remainingArgs[@]}"
+
+    $beta && nomarker=true
 
     # execute is the opposite of dryrun
     execute=true
