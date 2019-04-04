@@ -28,7 +28,7 @@ public class CommandLineParams {
   @Option(name="--nosplash", aliases={"--ns", "-n"}, usage="Don't use the internal splash screen." )
   public boolean noSplash;
 
-  @Option(name="--test", usage="Synthesize test data, for more convenient test iteration.")
+  @Option(name="--testdata", usage="Synthesize test data, for more convenient test iteration.")
   public boolean testData;
 
   @Argument

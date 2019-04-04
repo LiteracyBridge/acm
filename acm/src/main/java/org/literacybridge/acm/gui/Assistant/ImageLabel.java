@@ -128,18 +128,27 @@ public class ImageLabel extends JLabel {
     }
 
 //    private static String ttfResource = "Didot-HTF-L24-Light.ttf";
-    private static String ttfResource = "Palation_Sans_LT_W04_Light.ttf";
+    private static final String PALATION = "Palation_Sans_LT_W04_Light.ttf";
+    public static final String AVENIR = "AvenirLTStd-Light.ttf";
     public static Font getCustomFont(float size) {
         // <div>Font made from <a href="http://www.onlinewebfonts.com">oNline Web Fonts</a>is licensed by CC BY 3.0</div>
         Font font = null;
-        InputStream stream = ClassLoader.getSystemClassLoader().getResourceAsStream(ttfResource);
         try {
-            Font created = Font.createFont(Font.TRUETYPE_FONT, stream);
+            Font created = fontResource(PALATION);
             font = created.deriveFont(size);
+        } catch (Exception e) {
+            // Ignore.
+        }
+        return font;
+    }
+    public static Font fontResource(String name) {
+        Font font = null;
+        InputStream stream = ClassLoader.getSystemClassLoader().getResourceAsStream(name);
+        try {
+            font = Font.createFont(Font.TRUETYPE_FONT, stream);
         } catch (FontFormatException | IOException e) {
             // Ignore.
         }
         return font;
     }
-
 }

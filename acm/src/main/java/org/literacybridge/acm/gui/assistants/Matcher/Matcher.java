@@ -245,11 +245,16 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
     }
 
     public void setMatch(T left, T right) {
-        recordMatch(left, right, MATCH.MANUAL, 0);
+        // Need one LEFT_ONLY and one RIGHT_ONLY
+        if (!left.getMatch().isSingle() || !right.getMatch().isSingle() ||
+            left.getMatch() == right.getMatch()) {
+            throw new IllegalArgumentException("Invalid items to make a match");
+        }
+        T l = left.getMatch()==MATCH.LEFT_ONLY ? left : right;
+        T r = right.getMatch()==MATCH.RIGHT_ONLY ? right : left;
+        recordMatch(l, r, MATCH.MANUAL, 0);
         squash();
     }
-
-
 
     public static class MatchStats {
         private long start = System.nanoTime();

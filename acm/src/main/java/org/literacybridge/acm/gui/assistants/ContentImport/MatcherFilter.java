@@ -1,4 +1,7 @@
-package org.literacybridge.acm.gui.assistants.Matcher;
+package org.literacybridge.acm.gui.assistants.ContentImport;
+
+import org.literacybridge.acm.gui.assistants.ContentImport.MatcherTableModel;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
 
 import javax.swing.*;
 import java.util.function.Predicate;

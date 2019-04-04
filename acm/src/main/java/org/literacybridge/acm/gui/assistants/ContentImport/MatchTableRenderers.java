@@ -2,8 +2,6 @@ package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
-import org.literacybridge.acm.gui.assistants.Matcher.MatcherTable;
-import org.literacybridge.acm.gui.assistants.Matcher.MatcherTableModel;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -32,7 +30,8 @@ class MatchTableRenderers {
     private Color bgSelectionColor;
     private Color bgAlternateColor;
 
-    private static boolean isColorCoded = true;
+    static boolean colorCodeMatches = false;
+    static boolean isColorCoded = true;
 
     private MatcherTable table;
     private MatcherTableModel model;
@@ -60,38 +59,57 @@ class MatchTableRenderers {
 
     private Color getBG(int viewRow, int viewColumn, boolean isSelected) {
         Color bg = (viewRow%2 == 0) ? bgColor : bgAlternateColor;
+        Color custom = null;
         if (!isColorCoded) {
             if (isSelected) bg = bgSelectionColor;
 //                bg = isSelected ? bgSelectionColor : bgColor;
 //                if (viewRow % 2 == 1 && !isSelected) bg = bgAlternateColor; // darken(bg);
         } else {
-            if (isSelected) bg = selectionColor;
-            else {
+            if (isSelected) {
+                bg = selectionColor;
+            } else {
                 int row = table.convertRowIndexToModel(viewRow);
                 int column = table.convertColumnIndexToModel(viewColumn);
                 MatchableImportableAudio item = model.getRowAt(row);
+                if (item == null) {
+                    return bg;
+                }
                 switch (item.getMatch()) {
                 case EXACT:
                 case MANUAL:
-                    bg = exactColor;
+                    if (colorCodeMatches)
+                        custom = exactColor;
                     break;
                 case FUZZY:
-                    bg = fuzzyColor;
+                    if (colorCodeMatches)
+                        custom = fuzzyColor;
                     break;
                 case TOKEN:
-                    bg = tokenColor;
+                    if (colorCodeMatches)
+                        custom = tokenColor;
                     break;
                 case LEFT_ONLY:
-                    if (column == MatcherTableModel.Columns.Left.ordinal()) bg = leftColor;
+                    if (column == MatcherTableModel.Columns.Left.ordinal()) custom = leftColor;
                     break;
                 case RIGHT_ONLY:
-                    if (column == MatcherTableModel.Columns.Right.ordinal()) bg = rightColor;
+                    if (column == MatcherTableModel.Columns.Right.ordinal()) custom = rightColor;
                     break;
                 }
             }
-            if (viewRow % 2 == 1 && !isSelected) bg = lighten(bg);
+            if (viewRow % 2 == 1 && !isSelected) custom = alternateColor(custom);
         }
-        return bg;
+        return custom != null ? custom : bg;
+    }
+    private Color alternateColor(Color color) {
+        if (color == null) return null;
+        int r=color.getRed();
+        int g=color.getGreen();
+        int b=color.getBlue();
+        //int a=color.getAlpha();
+        int cmax = (r > g) ? r : g;
+        if (b > cmax) cmax = b;
+        if (cmax > 128) return lighten(color);
+        else return darken(color);
     }
     private Color lighten(Color color) {
         double FACTOR = 1.04;
@@ -179,29 +197,31 @@ class MatchTableRenderers {
         {
             int modelRow = table.convertRowIndexToModel(row);
             MatchableImportableAudio item = model.getRowAt(modelRow);
-            value = item.getOperation();
             String tooltip = null;
-            switch (item.getMatch()) {
-            case NONE:
-                break;
-            case EXACT:
-                tooltip = "Exact match";
-                break;
-            case FUZZY:
-                tooltip = "Fuzzy match @" + item.getScore();
-                break;
-            case TOKEN:
-                tooltip = "Token match @" + item.getScore();
-                break;
-            case MANUAL:
-                tooltip = "User match";
-                break;
-            case LEFT_ONLY:
-                tooltip = "Message is missing audio content";
-                break;
-            case RIGHT_ONLY:
-                tooltip = "Audio file has no matching message";
-                break;
+            if (item != null) {
+                value = item.getOperation();
+                switch (item.getMatch()) {
+                case NONE:
+                    break;
+                case EXACT:
+                    tooltip = "Exact match";
+                    break;
+                case FUZZY:
+                    tooltip = "Fuzzy match @" + item.getScore();
+                    break;
+                case TOKEN:
+                    tooltip = "Token match @" + item.getScore();
+                    break;
+                case MANUAL:
+                    tooltip = "User match";
+                    break;
+                case LEFT_ONLY:
+                    tooltip = "Message is missing audio content";
+                    break;
+                case RIGHT_ONLY:
+                    tooltip = "Audio file has no matching message";
+                    break;
+                }
             }
             JLabel label = super.getTableCellRendererComponent(table,
                 value,
@@ -231,7 +251,7 @@ class MatchTableRenderers {
 
             int modelRow = table.convertRowIndexToModel(row);
             MatchableImportableAudio item = MatchTableRenderers.this.model.getRowAt(modelRow);
-            boolean editable = item.getLeft() != null && item.getLeft().hasAudioItem()
+            boolean editable = item != null && item.getLeft() != null && item.getLeft().hasAudioItem()
                 && item.getMatch() != null && item.getMatch().isMatch();
             Component comp = editable ? this : dummy;
 

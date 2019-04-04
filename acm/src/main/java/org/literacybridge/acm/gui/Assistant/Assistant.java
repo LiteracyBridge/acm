@@ -260,14 +260,13 @@ public class Assistant<Context> extends JDialog {
         title = (title == null || title.length() == 0) ? "" : ": "+title;
         stepLabel.setText(String.format("Step %d of %d%s", currentPage+1, maxPage+1, title));
 
-        repaint();
-        revalidate();
-
         setNavButtonState();
         // Let the UI settle, then inform the new page that it has been entered.
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 page.onPageEntered(progressing);
+                repaint();
+                revalidate();
             }
         });
     }

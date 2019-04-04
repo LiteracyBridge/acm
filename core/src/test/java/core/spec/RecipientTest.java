@@ -1,10 +1,8 @@
 package core.spec;
 
 import org.junit.Test;
-import org.literacybridge.core.spec.Content;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.RecipientList;
-import org.literacybridge.core.tbloader.TbFlashData;
 
 import java.io.File;
 

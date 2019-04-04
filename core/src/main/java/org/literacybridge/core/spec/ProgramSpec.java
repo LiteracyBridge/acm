@@ -22,7 +22,7 @@ public class ProgramSpec {
     private List<Deployment> deployments = null;
     private RecipientList recipients = null;
     private Map<String, String> recipientsMap = null;
-    private Content content = null;
+    private ContentSpec contentSpec = null;
 
     public ProgramSpec(File programSpecDir) {
         this.programSpecDir = programSpecDir;
@@ -134,24 +134,24 @@ public class ProgramSpec {
     }
 
     /**
-     * Gets the content defined in the Program Specification.
+     * Gets the contentSpec defined in the Program Specification.
      * @return an object describing the content for every Deployment, including Playlist membership.
      */
-    public Content getContent() {
-        if (content == null) {
-            Content newContent = new Content();
+    public ContentSpec getContentSpec() {
+        if (contentSpec == null) {
+            ContentSpec newContentSpec = new ContentSpec();
             File csvFile = new File(programSpecDir, "content.csv");
             if (csvFile.exists()) {
                 try (FileInputStream fis = new FileInputStream(csvFile)) {
                     CsvReader.read(fis,
-                        Content.columnNames,
-                        x -> newContent.addMessage(newContent.new Message(x)));
-                    content = newContent;
+                        ContentSpec.columnNames,
+                        x -> newContentSpec.addMessage(newContentSpec.new MessageSpec(x)));
+                    contentSpec = newContentSpec;
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
-        return content;
+        return contentSpec;
     }
 }

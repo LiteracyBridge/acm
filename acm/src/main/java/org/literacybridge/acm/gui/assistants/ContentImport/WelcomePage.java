@@ -7,7 +7,7 @@ import org.literacybridge.acm.gui.MainWindow.SidebarView;
 import org.literacybridge.acm.gui.assistants.util.PSContent;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.core.spec.Content;
+import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.*;
@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -131,14 +132,22 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
      * @param actionEvent is unused. (Examine entire state when any part changes.
      */
     private void onSelection(ActionEvent actionEvent) {
-        int deplIx = deploymentChooser.getSelectedIndex();
-        deploymentChooser.setBorder(deplIx == 0 ? redBorder : blankBorder);
-        int langIx = languageChooser.getSelectedIndex();
-        languageChooser.setBorder(langIx == 0 ? redBorder : blankBorder);
+        int deploymentNo = getSelectedDeployment();
+        if (actionEvent != null && actionEvent.getSource() == deploymentChooser) {
+            deploymentChooser.setBorder(deploymentNo < 0 ? redBorder : blankBorder);
+            // If no deployment chosen, no language, either.
+            if (deploymentNo < 0) {
+                languageChooser.removeAllItems();
+            } else {
+                fillLanguagesForDeployment(deploymentNo);
+            }
+        }
+        String languagecode = getSelectedLanguage();
+        languageChooser.setBorder(languagecode == null ? redBorder : blankBorder);
 
         fillTitleList();
 
-        setComplete(deplIx >= 1 && langIx >= 1);
+        setComplete(deploymentNo >= 0 && languagecode != null);
     }
 
     @Override
@@ -157,24 +166,26 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
 
         // Fill context.programLanguagecodes
         languageChooser.removeAllItems();
-        languageChooser.insertItemAt("Choose...", 0);
-        // We aspire to be able to make an intelligent guess of the language. Initially, we ask
-        // the user to tell us in advance.
-//        languageChooser.addItem("Detect from file path.");
-        context.programSpec.getRecipients()
-            .stream()
-            .map(r -> r.language)
-            .collect(Collectors.toSet())
-            .forEach(languageChooser::addItem);
 
         // If previously selected, re-select.
         if (context.deploymentNo >= 0) {
             deploymentChooser.setSelectedItem(Integer.toString(context.deploymentNo));
+            fillLanguagesForDeployment(context.deploymentNo);
         }
         if (context.languagecode != null) {
             languageChooser.setSelectedItem(context.languagecode);
         }
         onSelection(null);
+    }
+
+    private void fillLanguagesForDeployment(int deploymentNo) {
+        languageChooser.removeAllItems();
+        languageChooser.insertItemAt("Choose...", 0);
+        Set<String> languages = context.programSpec.getLanguagesForDeployment(deploymentNo);
+        languages.forEach(languageChooser::addItem);
+        if (languages.size() == 1) {
+            languageChooser.setSelectedIndex(1);
+        }
     }
 
     @Override
@@ -210,18 +221,34 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
             .collect(Collectors.toSet());
     }
 
+    private int getSelectedDeployment() {
+        int deploymentNo = -1;
+        Object deploymentStr = deploymentChooser.getSelectedItem();
+        if (deploymentStr != null) {
+            try {
+                deploymentNo = Integer.parseInt(deploymentStr.toString());
+            } catch (NumberFormatException ignored) {
+                // ignored
+            }
+        }
+        return deploymentNo;
+    }
+
+    private String getSelectedLanguage() {
+        int langIx = languageChooser.getSelectedIndex();
+        if (langIx <= 0) return null;
+        return languageChooser.getItemAt(langIx);
+    }
+
     /**
      * Based on the selected Deployment fill the title preview.
      */
     private void fillTitleList() {
         progSpecRootNode.removeAllChildren();
 
-        Object deploymentStr = deploymentChooser.getSelectedItem();
-        Object languageStr = languageChooser.getSelectedItem();
-        if (deploymentStr != null && languageStr != null) {
-            int deploymentNo = Integer.parseInt(deploymentStr.toString());
-            String languagecode = languageStr.toString();
-
+        int deploymentNo = getSelectedDeployment();
+        String languagecode = getSelectedLanguage();
+        if (deploymentNo >= 0 && languagecode != null) {
             PSContent.fillTreeForDeployment(progSpecRootNode,
                 context.programSpec,
                 deploymentNo,
@@ -298,11 +325,11 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
             .stream()
             .collect(Collectors.toMap(Playlist::getName, pl -> pl));
 
-        List<Content.Playlist> contentPlaylists = context.programSpec.getContent()
-            .getDeployment(deploymentNo)
-            .getPlaylists();
-        for (Content.Playlist contentPlaylist : contentPlaylists) {
-            String plName = qualifiedPlaylistName(contentPlaylist.getPlaylistTitle(), deploymentNo, languagecode);
+        List<ContentSpec.PlaylistSpec> contentPlaylistSpecs = context.programSpec.getContentSpec()
+                                                                                 .getDeployment(deploymentNo)
+                                                                                 .getPlaylistSpecs();
+        for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
+            String plName = qualifiedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             if (!acmPlaylists.containsKey(plName)) {
                 Playlist playlist = store.newPlaylist(plName);
                 try {

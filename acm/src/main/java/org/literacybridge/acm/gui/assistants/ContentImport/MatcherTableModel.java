@@ -1,25 +1,39 @@
-package org.literacybridge.acm.gui.assistants.Matcher;
+package org.literacybridge.acm.gui.assistants.ContentImport;
+
+import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
+import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
 
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MatcherTableModel extends AbstractTableModel {
     public enum Columns {
-        Left(ImportableAudioItem.class), // (String.class),
-        Update(Boolean.class),
-        Status(String.class),
-        Right(ImportableFile.class); //(String.class);
+        Left(ImportableAudioItem.class, "Audio Item"),
+        Right(ImportableFile.class, "File"),
+        Status(String.class, "Status"),
+        Update(Boolean.class, "Update");
 
-        Columns(Class theClass) { this.theClass = theClass; }
-        Class<?> theClass;
-
-        static String[] names = {Left.name(), Update.name(), Status.name(), Right.name()};
-        static Class[] classes = {Left.theClass, Update.theClass, Status.theClass, Right.theClass};
+        Columns(Class theClass, String heading) { this.theClass = theClass; this.heading = heading;}
+        private Class<?> theClass;
+        private String heading;
+        public String heading() { return this.heading; }
+        public Class<?> theClass() { return this.theClass; }
     };
-    private static final String[] columnNames = {"Content Title", "Update?", "Status", "Audio File"};
-    private static final Class[] columnClasses = {String.class, Boolean.class, String.class, String.class};
+    private static final String[] columnNames = Arrays
+        .stream(Columns.values())
+        .map(Columns::heading)
+        .collect(Collectors.toList())
+        .toArray(new String[0]);
+    private static final Class[] columnClasses = Arrays
+        .stream(Columns.values())
+        .map(Columns::theClass)
+        .collect(Collectors.toList())
+        .toArray(new Class<?>[0]);
+
 
     private MatcherTable table;
     private List<MatchableImportableAudio> data;
@@ -47,13 +61,14 @@ public class MatcherTableModel extends AbstractTableModel {
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         MatchableImportableAudio row = getRowAt(rowIndex);
-        if (row == null)
+        if (row == null || columnIndex<0 || columnIndex>=Columns.values().length)
             return null;
-        switch (columnIndex) {
-        case 0: return row.getLeft();
-        case 1: return row.getLeft()!=null && row.getLeft().isReplaceOk();
-        case 2: return row.getScoredMatch();
-        case 3: return row.getRight();
+        Columns which = Columns.values()[columnIndex];
+        switch (which) {
+        case Left: return row.getLeft();
+        case Update: return row.getLeft()!=null && row.getLeft().isReplaceOk();
+        case Status: return row.getScoredMatch();
+        case Right: return row.getRight();
         default: return null;
         }
     }

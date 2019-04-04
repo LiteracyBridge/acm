@@ -8,26 +8,24 @@ import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
-import org.literacybridge.acm.gui.assistants.Matcher.MatcherTable;
-import org.literacybridge.acm.gui.assistants.Matcher.MatcherTableModel;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.store.SearchResult;
-import org.literacybridge.core.spec.Content;
+import org.literacybridge.core.spec.ContentSpec;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.io.File;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
@@ -48,6 +46,12 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
     private MatcherTableModel model;
     private JButton unMatch;
     private JButton manualMatch;
+
+    static {
+        // Configure the renderers for the match table.
+        MatchTableRenderers.colorCodeMatches = false;
+        MatchTableRenderers.isColorCoded = true;
+    }
 
     public MatchPage(PageHelper listener) {
         super(listener);
@@ -92,13 +96,6 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
 
         add(makeManualMatchButtons(), gbc);
 
-//        hbox = Box.createHorizontalBox();
-//        matcherPanel = new MatcherPanel(context);
-//        matcherPanel.setBorder(new LineBorder(Color.lightGray, 1));
-//        hbox.add(matcherPanel);
-//        add(hbox);
-
-
     }
 
     /**
@@ -124,6 +121,8 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(false);
+
+        table.addMouseListener(tableMouseListener);
 
         return scrollPane;
     }
@@ -164,6 +163,18 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         return hbox;
     }
 
+    MouseListener tableMouseListener = new MouseAdapter() {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if (e.getClickCount() == 2) {
+                MatchableImportableAudio selectedRow = selectedRow();
+                if (selectedRow != null && selectedRow.getMatch().isSingle()) {
+                    onManualMatch(null);
+                }
+            }
+        }
+    };
+
     private void onUnMatch(ActionEvent actionEvent) {
         int viewRow = table.getSelectionModel().getLeadSelectionIndex();
         if (viewRow >= 0) {
@@ -177,25 +188,20 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
     }
 
     private void onManualMatch(ActionEvent actionEvent) {
-        MatchableImportableAudio row = selectedRow();
-        File audioFile = row.getRight().getFile();
-        Map<String, MatchableImportableAudio> unmatchedItems = new LinkedHashMap<>();
-        context.matcher.matchableItems
-            .stream()
-            .filter(item->item.getMatch()== MATCH.LEFT_ONLY)
-            .forEach(item->unmatchedItems.put(item.getLeft().getTitle(), item));
-        String[] unmatchedTitles = unmatchedItems.keySet().toArray(new String[0]);
+        MatchableImportableAudio selectedRow = selectedRow();
+        MatchableImportableAudio chosenMatch = null;
 
-        JList<String> list = new JList<>(unmatchedTitles);
-        String message = "<html>Choose the Audio item for file '<i>" + audioFile.getName() + "</i>'.</html>";
-        AudioItemSelectionDialog dialog = new AudioItemSelectionDialog("Choose Message For Import Target",
-            message, list);
+        ManualMatchDialog dialog = new ManualMatchDialog();
+        if (selectedRow.getMatch()==MATCH.LEFT_ONLY) {
+            chosenMatch = dialog.getFileForAudioItem(selectedRow,
+                context.matcher.matchableItems);
+        } else if (selectedRow.getMatch()==MATCH.RIGHT_ONLY) {
+            chosenMatch = dialog.getAudioItemForFile(selectedRow,
+                context.matcher.matchableItems);
+        }
 
-        String chosenTitle = dialog.show();
-        if (chosenTitle != null) {
-            MatchableImportableAudio chosenItem = unmatchedItems.get(chosenTitle);
-
-            context.matcher.setMatch(chosenItem, row);
+        if (chosenMatch != null) {
+            context.matcher.setMatch(chosenMatch, selectedRow);
             model.fireTableDataChanged();
         }
     }
@@ -203,7 +209,7 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
     private void enableButtons() {
         MatchableImportableAudio row = selectedRow();
         unMatch.setEnabled(row != null && row.getMatch().isMatch());
-        manualMatch.setEnabled(row != null && row.getMatch()==MATCH.RIGHT_ONLY);
+        manualMatch.setEnabled(row != null && !row.getMatch().isMatch());
     }
     
     private MatchableImportableAudio selectedRow() {
@@ -228,16 +234,16 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
 
         // List of titles (left side list)
         List<ImportableAudioItem> titles = new ArrayList<>();
-        List<Content.Playlist> contentPlaylists = context.programSpec.getContent()
-            .getDeployment(deploymentNo)
-            .getPlaylists();
-        for (Content.Playlist contentPlaylist : contentPlaylists) {
-            for (Content.Message message : contentPlaylist.getMessages()) {
-                String playlistName = WelcomePage.qualifiedPlaylistName(message.playlistTitle, deploymentNo, languagecode);
-                Playlist playlist = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().findPlaylistByName(playlistName);
-                ImportableAudioItem importableAudio = new ImportableAudioItem(message.title, playlist);
-                // See if we already have this title.
-                AudioItem audioItem = findAudioItemForTitle(message.title, languagecode);
+        List<ContentSpec.PlaylistSpec> contentPlaylistSpecs = context.programSpec.getContentSpec()
+                                                                                 .getDeployment(deploymentNo)
+                                                                                 .getPlaylistSpecs();
+        for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
+            String playlistName = WelcomePage.qualifiedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
+            Playlist playlist = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().findPlaylistByName(playlistName);
+            for (ContentSpec.MessageSpec messageSpec : contentPlaylistSpec.getMessagesForLanguage(languagecode)) {
+                ImportableAudioItem importableAudio = new ImportableAudioItem(messageSpec, playlist);
+                // See if we already have this title in the ACM.
+                AudioItem audioItem = findAudioItemForTitle(messageSpec.title, languagecode);
                 importableAudio.setItem(audioItem);
                 titles.add(importableAudio);
             }
@@ -251,14 +257,9 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
             context.matcher.setData(titles, files, MatchableImportableAudio::new);
             model.setData(context.matcher.matchableItems);
             autoMatch();
-
+        } else {
+            model.fireTableDataChanged();
         }
-//        matcherPanel.setData(context.matcher, titles, files);
-//        if (progressing) {
-//            matcherPanel.reset();
-//            Matcher.MatchStats ms = matcherPanel.autoMatch();
-//            System.out.println(ms);
-//        }
 
         setComplete();
     }

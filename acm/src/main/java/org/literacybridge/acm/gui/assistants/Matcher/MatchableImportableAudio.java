@@ -2,26 +2,6 @@ package org.literacybridge.acm.gui.assistants.Matcher;
 
 public class MatchableImportableAudio extends MatchableItem<ImportableAudioItem, ImportableFile> {
 
-//    SimpleBooleanProperty doUpdate = new SimpleBooleanProperty(true);
-//    public boolean getDoUpdate() {
-//        return doUpdate.get();
-//    }
-//    public SimpleBooleanProperty doUpdateProperty() {
-//        return doUpdate;
-//    }
-//    void setDoUpdate(boolean doUpdate) {
-//        this.doUpdate.set(doUpdate);
-//    }
-//
-//    public boolean isDoReplaceEditable() {
-//        return getLeft() != null && getLeft().hasAudioItem()
-//            && getMatch() != null && getMatch().isMatch();
-//    }
-//
-//    public boolean isImportable() {
-//        return getMatch().isMatch() && (!getLeft().hasAudioItem() || getDoUpdate());
-//    }
-
     public String getOperation() {
         String status = "";
         if (getMatch().isMatch()) {

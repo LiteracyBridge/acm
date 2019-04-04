@@ -4,11 +4,10 @@ import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
-import org.literacybridge.core.spec.Content;
+import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -41,7 +40,7 @@ public class ContentImportContext {
      * The deployment from the Program Specification. Contains one or more playlists, each with
      * one or more messages.
      */
-    Content.Deployment deploymentSpec;
+    ContentSpec.DeploymentSpec deploymentSpec;
 
     /**
      * The fully-decorated titles from the Program Specification. If an audio item already exists,

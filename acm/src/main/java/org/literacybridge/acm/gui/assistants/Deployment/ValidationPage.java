@@ -10,7 +10,7 @@ import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
-import org.literacybridge.core.spec.Content;
+import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
 
@@ -204,14 +204,14 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         // For each language in the Deployment...
         for (String language : languages) {
             // Get the Program Spec playlists, and the ACM playlists (that match by pattern).
-            List<Content.Playlist> programSpecPlaylists = context.allProgramSpecPlaylists.get(language);
+            List<ContentSpec.PlaylistSpec> programSpecPlaylistSpecs = context.allProgramSpecPlaylists.get(language);
             List<Playlist> acmPlaylists = context.allAcmPlaylists.get(language);
 
             // For all the playlists in the Program Spec...
             Set<Playlist> foundPlaylists = new HashSet<>();
-            for (Content.Playlist programSpecPlaylist : programSpecPlaylists) {
+            for (ContentSpec.PlaylistSpec programSpecPlaylistSpec : programSpecPlaylistSpecs) {
                 // Get the corresponding ACM playlist, if it exists.
-                String qualifiedPlaylistName = qualifiedPlaylistName(programSpecPlaylist.getPlaylistTitle(),
+                String qualifiedPlaylistName = qualifiedPlaylistName(programSpecPlaylistSpec.getPlaylistTitle(),
                     deploymentNo,
                     language);
                 Playlist playlist = acmPlaylists.stream()
@@ -229,12 +229,12 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     foundPlaylists.add(playlist);
                     Set<AudioItem> foundItems = new HashSet<>();
                     // For the messages in the Program Spec...
-                    for (Content.Message message : programSpecPlaylist.getMessages()) {
+                    for (ContentSpec.MessageSpec messageSpec : programSpecPlaylistSpec.getMessageSpecs()) {
                         // Get the corresponding ACM AudioItem.
                         AudioItem audioItem = playlist.getAudioItemList()
                             .stream()
                             .map(store::getAudioItem)
-                            .filter(it -> it.getTitle().equals(message.title))
+                            .filter(it -> it.getTitle().equals(messageSpec.title))
                             .findFirst()
                             .orElse(null);
                         // If the ACM AudioItem is missing, note the issue.
@@ -242,7 +242,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                             context.issues.add(Issues.Severity.WARNING,
                                 Issues.Area.CONTENT,
                                 "Title '%s' is missing in playlist '%s' in the ACM.",
-                                message.title,
+                                messageSpec.title,
                                 playlist.getName());
                         } else {
                             foundItems.add(audioItem);
@@ -445,15 +445,15 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      *
      * @param deploymentNo of the Deployment.
      * @param languages    of all the Recipients in the Deployment.
-     * @return a map of { language : [Content.Playlist ] }
+     * @return a map of { language : [ContentSpec.PlaylistSpec ] }
      */
-    private Map<String, List<Content.Playlist>> getProgramSpecPlaylists(int deploymentNo,
+    private Map<String, List<ContentSpec.PlaylistSpec>> getProgramSpecPlaylists(int deploymentNo,
         Set<String> languages)
     {
-        Content content = context.programSpec.getContent();
-        Map<String, List<Content.Playlist>> programSpecPlaylists = new HashMap<>();
+        ContentSpec contentSpec = context.programSpec.getContentSpec();
+        Map<String, List<ContentSpec.PlaylistSpec>> programSpecPlaylists = new HashMap<>();
         for (String language : languages) {
-            programSpecPlaylists.put(language, content.getPlaylists(deploymentNo, language));
+            programSpecPlaylists.put(language, contentSpec.getPlaylists(deploymentNo, language));
         }
         return programSpecPlaylists;
     }

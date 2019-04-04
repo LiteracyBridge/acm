@@ -21,7 +21,12 @@ public class ContentImportAssistant {
         Map<String, Object> props = new HashMap<>();
         Assistant<ContentImportContext> assistant = new Assistant.Factory<ContentImportContext>()
             .withContext(context)
-            .withPageFactories(WelcomePage::new, FilesPage::new, MatchPage::new, ReviewPage::new, ImportedPage::new)
+            .withPageFactories(WelcomePage::new,
+                FilesPage::new,
+                MatchPage::new,
+//                ManualMatchPage::new,
+                ReviewPage::new,
+                ImportedPage::new)
             .withTitle("Content Import Assistant")
             .create();
 

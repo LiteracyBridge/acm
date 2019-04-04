@@ -1,11 +1,10 @@
 package org.literacybridge.acm.gui.assistants.util;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.core.spec.Content;
+import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.MutableTreeNode;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -17,18 +16,18 @@ import java.util.Set;
 public class PSContent {
 
     private static void fillTreeForDeploymentAndLanguage(DefaultMutableTreeNode languageNode,
-        Content content,
+        ContentSpec contentSpec,
         int deploymentNo,
         String language)
     {
-        List<Content.Playlist> playlists = content.getPlaylists(deploymentNo, language);
-        for (Content.Playlist playlist : playlists) {
-            PlaylistNode playlistNode = new PlaylistNode(playlist);
+        List<ContentSpec.PlaylistSpec> playlistSpecs = contentSpec.getPlaylists(deploymentNo, language);
+        for (ContentSpec.PlaylistSpec playlistSpec : playlistSpecs) {
+            PlaylistNode playlistNode = new PlaylistNode(playlistSpec);
             languageNode.add(playlistNode);
 
-            List<Content.Message> messages = playlist.getMessages();
-            for (Content.Message message : messages) {
-                MessageNode messageNode = new MessageNode(message);
+            List<ContentSpec.MessageSpec> messageSpecs = playlistSpec.getMessageSpecs();
+            for (ContentSpec.MessageSpec messageSpec : messageSpecs) {
+                MessageNode messageNode = new MessageNode(messageSpec);
                 playlistNode.add(messageNode);
             }
         }
@@ -37,25 +36,25 @@ public class PSContent {
 
     /**
      * Given a ProgramSpec, returns a tree of MutableTreeNodes for a given deployment.
-     * @param DefaultMutableTreeNode to be filled with playlist data.
+     * @param DefaultMutableTreeNode to be filled with playlistSpec data.
      * @param programSpec  with content data.
-     * @param deploymentNo for which the playlist tree is desired.
-     * @param languageCode for which the playlist tree is desired.
-     * @return a tree of languageCode / playlist / message
+     * @param deploymentNo for which the playlistSpec tree is desired.
+     * @param languageCode for which the playlistSpec tree is desired.
+     * @return a tree of languageCode / playlistSpec / message
      */
     public static void fillTreeForDeployment(DefaultMutableTreeNode root,
         ProgramSpec programSpec,
         int deploymentNo,
         String languageCode)
     {
-        Content content = programSpec.getContent();
+        ContentSpec contentSpec = programSpec.getContentSpec();
         Set<String> languageCodes = programSpec.getLanguagesForDeployment(deploymentNo);
         for (String language : languageCodes) {
             if (!language.equalsIgnoreCase(languageCode)) continue;
             LanguageNode languageNode = new LanguageNode(language);
             root.add(languageNode);
 
-            fillTreeForDeploymentAndLanguage(languageNode, content, deploymentNo, language);
+            fillTreeForDeploymentAndLanguage(languageNode, contentSpec, deploymentNo, language);
         }
     }
 
@@ -63,12 +62,12 @@ public class PSContent {
         ProgramSpec programSpec,
         int deploymentNo)
     {
-        Content content = programSpec.getContent();
+        ContentSpec contentSpec = programSpec.getContentSpec();
         Set<String> languageCodes = programSpec.getLanguagesForDeployment(deploymentNo);
         for (String language : languageCodes) {
             LanguageNode languageNode = new LanguageNode(language);
             root.add(languageNode);
-            fillTreeForDeploymentAndLanguage(languageNode, content, deploymentNo, language);
+            fillTreeForDeploymentAndLanguage(languageNode, contentSpec, deploymentNo, language);
         }
     }
 
@@ -94,30 +93,30 @@ public class PSContent {
     }
 
     /**
-     * Node class for a Playlist. One or more playlists in a language. These can be
+     * Node class for a PlaylistSpec. One or more playlists in a language. These can be
      * re-arranged within their language.
      */
     public static class PlaylistNode extends DefaultMutableTreeNode {
-        final Content.Playlist playlist;
+        final ContentSpec.PlaylistSpec playlistSpec;
 
-        public PlaylistNode(Content.Playlist playlist) {
-            this.playlist = playlist;
+        public PlaylistNode(ContentSpec.PlaylistSpec playlistSpec) {
+            this.playlistSpec = playlistSpec;
         }
 
         public String toString() {
-            return playlist.getPlaylistTitle();
+            return playlistSpec.getPlaylistTitle();
         }
     }
 
     /**
-     * Node class for an Audio Item. One or more Audio Items in a playlist. These can
+     * Node class for an Audio Item. One or more Audio Items in a playlistSpec. These can
      * be re-arranged within their playlist, and can also be moved to a different playlist
      * within the language.
      */
     public static class MessageNode extends DefaultMutableTreeNode {
-        final Content.Message item;
+        final ContentSpec.MessageSpec item;
 
-        public MessageNode(Content.Message item) {
+        public MessageNode(ContentSpec.MessageSpec item) {
             this.item = item;
         }
 
