@@ -142,8 +142,8 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
     protected void onPageLeaving(boolean progressing) {
         context.includeUfCategory = includeUfCategory.isSelected();
         context.includeTbCategory = includeTbCategory.isSelected();
-        // For time being, "no publish" if not a test database.
-        context.noPublish = noPublish.isSelected() || !ACMConfiguration.isTestAcm() || ACMConfiguration.isSandbox();
+        // Don't publish if user chose "no publish" option. Also don't publish if running in sandbox.
+        context.noPublish = noPublish.isSelected() || ACMConfiguration.isSandbox();
     }
 
     @Override
