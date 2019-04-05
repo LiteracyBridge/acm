@@ -99,15 +99,26 @@ public class JRecipientChooser extends JPanel {
         
         if (communityChooser != null) {
             int count = communityChooser.getItemCount();
-            for (int i = 0; i < count; i++) {
-                if (communityChooser.getItemAt(i).equalsIgnoreCase(community)) {
-                    communityChooser.setSelectedIndex(i);
-                    selectedCommunity = communityChooser.getSelectedItem().toString();
-                    didSelect = true;
-                    break;
+            if (count == 1) {
+                // Only one recipient; might as well select them.
+                communityChooser.setSelectedIndex(0);
+                didSelect = true;
+            } else {
+                for (int i = 0; i < count; i++) {
+                    if (communityChooser.getItemAt(i).equalsIgnoreCase(community)) {
+                        communityChooser.setSelectedIndex(i);
+                        selectedCommunity = communityChooser.getSelectedItem().toString();
+                        didSelect = true;
+                        break;
+                    }
                 }
             }
         } else {
+            if (recipients.size() == 1) {
+                // Only one recipient; auto-select them, by grabbing the one-and-only recipientid.
+                Recipient recipient = recipients.get(0);
+                recipientid = recipient.recipientid;
+            }
             if (recipientid == null) {
                 ImmutableBiMap<String, String> dir2id = new ImmutableBiMap.Builder<String, String>()
                     .putAll(programSpec.getRecipientsMap())
@@ -117,7 +128,7 @@ public class JRecipientChooser extends JPanel {
             }
             List<String> path = recipients.getPath(recipientid);
             // If we have a full path...
-            if (path.size() == maxHierarchy+1) {
+            if (path.size() == maxHierarchy + 1) {
                 didSelect = setSelectionWithPath(path);
             } else {
                 // Otherwise, just reset to the base level.
