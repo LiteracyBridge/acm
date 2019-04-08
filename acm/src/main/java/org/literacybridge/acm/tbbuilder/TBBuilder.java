@@ -1055,7 +1055,7 @@ public class TBBuilder {
                 "    TB-Builder.bat PUBLISH ACM-NAME DEPLOYMENT1 DEPLOYMENT2 ..." + NL + NL +
                 "Usually, the \"language\" and \"group\" are the same, and, usually, there is" + NL +
                 "only one deployment. If you need to use groups or multiple deployments, please" + NL +
-                "contact Literacy Bridge Seattle for detailed instructions." + NL + NL +
+                "contact Amplio Seattle for detailed instructions." + NL + NL +
                 "For example, assume your ACM is named ACM-DEMO, and that you have two Packages," + NL +
                 "DEMO-" + Y_M + "-EPO in the Esperanto language, and DEMO-" + Y_M + "-TLH in the Klingon" + NL +
                 "language, and that you wish to create a Deployment named DEMO-" + Y_M + "." + NL +
