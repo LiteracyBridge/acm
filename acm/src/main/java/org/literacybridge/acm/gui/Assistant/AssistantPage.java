@@ -10,7 +10,8 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -61,11 +62,14 @@ public abstract class AssistantPage<Context> extends JPanel {
      * @param columnValues A Map of Integer -> Stream<String> where the integer is the
      *                     column number, and the Stream is all the items in the column.
      */
-    public static void sizeColumns(JTable table, Map<Integer, Stream<String>> columnValues) {
+    public static void sizeColumns(JTable table, Map<Integer, Stream<Object>> columnValues) {
+        sizeColumns(table, columnValues, 0);
+    }
+    public static void sizeColumns(JTable table, Map<Integer, Stream<Object>> columnValues, int margin) {
         TableModel model = table.getModel();
         TableCellRenderer headerRenderer = table.getTableHeader().getDefaultRenderer();
 
-        for (Map.Entry<Integer, Stream<String>> e : columnValues.entrySet()) {
+        for (Map.Entry<Integer, Stream<Object>> e : columnValues.entrySet()) {
             final int columnNo = e.getKey();
             TableColumn column = table.getColumnModel().getColumn(columnNo);
 
@@ -84,9 +88,9 @@ public abstract class AssistantPage<Context> extends JPanel {
                 .orElse(1);
 
             int w = Math.max(headerWidth, cellWidth) + 2;
-            column.setPreferredWidth(w);
-            column.setMaxWidth(w + 40);
-            column.setWidth(w);
+            column.setMaxWidth(w + margin + 40);
+            column.setPreferredWidth(w + margin);
+            column.setWidth(w + margin);
         }
     }
 

@@ -54,7 +54,8 @@ public class ContentImportContext {
     /**
      * The files that the user selected to import.
      */
-    Set<File> importableFiles;
+    Set<File> importableRoots = new LinkedHashSet<>();
+    Set<File> importableFiles = new LinkedHashSet<>();
 
     // From the Match page
 

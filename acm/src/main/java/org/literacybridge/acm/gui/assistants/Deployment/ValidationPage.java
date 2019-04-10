@@ -486,7 +486,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     }
 
     private void sizeColumns() {
-        Map<Integer, Stream<String>> columnValues = new HashMap<>();
+        Map<Integer, Stream<Object>> columnValues = new HashMap<>();
         columnValues.put(0, Arrays.stream(Issues.Severity.values()).map(Issues.Severity::displayName));
         columnValues.put(1, Arrays.stream(Issues.Area.values()).map(Issues.Area::displayName));
 

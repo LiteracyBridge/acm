@@ -60,10 +60,10 @@ public class MatcherTable extends JTable {
     }
 
     void sizeColumns() {
-        Map<Integer, Stream<String>> columnValues = new HashMap<>();
+        Map<Integer, Stream<Object>> columnValues = new HashMap<>();
         // Set column 2 width (Status) on header & values.
         final int statusColumnNo = MatcherTableModel.Columns.Status.ordinal();
-        Stream<String> values = IntStream
+        Stream<Object> values = IntStream
             .range(0, this.getRowCount())
             .mapToObj(r -> getValueAt(r, statusColumnNo).toString());
         columnValues.put(statusColumnNo, values);

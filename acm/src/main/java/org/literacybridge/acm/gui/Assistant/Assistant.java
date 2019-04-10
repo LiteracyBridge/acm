@@ -4,7 +4,10 @@ import org.literacybridge.acm.gui.Application;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Frame;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -249,11 +252,11 @@ public class Assistant<Context> extends JDialog {
         if (currentPage >= 0) {
             AssistantPage page = getPage(currentPage);
             page.onPageLeaving(progressing);
+            page.setVisible(false);
             this.remove(page);
         }
         currentPage = newPage;
         AssistantPage page = getPage(currentPage);
-//        page.onPageEntered(progressing);
         this.add(page, BorderLayout.CENTER);
 
         String title = page.getTitle();
@@ -265,8 +268,7 @@ public class Assistant<Context> extends JDialog {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 page.onPageEntered(progressing);
-                repaint();
-                revalidate();
+                page.setVisible(true);
             }
         });
     }
