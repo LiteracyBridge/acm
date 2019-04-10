@@ -312,8 +312,10 @@ public class TBLoader extends JFrame {
         switch (state) {
         case Missing_Latest:
             // Problem with Dropbox, can't continue.
-            JOptionPane.showMessageDialog(this, "TB-Loader can't determine the latest Deployment, and can not continue.",
-                "Can't Determine Latest Deployment", JOptionPane.ERROR_MESSAGE);
+            String message = "TB-Loader can not determine the latest Deployment, and can not continue.\n"
+                +"(There is no .rev file in the 'published' directory.)";
+            JOptionPane.showMessageDialog(this, message,
+                "Cannot Determine Latest Deployment", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
             break;
         case Bad_Local:

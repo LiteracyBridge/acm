@@ -1059,7 +1059,7 @@ public class TBBuilder {
 
     private static void printUsage() {
         String NL = System.lineSeparator();
-        SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM");
+        SimpleDateFormat sdfDate = new SimpleDateFormat("yy-MM");
         String Y_M = sdfDate.format(new Date());
 
         String helpStr =
@@ -1071,12 +1071,12 @@ public class TBBuilder {
                 "    java -cp acm.jar:lib/* org.literacybridge.acm.tbbuilder.TBBuilder" + NL + NL +
                 "Prepares a new Deployment (Content Update) to be loaded onto Talking Books by" + NL +
                 "the TB-Loader. There are two steps, the CREATE step and the PUBLISH step." + NL + NL +
-                "    TB-Builder.bat CREATE ACM-NAME DEPLOYMENT package1 language1 group1 " + NL +
+                "    TB-Builder.bat CREATE ACM-NAME deployment-name package1 language1 group1 " + NL +
                 "                                                package2 language2 group2 ..." + NL + NL +
-                "    TB-Builder.bat PUBLISH ACM-NAME DEPLOYMENT1 DEPLOYMENT2 ..." + NL + NL +
-                "Usually, the \"language\" and \"group\" are the same, and, usually, there is" + NL +
-                "only one deployment. If you need to use groups or multiple deployments, please" + NL +
-                "contact Amplio Seattle for detailed instructions." + NL + NL +
+                "    TB-Builder.bat PUBLISH ACM-NAME deployment-name" + NL + NL +
+                "Usually, the \"language\" and \"group\" are the same. If you need to use groups " + NL +
+                "or manage multiple deployments at the same time, please contact Amplio Seattle" + NL +
+                "for detailed instructions." + NL + NL +
                 "For example, assume your ACM is named ACM-DEMO, and that you have two Packages," + NL +
                 "DEMO-" + Y_M + "-EPO in the Esperanto language, and DEMO-" + Y_M + "-TLH in the Klingon" + NL +
                 "language, and that you wish to create a Deployment named DEMO-" + Y_M + "." + NL +
