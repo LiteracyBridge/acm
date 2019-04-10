@@ -1,6 +1,5 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
-import com.sun.istack.internal.NotNull;
 import org.apache.commons.io.FilenameUtils;
 import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.tree.TreeModelSupport;
@@ -14,6 +13,7 @@ import org.literacybridge.acm.utils.OsUtils;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.tree.TreeCellRenderer;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -277,7 +277,6 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
     private AbstractFileNode nodeFromFile(File file) {
         if (file.isDirectory()) {
             DirectoryNode dirNode = new DirectoryNode(file);
-            @NotNull
             File[] dirContents = file.listFiles(dirfile -> chooserFilter.accept(dirfile));
             for (File childFile : dirContents) {
                 AbstractFileNode childNode = nodeFromFile(childFile);
@@ -298,15 +297,17 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
 
         void sizeColumns() {
             Map<Integer, Stream<Object>> columnValues = new HashMap<>();
-            // Set column 1 width (Status) on header & values.
-            final int timestampColumnNo = 1;
+            // Set column 1 width (Status) on header & values. Account for reordered columns.
+            TableColumn column = getColumnModel().getColumn(1);
+            final int timestampColumnNo = column.getModelIndex();
             Stream<Object> values = IntStream
                 .range(0, this.getRowCount())
                 .mapToObj(r -> getValueAt(r, timestampColumnNo));
             columnValues.put(timestampColumnNo, values);
 
             // Set column 2 width (Size) on header & values.
-            final int sizeColumnNo = 2;
+            column = getColumnModel().getColumn(2);
+            final int sizeColumnNo = column.getModelIndex();
             values = IntStream
                 .range(0, this.getRowCount())
                 .mapToObj(r -> getValueAt(r, sizeColumnNo));

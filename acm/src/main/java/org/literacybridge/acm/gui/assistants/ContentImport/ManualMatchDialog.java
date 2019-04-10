@@ -57,7 +57,7 @@ class ManualMatchDialog {
 
         choicesList.setListData(unmatchedTitles);
          /* bad */
-        String message = String.format("<html>Choose the File for Audio Item '<i>%s</i>'.</html>", row.getLeft().getTitle());
+        String message = String.format("<html>Choose the File for Audio Item <br/>&nbsp;&nbsp;<i>%s</i>.</html>", row.getLeft().getTitle());
         promptLabel.setText(message);
 
         JPanel pane = layoutComponents();
@@ -79,7 +79,7 @@ class ManualMatchDialog {
 
         choicesList.setListData(unmatchedTitles);
         /* good */
-        String message = String.format("<html>Choose the Audio item for file\n'<i>%s</i>'.</html>", row.getRight().getFile().getName());
+        String message = String.format("<html>Choose the Audio item for file<br/>&nbsp;&nbsp;<i>%s</i>.</html>", row.getRight().getFile().getName());
         promptLabel.setText(message);
 
         JPanel pane = layoutComponents();

@@ -65,6 +65,10 @@ class MatchTableRenderers {
 //                bg = isSelected ? bgSelectionColor : bgColor;
 //                if (viewRow % 2 == 1 && !isSelected) bg = bgAlternateColor; // darken(bg);
         } else {
+            int selectedRow = table.getSelectionModel().getLeadSelectionIndex();
+            int selectedColumn = table.getColumnModel().getSelectionModel().getLeadSelectionIndex();
+            if (selectedRow == viewRow && selectedColumn == viewColumn) isSelected = true;
+
             if (isSelected) {
                 bg = selectionColor;
             } else {

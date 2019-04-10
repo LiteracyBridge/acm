@@ -61,15 +61,18 @@ public class MatcherTable extends JTable {
 
     void sizeColumns() {
         Map<Integer, Stream<Object>> columnValues = new HashMap<>();
-        // Set column 2 width (Status) on header & values.
-        final int statusColumnNo = MatcherTableModel.Columns.Status.ordinal();
+        // Set column 2 width (Status) on header & values. Columns may have been re-ordered, so
+        // go through the model.
+        TableColumn column = getColumnModel().getColumn(MatcherTableModel.Columns.Status.ordinal());
+        final int statusColumnNo = column.getModelIndex();
         Stream<Object> values = IntStream
             .range(0, this.getRowCount())
-            .mapToObj(r -> getValueAt(r, statusColumnNo).toString());
+            .mapToObj(r -> getValueAt(r, statusColumnNo));
         columnValues.put(statusColumnNo, values);
 
         // Set column 1 width (Update?) on header only.
-        final int updateColumnNo = MatcherTableModel.Columns.Update.ordinal();
+        column = getColumnModel().getColumn(MatcherTableModel.Columns.Update.ordinal());
+        final int updateColumnNo = column.getModelIndex();
         values = Stream.empty();
         columnValues.put(updateColumnNo, values);
 

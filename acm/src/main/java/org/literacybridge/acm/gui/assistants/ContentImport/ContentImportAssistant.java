@@ -24,7 +24,6 @@ public class ContentImportAssistant {
             .withPageFactories(WelcomePage::new,
                 FilesPage::new,
                 MatchPage::new,
-//                ManualMatchPage::new,
                 ReviewPage::new,
                 ImportedPage::new)
             .withTitle("Content Import Assistant")

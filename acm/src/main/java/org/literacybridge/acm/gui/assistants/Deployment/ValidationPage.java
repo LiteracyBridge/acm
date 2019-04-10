@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
+import org.literacybridge.acm.gui.assistants.ContentImport.MatcherTableModel;
 import org.literacybridge.acm.gui.assistants.ContentImport.WelcomePage;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataStore;
@@ -15,6 +16,7 @@ import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
 
 import javax.swing.*;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
@@ -487,8 +489,14 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
     private void sizeColumns() {
         Map<Integer, Stream<Object>> columnValues = new HashMap<>();
-        columnValues.put(0, Arrays.stream(Issues.Severity.values()).map(Issues.Severity::displayName));
-        columnValues.put(1, Arrays.stream(Issues.Area.values()).map(Issues.Area::displayName));
+
+        TableColumn column = issuesTable.getColumnModel().getColumn(0);
+        int columnIx = column.getModelIndex();
+        columnValues.put(columnIx, Arrays.stream(Issues.Severity.values()).map(Issues.Severity::displayName));
+
+        column = issuesTable.getColumnModel().getColumn(1);
+        columnIx = column.getModelIndex();
+        columnValues.put(columnIx, Arrays.stream(Issues.Area.values()).map(Issues.Area::displayName));
 
         sizeColumns(issuesTable, columnValues);
     }

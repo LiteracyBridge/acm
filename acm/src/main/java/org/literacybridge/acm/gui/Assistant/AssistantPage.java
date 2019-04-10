@@ -61,6 +61,7 @@ public abstract class AssistantPage<Context> extends JPanel {
      * @param table to be sized.
      * @param columnValues A Map of Integer -> Stream<String> where the integer is the
      *                     column number, and the Stream is all the items in the column.
+     *                     NOTE: The column number is the number from the view.
      */
     public static void sizeColumns(JTable table, Map<Integer, Stream<Object>> columnValues) {
         sizeColumns(table, columnValues, 0);
@@ -71,7 +72,8 @@ public abstract class AssistantPage<Context> extends JPanel {
 
         for (Map.Entry<Integer, Stream<Object>> e : columnValues.entrySet()) {
             final int columnNo = e.getKey();
-            TableColumn column = table.getColumnModel().getColumn(columnNo);
+            final int modelColumnNo = table.convertColumnIndexToModel(columnNo);
+            TableColumn column = table.getColumnModel().getColumn(modelColumnNo);
 
             int headerWidth = headerRenderer.getTableCellRendererComponent(null,
                 column.getHeaderValue(),
@@ -80,8 +82,11 @@ public abstract class AssistantPage<Context> extends JPanel {
                 0,
                 0).getPreferredSize().width;
 
+            // To get the column class from the model we need to use the model column index. But to
+            // get the render component we need to use the view index.
             int cellWidth = e.getValue()
-                .map(item -> table.getDefaultRenderer(model.getColumnClass(columnNo))
+                .filter(item -> item != null)
+                .map(item -> table.getDefaultRenderer(model.getColumnClass(modelColumnNo))
                     .getTableCellRendererComponent(table, item, false, false, 0, columnNo)
                     .getPreferredSize().width)
                 .max(Integer::compareTo)

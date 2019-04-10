@@ -17,13 +17,22 @@ import org.literacybridge.acm.store.SearchResult;
 import org.literacybridge.core.spec.ContentSpec;
 
 import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -33,7 +42,7 @@ import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 public class MatchPage extends AssistantPage<ContentImportContext> {
     private static final int DEFAULT_THRESHOLD = 80;
     private static final int MINIMUM_THRESHOLD = 60;
-    public static int fuzzyThreshold = DEFAULT_THRESHOLD;
+    private static int fuzzyThreshold = DEFAULT_THRESHOLD;
 
     private final JLabel deployment;
     private final JLabel language;
@@ -53,7 +62,7 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         MatchTableRenderers.isColorCoded = true;
     }
 
-    public MatchPage(PageHelper listener) {
+    MatchPage(PageHelper listener) {
         super(listener);
         context = getContext();
         setLayout(new GridBagLayout());
@@ -119,8 +128,12 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         table.setGridColor(Color.RED);
 
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowSelectionAllowed(true);
+        table.setRowSelectionAllowed(false);
         table.setColumnSelectionAllowed(false);
+
+        table.setDragEnabled(true);
+        table.setDropMode(DropMode.ON);
+        table.setTransferHandler(matchTableTransferHandler);
 
         table.addMouseListener(tableMouseListener);
 
@@ -163,7 +176,7 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         return hbox;
     }
 
-    MouseListener tableMouseListener = new MouseAdapter() {
+    private MouseListener tableMouseListener = new MouseAdapter() {
         @Override
         public void mouseClicked(MouseEvent e) {
             if (e.getClickCount() == 2) {
@@ -222,6 +235,105 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         return row;
     }
 
+    private DataFlavor matchableFlavor = new DataFlavor(MatchableImportableAudio.class,"MatchableImportableAudio");
+    private class MatchableSelection implements Transferable {
+        final MatchableImportableAudio matchable;
+        MatchableSelection(MatchableImportableAudio matchable) {
+            this.matchable = matchable;
+        }
+
+        @Override
+        public DataFlavor[] getTransferDataFlavors() {
+            return new DataFlavor[] { matchableFlavor };
+        }
+
+        @Override
+        public boolean isDataFlavorSupported(DataFlavor flavor) {
+            return flavor.equals(matchableFlavor);
+        }
+
+        @Override
+        public MatchableImportableAudio getTransferData(DataFlavor flavor)
+            throws UnsupportedFlavorException
+        {
+            if (!isDataFlavorSupported(flavor)) throw new UnsupportedFlavorException(flavor);
+            return matchable;
+        }
+    }
+
+    private TransferHandler matchTableTransferHandler = new TransferHandler() {
+        @Override
+        public int getSourceActions(JComponent c) {
+            return COPY | LINK | MOVE;
+        }
+
+        @Override
+        protected Transferable createTransferable(JComponent c) {
+            MatchableImportableAudio row = selectedRow();
+            if (row == null) return null;
+            int viewCol = table.getColumnModel().getSelectionModel().getLeadSelectionIndex();
+            int modelCol = table.convertColumnIndexToModel(viewCol);
+            System.out.println("create transferable");
+            if (modelCol == 0) {
+                if (row.getMatch() == MATCH.LEFT_ONLY) {
+                    return new MatchableSelection(row);
+                }
+            } else if (modelCol == 1) {
+                if (row.getMatch() == MATCH.RIGHT_ONLY) {
+                    return new MatchableSelection(row);
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public boolean canImport(TransferSupport support) {
+            // This basically means "is drop ok".
+            MatchableImportableAudio sourceRow = null;
+            boolean can = false;
+            try {
+                sourceRow = (MatchableImportableAudio)support.getTransferable().getTransferData(matchableFlavor);
+            } catch (Exception ignored) {}
+            // If from ourself, do not accept the drop.
+            if (sourceRow == null) {
+                support.setShowDropLocation(false);
+                return false;
+            }
+            // Has to be dropping onto ourself...
+            if (support.getDropLocation() instanceof JTable.DropLocation) {
+                JTable.DropLocation dropLocation = (JTable.DropLocation) support.getDropLocation();
+                if (dropLocation.getRow() >= 0 && dropLocation.getColumn() >= 0) {
+                    int targetModelRow = table.convertRowIndexToModel(dropLocation.getRow());
+                    MatchableImportableAudio targetRow = model.getRowAt(targetModelRow);
+                    // Non null and one left-only & one right-only?
+                    if (context.matcher.areMatchable(sourceRow, targetRow)) {
+                        int targetModelColumn = table.convertColumnIndexToModel(dropLocation.getColumn());
+                        // Does the drop column match the drop row left/right - ness?
+                        if (targetModelColumn == 0 && targetRow.getMatch() == MATCH.LEFT_ONLY ||
+                            targetModelColumn == 1 && targetRow.getMatch() == MATCH.RIGHT_ONLY) {
+                            can = true;
+                        }
+                    }
+                }
+            }
+            support.setShowDropLocation(can);
+            return can;
+        }
+        @Override
+        public boolean importData(TransferSupport support) {
+            MatchableImportableAudio sourceRow = null;
+            try {
+                sourceRow = (MatchableImportableAudio)support.getTransferable().getTransferData(matchableFlavor);
+            } catch (Exception ignored) {}
+            JTable.DropLocation dropLocation = (JTable.DropLocation) support.getDropLocation();
+            int targetModelRow = table.convertRowIndexToModel(dropLocation.getRow());
+            MatchableImportableAudio targetRow = model.getRowAt(targetModelRow);
+            context.matcher.setMatch(sourceRow, targetRow);
+            model.fireTableDataChanged();
+            return true;
+        }
+    };
+
     @Override
     protected void onPageEntered(boolean progressing) {
         String languagecode = context.languagecode;
@@ -269,7 +381,7 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
      * and then sorts the contents.
      * @return a MatchStats describing how many matches were made.
      */
-    Matcher.MatchStats autoMatch() {
+    private Matcher.MatchStats autoMatch() {
         Matcher.MatchStats result = new Matcher.MatchStats();
         if (context.matcher != null) {
             result.add(context.matcher.findExactMatches());
@@ -291,14 +403,14 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
      */
     private AudioItem findAudioItemForTitle(String title, String languagecode) {
         List<Category> categoryList = new ArrayList<>();
-        List<Locale> localeList = Arrays.asList(new RFC3066LanguageCode(languagecode).getLocale());
+        List<Locale> localeList = Collections.singletonList(new RFC3066LanguageCode(languagecode).getLocale());
 
         SearchResult searchResult = store.search(title, categoryList, localeList);
         // Filter because search will return near matches.
         AudioItem item = searchResult.getAudioItems()
             .stream()
             .map(store::getAudioItem)
-            .filter(i->i.getTitle().equals(title))
+            .filter(it->it.getTitle().equals(title))
             .findAny()
             .orElse(null);
         return item;

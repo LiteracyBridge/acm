@@ -256,6 +256,12 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
         squash();
     }
 
+    public boolean areMatchable(T left, T right) {
+        return left != null && right != null &&
+            left.getMatch().isSingle() && right.getMatch().isSingle() &&
+            left.getMatch() != right.getMatch();
+    }
+
     public static class MatchStats {
         private long start = System.nanoTime();
         int comparisons;
