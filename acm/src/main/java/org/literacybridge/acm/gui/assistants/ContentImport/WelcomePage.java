@@ -2,9 +2,9 @@ package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.MainWindow.SidebarView;
 import org.literacybridge.acm.gui.assistants.util.PSContent;
+import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ContentSpec;
@@ -12,15 +12,17 @@ import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeCellRenderer;
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +35,7 @@ import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
-public class WelcomePage extends AssistantPage<ContentImportContext> {
+public class WelcomePage extends ContentImportPage<ContentImportContext> {
     private static final Logger LOG = Logger.getLogger(WelcomePage.class.getName());
 
     private final JComboBox<Object> deploymentChooser;
@@ -41,14 +43,12 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
     private final JLabel titlePreviewLabel;
     private final JScrollPane titlePreviewScroller;
 
-    private ContentImportContext context;
     private final DefaultMutableTreeNode progSpecRootNode;
     private final DefaultTreeModel progSpecTreeModel;
     private final JTree progSpecTree;
 
-    WelcomePage(PageHelper listener) {
+    WelcomePage(PageHelper<ContentImportContext> listener) {
         super(listener);
-        context = getContext();
         setLayout(new GridBagLayout());
 
         Insets insets = new Insets(0,0,15,0);
@@ -70,8 +70,10 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
             + "<ol>"
             + "<li> You choose the Deployment #, and the Language of the content you want to import.</li>"
             + "<li> You choose the files and folders containing the content.</li>"
-            + "<li> The assistant will automatically match as many imported files as it can.</li>"
-            + "<li> You manually match any remaining files to the titles in the Content Calendar.</li>"
+            + "<li> The assistant will automatically match as many imported files as it can. You will "
+            + "have an opportunity to match remaining files, or to \"unmatch\" files as needed.</li>"
+            + "<li> You review and approve the final message-to-file matches.</li>"
+            + "<li> The audio items are imported into the ACM, and placed in appropriate playlists.</li>"
             + "</html>");
         add(welcome, gbc);
 
@@ -98,7 +100,7 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
 
         // Title preview.
         titlePreviewLabel = new JLabel("Playlists and Message Titles in the Deployment:");
-        insets = new Insets(0,0,00,0);
+        insets = new Insets(0,0,0,0);
         gbc.insets = insets;
         add(titlePreviewLabel, gbc);
 
@@ -109,14 +111,14 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
         progSpecTree = new JTree(progSpecRootNode);
         progSpecTreeModel = (DefaultTreeModel) progSpecTree.getModel();
         progSpecTree.setRootVisible(false);
+        progSpecTree.setCellRenderer(treeCellRenderer);
 
         titlePreviewScroller = new JScrollPane(progSpecTree);
         panel.add(titlePreviewScroller, BorderLayout.CENTER);
         gbc.ipadx = 10;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
-        insets = new Insets(0,10,0,30);
-        gbc.insets = insets;
+        gbc.insets.bottom = 0;
         add(panel, gbc);
 
         titlePreviewLabel.setVisible(false);
@@ -142,6 +144,7 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
                 fillLanguagesForDeployment(deploymentNo);
             }
         }
+        deploymentChooser.setBorder(getSelectedDeployment()<=0 ? redBorder : blankBorder);
         String languagecode = getSelectedLanguage();
         languageChooser.setBorder(languagecode == null ? redBorder : blankBorder);
 
@@ -155,22 +158,24 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
         // Fill deployments
         deploymentChooser.removeAllItems();
         deploymentChooser.insertItemAt("Choose...", 0);
-        // We aspire to be able to import for multiple deployments, but it gets messy with
-        // messages repeated across playlists, etc. Initially, let the user specify the
-        // exact deployment.
-//        deploymentChooser.addItem("All");
-        context.programSpec.getDeployments()
+        List<String> deployments = context.programSpec.getDeployments()
             .stream()
             .map(d -> Integer.toString(d.deploymentnumber))
+            .collect(Collectors.toList());
+        deployments
             .forEach(deploymentChooser::addItem);
 
-        // Fill context.programLanguagecodes
+        // Empty the list until we have a deployment.
         languageChooser.removeAllItems();
 
-        // If previously selected, re-select.
-        if (context.deploymentNo >= 0) {
+        // If only one deployment, or previously selected, auto-select.
+        if (deployments.size() == 1) {
+            deploymentChooser.setSelectedIndex(1); // only item after "choose..."
+        } else if (context.deploymentNo >= 0) {
             deploymentChooser.setSelectedItem(Integer.toString(context.deploymentNo));
-            fillLanguagesForDeployment(context.deploymentNo);
+        }
+        if (deploymentChooser.getSelectedIndex() > 0) {
+            fillLanguagesForDeployment(getSelectedDeployment());
         }
         if (context.languagecode != null) {
             languageChooser.setSelectedItem(context.languagecode);
@@ -191,8 +196,8 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
     @Override
     protected void onPageLeaving(boolean progressing) {
         // Since this is the welcome page, there must be something selected in order to move on.
-        context.deploymentNo = Integer.parseInt(deploymentChooser.getSelectedItem().toString());
-        context.languagecode = languageChooser.getSelectedItem().toString();
+        context.deploymentNo = getSelectedDeployment();
+        context.languagecode = getSelectedLanguage();
 
         if (progressing) {
             ensurePlaylists(context.deploymentNo, context.languagecode);
@@ -214,11 +219,6 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
         File programSpecDir = ACMConfiguration.getInstance().getProgramSpecDirFor(project);
 
         context.programSpec = new ProgramSpec(programSpecDir);
-
-        context.programLanguagecodes = context.programSpec.getRecipients()
-            .stream()
-            .map(r -> r.language)
-            .collect(Collectors.toSet());
     }
 
     private int getSelectedDeployment() {
@@ -273,43 +273,29 @@ public class WelcomePage extends AssistantPage<ContentImportContext> {
         return false;
     }
 
-    /**
-     * Determines what Deployment(s), if any, the user has selected. Not that presently this
-     * is limited to a single Deployment.
-     * @return a possibly empty list of selected Deployments.
-     */
-    private List<Integer> getSelectedDeployments() {
-        List<Integer> result = new ArrayList<>();
-        Object selectedObject = deploymentChooser.getSelectedItem();
-        String selectedItem = selectedObject != null ? selectedObject.toString() : "";
-        if (selectedItem.matches("^\\d+$")) {
-            result.add(new Integer(selectedItem));
-        } else if (selectedItem.equalsIgnoreCase("all")) {
-            context.programSpec.getDeployments()
-                .stream()
-                .map(d -> Integer.toString(d.deploymentnumber))
-                .forEach(s -> result.add(new Integer(s)));
+    @SuppressWarnings("FieldCanBeLocal")
+    private TreeCellRenderer treeCellRenderer = new DefaultTreeCellRenderer() {
+        @Override
+        public Component getTreeCellRendererComponent(JTree tree,
+            Object value,
+            boolean selected,
+            boolean expanded,
+            boolean leaf,
+            int row,
+            boolean hasFocus)
+        {
+            ImageIcon icon = null;
+            if (value instanceof PSContent.MessageNode) {
+                String title = ((PSContent.MessageNode)value).getItem().getTitle();
+                AudioItem item = findAudioItemForTitle(title, getSelectedLanguage());
+                icon = item==null ? noSoundImage : soundImage;
+            }
+            JLabel comp = (JLabel) super.getTreeCellRendererComponent(tree, value,
+                selected, expanded, leaf, row, hasFocus);
+            comp.setIcon(icon);
+            return comp;
         }
-        return result;
-    }
-
-    /**
-     * Determines what Language(s), if any, the user has selected. Not that presently this
-     * is limited to a single Language.
-     * @return a possibly empty list of selected context.programLanguagecodes.
-     */
-    private List<String> getSelectedLanguages() {
-        List<String> result = new ArrayList<>();
-        Object selectedObject = languageChooser.getSelectedItem();
-        String selectedItem = selectedObject != null ? selectedObject.toString() : "";
-        if (context.programLanguagecodes.contains(selectedItem)) {
-            result.add(selectedItem);
-        } else if (selectedItem.equalsIgnoreCase("Detect from file path.")) {
-            result.addAll(context.programLanguagecodes);
-        }
-        return result;
-    }
-
+    };
     /**
      * Create the given playlist, if it doesn't already exist. The playlist will be
      * named like "1-Malaria_Prevention-dga", with deployment #, playlist name, and

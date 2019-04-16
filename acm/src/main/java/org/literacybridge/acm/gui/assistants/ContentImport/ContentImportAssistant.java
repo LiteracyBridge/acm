@@ -3,9 +3,9 @@ package org.literacybridge.acm.gui.assistants.ContentImport;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant;
 
-import java.util.HashMap;
-import java.util.Map;
-
+/**
+ * Helper class to create a new Content Import Assistant.
+ */
 public class ContentImportAssistant {
 
     public static Assistant<ContentImportContext> create() {
@@ -18,7 +18,7 @@ public class ContentImportAssistant {
             context.languagecode = "en";
         }
 
-        Map<String, Object> props = new HashMap<>();
+        @SuppressWarnings("UnnecessaryLocalVariable")
         Assistant<ContentImportContext> assistant = new Assistant.Factory<ContentImportContext>()
             .withContext(context)
             .withPageFactories(WelcomePage::new,

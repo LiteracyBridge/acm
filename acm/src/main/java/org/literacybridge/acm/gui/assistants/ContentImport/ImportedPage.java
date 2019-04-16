@@ -1,8 +1,10 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.Assistant.AssistantPage;
+import org.literacybridge.acm.gui.Assistant.ViewExceptionsDialog;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
@@ -14,41 +16,65 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.acm.utils.EmailHelper;
+import org.literacybridge.acm.utils.Version;
 
 import javax.swing.*;
-import java.awt.Component;
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.literacybridge.acm.Constants.CATEGORY_GENERAL_OTHER;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
+import static org.literacybridge.acm.utils.EmailHelper.HtmlTable;
+import static org.literacybridge.acm.utils.EmailHelper.TR;
+import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
+import static org.literacybridge.acm.utils.EmailHelper.sendEmail;
 
-public class ImportedPage extends AssistantPage<ContentImportContext> {
+public class ImportedPage extends ContentImportPage<ContentImportContext> {
+    private static final Logger LOG = Logger.getLogger(ImportedPage.class.getName());
 
     private final JLabel importedMessagesLabel;
-    private final JLabel currentMessage;
-    private final JTextPane importedMessagesLog;
     private final JLabel updatedMessagesLabel;
-    private ContentImportContext context;
+    private final JLabel errorMessagesLabel;
+    private final JLabel currentMessage;
+
     private int importCount;
     private int updateCount;
+    private int errorCount;
 
-    Category generalOtherCategory = ACMConfiguration
-        .getInstance()
+    private StringBuilder summaryMessage;
+    private HtmlTable summaryTable;
+
+    private List<Exception> errors = new ArrayList<>();
+
+    private Category generalOtherCategory = ACMConfiguration.getInstance()
         .getCurrentDB()
         .getMetadataStore()
         .getTaxonomy()
         .getCategory(CATEGORY_GENERAL_OTHER);
+    private final JLabel statusLabel;
+    private final JProgressBar progressBar;
+    private final JButton viewErrorsButton;
+    private int progressCount;
 
-    public ImportedPage(PageHelper listener) {
+    ImportedPage(PageHelper<ContentImportContext> listener) {
         super(listener);
-        context = getContext();
-        context = getContext();
         setLayout(new GridBagLayout());
 
         Insets insets = new Insets(0, 0, 15, 0);
@@ -76,29 +102,51 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
+        // The status line. Updated as items are imported.
         hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Imported "));
         importedMessagesLabel = parameterText("no");
         hbox.add(importedMessagesLabel);
-        hbox.add(new JLabel(" new and updated "));
+        hbox.add(new JLabel(" new message(s); updated "));
         updatedMessagesLabel = parameterText("no");
-        hbox.add(new JLabel("messages. Created "));
-        hbox.add(parameterText(Integer.toString(context.createdPlaylists.size())));
-        hbox.add(new JLabel(" new playlists."));
+        hbox.add(updatedMessagesLabel);
+        hbox.add(new JLabel(" message(s). Created "));
+        String message = context.createdPlaylists.size() == 0 ?
+                         "no" :
+                         Integer.toString(context.createdPlaylists.size());
+        hbox.add(parameterText(message));
+        hbox.add(new JLabel(" new playlist(s). "));
+        errorMessagesLabel = parameterText("No");
+        hbox.add(errorMessagesLabel);
+        hbox.add(new JLabel(" error(s)."));
+        hbox.add(Box.createHorizontalStrut(5));
+        viewErrorsButton = new JButton("View Errors");
+        viewErrorsButton.setVisible(false);
+        viewErrorsButton.addActionListener(this::onViewErrors);
+        hbox.add(viewErrorsButton);
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
+        // Current item being imported.
         currentMessage = new JLabel("...");
         add(currentMessage, gbc);
+
+        // Working / Finished
+        statusLabel = new JLabel("");
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.BOTH;
+        add(statusLabel, gbc);
+        setStatus("Working...");
+
+        // Add one to the progress max, for the "send email" step.
+        progressBar = new JProgressBar(0, context.matcher.matchableItems.size()+1);
+        progressBar.setValue(0);
+        add(progressBar, gbc);
 
         // Absorb any vertical space.
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
-        importedMessagesLog = new JTextPane();
-        importedMessagesLog.setText("");
-        importedMessagesLog.setEditable(false);
-        JScrollPane logScroller = new JScrollPane(importedMessagesLog);
-        add(logScroller, gbc);
+        add(new JLabel(""), gbc);
     }
 
     @Override
@@ -106,7 +154,9 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         SwingWorker worker = new SwingWorker<Integer, Void>() {
             @Override
-            protected Integer doInBackground() throws Exception {
+            protected Integer doInBackground() {
+                summaryMessage = new StringBuilder("<html>");
+                summaryTable = new HtmlTable().withStyle("border-collapse:collapse;border:2px lightgray");
                 performImports();
                 return 0;
             }
@@ -114,8 +164,19 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
             @Override
             protected void done() {
                 setCursor(Cursor.getDefaultCursor());
-                sendReport();
+                summaryMessage.append(summaryTable.toString());
+                summaryMessage.append("</html>");
+                sendSummaryReport();
+                UIUtils.setProgressBarValue(progressBar, ++progressCount);
                 setComplete();
+                progressBar.setVisible(false);
+                if (errors.size() > 0) {
+                    setStatus("Finished, but with errors.");
+                    statusLabel.setForeground(Color.red);
+                    viewErrorsButton.setVisible(true);
+                } else {
+                    setStatus("Finished.");
+                }
             }
         };
         worker.execute();
@@ -130,29 +191,84 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
     @Override
     protected boolean isSummaryPage() { return true; }
 
-    private void sendReport() {
+    private void setStatus(String status) {
+        UIUtils.setLabelText(statusLabel, "<html>" + "<span style='font-size:2.5em'>"+status+"</span>" + "</html>");
+    }
+
+    private void onViewErrors(ActionEvent actionEvent) {
+        DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
+        String computerName;
         try {
-            EmailHelper.sendEmail("ictnotifications@literacybridge.org",
-                "ictnotifications@literacybridge.org",
+            computerName = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e1) {
+            computerName = "UNKNOWN";
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withZone(
+            ZoneId.systemDefault());
+        String message = "<html>The following error(s) occurred when attempting to import the content. " +
+            "Please double check that the content is good audio. If possible, try listening to the " +
+            "messages outside of the ACM application. If the problem persists, contact Amplio technical " +
+            "support. The button below will send this report to Amplio."+
+            "</html>";
+        String reportHeading = String.format("Project %s, User %s (%s), Computer %s%nContent Import at %s%n" +
+                "Importing content for Deployment %d, in language %s%n"+
+                "ACM Version %s, built %s%n",
+            dbConfig.getProjectName(),
+            ACMConfiguration.getInstance().getUserName(),
+            ACMConfiguration.getInstance().getUserContact(),
+            computerName,
+            formatter.format(LocalDateTime.now()),
+            context.deploymentNo,
+            dbConfig.getLanguageLabel(new Locale(context.languagecode)),
+            Constants.ACM_VERSION, Version.buildTimestamp);
+
+        ViewExceptionsDialog dialog = new ViewExceptionsDialog(Application.getApplication(), "Errors While Importing");
+        dialog.showExceptions(message, reportHeading, errors);
+    }
+
+    /**
+     * Sends a summary email report to "interested parties".
+     */
+    private void sendSummaryReport() {
+        try {
+            sendEmail("ictnotifications@amplio.org",
+                "bill@amplio.org",
                 "Content Imported",
-                importedMessagesLog.getText(),
-                false);
+                summaryMessage.toString(),
+                true);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Actually perform the imports. Called on a background thread to keep the UI responsive.
+     */
     private void performImports() {
+        DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
         Matcher<ImportableAudioItem, ImportableFile, MatchableImportableAudio> matcher = context.matcher;
+        summaryMessage.append(String.format("<h2>Project %s</h2>",
+            dbConfig.getProjectName()));
+        DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withZone(
+            ZoneId.systemDefault());
+        summaryMessage.append(String.format("<h3>%s</h3>", formatter.format(LocalDateTime.now())));
+        summaryMessage.append(String.format(
+            "<p>Importing content for Deployment %d, in language %s</p>",
+            context.deploymentNo,
+            dbConfig.getLanguageLabel(new Locale(context.languagecode))));
 
-        // Look at all of the matches.
         importCount = 0;
         updateCount = 0;
+        errorCount = 0;
+        progressCount = 0;
+        // Look at all of the matches.
         for (MatchableImportableAudio matchableItem : matcher.matchableItems) {
             if (matchableItem.getMatch().isMatch()) {
                 // If not already in the ACM DB, or the "update item" checkbox is on, do the import.
                 boolean okToImport =
-                    !matchableItem.getLeft().hasAudioItem() || matchableItem.getLeft().isReplaceOk();
+                    !matchableItem.getLeft().hasAudioItem() || matchableItem.getLeft()
+                        .isReplaceOk();
                 if (okToImport) {
                     importOneItem(matchableItem);
                 } else if (matchableItem.getLeft().hasAudioItem()) {
@@ -161,11 +277,17 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
             } else if (matchableItem.getLeft() != null && matchableItem.getLeft().hasAudioItem()) {
                 ensureAudioInPlaylist(matchableItem);
             }
+            UIUtils.setProgressBarValue(progressBar, ++progressCount);
         }
+
         Application.getFilterState().updateResult(true);
-        UIUtils.setLabelText(currentMessage,"Click \"Close\" to return to the ACM.");
+        UIUtils.setLabelText(currentMessage, "Click \"Close\" to return to the ACM.");
     }
 
+    /**
+     * Import a single audio file.
+     * @param matchableItem to be imported.
+     */
     private void importOneItem(MatchableImportableAudio matchableItem)
     {
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
@@ -173,9 +295,12 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
         ImportableAudioItem importableAudio = matchableItem.getLeft();
 
         try {
+            summaryTable.append(new TR(matchableItem.getOperation(),
+                importableAudio.toString(),
+                matchableItem.getRight().getFile().getCanonicalPath()));
             String msg = String.format("%s: '%s' from '%s'",
                 matchableItem.getOperation(),
-                importableAudio,
+                importableAudio.toString(),
                 matchableItem.getRight().getFile().getCanonicalPath());
             UIUtils.setLabelText(currentMessage, msg);
 
@@ -184,46 +309,44 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
 
             // Add or update the audio file to the ACM database.
             AudioItem audioItem = importer.importFile(importableFile, handler);
-            UIUtils.appendLabelText(importedMessagesLog, msg, false);
 
             // If the item isn't already in the playlist, add it.
-            // TODO: that would be an error.
             Playlist playlist = importableAudio.getPlaylist();
             if (!audioItem.hasPlaylist(playlist)) {
                 try {
                     audioItem.addPlaylist(playlist);
                     playlist.addAudioItem(audioItem);
                     store.commit(audioItem, playlist);
-                    UIUtils.appendLabelText(importedMessagesLog,
-                        String.format("    and add to playlist '%s'.",
-                            audioItem.getTitle(),
-                            playlist.getName()),
-                        false);
+                    summaryTable.append(new TR("Add to Playlist", audioItem.getTitle(), playlist.getName()));
                 } catch (Exception e) {
-                    UIUtils.appendLabelText(importedMessagesLog,
-                        String.format("  Exception adding '%s'\n    to playlist '%s'\n  %s",
-                            importableAudio,
-                            playlist.getName(),
-                            e.getMessage()),
-                        false);
-                    e.printStackTrace();
+                    reportPlaylistException(e, importableAudio, playlist);
                 }
             }
             if (matchableItem.getLeft().hasAudioItem()) {
                 updateCount++;
-                UIUtils.setLabelText(updatedMessagesLabel, Integer.toString(importCount));
+                UIUtils.setLabelText(updatedMessagesLabel, Integer.toString(updateCount));
             } else {
                 importCount++;
                 UIUtils.setLabelText(importedMessagesLabel, Integer.toString(importCount));
             }
-        } catch (IOException e) {
-            UIUtils.appendLabelText(importedMessagesLog,
-                String.format("Exception importing '%s'\n  %s", importableAudio, e.getMessage()),
-                false);
-            e.printStackTrace();
+        } catch (Exception e) {
+            errorCount++;
+            UIUtils.setLabelText(errorMessagesLabel, Integer.toString(errorCount));
+            summaryTable.append(new TR("Exception importing", importableAudio.getTitle(), e.toString())
+                .withStyler(pinkZebra));
+
+            String logMsg = String.format("Exception importing '%s'", importableAudio.toString());
+            LOG.log(Level.SEVERE, logMsg, e);
+            errors.add(new ImportException(logMsg, e));
+
         }
     }
 
+    /**
+     * If the audio item didn't need to be imported, this can be used to make sure that it is in
+     * the appropriate playlist.
+     * @param matchableItem to be put into a playlist, if needed.
+     */
     private void ensureAudioInPlaylist(MatchableImportableAudio matchableItem) {
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         ImportableAudioItem importableAudio = matchableItem.getLeft();
@@ -234,23 +357,32 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
                 audioItem.addPlaylist(playlist);
                 playlist.addAudioItem(audioItem);
                 store.commit(playlist);
-                UIUtils.appendLabelText(importedMessagesLog,
-                    String.format("Add '%s'\n    to playlist '%s'.",
-                        importableAudio,
-                        audioItem.getTitle(),
-                        playlist.getName()),
-                    false);
+                summaryTable.append(new TR("Add to Playlist", audioItem.getTitle(), playlist.getName()));
             } catch (Exception e) {
-                UIUtils.appendLabelText(importedMessagesLog,
-                    String.format("  Exception adding '%s'\n    to playlist '%s'\n  %s",
-                        importableAudio,
-                        playlist.getName(),
-                        e.getMessage()),
-                    false);
-                e.printStackTrace();
+                reportPlaylistException(e, importableAudio, playlist);
             }
         }
 
+    }
+
+    /**
+     * Common code to report an exception encountered while putting an audio item into a playlist.
+     * @param e the exception.
+     * @param importableAudio the importable audio item (from the Program Spec)
+     * @param playlist the ACM Playlist into which an attempt was made to put the audio item.
+     */
+    private void reportPlaylistException(Exception e,
+        ImportableAudioItem importableAudio,
+        Playlist playlist)
+    {
+        errorCount++;
+        UIUtils.setLabelText(errorMessagesLabel, Integer.toString(errorCount));
+        summaryTable.append(new TR("Playlist Exception", playlist.getName(), e.toString())
+            .withStyler(pinkZebra));
+
+        String logMsg = String.format("Playlist exception '%s'", importableAudio);
+        LOG.log(Level.SEVERE, logMsg, e);
+        errors.add(new AddToPlaylistException(logMsg, e));
     }
 
     /**
@@ -275,13 +407,13 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
                 // If there is no category, add to "General Other"
                 if (item.getCategoryList().size() == 0) item.addCategory(category);
                 // If the item didn't know what language it was, add to the selected language.
-                // TODO: Warn user if unexpected language.
                 String existingLanguage = item.getLanguageCode();
                 if (!context.languagecode.equals(existingLanguage)) {
                     System.out.println(String.format("Forcing language to '%s' was '%s'.",
                         context.languagecode,
                         existingLanguage));
                     item.getMetadata().put(MetadataSpecification.DC_LANGUAGE, context.languagecode);
+                    summaryTable.append(new TR("Forcing language", context.languagecode, existingLanguage));
                 }
                 // Force the title.
                 String existingTitle = item.getTitle();
@@ -289,8 +421,8 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
                     System.out.println(String.format("Renaming '%s' to '%s'.",
                         existingTitle,
                         importableAudio.getTitle()));
-                    item
-                        .getMetadata()
+                    summaryTable.append(new TR("Renaming", existingTitle, importableAudio.getTitle()));
+                    item.getMetadata()
                         .put(MetadataSpecification.DC_TITLE, importableAudio.getTitle());
                 }
 
@@ -298,4 +430,21 @@ public class ImportedPage extends AssistantPage<ContentImportContext> {
         }
     }
 
+    /**
+     * Typed exception wrapper for any audio import exception.
+     */
+    private static class ImportException extends Exception {
+        ImportException(String message, Exception cause) {
+            super(message, cause);
+        }
+    }
+
+    /**
+     * Typed exception wrapper for any playlist exception.
+     */
+    private static class AddToPlaylistException extends Exception {
+        AddToPlaylistException(String message, Exception cause) {
+            super(message, cause);
+        }
+    }
 }

@@ -88,6 +88,9 @@ public class DBConfiguration extends Properties {
   public String getSharedACMname() {
     return acmName;
   }
+  public String getProjectName() {
+      return ACMConfiguration.cannonicalProjectName(acmName);
+  }
 
   /**
    * Gets a File representing global (ie, Dropbox) ACM directory.

@@ -190,7 +190,8 @@ public class Assistant<Context> extends JDialog {
      * @return true if this is a finish page, false otherwise.
      */
     private boolean isFinishPage() {
-        return currentPage == maxPage && !getPage(currentPage).isSummaryPage() ;
+        return currentPage == maxPage && !getPage(currentPage).isSummaryPage() ||
+               currentPage == maxPage-1 && getPage(maxPage).isSummaryPage();
     }
 
     /**

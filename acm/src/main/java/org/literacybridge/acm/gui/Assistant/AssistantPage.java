@@ -12,7 +12,12 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -55,24 +60,66 @@ public abstract class AssistantPage<Context> extends JPanel {
         return label;
     }
 
+    public static class SizingParams {
+        public static final int IGNORE = Integer.MIN_VALUE;
+
+        public SizingParams() {
+            this(-1);
+        }
+        public SizingParams(int modelColumn) {
+            this.modelColumn = modelColumn;
+            this.minPadding = IGNORE;
+            this.preferredPadding = 2;
+            this.maxPadding = 42;
+        }
+        public SizingParams(int modelColumn,
+            int minPadding,
+            int preferredPadding,
+            int maxPadding)
+        {
+            this.modelColumn = modelColumn;
+            this.minPadding = minPadding;
+            this.preferredPadding = preferredPadding;
+            this.maxPadding = maxPadding;
+        }
+        public SizingParams(int minPadding, int preferredPadding, int maxPadding) {
+            this.modelColumn = -1;
+            this.minPadding = minPadding;
+            this.preferredPadding = preferredPadding;
+            this.maxPadding = maxPadding;
+        }
+
+        public List<SizingParams> forColumns(Integer... columnNos) {
+            List<SizingParams> params = Arrays.stream(columnNos)
+                .map(n -> new SizingParams(n, minPadding, preferredPadding, maxPadding))
+                .collect(Collectors.toList());
+            return params;
+        }
+
+        int modelColumn;
+        int minPadding;
+        int preferredPadding;
+        int maxPadding;
+    }
     /**
      * Method to size "small" header columns. This is useful for columns with fairly consistent
      * and fairly small data. Sizes the column to show every item.
      * @param table to be sized.
-     * @param columnValues A Map of Integer -> Stream<String> where the integer is the
-     *                     column number, and the Stream is all the items in the column.
-     *                     NOTE: The column number is the number from the view.
+     * @param columns a list of model column numbers to be sized.
      */
-    public static void sizeColumns(JTable table, Map<Integer, Stream<Object>> columnValues) {
-        sizeColumns(table, columnValues, 0);
+    public static void sizeColumns(JTable table, Integer... columns) {
+        List<SizingParams> params = Arrays.stream(columns).map(SizingParams::new).collect(
+            Collectors.toList());
+        sizeColumns(table, params);
     }
-    public static void sizeColumns(JTable table, Map<Integer, Stream<Object>> columnValues, int margin) {
+
+    public static void sizeColumns(JTable table, List<SizingParams> params) {
         TableModel model = table.getModel();
         TableCellRenderer headerRenderer = table.getTableHeader().getDefaultRenderer();
 
-        for (Map.Entry<Integer, Stream<Object>> e : columnValues.entrySet()) {
-            final int columnNo = e.getKey();
-            final int modelColumnNo = table.convertColumnIndexToModel(columnNo);
+        for (SizingParams param : params) {
+            final int modelColumnNo = param.modelColumn;
+            final int viewCol = table.convertColumnIndexToView(modelColumnNo);
             TableColumn column = table.getColumnModel().getColumn(modelColumnNo);
 
             int headerWidth = headerRenderer.getTableCellRendererComponent(null,
@@ -84,25 +131,33 @@ public abstract class AssistantPage<Context> extends JPanel {
 
             // To get the column class from the model we need to use the model column index. But to
             // get the render component we need to use the view index.
-            int cellWidth = e.getValue()
+
+            Stream<Object> values = IntStream
+                .range(0, table.getRowCount())
+                .mapToObj(row -> table.getValueAt(row, modelColumnNo));
+
+
+            int cellWidth = IntStream
+                .range(0, table.getRowCount())
+                .mapToObj(row -> table.getValueAt(row, modelColumnNo))
                 .filter(item -> item != null)
                 .map(item -> table.getDefaultRenderer(model.getColumnClass(modelColumnNo))
-                    .getTableCellRendererComponent(table, item, false, false, 0, columnNo)
+                    .getTableCellRendererComponent(table, item, false, false, 0, viewCol)
                     .getPreferredSize().width)
                 .max(Integer::compareTo)
                 .orElse(1);
 
             int w = Math.max(headerWidth, cellWidth) + 2;
-            column.setMaxWidth(w + margin + 40);
-            column.setPreferredWidth(w + margin);
-            column.setWidth(w + margin);
+            if (param.minPadding != SizingParams.IGNORE) column.setMinWidth(w + param.minPadding);
+            if (param.maxPadding != SizingParams.IGNORE) column.setMaxWidth(w + param.maxPadding);
+            if (param.preferredPadding != SizingParams.IGNORE) column.setPreferredWidth(w + param.preferredPadding);
         }
     }
 
     private final Assistant.PageHelper<Context> pageHelper;
     private boolean isComplete = false;
 
-    public AssistantPage(Assistant.PageHelper pageHelper) {
+    public AssistantPage(Assistant.PageHelper<Context> pageHelper) {
         super();
         this.pageHelper = pageHelper;
         setBorder(new EmptyBorder(10, 10, 10, 10));

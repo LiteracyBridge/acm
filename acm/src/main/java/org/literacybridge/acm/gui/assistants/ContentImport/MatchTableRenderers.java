@@ -1,6 +1,5 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
-import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
 
 import javax.swing.*;
@@ -19,17 +18,6 @@ class MatchTableRenderers {
     private static Color leftColor = new Color(0xFFC0CB);
     private static Color rightColor = new Color(0xADD8E6);
 
-    private ImageIcon soundImage = new ImageIcon(
-        UIConstants.getResource("sound-1.png"));
-    private ImageIcon newSoundImage = new ImageIcon(
-        UIConstants.getResource("sound-2.png"));
-    private ImageIcon noSoundImage = new ImageIcon(
-        UIConstants.getResource("sound-3.png"));
-
-    private Color bgColor;
-    private Color bgSelectionColor;
-    private Color bgAlternateColor;
-
     static boolean colorCodeMatches = false;
     static boolean isColorCoded = true;
 
@@ -37,9 +25,6 @@ class MatchTableRenderers {
     private MatcherTableModel model;
 
     MatchTableRenderers(MatcherTable table) {
-        bgColor = Color.white; // table.getBackground();
-        bgSelectionColor = table.getSelectionBackground();
-        bgAlternateColor = new Color(235, 245, 252);
         this.table = table;
         model = this.table.getModel();
     }
@@ -58,10 +43,10 @@ class MatchTableRenderers {
     }
 
     private Color getBG(int viewRow, int viewColumn, boolean isSelected) {
-        Color bg = (viewRow%2 == 0) ? bgColor : bgAlternateColor;
+        Color bg = (viewRow%2 == 0) ? ContentImportPage.bgColor : ContentImportPage.bgAlternateColor;
         Color custom = null;
         if (!isColorCoded) {
-            if (isSelected) bg = bgSelectionColor;
+            if (isSelected) bg = ContentImportPage.bgSelectionColor;
 //                bg = isSelected ? bgSelectionColor : bgColor;
 //                if (viewRow % 2 == 1 && !isSelected) bg = bgAlternateColor; // darken(bg);
         } else {
@@ -178,10 +163,10 @@ class MatchTableRenderers {
                 hasFocus, row, column);
             ImageIcon icon = null;
             if (item != null && item.getLeft() != null) {
-                if (item.getLeft().hasAudioItem()) {
-                    icon = item.getLeft().hasAudioItem() ? newSoundImage : soundImage;
+                if (item.getLeft().hasAudioItem() || item.getMatch().isMatch()) {
+                    icon = ContentImportPage.soundImage;
                 } else {
-                    icon = item.getMatch().isMatch() ? newSoundImage : noSoundImage;
+                    icon = ContentImportPage.noSoundImage;
                 }
             }
             comp.setIcon(icon);

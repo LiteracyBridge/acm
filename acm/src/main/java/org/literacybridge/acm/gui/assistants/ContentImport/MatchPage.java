@@ -1,7 +1,6 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
@@ -9,11 +8,7 @@ import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.acm.store.RFC3066LanguageCode;
-import org.literacybridge.acm.store.SearchResult;
 import org.literacybridge.core.spec.ContentSpec;
 
 import javax.swing.*;
@@ -29,28 +24,22 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
-public class MatchPage extends AssistantPage<ContentImportContext> {
+public class MatchPage extends ContentImportPage<ContentImportContext> {
     private static final int DEFAULT_THRESHOLD = 80;
+    @SuppressWarnings("unused")
     private static final int MINIMUM_THRESHOLD = 60;
+    @SuppressWarnings("FieldCanBeLocal")
     private static int fuzzyThreshold = DEFAULT_THRESHOLD;
 
     private final JLabel deployment;
     private final JLabel language;
 
-    private ContentImportContext context;
-    private MetadataStore store = ACMConfiguration.getInstance()
-        .getCurrentDB()
-        .getMetadataStore();
     private MatcherTable table;
     private MatcherTableModel model;
     private JButton unMatch;
@@ -62,9 +51,8 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         MatchTableRenderers.isColorCoded = true;
     }
 
-    MatchPage(PageHelper listener) {
+    MatchPage(PageHelper<ContentImportContext> listener) {
         super(listener);
-        context = getContext();
         setLayout(new GridBagLayout());
 
         Insets tight = new Insets(0, 0, 5, 0);
@@ -103,6 +91,7 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         add(makeTable(), gbc);
         gbc.weighty = 0;
 
+        gbc.insets.bottom = 0;
         add(makeManualMatchButtons(), gbc);
 
     }
@@ -321,10 +310,12 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
         }
         @Override
         public boolean importData(TransferSupport support) {
-            MatchableImportableAudio sourceRow = null;
+            MatchableImportableAudio sourceRow;
             try {
                 sourceRow = (MatchableImportableAudio)support.getTransferable().getTransferData(matchableFlavor);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+                return false;
+            }
             JTable.DropLocation dropLocation = (JTable.DropLocation) support.getDropLocation();
             int targetModelRow = table.convertRowIndexToModel(dropLocation.getRow());
             MatchableImportableAudio targetRow = model.getRowAt(targetModelRow);
@@ -379,9 +370,8 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
     /**
      * Performs a sequence of exact/fuzzy/token matches (using the current value of threshold),
      * and then sorts the contents.
-     * @return a MatchStats describing how many matches were made.
      */
-    private Matcher.MatchStats autoMatch() {
+    private void autoMatch() {
         Matcher.MatchStats result = new Matcher.MatchStats();
         if (context.matcher != null) {
             result.add(context.matcher.findExactMatches());
@@ -391,29 +381,6 @@ public class MatchPage extends AssistantPage<ContentImportContext> {
             model.fireTableDataChanged();
             System.out.println(result.toString());
         }
-        return result;
-    }
-
-    /**
-     * Given a message title (ie, from the Program Spec), see if we already have such an
-     * audio item in the desired language.
-     * @param title The title to search for.
-     * @param languagecode The language in which we want the audio item.
-     * @return the AudioItem if it exists, otherwise null.
-     */
-    private AudioItem findAudioItemForTitle(String title, String languagecode) {
-        List<Category> categoryList = new ArrayList<>();
-        List<Locale> localeList = Collections.singletonList(new RFC3066LanguageCode(languagecode).getLocale());
-
-        SearchResult searchResult = store.search(title, categoryList, localeList);
-        // Filter because search will return near matches.
-        AudioItem item = searchResult.getAudioItems()
-            .stream()
-            .map(store::getAudioItem)
-            .filter(it->it.getTitle().equals(title))
-            .findAny()
-            .orElse(null);
-        return item;
     }
 
     @Override

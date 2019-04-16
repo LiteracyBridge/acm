@@ -22,7 +22,7 @@ public class MatcherTableModel extends AbstractTableModel {
         private String heading;
         public String heading() { return this.heading; }
         public Class<?> theClass() { return this.theClass; }
-    };
+    }
     private static final String[] columnNames = Arrays
         .stream(Columns.values())
         .map(Columns::heading)
@@ -89,7 +89,7 @@ public class MatcherTableModel extends AbstractTableModel {
         if (row == null) return;
         // If the row is a match AND has an existing audio item, enable the [ ] Replace checkbox.
         if (!(row.getMatch().isMatch() && row.getLeft().hasAudioItem())) return;
-        boolean v = (aValue != null && ((Boolean)aValue).booleanValue());
+        boolean v = (aValue != null && (Boolean) aValue);
         row.getLeft().setReplaceOk(v);
         super.fireTableRowsUpdated(rowIndex, rowIndex);
     }
@@ -104,7 +104,7 @@ public class MatcherTableModel extends AbstractTableModel {
         super.fireTableDataChanged();
     }
 
-    public MatchableImportableAudio getRowAt(int rowIndex) {
+    MatchableImportableAudio getRowAt(int rowIndex) {
         if (rowIndex < 0 || rowIndex >= data.size())
             return null;
         return data.get(rowIndex);
@@ -121,7 +121,7 @@ public class MatcherTableModel extends AbstractTableModel {
      * be compared to Strings, which (of course) leads to IllegalCast exceptions.
      * @param sorter on which to set the comparators.
      */
-    public void setupSorter(TableRowSorter<MatcherTableModel> sorter) {
+    void setupSorter(TableRowSorter<MatcherTableModel> sorter) {
         sorter.setComparator(Columns.Left.ordinal(), (ImportableAudioItem o1, ImportableAudioItem o2) -> {
             if (o1==null) return 1;
             if (o2==null) return -1;

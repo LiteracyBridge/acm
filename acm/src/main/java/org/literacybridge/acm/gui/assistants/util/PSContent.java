@@ -36,7 +36,7 @@ public class PSContent {
 
     /**
      * Given a ProgramSpec, returns a tree of MutableTreeNodes for a given deployment.
-     * @param DefaultMutableTreeNode to be filled with playlistSpec data.
+     * @param root to be filled with playlistSpec data.
      * @param programSpec  with content data.
      * @param deploymentNo for which the playlistSpec tree is desired.
      * @param languageCode for which the playlistSpec tree is desired.
@@ -115,6 +115,8 @@ public class PSContent {
      */
     public static class MessageNode extends DefaultMutableTreeNode {
         final ContentSpec.MessageSpec item;
+
+        public ContentSpec.MessageSpec getItem() { return item; }
 
         public MessageNode(ContentSpec.MessageSpec item) {
             this.item = item;

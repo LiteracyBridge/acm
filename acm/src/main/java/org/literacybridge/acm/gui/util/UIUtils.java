@@ -56,6 +56,15 @@ public class UIUtils {
     }
   }
 
+  public static void setProgressBarValue(final JProgressBar progressBar, final int value) {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      SwingUtilities.invokeLater(() -> progressBar.setValue(value));
+    } else {
+      progressBar.setValue(value);
+    }
+  }
+
+
   public static void appendLabelText(final JTextComponent textComponent,
       final String newText,
       final boolean prepend)

@@ -2,7 +2,6 @@ package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.apache.commons.io.FilenameUtils;
 import org.jdesktop.swingx.JXTreeTable;
-import org.jdesktop.swingx.tree.TreeModelSupport;
 import org.jdesktop.swingx.treetable.AbstractMutableTreeTableNode;
 import org.jdesktop.swingx.treetable.DefaultTreeTableModel;
 import org.literacybridge.acm.config.ACMConfiguration;
@@ -13,7 +12,6 @@ import org.literacybridge.acm.utils.OsUtils;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
 import javax.swing.tree.TreeCellRenderer;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -34,21 +32,18 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class FilesPage extends AssistantPage<ContentImportContext> {
+public class FilesPage extends ContentImportPage<ContentImportContext> {
 
     private enum AUDIO_EXTS {
         MP3, OGG, A18, WAV;
@@ -75,11 +70,8 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
     private final FileTreeModel fileTreeModel;
     private final FileTree fileTreeTable;
 
-    private ContentImportContext context;
-
-    FilesPage(PageHelper listener) {
+    FilesPage(PageHelper<ContentImportContext> listener) {
         super(listener);
-        context = getContext();
 
         setLayout(new GridBagLayout());
 
@@ -145,8 +137,7 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         gbc.ipadx = 10;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
-        insets = new Insets(0, 10, 0, 30);
-        gbc.insets = insets;
+        gbc.insets.bottom = 0;
         add(panel, gbc);
 
         fileChooser = new JFileChooser();
@@ -170,6 +161,8 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
     private FileFilter chooserFilter = new FileFilter() {
         @Override
         public boolean accept(File f) {
+            // Ignore hidden files.
+            if (f.isHidden() || f.getName().startsWith(".")) return false;
             return f.isDirectory() || AUDIO_EXTS.isAudioFile(f.getName());
         }
 
@@ -196,6 +189,10 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
 
     @Override
     protected void onPageEntered(boolean progressing) {
+        if (ACMConfiguration.isTestData() && progressing && context.importableRoots.size()==0) {
+            context.importableRoots.addAll(Collections.singletonList(new File("/Users/bill/A-test1")));
+        }
+
         // Fill deployment and language
         deployment.setText(Integer.toString(context.deploymentNo));
         language.setText(context.languagecode);
@@ -278,6 +275,7 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         if (file.isDirectory()) {
             DirectoryNode dirNode = new DirectoryNode(file);
             File[] dirContents = file.listFiles(dirfile -> chooserFilter.accept(dirfile));
+            assert dirContents != null;
             for (File childFile : dirContents) {
                 AbstractFileNode childNode = nodeFromFile(childFile);
                 if (childNode != null) {
@@ -296,24 +294,15 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         }
 
         void sizeColumns() {
-            Map<Integer, Stream<Object>> columnValues = new HashMap<>();
-            // Set column 1 width (Status) on header & values. Account for reordered columns.
-            TableColumn column = getColumnModel().getColumn(1);
-            final int timestampColumnNo = column.getModelIndex();
-            Stream<Object> values = IntStream
-                .range(0, this.getRowCount())
-                .mapToObj(r -> getValueAt(r, timestampColumnNo));
-            columnValues.put(timestampColumnNo, values);
+            List<SizingParams> params = new ArrayList<>();
+
+            // Set column 1 width (Status) on header & values.
+            params.add(new SizingParams(1, SizingParams.IGNORE, 20, 60));
 
             // Set column 2 width (Size) on header & values.
-            column = getColumnModel().getColumn(2);
-            final int sizeColumnNo = column.getModelIndex();
-            values = IntStream
-                .range(0, this.getRowCount())
-                .mapToObj(r -> getValueAt(r, sizeColumnNo));
-            columnValues.put(sizeColumnNo, values);
+            params.add(new SizingParams(2, SizingParams.IGNORE, 20, 60));
 
-            AssistantPage.sizeColumns(this, columnValues, 20);
+            AssistantPage.sizeColumns(this, params);
 
             // The timestamp and size columns have been sized to fit themselves. Name will get the rest.
         }
@@ -324,9 +313,14 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
      */
     private abstract class AbstractFileNode extends AbstractMutableTreeTableNode {
         String[] columns = { "Name", "Timestamp", "Size" };
-        final File file;
 
-        AbstractFileNode(File file) { this.file = file;}
+        AbstractFileNode(File file, boolean allowsChildren) {
+            super(file, allowsChildren);
+        }
+
+        public File getFile() {
+            return (File)getUserObject();
+        }
 
         @Override
         public int getColumnCount() {
@@ -337,11 +331,11 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         public Object getValueAt(int column) {
             switch (column) {
             case 0:
-                return file.getName();
+                return getFile().getName();
             case 1:
-                return new Date(file.lastModified());
+                return new Date(getFile().lastModified());
             case 2:
-                return file.length();
+                return getFile().length();
             }
             return null;
         }
@@ -359,21 +353,21 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
      * A filesystem File node. Consists of itself.
      */
     private class FileNode extends AbstractFileNode {
-        FileNode(File file) { super(file); }
+        FileNode(File file) { super(file, false); }
 
         /**
          * The files of a FileNode is just the file itself.
          *
          * @return the file as a singleton list.
          */
-        List<File> files() { return Collections.singletonList(file); }
+        List<File> files() { return Collections.singletonList(getFile()); }
     }
 
     /**
      * A filesystem Directory node. Consists of itself and any children explicitly added.
      */
     private class DirectoryNode extends AbstractFileNode {
-        DirectoryNode(File file) { super(file); }
+        DirectoryNode(File file) { super(file, true); }
 
         /**
          * The files that have been added to this directory node, or to any child
@@ -396,15 +390,14 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
         }
     }
 
+    /**
+     * TreeTable model for the file-ish view.
+     */
     private class FileTreeModel extends DefaultTreeTableModel {
         String[] columns = { "Name", "Timestamp", "Size" };
 
         FileTreeModel(DirectoryNode root) {
             super(root);
-        }
-
-        TreeModelSupport getTreeModelSupport() {
-            return modelSupport;
         }
 
         boolean isEmpty() {
@@ -455,9 +448,6 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
 
     private class FileTreeTableRenderer extends JLabel
         implements TreeCellRenderer, TableCellRenderer {
-        private Color bgColor;
-        private Color bgSelectionColor;
-        private Color bgAlternateColor;
 
         Font defaultFont, monoFont;
 
@@ -485,9 +475,6 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
             monoFont = new Font("Monospaced", defaultFont.getStyle(), defaultFont.getSize() - 1);
             setFont(monoFont);
             setOpaque(true);
-            bgColor = Color.white; // table.getBackground();
-            bgSelectionColor = fileTreeTable.getSelectionBackground();
-            bgAlternateColor = new Color(235, 245, 252);
         }
 
         @Override
@@ -498,11 +485,12 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
             int row,
             int column)
         {
-            String str = renderValue(value, isSelected, column);
+            int modelColumn = table.convertColumnIndexToModel(column);
+            String str = renderValue(value, isSelected, modelColumn);
 //            Color bg = (row%2 == 0) ? bgColor : bgAlternateColor;
             Color bg = (isSelected) ? bgSelectionColor : bgColor;
             setBackground(bg);
-            setFont(column == 2 ? monoFont : defaultFont);
+            setFont(modelColumn == 2 ? monoFont : defaultFont);
             setText(str);
             return this;
         }
@@ -527,14 +515,6 @@ public class FilesPage extends AssistantPage<ContentImportContext> {
             setFont(defaultFont);
             setText(str);
             return this;
-        }
-
-        private Color lighten(Color color) {
-            double FACTOR = 1.04;
-            return new Color(Math.min((int) (color.getRed() * FACTOR), 255),
-                Math.min((int) (color.getGreen() * FACTOR), 255),
-                Math.min((int) (color.getBlue() * FACTOR), 255),
-                color.getAlpha());
         }
 
     }

@@ -10,6 +10,8 @@ import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class WelcomePage extends AssistantPage<DeploymentContext> {
@@ -84,16 +86,18 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
 
         deploymentChooser.removeAllItems();
         deploymentChooser.addItem("Choose...");
-        context.programSpec.getDeployments()
-                           .stream()
-                           .map(d -> Integer.toString(d.deploymentnumber))
-                           .forEach(deploymentChooser::addItem);
+        List<String> deployments = context.programSpec.getDeployments()
+            .stream()
+            .map(d -> Integer.toString(d.deploymentnumber))
+            .collect(Collectors.toList());
+        deployments
+            .forEach(deploymentChooser::addItem);
 
-
-        // If previously selected, re-select.
-        int deploymentNo = context.deploymentNo;
-        if (deploymentNo >= 0) {
-            deploymentChooser.setSelectedItem(Integer.toString(deploymentNo));
+        // If only one deployment, or previously selected, auto-select.
+        if (deployments.size() == 1) {
+            deploymentChooser.setSelectedIndex(1); // only item after "choose..."
+        } else if (context.deploymentNo >= 0) {
+            deploymentChooser.setSelectedItem(Integer.toString(context.deploymentNo));
         }
         onSelection(null);
     }

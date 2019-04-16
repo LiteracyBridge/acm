@@ -1,26 +1,24 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
-import org.literacybridge.acm.gui.assistants.ContentImport.MatcherTableModel;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
 
 import javax.swing.*;
 import java.util.function.Predicate;
 
 /**
- * Filters rows in a MatcherTable<T>, based on a client supplied predicate.
- * @param <T> The type of the MatcherTable.
+ * Filters rows in a MatcherTable<MatchableImportableAudio>, based on a client supplied predicate.
  */
-class MatcherFilter<T extends MatchableItem<?,?>> extends RowFilter<MatcherTableModel, Integer> {
+class MatcherFilter extends RowFilter<MatcherTableModel, Integer> {
     private final MatcherTableModel model;
     private boolean includeMatched = true;
 
-    private Predicate<T> predicate;
+    private Predicate<MatchableImportableAudio> predicate;
 
     MatcherFilter(MatcherTableModel model) {
         this.model = model;
     }
 
-    void setPredicate(Predicate<T> predicate) {
+    void setPredicate(Predicate<MatchableImportableAudio> predicate) {
         this.predicate = predicate;
     }
 
@@ -28,7 +26,7 @@ class MatcherFilter<T extends MatchableItem<?,?>> extends RowFilter<MatcherTable
     public boolean include(Entry<? extends MatcherTableModel, ? extends Integer> entry) {
         if (predicate == null) return true;
         int rowIx = entry.getIdentifier();
-        T row = (T)model.getRowAt(rowIx);
+        MatchableImportableAudio row = model.getRowAt(rowIx);
         return predicate.test(row);
     }
 }

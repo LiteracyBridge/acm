@@ -407,8 +407,9 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         }
 
         for (Recipient recipient : recipients) {
-            File recipientDir = IOUtils.FileIgnoreCase(communitiesDir, recipientsMap.get(recipient.recipientid));
-            if (!recipientDir.exists() || !recipientDir.isDirectory()) {
+            String dirName = recipientsMap.get(recipient.recipientid);
+            File recipientDir = (dirName==null)?null:IOUtils.FileIgnoreCase(communitiesDir, dirName);
+            if (recipientDir == null || !recipientDir.exists() || !recipientDir.isDirectory()) {
                 context.issues.add(Issues.Severity.WARNING, Issues.Area.CUSTOM_GREETINGS, "Missing directory for recipient '%s'.", recipName(recipient));
             } else {
                 File languagesDir = IOUtils.FileIgnoreCase(recipientDir, "languages");
@@ -488,17 +489,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     }
 
     private void sizeColumns() {
-        Map<Integer, Stream<Object>> columnValues = new HashMap<>();
-
-        TableColumn column = issuesTable.getColumnModel().getColumn(0);
-        int columnIx = column.getModelIndex();
-        columnValues.put(columnIx, Arrays.stream(Issues.Severity.values()).map(Issues.Severity::displayName));
-
-        column = issuesTable.getColumnModel().getColumn(1);
-        columnIx = column.getModelIndex();
-        columnValues.put(columnIx, Arrays.stream(Issues.Area.values()).map(Issues.Area::displayName));
-
-        sizeColumns(issuesTable, columnValues);
+        // Content Issue category and issue description.
+        sizeColumns(issuesTable, 0, 1);
     }
 
 }
