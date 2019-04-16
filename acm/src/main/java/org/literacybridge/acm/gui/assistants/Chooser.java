@@ -2,7 +2,7 @@ package org.literacybridge.acm.gui.assistants;
 
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.Assistant;
-import org.literacybridge.acm.gui.Assistant.ImageLabel;
+import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.assistants.ContentImport.ContentImportAssistant;
 import org.literacybridge.acm.gui.assistants.Deployment.DeploymentAssistant;
@@ -10,8 +10,6 @@ import org.literacybridge.acm.gui.assistants.Deployment.DeploymentAssistant;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -64,7 +62,7 @@ public class Chooser extends JDialog {
         GridBagConstraints gbc = new GridBagConstraints(0,GridBagConstraints.RELATIVE, 1,1, 1.0,1.0, CENTER,BOTH, insets, 1,1);
 
         JLabel header = new JLabel(" ACM Assistants ");
-        header.setFont(ImageLabel.getCustomFont(16f));
+        header.setFont(LabelButton.getCustomFont(16f));
         Box hbox = Box.createHorizontalBox();
         hbox.setOpaque(true);
         hbox.setBackground(new Color(235, 245, 252));
@@ -74,25 +72,30 @@ public class Chooser extends JDialog {
         add(hbox, gbc);
 
         Dimension size = new Dimension(400, 92);
-        JLabel contentButton = new ImageLabel(usbIcon, "Import Content", this::runImport);
+//        JLabel contentButton = new LabelButton(usbIcon, "Import Content", this::runImport);
+        LabelButton contentButton = new LabelButton(usbIcon, "Import Content");
+        contentButton.addActionListener(e -> runImport());
         contentButton.setMinimumSize(size);
         contentButton.setPreferredSize(size);
         contentButton.setMaximumSize(size);
         panel.add(contentButton, gbc);
 
-        JLabel languageButton = new ImageLabel(langIcon, "Language Prompts", this::runDeployment);
+        LabelButton languageButton = new LabelButton(langIcon, "Language Prompts");
+        languageButton.addActionListener(e -> runDeployment());
         languageButton.setMinimumSize(size);
         languageButton.setPreferredSize(size);
         panel.add(languageButton, gbc);
         languageButton.setEnabled(false);
 
-        JLabel playlistButton = new ImageLabel(plIcon, "Playlist Prompts", this::runDeployment);
+        LabelButton playlistButton = new LabelButton(plIcon, "Playlist Prompts");
+        playlistButton.addActionListener(e -> runDeployment());
         playlistButton.setMinimumSize(size);
         playlistButton.setPreferredSize(size);
         panel.add(playlistButton, gbc);
         playlistButton.setEnabled(true);
 
-        JLabel deploymentButton = new ImageLabel(tbIcon, "Create Deployment", this::runDeployment);
+        LabelButton deploymentButton = new LabelButton(tbIcon, "Create Deployment");
+        deploymentButton.addActionListener(e -> runDeployment());
         deploymentButton.setMinimumSize(size);
         deploymentButton.setPreferredSize(size);
         panel.add(deploymentButton, gbc);
