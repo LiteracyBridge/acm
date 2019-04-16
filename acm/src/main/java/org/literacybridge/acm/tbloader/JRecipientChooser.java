@@ -208,7 +208,8 @@ public class JRecipientChooser extends JPanel {
             Box stack = Box.createVerticalBox();
             // Make a prompt for the level. Use a small text.
             Box box = Box.createHorizontalBox();
-            JLabel label = new JLabel(recipients.getNameOfLevel(ix));
+            // Spaces to prevent the last character being cut off. :(
+            JLabel label = new JLabel(recipients.getNameOfLevel(ix)+"  ");
             label.setFont(new Font("Sans Serif", Font.ITALIC, 10));
             box.add(label);
             box.add(Box.createHorizontalGlue()); // absorbs any extra width.
