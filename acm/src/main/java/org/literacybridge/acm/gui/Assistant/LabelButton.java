@@ -158,15 +158,20 @@ public class LabelButton extends JLabel {
                 super.setText(html);
             }
         }
+    }
 
-
+    public void setBorderColor(Color normalColor) {
+        normalBorder = new LineBorder(normalColor, 2);
+    }
+    public void setHoverBorderColor(Color hoverColor) {
+        hoverBorder = new LineBorder(hoverColor, 2);
     }
 
     private String actionCommand;
     private String getActionCommand() {
         return actionCommand;
     }
-    void setActionCommand(String actionCommand) {
+    public void setActionCommand(String actionCommand) {
         this.actionCommand = actionCommand;
     }
 
