@@ -12,6 +12,9 @@ public class ContentImportAssistant {
         // create the AssistantContainer:
 
         ContentImportContext context = new ContentImportContext();
+        context.fuzzyThreshold = ACMConfiguration.getInstance().getCurrentDB().getFuzzyThreshold();
+        context.notifyList = ACMConfiguration.getInstance().getCurrentDB().getNotifyList();
+
         // Debugging & development:
         if (ACMConfiguration.isTestData()) {
             context.deploymentNo = 1;

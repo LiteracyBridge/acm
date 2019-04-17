@@ -295,7 +295,7 @@ public class Application extends JXFrame {
           }
         }
       }
-      if (ACMConfiguration.getInstance().getCurrentDB().shouldPreCacheWav()) {
+      if (ACMConfiguration.getInstance().getCurrentDB().isShouldPreCacheWav()) {
         caching.cacheNewA18Files();
       }
 

@@ -473,7 +473,7 @@ public class TBBuilder {
      * @throws IOException if a file can't be read.
      */
     private void validateDeployment(String acmName, String deployment, List<PackageInfo> packages) throws IOException {
-        boolean strictNaming = ACMConfiguration.getInstance().getCurrentDB().strictDeploymentNaming();
+        boolean strictNaming = ACMConfiguration.getInstance().getCurrentDB().isStrictDeploymentNaming();
         if (strictNaming) {
             // Validate that the deployment is listed in the deployments.csv file.
             File deploymentsList = new File(sourceProgramspecDir, "deployments.csv");

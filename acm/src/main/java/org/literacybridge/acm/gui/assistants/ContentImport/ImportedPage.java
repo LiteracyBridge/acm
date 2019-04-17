@@ -34,6 +34,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -231,14 +232,18 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
      * Sends a summary email report to "interested parties".
      */
     private void sendSummaryReport() {
-        try {
-            sendEmail("ictnotifications@amplio.org",
-                "bill@amplio.org",
-                "Content Imported",
-                summaryMessage.toString(),
-                true);
-        } catch (IOException e) {
-            e.printStackTrace();
+        Collection<String> recipients = ACMConfiguration.getInstance().getCurrentDB().getNotifyList();
+        String subject = "Content Imported";
+        if (recipients.size() > 0) {
+            try {
+                sendEmail("ictnotifications@amplio.org",
+                    recipients,
+                    subject,
+                    summaryMessage.toString(),
+                    true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

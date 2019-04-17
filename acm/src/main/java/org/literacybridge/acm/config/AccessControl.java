@@ -4,10 +4,6 @@ import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
-import org.literacybridge.acm.repository.CachingRepository;
-import org.literacybridge.acm.repository.FileSystemGarbageCollector;
-import org.literacybridge.acm.repository.FileSystemRepository;
 import org.literacybridge.core.fs.ZipUnzip;
 
 import java.io.File;
@@ -677,7 +673,7 @@ public class AccessControl {
         } catch (IOException ex) {
             ex.printStackTrace();
             // If this is the only locking, rethrow the exception, so caller knows we can't get to server.
-            if (dbConfiguration.useAwsLocking()) {
+            if (dbConfiguration.isUseAwsLocking()) {
                 throw ex;
             }
         }

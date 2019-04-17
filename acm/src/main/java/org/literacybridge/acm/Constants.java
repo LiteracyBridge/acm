@@ -44,6 +44,8 @@ public class Constants {
   public final static String DEPLOYMENT_CHOICE = "DEPLOYMENT_CHOICE";
   public final static String BATCH_RECORD = "record.log";
   public final static String S3_BUCKET = "acm-logging";
+  public final static String FUZZY_THRESHOLD = "FUZZY_THRESHOLD";
+  public final static String NOTIFY_LIST = "NOTIFY_LIST";
 
   public final static String CATEGORY_GENERAL_OTHER = "0-0";
   public final static String CATEGORY_TB_CATEGORIES = "0-4-2";

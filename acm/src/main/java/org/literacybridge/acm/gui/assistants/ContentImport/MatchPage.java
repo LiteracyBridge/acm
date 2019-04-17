@@ -31,11 +31,9 @@ import java.util.stream.Collectors;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
 public class MatchPage extends ContentImportPage<ContentImportContext> {
+    private static final int MAXIMUM_THRESHOLD = 100;
     private static final int DEFAULT_THRESHOLD = 80;
-    @SuppressWarnings("unused")
     private static final int MINIMUM_THRESHOLD = 60;
-    @SuppressWarnings("FieldCanBeLocal")
-    private static int fuzzyThreshold = DEFAULT_THRESHOLD;
 
     private final JLabel deployment;
     private final JLabel language;
@@ -94,6 +92,11 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
         gbc.insets.bottom = 0;
         add(makeManualMatchButtons(), gbc);
 
+        if (context.fuzzyThreshold == null) {
+            context.fuzzyThreshold = DEFAULT_THRESHOLD;
+        } else {
+            context.fuzzyThreshold = Integer.max(MINIMUM_THRESHOLD, Integer.min(MAXIMUM_THRESHOLD, context.fuzzyThreshold));
+        }
     }
 
     /**
@@ -375,8 +378,8 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
         Matcher.MatchStats result = new Matcher.MatchStats();
         if (context.matcher != null) {
             result.add(context.matcher.findExactMatches());
-            result.add(context.matcher.findFuzzyMatches(fuzzyThreshold));
-            result.add(context.matcher.findTokenMatches(fuzzyThreshold));
+            result.add(context.matcher.findFuzzyMatches(context.fuzzyThreshold));
+            result.add(context.matcher.findTokenMatches(context.fuzzyThreshold));
             context.matcher.sort();
             model.fireTableDataChanged();
             System.out.println(result.toString());

@@ -25,13 +25,16 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
@@ -40,13 +43,16 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
 @SuppressWarnings("serial")
-public class DBConfiguration extends Properties {
+public class DBConfiguration { //extends Properties {
   private static final Logger LOG = Logger
       .getLogger(DBConfiguration.class.getName());
+
+  private Properties dbProperties;
 
   private boolean initialized = false;
   private File globalRepositoryDirectory;
@@ -308,19 +314,6 @@ public class DBConfiguration extends Properties {
       return CategoryFilter.writeCategoryFilter(sharedACMDirectory, taxonomy);
   }
 
-  private void writeProps() {
-    try {
-      BufferedOutputStream out = new BufferedOutputStream(
-          new FileOutputStream(getConfigurationPropertiesFile()));
-      super.store(out, null);
-      out.flush();
-      out.close();
-    } catch (IOException e) {
-      throw new RuntimeException("Unable to write configuration file: "
-          + getConfigurationPropertiesFile(), e);
-    }
-  }
-
   boolean init() throws Exception {
     if (!initialized) {
       InitializeAcmConfiguration();
@@ -378,9 +371,22 @@ public class DBConfiguration extends Properties {
       return accessControl != null ? accessControl.getAccessStatus() : AccessControl.AccessStatus.none;
   }
 
-  long getCacheSizeInBytes() {
+  private void writeProps() {
+        try {
+            BufferedOutputStream out = new BufferedOutputStream(
+                new FileOutputStream(getConfigurationPropertiesFile()));
+            dbProperties.store(out, null);
+            out.flush();
+            out.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to write configuration file: "
+                + getConfigurationPropertiesFile(), e);
+        }
+    }
+
+    long getCacheSizeInBytes() {
     long size = Constants.DEFAULT_CACHE_SIZE_IN_BYTES;
-    String value = getProperty(Constants.CACHE_SIZE_PROP_NAME);
+    String value = dbProperties.getProperty(Constants.CACHE_SIZE_PROP_NAME);
     if (value != null) {
       try {
         size = Long.parseLong(value);
@@ -398,9 +404,9 @@ public class DBConfiguration extends Properties {
     return languageLables.get(locale);
   }
 
-  public boolean shouldPreCacheWav() {
+  public boolean isShouldPreCacheWav() {
     boolean ret = false;
-    String preCache = getProperty(Constants.PRE_CACHE_WAV);
+    String preCache = dbProperties.getProperty(Constants.PRE_CACHE_WAV);
     if (preCache.equalsIgnoreCase("TRUE")) {
       ret = true;
     }
@@ -413,14 +419,14 @@ public class DBConfiguration extends Properties {
    * Currently defaults to false. Next, default to true. Then remove old
    * WordPress code and remove this entirely.
    */
-  boolean useAwsLocking() {
-    String awsLocking = getProperty(Constants.USE_AWS_LOCKING);
+  boolean isUseAwsLocking() {
+    String awsLocking = dbProperties.getProperty(Constants.USE_AWS_LOCKING);
     return awsLocking == null || !awsLocking.equalsIgnoreCase("false");
   }
 
 
-   public boolean strictDeploymentNaming() {
-        String strictNaming = getProperty(Constants.STRICT_DEPLOYMENT_NAMING);
+   public boolean isStrictDeploymentNaming() {
+        String strictNaming = dbProperties.getProperty(Constants.STRICT_DEPLOYMENT_NAMING);
         return strictNaming == null || !strictNaming.equalsIgnoreCase("false");
     }
 
@@ -429,9 +435,44 @@ public class DBConfiguration extends Properties {
      * @return true if we should add a toolbar button for configuration.
      */
     public boolean configurationDialog() {
-        String configurable = getProperty(Constants.CONFIGURATION_DIALOG);
+        String configurable = dbProperties.getProperty(Constants.CONFIGURATION_DIALOG);
         return ACMConfiguration.getInstance().isShowConfiguration() ||
             (configurable != null && configurable.equalsIgnoreCase("true"));
+    }
+
+    /**
+     * The configured value of the fuzzy match threshold, for content matching. If no
+     * value in the config file, returns null.
+     * @return The value, or null if none is specified or is not parseable.
+     */
+    public Integer getFuzzyThreshold() {
+        Integer result = null;
+        String value = dbProperties.getProperty(Constants.FUZZY_THRESHOLD);
+        try {
+            result = new Integer(value);
+        } catch (Exception ignored) {
+            // ignore and return null.
+        }
+        return result;
+    }
+
+    /**
+     * The configured value of "interested parties" for events in the ACM. This should
+     * be a list of email addresses, separated by commas.
+     * @return a possibly empty list of email addresses (not validated in any way).
+     */
+    public Collection<String> getNotifyList() {
+        Set<String> result;
+        String list = dbProperties.getProperty(Constants.NOTIFY_LIST);
+        if (list != null) {
+            result = Arrays.asList(list.split(","))
+                .stream()
+                .map(String::trim)
+                .collect(Collectors.toSet());
+        } else {
+            result = new HashSet<>();
+        }
+        return result;
     }
 
 
@@ -439,12 +480,12 @@ public class DBConfiguration extends Properties {
    * Parses the language labels from the 'AUDIO_LANGUAGES' String property
    * contained in the config.properties file. The appropriate line in the file
    * has the following format:
-   * AUDIO_LANGUAGES=en,dga("Dagaare"),tw("Twi"),sfw("Sehwi")
+   * AUDIO_LANGUAGES=en,dga("Dagaare"),twi("Twi"),sfw("Sehwi")
    */
   private void parseLanguageLabels() {
     if (audioLanguages == null) {
       audioLanguages = new ArrayList<Locale>();
-      String languages = getProperty(Constants.AUDIO_LANGUAGES);
+      String languages = dbProperties.getProperty(Constants.AUDIO_LANGUAGES);
       if (languages != null) {
         StringTokenizer tokenizer = new StringTokenizer(languages, ", ");
         while (tokenizer.hasMoreTokens()) {
@@ -484,7 +525,7 @@ public class DBConfiguration extends Properties {
    * @return The next correlation id property.
    */
   public int getNextCorrelationId() {
-    String nextId = getProperty("NEXT_CORRELATION_ID");
+    String nextId = dbProperties.getProperty("NEXT_CORRELATION_ID");
     if (nextId == null) {
       return 0;
     }
@@ -493,7 +534,7 @@ public class DBConfiguration extends Properties {
 
   public void setNextCorrelationId(int nextId) {
     String id = String.valueOf(nextId);
-    setProperty("NEXT_CORRELATION_ID", id);
+      dbProperties.setProperty("NEXT_CORRELATION_ID", id);
     writeProps();
   }
 
@@ -516,24 +557,25 @@ public class DBConfiguration extends Properties {
       try {
         BufferedInputStream in = new BufferedInputStream(
             new FileInputStream(getConfigurationPropertiesFile()));
-        load(in);
+          dbProperties = new Properties();
+          dbProperties.load(in);
       } catch (IOException e) {
         throw new RuntimeException("Unable to load configuration file: "
             + getConfigurationPropertiesFile(), e);
       }
     }
 
-    if (!containsKey(Constants.PRE_CACHE_WAV)) {
-      put(Constants.PRE_CACHE_WAV, "FALSE");
+    if (!dbProperties.containsKey(Constants.PRE_CACHE_WAV)) {
+        dbProperties.put(Constants.PRE_CACHE_WAV, "FALSE");
       propsChanged = true;
     }
-    if (!containsKey(Constants.AUDIO_LANGUAGES)) {
-      put(Constants.AUDIO_LANGUAGES,
+    if (!dbProperties.containsKey(Constants.AUDIO_LANGUAGES)) {
+        dbProperties.put(Constants.AUDIO_LANGUAGES,
           "en,dga(\"Dagaare\"),ssl(\"Sisaala\"),tw(\"Twi\"),"); // sfw(\"Sehwi\"),
       propsChanged = true;
     }
-    if (!containsKey(Constants.CACHE_SIZE_PROP_NAME)) {
-      put(Constants.CACHE_SIZE_PROP_NAME,
+    if (!dbProperties.containsKey(Constants.CACHE_SIZE_PROP_NAME)) {
+        dbProperties.put(Constants.CACHE_SIZE_PROP_NAME,
           Long.toString(Constants.DEFAULT_CACHE_SIZE_IN_BYTES));
       propsChanged = true;
     }

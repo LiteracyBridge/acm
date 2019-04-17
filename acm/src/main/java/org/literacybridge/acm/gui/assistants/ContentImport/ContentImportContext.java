@@ -7,6 +7,7 @@ import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -15,6 +16,18 @@ import java.util.Set;
  * contain all of the data for importing the audio tracks for one language in one deployment.
  */
 class ContentImportContext {
+    // Configured items
+
+    /**
+     * Value to use for the fuzzy matching threshold.
+     */
+    Integer fuzzyThreshold;
+
+    /**
+     * email addresses to be notified about the import.
+     */
+    Collection<String> notifyList;
+
     /**
      * Program Spec for the project.
      */
