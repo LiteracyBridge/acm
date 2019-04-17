@@ -4,21 +4,17 @@
  */
 package org.literacybridge.acm.utils;
 
-import org.literacybridge.acm.config.ACMConfiguration;
-
-import java.awt.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import javax.swing.*;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Point;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.*;
 
 /**
  * A collection of utility methods for Swing.
@@ -30,6 +26,7 @@ import javax.swing.*;
  * Commented out the unused parts of the class.
  *
  */
+@SuppressWarnings("DanglingJavadoc")
 public final class SwingUtils {
     private static final Logger LOG = Logger.getLogger(SwingUtils.class.getName());
 
@@ -72,15 +69,16 @@ public final class SwingUtils {
      * component, false otherwise
      * @return the List of components
      */
-    public static <T extends JComponent> List<T> getDescendantsOfType(
-        Class<T> clazz, Container container, boolean nested) {
-        List<T> tList = new ArrayList<T>();
+    private static <T extends JComponent> List<T> getDescendantsOfType(Class<T> clazz,
+        Container container,
+        boolean nested) {
+        List<T> tList = new ArrayList<>();
         for (Component component : container.getComponents()) {
             if (clazz.isAssignableFrom(component.getClass())) {
                 tList.add(clazz.cast(component));
             }
             if (nested || !clazz.isAssignableFrom(component.getClass())) {
-                tList.addAll(SwingUtils.<T>getDescendantsOfType(clazz,
+                tList.addAll(SwingUtils.getDescendantsOfType(clazz,
                     (Container) component, nested));
             }
         }
@@ -285,7 +283,7 @@ public final class SwingUtils {
      * false otherwise
      */
     public static boolean equals(Object obj1, Object obj2) {
-        return obj1 == null ? obj2 == null : obj1.equals(obj2);
+        return Objects.equals(obj1, obj2);
     }
 
     /**
@@ -382,14 +380,14 @@ public final class SwingUtils {
     /**
      * Exclude methods that return values that are meaningless to the user
      */
-    private static Set<String> setExclude = new HashSet<String>();
-    static {
-        setExclude.add("getFocusCycleRootAncestor");
-        setExclude.add("getAccessibleContext");
-        setExclude.add("getColorModel");
-        setExclude.add("getGraphics");
-        setExclude.add("getGraphicsConfiguration");
-    }
+//    private static Set<String> setExclude = new HashSet<String>();
+//    static {
+//        setExclude.add("getFocusCycleRootAncestor");
+//        setExclude.add("getAccessibleContext");
+//        setExclude.add("getColorModel");
+//        setExclude.add("getGraphics");
+//        setExclude.add("getGraphicsConfiguration");
+//    }
 
     /**
      * Common code to set L&F.
@@ -438,7 +436,7 @@ public final class SwingUtils {
                 System.out.println("Set l&f to metal.");
                 return;
             }
-            catch (Exception ex) {
+            catch (Exception ignored) {
             }
         }
 
@@ -523,5 +521,18 @@ public final class SwingUtils {
             pComponent.y += pParent.y;
         }
         return pComponent;
+    }
+
+    /**
+     * Handles otherwise unhandled Esc in dialogs.
+     * @param dialog to which to add the listener.
+     */
+    public static void addEscapeListener(final JDialog dialog) {
+        ActionListener escListener = e -> dialog.setVisible(false);
+
+        dialog.getRootPane().registerKeyboardAction(escListener,
+            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW);
+
     }
 }

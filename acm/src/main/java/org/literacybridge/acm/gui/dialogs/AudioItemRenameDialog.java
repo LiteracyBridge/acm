@@ -5,11 +5,15 @@ import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.SearchResult;
+import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -28,7 +32,7 @@ public class AudioItemRenameDialog extends JDialog {
     private JLabel renamePrompt;
     private JCheckBox manyToOneOk;
     private JCheckBox renameMatchingOk;
-    private JTextArea titleEdit;
+    private JTextField titleEdit;
     private JButton okButton;
 
     private boolean manyToOne = false;
@@ -63,6 +67,8 @@ public class AudioItemRenameDialog extends JDialog {
 
         setResizable(true);
         setSize(getPreferredSize());
+
+        SwingUtils.addEscapeListener(this);
     }
 
     /**
@@ -75,6 +81,9 @@ public class AudioItemRenameDialog extends JDialog {
             manyToOneOk = new JCheckBox(String.format(
                 "You are renaming %d Audio Items.\nAre you sure?", renameList.size()));
             manyToOneOk.addActionListener(comp -> enableOkButton());
+            // If accepting the dialog on "Enter" is desired when this checkbox has
+            // focus, do this:
+            //manyToOneOk.addKeyListener(keyListener);
             dialogPanel.add(manyToOneOk, gbc);
         }
 
@@ -83,8 +92,8 @@ public class AudioItemRenameDialog extends JDialog {
         dialogPanel.add(renamePrompt, gbc);
 
         Box hbox = Box.createHorizontalBox();
-        titleEdit = new JTextArea(oldTitle);
-        titleEdit.setRows(1);
+        titleEdit = new JTextField(oldTitle);
+        titleEdit.addKeyListener(keyListener);
         hbox.add(titleEdit);
         hbox.add(Box.createHorizontalGlue());
         gbc = gbc();
@@ -178,7 +187,21 @@ public class AudioItemRenameDialog extends JDialog {
         okButton.setEnabled(enable);
     }
 
-    /**
+    private KeyListener keyListener = new KeyAdapter() {
+        @Override
+        public void keyTyped(KeyEvent e) {
+            if (e.getKeyChar() == '\n' && okButton.isEnabled()) {
+                onOk();
+            } if (e.getKeyChar() == '\u001b') {
+                // Close on escape.
+                setVisible(false);
+            } else {
+                super.keyTyped(e);
+            }
+        }
+    };
+
+   /**
      * Gets the list of Audio Items to be renamed, based on the arguments, matching items,
      * and state of components.
      * @return the net list of items to be changed.
@@ -211,4 +234,5 @@ public class AudioItemRenameDialog extends JDialog {
 
         setVisible(false);
     }
+
 }

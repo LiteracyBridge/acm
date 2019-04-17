@@ -13,6 +13,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
+import static org.literacybridge.acm.utils.SwingUtils.addEscapeListener;
+
 public class Assistant<Context> extends JDialog {
     /**
      * This serves as the options class for the Assistant class. Create a new Factory(),
@@ -92,6 +94,8 @@ public class Assistant<Context> extends JDialog {
 
         setMinimumSize(factory.size==null ? new Dimension(800,600) : factory.size);
         setLocation(factory.owner.getX()+20, factory.owner.getY()+20);
+
+        addEscapeListener(this);
     }
 
     /**
