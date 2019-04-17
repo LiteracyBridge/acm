@@ -9,8 +9,7 @@ import org.literacybridge.acm.gui.Assistant.Assistant;
 public class ContentImportAssistant {
 
     public static Assistant<ContentImportContext> create() {
-        // create the AssistantContainer:
-
+        // Create the context and populate from project configuration
         ContentImportContext context = new ContentImportContext();
         context.fuzzyThreshold = ACMConfiguration.getInstance().getCurrentDB().getFuzzyThreshold();
         context.notifyList = ACMConfiguration.getInstance().getCurrentDB().getNotifyList();

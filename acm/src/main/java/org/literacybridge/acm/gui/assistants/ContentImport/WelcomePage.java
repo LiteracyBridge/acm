@@ -40,7 +40,7 @@ public class WelcomePage extends ContentImportPage<ContentImportContext> {
 
     private final JComboBox<Object> deploymentChooser;
     private final JComboBox<String> languageChooser;
-    private final JLabel titlePreviewLabel;
+    private final Box titlePreviewBox;
     private final JScrollPane titlePreviewScroller;
 
     private final DefaultMutableTreeNode progSpecRootNode;
@@ -99,10 +99,18 @@ public class WelcomePage extends ContentImportPage<ContentImportContext> {
         add(new JLabel("Click 'Next' when you are ready to continue."), gbc);
 
         // Title preview.
-        titlePreviewLabel = new JLabel("Playlists and Message Titles in the Deployment:");
+        titlePreviewBox = Box.createHorizontalBox();
+        titlePreviewBox.add(new JLabel("Playlists and Message Titles in the Deployment. (Titles with "));
+        titlePreviewBox.add(new JLabel(soundImage));
+        titlePreviewBox.add(new JLabel(" have content in the ACM, with "));
+        titlePreviewBox.add(new JLabel(noSoundImage));
+        titlePreviewBox.add(new JLabel("do not.):"));
+
+        titlePreviewBox.add(Box.createHorizontalGlue());
+
         insets = new Insets(0,0,0,0);
         gbc.insets = insets;
-        add(titlePreviewLabel, gbc);
+        add(titlePreviewBox, gbc);
 
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout(0,0));
@@ -121,7 +129,7 @@ public class WelcomePage extends ContentImportPage<ContentImportContext> {
         gbc.insets.bottom = 0;
         add(panel, gbc);
 
-        titlePreviewLabel.setVisible(false);
+        titlePreviewBox.setVisible(false);
         titlePreviewScroller.setVisible(false);
 
         getProjectInfo();
@@ -261,7 +269,7 @@ public class WelcomePage extends ContentImportPage<ContentImportContext> {
         
         boolean hasContent = hasContent(progSpecRootNode);
         titlePreviewScroller.setVisible(hasContent);
-        titlePreviewLabel.setVisible(hasContent);
+        titlePreviewBox.setVisible(hasContent);
     }
 
     private boolean hasContent(DefaultMutableTreeNode node) {

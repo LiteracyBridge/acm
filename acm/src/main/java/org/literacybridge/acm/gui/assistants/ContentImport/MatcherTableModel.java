@@ -15,7 +15,7 @@ public class MatcherTableModel extends AbstractTableModel {
         Left(ImportableAudioItem.class, "Audio Item"),
         Right(ImportableFile.class, "File"),
         Status(String.class, "Status"),
-        Update(Boolean.class, "Update");
+        Update(Boolean.class, "Update?");
 
         Columns(Class theClass, String heading) { this.theClass = theClass; this.heading = heading;}
         private Class<?> theClass;
