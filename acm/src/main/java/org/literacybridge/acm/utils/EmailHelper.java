@@ -1,17 +1,18 @@
 package org.literacybridge.acm.utils;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.AccessControl;
 import org.literacybridge.acm.config.HttpUtility;
-import org.literacybridge.acm.gui.assistants.ContentImport.ImportedPage;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
@@ -19,8 +20,18 @@ import java.util.stream.IntStream;
 
 public class EmailHelper {
     private static final Logger LOG = Logger.getLogger(EmailHelper.class.getName());
+    // The response when the email was sent.
+    private static final int EMAIL_SENT_RESPONSE = 200;
+
+    public static boolean sendEmail(String sender, String recipient, String subject, String body, boolean html) throws
+                                                                                                       IOException {
+        List<String> recipientList = Collections.singletonList(recipient);
+        return sendEmail(sender, recipientList, subject, body, html);
+    }
+
+
     @SuppressWarnings("unchecked")
-    public static boolean sendEmail(String from, String to, String subject, String body, boolean html) throws
+    public static boolean sendEmail(String from, Collection<String> recipientList, String subject, String body, boolean html) throws
                                                                                                        IOException
     {
         String computerName;
@@ -46,7 +57,9 @@ public class EmailHelper {
         request.put("computername", computerName);
         request.put("from", from);
         request.put("subject", subject);
-        request.put("recipient", to);
+        JSONArray recipients = new JSONArray();
+        recipients.addAll(recipientList);
+        request.put("recipient", recipients);
         request.put("body", body);
         request.put("html", html);
 
@@ -55,6 +68,13 @@ public class EmailHelper {
         try {
             httpUtility.sendPostRequest(requestURL, request);
             jsonResponse = httpUtility.readJSONObject();
+            Object o = jsonResponse.get("ResponseMetadata");
+            if (o instanceof JSONObject) {
+                o = ((JSONObject)o).get("HTTPStatusCode");
+            }
+            if (o instanceof Long) {
+                status_aws = ((Long)o) == EMAIL_SENT_RESPONSE;
+            }
             LOG.info(String.format("email: %s\n          %s\n", request.toString(), jsonResponse.toString()));
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -68,20 +88,13 @@ public class EmailHelper {
         return status_aws;
     }
 
-    public static BiFunction<TR,Integer,String> blueZebra = new BiFunction<TR,Integer,String>() {
-        @Override
-        public String apply(TR tr, Integer integer) {
-            return "background-color:"+((integer%2==0)?"#fff":"#eff");
-        }
-    };
+    private static BiFunction<TR, Integer, String> blueZebra = (tr, integer) ->
+        "background-color:" + ((integer % 2 == 0) ? "#fff" : "#eff");
 
-    public static BiFunction<TR,Integer,String> pinkZebra = new BiFunction<TR,Integer,String>() {
-        @Override
-        public String apply(TR tr, Integer integer) {
-            return "background-color:"+((integer%2==0)?"#ffeeee":"#ffe0e0");
-        }
-    };
+    public static BiFunction<TR, Integer, String> pinkZebra = (tr, integer) ->
+        "background-color:" + ((integer % 2 == 0) ? "#ffeeee" : "#ffe0e0");
 
+    @SuppressWarnings("unused")
     public static class TR {
         BiFunction<TR,Integer,String> styler;
         String style;
