@@ -16,7 +16,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -53,18 +52,8 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
         super(listener);
         setLayout(new GridBagLayout());
 
-        Insets tight = new Insets(0, 0, 5, 0);
-        GridBagConstraints gbc = new GridBagConstraints(0,
-            GridBagConstraints.RELATIVE,
-            1,
-            1,
-            1.0,
-            0.0,
-            GridBagConstraints.LINE_START,
-            GridBagConstraints.BOTH,
-            tight,
-            1,
-            1);
+        GridBagConstraints gbc = getGBC();
+        gbc.insets.bottom = 5;
 
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2em'>Match Files with Content.</span>"
@@ -77,15 +66,16 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
 
         Box hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Importing message content for deployment "));
-        deployment = parameterText();
+        deployment = makeBoxedLabel();
         hbox.add(deployment);
         hbox.add(new JLabel(" and language "));
-        language = parameterText();
+        language = makeBoxedLabel();
         hbox.add(language);
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
         gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
         add(makeTable(), gbc);
         gbc.weighty = 0;
 
@@ -344,7 +334,7 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
                                                                                  .getDeployment(deploymentNo)
                                                                                  .getPlaylistSpecs();
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
-            String playlistName = WelcomePage.qualifiedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
+            String playlistName = WelcomePage.decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             Playlist playlist = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().findPlaylistByName(playlistName);
             for (ContentSpec.MessageSpec messageSpec : contentPlaylistSpec.getMessagesForLanguage(languagecode)) {
                 ImportableAudioItem importableAudio = new ImportableAudioItem(messageSpec, playlist);

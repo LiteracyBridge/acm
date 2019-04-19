@@ -29,8 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
@@ -51,18 +49,7 @@ public class WelcomePage extends ContentImportPage<ContentImportContext> {
         super(listener);
         setLayout(new GridBagLayout());
 
-        Insets insets = new Insets(0,0,15,0);
-        GridBagConstraints gbc = new GridBagConstraints(0,
-            GridBagConstraints.RELATIVE,
-            1,
-            1,
-            1.0,
-            0.0,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.HORIZONTAL,
-            insets,
-            1,
-            1);
+        GridBagConstraints gbc = getGBC();
 
         JLabel welcome = new JLabel("<html>"
             + "<span style='font-size:2.5em'>Welcome to the Content Import Assistant.</span>"
@@ -108,7 +95,7 @@ public class WelcomePage extends ContentImportPage<ContentImportContext> {
 
         titlePreviewBox.add(Box.createHorizontalGlue());
 
-        insets = new Insets(0,0,0,0);
+        Insets insets = new Insets(0,0,0,0);
         gbc.insets = insets;
         add(titlePreviewBox, gbc);
 
@@ -323,7 +310,7 @@ public class WelcomePage extends ContentImportPage<ContentImportContext> {
                                                                                  .getDeployment(deploymentNo)
                                                                                  .getPlaylistSpecs();
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
-            String plName = qualifiedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
+            String plName = decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             if (!acmPlaylists.containsKey(plName)) {
                 Playlist playlist = store.newPlaylist(plName);
                 try {
@@ -340,21 +327,5 @@ public class WelcomePage extends ContentImportPage<ContentImportContext> {
         }
     }
 
-    public static String qualifiedPlaylistName(String title, int deploymentNo, String languagecode) {
-        title = normalizePlaylistTitle(title);
-        return String.format("%d-%s-%s", deploymentNo, title, languagecode);
-    }
-    private static Pattern playlistPattern = Pattern.compile("\\d+-(.*)-\\w+");
-    public static String basePlaylistName(String qualifiedName) {
-        Matcher matcher = playlistPattern.matcher(qualifiedName);
-        if (matcher.matches() && matcher.groupCount()==1) {
-            return matcher.group(1);
-        }
-        return null;
-    }
-    private static String normalizePlaylistTitle(String title) {
-        title = title.trim().replaceAll(" ", "_");
-        return title;
-    }
 
 }

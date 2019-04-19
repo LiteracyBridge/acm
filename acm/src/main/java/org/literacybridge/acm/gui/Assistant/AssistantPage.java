@@ -12,13 +12,20 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.util.ArrayList;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
 import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * The abstract base class for Assistant pages. Provides access to Assistant properties.
@@ -50,8 +57,8 @@ public abstract class AssistantPage<Context> extends JPanel {
     protected static final Border blankBorder = new LineBorder(new Color(0, 0, 0, 0), 1, true);
     protected static final Border parameterBorder = new CompoundBorder(greenBorder, new EmptyBorder(2,3,2,4));
 
-    public static JLabel parameterText() { return parameterText(null); }
-    public static JLabel parameterText(String text) {
+    public static JLabel makeBoxedLabel() { return makeBoxedLabel(null); }
+    public static JLabel makeBoxedLabel(String text) {
         JLabel label = new JLabel();
         label.setOpaque(true);
         label.setBackground(Color.white);
@@ -154,6 +161,27 @@ public abstract class AssistantPage<Context> extends JPanel {
         }
     }
 
+    /**
+     * Creates "standard" GridBagConstraints for a grid-based Assistant page. Optimized for
+     * one column, so each item is it's own row, but is a good starting point 
+     * @return a "standard" GridBagConstraints object.
+     */
+    public static GridBagConstraints getGBC() {
+        Insets insets = new Insets(0,0,15,0);
+        GridBagConstraints gbc = new GridBagConstraints(0,
+            GridBagConstraints.RELATIVE,
+            1,
+            1,
+            1.0,
+            0.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.HORIZONTAL,
+            insets,
+            1,
+            1);
+        return gbc;
+    }
+
     private final Assistant.PageHelper<Context> pageHelper;
     private boolean isComplete = false;
 
@@ -182,4 +210,61 @@ public abstract class AssistantPage<Context> extends JPanel {
     boolean isComplete() { return isComplete; }
 
     protected final Context getContext() { return pageHelper.getContext(); }
+
+    // Helpers to convert between decorated and un-decorated playlist names.
+
+    /**
+     * Given a playlist title, a deployment, and a language, build the decorated playlist name,
+     * like 1-Health-swh
+     * @param title of the playlist
+     * @param deploymentNo of the deployment
+     * @param languagecode of the playlist
+     * @return the decorated name.
+     */
+    public static String decoratedPlaylistName(String title, int deploymentNo, String languagecode) {
+        title = normalizePlaylistTitle(title);
+        return String.format("%d-%s-%s", deploymentNo, title, languagecode);
+    }
+
+    private static Pattern playlistPattern = Pattern.compile("\\d+-(.*)-\\w+");
+
+    /**
+     * Given a decorated playlist name, strip off the deployment and language, and return just
+     * the name. Underscores are converted (back) to spaces.
+     * @param decoratedName to be un-decorated.
+     * @return the un-decorated name.
+     */
+    public static String undecoratedPlaylistName(String decoratedName) {
+        Matcher matcher = playlistPattern.matcher(decoratedName);
+        if (matcher.matches() && matcher.groupCount()==1) {
+            return matcher.group(1).replaceAll("_", " ");
+        }
+        return null;
+    }
+
+    /**
+     * Given a playlist title, trim leading and trailing spaces, and replace remaining spaces
+     * with underscores.
+     * @param title, possibly with spaces.
+     * @return title without spaces.
+     */
+    private static String normalizePlaylistTitle(String title) {
+        title = title.trim().replaceAll(" ", "_");
+        return title;
+    }
+
+    public static <T> Stream<T> enumerationAsStream(Enumeration<T> e) {
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<T>() {
+            public T next() {
+                return e.nextElement();
+            }
+
+            public boolean hasNext() {
+                return e.hasMoreElements();
+            }
+        }, Spliterator.ORDERED), false);
+    }
+
+
+
 }

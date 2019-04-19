@@ -1,8 +1,18 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
+import org.jdesktop.swingx.treetable.DefaultMutableTreeTableNode;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
+import org.literacybridge.acm.store.Playlist;
+
 import javax.swing.table.AbstractTableModel;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
+
+import static org.literacybridge.acm.gui.Assistant.AssistantPage.enumerationAsStream;
 
 /**
  * This class describes issues with a Deployment. Some are merely warnings, others are
@@ -10,7 +20,9 @@ import java.util.List;
  */
 public class Issues {
     public enum Severity {
-        INFO("Info"), WARNING("Warning"), ERROR("ERROR");
+        ERROR("Errors"),
+        WARNING("Warnings"),
+        INFO("Information");
 
         String displayName;
 
@@ -55,31 +67,60 @@ public class Issues {
         issues.add(issue);
     }
 
-    public List<Issue> getIssues() {
-        return issues;
-    }
-
-    public List<Issue> getIssuesBySeverity() {
-        List<Issue> result = new ArrayList<>(issues);
-        result.sort((a, b) -> a.severity.ordinal() - b.severity.ordinal());
-        return result;
-    }
-
-    public List<Issue> getIssuesByArea() {
-        List<Issue> result = new ArrayList<>(issues);
-        result.sort((a, b) -> a.area.ordinal() - b.area.ordinal());
-        return result;
+    void addToTree(DefaultMutableTreeNode issueTreeRoot) {
+        for (Issue issue : issues) {
+            Severity severity = issue.severity;
+            Area area = issue.area;
+            // Get the node for severity.
+            SeverityNode severityNode = null;
+            Enumeration e = issueTreeRoot.children();
+            while (e.hasMoreElements() && severityNode == null) {
+                SeverityNode sNode = (SeverityNode) e.nextElement();
+                if (sNode.getSeverity() == severity) {
+                    severityNode = sNode;
+                } else if (sNode.getSeverity().ordinal() > severity.ordinal()) {
+                    // Found where it should go (before this).
+                    severityNode = new SeverityNode(issue);
+                    issueTreeRoot.insert(severityNode, issueTreeRoot.getIndex(sNode));
+                }
+            }
+            // Didn't find a spot in the list; add to the end.
+            if (severityNode == null) {
+                severityNode = new SeverityNode(issue);
+                issueTreeRoot.add(severityNode);
+            }
+            // Get the node for the area.
+            AreaNode areaNode = null;
+            e = severityNode.children();
+            while (e.hasMoreElements() && areaNode==null) {
+                // Don't care about order; makes it much simpler.
+                AreaNode aNode = (AreaNode) e.nextElement();
+                if (aNode.getArea() == area) {
+                    areaNode = aNode;
+                }
+            }
+            if (areaNode == null) {
+                areaNode = new AreaNode(issue);
+                severityNode.add(areaNode);
+            }
+            areaNode.add(new IssueNode(issue));
+        }
     }
 
     private boolean hasIssue(Severity severity) {
-        return issues.stream().map(Issue::getSeverity).anyMatch(i -> i == severity);
+        Issue issue = issues
+            .stream()
+            .filter(is -> is.severity==severity)
+            .findFirst()
+            .orElse(null);
+        return issue != null;
     }
 
-    public boolean hasWarning() {
+    boolean hasWarning() {
         return hasIssue(Severity.WARNING);
     }
 
-    public boolean hasError() {
+    boolean hasError() {
         return hasIssue(Severity.ERROR);
     }
 
@@ -93,7 +134,7 @@ public class Issues {
         String message;
         Object[] args;
 
-        public Severity getSeverity() {
+        Severity getSeverity() {
             return severity;
         }
 
@@ -103,49 +144,72 @@ public class Issues {
             this.message = message;
             this.args = args;
         }
+
+        public String format() {
+            return String.format(message, args);
+        }
     }
 
-    /**
-     * Expose the list of issues as a JTable model.
-     */
-    public class IssueTableModel extends AbstractTableModel {
-
-        @Override
-        public int getRowCount() {
-            return issues.size();
+    class SeverityNode extends DefaultMutableTreeNode {
+        SeverityNode(Issue issue) {
+            super(issue.getSeverity(), true);
         }
 
         @Override
-        public int getColumnCount() {
-            return 3;
+        public String toString() {
+            Object o = getUserObject();
+            if (o instanceof Severity) return ((Severity)o).displayName();
+            return o.toString();
         }
 
         @Override
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            Issue issue = issues.get(rowIndex);
-            switch (columnIndex) {
-            case 0:
-                return issue.severity.displayName();
-            case 1:
-                return issue.area.displayName();
-            case 2:
-                return String.format(issue.message, issue.args);
-            }
-            return null;
+        public boolean equals(Object obj) {
+            if (!(obj instanceof SeverityNode)) return false;
+            return ((SeverityNode)obj).getSeverity() == getSeverity();
         }
 
-        @Override
-        public String getColumnName(int column) {
-            switch (column) {
-            case 0:
-                return "Severity";
-            case 1:
-                return "Area";
-            case 2:
-                return "Issue";
-            }
-            return null;
+        Severity getSeverity() {
+            return (Severity) getUserObject();
         }
-
     }
+    class AreaNode extends DefaultMutableTreeNode {
+        AreaNode(Issue issue) {
+            super(issue.area, true);
+        }
+
+        @Override
+        public String toString() {
+            Object o = getUserObject();
+            if (o instanceof Area) return ((Area)o).displayName();
+            return o.toString();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof AreaNode)) return false;
+            return ((AreaNode)obj).getArea() == getArea();
+        }
+
+        Area getArea() {
+            return (Area) getUserObject();
+        }
+    }
+    class IssueNode extends DefaultMutableTreeNode {
+        IssueNode(Issue issue) {
+            super(issue, true);
+        }
+
+        @Override
+        public String toString() {
+            Object o = getUserObject();
+            if (o instanceof Issue) return ((Issue)o).format();
+            return o.toString();
+        }
+
+        public Issue getIssue() {
+            return (Issue) getUserObject();
+        }
+    }
+
+
 }

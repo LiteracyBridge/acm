@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -76,6 +77,8 @@ public class TBBuilder {
     public static final String ACM_PREFIX = "ACM-";
     private final static int MAX_DEPLOYMENTS = 5;
 
+    // Begin instance data
+
     private File sourceProgramspecDir;
 
     private File sourceTbLoadersDir;
@@ -92,7 +95,14 @@ public class TBBuilder {
     private List<String> warningMessages = new ArrayList<>();
     private Set<String> errorCommunities = new HashSet<>();
     private Set<String> errorLanguages = new HashSet<>();
-    public String project;
+    private String project;
+
+    private Consumer<String> statusWriter;
+    private void reportStatus(String format, Object... args) {
+        statusWriter.accept(String.format(format, args));
+    }
+
+
 
     /**
      * Class to hold the name, language, and groups of a single package.
@@ -112,6 +122,11 @@ public class TBBuilder {
         }
     }
 
+    public static class TBBuilderException extends Exception {
+        TBBuilderException(String message) {
+            super(message);
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         File lbDir = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
@@ -131,8 +146,13 @@ public class TBBuilder {
                 System.exit(1);
             }
 
-            TBBuilder tbb = new TBBuilder(args[1], true);
-            tbb.create(args);
+            TBBuilder tbb = new TBBuilder(args[1], System.out::print);
+            try {
+                tbb.validateAndCreate(args);
+            } catch (Exception e) {
+                System.err.print(e.toString());
+                System.exit(1);
+            }
         } else if (args[0].equalsIgnoreCase("PUBLISH")) {
             if (args.length < 3) {
                 System.out.print("Unexpected number of arguments for PUBLISH.\n");
@@ -140,12 +160,17 @@ public class TBBuilder {
                 System.exit(1);
             }
 
-            TBBuilder tbb = new TBBuilder(args[1], true);
+            TBBuilder tbb = new TBBuilder(args[1], System.out::print);
             int deploymentCount = args.length - 2;
             if (deploymentCount > MAX_DEPLOYMENTS)
                 deploymentCount = MAX_DEPLOYMENTS;
             List<String> deploymentList = Arrays.asList(args).subList(2, deploymentCount+2);
-            tbb.publish(deploymentList);
+            try {
+                tbb.publishDeployment(deploymentList);
+            } catch (Exception e) {
+                System.err.print(e.toString());
+                System.exit(1);
+            }
         } else {
             System.out.printf("Unknown operation '%s'. Operations are CREATE and PUBLISH\n", args[0]);
             printUsage();
@@ -153,20 +178,19 @@ public class TBBuilder {
         }
     }
 
-    public TBBuilder(DBConfiguration dbConfig) throws Exception {
-        this(dbConfig.getSharedACMname(), true);
+    public TBBuilder(DBConfiguration dbConfig, Consumer<String> statusWriter) throws Exception {
+        this(dbConfig.getSharedACMname(), statusWriter);
     }
 
     /**
      * Construct the TBBuilder. Opens the ACM that's being operated upon.
      *
      * @param sharedACM the ACM name.
-     * @param dbOpened
      * @throws Exception if the database can't be initialized.
      */
-    private TBBuilder(String sharedACM, boolean dbOpened) throws Exception {
+    private TBBuilder(String sharedACM, Consumer<String> statusWriter) throws Exception {
         sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(sharedACM);
-        if (!dbOpened) {
+        if (!ACMConfiguration.isInitialized()) {
             CommandLineParams params = new CommandLineParams();
             params.disableUI = true;
             params.sandbox = true;
@@ -174,6 +198,7 @@ public class TBBuilder {
             ACMConfiguration.initialize(params);
             ACMConfiguration.getInstance().setCurrentDB(params.sharedACM);
         }
+        this.statusWriter = statusWriter;
         // Like ~/Dropbox/ACM-UWR/TB-Loaders
         sourceTbLoadersDir = ACMConfiguration.getInstance().getTbLoaderDirFor(sharedACM);
         sourceTbOptionsDir = new File(sourceTbLoadersDir, "TB_Options");
@@ -233,21 +258,21 @@ public class TBBuilder {
      *             . . . optional triples of (package name, language, group)
      * @throws Exception if one of the packages encounters an IO error.
      */
-    private void create(String[] args) throws Exception {
+    private void validateAndCreate(String[] args) throws Exception {
         List<PackageInfo> packages = getPackageInfoForCreate(args);
         String acmName = args[1];
         String deployment = args[2];
         validateDeployment(acmName, deployment, packages);
 
-        doCreate(args[2], packages);
+        createDeployment(args[2], packages);
 
     }
-    public void apiCreate(String[] args) throws Exception {
+    public void createDeployment(String[] args) throws Exception {
         List<PackageInfo> packages = getPackageInfoForCreate(args);
-        doCreate(args[2], packages);
+        createDeployment(args[2], packages);
 
     }
-    private void doCreate(String deployment, List<PackageInfo> packages) throws Exception {
+    private void createDeployment(String deployment, List<PackageInfo> packages) throws Exception {
         createDeployment(deployment);
 
         for (PackageInfo pi : packages) {
@@ -326,7 +351,7 @@ public class TBBuilder {
         newRev = new File(stagedDeploymentDir, revFileName);
         newRev.createNewFile();
 
-        System.out.printf("%nDone with deployment of basic/community content.%n");
+        reportStatus("%nDone with deployment of basic/community content.%n");
     }
 
     private File latestFirmwareImage() {
@@ -353,8 +378,7 @@ public class TBBuilder {
     private void addImage(PackageInfo pi) throws Exception {
         Set<String> exportedCategories = null;
         boolean hasIntro = false;
-        int groupCount = pi.groups.length;
-        System.out.printf("%n%nExporting package %s%n", pi.name);
+        reportStatus("%n%nExporting package %s%n", pi.name);
 
         File sourcePackageDir = new File(sourceTbLoadersDir, "packages"+File.separator + pi.name);
         File sourceMessagesDir = new File(sourcePackageDir, "messages");
@@ -368,11 +392,9 @@ public class TBBuilder {
         stagedImageDir.mkdirs();
 
         if (!sourceListsDir.exists() || !sourceListsDir.isDirectory()) {
-            System.err.printf("Directory not found: %s%n", sourceListsDir);
-            System.exit(1);
+            throw(new TBBuilderException(String.format("Directory not found: %s%n", sourceListsDir)));
         } else if (sourceListsDir.listFiles().length == 0) {
-            System.err.printf("No lists found in %s%n", sourceListsDir);
-            System.exit(1);
+            throw(new TBBuilderException(String.format("No lists found in %s%n", sourceListsDir)));
         }
 
         File stagedMessagesDir = new File(stagedImageDir, "messages");
@@ -386,18 +408,15 @@ public class TBBuilder {
         File stagedWelcomeMessageDir = stagedLanguageDir;
 
         if (!stagedAudioDir.exists() && !stagedAudioDir.mkdirs()) {
-            System.err.printf("Unable to create directory: %s%n", stagedAudioDir);
-            System.exit(1);
+            throw(new TBBuilderException(String.format("Unable to create directory: %s%n", stagedAudioDir)));
         }
 
         if (!stagedLanguageDir.exists() && !stagedLanguageDir.mkdirs()) {
-            System.err.printf("Unable to create directory: %s%n", stagedLanguageDir);
-            System.exit(1);
+            throw(new TBBuilderException(String.format("Unable to create directory: %s%n", stagedLanguageDir)));
         }
 
         if (!stagedWelcomeMessageDir.exists() && !stagedWelcomeMessageDir.mkdirs()) {
-            System.err.printf("Unable to create directory: %s%n", stagedWelcomeMessageDir);
-            System.exit(1);
+            throw(new TBBuilderException(String.format("Unable to create directory: %s%n", stagedWelcomeMessageDir)));
         }
 
         File[] listFiles = stagedListsDir.listFiles();
@@ -407,13 +426,13 @@ public class TBBuilder {
             // delete the file. Remember that the file existed; we'll use that to select a
             // control.txt file that plays the intro.a18 at startup.
             if (listFile.getName().equals(TBBuilder.IntroMessageListFilename)) {
-                exportList(pi.name, listFile, stagedWelcomeMessageDir, "intro.a18", false);
+                exportContentForList(pi.name, listFile, stagedWelcomeMessageDir, "intro.a18", false);
                 listFile.delete();
                 hasIntro = true;
             } else if (listFile.getName().equalsIgnoreCase("_activeLists.txt")) {
                 exportedCategories = exportCategoriesInPackage(pi.name, listFile);
             } else {
-                exportList(pi.name, listFile, stagedAudioDir, true);
+                exportContentForList(pi.name, listFile, stagedAudioDir, true);
             }
         }
 
@@ -462,8 +481,8 @@ public class TBBuilder {
         f.createNewFile();
 
         exportPackagesInDeployment(pi.name, pi.language, pi.groups);
-        System.out.println(
-            String.format("Done with adding image for %s and %s.", pi.name, pi.language));
+        reportStatus(
+            String.format("Done with adding image for %s and %s.%n", pi.name, pi.language));
     }
 
     /**
@@ -485,7 +504,6 @@ public class TBBuilder {
 
                 String nextDeploymentName = null;
                 String prevDeploymentName = null;
-                int count = 0;
                 int deploymentIx = -1;
                 int deploymentNumberIx = -1;
                 int startDateIx = -1;
@@ -842,9 +860,7 @@ public class TBBuilder {
         }
         for (Map.Entry<String, List<String>> e : foundRecipientIds.entrySet()) {
             if (e.getValue().size() > 1) {
-                String dirs = e.getValue()
-                    .stream()
-                    .collect(Collectors.joining(", "));
+                String dirs = String.join(", ", e.getValue());
                 String msg = String.format("Recipientid %s found in multiple communities: %s",
                     e.getKey(), dirs);
                 fatalMessages.add(msg);
@@ -852,32 +868,29 @@ public class TBBuilder {
         }
     }
 
-    private static char getLatestDeploymentRevision(
+    private static String getLatestDeploymentRevision(
         File publishTbLoadersDir,
         final String deployment) throws Exception {
-        char revision = 'a';
+        Pattern deplPattern = Pattern.compile("(.*)-([a-zA-Z]+)$");
+        String revision = "a";
         File[] files = publishTbLoadersDir.listFiles((dir, name) ->
             name.toLowerCase().endsWith(".rev") && name.toLowerCase().startsWith(deployment.toLowerCase()));
         if (files.length > 1)
             throw new Exception("Too many *rev files.  There can only be one.");
         else if (files.length == 1) {
             // Assuming distribution-X.rev, pick the next higher than 'X'
-            char foundRevision = files[0].getName().charAt(deployment.length() + 1);
-            if (foundRevision >= revision) {
-                revision = ++foundRevision;
+            String foundRevision = "";
+            Matcher deplMatcher = deplPattern.matcher(files[0].getName());
+            if (deplMatcher.matches()) {
+                foundRevision = deplMatcher.group(2).toLowerCase();
+            }
+            if (foundRevision.compareTo(revision)>0) {
+                revision = incrementRevision(foundRevision);
                 // If there's already a directory (or file) of the new name, keep looking.
                 File probe = new File(publishTbLoadersDir, deployment + '-' + revision);
-                while (probe.exists() && Character.isLetter(revision)) {
-                    revision++;
+                while (probe.exists()) {
+                    revision = incrementRevision(revision);
                     probe = new File(publishTbLoadersDir, deployment + '-' + revision);
-                }
-                // If no un-used name found, keep the original one.
-                if (!Character.isLetter(revision)) {
-                    if (!Character.isLetter(foundRevision)) {
-                        throw new Exception(
-                            "Too many revisions. Can't allocate a new file name suffix.");
-                    }
-                    revision = foundRevision;
                 }
             }
         }
@@ -893,6 +906,25 @@ public class TBBuilder {
         return revision;
     }
 
+    private static String incrementRevision(String revision) {
+        char[] chars = revision.toCharArray();
+        // Looking for a digit we can add to.
+        boolean looking = true;
+        for (int ix=chars.length-1; ix>=0 && looking; ix--) {
+            if (++chars[ix] <= 'z') {
+                looking = false;
+            } else {
+                chars[ix] = 'a';
+            }
+        }
+        String result = new String(chars);
+        if (looking) {
+            // still looking, add another "digit".
+            result = "a"+result;
+        }
+        return result;
+    }
+
     /**
      * Zips up a Deployment, and places it in a Dropbox/{ACM-NAME}/TB-Loaders/published/{Deployment}-{counter}
      * directory. Creates a marker file named {Deployment}-{counter}.rev
@@ -900,7 +932,7 @@ public class TBBuilder {
      * @param deploymentList List of deployments. Effectively, always exactly one.
      * @throws Exception if a file can't be read.
      */
-    public void publish(List<String> deploymentList) throws Exception {
+    public void publishDeployment(List<String> deploymentList) throws Exception {
         // Make a local copy so we can munge it.
         List<String> deployments = new ArrayList<>(deploymentList).stream().map(String::toUpperCase).collect(Collectors.toList());
 
@@ -911,7 +943,7 @@ public class TBBuilder {
         this.deployment = distribution;
         // recent and should be name of
         // distribution
-        char revision = getLatestDeploymentRevision(publishBaseDir, distribution);
+        String revision = getLatestDeploymentRevision(publishBaseDir, distribution);
         final String publishDistributionName = distribution + "-" + revision; // e.g.
         // '2015-6-c'
         stagedDeploymentDir = new File(stagingDir, "content" + File.separator + this.deployment);
@@ -933,16 +965,16 @@ public class TBBuilder {
         File localContent = new File(stagingDir, "content");
         ZipUnzip.zip(localContent,
             new File(publishDistributionDir, "content-" + zipSuffix), true,
-            deployments.toArray(new String[deployments.size()]));
+            deployments.toArray(new String[0]));
 
         // merge csv files
         File stagedMetadata = new File(stagingDir, "metadata");
         //List<String> deploymentsList = Arrays.asList(deployments);
         File[] metadataDirs = stagedMetadata.listFiles(f -> f.isDirectory()
             && deployments.contains(f.getName()));
-        final List<File> inputContentCSVFiles = new LinkedList<File>();
-        final List<File> inputCategoriesCSVFiles = new LinkedList<File>();
-        final List<File> inputPackagesCSVFiles = new LinkedList<File>();
+        final List<File> inputContentCSVFiles = new LinkedList<>();
+        final List<File> inputCategoriesCSVFiles = new LinkedList<>();
+        final List<File> inputPackagesCSVFiles = new LinkedList<>();
         for (File metadataDir : metadataDirs) {
             metadataDir.listFiles(new FileFilter() {
                 @Override
@@ -1007,8 +1039,8 @@ public class TBBuilder {
         int year = cal.get(Calendar.YEAR);
         int month = cal.get(Calendar.MONTH) + 1;
         int date = cal.get(Calendar.DAY_OF_MONTH);
-        csvColumns[4] = String.valueOf(month) + "/" + String.valueOf(date) + "/"
-            + String.valueOf(year); // approx start date
+        csvColumns[4] = month + "/" + date + "/"
+            + year; // approx start date
         csvColumns[5] = null; // end date unknown at this point
         csvColumns[6] = languageCode;
         csvColumns[7] = groupsconcat;
@@ -1050,17 +1082,17 @@ public class TBBuilder {
         return categoriesInPackage;
     }
 
-    private void exportList(
+    private void exportContentForList(
         String contentPackage, File list,
         File targetDirectory, boolean writeToCSV) throws Exception {
-        exportList(contentPackage, list, targetDirectory, null, writeToCSV);
+        exportContentForList(contentPackage, list, targetDirectory, null, writeToCSV);
     }
 
-    private void exportList(
+    private void exportContentForList(
         String contentPackage, File list,
         File targetDirectory, String filename, boolean writeToCSV)
         throws Exception {
-        System.out.println("  Exporting list " + list);
+        reportStatus("  Exporting list %n" + list);
         String[] csvColumns = new String[5];
         csvColumns[0] = project.toUpperCase();
         csvColumns[1] = contentPackage.toUpperCase();
@@ -1076,7 +1108,7 @@ public class TBBuilder {
                 String uuid = reader.readLine();
                 AudioItem audioItem = ACMConfiguration.getInstance().getCurrentDB()
                     .getMetadataStore().getAudioItem(uuid);
-                System.out.println(String.format("    Exporting audioitem %s to %s", uuid, targetDirectory));
+                reportStatus(String.format("    Exporting audioitem %s to %s%n", uuid, targetDirectory));
                 if (filename == null) {
                     repository.exportA18WithMetadata(audioItem, targetDirectory);
                 } else {

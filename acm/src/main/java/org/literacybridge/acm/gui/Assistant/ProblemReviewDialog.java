@@ -7,27 +7,30 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Frame;
 import java.io.IOException;
+import java.util.Enumeration;
 import java.util.List;
 
+import static org.literacybridge.acm.gui.Assistant.AssistantPage.enumerationAsStream;
 import static org.literacybridge.acm.utils.EmailHelper.sendEmail;
 
 /**
- * Class to show a list of exceptions to a user. This is mostly so that they will have some
+ * Class to show a list of problems to a user. This is mostly so that they will have some
  * hopefully good information to put into a trouble report.
  * <p>
- * The exceptions are shown in a tree, collapsed, so the user can just see the summary,
+ * The problems are shown in a tree, collapsed, so the user can just see the summary,
  * but drill in if they're curious.
  * <p>
- * A handy button is provided to email the list of exceptions to Amplio (assuming they're
+ * A handy button is provided to email the list of problems to Amplio (assuming they're
  * online at the time -- no store and forward available).
  */
-public class ViewExceptionsDialog extends JDialog {
-    private DefaultTreeModel exceptionsTreeModel;
-    private DefaultMutableTreeNode exceptionsRoot;
+public class ProblemReviewDialog extends JDialog {
+    private DefaultTreeModel problemsTreeModel;
+    private DefaultMutableTreeNode problemsRoot;
     private final JLabel messageLabel;
 
     private List<Exception> exceptions;
@@ -41,7 +44,7 @@ public class ViewExceptionsDialog extends JDialog {
      * @param owner window, for positioning this window.
      * @param title for the dialog.
      */
-    public ViewExceptionsDialog(Frame owner, String title) {
+    public ProblemReviewDialog(Frame owner, String title) {
         super(owner, title, ModalityType.APPLICATION_MODAL);
 
         JPanel panel = new JPanel(new BorderLayout(5, 5));
@@ -51,10 +54,10 @@ public class ViewExceptionsDialog extends JDialog {
         messageLabel = new JLabel("Here they are:");
         panel.add(messageLabel, BorderLayout.NORTH);
 
-        exceptionsRoot = new DefaultMutableTreeNode();
-        JTree exceptionsTree = new JTree(exceptionsRoot);
+        problemsRoot = new DefaultMutableTreeNode();
+        JTree exceptionsTree = new JTree(problemsRoot);
         exceptionsTree.setBackground(new Color(0xf4, 0xf4, 0xf4));
-        exceptionsTreeModel = (DefaultTreeModel) exceptionsTree.getModel();
+        problemsTreeModel = (DefaultTreeModel) exceptionsTree.getModel();
         exceptionsTree.setRootVisible(true);
         JScrollPane exceptionsScroller = new JScrollPane(exceptionsTree);
         exceptionsScroller.setBorder(new LineBorder(new Color(0x40, 0x80, 0x40), 1));
@@ -80,28 +83,43 @@ public class ViewExceptionsDialog extends JDialog {
     }
 
     /**
-     * Called to actually show the list of exceptions.
+     * Called to actually show the list of problems.
      *
      * @param message       to show to the user.
      * @param reportHeading heading if a report is sent to Amplio.
+     * @param issues        an optional Tree of issues. Only required to have a toString method.
      * @param exceptions    the list of exceptions to show.
      */
-    public void showExceptions(String message, String reportHeading, List<Exception> exceptions) {
+    public void showProblems(String message, String reportHeading, MutableTreeNode issues, List<Exception> exceptions) {
         this.reportHeading = reportHeading;
         this.exceptions = exceptions;
+        DefaultMutableTreeNode exceptionsRoot = problemsRoot;
+        // Generic "issues"?
+        if (issues != null && (issues.getChildCount()>0 || issues.isLeaf())) {
+            if (issues.isLeaf()) {
+                // Only one item, so just insert it. TODO: Create an "Issue" parent?
+                problemsRoot.add(issues);
+            } else {
+                while (issues.getChildCount() > 0) {
+                    problemsRoot.add((MutableTreeNode) issues.getChildAt(0));
+                }
+            }
+            exceptionsRoot = new DefaultMutableTreeNode("Exceptions");
+            problemsTreeModel.insertNodeInto(exceptionsRoot, problemsRoot,
+                problemsRoot.getChildCount());
+        }
         messageLabel.setText(message);
         for (Exception ex : exceptions) {
             ExceptionNode eNode = new ExceptionNode(ex);
-            exceptionsTreeModel.insertNodeInto(eNode,
-                exceptionsRoot,
+            problemsTreeModel.insertNodeInto(eNode, exceptionsRoot,
                 exceptionsRoot.getChildCount());
             String[] frames = ExceptionUtils.getStackFrames(ex);
             for (String frame : frames) {
                 FrameNode fNode = new FrameNode(frame);
-                exceptionsTreeModel.insertNodeInto(fNode, eNode, eNode.getChildCount());
+                problemsTreeModel.insertNodeInto(fNode, eNode, eNode.getChildCount());
             }
         }
-        exceptionsTreeModel.reload();
+        problemsTreeModel.reload();
 
         if (getOwner() != null) {
             setLocation(getOwner().getX() + 40, getOwner().getY() + 40);

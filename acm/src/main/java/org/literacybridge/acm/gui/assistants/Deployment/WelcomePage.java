@@ -6,13 +6,13 @@ import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.*;
-import javax.swing.border.LineBorder;
-import java.awt.*;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class WelcomePage extends AssistantPage<DeploymentContext> {
 
@@ -20,23 +20,12 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
 
     private DeploymentContext context;
 
-    public WelcomePage(PageHelper listener) {
+    WelcomePage(PageHelper<DeploymentContext> listener) {
         super(listener);
         context = getContext();
         setLayout(new GridBagLayout());
 
-        Insets insets = new Insets(0,0,15,0);
-        GridBagConstraints gbc = new GridBagConstraints(0,
-            GridBagConstraints.RELATIVE,
-            1,
-            1,
-            1.0,
-            0.0,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.HORIZONTAL,
-            insets,
-            1,
-            1);
+        GridBagConstraints gbc = getGBC();
 
         JLabel welcome = new JLabel("<html>"
             + "<span style='font-size:2.5em'>Welcome to the Deployment Creation Assistant.</span>"
@@ -71,13 +60,13 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
      * Called when a selection changes. Inspect the deployment and language
      * selections, and if both have a selection, enable the "Next" button.
      *
-     * @param actionEvent
+     * @param actionEvent is unused.
      */
+    @SuppressWarnings("unused")
     private void onSelection(ActionEvent actionEvent) {
-        int deplIx = deploymentChooser.getSelectedIndex();
-        deploymentChooser.setBorder(deplIx <= 0 ? redBorder : blankBorder);
-
-        setComplete(deplIx >= 1);
+        boolean complete = getSelectedDeployment() >= 0;
+        deploymentChooser.setBorder(complete ? blankBorder : redBorder);
+        setComplete(complete);
     }
 
     @Override
@@ -105,12 +94,25 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
     @Override
     protected void onPageLeaving(boolean progressing) {
         // Since this is the welcome page, there must be something selected in order to move on.
-        context.deploymentNo = Integer.parseInt(deploymentChooser.getSelectedItem().toString());
+        context.deploymentNo = getSelectedDeployment();
     }
 
     @Override
     protected String getTitle() {
         return "Introduction";
+    }
+
+    private int getSelectedDeployment() {
+        int deploymentNo = -1;
+        Object deploymentStr = deploymentChooser.getSelectedItem();
+        if (deploymentStr != null) {
+            try {
+                deploymentNo = Integer.parseInt(deploymentStr.toString());
+            } catch (NumberFormatException ignored) {
+                // ignored
+            }
+        }
+        return deploymentNo;
     }
 
     private void getProgramInformation() {

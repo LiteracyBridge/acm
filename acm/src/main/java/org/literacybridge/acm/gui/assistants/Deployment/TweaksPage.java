@@ -45,19 +45,8 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
         context = getContext();
         setLayout(new GridBagLayout());
 
-        Insets insets = new Insets(0, 0, 15, 0);
         Insets tight = new Insets(0, 0, 5, 0);
-        GridBagConstraints gbc = new GridBagConstraints(0,
-            GridBagConstraints.RELATIVE,
-            1,
-            1,
-            1.0,
-            0.0,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.HORIZONTAL,
-            insets,
-            1,
-            1);
+        GridBagConstraints gbc = getGBC();
 
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2.5em'>Adjustments</span>" + "</ul>"
@@ -71,7 +60,7 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
         gbc.insets = tight;
         Box hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Creating deployment "));
-        deployment = parameterText();
+        deployment = makeBoxedLabel();
         hbox.add(deployment);
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);

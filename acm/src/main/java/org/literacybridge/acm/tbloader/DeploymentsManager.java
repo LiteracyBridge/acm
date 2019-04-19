@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.apache.commons.io.comparator.LastModifiedFileComparator.LASTMODIFIED_REVERSE;
 
@@ -110,6 +112,7 @@ class DeploymentsManager {
     }
 
     private AvailableDeployments findAvailableDeployments() {
+        Pattern deplPattern = Pattern.compile("(.*)-[a-zA-Z]+$");
         // Map deployment name (w/o the -x suffix) to File for the directory.
         Map<String, File> orderedDeployments = new LinkedHashMap<>();
         String latestPublishedRev = null;
@@ -134,9 +137,12 @@ class DeploymentsManager {
                         // Found a published directory. Ensure it contains the expected zip file.
                         File zip = new File(pf, "content-"+pf.getName()+".zip");
                         if (zip.exists() && zip.isFile()) {
-                            // Based on the -x suffix, keep the latest one.
+                            // Based on the -x suffix, keep the latest published instance of this deployment.
                             String depl = pf.getName();
-                            depl = depl.substring(0, depl.length() - 2);
+                            Matcher deplMatcher = deplPattern.matcher(pf.getName());
+                            if (deplMatcher.matches()) {
+                                depl = deplMatcher.group(1);
+                            }
                             if (deployments.containsKey(depl)) {
                                 // Compare file names. If new name is greater, store file.
                                 int cmp = pf.getName().compareTo(deployments.get(depl).getName());

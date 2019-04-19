@@ -4,7 +4,6 @@ import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
-import org.literacybridge.acm.gui.assistants.ContentImport.MatcherTableModel;
 import org.literacybridge.acm.gui.assistants.ContentImport.WelcomePage;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataStore;
@@ -16,16 +15,13 @@ import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
 
 import javax.swing.*;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableRowSorter;
-import java.awt.Color;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,47 +33,28 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static org.literacybridge.acm.gui.assistants.ContentImport.WelcomePage.qualifiedPlaylistName;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.GROUP_FILE_EXTENSION;
 
 public class ValidationPage extends AssistantPage<DeploymentContext> {
 
     private final JLabel deployment;
-    private final Issues.IssueTableModel issuesModel;
-    private final JTable issuesTable;
-    private final TableRowSorter<Issues.IssueTableModel> issuesSorter;
     private final JCheckBox deployWithWarnings;
     private final JCheckBox deployWithErrors;
 
     private DeploymentContext context;
 
     private MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+    private final JTree issuesTree;
+    private final DefaultMutableTreeNode issuesTreeRoot;
+    private final DefaultTreeModel issuesTreeModel;
 
-    private RecipientList recipients;
-
-    static ValidationPage Factory(PageHelper listener) {
-        return new ValidationPage(listener);
-    }
-
-    private ValidationPage(PageHelper listener) {
+    ValidationPage(PageHelper<DeploymentContext> listener) {
         super(listener);
         context = getContext();
         setLayout(new GridBagLayout());
 
-        Insets insets = new Insets(0, 0, 15, 0);
-        GridBagConstraints gbc = new GridBagConstraints(0,
-            GridBagConstraints.RELATIVE,
-            1,
-            1,
-            1.0,
-            0.0,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.HORIZONTAL,
-            insets,
-            1,
-            1);
+        GridBagConstraints gbc = getGBC();
 
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
@@ -88,7 +65,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
         Box hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Creating deployment "));
-        deployment = parameterText();
+        deployment = makeBoxedLabel();
         hbox.add(deployment);
         hbox.add(Box.createHorizontalGlue());
         // TODO: needed?
@@ -101,15 +78,11 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         add(deployWithErrors, gbc);
         deployWithErrors.addActionListener(this::onSelection);
 
-        issuesModel = context.issues.new IssueTableModel();
-        issuesTable = new JTable(issuesModel);
-        JScrollPane issuesScroller = new JScrollPane(issuesTable);
-        issuesTable.setFillsViewportHeight(true);
-        issuesTable.setGridColor(new Color(224, 224, 224));
-        issuesTable.setGridColor(Color.RED);
-        issuesSorter = new TableRowSorter<>(issuesModel);
-        issuesTable.setRowSorter(issuesSorter);
-        sizeColumns();
+        issuesTreeRoot = new DefaultMutableTreeNode();
+        issuesTreeModel = new DefaultTreeModel(issuesTreeRoot);
+        issuesTree = new JTree(issuesTreeModel);
+        issuesTree.setRootVisible(false);
+        JScrollPane issuesScroller = new JScrollPane(issuesTree);
 
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weighty = 1.0;
@@ -121,6 +94,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      *
      * @param actionEvent is ignored.
      */
+    @SuppressWarnings("unused")
     private void onSelection(ActionEvent actionEvent) {
         boolean ok = !context.issues.hasError() || deployWithErrors.isSelected();
         ok = ok && (!context.issues.hasWarning() || deployWithWarnings.isSelected());
@@ -140,6 +114,19 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         }
 
         validateDeployment(context.deploymentNo);
+
+        issuesTreeRoot.removeAllChildren();
+        context.issues.addToTree(issuesTreeRoot);
+        issuesTreeModel.reload();
+        for (int ix=0; ix<issuesTree.getRowCount(); ix++) {
+            issuesTree.expandRow(ix);
+        }
+
+        if (ACMConfiguration.isTestData()) {
+            deployWithErrors.setSelected(true);
+            deployWithWarnings.setSelected(true);
+            setComplete();
+        }
     }
 
     @Override
@@ -148,7 +135,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     }
 
     private void collectDeploymentInformation(int deploymentNo) {
-        recipients = context.programSpec.getRecipientsForDeployment(deploymentNo);
+        RecipientList recipients = context.programSpec.getRecipientsForDeployment(deploymentNo);
         context.languages = recipients.stream().map(r -> r.language).collect(Collectors.toSet());
 
         context.allProgramSpecPlaylists = getProgramSpecPlaylists(deploymentNo, context.languages);
@@ -213,7 +200,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             Set<Playlist> foundPlaylists = new HashSet<>();
             for (ContentSpec.PlaylistSpec programSpecPlaylistSpec : programSpecPlaylistSpecs) {
                 // Get the corresponding ACM playlist, if it exists.
-                String qualifiedPlaylistName = qualifiedPlaylistName(programSpecPlaylistSpec.getPlaylistTitle(),
+                String qualifiedPlaylistName = decoratedPlaylistName(programSpecPlaylistSpec.getPlaylistTitle(),
                     deploymentNo,
                     language);
                 Playlist playlist = acmPlaylists.stream()
@@ -280,6 +267,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      * @param languages to be checked.
      */
     private void validateSystemPrompts(Collection<String> languages) {
+        // Get from config? From Prog Spec?
         boolean hasUserFeedback = true;
         String[] required_messages = hasUserFeedback ?
                                      TBBuilder.REQUIRED_SYSTEM_MESSAGES_UF :
@@ -301,27 +289,30 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                 }
             }
             if (!missing.isEmpty()) {
-                StringBuilder msg = new StringBuilder("System prompts are missing for language %s: ");
+                /*
+                 * Some system prompts are missing. Build a minimal description of which ones,
+                 * by combining runs of consecutive missing numbers, formatted for the
+                 * issues pane.
+                 */
+                StringBuilder msg = new StringBuilder();
                 missing.sort(Integer::compareTo);
-                boolean running = false;
-                int prev = Short.MIN_VALUE;
-                for (int ix = 0; ix < missing.size(); ix++) {
-                    int n = missing.get(ix);
-                    if (n == prev + 1) {
-                        running = true;
-                    } else if (running) {
-                        msg.append('-')
-                            .append(Integer.toString(prev))
-                            .append(',')
-                            .append(Integer.toString(n));
-                        running = false;
+                boolean combining = false;
+                int prevN = Short.MIN_VALUE;
+                for (int n : missing) {
+                    if (n == prevN + 1) {
+                        combining = true;
+                    } else if (combining) {
+                        // We were combining, but this one is not prev+1, so close out the previous run.
+                        msg.append('-').append(prevN).append(',').append(n);
+                        combining = false;
                     } else {
-                        if (ix > 0) msg.append(',');
-                        msg.append(Integer.toString(n));
-                        running = false;
+                        if (msg.length() > 0) msg.append(',');
+                        msg.append(n);
+                        combining = false;
                     }
-                    prev = n;
+                    prevN = n;
                 }
+                msg.insert(0, "System prompts are missing for language %s: ");
                 context.issues.add(Issues.Severity.ERROR,
                     Issues.Area.SYSTEM_PROMPTS,
                     msg.toString(),
@@ -344,8 +335,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             // Here, we care about the actual playlists for the Deployment.
             List<Playlist> acmPlaylists = context.allAcmPlaylists.get(language);
             for (Playlist playlist : acmPlaylists) {
-                String title = WelcomePage.basePlaylistName(playlist.getName());
-                title = title.replaceAll("_", " ");
+                String title = WelcomePage.undecoratedPlaylistName(playlist.getName());
                 PlaylistPrompts prompts = new PlaylistPrompts(title, language);
                 prompts.findPrompts();
                 promptsMap.put(title, prompts);
@@ -486,11 +476,6 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             acmPlaylists.put(language, langPlaylists);
         }
         return acmPlaylists;
-    }
-
-    private void sizeColumns() {
-        // Content Issue category and issue description.
-        sizeColumns(issuesTable, 0, 1);
     }
 
 }

@@ -101,6 +101,10 @@ public class ACMConfiguration {
         return instance;
     }
 
+    public static synchronized boolean isInitialized() {
+        return instance != null;
+    }
+
     private static Set<String> testAcms = new HashSet<>();
     static {
         testAcms.add("ACM-TEST");

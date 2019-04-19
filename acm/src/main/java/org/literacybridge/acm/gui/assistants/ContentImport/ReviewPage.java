@@ -40,18 +40,7 @@ public class ReviewPage extends ContentImportPage<ContentImportContext> {
         super(listener);
         setLayout(new GridBagLayout());
 
-        Insets insets = new Insets(0,0,15,0);
-        GridBagConstraints gbc = new GridBagConstraints(0,
-            GridBagConstraints.RELATIVE,
-            1,
-            1,
-            1.0,
-            0.0,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.HORIZONTAL,
-            insets,
-            1,
-            1);
+        GridBagConstraints gbc = getGBC();
 
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2.5em'>Review & Import</span>"
@@ -62,17 +51,17 @@ public class ReviewPage extends ContentImportPage<ContentImportContext> {
 
         Box hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Importing message content for deployment "));
-        deployment = parameterText();
+        deployment = makeBoxedLabel();
         hbox.add(deployment);
         hbox.add(new JLabel(" and language "));
-        language = parameterText();
+        language = makeBoxedLabel();
         hbox.add(language);
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
         // Title preview.
         JLabel importPreviewLabel = new JLabel("Files to be imported:");
-        insets = new Insets(0,0,0,0);
+        Insets insets = new Insets(0,0,0,0);
         gbc.insets = insets;
         add(importPreviewLabel, gbc);
 

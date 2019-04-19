@@ -4,7 +4,7 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.Assistant.ViewExceptionsDialog;
+import org.literacybridge.acm.gui.Assistant.ProblemReviewDialog;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
@@ -23,7 +23,6 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
@@ -78,18 +77,7 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
         super(listener);
         setLayout(new GridBagLayout());
 
-        Insets insets = new Insets(0, 0, 15, 0);
-        GridBagConstraints gbc = new GridBagConstraints(0,
-            GridBagConstraints.RELATIVE,
-            1,
-            1,
-            1.0,
-            0.0,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.HORIZONTAL,
-            insets,
-            1,
-            1);
+        GridBagConstraints gbc = getGBC();
 
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2.5em'>Finished Content Import</span>" + "</html>");
@@ -97,27 +85,27 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
 
         Box hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Import message content for deployment "));
-        hbox.add(parameterText(Integer.toString(context.deploymentNo)));
+        hbox.add(makeBoxedLabel(Integer.toString(context.deploymentNo)));
         hbox.add(new JLabel(" in language "));
-        hbox.add(parameterText(context.languagecode));
+        hbox.add(makeBoxedLabel(context.languagecode));
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
         // The status line. Updated as items are imported.
         hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Imported "));
-        importedMessagesLabel = parameterText("no");
+        importedMessagesLabel = makeBoxedLabel("no");
         hbox.add(importedMessagesLabel);
         hbox.add(new JLabel(" new message(s); updated "));
-        updatedMessagesLabel = parameterText("no");
+        updatedMessagesLabel = makeBoxedLabel("no");
         hbox.add(updatedMessagesLabel);
         hbox.add(new JLabel(" message(s). Created "));
         String message = context.createdPlaylists.size() == 0 ?
                          "no" :
                          Integer.toString(context.createdPlaylists.size());
-        hbox.add(parameterText(message));
+        hbox.add(makeBoxedLabel(message));
         hbox.add(new JLabel(" new playlist(s). "));
-        errorMessagesLabel = parameterText("No");
+        errorMessagesLabel = makeBoxedLabel("No");
         hbox.add(errorMessagesLabel);
         hbox.add(new JLabel(" error(s)."));
         hbox.add(Box.createHorizontalStrut(5));
@@ -224,8 +212,8 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
             dbConfig.getLanguageLabel(new Locale(context.languagecode)),
             Constants.ACM_VERSION, Version.buildTimestamp);
 
-        ViewExceptionsDialog dialog = new ViewExceptionsDialog(Application.getApplication(), "Errors While Importing");
-        dialog.showExceptions(message, reportHeading, errors);
+        ProblemReviewDialog dialog = new ProblemReviewDialog(Application.getApplication(), "Errors While Importing");
+        dialog.showProblems(message, reportHeading, null, errors);
     }
 
     /**

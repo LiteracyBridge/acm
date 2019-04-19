@@ -31,17 +31,11 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class FilesPage extends ContentImportPage<ContentImportContext> {
 
@@ -75,18 +69,7 @@ public class FilesPage extends ContentImportPage<ContentImportContext> {
 
         setLayout(new GridBagLayout());
 
-        Insets insets = new Insets(0, 0, 15, 0);
-        GridBagConstraints gbc = new GridBagConstraints(0,
-            GridBagConstraints.RELATIVE,
-            1,
-            1,
-            1.0,
-            0.0,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.HORIZONTAL,
-            insets,
-            1,
-            1);
+        GridBagConstraints gbc = getGBC();
 
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2em'>Choose Files to Import.</span>"
@@ -95,10 +78,10 @@ public class FilesPage extends ContentImportPage<ContentImportContext> {
 
         Box hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Importing message content for deployment "));
-        deployment = parameterText();
+        deployment = makeBoxedLabel();
         hbox.add(deployment);
         hbox.add(new JLabel(" and language "));
-        language = parameterText();
+        language = makeBoxedLabel();
         hbox.add(language);
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
@@ -114,7 +97,7 @@ public class FilesPage extends ContentImportPage<ContentImportContext> {
 
         // Title preview.
         filesPreviewLabel = new JLabel("Files chosen to import:");
-        insets = new Insets(0, 0, 0, 0);
+        Insets insets = new Insets(0, 0, 0, 0);
         gbc.insets = insets;
         add(filesPreviewLabel, gbc);
 
@@ -559,18 +542,6 @@ public class FilesPage extends ContentImportPage<ContentImportContext> {
             }
             return formatter.format(ldt);
         }
-    }
-
-    private static <T> Stream<T> enumerationAsStream(Enumeration<T> e) {
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<T>() {
-            public T next() {
-                return e.nextElement();
-            }
-
-            public boolean hasNext() {
-                return e.hasMoreElements();
-            }
-        }, Spliterator.ORDERED), false);
     }
 
 }
