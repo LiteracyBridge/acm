@@ -76,7 +76,7 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
         noPublish = new JCheckBox("Do not publish the Deployment; create only.");
         // Always allow publish from a test database.
         // Do not allow publish from production if running sandboxed.
-        noPublish.setSelected(!ACMConfiguration.isTestAcm() || ACMConfiguration.isSandbox());
+        noPublish.setSelected(!ACMConfiguration.isTestAcm() && ACMConfiguration.isSandbox());
         noPublish.addActionListener(this::onSelection);
         add(noPublish, gbc);
 
@@ -132,7 +132,7 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
         context.includeUfCategory = includeUfCategory.isSelected();
         context.includeTbCategory = includeTbCategory.isSelected();
         // Don't publish if user chose "no publish" option. Also don't publish if running in sandbox.
-        context.noPublish = noPublish.isSelected() || ACMConfiguration.isSandbox();
+        context.noPublish = noPublish.isSelected();
     }
 
     @Override

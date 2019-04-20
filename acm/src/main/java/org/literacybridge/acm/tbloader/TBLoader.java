@@ -366,7 +366,9 @@ public class TBLoader extends JFrame {
             newDeploymentDescription = String.format("UNPUBLISHED: %s", newDeployment);
         } else {
             newDeployment = selectDeployment(dm);
-            newDeploymentDescription = newDeployment;
+            newDeploymentDescription = String.format("%s (%s)",
+                newDeployment,
+                dm.getLocalDeployment().localRevision);
         }
         localDeploymentDir = new File(localTbLoaderDir, TBLoaderConstants.CONTENT_SUBDIR + File.separator
             + newDeployment);
@@ -383,30 +385,33 @@ public class TBLoader extends JFrame {
     private String selectDeployment(DeploymentsManager dm) throws IOException {
         DeploymentsManager.LocalDeployment localDeployment = dm.getLocalDeployment();
         DeploymentsManager.AvailableDeployments available = dm.getAvailableDeployments();
-        String desired = available.latestPublished;
+        String desiredDeployment = available.latestDeployment;
 
         if (deploymentChoice) {
             ManageDeploymentsDialog dialog = new ManageDeploymentsDialog(this, available.deployments, localDeployment.localDeployment);
             // Place the new dialog within the application frame.
             dialog.setLocation(this.getX()+20, this.getY()+20);
             dialog.setVisible(true);
-            desired = dialog.selection;
+            desiredDeployment = dialog.selection;
         }
+        String desiredRevision = dm.getAvailableDeployments().getRevisionForDeployment(desiredDeployment);
+
         // If we don't have what we want, get it from Dropbox.
-        if (!desired.equals(localDeployment.localDeployment)) {
+        if (!desiredDeployment.equals(localDeployment.localDeployment) ||
+                !desiredRevision.equals(localDeployment.localRevision)) {
             Cursor waitCursor = new Cursor(Cursor.WAIT_CURSOR);
             Cursor defaultCursor = new Cursor(Cursor.DEFAULT_CURSOR);
             try {
                 this.setCursor(waitCursor);
                 Thread.sleep(1);
-                dm.getDeployment(desired);
+                dm.getDeployment(desiredDeployment);
             } catch (Exception ignored) {
                 // Do nothing.
             } finally {
                 this.setCursor(defaultCursor);
             }
         }
-        return desired;
+        return desiredDeployment;
     }
 
 
@@ -915,8 +920,8 @@ public class TBLoader extends JFrame {
                 }
                 newFirmwareVersionText.setText(firmwareVersion);
             }
-        } catch (Exception ignore) {
-            LOG.log(Level.WARNING, "exception - ignore and keep going with default string", ignore);
+        } catch (Exception ex) {
+            LOG.log(Level.WARNING, "exception - ignore and keep going with default string", ex);
         }
 
     }

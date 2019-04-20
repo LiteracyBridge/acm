@@ -6,11 +6,19 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 
 public class TBLoaderConstants {
   public static final String UNKNOWN = "UNKNOWN";
 
+  // group(1) is the deployment, group(2) is the revision.
+  public final static Pattern DEPLOYMENT_REVISION_PATTERN = Pattern.compile("(.*)-([a-zA-Z]+)(?i:\\.rev)?$");
   public static final String UNPUBLISHED_REV = "UNPUBLISHED";
+  // group(1) is timestamp, group(2) is deployment.
+  public final static Pattern UNPUBLISHED_DEPLOYMENT_PATTERN =
+                                  Pattern.compile(UNPUBLISHED_REV + "_([0-9.Z]*)_(.*?)(\\.rev)?$");
+  public final static String UNPUBLISHED_REVISION_FORMAT = UNPUBLISHED_REV + "_%s_%s.rev";
+
   public static final String COLLECTED_DATA_SUBDIR_NAME = "collected-data";
   public static final String COLLECTED_DATA_DROPBOXDIR_PREFIX = "tbcd";
   //public static final String COLLECTION_SUBDIR = "/"
@@ -72,7 +80,7 @@ public class TBLoaderConstants {
     public static final String DEPLOYMENT_UUID_PROPERTY = "DEPLOYEDUUID";
     public static final String STATS_COLLECTED_UUID_PROPERTY = "STATSUUID";
 
-    static {
+  static {
         ISO8601.setTimeZone(UTC);
     }
 

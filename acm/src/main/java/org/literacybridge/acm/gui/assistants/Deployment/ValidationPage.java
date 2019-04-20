@@ -71,10 +71,10 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         // TODO: needed?
         add(hbox, gbc);
 
-        deployWithWarnings = new JCheckBox("Create Deployment with warnings. This will not conform to the Program Spec.");
+        deployWithWarnings = new JCheckBox("Create Deployment with warnings. This may not conform to the Program Spec.");
         add(deployWithWarnings, gbc);
         deployWithWarnings.addActionListener(this::onSelection);
-        deployWithErrors = new JCheckBox("<html>Create Deployment with errors. <em>This will probably fail on Talking Books</em>.</html>");
+        deployWithErrors = new JCheckBox("<html>Create Deployment with errors. <em>This will probably fail on some Talking Books</em>.</html>");
         add(deployWithErrors, gbc);
         deployWithErrors.addActionListener(this::onSelection);
 

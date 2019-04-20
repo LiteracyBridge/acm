@@ -46,6 +46,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_REVISION_PATTERN;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENTID_PROPERTY;
 
 public class TBBuilder {
@@ -98,11 +99,15 @@ public class TBBuilder {
     private String project;
 
     private Consumer<String> statusWriter;
+    private String revision;
+
     private void reportStatus(String format, Object... args) {
         statusWriter.accept(String.format(format, args));
     }
 
-
+    public String getRevision() {
+        return revision;
+    }
 
     /**
      * Class to hold the name, language, and groups of a single package.
@@ -293,14 +298,14 @@ public class TBBuilder {
      */
     private void createDeployment(String deployment) throws Exception {
         this.deployment = deployment.toUpperCase();
-        stagedDeploymentDir = new File(stagingDir, "content" + File.separator + this.deployment);
+        File stagedContentDir = new File(stagingDir, "content" );
+        stagedDeploymentDir = new File(stagedContentDir, this.deployment);
         File stagedMetadataDir = new File(stagingDir, "metadata" + File.separator + this.deployment);
         File stagedProgramspecDir = new File(stagedDeploymentDir, Constants.ProgramSpecDir);
         DateFormat ISO8601time = new SimpleDateFormat("HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
         ISO8601time.setTimeZone(TBLoaderConstants.UTC);
         String timeStr = ISO8601time.format(new Date());
-        String revFileName = String.format("%s_%s.rev", TBLoaderConstants.UNPUBLISHED_REV, timeStr);
-
+        String revFileName = String.format(TBLoaderConstants.UNPUBLISHED_REVISION_FORMAT, timeStr, deployment);
         // use LB Home Dir to create folder, then zip to Dropbox and delete the
         // folder
         IOUtils.deleteRecursive(stagedDeploymentDir);
@@ -868,10 +873,7 @@ public class TBBuilder {
         }
     }
 
-    private static String getLatestDeploymentRevision(
-        File publishTbLoadersDir,
-        final String deployment) throws Exception {
-        Pattern deplPattern = Pattern.compile("(.*)-([a-zA-Z]+)$");
+    static String getLatestDeploymentRevision(File publishTbLoadersDir, final String deployment) throws Exception {
         String revision = "a";
         File[] files = publishTbLoadersDir.listFiles((dir, name) ->
             name.toLowerCase().endsWith(".rev") && name.toLowerCase().startsWith(deployment.toLowerCase()));
@@ -880,11 +882,11 @@ public class TBBuilder {
         else if (files.length == 1) {
             // Assuming distribution-X.rev, pick the next higher than 'X'
             String foundRevision = "";
-            Matcher deplMatcher = deplPattern.matcher(files[0].getName());
+            Matcher deplMatcher = DEPLOYMENT_REVISION_PATTERN.matcher(files[0].getName());
             if (deplMatcher.matches()) {
                 foundRevision = deplMatcher.group(2).toLowerCase();
             }
-            if (foundRevision.compareTo(revision)>0) {
+            if (foundRevision.compareTo(revision)>=0) {
                 revision = incrementRevision(foundRevision);
                 // If there's already a directory (or file) of the new name, keep looking.
                 File probe = new File(publishTbLoadersDir, deployment + '-' + revision);
@@ -906,7 +908,10 @@ public class TBBuilder {
         return revision;
     }
 
-    private static String incrementRevision(String revision) {
+    static String incrementRevision(String revision) {
+        if (revision==null || !revision.matches("^[a-z]+$")) {
+            throw new IllegalArgumentException("Revision string must match \"^[a-z]+$\".");
+        }
         char[] chars = revision.toCharArray();
         // Looking for a digit we can add to.
         boolean looking = true;
@@ -943,7 +948,7 @@ public class TBBuilder {
         this.deployment = distribution;
         // recent and should be name of
         // distribution
-        String revision = getLatestDeploymentRevision(publishBaseDir, distribution);
+        revision = getLatestDeploymentRevision(publishBaseDir, distribution);
         final String publishDistributionName = distribution + "-" + revision; // e.g.
         // '2015-6-c'
         stagedDeploymentDir = new File(stagingDir, "content" + File.separator + this.deployment);

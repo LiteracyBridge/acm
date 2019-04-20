@@ -76,7 +76,7 @@ public class TBLoaderTest {
     }
 
     @Test
-    public void testReadBinary() throws IOException {
+    public void testReadSrnBinary() throws IOException {
         int srNo = 456;
         configureDirectories();
         writeBinary(new File(homeDir, binaryFn), srNo);
@@ -86,7 +86,7 @@ public class TBLoaderTest {
     }
 
     @Test
-    public void testReadHex() throws IOException {
+    public void testReadSrnHex() throws IOException {
         int srNo = 789;
         configureDirectories();
         writeHex(new File(homeDir, hexFn), srNo);
@@ -96,7 +96,7 @@ public class TBLoaderTest {
     }
 
     @Test
-    public void testReadTxt() throws IOException {
+    public void testReadSrnTxt() throws IOException {
         int srNo = 234;
         configureDirectories();
 
@@ -107,7 +107,7 @@ public class TBLoaderTest {
     }
 
     @Test
-    public void testReadBinaryLarger() throws IOException {
+    public void testReadSrnBinaryLarger() throws IOException {
         int smallNo = 123;
         int largeNo = 124;
         configureDirectories();
@@ -120,7 +120,7 @@ public class TBLoaderTest {
     }
 
     @Test
-    public void testReadHexLarger() throws IOException {
+    public void testReadSrnHexLarger() throws IOException {
         int smallNo = 123;
         int largeNo = 124;
         configureDirectories();
