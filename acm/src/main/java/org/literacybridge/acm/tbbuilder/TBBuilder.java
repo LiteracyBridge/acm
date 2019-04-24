@@ -6,7 +6,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
@@ -21,10 +20,14 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -40,6 +43,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -78,6 +82,8 @@ public class TBBuilder {
     public static final String ACM_PREFIX = "ACM-";
     private final static int MAX_DEPLOYMENTS = 5;
 
+    private static final String WORK_IN_PROGRESS = "work_in_progress.properties";
+
     // Begin instance data
 
     private File sourceProgramspecDir;
@@ -90,7 +96,7 @@ public class TBBuilder {
     private CSVWriter categoriesInPackageCSVWriter;
     private CSVWriter packagesInDeploymentCSVWriter;
     private File stagingDir;
-    private String deployment;
+    private String deploymentName;
     private List<String> fatalMessages = new ArrayList<>();
     private List<String> errorMessages = new ArrayList<>();
     private List<String> warningMessages = new ArrayList<>();
@@ -105,6 +111,10 @@ public class TBBuilder {
         statusWriter.accept(String.format(format, args));
     }
 
+    /**
+     * Expose to API callers the "revision" that was calculated.
+     * @return the version of the Deployment, 'a', 'b', 'aa', etc.
+     */
     public String getRevision() {
         return revision;
     }
@@ -139,52 +149,33 @@ public class TBBuilder {
         new LogHelper().inDirectory(logDir).withName("TBBuilder.log").absolute().initialize();
 
         System.out.println(String.format("TB-Builder version %s", Constants.ACM_VERSION));
-        if (args.length == 0) {
+        if (args.length < 3) {
             printUsage();
-            System.exit(1);
         }
+        String command = args[0].toUpperCase();
+        String project = args[1];
+        String deploymentName = args[2].toUpperCase();
 
-        if (args[0].equalsIgnoreCase("CREATE")) {
-            if (args.length < 5 || (args.length > 5 && ((args.length % 3) != 0))) {
-                System.out.print("Unexpected number of arguments for CREATE.\n");
-                printUsage();
-                System.exit(1);
-            }
+        TBBuilder tbb = new TBBuilder(project, deploymentName, System.out::print);
 
-            TBBuilder tbb = new TBBuilder(args[1], System.out::print);
-            try {
-                tbb.validateAndCreate(args);
-            } catch (Exception e) {
-                System.err.print(e.toString());
-                System.exit(1);
-            }
-        } else if (args[0].equalsIgnoreCase("PUBLISH")) {
-            if (args.length < 3) {
-                System.out.print("Unexpected number of arguments for PUBLISH.\n");
-                printUsage();
-                System.exit(1);
-            }
-
-            TBBuilder tbb = new TBBuilder(args[1], System.out::print);
-            int deploymentCount = args.length - 2;
-            if (deploymentCount > MAX_DEPLOYMENTS)
-                deploymentCount = MAX_DEPLOYMENTS;
-            List<String> deploymentList = Arrays.asList(args).subList(2, deploymentCount+2);
-            try {
+        try {
+            if (command.equals("CREATE")) {
+                // arguments NOT including the deployment name.
+                List<String> argsList = Arrays.asList(args).subList(3, args.length - 3);
+                tbb.validateAndCreate(argsList);
+            } else if (command.equals("PUBLISH")) {
+                // arguments INCLUDING the deployment name.
+                int deploymentCount = Math.min(args.length - 2, MAX_DEPLOYMENTS);
+                List<String> deploymentList = Arrays.asList(args).subList(2, deploymentCount+2);
                 tbb.publishDeployment(deploymentList);
-            } catch (Exception e) {
-                System.err.print(e.toString());
-                System.exit(1);
+            } else {
+                System.out.printf("Unknown operation '%s'. Operations are CREATE and PUBLISH\n",
+                    args[0]);
+                printUsage();
             }
-        } else {
-            System.out.printf("Unknown operation '%s'. Operations are CREATE and PUBLISH\n", args[0]);
-            printUsage();
-            System.exit(1);
+        } catch (Exception e) {
+            System.err.print(e.toString());
         }
-    }
-
-    public TBBuilder(DBConfiguration dbConfig, Consumer<String> statusWriter) throws Exception {
-        this(dbConfig.getSharedACMname(), statusWriter);
     }
 
     /**
@@ -193,7 +184,7 @@ public class TBBuilder {
      * @param sharedACM the ACM name.
      * @throws Exception if the database can't be initialized.
      */
-    private TBBuilder(String sharedACM, Consumer<String> statusWriter) throws Exception {
+    public TBBuilder(String sharedACM, String deploymentName, Consumer<String> statusWriter) throws Exception {
         sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(sharedACM);
         if (!ACMConfiguration.isInitialized()) {
             CommandLineParams params = new CommandLineParams();
@@ -202,13 +193,17 @@ public class TBBuilder {
             params.sharedACM = sharedACM;
             ACMConfiguration.initialize(params);
             ACMConfiguration.getInstance().setCurrentDB(params.sharedACM);
+        } else if (!ACMConfiguration.getInstance().getCurrentDB().getSharedACMname().equals(sharedACM)) {
+            throw new IllegalArgumentException("Passed ACM Name must equal already-opened ACM name.");
         }
+
         this.statusWriter = statusWriter;
+        this.project = ACMConfiguration.cannonicalProjectName(sharedACM);
+        this.deploymentName = deploymentName;
         // Like ~/Dropbox/ACM-UWR/TB-Loaders
         sourceTbLoadersDir = ACMConfiguration.getInstance().getTbLoaderDirFor(sharedACM);
         sourceTbOptionsDir = new File(sourceTbLoadersDir, "TB_Options");
         sourceProgramspecDir = ACMConfiguration.getInstance().getProgramSpecDirFor(sharedACM);
-        project = ACMConfiguration.cannonicalProjectName(sharedACM);
         // ~/LiteracyBridge/TB-Loaders
         File localTbLoadersDir = new File(
             ACMConfiguration.getInstance().getApplicationHomeDirectory(),
@@ -220,24 +215,29 @@ public class TBBuilder {
     /**
      * From the main(String[] args) parameter, build a list of packages, their language, and groups.
      *
-     * @param args from main(), as described with create()
+     * @param args from main(), after the command, the project/acm, and the deployment name.
      * @return List of PackageInfo objects as specified in the args.
      */
-    private List<PackageInfo> getPackageInfoForCreate(String[] args) {
+    private List<PackageInfo> getPackageInfoForCreate(List<String> args) {
+        if (args.size() < 2 || (args.size() > 2 && ((args.size() % 3) != 0))) {
+            System.out.print("Unexpected number of arguments for CREATE.\n");
+            printUsage();
+        }
+        
         List<PackageInfo> packages = new ArrayList<>();
-        if (args.length == 5) {
+        if (args.size() == 2) {
             // one package with only default group
-            packages.add(new PackageInfo(args[3], args[4], TBLoaderConstants.DEFAULT_GROUP_LABEL));
+            packages.add(new PackageInfo(args.get(0), args.get(1), TBLoaderConstants.DEFAULT_GROUP_LABEL));
         } else {
             // one or more packages with specified group
-            int argIx = 3;
-            while (argIx < args.length) {
+            int argIx = 0;
+            while (argIx < args.size()) {
                 // First package is also the default, for communities with no other group defined.
-                if (argIx == 3) {
-                    packages.add(new PackageInfo(args[argIx], args[argIx + 1], TBLoaderConstants.DEFAULT_GROUP_LABEL,
-                        args[argIx + 2]));
+                if (argIx == 0) {
+                    packages.add(new PackageInfo(args.get(argIx), args.get(argIx + 1), TBLoaderConstants.DEFAULT_GROUP_LABEL,
+                        args.get(argIx + 2)));
                 } else {
-                    packages.add(new PackageInfo(args[argIx], args[argIx + 1], args[argIx + 2]));
+                    packages.add(new PackageInfo(args.get(argIx), args.get(argIx + 1), args.get(argIx + 2)));
                 }
                 argIx += 3;
             }
@@ -251,34 +251,37 @@ public class TBBuilder {
      * Existing content in the /content/DEPLOYMENT and /metadata/DEPLOYMENT
      * subdirectories of that directory will be deleted.
      *
-     * @param args from main(), as follows:
-     *             args[0] operation, CREATE (not PUBLISH)
-     *             args[1] the ACM upon which to operate
-     *             args[2] the Deployment name
-     *             args[3] the first package name
-     *             args[4] the first package language
-     *             args[5] (optional) the first package group (DEFAULT is always assigned to first pkg)
-     *             args[6..8] (optional) second package name, language, group
-     *             args[9..11] (optional) third package name, language, group
+     * @param args args[0] the first package name
+     *             args[1] the first package language
+     *             args[2] (optional) the first package group (DEFAULT is always assigned to first pkg)
+     *             args[3..5] (optional) second package name, language, group
+     *             args[6..8] (optional) third package name, language, group
      *             . . . optional triples of (package name, language, group)
      * @throws Exception if one of the packages encounters an IO error.
      */
-    private void validateAndCreate(String[] args) throws Exception {
+    private void validateAndCreate(List<String> args) throws Exception {
         List<PackageInfo> packages = getPackageInfoForCreate(args);
-        String acmName = args[1];
-        String deployment = args[2];
-        validateDeployment(acmName, deployment, packages);
-
-        createDeployment(args[2], packages);
-
+        validateDeployment(packages);
+        createDeploymentWithPackages(packages);
     }
-    public void createDeployment(String[] args) throws Exception {
+
+    /**
+     * Creates a deployment from the packages described by args.
+     * @param args args[0] the first package name
+     *             args[1] the first package language
+     *             args[2] (optional) the first package group (DEFAULT is always assigned to first pkg)
+     *             args[3..5] (optional) second package name, language, group
+     *             args[6..8] (optional) third package name, language, group
+     *             . . . optional triples of (package name, language, group)
+     * @throws Exception if the deployment can't be created.
+     */
+    public void createDeployment(List<String> args) throws Exception {
         List<PackageInfo> packages = getPackageInfoForCreate(args);
-        createDeployment(args[2], packages);
-
+        createDeploymentWithPackages(packages);
     }
-    private void createDeployment(String deployment, List<PackageInfo> packages) throws Exception {
-        createDeployment(deployment);
+
+    private void createDeploymentWithPackages(List<PackageInfo> packages) throws Exception {
+        createDeployment();
 
         for (PackageInfo pi : packages) {
             addImage(pi);
@@ -293,19 +296,17 @@ public class TBBuilder {
     /**
      * Creates the structure for a Deployment, into which packages can be added.
      *
-     * @param deployment name to be created.
      * @throws Exception if there is an IO error.
      */
-    private void createDeployment(String deployment) throws Exception {
-        this.deployment = deployment.toUpperCase();
+    private void createDeployment() throws Exception {
         File stagedContentDir = new File(stagingDir, "content" );
-        stagedDeploymentDir = new File(stagedContentDir, this.deployment);
-        File stagedMetadataDir = new File(stagingDir, "metadata" + File.separator + this.deployment);
+        stagedDeploymentDir = new File(stagedContentDir, this.deploymentName);
+        File stagedMetadataDir = new File(stagingDir, "metadata" + File.separator + this.deploymentName);
         File stagedProgramspecDir = new File(stagedDeploymentDir, Constants.ProgramSpecDir);
         DateFormat ISO8601time = new SimpleDateFormat("HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
         ISO8601time.setTimeZone(TBLoaderConstants.UTC);
         String timeStr = ISO8601time.format(new Date());
-        String revFileName = String.format(TBLoaderConstants.UNPUBLISHED_REVISION_FORMAT, timeStr, deployment);
+        String revFileName = String.format(TBLoaderConstants.UNPUBLISHED_REVISION_FORMAT, timeStr, deploymentName);
         // use LB Home Dir to create folder, then zip to Dropbox and delete the
         // folder
         IOUtils.deleteRecursive(stagedDeploymentDir);
@@ -496,7 +497,7 @@ public class TBBuilder {
      *
      * @throws IOException if a file can't be read.
      */
-    private void validateDeployment(String acmName, String deployment, List<PackageInfo> packages) throws IOException {
+    private void validateDeployment(List<PackageInfo> packages) throws IOException {
         boolean strictNaming = ACMConfiguration.getInstance().getCurrentDB().isStrictDeploymentNaming();
         if (strictNaming) {
             // Validate that the deployment is listed in the deployments.csv file.
@@ -532,14 +533,14 @@ public class TBBuilder {
 
 
                     if (deploymentIx < 0) {
-                        if (deploymentNumberIx >= 0 && isAcceptableNameFor(deployment,
-                            acmName,
+                        if (deploymentNumberIx >= 0 && isAcceptableNameFor(deploymentName,
+                            project,
                             line[deploymentNumberIx])) {
                             found = true;
                             break;
                         }
                     } else {
-                        if (line[deploymentIx].equalsIgnoreCase(deployment)) {
+                        if (line[deploymentIx].equalsIgnoreCase(deploymentName)) {
                             found = true;
                             break;
                         } else if (StringUtils.isEmpty(nextDeploymentName)) {
@@ -559,7 +560,7 @@ public class TBBuilder {
                 }
                 if (!found) {
                     String invalidMessage = String.format( "'%s' is not a valid deployment for ACM '%s'.",
-                        deployment, ACMConfiguration.cannonicalProjectName(acmName));
+                        deploymentName, ACMConfiguration.cannonicalProjectName(project));
                     if (StringUtils.isNotEmpty(nextDeploymentName) || StringUtils.isNotEmpty(prevDeploymentName)) {
                         String name = StringUtils.defaultIfEmpty(nextDeploymentName, prevDeploymentName);
                         invalidMessage += " (Did you mean '" + name + "'?)";
@@ -940,18 +941,16 @@ public class TBBuilder {
     public void publishDeployment(List<String> deploymentList) throws Exception {
         // Make a local copy so we can munge it.
         List<String> deployments = new ArrayList<>(deploymentList).stream().map(String::toUpperCase).collect(Collectors.toList());
+        assert deployments.get(0).equals(deploymentName);
 
         // e.g. 'ACM-UWR/TB-Loaders/published/'
         final File publishBaseDir = new File(sourceTbLoadersDir, "published");
         publishBaseDir.mkdirs();
-        String distribution = deployments.get(0); // assumes first deployment is most
-        this.deployment = distribution;
-        // recent and should be name of
-        // distribution
-        revision = getLatestDeploymentRevision(publishBaseDir, distribution);
-        final String publishDistributionName = distribution + "-" + revision; // e.g.
+
+        revision = getLatestDeploymentRevision(publishBaseDir, deploymentName);
+        final String publishDistributionName = deploymentName + "-" + revision; // e.g.
         // '2015-6-c'
-        stagedDeploymentDir = new File(stagingDir, "content" + File.separator + this.deployment);
+        stagedDeploymentDir = new File(stagingDir, "content" + File.separator + this.deploymentName);
         // Remove any .rev file that we had left to mark the deployment as unpublished.
         deleteRevFiles(stagedDeploymentDir);
 
@@ -966,7 +965,7 @@ public class TBBuilder {
             FileUtils.copyDirectory(stagedProgramspecDir, publishedProgramSpecDir);
         }
 
-        String zipSuffix = distribution + "-" + revision + ".zip";
+        String zipSuffix = deploymentName + "-" + revision + ".zip";
         File localContent = new File(stagingDir, "content");
         ZipUnzip.zip(localContent,
             new File(publishDistributionDir, "content-" + zipSuffix), true,
@@ -1014,7 +1013,7 @@ public class TBBuilder {
 
         // Note that what we've just published is the latest on this computer.
         deleteRevFiles(stagingDir);
-        File newRev = new File(stagingDir, distribution + "-" + revision + ".rev");
+        File newRev = new File(stagingDir, deploymentName + "-" + revision + ".rev");
         newRev.createNewFile();
     }
 
@@ -1037,7 +1036,7 @@ public class TBBuilder {
         String groupsconcat = StringUtils.join(groups, ',');
         String[] csvColumns = new String[9];
         csvColumns[0] = project.toUpperCase();
-        csvColumns[1] = deployment.toUpperCase();
+        csvColumns[1] = deploymentName.toUpperCase();
         csvColumns[2] = contentPackage.toUpperCase();
         csvColumns[3] = contentPackage.toUpperCase();
         Calendar cal = Calendar.getInstance();
@@ -1182,6 +1181,7 @@ public class TBBuilder {
                 "     TB-Builder.bat PUBLISH ACM-DEMO DEMO-" + Y_M + NL + NL;
             // @formatter:on
         System.out.print(helpStr);
+        System.exit(1);
     }
 
 }

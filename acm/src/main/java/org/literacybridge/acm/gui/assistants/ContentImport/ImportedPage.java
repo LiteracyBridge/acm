@@ -16,6 +16,7 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.Version;
 
 import javax.swing.*;
@@ -25,7 +26,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
@@ -33,7 +33,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -155,7 +154,7 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
                 setCursor(Cursor.getDefaultCursor());
                 summaryMessage.append(summaryTable.toString());
                 summaryMessage.append("</html>");
-                sendSummaryReport();
+                EmailHelper.sendNotificationEmail("Content Imported", summaryMessage.toString());
                 UIUtils.setProgressBarValue(progressBar, ++progressCount);
                 setComplete();
                 progressBar.setVisible(false);
@@ -184,7 +183,11 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
         UIUtils.setLabelText(statusLabel, "<html>" + "<span style='font-size:2.5em'>"+status+"</span>" + "</html>");
     }
 
-    private void onViewErrors(ActionEvent actionEvent) {
+    /**
+     * Shows the errors to the user, and gives them an opportunity to send an error report to Amplio.
+     * @param actionEvent is unused.
+     */
+    private void onViewErrors(@SuppressWarnings("unused") ActionEvent actionEvent) {
         DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
         String computerName;
         try {
@@ -200,7 +203,8 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
             "messages outside of the ACM application. If the problem persists, contact Amplio technical " +
             "support. The button below will send this report to Amplio."+
             "</html>";
-        String reportHeading = String.format("Project %s, User %s (%s), Computer %s%nContent Import at %s%n" +
+        String reportHeading = String.format("Error report from Content Import Assistant%n%n" +
+                "Project %s, User %s (%s), Computer %s%nContent Import at %s%n" +
                 "Importing content for Deployment %d, in language %s%n"+
                 "ACM Version %s, built %s%n",
             dbConfig.getProjectName(),
@@ -214,25 +218,6 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
 
         ProblemReviewDialog dialog = new ProblemReviewDialog(Application.getApplication(), "Errors While Importing");
         dialog.showProblems(message, reportHeading, null, errors);
-    }
-
-    /**
-     * Sends a summary email report to "interested parties".
-     */
-    private void sendSummaryReport() {
-        Collection<String> recipients = ACMConfiguration.getInstance().getCurrentDB().getNotifyList();
-        String subject = "Content Imported";
-        if (recipients.size() > 0) {
-            try {
-                sendEmail("ictnotifications@amplio.org",
-                    recipients,
-                    subject,
-                    summaryMessage.toString(),
-                    true);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     /**

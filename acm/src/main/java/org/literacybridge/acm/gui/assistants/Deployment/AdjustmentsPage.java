@@ -3,6 +3,7 @@ package org.literacybridge.acm.gui.assistants.Deployment;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
+import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.AudioItemNode;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.LanguageNode;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.PlaylistNode;
@@ -22,7 +23,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 
-public class TweaksPage extends AssistantPage<DeploymentContext> {
+public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     private final JLabel deployment;
     private final JCheckBox includeUfCategory;
     private final JCheckBox includeTbCategory;
@@ -36,11 +37,7 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
     private final JButton moveDown;
     private final DefaultTreeModel playlistTreeModel;
 
-    static TweaksPage Factory(PageHelper listener) {
-        return new TweaksPage(listener);
-    }
-
-    private TweaksPage(PageHelper listener) {
+    AdjustmentsPage(PageHelper<DeploymentContext> listener) {
         super(listener);
         context = getContext();
         setLayout(new GridBagLayout());
@@ -69,7 +66,7 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
         includeUfCategory.setSelected(true);
         add(includeUfCategory, gbc);
         includeUfCategory.addActionListener(this::onSelection);
-        includeTbCategory = new JCheckBox("Include Talking Book category ('The Talking Book is an audio computer, "
+        includeTbCategory = new JCheckBox("Include Talking Book category ('The Talking Book is a durable and portable audio computer, "
             +"that shares knowledge...')");
         add(includeTbCategory, gbc);
         includeTbCategory.addActionListener(this::onSelection);
@@ -81,7 +78,7 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
         add(noPublish, gbc);
 
         // The tree. 
-        context.playlistRootNode = new DefaultMutableTreeNode();
+        context.playlistRootNode = new AcmContent.AcmRootNode();
         playlistTree = new JTree(context.playlistRootNode);
         playlistTreeModel = (DefaultTreeModel) playlistTree.getModel();
         playlistTree.setRootVisible(false);
@@ -132,7 +129,7 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
         context.includeUfCategory = includeUfCategory.isSelected();
         context.includeTbCategory = includeTbCategory.isSelected();
         // Don't publish if user chose "no publish" option. Also don't publish if running in sandbox.
-        context.noPublish = noPublish.isSelected();
+        context.setNoPublish(noPublish.isSelected());
     }
 
     @Override
@@ -154,7 +151,7 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
      * Determines the target to which a node should be moved for "down".
      * @param actionEvent is ignored.
      */
-    private void onMoveDown(ActionEvent actionEvent) {
+    private void onMoveDown(@SuppressWarnings("unused") ActionEvent actionEvent) {
         DefaultMutableTreeNode selected = (DefaultMutableTreeNode)playlistTree.getLastSelectedPathComponent();
         DefaultMutableTreeNode parent = (DefaultMutableTreeNode)selected.getParent();
 
@@ -179,7 +176,7 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
      * Determines the target to which a node should be moved for "up".
      * @param actionEvent is ignored.
      */
-    private void onMoveUp(ActionEvent actionEvent) {
+    private void onMoveUp(@SuppressWarnings("unused") ActionEvent actionEvent) {
         DefaultMutableTreeNode selected = (DefaultMutableTreeNode)playlistTree.getLastSelectedPathComponent();
         DefaultMutableTreeNode parent = (DefaultMutableTreeNode)selected.getParent();
 
@@ -235,7 +232,7 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
 
     }
 
-    private void onRemove(ActionEvent actionEvent) {
+    private void onRemove(@SuppressWarnings("unused") ActionEvent actionEvent) {
         DefaultMutableTreeNode selected = (DefaultMutableTreeNode)playlistTree.getLastSelectedPathComponent();
         DefaultMutableTreeNode parent = (DefaultMutableTreeNode)selected.getParent();
         // Select the next sibling if there is one, else the previous sibling, else the parent.
@@ -303,8 +300,8 @@ public class TweaksPage extends AssistantPage<DeploymentContext> {
      *
      * @param actionEvent is ignored.
      */
-    private void onSelection(ActionEvent actionEvent) {
-        boolean okToPublish = ACMConfiguration.isTestAcm() || !ACMConfiguration.isSandbox();
+    private void onSelection(@SuppressWarnings("unused") ActionEvent actionEvent) {
+        boolean okToPublish = context.isPublishAllowed();
         if (!okToPublish) {
             noPublish.setSelected(true);
         }

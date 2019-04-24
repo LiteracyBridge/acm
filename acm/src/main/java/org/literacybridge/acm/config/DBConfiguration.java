@@ -223,7 +223,7 @@ public class DBConfiguration { //extends Properties {
      */
   public File getLocalTbLoadersDirectory() {
       File tbLoaders = new File(ACMConfiguration.getInstance().getApplicationHomeDirectory(),
-                                Constants.TBLoadersHomeDir + File.separator + getSharedACMname());
+                                Constants.TBLoadersHomeDir + File.separator + getProjectName());
       if (!tbLoaders.exists())
           tbLoaders.mkdirs();
       return tbLoaders;
@@ -404,7 +404,12 @@ public class DBConfiguration { //extends Properties {
     return languageLables.get(locale);
   }
 
-  public boolean isShouldPreCacheWav() {
+    public String getLanguageLabel(String languagecode) {
+        Locale locale = new Locale(languagecode);
+        return languageLables.get(locale);
+    }
+
+    public boolean isShouldPreCacheWav() {
     boolean ret = false;
     String preCache = dbProperties.getProperty(Constants.PRE_CACHE_WAV);
     if (preCache.equalsIgnoreCase("TRUE")) {

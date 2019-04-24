@@ -1,18 +1,9 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
-import org.jdesktop.swingx.treetable.DefaultMutableTreeTableNode;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
-import org.literacybridge.acm.store.Playlist;
-
-import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.MutableTreeNode;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-
-import static org.literacybridge.acm.gui.Assistant.AssistantPage.enumerationAsStream;
 
 /**
  * This class describes issues with a Deployment. Some are merely warnings, others are
@@ -204,10 +195,6 @@ public class Issues {
             Object o = getUserObject();
             if (o instanceof Issue) return ((Issue)o).format();
             return o.toString();
-        }
-
-        public Issue getIssue() {
-            return (Issue) getUserObject();
         }
     }
 

@@ -269,6 +269,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     private void validateSystemPrompts(Collection<String> languages) {
         // Get from config? From Prog Spec?
         boolean hasUserFeedback = true;
+        @SuppressWarnings("ConstantConditions")
         String[] required_messages = hasUserFeedback ?
                                      TBBuilder.REQUIRED_SYSTEM_MESSAGES_UF :
                                      TBBuilder.REQUIRED_SYSTEM_MESSAGES_NO_UF;
@@ -444,9 +445,10 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         Set<String> languages)
     {
         ContentSpec contentSpec = context.programSpec.getContentSpec();
+        ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
         Map<String, List<ContentSpec.PlaylistSpec>> programSpecPlaylists = new HashMap<>();
         for (String language : languages) {
-            programSpecPlaylists.put(language, contentSpec.getPlaylists(deploymentNo, language));
+            programSpecPlaylists.put(language, deploymentSpec.getPlaylistSpecs(language));
         }
         return programSpecPlaylists;
     }

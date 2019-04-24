@@ -13,9 +13,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class EmailHelper {
@@ -94,17 +99,102 @@ public class EmailHelper {
     public static BiFunction<TR, Integer, String> pinkZebra = (tr, integer) ->
         "background-color:" + ((integer % 2 == 0) ? "#ffeeee" : "#ffe0e0");
 
+    /**
+     * Sends a summary email report to "interested parties".
+     * @param subject - the subject of the email.
+     * @param body - the email body.
+     */
+    public static void sendNotificationEmail(String subject, String body) {
+        Collection<String> recipients = ACMConfiguration.getInstance().getCurrentDB().getNotifyList();
+        if (recipients.size() > 0) {
+            try {
+                sendEmail("ictnotifications@amplio.org",
+                    recipients,
+                    subject,
+                    body,
+                    true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static abstract class HtmlElement<T extends HtmlElement> {
+        String data;
+        Map<String,String> attrs;
+        Function<HtmlElement,String> styler;
+        String style;
+        public HtmlElement() {
+            this.data = "";
+        }
+        public HtmlElement(Object data) {
+            this.data = data.toString();
+        }
+        public T with(String key, Object value) {
+            if (attrs == null) attrs = new LinkedHashMap<>();
+            attrs.put(key, value.toString());
+            //noinspection unchecked
+            return (T)this;
+        }
+        public String toString() {
+            StringBuilder result = new StringBuilder("<").append(tag());
+            if (attrs != null) {
+                attrs.forEach((key, value) -> result.append(' ').append(key)
+                    .append("=\"")
+                    .append(value)
+                    .append('"'));
+            }
+            if (style != null || styler != null) {
+                result.append(" style='");
+                if (style != null) result.append(style).append(';');
+                if (styler!= null) result.append(styler.apply(this));
+                result.append("'");
+            }
+            result.append('>').append(data).append("</").append(tag()).append('>');
+            return result.toString();
+        }
+        protected abstract String tag();
+    }
+
+    public static class TD extends HtmlElement<TD> {
+        public TD() {
+            super();
+        }
+        public TD(Object data) {
+            super(data);
+        }
+        protected String tag() {
+            return "td";
+        }
+    }
+    public static class TH extends TD {
+        public TH(Object data) {
+            super(data);
+        }
+        public TH() {
+            super();
+        }
+        @Override
+        protected String tag() {
+            return "th";
+        }
+    }
+
     @SuppressWarnings("unused")
     public static class TR {
         BiFunction<TR,Integer,String> styler;
         String style;
-        List<String> data = new ArrayList<>();
+        List<TD> data = new ArrayList<>();
         public TR(String... data) {
+            this.data.addAll(Arrays.stream(data).map(TD::new).collect(Collectors.toList()));
+            this.styler = blueZebra;
+        }
+        public TR(TD... data) {
             this.data.addAll(Arrays.asList(data));
             this.styler = blueZebra;
         }
         TR append(String... data) {
-            this.data.addAll(Arrays.asList(data));
+            this.data.addAll(Arrays.stream(data).map(TD::new).collect(Collectors.toList()));
             return this;
         }
         TR withStyle(String style) {
@@ -131,7 +221,7 @@ public class EmailHelper {
                 result.append("'");
             }
             result.append('>');
-            data.forEach(s->result.append("<td>").append(s).append("</td>"));
+            data.forEach(result::append);
             result.append("</tr>");
             return result.toString();
         }

@@ -8,7 +8,7 @@ import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.store.SearchResult;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -144,8 +144,9 @@ class PlaylistPrompts {
      */
     private void findContentPrompts() {
         // Get any audio items in "TB Categories", given language, that textually match the playlist title.
-        List<Category> categoryList = Arrays.asList(store.getTaxonomy().getCategory(CATEGORY_TB_CATEGORIES));
-        List<Locale> localeList = Arrays.asList(new RFC3066LanguageCode(languagecode).getLocale());
+        List<Category> categoryList = Collections.singletonList(store.getTaxonomy()
+            .getCategory(CATEGORY_TB_CATEGORIES));
+        List<Locale> localeList = Collections.singletonList(new RFC3066LanguageCode(languagecode).getLocale());
 
         SearchResult searchResult = store.search(title, categoryList, localeList);
         Map<String, AudioItem> items = searchResult.getAudioItems()

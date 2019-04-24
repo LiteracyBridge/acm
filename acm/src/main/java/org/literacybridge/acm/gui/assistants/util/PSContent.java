@@ -20,7 +20,8 @@ public class PSContent {
         int deploymentNo,
         String language)
     {
-        List<ContentSpec.PlaylistSpec> playlistSpecs = contentSpec.getPlaylists(deploymentNo, language);
+        ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
+        List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecs(language);
         for (ContentSpec.PlaylistSpec playlistSpec : playlistSpecs) {
             PlaylistNode playlistNode = new PlaylistNode(playlistSpec);
             languageNode.add(playlistNode);

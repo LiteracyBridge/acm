@@ -14,11 +14,12 @@ public class DeploymentAssistant {
             context.deploymentNo = 1;
         }
 
+        @SuppressWarnings("UnnecessaryLocalVariable")
         Assistant<DeploymentContext> assistant = new Assistant.Factory<DeploymentContext>()
             .withContext(context)
             .withPageFactories(WelcomePage::new,
                 ValidationPage::new,
-                TweaksPage::Factory,
+                AdjustmentsPage::new,
                 DeployedPage::new)
             .withTitle("Deployment Assistant")
             .create();

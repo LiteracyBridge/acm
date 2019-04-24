@@ -308,7 +308,7 @@ public class WelcomePage extends ContentImportPage<ContentImportContext> {
 
         List<ContentSpec.PlaylistSpec> contentPlaylistSpecs = context.programSpec.getContentSpec()
                                                                                  .getDeployment(deploymentNo)
-                                                                                 .getPlaylistSpecs();
+                                                                                 .getPlaylistSpecs(languagecode);
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
             String plName = decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             if (!acmPlaylists.containsKey(plName)) {

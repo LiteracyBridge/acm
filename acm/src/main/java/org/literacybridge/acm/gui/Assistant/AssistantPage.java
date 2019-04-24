@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.regex.Matcher;
@@ -44,21 +45,21 @@ public abstract class AssistantPage<Context> extends JPanel {
      * In each page, for each combo box, measure the size of the longest string, and set the
      * combo preferred size (and, optionally, min or max size) to the string + baseComboWidth
      */
-    public static final int baseComboWidth = new JComboBox().getPreferredSize().width + 5;
-    public static void setComboWidth(JComboBox cb, String string) {
+    private static final int baseComboWidth = new JComboBox().getPreferredSize().width + 5;
+    protected static void setComboWidth(JComboBox cb, String string) {
         int textWidth = new JLabel("").getFontMetrics(cb.getFont()).stringWidth(string);
         Dimension size = cb.getPreferredSize();
         size.width = baseComboWidth + textWidth;
         cb.setPreferredSize(size);
     }
 
-    protected static final Border greenBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
-    protected static final Border redBorder = new LineBorder(Color.RED, 1, true);
-    protected static final Border blankBorder = new LineBorder(new Color(0, 0, 0, 0), 1, true);
-    protected static final Border parameterBorder = new CompoundBorder(greenBorder, new EmptyBorder(2,3,2,4));
+    private static final Border greenBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
+    protected static final Border redBorder = new RoundedLineBorder(Color.RED, 1, 8);
+    protected static final Border blankBorder = new RoundedLineBorder(new Color(0, 0, 0, 0), 1, 4);
+    private static final Border parameterBorder = new CompoundBorder(greenBorder, new EmptyBorder(2,3,2,4));
 
-    public static JLabel makeBoxedLabel() { return makeBoxedLabel(null); }
-    public static JLabel makeBoxedLabel(String text) {
+    protected static JLabel makeBoxedLabel() { return makeBoxedLabel(null); }
+    protected static JLabel makeBoxedLabel(String text) {
         JLabel label = new JLabel();
         label.setOpaque(true);
         label.setBackground(Color.white);
@@ -73,7 +74,7 @@ public abstract class AssistantPage<Context> extends JPanel {
         public SizingParams() {
             this(-1);
         }
-        public SizingParams(int modelColumn) {
+        SizingParams(int modelColumn) {
             this.modelColumn = modelColumn;
             this.minPadding = IGNORE;
             this.preferredPadding = 2;
@@ -147,7 +148,7 @@ public abstract class AssistantPage<Context> extends JPanel {
             int cellWidth = IntStream
                 .range(0, table.getRowCount())
                 .mapToObj(row -> table.getValueAt(row, modelColumnNo))
-                .filter(item -> item != null)
+                .filter(Objects::nonNull)
                 .map(item -> table.getDefaultRenderer(model.getColumnClass(modelColumnNo))
                     .getTableCellRendererComponent(table, item, false, false, 0, viewCol)
                     .getPreferredSize().width)
@@ -210,6 +211,14 @@ public abstract class AssistantPage<Context> extends JPanel {
     boolean isComplete() { return isComplete; }
 
     protected final Context getContext() { return pageHelper.getContext(); }
+
+    protected void goToLastPage() {
+        pageHelper.goToLastPage();
+    }
+
+    protected void cancelAssistant() {
+        pageHelper.cancelAssistant();
+    }
 
     // Helpers to convert between decorated and un-decorated playlist names.
 

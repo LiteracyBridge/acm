@@ -1,9 +1,6 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
-import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
-import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
-import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
+import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioMatcher;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import java.io.File;
@@ -57,7 +54,7 @@ class ContentImportContext {
     /**
      * The matcher object. Lets us know how titles were matched against files.
      */
-    Matcher<ImportableAudioItem, ImportableFile, MatchableImportableAudio> matcher = new Matcher<>();
+    ImportableAudioMatcher matcher = new ImportableAudioMatcher();
 
     /**
      * Created playlists, in the ACM.

@@ -359,7 +359,14 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
 
         setComplete();
     }
-    
+
+    @Override
+    protected void onPageLeaving(boolean progressing) {
+        if (progressing) {
+            context.matcher.sortByProgramSpecification();
+        }
+    }
+
     /**
      * Performs a sequence of exact/fuzzy/token matches (using the current value of threshold),
      * and then sorts the contents.
@@ -370,7 +377,7 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
             result.add(context.matcher.findExactMatches());
             result.add(context.matcher.findFuzzyMatches(context.fuzzyThreshold));
             result.add(context.matcher.findTokenMatches(context.fuzzyThreshold));
-            context.matcher.sort();
+            context.matcher.sortByProgramSpecification();
             model.fireTableDataChanged();
             System.out.println(result.toString());
         }

@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.Assistant;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -34,6 +35,7 @@ public class ProblemReviewDialog extends JDialog {
     private final JLabel messageLabel;
 
     private List<Exception> exceptions;
+    private MutableTreeNode issues;
     private String reportHeading;
     private final JButton sendButton;
     private final JButton closeButton;
@@ -92,6 +94,7 @@ public class ProblemReviewDialog extends JDialog {
      */
     public void showProblems(String message, String reportHeading, MutableTreeNode issues, List<Exception> exceptions) {
         this.reportHeading = reportHeading;
+        this.issues = issues;
         this.exceptions = exceptions;
         DefaultMutableTreeNode exceptionsRoot = problemsRoot;
         // Generic "issues"?
@@ -133,9 +136,25 @@ public class ProblemReviewDialog extends JDialog {
     private void sendTroubleReport() {
         sendButton.setEnabled(false);
         closeButton.setEnabled(false);
-        StringBuilder body = new StringBuilder("Error report from content import\n");
-        body.append(reportHeading);
-        exceptions.forEach(ex -> body.append('\n').append(ExceptionUtils.getStackTrace(ex)));
+        StringBuilder body = new StringBuilder(reportHeading).append('\n');
+
+        Enumeration en = problemsRoot.preorderEnumeration();
+        int prevLevel = -1;
+        int level;
+        while (en.hasMoreElements()) {
+            Object o = en.nextElement();
+            if (o instanceof DefaultMutableTreeNode) {
+                level = ((DefaultMutableTreeNode)o).getLevel();
+                if (level < prevLevel) {
+                    body.append('\n');
+                }
+                prevLevel = level;
+            } else {
+                level = 0;
+            }
+            body.append('\n').append(StringUtils.repeat("  ", level-1));
+            body.append(o.toString());
+        }
 
         String from = "techsupport@amplio.org";
         String to = "techsupport@amplio.org";

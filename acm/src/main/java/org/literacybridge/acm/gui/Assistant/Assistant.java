@@ -49,6 +49,8 @@ public class Assistant<Context> extends JDialog {
         void onComplete(boolean isComplete);
         Assistant getAssistant();
         Context getContext();
+        void goToLastPage();
+        void cancelAssistant();
     }
 
     private static final String NEXT_TEXT = "Next >>";
@@ -96,6 +98,7 @@ public class Assistant<Context> extends JDialog {
         setLocation(factory.owner.getX()+20, factory.owner.getY()+20);
 
         addEscapeListener(this);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
     }
 
     /**
@@ -157,15 +160,14 @@ public class Assistant<Context> extends JDialog {
         if (pageNumber < pages.size()) {
             return pages.get(pageNumber);
         }
-        if (pageNumber > pages.size()) {
-            throw new IllegalStateException("Accessing page out of order");
+
+        while (pageNumber >= pages.size()) {
+            List<Function<PageHelper, AssistantPage>> factories = factory.pageFactories;
+            Function<PageHelper, AssistantPage> ctor = factories.get(pageNumber);
+            AssistantPage newPage = ctor.apply(pageHelper);
+            pages.add(newPage);
         }
 
-        List<Function<PageHelper, AssistantPage>> factories = factory.pageFactories;
-        Function<PageHelper, AssistantPage> ctor = factories.get(pageNumber);
-        AssistantPage newPage = ctor.apply(pageHelper);
-
-        pages.add(newPage);
         return pages.get(pageNumber);
     }
     private PageHelper<Context> pageHelper = new PageHelper<Context>() {
@@ -180,6 +182,14 @@ public class Assistant<Context> extends JDialog {
         @Override
         public Context getContext() {
             return Assistant.this.context;
+        }
+        @Override
+        public void goToLastPage() {
+            navigate(maxPage);
+        }
+        @Override
+        public void cancelAssistant() {
+            onCancelButton();
         }
     };
 

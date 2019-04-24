@@ -1,5 +1,7 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
+import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ProgramSpec;
@@ -13,7 +15,6 @@ import java.util.Set;
 class DeploymentContext {
 
     int deploymentNo = -1;
-    String deploymentName;
     ProgramSpec programSpec;
     Set<String> languages;
 
@@ -25,7 +26,21 @@ class DeploymentContext {
     boolean includeTbCategory;
 
     // Don't publish, only create.
-    boolean noPublish;
+    private boolean noPublish;
+    void setNoPublish(boolean noPublish) {
+        this.noPublish = noPublish;
+    }
+    /**
+     * Note that this is the reverse of the boolean, and of the setter!
+     * @return true if the deployment should be published.
+     */
+    boolean isPublish() {
+        return !noPublish;
+    }
+    boolean isPublishAllowed() {
+        return ACMConfiguration.isTestData() || !ACMConfiguration.isSandbox();
+    }
+
 
     // { language : { playlisttitle : prompts } }
     Map<String, Map<String, PlaylistPrompts>> prompts = new HashMap<>();
@@ -34,6 +49,6 @@ class DeploymentContext {
     Issues issues = new Issues();
 
     // This is the root of a Deployment's languages / playlists / messages.
-    DefaultMutableTreeNode playlistRootNode;
+    AcmContent.AcmRootNode playlistRootNode;
 
 }

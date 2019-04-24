@@ -21,26 +21,26 @@ public class ContentSpec {
             .findFirst()
             .orElse(null);
     }
-    public List<PlaylistSpec> getPlaylists(int deploymentNumber) {
-        DeploymentSpec deploymentSpec = getDeployment(deploymentNumber);
-        if (deploymentSpec == null) return new ArrayList<PlaylistSpec>();
-        return deploymentSpec.getPlaylistSpecs();
-    }
-    public List<PlaylistSpec> getPlaylists(int deploymentNumber, String language) {
-        List<PlaylistSpec> result = new ArrayList<>();
-        for (PlaylistSpec playlistSpec : getPlaylists(deploymentNumber)) {
-            PlaylistSpec plCopy = new PlaylistSpec(playlistSpec.deploymentNumber, playlistSpec.playlistTitle);
-            for (MessageSpec msg : playlistSpec.getMessageSpecs()) {
-                if (StringUtils.isAllBlank(msg.language) || new StringFilter(msg.language).test(language)) {
-                    plCopy.addMessage(msg);
-                }
-            }
-            if (plCopy.messageSpecs.size() > 0) {
-                result.add(plCopy);
-            }
-        }
-        return result;
-    }
+//    public List<PlaylistSpec> getPlaylists(int deploymentNumber) {
+//        DeploymentSpec deploymentSpec = getDeployment(deploymentNumber);
+//        if (deploymentSpec == null) return new ArrayList<PlaylistSpec>();
+//        return deploymentSpec.getPlaylistSpecs();
+//    }
+//    public List<PlaylistSpec> getPlaylists(int deploymentNumber, String language) {
+//        List<PlaylistSpec> result = new ArrayList<>();
+//        for (PlaylistSpec playlistSpec : getPlaylists(deploymentNumber)) {
+//            PlaylistSpec plCopy = new PlaylistSpec(playlistSpec.deploymentNumber, playlistSpec.playlistTitle);
+//            for (MessageSpec msg : playlistSpec.getMessageSpecs()) {
+//                if (StringUtils.isAllBlank(msg.language) || new StringFilter(msg.language).test(language)) {
+//                    plCopy.addMessage(msg);
+//                }
+//            }
+//            if (plCopy.messageSpecs.size() > 0) {
+//                result.add(plCopy);
+//            }
+//        }
+//        return result;
+//    }
 
     /**
      * Add a messageSpec to the list of messageSpecs. Messages know all about themselves, so we can
@@ -78,6 +78,22 @@ public class ContentSpec {
         public List<PlaylistSpec> getPlaylistSpecs() {
             return playlistSpecs;
         }
+        public List<PlaylistSpec> getPlaylistSpecs(String language) {
+            List<PlaylistSpec> result = new ArrayList<>();
+            for (PlaylistSpec playlistSpec : playlistSpecs) {
+                PlaylistSpec plCopy = new PlaylistSpec(playlistSpec.deploymentNumber, playlistSpec.playlistTitle);
+                for (MessageSpec msg : playlistSpec.getMessageSpecs()) {
+                    if (StringUtils.isAllBlank(msg.language) || new StringFilter(msg.language).test(language)) {
+                        plCopy.addMessage(msg);
+                    }
+                }
+                if (plCopy.messageSpecs.size() > 0) {
+                    result.add(plCopy);
+                }
+            }
+            return result;
+        }
+
         int getPlaylistIx(String playlistTitle) {
             for (int ix = 0; ix< playlistSpecs.size(); ix++) {
                 if (playlistSpecs.get(ix).playlistTitle.equals(playlistTitle))
@@ -85,7 +101,7 @@ public class ContentSpec {
             }
             return -1;
         }
-        PlaylistSpec getPlaylist(String playlistTitle) {
+        public PlaylistSpec getPlaylist(String playlistTitle) {
             return playlistSpecs
                 .stream()
                 .filter(pl->pl.playlistTitle.equals(playlistTitle))
@@ -119,9 +135,19 @@ public class ContentSpec {
             return playlistTitle;
         }
 
+        public int getOrdinal() {
+            int result = -1;
+            DeploymentSpec deploymentSpec = getDeployment(this.deploymentNumber);
+            if (deploymentSpec != null) {
+                result = deploymentSpec.getPlaylistIx(this.playlistTitle);
+            }
+            return result;
+        }
+
         public List<MessageSpec> getMessageSpecs() {
             return messageSpecs;
         }
+
         int getMessageIx(MessageSpec messageSpec) {
             for (int ix = 0; ix< messageSpecs.size(); ix++) {
                 if (messageSpecs.get(ix).title.equals(messageSpec.title))
@@ -200,6 +226,15 @@ public class ContentSpec {
 
         public String getPlaylistTitle() {
             return playlistTitle;
+        }
+
+        public int getOrdinal() {
+            int result = -1;
+            PlaylistSpec playlistSpec = getPlaylist();
+            if (playlistSpec != null) {
+                result = playlistSpec.getMessageIx(this);
+            }
+            return result;
         }
 
         public PlaylistSpec getPlaylist() {
