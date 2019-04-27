@@ -14,6 +14,7 @@ import org.literacybridge.acm.audioconverter.api.WAVFormat;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.LBMetadataSerializer;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataStore;
@@ -29,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,7 +70,9 @@ public class AudioItemRepository {
         A18("a18", new A18Format(128, 16000, 1, AlgorithmList.A1800, useHeaderChoice.No)),
         WAV("wav", new WAVFormat(128, 16000, 1)),
         MP3("mp3", new MP3Format(128, 16000, 1)),
-        OGG("ogg", new OggFormat(128, 16000, 1));
+        OGG("ogg", new OggFormat(128, 16000, 1)),
+        WMA( "wma", new AudioConversionFormat(128, 16000, 1) {}),
+        M4A( "m4a", new AudioConversionFormat(128, 1600, 1) {});
 
         private final String fileExtension;
         private final AudioConversionFormat audioConversionFormat;
@@ -132,6 +136,7 @@ public class AudioItemRepository {
     {
         AudioFormat format = determineFormat(externalFile);
         if (format == null) {
+            System.out.printf("Unsupported or unrecognized audio format for file: " + externalFile);
             throw new UnsupportedFormatException(
                 "Unsupported or unrecognized audio format for file: " + externalFile);
         }
@@ -143,11 +148,7 @@ public class AudioItemRepository {
             // we only store the audio itself in the repo, as we keep the metadata
             // separately in the database;
             // therefore strip metadata section herea
-            DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(
-                externalFile)));
-            int numBytes = IOUtils.readLittleEndian32(in);
-            in.close();
-            IOUtils.copy(externalFile, toFile, numBytes + 4);
+            copyA18WithoutMetadata(externalFile, toFile);
         } else {
             IOUtils.copy(externalFile, toFile);
             try {
@@ -162,6 +163,13 @@ public class AudioItemRepository {
         A18DurationUtil.updateDuration(audioItem);
 
         return toFile;
+    }
+
+    public static void copyA18WithoutMetadata(File fromFile, File toFile) throws IOException {
+        DataInputStream in = new DataInputStream(new FileInputStream(fromFile));
+        int numBytes = IOUtils.readLittleEndian32(in);
+        in.close();
+        IOUtils.copy(fromFile, toFile, numBytes + 4);
     }
 
     /**
@@ -213,11 +221,11 @@ public class AudioItemRepository {
 
         if (OsUtils.WINDOWS && sourceFile != null) {
             IOUtils.ensureDirectoryExists(audioFile);
-            externalConverter.convert(sourceFile,
-                audioFile.getParentFile(),
+            File targetFile = ExternalConverter.targetFile(sourceFile, audioFile.getParentFile(), targetFormat.getAudioConversionFormat());
+            boolean overwrite = false;
+            externalConverter.convert(sourceFile, targetFile,
                 TMP_DIR,
-                targetFormat.getAudioConversionFormat(),
-                false);
+                targetFormat.getAudioConversionFormat(), overwrite);
         }
 
         return audioFile;
@@ -348,16 +356,21 @@ public class AudioItemRepository {
     }
 
     public static void appendMetadataToA18(AudioItem audioItem, File a18File) throws IOException {
-        // remove locale hack once we get rid of localized audio items
         Metadata metadata = audioItem.getMetadata();
+        Collection<Category> categories = audioItem.getCategoryList();
 
+        appendMetadataToA18(metadata, categories, a18File);
+    }
+
+    public static void appendMetadataToA18(Metadata metadata, Collection<Category> categories, File a18File) throws IOException {
         try (FileOutputStream fos = new FileOutputStream(a18File,true);
             BufferedOutputStream bos = new BufferedOutputStream(fos);
             DataOutputStream out = new DataOutputStream(bos)) {
             LBMetadataSerializer serializer = new LBMetadataSerializer();
-            serializer.serialize(Lists.newArrayList(audioItem.getCategoryList()), metadata, out);
+            serializer.serialize(categories, metadata, out);
         }
     }
+
 
     /**
      * Determines the format of the given file. Returns null, if the format was

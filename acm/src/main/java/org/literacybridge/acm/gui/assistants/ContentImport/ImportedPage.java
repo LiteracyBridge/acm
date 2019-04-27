@@ -5,9 +5,9 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.ProblemReviewDialog;
-import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
+import org.literacybridge.acm.gui.assistants.Matcher.AudioTarget;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableAudio;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.importexport.AudioImporter;
@@ -225,12 +225,9 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
      */
     private void performImports() {
         DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
-        Matcher<ImportableAudioItem, ImportableFile, MatchableImportableAudio> matcher = context.matcher;
-        summaryMessage.append(String.format("<h2>Project %s</h2>",
-            dbConfig.getProjectName()));
-        DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withZone(
-            ZoneId.systemDefault());
-        summaryMessage.append(String.format("<h3>%s</h3>", formatter.format(LocalDateTime.now())));
+        Matcher<AudioTarget, ImportableFile, MatchableAudio> matcher = context.matcher;
+        summaryMessage.append(String.format("<h2>Project %s</h2>", dbConfig.getProjectName()));
+        summaryMessage.append(String.format("<h3>%s</h3>", localDateTimeFormatter.format(LocalDateTime.now())));
         summaryMessage.append(String.format(
             "<p>Importing content for Deployment %d, in language %s</p>",
             context.deploymentNo,
@@ -241,7 +238,7 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
         errorCount = 0;
         progressCount = 0;
         // Look at all of the matches.
-        for (MatchableImportableAudio matchableItem : matcher.matchableItems) {
+        for (MatchableAudio matchableItem : matcher.matchableItems) {
             if (matchableItem.getMatch().isMatch()) {
                 // If not already in the ACM DB, or the "update item" checkbox is on, do the import.
                 boolean okToImport =
@@ -266,11 +263,11 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
      * Import a single audio file.
      * @param matchableItem to be imported.
      */
-    private void importOneItem(MatchableImportableAudio matchableItem)
+    private void importOneItem(MatchableAudio matchableItem)
     {
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         AudioImporter importer = AudioImporter.getInstance();
-        ImportableAudioItem importableAudio = matchableItem.getLeft();
+        AudioTarget importableAudio = matchableItem.getLeft();
 
         try {
             summaryTable.append(new TR(matchableItem.getOperation(),
@@ -325,9 +322,9 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
      * the appropriate playlist.
      * @param matchableItem to be put into a playlist, if needed.
      */
-    private void ensureAudioInPlaylist(MatchableImportableAudio matchableItem) {
+    private void ensureAudioInPlaylist(MatchableAudio matchableItem) {
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-        ImportableAudioItem importableAudio = matchableItem.getLeft();
+        AudioTarget importableAudio = matchableItem.getLeft();
         Playlist playlist = importableAudio.getPlaylist();
         AudioItem audioItem = matchableItem.getLeft().getItem();
         if (!audioItem.hasPlaylist(playlist)) {
@@ -350,7 +347,7 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
      * @param playlist the ACM Playlist into which an attempt was made to put the audio item.
      */
     private void reportPlaylistException(Exception e,
-        ImportableAudioItem importableAudio,
+        AudioTarget importableAudio,
         Playlist playlist)
     {
         errorCount++;
@@ -369,16 +366,16 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
      */
     private class ImportHandler implements AudioImporter.AudioItemProcessor {
         private final Category category;
-        private final MatchableImportableAudio matchableItem;
+        private final MatchableAudio matchableItem;
 
-        ImportHandler(Category category, MatchableImportableAudio matchableItem) {
+        ImportHandler(Category category, MatchableAudio matchableItem) {
             this.category = category;
             this.matchableItem = matchableItem;
         }
 
         @Override
         public void process(AudioItem item) {
-            ImportableAudioItem importableAudio = matchableItem.getLeft();
+            AudioTarget importableAudio = matchableItem.getLeft();
 
             // There really should be an item, but don't NPE if not.
             if (item != null) {

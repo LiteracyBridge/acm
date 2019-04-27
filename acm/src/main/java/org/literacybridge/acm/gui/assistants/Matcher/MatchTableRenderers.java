@@ -1,6 +1,6 @@
-package org.literacybridge.acm.gui.assistants.ContentImport;
+package org.literacybridge.acm.gui.assistants.Matcher;
 
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
+import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -10,7 +10,7 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.Color;
 import java.awt.Component;
 
-class MatchTableRenderers {
+public class MatchTableRenderers<T extends MatchableItem> {
     private static Color selectionColor = new Color(0xFA8072);
     private static Color exactColor = new Color(0xffffe0);
     private static Color fuzzyColor = new Color(0xfff0ff);
@@ -18,48 +18,53 @@ class MatchTableRenderers {
     private static Color leftColor = new Color(0xFFC0CB);
     private static Color rightColor = new Color(0xADD8E6);
 
-    static boolean colorCodeMatches = false;
-    static boolean isColorCoded = true;
+    public static boolean colorCodeMatches = false;
+    public static boolean isColorCoded = true;
 
-    private MatcherTable table;
-    private MatcherTableModel model;
+    private JTable table;
+    private IMatcherTableModel<T> model;
 
-    MatchTableRenderers(MatcherTable table) {
+    public MatchTableRenderers(JTable table, IMatcherTableModel<T> model) {
         this.table = table;
-        model = this.table.getModel();
+        this.model = model;
     }
 
-    MatcherRenderer getMatcherRenderer() {
+    public MatcherRenderer getMatcherRenderer() {
         return new MatcherRenderer();
     }
-    AudioItemRenderer getAudioItemRenderer() {
+    public AudioItemRenderer getAudioItemRenderer() {
         return new AudioItemRenderer();
     }
-    StatusRenderer getStatusRenderer() {
+    public StatusRenderer getStatusRenderer() {
         return new StatusRenderer();
     }
-    UpdatableRenderer getUpdatableRenderer() {
-        return new UpdatableRenderer();
+    public UpdatableBooleanRenderer getUpdatableBooleanRenderer() {
+        return new UpdatableBooleanRenderer();
     }
 
-    private Color getBG(int viewRow, int viewColumn, boolean isSelected) {
-        Color bg = (viewRow%2 == 0) ? ContentImportPage.bgColor : ContentImportPage.bgAlternateColor;
+    protected Color getBG(int viewRow, int viewColumn, boolean isSelected) {
+        Color bg = (viewRow%2 == 0) ? AcmAssistantPage.bgColor : AcmAssistantPage.bgAlternateColor;
         Color custom = null;
         if (!isColorCoded) {
-            if (isSelected) bg = ContentImportPage.bgSelectionColor;
+            if (isSelected) bg = AcmAssistantPage.bgSelectionColor;
 //                bg = isSelected ? bgSelectionColor : bgColor;
 //                if (viewRow % 2 == 1 && !isSelected) bg = bgAlternateColor; // darken(bg);
         } else {
-            int selectedRow = table.getSelectionModel().getLeadSelectionIndex();
-            int selectedColumn = table.getColumnModel().getSelectionModel().getLeadSelectionIndex();
-            if (selectedRow == viewRow && selectedColumn == viewColumn) isSelected = true;
+            int selectedViewRow = table.getSelectionModel().getLeadSelectionIndex();
+            int selectedViewColumn = table.getColumnModel().getSelectionModel().getLeadSelectionIndex();
+            int selectedColumn = table.convertColumnIndexToModel(selectedViewColumn);
+            int column = table.convertColumnIndexToModel(viewColumn);
+            if (selectedViewRow == viewRow && (selectedColumn == column
+                                              || model.isLeftColumn(selectedColumn) && model.isLeftColumn(column)
+                                              || model.isRightColumn(selectedColumn) && model.isRightColumn(column))) {
+                isSelected = true;
+            }
 
             if (isSelected) {
                 bg = selectionColor;
             } else {
                 int row = table.convertRowIndexToModel(viewRow);
-                int column = table.convertColumnIndexToModel(viewColumn);
-                MatchableImportableAudio item = model.getRowAt(row);
+                T item = model.getRowAt(row);
                 if (item == null) {
                     return bg;
                 }
@@ -78,10 +83,10 @@ class MatchTableRenderers {
                         custom = tokenColor;
                     break;
                 case LEFT_ONLY:
-                    if (column == MatcherTableModel.Columns.Left.ordinal()) custom = leftColor;
+                    if (model.isLeftColumn(column)) custom = leftColor;
                     break;
                 case RIGHT_ONLY:
-                    if (column == MatcherTableModel.Columns.Right.ordinal()) custom = rightColor;
+                    if (model.isRightColumn(column)) custom = rightColor;
                     break;
                 }
             }
@@ -156,17 +161,17 @@ class MatchTableRenderers {
             int column)
         {
             int modelRow = table.convertRowIndexToModel(row);
-            MatchableImportableAudio item = model.getRowAt(modelRow);
+            T item = model.getRowAt(modelRow);
             JLabel comp = super.getTableCellRendererComponent(table,
                 value,
                 isSelected,
                 hasFocus, row, column);
             ImageIcon icon = null;
             if (item != null && item.getLeft() != null) {
-                if (item.getLeft().hasAudioItem() || item.getMatch().isMatch()) {
-                    icon = ContentImportPage.soundImage;
+                if (item.getLeft().targetExists() || item.getMatch().isMatch()) {
+                    icon = AcmAssistantPage.soundImage;
                 } else {
-                    icon = ContentImportPage.noSoundImage;
+                    icon = AcmAssistantPage.noSoundImage;
                 }
             }
             comp.setIcon(icon);
@@ -185,7 +190,7 @@ class MatchTableRenderers {
             int column)
         {
             int modelRow = table.convertRowIndexToModel(row);
-            MatchableImportableAudio item = model.getRowAt(modelRow);
+            T item = model.getRowAt(modelRow);
             String tooltip = null;
             if (item != null) {
                 value = item.getOperation();
@@ -221,12 +226,12 @@ class MatchTableRenderers {
         }
     }
 
-    public class UpdatableRenderer extends JCheckBox implements TableCellRenderer {
+    public class UpdatableBooleanRenderer extends JCheckBox implements TableCellRenderer {
         private final Border noFocusBorder = new EmptyBorder(1, 1, 1, 1);
         // When we don't want to display a checkbox, we return the dummy label instead of "this" checkbox.
         private JLabel dummy;
 
-        UpdatableRenderer() {
+        UpdatableBooleanRenderer() {
             super();
             dummy = new JLabel();
             dummy.setOpaque(true);
@@ -239,8 +244,8 @@ class MatchTableRenderers {
             boolean isSelected, boolean hasFocus, int row, int column) {
 
             int modelRow = table.convertRowIndexToModel(row);
-            MatchableImportableAudio item = MatchTableRenderers.this.model.getRowAt(modelRow);
-            boolean editable = item != null && item.getLeft() != null && item.getLeft().hasAudioItem()
+            T item = MatchTableRenderers.this.model.getRowAt(modelRow);
+            boolean editable = item != null && item.getLeft() != null && item.getLeft().targetExists()
                 && item.getMatch() != null && item.getMatch().isMatch();
             Component comp = editable ? this : dummy;
 

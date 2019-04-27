@@ -6,7 +6,7 @@ import org.jdesktop.swingx.treetable.DefaultMutableTreeTableNode;
 import org.jdesktop.swingx.treetable.DefaultTreeTableModel;
 import org.jdesktop.swingx.treetable.MutableTreeTableNode;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableAudio;
 import org.literacybridge.acm.store.Playlist;
 
 import javax.swing.*;
@@ -33,8 +33,7 @@ public class ReviewPage extends ContentImportPage<ContentImportContext> {
     private final DefaultMutableTreeTableNode importPreviewRoot;
     private final ImportPreviewTreeModel importPreviewTreeModel;
     private final ImportPreviewTree importPreviewTreeTable;
-    private final JLabel deployment;
-    private final JLabel language;
+    private final ImportReminderLine importReminderLine;
 
     ReviewPage(PageHelper<ContentImportContext> listener) {
         super(listener);
@@ -49,15 +48,8 @@ public class ReviewPage extends ContentImportPage<ContentImportContext> {
                 + "</html>");
         add(welcome, gbc);
 
-        Box hbox = Box.createHorizontalBox();
-        hbox.add(new JLabel("Importing message content for deployment "));
-        deployment = makeBoxedLabel();
-        hbox.add(deployment);
-        hbox.add(new JLabel(" and language "));
-        language = makeBoxedLabel();
-        hbox.add(language);
-        hbox.add(Box.createHorizontalGlue());
-        add(hbox, gbc);
+        importReminderLine = new ImportReminderLine();
+        add(importReminderLine.getLine(), gbc);
 
         // Title preview.
         JLabel importPreviewLabel = new JLabel("Files to be imported:");
@@ -98,8 +90,8 @@ public class ReviewPage extends ContentImportPage<ContentImportContext> {
         String languagecode = context.languagecode;
 
         // Fill deployment and language
-        deployment.setText(Integer.toString(context.deploymentNo));
-        language.setText(languagecode);
+        importReminderLine.getDeployment().setText(Integer.toString(context.deploymentNo));
+        importReminderLine.getLanguage().setText(languagecode);
 
         while (importPreviewTreeModel.getRoot().getChildCount() > 0) {
             MutableTreeTableNode node = (MutableTreeTableNode) importPreviewTreeModel.getRoot().getChildAt(0);
@@ -107,12 +99,12 @@ public class ReviewPage extends ContentImportPage<ContentImportContext> {
         }
 
         // For the imports, create a "item from \n file" label, and add to the preview.
-        List<MatchableImportableAudio> importables = context.matcher.matchableItems.stream()
+        List<MatchableAudio> importables = context.matcher.matchableItems.stream()
             .filter(item -> item.getMatch().isMatch() && item.getLeft().isImportable())
             .collect(Collectors.toList());
 
         Map<Playlist, PlaylistNode> playlistNodes = new HashMap<>();
-        for (MatchableImportableAudio importable : importables) {
+        for (MatchableAudio importable : importables) {
             Playlist playlist = importable.getLeft().getPlaylist();
             PlaylistNode playlistNode = playlistNodes.get(playlist);
             if (playlistNode == null) {
@@ -171,12 +163,12 @@ public class ReviewPage extends ContentImportPage<ContentImportContext> {
         }
     }
     private class AudioNode extends DefaultMutableTreeTableNode {
-        AudioNode(MatchableImportableAudio matchable) {
+        AudioNode(MatchableAudio matchable) {
             super(matchable, false);
         }
         @Override
         public Object getValueAt(int column) {
-            MatchableImportableAudio me = (MatchableImportableAudio)getUserObject();
+            MatchableAudio me = (MatchableAudio)getUserObject();
             switch (column) {
             case 0:
                 return me.getLeft().getTitle();

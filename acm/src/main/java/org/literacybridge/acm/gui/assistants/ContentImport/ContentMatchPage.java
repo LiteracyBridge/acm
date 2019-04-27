@@ -1,12 +1,14 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
+import org.literacybridge.acm.gui.assistants.Matcher.AudioTarget;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchTableRenderers;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableAudio;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
+import org.literacybridge.acm.gui.assistants.Matcher.MatcherTableTransferHandler;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ContentSpec;
@@ -16,9 +18,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -29,13 +28,12 @@ import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
-public class MatchPage extends ContentImportPage<ContentImportContext> {
+public class ContentMatchPage extends ContentImportPage<ContentImportContext> {
     private static final int MAXIMUM_THRESHOLD = 100;
     private static final int DEFAULT_THRESHOLD = 80;
     private static final int MINIMUM_THRESHOLD = 60;
 
-    private final JLabel deployment;
-    private final JLabel language;
+    private final ImportReminderLine importReminderLine;
 
     private MatcherTable table;
     private MatcherTableModel model;
@@ -48,7 +46,7 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
         MatchTableRenderers.isColorCoded = true;
     }
 
-    MatchPage(PageHelper<ContentImportContext> listener) {
+    ContentMatchPage(PageHelper<ContentImportContext> listener) {
         super(listener);
         setLayout(new GridBagLayout());
 
@@ -63,16 +61,8 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
                 + "</html>");
         add(welcome, gbc);
 
-
-        Box hbox = Box.createHorizontalBox();
-        hbox.add(new JLabel("Importing message content for deployment "));
-        deployment = makeBoxedLabel();
-        hbox.add(deployment);
-        hbox.add(new JLabel(" and language "));
-        language = makeBoxedLabel();
-        hbox.add(language);
-        hbox.add(Box.createHorizontalGlue());
-        add(hbox, gbc);
+        importReminderLine = new ImportReminderLine();
+        add(importReminderLine.getLine(), gbc);
 
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
@@ -98,9 +88,9 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
 
         table.setFilter(this::filter);
 
-        MatchTableRenderers mtr = new MatchTableRenderers(table);
+        MatchTableRenderers mtr = new MatchTableRenderers(table, model);
         table.setRenderer(MatcherTableModel.Columns.Left, mtr.getAudioItemRenderer());
-        table.setRenderer(MatcherTableModel.Columns.Update, mtr.getUpdatableRenderer());
+        table.setRenderer(MatcherTableModel.Columns.Update, mtr.getUpdatableBooleanRenderer());
         table.setRenderer(MatcherTableModel.Columns.Status, mtr.getStatusRenderer());
         table.setRenderer(MatcherTableModel.Columns.Right, mtr.getMatcherRenderer());
 
@@ -115,6 +105,13 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
 
         table.setDragEnabled(true);
         table.setDropMode(DropMode.ON);
+
+        TransferHandler matchTableTransferHandler = new MatcherTableTransferHandler<MatchableAudio> (table, model) {
+            public void onMatched(MatchableAudio sourceRow, MatchableAudio targetRow) {
+                context.matcher.setMatch(sourceRow, targetRow);
+                model.fireTableDataChanged();
+            }
+        };
         table.setTransferHandler(matchTableTransferHandler);
 
         table.addMouseListener(tableMouseListener);
@@ -162,8 +159,8 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
         @Override
         public void mouseClicked(MouseEvent e) {
             if (e.getClickCount() == 2) {
-                MatchableImportableAudio selectedRow = selectedRow();
-                if (selectedRow != null && selectedRow.getMatch().isSingle()) {
+                MatchableAudio selectedRow = selectedRow();
+                if (selectedRow != null && selectedRow.getMatch().isUnmatched()) {
                     onManualMatch(null);
                 }
             }
@@ -174,7 +171,7 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
         int viewRow = table.getSelectionModel().getLeadSelectionIndex();
         if (viewRow >= 0) {
             int modelRow = table.convertRowIndexToModel(viewRow);
-            MatchableImportableAudio row = model.getRowAt(modelRow);
+            MatchableAudio row = model.getRowAt(modelRow);
             if (row != null && row.getMatch().isMatch()) {
                 context.matcher.unMatch(modelRow);
                 model.fireTableDataChanged();
@@ -183,16 +180,12 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
     }
 
     private void onManualMatch(ActionEvent actionEvent) {
-        MatchableImportableAudio selectedRow = selectedRow();
-        MatchableImportableAudio chosenMatch = null;
+        MatchableAudio selectedRow = selectedRow();
+        MatchableAudio chosenMatch = null;
 
-        ManualMatchDialog dialog = new ManualMatchDialog();
-        if (selectedRow.getMatch()==MATCH.LEFT_ONLY) {
-            chosenMatch = dialog.getFileForAudioItem(selectedRow,
-                context.matcher.matchableItems);
-        } else if (selectedRow.getMatch()==MATCH.RIGHT_ONLY) {
-            chosenMatch = dialog.getAudioItemForFile(selectedRow,
-                context.matcher.matchableItems);
+        ManualMatcherDialog dialog = new ManualMatcherDialog();
+        if (selectedRow.getMatch().isUnmatched()) {
+            chosenMatch = dialog.chooseMatchFor(selectedRow, context.matcher.matchableItems);
         }
 
         if (chosenMatch != null) {
@@ -202,13 +195,13 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
     }
 
     private void enableButtons() {
-        MatchableImportableAudio row = selectedRow();
+        MatchableAudio row = selectedRow();
         unMatch.setEnabled(row != null && row.getMatch().isMatch());
         manualMatch.setEnabled(row != null && !row.getMatch().isMatch());
     }
     
-    private MatchableImportableAudio selectedRow() {
-        MatchableImportableAudio row = null;
+    private MatchableAudio selectedRow() {
+        MatchableAudio row = null;
         int viewRow = table.getSelectionModel().getLeadSelectionIndex();
         if (viewRow >= 0) {
             int modelRow = table.convertRowIndexToModel(viewRow);
@@ -217,119 +210,17 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
         return row;
     }
 
-    private DataFlavor matchableFlavor = new DataFlavor(MatchableImportableAudio.class,"MatchableImportableAudio");
-    private class MatchableSelection implements Transferable {
-        final MatchableImportableAudio matchable;
-        MatchableSelection(MatchableImportableAudio matchable) {
-            this.matchable = matchable;
-        }
-
-        @Override
-        public DataFlavor[] getTransferDataFlavors() {
-            return new DataFlavor[] { matchableFlavor };
-        }
-
-        @Override
-        public boolean isDataFlavorSupported(DataFlavor flavor) {
-            return flavor.equals(matchableFlavor);
-        }
-
-        @Override
-        public MatchableImportableAudio getTransferData(DataFlavor flavor)
-            throws UnsupportedFlavorException
-        {
-            if (!isDataFlavorSupported(flavor)) throw new UnsupportedFlavorException(flavor);
-            return matchable;
-        }
-    }
-
-    private TransferHandler matchTableTransferHandler = new TransferHandler() {
-        @Override
-        public int getSourceActions(JComponent c) {
-            return COPY | LINK | MOVE;
-        }
-
-        @Override
-        protected Transferable createTransferable(JComponent c) {
-            MatchableImportableAudio row = selectedRow();
-            if (row == null) return null;
-            int viewCol = table.getColumnModel().getSelectionModel().getLeadSelectionIndex();
-            int modelCol = table.convertColumnIndexToModel(viewCol);
-            System.out.println("create transferable");
-            if (modelCol == 0) {
-                if (row.getMatch() == MATCH.LEFT_ONLY) {
-                    return new MatchableSelection(row);
-                }
-            } else if (modelCol == 1) {
-                if (row.getMatch() == MATCH.RIGHT_ONLY) {
-                    return new MatchableSelection(row);
-                }
-            }
-            return null;
-        }
-
-        @Override
-        public boolean canImport(TransferSupport support) {
-            // This basically means "is drop ok".
-            MatchableImportableAudio sourceRow = null;
-            boolean can = false;
-            try {
-                sourceRow = (MatchableImportableAudio)support.getTransferable().getTransferData(matchableFlavor);
-            } catch (Exception ignored) {}
-            // If from ourself, do not accept the drop.
-            if (sourceRow == null) {
-                support.setShowDropLocation(false);
-                return false;
-            }
-            // Has to be dropping onto ourself...
-            if (support.getDropLocation() instanceof JTable.DropLocation) {
-                JTable.DropLocation dropLocation = (JTable.DropLocation) support.getDropLocation();
-                if (dropLocation.getRow() >= 0 && dropLocation.getColumn() >= 0) {
-                    int targetModelRow = table.convertRowIndexToModel(dropLocation.getRow());
-                    MatchableImportableAudio targetRow = model.getRowAt(targetModelRow);
-                    // Non null and one left-only & one right-only?
-                    if (context.matcher.areMatchable(sourceRow, targetRow)) {
-                        int targetModelColumn = table.convertColumnIndexToModel(dropLocation.getColumn());
-                        // Does the drop column match the drop row left/right - ness?
-                        if (targetModelColumn == 0 && targetRow.getMatch() == MATCH.LEFT_ONLY ||
-                            targetModelColumn == 1 && targetRow.getMatch() == MATCH.RIGHT_ONLY) {
-                            can = true;
-                        }
-                    }
-                }
-            }
-            support.setShowDropLocation(can);
-            return can;
-        }
-        @Override
-        public boolean importData(TransferSupport support) {
-            MatchableImportableAudio sourceRow;
-            try {
-                sourceRow = (MatchableImportableAudio)support.getTransferable().getTransferData(matchableFlavor);
-            } catch (Exception ignored) {
-                return false;
-            }
-            JTable.DropLocation dropLocation = (JTable.DropLocation) support.getDropLocation();
-            int targetModelRow = table.convertRowIndexToModel(dropLocation.getRow());
-            MatchableImportableAudio targetRow = model.getRowAt(targetModelRow);
-            context.matcher.setMatch(sourceRow, targetRow);
-            model.fireTableDataChanged();
-            return true;
-        }
-    };
-
     @Override
     protected void onPageEntered(boolean progressing) {
         String languagecode = context.languagecode;
 
-        // Fill deployment and language
-        deployment.setText(Integer.toString(context.deploymentNo));
-        language.setText(languagecode);
+        importReminderLine.getDeployment().setText(Integer.toString(context.deploymentNo));
+        importReminderLine.getLanguage().setText(languagecode);
 
-        int deploymentNo = Integer.parseInt(deployment.getText());
+        int deploymentNo = context.deploymentNo;
 
         // List of titles (left side list)
-        List<ImportableAudioItem> titles = new ArrayList<>();
+        List<AudioTarget> titles = new ArrayList<>();
         List<ContentSpec.PlaylistSpec> contentPlaylistSpecs = context.programSpec.getContentSpec()
                                                                                  .getDeployment(deploymentNo)
                                                                                  .getPlaylistSpecs();
@@ -337,7 +228,7 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
             String playlistName = WelcomePage.decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             Playlist playlist = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().findPlaylistByName(playlistName);
             for (ContentSpec.MessageSpec messageSpec : contentPlaylistSpec.getMessagesForLanguage(languagecode)) {
-                ImportableAudioItem importableAudio = new ImportableAudioItem(messageSpec, playlist);
+                AudioTarget importableAudio = new AudioTarget(messageSpec, playlist);
                 // See if we already have this title in the ACM.
                 AudioItem audioItem = findAudioItemForTitle(messageSpec.title, languagecode);
                 importableAudio.setItem(audioItem);
@@ -350,7 +241,7 @@ public class MatchPage extends ContentImportPage<ContentImportContext> {
             .collect(Collectors.toList());
 
         if (progressing) {
-            context.matcher.setData(titles, files, MatchableImportableAudio::new);
+            context.matcher.setData(titles, files, MatchableAudio::new);
             model.setData(context.matcher.matchableItems);
             autoMatch();
         } else {

@@ -14,6 +14,9 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -182,6 +185,9 @@ public abstract class AssistantPage<Context> extends JPanel {
             1);
         return gbc;
     }
+
+    public static DateTimeFormatter localDateTimeFormatter =
+            DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withZone(ZoneId.systemDefault());
 
     private final Assistant.PageHelper<Context> pageHelper;
     private boolean isComplete = false;

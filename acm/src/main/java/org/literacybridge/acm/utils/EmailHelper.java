@@ -166,6 +166,9 @@ public class EmailHelper {
         protected String tag() {
             return "td";
         }
+        public TD colspan(int colspan) {
+            return with("colspan", colspan);
+        }
     }
     public static class TH extends TD {
         public TH(Object data) {

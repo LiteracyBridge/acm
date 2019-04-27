@@ -7,6 +7,7 @@ import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.Assistant.ProblemReviewDialog;
+import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.AudioItemNode;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.LanguageNode;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.PlaylistNode;
@@ -56,14 +57,13 @@ import static java.util.Calendar.YEAR;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
-public class DeployedPage extends AssistantPage<DeploymentContext> {
+public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
 
     private final JLabel publishNotification;
     private final JLabel summary;
     private final JLabel statusLabel;
     private final JButton viewErrorsButton;
     private final JLabel currentState;
-    private DeploymentContext context;
 
     DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
     private List<Exception> errors = new ArrayList<>();
@@ -73,8 +73,6 @@ public class DeployedPage extends AssistantPage<DeploymentContext> {
 
     DeployedPage(PageHelper<DeploymentContext> listener) {
         super(listener);
-        context = getContext();
-        context = getContext();
         setLayout(new GridBagLayout());
 
         GridBagConstraints gbc = getGBC();

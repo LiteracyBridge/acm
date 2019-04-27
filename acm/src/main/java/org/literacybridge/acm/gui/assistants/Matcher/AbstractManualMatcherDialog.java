@@ -1,7 +1,7 @@
-package org.literacybridge.acm.gui.assistants.ContentImport;
+package org.literacybridge.acm.gui.assistants.Matcher;
 
-import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableAudio;
+import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
+import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
@@ -20,18 +20,18 @@ import java.util.Map;
  * Dialog allows user to manually select the matching file or audio item for a selected
  * audio item or file.
  */
-class ManualMatchDialog {
+public abstract class AbstractManualMatcherDialog<T extends MatchableItem> {
     private final JList<String> choicesList;
     private final JLabel promptLabel;
     private JButton okButton, cancelButton;
     private JDialog dialog;
     private final JOptionPane optionPane;
-    private final Map<String, MatchableAudio> unmatchedImportables;
+    private final Map<String, T> unmatchedItems;
 
-    ManualMatchDialog() {
+    public AbstractManualMatcherDialog() {
         promptLabel = new JLabel("");
 
-        unmatchedImportables = new LinkedHashMap<>();
+        unmatchedItems = new LinkedHashMap<>();
         choicesList = new JList<>();
         choicesList.addListSelectionListener(this::listSelectionListener);
         choicesList.addMouseListener(listMouseListener);
@@ -41,65 +41,68 @@ class ManualMatchDialog {
         optionPane = new JOptionPane();
         optionPane.setOptions(new Object[] { okButton, cancelButton });
         dialog = optionPane.createDialog("");
+
+        SwingUtils.addEscapeListener(dialog);
     }
 
     /**
-     * Display an audio item and a list of unmatched files.
-     * @param row The MatchableAudio item to be matched. Must be LEFT_ONLY.
-     * @param matchableItems all of the MatchableAudio items. The RIGHT_ONLY items will
+     * Display an unmatched item from one side and a list of unmatched items from the other side.
+     * @param row The MatchableItem item to be matched. Must be LEFT_ONLY or RIGHT_ONLY.
+     * @param matchableItems all of the MatchableItem items. The other-side unmatched items will
      *                       be offered.
      * @return The chosen match.
      */
-    MatchableAudio getFileForAudioItem(MatchableAudio row,
-        List<MatchableAudio> matchableItems) {
+    public T chooseMatchFor(T row, List<T> matchableItems) {
+        MATCH filter;
+        String sourcesDescription, targetDescription;
+        String targetName;
+        final boolean isLeft = (row.getMatch() == MATCH.LEFT_ONLY);
+        if (row.getMatch() == MATCH.LEFT_ONLY) {
+            filter = MATCH.RIGHT_ONLY;
+            targetDescription = rightDescription();
+            sourcesDescription = leftDescription();
+            targetName = row.getLeft().toString();
+        } else if (row.getMatch() == MATCH.RIGHT_ONLY) {
+            filter = MATCH.LEFT_ONLY;
+            targetDescription = leftDescription();
+            sourcesDescription = rightDescription();
+            targetName = row.getRight().toString();
+        } else {
+            throw new IllegalArgumentException("Can only choose a match for an unmatched item");
+        }
 
         matchableItems
             .stream()
-            .filter(item->item.getMatch()== MATCH.RIGHT_ONLY)
-            .forEach(item-> unmatchedImportables.put(item.getRight().getFile().getName(), item));
-        String[] unmatchedTitles = unmatchedImportables
+            .filter(item->item.getMatch()== filter)
+            .forEach(item-> unmatchedItems.put((isLeft?item.getRight():item.getLeft()).toString(), item));
+        String[] unmatchedTitles = unmatchedItems
             .keySet().toArray(new String[0]);
 
         choicesList.setListData(unmatchedTitles);
-         /* bad */
-        String message = String.format("<html>Choose the File for Audio Item <br/>&nbsp;&nbsp;<i>%s</i>.</html>", row.getLeft().getTitle());
+        /* bad */
+        String message = String.format("<html>Choose the %s for %s <br/>&nbsp;&nbsp;<i>%s</i>.</html>", targetDescription, sourcesDescription, targetName);
         promptLabel.setText(message);
 
         JPanel pane = layoutComponents();
         optionPane.setMessage(pane);
-        dialog = optionPane.createDialog("Choose File for Audio Item");
+        dialog = optionPane.createDialog(String.format("Choose %s for %s", targetDescription, sourcesDescription));
 
         return show();
+
     }
 
     /**
-     * Display an file and a list of unmatched audio items.
-     * @param row The MatchableAudio item to be matched. Must be RIGHT_ONLY.
-     * @param matchableItems all of the MatchableAudio items. The LEFT_ONLY items will
-     *                       be offered.
-     * @return The chosen match.
+     * Display name for a left-side item. This is generally the "target" side, but in a match operation
+     * either side can be the "source" or the "target".
+     * @return the name.
      */
-    MatchableAudio getAudioItemForFile(MatchableAudio row,
-        List<MatchableAudio> matchableItems) {
+    protected abstract String leftDescription();
 
-        matchableItems
-            .stream()
-            .filter(item->item.getMatch()== MATCH.LEFT_ONLY)
-            .forEach(item-> unmatchedImportables.put(item.getLeft().getTitle(), item));
-        String[] unmatchedTitles = unmatchedImportables
-            .keySet().toArray(new String[0]);
-
-        choicesList.setListData(unmatchedTitles);
-        /* good */
-        String message = String.format("<html>Choose the Audio item for file<br/>&nbsp;&nbsp;<i>%s</i>.</html>", row.getRight().getFile().getName());
-        promptLabel.setText(message);
-
-        JPanel pane = layoutComponents();
-        optionPane.setMessage(pane);
-        dialog = optionPane.createDialog("Choose Audio Item For File");
-
-        return show();
-    }
+    /**
+     * Display name for a right-side item.
+     * @return the name.
+     */
+    protected abstract String rightDescription();
 
     /**
      * Mouse listener so we can accept a match on a double click.
@@ -158,22 +161,22 @@ class ManualMatchDialog {
         {
             Component comp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             if (isSelected)
-                comp.setBackground(ContentImportPage.bgSelectionColor);
+                comp.setBackground(AcmAssistantPage.bgSelectionColor);
             else
-                comp.setBackground(index%2==0 ? ContentImportPage.bgColor : ContentImportPage.bgAlternateColor);
+                comp.setBackground(index%2==0 ? AcmAssistantPage.bgColor : AcmAssistantPage.bgAlternateColor);
             return comp;
         }
     };
 
-    public MatchableAudio show() {
+    public T show() {
         dialog.setVisible(true);
         return getSelectedItem();
     }
 
-    private MatchableAudio getSelectedItem() {
+    private T getSelectedItem() {
         String chosenTitle = choicesList.getSelectedValue();
         if (chosenTitle != null) {
-            return unmatchedImportables.get(chosenTitle);
+            return unmatchedItems.get(chosenTitle);
         }
         return null;
     }

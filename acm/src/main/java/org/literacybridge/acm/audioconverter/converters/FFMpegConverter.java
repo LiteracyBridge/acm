@@ -30,11 +30,15 @@ public class FFMpegConverter extends BaseAudioConverter {
         + " -y" // overwrite output file
         + " \"" + targetFile.getAbsolutePath() + "\"";
 
+    System.out.println(String.format("Convert to 'wav' from file:\n%s\n with command:\n%s", audioFile, cmd));
+
     ConversionResult result = new ConversionResult();
     result.outputFile = targetFile;
     // important! ffmpeg prints to stderr, not stdout
     result.response = BaseAudioConverter.executeConversionCommand(cmd, true,
         audioFile.getName());
+
+    System.out.println(String.format("Conversion to 'wav' result: %s\n", result.response));
 
     return result;
   }

@@ -1,6 +1,7 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
-import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioMatcher;
+import org.literacybridge.acm.gui.assistants.Matcher.AudioMatcher;
+import org.literacybridge.acm.gui.assistants.common.FilesPage;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import java.io.File;
@@ -12,7 +13,7 @@ import java.util.Set;
  * This is the context for a content import. By the time the Assistant has finished, this will
  * contain all of the data for importing the audio tracks for one language in one deployment.
  */
-class ContentImportContext {
+class ContentImportContext implements FilesPage.FileImportContext {
     // Configured items
 
     /**
@@ -46,15 +47,25 @@ class ContentImportContext {
     /**
      * The files that the user selected to import.
      */
-    Set<File> importableRoots = new LinkedHashSet<>();
-    Set<File> importableFiles = new LinkedHashSet<>();
+    final Set<File> importableRoots = new LinkedHashSet<>();
+    final Set<File> importableFiles = new LinkedHashSet<>();
+
+    // Accessors to satisfy FileImportContext.
+    @Override
+    public Set<File> getImportableRoots() {
+        return importableRoots;
+    }
+    @Override
+    public Set<File> getImportableFiles() {
+        return importableFiles;
+    }
 
     // From the Match page
 
     /**
      * The matcher object. Lets us know how titles were matched against files.
      */
-    ImportableAudioMatcher matcher = new ImportableAudioMatcher();
+    AudioMatcher matcher = new AudioMatcher();
 
     /**
      * Created playlists, in the ACM.

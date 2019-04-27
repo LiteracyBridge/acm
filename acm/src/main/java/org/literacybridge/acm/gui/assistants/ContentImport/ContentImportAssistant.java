@@ -24,8 +24,8 @@ public class ContentImportAssistant {
         Assistant<ContentImportContext> assistant = new Assistant.Factory<ContentImportContext>()
             .withContext(context)
             .withPageFactories(WelcomePage::new,
-                FilesPage::new,
-                MatchPage::new,
+                ContentFilesPage::new,
+                ContentMatchPage::new,
                 ReviewPage::new,
                 ImportedPage::new)
             .withTitle("Content Import Assistant")

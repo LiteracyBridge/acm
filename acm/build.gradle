@@ -70,6 +70,7 @@ project(':core') {
 compileJava {
     targetCompatibility = '1.8'
     sourceCompatibility = '1.8'
+    //options.compilerArgs += ["-Xlint:deprecation", "-Xlint:unchecked", "-nowarn"]
 }
 
 File distDir = file("$projectDir/dist")

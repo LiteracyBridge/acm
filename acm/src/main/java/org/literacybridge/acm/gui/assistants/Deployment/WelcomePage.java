@@ -30,12 +30,12 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
 
         JLabel welcome = new JLabel("<html>"
             + "<span style='font-size:2.5em'>Welcome to the Deployment Creation Assistant.</span>"
-            + "<br/><br/><p>This assistant will guide you through creating a Deployment. To create the Deployment:</p>"
-            + "<ul>" + "<li> You will indicate the Deployment number you are creating.</li>"
+            + "<br/><br/><p>This assistant will guide you through creating a Deployment. Steps to create the Deployment:</p>"
+            + "<ol>" + "<li> You choose the Deployment # you are creating.</li>"
             + "<li> The assistant will automatically determine if the required files and content are available, per the program specification.</li>"
             + "<li> You will then have an opportunity to make minor modifications to the Deployment playlists."
             + "<li> Once the configuration of the Deployment is satisfactory, you can give your approval, and the Deployment will be created and published.</li>"
-            + "</ul>" + "<br/>Choose the Deployment, then click \"Next\" to get started. "
+            + "</ol>" + "<br/>Choose the Deployment, then click \"Next\" to get started. "
 
             + "</html>");
         add(welcome, gbc);

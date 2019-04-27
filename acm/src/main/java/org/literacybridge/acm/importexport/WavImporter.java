@@ -18,25 +18,9 @@ import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
-public class WavImporter extends AudioFileImporter {
-  private Metadata metadata = new Metadata();
-  private Set<Category> categories = new HashSet<>();
+public class WavImporter extends AnyImporter {
   WavImporter(File audioFile) {
     super(audioFile);
-  }
-
-
-  @Override
-  protected Metadata getMetadata() {
-    // Title is all we would have, and the base class will add that for us, so
-    // just return the empty metadata.
-    return metadata;
-  }
-
-  @Override
-  protected Set<Category> getCategories() {
-    // Unless & until we implement categories in MP3 files, this will be empty.
-    return categories;
   }
 
   static String[] getSupportedFileExtensions() {

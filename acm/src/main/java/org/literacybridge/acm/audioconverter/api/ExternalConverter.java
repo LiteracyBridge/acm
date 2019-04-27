@@ -10,31 +10,38 @@ import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.Conve
 
 public class ExternalConverter {
 
-    public String convert(File sourceFile, File targetDir, File tmpDir, AudioConversionFormat targetFormat, boolean overwrite)
+    public static File targetFile(File sourceFile, File targetDir, AudioConversionFormat targetFormat) {
+        return BaseAudioConverter.targetFile(sourceFile, targetDir, targetFormat.getFileExtension());
+    }
+
+    public void convert(File sourceFile, File destFile, AudioConversionFormat targetFormat, boolean overwrite)
+            throws ConversionException {
+        File TMP_DIR = new File(System.getProperty("java.io.tmpdir"));
+        convert(sourceFile, destFile, TMP_DIR, targetFormat, overwrite);
+    }
+
+    public String convert(File sourceFile, File targetFile, File tmpDir,
+                AudioConversionFormat targetFormat, boolean overwrite)
             throws ConversionException {
         String result = null;
-        Map<String, String> parameters = null;
+        Map<String, String> parameters = getParameters(targetFormat);
+        BaseAudioConverter converter = null;
 
         if (targetFormat.getFileEnding().equalsIgnoreCase("A18")) {
-            parameters = getParameters(targetFormat);
-            AnyToA18Converter converter = new AnyToA18Converter();
-            result = converter.convertFile(sourceFile, targetDir, tmpDir, overwrite, parameters);
+             converter = new AnyToA18Converter();
         } else {
             if (FilenameUtils.getExtension(sourceFile.getName()).equalsIgnoreCase("a18")) {
-                parameters = getParameters(targetFormat);
                 if (targetFormat.getFileEnding().equalsIgnoreCase("WAV")) {
-                    A18ToWavConverter converter = new A18ToWavConverter();
-                    result = converter.convertFile(sourceFile, targetDir, tmpDir, overwrite, parameters);
+                     converter = new A18ToWavConverter();
                 } else {
-                    A18ToAnyConverter converter = new A18ToAnyConverter(targetFormat.getFileExtension());
-                    result = converter.convertFile(sourceFile, targetDir, tmpDir, overwrite, parameters);
+                     converter = new A18ToAnyConverter(targetFormat.getFileExtension());
                 }
             } else {
-                parameters = getParameters(targetFormat);
-                FFMpegConverter converter = new FFMpegConverter();
-                result = converter.convertFile(sourceFile, targetDir, tmpDir, overwrite, parameters, "." + targetFormat.getFileEnding());
+                 converter = new FFMpegConverter();
             }
         }
+        result = converter.convertFile(sourceFile, targetFile, tmpDir, overwrite, parameters);
+
         return result;
     }
 

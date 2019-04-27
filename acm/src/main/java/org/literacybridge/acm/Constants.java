@@ -56,4 +56,5 @@ public class Constants {
   public static final String CATEGORY_TOO_LONG_FEEDBACK = "92-6";
   public static final String CATEGORY_UNKNOWN_LENGTH_FEEDBACK = "92-8";
   public static final String CATEGORY_TB_INSTRUCTIONS = "0-1";
+  public static final String CATEGORY_COMMUNITIES = "0-3";
 }

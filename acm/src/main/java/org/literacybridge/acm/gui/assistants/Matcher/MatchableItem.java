@@ -10,7 +10,7 @@ import java.util.Objects;
  * @param <L>
  * @param <R>
  */
-public class MatchableItem<L, R> implements Comparable<MatchableItem> {
+public class MatchableItem<L extends Target, R> implements Comparable<MatchableItem> {
     SimpleObjectProperty<L> left = new SimpleObjectProperty<>();
 
     public L getLeft() {
@@ -100,6 +100,12 @@ public class MatchableItem<L, R> implements Comparable<MatchableItem> {
         return disassociated;
     }
 
+    public boolean isMatchableWith(MatchableItem other) {
+        return other != null &&
+            this.getMatch().isUnmatched() && other.getMatch().isUnmatched() &&
+            this.getMatch() != other.getMatch();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -138,4 +144,27 @@ public class MatchableItem<L, R> implements Comparable<MatchableItem> {
     public String description() {
         return this.toString();
     }
+
+    public String getOperation() {
+        String status = "";
+        if (getMatch().isMatch()) {
+            if (!getLeft().targetExists()) {
+                status = "Import";
+            } else if (getLeft().isReplaceOk()) {
+                status = "Update";
+            } else {
+                status = "Keep";
+            }
+        } else if (getLeft() != null) {
+            if (getLeft().targetExists()) {
+                status = "Imported";
+            } else {
+                status = "Missing";
+            }
+        } else {
+            status = "Extra File";
+        }
+        return status;
+    }
+
 }

@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.assistants.ContentImport;
+package org.literacybridge.acm.gui.assistants.common;
 
 import org.apache.commons.io.FilenameUtils;
 import org.jdesktop.swingx.JXTreeTable;
@@ -32,17 +32,22 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class FilesPage extends ContentImportPage<ContentImportContext> {
+public abstract class FilesPage<T extends FilesPage.FileImportContext> extends AcmAssistantPage<T> {
+    public interface FileImportContext {
+        Set<File> getImportableRoots();
+        Set<File> getImportableFiles();
+    }
 
-    private enum AUDIO_EXTS {
-        MP3, OGG, A18, WAV;
+    protected enum AUDIO_EXTS {
+        MP3, OGG, A18, WAV, M4A, ACC, WMA;
 
-        static boolean isAudioFile(String name) {
+        public static boolean isAudioFile(String name) {
             String ext = FilenameUtils.getExtension(name);
             if (ext == null) return false;
             ext = ext.toUpperCase();
@@ -57,36 +62,21 @@ public class FilesPage extends ContentImportPage<ContentImportContext> {
     private final JButton chooseFiles;
     private final JScrollPane filesPreviewScroller;
     private final JLabel filesPreviewLabel;
-    private final JLabel deployment;
-    private final JLabel language;
     private final JFileChooser fileChooser;
     private final DirectoryNode fileTreeRootNode;
     private final FileTreeModel fileTreeModel;
     private final FileTree fileTreeTable;
 
-    FilesPage(PageHelper<ContentImportContext> listener) {
+    protected FilesPage(PageHelper<T> listener) {
         super(listener);
 
         setLayout(new GridBagLayout());
 
         GridBagConstraints gbc = getGBC();
 
-        JLabel welcome = new JLabel(
-            "<html>" + "<span style='font-size:2em'>Choose Files to Import.</span>"
-                + "<br/><br/><p>Choose the files that you wish to import.</p>" + "</html>");
-        add(welcome, gbc);
+        getPageIntro().forEach(comp -> add(comp, gbc));
 
         Box hbox = Box.createHorizontalBox();
-        hbox.add(new JLabel("Importing message content for deployment "));
-        deployment = makeBoxedLabel();
-        hbox.add(deployment);
-        hbox.add(new JLabel(" and language "));
-        language = makeBoxedLabel();
-        hbox.add(language);
-        hbox.add(Box.createHorizontalGlue());
-        add(hbox, gbc);
-
-        hbox = Box.createHorizontalBox();
         choosePrompt = new JLabel("Click here to choose files: ");
         hbox.add(choosePrompt);
         chooseFiles = new JButton("Choose File(s)");
@@ -133,10 +123,12 @@ public class FilesPage extends ContentImportPage<ContentImportContext> {
         if (ACMConfiguration.isTestData()) {
             List<File> testingFiles = Collections.singletonList(new File("/Users/bill/A-test1"));
             List<File> expandedFiles = expandDirectories(testingFiles);
-            context.importableFiles.addAll(expandedFiles);
+            context.getImportableFiles().addAll(expandedFiles);
         }
 
     }
+
+    protected abstract List<JComponent> getPageIntro();
 
     /**
      * Filter for the choose file dialog. Accepts directories and audio files.
@@ -164,7 +156,7 @@ public class FilesPage extends ContentImportPage<ContentImportContext> {
         fileChooser.showOpenDialog(this);
 
         List<File> rootFiles = Arrays.asList(fileChooser.getSelectedFiles());
-        context.importableRoots.addAll(rootFiles);
+        context.getImportableRoots().addAll(rootFiles);
         choosePrompt.setText("Click to choose more files: ");
 
         fillFileList();
@@ -172,13 +164,9 @@ public class FilesPage extends ContentImportPage<ContentImportContext> {
 
     @Override
     protected void onPageEntered(boolean progressing) {
-        if (ACMConfiguration.isTestData() && progressing && context.importableRoots.size()==0) {
-            context.importableRoots.addAll(Collections.singletonList(new File("/Users/bill/A-test1")));
+        if (ACMConfiguration.isTestData() && progressing && context.getImportableRoots().size()==0) {
+            context.getImportableRoots().addAll(Collections.singletonList(new File("/Users/bill/A-test1")));
         }
-
-        // Fill deployment and language
-        deployment.setText(Integer.toString(context.deploymentNo));
-        language.setText(context.languagecode);
 
         fillFileList();
     }
@@ -192,9 +180,9 @@ public class FilesPage extends ContentImportPage<ContentImportContext> {
      * Fill the filename preview list.
      */
     private void fillFileList() {
-        List<File> expandedFiles = expandRoots(new ArrayList<>(context.importableRoots));
-        context.importableFiles.clear();
-        context.importableFiles.addAll(expandedFiles);
+        List<File> expandedFiles = expandRoots(new ArrayList<>(context.getImportableRoots()));
+        context.getImportableFiles().clear();
+        context.getImportableFiles().addAll(expandedFiles);
         fileTreeTable.sizeColumns();
 
         filesPreviewScroller.setVisible(!fileTreeModel.isEmpty());
@@ -404,28 +392,28 @@ public class FilesPage extends ContentImportPage<ContentImportContext> {
 
         @Override
         public Object getChild(Object parent, int index) {
-            if (parent instanceof FileNode) return null;
-            if (parent instanceof DirectoryNode) return ((DirectoryNode) parent).getChildAt(index);
+            if (parent instanceof FilesPage.FileNode) return null;
+            if (parent instanceof FilesPage.DirectoryNode) return ((DirectoryNode) parent).getChildAt(index);
             return getRoot().getChildAt(index);
         }
 
         @Override
         public int getChildCount(Object parent) {
-            if (parent instanceof DirectoryNode) return ((DirectoryNode) parent).getChildCount();
-            if (parent instanceof FileNode) return 0;
+            if (parent instanceof FilesPage.DirectoryNode) return ((DirectoryNode) parent).getChildCount();
+            if (parent instanceof FilesPage.FileNode) return 0;
             return getRoot().getChildCount();
         }
 
         @Override
         public int getIndexOfChild(Object parent, Object child) {
-            if (parent instanceof DirectoryNode)
+            if (parent instanceof FilesPage.DirectoryNode)
                 return ((DirectoryNode) parent).getIndex((AbstractFileNode) child);
             return getRoot().getIndex((AbstractFileNode) child);
         }
 
         @Override
         public boolean isLeaf(Object node) {
-            return node instanceof FileNode;
+            return node instanceof FilesPage.FileNode;
         }
     }
 
@@ -490,7 +478,7 @@ public class FilesPage extends ContentImportPage<ContentImportContext> {
             // This method is only called to render the first column, column 0. Sometimes,
             // it is passed the LastComponent() from the tree path, not the actual  value,
             // so if we get a node, convert it to the value.
-            if (value instanceof AbstractFileNode) value = ((AbstractFileNode) value).getValueAt(0);
+            if (value instanceof FilesPage.AbstractFileNode) value = ((AbstractFileNode) value).getValueAt(0);
             String str = renderValue(value, selected, 0);
 //            Color bg = (row%2 == 0) ? bgColor : bgAlternateColor;
             Color bg = (selected) ? bgSelectionColor : bgColor;

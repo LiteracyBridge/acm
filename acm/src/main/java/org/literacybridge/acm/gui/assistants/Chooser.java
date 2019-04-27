@@ -6,6 +6,7 @@ import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.assistants.ContentImport.ContentImportAssistant;
 import org.literacybridge.acm.gui.assistants.Deployment.DeploymentAssistant;
+import org.literacybridge.acm.gui.assistants.GreetingsImport.GreetingsImportAssistant;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,10 +17,13 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import static java.awt.GridBagConstraints.BOTH;
 import static java.awt.GridBagConstraints.CENTER;
+import static org.literacybridge.acm.utils.SwingUtils.addEscapeListener;
 import static org.literacybridge.acm.utils.SwingUtils.getApplicationRelativeLocation;
 
 public class Chooser extends JDialog {
@@ -57,6 +61,7 @@ public class Chooser extends JDialog {
         ImageIcon tbIcon = new ImageIcon(UIConstants.getResource("tb_64g.png"));
         ImageIcon langIcon = new ImageIcon(UIConstants.getResource("language_64.png"));
         ImageIcon plIcon = new ImageIcon(UIConstants.getResource("pl_64.png"));
+        ImageIcon peopleIcon = new ImageIcon(UIConstants.getResource("people_64.png"));
 
         Insets insets = new Insets(0,0,0,0);
         GridBagConstraints gbc = new GridBagConstraints(0,GridBagConstraints.RELATIVE, 1,1, 1.0,1.0, CENTER,BOTH, insets, 1,1);
@@ -74,11 +79,24 @@ public class Chooser extends JDialog {
         Dimension size = new Dimension(400, 92);
 //        JLabel contentButton = new LabelButton(usbIcon, "Import Content", this::runImport);
         LabelButton contentButton = new LabelButton(usbIcon, "Import Content");
-        contentButton.addActionListener(e -> runImport());
+        contentButton.addActionListener(e -> runAssistant(ContentImportAssistant::create));
         contentButton.setMinimumSize(size);
         contentButton.setPreferredSize(size);
         contentButton.setMaximumSize(size);
         panel.add(contentButton, gbc);
+
+        LabelButton greetingsButton = new LabelButton(peopleIcon, "Custom Greetings");
+        greetingsButton.addActionListener(e -> runAssistant(GreetingsImportAssistant::create));
+        greetingsButton.setMinimumSize(size);
+        greetingsButton.setPreferredSize(size);
+        panel.add(greetingsButton, gbc);
+        greetingsButton.setEnabled(true);
+
+        LabelButton deploymentButton = new LabelButton(tbIcon, "Create Deployment");
+        deploymentButton.addActionListener(e -> runAssistant(DeploymentAssistant::create));
+        deploymentButton.setMinimumSize(size);
+        deploymentButton.setPreferredSize(size);
+        panel.add(deploymentButton, gbc);
 
         LabelButton languageButton = new LabelButton(langIcon, "Language Prompts");
         languageButton.addActionListener(e -> runDeployment());
@@ -94,12 +112,6 @@ public class Chooser extends JDialog {
         panel.add(playlistButton, gbc);
         playlistButton.setEnabled(true);
 
-        LabelButton deploymentButton = new LabelButton(tbIcon, "Create Deployment");
-        deploymentButton.addActionListener(e -> runDeployment());
-        deploymentButton.setMinimumSize(size);
-        deploymentButton.setPreferredSize(size);
-        panel.add(deploymentButton, gbc);
-
         // To experiment with sizes, uncomment this, and comment out "setUndecorated(true)"
 //        panel.addComponentListener(new ComponentAdapter() {
 //            @Override
@@ -109,12 +121,19 @@ public class Chooser extends JDialog {
 //            }
 //        });
 
+        addEscapeListener(this);
         addWindowListener(windowListener);
-        addKeyListener(keyListener);
         setAlwaysOnTop(true);
         setUndecorated(true);
 
         setMinimumSize(new Dimension(400, 4*92));
+    }
+
+    private void runAssistant(Supplier<Assistant> factory) {
+        setVisible(false);
+        Assistant da = factory.get();
+        da.setVisible(true);
+        boolean finished = da.finished;
     }
 
     private void runDeployment() {
@@ -125,23 +144,6 @@ public class Chooser extends JDialog {
         if (finished) System.out.println("deployment created");
     }
 
-    private void runImport() {
-        setVisible(false);
-        Assistant ca = ContentImportAssistant.create();
-        ca.setVisible(true);
-        boolean finished = ca.finished;
-        if (finished) System.out.println("import finished");
-    }
-
-    private KeyListener keyListener = new KeyAdapter() {
-        @Override
-        public void keyTyped(KeyEvent e) {
-            // escape?
-            if (e.getKeyChar() == 0x1b) {
-                setVisible(false);
-            }
-        }
-    };
 
     private WindowListener windowListener = new WindowAdapter() {
         @Override

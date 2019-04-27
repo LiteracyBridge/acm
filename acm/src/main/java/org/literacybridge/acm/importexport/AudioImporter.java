@@ -1,21 +1,31 @@
 package org.literacybridge.acm.importexport;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.apache.commons.io.FilenameUtils;
+import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataStore;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
 
@@ -68,17 +78,18 @@ public class AudioImporter {
         if (ctor != null) {
             return ctor.apply(audioFile);
         }
-        return null;
+        return new AnyImporter(audioFile);
     }
 
     /**
      * Perform the actual work of importing an audio file.
      * @param file The file to be imported.
      * @param processor Optional processor to examine the file after import.
+     * @param optionsArg Optional list of Option.
      * @throws IOException If the file can not be read or imported.
      */
     private AudioItem importFileWithOptions(File file, AudioItemProcessor processor, Option... optionsArg)
-        throws IOException
+        throws IOException, AudioItemRepository.UnsupportedFormatException, BaseAudioConverter.ConversionException
     {
         AudioItem result = null;
         Set<Option> options = new HashSet<>(Arrays.asList(optionsArg));
@@ -124,23 +135,18 @@ public class AudioImporter {
                     file.getName()));
                 result = item;
             } else {
-                try {
-                    ACMConfiguration.getInstance()
-                        .getCurrentDB()
-                        .getRepository()
-                        .updateAudioItem(item, file);
+                ACMConfiguration.getInstance()
+                    .getCurrentDB()
+                    .getRepository()
+                    .updateAudioItem(item, file);
 
-                    // let caller tweak audio item
-                    if (processor != null) {
-                        processor.process(item);
-                    }
-
-                    store.commit(item);
-                    result = item;
-                } catch (Exception e) {
-                    LOG.log(Level.WARNING,
-                        "Unable to update files for audioitem with id=" + title, e);
+                // let caller tweak audio item
+                if (processor != null) {
+                    processor.process(item);
                 }
+
+                store.commit(item);
+                result = item;
             }
         } else {
             // Otherwise, the item didn't already exist, so import the new audio item
@@ -156,7 +162,9 @@ public class AudioImporter {
      * @param category Category to be added.
      * @throws IOException If the file can't be read or imported.
      */
-    private AudioItem importFile(File file, Category category) throws IOException {
+    private AudioItem importFile(File file, Category category)
+        throws IOException, AudioItemRepository.UnsupportedFormatException, BaseAudioConverter.ConversionException
+    {
         return importFileWithOptions(file, (item) -> {if (item != null) item.addCategory(category);});
     }
 
@@ -168,7 +176,7 @@ public class AudioImporter {
      * @throws IOException If the file can't be converted or imported.
      */
     public AudioItem importFile(File file, AudioItemProcessor processor, Option... options)
-        throws IOException
+        throws IOException, AudioItemRepository.UnsupportedFormatException, BaseAudioConverter.ConversionException
     {
         return importFileWithOptions(file, processor, options);
     }
@@ -178,7 +186,9 @@ public class AudioImporter {
      * @param file The file to be imported.
      * @throws IOException If the file can't be converted or imported.
      */
-    public AudioItem importFile(File file) throws IOException {
+    public AudioItem importFile(File file)
+        throws IOException, AudioItemRepository.UnsupportedFormatException, BaseAudioConverter.ConversionException
+    {
         return importFileWithOptions(file, (AudioItemProcessor)null);
     }
 
@@ -203,6 +213,18 @@ public class AudioImporter {
                 break;
             }
         }
+    }
+
+    /**
+     * Don't import anything, but read metadata from an existing file.
+     * @param file A file.
+     * @return Any metadata in the file.
+     */
+    public Metadata getExistingMetadata(File file) {
+        AudioFileImporter importer = getImporter(file);
+        Metadata metadata = importer.getMetadata();
+
+        return metadata;
     }
 
     private void gatherFiles(File dir, boolean recursive, List<File> filesToImport) {

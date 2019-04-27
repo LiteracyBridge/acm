@@ -6,6 +6,7 @@ import org.literacybridge.core.utils.HierarchyInfo;
 import org.literacybridge.core.utils.IHierarchicalRecord;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +72,13 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
         return add(r);
     }
 
+    public int[] getAdapterIndicesForValues(String[] names) {
+        List<String> namesList = Arrays.asList(NAMES);
+        int[] result = new int[names.length];
+        for (int ix=0; ix<names.length; ix++) result[ix] = namesList.indexOf(names[ix]);
+        return result;
+    }
+
     /**
      * Wrapper class for Recipient. Allows an IHierarchicalList to access members by
      * level number.
@@ -89,6 +97,12 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
             case 5: return supportentity;
             }
             return null;
+        }
+
+        public String getValue(String level) {
+            // TODO: Cache these values.
+            int ix = Arrays.asList(NAMES).indexOf(level);
+            return getValue(ix);
         }
 
         public List<String> getPath() {

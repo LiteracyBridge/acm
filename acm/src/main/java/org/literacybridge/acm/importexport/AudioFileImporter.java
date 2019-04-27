@@ -45,35 +45,43 @@ abstract class AudioFileImporter {
 
     protected abstract Set<Category> getCategories();
 
-    AudioItem importSingleFile(AudioImporter.AudioItemProcessor itemProcessor) throws IOException
+    AudioItem importSingleFile(AudioImporter.AudioItemProcessor itemProcessor)
+        throws IOException, AudioItemRepository.UnsupportedFormatException
     {
         AudioItem result = null;
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-        try {
-            AudioItem audioItem = createAudioItem();
 
-            if (store.getAudioItem(audioItem.getUuid()) != null) {
-                // just skip if we have an item with the same id already
-                System.out.println(String.format("File '%s' is already in database; skipping",
-                    audioFile.getName()));
-                return audioItem;
-            }
+        AudioItem audioItem = createAudioItem();
 
-            // let caller tweak audio item
-            if (itemProcessor != null) {
-                itemProcessor.process(audioItem);
-            }
-
-            // Commit now because storeAudioFile will copy the file as an a18 (!), and then update the duration field (!)
-            // which runs another transaction.
-            store.commit(audioItem);
-
-            AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
-            repository.storeAudioFile(audioItem, audioFile);
-            result = audioItem;
-        } catch (AudioItemRepository.UnsupportedFormatException e) {
-            throw new IOException(e);
+        if (store.getAudioItem(audioItem.getUuid()) != null) {
+            // just skip if we have an item with the same id already
+            System.out.println(String.format("File '%s' is already in database; skipping",
+                audioFile.getName()));
+            return audioItem;
         }
+
+        // let caller tweak audio item
+        if (itemProcessor != null) {
+            itemProcessor.process(audioItem);
+        }
+
+        // Commit now because storeAudioFile will copy the file as an a18 (!), and then update the duration field (!)
+        // which runs another transaction.
+        store.commit(audioItem);
+
+        AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
+
+        System.out.printf("Importing file %s\n", audioFile);
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // A U D I O   I M P O R T   H A P P E N S   H E R E
+        //
+        // Here is where the actual conversion and import happens.
+        repository.storeAudioFile(audioItem, audioFile);
+        //
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        result = audioItem;
+
         return result;
     }
 

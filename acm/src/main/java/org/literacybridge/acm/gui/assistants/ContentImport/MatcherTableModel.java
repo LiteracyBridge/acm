@@ -1,8 +1,9 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
-import org.literacybridge.acm.gui.assistants.Matcher.ImportableAudioItem;
+import org.literacybridge.acm.gui.assistants.Matcher.IMatcherTableModel;
+import org.literacybridge.acm.gui.assistants.Matcher.AudioTarget;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableImportableAudio;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableAudio;
 
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
@@ -10,9 +11,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class MatcherTableModel extends AbstractTableModel {
+public class MatcherTableModel extends AbstractTableModel implements
+                                                          IMatcherTableModel<MatchableAudio> {
     public enum Columns {
-        Left(ImportableAudioItem.class, "Audio Item"),
+        Left(AudioTarget.class, "Audio Item"),
         Right(ImportableFile.class, "File"),
         Status(String.class, "Status"),
         Update(Boolean.class, "Update?");
@@ -36,7 +38,7 @@ public class MatcherTableModel extends AbstractTableModel {
 
 
     private MatcherTable table;
-    private List<MatchableImportableAudio> data;
+    private List<MatchableAudio> data;
 
     MatcherTableModel(MatcherTable table) {
         this.table = table;
@@ -59,8 +61,18 @@ public class MatcherTableModel extends AbstractTableModel {
     }
 
     @Override
+    public boolean isLeftColumn(int columnIndex) {
+        return columnIndex == Columns.Left.ordinal();
+    }
+
+    @Override
+    public boolean isRightColumn(int columnIndex) {
+        return columnIndex == Columns.Right.ordinal();
+    }
+
+    @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        MatchableImportableAudio row = getRowAt(rowIndex);
+        MatchableAudio row = getRowAt(rowIndex);
         if (row == null || columnIndex<0 || columnIndex>=Columns.values().length)
             return null;
         Columns which = Columns.values()[columnIndex];
@@ -76,7 +88,7 @@ public class MatcherTableModel extends AbstractTableModel {
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         if (columnIndex != Columns.Update.ordinal()) return false;
-        MatchableImportableAudio row = getRowAt(rowIndex);
+        MatchableAudio row = getRowAt(rowIndex);
         if (row == null) return false;
         // If the row is a match AND has an existing audio item, enable the [ ] Replace checkbox.
         return row.getMatch().isMatch() && row.getLeft().hasAudioItem();
@@ -85,7 +97,7 @@ public class MatcherTableModel extends AbstractTableModel {
     @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
         if (columnIndex != Columns.Update.ordinal()) return;
-        MatchableImportableAudio row = getRowAt(rowIndex);
+        MatchableAudio row = getRowAt(rowIndex);
         if (row == null) return;
         // If the row is a match AND has an existing audio item, enable the [ ] Replace checkbox.
         if (!(row.getMatch().isMatch() && row.getLeft().hasAudioItem())) return;
@@ -104,13 +116,13 @@ public class MatcherTableModel extends AbstractTableModel {
         super.fireTableDataChanged();
     }
 
-    MatchableImportableAudio getRowAt(int rowIndex) {
+    public MatchableAudio getRowAt(int rowIndex) {
         if (rowIndex < 0 || rowIndex >= data.size())
             return null;
         return data.get(rowIndex);
     }
 
-    public void setData(List<MatchableImportableAudio> data) {
+    public void setData(List<MatchableAudio> data) {
         this.data = data;
         fireTableDataChanged();
         table.sizeColumns();
@@ -122,7 +134,7 @@ public class MatcherTableModel extends AbstractTableModel {
      * @param sorter on which to set the comparators.
      */
     void setupSorter(TableRowSorter<MatcherTableModel> sorter) {
-        sorter.setComparator(Columns.Left.ordinal(), (ImportableAudioItem o1, ImportableAudioItem o2) -> {
+        sorter.setComparator(Columns.Left.ordinal(), (AudioTarget o1, AudioTarget o2) -> {
             if (o1==null) return 1;
             if (o2==null) return -1;
             return o1.getTitle().compareToIgnoreCase(o2.getTitle());

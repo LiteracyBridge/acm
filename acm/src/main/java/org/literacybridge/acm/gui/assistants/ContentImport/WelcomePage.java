@@ -61,6 +61,7 @@ public class WelcomePage extends ContentImportPage<ContentImportContext> {
             + "have an opportunity to match remaining files, or to \"unmatch\" files as needed.</li>"
             + "<li> You review and approve the final message-to-file matches.</li>"
             + "<li> The audio items are imported into the ACM, and placed in appropriate playlists.</li>"
+            + "</ol>"
             + "</html>");
         add(welcome, gbc);
 

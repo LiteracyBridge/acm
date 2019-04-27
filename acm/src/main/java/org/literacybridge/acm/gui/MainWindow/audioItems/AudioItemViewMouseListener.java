@@ -60,8 +60,6 @@ public class AudioItemViewMouseListener extends MouseAdapter {
                 showAudioItemDlg(e);
           else
               Toolkit.getDefaultToolkit().beep();
-      } else if (titleColumnClicked && selectedRows.length == 1 && selectedRowClicked && e.getClickCount()==2) {
-          showRenameDlg(e);
       }
   }
 

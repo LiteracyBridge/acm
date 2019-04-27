@@ -2,20 +2,17 @@ package org.literacybridge.acm.gui.assistants.Matcher;
 
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ContentSpec.MessageSpec;
 
 import java.util.Objects;
 
-public class ImportableAudioItem {
+public class AudioTarget extends Target {
     private MessageSpec message;
     // The ACM Playlist into which the item will be imported.
     private Playlist playlist;
     private AudioItem item;
-    // If there is an audio item AND a matching file, is it OK to replace this item?
-    private boolean replaceOk = false;
 
-    public ImportableAudioItem(MessageSpec message, Playlist playlist) {
+    public AudioTarget(MessageSpec message, Playlist playlist) {
         this.message = message;
         this.playlist = playlist;
     }
@@ -33,13 +30,8 @@ public class ImportableAudioItem {
     public boolean hasAudioItem() {
         return this.item != null;
     }
-
-    public void setReplaceOk(boolean replaceOk) {
-        this.replaceOk = replaceOk;
-    }
-    public boolean isReplaceOk() {
-        return replaceOk;
-    }
+    @Override
+    public boolean targetExists() { return hasAudioItem(); }
 
     public Playlist getPlaylist() {
         return playlist;
@@ -48,9 +40,6 @@ public class ImportableAudioItem {
         return message;
     }
 
-    public boolean isImportable() {
-        return !hasAudioItem() || isReplaceOk();
-    }
 
     @Override
     public String toString() {
@@ -61,7 +50,7 @@ public class ImportableAudioItem {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ImportableAudioItem that = (ImportableAudioItem) o;
+        AudioTarget that = (AudioTarget) o;
         return message.equals(that.message);
     }
 

@@ -1,5 +1,7 @@
 package org.literacybridge.acm.audioconverter.converters;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -19,32 +21,38 @@ public abstract class BaseAudioConverter {
     this.targetFormatExtension = targetFormatExtension;
   }
 
-  public String convertFile(File inputFile, File targetDir, File tmpDir,
-      boolean overwrite, Map<String, String> parameters)
-      throws ConversionException {
-    return convertFile(inputFile, targetDir, tmpDir, overwrite, parameters,
-        targetFormatExtension);
+  public File targetFile(File inputFile, File targetDir) {
+    return targetFile(inputFile, targetDir, targetFormatExtension);
+  }
+  static public File targetFile(File inputFile, File targetDir, String alternateExtension) {
+    if (alternateExtension.charAt(0)!='.') alternateExtension = "." + alternateExtension;
+    return new File(targetDir, FilenameUtils.removeExtension(inputFile.getName()) + alternateExtension);
   }
 
-  public String convertFile(File inputFile, File targetDir, File tmpDir,
-      boolean overwrite, Map<String, String> parameters, String targetExtension)
-      throws ConversionException {
-    if (tmpDir == null) {
-      tmpDir = targetDir;
-    }
-    File outputFile = new File(targetDir, getFileNameWithoutExtension(inputFile.getName()) + targetExtension);
-    if (outputFile.exists())
+  public String convertFile(File inputFile,
+      File outputFile,
+      File tmpDir,
+      boolean overwrite,
+      Map<String, String> parameters) throws ConversionException
+  {
+    if (outputFile.exists()) {
       if (!overwrite) {
         return null;
       } else {
         if (!outputFile.delete()) {
-          throw new ConversionException(String.format("Unable to overwrite output file (%s).", outputFile));
+          throw new ConversionException(String.format("Unable to overwrite output file (%s).",
+              outputFile));
         }
       }
-    ConversionResult result = doConvertFile(inputFile, targetDir, outputFile, tmpDir, parameters);
+    }
+
+    ConversionResult result = doConvertFile(inputFile, outputFile.getParentFile(), outputFile, tmpDir, parameters);
+
     if (!result.outputFile.getAbsolutePath().equals(outputFile.getAbsolutePath())) {
       if (!result.outputFile.equals(outputFile) && !result.outputFile.renameTo(outputFile)) {
-        throw new ConversionException(String.format("Unable to rename output file (%s as %s).", result.outputFile, outputFile));
+        throw new ConversionException(String.format("Unable to rename output file (%s as %s).",
+            result.outputFile,
+            outputFile));
       }
     }
     return result.response;
@@ -64,11 +72,7 @@ public abstract class BaseAudioConverter {
   public abstract void validateConverter()
       throws AudioConverterInitializationException;
 
-  static String getFileNameWithoutExtension(String fullName) {
-    return fullName.substring(0, fullName.lastIndexOf('.'));
-  }
-
-  static String executeConversionCommand(String cmd, boolean listenToStdErr,
+ static String executeConversionCommand(String cmd, boolean listenToStdErr,
       String inputFileName) throws ConversionException {
     StringBuilder responseBuilder = new StringBuilder();
     boolean success = false;

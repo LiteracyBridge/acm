@@ -1,9 +1,11 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.UIConstants;
+import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
@@ -22,22 +24,31 @@ import java.util.Locale;
  *
  * @param <Context>
  */
-abstract class ContentImportPage<Context> extends AssistantPage<Context> {
-    static Color bgColor = Color.white; // table.getBackground();
-    static Color bgSelectionColor = new JTable().getSelectionBackground();
-    static Color bgAlternateColor = new Color(235, 245, 252);
-
-    // Speaker with sound coming out of it.
-    static ImageIcon soundImage = new ImageIcon(UIConstants.getResource("sound-1.png"));
-    // Speaker with no sound coming out.
-    static ImageIcon noSoundImage = new ImageIcon(UIConstants.getResource("sound-3.png"));
-
-    Context context;
-    private MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+abstract class ContentImportPage<Context> extends AcmAssistantPage<Context> {
 
     ContentImportPage(Assistant.PageHelper<Context> listener) {
         super(listener);
-        context = getContext();
+    }
+
+    public static class ImportReminderLine {
+        private final Box hbox;
+        private final JLabel deployment;
+        private final JLabel language;
+
+        public JComponent getLine() { return hbox; }
+        public JLabel getDeployment() { return deployment; }
+        public JLabel getLanguage() { return language; }
+
+        public ImportReminderLine() {
+            hbox = Box.createHorizontalBox();
+            hbox.add(new JLabel("Importing message content for deployment "));
+            deployment = makeBoxedLabel();
+            hbox.add(deployment);
+            hbox.add(new JLabel(" and language "));
+            language = makeBoxedLabel();
+            hbox.add(language);
+            hbox.add(Box.createHorizontalGlue());
+        }
     }
 
     /**

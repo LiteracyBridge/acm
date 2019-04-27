@@ -6,7 +6,6 @@ import javafx.collections.ObservableList;
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -16,7 +15,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-public class Matcher<L, R, T extends MatchableItem<L, R>> {
+public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
 
     public ObservableList<T> matchableItems = FXCollections.observableArrayList(item -> new Observable[] {
         item.leftProperty(), item.matchProperty(), item.scoreProperty(), item.rightProperty() });
@@ -57,9 +56,9 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
         // list, and compare every "left" item to the next item.
         int ix = 0;
         while (ix < matchableItems.size() - 1) {
-            MatchableItem item1 = matchableItems.get(ix);
+            T item1 = matchableItems.get(ix);
             if (item1.getMatch() == MATCH.LEFT_ONLY) {
-                MatchableItem item2 = matchableItems.get(ix + 1);
+                T item2 = matchableItems.get(ix + 1);
                 if (item2.getMatch() == MATCH.RIGHT_ONLY) {
                     result.comparisons++;
                     // we have a left and a right. Compare them, and then move on.
@@ -103,16 +102,16 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
         return result;
     }
 
-    private boolean doMatch(MatchableItem item1, MatchableItem item2, int threshold, boolean tokens)
+    private boolean doMatch(T item1, T item2, int threshold, boolean tokens)
     {
         // We need one left and one right in order to match.
-        if (!item1.getMatch().isSingle() || !item2.getMatch().isSingle()
+        if (!item1.getMatch().isUnmatched() || !item2.getMatch().isUnmatched()
             || item1.getMatch() == item2.getMatch()) {
             return false;
         }
         // we have a left and a right. See which is which, compare them, and then move on.
-        MatchableItem l = item1.getMatch() == MATCH.LEFT_ONLY ? item1 : item2;
-        MatchableItem r = item1.getMatch() == MATCH.RIGHT_ONLY ? item1 : item2;
+        T l = item1.getMatch() == MATCH.LEFT_ONLY ? item1 : item2;
+        T r = item1.getMatch() == MATCH.RIGHT_ONLY ? item1 : item2;
 
         int score = scoreMatch(l, r, tokens);
         if (score >= threshold) {
@@ -123,7 +122,7 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
         return false;
     }
 
-    private void recordMatch(MatchableItem l, MatchableItem r, MATCH match, int score) {
+    private void recordMatch(T l, T r, MATCH match, int score) {
         l.setRight(r.getRight());
         l.setMatch(match);
         l.setScore(score);
@@ -137,7 +136,7 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
         }
     }
 
-    private int scoreMatch(MatchableItem l, MatchableItem r, boolean tokens) {
+    protected int scoreMatch(T l, T r, boolean tokens) {
         int score = 0;
         String left = l.getLeft().toString();
         String right = r.getRight().toString();
@@ -149,12 +148,12 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
         return score;
     }
 
-    private static class Comparison {
-        MatchableItem leftItem;
-        MatchableItem rightItem;
+    private class Comparison {
+        T leftItem;
+        T rightItem;
         int score;
 
-        public Comparison(MatchableItem leftItem, MatchableItem rightItem, int score) {
+        public Comparison(T leftItem, T rightItem, int score) {
             this.leftItem = leftItem;
             this.rightItem = rightItem;
             this.score = score;
@@ -163,9 +162,9 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
 
     private MatchStats matrixMatch(int threshold, boolean tokens) {
         MatchStats result = new MatchStats();
-        List<MatchableItem> leftList = new ArrayList<>();
-        List<MatchableItem> rightList = new ArrayList<>();
-        for (MatchableItem item : matchableItems) {
+        List<T> leftList = new ArrayList<>();
+        List<T> rightList = new ArrayList<>();
+        for (T item : matchableItems) {
             if (item.getMatch() == MATCH.LEFT_ONLY) leftList.add(item);
             else if (item.getMatch() == MATCH.RIGHT_ONLY) rightList.add(item);
         }
@@ -173,8 +172,8 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
         if (leftList.size() == 0 || rightList.size() == 0) return result;
         // Perform all comparisons, then pick the best ones.
         List<Comparison> comparisons = new ArrayList<>();
-        for (MatchableItem matchableItem1 : leftList) {
-            for (MatchableItem matchableItem : rightList) {
+        for (T matchableItem1 : leftList) {
+            for (T matchableItem : rightList) {
                 result.comparisons++;
                 int score = scoreMatch(matchableItem1, matchableItem, tokens);
                 comparisons.add(new Comparison(matchableItem1, matchableItem, score));
@@ -236,7 +235,7 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
             }
         }
     }
-    public void unMatch(MatchableImportableAudio item) {
+    public void unMatch(MatchableAudio item) {
         int itemIndex = matchableItems.indexOf(item);
         if (item.getMatch().isMatch()) {
             T disassociated = (T) item.disassociate();
@@ -246,7 +245,7 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
 
     public void setMatch(T left, T right) {
         // Need one LEFT_ONLY and one RIGHT_ONLY
-        if (!left.getMatch().isSingle() || !right.getMatch().isSingle() ||
+        if (!left.getMatch().isUnmatched() || !right.getMatch().isUnmatched() ||
             left.getMatch() == right.getMatch()) {
             throw new IllegalArgumentException("Invalid items to make a match");
         }
@@ -258,7 +257,7 @@ public class Matcher<L, R, T extends MatchableItem<L, R>> {
 
     public boolean areMatchable(T left, T right) {
         return left != null && right != null &&
-            left.getMatch().isSingle() && right.getMatch().isSingle() &&
+            left.getMatch().isUnmatched() && right.getMatch().isUnmatched() &&
             left.getMatch() != right.getMatch();
     }
 
