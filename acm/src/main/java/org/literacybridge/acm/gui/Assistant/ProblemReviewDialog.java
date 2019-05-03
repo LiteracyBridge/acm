@@ -99,18 +99,20 @@ public class ProblemReviewDialog extends JDialog {
         DefaultMutableTreeNode exceptionsRoot = problemsRoot;
         // Generic "issues"?
         if (issues != null && (issues.getChildCount()>0 || issues.isLeaf())) {
+            DefaultMutableTreeNode issuesRoot = new DefaultMutableTreeNode("Issues");
+            problemsTreeModel.insertNodeInto(issuesRoot, problemsRoot,
+                problemsRoot.getChildCount());
             if (issues.isLeaf()) {
-                // Only one item, so just insert it. TODO: Create an "Issue" parent?
-                problemsRoot.add(issues);
+                issuesRoot.add(issues);
             } else {
                 while (issues.getChildCount() > 0) {
-                    problemsRoot.add((MutableTreeNode) issues.getChildAt(0));
+                    issuesRoot.add((MutableTreeNode) issues.getChildAt(0));
                 }
             }
-            exceptionsRoot = new DefaultMutableTreeNode("Exceptions");
-            problemsTreeModel.insertNodeInto(exceptionsRoot, problemsRoot,
-                problemsRoot.getChildCount());
         }
+        exceptionsRoot = new DefaultMutableTreeNode("Exceptions");
+        problemsTreeModel.insertNodeInto(exceptionsRoot, problemsRoot,
+            problemsRoot.getChildCount());
         messageLabel.setText(message);
         for (Exception ex : exceptions) {
             ExceptionNode eNode = new ExceptionNode(ex);

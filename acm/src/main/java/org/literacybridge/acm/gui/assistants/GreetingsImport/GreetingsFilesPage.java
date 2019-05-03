@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.assistants.GreetingsImport;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
+import org.literacybridge.acm.gui.assistants.common.AbstractFilesPage;
 
 import javax.swing.*;
 import java.io.File;
@@ -9,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class GreetingsFilesPage extends org.literacybridge.acm.gui.assistants.common.FilesPage<GreetingsImportContext> {
+public class GreetingsFilesPage extends AbstractFilesPage<GreetingsImportContext> {
     GreetingsFilesPage(PageHelper<GreetingsImportContext> listener) {
         super(listener);
     }
@@ -41,7 +42,7 @@ public class GreetingsFilesPage extends org.literacybridge.acm.gui.assistants.co
 
     @Override
     protected String getTitle() {
-        return "Files to Import";
+        return "Greetings to Import";
     }
 
 }

@@ -1,6 +1,9 @@
 package org.literacybridge.core.utils;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.IntStream;
 
 public class HierarchyInfo <T extends IHierarchicalRecord> {
     public final int LEVELS;
@@ -13,20 +16,19 @@ public class HierarchyInfo <T extends IHierarchicalRecord> {
         this(names, names);
     }
     public HierarchyInfo(String[] names, String[] plurals) {
-        this(names, plurals, new boolean[names.length]);
+        this(names, plurals, new String[0]);
     }
-    public HierarchyInfo(String[] names, String[] plurals, boolean[] nonOmittables) {
+    public HierarchyInfo(String[] names, String[] plurals, String[] requiredAlways) {
+        List<String> requiredList = Arrays.asList(requiredAlways);
         if (names.length != plurals.length) {
             throw new IllegalArgumentException("names and plurals must be the same size");
         }
-        if (names.length != nonOmittables.length) {
-            throw new IllegalArgumentException("names and non-omittables must be the same size");
-        }
+        NON_OMITTABLE = new boolean[names.length];
+        IntStream.range(0, names.length).forEach(i->NON_OMITTABLE[i] = requiredList.contains(names[i]));
         LEVELS = names.length;
         MAX_LEVEL = LEVELS-1;
         NAMES = names;
         PLURALS = plurals;
-        NON_OMITTABLE = nonOmittables;
     }
 
     public String name(int level) {

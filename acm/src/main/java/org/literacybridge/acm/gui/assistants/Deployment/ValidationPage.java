@@ -428,8 +428,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         StringBuilder result = new StringBuilder(recipient.communityname);
         if (StringUtils.isNotEmpty(recipient.groupname))
             result.append('-').append(recipient.groupname);
-        if (StringUtils.isEmpty(recipient.groupname) && StringUtils.isNotEmpty(recipient.supportentity))
-            result.append('-').append(recipient.supportentity);
+        if (StringUtils.isEmpty(recipient.groupname) && StringUtils.isNotEmpty(recipient.agent))
+            result.append('-').append(recipient.agent);
         return result.toString();
     }
 

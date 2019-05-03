@@ -24,9 +24,9 @@ import java.util.Locale;
  *
  * @param <Context>
  */
-abstract class ContentImportPage<Context> extends AcmAssistantPage<Context> {
+abstract class ContentImportBase<Context> extends AcmAssistantPage<Context> {
 
-    ContentImportPage(Assistant.PageHelper<Context> listener) {
+    ContentImportBase(Assistant.PageHelper<Context> listener) {
         super(listener);
     }
 
@@ -59,7 +59,8 @@ abstract class ContentImportPage<Context> extends AcmAssistantPage<Context> {
      * @param languagecode The language in which we want the audio item.
      * @return the AudioItem if it exists, otherwise null.
      */
-    AudioItem findAudioItemForTitle(String title, String languagecode) {
+    static AudioItem findAudioItemForTitle(String title, String languagecode) {
+        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         List<Category> categoryList = new ArrayList<>();
         List<Locale> localeList = Collections.singletonList(new RFC3066LanguageCode(languagecode).getLocale());
 

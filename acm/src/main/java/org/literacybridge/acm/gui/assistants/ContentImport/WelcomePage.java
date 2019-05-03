@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
-public class WelcomePage extends ContentImportPage<ContentImportContext> {
+public class WelcomePage extends ContentImportBase<ContentImportContext> {
     private static final Logger LOG = Logger.getLogger(WelcomePage.class.getName());
 
     private final JComboBox<Object> deploymentChooser;
@@ -76,7 +76,7 @@ public class WelcomePage extends ContentImportPage<ContentImportContext> {
         hbox.add(Box.createHorizontalStrut(10));
 
         hbox.add(new JLabel("and the Language: "));
-        languageChooser = new JComboBox<>();
+        languageChooser = new LanguageChooser();
         languageChooser.addActionListener(this::onSelection);
         setComboWidth(languageChooser, "Detect from file path.");
         languageChooser.setMaximumSize(languageChooser.getPreferredSize());
@@ -96,8 +96,7 @@ public class WelcomePage extends ContentImportPage<ContentImportContext> {
 
         titlePreviewBox.add(Box.createHorizontalGlue());
 
-        Insets insets = new Insets(0,0,0,0);
-        gbc.insets = insets;
+        gbc.insets = new Insets(0,0,0,0);
         add(titlePreviewBox, gbc);
 
         JPanel panel = new JPanel();

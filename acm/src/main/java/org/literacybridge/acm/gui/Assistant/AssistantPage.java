@@ -11,6 +11,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
@@ -129,8 +130,10 @@ public abstract class AssistantPage<Context> extends JPanel {
         TableCellRenderer headerRenderer = table.getTableHeader().getDefaultRenderer();
 
         for (SizingParams param : params) {
+            // To get the column class from the model we need to use the model column index. But to
+            // get the render component we need to use the view index.
             final int modelColumnNo = param.modelColumn;
-            final int viewCol = table.convertColumnIndexToView(modelColumnNo);
+            final int viewColumnNo = table.convertColumnIndexToView(modelColumnNo);
             TableColumn column = table.getColumnModel().getColumn(modelColumnNo);
 
             int headerWidth = headerRenderer.getTableCellRendererComponent(null,
@@ -140,20 +143,12 @@ public abstract class AssistantPage<Context> extends JPanel {
                 0,
                 0).getPreferredSize().width;
 
-            // To get the column class from the model we need to use the model column index. But to
-            // get the render component we need to use the view index.
-
-            Stream<Object> values = IntStream
-                .range(0, table.getRowCount())
-                .mapToObj(row -> table.getValueAt(row, modelColumnNo));
-
-
             int cellWidth = IntStream
                 .range(0, table.getRowCount())
                 .mapToObj(row -> table.getValueAt(row, modelColumnNo))
                 .filter(Objects::nonNull)
                 .map(item -> table.getDefaultRenderer(model.getColumnClass(modelColumnNo))
-                    .getTableCellRendererComponent(table, item, false, false, 0, viewCol)
+                    .getTableCellRendererComponent(table, item, false, false, 0, viewColumnNo)
                     .getPreferredSize().width)
                 .max(Integer::compareTo)
                 .orElse(1);

@@ -31,31 +31,33 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public abstract class FilesPage<T extends FilesPage.FileImportContext> extends AcmAssistantPage<T> {
+public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportContext> extends AcmAssistantPage<T> {
     public interface FileImportContext {
         Set<File> getImportableRoots();
         Set<File> getImportableFiles();
     }
 
     protected enum AUDIO_EXTS {
-        MP3, OGG, A18, WAV, M4A, ACC, WMA;
+        MP3, OGG, M4a, WMA, WAV, A18;
 
         public static boolean isAudioFile(String name) {
             String ext = FilenameUtils.getExtension(name);
             if (ext == null) return false;
-            ext = ext.toUpperCase();
+            ext = ext.toLowerCase();
             return exts.contains(ext);
         }
 
-        static Set<String> exts = new HashSet<>();
-        static { for (AUDIO_EXTS ext : AUDIO_EXTS.values()) {exts.add(ext.name());}}
+        static List<String> exts = new ArrayList<>();
+        static { for (AUDIO_EXTS ext : AUDIO_EXTS.values()) {exts.add(ext.name().toLowerCase());}}
+
+        public static int getWeight(String ext) { return exts.indexOf(ext);}
     }
 
     private final JLabel choosePrompt;
@@ -67,7 +69,7 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
     private final FileTreeModel fileTreeModel;
     private final FileTree fileTreeTable;
 
-    protected FilesPage(PageHelper<T> listener) {
+    protected AbstractFilesPage(PageHelper<T> listener) {
         super(listener);
 
         setLayout(new GridBagLayout());
@@ -87,8 +89,7 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
 
         // Title preview.
         filesPreviewLabel = new JLabel("Files chosen to import:");
-        Insets insets = new Insets(0, 0, 0, 0);
-        gbc.insets = insets;
+        gbc.insets = new Insets(0, 0, 0, 0);
         add(filesPreviewLabel, gbc);
 
         JPanel panel = new JPanel();
@@ -152,7 +153,7 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
      *
      * @param actionEvent is unused.
      */
-    private void onChooseFiles(ActionEvent actionEvent) {
+    private void onChooseFiles(@SuppressWarnings("unused") ActionEvent actionEvent) {
         fileChooser.showOpenDialog(this);
 
         List<File> rootFiles = Arrays.asList(fileChooser.getSelectedFiles());
@@ -218,7 +219,7 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
     private List<File> expandRoots(List<File> roots) {
         // removeAllChildren()
         while (fileTreeModel.getRoot().getChildCount() > 0) {
-            AbstractFileNode node = (AbstractFileNode)fileTreeModel.getRoot().getChildAt(0);
+            AbstractFilesPage.AbstractFileNode node = (AbstractFilesPage.AbstractFileNode)fileTreeModel.getRoot().getChildAt(0);
             fileTreeModel.removeNodeFromParent(node);
         }
         DirectoryNode virtualRoot;
@@ -245,8 +246,7 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
     private AbstractFileNode nodeFromFile(File file) {
         if (file.isDirectory()) {
             DirectoryNode dirNode = new DirectoryNode(file);
-            File[] dirContents = file.listFiles(dirfile -> chooserFilter.accept(dirfile));
-            assert dirContents != null;
+            List<File> dirContents = filesInDirectory(file);
             for (File childFile : dirContents) {
                 AbstractFileNode childNode = nodeFromFile(childFile);
                 if (childNode != null) {
@@ -257,6 +257,36 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
         } else {
             return new FileNode(file);
         }
+    }
+
+    protected List<File> filesInDirectory(File directory) {
+        File[] dirContents = directory.listFiles(dirfile -> chooserFilter.accept(dirfile));
+        if (dirContents != null)
+            return Arrays.asList(dirContents);
+        return new ArrayList<>();
+    }
+
+    protected List<File> preferredFilesInDirectory(File directory) {
+        List<File> files = filesInDirectory(directory);
+        // Remove multiples that differ only by extension.
+        Map<String, File> keepers = new HashMap<>();
+        for (File newFile : files) {
+            String key = FilenameUtils.removeExtension(newFile.getName()).toLowerCase();
+            if (keepers.containsKey(key)) {
+                File keptFile = keepers.get(key);
+                String keptExt = FilenameUtils.getExtension(keptFile.getName()).toLowerCase();
+                String newExt = FilenameUtils.getExtension(newFile.getName()).toLowerCase();
+                // If we don't like the new one better, just continue, and keep the old one.
+                int keptWeight = AUDIO_EXTS.getWeight(keptExt);
+                int newWeight = AUDIO_EXTS.getWeight(newExt);
+                // Highest weight is most preferred.
+                if (newWeight <= keptWeight) {
+                    continue;
+                }
+            }
+            keepers.put(key, newFile);
+        }
+        return new ArrayList<>(keepers.values());
     }
 
     private class FileTree extends JXTreeTable {
@@ -348,7 +378,7 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
          */
         List<File> files() {
             return enumerationAsStream(children())
-                .map(o -> (AbstractFileNode) o)
+                .map(o -> (AbstractFilesPage.AbstractFileNode) o)
                 .map(AbstractFileNode::files)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -387,33 +417,35 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
 
         @Override
         public Object getValueAt(Object node, int column) {
-            return ((AbstractFileNode) node).getValueAt(column);
+            if (node instanceof AbstractFilesPage.AbstractFileNode)
+                return ((AbstractFilesPage.AbstractFileNode) node).getValueAt(column);
+            return null;
         }
 
         @Override
         public Object getChild(Object parent, int index) {
-            if (parent instanceof FilesPage.FileNode) return null;
-            if (parent instanceof FilesPage.DirectoryNode) return ((DirectoryNode) parent).getChildAt(index);
+            if (parent instanceof AbstractFilesPage.FileNode) return null;
+            if (parent instanceof AbstractFilesPage.DirectoryNode) return ((AbstractFilesPage.DirectoryNode) parent).getChildAt(index);
             return getRoot().getChildAt(index);
         }
 
         @Override
         public int getChildCount(Object parent) {
-            if (parent instanceof FilesPage.DirectoryNode) return ((DirectoryNode) parent).getChildCount();
-            if (parent instanceof FilesPage.FileNode) return 0;
+            if (parent instanceof AbstractFilesPage.DirectoryNode) return ((AbstractFilesPage.DirectoryNode) parent).getChildCount();
+            if (parent instanceof AbstractFilesPage.FileNode) return 0;
             return getRoot().getChildCount();
         }
 
         @Override
         public int getIndexOfChild(Object parent, Object child) {
-            if (parent instanceof FilesPage.DirectoryNode)
-                return ((DirectoryNode) parent).getIndex((AbstractFileNode) child);
-            return getRoot().getIndex((AbstractFileNode) child);
+            if (parent instanceof AbstractFilesPage.DirectoryNode)
+                return ((AbstractFilesPage.DirectoryNode) parent).getIndex((AbstractFilesPage.AbstractFileNode) child);
+            return getRoot().getIndex((AbstractFilesPage.AbstractFileNode) child);
         }
 
         @Override
         public boolean isLeaf(Object node) {
-            return node instanceof FilesPage.FileNode;
+            return node instanceof AbstractFilesPage.FileNode;
         }
     }
 
@@ -422,7 +454,7 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
 
         Font defaultFont, monoFont;
 
-        private String renderValue(Object value, boolean isSelected, int column) {
+        private String renderValue(Object value, int column) {
             switch (column) {
             case 0:
                 if (value instanceof File) {
@@ -457,7 +489,7 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
             int column)
         {
             int modelColumn = table.convertColumnIndexToModel(column);
-            String str = renderValue(value, isSelected, modelColumn);
+            String str = renderValue(value, modelColumn);
 //            Color bg = (row%2 == 0) ? bgColor : bgAlternateColor;
             Color bg = (isSelected) ? bgSelectionColor : bgColor;
             setBackground(bg);
@@ -478,8 +510,8 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
             // This method is only called to render the first column, column 0. Sometimes,
             // it is passed the LastComponent() from the tree path, not the actual  value,
             // so if we get a node, convert it to the value.
-            if (value instanceof FilesPage.AbstractFileNode) value = ((AbstractFileNode) value).getValueAt(0);
-            String str = renderValue(value, selected, 0);
+            if (value instanceof AbstractFilesPage.AbstractFileNode) value = ((AbstractFilesPage.AbstractFileNode) value).getValueAt(0);
+            String str = renderValue(value, 0);
 //            Color bg = (row%2 == 0) ? bgColor : bgAlternateColor;
             Color bg = (selected) ? bgSelectionColor : bgColor;
             setBackground(bg);
@@ -490,6 +522,11 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
 
     }
 
+    /**
+     * Encode any 64 bit file size in a short string.
+     * @param longSize of the file.
+     * @return a short string approximating that size.
+     */
     private String fileSizeStr(long longSize) {
         String[] suffixes = { "B ", "kB", "mB", "gB", "tB", "pB", "eB" };
         double size = (double) longSize;
@@ -503,6 +540,13 @@ public abstract class FilesPage<T extends FilesPage.FileImportContext> extends A
         return String.format("%7s", rep);
     }
 
+    /** Format a file's timestamp as a string. On windows systems, does it similarly to
+     * how (one version of) the windows file explorer formats times. On other systems
+     * formats the way bash does, with dates in the current year showing the time, while
+     * farther dates (in a different year) shows the year.
+     * @param date to be formatted.
+     * @return the date as a string.
+     */
     private String fileDateStr(Date date) {
         if (!OsUtils.MAC_OS) {
             // Windows style formatting

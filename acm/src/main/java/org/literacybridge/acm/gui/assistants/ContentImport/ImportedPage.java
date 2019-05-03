@@ -5,9 +5,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.ProblemReviewDialog;
-import org.literacybridge.acm.gui.assistants.Matcher.AudioTarget;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableAudio;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.importexport.AudioImporter;
@@ -45,7 +43,7 @@ import static org.literacybridge.acm.utils.EmailHelper.TR;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 import static org.literacybridge.acm.utils.EmailHelper.sendEmail;
 
-public class ImportedPage extends ContentImportPage<ContentImportContext> {
+public class ImportedPage extends ContentImportBase<ContentImportContext> {
     private static final Logger LOG = Logger.getLogger(ImportedPage.class.getName());
 
     private final JLabel importedMessagesLabel;
@@ -225,7 +223,7 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
      */
     private void performImports() {
         DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
-        Matcher<AudioTarget, ImportableFile, MatchableAudio> matcher = context.matcher;
+        Matcher<AudioTarget, ImportableFile, AudioMatchable> matcher = context.matcher;
         summaryMessage.append(String.format("<h2>Project %s</h2>", dbConfig.getProjectName()));
         summaryMessage.append(String.format("<h3>%s</h3>", localDateTimeFormatter.format(LocalDateTime.now())));
         summaryMessage.append(String.format(
@@ -238,12 +236,10 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
         errorCount = 0;
         progressCount = 0;
         // Look at all of the matches.
-        for (MatchableAudio matchableItem : matcher.matchableItems) {
+        for (AudioMatchable matchableItem : matcher.matchableItems) {
             if (matchableItem.getMatch().isMatch()) {
                 // If not already in the ACM DB, or the "update item" checkbox is on, do the import.
-                boolean okToImport =
-                    !matchableItem.getLeft().hasAudioItem() || matchableItem.getLeft()
-                        .isReplaceOk();
+                boolean okToImport = matchableItem.getLeft().isImportable();
                 if (okToImport) {
                     importOneItem(matchableItem);
                 } else if (matchableItem.getLeft().hasAudioItem()) {
@@ -263,7 +259,7 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
      * Import a single audio file.
      * @param matchableItem to be imported.
      */
-    private void importOneItem(MatchableAudio matchableItem)
+    private void importOneItem(AudioMatchable matchableItem)
     {
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         AudioImporter importer = AudioImporter.getInstance();
@@ -322,7 +318,7 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
      * the appropriate playlist.
      * @param matchableItem to be put into a playlist, if needed.
      */
-    private void ensureAudioInPlaylist(MatchableAudio matchableItem) {
+    private void ensureAudioInPlaylist(AudioMatchable matchableItem) {
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         AudioTarget importableAudio = matchableItem.getLeft();
         Playlist playlist = importableAudio.getPlaylist();
@@ -366,9 +362,9 @@ public class ImportedPage extends ContentImportPage<ContentImportContext> {
      */
     private class ImportHandler implements AudioImporter.AudioItemProcessor {
         private final Category category;
-        private final MatchableAudio matchableItem;
+        private final AudioMatchable matchableItem;
 
-        ImportHandler(Category category, MatchableAudio matchableItem) {
+        ImportHandler(Category category, AudioMatchable matchableItem) {
             this.category = category;
             this.matchableItem = matchableItem;
         }

@@ -6,7 +6,6 @@ import org.jdesktop.swingx.treetable.DefaultMutableTreeTableNode;
 import org.jdesktop.swingx.treetable.DefaultTreeTableModel;
 import org.jdesktop.swingx.treetable.MutableTreeTableNode;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableAudio;
 import org.literacybridge.acm.store.Playlist;
 
 import javax.swing.*;
@@ -27,7 +26,7 @@ import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
-public class ReviewPage extends ContentImportPage<ContentImportContext> {
+public class ReviewPage extends ContentImportBase<ContentImportContext> {
 
 //    private final DefaultListModel<String> importPreviewModel;
     private final DefaultMutableTreeTableNode importPreviewRoot;
@@ -99,12 +98,12 @@ public class ReviewPage extends ContentImportPage<ContentImportContext> {
         }
 
         // For the imports, create a "item from \n file" label, and add to the preview.
-        List<MatchableAudio> importables = context.matcher.matchableItems.stream()
+        List<AudioMatchable> importables = context.matcher.matchableItems.stream()
             .filter(item -> item.getMatch().isMatch() && item.getLeft().isImportable())
             .collect(Collectors.toList());
 
         Map<Playlist, PlaylistNode> playlistNodes = new HashMap<>();
-        for (MatchableAudio importable : importables) {
+        for (AudioMatchable importable : importables) {
             Playlist playlist = importable.getLeft().getPlaylist();
             PlaylistNode playlistNode = playlistNodes.get(playlist);
             if (playlistNode == null) {
@@ -163,12 +162,12 @@ public class ReviewPage extends ContentImportPage<ContentImportContext> {
         }
     }
     private class AudioNode extends DefaultMutableTreeTableNode {
-        AudioNode(MatchableAudio matchable) {
+        AudioNode(AudioMatchable matchable) {
             super(matchable, false);
         }
         @Override
         public Object getValueAt(int column) {
-            MatchableAudio me = (MatchableAudio)getUserObject();
+            AudioMatchable me = (AudioMatchable)getUserObject();
             switch (column) {
             case 0:
                 return me.getLeft().getTitle();

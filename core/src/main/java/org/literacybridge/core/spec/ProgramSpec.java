@@ -84,6 +84,13 @@ public class ProgramSpec {
     }
 
     /**
+     * A list of languages declared for any recipient in the project.
+     * @return a list (in a set) of the ISO 639-3 language codes.
+     */
+    public Set<String> getLanguages() {
+        return getRecipients().stream().map(r -> r.language).collect(Collectors.toSet());
+    }
+    /**
      * Gets a list of used components in the Program. (That is, components which have recipient
      * members.)
      *

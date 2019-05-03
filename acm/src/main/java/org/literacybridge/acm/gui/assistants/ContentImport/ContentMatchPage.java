@@ -1,13 +1,10 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.gui.assistants.Matcher.AudioTarget;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchTableRenderers;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableAudio;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
-import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 import org.literacybridge.acm.gui.assistants.Matcher.MatcherTableTransferHandler;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
@@ -28,7 +25,7 @@ import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
-public class ContentMatchPage extends ContentImportPage<ContentImportContext> {
+public class ContentMatchPage2 extends ContentImportBase<ContentImportContext> {
     private static final int MAXIMUM_THRESHOLD = 100;
     private static final int DEFAULT_THRESHOLD = 80;
     private static final int MINIMUM_THRESHOLD = 60;
@@ -46,7 +43,7 @@ public class ContentMatchPage extends ContentImportPage<ContentImportContext> {
         MatchTableRenderers.isColorCoded = true;
     }
 
-    ContentMatchPage(PageHelper<ContentImportContext> listener) {
+    ContentMatchPage2(PageHelper<ContentImportContext> listener) {
         super(listener);
         setLayout(new GridBagLayout());
 
@@ -106,8 +103,8 @@ public class ContentMatchPage extends ContentImportPage<ContentImportContext> {
         table.setDragEnabled(true);
         table.setDropMode(DropMode.ON);
 
-        TransferHandler matchTableTransferHandler = new MatcherTableTransferHandler<MatchableAudio> (table, model) {
-            public void onMatched(MatchableAudio sourceRow, MatchableAudio targetRow) {
+        TransferHandler matchTableTransferHandler = new MatcherTableTransferHandler<AudioMatchable> (table, model) {
+            public void onMatched(AudioMatchable sourceRow, AudioMatchable targetRow) {
                 context.matcher.setMatch(sourceRow, targetRow);
                 model.fireTableDataChanged();
             }
@@ -159,7 +156,7 @@ public class ContentMatchPage extends ContentImportPage<ContentImportContext> {
         @Override
         public void mouseClicked(MouseEvent e) {
             if (e.getClickCount() == 2) {
-                MatchableAudio selectedRow = selectedRow();
+                AudioMatchable selectedRow = selectedRow();
                 if (selectedRow != null && selectedRow.getMatch().isUnmatched()) {
                     onManualMatch(null);
                 }
@@ -171,7 +168,7 @@ public class ContentMatchPage extends ContentImportPage<ContentImportContext> {
         int viewRow = table.getSelectionModel().getLeadSelectionIndex();
         if (viewRow >= 0) {
             int modelRow = table.convertRowIndexToModel(viewRow);
-            MatchableAudio row = model.getRowAt(modelRow);
+            AudioMatchable row = model.getRowAt(modelRow);
             if (row != null && row.getMatch().isMatch()) {
                 context.matcher.unMatch(modelRow);
                 model.fireTableDataChanged();
@@ -180,8 +177,8 @@ public class ContentMatchPage extends ContentImportPage<ContentImportContext> {
     }
 
     private void onManualMatch(ActionEvent actionEvent) {
-        MatchableAudio selectedRow = selectedRow();
-        MatchableAudio chosenMatch = null;
+        AudioMatchable selectedRow = selectedRow();
+        AudioMatchable chosenMatch = null;
 
         ManualMatcherDialog dialog = new ManualMatcherDialog();
         if (selectedRow.getMatch().isUnmatched()) {
@@ -195,13 +192,13 @@ public class ContentMatchPage extends ContentImportPage<ContentImportContext> {
     }
 
     private void enableButtons() {
-        MatchableAudio row = selectedRow();
+        AudioMatchable row = selectedRow();
         unMatch.setEnabled(row != null && row.getMatch().isMatch());
         manualMatch.setEnabled(row != null && !row.getMatch().isMatch());
     }
     
-    private MatchableAudio selectedRow() {
-        MatchableAudio row = null;
+    private AudioMatchable selectedRow() {
+        AudioMatchable row = null;
         int viewRow = table.getSelectionModel().getLeadSelectionIndex();
         if (viewRow >= 0) {
             int modelRow = table.convertRowIndexToModel(viewRow);
@@ -241,12 +238,12 @@ public class ContentMatchPage extends ContentImportPage<ContentImportContext> {
             .collect(Collectors.toList());
 
         if (progressing) {
-            context.matcher.setData(titles, files, MatchableAudio::new);
+            context.matcher.setData(titles, files, AudioMatchable::new);
             model.setData(context.matcher.matchableItems);
-            autoMatch();
-        } else {
-            model.fireTableDataChanged();
+            context.matcher.autoMatch(context.fuzzyThreshold);
+            context.matcher.sortByProgramSpecification();
         }
+        model.fireTableDataChanged();
 
         setComplete();
     }
@@ -255,22 +252,6 @@ public class ContentMatchPage extends ContentImportPage<ContentImportContext> {
     protected void onPageLeaving(boolean progressing) {
         if (progressing) {
             context.matcher.sortByProgramSpecification();
-        }
-    }
-
-    /**
-     * Performs a sequence of exact/fuzzy/token matches (using the current value of threshold),
-     * and then sorts the contents.
-     */
-    private void autoMatch() {
-        Matcher.MatchStats result = new Matcher.MatchStats();
-        if (context.matcher != null) {
-            result.add(context.matcher.findExactMatches());
-            result.add(context.matcher.findFuzzyMatches(context.fuzzyThreshold));
-            result.add(context.matcher.findTokenMatches(context.fuzzyThreshold));
-            context.matcher.sortByProgramSpecification();
-            model.fireTableDataChanged();
-            System.out.println(result.toString());
         }
     }
 

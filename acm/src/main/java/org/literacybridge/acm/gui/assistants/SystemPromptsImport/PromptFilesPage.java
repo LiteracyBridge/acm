@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.assistants.ContentImport;
+package org.literacybridge.acm.gui.assistants.SystemPromptsImport;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
@@ -10,10 +10,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class ContentFilesPage extends AbstractFilesPage<ContentImportContext> {
-    private ContentImportBase.ImportReminderLine importReminderLine;
-
-    ContentFilesPage(PageHelper<ContentImportContext> listener) {
+public class PromptFilesPage extends AbstractFilesPage<PromptImportContext> {
+    PromptFilesPage(PageHelper<PromptImportContext> listener) {
         super(listener);
     }
 
@@ -21,11 +19,13 @@ public class ContentFilesPage extends AbstractFilesPage<ContentImportContext> {
         List<JComponent> components = new ArrayList<>();
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2em'>Choose Files to Import.</span>"
-                + "<br/><br/><p>Choose the files that you wish to import.</p>" + "</html>");
+                + "<br/><br/><p>Choose the files containing the system prompts that you wish to import.</p>" + "</html>");
         components.add(welcome);
 
-        importReminderLine = new ContentImportBase.ImportReminderLine();
-        components.add(importReminderLine.getLine());
+        Box hbox = Box.createHorizontalBox();
+        hbox.add(new JLabel("Importing System Prompts."));
+        hbox.add(Box.createHorizontalGlue());
+        components.add(hbox);
 
         return components;
     }
@@ -35,17 +35,14 @@ public class ContentFilesPage extends AbstractFilesPage<ContentImportContext> {
         super.onPageEntered(progressing);
 
         if (ACMConfiguration.isTestData() && progressing && context.importableRoots.size()==0) {
-            context.importableRoots.addAll(Collections.singletonList(new File("/Users/bill/A-test1")));
+            context.importableRoots.addAll(Collections.singletonList(new File("/Users/bill/A-communities")));
         }
 
-        // Fill deployment and language
-        importReminderLine.getDeployment().setText(Integer.toString(context.deploymentNo));
-        importReminderLine.getLanguage().setText(context.languagecode);
     }
 
     @Override
     protected String getTitle() {
-        return "Files to Import";
+        return "Prompts to Import";
     }
 
 }

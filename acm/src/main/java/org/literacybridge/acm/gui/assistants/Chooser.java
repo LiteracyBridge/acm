@@ -7,17 +7,14 @@ import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.assistants.ContentImport.ContentImportAssistant;
 import org.literacybridge.acm.gui.assistants.Deployment.DeploymentAssistant;
 import org.literacybridge.acm.gui.assistants.GreetingsImport.GreetingsImportAssistant;
+import org.literacybridge.acm.gui.assistants.SystemPromptsImport.PromptImportAssistant;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -99,18 +96,18 @@ public class Chooser extends JDialog {
         panel.add(deploymentButton, gbc);
 
         LabelButton languageButton = new LabelButton(langIcon, "Language Prompts");
-        languageButton.addActionListener(e -> runDeployment());
+        languageButton.addActionListener(e -> runAssistant(PromptImportAssistant::create));
         languageButton.setMinimumSize(size);
         languageButton.setPreferredSize(size);
         panel.add(languageButton, gbc);
-        languageButton.setEnabled(false);
+        languageButton.setEnabled(true);
 
         LabelButton playlistButton = new LabelButton(plIcon, "Playlist Prompts");
         playlistButton.addActionListener(e -> runDeployment());
         playlistButton.setMinimumSize(size);
         playlistButton.setPreferredSize(size);
         panel.add(playlistButton, gbc);
-        playlistButton.setEnabled(true);
+        playlistButton.setEnabled(false);
 
         // To experiment with sizes, uncomment this, and comment out "setUndecorated(true)"
 //        panel.addComponentListener(new ComponentAdapter() {

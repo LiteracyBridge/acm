@@ -1,10 +1,11 @@
-package org.literacybridge.acm.gui.assistants.Matcher;
+package org.literacybridge.acm.gui.assistants.ContentImport;
 
+import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
+import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
+import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 import org.literacybridge.core.spec.ContentSpec;
 
-import java.util.Comparator;
-
-public class AudioMatcher extends Matcher<AudioTarget, ImportableFile, MatchableAudio>  {
+public class AudioMatcher extends Matcher<AudioTarget, ImportableFile, AudioMatchable> {
     public void sortByProgramSpecification() {
         matchableItems.sort((o1, o2) -> {
             MATCH m1 = o1.getMatch();

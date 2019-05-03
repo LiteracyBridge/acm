@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.assistants.GreetingsImport;
+package org.literacybridge.acm.gui.assistants.SystemPromptsImport;
 
 import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.Constants;
@@ -19,8 +19,6 @@ import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.EmailHelper.TD;
 import org.literacybridge.acm.utils.Version;
-import org.literacybridge.core.spec.Recipient;
-import org.literacybridge.core.tbloader.TBLoaderConstants;
 
 import javax.swing.*;
 import java.awt.Color;
@@ -44,7 +42,7 @@ import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
-public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportContext> {
+public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
 
     private final JLabel statusLabel;
     private final JProgressBar progressBar;
@@ -64,7 +62,7 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
     private ExternalConverter externalConverter;
     private DBConfiguration dbConfig;
 
-    GreetingsImportedPage(Assistant.PageHelper<GreetingsImportContext> listener) {
+    PromptImportedPage(Assistant.PageHelper<PromptImportContext> listener) {
         super(listener);
 
         setLayout(new GridBagLayout());
@@ -121,9 +119,10 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
 
     @Override
     protected void onPageEntered(boolean progressing) {
-        List<GreetingMatchable> matches = context.matcher.matchableItems
-            .filtered((item) -> item.getMatch().isMatch())
+        List<PromptMatchable> matches = context.matcher.matchableItems
+            .filtered((item)->item.getMatch().isMatch())
             .filtered((item) -> item.getLeft().isImportable());
+
         progressBar.setMaximum(matches.size()+1);
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         SwingWorker worker = new SwingWorker<Integer, Void>() {
@@ -140,7 +139,10 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
                 setCursor(Cursor.getDefaultCursor());
                 summaryMessage.append(summaryTable.toString());
                 summaryMessage.append("</html>");
-                EmailHelper.sendNotificationEmail("Greetings Imported", summaryMessage.toString());
+                EmailHelper.sendNotificationEmail(
+                    String.format("%s System Prompts Imported for language %s",
+                        dbConfig.getProjectName(), getLanguageAndName(context.languagecode)),
+                    summaryMessage.toString());
                 UIUtils.setProgressBarValue(progressBar, ++progressCount);
                 setComplete();
                 progressBar.setVisible(false);
@@ -180,18 +182,18 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
             computerName = "UNKNOWN";
         }
 
-        String message = "<html>The following error(s) occurred when attempting to import greetings. " +
+        String message = "<html>The following error(s) occurred when attempting to import system prompts. " +
             "Please double check that the greetings are good audio. If possible, try listening to the " +
             "messages outside of the ACM application. If the problem persists, contact Amplio technical " +
             "support. The button below will send this report to Amplio."+
             "</html>";
-        String reportHeading = String.format("Error report from Greetings Import Assistant%n%n" +
-                "Project %s, User %s (%s), Computer %s%nGreetings Import at %s%n" +
-                "ACM Version %s, built %s%n",
+        String reportHeading = String.format("Error report from Greetings Import Assistant\n\n" +
+                "Project %s, User %s (%s), Computer %s, Language %s\nSystem Prompts Import at %s\n" +
+                "ACM Version %s, built %s\n",
             dbConfig.getProjectName(),
             ACMConfiguration.getInstance().getUserName(),
             ACMConfiguration.getInstance().getUserContact(),
-            computerName,
+            computerName, getLanguageAndName(context.languagecode),
             localDateTimeFormatter.format(LocalDateTime.now()),
             Constants.ACM_VERSION, Version.buildTimestamp);
 
@@ -199,17 +201,18 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
         dialog.showProblems(message, reportHeading, null, errors);
     }
 
-    private void performImports(List<GreetingMatchable> matches) {
+    private void performImports(List<PromptMatchable> matches) {
         dbConfig = ACMConfiguration.getInstance().getCurrentDB();
         Map<String, String> recipientsMap = context.programSpec.getRecipientsMap();
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
         File communitiesDir = new File(tbLoadersDir, "communities");
+        File languageDir = new File("boo!");
 
         externalConverter = new ExternalConverter();
 
         summaryMessage.append(String.format("<h2>Project %s</h2>", dbConfig.getProjectName()));
         summaryMessage.append(String.format("<h3>%s</h3>", localDateTimeFormatter.format(LocalDateTime.now())));
-        summaryMessage.append("<p>Importing Greetings.</p>");
+        summaryMessage.append(String.format("<p>Importing System Prompts for language %s.</p>", getLanguageAndName(context.languagecode)));
 
         importCount = 0;
         updateCount = 0;
@@ -221,40 +224,25 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
             .forEach((item) -> {
                 try {
                     // Make sure the directories exist. Create the .grp file if it doesn't exist.
-                    Recipient recipient = item.getLeft().getRecipient();
+                    String promptId = item.getLeft().getPromptId();
                     UIUtils.setLabelText(currentMessage, item.getLeft().toString());
-                    File recipientDir = new File(communitiesDir, recipientsMap.get(recipient.recipientid));
-                    File languagesDir = new File(recipientDir, "languages");
-                    File languageDir = new File(languagesDir, recipient.language);
-                    File greeting = new File(languageDir, "10.a18");
-                    boolean isReplace = greeting.exists();
+                    File promptFile = new File(languageDir, promptId+".a18");
+                    boolean isReplace = promptFile.exists();
                     summaryTable.append(new EmailHelper.TR(isReplace?"Replace":"Import", item.getLeft().toString(), item.getRight().getFile().toString()));
-                    if (!greeting.exists()) {
+                    if (!promptFile.exists()) {
                         if (!languageDir.exists()) {
                             if (!languageDir.mkdirs()) throw new Exception(String.format("Unable to create directory '%s'", languageDir.getAbsolutePath()));
                             summaryTable.append(new EmailHelper.TR(new TD(), new TD("Created language directory")));
                         }
-                        File systemDir = new File(recipientDir, "system");
-                        if (!systemDir.exists()) {
-                            if (!systemDir.mkdirs()) throw new Exception(String.format("Unable to create directory '%s'",systemDir.getAbsolutePath()));
-                            summaryTable.append(new EmailHelper.TR(new TD(), new TD("Created system directory")));
-                        }
-                        File grpFile = new File(systemDir, recipient.language + TBLoaderConstants.GROUP_FILE_EXTENSION);
-                        if (!grpFile.exists()) {
-                            if (!grpFile.createNewFile()) throw new Exception(String.format("Unable to create 'grp' file '%s'", grpFile.getAbsolutePath()));
-                            summaryTable.append(new EmailHelper.TR(new TD(), new TD("Created .grp file")));
-                        }
                     }
                     // Import the audio.
                     File sourceFile = item.getRight().getFile();
-                    copyOrConvert(item.getLeft(), sourceFile, greeting);
+                    copyOrConvert(item.getLeft(), sourceFile, promptFile);
 
                     if (isReplace) {
-                        updateCount++;
-                        UIUtils.setLabelText(updatedMessagesLabel, Integer.toString(updateCount));
+                        UIUtils.setLabelText(updatedMessagesLabel, Integer.toString(++updateCount));
                     } else {
-                        importCount++;
-                        UIUtils.setLabelText(importedMessagesLabel, Integer.toString(importCount));
+                        UIUtils.setLabelText(importedMessagesLabel, Integer.toString(++importCount));
                     }
 
                 } catch (Exception e) {
@@ -273,10 +261,10 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
             });
     }
 
-    private void copyOrConvert(GreetingTarget target, File fromFile, File toFile)
+    private void copyOrConvert(PromptTarget target, File fromFile, File toFile)
         throws BaseAudioConverter.ConversionException, IOException
     {
-        Recipient recipient = target.getRecipient();
+        String promptId = target.getPromptId();
         Metadata metadata = AudioImporter.getInstance().getExistingMetadata(fromFile);
         // Don't expect to usually find existing metadata.
         if (metadata == null) {
@@ -286,9 +274,9 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
         // get a new id, even if the object already had one.
         String id = ACMConfiguration.getInstance().getNewAudioItemUID();
         metadata.put(DC_IDENTIFIER, id);
-        metadata.put(DC_LANGUAGE, recipient.language);
+        metadata.put(DC_LANGUAGE, context.languagecode);
         metadata.put(DC_TITLE, target.toString());
-        Category communities = dbConfig.getMetadataStore().getCategory(Constants.CATEGORY_COMMUNITIES);
+        Category communities = dbConfig.getMetadataStore().getCategory(Constants.CATEGORY_TB_SYSTEM);
         categories.add(communities);
 
         if (FilenameUtils.getExtension(fromFile.getName()).equalsIgnoreCase(AudioItemRepository.AudioFormat.A18.getFileExtension())) {

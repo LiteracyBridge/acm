@@ -16,6 +16,7 @@ public class Recipient {
         numtbs,
         supportentity, /*model,*/
         language, /*coordinates*/
+        agent
     };
 
     public static String[] columnNames;
@@ -37,30 +38,8 @@ public class Recipient {
     public final int numtbs;
     public final String supportentity;
     public final String language;
+    public final String agent;
     
-    public Recipient(String recipientid,
-        String communityname,
-        String groupname,
-        String component,
-        String country,
-        String region,
-        String district,
-        String numtbs,
-        String supportentity,
-        String language)
-    {
-        this.recipientid = recipientid;
-        this.communityname = communityname;
-        this.groupname = groupname;
-        this.component = component;
-        this.country = country;
-        this.region = region;
-        this.district = district;
-        this.numtbs = Integer.parseInt(numtbs);
-        this.supportentity = supportentity;
-        this.language = language;
-    }
-
     public Recipient(Map<String, String> properties) {
         this.recipientid = properties.get(columns.recipientid.name());
         this.communityname = properties.get(columns.communityname.name());
@@ -70,13 +49,15 @@ public class Recipient {
         this.region = properties.get(columns.region.name());
         this.district = properties.get(columns.district.name());
         this.numtbs = Integer.parseInt(properties.get(columns.numtbs.name()));
+        String agentKey = properties.containsKey(columns.agent.name()) ? columns.agent.name() : columns.supportentity.name();
+        this.agent = properties.get(agentKey);
         this.supportentity = properties.get(columns.supportentity.name());
         this.language = properties.get(columns.language.name());
     }
 
     public String getName() {
         return String.format("%s / %s / %s / %s / %s / %s",
-            country, region, district, communityname, groupname, supportentity);
+            country, region, district, communityname, groupname, agent);
     }
 
 }

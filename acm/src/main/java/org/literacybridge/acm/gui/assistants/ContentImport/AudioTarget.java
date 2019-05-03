@@ -1,5 +1,6 @@
-package org.literacybridge.acm.gui.assistants.Matcher;
+package org.literacybridge.acm.gui.assistants.ContentImport;
 
+import org.literacybridge.acm.gui.assistants.Matcher.Target;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ContentSpec.MessageSpec;

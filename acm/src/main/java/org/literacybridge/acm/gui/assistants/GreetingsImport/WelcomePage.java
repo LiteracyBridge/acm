@@ -103,6 +103,7 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
         File programSpecDir = ACMConfiguration.getInstance().getProgramSpecDirFor(project);
 
         context.programSpec = new ProgramSpec(programSpecDir);
+        context.recipientColumnProvider = context.new RecipientColumnProvider();
     }
 
     private void findRecipientsWithRecordings() {
@@ -172,7 +173,7 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
 
     private class RecipientModel extends AbstractRecipientsModel {
         RecipientModel() {
-            super(context.programSpec.getRecipients());
+            super(context.recipientColumnProvider);
         }
 
         @Override

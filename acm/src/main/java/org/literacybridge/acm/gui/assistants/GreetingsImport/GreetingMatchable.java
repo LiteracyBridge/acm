@@ -1,21 +1,24 @@
-package org.literacybridge.acm.gui.assistants.Matcher;
+package org.literacybridge.acm.gui.assistants.GreetingsImport;
 
+import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
+import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
 import org.literacybridge.core.spec.Recipient;
 
-public class MatchableGreeting extends MatchableItem<GreetingsTarget, ImportableFile> {
+public class GreetingMatchable extends MatchableItem<GreetingTarget, ImportableFile> {
 
-    public MatchableGreeting(GreetingsTarget left, ImportableFile right) {
+    public GreetingMatchable(GreetingTarget left, ImportableFile right) {
         super(left, right);
     }
 
-    public MatchableGreeting(GreetingsTarget left,
+    public GreetingMatchable(GreetingTarget left,
         ImportableFile right,
         MATCH match)
     {
         super(left, right, match);
     }
 
-    public MatchableGreeting(GreetingsTarget left,
+    public GreetingMatchable(GreetingTarget left,
         ImportableFile right,
         MATCH match,
         int score)
@@ -30,15 +33,15 @@ public class MatchableGreeting extends MatchableItem<GreetingsTarget, Importable
             Recipient recipient = getLeft().getRecipient();
             if (recipient.communityname.toLowerCase().contains(filterText) ||
                 recipient.groupname.toLowerCase().contains(filterText) ||
-                recipient.supportentity.toLowerCase().contains(filterText))
+                recipient.agent.toLowerCase().contains(filterText))
                 return true;
         }
         return false;
     }
 
     @Override
-    public MatchableGreeting disassociate() {
-        MatchableGreeting disassociated = new MatchableGreeting(null, getRight(), MATCH.RIGHT_ONLY);
+    public GreetingMatchable disassociate() {
+        GreetingMatchable disassociated = new GreetingMatchable(null, getRight(), MATCH.RIGHT_ONLY);
         setRight(null);
         setMatch(MATCH.LEFT_ONLY);
         setScore(0);

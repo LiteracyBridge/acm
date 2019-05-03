@@ -1,7 +1,6 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableAudio;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -34,7 +33,7 @@ public class MatcherTable extends JTable {
         setPreferredScrollableViewportSize(new Dimension(500, 70));
     }
 
-    public void setFilter(Predicate<MatchableAudio> predicate) {
+    public void setFilter(Predicate<AudioMatchable> predicate) {
         filter.setPredicate(predicate);
     }
 

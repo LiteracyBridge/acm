@@ -1,9 +1,7 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.gui.assistants.Matcher.IMatcherTableModel;
-import org.literacybridge.acm.gui.assistants.Matcher.AudioTarget;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableAudio;
 
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
@@ -12,7 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class MatcherTableModel extends AbstractTableModel implements
-                                                          IMatcherTableModel<MatchableAudio> {
+                                                          IMatcherTableModel<AudioMatchable> {
     public enum Columns {
         Left(AudioTarget.class, "Audio Item"),
         Right(ImportableFile.class, "File"),
@@ -38,7 +36,7 @@ public class MatcherTableModel extends AbstractTableModel implements
 
 
     private MatcherTable table;
-    private List<MatchableAudio> data;
+    private List<AudioMatchable> data;
 
     MatcherTableModel(MatcherTable table) {
         this.table = table;
@@ -72,7 +70,7 @@ public class MatcherTableModel extends AbstractTableModel implements
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        MatchableAudio row = getRowAt(rowIndex);
+        AudioMatchable row = getRowAt(rowIndex);
         if (row == null || columnIndex<0 || columnIndex>=Columns.values().length)
             return null;
         Columns which = Columns.values()[columnIndex];
@@ -88,7 +86,7 @@ public class MatcherTableModel extends AbstractTableModel implements
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         if (columnIndex != Columns.Update.ordinal()) return false;
-        MatchableAudio row = getRowAt(rowIndex);
+        AudioMatchable row = getRowAt(rowIndex);
         if (row == null) return false;
         // If the row is a match AND has an existing audio item, enable the [ ] Replace checkbox.
         return row.getMatch().isMatch() && row.getLeft().hasAudioItem();
@@ -97,7 +95,7 @@ public class MatcherTableModel extends AbstractTableModel implements
     @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
         if (columnIndex != Columns.Update.ordinal()) return;
-        MatchableAudio row = getRowAt(rowIndex);
+        AudioMatchable row = getRowAt(rowIndex);
         if (row == null) return;
         // If the row is a match AND has an existing audio item, enable the [ ] Replace checkbox.
         if (!(row.getMatch().isMatch() && row.getLeft().hasAudioItem())) return;
@@ -116,13 +114,13 @@ public class MatcherTableModel extends AbstractTableModel implements
         super.fireTableDataChanged();
     }
 
-    public MatchableAudio getRowAt(int rowIndex) {
+    public AudioMatchable getRowAt(int rowIndex) {
         if (rowIndex < 0 || rowIndex >= data.size())
             return null;
         return data.get(rowIndex);
     }
 
-    public void setData(List<MatchableAudio> data) {
+    public void setData(List<AudioMatchable> data) {
         this.data = data;
         fireTableDataChanged();
         table.sizeColumns();

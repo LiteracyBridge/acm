@@ -1,6 +1,10 @@
-package org.literacybridge.acm.gui.assistants.Matcher;
+package org.literacybridge.acm.gui.assistants.ContentImport;
 
-public class MatchableAudio extends MatchableItem<AudioTarget, ImportableFile> {
+import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
+import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
+
+public class AudioMatchable extends MatchableItem<AudioTarget, ImportableFile> {
 
     /**
      * If there's a match, and there's an existing AudioItem, and user is OK with it, then the
@@ -10,17 +14,17 @@ public class MatchableAudio extends MatchableItem<AudioTarget, ImportableFile> {
 //    public boolean isUpdate() {
 //        return getMatch().isMatch() && getLeft().hasAudioItem() && getLeft().isReplaceOk();
 //    }
-    private MatchableAudio(AudioTarget left, ImportableFile right, MATCH match) {
+    private AudioMatchable(AudioTarget left, ImportableFile right, MATCH match) {
         super(left, right, match);
     }
 
-    public MatchableAudio(AudioTarget left, ImportableFile right) {
+    public AudioMatchable(AudioTarget left, ImportableFile right) {
         super(left, right);
     }
 
     @Override
-    public MatchableAudio disassociate() {
-        MatchableAudio disassociated = new MatchableAudio(null, getRight(), MATCH.RIGHT_ONLY);
+    public AudioMatchable disassociate() {
+        AudioMatchable disassociated = new AudioMatchable(null, getRight(), MATCH.RIGHT_ONLY);
         setRight(null);
         setMatch(MATCH.LEFT_ONLY);
         setScore(0);

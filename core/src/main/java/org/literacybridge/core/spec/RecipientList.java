@@ -10,17 +10,18 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class RecipientList extends DelayeredHierarchicalList<RecipientList.RecipientAdapter> {
     // Note that the view presented by the parent class may omit some of these. use getNameOfLevel(ix)
-    private final static String[] NAMES = {"Country", "Region", "District", "Community", "Group", "Support Entity / Agent"};
-    private final static String[] PLURALS = {"Countries", "Regions", "Districts", "Communities", "Groups", "Support Entities / Agents"};
-    private final static boolean[] NON_OMITTABLES = {false, false, false, true, false, false};
+    private final static String[] NAMES = {"Country", "Region", "District", "Community", "Group", "Agent"};
+    private final static String[] PLURALS = {"Countries", "Regions", "Districts", "Communities", "Groups", "Agents"};
+    private final static String[] REQUIRED_ALWAYS = {"Community"};
     
     private final Map<String, Integer> numTbsCache = new HashMap<>();
 
     RecipientList() {
-        super(new HierarchyInfo<>(NAMES, PLURALS, NON_OMITTABLES));
+        super(new HierarchyInfo<>(NAMES, PLURALS, REQUIRED_ALWAYS));
     }
 
     public String getSingular(int level) {
@@ -72,11 +73,10 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
         return add(r);
     }
 
-    public int[] getAdapterIndicesForValues(String[] names) {
+    public List<Integer> getAdapterIndicesForValues(List<String> names) {
         List<String> namesList = Arrays.asList(NAMES);
-        int[] result = new int[names.length];
-        for (int ix=0; ix<names.length; ix++) result[ix] = namesList.indexOf(names[ix]);
-        return result;
+        int[] result = new int[names.size()];
+        return names.stream().map(namesList::indexOf).collect(Collectors.toList());
     }
 
     /**
@@ -94,7 +94,7 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
             case 2: return district;
             case 3: return communityname;
             case 4: return groupname;
-            case 5: return supportentity;
+            case 5: return agent;
             }
             return null;
         }

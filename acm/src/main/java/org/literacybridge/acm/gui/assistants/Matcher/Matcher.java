@@ -4,6 +4,7 @@ import javafx.beans.Observable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import me.xdrop.fuzzywuzzy.FuzzySearch;
+import org.literacybridge.acm.gui.assistants.ContentImport.AudioMatchable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,6 +48,16 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         }
 
         Collections.sort(matchableItems);
+    }
+
+    public MatchStats autoMatch(int threshold) {
+        MatchStats result = new MatchStats();
+        result.add(findExactMatches());
+        result.add(findFuzzyMatches(threshold));
+        result.add(findTokenMatches(threshold));
+        //context.matcher.sortByProgramSpecification();
+        System.out.println(result.toString());
+        return result;
     }
 
     public MatchStats findExactMatches() {
@@ -186,7 +197,7 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
             // Stop when the matches aren't good enough.
             if (mc.score < threshold) break;
             // If we haven't already matched this item, match it now.
-            if (!mc.leftItem.getMatch().isMatch()) {
+            if (mc.leftItem.getMatch()==MATCH.LEFT_ONLY && mc.rightItem.getMatch()==MATCH.RIGHT_ONLY) {
                 result.matches++;
                 recordMatch(mc.leftItem, mc.rightItem, matchFlavor, mc.score);
             }
@@ -235,7 +246,7 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
             }
         }
     }
-    public void unMatch(MatchableAudio item) {
+    public void unMatch(AudioMatchable item) {
         int itemIndex = matchableItems.indexOf(item);
         if (item.getMatch().isMatch()) {
             T disassociated = (T) item.disassociate();

@@ -1,16 +1,16 @@
-package org.literacybridge.acm.gui.assistants.GreetingsImport;
+package org.literacybridge.acm.gui.assistants.SystemPromptsImport;
 
 import org.literacybridge.acm.gui.assistants.Matcher.AbstractManualMatcherDialog;
 
-public class ManualMatcherDialog extends AbstractManualMatcherDialog<GreetingMatchable> {
+public class ManualMatcherDialog extends AbstractManualMatcherDialog<PromptMatchable> {
 
     @Override
     protected String leftDescription() {
-        return "Recipient";
+        return "Prompt";
     }
 
     @Override
     protected String rightDescription() {
-        return "Greeting";
+        return "Audio";
     }
 }

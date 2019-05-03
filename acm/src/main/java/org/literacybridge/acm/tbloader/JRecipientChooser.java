@@ -26,7 +26,7 @@ import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.LINE_START;
 
 /**
- * A Swing component to choose a recipient by country/region/district/community/group/supportentity-group.
+ * A Swing component to choose a recipient by country/region/district/community/group/agent.
  *
  * Smart about the fields displayed and enabled, so that user only needs to chose where there are
  * actually multiple items to choose from.

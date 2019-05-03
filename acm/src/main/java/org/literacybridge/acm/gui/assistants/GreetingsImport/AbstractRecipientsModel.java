@@ -1,13 +1,8 @@
 package org.literacybridge.acm.gui.assistants.GreetingsImport;
 
-import org.literacybridge.core.spec.RecipientList;
+import org.literacybridge.core.spec.RecipientList.RecipientAdapter;
 
 import javax.swing.table.AbstractTableModel;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.IntStream;
 
 /**
  * Abstract base class for a Table Model with a RecipientAdapter as the first one or more columns.
@@ -30,43 +25,26 @@ abstract class AbstractRecipientsModel extends AbstractTableModel {
      * only names in that collection are added to the model.
      */
 
-    private int[] recipientColumnsMap;
-    int maxRecipientColumn;
-    int numRecipientColumns;
+    private GreetingsImportContext.RecipientColumnProvider recipientColumnProvider;
 
-    List<String> columnNames = new ArrayList<>();
-
-    AbstractRecipientsModel(RecipientList recipients) {
-        this(recipients, null);
-    }
-
-    AbstractRecipientsModel(RecipientList recipients, final Collection<String> columnsOfInterest) {
-        String[] recipientColumnNames = IntStream.rangeClosed(0, recipients.getMaxLevel())
-            .mapToObj(recipients::getNameOfLevel)
-            .filter(it -> columnsOfInterest == null || columnsOfInterest.contains(it))
-            .toArray(String[]::new);
-        recipientColumnsMap = recipients.getAdapterIndicesForValues(recipientColumnNames);
-        numRecipientColumns = recipientColumnNames.length;
-        maxRecipientColumn = numRecipientColumns-1;
-
-        columnNames.addAll(Arrays.asList(recipientColumnNames));
+    AbstractRecipientsModel(GreetingsImportContext.RecipientColumnProvider recipientColumnProvider) {
+        this.recipientColumnProvider = recipientColumnProvider;
     }
 
     @Override
     public int getColumnCount() {
-        return columnNames.size();
+        return recipientColumnProvider.getColumnCount();
     }
 
     @Override
     public String getColumnName(int column) {
-        return columnNames.get(column);
+        return recipientColumnProvider.getColumnName(column);
     }
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        RecipientList.RecipientAdapter recipient = getRecipientAt(rowIndex);
-        if (recipient == null) return "";
-        return recipient.getValue(recipientColumnsMap[columnIndex]);
+        RecipientAdapter target = getRecipientAt(rowIndex);
+        return recipientColumnProvider.getValueAt(target, columnIndex);
     }
 
     /**
@@ -74,6 +52,6 @@ abstract class AbstractRecipientsModel extends AbstractTableModel {
      * @param rowIndex for which the Recipient is needed.
      * @return the recipient.
      */
-    abstract RecipientList.RecipientAdapter getRecipientAt(int rowIndex);
+    abstract RecipientAdapter getRecipientAt(int rowIndex);
 }
 

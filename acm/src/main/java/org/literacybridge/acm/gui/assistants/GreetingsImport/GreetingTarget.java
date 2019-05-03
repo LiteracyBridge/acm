@@ -1,15 +1,17 @@
-package org.literacybridge.acm.gui.assistants.Matcher;
+package org.literacybridge.acm.gui.assistants.GreetingsImport;
 
+import org.apache.commons.lang.StringUtils;
+import org.literacybridge.acm.gui.assistants.Matcher.Target;
 import org.literacybridge.core.spec.RecipientList;
 
-public class GreetingsTarget extends Target {
+public class GreetingTarget extends Target {
     // The Recipient, obviously. From the Program Specification.
     private RecipientList.RecipientAdapter recipientAdapter;
 
     // Is there already an audio greeting for the Recipient in the ACM?
     private boolean hasGreeting;
 
-    public GreetingsTarget(RecipientList.RecipientAdapter recipientAdapter) {
+    public GreetingTarget(RecipientList.RecipientAdapter recipientAdapter) {
         this.recipientAdapter = recipientAdapter;
     }
 
@@ -30,6 +32,13 @@ public class GreetingsTarget extends Target {
 
     @Override
     public String toString() {
-        return recipientAdapter.getName();
+        StringBuilder result = new StringBuilder(recipientAdapter.communityname);
+        if (StringUtils.isNotBlank(recipientAdapter.groupname)) {
+            result.append('-').append(recipientAdapter.groupname);
+        }
+        if (StringUtils.isNotBlank(recipientAdapter.agent)) {
+            result.append('-').append(recipientAdapter.agent);
+        }
+        return result.toString();
     }
 }
