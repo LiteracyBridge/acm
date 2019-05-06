@@ -116,12 +116,14 @@ public class FsFile extends TbFile {
 
         List<FsFile> filteredFiles = new ArrayList<>();
         File[] files = file.listFiles();
-        for (File file : files) {
-            if (filter == null || filter.accept(this, file.getName())) {
-                filteredFiles.add(new FsFile(file));
+        if (files != null) {
+            for (File file : files) {
+                if (filter == null || filter.accept(this, file.getName())) {
+                    filteredFiles.add(new FsFile(file));
+                }
             }
         }
-        return filteredFiles.toArray(new FsFile[filteredFiles.size()]);
+        return filteredFiles.toArray(new FsFile[0]);
     }
 
     @Override

@@ -138,7 +138,7 @@ public class TBLoaderUtils {
                 });
                 // For each .grp file in the community...
                 groupsLoop:
-                for (String group : groups) {
+                for (String group : groups != null ? groups : new String[0]) {
                     // look for a match in each of images's group listing
                     groupName = group.substring(0, group.length() - 4);
                     for (File image : images) {

@@ -123,9 +123,12 @@ public abstract class TbFile {
         if (!exists()) return numDeleted;
         if (isDirectory() && hasFlag(flags, Flags.recursive, Flags.contentRecursive)) {
             String [] children = list();
-            for (String child : children) {
-                TbFile f = open(child);
-                numDeleted += f.delete(Flags.recursive);
+            // Sometimes isDirectory() is true, but children is nonetheless null.
+            if (children != null) {
+                for (String child : children) {
+                    TbFile f = open(child);
+                    numDeleted += f.delete(Flags.recursive);
+                }
             }
             if (hasFlag(flags, Flags.contentRecursive)) return numDeleted;
         }
@@ -137,9 +140,11 @@ public abstract class TbFile {
         if (!exists()) return;
         if (isDirectory()) {
             String [] children = list();
-            for (String child : children) {
-                TbFile f = open(child);
-                f.deleteDirectory();
+            if (children != null) {
+                for (String child : children) {
+                    TbFile f = open(child);
+                    f.deleteDirectory();
+                }
             }
         }
         delete();
@@ -175,11 +180,13 @@ public abstract class TbFile {
             String[] children = src.list();
             int numCopied = 0;
             long startTime = System.nanoTime();
-            for (String child : children) {
-                TbFile srcChild = src.open(child);
-                if (filter == null || filter.accept(srcChild)) {
-                    numCopied++;
-                    bytesCopied += copyDir(srcChild, dst.open(child), filter, progress);
+            if (children != null) {
+                for (String child : children) {
+                    TbFile srcChild = src.open(child);
+                    if (filter == null || filter.accept(srcChild)) {
+                        numCopied++;
+                        bytesCopied += copyDir(srcChild, dst.open(child), filter, progress);
+                    }
                 }
             }
             double seconds = (System.nanoTime()-startTime)/1e9;

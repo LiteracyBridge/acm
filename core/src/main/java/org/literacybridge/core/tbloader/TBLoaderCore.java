@@ -1060,7 +1060,7 @@ public class TBLoaderCore {
         // Filter to exclude certain named files or directories, anything starting with ".", or ending with ".img" or ".old".
         TbFile.CopyFilter copyFilesFilter = new TbFile.CopyFilter() {
             Set excludedNames = new HashSet<>(Arrays.asList("languages",
-                    "messages",
+                    "audio",
                     "ostats",
                     "inbox",
                     "archive",
