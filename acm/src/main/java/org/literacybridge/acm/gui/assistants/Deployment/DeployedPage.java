@@ -382,6 +382,11 @@ public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
     /**
      * Gets the prompt category to be used in the _activeLists.txt file, and if necessary
      * extracts prompts from the ACM.
+     *
+     * If there is an audio item (ie, in the ACM proper) for the prompt, that will be used
+     * preferentially to the pre-defined prompt, because that is more accessible to the
+     * program manager.
+     * 
      * @param prompts The prompts that were found earlier, if any.
      * @param promptIx The index of the playlist in the Deployment. Used to synthesize the
      *                 category name when there isn't one already existing.
@@ -407,14 +412,14 @@ public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
         AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
         // If there is not a pre-defined set of prompt files, we'll need to extract the
         // content audio to the promptsDir.
-        if (prompts.shortPromptFile == null && prompts.shortPromptItem != null) {
+        if (/*prompts.shortPromptFile == null &&*/ prompts.shortPromptItem != null) {
             if (!promptsDir.exists()) {
                 if (!promptsDir.mkdirs()) errors.add(new MakeDirectoryException("prompts", promptsDir));
             }
             repository.exportA18WithMetadataToFile(prompts.shortPromptItem,
                 new File(promptsDir, promptCat+".a18"));
         }
-        if (prompts.longPromptFile == null && prompts.longPromptItem != null) {
+        if (/*prompts.longPromptFile == null &&*/ prompts.longPromptItem != null) {
             if (!promptsDir.exists()) {
                 if (!promptsDir.mkdirs()) errors.add(new MakeDirectoryException("prompts", promptsDir));
             }

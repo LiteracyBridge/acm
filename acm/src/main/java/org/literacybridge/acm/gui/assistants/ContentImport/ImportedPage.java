@@ -37,6 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.literacybridge.acm.Constants.CATEGORY_GENERAL_OTHER;
+import static org.literacybridge.acm.Constants.CATEGORY_TB_CATEGORIES;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import static org.literacybridge.acm.utils.EmailHelper.HtmlTable;
 import static org.literacybridge.acm.utils.EmailHelper.TR;
@@ -65,6 +66,12 @@ public class ImportedPage extends ContentImportBase<ContentImportContext> {
         .getMetadataStore()
         .getTaxonomy()
         .getCategory(CATEGORY_GENERAL_OTHER);
+    private Category categoriesCategory = ACMConfiguration.getInstance()
+        .getCurrentDB()
+        .getMetadataStore()
+        .getTaxonomy()
+        .getCategory(CATEGORY_TB_CATEGORIES);
+
     private final JLabel statusLabel;
     private final JProgressBar progressBar;
     private final JButton viewErrorsButton;
@@ -242,10 +249,12 @@ public class ImportedPage extends ContentImportBase<ContentImportContext> {
                 boolean okToImport = matchableItem.getLeft().isImportable();
                 if (okToImport) {
                     importOneItem(matchableItem);
-                } else if (matchableItem.getLeft().hasAudioItem()) {
+                } else if (matchableItem.getLeft().hasAudioItem()
+                        && !matchableItem.getLeft().isPlaylist()) {
                     ensureAudioInPlaylist(matchableItem);
                 }
-            } else if (matchableItem.getLeft() != null && matchableItem.getLeft().hasAudioItem()) {
+            } else if (matchableItem.getLeft() != null && matchableItem.getLeft().hasAudioItem()
+                    && !matchableItem.getLeft().isPlaylist()) {
                 ensureAudioInPlaylist(matchableItem);
             }
             UIUtils.setProgressBarValue(progressBar, ++progressCount);
@@ -275,22 +284,25 @@ public class ImportedPage extends ContentImportBase<ContentImportContext> {
                 matchableItem.getRight().getFile().getCanonicalPath());
             UIUtils.setLabelText(currentMessage, msg);
 
-            ImportHandler handler = new ImportHandler(generalOtherCategory, matchableItem);
+            Category cat = matchableItem.getLeft().isPlaylist() ? categoriesCategory : generalOtherCategory;
+            ImportHandler handler = new ImportHandler(cat, matchableItem);
             File importableFile = matchableItem.getRight().getFile();
 
             // Add or update the audio file to the ACM database.
             AudioItem audioItem = importer.importFile(importableFile, handler);
 
-            // If the item isn't already in the playlist, add it.
-            Playlist playlist = importableAudio.getPlaylist();
-            if (!audioItem.hasPlaylist(playlist)) {
-                try {
-                    audioItem.addPlaylist(playlist);
-                    playlist.addAudioItem(audioItem);
-                    store.commit(audioItem, playlist);
-                    summaryTable.append(new TR("Add to Playlist", audioItem.getTitle(), playlist.getName()));
-                } catch (Exception e) {
-                    reportPlaylistException(e, importableAudio, playlist);
+            if (!matchableItem.getLeft().isPlaylist()) {
+                // If the item isn't already in the playlist, add it.
+                Playlist playlist = importableAudio.getPlaylist();
+                if (!audioItem.hasPlaylist(playlist)) {
+                    try {
+                        audioItem.addPlaylist(playlist);
+                        playlist.addAudioItem(audioItem);
+                        store.commit(audioItem, playlist);
+                        summaryTable.append(new TR("Add to Playlist", audioItem.getTitle(), playlist.getName()));
+                    } catch (Exception e) {
+                        reportPlaylistException(e, importableAudio, playlist);
+                    }
                 }
             }
             if (matchableItem.getLeft().hasAudioItem()) {

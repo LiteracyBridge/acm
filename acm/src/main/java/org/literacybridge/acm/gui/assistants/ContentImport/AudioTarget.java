@@ -7,20 +7,16 @@ import org.literacybridge.core.spec.ContentSpec.MessageSpec;
 
 import java.util.Objects;
 
-public class AudioTarget extends Target {
-    private MessageSpec message;
+public abstract class AudioTarget extends Target {
     // The ACM Playlist into which the item will be imported.
-    private Playlist playlist;
-    private AudioItem item;
+    protected Playlist playlist;
+    protected AudioItem item;
 
-    public AudioTarget(MessageSpec message, Playlist playlist) {
-        this.message = message;
+    public AudioTarget(Playlist playlist) {
         this.playlist = playlist;
     }
 
-    public String getTitle() {
-        return message.title;
-    }
+    public abstract String getTitle();
 
     public void setItem(AudioItem item) {
         this.item = item;
@@ -28,36 +24,19 @@ public class AudioTarget extends Target {
     public AudioItem getItem() {
         return item;
     }
-    public boolean hasAudioItem() {
-        return this.item != null;
-    }
-    @Override
-    public boolean targetExists() { return hasAudioItem(); }
+    public abstract boolean hasAudioItem();
 
     public Playlist getPlaylist() {
         return playlist;
     }
-    public MessageSpec getMessage() {
-        return message;
+    private MessageSpec getMessage() {
+        return null;
     }
 
+    public abstract int getPlaylistSpecOrdinal();
+    public abstract int getMessageSpecOrdinal();
 
-    @Override
-    public String toString() {
-        return message.title;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        AudioTarget that = (AudioTarget) o;
-        return message.equals(that.message);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(message, playlist, item);
-    }
+    public abstract boolean isMessage();
+    public abstract boolean isPlaylist();
 
 }

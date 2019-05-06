@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.assistants.Matcher;
 
+import org.literacybridge.acm.gui.assistants.ContentImport.AudioPlaylistTarget;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 
 import javax.swing.*;
@@ -9,6 +10,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
 
 public class MatchTableRenderers<T extends MatchableItem> {
     private static Color selectionColor = new Color(0xFA8072);
@@ -83,7 +85,7 @@ public class MatchTableRenderers<T extends MatchableItem> {
                         custom = tokenColor;
                     break;
                 case LEFT_ONLY:
-                    if (model.isLeftColumn(column)) custom = leftColor;
+                    if (model.isLeftColumn(column) && !item.getLeft().targetExists()) custom = leftColor;
                     break;
                 case RIGHT_ONLY:
                     if (model.isRightColumn(column)) custom = rightColor;
@@ -152,6 +154,16 @@ public class MatchTableRenderers<T extends MatchableItem> {
 
     public class AudioItemRenderer extends MatcherRenderer {
 
+        private final Font normalFont;
+        private final Font italicFont;
+
+        AudioItemRenderer() {
+            super();
+            normalFont = getFont();
+            italicFont = new Font(normalFont.getName(),
+                normalFont.getStyle()|Font.ITALIC,
+                normalFont.getSize());
+        }
         @Override
         public JLabel getTableCellRendererComponent(JTable table,
             Object value,
@@ -173,6 +185,7 @@ public class MatchTableRenderers<T extends MatchableItem> {
                 } else {
                     icon = AcmAssistantPage.noSoundImage;
                 }
+                setFont(item.getLeft() instanceof AudioPlaylistTarget ? italicFont : normalFont);
             }
             comp.setIcon(icon);
             return comp;

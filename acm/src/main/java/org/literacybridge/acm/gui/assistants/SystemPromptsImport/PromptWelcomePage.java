@@ -62,7 +62,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
         hbox.add(new JLabel("Choose the Language: "));
         languageChooser = new LanguageChooser();
         languageChooser.addActionListener(this::onSelection);
-        setComboWidth(languageChooser, "Detect from file path.");
+        setComboWidth(languageChooser, "Choose...");
         languageChooser.setMaximumSize(languageChooser.getPreferredSize());
         hbox.add(languageChooser);
         hbox.add(Box.createHorizontalGlue());

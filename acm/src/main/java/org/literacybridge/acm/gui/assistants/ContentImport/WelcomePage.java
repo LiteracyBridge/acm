@@ -78,7 +78,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         hbox.add(new JLabel("and the Language: "));
         languageChooser = new LanguageChooser();
         languageChooser.addActionListener(this::onSelection);
-        setComboWidth(languageChooser, "Detect from file path.");
+        setComboWidth(languageChooser, "Choose...");
         languageChooser.setMaximumSize(languageChooser.getPreferredSize());
         hbox.add(languageChooser);
         hbox.add(Box.createHorizontalGlue());

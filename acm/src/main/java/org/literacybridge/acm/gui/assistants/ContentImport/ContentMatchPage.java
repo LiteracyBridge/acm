@@ -1,6 +1,7 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.gui.assistants.Deployment.PlaylistPrompts;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchTableRenderers;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
-public class ContentMatchPage2 extends ContentImportBase<ContentImportContext> {
+public class ContentMatchPage extends ContentImportBase<ContentImportContext> {
     private static final int MAXIMUM_THRESHOLD = 100;
     private static final int DEFAULT_THRESHOLD = 80;
     private static final int MINIMUM_THRESHOLD = 60;
@@ -43,7 +44,7 @@ public class ContentMatchPage2 extends ContentImportBase<ContentImportContext> {
         MatchTableRenderers.isColorCoded = true;
     }
 
-    ContentMatchPage2(PageHelper<ContentImportContext> listener) {
+    ContentMatchPage(PageHelper<ContentImportContext> listener) {
         super(listener);
         setLayout(new GridBagLayout());
 
@@ -200,7 +201,7 @@ public class ContentMatchPage2 extends ContentImportBase<ContentImportContext> {
     private AudioMatchable selectedRow() {
         AudioMatchable row = null;
         int viewRow = table.getSelectionModel().getLeadSelectionIndex();
-        if (viewRow >= 0) {
+        if (viewRow >= 0 && viewRow < table.getRowCount()) {
             int modelRow = table.convertRowIndexToModel(viewRow);
             row = model.getRowAt(modelRow);
         }
@@ -222,10 +223,38 @@ public class ContentMatchPage2 extends ContentImportBase<ContentImportContext> {
                                                                                  .getDeployment(deploymentNo)
                                                                                  .getPlaylistSpecs();
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
+            // What is/will-be the name of the ACM playlist for this Program Spec playlist? And does it exist yet?
             String playlistName = WelcomePage.decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             Playlist playlist = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().findPlaylistByName(playlistName);
+
+            // Add playlist prompts to the list of items that may be imported.
+            PlaylistPrompts prompts = new PlaylistPrompts(contentPlaylistSpec.getPlaylistTitle(), languagecode);
+            prompts.findPrompts();
+            String shortPrompt = prompts.shortPromptString();
+            String longPrompt = prompts.longPromptString();
+            AudioPlaylistTarget plItem = new AudioPlaylistTarget(contentPlaylistSpec, shortPrompt, false, playlist);
+            if (prompts.hasShortPrompt()) {
+                if (prompts.getShortItem()!=null) {
+                    plItem.setItem(prompts.getShortItem());
+                } else {
+                    plItem.setFile(prompts.getShortFile());
+                }
+            }
+            titles.add(plItem);
+
+            plItem = new AudioPlaylistTarget(contentPlaylistSpec, longPrompt, true, playlist);
+            if (prompts.hasLongPrompt()) {
+                if (prompts.getLongItem()!=null) {
+                    plItem.setItem(prompts.getLongItem());
+                } else {
+                    plItem.setFile(prompts.getLongFile());
+                }
+            }
+            titles.add(plItem);
+
+            // Add the messages to the list.
             for (ContentSpec.MessageSpec messageSpec : contentPlaylistSpec.getMessagesForLanguage(languagecode)) {
-                AudioTarget importableAudio = new AudioTarget(messageSpec, playlist);
+                AudioTarget importableAudio = new AudioMessageTarget(messageSpec, playlist);
                 // See if we already have this title in the ACM.
                 AudioItem audioItem = findAudioItemForTitle(messageSpec.title, languagecode);
                 importableAudio.setItem(audioItem);

@@ -12,9 +12,11 @@ import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -179,6 +181,9 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
                 return "";
             }
         }
+        public AudioMatchable getMatchable() {
+            return (AudioMatchable)getUserObject();
+        }
     }
 
     /**
@@ -244,6 +249,9 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
     private class ImportPreviewTreeTableRenderer extends JLabel
         implements TreeCellRenderer, TableCellRenderer {
 
+        private final Font normalFont;
+        private final Font italicFont;
+
         private String renderValue(Object value, boolean isSelected, int column) {
             if (value == null) return "(null)";
             return value.toString();
@@ -252,6 +260,61 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
         ImportPreviewTreeTableRenderer() {
             super();
             setOpaque(true);
+            normalFont = getFont();
+            italicFont = new Font(normalFont.getName(),
+                normalFont.getStyle()|Font.ITALIC,
+                normalFont.getSize());
+
+        }
+
+        private AudioMatchable getMatchable(int row) {
+            if (row >= 0) {
+                TreePath path = importPreviewTreeTable.getPathForRow(row);
+                if (path != null) {
+                    Object node = path.getLastPathComponent();
+                    if (node instanceof AudioNode) {
+                        return ((AudioNode) node).getMatchable();
+                    }
+                }
+            }
+            return null;
+        }
+
+        private void setFont(AudioMatchable matchable) {
+            boolean italics = matchable!=null && matchable.getLeft().isPlaylist();
+            setFont(italics ? italicFont : normalFont);
+        }
+
+        private void setAudioTooltip(AudioMatchable matchable) {
+            String tip = null;
+            if (matchable != null) {
+                if (matchable.getLeft().isPlaylist()) {
+                    AudioPlaylistTarget plt = (AudioPlaylistTarget)matchable.getLeft();
+                    String text = plt.getPlaylistSpec().getPlaylistTitle();
+                    boolean longPrompt = ((AudioPlaylistTarget)matchable.getLeft()).isLong();
+                    if (!longPrompt) {
+                        tip = String.format("Title: '%s'", text);
+                    } else {
+                        tip = String.format("Invitation: 'To learn about %s, press the tree.'", text);
+                    }
+                } else {
+                    tip = String.format("Message: '%s'", matchable.getLeft().getTitle());
+                }
+            }
+            setToolTipText(tip);
+        }
+
+        private void setFont(int row) {
+            boolean italics = false;
+            if (row >= 0) {
+                TreePath path = importPreviewTreeTable.getPathForRow(row);
+                Object node = path.getLastPathComponent();
+                if (node instanceof AudioNode) {
+                    AudioMatchable am = ((AudioNode)node).getMatchable();
+                    italics = (am.getLeft().isPlaylist());
+                }
+            }
+            setFont(italics ? italicFont : normalFont);
         }
 
         @Override
@@ -262,6 +325,22 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
             int row,
             int column)
         {
+            AudioMatchable am = getMatchable(row);
+            setFont(am);
+
+            String tip = null;
+            int modelColumn = table.convertColumnIndexToModel(column);
+            if (am != null && modelColumn == 1) {
+                String thing = am.getLeft().isPlaylist() ? "playlist prompt" : "message";
+                // If we are here, we're going to copy a file. Either "Import New" or "Replace".
+                if (am.getLeft().targetExists()) {
+                    tip = "Replace existing "+thing+" with a new recording.";
+                } else {
+                    tip = "Import a new recording for the "+thing+".";
+                }
+            }
+            setToolTipText(tip);
+
             String str = renderValue(value, isSelected, column);
             Color bg = (column!=1) ? bgColor : bgAlternateColor;
             bg = (isSelected) ? bgSelectionColor : bg;
@@ -279,6 +358,10 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
             int row,
             boolean hasFocus)
         {
+            AudioMatchable am = getMatchable(row);
+            setFont(am);
+            setAudioTooltip(am);
+
             // This method is only called to render the first column, column 0. Sometimes,
             // it is passed the LastComponent() from the tree path, not the actual  value,
             // so if we get a node, convert it to the value.
