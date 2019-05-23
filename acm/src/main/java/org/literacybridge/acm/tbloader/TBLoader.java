@@ -1467,8 +1467,11 @@ public class TBLoader extends JFrame {
     }
 
     private void onCopyFinished(final String endMsg, final String endTitle) {
+        onCopyFinished(endMsg, endTitle, JOptionPane.PLAIN_MESSAGE);
+    }
+    private void onCopyFinished(final String endMsg, final String endTitle, int msgType) {
         SwingUtilities.invokeLater(() -> {
-            JOptionPane.showMessageDialog(applicationWindow, endMsg, endTitle, JOptionPane.PLAIN_MESSAGE);
+            JOptionPane.showMessageDialog(applicationWindow, endMsg, endTitle, msgType);
             updatingTB = false;
             resetUI(true);
             LOG.log(Level.INFO, endMsg);
@@ -1665,6 +1668,7 @@ public class TBLoader extends JFrame {
 
             String endMsg = null;
             String endTitle = null;
+            int endMessageType = JOptionPane.PLAIN_MESSAGE;
             OperationLog.Operation opLog = OperationLog.startOperation("TbLoaderUpdate");
             opLog.put("serialno", newDeploymentInfo.getSerialNumber())
                 .put("project", newDeploymentInfo.getProjectName())
@@ -1703,10 +1707,15 @@ public class TBLoader extends JFrame {
 
                 opLog.put("gotstatistics", result.gotStatistics)
                     .put("corrupted", result.corrupted)
-                    .put("reformatfailed", result.reformatFailed)
+                    .put("reformatfailed", result.reformatOp== TBLoaderCore.Result.FORMAT_OP.failed)
                     .put("verified", result.verified);
 
-                if (!result.gotStatistics) {
+                if (result.corrupted && result.reformatOp != TBLoaderCore.Result.FORMAT_OP.succeeded) {
+                    endMsg = "There is an error in the Talking Book SD card, and it needs to be re-formatted."
+                        + "\nPlease re-format the Talking Book SD card, and try again.";
+                    endTitle = "Corrupted SD Card";
+                    endMessageType = JOptionPane.ERROR_MESSAGE;
+                } else if (!result.gotStatistics) {
                     LOG.log(Level.SEVERE, "Could not get statistics!");
                     statusDisplay.error("Could not get statistics.");
                     if (result.corrupted) {
@@ -1718,7 +1727,7 @@ public class TBLoader extends JFrame {
                                                           "Failure!", JOptionPane.ERROR_MESSAGE);
                         }
 
-                        if (result.reformatFailed) {
+                        if (result.reformatOp == TBLoaderCore.Result.FORMAT_OP.failed) {
                             LOG.log(Level.SEVERE, "STATUS:Reformat Failed");
                             LOG.log(Level.SEVERE,
                                     "Could not reformat memory card.\nMake sure you have a good USB connection\nand that the Talking Book is powered with batteries, then try again.\n\nIf you still cannot reformat, replace the memory card.");
@@ -1756,7 +1765,7 @@ public class TBLoader extends JFrame {
                         endTitle = "Failure";
                     }
                 }
-                onCopyFinished(endMsg, endTitle);
+                onCopyFinished(endMsg, endTitle, endMessageType);
             }
 
         }

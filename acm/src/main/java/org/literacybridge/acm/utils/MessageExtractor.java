@@ -275,7 +275,7 @@ public class MessageExtractor {
                 }
             }
             if (params.verbose) {
-                System.out.println(String.format("Extracting %d of %d available", maxToExtract, toExtract.size()));
+                System.out.println(String.format("%s %d of %d available, %d total", announcement, maxToExtract, toExtract.size(), items.size()));
             }
 
 

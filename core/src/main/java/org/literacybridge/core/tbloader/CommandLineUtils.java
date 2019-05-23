@@ -125,7 +125,7 @@ public class CommandLineUtils {
     return errorLine == null;
   }
 
-  public static boolean checkDisk(String drive, String saveOutputFile) throws IOException {
+  public static boolean checkDiskAndFix(String drive, String saveOutputFile) throws IOException {
     if (!OSChecker.WINDOWS) {
       throw new IllegalStateException("checkDisk operation is only supported on Windows");
     }
@@ -134,7 +134,7 @@ public class CommandLineUtils {
     if (!output.getParentFile().exists()) {
       output.getParentFile().mkdirs();
     }
-    String errorLine = CommandLineUtils.execute(String.format("echo n|chkdsk %s > %s", drive, output.getAbsolutePath()));
+    String errorLine = CommandLineUtils.execute(String.format("echo n|chkdsk /f %s > %s", drive, output.getAbsolutePath()));
     return errorLine == null;
   }
 

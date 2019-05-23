@@ -176,6 +176,7 @@ import static org.literacybridge.core.tbloader.TBLoaderUtils.getBytesString;
  */
 public class TBLoaderCore {
     private static final Logger LOG = Logger.getLogger(TBLoaderCore.class.getName());
+    private Result.FORMAT_OP mFormatOp;
 
     public enum Action {
         DEPLOY,
@@ -685,17 +686,18 @@ public class TBLoaderCore {
      * For reporting a result back to callers, with explicit fields for various things that can
      * go wrong.
      */
-    public class Result {
+    public static class Result {
+        public enum FORMAT_OP {noFormat, succeeded, failed};
         public final boolean gotStatistics;
         public final boolean corrupted;
-        public final boolean reformatFailed;
+        public final FORMAT_OP reformatOp;
         public final boolean verified;
         public final String duration;
 
         private Result() {
             this.gotStatistics = false;
             this.corrupted = false;
-            this.reformatFailed = false;
+            this.reformatOp = FORMAT_OP.noFormat;
             this.verified = false;
             this.duration = "";
         }
@@ -703,11 +705,11 @@ public class TBLoaderCore {
         private Result(long startTime,
                 boolean gotStatistics,
                 boolean corrupted,
-                boolean reformatFailed,
+                FORMAT_OP reformatOp,
                 boolean verified) {
             this.gotStatistics = gotStatistics;
             this.corrupted = corrupted;
-            this.reformatFailed = reformatFailed;
+            this.reformatOp = reformatOp;
             this.verified = verified;
             this.duration = getDuration(startTime); // Nice printed format
         }
@@ -743,6 +745,7 @@ public class TBLoaderCore {
      * @return a Result object that describes the result.
      */
     private Result performOperation() {
+        mFormatOp = Result.FORMAT_OP.noFormat;
         LOG.log(Level.FINE, "TBL!: performOperation");
 
         mStepsLog = OperationLog.startOperation(mStatsOnly ? "CorTalkingBookCollectStatistics" : "CoreTalkingBookUpdate");
@@ -803,7 +806,7 @@ public class TBLoaderCore {
 
         boolean verified = false;
         try {
-            if (!mStatsOnly) {
+            if (!mStatsOnly && !mTbHasDiskCorruption) {
                 Result x = reformatRelabel();
                 if (x != null) return x;
 
@@ -829,7 +832,9 @@ public class TBLoaderCore {
 
             writeTbLog(gotStatistics, verified);
 
-            disconnectDevice();
+            if (!mTbHasDiskCorruption) {
+                disconnectDevice();
+            }
 
         } catch (Throwable e) {
             LOG.log(Level.WARNING, "TBL!: Unable to update Talking Book:", e);
@@ -846,8 +851,7 @@ public class TBLoaderCore {
         }
 
         Result result = new Result(mUpdateStartTime,
-                gotStatistics, mTbHasDiskCorruption,
-                false,
+                gotStatistics, mTbHasDiskCorruption, mFormatOp,
                 verified);
         String completionMessage = String.format("TB-Loader updated in %s", result.duration);
         mProgressListener.detail("");
@@ -881,7 +885,7 @@ public class TBLoaderCore {
             if (mTbHasDiskCorruption) {
                 mTbDeviceInfo.setCorrupted();
                 mProgressListener.log("Storage corrupted, attempting repair.");
-                CommandLineUtils.checkDisk(mTbDeviceInfo.getRootFile().getAbsolutePath(),
+                CommandLineUtils.checkDiskAndFix(mTbDeviceInfo.getRootFile().getAbsolutePath(),
                                            new RelativePath(mTalkingBookDataDirectoryPath,
                                 "chkdsk-reformat.txt").asString());
                 finishStep("Attempted repair of Talking Book storage");
@@ -1271,14 +1275,16 @@ public class TBLoaderCore {
             if (!OSChecker.WINDOWS) {
                 // distinction without a difference... has corruption, reformat didn't fail because
                 // no reformat was attempted.
-                return new Result(0, false, true, false, false);
+                return new Result(0, false, true, Result.FORMAT_OP.noFormat, false);
             }
             goodCard = CommandLineUtils.formatDisk(mTbDeviceInfo.getRootFile().getAbsolutePath(),
                                                    mTbDeviceInfo.getSerialNumber().toUpperCase());
             if (!goodCard) {
                 mProgressListener.log("Reformat failed");
-                return new Result(0, false, true, true, false);
+                mFormatOp = Result.FORMAT_OP.failed;
+                return new Result(0, false, true, Result.FORMAT_OP.failed, false);
             } else {
+                mFormatOp = Result.FORMAT_OP.succeeded;
                 mProgressListener.log(String.format("Reformatted card, %s", getStepTime()));
             }
         } else {
