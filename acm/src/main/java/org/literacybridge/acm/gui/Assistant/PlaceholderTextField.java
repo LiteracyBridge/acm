@@ -1,11 +1,15 @@
 package org.literacybridge.acm.gui.Assistant;
 
-import java.awt.*;
-
 import javax.swing.*;
 import javax.swing.text.Document;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 
-@SuppressWarnings("serial")
+/**
+ * A text field subclass with formal placeholder support.
+ */
+@SuppressWarnings({ "serial", "unused" })
 public class PlaceholderTextField extends JTextField {
     private String placeholder;
 

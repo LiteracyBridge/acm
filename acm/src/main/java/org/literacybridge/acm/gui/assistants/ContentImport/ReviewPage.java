@@ -6,6 +6,8 @@ import org.jdesktop.swingx.treetable.DefaultMutableTreeTableNode;
 import org.jdesktop.swingx.treetable.DefaultTreeTableModel;
 import org.jdesktop.swingx.treetable.MutableTreeTableNode;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
+import org.literacybridge.acm.gui.Assistant.LabelButton;
+import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.store.Playlist;
 
 import javax.swing.*;
@@ -44,7 +46,7 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
 
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2.5em'>Review & Import</span>"
-                + "<br/><br/>When you are satisfied with these imports, click \"Finish\" to perform the import. "
+                + "<br/><br/>When you are satisfied with these imports, click \"Finish\" to import the content. "
 
                 + "</html>");
         add(welcome, gbc);
@@ -54,8 +56,7 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
 
         // Title preview.
         JLabel importPreviewLabel = new JLabel("Files to be imported:");
-        Insets insets = new Insets(0,0,0,0);
-        gbc.insets = insets;
+        gbc.insets = new Insets(0,0,0,0);
         add(importPreviewLabel, gbc);
 
         JPanel panel = new JPanel();
@@ -88,11 +89,9 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
 
     @Override
     protected void onPageEntered(boolean progressing) {
-        String languagecode = context.languagecode;
-
         // Fill deployment and language
         importReminderLine.getDeployment().setText(Integer.toString(context.deploymentNo));
-        importReminderLine.getLanguage().setText(languagecode);
+        importReminderLine.getLanguage().setText(AcmAssistantPage.getLanguageAndName(context.languagecode));
 
         while (importPreviewTreeModel.getRoot().getChildCount() > 0) {
             MutableTreeTableNode node = (MutableTreeTableNode) importPreviewTreeModel.getRoot().getChildAt(0);
@@ -159,7 +158,7 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
 
         @Override
         public Object getValueAt(int column) {
-            if (column == 0) return ((Playlist)getUserObject()).getName();
+            if (column == 0) return undecoratedPlaylistName(((Playlist)getUserObject()).getName());
             return "";
         }
     }
@@ -181,7 +180,7 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
                 return "";
             }
         }
-        public AudioMatchable getMatchable() {
+        AudioMatchable getMatchable() {
             return (AudioMatchable)getUserObject();
         }
     }
@@ -190,7 +189,7 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
      * TreeTable model for the import preview.
      */
     private class ImportPreviewTreeModel extends DefaultTreeTableModel {
-        String[] columns = { "Message", "Operation", "File" };
+        String[] columns = { "Title", "Operation", "Audio File" };
 
         ImportPreviewTreeModel(MutableTreeTableNode root) {
             super(root);
@@ -252,6 +251,7 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
         private final Font normalFont;
         private final Font italicFont;
 
+        @SuppressWarnings("unused")
         private String renderValue(Object value, boolean isSelected, int column) {
             if (value == null) return "(null)";
             return value.toString();
@@ -261,9 +261,10 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
             super();
             setOpaque(true);
             normalFont = getFont();
-            italicFont = new Font(normalFont.getName(),
-                normalFont.getStyle()|Font.ITALIC,
-                normalFont.getSize());
+//            italicFont = new Font(normalFont.getName(),
+//                normalFont.getStyle()|Font.ITALIC,
+//                normalFont.getSize());
+            italicFont = LabelButton.fontResource(LabelButton.AVENIR).deriveFont((float)normalFont.getSize()).deriveFont(Font.ITALIC);
 
         }
 
@@ -302,19 +303,6 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
                 }
             }
             setToolTipText(tip);
-        }
-
-        private void setFont(int row) {
-            boolean italics = false;
-            if (row >= 0) {
-                TreePath path = importPreviewTreeTable.getPathForRow(row);
-                Object node = path.getLastPathComponent();
-                if (node instanceof AudioNode) {
-                    AudioMatchable am = ((AudioNode)node).getMatchable();
-                    italics = (am.getLeft().isPlaylist());
-                }
-            }
-            setFont(italics ? italicFont : normalFont);
         }
 
         @Override
@@ -373,14 +361,6 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
             setText(str);
             return this;
         }
-
-//        private Color lighten(Color color) {
-//            double FACTOR = 1.04;
-//            return new Color(Math.min((int) (color.getRed() * FACTOR), 255),
-//                Math.min((int) (color.getGreen() * FACTOR), 255),
-//                Math.min((int) (color.getBlue() * FACTOR), 255),
-//                color.getAlpha());
-//        }
 
     }
 

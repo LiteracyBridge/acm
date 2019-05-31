@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.Assistant;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -9,6 +10,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreePath;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Frame;
@@ -16,7 +18,6 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.List;
 
-import static org.literacybridge.acm.gui.Assistant.AssistantPage.enumerationAsStream;
 import static org.literacybridge.acm.utils.EmailHelper.sendEmail;
 
 /**
@@ -32,10 +33,9 @@ import static org.literacybridge.acm.utils.EmailHelper.sendEmail;
 public class ProblemReviewDialog extends JDialog {
     private DefaultTreeModel problemsTreeModel;
     private DefaultMutableTreeNode problemsRoot;
+    private final JTree problemsTree;
     private final JLabel messageLabel;
 
-    private List<Exception> exceptions;
-    private MutableTreeNode issues;
     private String reportHeading;
     private final JButton sendButton;
     private final JButton closeButton;
@@ -57,11 +57,11 @@ public class ProblemReviewDialog extends JDialog {
         panel.add(messageLabel, BorderLayout.NORTH);
 
         problemsRoot = new DefaultMutableTreeNode();
-        JTree exceptionsTree = new JTree(problemsRoot);
-        exceptionsTree.setBackground(new Color(0xf4, 0xf4, 0xf4));
-        problemsTreeModel = (DefaultTreeModel) exceptionsTree.getModel();
-        exceptionsTree.setRootVisible(true);
-        JScrollPane exceptionsScroller = new JScrollPane(exceptionsTree);
+        problemsTree = new JTree(problemsRoot);
+        problemsTree.setBackground(new Color(0xf4, 0xf4, 0xf4));
+        problemsTreeModel = (DefaultTreeModel) problemsTree.getModel();
+        problemsTree.setRootVisible(true);
+        JScrollPane exceptionsScroller = new JScrollPane(problemsTree);
         exceptionsScroller.setBorder(new LineBorder(new Color(0x40, 0x80, 0x40), 1));
 
         panel.add(exceptionsScroller, BorderLayout.CENTER);
@@ -82,6 +82,8 @@ public class ProblemReviewDialog extends JDialog {
         panel.add(hbox, BorderLayout.SOUTH);
         add(panel);
         setSize(800, 500);
+
+        SwingUtils.addEscapeListener(this);
     }
 
     /**
@@ -94,12 +96,11 @@ public class ProblemReviewDialog extends JDialog {
      */
     public void showProblems(String message, String reportHeading, MutableTreeNode issues, List<Exception> exceptions) {
         this.reportHeading = reportHeading;
-        this.issues = issues;
-        this.exceptions = exceptions;
-        DefaultMutableTreeNode exceptionsRoot = problemsRoot;
+        DefaultMutableTreeNode exceptionsRoot;
+        DefaultMutableTreeNode issuesRoot = null;
         // Generic "issues"?
         if (issues != null && (issues.getChildCount()>0 || issues.isLeaf())) {
-            DefaultMutableTreeNode issuesRoot = new DefaultMutableTreeNode("Issues");
+            issuesRoot = new DefaultMutableTreeNode("Issues");
             problemsTreeModel.insertNodeInto(issuesRoot, problemsRoot,
                 problemsRoot.getChildCount());
             if (issues.isLeaf()) {
@@ -110,7 +111,7 @@ public class ProblemReviewDialog extends JDialog {
                 }
             }
         }
-        exceptionsRoot = new DefaultMutableTreeNode("Exceptions");
+        exceptionsRoot = new DefaultMutableTreeNode("Errors");
         problemsTreeModel.insertNodeInto(exceptionsRoot, problemsRoot,
             problemsRoot.getChildCount());
         messageLabel.setText(message);
@@ -125,6 +126,11 @@ public class ProblemReviewDialog extends JDialog {
             }
         }
         problemsTreeModel.reload();
+
+        problemsTree.expandPath(new TreePath(exceptionsRoot.getPath()));
+        if (issuesRoot != null) {
+            problemsTree.expandPath(new TreePath(issuesRoot.getPath()));
+        }
 
         if (getOwner() != null) {
             setLocation(getOwner().getX() + 40, getOwner().getY() + 40);
@@ -169,6 +175,7 @@ public class ProblemReviewDialog extends JDialog {
                 e.printStackTrace();
             }
             closeButton.setEnabled(true);
+            getRootPane().setDefaultButton(closeButton);
         });
     }
 

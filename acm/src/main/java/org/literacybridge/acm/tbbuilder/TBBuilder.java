@@ -20,14 +20,10 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -43,7 +39,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -874,41 +869,45 @@ public class TBBuilder {
         }
     }
 
-    static String getLatestDeploymentRevision(File publishTbLoadersDir, final String deployment) throws Exception {
+    static String getNextDeploymentRevision(File publishTbLoadersDir, final String deployment) throws Exception {
         String revision = "a";
-        File[] files = publishTbLoadersDir.listFiles((dir, name) ->
-            name.toLowerCase().endsWith(".rev") && name.toLowerCase().startsWith(deployment.toLowerCase()));
-        if (files.length > 1)
-            throw new Exception("Too many *rev files.  There can only be one.");
-        else if (files.length == 1) {
-            // Assuming distribution-X.rev, pick the next higher than 'X'
-            String foundRevision = "";
-            Matcher deplMatcher = DEPLOYMENT_REVISION_PATTERN.matcher(files[0].getName());
-            if (deplMatcher.matches()) {
-                foundRevision = deplMatcher.group(2).toLowerCase();
-            }
-            if (foundRevision.compareTo(revision)>=0) {
-                revision = incrementRevision(foundRevision);
-                // If there's already a directory (or file) of the new name, keep looking.
-                File probe = new File(publishTbLoadersDir, deployment + '-' + revision);
-                while (probe.exists()) {
-                    revision = incrementRevision(revision);
-                    probe = new File(publishTbLoadersDir, deployment + '-' + revision);
+
+        String highestRevision = "";
+        String[] fileNames = publishTbLoadersDir.list((dir, name) ->
+            name.toLowerCase().startsWith(deployment.toLowerCase()));
+        if (fileNames != null && fileNames.length > 0) {
+            for (String fileName : fileNames) {
+                String fileRevision = "";
+                Matcher deplMatcher = DEPLOYMENT_REVISION_PATTERN.matcher(fileName);
+                if (deplMatcher.matches()) {
+                    fileRevision = deplMatcher.group(2).toLowerCase();
+                }
+                // A longer name is always greater. When the lengths are the same, then we need
+                // to compare the strings.
+                if (fileRevision.length() == highestRevision.length()) {
+                    if (fileRevision.compareTo(highestRevision) > 0) {
+                        highestRevision = fileRevision;
+                    }
+                } else if (fileRevision.length() > highestRevision.length()) {
+                    highestRevision = fileRevision;
                 }
             }
+            revision = incrementRevision(highestRevision);
         }
+
         // Delete *.rev, then create our deployment-revision.rev marker file.
         deleteRevFiles(publishTbLoadersDir);
-        files = publishTbLoadersDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".rev"));
-        for (File f : files) {
-            f.delete();
-        }
 
         File newRev = new File(publishTbLoadersDir, deployment + "-" + revision + ".rev");
         newRev.createNewFile();
         return revision;
     }
 
+    /**
+     * Given a revision string, like "a", or "zz", create the next higher value, like "b" or "aaa".
+     * @param revision to be incremented
+     * @return the incremented value
+     */
     static String incrementRevision(String revision) {
         if (revision==null || !revision.matches("^[a-z]+$")) {
             throw new IllegalArgumentException("Revision string must match \"^[a-z]+$\".");
@@ -947,7 +946,7 @@ public class TBBuilder {
         final File publishBaseDir = new File(sourceTbLoadersDir, "published");
         publishBaseDir.mkdirs();
 
-        revision = getLatestDeploymentRevision(publishBaseDir, deploymentName);
+        revision = getNextDeploymentRevision(publishBaseDir, deploymentName);
         final String publishDistributionName = deploymentName + "-" + revision; // e.g.
         // '2015-6-c'
         stagedDeploymentDir = new File(stagingDir, "content" + File.separator + this.deploymentName);
@@ -1024,8 +1023,10 @@ public class TBBuilder {
      */
     private static void deleteRevFiles(File dir) {
         File[] files = dir.listFiles((dir1, name) -> name.toLowerCase().endsWith(".rev"));
-        for (File revisionFile : files) {
-            revisionFile.delete();
+        if (files != null) {
+            for (File revisionFile : files) {
+                revisionFile.delete();
+            }
         }
     }
 

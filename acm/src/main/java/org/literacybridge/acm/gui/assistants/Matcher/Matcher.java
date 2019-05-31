@@ -1,15 +1,11 @@
 package org.literacybridge.acm.gui.assistants.Matcher;
 
-import javafx.beans.Observable;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 import org.literacybridge.acm.gui.assistants.ContentImport.AudioMatchable;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,8 +14,7 @@ import java.util.stream.Collectors;
 
 public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
 
-    public ObservableList<T> matchableItems = FXCollections.observableArrayList(item -> new Observable[] {
-        item.leftProperty(), item.matchProperty(), item.scoreProperty(), item.rightProperty() });
+    public List<T> matchableItems = new ArrayList<>();
 
     public Matcher() {
 
@@ -60,7 +55,7 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         return result;
     }
 
-    public MatchStats findExactMatches() {
+    private MatchStats findExactMatches() {
         MatchStats result = new MatchStats();
         // The array is sorted, so matching strings will already be adjacent. And the "left"
         // strings sort earlier than the "right" strings. So, all we need to do is walk the
@@ -97,11 +92,11 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         return result;
     }
 
-    public MatchStats findTokenMatches(int threshold) {
+    private MatchStats findTokenMatches(int threshold) {
         return fuzzyMatchWorker(threshold, true);
     }
 
-    public MatchStats findFuzzyMatches(int threshold) {
+    private MatchStats findFuzzyMatches(int threshold) {
         return fuzzyMatchWorker(threshold, false);
     }
 
@@ -148,7 +143,7 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
     }
 
     protected int scoreMatch(T l, T r, boolean tokens) {
-        int score = 0;
+        int score;
         String left = l.getLeft().toString();
         String right = r.getRight().toString();
         if (tokens) {
@@ -164,7 +159,7 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         T rightItem;
         int score;
 
-        public Comparison(T leftItem, T rightItem, int score) {
+        Comparison(T leftItem, T rightItem, int score) {
             this.leftItem = leftItem;
             this.rightItem = rightItem;
             this.score = score;
@@ -208,30 +203,27 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
 
     public void sort() {
 //        Collections.sort(matchableItems);
-        matchableItems.sort(new Comparator<T>() {
-            @Override
-            public int compare(T o1, T o2) {
-                MATCH m1 = o1.getMatch();
-                MATCH m2 = o2.getMatch();
-                // Compare unmatched items against each other.
-                // Compare same-matches against each other.
-                if ((!m1.isMatch() && !m2.isMatch()) || m1 == m2) {
-                    return o1.compareTo(o2);
-                }
-                // Compare unmatched as less than matched.
-                if (m1.isMatch() && !m2.isMatch()) {
-                    return 1;
-                } else if (!m1.isMatch() && m2.isMatch()) {
-                    return -1;
-                }
-                // Otherwise compare by match type. Let the looser matches sort lower.
-                return m2.ordinal() - m1.ordinal();
+        matchableItems.sort((o1, o2) -> {
+            MATCH m1 = o1.getMatch();
+            MATCH m2 = o2.getMatch();
+            // Compare unmatched items against each other.
+            // Compare same-matches against each other.
+            if ((!m1.isMatch() && !m2.isMatch()) || m1 == m2) {
+                return o1.compareTo(o2);
             }
+            // Compare unmatched as less than matched.
+            if (m1.isMatch() && !m2.isMatch()) {
+                return 1;
+            } else if (!m1.isMatch() && m2.isMatch()) {
+                return -1;
+            }
+            // Otherwise compare by match type. Let the looser matches sort lower.
+            return m2.ordinal() - m1.ordinal();
         });
     }
 
     private void squash() {
-        List<MatchableItem> toRemove = matchableItems.stream()
+        List<T> toRemove = matchableItems.stream()
             .filter(m -> m.getMatch() == MATCH.NONE)
             .collect(Collectors.toList());
         matchableItems.removeAll(toRemove);
@@ -241,6 +233,7 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         if (itemIndex >= 0 && itemIndex < matchableItems.size()) {
             T item = matchableItems.get(itemIndex);
             if (item.getMatch().isMatch()) {
+                @SuppressWarnings("unchecked")
                 T disassociated = (T) item.disassociate();
                 matchableItems.add(itemIndex, disassociated);
             }

@@ -1,13 +1,15 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
-import org.literacybridge.acm.gui.assistants.GreetingsImport.GreetingsMatcher;
+import org.literacybridge.acm.gui.assistants.Deployment.PlaylistPrompts;
 import org.literacybridge.acm.gui.assistants.common.AbstractFilesPage;
 import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -42,6 +44,10 @@ class ContentImportContext implements AbstractFilesPage.FileImportContext, Abstr
      * The language code for which audio is to be imported.
      */
     String languagecode;
+
+    Map<String, PlaylistPrompts> playlistPromptsMap = new HashMap<>();
+
+    boolean promptsOnly;
 
     // From the Files page
 

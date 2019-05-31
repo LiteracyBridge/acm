@@ -5,7 +5,6 @@ import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.Assistant.ProblemReviewDialog;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.AudioItemNode;
@@ -13,7 +12,7 @@ import org.literacybridge.acm.gui.assistants.util.AcmContent.LanguageNode;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.PlaylistNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.EmailHelper.TD;
@@ -21,7 +20,6 @@ import org.literacybridge.acm.utils.EmailHelper.TH;
 import org.literacybridge.acm.utils.EmailHelper.TR;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.acm.utils.Version;
-import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ContentSpec.DeploymentSpec;
 import org.literacybridge.core.spec.ContentSpec.MessageSpec;
 import org.literacybridge.core.spec.ContentSpec.PlaylistSpec;
@@ -49,7 +47,6 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -65,7 +62,7 @@ public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
     private final JButton viewErrorsButton;
     private final JLabel currentState;
 
-    DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
+    private DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
     private List<Exception> errors = new ArrayList<>();
     private DateTimeFormatter localDateFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL)
         .withZone(ZoneId.systemDefault());
@@ -406,7 +403,14 @@ public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
             // For the intro message, we don't actually need or want a prompt file.
             if (promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE)) return promptCat;
         } else {
-            promptCat = String.format("100-0-%d", promptIx);
+            // If we weren't able to find a category id, then this must have been a prompt from 
+            // content. But if we can't find the category item, just make up a category id.
+            AudioItem promptITem = prompts.getShortItem();
+            if (promptITem != null) {
+                promptCat = prompts.getShortItem().getUuid();
+            } else {
+                promptCat = String.format("100-0-%d-%d", context.deploymentNo, promptIx);
+            }
         }
 
         AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
@@ -444,8 +448,7 @@ public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
     }
 
     private void makeDeploymentReport() {
-        EmailHelper.HtmlTable summaryTable = new EmailHelper.HtmlTable().withStyle("font-family:sans-serif;border-collapse:collapse;border:2px solid #5CE6E6;width:100%");
-        String cs="colspan";
+        EmailHelper.HtmlTable summaryTable = new EmailHelper.HtmlTable().withStyle("font-family:sans-serif;border-collapse:collapse;border:2px solid #B8C4CC;width:100%");
         String msg;
 
         // For each language in the deployment
@@ -454,12 +457,12 @@ public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
             LanguageNode languageNode = context.playlistRootNode.find(language);
             if (languageNode == null) {
                 msg = String.format("<h2>No playlists found for language '%s (%s)'!</h2>", dbConfig.getLanguageLabel(language), language);
-                summaryTable.append(new TR(new TD(msg).with(cs, 4)));
+                summaryTable.append(new TR(new TD(msg).colspan(4)));
                 continue;
             }
 
             msg = String.format("<h2>Content package for language '%s (%s)'.</h2>", dbConfig.getLanguageLabel(language), language);
-            summaryTable.append(new TR(new TD(msg).with(cs, 4)));
+            summaryTable.append(new TR(new TD(msg).colspan(4)));
 
             summaryTable.append(new TR(new TH("PL #").with("align","left"), new TH("PL / MSG #").with("align","left"), new TH("Message").with("align","left"), new TH("Notes").with("align","left")));
 
@@ -495,7 +498,7 @@ public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
                     }
                 }
 
-                summaryTable.append(new TR(new TD(playlistIx+1), new TD(playlistTitle).with(cs,2), new TD(msg)));
+                summaryTable.append(new TR(new TD(playlistIx+1), new TD(playlistTitle).colspan(2), new TD(msg)));
 
                 // If there's a PS playlist, get the PS message list.
                 List<String> specifiedMessages = new ArrayList<>();
@@ -535,12 +538,12 @@ public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
                         summaryTable.append(new TR(new TD(), new TD('*'), new TD("<i>"+title+"</i>"), new TD("Missing!")).withStyler(pinkZebra));
                     }
                 }
-                summaryTable.append(new TR(new TD("&nbsp;<br/>").with(cs,4))); // blank line, but with proper formatting.
+                summaryTable.append(new TR(new TD("&nbsp;<br/>").colspan(4))); // blank line, but with proper formatting.
             }
             // If there are PS playlists not in the ACM
             for (String title : specifiedPlaylists) {
                 if (!foundPlaylists.contains(title)) {
-                    summaryTable.append(new TR(new TD('*'), new TD("<i>"+title+"</i>").with(cs,2), new TD("Missing!")).withStyler(pinkZebra));
+                    summaryTable.append(new TR(new TD('*'), new TD("<i>"+title+"</i>").colspan(2), new TD("Missing!")).withStyler(pinkZebra));
                 }
             }
         }

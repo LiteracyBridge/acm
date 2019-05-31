@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.assistants.SystemPromptsImport;
+package org.literacybridge.acm.gui.assistants.PromptsImport;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;

@@ -1,14 +1,23 @@
 package org.literacybridge.acm.gui.assistants.Matcher;
 
+import org.literacybridge.acm.gui.Assistant.LabelButton;
+import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
+import org.literacybridge.acm.gui.assistants.ContentImport.AudioPlaylistTarget;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
-import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
-import javax.swing.border.LineBorder;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -16,33 +25,54 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.literacybridge.acm.gui.Assistant.AssistantPage.redBorder;
+
 /**
  * Dialog allows user to manually select the matching file or audio item for a selected
  * audio item or file.
  */
-public abstract class AbstractManualMatcherDialog<T extends MatchableItem> {
+public abstract class AbstractManualMatcherDialog<T extends MatchableItem> extends JDialog {
     private final JList<String> choicesList;
     private final JLabel promptLabel;
-    private JButton okButton, cancelButton;
-    private JDialog dialog;
-    private final JOptionPane optionPane;
+    private JButton okButton;
     private final Map<String, T> unmatchedItems;
 
-    public AbstractManualMatcherDialog() {
+    public AbstractManualMatcherDialog(T row, List<T> matchableItems) {
+        super((Frame)null, "", true);
+        setLayout(new BorderLayout());
+        JPanel dialogPanel = new JPanel();
+        add(dialogPanel, BorderLayout.CENTER);
+        dialogPanel.setLayout(new BorderLayout());
+        dialogPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+
         promptLabel = new JLabel("");
 
         unmatchedItems = new LinkedHashMap<>();
         choicesList = new JList<>();
         choicesList.addListSelectionListener(this::listSelectionListener);
+        choicesList.addFocusListener(listFocusListener);
         choicesList.addMouseListener(listMouseListener);
         choicesList.setCellRenderer(listCellRenderer);
 
-        setupButtons();
-        optionPane = new JOptionPane();
-        optionPane.setOptions(new Object[] { okButton, cancelButton });
-        dialog = optionPane.createDialog("");
+        dialogPanel.add(setupButtons(), BorderLayout.SOUTH);
+        dialogPanel.add(buildLayout(row, matchableItems));
 
-        SwingUtils.addEscapeListener(dialog);
+        getRootPane().registerKeyboardAction(e -> onCancel(),
+            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+        ActionListener enterListener = (e) -> {
+            System.out.println("Enter");
+            onOk();
+        };
+
+        getRootPane().registerKeyboardAction(enterListener,
+            KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW);
+        getRootPane().setDefaultButton(null);
+
+        setMinimumSize(new Dimension(500, 300));
+        setVisible(true);
     }
 
     /**
@@ -52,7 +82,7 @@ public abstract class AbstractManualMatcherDialog<T extends MatchableItem> {
      *                       be offered.
      * @return The chosen match.
      */
-    public T chooseMatchFor(T row, List<T> matchableItems) {
+    private JComponent buildLayout(T row, List<T> matchableItems) {
         MATCH filter;
         String sourcesDescription, targetDescription;
         String targetName;
@@ -84,10 +114,9 @@ public abstract class AbstractManualMatcherDialog<T extends MatchableItem> {
         promptLabel.setText(message);
 
         JPanel pane = layoutComponents();
-        optionPane.setMessage(pane);
-        dialog = optionPane.createDialog(String.format("Choose %s for %s", targetDescription, sourcesDescription));
+        setTitle(String.format("Choose %s for %s", targetDescription, sourcesDescription));
 
-        return show();
+        return pane;
 
     }
 
@@ -111,23 +140,40 @@ public abstract class AbstractManualMatcherDialog<T extends MatchableItem> {
     private MouseListener listMouseListener = new MouseAdapter() {
         @Override
         public void mouseClicked(MouseEvent e) {
-            if (e.getClickCount() == 2) dialog.setVisible(false);
+            if (e.getClickCount() == 2) setVisible(false);
         }
     };
 
     /**
      * Create the OK and Cancel buttons and their listeners.
      */
-    private void setupButtons() {
+    private JComponent setupButtons() {
+        Box hbox = Box.createHorizontalBox();
+        hbox.add(Box.createHorizontalGlue());
+
         okButton = new JButton("Ok");
-        okButton.addActionListener(e -> dialog.setVisible(false));
+        okButton.addActionListener(e -> onOk());
         okButton.setEnabled(false);
 
-        cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(e -> {
-            choicesList.clearSelection();
-            dialog.setVisible(false);
-        });
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.addActionListener(e -> onCancel());
+
+        hbox.add(okButton);
+        hbox.add(Box.createHorizontalStrut(5));
+        hbox.add(cancelButton);
+        hbox.add(Box.createHorizontalStrut(5));
+        hbox.setBorder(new EmptyBorder(4,10,4,8));
+        return hbox;
+    }
+
+    private void onOk() {
+        if (okButton.isEnabled()) {
+            setVisible(false);
+        }
+    }
+    private void onCancel() {
+        choicesList.clearSelection();
+        setVisible(false);
     }
 
     /**
@@ -137,8 +183,9 @@ public abstract class AbstractManualMatcherDialog<T extends MatchableItem> {
     private JPanel layoutComponents() {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
         panel.add(promptLabel, BorderLayout.NORTH);
-        panel.add(choicesList, BorderLayout.CENTER);
-        choicesList.setBorder(new LineBorder(Color.red, 1));
+        JScrollPane choicesListScrollPane = new JScrollPane(choicesList);
+        panel.add(choicesListScrollPane, BorderLayout.CENTER);
+        choicesList.setBorder(redBorder);
         return panel;
     }
 
@@ -146,12 +193,49 @@ public abstract class AbstractManualMatcherDialog<T extends MatchableItem> {
      * Listens for list selection, and enables the OK button whenever an item is selected.
      * @param listSelectionEvent isunused.
      */
-    private void listSelectionListener(ListSelectionEvent listSelectionEvent) {
-        okButton.setEnabled(choicesList.getLeadSelectionIndex() >= 0);
+    private void listSelectionListener(@SuppressWarnings("unused") ListSelectionEvent listSelectionEvent) {
+        boolean haveSelection = choicesList.getLeadSelectionIndex() >= 0;
+        okButton.setEnabled(haveSelection);
+        if (haveSelection) {
+            getRootPane().setDefaultButton(okButton);
+        }
+        setListBorder();
     }
 
     @SuppressWarnings("FieldCanBeLocal")
+    private final FocusListener listFocusListener = new FocusListener() {
+        @Override
+        public void focusGained(FocusEvent e) {
+            setListBorder();
+        }
+
+        @Override
+        public void focusLost(FocusEvent e) {
+            setListBorder();
+        }
+    };
+
+    private void setListBorder() {
+        boolean haveFocus = choicesList.hasFocus();
+        boolean haveSelection = choicesList.getLeadSelectionIndex() >= 0;
+        int ix = (haveSelection?0:2) + (haveFocus?0:1);
+        choicesList.setBorder(borders[ix]);
+    }
+
+    private Color borderColor = new Color(136, 176, 220);
+    private RoundedLineBorder[] borders = {
+        new RoundedLineBorder(borderColor, 2, 6),
+        new RoundedLineBorder(borderColor, 1, 6, 2),
+        new RoundedLineBorder(Color.RED, 2, 6),
+        new RoundedLineBorder(Color.RED, 1, 6, 2)
+    };
+
+    @SuppressWarnings("FieldCanBeLocal")
     private ListCellRenderer<? super String> listCellRenderer = new DefaultListCellRenderer() {
+        Font normalFont = getFont();
+        Font italicFont = LabelButton.fontResource(LabelButton.AVENIR).deriveFont((float)normalFont.getSize()).deriveFont(
+            Font.ITALIC);
+
         @Override
         public Component getListCellRendererComponent(JList<?> list,
             Object value,
@@ -159,27 +243,26 @@ public abstract class AbstractManualMatcherDialog<T extends MatchableItem> {
             boolean isSelected,
             boolean cellHasFocus)
         {
+            // TODO: This really doesn't belong here.
+            Object row = unmatchedItems.get(value.toString()).getLeft();
+            Font font = (row instanceof AudioPlaylistTarget) ? italicFont : normalFont;
+            // 
             Component comp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             if (isSelected)
                 comp.setBackground(AcmAssistantPage.bgSelectionColor);
             else
                 comp.setBackground(index%2==0 ? AcmAssistantPage.bgColor : AcmAssistantPage.bgAlternateColor);
+            comp.setFont(font);
             return comp;
         }
     };
 
-    public T show() {
-        dialog.setVisible(true);
-        return getSelectedItem();
-    }
-
-    private T getSelectedItem() {
+    public T getSelectedItem() {
         String chosenTitle = choicesList.getSelectedValue();
         if (chosenTitle != null) {
             return unmatchedItems.get(chosenTitle);
         }
         return null;
     }
-
 }
 

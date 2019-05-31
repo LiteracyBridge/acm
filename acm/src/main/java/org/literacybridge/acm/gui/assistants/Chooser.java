@@ -7,10 +7,15 @@ import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.assistants.ContentImport.ContentImportAssistant;
 import org.literacybridge.acm.gui.assistants.Deployment.DeploymentAssistant;
 import org.literacybridge.acm.gui.assistants.GreetingsImport.GreetingsImportAssistant;
-import org.literacybridge.acm.gui.assistants.SystemPromptsImport.PromptImportAssistant;
+import org.literacybridge.acm.gui.assistants.PromptsImport.PromptImportAssistant;
 
 import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -26,7 +31,7 @@ import static org.literacybridge.acm.utils.SwingUtils.getApplicationRelativeLoca
 public class Chooser extends JDialog {
     private static final Logger LOG = Logger.getLogger(Chooser.class.getName());
 
-    public static void showChooserMenu(ActionEvent actionEvent) {
+    public static void showChooserMenu(@SuppressWarnings("unused") ActionEvent actionEvent) {
         Chooser dialog = new Chooser(Application.getApplication());
         // Place the new dialog within the application frame. This is hacky, but if it fails, the dialog
         // simply winds up in a funny place. Unfortunately, Swing only lets us get the location of a
@@ -51,9 +56,6 @@ public class Chooser extends JDialog {
         setBackground(new Color(0xe0fff0));
 
         // USB Flash Drive by fahmionline from the Noun Project
-        ImageIcon backwardImageIcon = new ImageIcon(
-            UIConstants.getResource(UIConstants.ICON_BACKWARD_24_PX));
-
         ImageIcon usbIcon = new ImageIcon(UIConstants.getResource("usb_64.png"));
         ImageIcon tbIcon = new ImageIcon(UIConstants.getResource("tb_64g.png"));
         ImageIcon langIcon = new ImageIcon(UIConstants.getResource("language_64.png"));
@@ -74,20 +76,19 @@ public class Chooser extends JDialog {
         add(hbox, gbc);
 
         Dimension size = new Dimension(400, 92);
-//        JLabel contentButton = new LabelButton(usbIcon, "Import Content", this::runImport);
         LabelButton contentButton = new LabelButton(usbIcon, "Import Content");
         contentButton.addActionListener(e -> runAssistant(ContentImportAssistant::create));
         contentButton.setMinimumSize(size);
         contentButton.setPreferredSize(size);
-        contentButton.setMaximumSize(size);
+//        contentButton.setMaximumSize(size);
         panel.add(contentButton, gbc);
 
-        LabelButton greetingsButton = new LabelButton(peopleIcon, "Custom Greetings");
-        greetingsButton.addActionListener(e -> runAssistant(GreetingsImportAssistant::create));
-        greetingsButton.setMinimumSize(size);
-        greetingsButton.setPreferredSize(size);
-        panel.add(greetingsButton, gbc);
-        greetingsButton.setEnabled(true);
+        LabelButton playlistButton = new LabelButton(plIcon, "Playlist Prompts");
+        playlistButton.addActionListener(e -> runAssistant(ContentImportAssistant::createPromptImporter));
+        playlistButton.setMinimumSize(size);
+        playlistButton.setPreferredSize(size);
+        panel.add(playlistButton, gbc);
+//        playlistButton.setEnabled(true);
 
         LabelButton deploymentButton = new LabelButton(tbIcon, "Create Deployment");
         deploymentButton.addActionListener(e -> runAssistant(DeploymentAssistant::create));
@@ -95,19 +96,19 @@ public class Chooser extends JDialog {
         deploymentButton.setPreferredSize(size);
         panel.add(deploymentButton, gbc);
 
+        LabelButton greetingsButton = new LabelButton(peopleIcon, "Custom Greetings");
+        greetingsButton.addActionListener(e -> runAssistant(GreetingsImportAssistant::create));
+        greetingsButton.setMinimumSize(size);
+        greetingsButton.setPreferredSize(size);
+        panel.add(greetingsButton, gbc);
+//        greetingsButton.setEnabled(true);
+
         LabelButton languageButton = new LabelButton(langIcon, "Language Prompts");
         languageButton.addActionListener(e -> runAssistant(PromptImportAssistant::create));
         languageButton.setMinimumSize(size);
         languageButton.setPreferredSize(size);
         panel.add(languageButton, gbc);
-        languageButton.setEnabled(true);
-
-        LabelButton playlistButton = new LabelButton(plIcon, "Playlist Prompts");
-        playlistButton.addActionListener(e -> runDeployment());
-        playlistButton.setMinimumSize(size);
-        playlistButton.setPreferredSize(size);
-        panel.add(playlistButton, gbc);
-        playlistButton.setEnabled(false);
+//        languageButton.setEnabled(true);
 
         // To experiment with sizes, uncomment this, and comment out "setUndecorated(true)"
 //        panel.addComponentListener(new ComponentAdapter() {
@@ -130,17 +131,7 @@ public class Chooser extends JDialog {
         setVisible(false);
         Assistant da = factory.get();
         da.setVisible(true);
-        boolean finished = da.finished;
     }
-
-    private void runDeployment() {
-        setVisible(false);
-        Assistant da = DeploymentAssistant.create();
-        da.setVisible(true);
-        boolean finished = da.finished;
-        if (finished) System.out.println("deployment created");
-    }
-
 
     private WindowListener windowListener = new WindowAdapter() {
         @Override

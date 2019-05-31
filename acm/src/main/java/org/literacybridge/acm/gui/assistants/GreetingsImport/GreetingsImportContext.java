@@ -1,7 +1,6 @@
 package org.literacybridge.acm.gui.assistants.GreetingsImport;
 
 import org.literacybridge.acm.gui.assistants.Matcher.ColumnProvider;
-import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 import org.literacybridge.acm.gui.assistants.common.AbstractFilesPage;
 import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
 import org.literacybridge.core.spec.ProgramSpec;
@@ -74,7 +73,7 @@ public class GreetingsImportContext
             return columnNames.get(columnIndex);
         }
 
-        public Class getColumnClass(int columnIndex) {
+        public Class getColumnClass(@SuppressWarnings("unused") int columnIndex) {
             return String.class;
         }
 

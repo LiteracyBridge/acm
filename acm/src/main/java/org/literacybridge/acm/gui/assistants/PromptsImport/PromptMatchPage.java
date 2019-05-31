@@ -1,22 +1,18 @@
-package org.literacybridge.acm.gui.assistants.SystemPromptsImport;
+package org.literacybridge.acm.gui.assistants.PromptsImport;
 
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.Matcher.AbstractMatchTableModel;
+import org.literacybridge.acm.gui.assistants.Matcher.ColumnProvider;
 import org.literacybridge.acm.gui.assistants.Matcher.IMatcherTableModel;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchTableRenderers;
-import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
-import org.literacybridge.acm.gui.assistants.Matcher.MatcherTableTransferHandler;
-import org.literacybridge.acm.gui.assistants.Matcher.ColumnProvider;
 import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
-import javax.swing.table.TableRowSorter;
 import java.awt.Component;
-import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -32,13 +28,12 @@ public class PromptMatchPage extends
 
     @Override
     protected Component getWelcome() {
-        JLabel welcome = new JLabel("<html>"
+        return new JLabel("<html>"
             + "<span style='font-size:2em'>Match Prompts with Audio.</span>"
             + "<br/><br/><p>The Assistant has automatically matched files as possible with prompts. "
             + "Only high-confidence matches are performed, so manual matching may be required. "
             + "Perform any additional matching (or un-matching) as required, then click \"Finish\" to perform the import.</p>"
             + "</html>");
-        return welcome;
     }
 
     @Override
@@ -48,12 +43,12 @@ public class PromptMatchPage extends
 
     @Override
     protected String getUnmatchTooltip() {
-        return "Unmatch the Audio Item from the File.";
+        return "Unmatch the prompt from the file.";
     }
 
     @Override
     protected String getMatchTooltip() {
-        return "Manually match this file with an message.";
+        return "Manually match this file with a prompt.";
     }
 
     @Override
@@ -89,8 +84,8 @@ public class PromptMatchPage extends
 
     @Override
     protected PromptMatchable onManualMatch(PromptMatchable selectedRow) {
-        ManualMatcherDialog dialog = new ManualMatcherDialog();
-        return dialog.chooseMatchFor(selectedRow, context.matcher.matchableItems);
+        ManualMatcherDialog dialog = new ManualMatcherDialog(selectedRow, context.matcher.matchableItems);
+        return dialog.getSelectedItem();
     }
 
 

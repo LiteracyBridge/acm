@@ -1,21 +1,14 @@
 package org.literacybridge.acm.gui.assistants.GreetingsImport;
 
-import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.audioconverter.api.AudioConversionFormat;
-import org.literacybridge.acm.audioconverter.api.ExternalConverter;
-import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.Assistant;
 import org.literacybridge.acm.gui.Assistant.ProblemReviewDialog;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
+import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.gui.util.UIUtils;
-import org.literacybridge.acm.importexport.AudioImporter;
-import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.EmailHelper.TD;
 import org.literacybridge.acm.utils.Version;
@@ -29,19 +22,15 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
 public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportContext> {
@@ -61,8 +50,6 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
     private StringBuilder summaryMessage;
     private EmailHelper.HtmlTable summaryTable;
     private List<Exception> errors = new ArrayList<>();
-    private ExternalConverter externalConverter;
-    private DBConfiguration dbConfig;
 
     GreetingsImportedPage(Assistant.PageHelper<GreetingsImportContext> listener) {
         super(listener);
@@ -121,9 +108,10 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
 
     @Override
     protected void onPageEntered(boolean progressing) {
-        List<GreetingMatchable> matches = context.matcher.matchableItems
-            .filtered((item) -> item.getMatch().isMatch())
-            .filtered((item) -> item.getLeft().isImportable());
+        List<GreetingMatchable> matches = context.matcher.matchableItems.stream()
+            .filter((item) -> item.getMatch().isMatch())
+            .filter((item) -> item.getLeft().isImportable())
+            .collect(Collectors.toList());
         progressBar.setMaximum(matches.size()+1);
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         SwingWorker worker = new SwingWorker<Integer, Void>() {
@@ -200,12 +188,10 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
     }
 
     private void performImports(List<GreetingMatchable> matches) {
-        dbConfig = ACMConfiguration.getInstance().getCurrentDB();
+        DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
         Map<String, String> recipientsMap = context.programSpec.getRecipientsMap();
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
         File communitiesDir = new File(tbLoadersDir, "communities");
-
-        externalConverter = new ExternalConverter();
 
         summaryMessage.append(String.format("<h2>Project %s</h2>", dbConfig.getProjectName()));
         summaryMessage.append(String.format("<h3>%s</h3>", localDateTimeFormatter.format(LocalDateTime.now())));
@@ -217,7 +203,7 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
         progressCount = 0;
 
         // Iterate over the matched items.
-        matches.stream()
+        matches
             .forEach((item) -> {
                 try {
                     // Make sure the directories exist. Create the .grp file if it doesn't exist.
@@ -247,7 +233,7 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
                     }
                     // Import the audio.
                     File sourceFile = item.getRight().getFile();
-                    copyOrConvert(item.getLeft(), sourceFile, greeting);
+                    AudioUtils.copyOrConvert(item.getLeft().toString(), item.getLeft().getRecipient().language, sourceFile, greeting);
 
                     if (isReplace) {
                         updateCount++;
@@ -271,35 +257,6 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
                     // Ignore
                 }
             });
-    }
-
-    private void copyOrConvert(GreetingTarget target, File fromFile, File toFile)
-        throws BaseAudioConverter.ConversionException, IOException
-    {
-        Recipient recipient = target.getRecipient();
-        Metadata metadata = AudioImporter.getInstance().getExistingMetadata(fromFile);
-        // Don't expect to usually find existing metadata.
-        if (metadata == null) {
-            metadata = new Metadata();
-        }
-        Collection<Category> categories = new ArrayList<>();
-        // get a new id, even if the object already had one.
-        String id = ACMConfiguration.getInstance().getNewAudioItemUID();
-        metadata.put(DC_IDENTIFIER, id);
-        metadata.put(DC_LANGUAGE, recipient.language);
-        metadata.put(DC_TITLE, target.toString());
-        Category communities = dbConfig.getMetadataStore().getCategory(Constants.CATEGORY_COMMUNITIES);
-        categories.add(communities);
-
-        if (FilenameUtils.getExtension(fromFile.getName()).equalsIgnoreCase(AudioItemRepository.AudioFormat.A18.getFileExtension())) {
-            AudioItemRepository.copyA18WithoutMetadata(fromFile, toFile);
-        } else {
-            AudioConversionFormat audioConversionFormat = AudioItemRepository.AudioFormat.A18.getAudioConversionFormat();
-            externalConverter.convert(fromFile, toFile, audioConversionFormat, true);
-        }
-
-        AudioItemRepository.appendMetadataToA18(metadata, categories, toFile);
-
     }
 
     @Override

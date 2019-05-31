@@ -1,7 +1,7 @@
 package org.literacybridge.acm.gui.assistants.Matcher;
 
 public class Target {
-    boolean replaceOk = false;
+    private boolean replaceOk = false;
 
     public void setReplaceOk(boolean replaceOk) {
         this.replaceOk = replaceOk;

@@ -4,7 +4,7 @@ import org.literacybridge.acm.gui.util.SortedListModel;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.SearchResult;
 
-class PlaylistListModel extends SortedListModel<PlaylistListModel.PlaylistLabel> {
+public class PlaylistListModel extends SortedListModel<PlaylistListModel.PlaylistLabel> {
   PlaylistListModel(Iterable<Playlist> playlists, SearchResult searchResult) {
     for (Playlist playlist : playlists) {
       add(new PlaylistLabel(playlist, searchResult.getFacetCount(playlist)));
@@ -20,7 +20,7 @@ class PlaylistListModel extends SortedListModel<PlaylistListModel.PlaylistLabel>
       this.facetCount = facetCount;
     }
 
-    Playlist getPlaylist() {
+    public Playlist getPlaylist() {
       return playlist;
     }
 

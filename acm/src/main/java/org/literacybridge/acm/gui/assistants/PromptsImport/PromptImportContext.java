@@ -1,6 +1,5 @@
-package org.literacybridge.acm.gui.assistants.SystemPromptsImport;
+package org.literacybridge.acm.gui.assistants.PromptsImport;
 
-import org.literacybridge.acm.gui.assistants.GreetingsImport.GreetingsMatcher;
 import org.literacybridge.acm.gui.assistants.common.AbstractFilesPage;
 import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
 import org.literacybridge.core.spec.ProgramSpec;
@@ -17,7 +16,7 @@ public class PromptImportContext implements AbstractFilesPage.FileImportContext,
     public Set<String> specLanguages;
     public Set<String> configLanguages;
 
-    // What are the prompts?
+    // What are the prompts?  [0, 1, ...] and { 0: "bell", 1: "Begin speaking...", ...}
     public List<String> promptIds;
     public Map<String, String> promptDefinitions;
 

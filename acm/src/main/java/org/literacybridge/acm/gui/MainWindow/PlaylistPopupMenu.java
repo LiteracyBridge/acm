@@ -8,6 +8,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.MainWindow.SidebarView.PlaylistsChanged;
 import org.literacybridge.acm.gui.MainWindow.PlaylistListModel.PlaylistLabel;
+import org.literacybridge.acm.gui.dialogs.PlaylistEditDialog;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
@@ -25,7 +26,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -56,204 +56,204 @@ class PlaylistPopupMenu extends JPopupMenu {
 
             add(deletePlaylist);
 
-            deletePlaylist.addActionListener(deleteListener);
+            deletePlaylist.addActionListener(this::deleteListener);
         } else {
             PlaylistLabel selectedPlaylist = selectedPlaylists.get(0);
             String playlist = selectedPlaylist.getPlaylist().getName();
             JMenuItem deletePlaylist = new JMenuItem("Delete '" + playlist + "' ...");
             JMenuItem renamePlaylist = new JMenuItem("Rename '" + playlist + "' ...");
             JMenuItem exportPlaylist = new JMenuItem("Export '" + playlist + "' ...");
+            JMenuItem editPlaylist = new JMenuItem("Edit '" + playlist + "' ...");
 
             add(deletePlaylist);
             add(renamePlaylist);
             add(exportPlaylist);
+            add(editPlaylist);
 
-            deletePlaylist.addActionListener(deleteListener);
-            renamePlaylist.addActionListener(renameListener);
-            exportPlaylist.addActionListener(exportListener);
+            deletePlaylist.addActionListener(this::deleteListener);
+            renamePlaylist.addActionListener(this::renameListener);
+            exportPlaylist.addActionListener(this::exportListener);
+            editPlaylist.addActionListener(this::editListener);
         }
     }
 
     /**
      * Called when the delete menu item is clicked.
      */
-    private ActionListener deleteListener = new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            Object[] options = {
-                LabelProvider.getLabel("CANCEL"),
-                LabelProvider.getLabel("DELETE") };
+    private void deleteListener(ActionEvent e) {
+        Object[] options = {
+            LabelProvider.getLabel("CANCEL"),
+            LabelProvider.getLabel("DELETE") };
 
-            String message;
-            if (selectedPlaylists.size() == 1) {
-                message = String.format("Delete playlist '%s'?", selectedPlaylists.get(0));
-            } else {
-                message = String.format("Delete %d playlists?", selectedPlaylists.size());
-            }
-            int n = JOptionPane.showOptionDialog(Application.getApplication(),
-                message,
-                LabelProvider.getLabel("CONFRIM_DELETE"),
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null,
-                options, options[0]);
+        String message;
+        if (selectedPlaylists.size() == 1) {
+            message = String.format("Delete playlist '%s'?", selectedPlaylists.get(0));
+        } else {
+            message = String.format("Delete %d playlists?", selectedPlaylists.size());
+        }
+        int n = JOptionPane.showOptionDialog(Application.getApplication(),
+            message,
+            LabelProvider.getLabel("CONFRIM_DELETE"),
+            JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+            options, options[0]);
 
-            if (n == 1) {
-                try {
-                    for (PlaylistLabel selectedPlaylist : selectedPlaylists) {
-                        try {
-                            List<String> audioItems = Lists.newLinkedList(selectedPlaylist.getPlaylist()
-                                .getAudioItemList());
-                            for (String audioItemUuid : audioItems) {
-                                AudioItem audioItem = ACMConfiguration.getInstance()
-                                    .getCurrentDB()
-                                    .getMetadataStore()
-                                    .getAudioItem(audioItemUuid);
-                                audioItem.removePlaylist(selectedPlaylist.getPlaylist());
-                                ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(audioItem);
-                            }
-                            ACMConfiguration.getInstance()
+        if (n == 1) {
+            try {
+                for (PlaylistLabel selectedPlaylist : selectedPlaylists) {
+                    try {
+                        List<String> audioItems = Lists.newLinkedList(selectedPlaylist.getPlaylist()
+                            .getAudioItemList());
+                        for (String audioItemUuid : audioItems) {
+                            AudioItem audioItem = ACMConfiguration.getInstance()
                                 .getCurrentDB()
                                 .getMetadataStore()
-                                .deletePlaylist(selectedPlaylist.getPlaylist().getUuid());
-                            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(selectedPlaylist.getPlaylist());
-                        } catch (Exception ex) {
-                            LOG.log(Level.WARNING,
-                                "Unable to remove playlist " + selectedPlaylist.toString());
+                                .getAudioItem(audioItemUuid);
+                            audioItem.removePlaylist(selectedPlaylist.getPlaylist());
+                            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(audioItem);
                         }
+                        ACMConfiguration.getInstance()
+                            .getCurrentDB()
+                            .getMetadataStore()
+                            .deletePlaylist(selectedPlaylist.getPlaylist().getUuid());
+                        ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(selectedPlaylist.getPlaylist());
+                    } catch (Exception ex) {
+                        LOG.log(Level.WARNING,
+                            "Unable to remove playlist " + selectedPlaylist.toString());
                     }
-                }  finally {
-                    Application.getMessageService().pumpMessage(new PlaylistsChanged());
-                    Application.getFilterState().setSelectedPlaylist(null);
-                    Application.getFilterState().updateResult(true);
                 }
+            }  finally {
+                Application.getMessageService().pumpMessage(new PlaylistsChanged());
+                Application.getFilterState().setSelectedPlaylist(null);
+                Application.getFilterState().updateResult(true);
             }
         }
-    };
+    }
 
     /**
      * Called when the rename menu item is clicked.
      */
-    private ActionListener renameListener = new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent arg0) {
-            PlaylistLabel selectedPlaylist = selectedPlaylists.get(0);
-            String playlistName = (String) JOptionPane.showInputDialog(
-                PlaylistPopupMenu.this, "Enter playlist name:", "Edit playlist",
-                JOptionPane.PLAIN_MESSAGE, null, null, selectedPlaylist.getPlaylist().getName());
-            if (!StringUtils.isEmpty(playlistName)) {
-                try {
-                    selectedPlaylist.getPlaylist().setName(playlistName);
-                    ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
-                        .commit(selectedPlaylist.getPlaylist());
+    private void renameListener(ActionEvent arg0) {
+        PlaylistLabel selectedPlaylist = selectedPlaylists.get(0);
+        String playlistName = (String) JOptionPane.showInputDialog(
+            PlaylistPopupMenu.this, "Enter playlist name:", "Edit playlist",
+            JOptionPane.PLAIN_MESSAGE, null, null, selectedPlaylist.getPlaylist().getName());
+        if (!StringUtils.isEmpty(playlistName)) {
+            try {
+                selectedPlaylist.getPlaylist().setName(playlistName);
+                ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
+                    .commit(selectedPlaylist.getPlaylist());
 
-                    Application.getMessageService().pumpMessage(new PlaylistsChanged());
-                } catch (Exception ex) {
-                    LOG.log(Level.WARNING,
-                        "Unable to rename playlist " + selectedPlaylist.toString());
-                } finally {
-                    Application.getFilterState().updateResult(true);
-                }
+                Application.getMessageService().pumpMessage(new PlaylistsChanged());
+            } catch (Exception ex) {
+                LOG.log(Level.WARNING,
+                    "Unable to rename playlist " + selectedPlaylist.toString());
+            } finally {
+                Application.getFilterState().updateResult(true);
             }
         }
-    };
+    }
+
+
+    private void editListener(ActionEvent e) {
+        PlaylistEditDialog.showDialog(selectedPlaylists.get(0));
+    }
 
     /**
      * Called when the export menu item is clicked.
      */
-    private ActionListener exportListener = new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent event) {
-            LinkedHashMap<String, Category> categories = new LinkedHashMap<>();
-            PlaylistLabel selectedPlaylist = selectedPlaylists.get(0);
-            try {
-                // Prompt the user for the name of the exported package. If we've exported a
-                // package previously in this invocation of the ACM, use that package name as
-                // an initial value; user can leave that alone to continue exporting playlists
-                // into the package, or can enter a new name, to start a new package.
-                String packageName = promptWithMaxLength("Export Playlist",
-                    "Enter Content Package name:", MAX_PACKAGE_NAME_LENGTH, previousPackageName);
+    private void exportListener(ActionEvent event) {
+        LinkedHashMap<String, Category> categories = new LinkedHashMap<>();
+        PlaylistLabel selectedPlaylist = selectedPlaylists.get(0);
+        try {
+            // Prompt the user for the name of the exported package. If we've exported a
+            // package previously in this invocation of the ACM, use that package name as
+            // an initial value; user can leave that alone to continue exporting playlists
+            // into the package, or can enter a new name, to start a new package.
+            String packageName = promptWithMaxLength("Export Playlist",
+                "Enter Content Package name:", MAX_PACKAGE_NAME_LENGTH, previousPackageName);
 
-                if (!StringUtils.isEmpty(packageName)) {
-                    // If the user actually entered anything, create the directory for the package.
-                    previousPackageName = packageName;
-                    File packageMessagesListsDir = new File(
-                        ACMConfiguration.getInstance().getCurrentDB()
-                            .getTBLoadersDirectory(),
-                        "packages/" + packageName + "/messages/lists/"
-                            + TBBuilder.firstMessageListName);
-                    if (!packageMessagesListsDir.exists()) {
-                        packageMessagesListsDir.mkdirs();
-                    }
-
-                    // If this is the first time that a playlist has been exported into this package,
-                    // there will be no _activeLists.txt file. In that case, prompt the user for
-                    // which _activeLists.txt they want. The files reside in the ACM directory, in
-                    // TB-Loaders / TB_Options / activeLists.
-                    // The contents of these files must be actual, valid _activeLists.txt files.
-                    // By convention, the files are named as "Health_Farming_....txt", where
-                    // the words are suggestive of the categories, in order, in the file.
-                    File targetActiveListsFile;
-                    targetActiveListsFile = new File(packageMessagesListsDir, "_activeLists.txt");
-                    if (!targetActiveListsFile.exists()) {
-                        File sourceActiveListsFile = getActiveListsForExport();
-                        IOUtils.copy(sourceActiveListsFile, targetActiveListsFile);
-                    }
-
-                    MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
-                        .getMetadataStore();
-
-                    // Add "Intro Message" to list of categories. hard coded as "0-5". "Intro Message".
-                    // Note that this "Intro Message" category is NOT in the template _activeLists.txt
-                    // file. If the user chooses to export a playlist to the category, those message
-                    // ids will be written to a 0-5.txt file, and there will still be no pointer to
-                    // it in the _activeLists.txt file. Still later, at TB-Builder create time, the
-                    // existance of the 0-5.txt file will trigger exporting one of the files whose
-                    // id is in 0-5.txt (as languages/${language}/intro.a18), and a special control.txt
-                    // that plays intro.txt will put into the Deployment.
-                    Category category = store.getCategory(Constants.CATEGORY_INTRO_MESSAGE);
-                    categories.put(category.getCategoryName(), category);
-
-                    // Read the categories from the _activeLists.txt file.
-                    BufferedReader reader = new BufferedReader(new FileReader(targetActiveListsFile));
-                    while (reader.ready()) {
-                        String line = reader.readLine();
-                        if (StringUtils.isEmpty(line)) {
-                            break;
-                        }
-                        if (line.contains("$")) {
-                            // Hacky way to skip "$0-1", with is the Talking Book description. It is
-                            // built in, and pre-existing.
-                            continue;
-                        }
-                        if (line.startsWith("!")) {
-                            // The "!" means locked. Category follows the "!"
-                            line = line.substring(1);
-                        }
-
-                        category = store.getCategory(line);
-                        if (category != null) {
-                            categories.put(category.getCategoryName(), category);
-                        }
-                    }
-                    reader.close();
-
-                    // Prompt the user for the Category name / Playlist name for this playlist. If they
-                    // choose a name that's already been exported to, the existing file will be silently
-                    // overwritten.
-                    String[] names = categories.keySet().toArray(new String[categories.size()]);
-                    String categoryName = (String) JOptionPane.showInputDialog(
-                        Application.getApplication(), "Choose export category:",
-                        "Export playlist", JOptionPane.PLAIN_MESSAGE, null, names, "");
-
-                    if (!StringUtils.isEmpty(categoryName)) {
-                        export(selectedPlaylist.getPlaylist(), categories.get(categoryName), packageMessagesListsDir);
-                    }
+            if (!StringUtils.isEmpty(packageName)) {
+                // If the user actually entered anything, create the directory for the package.
+                previousPackageName = packageName;
+                File packageMessagesListsDir = new File(
+                    ACMConfiguration.getInstance().getCurrentDB()
+                        .getTBLoadersDirectory(),
+                    "packages/" + packageName + "/messages/lists/"
+                        + TBBuilder.firstMessageListName);
+                if (!packageMessagesListsDir.exists()) {
+                    packageMessagesListsDir.mkdirs();
                 }
 
-            } catch (IOException e) {
-                LOG.log(Level.WARNING, "Error while exporting playlist.", e);
+                // If this is the first time that a playlist has been exported into this package,
+                // there will be no _activeLists.txt file. In that case, prompt the user for
+                // which _activeLists.txt they want. The files reside in the ACM directory, in
+                // TB-Loaders / TB_Options / activeLists.
+                // The contents of these files must be actual, valid _activeLists.txt files.
+                // By convention, the files are named as "Health_Farming_....txt", where
+                // the words are suggestive of the categories, in order, in the file.
+                File targetActiveListsFile;
+                targetActiveListsFile = new File(packageMessagesListsDir, "_activeLists.txt");
+                if (!targetActiveListsFile.exists()) {
+                    File sourceActiveListsFile = getActiveListsForExport();
+                    IOUtils.copy(sourceActiveListsFile, targetActiveListsFile);
+                }
+
+                MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
+                    .getMetadataStore();
+
+                // Add "Intro Message" to list of categories. hard coded as "0-5". "Intro Message".
+                // Note that this "Intro Message" category is NOT in the template _activeLists.txt
+                // file. If the user chooses to export a playlist to the category, those message
+                // ids will be written to a 0-5.txt file, and there will still be no pointer to
+                // it in the _activeLists.txt file. Still later, at TB-Builder create time, the
+                // existance of the 0-5.txt file will trigger exporting one of the files whose
+                // id is in 0-5.txt (as languages/${language}/intro.a18), and a special control.txt
+                // that plays intro.txt will put into the Deployment.
+                Category category = store.getCategory(Constants.CATEGORY_INTRO_MESSAGE);
+                categories.put(category.getCategoryName(), category);
+
+                // Read the categories from the _activeLists.txt file.
+                BufferedReader reader = new BufferedReader(new FileReader(targetActiveListsFile));
+                while (reader.ready()) {
+                    String line = reader.readLine();
+                    if (StringUtils.isEmpty(line)) {
+                        break;
+                    }
+                    if (line.contains("$")) {
+                        // Hacky way to skip "$0-1", with is the Talking Book description. It is
+                        // built in, and pre-existing.
+                        continue;
+                    }
+                    if (line.startsWith("!")) {
+                        // The "!" means locked. Category follows the "!"
+                        line = line.substring(1);
+                    }
+
+                    category = store.getCategory(line);
+                    if (category != null) {
+                        categories.put(category.getCategoryName(), category);
+                    }
+                }
+                reader.close();
+
+                // Prompt the user for the Category name / Playlist name for this playlist. If they
+                // choose a name that's already been exported to, the existing file will be silently
+                // overwritten.
+                String[] names = categories.keySet().toArray(new String[0]);
+                String categoryName = (String) JOptionPane.showInputDialog(
+                    Application.getApplication(), "Choose export category:",
+                    "Export playlist", JOptionPane.PLAIN_MESSAGE, null, names, "");
+
+                if (!StringUtils.isEmpty(categoryName)) {
+                    export(selectedPlaylist.getPlaylist(), categories.get(categoryName), packageMessagesListsDir);
+                }
             }
+
+        } catch (IOException e) {
+            LOG.log(Level.WARNING, "Error while exporting playlist.", e);
         }
-    };
+    }
+
 
     /**
      * Exports a playlist, by creating a file with a list of the message ids in the playlist.
@@ -311,7 +311,7 @@ class PlaylistPopupMenu extends JPopupMenu {
                 listCollection.put(possibleActiveListString, possibleActiveListFile);
             }
 
-            String[] listNames = listCollection.keySet().toArray(new String[listCollection.size()]);
+            String[] listNames = listCollection.keySet().toArray(new String[0]);
             String listName = (String) JOptionPane.showInputDialog(
                 Application.getApplication(), "Choose categories & order:",
                 "Category Order", JOptionPane.PLAIN_MESSAGE, null,
@@ -337,8 +337,7 @@ class PlaylistPopupMenu extends JPopupMenu {
     private static final int MAX_PACKAGE_NAME_LENGTH = 20;
     private JLabel charsRemainingPrompt;
 
-    public String promptWithMaxLength(
-        String title, String prompt, int maxLen, String initialValue) {
+    private String promptWithMaxLength(String title, String prompt, int maxLen, String initialValue) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
         panel.add(new JLabel(prompt));
@@ -459,7 +458,7 @@ class PlaylistPopupMenu extends JPopupMenu {
          *  Convenience constructor. The listener is only used once and then it is
          *  removed from the component.
          */
-        public RequestFocusListener()
+        RequestFocusListener()
         {
             this(true);
         }
@@ -471,7 +470,7 @@ class PlaylistPopupMenu extends JPopupMenu {
          *  @param removeListener when true this listener is only invoked once
          *                        otherwise it can be invoked multiple times.
          */
-        public RequestFocusListener(boolean removeListener)
+        RequestFocusListener(boolean removeListener)
         {
             this.removeListener = removeListener;
         }

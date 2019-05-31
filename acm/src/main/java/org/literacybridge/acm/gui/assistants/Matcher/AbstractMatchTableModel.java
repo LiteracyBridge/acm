@@ -34,7 +34,7 @@ public abstract class AbstractMatchTableModel<TargetType extends Target, Matchab
         replaceColumnNo = statusColumnNo + 1;
         fileColumnNo = replaceColumnNo + 1;
 
-        String[] NAMES = { "Status", "Replace?", "File" };
+        String[] NAMES = { "Status", "Replace?", "Audio File" };
         columnNames.addAll(Arrays.asList(NAMES));
     }
 

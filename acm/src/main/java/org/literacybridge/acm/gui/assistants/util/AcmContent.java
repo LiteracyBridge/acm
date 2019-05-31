@@ -35,6 +35,7 @@ public class AcmContent {
             if (super.children == null) {
                 return new ArrayList<>();
             } else {
+                //noinspection unchecked
                 return (List<LanguageNode>)super.children;
             }
         }
@@ -76,6 +77,7 @@ public class AcmContent {
             if (super.children == null) {
                 return new ArrayList<>();
             } else {
+                //noinspection unchecked
                 return (List<PlaylistNode>)super.children;
             }
         }
@@ -108,6 +110,7 @@ public class AcmContent {
             if (super.children == null) {
                 return new ArrayList<>();
             } else {
+                //noinspection unchecked
                 return (List<AudioItemNode>)super.children;
             }
         }

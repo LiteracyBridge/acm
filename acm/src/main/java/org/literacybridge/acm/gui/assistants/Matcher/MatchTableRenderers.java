@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.assistants.Matcher;
 
+import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.assistants.ContentImport.AudioPlaylistTarget;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 
@@ -129,8 +130,15 @@ public class MatchTableRenderers<T extends MatchableItem> {
      * the match state of the data.
      */
     public class MatcherRenderer extends DefaultTableCellRenderer {
+        Font normalFont, italicFont;
         MatcherRenderer() {
             super();
+            normalFont = getFont();
+//            italicFont = new Font(normalFont.getName(),
+//                normalFont.getStyle()|Font.ITALIC,
+//                normalFont.getSize());
+            italicFont = LabelButton.fontResource(LabelButton.AVENIR).deriveFont((float)normalFont.getSize()).deriveFont(Font.ITALIC);
+
         }
 
         private void setBackground(int viewRow, int viewColumn, boolean isSelected) {
@@ -147,22 +155,22 @@ public class MatchTableRenderers<T extends MatchableItem> {
             int column)
         {
             super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+            int modelRow = table.convertRowIndexToModel(row);
+            T item = model.getRowAt(modelRow);
+            if (item != null && item.getLeft() != null) {
+                setFont(item.getLeft() instanceof AudioPlaylistTarget ? italicFont : normalFont);
+            }
+
             setBackground(row, column, isSelected);
             return this;
         }
     }
 
     public class AudioItemRenderer extends MatcherRenderer {
-
-        private final Font normalFont;
-        private final Font italicFont;
-
         AudioItemRenderer() {
             super();
-            normalFont = getFont();
-            italicFont = new Font(normalFont.getName(),
-                normalFont.getStyle()|Font.ITALIC,
-                normalFont.getSize());
+//            italicFont = LabelButton.fontResource(LabelButton.AVENIR).deriveFont((float)normalFont.getSize()).deriveFont(Font.ITALIC);
         }
         @Override
         public JLabel getTableCellRendererComponent(JTable table,
@@ -172,6 +180,7 @@ public class MatchTableRenderers<T extends MatchableItem> {
             int row,
             int column)
         {
+            String tooltip = null;
             int modelRow = table.convertRowIndexToModel(row);
             T item = model.getRowAt(modelRow);
             JLabel comp = super.getTableCellRendererComponent(table,
@@ -186,7 +195,13 @@ public class MatchTableRenderers<T extends MatchableItem> {
                     icon = AcmAssistantPage.noSoundImage;
                 }
                 setFont(item.getLeft() instanceof AudioPlaylistTarget ? italicFont : normalFont);
+                if (item.getLeft() instanceof AudioPlaylistTarget) {
+                    AudioPlaylistTarget target = (AudioPlaylistTarget)item.getLeft();
+                    comp.setText(target.getPromptString());
+                    tooltip = String.format("%s playlist prompt for %s", target.isLong() ? "Long":"Short", target.getPlaylistSpec().getPlaylistTitle());
+                }
             }
+            comp.setToolTipText(tooltip);
             comp.setIcon(icon);
             return comp;
         }

@@ -94,7 +94,7 @@ public class EmailHelper {
     }
 
     private static BiFunction<TR, Integer, String> blueZebra = (tr, integer) ->
-        "background-color:" + ((integer % 2 == 0) ? "#fff" : "#eff");
+        "background-color:" + ((integer % 2 == 0) ? "#fff" : "#ebf5fc");
 
     public static BiFunction<TR, Integer, String> pinkZebra = (tr, integer) ->
         "background-color:" + ((integer % 2 == 0) ? "#ffeeee" : "#ffe0e0");

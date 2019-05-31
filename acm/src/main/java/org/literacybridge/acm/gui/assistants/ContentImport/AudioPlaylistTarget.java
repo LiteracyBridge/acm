@@ -1,7 +1,6 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
-import org.literacybridge.acm.gui.assistants.Matcher.Target;
-import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.gui.assistants.Deployment.PlaylistPrompts;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ContentSpec.MessageSpec;
@@ -10,20 +9,24 @@ import java.io.File;
 import java.util.Objects;
 
 public class AudioPlaylistTarget extends AudioTarget {
-    private String title;
+    private static final String SHORT_PROMPT = "\"%s\"";
+    private static final String LONG_PROMPT = "\"...%s...\"";
+
     private ContentSpec.PlaylistSpec playlistSpec;
     private boolean isLong;
     private File file;
 
-    public AudioPlaylistTarget(ContentSpec.PlaylistSpec playlistSpec, String title, boolean isLong, Playlist playlist) {
+    AudioPlaylistTarget(ContentSpec.PlaylistSpec playlistSpec, boolean isLong, Playlist playlist) {
         super(playlist);
         this.playlistSpec = playlistSpec;
-        this.title = title;
         this.isLong = isLong;
     }
 
     public String getTitle() {
-        return title;
+        return String.format(isLong?PlaylistPrompts.LONG_TITLE:PlaylistPrompts.SHORT_TITLE, playlistSpec.getPlaylistTitle());
+    }
+    public String getPromptString() {
+        return String.format(isLong?LONG_PROMPT:SHORT_PROMPT, playlistSpec.getPlaylistTitle());
     }
 
     public File getFile() {
@@ -72,7 +75,7 @@ public class AudioPlaylistTarget extends AudioTarget {
 
     @Override
     public String toString() {
-        return title;
+        return getTitle();
     }
 
     @Override

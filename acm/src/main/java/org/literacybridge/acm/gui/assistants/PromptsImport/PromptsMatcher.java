@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.assistants.SystemPromptsImport;
+package org.literacybridge.acm.gui.assistants.PromptsImport;
 
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 import org.apache.commons.io.FilenameUtils;
@@ -6,7 +6,6 @@ import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 
 import java.util.function.BiFunction;
-
 
 public class PromptsMatcher extends Matcher<PromptTarget, ImportableFile, PromptMatchable> {
 
@@ -21,10 +20,9 @@ public class PromptsMatcher extends Matcher<PromptTarget, ImportableFile, Prompt
                                                  FuzzySearch::ratio;
 
         String fileName = FilenameUtils.removeExtension(file.getFile().getName());
-        int score = 0; // so far
 
         // Try to match with both the prompt id and definition.
-        score = fn.apply(prompt.getPromptId(), fileName);
+        int score = fn.apply(prompt.getPromptId(), fileName);
         score = Math.max(score, fn.apply(prompt.getPromptDefinition(), fileName));
 
         if (tokens) {

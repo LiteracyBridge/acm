@@ -11,17 +11,17 @@ public class GreetingTarget extends Target {
     // Is there already an audio greeting for the Recipient in the ACM?
     private boolean hasGreeting;
 
-    public GreetingTarget(RecipientList.RecipientAdapter recipientAdapter) {
+    GreetingTarget(RecipientList.RecipientAdapter recipientAdapter) {
         this.recipientAdapter = recipientAdapter;
     }
 
     public RecipientList.RecipientAdapter getRecipient() {
         return recipientAdapter;
     }
-    public boolean hasGreeting() {
+    private boolean hasGreeting() {
         return hasGreeting;
     }
-    public void setHasGreeting(boolean hasGreeting) {
+    void setHasGreeting(boolean hasGreeting) {
         this.hasGreeting = hasGreeting;
     }
 

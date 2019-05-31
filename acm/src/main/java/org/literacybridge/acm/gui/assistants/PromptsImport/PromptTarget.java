@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.assistants.SystemPromptsImport;
+package org.literacybridge.acm.gui.assistants.PromptsImport;
 
 import org.literacybridge.acm.gui.assistants.Matcher.Target;
 
@@ -9,21 +9,21 @@ public class PromptTarget extends Target {
     // Is there already an audio greeting for the Recipient in the ACM?
     private boolean hasPrompt;
 
-    public PromptTarget(String promptId, String promptDefinition) {
+    PromptTarget(String promptId, String promptDefinition) {
         this.promptId = promptId;
         this.promptDefinition = promptDefinition;
     }
 
-    public String getPromptId() {
+    String getPromptId() {
         return promptId;
     }
-    public String getPromptDefinition() {
+    String getPromptDefinition() {
         return promptDefinition;
     }
-    public boolean hasPrompt() {
+    private boolean hasPrompt() {
         return hasPrompt;
     }
-    public void setHasPrompt(boolean hasPrompt) {
+    void setHasPrompt(boolean hasPrompt) {
         this.hasPrompt = hasPrompt;
     }
 

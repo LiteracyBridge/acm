@@ -45,7 +45,7 @@ public class ExternalConverter {
         return result;
     }
 
-    private Map<String, String> getParameters(AudioConversionFormat targetFormat) {
+    private static Map<String, String> getParameters(AudioConversionFormat targetFormat) {
 
         Map<String, String> parameters = new LinkedHashMap<String, String>();
 

@@ -1,12 +1,11 @@
 package org.literacybridge.acm.gui.assistants.util;
 
-import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -21,10 +20,15 @@ public class PSContent {
         String language)
     {
         ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
+        if (deploymentSpec == null) return;
+
         List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecs(language);
         for (ContentSpec.PlaylistSpec playlistSpec : playlistSpecs) {
             PlaylistNode playlistNode = new PlaylistNode(playlistSpec);
             languageNode.add(playlistNode);
+
+            playlistNode.add(new PromptNode(playlistSpec, false));
+            playlistNode.add(new PromptNode(playlistSpec, true));
 
             List<ContentSpec.MessageSpec> messageSpecs = playlistSpec.getMessageSpecs();
             for (ContentSpec.MessageSpec messageSpec : messageSpecs) {
@@ -41,7 +45,6 @@ public class PSContent {
      * @param programSpec  with content data.
      * @param deploymentNo for which the playlistSpec tree is desired.
      * @param languageCode for which the playlistSpec tree is desired.
-     * @return a tree of languageCode / playlistSpec / message
      */
     public static void fillTreeForDeployment(DefaultMutableTreeNode root,
         ProgramSpec programSpec,
@@ -56,6 +59,39 @@ public class PSContent {
             root.add(languageNode);
 
             fillTreeForDeploymentAndLanguage(languageNode, contentSpec, deploymentNo, language);
+        }
+    }
+
+    /**
+     * Given a ProgramSpec, returns a tree of MutableTreeNodes for a given deployment.
+     * @param root to be filled with playlistSpec data.
+     * @param programSpec  with content data.
+     * @param deploymentNo for which the playlistSpec tree is desired.
+     * @param languageCode for which the playlistSpec tree is desired.
+     */
+    public static void fillTreeWithPlaylistPromptsForDeployment(DefaultMutableTreeNode root,
+        ProgramSpec programSpec,
+        int deploymentNo,
+        String languageCode)
+    {
+        ContentSpec contentSpec = programSpec.getContentSpec();
+        LanguageNode languageNode = null;
+
+        ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
+        if (deploymentSpec == null) return;
+
+        List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecs(languageCode);
+        for (ContentSpec.PlaylistSpec playlistSpec : playlistSpecs) {
+            if (languageNode == null) {
+                languageNode = new LanguageNode(languageCode);
+                root.add(languageNode);
+            }
+
+            PlaylistNode playlistNode = new PlaylistNode(playlistSpec);
+            languageNode.add(playlistNode);
+
+            playlistNode.add(new PromptNode(playlistSpec, false));
+            playlistNode.add(new PromptNode(playlistSpec, true));
         }
     }
 
@@ -77,19 +113,12 @@ public class PSContent {
      * re-arranged (because it makes no difference on a TB).
      */
     public static class LanguageNode extends DefaultMutableTreeNode {
-        final String languagecode;
-        final String languagename;
-
-        public LanguageNode(String languagecode) {
-            this.languagecode = languagecode;
-            this.languagename = ACMConfiguration
-                .getInstance()
-                .getCurrentDB()
-                .getLanguageLabel(new Locale(languagecode));
+        LanguageNode(String languagecode) {
+            super(languagecode);
         }
 
         public String toString() {
-            return String.format("%s (%s)", languagecode, languagename);
+            return AcmAssistantPage.getLanguageAndName((String)getUserObject());
         }
     }
 
@@ -98,14 +127,12 @@ public class PSContent {
      * re-arranged within their language.
      */
     public static class PlaylistNode extends DefaultMutableTreeNode {
-        final ContentSpec.PlaylistSpec playlistSpec;
-
-        public PlaylistNode(ContentSpec.PlaylistSpec playlistSpec) {
-            this.playlistSpec = playlistSpec;
+        PlaylistNode(ContentSpec.PlaylistSpec playlistSpec) {
+            super(playlistSpec);
         }
 
         public String toString() {
-            return playlistSpec.getPlaylistTitle();
+            return ((ContentSpec.PlaylistSpec)getUserObject()).getPlaylistTitle();
         }
     }
 
@@ -115,16 +142,44 @@ public class PSContent {
      * within the language.
      */
     public static class MessageNode extends DefaultMutableTreeNode {
-        final ContentSpec.MessageSpec item;
+        public ContentSpec.MessageSpec getItem() { return (ContentSpec.MessageSpec)getUserObject(); }
 
-        public ContentSpec.MessageSpec getItem() { return item; }
-
-        public MessageNode(ContentSpec.MessageSpec item) {
-            this.item = item;
+        MessageNode(ContentSpec.MessageSpec item) {
+            super(item);
         }
 
         public String toString() {
-            return item.title;
+            return getItem().title;
         }
     }
+
+    /**
+     * Node class for an Audio Item for a playlist prompt. These can't be moved; they're implicit
+     * to the Playlist.
+     */
+    public static class PromptNode extends DefaultMutableTreeNode {
+        boolean isLongPrompt;
+
+        PromptNode(ContentSpec.PlaylistSpec playlistSpec, boolean isLongPrompt) {
+            super(playlistSpec);
+            this.isLongPrompt = isLongPrompt;
+        }
+
+        public ContentSpec.PlaylistSpec getPlaylist() {
+            return (ContentSpec.PlaylistSpec) getUserObject();
+        }
+        public boolean isLongPrompt() {
+            return this.isLongPrompt;
+        }
+
+        public String toString() {
+            StringBuilder result = new StringBuilder();
+            result.append('"');
+            if (isLongPrompt) result.append("...");
+            result.append(getPlaylist().getPlaylistTitle());
+            if (isLongPrompt) result.append("...");
+            return result.append('"').toString();
+        }
+    }
+
 }

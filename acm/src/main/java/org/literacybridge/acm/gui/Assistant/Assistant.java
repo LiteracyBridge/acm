@@ -99,6 +99,7 @@ public class Assistant<Context> extends JDialog {
 
         addEscapeListener(this);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        getRootPane().setDefaultButton(null);
     }
 
     /**
@@ -246,6 +247,7 @@ public class Assistant<Context> extends JDialog {
     private void setNavButtonState() {
         prevButton.setEnabled(currentPage > 0 && !isSummaryPage());
         nextButton.setEnabled(isPageComplete());
+        getRootPane().setDefaultButton(isPageComplete() ? nextButton : null);
         cancelButton.setEnabled(!isSummaryPage());
 
         if (isSummaryPage()) {

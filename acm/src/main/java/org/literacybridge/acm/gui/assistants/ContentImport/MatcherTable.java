@@ -4,8 +4,6 @@ import org.literacybridge.acm.gui.Assistant.AssistantPage;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 import java.awt.Dimension;
 import java.util.function.Predicate;
@@ -36,12 +34,6 @@ public class MatcherTable extends JTable {
     public void setFilter(Predicate<AudioMatchable> predicate) {
         filter.setPredicate(predicate);
     }
-
-    void setRenderer(MatcherTableModel.Columns column, TableCellRenderer renderer) {
-        TableColumn columnModel = getColumnModel().getColumn(column.ordinal());
-        columnModel.setCellRenderer(renderer);
-    }
-
 
     private void tableModelListener(TableModelEvent tableModelEvent) {
         if (tableModelEvent.getFirstRow() == TableModelEvent.HEADER_ROW) {

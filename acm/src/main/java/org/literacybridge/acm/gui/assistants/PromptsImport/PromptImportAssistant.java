@@ -1,8 +1,7 @@
-package org.literacybridge.acm.gui.assistants.SystemPromptsImport;
+package org.literacybridge.acm.gui.assistants.PromptsImport;
 
 import com.opencsv.CSVReader;
 import org.apache.commons.io.input.BOMInputStream;
-import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant;
 
 import java.io.InputStream;
@@ -19,11 +18,11 @@ public class PromptImportAssistant {
         // Development debugging
         PromptImportContext context = new PromptImportContext();
         // Debugging & development:
-        if (ACMConfiguration.isTestData()) {
-        }
+//        if (ACMConfiguration.isTestData()) {
+//        }
 
         context.promptDefinitions = loadSystemPrompts();
-        context.promptIds = new ArrayList<String>(context.promptDefinitions.keySet());
+        context.promptIds = new ArrayList<>(context.promptDefinitions.keySet());
         //context.promptDefinitions.forEach((k,v)->context.promptHasRecording.put(k,false));
 
         @SuppressWarnings("UnnecessaryLocalVariable")

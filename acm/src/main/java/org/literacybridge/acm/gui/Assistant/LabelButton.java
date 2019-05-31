@@ -5,8 +5,11 @@ import org.literacybridge.acm.utils.OsUtils;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
-import javax.swing.event.EventListenerList;
-import java.awt.*;
+import java.awt.AWTEvent;
+import java.awt.Color;
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.FontFormatException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -216,7 +219,9 @@ public class LabelButton extends JLabel {
 
 
     //    private static String ttfResource = "Didot-HTF-L24-Light.ttf";
+    // A decorative typeface, more subdued than Papyrus.
     public static final String PALATION = "Palation_Sans_LT_W04_Light.ttf";
+    // A very light, very readable typeface.
     public static final String AVENIR = "AvenirLTStd-Light.ttf";
     public static Font getCustomFont(float size) {
         // <div>Font made from <a href="http://www.onlinewebfonts.com">oNline Web Fonts</a>is licensed by CC BY 3.0</div>

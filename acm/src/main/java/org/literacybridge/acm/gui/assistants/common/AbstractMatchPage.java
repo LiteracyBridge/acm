@@ -3,7 +3,6 @@ package org.literacybridge.acm.gui.assistants.common;
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.PlaceholderTextField;
-import org.literacybridge.acm.gui.assistants.GreetingsImport.ManualMatcherDialog;
 import org.literacybridge.acm.gui.assistants.Matcher.AbstractMatchTableModel;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
@@ -228,7 +227,6 @@ public abstract class AbstractMatchPage<Context extends AbstractMatchPage.MatchC
         M selectedRow = selectedRow();
         M chosenMatch = null;
 
-        ManualMatcherDialog dialog = new ManualMatcherDialog();
         if (selectedRow.getMatch().isUnmatched()) {
             chosenMatch = onManualMatch(selectedRow);
         }

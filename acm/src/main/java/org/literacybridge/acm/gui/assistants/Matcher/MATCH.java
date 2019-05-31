@@ -12,7 +12,6 @@ public enum MATCH {
     RIGHT_ONLY;
 
     public boolean isMatch() { return ordinal() >= EXACT.ordinal() && ordinal() <= MANUAL.ordinal();}
-    public boolean isNonStrictMatch() { return ordinal() >= FUZZY.ordinal() && ordinal() <= TOKEN.ordinal();}
     public boolean isUnmatched() { return ordinal() >= MATCH.LEFT_ONLY.ordinal();}
 
     public static final int PERFECT = 100;

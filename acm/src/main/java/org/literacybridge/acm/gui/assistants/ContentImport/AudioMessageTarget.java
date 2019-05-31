@@ -1,6 +1,5 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
-import org.literacybridge.acm.gui.assistants.Matcher.Target;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ContentSpec.MessageSpec;
@@ -10,12 +9,15 @@ import java.util.Objects;
 public class AudioMessageTarget extends AudioTarget {
     protected MessageSpec message;
 
-    public AudioMessageTarget(MessageSpec message, Playlist playlist) {
+    AudioMessageTarget(MessageSpec message, Playlist playlist) {
         super(playlist);
         this.message = message;
     }
 
     public String getTitle() {
+        return message.title;
+    }
+    public String getPromptString() {
         return message.title;
     }
 

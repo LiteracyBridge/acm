@@ -6,7 +6,6 @@ import org.literacybridge.acm.gui.assistants.Matcher.AbstractMatchTableModel;
 import org.literacybridge.acm.gui.assistants.Matcher.IMatcherTableModel;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchTableRenderers;
-import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
 
 import javax.swing.*;
@@ -28,12 +27,11 @@ public class GreetingsMatchPage extends AbstractMatchPage<GreetingsImportContext
 
     @Override
     protected Component getWelcome() {
-        JLabel welcome = new JLabel("<html>" + "<span style='font-size:2em'>New Match Recipients with Greetings.</span>"
+        return new JLabel("<html>" + "<span style='font-size:2em'>New Match Recipients with Greetings.</span>"
                 + "<br/><br/><p>The Assistant has automatically matched files as possible with recipients. "
                 + "Only high-confidence matches are performed, so manual matching may be required. "
                 + "Perform any additional matching (or un-matching) as required, then click \"Finish\" to perform the import.</p>"
                 + "</html>");
-        return welcome;
     }
     @Override
     protected String getFilterSwitchPrompt() {
@@ -41,10 +39,10 @@ public class GreetingsMatchPage extends AbstractMatchPage<GreetingsImportContext
     }
 
     protected String getUnmatchTooltip() {
-        return "Unmatch the Audio Item from the File.";
+        return "Unmatch the greeting from the file.";
     }
     protected String getMatchTooltip() {
-        return "Manually match this file with an message.";
+        return "Manually match this file with a greeting.";
     }
 
     @Override
@@ -105,8 +103,8 @@ public class GreetingsMatchPage extends AbstractMatchPage<GreetingsImportContext
 
     @Override
     protected GreetingMatchable onManualMatch(GreetingMatchable selectedRow) {
-        ManualMatcherDialog dialog = new ManualMatcherDialog();
-        return dialog.chooseMatchFor(selectedRow, context.matcher.matchableItems);
+        ManualMatcherDialog dialog = new ManualMatcherDialog(selectedRow, context.matcher.matchableItems);
+        return dialog.getSelectedItem();
     }
 
     @Override

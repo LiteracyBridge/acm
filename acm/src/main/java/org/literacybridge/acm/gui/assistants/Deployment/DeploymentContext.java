@@ -6,7 +6,6 @@ import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ProgramSpec;
 
-import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

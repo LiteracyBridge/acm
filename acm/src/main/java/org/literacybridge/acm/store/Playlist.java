@@ -38,6 +38,14 @@ public class Playlist extends Committable {
     audioItems.add(uuid);
   }
 
+  public void addAudioItem(int index, AudioItem item) {
+    addAudioItem(index, item.getUuid());
+  }
+
+  public void addAudioItem(int index, String uuid) {
+    audioItems.add(index, uuid);
+  }
+
   public void removeAudioItem(String uuid) {
     audioItems.remove(uuid);
   }

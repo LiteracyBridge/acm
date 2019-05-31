@@ -2,7 +2,10 @@ package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.MainWindow.SidebarView;
+import org.literacybridge.acm.gui.assistants.Deployment.PlaylistPrompts;
+import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.gui.assistants.util.PSContent;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataStore;
@@ -17,6 +20,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellRenderer;
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -36,7 +40,7 @@ import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 public class WelcomePage extends ContentImportBase<ContentImportContext> {
     private static final Logger LOG = Logger.getLogger(WelcomePage.class.getName());
 
-    private final JComboBox<Object> deploymentChooser;
+    private final JComboBox<String> deploymentChooser;
     private final JComboBox<String> languageChooser;
     private final Box titlePreviewBox;
     private final JScrollPane titlePreviewScroller;
@@ -47,22 +51,13 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
 
     WelcomePage(PageHelper<ContentImportContext> listener) {
         super(listener);
+        getProjectInfo();
+
         setLayout(new GridBagLayout());
 
         GridBagConstraints gbc = getGBC();
 
-        JLabel welcome = new JLabel("<html>"
-            + "<span style='font-size:2.5em'>Welcome to the Content Import Assistant.</span>"
-            + "<br/><br/><p>This assistant will guide you through importing audio content into your project. Steps to import audio:</p>"
-            + "<ol>"
-            + "<li> You choose the Deployment #, and the Language of the content you want to import.</li>"
-            + "<li> You choose the files and folders containing the content.</li>"
-            + "<li> The assistant will automatically match as many imported files as it can. You will "
-            + "have an opportunity to match remaining files, or to \"unmatch\" files as needed.</li>"
-            + "<li> You review and approve the final message-to-file matches.</li>"
-            + "<li> The audio items are imported into the ACM, and placed in appropriate playlists.</li>"
-            + "</ol>"
-            + "</html>");
+        JLabel welcome = new JLabel(getWelcomeIntro());
         add(welcome, gbc);
 
         // Deployment # and language chooser, in a HorizontalBox.
@@ -78,19 +73,21 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         hbox.add(new JLabel("and the Language: "));
         languageChooser = new LanguageChooser();
         languageChooser.addActionListener(this::onSelection);
-        setComboWidth(languageChooser, "Choose...");
+        Set<String> languageStrings = context.programSpec.getLanguages()
+            .stream()
+            .map(AcmAssistantPage::getLanguageAndName)
+            .collect(Collectors.toSet());
+        setComboWidth(languageChooser, languageStrings, "Choose...");
         languageChooser.setMaximumSize(languageChooser.getPreferredSize());
         hbox.add(languageChooser);
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
-        add(new JLabel("Click 'Next' when you are ready to continue."), gbc);
-
         // Title preview.
         titlePreviewBox = Box.createHorizontalBox();
-        titlePreviewBox.add(new JLabel("Playlists and Message Titles in the Deployment. (Titles with "));
+        titlePreviewBox.add(new JLabel(getTitlePreviewProlog()));
         titlePreviewBox.add(new JLabel(soundImage));
-        titlePreviewBox.add(new JLabel(" have content in the ACM, with "));
+        titlePreviewBox.add(new JLabel(" already have content in the ACM, with "));
         titlePreviewBox.add(new JLabel(noSoundImage));
         titlePreviewBox.add(new JLabel("do not.):"));
 
@@ -107,6 +104,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         progSpecTreeModel = (DefaultTreeModel) progSpecTree.getModel();
         progSpecTree.setRootVisible(false);
         progSpecTree.setCellRenderer(treeCellRenderer);
+        javax.swing.ToolTipManager.sharedInstance().registerComponent(progSpecTree);
 
         titlePreviewScroller = new JScrollPane(progSpecTree);
         panel.add(titlePreviewScroller, BorderLayout.CENTER);
@@ -118,8 +116,6 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
 
         titlePreviewBox.setVisible(false);
         titlePreviewScroller.setVisible(false);
-
-        getProjectInfo();
     }
 
     /**
@@ -136,7 +132,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
             if (deploymentNo < 0) {
                 languageChooser.removeAllItems();
             } else {
-                fillLanguagesForDeployment(deploymentNo);
+                fillLanguageChooser(languageChooser, deploymentNo, context.programSpec, context.languagecode);
             }
         }
         deploymentChooser.setBorder(getSelectedDeployment()<=0 ? redBorder : blankBorder);
@@ -150,42 +146,14 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
 
     @Override
     protected void onPageEntered(boolean progressing) {
-        // Fill deployments
-        deploymentChooser.removeAllItems();
-        deploymentChooser.insertItemAt("Choose...", 0);
-        List<String> deployments = context.programSpec.getDeployments()
-            .stream()
-            .map(d -> Integer.toString(d.deploymentnumber))
-            .collect(Collectors.toList());
-        deployments
-            .forEach(deploymentChooser::addItem);
+        fillDeploymentChooser(deploymentChooser, context.programSpec, context.deploymentNo);
 
         // Empty the list until we have a deployment.
         languageChooser.removeAllItems();
-
-        // If only one deployment, or previously selected, auto-select.
-        if (deployments.size() == 1) {
-            deploymentChooser.setSelectedIndex(1); // only item after "choose..."
-        } else if (context.deploymentNo >= 0) {
-            deploymentChooser.setSelectedItem(Integer.toString(context.deploymentNo));
-        }
-        if (deploymentChooser.getSelectedIndex() > 0) {
-            fillLanguagesForDeployment(getSelectedDeployment());
-        }
-        if (context.languagecode != null) {
-            languageChooser.setSelectedItem(context.languagecode);
+        if (getSelectedDeployment() > 0) {
+            fillLanguageChooser(languageChooser, getSelectedDeployment(), context.programSpec, context.languagecode);
         }
         onSelection(null);
-    }
-
-    private void fillLanguagesForDeployment(int deploymentNo) {
-        languageChooser.removeAllItems();
-        languageChooser.insertItemAt("Choose...", 0);
-        Set<String> languages = context.programSpec.getLanguagesForDeployment(deploymentNo);
-        languages.forEach(languageChooser::addItem);
-        if (languages.size() == 1) {
-            languageChooser.setSelectedIndex(1);
-        }
     }
 
     @Override
@@ -202,6 +170,46 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
     @Override
     protected String getTitle() {
         return "Introduction & Choose Deployment, Language.";
+    }
+
+    private String getWelcomeIntro() {
+        String content = "<html>"
+            + "<span style='font-size:2.5em'>Welcome to the Content Import Assistant.</span>"
+            + "<br/><br/><p>This assistant will guide you through importing audio content "
+            + "into your project. Steps to import:</p>"
+            + "<ol>"
+            + "<li> Choose the Deployment # and the Language of the content you wish to import.</li>"
+            + "<li> Choose the files and folders containing the audio.</li>"
+            + "<li> The assistant will automatically match as many imported files as it can. You will "
+            + "have an opportunity to match remaining files, or to \"unmatch\" files as needed.</li>"
+            + "<li> Review and approve the final message-to-file matches.</li>"
+            + "<li> The audio files are imported into the ACM, and placed in appropriate playlists.</li>"
+            + "</ol>"
+            + "</html>";
+
+        String playlists = "<html>"
+            + "<span style='font-size:2.5em'>Welcome to the Playlist Prompt Assistant.</span>"
+            + "<br/><br/><p>This assistant will guide you through importing playlist prompts "
+            + "into your project. Steps to import:</p>"
+            + "<ol>"
+            + "<li> Choose the Deployment # and the Language of the prompts you wish to import.</li>"
+            + "<li> Choose the files and folders containing the prompts.</li>"
+            + "<li> The assistant will automatically match as many imported files as it can. You will "
+            + "have an opportunity to match remaining files, or to \"unmatch\" files as needed.</li>"
+            + "<li> Review and approve the final prompt-to-file matches.</li>"
+            + "<li> The audio files are imported into the ACM.</li>"
+            + "</ol>"
+            + "</html>";
+
+        return context.promptsOnly ? playlists : content;
+    }
+
+    private String getTitlePreviewProlog() {
+        if (context.promptsOnly) {
+            return "Playlist prompts in the Deployment. (Prompts with ";
+        } else {
+            return "Prompts and message titles in the Deployment. (Titles with ";
+        }
     }
 
     /**
@@ -244,10 +252,19 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         int deploymentNo = getSelectedDeployment();
         String languagecode = getSelectedLanguage();
         if (deploymentNo >= 0 && languagecode != null) {
-            PSContent.fillTreeForDeployment(progSpecRootNode,
-                context.programSpec,
-                deploymentNo,
-                languagecode);
+            // Find the playlist recordings so that we can paint the speaker to indicate existing prompts.
+            findPlaylistRecordings(deploymentNo);
+            if (context.promptsOnly) {
+                PSContent.fillTreeWithPlaylistPromptsForDeployment(progSpecRootNode,
+                    context.programSpec,
+                    deploymentNo,
+                    languagecode);
+            } else {
+                PSContent.fillTreeForDeployment(progSpecRootNode,
+                    context.programSpec,
+                    deploymentNo,
+                    languagecode);
+            }
             progSpecTreeModel.reload();
             for (int i = 0; i < progSpecTree.getRowCount(); i++) {
                 progSpecTree.expandRow(i);
@@ -259,10 +276,26 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         titlePreviewBox.setVisible(hasContent);
     }
 
+    private void findPlaylistRecordings(int deploymentNo) {
+        String languagecode = getSelectedLanguage();
+        context.playlistPromptsMap.clear();
+
+        ContentSpec contentSpec = context.programSpec.getContentSpec();
+        ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
+        if (deploymentSpec == null) return;
+        List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecs(getSelectedLanguage());
+
+        for (ContentSpec.PlaylistSpec contentPlaylistSpec : playlistSpecs) {
+            PlaylistPrompts prompts = new PlaylistPrompts(contentPlaylistSpec.getPlaylistTitle(), languagecode);
+            prompts.findPrompts();
+            context.playlistPromptsMap.put(contentPlaylistSpec.getPlaylistTitle(), prompts);
+        }
+    }
+
     private boolean hasContent(DefaultMutableTreeNode node) {
         for (Enumeration e = node.breadthFirstEnumeration(); e.hasMoreElements(); ) {
             DefaultMutableTreeNode current = (DefaultMutableTreeNode) e.nextElement();
-            if (current instanceof PSContent.MessageNode)
+            if (current instanceof PSContent.MessageNode || current instanceof PSContent.PromptNode)
                 return true;
         }
         return false;
@@ -270,6 +303,13 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
 
     @SuppressWarnings("FieldCanBeLocal")
     private TreeCellRenderer treeCellRenderer = new DefaultTreeCellRenderer() {
+        Font normalFont = getFont();
+//        Font italicFont = new Font(normalFont.getName(),
+//                normalFont.getStyle()|Font.ITALIC,
+//            normalFont.getSize());
+        Font italicFont = LabelButton.fontResource(LabelButton.AVENIR).deriveFont((float)normalFont.getSize()).deriveFont(Font.ITALIC);
+
+
         @Override
         public Component getTreeCellRendererComponent(JTree tree,
             Object value,
@@ -279,15 +319,27 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
             int row,
             boolean hasFocus)
         {
+            Font font = normalFont;
             ImageIcon icon = null;
+            String tooltip = null;
             if (value instanceof PSContent.MessageNode) {
                 String title = ((PSContent.MessageNode)value).getItem().getTitle();
                 AudioItem item = findAudioItemForTitle(title, getSelectedLanguage());
-                icon = item==null ? noSoundImage : soundImage;
+                icon = item!=null ? soundImage : noSoundImage;
+            } else if (value instanceof PSContent.PromptNode) {
+                PSContent.PromptNode promptNode = (PSContent.PromptNode)value;
+                String title = promptNode.getPlaylist().getPlaylistTitle();
+                PlaylistPrompts prompts = context.playlistPromptsMap.get(title);
+                boolean hasPrompt = promptNode.isLongPrompt() ? prompts.hasLongPrompt() : prompts.hasShortPrompt();
+                icon = hasPrompt ? soundImage : noSoundImage;
+                tooltip = String.format("%s playlist prompt for %s", promptNode.isLongPrompt() ? "Long":"Short", title);
+                font = italicFont;
             }
             JLabel comp = (JLabel) super.getTreeCellRendererComponent(tree, value,
                 selected, expanded, leaf, row, hasFocus);
             comp.setIcon(icon);
+            comp.setToolTipText(tooltip);
+            comp.setFont(font);
             return comp;
         }
     };

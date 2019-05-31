@@ -12,8 +12,8 @@ import java.util.stream.Collectors;
 public class MatcherTableModel extends AbstractTableModel implements
                                                           IMatcherTableModel<AudioMatchable> {
     public enum Columns {
-        Left(AudioTarget.class, "Audio Item"),
-        Right(ImportableFile.class, "File"),
+        Left(AudioTarget.class, "Title"),
+        Right(ImportableFile.class, "Audio File"),
         Status(String.class, "Status"),
         Update(Boolean.class, "Update?");
 

@@ -8,7 +8,6 @@ import java.util.function.Predicate;
  */
 class MatcherFilter extends RowFilter<MatcherTableModel, Integer> {
     private final MatcherTableModel model;
-    private boolean includeMatched = true;
 
     private Predicate<AudioMatchable> predicate;
 

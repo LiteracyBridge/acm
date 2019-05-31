@@ -1,10 +1,7 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant;
-import org.literacybridge.acm.gui.Assistant.AssistantPage;
-import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
@@ -13,7 +10,6 @@ import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.store.SearchResult;
 
 import javax.swing.*;
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,7 +35,7 @@ abstract class ContentImportBase<Context> extends AcmAssistantPage<Context> {
         public JLabel getDeployment() { return deployment; }
         public JLabel getLanguage() { return language; }
 
-        public ImportReminderLine() {
+        ImportReminderLine() {
             hbox = Box.createHorizontalBox();
             hbox.add(new JLabel("Importing message content for deployment "));
             deployment = makeBoxedLabel();

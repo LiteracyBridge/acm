@@ -5,7 +5,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.io.IOException;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.fail;
@@ -96,7 +95,7 @@ public class TBBuilderTest {
         File revFile = new File(publishedDir, deploymentName+"-"+oldRev+".rev");
         revFile.createNewFile();
 
-        String newRev = TBBuilder.getLatestDeploymentRevision(publishedDir, deploymentName);
+        String newRev = TBBuilder.getNextDeploymentRevision(publishedDir, deploymentName);
         assertEquals("New revisions should be \"b\".", "b", newRev);
     }
 
@@ -106,7 +105,7 @@ public class TBBuilderTest {
 
         String deploymentName = "Other-file-3.14";
 
-        String newRev = TBBuilder.getLatestDeploymentRevision(publishedDir, deploymentName);
+        String newRev = TBBuilder.getNextDeploymentRevision(publishedDir, deploymentName);
         assertEquals("First revisions should be \"a\".", "a", newRev);
    }
 
@@ -116,19 +115,19 @@ public class TBBuilderTest {
 
         String deploymentName = "some-1.rEallY.23-skidoo$_$_@weird-name";
 
-        String newRev = TBBuilder.getLatestDeploymentRevision(publishedDir, deploymentName);
+        String newRev = TBBuilder.getNextDeploymentRevision(publishedDir, deploymentName);
         assertEquals("First revisions should be \"a\".", "a", newRev);
 
-        newRev = TBBuilder.getLatestDeploymentRevision(publishedDir, deploymentName);
+        newRev = TBBuilder.getNextDeploymentRevision(publishedDir, deploymentName);
         assertEquals("Second revisions should be \"b\".", "b", newRev);
 
         for (int i='c'; i<='z'; i++) {
             String expected = String.valueOf((char)i);
-            newRev = TBBuilder.getLatestDeploymentRevision(publishedDir, deploymentName);
+            newRev = TBBuilder.getNextDeploymentRevision(publishedDir, deploymentName);
             assertEquals("Subsequent revisions should increment.", expected, newRev);
         }
 
-        newRev = TBBuilder.getLatestDeploymentRevision(publishedDir, deploymentName);
+        newRev = TBBuilder.getNextDeploymentRevision(publishedDir, deploymentName);
         assertEquals("Eventually, revisions should increment to \"aa\".", "aa", newRev);
     }
 

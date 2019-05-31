@@ -1,21 +1,14 @@
-package org.literacybridge.acm.gui.assistants.SystemPromptsImport;
+package org.literacybridge.acm.gui.assistants.PromptsImport;
 
-import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.audioconverter.api.AudioConversionFormat;
-import org.literacybridge.acm.audioconverter.api.ExternalConverter;
-import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.Assistant;
 import org.literacybridge.acm.gui.Assistant.ProblemReviewDialog;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
+import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.gui.util.UIUtils;
-import org.literacybridge.acm.importexport.AudioImporter;
-import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.EmailHelper.TD;
 import org.literacybridge.acm.utils.Version;
@@ -27,19 +20,14 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
-import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
 public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
@@ -59,7 +47,6 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
     private StringBuilder summaryMessage;
     private EmailHelper.HtmlTable summaryTable;
     private List<Exception> errors = new ArrayList<>();
-    private ExternalConverter externalConverter;
     private DBConfiguration dbConfig;
 
     PromptImportedPage(Assistant.PageHelper<PromptImportContext> listener) {
@@ -119,9 +106,10 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
 
     @Override
     protected void onPageEntered(boolean progressing) {
-        List<PromptMatchable> matches = context.matcher.matchableItems
-            .filtered((item)->item.getMatch().isMatch())
-            .filtered((item) -> item.getLeft().isImportable());
+        List<PromptMatchable> matches = context.matcher.matchableItems.stream()
+            .filter((item)->item.getMatch().isMatch())
+            .filter((item) -> item.getLeft().isImportable())
+            .collect(Collectors.toList());
 
         progressBar.setMaximum(matches.size()+1);
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -202,17 +190,16 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
     }
 
     private void performImports(List<PromptMatchable> matches) {
+        String languagecode = context.languagecode;
         dbConfig = ACMConfiguration.getInstance().getCurrentDB();
-        Map<String, String> recipientsMap = context.programSpec.getRecipientsMap();
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
-        File communitiesDir = new File(tbLoadersDir, "communities");
-        File languageDir = new File("boo!");
-
-        externalConverter = new ExternalConverter();
+        File tbOptionsDir = new File(tbLoadersDir, "TB_Options");
+        File languagesDir = new File(tbOptionsDir, "languages");
+        File languageDir = new File(languagesDir, languagecode);
 
         summaryMessage.append(String.format("<h2>Project %s</h2>", dbConfig.getProjectName()));
         summaryMessage.append(String.format("<h3>%s</h3>", localDateTimeFormatter.format(LocalDateTime.now())));
-        summaryMessage.append(String.format("<p>Importing System Prompts for language %s.</p>", getLanguageAndName(context.languagecode)));
+        summaryMessage.append(String.format("<p>Importing System Prompts for language %s.</p>", getLanguageAndName(languagecode)));
 
         importCount = 0;
         updateCount = 0;
@@ -220,12 +207,12 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
         progressCount = 0;
 
         // Iterate over the matched items.
-        matches.stream()
+        matches
             .forEach((item) -> {
                 try {
                     // Make sure the directories exist. Create the .grp file if it doesn't exist.
-                    String promptId = item.getLeft().getPromptId();
-                    UIUtils.setLabelText(currentMessage, item.getLeft().toString());
+                    String promptId = item.getLeft().getPromptId(); // 0, 1, etc.
+                    UIUtils.setLabelText(currentMessage, item.getLeft().toString()); // 0: bell,...
                     File promptFile = new File(languageDir, promptId+".a18");
                     boolean isReplace = promptFile.exists();
                     summaryTable.append(new EmailHelper.TR(isReplace?"Replace":"Import", item.getLeft().toString(), item.getRight().getFile().toString()));
@@ -237,7 +224,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                     }
                     // Import the audio.
                     File sourceFile = item.getRight().getFile();
-                    copyOrConvert(item.getLeft(), sourceFile, promptFile);
+                    AudioUtils.copyOrConvert(item.getLeft().toString(), languagecode, sourceFile, promptFile);
 
                     if (isReplace) {
                         UIUtils.setLabelText(updatedMessagesLabel, Integer.toString(++updateCount));
@@ -259,35 +246,6 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                     // Ignore
                 }
             });
-    }
-
-    private void copyOrConvert(PromptTarget target, File fromFile, File toFile)
-        throws BaseAudioConverter.ConversionException, IOException
-    {
-        String promptId = target.getPromptId();
-        Metadata metadata = AudioImporter.getInstance().getExistingMetadata(fromFile);
-        // Don't expect to usually find existing metadata.
-        if (metadata == null) {
-            metadata = new Metadata();
-        }
-        Collection<Category> categories = new ArrayList<>();
-        // get a new id, even if the object already had one.
-        String id = ACMConfiguration.getInstance().getNewAudioItemUID();
-        metadata.put(DC_IDENTIFIER, id);
-        metadata.put(DC_LANGUAGE, context.languagecode);
-        metadata.put(DC_TITLE, target.toString());
-        Category communities = dbConfig.getMetadataStore().getCategory(Constants.CATEGORY_TB_SYSTEM);
-        categories.add(communities);
-
-        if (FilenameUtils.getExtension(fromFile.getName()).equalsIgnoreCase(AudioItemRepository.AudioFormat.A18.getFileExtension())) {
-            AudioItemRepository.copyA18WithoutMetadata(fromFile, toFile);
-        } else {
-            AudioConversionFormat audioConversionFormat = AudioItemRepository.AudioFormat.A18.getAudioConversionFormat();
-            externalConverter.convert(fromFile, toFile, audioConversionFormat, true);
-        }
-
-        AudioItemRepository.appendMetadataToA18(metadata, categories, toFile);
-
     }
 
     @Override

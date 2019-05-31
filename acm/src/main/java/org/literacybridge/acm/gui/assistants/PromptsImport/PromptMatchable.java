@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.assistants.SystemPromptsImport;
+package org.literacybridge.acm.gui.assistants.PromptsImport;
 
 import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
@@ -7,35 +7,24 @@ import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
 
 public class PromptMatchable extends MatchableItem<PromptTarget, ImportableFile> {
 
-    public PromptMatchable(PromptTarget left, ImportableFile right) {
+    PromptMatchable(PromptTarget left, ImportableFile right) {
         super(left, right);
     }
 
-    public PromptMatchable(PromptTarget left,
-        ImportableFile right,
-        MATCH match)
+    private PromptMatchable(PromptTarget left, ImportableFile right, MATCH match)
     {
         super(left, right, match);
     }
 
-    public PromptMatchable(PromptTarget left,
-        ImportableFile right,
-        MATCH match,
-        int score)
-    {
-        super(left, right, match, score);
-    }
-
-    public boolean containsText(String filterText) {
+    boolean containsText(String filterText) {
         if (getRight() != null && getRight().getFile().getName().toLowerCase().contains(filterText))
             return true;
         if (getLeft() != null) {
             PromptTarget target = getLeft();
             String definition = target.getPromptDefinition().toLowerCase();
             // TODO: add fuzzy matching.
-            if (definition.contains(filterText) ||
-                target.getPromptId().contains(filterText))
-                return true;
+            return definition.contains(filterText) ||
+                target.getPromptId().contains(filterText);
         }
         return false;
     }

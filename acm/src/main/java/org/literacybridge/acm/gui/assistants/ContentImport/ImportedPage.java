@@ -7,6 +7,7 @@ import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.ProblemReviewDialog;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
+import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.importexport.AudioImporter;
 import org.literacybridge.acm.store.AudioItem;
@@ -14,8 +15,10 @@ import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.Transaction;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.Version;
+import org.literacybridge.core.spec.ContentSpec;
 
 import javax.swing.*;
 import java.awt.Color;
@@ -35,6 +38,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.Constants.CATEGORY_GENERAL_OTHER;
 import static org.literacybridge.acm.Constants.CATEGORY_TB_CATEGORIES;
@@ -42,7 +46,6 @@ import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import static org.literacybridge.acm.utils.EmailHelper.HtmlTable;
 import static org.literacybridge.acm.utils.EmailHelper.TR;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
-import static org.literacybridge.acm.utils.EmailHelper.sendEmail;
 
 public class ImportedPage extends ContentImportBase<ContentImportContext> {
     private static final Logger LOG = Logger.getLogger(ImportedPage.class.getName());
@@ -91,7 +94,7 @@ public class ImportedPage extends ContentImportBase<ContentImportContext> {
         hbox.add(new JLabel("Import message content for deployment "));
         hbox.add(makeBoxedLabel(Integer.toString(context.deploymentNo)));
         hbox.add(new JLabel(" in language "));
-        hbox.add(makeBoxedLabel(context.languagecode));
+        hbox.add(makeBoxedLabel(AcmAssistantPage.getLanguageAndName(context.languagecode)));
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
@@ -204,7 +207,7 @@ public class ImportedPage extends ContentImportBase<ContentImportContext> {
         DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withZone(
             ZoneId.systemDefault());
         String message = "<html>The following error(s) occurred when attempting to import the content. " +
-            "Please double check that the content is good audio. If possible, try listening to the " +
+            "The Audio File may be damaged. If possible, try listening to the " +
             "messages outside of the ACM application. If the problem persists, contact Amplio technical " +
             "support. The button below will send this report to Amplio."+
             "</html>";
@@ -251,11 +254,11 @@ public class ImportedPage extends ContentImportBase<ContentImportContext> {
                     importOneItem(matchableItem);
                 } else if (matchableItem.getLeft().hasAudioItem()
                         && !matchableItem.getLeft().isPlaylist()) {
-                    ensureAudioInPlaylist(matchableItem);
+                    ensureAudioInPlaylist(matchableItem.getLeft());
                 }
             } else if (matchableItem.getLeft() != null && matchableItem.getLeft().hasAudioItem()
                     && !matchableItem.getLeft().isPlaylist()) {
-                ensureAudioInPlaylist(matchableItem);
+                ensureAudioInPlaylist(matchableItem.getLeft());
             }
             UIUtils.setProgressBarValue(progressBar, ++progressCount);
         }
@@ -290,20 +293,12 @@ public class ImportedPage extends ContentImportBase<ContentImportContext> {
 
             // Add or update the audio file to the ACM database.
             AudioItem audioItem = importer.importFile(importableFile, handler);
+            matchableItem.getLeft().setItem(audioItem);
 
+            // If the item isn't already in the playlist, add it. Do not, however, add playlist prompts
+            // to a playlist.
             if (!matchableItem.getLeft().isPlaylist()) {
-                // If the item isn't already in the playlist, add it.
-                Playlist playlist = importableAudio.getPlaylist();
-                if (!audioItem.hasPlaylist(playlist)) {
-                    try {
-                        audioItem.addPlaylist(playlist);
-                        playlist.addAudioItem(audioItem);
-                        store.commit(audioItem, playlist);
-                        summaryTable.append(new TR("Add to Playlist", audioItem.getTitle(), playlist.getName()));
-                    } catch (Exception e) {
-                        reportPlaylistException(e, importableAudio, playlist);
-                    }
-                }
+                ensureAudioInPlaylist(matchableItem.getLeft());
             }
             if (matchableItem.getLeft().hasAudioItem()) {
                 updateCount++;
@@ -326,26 +321,103 @@ public class ImportedPage extends ContentImportBase<ContentImportContext> {
     }
 
     /**
-     * If the audio item didn't need to be imported, this can be used to make sure that it is in
-     * the appropriate playlist.
-     * @param matchableItem to be put into a playlist, if needed.
+     * Add an audio item to a playlist, if it is not already there.
+     * @param audioTarget to be put into a playlist, if needed.
      */
-    private void ensureAudioInPlaylist(AudioMatchable matchableItem) {
-        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-        AudioTarget importableAudio = matchableItem.getLeft();
-        Playlist playlist = importableAudio.getPlaylist();
-        AudioItem audioItem = matchableItem.getLeft().getItem();
+    private void ensureAudioInPlaylist(AudioTarget audioTarget) {
+        // Only put content messages (not playlist announement messages) into playlists.
+        if (!(audioTarget instanceof AudioMessageTarget)) return;
+
+        AudioMessageTarget audioMessageTarget = (AudioMessageTarget) audioTarget;
+
+        Playlist playlist = audioMessageTarget.getPlaylist();
+        AudioItem audioItem = audioMessageTarget.getItem();
+
         if (!audioItem.hasPlaylist(playlist)) {
             try {
+                Transaction transaction = ACMConfiguration.getInstance()
+                    .getCurrentDB()
+                    .getMetadataStore()
+                    .newTransaction();
+
                 audioItem.addPlaylist(playlist);
-                playlist.addAudioItem(audioItem);
-                store.commit(playlist);
+                transaction.add(audioItem);
+
+                int index = findIndexInPlaylist(audioMessageTarget);
+                playlist.addAudioItem(index, audioItem);
+                transaction.add(playlist);
+
+                transaction.commit();
                 summaryTable.append(new TR("Add to Playlist", audioItem.getTitle(), playlist.getName()));
             } catch (Exception e) {
-                reportPlaylistException(e, importableAudio, playlist);
+                reportPlaylistException(e, audioMessageTarget, playlist);
             }
         }
 
+    }
+
+    /**
+     * Find the index at which a message should be placed in the ACM playlist.
+     *
+     * Given a message title (from the program spec) and an ACM playlist, find the target
+     * index as follows:
+     * - Get a list of the titles already in the ACM playlist.
+     * - Get a list of the titles in the program spec playlist. Find the given message in that
+     *   list of titles.
+     * - Take the immediately preceding title from the program spec playlist, and see if that
+     *   title is in the ACM playlist. If it is, put the new message immediately after that
+     *   existing message.
+     * - If the immediately preceding title is not found, take the immediately following title
+     *   from the program spec playlist, and look for that in the ACM playlist. If it is found,
+     *   put the new message immediately before that existing message.
+     * - If neither of the immediate neighbors was found, try the next closest previous title,
+     *   and if it is not found, try the next closest following title.
+     * - Continue until a neighbor (however distant) is found in the ACM playlist, or until there
+     *   are no further program spec titles for which to look. If no neighbor is found, put the
+     *   new title at index 0, the first item in the playlist.
+     * @param audioMessageTarget describing the message to be inserted, and the playlist into
+     *                           which it should be inserted.
+     * @return the index at which the message should be inserted into the playlist.
+     */
+    private int findIndexInPlaylist(AudioMessageTarget audioMessageTarget) {
+        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+        Playlist playlist = audioMessageTarget.getPlaylist();
+        String title = audioMessageTarget.message.getTitle();
+        // Get the list of titles of items already in the ACM playlist.
+        List<String> acmTitles = playlist
+            .getAudioItemList()
+            .stream()
+            .map(id -> store.getAudioItem(id).getTitle())
+            .collect(Collectors.toList());
+        // Get the list of titles as specified by the Program Specification.
+        List<String> specTitles = audioMessageTarget
+            .getMessage()
+            .getPlaylist()
+            .getMessagesForLanguage(context.languagecode)
+            .stream()
+            .map(ContentSpec.MessageSpec::getTitle)
+            .collect(Collectors.toList());
+        int specIx = specTitles.indexOf(title);
+        // Start with immediate previous sibling, then immediate next sibling, then -2, then +2, ...
+        // try to find a sibling already in the ACM playlist. Put this message after or before
+        // that found message.
+        int offset = -1;
+        int maxDistance = Math.max(specIx, specTitles.size()-1-specIx);
+        while (Math.abs(offset) <= maxDistance) {
+            // Next index of a progspec title to look for.
+            int testIx = specIx + offset;
+            // If a valid progspec index, see if there's an acm item of that title.
+            int acmIx = testIx>=0&&testIx<specTitles.size() ? acmTitles.indexOf(specTitles.get(testIx)) : -1;
+            // If there's an acm item, put this new title after or before, depending on which way we were looking.
+            if (acmIx >= 0) {
+                return acmIx + (offset<0 ? 1 : 0);
+            }
+            offset = (offset<0) ? -offset : -offset-1;
+        }
+
+        // Didn't find any neighbors. Put this at the beginning. Next item, for which this will be
+        // a neighbor, will get placed appropriately after or before this one.
+        return 0;
     }
 
     /**

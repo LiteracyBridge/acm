@@ -1,18 +1,16 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
-import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
-import org.literacybridge.core.spec.ContentSpec;
 
-public class AudioMatcher extends Matcher<AudioTarget, ImportableFile, AudioMatchable> {
+class AudioMatcher extends Matcher<AudioTarget, ImportableFile, AudioMatchable> {
     /**
      * Set this to true to sort unmatched files to the end of the list. Set to false to sort
      * unmatched files intermingled by name with the program spec items.
      */
-    public static boolean filesAtEnd = true;
+    private static boolean filesAtEnd = true;
 
-    public void sortByProgramSpecification() {
+    void sortByProgramSpecification() {
         matchableItems.sort((o1, o2) -> {
             AudioTarget t1 = o1.getLeft();
             AudioTarget t2 = o2.getLeft();

@@ -60,6 +60,8 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
         public static int getWeight(String ext) { return exts.indexOf(ext);}
     }
 
+    private String[] columns = { "Audio File", "Timestamp", "Size" };
+
     private final JLabel choosePrompt;
     private final JButton chooseFiles;
     private final JScrollPane filesPreviewScroller;
@@ -79,16 +81,16 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
         getPageIntro().forEach(comp -> add(comp, gbc));
 
         Box hbox = Box.createHorizontalBox();
-        choosePrompt = new JLabel("Click here to choose files: ");
+        choosePrompt = new JLabel("Click here to choose audio files: ");
         hbox.add(choosePrompt);
-        chooseFiles = new JButton("Choose File(s)");
+        chooseFiles = new JButton("Choose Audio File(s)");
         chooseFiles.addActionListener(this::onChooseFiles);
         hbox.add(chooseFiles);
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
         // Title preview.
-        filesPreviewLabel = new JLabel("Files chosen to import:");
+        filesPreviewLabel = new JLabel("Audio files chosen to import:");
         gbc.insets = new Insets(0, 0, 0, 0);
         add(filesPreviewLabel, gbc);
 
@@ -158,7 +160,7 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
 
         List<File> rootFiles = Arrays.asList(fileChooser.getSelectedFiles());
         context.getImportableRoots().addAll(rootFiles);
-        choosePrompt.setText("Click to choose more files: ");
+        choosePrompt.setText("Click to choose more audio files: ");
 
         fillFileList();
     }
@@ -170,6 +172,8 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
         }
 
         fillFileList();
+
+        chooseFiles.requestFocus();
     }
 
     @Override
@@ -246,7 +250,7 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
     private AbstractFileNode nodeFromFile(File file) {
         if (file.isDirectory()) {
             DirectoryNode dirNode = new DirectoryNode(file);
-            List<File> dirContents = filesInDirectory(file);
+            List<File> dirContents = preferredFilesInDirectory(file);
             for (File childFile : dirContents) {
                 AbstractFileNode childNode = nodeFromFile(childFile);
                 if (childNode != null) {
@@ -259,14 +263,14 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
         }
     }
 
-    protected List<File> filesInDirectory(File directory) {
+    private List<File> filesInDirectory(File directory) {
         File[] dirContents = directory.listFiles(dirfile -> chooserFilter.accept(dirfile));
         if (dirContents != null)
             return Arrays.asList(dirContents);
         return new ArrayList<>();
     }
 
-    protected List<File> preferredFilesInDirectory(File directory) {
+    private List<File> preferredFilesInDirectory(File directory) {
         List<File> files = filesInDirectory(directory);
         // Remove multiples that differ only by extension.
         Map<String, File> keepers = new HashMap<>();
@@ -297,7 +301,7 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
         void sizeColumns() {
             List<SizingParams> params = new ArrayList<>();
 
-            // Set column 1 width (Status) on header & values.
+            // Set column 1 width (Timestamp) on header & values.
             params.add(new SizingParams(1, SizingParams.IGNORE, 20, 60));
 
             // Set column 2 width (Size) on header & values.
@@ -313,7 +317,6 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
      * Abstract base class for File and Directory nodes. Both of those have a backing File object.
      */
     private abstract class AbstractFileNode extends AbstractMutableTreeTableNode {
-        String[] columns = { "Name", "Timestamp", "Size" };
 
         AbstractFileNode(File file, boolean allowsChildren) {
             super(file, allowsChildren);
@@ -395,8 +398,6 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
      * TreeTable model for the file-ish view.
      */
     private class FileTreeModel extends DefaultTreeTableModel {
-        String[] columns = { "Name", "Timestamp", "Size" };
-
         FileTreeModel(DirectoryNode root) {
             super(root);
         }

@@ -1,42 +1,36 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.Deployment.PlaylistPrompts;
+import org.literacybridge.acm.gui.assistants.Matcher.AbstractMatchTableModel;
+import org.literacybridge.acm.gui.assistants.Matcher.ColumnProvider;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
-import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchTableRenderers;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
-import org.literacybridge.acm.gui.assistants.Matcher.MatcherTableTransferHandler;
+import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
+import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ContentSpec;
 
 import javax.swing.*;
-import java.awt.Color;
+import javax.swing.table.TableColumn;
 import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
-public class ContentMatchPage extends ContentImportBase<ContentImportContext> {
+//public class ContentMatchPageOld extends ContentImportBase<ContentImportContext> {
+public class ContentMatchPage extends
+                                    AbstractMatchPage<ContentImportContext, AudioTarget, ImportableFile, AudioMatchable> {
+
     private static final int MAXIMUM_THRESHOLD = 100;
     private static final int DEFAULT_THRESHOLD = 80;
     private static final int MINIMUM_THRESHOLD = 60;
 
-    private final ImportReminderLine importReminderLine;
-
-    private MatcherTable table;
-    private MatcherTableModel model;
-    private JButton unMatch;
-    private JButton manualMatch;
+    private ContentImportBase.ImportReminderLine importReminderLine;
 
     static {
         // Configure the renderers for the match table.
@@ -46,174 +40,108 @@ public class ContentMatchPage extends ContentImportBase<ContentImportContext> {
 
     ContentMatchPage(PageHelper<ContentImportContext> listener) {
         super(listener);
-        setLayout(new GridBagLayout());
-
-        GridBagConstraints gbc = getGBC();
-        gbc.insets.bottom = 5;
-
-        JLabel welcome = new JLabel(
-            "<html>" + "<span style='font-size:2em'>Match Files with Content.</span>"
-                + "<br/><br/><p>The Assistant has automatically matched files as possible with content. "
-                + "Only high-confidence matches are performed, so manual matching may be required. "
-                + "Perform any additional matching (or un-matching) as required, then click \"Next\" to continue.</p>"
-                + "</html>");
-        add(welcome, gbc);
-
-        importReminderLine = new ImportReminderLine();
-        add(importReminderLine.getLine(), gbc);
-
-        gbc.weighty = 1.0;
-        gbc.fill = GridBagConstraints.BOTH;
-        add(makeTable(), gbc);
-        gbc.weighty = 0;
-
-        gbc.insets.bottom = 0;
-        add(makeManualMatchButtons(), gbc);
 
         if (context.fuzzyThreshold == null) {
             context.fuzzyThreshold = DEFAULT_THRESHOLD;
         } else {
             context.fuzzyThreshold = Integer.max(MINIMUM_THRESHOLD, Integer.min(MAXIMUM_THRESHOLD, context.fuzzyThreshold));
         }
+
+        table.moveColumn(tableModel.getFileColumnNo(), 1);
     }
 
-    /**
-     * Creates the table and sets the model and various renderers, filters, etc.
-     */
-    private Component makeTable() {
-        table = new MatcherTable();
-        model = table.getModel();
 
-        table.setFilter(this::filter);
+    @Override
+    protected Component getWelcome() {
+        JLabel welcome = new JLabel(
+            "<html>" + "<span style='font-size:2em'>Match Files with Content.</span>"
+                + "<br/><br/><p>The Assistant has automatically matched files as possible with content. "
+                + "Only high-confidence matches are performed, so manual matching may be required. "
+                + "Perform any additional matching (or un-matching) as required, then click \"Next\" to continue.</p>"
+                + "</html>");
+        importReminderLine = new ContentImportBase.ImportReminderLine();
 
-        MatchTableRenderers mtr = new MatchTableRenderers(table, model);
-        table.setRenderer(MatcherTableModel.Columns.Left, mtr.getAudioItemRenderer());
-        table.setRenderer(MatcherTableModel.Columns.Update, mtr.getUpdatableBooleanRenderer());
-        table.setRenderer(MatcherTableModel.Columns.Status, mtr.getStatusRenderer());
-        table.setRenderer(MatcherTableModel.Columns.Right, mtr.getMatcherRenderer());
-
-        JScrollPane scrollPane = new JScrollPane(table);
-        table.setFillsViewportHeight(true);
-        table.setGridColor(new Color(224, 224, 224));
-        table.setGridColor(Color.RED);
-
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowSelectionAllowed(false);
-        table.setColumnSelectionAllowed(false);
-
-        table.setDragEnabled(true);
-        table.setDropMode(DropMode.ON);
-
-        TransferHandler matchTableTransferHandler = new MatcherTableTransferHandler<AudioMatchable> (table, model) {
-            public void onMatched(AudioMatchable sourceRow, AudioMatchable targetRow) {
-                context.matcher.setMatch(sourceRow, targetRow);
-                model.fireTableDataChanged();
-            }
-        };
-        table.setTransferHandler(matchTableTransferHandler);
-
-        table.addMouseListener(tableMouseListener);
-
-        return scrollPane;
-    }
-
-    /**
-     * The filter for showing and hiding matched columns.
-     *
-     * @param t   The item to be filtered.
-     * @param <T> Type of the item, some subclass of MatchableItem.
-     * @return true if the item shoudl be shown.
-     */
-    private <T extends MatchableItem<?, ?>> boolean filter(T t) {
-        MATCH match = t.getMatch();
-        return match != MATCH.NONE;
-    }
-
-    private Box makeManualMatchButtons() {
-        // Control buttons
+        Box vbox = Box.createVerticalBox();
         Box hbox = Box.createHorizontalBox();
-        unMatch = new JButton("Unmatch");
-        unMatch.addActionListener(this::onUnMatch);
-        unMatch.setToolTipText("Unmatch the Audio Item from the File.");
-        hbox.add(unMatch);
-        hbox.add(Box.createHorizontalStrut(5));
-        manualMatch = new JButton("Manual Match");
-        manualMatch.addActionListener(this::onManualMatch);
-        manualMatch.setToolTipText("Manually match this file with an message.");
-        hbox.add(manualMatch);
-        hbox.add(Box.createHorizontalStrut(5));
-
-        unMatch.setEnabled(false);
-        manualMatch.setEnabled(false);
-
+        hbox.add(welcome);
         hbox.add(Box.createHorizontalGlue());
+        vbox.add(hbox);
 
-        table.getSelectionModel().addListSelectionListener(ev -> enableButtons());
-
-        return hbox;
+        hbox = Box.createHorizontalBox();
+        hbox.add(importReminderLine.getLine());
+        hbox.add(Box.createHorizontalGlue());
+        vbox.add(hbox);
+        return vbox;
     }
 
-    private MouseListener tableMouseListener = new MouseAdapter() {
-        @Override
-        public void mouseClicked(MouseEvent e) {
-            if (e.getClickCount() == 2) {
-                AudioMatchable selectedRow = selectedRow();
-                if (selectedRow != null && selectedRow.getMatch().isUnmatched()) {
-                    onManualMatch(null);
-                }
-            }
-        }
-    };
-
-    private void onUnMatch(ActionEvent actionEvent) {
-        int viewRow = table.getSelectionModel().getLeadSelectionIndex();
-        if (viewRow >= 0) {
-            int modelRow = table.convertRowIndexToModel(viewRow);
-            AudioMatchable row = model.getRowAt(modelRow);
-            if (row != null && row.getMatch().isMatch()) {
-                context.matcher.unMatch(modelRow);
-                model.fireTableDataChanged();
-            }
-        }
+    @Override
+    protected String getFilterSwitchPrompt() {
+        return null;
     }
 
-    private void onManualMatch(ActionEvent actionEvent) {
-        AudioMatchable selectedRow = selectedRow();
-        AudioMatchable chosenMatch = null;
-
-        ManualMatcherDialog dialog = new ManualMatcherDialog();
-        if (selectedRow.getMatch().isUnmatched()) {
-            chosenMatch = dialog.chooseMatchFor(selectedRow, context.matcher.matchableItems);
-        }
-
-        if (chosenMatch != null) {
-            context.matcher.setMatch(chosenMatch, selectedRow);
-            model.fireTableDataChanged();
-        }
+    @Override
+    protected String getUnmatchTooltip() {
+        return "Unmatch the title from the file.";
     }
 
-    private void enableButtons() {
-        AudioMatchable row = selectedRow();
-        unMatch.setEnabled(row != null && row.getMatch().isMatch());
-        manualMatch.setEnabled(row != null && !row.getMatch().isMatch());
+    @Override
+    protected String getMatchTooltip() {
+        return "Manually match this file with a title.";
     }
-    
-    private AudioMatchable selectedRow() {
-        AudioMatchable row = null;
-        int viewRow = table.getSelectionModel().getLeadSelectionIndex();
-        if (viewRow >= 0 && viewRow < table.getRowCount()) {
-            int modelRow = table.convertRowIndexToModel(viewRow);
-            row = model.getRowAt(modelRow);
-        }
-        return row;
+
+    @Override
+    protected AbstractMatchTableModel<AudioTarget, AudioMatchable> getModel() {
+        return new AudioMatchModel();
     }
+
+    @Override
+    protected RowFilter<AbstractMatchTableModel<AudioTarget, AudioMatchable>, Integer> getFilter() {
+        return null;
+    }
+
+    @Override
+    protected void setCellRenderers() {
+        @SuppressWarnings("unchecked")
+        MatchTableRenderers mtr = new MatchTableRenderers(table, tableModel);
+
+        TableColumn columnModel = table.getColumnModel().getColumn(0);
+        columnModel.setCellRenderer(mtr.getAudioItemRenderer());
+
+        columnModel = table.getColumnModel().getColumn(tableModel.getReplaceColumnNo());
+        columnModel.setCellRenderer(mtr.getUpdatableBooleanRenderer());
+
+        columnModel = table.getColumnModel().getColumn(tableModel.getStatusColumnNo());
+        columnModel.setCellRenderer(mtr.getStatusRenderer());
+
+        columnModel = table.getColumnModel().getColumn(tableModel.getFileColumnNo());
+        columnModel.setCellRenderer(mtr.getMatcherRenderer());
+
+    }
+
+    @Override
+    protected void sizeColumns() {
+        // Set columns 1 & 2 width (Update? and Status) on header & values.
+        AssistantPage.sizeColumns(table, tableModel.getReplaceColumnNo(), tableModel.getStatusColumnNo());
+    }
+
+    @Override
+    protected void updateFilter() {
+
+    }
+
+    @Override
+    protected AudioMatchable onManualMatch(AudioMatchable selectedRow) {
+        ManualMatcherDialog dialog = new ManualMatcherDialog(selectedRow, context.matcher.matchableItems);
+        return dialog.getSelectedItem();
+    }
+
 
     @Override
     protected void onPageEntered(boolean progressing) {
         String languagecode = context.languagecode;
 
         importReminderLine.getDeployment().setText(Integer.toString(context.deploymentNo));
-        importReminderLine.getLanguage().setText(languagecode);
+        importReminderLine.getLanguage().setText(AcmAssistantPage.getLanguageAndName(context.languagecode));
 
         int deploymentNo = context.deploymentNo;
 
@@ -223,16 +151,12 @@ public class ContentMatchPage extends ContentImportBase<ContentImportContext> {
                                                                                  .getDeployment(deploymentNo)
                                                                                  .getPlaylistSpecs();
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
-            // What is/will-be the name of the ACM playlist for this Program Spec playlist? And does it exist yet?
             String playlistName = WelcomePage.decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             Playlist playlist = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().findPlaylistByName(playlistName);
 
             // Add playlist prompts to the list of items that may be imported.
-            PlaylistPrompts prompts = new PlaylistPrompts(contentPlaylistSpec.getPlaylistTitle(), languagecode);
-            prompts.findPrompts();
-            String shortPrompt = prompts.shortPromptString();
-            String longPrompt = prompts.longPromptString();
-            AudioPlaylistTarget plItem = new AudioPlaylistTarget(contentPlaylistSpec, shortPrompt, false, playlist);
+            PlaylistPrompts prompts = context.playlistPromptsMap.get(contentPlaylistSpec.getPlaylistTitle());
+            AudioPlaylistTarget plItem = new AudioPlaylistTarget(contentPlaylistSpec, false, playlist);
             if (prompts.hasShortPrompt()) {
                 if (prompts.getShortItem()!=null) {
                     plItem.setItem(prompts.getShortItem());
@@ -242,7 +166,7 @@ public class ContentMatchPage extends ContentImportBase<ContentImportContext> {
             }
             titles.add(plItem);
 
-            plItem = new AudioPlaylistTarget(contentPlaylistSpec, longPrompt, true, playlist);
+            plItem = new AudioPlaylistTarget(contentPlaylistSpec, true, playlist);
             if (prompts.hasLongPrompt()) {
                 if (prompts.getLongItem()!=null) {
                     plItem.setItem(prompts.getLongItem());
@@ -252,13 +176,14 @@ public class ContentMatchPage extends ContentImportBase<ContentImportContext> {
             }
             titles.add(plItem);
 
-            // Add the messages to the list.
-            for (ContentSpec.MessageSpec messageSpec : contentPlaylistSpec.getMessagesForLanguage(languagecode)) {
-                AudioTarget importableAudio = new AudioMessageTarget(messageSpec, playlist);
-                // See if we already have this title in the ACM.
-                AudioItem audioItem = findAudioItemForTitle(messageSpec.title, languagecode);
-                importableAudio.setItem(audioItem);
-                titles.add(importableAudio);
+            if (!context.promptsOnly) {
+                for (ContentSpec.MessageSpec messageSpec : contentPlaylistSpec.getMessagesForLanguage(languagecode)) {
+                    AudioTarget importableAudio = new AudioMessageTarget(messageSpec, playlist);
+                    // See if we already have this title in the ACM.
+                    AudioItem audioItem = ContentImportBase.findAudioItemForTitle(messageSpec.title, languagecode);
+                    importableAudio.setItem(audioItem);
+                    titles.add(importableAudio);
+                }
             }
         }
         // List of files (right side list)
@@ -268,11 +193,12 @@ public class ContentMatchPage extends ContentImportBase<ContentImportContext> {
 
         if (progressing) {
             context.matcher.setData(titles, files, AudioMatchable::new);
-            model.setData(context.matcher.matchableItems);
+//            tableModel.setData(context.matcher.matchableItems);
             context.matcher.autoMatch(context.fuzzyThreshold);
             context.matcher.sortByProgramSpecification();
         }
-        model.fireTableDataChanged();
+        tableModel.fireTableDataChanged();
+        sizeColumns();
 
         setComplete();
     }
@@ -288,4 +214,43 @@ public class ContentMatchPage extends ContentImportBase<ContentImportContext> {
     protected String getTitle() {
         return "Auto-match Files with Content";
     }
+
+    class AudioMatchModel extends AbstractMatchTableModel<AudioTarget, AudioMatchable> {
+        AudioMatchModel() {
+            super(new AudioTargetColumnProvider());
+        }
+
+        @Override
+        public int getRowCount() {
+            return context.matcher.matchableItems.size();
+        }
+
+        @Override
+        public AudioMatchable getRowAt(int rowIndex) {
+            return context.matcher.matchableItems.get(rowIndex);
+        }
+    }
+
+    public class AudioTargetColumnProvider implements ColumnProvider<AudioTarget> {
+        @Override
+        public int getColumnCount() {
+            return 1;
+        }
+
+        @Override
+        public String getColumnName(int columnIndex) {
+            return "Title";
+        }
+
+        @Override
+        public Class getColumnClass(int columnIndex) {
+            return String.class;
+        }
+
+        @Override
+        public Object getValueAt(AudioTarget target, int columnIndex) {
+            return target;
+        }
+    }
+
 }

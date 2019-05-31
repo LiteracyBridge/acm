@@ -5,9 +5,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.Shape;
 import java.awt.geom.Path2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 
 /**
@@ -15,9 +15,18 @@ import java.awt.geom.RoundRectangle2D;
  */
 public class RoundedLineBorder extends LineBorder {
     private int radius;
+    private int insetThickness;
+
+    public RoundedLineBorder(Color color, int thickness, int radius, int insetThickness) {
+        super(color, thickness, true);
+        this.radius = radius;
+        this.insetThickness = insetThickness;
+    }
+
     public RoundedLineBorder(Color color, int thickness, int radius) {
         super(color, thickness, true);
         this.radius = radius;
+        this.insetThickness = thickness;
     }
 
     @Override
@@ -41,4 +50,11 @@ public class RoundedLineBorder extends LineBorder {
             g2d.setColor(oldColor);
         }
     }
+
+    @Override
+    public Insets getBorderInsets(Component c, Insets insets) {
+        insets.set(insetThickness, insetThickness, insetThickness, insetThickness);
+        return insets;
+    }
+
 }

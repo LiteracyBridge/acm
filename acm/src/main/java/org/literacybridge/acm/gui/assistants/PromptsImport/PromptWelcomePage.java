@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.assistants.SystemPromptsImport;
+package org.literacybridge.acm.gui.assistants.PromptsImport;
 
 import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
@@ -12,15 +12,16 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Predicate;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
@@ -82,7 +83,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
         promptTable.setDefaultRenderer(Object.class, new RecipientCellRenderer());
 
         TableRowSorter<PromptModel> sorter = new TableRowSorter<>(promptModel);
-        sorter.setComparator(0, (String a, String b)->Integer.parseInt(a)-Integer.parseInt(b));
+        sorter.setComparator(0, Comparator.comparingInt((ToIntFunction<String>) Integer::parseInt));
         promptFilter = new PromptFilter();
         sorter.setRowFilter(promptFilter);
         promptTable.setRowSorter(sorter);
@@ -142,7 +143,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
      *
      * @param actionEvent is unused. (Examine entire state when any part changes.
      */
-    private void onSelection(ActionEvent actionEvent) {
+    private void onSelection(@SuppressWarnings("unused") ActionEvent actionEvent) {
         String languagecode = getSelectedLanguage();
         languageChooser.setBorder(languagecode == null ? redBorder : blankBorder);
 

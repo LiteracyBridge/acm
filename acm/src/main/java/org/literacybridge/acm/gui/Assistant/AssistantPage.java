@@ -11,7 +11,6 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
@@ -19,10 +18,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.regex.Matcher;
@@ -49,17 +50,29 @@ public abstract class AssistantPage<Context> extends JPanel {
      * In each page, for each combo box, measure the size of the longest string, and set the
      * combo preferred size (and, optionally, min or max size) to the string + baseComboWidth
      */
-    private static final int baseComboWidth = new JComboBox().getPreferredSize().width + 5;
+    private static final int baseComboWidth = new JComboBox().getPreferredSize().width + 6;
+
+    protected static void setComboWidth(JComboBox cb, Collection<String> strings, String string) {
+        Collection<String> allStrings = new HashSet<>(strings);
+        allStrings.add(string);
+        setComboWidth(cb, allStrings);
+    }
     protected static void setComboWidth(JComboBox cb, String string) {
-        int textWidth = new JLabel("").getFontMetrics(cb.getFont()).stringWidth(string);
+        setComboWidth(cb, Collections.singleton(string));
+    }
+    protected static void setComboWidth(JComboBox cb, Collection<String> strings) {
+        int textWidth = 0;
+        for (String string : strings) {
+            textWidth = Math.max(textWidth, new JLabel("").getFontMetrics(cb.getFont()).stringWidth(string));
+        }
         Dimension size = cb.getPreferredSize();
         size.width = baseComboWidth + textWidth;
         cb.setPreferredSize(size);
     }
 
     private static final Border greenBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
-    protected static final Border redBorder = new RoundedLineBorder(Color.RED, 1, 8);
-    protected static final Border blankBorder = new RoundedLineBorder(new Color(0, 0, 0, 0), 1, 4);
+    public static final Border redBorder = new RoundedLineBorder(Color.RED, 1, 8);
+    public static final Border blankBorder = new RoundedLineBorder(new Color(0, 0, 0, 0), 1, 4);
     private static final Border parameterBorder = new CompoundBorder(greenBorder, new EmptyBorder(2,3,2,4));
 
     protected static JLabel makeBoxedLabel() { return makeBoxedLabel(null); }
@@ -134,29 +147,35 @@ public abstract class AssistantPage<Context> extends JPanel {
             // get the render component we need to use the view index.
             final int modelColumnNo = param.modelColumn;
             final int viewColumnNo = table.convertColumnIndexToView(modelColumnNo);
-            TableColumn column = table.getColumnModel().getColumn(modelColumnNo);
+            TableColumn tableColumn = table.getColumnModel().getColumn(viewColumnNo);
 
             int headerWidth = headerRenderer.getTableCellRendererComponent(null,
-                column.getHeaderValue(),
+                tableColumn.getHeaderValue(),
                 false,
                 false,
                 0,
                 0).getPreferredSize().width;
 
-            int cellWidth = IntStream
-                .range(0, table.getRowCount())
-                .mapToObj(row -> table.getValueAt(row, modelColumnNo))
-                .filter(Objects::nonNull)
-                .map(item -> table.getDefaultRenderer(model.getColumnClass(modelColumnNo))
-                    .getTableCellRendererComponent(table, item, false, false, 0, viewColumnNo)
-                    .getPreferredSize().width)
+            // Determine which table cell renderer is expected.
+            Class columnClass = model.getColumnClass(modelColumnNo);
+            TableCellRenderer columnClassRenderer = table.getDefaultRenderer(columnClass);
+            TableCellRenderer columnRenderer = tableColumn.getCellRenderer();
+            TableCellRenderer columnActualRenderer = columnRenderer != null ? columnRenderer : columnClassRenderer;
+
+            // For each row, render the value, and get the width. Take the largest width.
+            int cellWidth = IntStream.range(0, table.getRowCount())
+                .mapToObj(rowNo ->
+                    columnActualRenderer
+                        .getTableCellRendererComponent(table, table.getValueAt(rowNo, viewColumnNo), false, false, rowNo, viewColumnNo)
+                        .getPreferredSize()
+                        .width)
                 .max(Integer::compareTo)
-                .orElse(1);
+                .orElse(0);
 
             int w = Math.max(headerWidth, cellWidth) + 2;
-            if (param.minPadding != SizingParams.IGNORE) column.setMinWidth(w + param.minPadding);
-            if (param.maxPadding != SizingParams.IGNORE) column.setMaxWidth(w + param.maxPadding);
-            if (param.preferredPadding != SizingParams.IGNORE) column.setPreferredWidth(w + param.preferredPadding);
+            if (param.minPadding != SizingParams.IGNORE) tableColumn.setMinWidth(w + param.minPadding);
+            if (param.maxPadding != SizingParams.IGNORE) tableColumn.setMaxWidth(w + param.maxPadding);
+            if (param.preferredPadding != SizingParams.IGNORE) tableColumn.setPreferredWidth(w + param.preferredPadding);
         }
     }
 

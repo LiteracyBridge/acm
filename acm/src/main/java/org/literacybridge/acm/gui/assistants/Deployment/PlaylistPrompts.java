@@ -36,8 +36,8 @@ import static org.literacybridge.acm.Constants.CATEGORY_TB_CATEGORIES;
  * unexpected.
  */
 public class PlaylistPrompts {
-    public static final String SHORT_PROMPT_DECORATION = "";
-    public static final String LONG_PROMPT_DECORATION = " : invite";
+    public static final String SHORT_TITLE = "%s";
+    public static final String LONG_TITLE = "%s : description";
 
     private final String title;
     private final String languagecode;
@@ -48,8 +48,8 @@ public class PlaylistPrompts {
     String categoryId;
 
 
-    File shortPromptFile;
-    File longPromptFile;
+    private File shortPromptFile;
+    private File longPromptFile;
     AudioItem shortPromptItem;
     AudioItem longPromptItem;
 
@@ -61,6 +61,13 @@ public class PlaylistPrompts {
     public void findPrompts() {
         findCategoryPrompts();
         findContentPrompts();
+    }
+
+    public String getTitle() {
+        return title;
+    }
+    public String getLanguagecode() {
+        return languagecode;
     }
 
     public AudioItem getShortItem() {
@@ -98,13 +105,6 @@ public class PlaylistPrompts {
         // It would be very weird (and difficult) for this to happen.
         return hasBothPrompts() && !hasEitherPromptAmbiguity() &&
             ((shortPromptFile==null) != (longPromptFile==null));
-    }
-
-    public String shortPromptString() {
-        return title + SHORT_PROMPT_DECORATION;
-    }
-    public String longPromptString() {
-        return title + LONG_PROMPT_DECORATION;
     }
 
     /**
@@ -176,11 +176,11 @@ public class PlaylistPrompts {
             .collect(Collectors.toMap(AudioItem::getTitle, c -> c));
 
         // Case insensitive, match pattern and optional " : description"
-        String regex = "(?i)^(" + Pattern.quote(title) + ")([: ]+(description|invite|invitation|prompt))?$";
+        String regex = "(?i)^(" + Pattern.quote(title) + ")([: ]+(description|invite|invitation|prompt|long))?$";
         Pattern pattern = Pattern.compile(regex);
         for (Map.Entry<String, AudioItem> e : items.entrySet()) {
             Matcher matcher = pattern.matcher(e.getKey());
-            if (matcher.matches() && matcher.groupCount()==2) {
+            if (matcher.matches() && matcher.groupCount()==3) {
                 if (matcher.group(2) != null) {
                     longPromptItem = e.getValue();
                 } else {
