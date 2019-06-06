@@ -20,4 +20,7 @@ public class Target {
      */
     public boolean targetExists() { return false; }
 
+    public String getTitle() {
+        return toString();
+    }
 }

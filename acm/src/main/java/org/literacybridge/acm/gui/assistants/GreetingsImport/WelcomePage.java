@@ -32,7 +32,7 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
         GridBagConstraints gbc = getGBC();
 
         JLabel welcome = new JLabel("<html>"
-            + "<span style='font-size:2.5em'>Welcome to the Greetings Import Assistant.</span>"
+            + "<span style='font-size:2.5em'>Welcome to the Custom Greetings Assistant.</span>"
             + "<br/><br/><p>This assistant will guide you through importing custom greetings for recipients. Steps to import greetings:</p>"
             + "<ol>"
             + "<li> Review the Recipients that need custom prompts, in the list below.</li>"

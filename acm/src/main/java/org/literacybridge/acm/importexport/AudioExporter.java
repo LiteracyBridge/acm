@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
@@ -17,7 +16,7 @@ import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataSpecification;
 
 public class AudioExporter {
-    static final String FILENAME_SEPARATOR = "___";
+    static final String AUDIOITEM_ID_SEPARATOR = "___";
 
     private static AudioExporter instance;
     public static synchronized AudioExporter getInstance() {
@@ -89,7 +88,7 @@ public class AudioExporter {
                     String title = metadata.getMetadataValue(MetadataSpecification.DC_TITLE).getValue();
                     basename.append(title);
                     if (idInFilename) {
-                        basename.append(FILENAME_SEPARATOR);
+                        basename.append(AUDIOITEM_ID_SEPARATOR);
                     }
                 }
                 if (idInFilename) {

@@ -2,9 +2,9 @@ package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
-import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableFileItem;
 
-public class AudioMatchable extends MatchableItem<AudioTarget, ImportableFile> {
+public class AudioMatchable extends MatchableFileItem<AudioTarget> {
 
     private AudioMatchable(AudioTarget left, ImportableFile right, MATCH match) {
         super(left, right, match);

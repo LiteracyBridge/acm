@@ -47,8 +47,8 @@ import static org.literacybridge.acm.utils.EmailHelper.HtmlTable;
 import static org.literacybridge.acm.utils.EmailHelper.TR;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
-public class ImportedPage extends ContentImportBase<ContentImportContext> {
-    private static final Logger LOG = Logger.getLogger(ImportedPage.class.getName());
+public class FinishImportPage extends ContentImportBase<ContentImportContext> {
+    private static final Logger LOG = Logger.getLogger(FinishImportPage.class.getName());
 
     private final JLabel importedMessagesLabel;
     private final JLabel updatedMessagesLabel;
@@ -80,7 +80,7 @@ public class ImportedPage extends ContentImportBase<ContentImportContext> {
     private final JButton viewErrorsButton;
     private int progressCount;
 
-    ImportedPage(PageHelper<ContentImportContext> listener) {
+    FinishImportPage(PageHelper<ContentImportContext> listener) {
         super(listener);
         setLayout(new GridBagLayout());
 
@@ -263,6 +263,7 @@ public class ImportedPage extends ContentImportBase<ContentImportContext> {
             UIUtils.setProgressBarValue(progressBar, ++progressCount);
         }
 
+        // Refresh the content and playlist views.
         Application.getFilterState().updateResult(true);
         UIUtils.setLabelText(currentMessage, "Click \"Close\" to return to the ACM.");
     }
@@ -292,15 +293,21 @@ public class ImportedPage extends ContentImportBase<ContentImportContext> {
             File importableFile = matchableItem.getRight().getFile();
 
             // Add or update the audio file to the ACM database.
-            AudioItem audioItem = importer.importFile(importableFile, handler);
-            matchableItem.getLeft().setItem(audioItem);
+            boolean isUpdate = matchableItem.getLeft().hasAudioItem(); // to update proper counter after success
+            if (isUpdate) {
+                AudioItem existingItem = matchableItem.getLeft().getItem();
+                importer.updateAudioItem(existingItem, importableFile, handler);
+            } else {
+                AudioItem audioItem = importer.importFile(importableFile, handler);
+                matchableItem.getLeft().setItem(audioItem);
+            }
 
             // If the item isn't already in the playlist, add it. Do not, however, add playlist prompts
             // to a playlist.
             if (!matchableItem.getLeft().isPlaylist()) {
                 ensureAudioInPlaylist(matchableItem.getLeft());
             }
-            if (matchableItem.getLeft().hasAudioItem()) {
+            if (isUpdate) {
                 updateCount++;
                 UIUtils.setLabelText(updatedMessagesLabel, Integer.toString(updateCount));
             } else {

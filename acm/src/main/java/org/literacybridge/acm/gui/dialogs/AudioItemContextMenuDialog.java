@@ -54,15 +54,17 @@ public class AudioItemContextMenuDialog extends JDialog {
     setResizable(false);
     setUndecorated(true);
 
-    GridLayout grid = new GridLayout(6, 1);
+    // Any number of rows, 1 column.
+    GridLayout grid = new GridLayout(0, 1);
 
     final String labelPostfix = getPostfixLabel(selectedAudioItems);
 
     FlatButton renameButton = makeRenameButton(selectedAudioItems, labelPostfix);
-    FlatButton deleteButton = makeDeleteButton(selectedAudioItems, labelPostfix);
     FlatButton editButton = makeEditButton(selectedAudioItems);
+    FlatButton removeButton = makeRemoveButton(selectedAudioItems, labelPostfix);
     FlatButton exportAudioButton = makeExportButton(selectedAudioItems, labelPostfix, ExportDialog.TYPE.Audio);
     FlatButton exportMetadataButton = makeExportButton(selectedAudioItems, labelPostfix, ExportDialog.TYPE.Metadata);
+    FlatButton deleteButton = makeDeleteButton(selectedAudioItems, labelPostfix);
     FlatButton languageButton = makeLanguageButton(selectedAudioItems, labelPostfix);
 
     setLayout(grid);
@@ -70,12 +72,19 @@ public class AudioItemContextMenuDialog extends JDialog {
 
     renameButton.setBorder(border);
     editButton.setBorder(border);
-    deleteButton.setBorder(border);
+    if (removeButton != null) {
+        removeButton.setBorder(border);
+    }
     exportAudioButton.setBorder(border);
     exportMetadataButton.setBorder(border);
+    deleteButton.setBorder(border);
     languageButton.setBorder(border);
+
     add(renameButton);
     add(editButton);
+    if (removeButton != null) {
+        add(removeButton);
+    }
     add(exportAudioButton);
     add(exportMetadataButton);
     add(deleteButton);
@@ -106,18 +115,28 @@ public class AudioItemContextMenuDialog extends JDialog {
   }
 
   /**
-   * Makes a delete button. If there is a playlist selected, it will be "delete items
-   * from playlist". If no playlist, it will be "delete items".
+   * Makes a delete button.
    * TODO: address usability
    * @param selectedAudioItems Audio item(s) to delete.
    * @param labelPostfix String to label the item(s)
    * @return The button
    */
   private FlatButton makeDeleteButton(final AudioItem[] selectedAudioItems, final String labelPostfix) {
+      return makeDeleteAuditItemsButton(selectedAudioItems, labelPostfix);
+  }
+
+  /**
+   * Makes a remove items from playlist button. If there is a playlist selected, returns null;
+   * TODO: address usability
+   * @param selectedAudioItems Audio item(s) to delete.
+   * @param labelPostfix String to label the item(s)
+   * @return The button
+   */
+  private FlatButton makeRemoveButton(final AudioItem[] selectedAudioItems, final String labelPostfix) {
     if (Application.getFilterState().getSelectedPlaylist() != null) {
       return makeRemoveFromPlaylistButton(selectedAudioItems, labelPostfix);
     } else
-      return makeDeleteAuditItemsButton(selectedAudioItems, labelPostfix);
+      return null;
   }
 
   /**
@@ -171,7 +190,7 @@ public class AudioItemContextMenuDialog extends JDialog {
     Color backgroundColor = Application.getApplication().getBackground();
     Color highlightedColor = SystemColor.textHighlight;
     ImageIcon deleteImageIcon = new ImageIcon(
-            UIConstants.getResource(UIConstants.ICON_DELETE_16_PX));
+            UIConstants.getResource(UIConstants.ICON_TRASH_16_PX));
     final String selectedTitle = getMetadataTitle(selectedAudioItems[0]);
     String buttonLabel = String.format(LabelProvider.getLabel("AUDIO_ITEM_CONTEXT_MENU_DIALOG__DELETE"), labelPostfix);
 
@@ -252,7 +271,7 @@ public class AudioItemContextMenuDialog extends JDialog {
     ImageIcon renameImageIcon = new ImageIcon(
         UIConstants.getResource("rename-16.png"));
     final String selectedTitle = getMetadataTitle(selectedAudioItems[0]);
-    String buttonLabel = String.format("Rename %s", labelPostfix);
+    String buttonLabel = String.format("Rename '%s'", labelPostfix);
 
     FlatButton renameButton = new FlatButton(buttonLabel, renameImageIcon, backgroundColor, highlightedColor) {
       @Override

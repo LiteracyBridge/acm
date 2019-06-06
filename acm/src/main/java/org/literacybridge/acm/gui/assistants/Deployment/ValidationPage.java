@@ -17,6 +17,8 @@ import org.literacybridge.core.spec.RecipientList;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -34,6 +36,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.literacybridge.acm.gui.assistants.common.AcmAssistantPage.getLanguageAndName;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.GROUP_FILE_EXTENSION;
 
 public class ValidationPage extends AssistantPage<DeploymentContext> {
@@ -41,6 +44,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     private final JLabel deployment;
     private final JCheckBox deployWithWarnings;
     private final JCheckBox deployWithErrors;
+    private final CardLayout issuesLayout;
 
     private DeploymentContext context;
 
@@ -48,6 +52,15 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     private final JTree issuesTree;
     private final DefaultMutableTreeNode issuesTreeRoot;
     private final DefaultTreeModel issuesTreeModel;
+    private final JPanel issuesBillboard;
+
+    private final String issuesWelcome = "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
+        + "<br/>Examine any issues, and click \"Next\" if you wish to proceed. "
+        + "</html>";
+    private final String noIssuesWelcome = "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
+        + "<br/>Click \"Next\" to proceed. "
+        + "</html>";
+    private final JLabel welcomeLabel;
 
     ValidationPage(PageHelper<DeploymentContext> listener) {
         super(listener);
@@ -56,37 +69,52 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
         GridBagConstraints gbc = getGBC();
 
-        JLabel welcome = new JLabel(
+        welcomeLabel = new JLabel(
             "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
                 + "<br/>Examine any issues, and click \"Next\" if you wish to proceed. "
 
                 + "</html>");
-        add(welcome, gbc);
+        add(welcomeLabel, gbc);
 
         Box hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Creating deployment "));
         deployment = makeBoxedLabel();
         hbox.add(deployment);
         hbox.add(Box.createHorizontalGlue());
-        // TODO: needed?
         add(hbox, gbc);
 
-        deployWithWarnings = new JCheckBox("Create Deployment with warnings. This may not conform to the Program Spec.");
+        deployWithWarnings = new JCheckBox("Create Deployment despite warnings. This may not conform to the Program Spec.");
         add(deployWithWarnings, gbc);
         deployWithWarnings.addActionListener(this::onSelection);
-        deployWithErrors = new JCheckBox("<html>Create Deployment with errors. <em>This will probably fail on some Talking Books</em>.</html>");
+        deployWithErrors = new JCheckBox("<html>Create Deployment despite errors. <em>This will probably fail on some Talking Books</em>.</html>");
         add(deployWithErrors, gbc);
         deployWithErrors.addActionListener(this::onSelection);
 
+        JPanel issuesCard = new JPanel(new BorderLayout());
         issuesTreeRoot = new DefaultMutableTreeNode();
         issuesTreeModel = new DefaultTreeModel(issuesTreeRoot);
         issuesTree = new JTree(issuesTreeModel);
         issuesTree.setRootVisible(false);
+        issuesTree.setShowsRootHandles(true);
         JScrollPane issuesScroller = new JScrollPane(issuesTree);
+        issuesCard.add(issuesScroller, BorderLayout.CENTER);
+
+        // Show "No issues..." instead of an empty issues tree.
+        JPanel noIssuesCard = new JPanel(new BorderLayout());
+        Box noIssuesLabel = Box.createVerticalBox();
+        noIssuesLabel.add(new JLabel("<html><span style='font-size:2.5em'>No issues or differences found.</span></html>"));
+        noIssuesLabel.add(Box.createVerticalGlue());
+        noIssuesCard.add(noIssuesLabel, BorderLayout.CENTER);
+
+        issuesLayout = new CardLayout();
+        issuesBillboard = new JPanel(issuesLayout);
+        issuesBillboard.add(issuesCard, "ISSUES");
+        issuesBillboard.add(noIssuesCard, "NOISSUES");
 
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weighty = 1.0;
-        add(issuesScroller, gbc);
+        add(issuesBillboard, gbc);
+
     }
 
     /**
@@ -162,8 +190,17 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         // Check that we have all recipient prompts for recipients in the deployment.
         validateRecipients(deploymentNo);
 
-        deployWithWarnings.setVisible(context.issues.hasWarning());
-        deployWithErrors.setVisible(context.issues.hasError());
+        if (context.issues.hasNoIssues()) {
+            welcomeLabel.setText(noIssuesWelcome);
+            issuesLayout.show(issuesBillboard, "NOISSUES");
+            deployWithErrors.setVisible(false);
+            deployWithWarnings.setVisible(false);
+        } else {
+            welcomeLabel.setText(issuesWelcome);
+            issuesLayout.show(issuesBillboard, "ISSUES");
+            deployWithWarnings.setVisible(context.issues.hasWarning());
+            deployWithErrors.setVisible(context.issues.hasError());
+        }
 
         onSelection(null);
     }
@@ -176,7 +213,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                 context.issues.add(Issues.Severity.ERROR,
                     Issues.Area.LANGUAGES,
                     "Language '%s' is used in the Deployment, but is not defined in the ACM.",
-                    language);
+                    getLanguageAndName(language));
             }
         }
     }
@@ -313,11 +350,11 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     }
                     prevN = n;
                 }
-                msg.insert(0, "System prompts are missing for language %s: ");
+                msg.insert(0, "System prompts are missing for language '%s': ");
                 context.issues.add(Issues.Severity.ERROR,
                     Issues.Area.SYSTEM_PROMPTS,
                     msg.toString(),
-                    language);
+                    getLanguageAndName(language));
             }
         }
     }
@@ -354,7 +391,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     context.issues.add(Issues.Severity.ERROR,
                         Issues.Area.PLAYLISTS,
                         msg.toString(),
-                        language,
+                        getLanguageAndName(language),
                         title);
 
                 } else if (prompts.hasEitherPromptAmbiguity()) {
@@ -372,14 +409,14 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     context.issues.add(Issues.Severity.WARNING,
                         Issues.Area.PLAYLISTS,
                         msg.toString(),
-                        language,
+                        getLanguageAndName(language),
                         title);
 
                 } else if (prompts.hasMixedPrompts()) {
                     context.issues.add(Issues.Severity.INFO,
                         Issues.Area.PLAYLISTS,
                         "One ACM message and one category prompt was found in language '%s' for playlist '%s'.",
-                        language,
+                        getLanguageAndName(language),
                         title);
                 }
 

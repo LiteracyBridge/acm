@@ -95,10 +95,13 @@ public class AcmContent {
             return (Playlist)getUserObject();
         }
         public String toString() {
-            return getPlaylist().getName();
+            return AssistantPage.undecoratedPlaylistName(getPlaylist().getName());
         }
         public String getTitle() {
             return AssistantPage.undecoratedPlaylistName(getPlaylist().getName());
+        }
+        public String getDecoratedTitle() {
+            return getPlaylist().getName();
         }
 
         @SuppressWarnings("unchecked")

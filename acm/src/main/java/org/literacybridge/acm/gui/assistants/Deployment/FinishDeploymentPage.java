@@ -28,6 +28,7 @@ import org.literacybridge.core.spec.Deployment;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -54,7 +55,7 @@ import static java.util.Calendar.YEAR;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
-public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
+public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
     private final JLabel publishNotification;
     private final JLabel summary;
@@ -68,7 +69,7 @@ public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
         .withZone(ZoneId.systemDefault());
     private StringBuilder summaryMessage;
 
-    DeployedPage(PageHelper<DeploymentContext> listener) {
+    FinishDeploymentPage(PageHelper<DeploymentContext> listener) {
         super(listener);
         setLayout(new GridBagLayout());
 
@@ -116,8 +117,6 @@ public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
         add(statusLabel, gbc);
         setStatus("Working...");
 
-        add(new JLabel("Click \"Close\" to return to the ACM."), gbc);
-
         // Absorb any vertical space.
         gbc.weighty = 1.0;
         add(new JLabel(), gbc);
@@ -125,16 +124,43 @@ public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
 
     @Override
     protected void onPageEntered(boolean progressing) {
-        summaryMessage = new StringBuilder("<html>");
-        summaryMessage.append(String.format("<h1>Deployment %d for Project %s</h1>",
-            context.deploymentNo, dbConfig.getProjectName()));
-        summaryMessage.append(String.format("<h3>Created on %s</h3>", localDateFormatter.format(LocalDateTime.now())));
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        SwingWorker worker = new SwingWorker<Integer, Void>() {
+            @Override
+            protected Integer doInBackground() {
+                summaryMessage = new StringBuilder("<html>");
+                summaryMessage.append(String.format("<h1>Deployment %d for Project %s</h1>",
+                    context.deploymentNo, dbConfig.getProjectName()));
+                summaryMessage.append(String.format("<h3>Created on %s</h3>", localDateFormatter.format(LocalDateTime.now())));
 
-        createDeployment();
+                createDeployment();
+                return 0;
+            }
 
-        summaryMessage.append("</html>");
-        EmailHelper.sendNotificationEmail("Deployment Created", summaryMessage.toString());
+            @Override
+            protected void done() {
+                setCursor(Cursor.getDefaultCursor());
+                summaryMessage.append("</html>");
+                EmailHelper.sendNotificationEmail("Deployment Created", summaryMessage.toString());
 
+                setComplete();
+
+                if (errors.size() > 0) {
+                    setStatus("Finished, but with errors.");
+                    statusLabel.setForeground(Color.red);
+                    viewErrorsButton.setVisible(true);
+                } else {
+                    setStatus("Finished.");
+                }
+
+                setComplete();
+
+                UIUtils.setLabelText(currentState, "Click \"Close\" to return to the ACM.");
+            }
+        };
+
+        worker.execute();
+        setComplete(false);
     }
 
     @Override
@@ -226,22 +252,8 @@ public class DeployedPage extends AcmAssistantPage<DeploymentContext> {
 
         if (ACMConfiguration.isTestData()) {
             // Fake error for testing.
-            errors.add(new DeploymentException("Just kidding", null));
+            errors.add(new DeploymentException("Simulated error for testing.", null));
         }
-
-        if (errors.size() > 0) {
-            setStatus("Finished, but with errors.");
-            statusLabel.setForeground(Color.red);
-            summary.setText(String.format("There were errors creating Deployment #%d.", context.deploymentNo));
-            viewErrorsButton.setVisible(true);
-        } else {
-            summary.setText(String.format("Deployment #%d successfully created as %s.",
-                context.deploymentNo, deploymentName()));
-            setStatus("Finished.");
-        }
-
-        setComplete();
-
     }
 
     /**

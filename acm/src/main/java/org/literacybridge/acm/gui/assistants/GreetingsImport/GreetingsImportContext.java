@@ -95,4 +95,13 @@ public class GreetingsImportContext
         }
     }
 
+    class GreetingMatchableColumnProvider extends RecipientColumnProviderBase implements ColumnProvider<GreetingMatchable> {
+        @Override
+        public Object getValueAt(GreetingMatchable data, int columnIndex) {
+            if (data == null) return null;
+            RecipientAdapter recipient = data.getLeft().getRecipient();
+            return super.getValueAt(recipient, columnIndex);
+        }
+    }
+
 }

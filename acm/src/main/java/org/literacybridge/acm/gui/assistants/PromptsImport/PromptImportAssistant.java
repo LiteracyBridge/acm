@@ -31,6 +31,7 @@ public class PromptImportAssistant {
             .withPageFactories(PromptWelcomePage::new,
                 PromptFilesPage::new,
                 PromptMatchPage::new,
+                ReviewPage::new,
                 PromptImportedPage::new)
             .withTitle("Language Import Assistant")
             .create();

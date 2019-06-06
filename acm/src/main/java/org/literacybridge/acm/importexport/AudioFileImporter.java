@@ -94,23 +94,18 @@ abstract class AudioFileImporter {
 
         // Get a new AudioItem, using a new or existing id.
         String id = null;
-        if (loadedMetadata != null) {
-            id = loadedMetadata.get(DC_IDENTIFIER);
-        }
-        // If no id from metadata, try to get it from filename. When audio is exported as
+
+        // Try to get it from filename. When audio is exported as
         // "title + id", the format is "${title}___${id}"; we can parse that for the id.
-        String titleFromFilename = null;
+        String titleFromFilename = FilenameUtils.removeExtension(audioFile.getName());
+        int pos = titleFromFilename.indexOf(AudioExporter.AUDIOITEM_ID_SEPARATOR);
+        if (pos != -1) {
+            id = titleFromFilename.substring(pos + AudioExporter.AUDIOITEM_ID_SEPARATOR.length());
+            titleFromFilename = titleFromFilename.substring(0, pos);
+        }
+        // If no id from filename, allocate a new one.
         if (isEmpty(id)) {
-            titleFromFilename = FilenameUtils.removeExtension(audioFile.getName());
-            int pos = titleFromFilename.indexOf(AudioExporter.FILENAME_SEPARATOR);
-            if (pos != -1) {
-                id = titleFromFilename.substring(pos + AudioExporter.FILENAME_SEPARATOR.length());
-                titleFromFilename = titleFromFilename.substring(0, pos);
-            }
-            // If no id from filename, allocate a new one.
-            if (isEmpty(id)) {
-                id = ACMConfiguration.getInstance().getNewAudioItemUID();
-            }
+            id = ACMConfiguration.getInstance().getNewAudioItemUID();
         }
         AudioItem audioItem = store.newAudioItem(id);
         Metadata metadata = audioItem.getMetadata();
@@ -127,7 +122,7 @@ abstract class AudioFileImporter {
         if (isEmpty(metadata.get(DC_TITLE))) {
             if (isEmpty(titleFromFilename)) {
                 titleFromFilename = FilenameUtils.removeExtension(audioFile.getName());
-                int pos = titleFromFilename.indexOf(AudioExporter.FILENAME_SEPARATOR);
+                pos = titleFromFilename.indexOf(AudioExporter.AUDIOITEM_ID_SEPARATOR);
                 if (pos != -1) {
                     titleFromFilename = titleFromFilename.substring(0, pos);
                 }

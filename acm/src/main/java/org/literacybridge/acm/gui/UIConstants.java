@@ -4,6 +4,7 @@ import java.net.URL;
 
 public abstract class UIConstants {
   public static final String ICON_EDIT_16_PX = "edit16px.png";
+  public static final String ICON_TRASH_16_PX = "trash16px.png";
   public static final String ICON_DELETE_16_PX = "delete16px.png";
   public static final String ICON_EXPORT_16_PX = "export16px.png";
   public static final String ICON_GRID_16_PX = "grid16px.png";

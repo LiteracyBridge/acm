@@ -66,6 +66,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         includeUfCategory.setSelected(true);
         add(includeUfCategory, gbc);
         includeUfCategory.addActionListener(this::onSelection);
+        
         includeTbCategory = new JCheckBox("Include Talking Book category ('The Talking Book is a durable and portable audio computer, "
             +"that shares knowledge...')");
         add(includeTbCategory, gbc);
@@ -82,6 +83,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         playlistTree = new JTree(context.playlistRootNode);
         playlistTreeModel = (DefaultTreeModel) playlistTree.getModel();
         playlistTree.setRootVisible(false);
+        playlistTree.setShowsRootHandles(true);
         playlistTree.addTreeSelectionListener(ev -> enableButtons());
         JScrollPane playlistScrollPane = new JScrollPane(playlistTree);
         // Set the size large, so it will take up most of the Vertical Box.
@@ -115,6 +117,9 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     @Override
     protected void onPageEntered(boolean progressing) {
         deployment.setText(Integer.toString(context.deploymentNo));
+
+        includeUfCategory.setSelected(context.includeUfCategory);
+        includeTbCategory.setSelected(context.includeTbCategory);
 
         if (progressing) {
             fillPlaylists();

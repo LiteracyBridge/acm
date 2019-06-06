@@ -18,8 +18,9 @@ public class GreetingsImportAssistant {
             .withPageFactories(WelcomePage::new,
                 GreetingsFilesPage::new,
                 GreetingsMatchPage::new,
+                ReviewPage::new,
                 GreetingsImportedPage::new)
-            .withTitle("Greetings Import Assistant")
+            .withTitle("Custom Greetings Assistant")
             .create();
 
         return assistant;

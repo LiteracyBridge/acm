@@ -27,13 +27,12 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
-
 public class AudioImporter {
     private static final Logger LOG = Logger.getLogger(AudioImporter.class.getName());
 
     public enum Option {
-        addNewOnly     // Do not update existing items, only add new ones.
+        addNewOnly,     // Do not update existing items, only add new ones.
+        updateOnly      // Only update the specified item.
     };
 
     private static AudioImporter instance = new AudioImporter();
@@ -88,7 +87,7 @@ public class AudioImporter {
      * @param optionsArg Optional list of Option.
      * @throws IOException If the file can not be read or imported.
      */
-    private AudioItem importFileWithOptions(File file, AudioItemProcessor processor, Option... optionsArg)
+    private AudioItem importFileWithOptions(File file, AudioItemProcessor processor, AudioItem existingItem, Option... optionsArg)
         throws IOException, AudioItemRepository.UnsupportedFormatException, BaseAudioConverter.ConversionException
     {
         AudioItem result = null;
@@ -110,20 +109,15 @@ public class AudioImporter {
         String title = FilenameUtils.removeExtension(file.getName());
 
         // Determine if this is a new or existing audio item.
-        Metadata metadata = importer.getMetadata();
-        String id = metadata.get(DC_IDENTIFIER);
-        AudioItem item = store.getAudioItem(id);
-
-        // If the item was not found by id, try filename as title.
+        AudioItem item = null;
+        if (options.contains(Option.updateOnly)) {
+            item = existingItem;
+        }
         if (item == null) {
-            item = store.getAudioItem(title);
-            // If still not found, look for an "id" tacked on to the filename.
-            if (item == null) {
-                int pos = title.indexOf(AudioExporter.FILENAME_SEPARATOR);
-                if (pos != -1) {
-                    id = title.substring(pos + AudioExporter.FILENAME_SEPARATOR.length());
-                    item = store.getAudioItem(id);
-                }
+            int pos = title.indexOf(AudioExporter.AUDIOITEM_ID_SEPARATOR);
+            if (pos != -1) {
+                String id = title.substring(pos + AudioExporter.AUDIOITEM_ID_SEPARATOR.length());
+                item = store.getAudioItem(id);
             }
         }
 
@@ -165,7 +159,14 @@ public class AudioImporter {
     private AudioItem importFile(File file, Category category)
         throws IOException, AudioItemRepository.UnsupportedFormatException, BaseAudioConverter.ConversionException
     {
-        return importFileWithOptions(file, (item) -> {if (item != null) item.addCategory(category);});
+        return importFileWithOptions(file, (item) -> {if (item != null) item.addCategory(category);}, null);
+    }
+
+    public AudioItem updateAudioItem(AudioItem existingItem, File file, AudioItemProcessor processor)
+        throws AudioItemRepository.UnsupportedFormatException,
+               BaseAudioConverter.ConversionException, IOException
+    {
+        return importFileWithOptions(file, processor, existingItem, Option.updateOnly);
     }
 
     /**
@@ -178,7 +179,7 @@ public class AudioImporter {
     public AudioItem importFile(File file, AudioItemProcessor processor, Option... options)
         throws IOException, AudioItemRepository.UnsupportedFormatException, BaseAudioConverter.ConversionException
     {
-        return importFileWithOptions(file, processor, options);
+        return importFileWithOptions(file, processor, null, options);
     }
 
     /**
@@ -189,7 +190,7 @@ public class AudioImporter {
     public AudioItem importFile(File file)
         throws IOException, AudioItemRepository.UnsupportedFormatException, BaseAudioConverter.ConversionException
     {
-        return importFileWithOptions(file, (AudioItemProcessor)null);
+        return importFileWithOptions(file, (AudioItemProcessor)null, null);
     }
 
     /**

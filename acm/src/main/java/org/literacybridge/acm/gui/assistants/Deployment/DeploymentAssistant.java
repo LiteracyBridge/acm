@@ -20,7 +20,7 @@ public class DeploymentAssistant {
             .withPageFactories(WelcomePage::new,
                 ValidationPage::new,
                 AdjustmentsPage::new,
-                DeployedPage::new)
+                FinishDeploymentPage::new)
             .withTitle("Deployment Assistant")
             .create();
 

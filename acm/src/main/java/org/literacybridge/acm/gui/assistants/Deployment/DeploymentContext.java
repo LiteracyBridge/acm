@@ -17,11 +17,13 @@ class DeploymentContext {
     ProgramSpec programSpec;
     Set<String> languages;
 
+    // Map of {languagecode : [playlistspec, ...], ...}
     Map<String, List<ContentSpec.PlaylistSpec>> allProgramSpecPlaylists;
+    // Map of {languagecode : [Playlist, ...], ...}
     Map<String, List<Playlist>> allAcmPlaylists;
 
     // Should these be per-contentpackage properties?
-    boolean includeUfCategory;
+    boolean includeUfCategory = true;
     boolean includeTbCategory;
 
     // Don't publish, only create.

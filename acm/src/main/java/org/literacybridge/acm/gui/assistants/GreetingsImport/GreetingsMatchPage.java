@@ -27,7 +27,7 @@ public class GreetingsMatchPage extends AbstractMatchPage<GreetingsImportContext
 
     @Override
     protected Component getWelcome() {
-        return new JLabel("<html>" + "<span style='font-size:2em'>New Match Recipients with Greetings.</span>"
+        return new JLabel("<html>" + "<span style='font-size:2em'>Match Recipients with Greetings.</span>"
                 + "<br/><br/><p>The Assistant has automatically matched files as possible with recipients. "
                 + "Only high-confidence matches are performed, so manual matching may be required. "
                 + "Perform any additional matching (or un-matching) as required, then click \"Finish\" to perform the import.</p>"

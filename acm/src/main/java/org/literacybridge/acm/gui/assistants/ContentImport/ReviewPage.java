@@ -1,102 +1,71 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
-import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.treetable.AbstractMutableTreeTableNode;
 import org.jdesktop.swingx.treetable.DefaultMutableTreeTableNode;
-import org.jdesktop.swingx.treetable.DefaultTreeTableModel;
 import org.jdesktop.swingx.treetable.MutableTreeTableNode;
-import org.literacybridge.acm.gui.Assistant.AssistantPage;
+import org.literacybridge.acm.gui.Assistant.Assistant;
 import org.literacybridge.acm.gui.Assistant.LabelButton;
+import org.literacybridge.acm.gui.assistants.ContentImport.ContentImportBase.ImportReminderLine;
+import org.literacybridge.acm.gui.assistants.Matcher.ColumnProvider;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableFileItem;
+import org.literacybridge.acm.gui.assistants.Matcher.Target;
+import org.literacybridge.acm.gui.assistants.common.AbstractReviewPage;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.store.Playlist;
 
 import javax.swing.*;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.tree.TreeCellRenderer;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
+public class ReviewPage extends AbstractReviewPage<ContentImportContext, AudioMatchable> {
 
-public class ReviewPage extends ContentImportBase<ContentImportContext> {
-
-//    private final DefaultListModel<String> importPreviewModel;
-    private final DefaultMutableTreeTableNode importPreviewRoot;
-    private final ImportPreviewTreeModel importPreviewTreeModel;
-    private final ImportPreviewTree importPreviewTreeTable;
-    private final ImportReminderLine importReminderLine;
-
-    ReviewPage(PageHelper<ContentImportContext> listener) {
+    ReviewPage(Assistant.PageHelper<ContentImportContext> listener) {
         super(listener);
-        setLayout(new GridBagLayout());
+    }
 
-        GridBagConstraints gbc = getGBC();
+    private ImportReminderLine importReminderLine;
+
+    @Override
+    protected List<JComponent> getPageIntro() {
+        List<JComponent> components = new ArrayList<>();
 
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2.5em'>Review & Import</span>"
                 + "<br/><br/>When you are satisfied with these imports, click \"Finish\" to import the content. "
 
                 + "</html>");
-        add(welcome, gbc);
+        components.add(welcome);
 
         importReminderLine = new ImportReminderLine();
-        add(importReminderLine.getLine(), gbc);
+        components.add(importReminderLine.getLine());
 
-        // Title preview.
-        JLabel importPreviewLabel = new JLabel("Files to be imported:");
-        gbc.insets = new Insets(0,0,0,0);
-        add(importPreviewLabel, gbc);
-
-        JPanel panel = new JPanel();
-        panel.setLayout(new BorderLayout(0,0));
-
-        importPreviewRoot = new DefaultMutableTreeTableNode();
-        importPreviewTreeModel = new ImportPreviewTreeModel(importPreviewRoot);
-        importPreviewTreeTable = new ImportPreviewTree(importPreviewTreeModel);
-        importPreviewTreeTable.setRootVisible(false);
-        importPreviewTreeTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
-
-        ImportPreviewTreeTableRenderer importPreviewTreeTableRenderer = new ImportPreviewTreeTableRenderer();
-        importPreviewTreeTable.setDefaultRenderer(Object.class, importPreviewTreeTableRenderer);
-        importPreviewTreeTable.setTreeCellRenderer(importPreviewTreeTableRenderer);
-
-        // Set the operation column to be centered.
-        ImportPreviewTreeTableRenderer centerRenderer = new ImportPreviewTreeTableRenderer();
-        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        importPreviewTreeTable.getColumnModel().getColumn(1).setCellRenderer( centerRenderer );
-
-        JScrollPane importPreviewScroller = new JScrollPane(importPreviewTreeTable);
-        panel.add(importPreviewScroller, BorderLayout.CENTER);
-
-        gbc.ipadx = 10;
-        gbc.weighty = 1.0;
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets.bottom = 0;
-        add(panel, gbc);
+        return components;
     }
 
     @Override
-    protected void onPageEntered(boolean progressing) {
-        // Fill deployment and language
-        importReminderLine.getDeployment().setText(Integer.toString(context.deploymentNo));
-        importReminderLine.getLanguage().setText(AcmAssistantPage.getLanguageAndName(context.languagecode));
+    protected ColumnProvider<AudioMatchable> getColumnProvider() {
+        return new PromptTargetColumnProvider();
+    }
 
-        while (importPreviewTreeModel.getRoot().getChildCount() > 0) {
-            MutableTreeTableNode node = (MutableTreeTableNode) importPreviewTreeModel.getRoot().getChildAt(0);
-            importPreviewTreeModel.removeNodeFromParent(node);
-        }
+    @Override
+    protected ImportPreviewTreeTableModel getTreeModel(MutableTreeTableNode root) {
+        return new ImportPreviewTreeTableModel<>(root, new PromptTargetColumnProvider());
+    }
+
+    @Override
+    protected AbstractTreeTableRenderer getTreeTableRenderer(ImportPreviewTreeTableModel model)
+    {
+        return new ImportPreviewTreeTableRenderer(model);
+    }
+
+    @Override
+    protected void fillTreeModel() {
 
         // For the imports, create a "item from \n file" label, and add to the preview.
         List<AudioMatchable> importables = context.matcher.matchableItems.stream()
@@ -110,46 +79,29 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
             if (playlistNode == null) {
                 playlistNode = new PlaylistNode(playlist);
                 playlistNodes.put(playlist, playlistNode);
-                importPreviewTreeModel.insertNodeInto(playlistNode, importPreviewRoot, importPreviewTreeModel.getRoot().getChildCount());
+                importPreviewTreeTableModel.insertNodeInto(playlistNode,
+                    importPreviewRoot,
+                    importPreviewTreeTableModel.getRoot().getChildCount());
             }
-            AudioNode audioNode = new AudioNode(importable);
-            playlistNode.add(audioNode);
-            importPreviewTreeModel.insertNodeInto(audioNode, playlistNode, playlistNode.getChildCount());
+            PreviewTargetNode<AudioMatchable> previewTargetNode = new PreviewTargetNode<>(importable);
+            playlistNode.add(previewTargetNode);
+            importPreviewTreeTableModel.insertNodeInto(previewTargetNode,
+                playlistNode,
+                playlistNode.getChildCount());
         }
-        importPreviewTreeTable.sizeColumns();
-        importPreviewTreeTable.expandAll();
-        setComplete();
+
     }
 
     @Override
-    protected void onPageLeaving(boolean progressing) {
+    protected void onPageEntered(boolean progressing) {
+        super.onPageEntered(progressing);
+
+        // Fill deployment and language
+        importReminderLine.getDeployment().setText(Integer.toString(context.deploymentNo));
+        importReminderLine.getLanguage()
+            .setText(AcmAssistantPage.getLanguageAndName(context.languagecode));
+
     }
-
-    @Override
-    protected String getTitle() {
-        return "Review Files to Import";
-    }
-
-
-    private class ImportPreviewTree extends JXTreeTable {
-        ImportPreviewTree(ImportPreviewTreeModel fileTreeModel) {
-            super(fileTreeModel);
-        }
-
-        void sizeColumns() {
-            List<SizingParams> params = new ArrayList<>();
-
-            // Set column 1 width (Status) on header & values.
-            params.add(new SizingParams(1, SizingParams.IGNORE, 10, 10));
-
-            // Set column 2 width (Size) on header & values.
-            params.add(new SizingParams(2, SizingParams.IGNORE, 20, SizingParams.IGNORE));
-
-            AssistantPage.sizeColumns(this, params);
-            // The timestamp and size columns have been sized to fit themselves. Name will get the rest.
-        }
-    }
-
 
     private class PlaylistNode extends DefaultMutableTreeTableNode {
         PlaylistNode(Playlist playlist) {
@@ -158,114 +110,55 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
 
         @Override
         public Object getValueAt(int column) {
-            if (column == 0) return undecoratedPlaylistName(((Playlist)getUserObject()).getName());
+            if (column == 0) return toString();
             return "";
         }
-    }
-    private class AudioNode extends DefaultMutableTreeTableNode {
-        AudioNode(AudioMatchable matchable) {
-            super(matchable, false);
-        }
+
         @Override
-        public Object getValueAt(int column) {
-            AudioMatchable me = (AudioMatchable)getUserObject();
-            switch (column) {
-            case 0:
-                return me.getLeft().getTitle();
-            case 1:
-                return me.getOperation();
-            case 2:
-                return me.getRight().getFile().getName();
-            default:
-                return "";
-            }
-        }
-        AudioMatchable getMatchable() {
-            return (AudioMatchable)getUserObject();
+        public String toString() {
+            return undecoratedPlaylistName(((Playlist) getUserObject()).getName());
         }
     }
 
-    /**
-     * TreeTable model for the import preview.
-     */
-    private class ImportPreviewTreeModel extends DefaultTreeTableModel {
-        String[] columns = { "Title", "Operation", "Audio File" };
-
-        ImportPreviewTreeModel(MutableTreeTableNode root) {
-            super(root);
-        }
-
-        boolean isEmpty() {
-            return getRoot().getChildCount() == 0;
-        }
+    private class PromptTargetColumnProvider implements ColumnProvider<AudioMatchable> {
 
         @Override
         public int getColumnCount() {
-            return columns.length;
+            return 1;
         }
 
         @Override
-        public String getColumnName(int column) {
-            return columns[column];
+        public String getColumnName(int columnIndex) {
+            return "Title";
         }
 
         @Override
-        public Object getValueAt(Object node, int column) {
-            return ((DefaultMutableTreeTableNode) node).getValueAt(column);
+        public Class getColumnClass(int columnIndex) {
+            return String.class;
         }
 
         @Override
-        public Object getChild(Object parent, int index) {
-            if (parent instanceof AudioNode) return null;
-            if (parent instanceof AbstractMutableTreeTableNode) {
-                return ((AbstractMutableTreeTableNode)parent).getChildAt(index);
-            }
-            return null;
-        }
-
-        @Override
-        public int getChildCount(Object parent) {
-            if (parent instanceof AbstractMutableTreeTableNode) {
-                return ((AbstractMutableTreeTableNode)parent).getChildCount();
-            }
-            return 0;
-        }
-
-        @Override
-        public int getIndexOfChild(Object parent, Object child) {
-            if (parent instanceof AbstractMutableTreeTableNode && child instanceof TreeNode) {
-                return ((AbstractMutableTreeTableNode)parent).getIndex((TreeNode)child);
-            }
-            return -1;
-        }
-
-        @Override
-        public boolean isLeaf(Object node) {
-            return node instanceof AudioNode;
+        public Object getValueAt(AudioMatchable data, int columnIndex) {
+            if (data == null) return null;
+            AudioTarget target = data.getLeft();
+            return target.getTitle();
         }
     }
 
-    private class ImportPreviewTreeTableRenderer extends JLabel
-        implements TreeCellRenderer, TableCellRenderer {
+    private class ImportPreviewTreeTableRenderer<U extends MatchableFileItem<? extends Target>>
+        extends AbstractReviewPage.ImportPreviewTreeTableRenderer {
 
         private final Font normalFont;
         private final Font italicFont;
 
-        @SuppressWarnings("unused")
-        private String renderValue(Object value, boolean isSelected, int column) {
-            if (value == null) return "(null)";
-            return value.toString();
-        }
+        ImportPreviewTreeTableRenderer(ImportPreviewTreeTableModel<U> model) {
+            //noinspection unchecked
+            super(model);
 
-        ImportPreviewTreeTableRenderer() {
-            super();
-            setOpaque(true);
             normalFont = getFont();
-//            italicFont = new Font(normalFont.getName(),
-//                normalFont.getStyle()|Font.ITALIC,
-//                normalFont.getSize());
-            italicFont = LabelButton.fontResource(LabelButton.AVENIR).deriveFont((float)normalFont.getSize()).deriveFont(Font.ITALIC);
-
+            italicFont = LabelButton.fontResource(LabelButton.AVENIR)
+                .deriveFont((float) normalFont.getSize())
+                .deriveFont(Font.ITALIC);
         }
 
         private AudioMatchable getMatchable(int row) {
@@ -273,8 +166,8 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
                 TreePath path = importPreviewTreeTable.getPathForRow(row);
                 if (path != null) {
                     Object node = path.getLastPathComponent();
-                    if (node instanceof AudioNode) {
-                        return ((AudioNode) node).getMatchable();
+                    if (node instanceof AbstractReviewPage.PreviewTargetNode) {
+                        return (AudioMatchable) ((PreviewTargetNode) node).getMatchable();
                     }
                 }
             }
@@ -282,7 +175,7 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
         }
 
         private void setFont(AudioMatchable matchable) {
-            boolean italics = matchable!=null && matchable.getLeft().isPlaylist();
+            boolean italics = matchable != null && matchable.getLeft().isPlaylist();
             setFont(italics ? italicFont : normalFont);
         }
 
@@ -290,13 +183,14 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
             String tip = null;
             if (matchable != null) {
                 if (matchable.getLeft().isPlaylist()) {
-                    AudioPlaylistTarget plt = (AudioPlaylistTarget)matchable.getLeft();
+                    AudioPlaylistTarget plt = (AudioPlaylistTarget) matchable.getLeft();
                     String text = plt.getPlaylistSpec().getPlaylistTitle();
-                    boolean longPrompt = ((AudioPlaylistTarget)matchable.getLeft()).isLong();
+                    boolean longPrompt = ((AudioPlaylistTarget) matchable.getLeft()).isLong();
                     if (!longPrompt) {
                         tip = String.format("Title: '%s'", text);
                     } else {
-                        tip = String.format("Invitation: 'To learn about %s, press the tree.'", text);
+                        tip = String.format("Invitation: 'To learn about %s, press the tree.'",
+                            text);
                     }
                 } else {
                     tip = String.format("Message: '%s'", matchable.getLeft().getTitle());
@@ -318,23 +212,18 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
 
             String tip = null;
             int modelColumn = table.convertColumnIndexToModel(column);
-            if (am != null && modelColumn == 1) {
+            if (am != null && model.isCenterColumn(modelColumn)) {
                 String thing = am.getLeft().isPlaylist() ? "playlist prompt" : "message";
                 // If we are here, we're going to copy a file. Either "Import New" or "Replace".
                 if (am.getLeft().targetExists()) {
-                    tip = "Replace existing "+thing+" with a new recording.";
+                    tip = "Replace existing " + thing + " with a new recording.";
                 } else {
-                    tip = "Import a new recording for the "+thing+".";
+                    tip = "Import a new recording for the " + thing + ".";
                 }
             }
             setToolTipText(tip);
 
-            String str = renderValue(value, isSelected, column);
-            Color bg = (column!=1) ? bgColor : bgAlternateColor;
-            bg = (isSelected) ? bgSelectionColor : bg;
-            setBackground(bg);
-            setText(str);
-            return this;
+            return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         }
 
         @Override
@@ -350,16 +239,9 @@ public class ReviewPage extends ContentImportBase<ContentImportContext> {
             setFont(am);
             setAudioTooltip(am);
 
-            // This method is only called to render the first column, column 0. Sometimes,
-            // it is passed the LastComponent() from the tree path, not the actual  value,
-            // so if we get a node, convert it to the value.
-            if (value instanceof AbstractMutableTreeTableNode) value = ((AbstractMutableTreeTableNode) value).getValueAt(0);
-            String str = renderValue(value, selected, 0);
-//            Color bg = (row%2 == 0) ? bgColor : bgAlternateColor;
-            Color bg = (selected) ? bgSelectionColor : bgColor;
-            setBackground(bg);
-            setText(str);
-            return this;
+            if (value instanceof AbstractMutableTreeTableNode)
+                value = ((AbstractMutableTreeTableNode) value).getValueAt(0);
+            return super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
         }
 
     }

@@ -115,6 +115,10 @@ public class Issues {
         return hasIssue(Severity.ERROR);
     }
 
+    boolean hasNoIssues() {
+        return issues.isEmpty();
+    }
+
 
     /**
      * Encapsulates a single issue.

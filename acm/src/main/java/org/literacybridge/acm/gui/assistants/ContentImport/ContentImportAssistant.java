@@ -15,6 +15,7 @@ public class ContentImportAssistant {
         context.notifyList = ACMConfiguration.getInstance().getCurrentDB().getNotifyList();
         context.promptsOnly = promptsOnly;
 
+        String title = promptsOnly ? "Playlist Prompts Assistant" : "Content Import Assistant";
         // Debugging & development:
         if (ACMConfiguration.isTestData()) {
             context.deploymentNo = 1;
@@ -24,10 +25,12 @@ public class ContentImportAssistant {
         @SuppressWarnings("UnnecessaryLocalVariable")
         Assistant<ContentImportContext> assistant = new Assistant.Factory<ContentImportContext>().withContext(
             context)
-            .withPageFactories(WelcomePage::new, ContentFilesPage::new,
-//                ContentMatchPageOld::new,
-                ContentMatchPage::new, ReviewPage::new, ImportedPage::new)
-            .withTitle("Content Import Assistant")
+            .withPageFactories(WelcomePage::new,
+                ContentFilesPage::new,
+                ContentMatchPage::new,
+                ReviewPage::new,
+                FinishImportPage::new)
+            .withTitle(title)
             .create();
 
         return assistant;

@@ -3,9 +3,10 @@ package org.literacybridge.acm.gui.assistants.PromptsImport;
 import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableFileItem;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
 
-public class PromptMatchable extends MatchableItem<PromptTarget, ImportableFile> {
+public class PromptMatchable extends MatchableFileItem<PromptTarget> {
 
     PromptMatchable(PromptTarget left, ImportableFile right) {
         super(left, right);

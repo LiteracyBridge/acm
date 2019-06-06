@@ -2,10 +2,11 @@ package org.literacybridge.acm.gui.assistants.GreetingsImport;
 
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
+import org.literacybridge.acm.gui.assistants.Matcher.MatchableFileItem;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
 import org.literacybridge.core.spec.Recipient;
 
-public class GreetingMatchable extends MatchableItem<GreetingTarget, ImportableFile> {
+public class GreetingMatchable extends MatchableFileItem<GreetingTarget> {
 
     GreetingMatchable(GreetingTarget left, ImportableFile right) {
         super(left, right);
