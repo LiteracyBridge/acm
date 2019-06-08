@@ -7,7 +7,6 @@ import org.apache.commons.lang.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.utils.DropboxFinder;
-import org.literacybridge.acm.utils.Version;
 
 import javax.swing.*;
 import java.io.BufferedInputStream;
@@ -24,8 +23,10 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 public class ACMConfiguration {
     private static final Logger LOG = Logger.getLogger(ACMConfiguration.class.getName());
@@ -64,6 +65,7 @@ public class ACMConfiguration {
      * @return the upper-cased ACM directory name.
      */
     public static String cannonicalAcmDirectoryName(String acmName) {
+        if (isEmpty(acmName)) return null;
         acmName = acmName.toUpperCase().replaceAll(NON_FILE_CHARS, "");
         if (!acmName.startsWith(ACM_PREFIX)) {
             acmName = ACM_PREFIX + acmName;
@@ -78,6 +80,7 @@ public class ACMConfiguration {
      * @return the upper-cased project name.
      */
     public static String cannonicalProjectName(String projectName) {
+        if (isEmpty(projectName)) return null;
         projectName = projectName.toUpperCase().replaceAll(NON_FILE_CHARS, "");
         if (projectName.startsWith(ACM_PREFIX)) {
             projectName = projectName.substring(ACM_PREFIX.length());
@@ -175,6 +178,18 @@ public class ACMConfiguration {
         }
 
         writeUserProps();
+    }
+
+    /**
+     * @return a list of the known ACMs (those found on this machine).
+     */
+    public List<String> getKnownAcms() {
+        List<String> dbs = allDBs.keySet()
+            .stream()
+            .map(ACMConfiguration::cannonicalProjectName)
+            .collect(Collectors.toList());
+        dbs.sort(String::compareToIgnoreCase);
+        return dbs;
     }
 
     /**
@@ -445,7 +460,10 @@ public class ACMConfiguration {
         return doUpdate && !forceSandbox;
     }
 
-    boolean isForceSandbox() {
+    public void setForceSandbox(boolean forceSandbox) {
+        this.forceSandbox = forceSandbox;
+    }
+    public boolean isForceSandbox() {
         return forceSandbox;
     }
 

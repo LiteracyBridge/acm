@@ -35,7 +35,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -440,7 +439,7 @@ public class DBConfiguration { //extends Properties {
     public boolean configurationDialog() {
         String configurable = dbProperties.getProperty(Constants.CONFIGURATION_DIALOG);
         return ACMConfiguration.getInstance().isShowConfiguration() ||
-            (configurable != null && configurable.equalsIgnoreCase("true"));
+            (configurable != null && !configurable.equalsIgnoreCase("false"));
     }
 
     

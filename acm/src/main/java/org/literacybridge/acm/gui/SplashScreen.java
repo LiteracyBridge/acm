@@ -1,16 +1,11 @@
 package org.literacybridge.acm.gui;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.IOException;
-
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JProgressBar;
-import javax.swing.SwingConstants;
 
 public class SplashScreen extends JFrame {
   private JLabel progressLabel = new JLabel("Starting...");

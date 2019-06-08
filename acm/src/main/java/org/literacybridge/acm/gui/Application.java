@@ -23,7 +23,9 @@ import org.literacybridge.acm.utils.OsUtils;
 import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -34,6 +36,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 public class Application extends JXFrame {
   private static final Logger LOG = Logger
@@ -175,13 +180,20 @@ public class Application extends JXFrame {
     return this.player;
   }
 
+  /**
+   * Main entry point for the ACM application.
+   * @param args to the app.
+   * @throws Exception if initialization fails.
+   */
   public static void main(String[] args) throws Exception {
       new LogHelper().withName("ACM.log").initialize();
+
     // We can use this to put the menu in the right place on MacOS. When we have a menu.
     //System.setProperty("apple.laf.useScreenMenuBar", "true");
     // This doesn't work because somehow the property has already been read by this point.
     // Something to do with the AppKit thread starting earlier than this.
     //System.setProperty("apple.eawt.quitStrategy", "CLOSE_ALL_WINDOWS");
+
     System.out.println("starting main()");
     CommandLineParams params = new CommandLineParams();
     CmdLineParser parser = new CmdLineParser(params);
@@ -196,13 +208,17 @@ public class Application extends JXFrame {
       return;
     }
     if (params.noSplash) OWN_SPLASH = false;
+
     startUp(params);
+
     if (params.cleanUnreferenced) {
       ACMConfiguration.getInstance().getCurrentDB().getRepository().cleanUnreferencedFiles();
     }
   }
 
   private static void startUp(CommandLineParams params) throws Exception {
+    preRunChecks();
+
     SplashScreen splash = null;
     if (OWN_SPLASH) {
       splash = new SplashScreen();
@@ -222,17 +238,18 @@ public class Application extends JXFrame {
       // set look & feel; we use Sea Glass by default.
       SwingUtils.setLookAndFeel("");
 
-      if (Runtime.getRuntime().maxMemory() < 400 * 1024 * 1024) {
-        JOptionPane.showMessageDialog(null,
-            "Not enough memory available for JVM. Please make sure your"
-                + " java command contains the argument -XMX512m (or more).");
-        System.exit(0);
-      }
-
     // String dbDirName = null, repositoryDirName= null;
     // initialize config and generate random ID for this acm instance
 //    splash.setProgressLabel("Initializing...");
     ACMConfiguration.initialize(params);
+
+    getAcmToOpen(params);
+
+    if (isEmpty(params.sharedACM)) {
+      JOptionPane.showMessageDialog(null,
+          "No ACM chosen Can not continue.");
+      System.exit(1);
+    }
 
     // init database
     try {
@@ -263,17 +280,6 @@ public class Application extends JXFrame {
       if (OWN_SPLASH)
         splash.close();
 
-      // Prompt the user to update to Java 8.
-      if (JAVA_VERSION < 1.8) {
-        String message = "This computer needs to be updated to Java 8." +
-                "\n\nPlease contact ICT staff to arrange for the update." +
-                "\n\nThe update will only take a few minutes. Please try" +
-                "\nto do this in the next few days. In the meantime, the" +
-                "\nACM will continue to work normally." +
-                "\n\nThank you!";
-        JOptionPane.showMessageDialog(null, message, "Please Update Java", JOptionPane.INFORMATION_MESSAGE);
-      }
-
       LOG.log(Level.INFO, "ACM successfully started.");
       WavFilePreCaching caching = new WavFilePreCaching();
       GCInfo gcInfo = ACMConfiguration.getInstance().getCurrentDB().getRepository().getGcInfo();
@@ -300,6 +306,49 @@ public class Application extends JXFrame {
       }
 
       application.mainView.audioItemView.requestFocusInWindow();
+  }
+
+  /**
+   * If there is no ACM specified on the command line, query the user.
+   * @param params from the command line.
+   */
+  private static void getAcmToOpen(CommandLineParams params) {
+    if (isNotEmpty(params.sharedACM)) {
+      return;
+    }
+
+    AcmChooserDialog dialog = new AcmChooserDialog(ACMConfiguration.getInstance().getKnownAcms(),
+        ACMConfiguration.getInstance().isForceSandbox());
+    String acmName = dialog.getSelectedItem();
+    if (isNotEmpty(acmName)) {
+      params.sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(acmName);
+      ACMConfiguration.getInstance().setForceSandbox(dialog.getForceSandbox());
+    }
+  }
+
+  /**
+   * Performs some checks before starting the application. If we determine that the
+   * application can't run, calls exit()
+   */
+  private static void preRunChecks() {
+    // Check system memory. If insufficient, show a message and exit.
+    if (Runtime.getRuntime().maxMemory() < 400 * 1024 * 1024) {
+      JOptionPane.showMessageDialog(null,
+          "Not enough memory available for JVM. Please make sure your"
+              + " java command contains the argument -XMX512m (or more).");
+      System.exit(0);
+    }
+
+    // Prompt the user to update to Java 8. Can't fail.
+    if (JAVA_VERSION < 1.8) {
+      String message = "This computer needs to be updated to Java 8." +
+          "\n\nPlease contact ICT staff to arrange for the update." +
+          "\n\nThe update will only take a few minutes. Please try" +
+          "\nto do this in the next few days. In the meantime, the" +
+          "\nACM will continue to work normally." +
+          "\n\nThank you!";
+      JOptionPane.showMessageDialog(null, message, "Please Update Java", JOptionPane.INFORMATION_MESSAGE);
+    }
   }
 
   public static class FilterState {

@@ -31,6 +31,6 @@ public class CommandLineParams {
   @Option(name="--testdata", usage="Synthesize test data, for more convenient test iteration.")
   public boolean testData;
 
-  @Argument
+  @Argument(required=false)
   public String sharedACM;
 }
