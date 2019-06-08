@@ -57,7 +57,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
         GridBagConstraints gbc = getGBC();
 
         JLabel welcome = new JLabel(
-            "<html>" + "<span style='font-size:2.5em'>Finished Importing Greetings</span>"
+            "<html>" + "<span style='font-size:2.5em'>Finished Importing System Prompts</span>"
                 + "</html>");
         add(welcome, gbc);
 
@@ -66,10 +66,10 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
         hbox.add(new JLabel("Imported "));
         importedMessagesLabel = makeBoxedLabel("no");
         hbox.add(importedMessagesLabel);
-        hbox.add(new JLabel(" new message(s); updated "));
+        hbox.add(new JLabel(" new prompt(s); updated "));
         updatedMessagesLabel = makeBoxedLabel("no");
         hbox.add(updatedMessagesLabel);
-        hbox.add(new JLabel(" message(s). "));
+        hbox.add(new JLabel(" prompt(s). "));
         errorMessagesLabel = makeBoxedLabel("No");
         hbox.add(errorMessagesLabel);
         hbox.add(new JLabel(" error(s)."));
@@ -124,6 +124,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
 
             @Override
             protected void done() {
+                UIUtils.setLabelText(currentMessage, "Click \"Close\" to return to the ACM.");
                 setCursor(Cursor.getDefaultCursor());
                 summaryMessage.append(summaryTable.toString());
                 summaryMessage.append("</html>");
@@ -171,11 +172,11 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
         }
 
         String message = "<html>The following error(s) occurred when attempting to import system prompts. " +
-            "Please double check that the greetings are good audio. If possible, try listening to the " +
+            "Please double check that the files are good audio. If possible, try listening to the " +
             "messages outside of the ACM application. If the problem persists, contact Amplio technical " +
             "support. The button below will send this report to Amplio."+
             "</html>";
-        String reportHeading = String.format("Error report from Greetings Import Assistant\n\n" +
+        String reportHeading = String.format("Error report from System Prompts Import Assistant\n\n" +
                 "Project %s, User %s (%s), Computer %s, Language %s\nSystem Prompts Import at %s\n" +
                 "ACM Version %s, built %s\n",
             dbConfig.getProjectName(),

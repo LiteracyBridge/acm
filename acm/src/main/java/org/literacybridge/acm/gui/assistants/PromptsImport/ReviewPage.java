@@ -26,7 +26,7 @@ public class ReviewPage extends AbstractReviewPage<PromptImportContext, PromptMa
         components.add(welcome);
 
         Box hbox = Box.createHorizontalBox();
-        hbox.add(new JLabel("Importing system language greetings. "));
+        hbox.add(new JLabel("Importing system prompts. "));
         hbox.add(Box.createHorizontalGlue());
         components.add(hbox);
 
@@ -36,6 +36,17 @@ public class ReviewPage extends AbstractReviewPage<PromptImportContext, PromptMa
     @Override
     protected PromptTargetColumnProvider getColumnProvider() {
         return new PromptTargetColumnProvider();
+    }
+
+    @Override
+    protected List<SizingParams> getSizingParams() {
+        // We want to add to the columns to be sized.
+        List<SizingParams> params = super.getSizingParams();
+
+        // Set column 0 width (Operation) on header & values.
+        params.add(new SizingParams(0, 10, 26, 26));
+
+        return params;
     }
 
     @Override
@@ -80,7 +91,7 @@ public class ReviewPage extends AbstractReviewPage<PromptImportContext, PromptMa
         @Override
         public Class getColumnClass(int columnIndex) {
             if (columnIndex == 0) {
-                return Integer.class;
+                return String.class;
             }
             return String.class;
         }

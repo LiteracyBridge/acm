@@ -159,6 +159,7 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
 
             @Override
             protected void done() {
+                UIUtils.setLabelText(currentMessage, "Click \"Close\" to return to the ACM.");
                 setCursor(Cursor.getDefaultCursor());
                 summaryMessage.append(summaryTable.toString());
                 summaryMessage.append("</html>");
@@ -265,7 +266,6 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
 
         // Refresh the content and playlist views.
         Application.getFilterState().updateResult(true);
-        UIUtils.setLabelText(currentMessage, "Click \"Close\" to return to the ACM.");
     }
 
     /**

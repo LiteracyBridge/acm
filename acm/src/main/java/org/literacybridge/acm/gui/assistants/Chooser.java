@@ -103,7 +103,7 @@ public class Chooser extends JDialog {
         panel.add(greetingsButton, gbc);
 //        greetingsButton.setEnabled(true);
 
-        LabelButton languageButton = new LabelButton(langIcon, "Language Prompts");
+        LabelButton languageButton = new LabelButton(langIcon, "System Prompts");
         languageButton.addActionListener(e -> runAssistant(PromptImportAssistant::create));
         languageButton.setMinimumSize(size);
         languageButton.setPreferredSize(size);

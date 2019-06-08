@@ -94,7 +94,8 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
 
         fillTreeModel();
 
-        importPreviewTreeTable.sizeColumns();
+//        importPreviewTreeTable.sizeColumns();
+        sizeColumns();
         importPreviewTreeTable.expandAll();
         setComplete();
     }
@@ -110,25 +111,43 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
         return "Review Files to Import";
     }
 
+    protected void sizeColumns() {
+        List<SizingParams> params = getSizingParams();
+
+        AssistantPage.sizeColumns(importPreviewTreeTable, params);
+        // The Operation and Audio File columns have been sized to fit themselves. The target will get the rest.
+    }
+    protected List<SizingParams> getSizingParams() {
+        List<SizingParams> params = new ArrayList<>();
+        int n = targetColumnProvider.getColumnCount();
+
+        // Set column 1 width (Operation) on header & values.
+        params.add(new SizingParams(n, SizingParams.IGNORE, 10, 10));
+
+        // Set column 2 width (Audio File) on header & values.
+        params.add(new SizingParams(n+1, SizingParams.IGNORE, 20, SizingParams.IGNORE));
+
+        return params;
+    }
 
     protected class ImportPreviewTreeTable extends JXTreeTable {
         ImportPreviewTreeTable(ImportPreviewTreeTableModel fileTreeModel) {
             super(fileTreeModel);
         }
 
-        void sizeColumns() {
-            List<SizingParams> params = new ArrayList<>();
-            int n = targetColumnProvider.getColumnCount();
-
-            // Set column 1 width (Operation) on header & values.
-            params.add(new SizingParams(n, SizingParams.IGNORE, 10, 10));
-
-            // Set column 2 width (Audio File) on header & values.
-            params.add(new SizingParams(n+1, SizingParams.IGNORE, 20, SizingParams.IGNORE));
-
-            AssistantPage.sizeColumns(this, params);
-            // The Operation and Audio File columns have been sized to fit themselves. The target will get the rest.
-        }
+//        void sizeColumns() {
+//            List<SizingParams> params = new ArrayList<>();
+//            int n = targetColumnProvider.getColumnCount();
+//
+//            // Set column 1 width (Operation) on header & values.
+//            params.add(new SizingParams(n, SizingParams.IGNORE, 10, 10));
+//
+//            // Set column 2 width (Audio File) on header & values.
+//            params.add(new SizingParams(n+1, SizingParams.IGNORE, 20, SizingParams.IGNORE));
+//
+//            AssistantPage.sizeColumns(this, params);
+//            // The Operation and Audio File columns have been sized to fit themselves. The target will get the rest.
+//        }
     }
 
     private class PlaylistNode extends DefaultMutableTreeTableNode {

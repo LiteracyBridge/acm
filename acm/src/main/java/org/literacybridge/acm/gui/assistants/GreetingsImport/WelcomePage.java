@@ -35,8 +35,8 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
             + "<span style='font-size:2.5em'>Welcome to the Custom Greetings Assistant.</span>"
             + "<br/><br/><p>This assistant will guide you through importing custom greetings for recipients. Steps to import greetings:</p>"
             + "<ol>"
-            + "<li> Review the Recipients that need custom prompts, in the list below.</li>"
-            + "<li> You choose the files and folders containing the custom greetings.</li>"
+            + "<li> Review the Recipients that need custom greetings, in the list below.</li>"
+            + "<li> Choose the files and folders containing the custom greetings.</li>"
             + "<li> The Assistant will automatically make any matches that it can. You then "
             + "have an opportunity to match remaining files, or to \"unmatch\" files as needed.</li>"
             + "<li> You review and approve the final recipient-to-file matches.</li>"
@@ -48,7 +48,7 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
         add(welcome, gbc);
 
         gbc.insets.bottom = 0;
-        JCheckBox onlyMissing = new JCheckBox("Only show Recipients without recordings.", false);
+        JCheckBox onlyMissing = new JCheckBox("Only show Recipients without custom greetings.", false);
         add(onlyMissing, gbc);
 
         recipientModel = new RecipientModel();

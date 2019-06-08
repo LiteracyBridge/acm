@@ -7,6 +7,7 @@ import org.literacybridge.acm.gui.assistants.Matcher.IMatcherTableModel;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchTableRenderers;
 import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
+import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -30,7 +31,7 @@ public class GreetingsMatchPage extends AbstractMatchPage<GreetingsImportContext
         return new JLabel("<html>" + "<span style='font-size:2em'>Match Recipients with Greetings.</span>"
                 + "<br/><br/><p>The Assistant has automatically matched files as possible with recipients. "
                 + "Only high-confidence matches are performed, so manual matching may be required. "
-                + "Perform any additional matching (or un-matching) as required, then click \"Finish\" to perform the import.</p>"
+                + "Perform any additional matching (or un-matching) as required, then click \"Next\" to continue.</p>"
                 + "</html>");
     }
     @Override
@@ -167,11 +168,12 @@ public class GreetingsMatchPage extends AbstractMatchPage<GreetingsImportContext
                 if (column == 0) {
                     int modelRow = table.convertRowIndexToModel(row);
                     GreetingMatchable item = context.matcher.matchableItems.get(modelRow);
-                    if (item.getLeft() != null) {
-                        String recipientid = item.getLeft().getRecipient().recipientid;
-                        icon = (context.recipientHasRecording.getOrDefault(recipientid, true) ?
-                                soundImage :
-                                noSoundImage);
+                    if (item != null && item.getLeft() != null) {
+                        if (item.getLeft().targetExists() || item.getMatch().isMatch()) {
+                            icon = AcmAssistantPage.soundImage;
+                        } else {
+                            icon = AcmAssistantPage.noSoundImage;
+                        }
                     }
                 }
                 setIcon(icon);

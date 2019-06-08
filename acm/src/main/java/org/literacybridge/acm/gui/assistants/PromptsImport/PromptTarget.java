@@ -6,7 +6,7 @@ public class PromptTarget extends Target {
     private String promptId;
     private String promptDefinition;
 
-    // Is there already an audio greeting for the Recipient in the ACM?
+    // Is there already an audio file for the System Prompt in the ACM?
     private boolean hasPrompt;
 
     PromptTarget(String promptId, String promptDefinition) {

@@ -33,7 +33,7 @@ public class PromptImportAssistant {
                 PromptMatchPage::new,
                 ReviewPage::new,
                 PromptImportedPage::new)
-            .withTitle("Language Import Assistant")
+            .withTitle("System Prompts Assistant")
             .create();
 
         return assistant;

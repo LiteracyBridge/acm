@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
@@ -44,11 +45,11 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
         GridBagConstraints gbc = getGBC();
 
         JLabel welcome = new JLabel("<html>"
-            + "<span style='font-size:2.5em'>Welcome to the System Prompt Language Assistant.</span>"
+            + "<span style='font-size:2.5em'>Welcome to the System Prompts Assistant.</span>"
             + "<br/><br/><p>This assistant will guide you through importing system prompts for a language. Steps to import prompts:</p>"
             + "<ol>"
             + "<li> Choose the language for which you need to import prompts. Review the prompts that need audio, in the list below.</li>"
-            + "<li> You choose the files and folders containing the audio for the prompts.</li>"
+            + "<li> Choose the files and folders containing the audio for the prompts.</li>"
             + "<li> The Assistant will automatically make any matches that it can. You then "
             + "have an opportunity to match remaining files, or to \"unmatch\" files as needed.</li>"
             + "<li> You review and approve the final prompt-to-file matches.</li>"
@@ -62,14 +63,11 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
         Box hbox = Box.createHorizontalBox();
         hbox.add(new JLabel("Choose the Language: "));
         languageChooser = new LanguageChooser();
+        fillLanguageChooser();
         languageChooser.addActionListener(this::onSelection);
-        setComboWidth(languageChooser, "Choose...");
-        languageChooser.setMaximumSize(languageChooser.getPreferredSize());
         hbox.add(languageChooser);
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
-
-        fillLanguageChooser();
 
         add(new JLabel("Click 'Next' when you are ready to continue."), gbc);
 
@@ -113,9 +111,19 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
     private void fillLanguageChooser() {
         languageChooser.removeAllItems();
         languageChooser.insertItemAt("Choose...", 0);
-        context.configLanguages.forEach(languageChooser::addItem);
-        if (context.configLanguages.size() == 1) {
+        context.configLanguagecodes.forEach(languageChooser::addItem);
+
+        Set<String> languageStrings = context.configLanguagecodes
+            .stream()
+            .map(AcmAssistantPage::getLanguageAndName)
+            .collect(Collectors.toSet());
+        setComboWidth(languageChooser, languageStrings, "Choose...");
+        languageChooser.setMaximumSize(languageChooser.getPreferredSize());
+
+        if (context.configLanguagecodes.size() == 1) {
             languageChooser.setSelectedIndex(1);
+        } else {
+            languageChooser.setSelectedIndex(0);
         }
     }
 
@@ -123,8 +131,10 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
     protected void onPageEntered(boolean progressing) {
         if (StringUtils.isNotBlank(context.languagecode)) {
             languageChooser.setSelectedItem(context.languagecode);
-            onSelection(null);
+        } else {
+            languageChooser.setSelectedIndex(0);
         }
+        onSelection(null);
     }
 
     @Override
@@ -163,8 +173,8 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
         File programSpecDir = ACMConfiguration.getInstance().getProgramSpecDirFor(project);
 
         context.programSpec = new ProgramSpec(programSpecDir);
-        context.specLanguages = context.programSpec.getLanguages();
-        context.configLanguages = dbConfig.getAudioLanguages().stream().map(Locale::getLanguage).collect(Collectors.toSet());
+        context.specLanguagecodes = context.programSpec.getLanguages();
+        context.configLanguagecodes = dbConfig.getAudioLanguages().stream().map(Locale::getLanguage).collect(Collectors.toSet());
     }
 
     private void fillPromptList() {

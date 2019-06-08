@@ -13,8 +13,8 @@ import java.util.Set;
 
 public class PromptImportContext implements AbstractFilesPage.FileImportContext, AbstractMatchPage.MatchContext {
     public ProgramSpec programSpec;
-    public Set<String> specLanguages;
-    public Set<String> configLanguages;
+    public Set<String> specLanguagecodes;
+    public Set<String> configLanguagecodes;
 
     // What are the prompts?  [0, 1, ...] and { 0: "bell", 1: "Begin speaking...", ...}
     public List<String> promptIds;

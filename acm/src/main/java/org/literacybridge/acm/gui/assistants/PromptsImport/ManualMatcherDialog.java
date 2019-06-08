@@ -17,6 +17,6 @@ public class ManualMatcherDialog extends AbstractManualMatcherDialog<PromptMatch
 
     @Override
     protected String rightDescription() {
-        return "Audio";
+        return "Audio File";
     }
 }

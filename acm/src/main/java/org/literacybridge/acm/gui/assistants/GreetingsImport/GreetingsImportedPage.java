@@ -68,10 +68,10 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
         hbox.add(new JLabel("Imported "));
         importedMessagesLabel = makeBoxedLabel("no");
         hbox.add(importedMessagesLabel);
-        hbox.add(new JLabel(" new message(s); updated "));
+        hbox.add(new JLabel(" new greeting(s); updated "));
         updatedMessagesLabel = makeBoxedLabel("no");
         hbox.add(updatedMessagesLabel);
-        hbox.add(new JLabel(" message(s). "));
+        hbox.add(new JLabel(" greeting(s). "));
         errorMessagesLabel = makeBoxedLabel("No");
         hbox.add(errorMessagesLabel);
         hbox.add(new JLabel(" error(s)."));
@@ -125,6 +125,7 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
 
             @Override
             protected void done() {
+                UIUtils.setLabelText(currentMessage, "Click \"Close\" to return to the ACM.");
                 setCursor(Cursor.getDefaultCursor());
                 summaryMessage.append(summaryTable.toString());
                 summaryMessage.append("</html>");
