@@ -45,6 +45,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
 @SuppressWarnings("serial")
@@ -62,7 +63,7 @@ public class DBConfiguration { //extends Properties {
   private File sharedACMDirectory;
   private String acmName = null;
   private List<Locale> audioLanguages = null;
-  private Map<Locale, String> languageLables = new HashMap<Locale, String>();
+  private Map<Locale, String> languageLabels = new HashMap<Locale, String>();
 
   private AudioItemRepository repository;
   private MetadataStore store;
@@ -397,16 +398,13 @@ public class DBConfiguration { //extends Properties {
     return size;
   }
 
-  private final static Pattern LANGUAGE_LABEL_PATTERN = Pattern
-      .compile(".*\\(\"(.+)\"\\).*");
-
   public String getLanguageLabel(Locale locale) {
-    return languageLables.get(locale);
+    return languageLabels.get(locale);
   }
 
     public String getLanguageLabel(String languagecode) {
         Locale locale = new Locale(languagecode);
-        return languageLables.get(locale);
+        return languageLabels.get(locale);
     }
 
     public boolean isShouldPreCacheWav() {
@@ -444,6 +442,8 @@ public class DBConfiguration { //extends Properties {
         return ACMConfiguration.getInstance().isShowConfiguration() ||
             (configurable != null && configurable.equalsIgnoreCase("true"));
     }
+
+    
 
     /**
      * The configured value of the fuzzy match threshold, for content matching. If no
@@ -487,35 +487,44 @@ public class DBConfiguration { //extends Properties {
    * has the following format:
    * AUDIO_LANGUAGES=en,dga("Dagaare"),twi("Twi"),sfw("Sehwi")
    */
-  private void parseLanguageLabels() {
-    if (audioLanguages == null) {
-      audioLanguages = new ArrayList<Locale>();
-      String languages = dbProperties.getProperty(Constants.AUDIO_LANGUAGES);
-      if (languages != null) {
-        StringTokenizer tokenizer = new StringTokenizer(languages, ", ");
-        while (tokenizer.hasMoreTokens()) {
-          String code = tokenizer.nextToken();
-          String label = null;
-          Matcher labelMatcher = LANGUAGE_LABEL_PATTERN.matcher(code);
-          if (labelMatcher.matches()) {
-            label = labelMatcher.group(1);
-            code = code.substring(0, code.indexOf("("));
-          }
-          RFC3066LanguageCode language = new RFC3066LanguageCode(code);
-          Locale locale = language.getLocale();
-          if (locale != null) {
-            if (label != null) {
-              languageLables.put(locale, label);
+    private final static Pattern LANGUAGE_LABEL_PATTERN = Pattern
+        .compile("^([a-zA-Z]{2,3})(?:\\(\"(.+)\"\\))?$");
+
+    private void parseLanguageLabels() {
+        if (audioLanguages == null) {
+            audioLanguages = new ArrayList<Locale>();
+            String languagesProperty = dbProperties.getProperty(Constants.AUDIO_LANGUAGES);
+            if (languagesProperty != null) {
+                String[] languages = languagesProperty.split(",");
+                for (String language : languages) {
+                    language = language.trim();
+                    if (isEmpty(language)) continue;
+                    Matcher labelMatcher = LANGUAGE_LABEL_PATTERN.matcher(language);
+                    if (labelMatcher.matches()) {
+                        String iso = labelMatcher.group(1);
+                        String label = (labelMatcher.groupCount() > 1) ?
+                                       labelMatcher.group(2) :
+                                       null;
+                        RFC3066LanguageCode rfc3066 = new RFC3066LanguageCode(iso);
+                        Locale locale = rfc3066.getLocale();
+                        if (locale != null) {
+                            if (isEmpty(label) && !locale.getDisplayName().equalsIgnoreCase(iso)) {
+                                label = locale.getDisplayName();
+                            }
+                            if (!isEmpty(label)) {
+                                languageLabels.put(locale, label);
+                            }
+                            audioLanguages.add(locale);
+                        }
+                    }
+                }
+                if (audioLanguages.isEmpty()) {
+                    languageLabels.put(Locale.ENGLISH, Locale.ENGLISH.getDisplayName());
+                    audioLanguages.add(Locale.ENGLISH);
+                }
             }
-            audioLanguages.add(locale);
-          }
         }
-        if (audioLanguages.isEmpty()) {
-          audioLanguages.add(Locale.ENGLISH);
-        }
-      }
     }
-  }
 
   public List<Locale> getAudioLanguages() {
     return Collections.unmodifiableList(audioLanguages);
