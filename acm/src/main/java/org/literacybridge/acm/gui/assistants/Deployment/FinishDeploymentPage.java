@@ -299,7 +299,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                     PlaylistPrompts prompts = playlistsPrompts.get(title);
                     int promptIx = new ArrayList<>(playlistsPrompts.keySet()).indexOf(title);
 
-                    String promptCat = getPromptCat(prompts, promptIx, promptsDir);
+                    String promptCat = getPromptCategoryAndFiles(prompts, promptIx, promptsDir);
                     if (!promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE)) {
                         activeListsWriter.println("!"+promptCat);
                     }
@@ -405,7 +405,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
      * @throws BaseAudioConverter.ConversionException If the audio file can't be converted
      *          to .a18 format.
      */
-    private String getPromptCat(PlaylistPrompts prompts, int promptIx, File promptsDir)
+    private String getPromptCategoryAndFiles(PlaylistPrompts prompts, int promptIx, File promptsDir)
         throws IOException, BaseAudioConverter.ConversionException
     {
         // If there is a categoryId, that's the "prompt category".

@@ -229,9 +229,13 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     private void validatePlaylists(int deploymentNo, Collection<String> languages) {
         // For each language in the Deployment...
         for (String language : languages) {
-            // Get the Program Spec playlists, and the ACM playlists (that match by pattern).
+            // Get the Program Spec playlists, and the ACM playlists (as matched by pattern).
             List<ContentSpec.PlaylistSpec> programSpecPlaylistSpecs = context.allProgramSpecPlaylists.get(language);
             List<Playlist> acmPlaylists = context.allAcmPlaylists.get(language);
+
+            // We need to order the ACM playlists the same as the Program Spec playlists. Extra
+            // Playlists can go at the end. Missing playlists, obviously, will be missing.
+            List<Playlist> progspecOrderedAcmPlaylists = new ArrayList<>();
 
             // For all the playlists in the Program Spec...
             Set<Playlist> foundPlaylists = new HashSet<>();
@@ -244,6 +248,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     .filter(p -> p.getName().equals(qualifiedPlaylistName))
                     .findFirst()
                     .orElse(null);
+
                 // If the ACM playlist is missing, note the issue.
                 if (playlist == null) {
                     context.issues.add(Issues.Severity.WARNING,
@@ -251,7 +256,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                         "Playlist '%s' is missing in the ACM.",
                         qualifiedPlaylistName);
                 } else {
-                    // ...otherwise, we have the playlist, so check the contents.
+                    // ...otherwise, we have the playlist, so add to the list of ACM playlists, and check the contents.
+                    progspecOrderedAcmPlaylists.add(playlist);
                     foundPlaylists.add(playlist);
                     Set<AudioItem> foundItems = new HashSet<>();
                     // For the messages in the Program Spec...
@@ -290,10 +296,16 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             // Report the playlists in the ACM list but not the Program Specification list.
             acmPlaylists.stream()
                 .filter(p -> !foundPlaylists.contains(p))
-                .forEach(p -> context.issues.add(Issues.Severity.INFO,
-                    Issues.Area.PLAYLISTS,
-                    "Playlist '%s' was added to the ACM.",
-                    p.getName()));
+                .forEach(p -> {
+                    context.issues.add(Issues.Severity.INFO,
+                        Issues.Area.PLAYLISTS,
+                        "Playlist '%s' was added to the ACM.",
+                        p.getName());
+                    progspecOrderedAcmPlaylists.add(p);
+                });
+
+            // We have the ACM Playlists in Program Spec order, so save that ordering.
+            context.allAcmPlaylists.put(language, progspecOrderedAcmPlaylists);
         }
 
     }
