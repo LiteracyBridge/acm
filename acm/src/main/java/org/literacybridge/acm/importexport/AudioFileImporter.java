@@ -48,7 +48,6 @@ abstract class AudioFileImporter {
     AudioItem importSingleFile(AudioImporter.AudioItemProcessor itemProcessor)
         throws IOException, AudioItemRepository.UnsupportedFormatException
     {
-        AudioItem result = null;
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
 
         AudioItem audioItem = createAudioItem();
@@ -59,15 +58,6 @@ abstract class AudioFileImporter {
                 audioFile.getName()));
             return audioItem;
         }
-
-        // let caller tweak audio item
-        if (itemProcessor != null) {
-            itemProcessor.process(audioItem);
-        }
-
-        // Commit now because storeAudioFile will copy the file as an a18 (!), and then update the duration field (!)
-        // which runs another transaction.
-        store.commit(audioItem);
 
         AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
 
@@ -80,9 +70,13 @@ abstract class AudioFileImporter {
         //
         ////////////////////////////////////////////////////////////////////////////////////////////
 
-        result = audioItem;
+        // let caller tweak audio item
+        if (itemProcessor != null) {
+            itemProcessor.process(audioItem);
+            store.commit(audioItem);
+        }
 
-        return result;
+        return audioItem;
     }
 
 

@@ -1,5 +1,7 @@
 package org.literacybridge.acm.audioconverter.converters;
 
+import org.literacybridge.acm.utils.OsUtils;
+
 import java.io.File;
 import java.util.HashSet;
 import java.util.Map;
@@ -17,6 +19,11 @@ public class A18ToAnyConverter extends BaseAudioConverter {
   public ConversionResult doConvertFile(File inputFile, File targetDir,
       File targetFile, File tmpDir, Map<String, String> parameters)
       throws ConversionException {
+
+    if (!OsUtils.WINDOWS) {
+      throw new ConversionException("A18 conversion is only supported on Windows.");
+    }
+
     File tmp = null;
     try {
       ConversionResult r1 = a18ToWavConverter.doConvertFile(inputFile, tmpDir,

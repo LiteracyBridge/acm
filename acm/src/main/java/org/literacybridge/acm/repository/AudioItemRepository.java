@@ -219,14 +219,15 @@ public class AudioItemRepository {
             }
         }
 
-        if (OsUtils.WINDOWS && sourceFile != null) {
-            IOUtils.ensureDirectoryExists(audioFile);
-            File targetFile = ExternalConverter.targetFile(sourceFile, audioFile.getParentFile(), targetFormat.getAudioConversionFormat());
-            boolean overwrite = false;
-            externalConverter.convert(sourceFile, targetFile,
-                TMP_DIR,
-                targetFormat.getAudioConversionFormat(), overwrite);
+        if (sourceFile == null) {
+            throw new ConversionException("Source file must not be null.");
         }
+        IOUtils.ensureDirectoryExists(audioFile);
+        File targetFile = ExternalConverter.targetFile(sourceFile, audioFile.getParentFile(), targetFormat.getAudioConversionFormat());
+        boolean overwrite = false;
+        externalConverter.convert(sourceFile, targetFile,
+            TMP_DIR,
+            targetFormat.getAudioConversionFormat(), overwrite);
 
         return audioFile;
     }
