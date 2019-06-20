@@ -47,6 +47,7 @@ public class AcmChooserDialog extends JDialog {
         promptLabel = new JLabel("<html>Choose the ACM to open.</html>");
 
         choicesList = new JList<>();
+        choicesList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         choicesList.setListData(acmNames.toArray(new String[0]));
         choicesList.addListSelectionListener(this::listSelectionListener);
         choicesList.addFocusListener(listFocusListener);

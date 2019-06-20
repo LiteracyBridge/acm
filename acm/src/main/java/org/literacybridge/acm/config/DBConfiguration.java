@@ -439,7 +439,7 @@ public class DBConfiguration { //extends Properties {
     public boolean configurationDialog() {
         String configurable = dbProperties.getProperty(Constants.CONFIGURATION_DIALOG);
         return ACMConfiguration.getInstance().isShowConfiguration() ||
-            (configurable != null && !configurable.equalsIgnoreCase("false"));
+            (configurable == null || !configurable.equalsIgnoreCase("false"));
     }
 
     

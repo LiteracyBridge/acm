@@ -36,6 +36,7 @@ public abstract class AbstractManualMatcherDialog<T extends MatchableItem> exten
     private final JLabel promptLabel;
     private JButton okButton;
     private final Map<String, T> unmatchedItems;
+    private JScrollPane choicesListScrollPane;
 
     public AbstractManualMatcherDialog(T row, List<T> matchableItems) {
         super((Frame)null, "", true);
@@ -183,9 +184,9 @@ public abstract class AbstractManualMatcherDialog<T extends MatchableItem> exten
     private JPanel layoutComponents() {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
         panel.add(promptLabel, BorderLayout.NORTH);
-        JScrollPane choicesListScrollPane = new JScrollPane(choicesList);
+        choicesListScrollPane = new JScrollPane(choicesList);
         panel.add(choicesListScrollPane, BorderLayout.CENTER);
-        choicesList.setBorder(redBorder);
+        choicesListScrollPane.setBorder(redBorder);
         return panel;
     }
 
@@ -219,7 +220,7 @@ public abstract class AbstractManualMatcherDialog<T extends MatchableItem> exten
         boolean haveFocus = choicesList.hasFocus();
         boolean haveSelection = choicesList.getLeadSelectionIndex() >= 0;
         int ix = (haveSelection?0:2) + (haveFocus?0:1);
-        choicesList.setBorder(borders[ix]);
+        choicesListScrollPane.setBorder(borders[ix]);
     }
 
     private Color borderColor = new Color(136, 176, 220);
