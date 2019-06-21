@@ -194,13 +194,10 @@ public class SidebarView extends ACMContainer implements Observer {
         playlistList.setSelectionModel(new DefaultListSelectionModel() {
             @Override
             public void setSelectionInterval(int index0, int index1) {
-                if (isSelectedIndex(index0)) {
+                if (index0==index1 && index0==getMinSelectionIndex() && index0==getMaxSelectionIndex()) {
                     super.removeSelectionInterval(index0, index1);
-                    Application.getFilterState().setSelectedPlaylist(null);
                 } else {
                     super.setSelectionInterval(index0, index1);
-                    Application.getFilterState().setSelectedPlaylist(
-                        playlistList.getModel().getElementAt(index0).getPlaylist());
                 }
             }
         });
@@ -610,6 +607,13 @@ public class SidebarView extends ACMContainer implements Observer {
         });
 
         playlistList.addListSelectionListener(e -> {
+            int[] selections = playlistList.getSelectedIndices();
+            if (selections.length != 1) {
+                Application.getFilterState().setSelectedPlaylist(null);
+            } else {
+                Application.getFilterState().setSelectedPlaylist(
+                    playlistList.getModel().getElementAt(selections[0]).getPlaylist());
+            }
             clearTreeSelections();
             Application
                 .getMessageService().pumpMessage(new AudioItemTableSortOrderMessage(
@@ -863,8 +867,16 @@ public class SidebarView extends ACMContainer implements Observer {
         if (!clearingSelections) {
             MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
                 .getMetadataStore();
-            ListModel<PlaylistLabel> model = new PlaylistListModel(store.getPlaylists(), result);
-            playlistList.setModel(model);
+            PlaylistListModel newModel = new PlaylistListModel(store.getPlaylists(), result);
+            ListModel currentModel = playlistList.getModel();
+            // If the model hasn't changed, just update the counts based on the most
+            // recent search. This preserves any selection state.
+            if (newModel.equals(currentModel)) {
+                ((PlaylistListModel)currentModel).updateFacetCounts(result);
+                playlistList.updateUI();
+            } else {
+                playlistList.setModel(newModel);
+            }
         }
     }
 

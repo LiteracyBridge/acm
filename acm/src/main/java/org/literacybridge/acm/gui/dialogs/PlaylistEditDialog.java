@@ -3,6 +3,7 @@ package org.literacybridge.acm.gui.dialogs;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
+import org.literacybridge.acm.gui.MainWindow.PlaylistListModel;
 import org.literacybridge.acm.gui.MainWindow.SidebarView;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import org.literacybridge.acm.store.AudioItem;
@@ -30,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.literacybridge.acm.gui.MainWindow.PlaylistListModel.PlaylistLabel;
+import org.literacybridge.acm.gui.MainWindow.PlaylistListModel.PlaylistLabel;
 import static org.literacybridge.acm.utils.SwingUtils.getApplicationRelativeLocation;
 
 public final class PlaylistEditDialog extends JDialog {

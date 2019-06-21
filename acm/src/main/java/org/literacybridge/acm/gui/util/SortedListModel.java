@@ -3,6 +3,7 @@ package org.literacybridge.acm.gui.util;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -26,6 +27,10 @@ public class SortedListModel<T extends Comparable<T>>
     return (T) model.toArray()[index];
   }
 
+  public SortedSet<T> getModel() {
+    return new TreeSet<>(model);
+  }
+
   public void add(T element) {
     if (model.add(element)) {
       fireContentsChanged(this, 0, getSize());
@@ -43,11 +48,11 @@ public class SortedListModel<T extends Comparable<T>>
     fireContentsChanged(this, 0, getSize());
   }
 
-  public boolean contains(Object element) {
+  public boolean contains(T element) {
     return model.contains(element);
   }
 
-  public Object firstElement() {
+  public T firstElement() {
     return model.first();
   }
 
@@ -55,15 +60,28 @@ public class SortedListModel<T extends Comparable<T>>
     return model.iterator();
   }
 
-  public Object lastElement() {
+  public T lastElement() {
     return model.last();
   }
 
-  public boolean removeElement(Object element) {
+  public boolean removeElement(T element) {
     boolean removed = model.remove(element);
     if (removed) {
       fireContentsChanged(this, 0, getSize());
     }
     return removed;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof SortedListModel)) return false;
+    SortedListModel<?> that = (SortedListModel<?>) o;
+    return model.equals(that.model);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(model);
   }
 }
