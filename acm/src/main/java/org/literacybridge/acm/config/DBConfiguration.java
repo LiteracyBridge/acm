@@ -371,7 +371,7 @@ public class DBConfiguration { //extends Properties {
       return accessControl != null ? accessControl.getAccessStatus() : AccessControl.AccessStatus.none;
   }
 
-  private void writeProps() {
+  public void writeProps() {
         try {
             BufferedOutputStream out = new BufferedOutputStream(
                 new FileOutputStream(getConfigurationPropertiesFile()));
@@ -439,7 +439,7 @@ public class DBConfiguration { //extends Properties {
     public boolean configurationDialog() {
         String configurable = dbProperties.getProperty(Constants.CONFIGURATION_DIALOG);
         return ACMConfiguration.getInstance().isShowConfiguration() ||
-            (configurable == null || !configurable.equalsIgnoreCase("false"));
+            (configurable != null && configurable.equalsIgnoreCase("true"));
     }
 
     
@@ -460,6 +460,10 @@ public class DBConfiguration { //extends Properties {
         return result;
     }
 
+    public void setFuzzyThreshold(int threshold) {
+        dbProperties.setProperty(Constants.FUZZY_THRESHOLD, Integer.toString(threshold));
+    }
+
     /**
      * The configured value of "interested parties" for events in the ACM. This should
      * be a list of email addresses, separated by commas.
@@ -469,7 +473,7 @@ public class DBConfiguration { //extends Properties {
         Set<String> result;
         String list = dbProperties.getProperty(Constants.NOTIFY_LIST);
         if (list != null) {
-            result = Arrays.asList(list.split(","))
+            result = Arrays.asList(list.split("[, ]+"))
                 .stream()
                 .map(String::trim)
                 .collect(Collectors.toSet());
@@ -479,6 +483,9 @@ public class DBConfiguration { //extends Properties {
         return result;
     }
 
+    public void setNotifyList(Collection<String> list) {
+        dbProperties.setProperty(Constants.NOTIFY_LIST, String.join(", ", list));
+    }
 
     /**
    * Parses the language labels from the 'AUDIO_LANGUAGES' String property

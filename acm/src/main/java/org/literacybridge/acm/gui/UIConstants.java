@@ -23,6 +23,8 @@ public abstract class UIConstants {
 
 //  public static final String SPLASH_SCREEN_IMAGE = "splash-screen.jpg";
   public static final String SPLASH_SCREEN_IMAGE = "splash-acm.jpg";
+  public static final String GEARS_64_PNG = "gears_64.png";
+  public static final String TREE_64_PNG = "tree_64.png";
 
   public static URL getResource(String resourceName) {
     return UIConstants.class.getResource("/" + resourceName);

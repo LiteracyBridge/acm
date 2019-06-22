@@ -1,4 +1,4 @@
-package org.literacybridge.acm.gui.dialogs;
+package org.literacybridge.acm.gui.settings;
 
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.CheckboxTree;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingEvent;
@@ -13,17 +13,15 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
-import java.awt.*;
-import java.awt.event.ActionEvent;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.literacybridge.acm.utils.SwingUtils.getApplicationRelativeLocation;
-
-public class VisibleCategoriesDialog extends JDialog {
+public class VisibleCategoriesPanel extends AbstractSettingsBase {
     private Taxonomy originalTaxonomy;
     private Collection<String> originalExpanded;
 
@@ -31,16 +29,15 @@ public class VisibleCategoriesDialog extends JDialog {
     private final DefaultMutableTreeNode categoryRootNode;
     private CheckboxTree categoryTree;
 
-    private VisibleCategoriesDialog(JFrame owner) {
-        super(owner,
-            LabelProvider.getLabel("CHOOSE_VISIBLE_CATEGORIES"),
-            ModalityType.APPLICATION_MODAL);
+    VisibleCategoriesPanel(SettingsDialog.SettingsHelper helper) {
+        super(helper);
         preserveState();
+        setLayout(new BorderLayout());
 
         JPanel dialogPanel = new JPanel();
         dialogPanel.setLayout(new BoxLayout(dialogPanel, BoxLayout.Y_AXIS));
         dialogPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
-        add(dialogPanel);
+        add(dialogPanel, BorderLayout.CENTER);
 
         // The tree. Note that the root does not hold the taxonomy root. (TODO: why not?)
         categoryRootNode = new DefaultMutableTreeNode();
@@ -55,21 +52,6 @@ public class VisibleCategoriesDialog extends JDialog {
         fillCategories();
 
         dialogPanel.add(categoryScrollPane);
-        dialogPanel.add(Box.createVerticalStrut(5));
-
-        Box buttonBox = Box.createHorizontalBox();
-        buttonBox.add(Box.createHorizontalGlue());
-        JButton cancelButton = new JButton(LabelProvider.getLabel("CANCEL"));
-        buttonBox.add(cancelButton);
-        buttonBox.add(Box.createHorizontalStrut(6));
-        JButton okButton = new JButton(LabelProvider.getLabel("OK"));
-        buttonBox.add(okButton);
-        dialogPanel.add(buttonBox);
-
-        cancelButton.addActionListener(this::cancelButtonHandler);
-        okButton.addActionListener(this::okButtonHandler);
-
-        setSize(400, 600);
     }
 
     private void preserveState() {
@@ -179,35 +161,27 @@ public class VisibleCategoriesDialog extends JDialog {
         }
     }
 
-    private void cancelButtonHandler(ActionEvent actionEvent) {
-        this.setVisible(false);
+    @Override
+    public void onCancel() {
+        // Nothing to do; just abandon any changes.
     }
 
-    private void okButtonHandler(ActionEvent actionEvent) {
-        // Build a map of id:isVisible from our copy of the taxonomy, and update the global taxonomy.
-        Map<String, Boolean> visiblityStates = StreamSupport.stream(taxonomy.breadthFirstIterator()
-            .spliterator(), false).collect(Collectors.toMap(Category::getId, Category::isVisible));
-        ACMConfiguration.getInstance()
-            .getCurrentDB()
-            .getMetadataStore()
-            .getTaxonomy()
-            .updateCategoryVisibility(visiblityStates);
+    @Override
+    public void onOk() {
+        if (!taxonomy.equals(originalTaxonomy)) {
+            // Build a map of id:isVisible from our copy of the taxonomy, and update the global taxonomy.
+            Map<String, Boolean> visiblityStates = StreamSupport.stream(taxonomy.breadthFirstIterator()
+                .spliterator(), false).collect(Collectors.toMap(Category::getId, Category::isVisible));
+            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getTaxonomy().updateCategoryVisibility(visiblityStates);
 
-        // Persist the visibility in the "category.whitelist" file.
-        boolean ok = ACMConfiguration.getInstance().getCurrentDB().writeCategoryFilter(taxonomy);
-
-        this.setVisible(false);
+            // Persist the visibility in the "category.whitelist" file.
+            ACMConfiguration.getInstance().getCurrentDB().writeCategoryFilter(taxonomy);
+        }
     }
 
-    public static void showDialog(ActionEvent e) {
-        VisibleCategoriesDialog dialog = new VisibleCategoriesDialog(Application.getApplication());
-        // Place the new dialog within the application frame. This is hacky, but if it fails, the dialog
-        // simply winds up in a funny place. Unfortunately, Swing only lets us get the location of a
-        // component relative to its parent.
-        Point pAudio = getApplicationRelativeLocation(Application.getApplication()
-            .getMainView()
-            .getAudioItemView());
-        dialog.setLocation(pAudio);
-        dialog.setVisible(true);
+    @Override
+    public String getTitle() {
+        return LabelProvider.getLabel("VISIBLE_CATEGORIES");
     }
+
 }

@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.google.common.collect.Maps;
 import org.literacybridge.acm.gui.Application;
@@ -135,7 +136,22 @@ public class Taxonomy implements Cloneable {
     }
   }
 
+  // The Class type of this class is enough to let receivers know that the visibilities were updated.
   public static class CategoryVisibilitiesUpdated {
 
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Taxonomy taxonomy = (Taxonomy) o;
+    return getRevision().equals(taxonomy.getRevision())
+        && mRootCategory.equals(taxonomy.mRootCategory) && categories.equals(taxonomy.categories);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getRevision(), mRootCategory, categories);
   }
 }

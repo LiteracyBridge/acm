@@ -224,10 +224,13 @@ public class LabelButton extends JLabel {
     // A very light, very readable typeface.
     public static final String AVENIR = "AvenirLTStd-Light.ttf";
     public static Font getCustomFont(float size) {
+        return getCustomFont(PALATION, size);
+    }
+    public static Font getCustomFont(String name, float size) {
         // <div>Font made from <a href="http://www.onlinewebfonts.com">oNline Web Fonts</a>is licensed by CC BY 3.0</div>
         Font font = null;
         try {
-            Font created = fontResource(PALATION);
+            Font created = fontResource(name);
             font = created.deriveFont(size);
         } catch (Exception e) {
             // Ignore.

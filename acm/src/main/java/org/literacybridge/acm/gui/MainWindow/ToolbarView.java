@@ -3,10 +3,9 @@ package org.literacybridge.acm.gui.MainWindow;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.assistants.Chooser;
-import org.literacybridge.acm.gui.dialogs.VisibleCategoriesDialog;
-import org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemView;
 import org.literacybridge.acm.gui.messages.PlayAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemMessage;
 import org.literacybridge.acm.gui.messages.RequestAudioItemToPlayMessage;
@@ -14,14 +13,17 @@ import org.literacybridge.acm.gui.messages.SearchRequestMessage;
 import org.literacybridge.acm.gui.playerAPI.PlayerStateDetails;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
-import org.literacybridge.acm.gui.util.language.UILanguageChanged;
+import org.literacybridge.acm.gui.settings.SettingsDialog;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.utils.OsUtils;
 
 import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -31,7 +33,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.Locale;
 import java.util.Observable;
 
 public class ToolbarView extends JToolBar  {
@@ -117,7 +118,9 @@ public class ToolbarView extends JToolBar  {
     // Today, we have only one configuration option, the visible categories, so we can
     // go straight to that dialog. If and when we have more configurations, this will
     // open some sort of configuration container.
-    configureButton.addActionListener(VisibleCategoriesDialog::showDialog);
+
+    configureButton.addActionListener(SettingsDialog::showDialog);
+//    configureButton.addActionListener(VisibleCategoriesDialog::showDialog);
     assistantButton.addActionListener(Chooser::showChooserMenu);
   }
 
@@ -262,18 +265,6 @@ public class ToolbarView extends JToolBar  {
     });
   }
 
-  private void updateControlsLanguage(Locale newLocale) {
-    String currText = searchTF.getText();
-    if (currText.equals(placeholderText)) {
-      placeholderText = LabelProvider
-          .getLabel(LabelProvider.PLACEHOLDER_TEXT, newLocale);
-      searchTF.setText(placeholderText);
-    } else {
-      placeholderText = LabelProvider
-          .getLabel(LabelProvider.PLACEHOLDER_TEXT, newLocale);
-    }
-  }
-
   private void play(AudioItem item) {
     if (player != null) {
       player.stop();
@@ -299,11 +290,6 @@ public class ToolbarView extends JToolBar  {
   }
 
   private void onApplicationUpdate(Observable o, Object arg) {
-    if (arg instanceof UILanguageChanged) {
-      UILanguageChanged newLocale = (UILanguageChanged) arg;
-      updateControlsLanguage(newLocale.getNewLocale());
-    }
-
     if (arg instanceof PlayAudioItemMessage && OsUtils.WINDOWS) {
       PlayAudioItemMessage item = (PlayAudioItemMessage) arg;
       play(item.getAudioItem());
@@ -315,7 +301,8 @@ public class ToolbarView extends JToolBar  {
   }
 
   private void initComponents() {
-    boolean showConfigButton = ACMConfiguration.getInstance().getCurrentDB().configurationDialog();
+    boolean showConfigButton = !ACMConfiguration.getInstance().getCurrentDB().isSandboxed() ||
+                               ACMConfiguration.getInstance().getCurrentDB().configurationDialog();
 
     setPreferredSize(new Dimension(300, TOOLBAR_HEIGHT));
     // I (bill) think the toolbar looks better without this:
