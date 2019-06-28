@@ -6,10 +6,13 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -21,6 +24,20 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ DropboxFinderTest.class, DropboxFinder.class })
 public class DropboxFinderTest {
+  @Rule
+  public TemporaryFolder tmp = new TemporaryFolder();
+
+  private File mockDropbox(boolean business) throws IOException {
+    File dropbox = tmp.newFolder(business?"Dropbox (Amplio)":"Dropbox");
+    File LB_software = new File(dropbox, "LB-software");
+    File ACM_Install = new File(LB_software, "ACM-Install");
+    File ACM = new File(ACM_Install, "ACM");
+    File software = new File (ACM, "software");
+    software.mkdirs();
+    File acm_jar = new File(software, "acm.jar");
+    acm_jar.createNewFile();
+    return dropbox;
+  }
 
   /**
    * Rigourous Test :-)
@@ -112,11 +129,13 @@ public class DropboxFinderTest {
   }
 
   @Test
-  public void testParseDrobpoxPersonal() {
+  public void testParseDrobpoxPersonal() throws IOException {
+    File dbxDirPer = mockDropbox(true);
+    String dbxPathPer = dbxDirPer.getAbsolutePath();
     DropboxFinder dbFinder = new DropboxFinder();
     // String jsonString = "{\"business\": {\"path\": \"/Users/bill/Dropbox
     // (Literacy Bridge)\", \"host\": 4929547026}}";
-    String jsonString = "{\"personal\": {\"path\": \"/Users/LB/Dropbox\", \"host\": 4929547026}}";
+    String jsonString = "{\"personal\": {\"path\": \""+dbxPathPer+"\", \"host\": 4929547026}}";
     InputStream jsonStream = null;
     try {
       jsonStream = new ByteArrayInputStream(jsonString.getBytes("UTF-8"));
@@ -127,13 +146,15 @@ public class DropboxFinderTest {
     String path;
     path = dbFinder.getDropboxPathFromInputStream(jsonStream);
 
-    assertEquals("/Users/LB/Dropbox", path);
+    assertEquals(dbxPathPer, path);
   }
 
   @Test
-  public void testParseDrobpoxBusiness() {
+  public void testParseDrobpoxBusiness() throws IOException {
+    File dbxDirBus = mockDropbox(true);
+    String dbxPathBus = dbxDirBus.getAbsolutePath();
     DropboxFinder dbFinder = new DropboxFinder();
-    String jsonString = "{\"business\": {\"path\": \"/Users/LB/Dropbox (Literacy Bridge)\", \"host\": 4929547026}}";
+    String jsonString = "{\"business\": {\"path\": \""+dbxPathBus+"\", \"host\": 4929547026}}";
     // String jsonString = "{\"personal\": {\"path\": \"/Users/LB/Dropbox\",
     // \"host\": 4929547026}}";
     InputStream jsonStream = null;
@@ -146,13 +167,17 @@ public class DropboxFinderTest {
     String path;
     path = dbFinder.getDropboxPathFromInputStream(jsonStream);
 
-    assertEquals("/Users/LB/Dropbox (Literacy Bridge)", path);
+    assertEquals(dbxPathBus, path);
   }
 
   @Test
-  public void testParseDrobpoxBoth() {
+  public void testParseDrobpoxBoth() throws IOException {
+    File dbxDirPer = mockDropbox(false);
+    String dbxPathPer = dbxDirPer.getAbsolutePath();
+    File dbxDirBus = mockDropbox(true);
+    String dbxPathBus = dbxDirBus.getAbsolutePath();
     DropboxFinder dbFinder = new DropboxFinder();
-    String jsonString = "{\"business\": {\"path\": \"/Users/LB/Dropbox (Literacy Bridge)\", \"host\": 4929547026},"
+    String jsonString = "{\"business\": {\"path\": \""+dbxPathBus+"\", \"host\": 4929547026},"
         + "\"personal\": {\"path\": \"/Users/LB/Dropbox\", \"host\": 4929547026}}";
     InputStream jsonStream = null;
     try {
@@ -164,7 +189,7 @@ public class DropboxFinderTest {
     String path;
     path = dbFinder.getDropboxPathFromInputStream(jsonStream);
 
-    assertEquals("/Users/LB/Dropbox (Literacy Bridge)", path);
+    assertEquals(dbxPathBus, path);
   }
 
   @Test

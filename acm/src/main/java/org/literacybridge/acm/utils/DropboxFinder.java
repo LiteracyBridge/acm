@@ -19,6 +19,11 @@ public class DropboxFinder {
   }
 
   private static final String infoFileName = "info.json";
+  private static final String acmJarPath = "LB-software" + File.separator +
+      "ACM-Install" + File.separator +
+      "ACM" + File.separator +
+      "software" + File.separator +
+      "acm.jar";
 
   public static void main(String[] args) {
     String dropboxPath = getDropboxPath();
@@ -72,16 +77,29 @@ public class DropboxFinder {
       JsonNode root = mapper.readTree(is);
       JsonNode node = root.get("business");
       if (node != null) {
-        return node.get("path").getTextValue();
+        String path = node.get("path").getTextValue();
+        if (pathIsOurDropbox(path))
+          return path;
       }
       // No business, look for "personal"
       node = root.get("personal");
       if (node != null) {
-        return node.get("path").getTextValue();
+        String path = node.get("path").getTextValue();
+        if (pathIsOurDropbox(path))
+          return path;
       }
     } catch (Exception ignored) {
     }
     return "";
+  }
+
+  protected boolean pathIsOurDropbox(String path) {
+    File dbxDir = new File(path);
+    if (dbxDir.exists() && dbxDir.isDirectory()) {
+      File jarFile = new File(dbxDir, acmJarPath);
+      return jarFile.exists() && jarFile.isFile();
+    }
+    return false;
   }
 
   /**
