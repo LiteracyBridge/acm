@@ -46,6 +46,7 @@ function main() {
 
     updateLibs
     updateJar
+    updateSplash
     updateBuildProps
     $updated && updateMarker
 }
@@ -91,6 +92,27 @@ function updateJar() {
         if ! cmp -s acm.jar "$f" ; then
             updated=true
             cpcmd=(cp -v "acm.jar" "$f")
+
+            $verbose && echo $prefix "${cpcmd[@]}">>${report}
+            $execute && "${cpcmd[@]}"
+        fi
+    done
+    # Here in bizarro-world, we need an empty echo to keep going.
+    echo >/dev/null
+}
+
+# Update the acm.jar file wherever it exists in Dropbox. By now, really only 1 place.
+function updateSplash() {
+    # Update the splash-acm.jpg. 
+    local filename=splash-acm.jpg
+    local excludedPath='*/ACM-beta/*'
+    if $beta; then
+        excludedPath="thiswon'tbefound"
+    fi
+    for f in $(find ${dropbox} -not -path ${excludedPath} -iname ${filename}); do
+        if ! cmp -s ${filename} "$f" ; then
+            updated=true
+            cpcmd=(cp -v "${filename}" "$f")
 
             $verbose && echo $prefix "${cpcmd[@]}">>${report}
             $execute && "${cpcmd[@]}"
