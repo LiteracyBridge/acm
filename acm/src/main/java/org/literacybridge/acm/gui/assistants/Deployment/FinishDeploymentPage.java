@@ -439,7 +439,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             if (!promptsDir.exists()) {
                 if (!promptsDir.mkdirs()) errors.add(new MakeDirectoryException("prompts", promptsDir));
             }
-            repository.exportA18WithMetadataToFile(prompts.shortPromptItem,
+            repository.exportA18WithMetadataToFile(prompts.longPromptItem,
                 new File(promptsDir, "i"+promptCat+".a18"));
         }
 
