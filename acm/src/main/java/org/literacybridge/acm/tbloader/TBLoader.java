@@ -944,7 +944,7 @@ public class TBLoader extends JFrame {
         files = fCommunityDir.listFiles((dir, name) -> dir.isDirectory());
 
         File programspecDir = new File(localTbLoaderDir,
-            TBLoaderConstants.CONTENT_SUBDIR + File.separator + newDeploymentText.getText().toString() + File.separator
+            TBLoaderConstants.CONTENT_SUBDIR + File.separator + newDeployment + File.separator
                 + Constants.ProgramSpecDir);
         try {
             programSpec = new ProgramSpec(programspecDir);
