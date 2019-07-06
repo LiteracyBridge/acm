@@ -95,7 +95,7 @@ public class GeneralSettingsPanel extends AbstractSettingsBase {
         gridPanel.add(new JLabel("Fuzzy threshold:"), gbcLeft);
         gbcRight.gridx++;
         Box vbox = Box.createVerticalBox();
-        fuzzyThreshold = new JTextField("60");
+        fuzzyThreshold = new JTextField("80");
         fuzzyThreshold.setInputVerifier(thresholdVerifier);
         fuzzyThreshold.getDocument().addDocumentListener(thresholdDocumentListener);
         fuzzyThreshold.setToolTipText(

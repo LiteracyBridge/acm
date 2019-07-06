@@ -450,17 +450,19 @@ public class DBConfiguration { //extends Properties {
      * @return The value, or null if none is specified or is not parseable.
      */
     public Integer getFuzzyThreshold() {
-        Integer result = null;
+        Integer result = Constants.FUZZY_THRESHOLD_DEFAULT;
         String value = dbProperties.getProperty(Constants.FUZZY_THRESHOLD);
         try {
             result = new Integer(value);
         } catch (Exception ignored) {
-            // ignore and return null.
+            // ignore and return default.
         }
         return result;
     }
 
     public void setFuzzyThreshold(int threshold) {
+        threshold = Math.min(threshold, Constants.FUZZY_THRESHOLD_MAXIMUM);
+        threshold = Math.max(threshold, Constants.FUZZY_THRESHOLD_MINIMUM);
         dbProperties.setProperty(Constants.FUZZY_THRESHOLD, Integer.toString(threshold));
     }
 

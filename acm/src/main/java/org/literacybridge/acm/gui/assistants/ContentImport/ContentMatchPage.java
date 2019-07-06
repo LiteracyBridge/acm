@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.Deployment.PlaylistPrompts;
@@ -26,10 +27,6 @@ import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 public class ContentMatchPage extends
                                     AbstractMatchPage<ContentImportContext, AudioTarget, ImportableFile, AudioMatchable> {
 
-    private static final int MAXIMUM_THRESHOLD = 100;
-    private static final int DEFAULT_THRESHOLD = 80;
-    private static final int MINIMUM_THRESHOLD = 60;
-
     private ContentImportBase.ImportReminderLine importReminderLine;
 
     static {
@@ -42,9 +39,10 @@ public class ContentMatchPage extends
         super(listener);
 
         if (context.fuzzyThreshold == null) {
-            context.fuzzyThreshold = DEFAULT_THRESHOLD;
+            context.fuzzyThreshold = Constants.FUZZY_THRESHOLD_DEFAULT;
         } else {
-            context.fuzzyThreshold = Integer.max(MINIMUM_THRESHOLD, Integer.min(MAXIMUM_THRESHOLD, context.fuzzyThreshold));
+            context.fuzzyThreshold = Integer.max(Constants.FUZZY_THRESHOLD_MINIMUM, Integer.min(
+                Constants.FUZZY_THRESHOLD_MAXIMUM, context.fuzzyThreshold));
         }
 
         table.moveColumn(tableModel.getFileColumnNo(), 1);

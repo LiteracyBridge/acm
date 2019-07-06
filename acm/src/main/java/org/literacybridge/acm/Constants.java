@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 public class Constants {
-  public final static String ACM_VERSION = "r1906280"; // yy mm dd n
+  public final static String ACM_VERSION = "r1907030"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String ACM_DIR_NAME = "ACM";
   public final static String CACHE_DIR_NAME = "cache";
@@ -58,4 +58,8 @@ public class Constants {
   public static final String CATEGORY_UNKNOWN_LENGTH_FEEDBACK = "92-8";
   public static final String CATEGORY_TB_INSTRUCTIONS = "0-1";
   public static final String CATEGORY_COMMUNITIES = "0-3";
+
+  public static final int FUZZY_THRESHOLD_MAXIMUM = 100;
+  public static final int FUZZY_THRESHOLD_DEFAULT = 80;
+  public static final int FUZZY_THRESHOLD_MINIMUM = 60;
 }

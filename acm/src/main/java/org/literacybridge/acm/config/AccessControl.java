@@ -112,8 +112,8 @@ public class AccessControl {
 
     private final DBConfiguration dbConfiguration;
 
-    protected AccessStatus accessStatus = AccessStatus.none;
-    protected OpenStatus openStatus = OpenStatus.none;
+    AccessStatus accessStatus = AccessStatus.none;
+    OpenStatus openStatus = OpenStatus.none;
     private Map<String,String> possessor;
     private DBInfo dbInfo;
 
@@ -145,10 +145,10 @@ public class AccessControl {
         return possessor;
     }
 
-    public AccessStatus getAccessStatus() {
+    AccessStatus getAccessStatus() {
         return accessStatus;
     }
-    public OpenStatus getOpenStatus() {
+    OpenStatus getOpenStatus() {
         return openStatus;
     }
 
@@ -191,7 +191,7 @@ public class AccessControl {
         dbInfo.setFilenames(currentFilename, nextFilename);
     }
 
-    public int getCurrentDbVersion() {
+    int getCurrentDbVersion() {
         try {
             String currentFilename = getCurrentZipFilename();
             String currentFileNumber = currentFilename.substring(
@@ -458,11 +458,11 @@ public class AccessControl {
         throw new IllegalStateException("Only valid in sub-classes");
     }
 
-    public UpdateDbStatus commitDbChanges() {
+    UpdateDbStatus commitDbChanges() {
         return commitOrDiscard(CloseDisposition.save);
     }
 
-    public UpdateDbStatus discardDbChanges() {
+    UpdateDbStatus discardDbChanges() {
         return commitOrDiscard(CloseDisposition.discard);
     }
 
@@ -516,6 +516,8 @@ public class AccessControl {
         boolean status_aws = true;
         String filename_aws = null, key_aws = null, possessor_aws = null;
 
+        // Code for testing. This is 'true' when dropbox is overridden by environment variable,
+        // that is, not a real ACM in dropbox.
         if (ACMConfiguration.getInstance().isNoDbCheckout()) {
             if (!setNewestModifiedZipFileAsCurrent()) {
                 setZipFilenames(DB_DOES_NOT_EXIST);
