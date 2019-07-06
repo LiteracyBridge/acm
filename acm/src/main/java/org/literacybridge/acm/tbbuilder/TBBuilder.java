@@ -156,7 +156,7 @@ public class TBBuilder {
         try {
             if (command.equals("CREATE")) {
                 // arguments NOT including the deployment name.
-                List<String> argsList = Arrays.asList(args).subList(3, args.length - 3);
+                List<String> argsList = Arrays.asList(args).subList(3, args.length);
                 tbb.validateAndCreate(argsList);
             } else if (command.equals("PUBLISH")) {
                 // arguments INCLUDING the deployment name.
