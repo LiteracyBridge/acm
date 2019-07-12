@@ -29,11 +29,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.repository.FileRepositoryInterface.Repository;
 
@@ -74,6 +76,8 @@ public class AudioItemRepository {
         WMA( "wma", new AudioConversionFormat(128, 16000, 1) {}),
         M4A( "m4a", new AudioConversionFormat(128, 1600, 1) {});
 
+        private static AudioFormat[] EXPORTABLES = {A18, WAV, MP3, OGG};
+
         private final String fileExtension;
         private final AudioConversionFormat audioConversionFormat;
 
@@ -88,6 +92,13 @@ public class AudioItemRepository {
 
         public AudioConversionFormat getAudioConversionFormat() {
             return audioConversionFormat;
+        }
+
+        public static AudioFormat[] exportables() {
+            return EXPORTABLES;
+        }
+        public AudioFormat[] importables() {
+            return AudioFormat.values();
         }
     }
 

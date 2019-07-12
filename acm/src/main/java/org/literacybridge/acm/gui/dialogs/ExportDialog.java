@@ -98,7 +98,7 @@ public class ExportDialog extends JDialog {
             // Set up the file type choosers.
             fileChooser.setAcceptAllFileFilterUsed(false);
             String labelFormat = LabelProvider.getLabel("X_AUDIO_FILES");
-            for (AudioFormat format : AudioFormat.values()) {
+            for (AudioFormat format : AudioFormat.exportables()) {
                 String extension = format.getFileExtension().trim().toLowerCase();
                 String label = String.format(labelFormat, extension.toUpperCase());
                 FileNameExtensionFilter filter = new FileNameExtensionFilter(label, extension);

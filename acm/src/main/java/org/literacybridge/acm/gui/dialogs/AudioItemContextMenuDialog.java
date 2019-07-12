@@ -122,7 +122,7 @@ public class AudioItemContextMenuDialog extends JDialog {
    * @return The button
    */
   private FlatButton makeDeleteButton(final AudioItem[] selectedAudioItems, final String labelPostfix) {
-      return makeDeleteAuditItemsButton(selectedAudioItems, labelPostfix);
+      return makeDeleteAudioItemsButton(selectedAudioItems, labelPostfix);
   }
 
   /**
@@ -186,7 +186,7 @@ public class AudioItemContextMenuDialog extends JDialog {
    * @param labelPostfix String to label the item(s)
    * @return The button
    */
-  private FlatButton makeDeleteAuditItemsButton(final AudioItem[] selectedAudioItems, final String labelPostfix) {
+  private FlatButton makeDeleteAudioItemsButton(final AudioItem[] selectedAudioItems, final String labelPostfix) {
     Color backgroundColor = Application.getApplication().getBackground();
     Color highlightedColor = SystemColor.textHighlight;
     ImageIcon deleteImageIcon = new ImageIcon(
