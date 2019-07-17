@@ -8,6 +8,7 @@ import org.literacybridge.acm.gui.Assistant.ProblemReviewDialog;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
+import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.importexport.AudioImporter;
 import org.literacybridge.acm.store.AudioItem;
@@ -18,7 +19,6 @@ import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.Transaction;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.Version;
-import org.literacybridge.core.spec.ContentSpec;
 
 import javax.swing.*;
 import java.awt.Color;
@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.Constants.CATEGORY_GENERAL_OTHER;
 import static org.literacybridge.acm.Constants.CATEGORY_TB_CATEGORIES;
@@ -387,44 +386,7 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
      * @return the index at which the message should be inserted into the playlist.
      */
     private int findIndexInPlaylist(AudioMessageTarget audioMessageTarget) {
-        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-        Playlist playlist = audioMessageTarget.getPlaylist();
-        String title = audioMessageTarget.message.getTitle();
-        // Get the list of titles of items already in the ACM playlist.
-        List<String> acmTitles = playlist
-            .getAudioItemList()
-            .stream()
-            .map(id -> store.getAudioItem(id).getTitle())
-            .collect(Collectors.toList());
-        // Get the list of titles as specified by the Program Specification.
-        List<String> specTitles = audioMessageTarget
-            .getMessage()
-            .getPlaylist()
-            .getMessagesForLanguage(context.languagecode)
-            .stream()
-            .map(ContentSpec.MessageSpec::getTitle)
-            .collect(Collectors.toList());
-        int specIx = specTitles.indexOf(title);
-        // Start with immediate previous sibling, then immediate next sibling, then -2, then +2, ...
-        // try to find a sibling already in the ACM playlist. Put this message after or before
-        // that found message.
-        int offset = -1;
-        int maxDistance = Math.max(specIx, specTitles.size()-1-specIx);
-        while (Math.abs(offset) <= maxDistance) {
-            // Next index of a progspec title to look for.
-            int testIx = specIx + offset;
-            // If a valid progspec index, see if there's an acm item of that title.
-            int acmIx = testIx>=0&&testIx<specTitles.size() ? acmTitles.indexOf(specTitles.get(testIx)) : -1;
-            // If there's an acm item, put this new title after or before, depending on which way we were looking.
-            if (acmIx >= 0) {
-                return acmIx + (offset<0 ? 1 : 0);
-            }
-            offset = (offset<0) ? -offset : -offset-1;
-        }
-
-        // Didn't find any neighbors. Put this at the beginning. Next item, for which this will be
-        // a neighbor, will get placed appropriately after or before this one.
-        return 0;
+        return AudioUtils.findIndexForMessageInPlaylist(audioMessageTarget.getMessage(), audioMessageTarget.getPlaylist(), context.languagecode);
     }
 
     /**

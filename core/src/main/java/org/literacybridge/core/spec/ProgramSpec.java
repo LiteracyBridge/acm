@@ -2,7 +2,9 @@ package org.literacybridge.core.spec;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 public class ProgramSpec {
 
     private final File programSpecDir;
+    private final String resourceDirectory;
 
     private List<String> components = null;
     private List<Deployment> deployments = null;
@@ -25,21 +28,44 @@ public class ProgramSpec {
     private ContentSpec contentSpec = null;
 
     public ProgramSpec(File programSpecDir) {
+        this.resourceDirectory = null;
         this.programSpecDir = programSpecDir;
+    }
+
+    public ProgramSpec(String resourceDirectory) {
+        if (!resourceDirectory.startsWith("/")) {
+            resourceDirectory = "/" + resourceDirectory;
+        }
+        this.resourceDirectory = resourceDirectory;
+        this.programSpecDir = null;
+    }
+
+    private InputStream getSpecStream(String filename) {
+        if (programSpecDir != null) {
+            File csvFile = new File(programSpecDir, filename);
+            if (csvFile.exists()) {
+                try {
+                    return new FileInputStream(csvFile);
+                } catch (FileNotFoundException e) {
+                    // Ignore
+                }
+            }
+        } else {
+            return getClass().getResourceAsStream(resourceDirectory + '/' + filename);
+        }
+        return null;
     }
 
     public RecipientList getRecipients() {
         if (recipients == null) {
-            File csvFile = new File(programSpecDir, Recipient.FILENAME);
-            if (csvFile.exists()) {
-                try {
+            try (InputStream is = getSpecStream(Recipient.FILENAME)) {
+                if (is != null) {
                     final RecipientList result = new RecipientList();
-                    CsvReader reader = new CsvReader(csvFile, Recipient.columnNames);
-                    reader.read(result::add);
+                    CsvReader.read(is, Recipient.columnNames, result::add);
                     recipients = result;
-                } catch (IOException ignored) {
-                    // Just leave recipients null
                 }
+            } catch (IOException ignored) {
+                // Just leave recipients null
             }
         }
         return recipients;
@@ -68,16 +94,16 @@ public class ProgramSpec {
 
     public Map<String, String> getRecipientsMap() {
         if (recipientsMap == null) {
-            File csvFile = new File(programSpecDir, RecipientMap.FILENAME);
-            if (csvFile.exists()) {
-                try {
+            try (InputStream is = getSpecStream(RecipientMap.FILENAME)) {
+                if (is != null) {
                     final Map<String, String> result = new HashMap<>();
-                    CsvReader reader = new CsvReader(csvFile, RecipientMap.columnNames);
-                    reader.read(record -> result.put(record.get(RecipientMap.columns.recipientid.name()),
-                        record.get(RecipientMap.columns.directory.name())));
+                    CsvReader.read(is,
+                        RecipientMap.columnNames,
+                        record -> result.put(record.get(RecipientMap.columns.recipientid.name()),
+                            record.get(RecipientMap.columns.directory.name())));
                     recipientsMap = result;
-                } catch (IOException ignored) {
                 }
+            } catch (IOException ignored) {
             }
         }
         return recipientsMap;
@@ -114,20 +140,18 @@ public class ProgramSpec {
      */
     public List<Deployment> getDeployments() {
         if (deployments == null) {
-            File csvFile = new File(programSpecDir, Deployment.FILENAME);
-            if (csvFile.exists()) {
-                try {
+            try (InputStream is = getSpecStream(Deployment.FILENAME)) {
+                if (is != null) {
                     final List<Deployment> result = new ArrayList<>();
-                    CsvReader reader = new CsvReader(csvFile, Deployment.columnNames);
-                    reader.read(record -> {
+                    CsvReader.read(is, Deployment.columnNames, record -> {
                         try {
                             result.add(new Deployment(record));
                         } catch (ParseException ignored) {
                         }
                     });
                     deployments = result;
-                } catch (IOException ignored) {
                 }
+            } catch (IOException ignored) {
             }
         }
         return deployments;
@@ -147,16 +171,15 @@ public class ProgramSpec {
     public ContentSpec getContentSpec() {
         if (contentSpec == null) {
             ContentSpec newContentSpec = new ContentSpec();
-            File csvFile = new File(programSpecDir, "content.csv");
-            if (csvFile.exists()) {
-                try (FileInputStream fis = new FileInputStream(csvFile)) {
+            try (InputStream fis = getSpecStream("content.csv")) {
+                if (fis != null) {
                     CsvReader.read(fis,
                         ContentSpec.columnNames,
                         x -> newContentSpec.addMessage(newContentSpec.new MessageSpec(x)));
                     contentSpec = newContentSpec;
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
         return contentSpec;

@@ -126,7 +126,7 @@ public class AudioItem extends Committable {
     playlists.remove(playlist.getUuid());
   }
 
-  public final Iterable<Playlist> getPlaylists() {
+  public final Collection<Playlist> getPlaylists() {
     return playlists.values();
   }
 

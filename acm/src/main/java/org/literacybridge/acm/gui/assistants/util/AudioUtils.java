@@ -10,11 +10,16 @@ import org.literacybridge.acm.importexport.AudioImporter;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.core.spec.ContentSpec;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
@@ -49,5 +54,67 @@ public class AudioUtils {
         AudioItemRepository.appendMetadataToA18(metadata, categories, toFile);
     }
 
+    /**
+     * Find the index at which a message should be placed in the ACM playlist.
+     *
+     * Given a message title (from the program spec) and an ACM playlist, find the target
+     * index as follows:
+     * - Get a list of the titles already in the ACM playlist.
+     * - Get a list of the titles in the program spec playlist. Find the given message in that
+     *   list of titles.
+     * - Take the immediately preceding title from the program spec playlist, and see if that
+     *   title is in the ACM playlist. If it is, put the new message immediately after that
+     *   existing message.
+     * - If the immediately preceding title is not found, take the immediately following title
+     *   from the program spec playlist, and look for that in the ACM playlist. If it is found,
+     *   put the new message immediately before that existing message.
+     * - If neither of the immediate neighbors was found, try the next closest previous title,
+     *   and if it is not found, try the next closest following title.
+     * - Continue until a neighbor (however distant) is found in the ACM playlist, or until there
+     *   are no further program spec titles for which to look. If no neighbor is found, put the
+     *   new title at index 0, the first item in the playlist.
+     *
+     * @param message The MessageSpec for which we want the proper index in the Playlist.
+     * @param playlist The Playlist in which we want the index.
+     * @param languagecode The Playlist's (assumed) language. (Language is not a formal property of playlist.)
+     * @return the index, or 0 if an index can't be determined.
+     */
+    public static int findIndexForMessageInPlaylist(ContentSpec.MessageSpec message, Playlist playlist, String languagecode) {
+        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+        String title = message.getTitle();
+        // Get the list of titles of items already in the ACM playlist.
+        List<String> acmTitles = playlist
+            .getAudioItemList()
+            .stream()
+            .map(id -> store.getAudioItem(id).getTitle())
+            .collect(Collectors.toList());
+        // Get the list of titles as specified by the Program Specification.
+        List<String> specTitles = message
+            .getPlaylist()
+            .getMessagesForLanguage(languagecode)
+            .stream()
+            .map(ContentSpec.MessageSpec::getTitle)
+            .collect(Collectors.toList());
+        int specIx = specTitles.indexOf(title);
+        // Start with immediate previous sibling, then immediate next sibling, then -2, then +2, ...
+        // try to find a sibling already in the ACM playlist. Put this message after or before
+        // that found message.
+        int offset = -1;
+        int maxDistance = Math.max(specIx, specTitles.size()-1-specIx);
+        while (Math.abs(offset) <= maxDistance) {
+            // Next index of a progspec title to look for.
+            int testIx = specIx + offset;
+            // If a valid progspec index, see if there's an acm item of that title.
+            int acmIx = testIx>=0&&testIx<specTitles.size() ? acmTitles.indexOf(specTitles.get(testIx)) : -1;
+            // If there's an acm item, put this new title after or before, depending on which way we were looking.
+            if (acmIx >= 0) {
+                return acmIx + (offset<0 ? 1 : 0);
+            }
+            offset = (offset<0) ? -offset : -offset-1;
+        }
 
+        // Didn't find any neighbors. Put this at the beginning. Next item, for which this will be
+        // a neighbor, will get placed appropriately after or before this one.
+        return 0;
+    }
 }
