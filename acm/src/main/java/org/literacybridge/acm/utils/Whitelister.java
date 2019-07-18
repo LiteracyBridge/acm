@@ -22,7 +22,8 @@ import java.util.TreeSet;
 public class Whitelister {
     public enum OPTIONS {
         regex,          // treat values as regular expressions
-        caseSensitive   // Values are case sensitive. Default case-insensitive.
+        caseSensitive,  // Values are case sensitive. Default case-insensitive.
+        emptyImpliesAll //
     };
 
     /**
@@ -59,9 +60,12 @@ public class Whitelister {
                         wl = addToList(wl, item);
                     }
                 }
-                // If there were no whitelist lines and no blacklist lines, treat this as an
-                // empty whitelist. That is, nothing will be included.
-                if (wl == null && bl == null) {
+                // If there were no whitelist lines and no blacklist lines:
+                //   if the option 'emptyImpliesAll' is set then
+                //      behave as if there is no whitelist file, and include everything
+                //   otherwise
+                //      treat this as an empty whitelist. That is, nothing will be included.
+                if (wl == null && bl == null && !this.options.contains(OPTIONS.emptyImpliesAll)) {
                     wl = new TreeSet<>();
                 }
             } catch (IOException ex) {

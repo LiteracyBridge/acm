@@ -34,7 +34,7 @@ public class CategoryFilter extends Whitelister {
      * @param projectDir The project directory.
      */
     public CategoryFilter(File projectDir) {
-        super(categoryWhitelistFile(projectDir));
+        super(categoryWhitelistFile(projectDir), OPTIONS.emptyImpliesAll);
     }
 
     /**
