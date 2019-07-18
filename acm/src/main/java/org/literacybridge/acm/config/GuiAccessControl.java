@@ -54,7 +54,7 @@ public class GuiAccessControl extends AccessControl {
                 stackTraceExit(1);
                 break;
             case noNetworkNoDbError:
-                msg = "Cannot connect to Literacy Bridge server and no available database. Shutting down.";
+                msg = "Cannot connect to Amplio server and no available database. Shutting down.";
                 JOptionPane.showMessageDialog(null, msg);
                 stackTraceExit(1);
                 break;
@@ -73,7 +73,7 @@ public class GuiAccessControl extends AccessControl {
             case noServer: {
                 if (useSandbox) break statusLoop;
                 Object[] options = { "Try again", "Use Demo Mode" };
-                msg = "Cannot reach Literacy Bridge web server.  Do you want to get online now and try again or use Demo Mode?";
+                msg = "Cannot reach Amplio server.  Do you want to get online now and try again or use Demo Mode?";
                 String title = "Cannot Connect to Server";
                 buttonIx = JOptionPane.showOptionDialog(null, msg, title,
                                                         JOptionPane.YES_NO_CANCEL_OPTION,
@@ -159,7 +159,7 @@ public class GuiAccessControl extends AccessControl {
         case none:
             throw new IllegalStateException("Should not happen");
         case serverError:
-            String msg = "Cannot connect to Literacy Bridge server to check out database. Shutting down.";
+            String msg = "Cannot connect to Amplio server to check out database. Shutting down.";
             JOptionPane.showMessageDialog(null, msg);
             stackTraceExit(1);
             break;
@@ -244,7 +244,7 @@ public class GuiAccessControl extends AccessControl {
                 break checkinLoop;
             case networkError: {
                 Object[] options = { "Try again", "Shutdown" };
-                msg = "Cannot reach Literacy Bridge web server.\nDo you want to get online and try again or shutdown and try later?";
+                msg = "Cannot reach Amplio server.\nDo you want to get online and try again or shutdown and try later?";
                 title = "Cannot Connect to Server";
                 buttonIx = JOptionPane.showOptionDialog(null, msg, title,
                                                         JOptionPane.YES_NO_CANCEL_OPTION,

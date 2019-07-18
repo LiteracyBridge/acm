@@ -125,7 +125,7 @@ public class AudioConverter extends JFrame
   public AudioConverter() {
     // initialize JFrame
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    setTitle("Literacy Bridge Audio Converter");
+    setTitle("Amplio Audio Converter");
 
     // load available converters
     loadConverters();
