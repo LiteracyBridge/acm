@@ -15,21 +15,21 @@ import com.google.common.collect.Sets;
  *
  */
 public class AudioItem extends Committable {
-  private final String uuid;
+  private final String id;
   private final Metadata metadata;
 
   private final Map<String, Category> categories;
   private final Map<String, Playlist> playlists;
 
-  AudioItem(String uuid) {
-    this.uuid = uuid;
+  AudioItem(String id) {
+    this.id = id;
     this.metadata = new Metadata();
     this.categories = Maps.newHashMap();
     this.playlists = Maps.newHashMap();
   }
 
-  public final String getUuid() {
-    return uuid;
+  public final String getId() {
+    return id;
   }
 
   public final Metadata getMetadata() {
@@ -55,7 +55,7 @@ public class AudioItem extends Committable {
     // make sure all parents up to the root are added as well
     do {
       if (!hasCategory(category)) {
-        categories.put(category.getUuid(), category);
+        categories.put(category.getId(), category);
       }
       category = category.getParent();
     } while (category != null);
@@ -67,11 +67,11 @@ public class AudioItem extends Committable {
   }
 
   public final boolean hasCategory(Category category) {
-    return categories.containsKey(category.getUuid());
+    return categories.containsKey(category.getId());
   }
 
   public final void removeCategory(Category category) {
-    categories.remove(category.getUuid());
+    categories.remove(category.getId());
     while (removeOrphanedNonLeafCategories())
       ;
   }
@@ -96,7 +96,7 @@ public class AudioItem extends Committable {
     // least one child
 
     for (Category cat : toRemove) {
-      categories.remove(cat.getUuid());
+      categories.remove(cat.getId());
     }
 
     return !toRemove.isEmpty();
@@ -115,15 +115,15 @@ public class AudioItem extends Committable {
   }
 
   public final void addPlaylist(Playlist playlist) {
-    playlists.put(playlist.getUuid(), playlist);
+    playlists.put(playlist.getId(), playlist);
   }
 
   public final boolean hasPlaylist(Playlist playlist) {
-    return playlists.containsKey(playlist.getUuid());
+    return playlists.containsKey(playlist.getId());
   }
 
   public final void removePlaylist(Playlist playlist) {
-    playlists.remove(playlist.getUuid());
+    playlists.remove(playlist.getId());
   }
 
   public final Collection<Playlist> getPlaylists() {
@@ -133,7 +133,7 @@ public class AudioItem extends Committable {
   @Override
   public boolean doCommit(Transaction t) throws IOException {
     if (isDeleteRequested()) {
-      t.getIndex().deleteAudioItem(uuid, t);
+      t.getIndex().deleteAudioItem(id, t);
       return false;
     } else {
       return t.getIndex().updateAudioItem(this, t.getWriter());

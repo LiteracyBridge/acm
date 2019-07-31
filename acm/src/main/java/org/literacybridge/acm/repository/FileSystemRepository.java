@@ -34,8 +34,8 @@ public class FileSystemRepository implements FileRepositoryInterface {
      * @return A File object representing the physical file.
      */
     public File resolveFile(AudioItem audioItem, AudioFormat format, boolean writeAccess) {
-        return new File(resolveDirectory(audioItem.getUuid()),
-            audioItem.getUuid() + "." + format.getFileExtension());
+        return new File(resolveDirectory(audioItem.getId()),
+            audioItem.getId() + "." + format.getFileExtension());
     }
 
     /**

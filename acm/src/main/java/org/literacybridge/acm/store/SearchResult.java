@@ -47,7 +47,7 @@ public class SearchResult {
     if (category == null) {
       return 0;
     }
-    Integer count = categoryFacetCounts.get(category.getUuid());
+    Integer count = categoryFacetCounts.get(category.getId());
     if (count == null) {
       return 0;
     } else {
@@ -59,7 +59,7 @@ public class SearchResult {
     if (playlist == null) {
       return 0;
     }
-    Integer count = playlistFacetCounts.get(playlist.getUuid());
+    Integer count = playlistFacetCounts.get(playlist.getId());
     if (count == null) {
       return 0;
     } else {

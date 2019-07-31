@@ -164,12 +164,12 @@ public class AudioItemContextMenuDialog extends JDialog {
         for (AudioItem a : selectedAudioItems) {
           try {
             a.removePlaylist(selectedPlaylist);
-            selectedPlaylist.removeAudioItem(a.getUuid());
+            selectedPlaylist.removeAudioItem(a.getId());
             ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
                     .commit(a);
           } catch (Exception e) {
             LOG.log(Level.WARNING, "Unable to remove audioitem id="
-                    + a.getUuid() + " from playlist " + selectedPlaylist.getName(), e);
+                    + a.getId() + " from playlist " + selectedPlaylist.getName(), e);
           }
         }
         Application.getFilterState().updateResult(true);
@@ -222,7 +222,7 @@ public class AudioItemContextMenuDialog extends JDialog {
               ACMConfiguration.getInstance()
                       .getCurrentDB()
                       .getMetadataStore()
-                      .deleteAudioItem(a.getUuid());
+                      .deleteAudioItem(a.getId());
               ACMConfiguration.getInstance()
                       .getCurrentDB()
                       .getMetadataStore()
@@ -247,7 +247,7 @@ public class AudioItemContextMenuDialog extends JDialog {
             } catch (Exception e) {
               // TODO: fix all of these silently ignored exceptions
               LOG.log(Level.WARNING,
-                      "Unable to delete audioitem id=" + a.getUuid(), e);
+                      "Unable to delete audioitem id=" + a.getId(), e);
             }
           }
           Application.getFilterState().updateResult(true);

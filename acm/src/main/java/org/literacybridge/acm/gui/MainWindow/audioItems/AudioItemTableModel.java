@@ -141,14 +141,14 @@ public class AudioItemTableModel extends AbstractTableModel {
                 Playlist playlist = Application.getFilterState().getSelectedPlaylist();
                 int position = 0;
                 if (playlist != null) {
-                    position = playlist.getAudioItemPosition(audioItem.getUuid()) + 1;
+                    position = playlist.getAudioItemPosition(audioItem.getId()) + 1;
                 }
                 return new AudioItemNode<>(audioItem, position);
             }
         }).setComparator(Comparator.comparingInt(AudioItemNode::getValue));
 
     private final Map<String, Integer> uuidToRowIndexMap;
-  private final List<AudioItemNodeRow> rowIndexToUuidMap;
+  private final List<AudioItemNodeRow> rowIndexToIdMap;
 
   private final ColumnInfo<?>[] columns;
 
@@ -156,7 +156,7 @@ public class AudioItemTableModel extends AbstractTableModel {
       MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
           .getMetadataStore();
     this.uuidToRowIndexMap = Maps.newHashMap();
-    this.rowIndexToUuidMap = Lists.newArrayList();
+    this.rowIndexToIdMap = Lists.newArrayList();
 
     columns = initializeColumnInfoArray(infoIconColumn, titleColumn,
         durationColumn, categoriesColumn, sourceColumn, languagesColumn,
@@ -186,10 +186,10 @@ public class AudioItemTableModel extends AbstractTableModel {
                         int row = addNewAudioItem(audioItem);
                         fireTableRowsInserted(row, row);
                     } else {
-                        int row = uuidToRowIndexMap.get(audioItem.getUuid());
+                        int row = uuidToRowIndexMap.get(audioItem.getId());
 
                         if (eventType == MetadataStore.DataChangeEventType.ITEM_MODIFIED) {
-                            rowIndexToUuidMap.set(row, convertToAudioItemNodeRow(audioItem));
+                            rowIndexToIdMap.set(row, convertToAudioItemNodeRow(audioItem));
                             fireTableRowsUpdated(row, row);
                         } else if (eventType == MetadataStore.DataChangeEventType.ITEM_DELETED) {
                             removeAudioItem(audioItem);
@@ -209,8 +209,8 @@ public class AudioItemTableModel extends AbstractTableModel {
     return infos;
   }
 
-  public String getAudioItemUuid(int rowIndex) {
-    return rowIndexToUuidMap.get(rowIndex).audioItem.getUuid();
+  public String getAudioItemId(int rowIndex) {
+    return rowIndexToIdMap.get(rowIndex).audioItem.getId();
   }
 
   public ColumnInfo<?>[] getColumnInfos() {
@@ -236,9 +236,9 @@ public class AudioItemTableModel extends AbstractTableModel {
   public Object getValueAt(int rowIndex, int columnIndex) {
     ColumnInfo<?> column = columns[columnIndex];
     if (column.getValueProvider().isValueCachable()) {
-      return rowIndexToUuidMap.get(rowIndex).columns[columnIndex];
+      return rowIndexToIdMap.get(rowIndex).columns[columnIndex];
     } else {
-      AudioItem audioItem = rowIndexToUuidMap.get(rowIndex).audioItem;
+      AudioItem audioItem = rowIndexToIdMap.get(rowIndex).audioItem;
       return column.getValueProvider().getValue(audioItem);
     }
   }
@@ -259,9 +259,9 @@ public class AudioItemTableModel extends AbstractTableModel {
   }
 
   private int addNewAudioItem(AudioItem item) {
-    int row = rowIndexToUuidMap.size();
-    uuidToRowIndexMap.put(item.getUuid(), row);
-    rowIndexToUuidMap.add(convertToAudioItemNodeRow(item));
+    int row = rowIndexToIdMap.size();
+    uuidToRowIndexMap.put(item.getId(), row);
+    rowIndexToIdMap.add(convertToAudioItemNodeRow(item));
     return row;
   }
 
@@ -270,15 +270,15 @@ public class AudioItemTableModel extends AbstractTableModel {
    * @param item The audio item to be removed.
      */
   private void removeAudioItem(AudioItem item) {
-    int row = uuidToRowIndexMap.get(item.getUuid());
+    int row = uuidToRowIndexMap.get(item.getId());
     // Adjust higher numbered rows in the id -> row map to account for row removed in middle.
     for (Map.Entry<String,Integer> e : uuidToRowIndexMap.entrySet()) {
       if (e.getValue() > row) {
         e.setValue(e.getValue() - 1);
       }
     }
-    uuidToRowIndexMap.remove(item.getUuid());
-    rowIndexToUuidMap.remove(row);
+    uuidToRowIndexMap.remove(item.getId());
+    rowIndexToIdMap.remove(row);
   }
 
   /**

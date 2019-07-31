@@ -106,10 +106,6 @@ public class Category implements Cloneable {
     return !children.isEmpty();
   }
 
-  @Deprecated // This is not really a uuid. Use getId
-  public String getUuid() {
-    return id;
-  }
   public String getId() {
       return id;
   }

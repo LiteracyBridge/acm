@@ -288,7 +288,7 @@ public class MessageExtractor {
                 count++;
                 List<AudioItem> oneItem = Collections.singletonList(item);
                 if (params.verbose) {
-                    System.out.println(String.format("%s item %d of %d: %s", announcement, count, maxToExtract, item.getUuid()));
+                    System.out.println(String.format("%s item %d of %d: %s", announcement, count, maxToExtract, item.getId()));
                 }
                 AudioExporter.getInstance().export(oneItem,
                     destinationDirectory,
@@ -309,7 +309,7 @@ public class MessageExtractor {
                 }
                 MetadataStore metadataStore = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
                 for (AudioItem item : extracted) {
-                    metadataStore.deleteAudioItem(item.getUuid());
+                    metadataStore.deleteAudioItem(item.getId());
                     metadataStore.commit(item);
                 }
                 ACMConfiguration.getInstance().getCurrentDB().commitDbChanges();

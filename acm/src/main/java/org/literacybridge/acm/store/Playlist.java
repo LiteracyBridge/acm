@@ -9,17 +9,17 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class Playlist extends Committable {
-  private final String uuid;
+  private final String id;
   private String name;
   private final List<String> audioItems;
 
-  Playlist(String uuid) {
-    this.uuid = uuid;
+  Playlist(String id) {
+    this.id = id;
     audioItems = Lists.newArrayList();
   }
 
-  public String getUuid() {
-    return uuid;
+  public String getId() {
+    return id;
   }
 
   public String getName() {
@@ -31,27 +31,27 @@ public class Playlist extends Committable {
   }
 
   public void addAudioItem(AudioItem item) {
-    addAudioItem(item.getUuid());
+    addAudioItem(item.getId());
   }
 
-  public void addAudioItem(String uuid) {
-    audioItems.add(uuid);
+  public void addAudioItem(String id) {
+    audioItems.add(id);
   }
 
   public void addAudioItem(int index, AudioItem item) {
-    addAudioItem(index, item.getUuid());
+    addAudioItem(index, item.getId());
   }
 
-  public void addAudioItem(int index, String uuid) {
-    audioItems.add(index, uuid);
+  public void addAudioItem(int index, String id) {
+    audioItems.add(index, id);
   }
 
-  public void removeAudioItem(String uuid) {
-    audioItems.remove(uuid);
+  public void removeAudioItem(String id) {
+    audioItems.remove(id);
   }
 
-  public int getAudioItemPosition(String uuid) {
-    return audioItems.indexOf(uuid);
+  public int getAudioItemPosition(String id) {
+    return audioItems.indexOf(id);
   }
 
   public Collection<String> getAudioItemList() {
@@ -83,7 +83,7 @@ public class Playlist extends Committable {
   @Override
   public boolean doCommit(Transaction t) throws IOException {
     if (isDeleteRequested()) {
-      t.getIndex().deletePlaylist(uuid, t);
+      t.getIndex().deletePlaylist(id, t);
       return false;
     } else {
       return t.getIndex().updatePlaylistName(this, t);
@@ -101,15 +101,15 @@ public class Playlist extends Committable {
 
   public static final class Builder {
     private SortedMap<Integer, String> items = Maps.newTreeMap();
-    private String uuid;
+    private String id;
     private String name;
     private Playlist playlistPrototype;
 
     private Builder() {
     }
 
-    public Builder withUuid(String uuid) {
-      this.uuid = uuid;
+    public Builder withId(String id) {
+      this.id = id;
       return this;
     }
 
@@ -123,13 +123,13 @@ public class Playlist extends Committable {
       return this;
     }
 
-    public Builder addAudioItem(String uuid, int position) {
-      items.put(position, uuid);
+    public Builder addAudioItem(String id, int position) {
+      items.put(position, id);
       return this;
     }
 
     public Playlist build() {
-      final Playlist playlist = (playlistPrototype == null) ? new Playlist(uuid)
+      final Playlist playlist = (playlistPrototype == null) ? new Playlist(id)
           : playlistPrototype;
       playlist.audioItems.clear();
       playlist.setName(name);

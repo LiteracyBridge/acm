@@ -114,7 +114,7 @@ class PlaylistPopupMenu extends JPopupMenu {
                         ACMConfiguration.getInstance()
                             .getCurrentDB()
                             .getMetadataStore()
-                            .deletePlaylist(selectedPlaylist.getPlaylist().getUuid());
+                            .deletePlaylist(selectedPlaylist.getPlaylist().getId());
                         ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(selectedPlaylist.getPlaylist());
                     } catch (Exception ex) {
                         LOG.log(Level.WARNING,

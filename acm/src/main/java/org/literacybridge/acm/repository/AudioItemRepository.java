@@ -1,6 +1,5 @@
 package org.literacybridge.acm.repository;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.literacybridge.acm.audioconverter.api.A18Format;
@@ -19,9 +18,7 @@ import org.literacybridge.acm.store.LBMetadataSerializer;
 import org.literacybridge.acm.store.Metadata;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.utils.IOUtils;
-import org.literacybridge.acm.utils.OsUtils;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -29,13 +26,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.repository.FileRepositoryInterface.Repository;
 
@@ -231,7 +226,7 @@ public class AudioItemRepository {
         }
 
         if (sourceFile == null) {
-            throw new ConversionException("Source file must not be null.");
+            throw new ConversionException(String.format("Source file must not be null (%s).", audioItem.getTitle()));
         }
         IOUtils.ensureDirectoryExists(audioFile);
         File targetFile = ExternalConverter.targetFile(sourceFile, audioFile.getParentFile(), targetFormat.getAudioConversionFormat());
@@ -299,7 +294,7 @@ public class AudioItemRepository {
         // a new a18 in the temp folder, which isn't necessary for export
         File fromFile = resolveFile(audioItem, AudioFormat.A18, false);
         if (fromFile == null) {
-            throw new IOException("AudioItem " + audioItem.getUuid() + " not found in repository.");
+            throw new IOException("AudioItem " + audioItem.getId() + " not found in repository.");
         }
 
         exportA18WithMetadataToFile(audioItem, new File(targetDirectory, fromFile.getName()));
@@ -316,7 +311,7 @@ public class AudioItemRepository {
             fromFile = convert(audioItem, AudioFormat.A18);
         }
         if (fromFile == null) {
-            throw new IOException("AudioItem " + audioItem.getUuid() + " not found in repository.");
+            throw new IOException("AudioItem " + audioItem.getId() + " not found in repository.");
         }
         IOUtils.copy(fromFile, targetFile);
         appendMetadataToA18(audioItem, targetFile);

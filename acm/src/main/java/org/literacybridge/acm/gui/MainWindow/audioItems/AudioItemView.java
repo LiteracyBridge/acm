@@ -157,7 +157,7 @@ public class AudioItemView extends Container {
         public boolean include(
             javax.swing.RowFilter.Entry<?, ?> entry) {
           return currResult.getAudioItems().contains(
-              tableModel.getAudioItemUuid((Integer) entry.getIdentifier()));
+              tableModel.getAudioItemId((Integer) entry.getIdentifier()));
         }
       });
     }

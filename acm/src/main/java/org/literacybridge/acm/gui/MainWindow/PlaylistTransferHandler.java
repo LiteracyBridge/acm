@@ -72,7 +72,7 @@ public class PlaylistTransferHandler extends TransferHandler {
       if (!item.hasPlaylist(playlist)) {
         try {
           item.addPlaylist(playlist);
-          playlist.addAudioItem(item.getUuid());
+          playlist.addAudioItem(item.getId());
           ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
               .commit(item, playlist);
         } catch (Exception e) {

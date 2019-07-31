@@ -261,7 +261,7 @@ public class CSVExporter {
          * @param node   What to write
          */
         private void exportCategoryCodes(CSVWriter writer, Category node) {
-            values[0] = node.getUuid();
+            values[0] = node.getId();
             values[1] = node.getCategoryName();
             if (listFullCategories) {
                 values[2] = node.getFullName();

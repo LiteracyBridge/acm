@@ -98,7 +98,7 @@ public class DBExporter {
   private void getChildren(CSVWriter writer, Category cat) {
     for (Category child : cat.getSortedChildren()) {
       String[] values = new String[3];
-      values[0] = child.getUuid();
+      values[0] = child.getId();
       values[1] = child.getCategoryName().toString();
       values[2] = project;
       writer.writeNext(values);

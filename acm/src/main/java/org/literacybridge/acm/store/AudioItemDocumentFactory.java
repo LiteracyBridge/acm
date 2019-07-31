@@ -52,20 +52,20 @@ public class AudioItemDocumentFactory {
       }
     }
 
-    doc.add(new StringField(AudioItemIndex.UID_FIELD, audioItem.getUuid(),
+    doc.add(new StringField(AudioItemIndex.UID_FIELD, audioItem.getId(),
         Store.YES));
     for (Category category : audioItem.getCategoryList()) {
       doc.add(new StringField(AudioItemIndex.CATEGORIES_FIELD,
-          category.getUuid(), Store.YES));
+          category.getId(), Store.YES));
       doc.add(new SortedSetDocValuesFacetField(
-          AudioItemIndex.CATEGORIES_FACET_FIELD, category.getUuid()));
+          AudioItemIndex.CATEGORIES_FACET_FIELD, category.getId()));
     }
 
     doc.add(new Field(AudioItemIndex.PLAYLISTS_FIELD,
         new PlaylistTokenStream(audioItem), TextField.TYPE_NOT_STORED));
     for (Playlist playlist : audioItem.getPlaylists()) {
       doc.add(new SortedSetDocValuesFacetField(
-          AudioItemIndex.PLAYLISTS_FACET_FIELD, playlist.getUuid()));
+          AudioItemIndex.PLAYLISTS_FACET_FIELD, playlist.getId()));
     }
 
     if (metadata.containsField(MetadataSpecification.DC_LANGUAGE)) {
@@ -175,8 +175,8 @@ public class AudioItemDocumentFactory {
 
       Playlist playlist = playlistIterator.next();
       termAtt.setEmpty();
-      termAtt.append(playlist.getUuid());
-      int value = playlist.getAudioItemPosition(audioItem.getUuid());
+      termAtt.append(playlist.getId());
+      int value = playlist.getAudioItemPosition(audioItem.getId());
       BytesRef payload = new BytesRef(PayloadHelper.encodeInt(value));
       payloadAtt.setPayload(payload);
       return true;

@@ -52,7 +52,7 @@ abstract class AudioFileImporter {
 
         AudioItem audioItem = createAudioItem();
 
-        if (store.getAudioItem(audioItem.getUuid()) != null) {
+        if (store.getAudioItem(audioItem.getId()) != null) {
             // just skip if we have an item with the same id already
             System.out.println(String.format("File '%s' is already in database; skipping",
                 audioFile.getName()));
@@ -111,7 +111,7 @@ abstract class AudioFileImporter {
 
         // Add defaults for missing required values.
         if (isEmpty(metadata.get(DC_IDENTIFIER))) {
-            metadata.put(DC_IDENTIFIER, audioItem.getUuid());
+            metadata.put(DC_IDENTIFIER, audioItem.getId());
         }
         if (isEmpty(metadata.get(DC_TITLE))) {
             if (isEmpty(titleFromFilename)) {

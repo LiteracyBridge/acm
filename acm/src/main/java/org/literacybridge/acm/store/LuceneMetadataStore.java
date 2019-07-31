@@ -40,17 +40,17 @@ public class LuceneMetadataStore extends MetadataStore {
     try {
       Iterable<AudioItem> audioItems = index.getAudioItems();
       for (AudioItem audioItem : audioItems) {
-        audioItemCache.put(audioItem.getUuid(), audioItem);
+        audioItemCache.put(audioItem.getId(), audioItem);
       }
 
       Iterable<Playlist> playlists = index.getPlaylists();
       for (Playlist playlist : playlists) {
-        playlistCache.put(playlist.getUuid(), playlist);
+        playlistCache.put(playlist.getId(), playlist);
         for (String uid : playlist.getAudioItemList()) {
           AudioItem audioItem = audioItemCache.get(uid);
           if (audioItem != null) {
             audioItem.addPlaylist(playlist);
-            audioItemCache.put(audioItem.getUuid(), audioItem);
+            audioItemCache.put(audioItem.getId(), audioItem);
           }
         }
       }
@@ -67,17 +67,17 @@ public class LuceneMetadataStore extends MetadataStore {
           if (item instanceof Playlist) {
             Playlist playlist = (Playlist) item;
             if (event.getEventType() == DataChangeEventType.ITEM_DELETED) {
-              playlistCache.remove(playlist.getUuid());
+              playlistCache.remove(playlist.getId());
             } else {
-              playlistCache.put(playlist.getUuid(), playlist);
+              playlistCache.put(playlist.getId(), playlist);
             }
           }
           if (item instanceof AudioItem) {
             AudioItem audioItem = (AudioItem) item;
             if (event.getEventType() == DataChangeEventType.ITEM_DELETED) {
-              audioItemCache.remove(audioItem.getUuid());
+              audioItemCache.remove(audioItem.getId());
             } else {
-              audioItemCache.put(audioItem.getUuid(), audioItem);
+              audioItemCache.put(audioItem.getId(), audioItem);
             }
           }
         }

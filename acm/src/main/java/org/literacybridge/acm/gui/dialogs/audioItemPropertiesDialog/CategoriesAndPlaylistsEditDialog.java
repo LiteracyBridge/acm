@@ -71,7 +71,7 @@ public class CategoriesAndPlaylistsEditDialog extends ACMDialog {
               .commit(audioItem);
         } catch (IOException ex) {
           LOG.log(Level.SEVERE,
-              "Unable to commit changes to AudioItem " + audioItem.getUuid(),
+              "Unable to commit changes to AudioItem " + audioItem.getId(),
               ex);
         }
         setVisible(false);

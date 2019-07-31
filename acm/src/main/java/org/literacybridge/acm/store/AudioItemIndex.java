@@ -169,14 +169,14 @@ public class AudioItemIndex {
 
   public boolean updateAudioItem(AudioItem audioItem, IndexWriter writer)
       throws IOException {
-    Document oldDoc = getDocument(audioItem.getUuid());
+    Document oldDoc = getDocument(audioItem.getId());
 
     if (oldDoc == null) {
       addAudioItem(audioItem, writer);
       return true;
     } else {
       Document doc = factory.createLuceneDocument(audioItem);
-      writer.updateDocument(new Term(UID_FIELD, audioItem.getUuid()),
+      writer.updateDocument(new Term(UID_FIELD, audioItem.getId()),
           facetsConfig.build(doc));
       return false;
     }
@@ -220,7 +220,7 @@ public class AudioItemIndex {
         String[] pair = tokenizer.nextToken().split(":");
         String uuid = pair[0];
         String name = pair[1];
-        playlists.put(uuid, Playlist.builder().withUuid(uuid).withName(name));
+        playlists.put(uuid, Playlist.builder().withId(uuid).withName(name));
       }
     }
     return playlists;
@@ -230,7 +230,7 @@ public class AudioItemIndex {
       IndexWriter writer) throws IOException {
     StringBuilder builder = new StringBuilder();
     for (Playlist playlist : playlists) {
-      builder.append(playlist.getUuid());
+      builder.append(playlist.getId());
       builder.append(':');
       builder.append(playlist.getName());
       builder.append(',');
@@ -267,7 +267,7 @@ public class AudioItemIndex {
   public boolean updatePlaylistName(Playlist playlist, Transaction t)
       throws IOException {
     Map<String, Playlist.Builder> playlists = readPlaylistNames();
-    Playlist.Builder removed = playlists.remove(playlist.getUuid());
+    Playlist.Builder removed = playlists.remove(playlist.getId());
     List<Playlist> updatedPlaylists = Lists.newLinkedList();
     for (Playlist.Builder p : playlists.values()) {
       updatedPlaylists.add(p.build());
@@ -310,7 +310,7 @@ public class AudioItemIndex {
   }
 
   public void refresh(Playlist playlist) throws IOException {
-    getPlaylist(playlist.getUuid(), playlist);
+    getPlaylist(playlist.getId(), playlist);
   }
 
   public Playlist getPlaylist(String uuid) throws IOException {
@@ -322,7 +322,7 @@ public class AudioItemIndex {
     final IndexSearcher searcher = searcherManager.acquire();
     try {
       final Playlist.Builder builder = Playlist.builder();
-      builder.withUuid(uuid);
+      builder.withId(uuid);
       builder.withName(uuid);
       if (playlist != null) {
         builder.withPlaylistPrototype(playlist);
@@ -360,7 +360,7 @@ public class AudioItemIndex {
               payload.offset);
           AudioItem audioItem = loadAudioItem(
               leafReader.document(postingsEnum.docID()));
-          playlistBuilder.addAudioItem(audioItem.getUuid(), playlistPos);
+          playlistBuilder.addAudioItem(audioItem.getId(), playlistPos);
         }
       }
     }
@@ -444,7 +444,7 @@ public class AudioItemIndex {
   }
 
   public void refresh(AudioItem audioItem) throws IOException {
-    Document doc = getDocument(audioItem.getUuid());
+    Document doc = getDocument(audioItem.getId());
     if (doc == null) {
       throw new IOException("AudioItem not found.");
     }
@@ -486,7 +486,7 @@ public class AudioItemIndex {
     BooleanQuery.Builder bq = new BooleanQuery.Builder();
     addTextQuery(bq, filterString);
     if (selectedPlaylist != null) {
-      bq.add(new TermQuery(new Term(PLAYLISTS_FIELD, selectedPlaylist.getUuid())),
+      bq.add(new TermQuery(new Term(PLAYLISTS_FIELD, selectedPlaylist.getId())),
           Occur.MUST);
     }
     return search(bq.build());
@@ -502,7 +502,7 @@ public class AudioItemIndex {
       BooleanQuery.Builder categoriesQuery = new BooleanQuery.Builder();
       for (Category category : filterCategories) {
         categoriesQuery.add(
-            new TermQuery(new Term(CATEGORIES_FIELD, category.getUuid())),
+            new TermQuery(new Term(CATEGORIES_FIELD, category.getId())),
             Occur.SHOULD);
       }
       bq.add(categoriesQuery.build(), Occur.MUST);

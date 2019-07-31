@@ -448,7 +448,7 @@ public class Application extends JXFrame {
       }
       if (filterCategories != null && !filterCategories.isEmpty()) {
         for (Category cat : filterCategories) {
-          builder.append("FC:").append(cat.getUuid());
+          builder.append("FC:").append(cat.getId());
           builder.append(",");
         }
       }

@@ -2,9 +2,7 @@ package org.literacybridge.acm.gui.dialogs;
 
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
@@ -17,7 +15,6 @@ import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.SearchResult;
 import org.literacybridge.acm.store.Transaction;
-import org.literacybridge.acm.utils.SwingUtils;
 import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ProgramSpec;
 
@@ -33,16 +30,12 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.Toolkit;
 import java.awt.Window;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
@@ -828,7 +821,7 @@ public class AudioItemRenameDialog extends JDialog {
                 Collection<Playlist> playlists = new ArrayList<>(item.getPlaylists());
                 playlists.forEach(pl -> {
                     item.removePlaylist(pl);
-                    pl.removeAudioItem(item.getUuid());
+                    pl.removeAudioItem(item.getId());
                 });
                 transaction.add(item);
             });

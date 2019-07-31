@@ -132,7 +132,7 @@ public class LuceneMetadataStoreTest {
     assertNumSearchResults(store, "lorem", p2, 2);
     assertNumSearchResults(store, "lorem", p3, 1);
 
-    store.deletePlaylist(p2.getUuid());
+    store.deletePlaylist(p2.getId());
     store.commit(p2);
     Exception expectedException = null;
     try {
@@ -280,9 +280,9 @@ public class LuceneMetadataStoreTest {
     assertNumSearchResults(store, "123", 1);
 
     // try rollback of a delete attempt
-    store.deleteAudioItem(a1.getUuid());
+    store.deleteAudioItem(a1.getId());
     // before the commit a2 should still be returned
-    assertEquals(a1, store.getAudioItem(a1.getUuid()));
+    assertEquals(a1, store.getAudioItem(a1.getId()));
 
     a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum"));
@@ -298,7 +298,7 @@ public class LuceneMetadataStoreTest {
     // altered
     assertNumSearchResults(store, "lor", 2);
     assertNumSearchResults(store, "123", 1);
-    assertEquals(a1, store.getAudioItem(a1.getUuid()));
+    assertEquals(a1, store.getAudioItem(a1.getId()));
 
     // this is a no-op, but we want to check that a1 is still committable after
     // a successful rollback
@@ -308,9 +308,9 @@ public class LuceneMetadataStoreTest {
     // rollback to fail
 
     // try rollback of a delete attempt
-    store.deleteAudioItem(a1.getUuid());
+    store.deleteAudioItem(a1.getId());
     // before the commit a2 should still be returned
-    assertEquals(a1, store.getAudioItem(a1.getUuid()));
+    assertEquals(a1, store.getAudioItem(a1.getId()));
 
     a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lorem ipsum"));
@@ -327,7 +327,7 @@ public class LuceneMetadataStoreTest {
     // altered
     assertNumSearchResults(store, "lor", 2);
     assertNumSearchResults(store, "123", 1);
-    assertEquals(a1, store.getAudioItem(a1.getUuid()));
+    assertEquals(a1, store.getAudioItem(a1.getId()));
 
     expectedException = null;
     try {
@@ -376,7 +376,7 @@ public class LuceneMetadataStoreTest {
 
     store.commit(p1, p2, p3);
 
-    store.deletePlaylist(p2.getUuid());
+    store.deletePlaylist(p2.getId());
     a2.getMetadata().putMetadataField(MetadataSpecification.DC_TITLE,
         MetadataValue.newValue("Lxyzorem ipsum"));
     expectedException = null;

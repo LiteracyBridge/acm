@@ -83,7 +83,7 @@ public class ExportToDeviceTransferHandler extends TransferHandler {
                             try {
                                 A18DeviceExporter.exportToDevice(item, device);
                             } catch (Exception e) {
-                                LOG.log(Level.WARNING, "Unable to export AudioItem with id=" + item.getUuid(), e);
+                                LOG.log(Level.WARNING, "Unable to export AudioItem with id=" + item.getId(), e);
                             }
                             if (!onProgress(++count, audioItems.length)) {
                                 break;

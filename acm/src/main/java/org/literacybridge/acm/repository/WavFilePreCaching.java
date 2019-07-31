@@ -58,7 +58,7 @@ public class WavFilePreCaching {
             while (it.hasNext() && !isCancelled()) {
                 AudioItem item = it.next();
                 try {
-                    itemBeingProcessed = item.getUuid();
+                    itemBeingProcessed = item.getId();
                     System.out.println("Converting " + itemBeingProcessed);
                     ACMConfiguration.getInstance()
                         .getCurrentDB()

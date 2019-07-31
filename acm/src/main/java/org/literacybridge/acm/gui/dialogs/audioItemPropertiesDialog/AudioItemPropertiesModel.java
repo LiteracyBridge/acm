@@ -364,7 +364,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
       store.commit(audioItem);
     } catch (IOException e) {
       LOG.log(Level.SEVERE,
-          "Unable to commit changes to AudioItem " + audioItem.getUuid(), e);
+          "Unable to commit changes to AudioItem " + audioItem.getId(), e);
     }
   }
 
@@ -384,7 +384,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
       store.commit(audioItem);
     } catch (IOException e) {
       LOG.log(Level.SEVERE,
-          "Unable to commit changes to AudioItem " + audioItem.getUuid(), e);
+          "Unable to commit changes to AudioItem " + audioItem.getId(), e);
     }
   }
 

@@ -130,7 +130,7 @@ public class LBMetadataSerializer {
     } else {
       out.writeByte((byte) categories.size());
       for (Category c : categories) {
-        IOUtils.writeAsUTF8(out, c.getUuid());
+        IOUtils.writeAsUTF8(out, c.getId());
       }
     }
   }

@@ -231,9 +231,9 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             // Create.
             final List<String> args = new ArrayList<>();
             pkgs.forEach((key, value) -> {
-                args.add(value);
-                args.add(key);
-                args.add(key);
+                args.add(value); // package
+                args.add(key);   // language
+                args.add(key);   // group
             });
             tbb.createDeployment(args);
 
@@ -381,7 +381,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             Enumeration audioItemEnumeration = playlistNode.children();
             while (audioItemEnumeration.hasMoreElements()) {
                 AudioItemNode audioItemNode = (AudioItemNode)audioItemEnumeration.nextElement();
-                String audioItemId = audioItemNode.getAudioItem().getUuid();
+                String audioItemId = audioItemNode.getAudioItem().getId();
 
                 listWriter.println(audioItemId);
             }
@@ -419,7 +419,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             // content. But if we can't find the category item, just make up a category id.
             AudioItem promptITem = prompts.getShortItem();
             if (promptITem != null) {
-                promptCat = prompts.getShortItem().getUuid();
+                promptCat = prompts.getShortItem().getId();
             } else {
                 promptCat = String.format("100-0-%d-%d", context.deploymentNo, promptIx);
             }
