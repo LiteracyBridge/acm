@@ -542,28 +542,6 @@ public class DBConfiguration { //extends Properties {
     return Collections.unmodifiableList(audioLanguages);
   }
 
-  /**
-   * The "correlation id" is a small, incrementing integer that is assigned
-   * to user feedback imported into an ACM database (generally, a -FB- database.)
-   *
-   * These ids are managed by the feedback importer, and stored here so that
-   * the latest value is available on every machine.
-   * @return The next correlation id property.
-   */
-  public int getNextCorrelationId() {
-    String nextId = dbProperties.getProperty("NEXT_CORRELATION_ID");
-    if (nextId == null) {
-      return 0;
-    }
-    return Integer.valueOf(nextId);
-  }
-
-  public void setNextCorrelationId(int nextId) {
-    String id = String.valueOf(nextId);
-      dbProperties.setProperty("NEXT_CORRELATION_ID", id);
-    writeProps();
-  }
-
   private void InitializeAcmConfiguration() {
     boolean propsChanged = false;
 

@@ -17,19 +17,15 @@ import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataStore.DataChangeListener;
 import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.acm.store.SearchResult;
-import org.literacybridge.acm.utils.B26RotatingEncoding;
 
 import javax.swing.table.AbstractTableModel;
 import java.io.File;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class AudioItemTableModel extends AbstractTableModel {
   private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
@@ -54,7 +50,7 @@ public class AudioItemTableModel extends AbstractTableModel {
     private static final ColumnInfo<String> durationColumn = ColumnInfo.newMetadataColumnInfo(
         LabelProvider.AUDIO_ITEM_TABLE_COLUMN_DURATION,
         ColumnInfo.WIDTH_NOT_SET,
-        65,
+        85,
         MetadataSpecification.LB_DURATION);
 
     private static final ColumnInfo<String> categoriesColumn = ColumnInfo.newColumnInfo(
@@ -110,24 +106,18 @@ public class AudioItemTableModel extends AbstractTableModel {
             }
         });
 
-    public static final ColumnInfo<String> correlationIdColumn = ColumnInfo.newColumnInfo(
-        LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CORRELATION_ID,
+    static final ColumnInfo<String> sdgGoalsColumn = ColumnInfo.newMetadataColumnInfo(
+        LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SDG_GOALS,
         ColumnInfo.WIDTH_NOT_SET,
         140,
-        new ValueProvider<String>(true) {
-            @Override
-            protected AudioItemNode<String> getValue(AudioItem audioItem) {
-                String value = "";
-                if (audioItem.getMetadata()
-                    .containsField(MetadataSpecification.LB_CORRELATION_ID)) {
-                    Integer integerValue = audioItem.getMetadata()
-                        .getMetadataValue(MetadataSpecification.LB_CORRELATION_ID)
-                        .getValue();
-                    value = B26RotatingEncoding.encode(integerValue);
-                }
-                return new AudioItemNode<>(audioItem, value);
-            }
-        });
+        MetadataSpecification.LB_SDG_GOALS);
+
+    static final ColumnInfo<String> sdgTargetsColumn = ColumnInfo.newMetadataColumnInfo(
+        LabelProvider.AUDIO_ITEM_TABLE_COLUMN_SDG_TARGETS,
+        ColumnInfo.WIDTH_NOT_SET,
+        140,
+        MetadataSpecification.LB_SDG_TARGETS);
+
 
     public static final ColumnInfo<Integer> playlistOrderColumn = ColumnInfo.newColumnInfo(
         LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER,
@@ -160,7 +150,8 @@ public class AudioItemTableModel extends AbstractTableModel {
 
     columns = initializeColumnInfoArray(infoIconColumn, titleColumn,
         durationColumn, categoriesColumn, sourceColumn, languagesColumn,
-        dateFileModifiedColumn, correlationIdColumn, playlistOrderColumn);
+        dateFileModifiedColumn, /*correlationIdColumn,*/ sdgGoalsColumn,
+        sdgTargetsColumn, playlistOrderColumn);
 
     for (AudioItem item : store.getAudioItems()) {
       addNewAudioItem(item);

@@ -34,8 +34,9 @@ public class AudioItemCellRenderer extends DefaultTableCellRenderer {
     JLabel label = (JLabel) super.getTableCellRendererComponent(table, value,
         isSelected, hasFocus, row, column);
 
+    int modelColumn = table.convertColumnIndexToModel(column);
     // If this is the "info icon column", and the row is highlighted, set the icon to be the gear icon.
-    if (column == AudioItemTableModel.infoIconColumn.getColumnIndex() && row == highlightedRow) {
+    if (modelColumn == AudioItemTableModel.infoIconColumn.getColumnIndex() && row == highlightedRow) {
       label.setIcon(settingsImageIcon);
     } else {
       label.setIcon(null);
@@ -46,11 +47,13 @@ public class AudioItemCellRenderer extends DefaultTableCellRenderer {
         String labelText = audioItemNode.toString();
         label.setText(labelText);
 
+        // Set a tooltip for language column (with iso639-3 code) and for wide values (with the
+        // full text).
         int columnWidth = table.getColumnModel().getColumn(column).getWidth();
         Graphics g = table.getGraphics();
         FontMetrics met = g.getFontMetrics();
         int textWidth = met.stringWidth(label.getText()) + 10;
-        boolean isLanguage = column == AudioItemTableModel.languagesColumn.getColumnIndex();
+        boolean isLanguage = modelColumn == AudioItemTableModel.languagesColumn.getColumnIndex();
 
         if (StringUtils.isNotEmpty(audioItemNode.toString()) &&
                 (isLanguage || textWidth > columnWidth)) {

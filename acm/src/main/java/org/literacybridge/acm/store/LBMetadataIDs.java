@@ -10,6 +10,9 @@ public class LBMetadataIDs {
 
   // TODO: this should be defined in a separate (online, xml?) spec
   // Really TODO: Where do these numbers come from? They look pretty, um, magical...
+
+  // If a property is obsoleted, do not reuse the integer id.
+
   public static final ImmutableBiMap<MetadataField<?>, Integer> FieldToIDMap = new ImmutableBiMap.Builder<MetadataField<?>, Integer>()
           .put(DC_TITLE, 1)
           .put(DC_PUBLISHER, 5)
@@ -30,7 +33,9 @@ public class LBMetadataIDs {
           .put(LB_NOTES, 31)
           .put(LB_BENEFICIARY, 32)
           .put(LB_STATUS, 33)
-          .put(LB_CORRELATION_ID, 34)
+//          .put(LB_CORRELATION_ID, 34)
+          .put(LB_SDG_GOALS, 35)
+          .put(LB_SDG_TARGETS, 36)
           .build();
   public static final ImmutableBiMap<MetadataField<?>, String> FieldToNameMap = new ImmutableBiMap.Builder<MetadataField<?>, String>()
           .put(DC_TITLE, DC_TITLE.getName())
@@ -52,7 +57,8 @@ public class LBMetadataIDs {
           .put(LB_NOTES, LB_NOTES.getName())
           .put(LB_BENEFICIARY, LB_BENEFICIARY.getName())
           .put(LB_STATUS, LB_STATUS.getName())
-          .put(LB_CORRELATION_ID, LB_CORRELATION_ID.getName())
+          .put(LB_SDG_GOALS, LB_SDG_GOALS.getName())
+          .put(LB_SDG_TARGETS, LB_SDG_TARGETS.getName())
           .build();
 
   public static final ImmutableBiMap<String, MetadataField<?>> NameToFieldMap = FieldToNameMap.inverse();
@@ -77,7 +83,8 @@ public class LBMetadataIDs {
           .put(LB_NOTES, String.class)
           .put(LB_BENEFICIARY, String.class)
           .put(LB_STATUS, Integer.class)
-          .put(LB_CORRELATION_ID, Integer.class)
+          .put(LB_SDG_GOALS, String.class)
+          .put(LB_SDG_TARGETS, String.class)
           .build();
 
 }

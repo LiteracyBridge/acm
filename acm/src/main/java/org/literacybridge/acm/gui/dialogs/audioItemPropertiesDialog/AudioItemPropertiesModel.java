@@ -45,7 +45,6 @@ import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 
 import com.google.common.collect.Maps;
-import org.literacybridge.acm.utils.B26RotatingEncoding;
 
 public class AudioItemPropertiesModel extends AbstractTableModel {
   private static final Logger LOG = Logger
@@ -227,28 +226,6 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
         .add(new AudioItemProperty.MetadataProperty(LB_NOTES, true));
     audioItemPropertiesObject
         .add(new AudioItemProperty.MetadataProperty(LB_BENEFICIARY, true));
-
-    audioItemPropertiesObject.add(new AudioItemProperty(false) {
-      @Override
-      public String getName() {
-        return "ID";
-      }
-
-      @Override
-      public String getValue(AudioItem audioItem) {
-        String value = "";
-        if (audioItem.getMetadata().containsField(MetadataSpecification.LB_CORRELATION_ID)) {
-          Integer integerValue = audioItem.getMetadata().getMetadataValue(MetadataSpecification.LB_CORRELATION_ID).getValue();
-          value = String.format("%s (%d)", B26RotatingEncoding.encode(integerValue), integerValue);
-        }
-        return value;
-      }
-
-      @Override
-      public void setValue(AudioItem audioItem, Object newValue) {
-        // not supported
-      }
-    });
 
   }
 

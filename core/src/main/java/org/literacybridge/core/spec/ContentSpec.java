@@ -197,9 +197,11 @@ public class ContentSpec {
          * be present? If no filter, all languages in the deployment.
          */
         public final String language;
-        public final String default_category;
-
         private StringFilter languageFilter;
+
+        public final String default_category;
+        public final String sdg_goals;
+        public final String sdg_targets;
 
         public MessageSpec(Map<String, String> properties) {
             this.deploymentNumber = Integer.parseInt(properties.get(columns.deploymentNumber.externalName));
@@ -209,6 +211,8 @@ public class ContentSpec {
             this.format = properties.get(columns.format.externalName);
             this.language = properties.get(columns.language.externalName);
             this.default_category = properties.get(columns.default_category.externalName);
+            this.sdg_goals = properties.get(columns.sdg_goals.externalName);
+            this.sdg_targets = properties.get(columns.sdg_targets.externalName);
             this.languageFilter = new StringFilter(this.language);
         }
 
@@ -268,6 +272,8 @@ public class ContentSpec {
         keyPoints("key_points"),
         format,
         language("language"),
+        sdg_goals("sdg_goals"),
+        sdg_targets("sdg_targets"),
         default_category;
 
         String externalName;

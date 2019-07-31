@@ -26,7 +26,6 @@ import static org.literacybridge.acm.store.MetadataSpecification.DC_SOURCE;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
 import static org.literacybridge.acm.store.MetadataSpecification.DTB_REVISION;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_BENEFICIARY;
-import static org.literacybridge.acm.store.MetadataSpecification.LB_CORRELATION_ID;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_DATE_RECORDED;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_DURATION;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_ENGLISH_TRANSCRIPTION;
@@ -35,6 +34,8 @@ import static org.literacybridge.acm.store.MetadataSpecification.LB_KEYWORDS;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_MESSAGE_FORMAT;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_NOTES;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_PRIMARY_SPEAKER;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_SDG_GOALS;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_SDG_TARGETS;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_STATUS;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_TARGET_AUDIENCE;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_TIMING;
@@ -67,7 +68,7 @@ public class CSVExporter {
             // categories are stuffed here
             null,  // quality is stuffed here
             null,  // project is stuffed here
-            LB_CORRELATION_ID };
+            LB_SDG_GOALS, LB_SDG_TARGETS };
 
     private static final int CATEGORY_COLUMN_INDEX = 19;
     private static final int QUALITY_COLUMN_INDEX = 20;
@@ -122,8 +123,6 @@ public class CSVExporter {
                         DurationAndQuality dq = durationAndQualityFromValue(value);
                         value = dq.duration;
                         quality = dq.quality;
-                    } else if (field == MetadataSpecification.LB_CORRELATION_ID) {
-                        value = correlationIdFromValue(value);
                     }
                     values[i] = value;
                 }

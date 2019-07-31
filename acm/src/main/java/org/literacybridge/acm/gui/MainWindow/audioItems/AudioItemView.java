@@ -11,14 +11,20 @@ import java.awt.event.MouseMotionListener;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Set;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
@@ -34,9 +40,18 @@ import org.literacybridge.acm.gui.messages.RequestedAudioItemMessage;
 import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.language.UILanguageChanged;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.Metadata;
+import org.literacybridge.acm.store.MetadataField;
 import org.literacybridge.acm.store.MetadataSpecification;
+import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.SearchResult;
+
+import static org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemTableModel.playlistOrderColumn;
+import static org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemTableModel.sdgGoalsColumn;
+import static org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemTableModel.sdgTargetsColumn;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_SDG_GOALS;
+import static org.literacybridge.acm.store.MetadataSpecification.LB_SDG_TARGETS;
 
 public class AudioItemView extends Container {
 
@@ -51,10 +66,8 @@ public class AudioItemView extends Container {
   private AudioItemViewMouseListener mouseListener;
   private final AudioItemTableModel tableModel;
 
-  private TableColumn playlistOrderColumn;
-  private TableColumn correlationIdColumn;
-  private boolean firstDataSet = false;
-  private boolean showCorrelationId = ACMConfiguration.getInstance().getCurrentDB().getNextCorrelationId() > 0;
+  private boolean widthsAndColumnsSet = false;
+  private JTableColumnSelector columnSelector;
 
   public AudioItemView() {
     setLayout(new BorderLayout());
@@ -62,6 +75,29 @@ public class AudioItemView extends Container {
     createTable();
     addHandler();
     addToMessageService();
+
+    initColumnSize();
+
+    // Enable the SDG columns by default if there is SDG data in the metadata.
+    MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+    boolean hasSdgFields = store.getAudioItems().stream().anyMatch(item->{
+      Metadata md = item.getMetadata();
+      Set<MetadataField<?>> keys = md.keySet();
+      return keys.contains(LB_SDG_GOALS) || keys.contains(LB_SDG_TARGETS);
+    });
+    columnSelector.setColumnVisible(sdgGoalsColumn.getColumnIndex(), hasSdgFields);
+    columnSelector.setColumnVisible(sdgTargetsColumn.getColumnIndex(), hasSdgFields);
+
+    // Set the comparator (only the Playlist Order has such a thing).
+    TableSortController<AudioItemTableModel> tableRowSorter = (TableSortController<AudioItemTableModel>) audioItemTable
+        .getRowSorter();
+    for (ColumnInfo<?> columnInfo : tableModel.getColumnInfos()) {
+      Comparator<?> comparator = columnInfo.getComparator();
+      if (comparator != null) {
+        tableRowSorter.setComparator(columnInfo.getColumnIndex(), comparator);
+      }
+    }
+
   }
 
   private void addToMessageService() {
@@ -97,38 +133,9 @@ public class AudioItemView extends Container {
   }
 
   private void updateTable() {
-    // Cache the playlistOrderColumn
-    if (!firstDataSet) {
-      initColumnSize();
-      playlistOrderColumn = audioItemTable.getTableHeader().getColumnModel()
-          .getColumn(AudioItemTableModel.playlistOrderColumn.getColumnIndex());
-      correlationIdColumn = audioItemTable.getTableHeader().getColumnModel()
-          .getColumn(AudioItemTableModel.correlationIdColumn.getColumnIndex());
-      firstDataSet = true;
-    }
-
     // If a playlist is selected (ie, is filtering), make the playlist order column visible.
     boolean showPlaylistOrder = Application.getFilterState().getSelectedPlaylist() != null;
-
-    // There's no evident way to query if a column is in the table. Removing when not there
-    // has no effect. So, always remove the optional columns, then add back the ones we want.
-    audioItemTable.removeColumn(playlistOrderColumn);
-    audioItemTable.removeColumn(correlationIdColumn);
-
-    if (showCorrelationId) {
-      audioItemTable.addColumn(correlationIdColumn);
-    }
-    if (showPlaylistOrder) {
-      audioItemTable.addColumn(playlistOrderColumn);
-      TableSortController<AudioItemTableModel> tableRowSorter = (TableSortController<AudioItemTableModel>) audioItemTable
-          .getRowSorter();
-      for (ColumnInfo<?> columnInfo : tableModel.getColumnInfos()) {
-        Comparator<?> comparator = columnInfo.getComparator();
-        if (comparator != null) {
-          tableRowSorter.setComparator(columnInfo.getColumnIndex(), comparator);
-        }
-      }
-    }
+    columnSelector.setColumnVisible(playlistOrderColumn.getColumnIndex(), showPlaylistOrder);
 
     if (currResult != null) {
       if (currResult.getAudioItems().isEmpty()) {
@@ -258,7 +265,7 @@ public class AudioItemView extends Container {
     return getValueAt(modelRow, 0);
   }
 
-  AudioItem getNextAudioItem() {
+  private AudioItem getNextAudioItem() {
     int tableRow = audioItemTable.getSelectedRow();
     if (tableRow < audioItemTable.getRowCount() - 1) {
       tableRow++;
@@ -268,7 +275,7 @@ public class AudioItemView extends Container {
     return getValueAt(modelRow, 0);
   }
 
-  AudioItem getPreviousAudioItem() {
+  private AudioItem getPreviousAudioItem() {
     int tableRow = audioItemTable.getSelectedRow();
     if (tableRow > 0) {
       tableRow--;
@@ -278,7 +285,7 @@ public class AudioItemView extends Container {
     return getValueAt(modelRow, 0);
   }
 
-  public AudioItem getAudioItemAtTableRow(int row) {
+  AudioItem getAudioItemAtTableRow(int row) {
     int modelRow = audioItemTable.convertRowIndexToModel(row);
     return getValueAt(modelRow, 0);
   }
@@ -296,7 +303,7 @@ public class AudioItemView extends Container {
     return item;
   }
 
-  public boolean selectAudioItem(AudioItem audioItem) {
+  private boolean selectAudioItem(AudioItem audioItem) {
     for (int i = 0; i < audioItemTable.getRowCount(); i++) {
       int modelIndex = audioItemTable.convertRowIndexToModel(i);
       AudioItem item = getValueAt(modelIndex, 0);
@@ -310,7 +317,7 @@ public class AudioItemView extends Container {
     return false;
   }
 
-  boolean selectTableRow(int rowStart, int rowEnd) {
+  private boolean selectTableRow(int rowStart, int rowEnd) {
     ListSelectionModel selectionModel = audioItemTable.getSelectionModel();
     if (selectionModel != null) {
       selectionModel.setSelectionInterval(rowStart, rowEnd);
@@ -320,7 +327,7 @@ public class AudioItemView extends Container {
     return false;
   }
 
-  boolean selectTableRow(int row) {
+  private boolean selectTableRow(int row) {
     return selectTableRow(row, row);
   }
 
@@ -332,7 +339,7 @@ public class AudioItemView extends Container {
     return -1;
   }
 
-  int[] getCurrentSelectedRows() {
+  private int[] getCurrentSelectedRows() {
     if (audioItemTable != null) {
       return audioItemTable.getSelectedRows();
     }
@@ -346,7 +353,7 @@ public class AudioItemView extends Container {
     mouseListener.setCurrentResult(result);
   }
 
-  public void addHandler() {
+  private void addHandler() {
 
     final AudioItemCellRenderer renderer = new AudioItemCellRenderer();
     audioItemTable.setDefaultRenderer(Object.class, renderer);
@@ -365,7 +372,7 @@ public class AudioItemView extends Container {
     });
 
     audioItemTable.addMouseListener(new MouseListener() {
-        public int defaultDelay;
+        int defaultDelay;
 
         @Override
       public void mouseExited(MouseEvent e) {
@@ -447,5 +454,119 @@ public class AudioItemView extends Container {
     mouseListener = new AudioItemViewMouseListener(this);
     audioItemTable.addMouseListener(mouseListener);
     audioItemTable.getTableHeader().addMouseListener(mouseListener);
+
+    columnSelector = new JTableColumnSelector();
+    columnSelector.install(audioItemTable);
   }
+
+
+
+
+  /**
+   * A class that allows user to select visible columns of a JTable using a popup menu.
+   *
+   * @author Sergey A. Tachenov
+   */
+  class JTableColumnSelector {
+
+    private JTable table;
+    private final Map<Integer, TableColumn> hiddenColumns = new HashMap<>();
+    private final Map<Integer, JCheckBoxMenuItem> columnCheckboxes = new HashMap<>();
+
+    /**
+     * Constructor. Call {@link #install(javax.swing.JTable) install} to actually
+     * install it on a JTable.
+     */
+    JTableColumnSelector() {
+    }
+
+    /**
+     * Installs this selector on a given table.
+     * @param table the table to install this selector on
+     */
+    void install(JTable table) {
+      this.table = table;
+      table.getTableHeader().setComponentPopupMenu(createHeaderMenu());
+    }
+
+    /**
+     * Exposes show/hide functionality to external code.
+     * @param modelIndex Column to be shown or hidden.
+     * @param visible if true, show, if false, hide.
+     */
+    void setColumnVisible(int modelIndex, boolean visible) {
+      // Track in the column selector UI.
+      if (columnCheckboxes.containsKey(modelIndex)) {
+        columnCheckboxes.get(modelIndex).setSelected(visible);
+        updateColumnModel(modelIndex, visible);
+      }
+    }
+
+    private JPopupMenu createHeaderMenu() {
+      final JPopupMenu headerMenu = new JPopupMenu();
+      final TableModel model = table.getModel();
+      for (int i = 0; i < model.getColumnCount(); ++i) {
+        JCheckBoxMenuItem item = createMenuItem(i);
+        if (item != null) {
+          columnCheckboxes.put(i, item);
+          headerMenu.add(item);
+        }
+      }
+      return headerMenu;
+    }
+
+    private JCheckBoxMenuItem createMenuItem(final int modelIndex) {
+      JCheckBoxMenuItem menuItem = null;
+      final TableModel model = table.getModel();
+      final String columnName = model.getColumnName(modelIndex);
+      if (columnName != null && columnName.length() > 0) {
+        menuItem = new JCheckBoxMenuItem(columnName);
+        menuItem.setSelected(true);
+        menuItem.addActionListener(action -> {
+          JCheckBoxMenuItem item = (JCheckBoxMenuItem)action.getSource();
+          updateColumnModel(modelIndex, item.isSelected());
+        });
+      }
+      return menuItem;
+    }
+
+    private void updateColumnModel(int modelIndex, boolean visible) {
+      if (visible)
+        showColumn(modelIndex);
+      else
+        hideColumn(modelIndex);
+    }
+
+    private void showColumn(int modelIndex) {
+      if (hiddenColumns.containsKey(modelIndex)) {
+        TableColumn column = hiddenColumns.remove(modelIndex);
+        TableColumnModel columnModel = table.getColumnModel();
+        columnModel.addColumn(column);
+        final int addedViewIndex = columnModel.getColumnCount() - 1;
+        if (modelIndex < columnModel.getColumnCount())
+          columnModel.moveColumn(addedViewIndex, modelIndex);
+      }
+    }
+
+    private void hideColumn(int modelIndex) {
+      int vIndex = table.convertColumnIndexToView(modelIndex);
+      // Check if already hidden.
+      if (vIndex >= 0) {
+        TableColumnModel columnModel = table.getColumnModel();
+        TableColumn column = columnModel.getColumn(vIndex);
+        columnModel.removeColumn(column);
+        hiddenColumns.put(modelIndex, column);
+        workaroundForSwingIndexOutOfBoundsBug(column);
+      }
+    }
+
+    private void workaroundForSwingIndexOutOfBoundsBug(TableColumn column) {
+      JTableHeader tableHeader = table.getTableHeader();
+      if (tableHeader.getDraggedColumn() == column) {
+        tableHeader.setDraggedColumn(null);
+      }
+    }
+
+  }
+
 } // class

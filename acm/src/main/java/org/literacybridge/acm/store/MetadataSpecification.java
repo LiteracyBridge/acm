@@ -115,8 +115,10 @@ public interface MetadataSpecification {
       "LB_BENEFICIARY");
   public final static MetadataField<Integer> LB_STATUS = new MetadataIntegerField(
       "LB_STATUS");
-  public final static MetadataField<Integer> LB_CORRELATION_ID = new MetadataIntegerField(
-      "LB_CORRELATION_ID");
+  public final static MetadataField<String> LB_SDG_GOALS =
+      new MetadataStringField("LB_SDG_GOALS");
+  public final static MetadataField<String> LB_SDG_TARGETS =
+      new MetadataStringField("LB_SDG_TARGETS");
 
   // ============================================================================================================
 
@@ -142,6 +144,7 @@ public interface MetadataSpecification {
           .add(LB_NOTES)
           .add(LB_BENEFICIARY)
           .add(LB_STATUS)
-          .add(LB_CORRELATION_ID)
+          .add(LB_SDG_GOALS)
+          .add(LB_SDG_TARGETS)
           .build();
 }

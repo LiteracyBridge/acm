@@ -382,8 +382,6 @@ public class FeedbackImporter {
 
     AudioImporter importer = AudioImporter.getInstance();
     MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
-    int id = ACMConfiguration.getInstance().getCurrentDB().getNextCorrelationId() + 1;
-    ACMConfiguration.getInstance().getCurrentDB().setNextCorrelationId(id + filesToImport.size());
 
     for (File file : filesToImport) {
       try {
@@ -393,7 +391,6 @@ public class FeedbackImporter {
         }
         // Reset the value, because the lambda may not be called, if the file is already in DB.
         tweaks[0] = ImportResults.TWEAKS.NO_CHANGE;
-        metadata.putMetadataField(MetadataSpecification.LB_CORRELATION_ID, new MetadataValue<>(id++));
         importer.importFile(file,
                             (item)->{
                                 // TODO: item.getMetadata().put(LB_CORRELATION_ID, (id++))

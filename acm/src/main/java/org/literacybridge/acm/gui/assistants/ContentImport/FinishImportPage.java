@@ -465,7 +465,24 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
                     item.getMetadata()
                         .put(MetadataSpecification.DC_TITLE, importableAudio.getTitle());
                 }
-
+                // Set the SDG Goals and SDG Targets for content messages, if any are in the spec.
+                ContentSpec.MessageSpec messageSpec = importableAudio.getMessageSpec();
+                if (messageSpec != null) {
+                    // If there are SDG Goals, and the message's SDG Goals are different, set the SDG Goals.
+                    String specSdgGoals = messageSpec.sdg_goals;
+                    String acmSdgGoals = item.getMetadata().get(MetadataSpecification.LB_SDG_GOALS);
+                    if (StringUtils.isNotEmpty(specSdgGoals) && !StringUtils.equals(specSdgGoals, acmSdgGoals)) {
+                        item.getMetadata().putMetadataField(MetadataSpecification.LB_SDG_GOALS, new MetadataValue<>(specSdgGoals));
+                        summaryTable.append(new TR("Setting SDG Goals", specSdgGoals));
+                    }
+                    // Same with SDG Targets.
+                    String specSdgTargets = messageSpec.sdg_targets;
+                    String acmSdgTargets = item.getMetadata().get(MetadataSpecification.LB_SDG_TARGETS);
+                    if (StringUtils.isNotEmpty(specSdgTargets) && !StringUtils.equals(specSdgTargets, acmSdgTargets)) {
+                        item.getMetadata().putMetadataField(MetadataSpecification.LB_SDG_TARGETS, new MetadataValue<>(specSdgTargets));
+                        summaryTable.append(new TR("Setting SDG Targets", specSdgTargets));
+                    }
+                }
             }
         }
     }

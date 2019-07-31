@@ -41,8 +41,9 @@ public class AudioItemViewMouseListener extends MouseAdapter {
 
       // Was the click on the info icon?
       int col = adaptee.audioItemTable.columnAtPoint(e.getPoint());
-      boolean infoIconClicked = col == AudioItemTableModel.infoIconColumn.getColumnIndex();
-      boolean titleColumnClicked = col == AudioItemTableModel.titleColumn.getColumnIndex();
+      int modelColumn = adaptee.audioItemTable.convertColumnIndexToModel(col);
+
+      boolean infoIconClicked = modelColumn == AudioItemTableModel.infoIconColumn.getColumnIndex();
 
       // Was the click on a selected row?
       int row = headerClick ? -1 : adaptee.audioItemTable.rowAtPoint(e.getPoint());
