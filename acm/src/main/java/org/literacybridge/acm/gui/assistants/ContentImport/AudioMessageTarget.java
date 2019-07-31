@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ContentSpec.MessageSpec;
 
 import java.util.Objects;
@@ -36,15 +37,23 @@ public class AudioMessageTarget extends AudioTarget {
     public Playlist getPlaylist() {
         return playlist;
     }
-    public MessageSpec getMessage() {
+
+    @Override
+    public MessageSpec getMessageSpec() {
         return message;
     }
-
-    public int getPlaylistSpecOrdinal() {
-        return getMessage().getPlaylist().getOrdinal();
+    @Override
+    public ContentSpec.PlaylistSpec getPlaylistSpec() {
+        return getMessageSpec().getPlaylist();
     }
+
+    @Override
+    public int getPlaylistSpecOrdinal() {
+        return getMessageSpec().getPlaylist().getOrdinal();
+    }
+    @Override
     public int getMessageSpecOrdinal() {
-        return getMessage().getOrdinal();
+        return getMessageSpec().getOrdinal();
     }
 
     @Override

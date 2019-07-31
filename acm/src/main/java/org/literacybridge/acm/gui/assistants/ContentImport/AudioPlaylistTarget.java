@@ -45,10 +45,12 @@ public class AudioPlaylistTarget extends AudioTarget {
     public Playlist getPlaylist() {
         return playlist;
     }
-    public MessageSpec getMessage() {
+
+    @Override
+    public MessageSpec getMessageSpec() {
         return null;
     }
-
+    @Override
     public ContentSpec.PlaylistSpec getPlaylistSpec() {
         return playlistSpec;
     }

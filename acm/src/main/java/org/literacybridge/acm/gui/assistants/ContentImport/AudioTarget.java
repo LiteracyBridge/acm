@@ -3,6 +3,7 @@ package org.literacybridge.acm.gui.assistants.ContentImport;
 import org.literacybridge.acm.gui.assistants.Matcher.Target;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.core.spec.ContentSpec;
 
 public abstract class AudioTarget extends Target {
     // The ACM Playlist into which the item will be imported.
@@ -29,6 +30,9 @@ public abstract class AudioTarget extends Target {
     public Playlist getPlaylist() {
         return playlist;
     }
+
+    public abstract ContentSpec.MessageSpec getMessageSpec();
+    public abstract ContentSpec.PlaylistSpec getPlaylistSpec();
 
     public abstract int getPlaylistSpecOrdinal();
     public abstract int getMessageSpecOrdinal();

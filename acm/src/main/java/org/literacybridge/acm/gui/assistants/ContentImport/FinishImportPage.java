@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
@@ -15,10 +16,12 @@ import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataSpecification;
 import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.store.Transaction;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.Version;
+import org.literacybridge.core.spec.ContentSpec;
 
 import javax.swing.*;
 import java.awt.Color;
@@ -287,7 +290,20 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
                 matchableItem.getRight().getFile().getCanonicalPath());
             UIUtils.setLabelText(currentMessage, msg);
 
-            Category cat = matchableItem.getLeft().isPlaylist() ? categoriesCategory : generalOtherCategory;
+            Category cat = null;
+            if (matchableItem.getLeft().isPlaylist()) {
+                cat = categoriesCategory;
+            } else {
+                ContentSpec.MessageSpec messageSpec = matchableItem.getLeft().getMessageSpec();
+                assert(messageSpec != null);
+                String defaultCat = messageSpec.default_category;
+                if (StringUtils.isNoneEmpty(defaultCat)) {
+                    cat = store.getTaxonomy().getRootCategory().findChildWithName(defaultCat);
+                }
+                if (cat == null) {
+                    cat = generalOtherCategory;
+                }
+            }
             ImportHandler handler = new ImportHandler(cat, matchableItem);
             File importableFile = matchableItem.getRight().getFile();
 
@@ -386,7 +402,7 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
      * @return the index at which the message should be inserted into the playlist.
      */
     private int findIndexInPlaylist(AudioMessageTarget audioMessageTarget) {
-        return AudioUtils.findIndexForMessageInPlaylist(audioMessageTarget.getMessage(), audioMessageTarget.getPlaylist(), context.languagecode);
+        return AudioUtils.findIndexForMessageInPlaylist(audioMessageTarget.getMessageSpec(), audioMessageTarget.getPlaylist(), context.languagecode);
     }
 
     /**
@@ -428,7 +444,7 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
 
             // There really should be an item, but don't NPE if not.
             if (item != null) {
-                // If there is no category, add to "General Other"
+                // If there is no category, add to the specified category.
                 if (item.getCategoryList().size() == 0) item.addCategory(category);
                 // If the item didn't know what language it was, add to the selected language.
                 String existingLanguage = item.getLanguageCode();
