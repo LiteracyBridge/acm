@@ -2,9 +2,15 @@ package org.literacybridge.acm.store;
 
 import com.google.common.collect.Lists;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class Category implements Cloneable {
   private final String id;
@@ -147,6 +153,84 @@ public class Category implements Cloneable {
         return false;
 
     }
+
+    /**
+     * Searches for a child with the given name. Performs a breadth first search, and returns the
+     * first item found. If the name may be ambiguous within the tree, it is possible to perform
+     * an step-by-step search through levels, by joining (with ':') names at successively deeper
+     * levels. In this way, it is possible to specify a parent in which the child should be
+     * unique.
+     * @param targetFullName Name of the category, or a path of category names concatenated with
+     *                       ':'.
+     * @return The first matching Category found, or null if none is found.
+     */
+    public Category findChildWithName(String targetFullName) {
+        String[] parts = targetFullName.split(":", 2);
+        String name = parts[0].trim();
+        Category matching = breadthFirstIterator().stream()
+            .filter(cat -> cat.getCategoryName().equals(name))
+            .findFirst()
+            .orElse(null);
+        if (matching != null) {
+            if (parts.length > 1) {
+                matching = matching.findChildWithName(parts[1].trim());
+            }
+        }
+        return matching;
+    }
+
+    /**
+     * Returns an iterator that will perform a depth first iteration of the children of this
+     * Category.
+     *
+     * The iterator also contains a "stream()" convenience function, which simply calls
+     * StreamSupport.stream(this.spliterator(), false). This makes it possible to simply call,
+     * for instance,
+     *   List<String> categoryNames = category.breadthFirstIterator()
+     *       .stream()
+     *       .map(Category::getCategoryName)
+     *       .collect(Collectors.toList())
+     *
+     * @return the iterator.
+     */
+    public CategoryIterable breadthFirstIterator() {
+        return new CategoryIterable(this);
+    }
+    public static class CategoryIterable implements Iterable<Category> {
+        Category root;
+        CategoryIterable(Category root) {
+            this.root = root;
+        }
+
+        @Override
+        public CategoryIterator iterator() {
+            return new CategoryIterator(root);
+        }
+
+        public Stream<Category> stream() {
+            return StreamSupport.stream(this.spliterator(), false);
+        }
+
+    };
+    private static class CategoryIterator implements Iterator<Category> {
+        private List<Category> queue = new ArrayList<>();
+        private CategoryIterator(Category root) {
+            queue.addAll(root.getSortedChildren());
+        }
+        @Override
+        public boolean hasNext() {
+            return !queue.isEmpty();
+        }
+
+        @Override
+        public Category next() {
+            Category next = queue.remove(0);
+            queue.addAll(next.getSortedChildren());
+            return next;
+        }
+    }
+
+
 
     @Override
     public boolean equals(Object o) {

@@ -14,7 +14,7 @@ import org.literacybridge.acm.gui.Application;
 public class Taxonomy implements Cloneable {
   private Integer revision;
 
-  private final Category mRootCategory;
+  private final Category rootCategory;
   // Map of categoryId : Category. Maps every categoryid in the Taxonomy to its Category object.
   private final Map<String, Category> categories;
 
@@ -23,7 +23,7 @@ public class Taxonomy implements Cloneable {
     Taxonomy clone = null;
     try {
       super.clone();
-      Category newRoot = this.mRootCategory.clone();
+      Category newRoot = this.rootCategory.clone();
       clone = new Taxonomy(newRoot);
       clone.revision = this.revision;
       // We've cloned the categories, now add them to the Taxonomy's map of categories.
@@ -42,7 +42,7 @@ public class Taxonomy implements Cloneable {
 
   private Taxonomy(Category root) {
     categories = Maps.newHashMap();
-    this.mRootCategory = root;
+    this.rootCategory = root;
     categories.put(root.getId(), root);
   }
 
@@ -62,7 +62,7 @@ public class Taxonomy implements Cloneable {
   }
 
   public Category getRootCategory() {
-    return mRootCategory;
+    return rootCategory;
   }
 
   public Category getCategory(String categoryId) {
@@ -70,11 +70,11 @@ public class Taxonomy implements Cloneable {
   }
 
   public Collection<Category> getCategoryList() {
-    return mRootCategory.getChildren();
+    return rootCategory.getChildren();
   }
 
   public boolean isRoot(Category category) {
-    return category == this.mRootCategory;
+    return category == this.rootCategory;
   }
 
   public void addChild(Category parent, Category newChild) {
@@ -107,33 +107,7 @@ public class Taxonomy implements Cloneable {
   }
 
   public Iterable<Category> breadthFirstIterator() {
-    return new TaxonomyIterable();
-  }
-
-  private class TaxonomyIterable implements Iterable<Category> {
-
-    @Override
-    public Iterator<Category> iterator() {
-      return new TaxonomyIterator(Taxonomy.this);
-    }
-  };
-
-  private static class TaxonomyIterator implements Iterator<Category> {
-    private List<Category> queue = new ArrayList<>();
-    private TaxonomyIterator(Taxonomy taxonomy) {
-      queue.addAll(taxonomy.getRootCategory().getSortedChildren());
-    }
-    @Override
-    public boolean hasNext() {
-      return !queue.isEmpty();
-    }
-
-    @Override
-    public Category next() {
-      Category next = queue.remove(0);
-      queue.addAll(next.getSortedChildren());
-      return next;
-    }
+    return rootCategory.breadthFirstIterator();
   }
 
   // The Class type of this class is enough to let receivers know that the visibilities were updated.
@@ -147,11 +121,11 @@ public class Taxonomy implements Cloneable {
     if (o == null || getClass() != o.getClass()) return false;
     Taxonomy taxonomy = (Taxonomy) o;
     return getRevision().equals(taxonomy.getRevision())
-        && mRootCategory.equals(taxonomy.mRootCategory) && categories.equals(taxonomy.categories);
+        && rootCategory.equals(taxonomy.rootCategory) && categories.equals(taxonomy.categories);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getRevision(), mRootCategory, categories);
+    return Objects.hash(getRevision(), rootCategory, categories);
   }
 }
