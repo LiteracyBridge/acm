@@ -88,7 +88,7 @@ public class AudioItemView extends Container {
 
     audioItemTable.setSortOrder(
         AudioItemTableModel.dateFileModifiedColumn.getColumnIndex(),
-        SortOrder.ASCENDING);
+        SortOrder.DESCENDING);
 
     JScrollPane scrollPane = new JScrollPane(audioItemTable);
     scrollPane.setPreferredSize(new Dimension(800, 500));
