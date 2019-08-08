@@ -21,7 +21,8 @@ public class GuiAccessControl extends AccessControl {
 
     @Override
     public void initDb() {
-        boolean useSandbox = ACMConfiguration.getInstance().isForceSandbox();
+        boolean useSandbox = ACMConfiguration.getInstance().isForceSandbox() ||
+            dbConfiguration.userIsReadOnly();
         int buttonIx;
         accessStatus = AccessStatus.none;
 

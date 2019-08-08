@@ -110,7 +110,7 @@ public class AccessControl {
     private final static String DB_DOES_NOT_EXIST = "NULL";
     private final static String DB_KEY_OVERRIDE = "force";
 
-    private final DBConfiguration dbConfiguration;
+    protected final DBConfiguration dbConfiguration;
 
     AccessStatus accessStatus = AccessStatus.none;
     OpenStatus openStatus = OpenStatus.none;

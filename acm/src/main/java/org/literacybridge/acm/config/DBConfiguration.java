@@ -299,6 +299,10 @@ public class DBConfiguration { //extends Properties {
         return userHasWriteAccess;
     }
 
+    public boolean userIsReadOnly() {
+        return !userHasWriteAccess(ACMConfiguration.getInstance().getUserName());
+    }
+
   /**
    * Gets a File containing the configuration properties for this ACM database.
    * @return The File.
