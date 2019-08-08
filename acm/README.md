@@ -1,8 +1,6 @@
 # Configuring in IntelliJ
 
-Google chose to use Gradle for Android builds. Gradle is a hot
-mess, and the integration with IJ is not very unintuitive. But at 
-least Gradle isn't Ant! Still, don't blame me for Gradle :)
+Google chose to use Gradle for Android builds.
 
 When you first open the project, you may get some weird error messages.
 Just let Gradle and IntelliJ settle down (takes *minutes* the first time),
