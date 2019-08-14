@@ -3,6 +3,7 @@ package org.literacybridge.acm.gui.util;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.Rectangle;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
@@ -25,6 +26,12 @@ public class UIUtils {
   }
 
   public static <T extends Container> T showDialog(final T dialog, int x, int y) {
+    // If dialog extends past the bottom or right, move it back to fit. Don't go off top or left.
+    Rectangle deviceBounds = dialog.getGraphicsConfiguration().getDevice().getDefaultConfiguration().getBounds();
+    int dy = dialog.getHeight();
+    y = Math.max(0, Math.min(y, deviceBounds.height - dy - 20));
+    int dx = dialog.getWidth();
+    x = Math.max(0, Math.min(x, deviceBounds.width - dx - 10));
 
     dialog.setLocation(x, y);
     setVisible(dialog, true);
