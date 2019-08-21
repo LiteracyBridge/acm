@@ -44,7 +44,10 @@ public class Assistant<Context> extends JDialog {
         public Factory<Context> withBackground(Color background) { this.background = background; return this; }
     }
 
-
+    /**
+     * Passed to an Assistant's constructor.
+     * @param <Context> The Assistant's context, created by the Assistant's factory.
+     */
     public interface PageHelper<Context> {
         void onComplete(boolean isComplete);
         Assistant getAssistant();

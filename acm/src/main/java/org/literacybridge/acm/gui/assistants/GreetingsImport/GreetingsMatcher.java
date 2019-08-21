@@ -9,6 +9,9 @@ import org.literacybridge.core.spec.RecipientList.RecipientAdapter;
 
 import java.util.function.BiFunction;
 
+/**
+ * Class to match custom greetings with recipients. Provides a specialized scoring function
+ */
 public class GreetingsMatcher extends Matcher<GreetingTarget, ImportableFile, GreetingMatchable> {
 
     @Override

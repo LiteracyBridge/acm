@@ -36,6 +36,9 @@ import java.util.stream.StreamSupport;
 /**
  * The abstract base class for Assistant pages. Provides access to Assistant properties.
  *
+ * Various pages of an Assistant can communicate with each other through their shared Context
+ * object.
+ *
  * Derived classes must implement 'OnPageEnterer'.
  */
 public abstract class AssistantPage<Context> extends JPanel {

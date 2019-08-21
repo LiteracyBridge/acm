@@ -1,7 +1,6 @@
 package org.literacybridge.acm.gui.assistants.Matcher;
 
 import me.xdrop.fuzzywuzzy.FuzzySearch;
-import org.literacybridge.acm.gui.assistants.ContentImport.AudioMatchable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,6 +44,7 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         Collections.sort(matchableItems);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public MatchStats autoMatch(int threshold) {
         MatchStats result = new MatchStats();
         result.add(findExactMatches());
@@ -59,7 +59,8 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         MatchStats result = new MatchStats();
         // The array is sorted, so matching strings will already be adjacent. And the "left"
         // strings sort earlier than the "right" strings. So, all we need to do is walk the
-        // list, and compare every "left" item to the next item.
+        // list, and compare every "left" item to the next item. Note that there are "left",
+        // "right", and other items.
         int ix = 0;
         while (ix < matchableItems.size() - 1) {
             T item1 = matchableItems.get(ix);
@@ -108,26 +109,6 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         return result;
     }
 
-    private boolean doMatch(T item1, T item2, int threshold, boolean tokens)
-    {
-        // We need one left and one right in order to match.
-        if (!item1.getMatch().isUnmatched() || !item2.getMatch().isUnmatched()
-            || item1.getMatch() == item2.getMatch()) {
-            return false;
-        }
-        // we have a left and a right. See which is which, compare them, and then move on.
-        T l = item1.getMatch() == MATCH.LEFT_ONLY ? item1 : item2;
-        T r = item1.getMatch() == MATCH.RIGHT_ONLY ? item1 : item2;
-
-        int score = scoreMatch(l, r, tokens);
-        if (score >= threshold) {
-            // Yay!
-            recordMatch(l, r, tokens ? MATCH.TOKEN : MATCH.FUZZY, score);
-            return true;
-        }
-        return false;
-    }
-
     private void recordMatch(T l, T r, MATCH match, int score) {
         l.setRight(r.getRight());
         l.setMatch(match);
@@ -154,6 +135,9 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         return score;
     }
 
+    /**
+     * This keeps track of a comparison between a left item and a right item.
+     */
     private class Comparison {
         T leftItem;
         T rightItem;
@@ -166,6 +150,18 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         }
     }
 
+    /**
+     * Implements the fuzzy matching. Compares every unmatched Left with every unmatched Right.
+     * The results are sorted, with the best matches first. The best matches are then recorded
+     * (recording a match takes the Left and Right items out of consideration for less good
+     * matches). When the quality of matches becomes less than threshold, recording stops.
+     *
+     * The primary result is in side effects in the matchableItems list.
+     *
+     * @param threshold The minimum acceptable match.
+     * @param tokens If true, perform a "tokenSortRatio" match, otherwise a "ratio" match.
+     * @return MatchStats, describing hte comparisons made and matches found.
+     */
     private MatchStats matrixMatch(int threshold, boolean tokens) {
         MatchStats result = new MatchStats();
         List<T> leftList = new ArrayList<>();
@@ -202,7 +198,6 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
     }
 
     public void sort() {
-//        Collections.sort(matchableItems);
         matchableItems.sort((o1, o2) -> {
             MATCH m1 = o1.getMatch();
             MATCH m2 = o2.getMatch();
@@ -222,6 +217,10 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         });
     }
 
+    /**
+     * Removes "blank" entries from the list of matchableItems. These entries are the result
+     * of recording a match (the former Right item becomes blank).
+     */
     private void squash() {
         List<T> toRemove = matchableItems.stream()
             .filter(m -> m.getMatch() == MATCH.NONE)
@@ -229,6 +228,10 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         matchableItems.removeAll(toRemove);
     }
 
+    /**
+     * Unmatch the item at the index. The single item becomes separate Left and Right items.
+     * @param itemIndex to be unmatched.
+     */
     public void unMatch(int itemIndex) {
         if (itemIndex >= 0 && itemIndex < matchableItems.size()) {
             T item = matchableItems.get(itemIndex);
@@ -239,32 +242,38 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
             }
         }
     }
-    public void unMatch(AudioMatchable item) {
-        int itemIndex = matchableItems.indexOf(item);
-        if (item.getMatch().isMatch()) {
-            T disassociated = (T) item.disassociate();
-            matchableItems.add(itemIndex, disassociated);
-        }
-    }
 
-    public void setMatch(T left, T right) {
-        // Need one LEFT_ONLY and one RIGHT_ONLY
-        if (!left.getMatch().isUnmatched() || !right.getMatch().isUnmatched() ||
-            left.getMatch() == right.getMatch()) {
+    /**
+     * This is used to record a manual match.
+     * @param a One item in the match.
+     * @param b Other item.
+     */
+    public void setMatch(T a, T b) {
+        if (!areMatchable(a, b)) {
             throw new IllegalArgumentException("Invalid items to make a match");
         }
-        T l = left.getMatch()==MATCH.LEFT_ONLY ? left : right;
-        T r = right.getMatch()==MATCH.RIGHT_ONLY ? right : left;
+        T l = a.getMatch()==MATCH.LEFT_ONLY ? a : b;
+        T r = b.getMatch()==MATCH.RIGHT_ONLY ? b : a;
         recordMatch(l, r, MATCH.MANUAL, 0);
         squash();
     }
 
-    public boolean areMatchable(T left, T right) {
-        return left != null && right != null &&
-            left.getMatch().isUnmatched() && right.getMatch().isUnmatched() &&
-            left.getMatch() != right.getMatch();
+    /**
+     * Are two items potential candidates for a match? That is, is there one unmatched Left and
+     * one unmatched Right item.
+     * @param a One item.
+     * @param b Other item.
+     * @return true if the could potentially be a match.
+     */
+    private boolean areMatchable(T a, T b) {
+        return a != null && b != null &&
+            a.getMatch().isUnmatched() && b.getMatch().isUnmatched() &&
+            a.getMatch() != b.getMatch();
     }
 
+    /**
+     * This accumulates statistics about matching.
+     */
     public static class MatchStats {
         private long start = System.nanoTime();
         int comparisons;
