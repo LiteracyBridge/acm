@@ -1,6 +1,7 @@
 package org.literacybridge.acm.store;
 
 import org.junit.Test;
+import org.literacybridge.acm.store.Category.CategoryBuilder;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -46,8 +47,7 @@ public class CategoryTest {
     }
 
     private Category buildCatTree() {
-        Category root = new Category("0");
-        root.setName("0");
+        Category root = new CategoryBuilder("0").withName("0").build();
 
         addChildren(root, 0, 2);
 
@@ -58,8 +58,7 @@ public class CategoryTest {
         String baseId = root.getId();
         for (int i=0; i<5; i++) {
             String newId = String.format("%s-%d", baseId, i);
-            Category newCat = new Category(newId);
-            newCat.setName(newId);
+            Category newCat = new CategoryBuilder(newId).withName(newId).build();
             root.addChild(newCat);
             if (level < maxLevel) addChildren(newCat, level+1, maxLevel);
         }

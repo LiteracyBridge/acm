@@ -155,7 +155,7 @@ public class VisibleCategoriesPanel extends AbstractSettingsBase {
      * @param visible whether should be visible.
      */
     private static void fillVisibility(Category cat, boolean visible) {
-        cat.setVisible(visible);
+        cat.updateVisibility(visible);
         for (Category child : cat.getChildren()) {
             fillVisibility(child, visible);
         }

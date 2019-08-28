@@ -6,7 +6,6 @@ import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.ContentImport.WelcomePage;
 import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
@@ -27,16 +26,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.assistants.common.AcmAssistantPage.getLanguageAndName;
+import static org.literacybridge.acm.tbbuilder.TBBuilder.MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.GROUP_FILE_EXTENSION;
 
 public class ValidationPage extends AssistantPage<DeploymentContext> {
@@ -48,18 +44,24 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
     private DeploymentContext context;
 
-    private MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
     private final JTree issuesTree;
     private final DefaultMutableTreeNode issuesTreeRoot;
     private final DefaultTreeModel issuesTreeModel;
     private final JPanel issuesBillboard;
 
-    private final String issuesWelcome = "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
-        + "<br/>Examine any issues, and click \"Next\" if you wish to proceed. "
-        + "</html>";
-    private final String noIssuesWelcome = "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
-        + "<br/>Click \"Next\" to proceed. "
-        + "</html>";
+    @SuppressWarnings("FieldCanBeLocal")
+    private final String fatalIssuesWelcome =
+        "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
+            + "<br/>Severe errors were found. The Deployment can not be created. Click \"Cancel\" to exit."
+            + "</html>";
+    @SuppressWarnings("FieldCanBeLocal")
+    private final String issuesWelcome =
+        "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
+            + "<br/>Examine any issues, and click \"Next\" if you wish to proceed. " + "</html>";
+    @SuppressWarnings("FieldCanBeLocal")
+    private final String noIssuesWelcome =
+        "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
+            + "<br/>Click \"Next\" to proceed. " + "</html>";
     private final JLabel welcomeLabel;
 
     ValidationPage(PageHelper<DeploymentContext> listener) {
@@ -83,10 +85,12 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
-        deployWithWarnings = new JCheckBox("Create Deployment despite warnings. This may not conform to the Program Spec.");
+        deployWithWarnings = new JCheckBox(
+            "Create Deployment despite warnings. This may not conform to the Program Spec.");
         add(deployWithWarnings, gbc);
         deployWithWarnings.addActionListener(this::onSelection);
-        deployWithErrors = new JCheckBox("<html>Create Deployment despite errors. <em>This will probably fail on some Talking Books</em>.</html>");
+        deployWithErrors = new JCheckBox(
+            "<html>Create Deployment despite errors. <em>This will probably fail on some Talking Books</em>.</html>");
         add(deployWithErrors, gbc);
         deployWithErrors.addActionListener(this::onSelection);
 
@@ -102,7 +106,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         // Show "No issues..." instead of an empty issues tree.
         JPanel noIssuesCard = new JPanel(new BorderLayout());
         Box noIssuesLabel = Box.createVerticalBox();
-        noIssuesLabel.add(new JLabel("<html><span style='font-size:2.5em'>No issues or differences found.</span></html>"));
+        noIssuesLabel.add(new JLabel(
+            "<html><span style='font-size:2.5em'>No issues or differences found.</span></html>"));
         noIssuesLabel.add(Box.createVerticalGlue());
         noIssuesCard.add(noIssuesLabel, BorderLayout.CENTER);
 
@@ -124,7 +129,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      */
     @SuppressWarnings("unused")
     private void onSelection(ActionEvent actionEvent) {
-        boolean ok = !context.issues.hasError() || deployWithErrors.isSelected();
+        boolean ok = !context.issues.hasFatalError();
+        ok = ok && !context.issues.hasError() || deployWithErrors.isSelected();
         ok = ok && (!context.issues.hasWarning() || deployWithWarnings.isSelected());
         setComplete(ok);
     }
@@ -136,7 +142,6 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         if (progressing) {
             // Reset issues when we enter with a (possibly) new deployment number.
             context.issues.clear();
-            collectDeploymentInformation(context.deploymentNo);
             deployWithWarnings.setSelected(false);
             deployWithErrors.setSelected(false);
         }
@@ -146,7 +151,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         issuesTreeRoot.removeAllChildren();
         context.issues.addToTree(issuesTreeRoot);
         issuesTreeModel.reload();
-        for (int ix=0; ix<issuesTree.getRowCount(); ix++) {
+        for (int ix = 0; ix < issuesTree.getRowCount(); ix++) {
             issuesTree.expandRow(ix);
         }
 
@@ -160,15 +165,6 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     @Override
     protected String getTitle() {
         return "Validate the Deployment";
-    }
-
-    private void collectDeploymentInformation(int deploymentNo) {
-        RecipientList recipients = context.programSpec.getRecipientsForDeployment(deploymentNo);
-        context.languages = recipients.stream().map(r -> r.language).collect(Collectors.toSet());
-
-        context.allProgramSpecPlaylists = getProgramSpecPlaylists(deploymentNo, context.languages);
-        context.allAcmPlaylists = getAcmPlaylists(deploymentNo, context.languages);
-
     }
 
     private void validateDeployment(int deploymentNo) {
@@ -190,11 +186,18 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         // Check that we have all recipient prompts for recipients in the deployment.
         validateRecipients(deploymentNo);
 
+        validateFirmware();
+
         if (context.issues.hasNoIssues()) {
             welcomeLabel.setText(noIssuesWelcome);
             issuesLayout.show(issuesBillboard, "NOISSUES");
             deployWithErrors.setVisible(false);
             deployWithWarnings.setVisible(false);
+        } else if (context.issues.hasFatalError()) {
+            welcomeLabel.setText(fatalIssuesWelcome);
+            issuesLayout.show(issuesBillboard, "ISSUES");
+            deployWithWarnings.setVisible(false);
+            deployWithErrors.setVisible(false);
         } else {
             welcomeLabel.setText(issuesWelcome);
             issuesLayout.show(issuesBillboard, "ISSUES");
@@ -230,7 +233,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         // For each language in the Deployment...
         for (String language : languages) {
             // Get the Program Spec playlists, and the ACM playlists (as matched by pattern).
-            List<ContentSpec.PlaylistSpec> programSpecPlaylistSpecs = context.allProgramSpecPlaylists.get(language);
+            List<ContentSpec.PlaylistSpec> programSpecPlaylistSpecs = context.allProgramSpecPlaylists
+                .get(language);
             List<Playlist> acmPlaylists = context.allAcmPlaylists.get(language);
 
             // We need to order the ACM playlists the same as the Program Spec playlists. Extra
@@ -294,20 +298,17 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                 }
             }
             // Report the playlists in the ACM list but not the Program Specification list.
-            acmPlaylists.stream()
-                .filter(p -> !foundPlaylists.contains(p))
-                .forEach(p -> {
-                    context.issues.add(Issues.Severity.INFO,
-                        Issues.Area.PLAYLISTS,
-                        "Playlist '%s' was added to the ACM.",
-                        p.getName());
-                    progspecOrderedAcmPlaylists.add(p);
-                });
+            acmPlaylists.stream().filter(p -> !foundPlaylists.contains(p)).forEach(p -> {
+                context.issues.add(Issues.Severity.INFO,
+                    Issues.Area.PLAYLISTS,
+                    "Playlist '%s' was added to the ACM.",
+                    p.getName());
+                progspecOrderedAcmPlaylists.add(p);
+            });
 
             // We have the ACM Playlists in Program Spec order, so save that ordering.
             context.allAcmPlaylists.put(language, progspecOrderedAcmPlaylists);
         }
-
     }
 
     /**
@@ -316,10 +317,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      * @param languages to be checked.
      */
     private void validateSystemPrompts(Collection<String> languages) {
-        // Get from config? From Prog Spec?
-        boolean hasUserFeedback = true;
-        @SuppressWarnings("ConstantConditions")
-        String[] required_messages = hasUserFeedback ?
+        String[] required_messages = context.includeUfCategory ?
                                      TBBuilder.REQUIRED_SYSTEM_MESSAGES_UF :
                                      TBBuilder.REQUIRED_SYSTEM_MESSAGES_NO_UF;
 
@@ -442,34 +440,93 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
         File communitiesDir = IOUtils.FileIgnoreCase(tbLoadersDir, "communities");
         if (!communitiesDir.exists() || !communitiesDir.isDirectory()) {
-            context.issues.add(Issues.Severity.ERROR, Issues.Area.CUSTOM_GREETINGS, "The 'communities' directory is missing in this project.");
+            context.issues.add(Issues.Severity.ERROR,
+                Issues.Area.CUSTOM_GREETINGS,
+                "The 'communities' directory is missing in this project.");
             return;
         }
 
         for (Recipient recipient : recipients) {
             String dirName = recipientsMap.get(recipient.recipientid);
-            File recipientDir = (dirName==null)?null:IOUtils.FileIgnoreCase(communitiesDir, dirName);
+            File recipientDir = (dirName == null) ?
+                                null :
+                                IOUtils.FileIgnoreCase(communitiesDir, dirName);
             if (recipientDir == null || !recipientDir.exists() || !recipientDir.isDirectory()) {
-                context.issues.add(Issues.Severity.WARNING, Issues.Area.CUSTOM_GREETINGS, "Missing directory for recipient '%s'.", recipName(recipient));
+                context.issues.add(Issues.Severity.WARNING,
+                    Issues.Area.CUSTOM_GREETINGS,
+                    "Missing directory for recipient '%s'.",
+                    recipName(recipient));
             } else {
                 File languagesDir = IOUtils.FileIgnoreCase(recipientDir, "languages");
                 File languageDir = IOUtils.FileIgnoreCase(languagesDir, recipient.language);
                 File promptFile = IOUtils.FileIgnoreCase(languageDir, "10.a18");
                 if (!languageDir.exists() || !languageDir.isDirectory()) {
-                    context.issues.add(Issues.Severity.WARNING, Issues.Area.CATEGORY_PROMPTS, "Missing 'languages/%s' directory for recipient '%s'.", recipient.language, recipName(recipient));
+                    context.issues.add(Issues.Severity.WARNING,
+                        Issues.Area.CATEGORY_PROMPTS,
+                        "Missing 'languages/%s' directory for recipient '%s'.",
+                        recipient.language,
+                        recipName(recipient));
                 } else if (!promptFile.exists()) {
-                    context.issues.add(Issues.Severity.WARNING, Issues.Area.CATEGORY_PROMPTS, "No custom greeting for recipient '%s'.", recipName(recipient));
+                    context.issues.add(Issues.Severity.WARNING,
+                        Issues.Area.CATEGORY_PROMPTS,
+                        "No custom greeting for recipient '%s'.",
+                        recipName(recipient));
                 }
-                
+
                 File systemDir = new File(recipientDir, "system");
-                File[] groupDirs = systemDir.listFiles((dir, name) -> name.toLowerCase().endsWith(GROUP_FILE_EXTENSION));
+                File[] groupDirs = systemDir.listFiles((dir, name) -> name.toLowerCase()
+                    .endsWith(GROUP_FILE_EXTENSION));
                 if (!systemDir.exists() || !systemDir.isDirectory()) {
-                    context.issues.add(Issues.Severity.WARNING, Issues.Area.CATEGORY_PROMPTS, "Missing 'system' directory for recipient '%s'.", recipName(recipient));
-                } else if (groupDirs==null || groupDirs.length==0) {
-                    context.issues.add(Issues.Severity.WARNING, Issues.Area.CATEGORY_PROMPTS, "No '.grp' file for recipient '%s'.", recipName(recipient));
+                    context.issues.add(Issues.Severity.WARNING,
+                        Issues.Area.CATEGORY_PROMPTS,
+                        "Missing 'system' directory for recipient '%s'.",
+                        recipName(recipient));
+                } else if (groupDirs == null || groupDirs.length == 0) {
+                    context.issues.add(Issues.Severity.WARNING,
+                        Issues.Area.CATEGORY_PROMPTS,
+                        "No '.grp' file for recipient '%s'.",
+                        recipName(recipient));
                 }
             }
 
+        }
+    }
+
+    private void validateFirmware() {
+        // BE SURE that the "no firmware" message compares less than MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE
+        String noFirmware = "no firmware image";
+        assert (noFirmware.compareTo(MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE) < 0);
+
+        // A firmware update may be required to support hidden user feedback. Check the
+        // version currently in the project.
+        if (!context.includeUfCategory) {
+            // Find the lexically greatest filename of firmware. Works because we'll never exceed 4 digits.
+            String project = ACMConfiguration.cannonicalProjectName(ACMConfiguration.getInstance()
+                .getCurrentDB()
+                .getSharedACMname());
+            File sourceTbLoadersDir = ACMConfiguration.getInstance().getTbLoaderDirFor(project);
+            File sourceTbOptionsDir = new File(sourceTbLoadersDir, "TB_Options");
+            File latestFirmware = null;
+            File[] firmwareVersions = new File(sourceTbOptionsDir, "firmware").listFiles();
+            if (firmwareVersions != null) {
+                for (File f : firmwareVersions) {
+                    if (latestFirmware == null) {
+                        latestFirmware = f;
+                    } else if (latestFirmware.getName().compareToIgnoreCase(f.getName()) < 0) {
+                        latestFirmware = f;
+                    }
+                }
+            }
+
+            String image =
+                latestFirmware != null ? latestFirmware.getName().toLowerCase() : noFirmware;
+            if (image.compareTo(MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE) < 0) {
+                context.issues.add(Issues.Severity.FATAL,
+                    Issues.Area.FIRMWARE,
+                    "Minimum firmware image for hidden user feedback is %s, but found %s.",
+                    MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE,
+                    image);
+            }
         }
     }
 
@@ -480,53 +537,6 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         if (StringUtils.isEmpty(recipient.groupname) && StringUtils.isNotEmpty(recipient.agent))
             result.append('-').append(recipient.agent);
         return result.toString();
-    }
-
-    /**
-     * Gets the playlists defined in the Program Spec for a given Deployment. Note that playlists
-     * may be different between languages, due to missing content in some languages.
-     *
-     * @param deploymentNo of the Deployment.
-     * @param languages    of all the Recipients in the Deployment.
-     * @return a map of { language : [ContentSpec.PlaylistSpec ] }
-     */
-    private Map<String, List<ContentSpec.PlaylistSpec>> getProgramSpecPlaylists(int deploymentNo,
-        Set<String> languages)
-    {
-        ContentSpec contentSpec = context.programSpec.getContentSpec();
-        ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
-        Map<String, List<ContentSpec.PlaylistSpec>> programSpecPlaylists = new HashMap<>();
-        for (String language : languages) {
-            programSpecPlaylists.put(language, deploymentSpec.getPlaylistSpecs(language));
-        }
-        return programSpecPlaylists;
-    }
-
-    /**
-     * Gets the playlists defined in the ACM for a given Deployment. If all content was imported,
-     * and playlists were not manually edited, these will completely match the programSpec playlists.
-     * Additional playlists may be present, if there were any created with the pattern #-pl-lang.
-     *
-     * @param deploymentNo of the Deployment.
-     * @param languages    of all the Recipients in the Deployment.
-     * @return a map of { language : [ Playlist ] }
-     */
-    private Map<String, List<Playlist>> getAcmPlaylists(int deploymentNo, Set<String> languages) {
-        Map<String, List<Playlist>> acmPlaylists = new LinkedHashMap<>();
-        Collection<Playlist> playlists = store.getPlaylists();
-        for (String language : languages) {
-            List<Playlist> langPlaylists = new ArrayList<>();
-            // Look for anything matching the pattern, whether from the Program Spec or not.
-            Pattern pattern = Pattern.compile(String.format("%d-.*-%s", deploymentNo, language));
-            for (Playlist pl : playlists) {
-                Matcher plMatcher = pattern.matcher(pl.getName());
-                if (plMatcher.matches()) {
-                    langPlaylists.add(pl);
-                }
-            }
-            acmPlaylists.put(language, langPlaylists);
-        }
-        return acmPlaylists;
     }
 
 }

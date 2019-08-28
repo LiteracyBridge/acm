@@ -100,23 +100,20 @@ public class CategoryFilter extends Whitelister {
      * --  If the category has a parent, it inherits the parent's visibility.
      * --  Otherwise this is the root category, and it is visible.
      *
-     * @param cat    The category for which to get the visibility.
+     * @param catId    The category id for which to get the visibility.
      * @param parent The parent, if any, of the category.
      * @return true if the category should be visible to the user.
      */
-    public boolean getVisibilityFor(Category cat, Category parent) {
+    public boolean getVisibilityFor(String catId, Category parent) {
         boolean isVisible;
-        if (cat.isNonAssignable()) {
-            // If the category is "nonAssignable" in the taxonomy, it is not visible.
-            isVisible = false;
-        } else if (blacklistedItems != null && blacklistedItems.contains(cat.getId())) {
+        if (blacklistedItems != null && blacklistedItems.contains(catId)) {
             // If there's a blacklist, and this id is in it, it is not visible.
             isVisible = false;
         } else if (whitelistedItems != null) {
             // If a whitelist exists, this is visible if in the whitelist, or if
             // parent is visible.
             boolean inheritVisible = parent != null && parent.isVisible();
-            isVisible = whitelistedItems.contains(cat.getId()) || inheritVisible;
+            isVisible = whitelistedItems.contains(catId) || inheritVisible;
         } else {
             // Not non-assignable, not blacklisted, no whitelist exists. Inherit.
             // If there is no parent, since there is no whitelist, make visible.
@@ -124,14 +121,23 @@ public class CategoryFilter extends Whitelister {
         }
         return isVisible;
     }
+    public boolean getVisibilityFor(Category cat, Category parent) {
+        boolean isVisible;
+        if (cat.isNonAssignable()) {
+            isVisible = false;
+        } else {
+            isVisible = getVisibilityFor(cat.getId(), parent);
+        }
+        return isVisible;
+    }
 
-    /**
-     * Determines if the given category, or any of its children, requires whitelist semantics. This
-     * really means "is there a visible category below a non-visible category?".
-     *
-     * @param taxonomy to be checked.
-     * @return true if it requires whitelist semantics.
-     */
+        /**
+         * Determines if the given category, or any of its children, requires whitelist semantics. This
+         * really means "is there a visible category below a non-visible category?".
+         *
+         * @param taxonomy to be checked.
+         * @return true if it requires whitelist semantics.
+         */
     public static boolean requiresWhitelistSemantics(Taxonomy taxonomy) {
         Category root = taxonomy.getRootCategory();
         return requiresWhitelistSemantics(root, false);

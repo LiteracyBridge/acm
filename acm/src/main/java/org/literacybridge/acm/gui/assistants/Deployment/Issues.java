@@ -11,6 +11,7 @@ import java.util.List;
  */
 public class Issues {
     public enum Severity {
+        FATAL("Fatal"),
         ERROR("Errors"),
         WARNING("Warnings"),
         INFO("Information");
@@ -33,7 +34,8 @@ public class Issues {
         PLAYLISTS("Playlists"),
         CATEGORY_PROMPTS("Prompts"),
         SYSTEM_PROMPTS("Sys Prompts"),
-        CUSTOM_GREETINGS("Greetings");
+        CUSTOM_GREETINGS("Greetings"),
+        FIRMWARE("Firmware");
 
         String displayName;
 
@@ -115,6 +117,10 @@ public class Issues {
         return hasIssue(Severity.ERROR);
     }
 
+    boolean hasFatalError() {
+        return hasIssue(Severity.FATAL);
+    }
+
     boolean hasNoIssues() {
         return issues.isEmpty();
     }
@@ -123,7 +129,7 @@ public class Issues {
     /**
      * Encapsulates a single issue.
      */
-    public class Issue {
+    public static class Issue {
         Severity severity;
         Area area;
         String message;
@@ -145,7 +151,7 @@ public class Issues {
         }
     }
 
-    class SeverityNode extends DefaultMutableTreeNode {
+    static class SeverityNode extends DefaultMutableTreeNode {
         SeverityNode(Issue issue) {
             super(issue.getSeverity(), true);
         }
@@ -167,7 +173,7 @@ public class Issues {
             return (Severity) getUserObject();
         }
     }
-    class AreaNode extends DefaultMutableTreeNode {
+    static class AreaNode extends DefaultMutableTreeNode {
         AreaNode(Issue issue) {
             super(issue.area, true);
         }
@@ -189,7 +195,7 @@ public class Issues {
             return (Area) getUserObject();
         }
     }
-    class IssueNode extends DefaultMutableTreeNode {
+    static class IssueNode extends DefaultMutableTreeNode {
         IssueNode(Issue issue) {
             super(issue, true);
         }

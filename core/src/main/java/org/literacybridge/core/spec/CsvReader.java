@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -77,7 +78,7 @@ public class CsvReader {
     static void read(InputStream csvStream, String[] columns, Handler handler) throws IOException {
         List<String[]> entries = null;
         BOMInputStream bis = new BOMInputStream(csvStream);
-        try (Reader ir = new InputStreamReader(bis);
+        try (Reader ir = new InputStreamReader(bis, StandardCharsets.UTF_8);
             CSVReader reader = new CSVReader(ir)) {
 
             Map<String, Integer> indices = null;

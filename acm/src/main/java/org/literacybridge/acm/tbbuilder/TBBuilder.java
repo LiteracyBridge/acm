@@ -70,7 +70,7 @@ public class TBBuilder {
         "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "28", "29",
         "33", "37", "38", "41", "53", "54", "61", "62", "63", "65", "80"
     };
-    private final static String MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE = "r1220.img";
+    public final static String MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE = "r1220.img";
 
     public static String firstMessageListName = "1";
     private static String IntroMessageListFilename = Constants.CATEGORY_INTRO_MESSAGE + ".txt";

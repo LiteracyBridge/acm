@@ -1,17 +1,21 @@
 package org.literacybridge.acm.store;
 
 import org.literacybridge.acm.config.CategoryFilter;
+import org.literacybridge.acm.store.Category.CategoryBuilder;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 // @formatter:off
 /**
  * Loads a literacy bridge taxonomy from a YAML file. The file is structured as follows:
@@ -40,6 +44,7 @@ public class TaxonomyLoader {
     private final static String YAML_CATEGORIES_FIELD = "categories";
     private final static String YAML_TAXONOMY_FIELD = "taxonomy";
     private final static String YAML_CAT_NAME_FIELD = "name";
+    private final static String YAML_CAT_AKA_FIELD = "aka";
     private final static String YAML_CAT_ORDER_FIELD = "order";
     private final static String YAML_CAT_NON_ASSIGNABLE_FIELD = "nonassignable"; // Can a message be assigned to this category?
     private final static String YAML_CAT_USERFEEDBACK_BUCKETS = "feedbackbuckets"; // Add UF buckets?
@@ -61,28 +66,30 @@ public class TaxonomyLoader {
      * @param taxonomy     A taxonomy object containing only a root entry.
      */
     public static void loadLatestTaxonomy(File acmDirectory, Taxonomy taxonomy) {
-        TaxonomyLoader loader = new TaxonomyLoader(acmDirectory);
-        loader.loadLatestTaxonomy(taxonomy);
+        TaxonomyLoader loader = new TaxonomyLoader(acmDirectory, taxonomy);
+        loader.loadLatestTaxonomy();
     }
 
     private File acmDirectory;
+    private Taxonomy taxonomy;
     private CategoryFilter categoryFilter;
 
-    private TaxonomyLoader(File acmDirectory) {
+    private TaxonomyLoader(File acmDirectory, Taxonomy taxonomy) {
         this.acmDirectory = acmDirectory;
+        this.taxonomy = taxonomy;
         categoryFilter = new CategoryFilter(acmDirectory);
     }
 
-    private void loadLatestTaxonomy(Taxonomy taxonomy) {
+    private void loadLatestTaxonomy() {
         // Note that if there is a whitelist, and it does not have "LB_TAX_1.0" in it,
         // then anything that is to be visible must be explicitly whitelisted.
         Category rootCategory = taxonomy.getRootCategory();
-        rootCategory.setVisible(categoryFilter.getVisibilityFor(rootCategory, null));
+        rootCategory.updateVisibility(categoryFilter.getVisibilityFor(rootCategory, null));
 
         VersionedTaxonomyData taxonomyData = findLatest();
         taxonomy.setRevision(taxonomyData.revision);
         Map<String, Object> categories = taxonomyData.categories;
-        parseYamlData(taxonomy, categories, rootCategory);
+        parseYamlData(categories, rootCategory);
     }
 
     /**
@@ -153,25 +160,19 @@ public class TaxonomyLoader {
 
     /**
      * Helper to add the default "addFeedbackBuckets=false" parameter.
-     * @param taxonomy object to be populated
      * @param subCategories map of id: category to be parsed into the taxonomy.
      * @param parent category under which to place the parsed categories.
      */
-    private void parseYamlData(Taxonomy taxonomy,
-        Map<String, Object> subCategories,
-        Category parent) {
-        parseYamlData(taxonomy, subCategories, parent, false);
+    private void parseYamlData(Map<String, Object> subCategories, Category parent) {
+        parseYamlData(subCategories, parent, false);
     }
     /**
      * Parses the nested object maps loaded from a Taxonomy YAML into a Taxonomy object.
-     *
-     * @param taxonomy      object to be populated.
-     * @param subCategories map of id: category to be parsed into the Taxonomy.
+     *  @param subCategories map of id: category to be parsed into the Taxonomy.
      * @param parent        category under which to place the parsed categories.
      * @param addFeedbackBuckets If true, add feedback buckets to the leaf nodes.
      */
-    private void parseYamlData(Taxonomy taxonomy,
-        Map<String, Object> subCategories,
+    private void parseYamlData(Map<String, Object> subCategories,
         Category parent,
         boolean addFeedbackBuckets)
     {
@@ -182,6 +183,7 @@ public class TaxonomyLoader {
         for (Entry<String, Object> entry : subCategories.entrySet()) {
             String catID = entry.getKey();
 
+            @SuppressWarnings("unchecked")
             Map<String, Object> catData = (Map<String, Object>) entry.getValue();
             String catName = (String) catData.get(YAML_CAT_NAME_FIELD);
 
@@ -216,17 +218,32 @@ public class TaxonomyLoader {
                 // Ignore, and use passed-in value.
             }
 
-            Category cat = addCategoryToTaxonomy(taxonomy,
-                parent,
-                catID,
-                catName,
-                order,
-                nonAssignable);
+            List<String> aliases = null;
+            field = catData.get(YAML_CAT_AKA_FIELD);
+            try {
+                if (field != null) {
+                    aliases = Arrays.stream(((String) field).split(","))
+                        .map(String::trim)
+                        .collect(Collectors.toList());
+                }
+            } catch (Exception ex) {
+                // Ignore and use no AKA.
+            }
+
+
+            Category cat = new CategoryBuilder(catID).withName(catName)
+                .withOrder(order)
+                .nonAssignable(nonAssignable)
+                .alsoKnownAs(aliases)
+                .withVisibility(categoryFilter.getVisibilityFor(catID, parent))
+                .build();
+            taxonomy.addChild(parent, cat);
             Object children = catData.get(YAML_CAT_CHILDREN_FIELD);
             if (children != null) {
-                parseYamlData(taxonomy, (Map<String, Object>) children, cat, addBuckets);
+                //noinspection unchecked
+                parseYamlData((Map<String, Object>) children, cat, addBuckets);
             } else if (addBuckets) {
-                addFeedbackBuckets(taxonomy, cat);
+                addFeedbackBuckets(cat);
             }
         }
     }
@@ -234,43 +251,22 @@ public class TaxonomyLoader {
     /**
      * Adds the feedback buckets to a taxonomy node. Removes much boilerplate from the taxonomy
      * file.
-     * @param taxonomy The taxonomy containing the category node.
-     * @param cat Category node to get buckets.
+     * @param parent Category node to get buckets.
      */
-    private void addFeedbackBuckets(Taxonomy taxonomy, Category cat) {
+    private void addFeedbackBuckets(Category parent) {
         int order = 1;
-        boolean nonAssignable = cat.isNonAssignable();
+        boolean nonAssignable = parent.isNonAssignable();
         for (String[] fb : FEEDBACK_BUCKETS) {
-            String id = cat.getId() + fb[0];
-            Category bucketCat = addCategoryToTaxonomy(taxonomy, cat, id, fb[1], order++, nonAssignable);
-            bucketCat.setAutogenerated(true);
+            String id = parent.getId() + fb[0];
+            Category cat = new CategoryBuilder(id)
+                .withName(fb[1])
+                .withOrder(order++)
+                .nonAssignable(nonAssignable)
+                .withVisibility(categoryFilter.getVisibilityFor(id, parent))
+                .autogenerated()
+                .build();
+            taxonomy.addChild(parent, cat);
         }
-    }
-
-    /**
-     * Creates a Category object, and adds it to the Taxonomy as a child of the given Parent.
-     *
-     * @param taxonomy to receive the new Category.
-     * @param parent   of the new Category.
-     * @param id       of the new Category, like "9-0"
-     * @param name     of the new Category, like "Feedback From Users"
-     * @param order    of the Category within a list of it and its peers
-     * @return the new Category object
-     */
-    private Category addCategoryToTaxonomy(Taxonomy taxonomy,
-        Category parent,
-        String id,
-        String name,
-        int order,
-        boolean nonAssignable)
-    {
-        Category cat = new Category(id);
-        cat.setName(name);
-        cat.setOrder(order);
-        cat.setNonAssignable(nonAssignable);
-        cat.setVisible(categoryFilter.getVisibilityFor(cat, parent));
-        taxonomy.addChild(parent, cat);
-        return cat;
     }
 
     private static void print(Category cat) {

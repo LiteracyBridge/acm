@@ -1,6 +1,8 @@
 package org.literacybridge.acm.gui.Assistant;
 
 import org.apache.commons.lang.StringUtils;
+import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.store.MetadataStore;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -202,6 +204,8 @@ public abstract class AssistantPage<Context> extends JPanel {
             1);
         return gbc;
     }
+
+    protected MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
 
     public static DateTimeFormatter localDateTimeFormatter =
             DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withZone(ZoneId.systemDefault());

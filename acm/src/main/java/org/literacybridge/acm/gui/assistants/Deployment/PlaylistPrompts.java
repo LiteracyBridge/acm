@@ -8,6 +8,7 @@ import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.store.SearchResult;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -112,22 +113,47 @@ public class PlaylistPrompts {
      * directory.
      */
     private void findCategoryPrompts() {
-        getCategoryId();
+        List<String> categoryIds = getCategoryIds();
         // If we know the category...
-        if (categoryId != null) {
+        if (categoryIds.size() > 0) {
             // Where to look for category prompts.
             File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
             String languagesPath =
                 "TB_Options" + File.separator + "languages" + File.separator + languagecode + File.separator + "cat";
             File categoriesDir = new File(tbLoadersDir, languagesPath);
 
-            // Look for short and long files.
-            String filename = String.format("%s.a18", categoryId);
-            File promptFile = new File(categoriesDir, filename);
-            if (promptFile.exists()) shortPromptFile = promptFile;
-            filename = "i" + filename;
-            promptFile = new File(categoriesDir, filename);
-            if (promptFile.exists()) longPromptFile = promptFile;
+            boolean foundShort = false, foundLong = false, foundBoth = false;
+            for (String categoryId : categoryIds) {
+                // Look for short and long files.
+                String filename = String.format("%s.a18", categoryId);
+                File shortPromptFile = new File(categoriesDir, filename);
+                File longPromptFile = new File(categoriesDir, "i" + filename);
+                if (shortPromptFile.exists() && longPromptFile.exists()) {
+                    this.shortPromptFile = shortPromptFile;
+                    this.longPromptFile = longPromptFile;
+                    this.categoryId = categoryId;
+                    foundBoth = true;
+                    break;
+                } else {
+                    if (shortPromptFile.exists()) {
+                        this.shortPromptFile = shortPromptFile;
+                        this.categoryId = categoryId;
+                        foundShort = true;
+                    }
+                    if (longPromptFile.exists()) {
+                        this.longPromptFile = longPromptFile;
+                        this.categoryId = categoryId;
+                        foundLong = true;
+                    }
+                }
+            }
+
+            if (foundShort && foundLong && !foundBoth) {
+                // Found both recordings, but for different categories, and never together.
+                this.longPromptFile = null;
+                this.shortPromptFile = null;
+                this.categoryId = null;
+            }
         }
     }
 
@@ -135,28 +161,38 @@ public class PlaylistPrompts {
      * Look for a category name that matches the playlist title, only considering leaf nodes.
      * If the bare title isn't found, look for "General ${category}".
      */
-    private void getCategoryId() {
-        // Look for the category name amongst the leaf nodes.
-        categoryId = StreamSupport.stream(store.getTaxonomy()
+    private List<String> getCategoryIds() {
+        List<String> result = new ArrayList<>();
+        // Look for the category name as-is.
+        String categoryId = StreamSupport.stream(store.getTaxonomy()
             .breadthFirstIterator()
             .spliterator(), false)
-            .filter(c -> !c.hasChildren())
-            .filter(c -> c.getCategoryName().equalsIgnoreCase(title))
+            // Strictly, non-leafs aren't assignable categories, however they might have been
+            // used as playlist categories. So while it would be appropriate to filter out non-
+            // leaf nodes, it doesn't work with reality.
+            //.filter(c -> !c.hasChildren())
+            .filter(c -> c.isKnownAs(title))
             .map(Category::getId)
             .findFirst()
             .orElse(null);
-        if (categoryId == null) {
-            // If it wasn't there, decorate like "General Category".
-            final String generalTitle = "General " + title;
-            categoryId = StreamSupport.stream(store.getTaxonomy()
-                .breadthFirstIterator()
-                .spliterator(), false)
-                .filter(c -> !c.hasChildren())
-                .filter(c -> c.getCategoryName().equalsIgnoreCase(generalTitle))
-                .map(Category::getId)
-                .findFirst()
-                .orElse(null);
+        if (categoryId != null) {
+            result.add(categoryId);
         }
+        // Look for the category name decorated as "General Category"
+        final String generalTitle = "General " + title;
+        categoryId = StreamSupport.stream(store.getTaxonomy()
+            .breadthFirstIterator()
+            .spliterator(), false)
+            // Same comment as above.
+            //.filter(c -> !c.hasChildren())
+            .filter(c -> c.isKnownAs(generalTitle))
+            .map(Category::getId)
+            .findFirst()
+            .orElse(null);
+        if (categoryId != null) {
+            result.add(categoryId);
+        }
+        return result;
     }
 
     /**

@@ -9,19 +9,31 @@ import org.literacybridge.acm.gui.assistants.util.AcmContent.LanguageNode;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.PlaylistNode;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.core.spec.ContentSpec;
+import org.literacybridge.core.spec.RecipientList;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     private final JLabel deployment;
@@ -62,10 +74,19 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
-        includeUfCategory = new JCheckBox("Include User Feedback Category.");
-        includeUfCategory.setSelected(true);
-        add(includeUfCategory, gbc);
-        includeUfCategory.addActionListener(this::onSelection);
+        includeUfCategory = new JCheckBox("Make User Feedback visible.");
+        if (ACMConfiguration.getInstance().getCurrentDB().isUserFeedbackHidden()) {
+            includeUfCategory.setSelected(false);
+            JLabel label = new JLabel("User Feedback is hidden for this project.");
+            Font normalFont = label.getFont();
+            Font italicFont = new Font(normalFont.getName(),normalFont.getStyle()|Font.ITALIC, normalFont.getSize());
+            label.setFont(italicFont);
+            add(label, gbc);
+        } else {
+            includeUfCategory.setSelected(true);
+            add(includeUfCategory, gbc);
+            includeUfCategory.addActionListener(this::onSelection);
+        }
         
         includeTbCategory = new JCheckBox("Include Talking Book category ('The Talking Book is a durable and portable audio computer, "
             +"that shares knowledge...')");
@@ -122,6 +143,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         includeTbCategory.setSelected(context.includeTbCategory);
 
         if (progressing) {
+            collectDeploymentInformation(context.deploymentNo);
             fillPlaylists();
             expandTree();
         }
@@ -140,6 +162,18 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     @Override
     protected String getTitle() {
         return "Final Adjustments";
+    }
+
+    /**
+     * Get the languages and playlists for the given deployment.
+     * @param deploymentNo that we are creating.
+     */
+    private void collectDeploymentInformation(int deploymentNo) {
+        RecipientList recipients = context.programSpec.getRecipientsForDeployment(deploymentNo);
+        context.languages = recipients.stream().map(r -> r.language).collect(Collectors.toSet());
+
+        context.allProgramSpecPlaylists = getProgramSpecPlaylists(deploymentNo, context.languages);
+        context.allAcmPlaylists = getAcmPlaylists(deploymentNo, context.languages);
     }
 
     /**
@@ -234,7 +268,6 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         // And finally, re-select the moved item.
         TreePath path = new TreePath(selected.getPath());
         playlistTree.setSelectionPath(path);
-
     }
 
     private void onRemove(@SuppressWarnings("unused") ActionEvent actionEvent) {
@@ -372,5 +405,70 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
             });
     }
 
+    /**
+     * Gets the playlists defined in the Program Spec for a given Deployment. Note that playlists
+     * may be different between languages, due to missing content in some languages.
+     *
+     * @param deploymentNo of the Deployment.
+     * @param languages    of all the Recipients in the Deployment.
+     * @return a map of { language : [ContentSpec.PlaylistSpec ] }
+     */
+    private Map<String, List<ContentSpec.PlaylistSpec>> getProgramSpecPlaylists(int deploymentNo,
+        Set<String> languages)
+    {
+        ContentSpec contentSpec = context.programSpec.getContentSpec();
+        ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
+        Map<String, List<ContentSpec.PlaylistSpec>> programSpecPlaylists = new HashMap<>();
+        for (String language : languages) {
+            programSpecPlaylists.put(language, deploymentSpec.getPlaylistSpecs(language));
+        }
+        return programSpecPlaylists;
+    }
+
+    /**
+     * Gets the playlists defined in the ACM for a given Deployment. If all content was imported,
+     * and playlists were not manually edited, these will completely match the programSpec playlists.
+     * Additional playlists may be present, if there were any created with the pattern #-pl-lang.
+     *
+     * @param deploymentNo of the Deployment.
+     * @param languages    of all the Recipients in the Deployment.
+     * @return a map of { language : [ Playlist ] }
+     */
+    private Map<String, List<Playlist>> getAcmPlaylists(int deploymentNo, Set<String> languages) {
+        Map<String, List<Playlist>> acmPlaylists = new LinkedHashMap<>();
+        Collection<Playlist> playlists = store.getPlaylists();
+        for (String language : languages) {
+            List<Playlist> langPlaylists = new ArrayList<>();
+            // Look for anything matching the pattern, whether from the Program Spec or not.
+            Pattern pattern = Pattern.compile(String.format("%d-.*-%s", deploymentNo, language));
+            for (Playlist pl : playlists) {
+                Matcher plMatcher = pattern.matcher(pl.getName());
+                if (plMatcher.matches()) {
+                    langPlaylists.add(pl);
+                }
+            }
+            Map<String, ContentSpec.PlaylistSpec> specPlaylists =
+                context.allProgramSpecPlaylists.get(language)
+                    .stream()
+                    .collect(Collectors.toMap(ContentSpec.PlaylistSpec::getPlaylistTitle,
+                        Function.identity()));
+            langPlaylists.sort((a,b)->{
+                String nameA = undecoratedPlaylistName(a.getName());
+                String nameB = undecoratedPlaylistName(b.getName());
+                ContentSpec.PlaylistSpec psA = specPlaylists.get(nameA);
+                ContentSpec.PlaylistSpec psB = specPlaylists.get(nameB);
+                if (psA != null && psB != null) {
+                    return psA.getOrdinal() - psB.getOrdinal();
+                } else if (psA == null && psB == null) {
+                    return nameA.compareToIgnoreCase(nameB);
+                } else if (psA == null) {
+                    return 1;
+                }
+                return -1;
+            });
+            acmPlaylists.put(language, langPlaylists);
+        }
+        return acmPlaylists;
+    }
 
 }
