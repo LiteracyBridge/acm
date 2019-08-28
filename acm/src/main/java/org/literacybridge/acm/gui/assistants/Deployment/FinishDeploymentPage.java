@@ -58,7 +58,6 @@ import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
     private final JLabel publishNotification;
-    private final JLabel summary;
     private final JLabel statusLabel;
     private final JButton viewErrorsButton;
     private final JLabel currentState;
@@ -94,7 +93,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
         // The status line. Could be updated as the deployment progresses.
         hbox = Box.createHorizontalBox();
-        summary = new JLabel();
+        JLabel summary = new JLabel();
         summary.setText(String.format("Creating Deployment %d as %s.",
             context.deploymentNo, deploymentName()));
         hbox.add(summary);
@@ -300,7 +299,11 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                     int promptIx = new ArrayList<>(playlistsPrompts.keySet()).indexOf(title);
 
                     String promptCat = getPromptCategoryAndFiles(prompts, promptIx, promptsDir);
-                    if (!promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE)) {
+                    // The intro message is handled specially, in the control file.
+                    // User feedback category is added later. The best way to have feedback from
+                    // users is a category named "Selected Feedback from Users" or some such.
+                    if (!(promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE) ||
+                          promptCat.equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK))) {
                         activeListsWriter.println("!"+promptCat);
                     }
                     createListFile(playlistNode, promptCat, listsDir);

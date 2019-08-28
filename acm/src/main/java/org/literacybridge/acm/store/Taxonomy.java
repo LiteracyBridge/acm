@@ -3,13 +3,14 @@ package org.literacybridge.acm.store;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import com.google.common.collect.Maps;
 import org.literacybridge.acm.gui.Application;
+
+import static org.literacybridge.acm.store.Category.*;
 
 public class Taxonomy implements Cloneable {
   private Integer revision;
@@ -52,9 +53,10 @@ public class Taxonomy implements Cloneable {
      * @return the latest taxonomy.
      */
   public static Taxonomy createTaxonomy(File acmDirectory) {
-    Category root = new Category(TaxonomyLoader.LB_TAXONOMY_UID);
-    root.setName("root");
-    root.setOrder(0);
+    Category root = new CategoryBuilder(TaxonomyLoader.LB_TAXONOMY_UID)
+        .withName("root")
+        .withOrder(0)
+        .build();
 
     Taxonomy taxonomy = new Taxonomy(root);
     TaxonomyLoader.loadLatestTaxonomy(acmDirectory, taxonomy);
@@ -79,7 +81,6 @@ public class Taxonomy implements Cloneable {
 
   public void addChild(Category parent, Category newChild) {
     parent.addChild(newChild);
-    newChild.setParent(parent);
     categories.put(newChild.getId(), newChild);
   }
 
@@ -97,7 +98,7 @@ public class Taxonomy implements Cloneable {
       Category cat = getCategory(entry.getKey());
       Boolean visible = entry.getValue();
       if (cat.isVisible() != visible) {
-        cat.setVisible(visible);
+        cat.updateVisibility(visible);
         changed = true;
       }
     }

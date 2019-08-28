@@ -23,7 +23,7 @@ class DeploymentContext {
     Map<String, List<Playlist>> allAcmPlaylists;
 
     // Should these be per-contentpackage properties?
-    boolean includeUfCategory = true;
+    boolean includeUfCategory = !ACMConfiguration.getInstance().getCurrentDB().isUserFeedbackHidden();
     boolean includeTbCategory;
 
     // Don't publish, only create.

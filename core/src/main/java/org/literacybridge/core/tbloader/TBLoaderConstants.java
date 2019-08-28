@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
+@SuppressWarnings("WeakerAccess")
 public class TBLoaderConstants {
   public static final String UNKNOWN = "UNKNOWN";
 
