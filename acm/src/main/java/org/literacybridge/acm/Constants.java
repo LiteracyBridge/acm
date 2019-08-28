@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 public class Constants {
-  public final static String ACM_VERSION = "r1908210"; // yy mm dd n
+  public final static String ACM_VERSION = "r1908230"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String ACM_DIR_NAME = "ACM";
   public final static String CACHE_DIR_NAME = "cache";
@@ -40,6 +40,7 @@ public class Constants {
   public final static String PRE_CACHE_WAV = "PRE_CACHE_WAV";
   public final static String CACHE_SIZE_PROP_NAME = "CACHE_SIZE_IN_BYTES";
   public final static String STRICT_DEPLOYMENT_NAMING = "STRICT_DEPLOYMENT_NAMING";
+  public final static String USER_FEEDBACK_HIDDEN = "USER_FEEDBACK_HIDDEN";
   public final static String CONFIGURATION_DIALOG = "CONFIGURATION_DIALOG";
   public final static String USE_AWS_LOCKING = "USE_AWS_LOCKING";
   public final static String DEPLOYMENT_CHOICE = "DEPLOYMENT_CHOICE";

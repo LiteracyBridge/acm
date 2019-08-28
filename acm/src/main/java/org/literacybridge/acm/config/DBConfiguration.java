@@ -436,6 +436,11 @@ public class DBConfiguration { //extends Properties {
         return strictNaming == null || !strictNaming.equalsIgnoreCase("false");
     }
 
+    public boolean isUserFeedbackHidden() {
+        String userFeedbackHidden = dbProperties.getProperty(Constants.USER_FEEDBACK_HIDDEN);
+        return userFeedbackHidden != null && userFeedbackHidden.equalsIgnoreCase("true");
+    }
+
     /**
      * If true, add a toolbar button for configuration. Default is false; override in properties.config.
      * @return true if we should add a toolbar button for configuration.
