@@ -420,7 +420,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
         Map<String, List<ContentSpec.PlaylistSpec>> programSpecPlaylists = new HashMap<>();
         for (String language : languages) {
-            programSpecPlaylists.put(language, deploymentSpec.getPlaylistSpecs(language));
+            programSpecPlaylists.put(language, deploymentSpec.getPlaylistSpecsForLanguage(language));
         }
         return programSpecPlaylists;
     }

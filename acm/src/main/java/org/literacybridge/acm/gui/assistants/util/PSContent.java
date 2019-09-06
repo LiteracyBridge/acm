@@ -22,7 +22,7 @@ public class PSContent {
         ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
         if (deploymentSpec == null) return;
 
-        List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecs(language);
+        List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(language);
         for (ContentSpec.PlaylistSpec playlistSpec : playlistSpecs) {
             PlaylistNode playlistNode = new PlaylistNode(playlistSpec);
             languageNode.add(playlistNode);
@@ -80,7 +80,7 @@ public class PSContent {
         ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
         if (deploymentSpec == null) return;
 
-        List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecs(languageCode);
+        List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(languageCode);
         for (ContentSpec.PlaylistSpec playlistSpec : playlistSpecs) {
             if (languageNode == null) {
                 languageNode = new LanguageNode(languageCode);

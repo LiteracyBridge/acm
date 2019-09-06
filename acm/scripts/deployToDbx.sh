@@ -61,7 +61,7 @@ function updateLibs() {
             updated=true
 
             # Make the commands, so that they can be displayed and/or executed
-            cpcmd=(cp -v "lib/${f}" "${acmDir}/lib/${f}")
+            cpcmd=(cp -pv "lib/${f}" "${acmDir}/lib/${f}")
 
             $verbose && echo $prefix "${cpcmd[@]}">>${report}
             $execute && "${cpcmd[@]}"
@@ -91,7 +91,7 @@ function updateJar() {
     for f in $(find ${dropbox} -not -path ${excludedPath} -iname acm.jar); do
         if ! cmp -s acm.jar "$f" ; then
             updated=true
-            cpcmd=(cp -v "acm.jar" "$f")
+            cpcmd=(cp -pv "acm.jar" "$f")
 
             $verbose && echo $prefix "${cpcmd[@]}">>${report}
             $execute && "${cpcmd[@]}"
@@ -112,7 +112,7 @@ function updateSplash() {
     for f in $(find ${dropbox} -not -path ${excludedPath} -iname ${filename}); do
         if ! cmp -s ${filename} "$f" ; then
             updated=true
-            cpcmd=(cp -v "${filename}" "$f")
+            cpcmd=(cp -pv "${filename}" "$f")
 
             $verbose && echo $prefix "${cpcmd[@]}">>${report}
             $execute && "${cpcmd[@]}"
@@ -127,7 +127,7 @@ function updateBuildProps() {
     if [ -e build.properties ]; then
         if ! cmp -s "build.properties" "${acmDir}/build.properties" ; then
             updated=true
-            cpcmd=(cp -v "build.properties" "${acmDir}/build.properties")
+            cpcmd=(cp -pv "build.properties" "${acmDir}/build.properties")
 
             $verbose && echo "${cpcmd[@]}">>${report}
             $execute && "${cpcmd[@]}"

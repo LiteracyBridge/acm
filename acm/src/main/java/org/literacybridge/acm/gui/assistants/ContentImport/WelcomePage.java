@@ -283,7 +283,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         ContentSpec contentSpec = context.programSpec.getContentSpec();
         ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
         if (deploymentSpec == null) return;
-        List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecs(getSelectedLanguage());
+        List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(languagecode);
 
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : playlistSpecs) {
             PlaylistPrompts prompts = new PlaylistPrompts(contentPlaylistSpec.getPlaylistTitle(), languagecode);
@@ -360,7 +360,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
 
         List<ContentSpec.PlaylistSpec> contentPlaylistSpecs = context.programSpec.getContentSpec()
                                                                                  .getDeployment(deploymentNo)
-                                                                                 .getPlaylistSpecs(languagecode);
+                                                                                 .getPlaylistSpecsForLanguage(languagecode);
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
             String plName = decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             if (!acmPlaylists.containsKey(plName)) {

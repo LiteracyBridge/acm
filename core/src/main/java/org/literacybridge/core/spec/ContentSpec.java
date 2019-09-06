@@ -78,15 +78,19 @@ public class ContentSpec {
         public List<PlaylistSpec> getPlaylistSpecs() {
             return playlistSpecs;
         }
-        public List<PlaylistSpec> getPlaylistSpecs(String language) {
+        public List<PlaylistSpec> getPlaylistSpecsForLanguage(String language) {
             List<PlaylistSpec> result = new ArrayList<>();
+            // For all of the playlists (in every language) in the deployment...
             for (PlaylistSpec playlistSpec : playlistSpecs) {
                 PlaylistSpec plCopy = new PlaylistSpec(playlistSpec.deploymentNumber, playlistSpec.playlistTitle);
+                // For all the messages in the playlist...
                 for (MessageSpec msg : playlistSpec.getMessageSpecs()) {
+                    // If the message should be in the deployment in the given language, add it to the result.
                     if (StringUtils.isAllBlank(msg.language) || new StringFilter(msg.language).test(language)) {
                         plCopy.addMessage(msg);
                     }
                 }
+                // If the playlist has any messages in the language, keep it.
                 if (plCopy.messageSpecs.size() > 0) {
                     result.add(plCopy);
                 }

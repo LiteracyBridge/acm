@@ -23,7 +23,9 @@ class DeploymentContext {
     Map<String, List<Playlist>> allAcmPlaylists;
 
     // Should these be per-contentpackage properties?
+    // "User Feedback..."
     boolean includeUfCategory = !ACMConfiguration.getInstance().getCurrentDB().isUserFeedbackHidden();
+    // "The Talking Book is an audio computer that shares knowledge..."
     boolean includeTbCategory;
 
     // Don't publish, only create.

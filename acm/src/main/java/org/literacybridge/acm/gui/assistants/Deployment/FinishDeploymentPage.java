@@ -50,6 +50,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Calendar.YEAR;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
@@ -483,14 +484,11 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
             // Get the ProgSpec playlists, limited to those with messages in this language.
             DeploymentSpec deploymentSpec = context.programSpec.getContentSpec().getDeployment(context.deploymentNo);
-            List<PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecs();
-            // Build a list of the playlists in the progspec that have messages in this language.
-            List<String> specifiedPlaylists = new ArrayList<>();
-            for (PlaylistSpec playlistSpec : playlistSpecs) {
-                List<MessageSpec> msgs = playlistSpec.getMessagesForLanguage(language);
-                if (msgs.size() > 0)
-                    specifiedPlaylists.add(playlistSpec.getPlaylistTitle());
-            }
+            List<PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(language);
+            // Get the titles of the playlists.
+            List<String> specifiedPlaylists = playlistSpecs.stream()
+                .map(PlaylistSpec::getPlaylistTitle)
+                .collect(Collectors.toList());
             // Keep track of which playlists we find, so we can report on the ones missing.
             Set<String> foundPlaylists = new HashSet<>();
 

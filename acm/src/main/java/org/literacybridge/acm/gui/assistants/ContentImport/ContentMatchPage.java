@@ -147,7 +147,8 @@ public class ContentMatchPage extends
         List<AudioTarget> titles = new ArrayList<>();
         List<ContentSpec.PlaylistSpec> contentPlaylistSpecs = context.programSpec.getContentSpec()
                                                                                  .getDeployment(deploymentNo)
-                                                                                 .getPlaylistSpecs();
+                                                                                 .getPlaylistSpecsForLanguage(context.languagecode);
+
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
             String playlistName = WelcomePage.decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             Playlist playlist = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().findPlaylistByName(playlistName);
