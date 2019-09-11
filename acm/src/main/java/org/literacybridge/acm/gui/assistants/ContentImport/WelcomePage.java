@@ -99,6 +99,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout(0,0));
 
+        // Preview of the titles will be built here, after user chooses Depl# & language.
         progSpecRootNode = new DefaultMutableTreeNode();
         progSpecTree = new JTree(progSpecRootNode);
         progSpecTreeModel = (DefaultTreeModel) progSpecTree.getModel();
@@ -247,6 +248,16 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
      * Based on the selected Deployment fill the title preview.
      */
     private void fillTitleList() {
+        PSContent.PlaylistFilter playlistFilter = new PSContent.PlaylistFilter() {
+            public PSContent.PlDisposition filter(ContentSpec.PlaylistSpec playlistSpec) {
+                String title = playlistSpec.getPlaylistTitle();
+                if (context.introMessageCategoryName.equalsIgnoreCase(title)) {
+                    return PSContent.PlDisposition.ADD;
+                }
+                return PSContent.PlDisposition.ADD_WITH_PROMPTS;
+            }
+        };
+
         progSpecRootNode.removeAllChildren();
 
         int deploymentNo = getSelectedDeployment();
@@ -258,12 +269,14 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
                 PSContent.fillTreeWithPlaylistPromptsForDeployment(progSpecRootNode,
                     context.programSpec,
                     deploymentNo,
-                    languagecode);
+                    languagecode,
+                    playlistFilter);
             } else {
                 PSContent.fillTreeForDeployment(progSpecRootNode,
                     context.programSpec,
                     deploymentNo,
-                    languagecode);
+                    languagecode,
+                    playlistFilter);
             }
             progSpecTreeModel.reload();
             for (int i = 0; i < progSpecTree.getRowCount(); i++) {
@@ -330,10 +343,19 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
                 PSContent.PromptNode promptNode = (PSContent.PromptNode)value;
                 String title = promptNode.getPlaylist().getPlaylistTitle();
                 PlaylistPrompts prompts = context.playlistPromptsMap.get(title);
-                boolean hasPrompt = promptNode.isLongPrompt() ? prompts.hasLongPrompt() : prompts.hasShortPrompt();
-                icon = hasPrompt ? soundImage : noSoundImage;
-                tooltip = String.format("%s playlist prompt for %s", promptNode.isLongPrompt() ? "Long":"Short", title);
-                font = italicFont;
+                if (context.introMessageCategoryName.equalsIgnoreCase(title)) {
+                    tooltip = "Special 'Playlist' for Intro Message, which has no prompts.";
+                    icon = null;
+                } else {
+                    boolean hasPrompt = promptNode.isLongPrompt() ?
+                                        prompts.hasLongPrompt() :
+                                        prompts.hasShortPrompt();
+                    icon = hasPrompt ? soundImage : noSoundImage;
+                    tooltip = String.format("%s playlist prompt for %s",
+                        promptNode.isLongPrompt() ? "Long" : "Short",
+                        title);
+                    font = italicFont;
+                }
             }
             JLabel comp = (JLabel) super.getTreeCellRendererComponent(tree, value,
                 selected, expanded, leaf, row, hasFocus);

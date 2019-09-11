@@ -44,7 +44,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -275,9 +274,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
         File packagesDir = new File(tbLoadersDir, "packages");
 
-        Enumeration<LanguageNode> langEnumeration = context.playlistRootNode.children();
-        while (langEnumeration.hasMoreElements()) {
-            LanguageNode languageNode = langEnumeration.nextElement();
+        for (LanguageNode languageNode : context.playlistRootNode.getLanguageNodes()) {
             String language = languageNode.getLanguageCode();
 
             // one entry in the language : package-name map.
@@ -292,9 +289,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             String title = null;
             try (PrintWriter activeListsWriter = new PrintWriter(activeLists)) {
                 Map<String, PlaylistPrompts> playlistsPrompts = context.prompts.get(language);
-                Enumeration<PlaylistNode> playlistEnumeration = languageNode.children();
-                while (playlistEnumeration.hasMoreElements()) {
-                    PlaylistNode playlistNode = playlistEnumeration.nextElement();
+                for (PlaylistNode playlistNode : languageNode.getPlaylistNodes()) {
                     title = playlistNode.getTitle();
                     PlaylistPrompts prompts = playlistsPrompts.get(title);
                     int promptIx = new ArrayList<>(playlistsPrompts.keySet()).indexOf(title);
@@ -335,9 +330,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             return false;
         }
 
-        Enumeration langEnumeration = context.playlistRootNode.children();
-        while (langEnumeration.hasMoreElements()) {
-            LanguageNode languageNode = (LanguageNode)langEnumeration.nextElement();
+        for (LanguageNode languageNode : context.playlistRootNode.getLanguageNodes()) {
             String language = languageNode.getLanguageCode();
 
             // Create the directories.
@@ -382,9 +375,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     {
         File listFile = new File(listsDir, promptCat + ".txt");
         try (PrintWriter listWriter = new PrintWriter(listFile)) {
-            Enumeration audioItemEnumeration = playlistNode.children();
-            while (audioItemEnumeration.hasMoreElements()) {
-                AudioItemNode audioItemNode = (AudioItemNode)audioItemEnumeration.nextElement();
+            for (AudioItemNode audioItemNode : playlistNode.getAudioItemNodes()) {
                 String audioItemId = audioItemNode.getAudioItem().getId();
 
                 listWriter.println(audioItemId);
@@ -416,7 +407,9 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         String promptCat;
         if (prompts.categoryId != null) {
             promptCat = prompts.categoryId;
-            // For the intro message, we don't actually need or want a prompt file.
+            // For the intro message, we don't actually need or want a prompt file. The intro
+            // is played automatically, right after "Welcome to the Talking Book!".  It can't be
+            // selected by the user, so it needs no prompt.
             if (promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE)) return promptCat;
         } else {
             // If we weren't able to find a category id, then this must have been a prompt from 
@@ -494,9 +487,8 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
             int playlistIx = -1; // To keep track of the ordinal position of each playlist.
             // For each ACM playlist
-            for (Enumeration<PlaylistNode> playlistEnumeration=languageNode.children(); playlistEnumeration.hasMoreElements(); ) {
+            for (PlaylistNode playlistNode : languageNode.getPlaylistNodes()) {
                 playlistIx++;
-                PlaylistNode playlistNode = playlistEnumeration.nextElement();
                 String playlistTitle = playlistNode.getTitle();
                 foundPlaylists.add(playlistTitle);
 
@@ -526,9 +518,8 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                 msg = "";
                 // For each message in the ACM message list...
                 int audioItemIx = -1;
-                for (Enumeration<AudioItemNode> audioItemEnumeration=playlistNode.children(); audioItemEnumeration.hasMoreElements(); ) {
+                for (AudioItemNode audioItemNode : playlistNode.getAudioItemNodes()) {
                     audioItemIx++;
-                    AudioItemNode audioItemNode = audioItemEnumeration.nextElement();
                     String audioItemTitle = audioItemNode.getAudioItem().getTitle();
                     foundMessages.add(audioItemTitle);
 

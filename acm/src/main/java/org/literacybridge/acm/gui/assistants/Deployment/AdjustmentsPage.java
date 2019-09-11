@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,10 +50,14 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     private final JButton moveUp;
     private final JButton moveDown;
     private final DefaultTreeModel playlistTreeModel;
+    private final String introMessageCategoryName;
+    private final Set<Object> introMessageCategories = new HashSet<>();
 
     AdjustmentsPage(PageHelper<DeploymentContext> listener) {
         super(listener);
         context = getContext();
+        introMessageCategoryName = store.getCategory(Constants.CATEGORY_INTRO_MESSAGE).getCategoryName();
+
         setLayout(new GridBagLayout());
 
         Insets tight = new Insets(0, 0, 5, 0);
@@ -88,8 +94,8 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
             includeUfCategory.addActionListener(this::onSelection);
         }
         
-        includeTbCategory = new JCheckBox("Include Talking Book category ('The Talking Book is a durable and portable audio computer, "
-            +"that shares knowledge...')");
+        includeTbCategory = new JCheckBox("Include Talking Book category ('Talking Book. To learn about this device, press the tree ...')");
+        includeTbCategory.setSelected(true);
         add(includeTbCategory, gbc);
         includeTbCategory.addActionListener(this::onSelection);
         noPublish = new JCheckBox("Do not publish the Deployment; create only.");
@@ -265,9 +271,10 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         playlistTree.expandPath(new TreePath(newParent.getPath()));
 
 
-        // And finally, re-select the moved item.
+        // And finally, re-select the moved item, and make sure it is visible.
         TreePath path = new TreePath(selected.getPath());
         playlistTree.setSelectionPath(path);
+        playlistTree.scrollPathToVisible(path);
     }
 
     private void onRemove(@SuppressWarnings("unused") ActionEvent actionEvent) {
@@ -297,10 +304,19 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         if (selected == null) return false;
         if (selected instanceof LanguageNode) return false;
         DefaultMutableTreeNode sibling = selected.getPreviousSibling();
+        // The intro message category is first and can't be moved. And the category after any Intro Message
+        // playlist can't be moved up.
+        if (selected instanceof PlaylistNode) {
+            if (introMessageCategories.contains(selected.getUserObject())) return false;
+            if (sibling != null && introMessageCategories.contains(sibling.getUserObject())) return false;
+        }
         if (sibling != null) return true;
         if (selected instanceof AudioItemNode) {
             DefaultMutableTreeNode parent = (DefaultMutableTreeNode)selected.getParent();
             DefaultMutableTreeNode parentSibling = parent.getPreviousSibling();
+            // Message node can't move into or out of "Intro Message" category.
+            if (introMessageCategories.contains(parent.getUserObject())) return false;
+            if (parentSibling != null && introMessageCategories.contains(parentSibling.getUserObject())) return false;
             return parentSibling != null;
         }
         return false;
@@ -314,11 +330,16 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     private boolean canMoveDown(DefaultMutableTreeNode selected) {
         if (selected == null) return false;
         if (selected instanceof LanguageNode) return false;
+        // The intro message category is first and can't be moved.
+        if (selected instanceof PlaylistNode && introMessageCategories.contains(selected.getUserObject())) return false;
         DefaultMutableTreeNode sibling = selected.getNextSibling();
         if (sibling != null) return true;
         if (selected instanceof AudioItemNode) {
             DefaultMutableTreeNode parent = (DefaultMutableTreeNode)selected.getParent();
             DefaultMutableTreeNode parentSibling = parent.getNextSibling();
+            // Message node can't move into or out of "Intro Message" category.
+            if (introMessageCategories.contains(parent.getUserObject())) return false;
+            if (parentSibling != null && introMessageCategories.contains(parentSibling.getUserObject())) return false;
             return parentSibling != null;
         }
         return false;
@@ -437,6 +458,9 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     private Map<String, List<Playlist>> getAcmPlaylists(int deploymentNo, Set<String> languages) {
         Map<String, List<Playlist>> acmPlaylists = new LinkedHashMap<>();
         Collection<Playlist> playlists = store.getPlaylists();
+
+        introMessageCategories.clear();
+
         for (String language : languages) {
             List<Playlist> langPlaylists = new ArrayList<>();
             // Look for anything matching the pattern, whether from the Program Spec or not.
@@ -445,6 +469,10 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
                 Matcher plMatcher = pattern.matcher(pl.getName());
                 if (plMatcher.matches()) {
                     langPlaylists.add(pl);
+                    // Remember which playlists were "Intro Message" categories.
+                    if (introMessageCategoryName.equals(undecoratedPlaylistName(pl.getName()))) {
+                        introMessageCategories.add(pl);
+                    }
                 }
             }
             Map<String, ContentSpec.PlaylistSpec> specPlaylists =
@@ -453,8 +481,13 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
                     .collect(Collectors.toMap(ContentSpec.PlaylistSpec::getPlaylistTitle,
                         Function.identity()));
             langPlaylists.sort((a,b)->{
+                // If this is the "Intro Message" category, it sorts first.
+                if (introMessageCategories.contains(a)) return -1;
+                if (introMessageCategories.contains(b)) return 1;
+                // Get the names, to look up in the programspec.
                 String nameA = undecoratedPlaylistName(a.getName());
                 String nameB = undecoratedPlaylistName(b.getName());
+
                 ContentSpec.PlaylistSpec psA = specPlaylists.get(nameA);
                 ContentSpec.PlaylistSpec psB = specPlaylists.get(nameB);
                 if (psA != null && psB != null) {

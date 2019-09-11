@@ -1,12 +1,11 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
 import org.apache.commons.lang.StringUtils;
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
-import org.literacybridge.acm.gui.assistants.ContentImport.WelcomePage;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.spec.ContentSpec;
@@ -30,12 +29,25 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.assistants.common.AcmAssistantPage.getLanguageAndName;
 import static org.literacybridge.acm.tbbuilder.TBBuilder.MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.GROUP_FILE_EXTENSION;
 
 public class ValidationPage extends AssistantPage<DeploymentContext> {
+    /**
+     * In the adjustments page the user had an opportunity to rearrange playlists, and titles
+     * within playlists, and to remove titles or entire playlists. The results of that arrangement
+     * is in a tree rooted in
+     *     context.playlistRootNode
+     * The tree structure is
+     *   AcmContent.AcmRootNode
+     *     AcmContent.LanguageNode              user object is languagecode
+     *       AcmContent.PlaylistNode            user object is ACM Playlist
+     *         AcmContent.AudioItemNode         user object is ACM AudioItem
+     * Those are the playlists and messages that we need to validate.
+     */
 
     private final JLabel deployment;
     private final JCheckBox deployWithWarnings;
@@ -181,10 +193,13 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         validateSystemPrompts(context.languages);
 
         // Check that we have all category prompts for categories in each language.
-        validatePlaylistPrompts(context.languages);
+        validatePlaylistPrompts();
 
         // Check that we have all recipient prompts for recipients in the deployment.
         validateRecipients(deploymentNo);
+
+        // If there is an Intro Message category, validate that there's only one message.
+        validateIntroMessage();
 
         validateFirmware();
 
@@ -232,82 +247,79 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     private void validatePlaylists(int deploymentNo, Collection<String> languages) {
         // For each language in the Deployment...
         for (String language : languages) {
-            // Get the Program Spec playlists, and the ACM playlists (as matched by pattern).
+            // Get the Program Spec playlists
             List<ContentSpec.PlaylistSpec> programSpecPlaylistSpecs = context.allProgramSpecPlaylists
                 .get(language);
-            List<Playlist> acmPlaylists = context.allAcmPlaylists.get(language);
 
-            // We need to order the ACM playlists the same as the Program Spec playlists. Extra
-            // Playlists can go at the end. Missing playlists, obviously, will be missing.
-            List<Playlist> progspecOrderedAcmPlaylists = new ArrayList<>();
+            // Get the adjusted list of ACM playlists.
+            AcmContent.LanguageNode languageNode = context.playlistRootNode.getLanguageNode(language);
+            if (languageNode == null) {
+                context.issues.add(Issues.Severity.WARNING, Issues.Area.LANGUAGES,
+                    "There is no content in the deployment for language '%s'", getLanguageAndName(language));
+                continue;
+            }
 
-            // For all the playlists in the Program Spec...
-            Set<Playlist> foundPlaylists = new HashSet<>();
+            List<AcmContent.PlaylistNode> adjustedPlaylists = languageNode.getPlaylistNodes();
+            Set<AcmContent.PlaylistNode> foundPlaylists = new HashSet<>();
+            // Try to find all the playlists from the Program Spec in the adjusted ACM playlists...
             for (ContentSpec.PlaylistSpec programSpecPlaylistSpec : programSpecPlaylistSpecs) {
-                // Get the corresponding ACM playlist, if it exists.
+                // Get the corresponding adjusted ACM playlist, if it exists.
                 String qualifiedPlaylistName = decoratedPlaylistName(programSpecPlaylistSpec.getPlaylistTitle(),
                     deploymentNo,
                     language);
-                Playlist playlist = acmPlaylists.stream()
-                    .filter(p -> p.getName().equals(qualifiedPlaylistName))
+                AcmContent.PlaylistNode playlistNode = adjustedPlaylists.stream()
+                    .filter(p -> p.getDecoratedTitle().equals(qualifiedPlaylistName))
                     .findFirst()
                     .orElse(null);
 
                 // If the ACM playlist is missing, note the issue.
-                if (playlist == null) {
+                if (playlistNode == null) {
                     context.issues.add(Issues.Severity.WARNING,
                         Issues.Area.PLAYLISTS,
                         "Playlist '%s' is missing in the ACM.",
                         qualifiedPlaylistName);
                 } else {
                     // ...otherwise, we have the playlist, so add to the list of ACM playlists, and check the contents.
-                    progspecOrderedAcmPlaylists.add(playlist);
-                    foundPlaylists.add(playlist);
-                    Set<AudioItem> foundItems = new HashSet<>();
+                    foundPlaylists.add(playlistNode);
+                    Set<AcmContent.AudioItemNode> foundItems = new HashSet<>();
                     // For the messages in the Program Spec...
                     for (ContentSpec.MessageSpec messageSpec : programSpecPlaylistSpec.getMessageSpecs()) {
                         // Get the corresponding ACM AudioItem.
-                        AudioItem audioItem = playlist.getAudioItemList()
+                        AcmContent.AudioItemNode audioItemNode = playlistNode.getAudioItemNodes()
                             .stream()
-                            .map(store::getAudioItem)
-                            .filter(it -> it.getTitle().equals(messageSpec.title))
+                            .filter(it -> it.toString().equals(messageSpec.title))
                             .findFirst()
                             .orElse(null);
                         // If the ACM AudioItem is missing, note the issue.
-                        if (audioItem == null) {
+                        if (audioItemNode == null) {
                             context.issues.add(Issues.Severity.WARNING,
                                 Issues.Area.CONTENT,
                                 "Title '%s' is missing in playlist '%s' in the ACM.",
                                 messageSpec.title,
-                                playlist.getName());
+                                playlistNode.getTitle());
                         } else {
-                            foundItems.add(audioItem);
+                            foundItems.add(audioItemNode);
                         }
                     }
                     // We've looked in the ACM for messages in the Program Spec.
                     // Now see if there are messages added to the ACM playlist.
-                    playlist.getAudioItemList()
+                    playlistNode.getAudioItemNodes()
                         .stream()
-                        .map(store::getAudioItem)
                         .filter(i -> !foundItems.contains(i))
                         .forEach(i -> context.issues.add(Issues.Severity.INFO,
                             Issues.Area.CONTENT,
                             "Title '%s' was added to playlist '%s' in the ACM.",
-                            i.getTitle(),
-                            playlist.getName()));
+                            i.toString(),
+                            playlistNode.getTitle()));
                 }
             }
             // Report the playlists in the ACM list but not the Program Specification list.
-            acmPlaylists.stream().filter(p -> !foundPlaylists.contains(p)).forEach(p -> {
-                context.issues.add(Issues.Severity.INFO,
+            adjustedPlaylists.stream()
+                .filter(p -> !foundPlaylists.contains(p))
+                .forEach(p -> context.issues.add(Issues.Severity.INFO,
                     Issues.Area.PLAYLISTS,
                     "Playlist '%s' was added to the ACM.",
-                    p.getName());
-                progspecOrderedAcmPlaylists.add(p);
-            });
-
-            // We have the ACM Playlists in Program Spec order, so save that ordering.
-            context.allAcmPlaylists.put(language, progspecOrderedAcmPlaylists);
+                    p.getTitle()));
         }
     }
 
@@ -373,63 +385,107 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      * Validates that the playlist prompts exist (short and long) for all playlists in all
      * languages.
      *
-     * @param languages to check.
      */
-    private void validatePlaylistPrompts(Collection<String> languages) {
-        for (String language : languages) {
+    private void validatePlaylistPrompts() {
+        for (AcmContent.LanguageNode languageNode: context.playlistRootNode.getLanguageNodes()) {
+            String language = languageNode.getLanguageCode();
             Map<String, PlaylistPrompts> promptsMap = new HashMap<>();
             context.prompts.put(language, promptsMap);
 
-            // Here, we care about the actual playlists for the Deployment.
-            List<Playlist> acmPlaylists = context.allAcmPlaylists.get(language);
-            for (Playlist playlist : acmPlaylists) {
-                String title = WelcomePage.undecoratedPlaylistName(playlist.getName());
+            for (AcmContent.PlaylistNode playlistNode : languageNode.getPlaylistNodes()) {
+                String title = playlistNode.getTitle();
+
                 PlaylistPrompts prompts = new PlaylistPrompts(title, language);
                 prompts.findPrompts();
                 promptsMap.put(title, prompts);
 
-                if (!prompts.hasBothPrompts()) {
-                    StringBuilder msg = new StringBuilder();
-                    if (!prompts.hasShortPrompt() && prompts.hasLongPrompt())
-                        msg.append("The short prompt is");
-                    else if (prompts.hasShortPrompt() && !prompts.hasLongPrompt())
-                        msg.append("The long prompt is");
-                    else msg.append("Both the short and long prompts are");
+                // Don't need a prompt for the Intro Message; only care about the others.
+                if (!Constants.CATEGORY_INTRO_MESSAGE.equals(prompts.categoryId)) {
+                    if (!prompts.hasBothPrompts()) {
+                        StringBuilder msg = new StringBuilder();
+                        if (!prompts.hasShortPrompt() && prompts.hasLongPrompt())
+                            msg.append("The short prompt is");
+                        else if (prompts.hasShortPrompt() && !prompts.hasLongPrompt())
+                            msg.append("The long prompt is");
+                        else msg.append("Both the short and long prompts are");
 
-                    msg.append(" missing in language '%s' for playlist '%s'.");
+                        msg.append(" missing in language '%s' for playlist '%s'.");
 
-                    context.issues.add(Issues.Severity.ERROR,
-                        Issues.Area.PLAYLISTS,
-                        msg.toString(),
-                        getLanguageAndName(language),
-                        title);
+                        context.issues.add(Issues.Severity.ERROR,
+                            Issues.Area.PLAYLISTS,
+                            msg.toString(),
+                            getLanguageAndName(language),
+                            title);
 
-                } else if (prompts.hasEitherPromptAmbiguity()) {
-                    StringBuilder msg = new StringBuilder(
-                        "There is both an ACM message and a category ");
-                    if (prompts.hasShortPromptAmbiguity() && !prompts.hasLongPromptAmbiguity())
-                        msg.append("short ");
-                    else if (!prompts.hasShortPromptAmbiguity() && prompts.hasLongPromptAmbiguity())
-                        msg.append("long ");
-                    else msg.append("short and long ");
+                    } else if (prompts.hasEitherPromptAmbiguity()) {
+                        StringBuilder msg = new StringBuilder(
+                            "There is both an ACM message and a category ");
+                        if (prompts.hasShortPromptAmbiguity() && !prompts.hasLongPromptAmbiguity())
+                            msg.append("short ");
+                        else if (!prompts.hasShortPromptAmbiguity() && prompts.hasLongPromptAmbiguity())
+                            msg.append("long ");
+                        else msg.append("short and long ");
 
-                    msg.append(
-                        " prompt in language '%s' for playlist '%s'. The ACM message will be used.");
+                        msg.append(
+                            " prompt in language '%s' for playlist '%s'. The ACM message will be used.");
 
-                    context.issues.add(Issues.Severity.WARNING,
-                        Issues.Area.PLAYLISTS,
-                        msg.toString(),
-                        getLanguageAndName(language),
-                        title);
+                        context.issues.add(Issues.Severity.WARNING,
+                            Issues.Area.PLAYLISTS,
+                            msg.toString(),
+                            getLanguageAndName(language),
+                            title);
 
-                } else if (prompts.hasMixedPrompts()) {
-                    context.issues.add(Issues.Severity.INFO,
-                        Issues.Area.PLAYLISTS,
-                        "One ACM message and one category prompt was found in language '%s' for playlist '%s'.",
-                        getLanguageAndName(language),
-                        title);
+                    } else if (prompts.hasMixedPrompts()) {
+                        context.issues.add(Issues.Severity.INFO,
+                            Issues.Area.PLAYLISTS,
+                            "One ACM message and one category prompt was found in language '%s' for playlist '%s'.",
+                            getLanguageAndName(language),
+                            title);
+                    }
                 }
 
+            }
+        }
+    }
+
+    /**
+     * If there is an "Intro Message' category, it should have exactly one message. Warn if there
+     * is such a category, but too few or too many messages. (Only the last one is used.)
+     */
+    private void validateIntroMessage() {
+        for (AcmContent.LanguageNode languageNode : context.playlistRootNode.getLanguageNodes()) {
+            String language = languageNode.getLanguageCode();
+            Map<String, PlaylistPrompts> promptsMap = context.prompts.get(language);
+
+            for (AcmContent.PlaylistNode playlistNode : languageNode.getPlaylistNodes()) {
+                String plTitle = playlistNode.getTitle();
+
+                PlaylistPrompts prompts = promptsMap.get(plTitle);
+
+                if (Constants.CATEGORY_INTRO_MESSAGE.equals(prompts.categoryId)) {
+                    // Only the last message is actually used. But "last" is just an accident
+                    // of history. It could have well been "first", or "random". Since it
+                    // is deterministic, we can give a better warning.
+                    List<String> titles = playlistNode.getAudioItemNodes()
+                        .stream()
+                        .map(AcmContent.AudioItemNode::toString)
+                        .collect(Collectors.toList());
+
+                    if (titles.size() > 1) {
+                        context.issues.add(Issues.Severity.INFO, Issues.Area.INTRO_MESSAGE,
+                            "Only one message will be played as intro for language '%s': %s",
+                            getLanguageAndName(language), titles.get(titles.size()-1));
+                        for (String title : titles.subList(0, titles.size()-1)) {
+                            context.issues.add(Issues.Severity.INFO, Issues.Area.INTRO_MESSAGE,
+                                "This message will be skipped in intro for language '%s': %s",
+                                getLanguageAndName(language), title);
+                        }
+                    } else if (titles.size() == 0) {
+                        context.issues.add(Issues.Severity.INFO, Issues.Area.INTRO_MESSAGE,
+                            "There is an 'Intro Message' category for language '%s', but it has no message.",
+                            getLanguageAndName(language));
+                    }
+                }
             }
         }
     }

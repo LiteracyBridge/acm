@@ -1,5 +1,7 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
+import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.assistants.Deployment.PlaylistPrompts;
 import org.literacybridge.acm.gui.assistants.common.AbstractFilesPage;
 import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
@@ -48,6 +50,15 @@ class ContentImportContext implements AbstractFilesPage.FileImportContext, Abstr
     Map<String, PlaylistPrompts> playlistPromptsMap = new HashMap<>();
 
     boolean promptsOnly;
+
+    // Special playlist name "Intro Message", which has no prompts, and is treated specially
+    // all through the deployment process.
+    String introMessageCategoryName = ACMConfiguration.getInstance()
+        .getCurrentDB()
+        .getMetadataStore()
+        .getCategory(Constants.CATEGORY_INTRO_MESSAGE)
+        .getCategoryName();
+
 
     // From the Files page
 
