@@ -13,27 +13,44 @@ import java.util.Set;
  * as defined in the Program Specification.
  */
 public class PSContent {
+    public enum PlDisposition {
+        IGNORE,
+        ADD,
+        ADD_WITH_PROMPTS
+    }
+    public static class PlaylistFilter {
+        public PlDisposition filter(ContentSpec.PlaylistSpec playlistSpec) {
+            return PlDisposition.ADD_WITH_PROMPTS;
+        }
+    }
+
 
     private static void fillTreeForDeploymentAndLanguage(DefaultMutableTreeNode languageNode,
         ContentSpec contentSpec,
         int deploymentNo,
-        String language)
+        String language,
+        PlaylistFilter playlistFilter)
     {
         ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
         if (deploymentSpec == null) return;
 
         List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(language);
         for (ContentSpec.PlaylistSpec playlistSpec : playlistSpecs) {
-            PlaylistNode playlistNode = new PlaylistNode(playlistSpec);
-            languageNode.add(playlistNode);
+            PlDisposition disposition = playlistFilter.filter(playlistSpec);
+            if (disposition != PlDisposition.IGNORE) {
+                PlaylistNode playlistNode = new PlaylistNode(playlistSpec);
+                languageNode.add(playlistNode);
 
-            playlistNode.add(new PromptNode(playlistSpec, false));
-            playlistNode.add(new PromptNode(playlistSpec, true));
+                if (disposition == PlDisposition.ADD_WITH_PROMPTS) {
+                    playlistNode.add(new PromptNode(playlistSpec, false));
+                    playlistNode.add(new PromptNode(playlistSpec, true));
+                }
 
-            List<ContentSpec.MessageSpec> messageSpecs = playlistSpec.getMessageSpecs();
-            for (ContentSpec.MessageSpec messageSpec : messageSpecs) {
-                MessageNode messageNode = new MessageNode(messageSpec);
-                playlistNode.add(messageNode);
+                List<ContentSpec.MessageSpec> messageSpecs = playlistSpec.getMessageSpecs();
+                for (ContentSpec.MessageSpec messageSpec : messageSpecs) {
+                    MessageNode messageNode = new MessageNode(messageSpec);
+                    playlistNode.add(messageNode);
+                }
             }
         }
 
@@ -49,7 +66,8 @@ public class PSContent {
     public static void fillTreeForDeployment(DefaultMutableTreeNode root,
         ProgramSpec programSpec,
         int deploymentNo,
-        String languageCode)
+        String languageCode,
+        PlaylistFilter playlistFilter)
     {
         ContentSpec contentSpec = programSpec.getContentSpec();
         Set<String> languageCodes = programSpec.getLanguagesForDeployment(deploymentNo);
@@ -58,7 +76,7 @@ public class PSContent {
             LanguageNode languageNode = new LanguageNode(language);
             root.add(languageNode);
 
-            fillTreeForDeploymentAndLanguage(languageNode, contentSpec, deploymentNo, language);
+            fillTreeForDeploymentAndLanguage(languageNode, contentSpec, deploymentNo, language, playlistFilter);
         }
     }
 
@@ -72,7 +90,8 @@ public class PSContent {
     public static void fillTreeWithPlaylistPromptsForDeployment(DefaultMutableTreeNode root,
         ProgramSpec programSpec,
         int deploymentNo,
-        String languageCode)
+        String languageCode,
+        PlaylistFilter playlistFilter)
     {
         ContentSpec contentSpec = programSpec.getContentSpec();
         LanguageNode languageNode = null;
@@ -82,29 +101,37 @@ public class PSContent {
 
         List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(languageCode);
         for (ContentSpec.PlaylistSpec playlistSpec : playlistSpecs) {
-            if (languageNode == null) {
-                languageNode = new LanguageNode(languageCode);
-                root.add(languageNode);
+            PlDisposition disposition = playlistFilter.filter(playlistSpec);
+            if (disposition != PlDisposition.IGNORE) {
+
+                if (languageNode == null) {
+                    languageNode = new LanguageNode(languageCode);
+                    root.add(languageNode);
+                }
+
+                PlaylistNode playlistNode = new PlaylistNode(playlistSpec);
+                languageNode.add(playlistNode);
+
+                if (disposition == PlDisposition.ADD_WITH_PROMPTS) {
+                    playlistNode.add(new PromptNode(playlistSpec, false));
+                    playlistNode.add(new PromptNode(playlistSpec, true));
+                }
+
             }
-
-            PlaylistNode playlistNode = new PlaylistNode(playlistSpec);
-            languageNode.add(playlistNode);
-
-            playlistNode.add(new PromptNode(playlistSpec, false));
-            playlistNode.add(new PromptNode(playlistSpec, true));
         }
     }
 
     public static void fillTreeForDeployment(DefaultMutableTreeNode root,
         ProgramSpec programSpec,
-        int deploymentNo)
+        int deploymentNo,
+        PlaylistFilter playlistFilter)
     {
         ContentSpec contentSpec = programSpec.getContentSpec();
         Set<String> languageCodes = programSpec.getLanguagesForDeployment(deploymentNo);
         for (String language : languageCodes) {
             LanguageNode languageNode = new LanguageNode(language);
             root.add(languageNode);
-            fillTreeForDeploymentAndLanguage(languageNode, contentSpec, deploymentNo, language);
+            fillTreeForDeploymentAndLanguage(languageNode, contentSpec, deploymentNo, language, playlistFilter);
         }
     }
 

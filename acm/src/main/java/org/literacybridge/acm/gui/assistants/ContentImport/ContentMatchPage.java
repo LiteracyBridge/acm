@@ -153,27 +153,31 @@ public class ContentMatchPage extends
             String playlistName = WelcomePage.decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             Playlist playlist = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().findPlaylistByName(playlistName);
 
-            // Add playlist prompts to the list of items that may be imported.
-            PlaylistPrompts prompts = context.playlistPromptsMap.get(contentPlaylistSpec.getPlaylistTitle());
-            AudioPlaylistTarget plItem = new AudioPlaylistTarget(contentPlaylistSpec, false, playlist);
-            if (prompts.hasShortPrompt()) {
-                if (prompts.getShortItem()!=null) {
-                    plItem.setItem(prompts.getShortItem());
-                } else {
-                    plItem.setFile(prompts.getShortFile());
+            // If this isn't the special "Intro Message" playlist, add playlist prompts to the list of items that may be imported.
+            if (!context.introMessageCategoryName.equalsIgnoreCase(contentPlaylistSpec.getPlaylistTitle())) {
+                PlaylistPrompts prompts = context.playlistPromptsMap.get(contentPlaylistSpec.getPlaylistTitle());
+                AudioPlaylistTarget plItem = new AudioPlaylistTarget(contentPlaylistSpec,
+                    false,
+                    playlist);
+                if (prompts.hasShortPrompt()) {
+                    if (prompts.getShortItem() != null) {
+                        plItem.setItem(prompts.getShortItem());
+                    } else {
+                        plItem.setFile(prompts.getShortFile());
+                    }
                 }
-            }
-            titles.add(plItem);
+                titles.add(plItem);
 
-            plItem = new AudioPlaylistTarget(contentPlaylistSpec, true, playlist);
-            if (prompts.hasLongPrompt()) {
-                if (prompts.getLongItem()!=null) {
-                    plItem.setItem(prompts.getLongItem());
-                } else {
-                    plItem.setFile(prompts.getLongFile());
+                plItem = new AudioPlaylistTarget(contentPlaylistSpec, true, playlist);
+                if (prompts.hasLongPrompt()) {
+                    if (prompts.getLongItem() != null) {
+                        plItem.setItem(prompts.getLongItem());
+                    } else {
+                        plItem.setFile(prompts.getLongFile());
+                    }
                 }
+                titles.add(plItem);
             }
-            titles.add(plItem);
 
             if (!context.promptsOnly) {
                 for (ContentSpec.MessageSpec messageSpec : contentPlaylistSpec.getMessagesForLanguage(languagecode)) {
@@ -230,7 +234,7 @@ public class ContentMatchPage extends
         }
     }
 
-    public class AudioTargetColumnProvider implements ColumnProvider<AudioTarget> {
+    public static class AudioTargetColumnProvider implements ColumnProvider<AudioTarget> {
         @Override
         public int getColumnCount() {
             return 1;

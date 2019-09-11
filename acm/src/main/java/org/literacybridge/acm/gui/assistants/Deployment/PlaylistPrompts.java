@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
@@ -115,7 +116,12 @@ public class PlaylistPrompts {
     private void findCategoryPrompts() {
         List<String> categoryIds = getCategoryIds();
         // If we know the category...
-        if (categoryIds.size() > 0) {
+        if (categoryIds.size() == 1 && categoryIds.get(0).equals(Constants.CATEGORY_INTRO_MESSAGE)) {
+            // The intro message has no prompts; only a category. The intro message is handled specially
+            // in the "control.txt", and is played right after "Welcome to the Talking Book!".
+            this.categoryId = categoryIds.get(0);
+
+        } else if (categoryIds.size() > 0) {
             // Where to look for category prompts.
             File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
             String languagesPath =

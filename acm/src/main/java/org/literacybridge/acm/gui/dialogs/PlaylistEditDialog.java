@@ -118,13 +118,13 @@ public final class PlaylistEditDialog extends JDialog {
         Box hbox = Box.createHorizontalBox();
 
         moveUpButton = new JButton("Move Up");
-        moveUpButton.addActionListener(actionEvent -> listModel.moveUp(itemsList.getSelectedIndex()));
+        moveUpButton.addActionListener(actionEvent -> onMoveUp());
 
         removeButton = new JButton("Remove Item");
         removeButton.addActionListener(actionEvent -> listModel.remove(itemsList.getSelectedIndex()));
 
         moveDownButton = new JButton("Move Down");
-        moveDownButton.addActionListener(actionEvent -> listModel.moveDown(itemsList.getSelectedIndex()));
+        moveDownButton.addActionListener(actionEvent -> onMoveDown());
 
         hbox.add(moveUpButton);
         hbox.add(Box.createHorizontalStrut(5));
@@ -134,6 +134,18 @@ public final class PlaylistEditDialog extends JDialog {
         hbox.add(Box.createHorizontalGlue());
         hbox.setBorder(new EmptyBorder(4, 10, 4, 10));
         return hbox;
+    }
+
+    private void onMoveUp() {
+        int ix = itemsList.getSelectedIndex();
+        listModel.moveUp(ix);
+        itemsList.ensureIndexIsVisible(ix-1);
+    }
+
+    private void onMoveDown() {
+        int ix = itemsList.getSelectedIndex();
+        listModel.moveDown(ix);
+        itemsList.ensureIndexIsVisible(ix+1);
     }
 
     /**
@@ -316,7 +328,7 @@ public final class PlaylistEditDialog extends JDialog {
             boolean isSelected,
             boolean cellHasFocus)
         {
-            String label = labelsMap.get(value.toString());
+            String label = String.format("%d: %s", index+1, labelsMap.get(value.toString()));
             Component comp = super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
             if (isSelected)
                 comp.setBackground(AcmAssistantPage.bgSelectionColor);

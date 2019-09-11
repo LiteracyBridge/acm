@@ -65,7 +65,7 @@ public abstract class AssistantPage<Context> extends JPanel {
     protected static void setComboWidth(JComboBox cb, String string) {
         setComboWidth(cb, Collections.singleton(string));
     }
-    protected static void setComboWidth(JComboBox cb, Collection<String> strings) {
+    private static void setComboWidth(JComboBox cb, Collection<String> strings) {
         int textWidth = 0;
         for (String string : strings) {
             textWidth = Math.max(textWidth, new JLabel("").getFontMetrics(cb.getFont()).stringWidth(string));
@@ -77,7 +77,7 @@ public abstract class AssistantPage<Context> extends JPanel {
 
     private static final Border greenBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
     public static final Border redBorder = new RoundedLineBorder(Color.RED, 1, 8);
-    public static final Border blankBorder = new RoundedLineBorder(new Color(0, 0, 0, 0), 1, 4);
+    protected static final Border blankBorder = new RoundedLineBorder(new Color(0, 0, 0, 0), 1, 4);
     private static final Border parameterBorder = new CompoundBorder(greenBorder, new EmptyBorder(2,3,2,4));
 
     protected static JLabel makeBoxedLabel() { return makeBoxedLabel(null); }
@@ -120,6 +120,7 @@ public abstract class AssistantPage<Context> extends JPanel {
         }
 
         public List<SizingParams> forColumns(Integer... columnNos) {
+            @SuppressWarnings("UnnecessaryLocalVariable")
             List<SizingParams> params = Arrays.stream(columnNos)
                 .map(n -> new SizingParams(n, minPadding, preferredPadding, maxPadding))
                 .collect(Collectors.toList());
@@ -191,6 +192,7 @@ public abstract class AssistantPage<Context> extends JPanel {
      */
     public static GridBagConstraints getGBC() {
         Insets insets = new Insets(0,0,15,0);
+        @SuppressWarnings("UnnecessaryLocalVariable")
         GridBagConstraints gbc = new GridBagConstraints(0,
             GridBagConstraints.RELATIVE,
             1,
@@ -207,7 +209,7 @@ public abstract class AssistantPage<Context> extends JPanel {
 
     protected MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
 
-    public static DateTimeFormatter localDateTimeFormatter =
+    protected static DateTimeFormatter localDateTimeFormatter =
             DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withZone(ZoneId.systemDefault());
 
     private final Assistant.PageHelper<Context> pageHelper;
@@ -275,7 +277,7 @@ public abstract class AssistantPage<Context> extends JPanel {
         if (matcher.matches() && matcher.groupCount()==1) {
             return matcher.group(1).replaceAll("_", " ");
         }
-        return null;
+        return decoratedName;
     }
 
     /**

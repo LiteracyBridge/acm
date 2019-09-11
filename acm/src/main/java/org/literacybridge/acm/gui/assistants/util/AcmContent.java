@@ -31,13 +31,21 @@ public class AcmContent {
             return null;
         }
 
-        public List<LanguageNode> getLanguages() {
+        public List<LanguageNode> getLanguageNodes() {
             if (super.children == null) {
                 return new ArrayList<>();
             } else {
                 //noinspection unchecked
                 return (List<LanguageNode>)super.children;
             }
+        }
+
+        public LanguageNode getLanguageNode(String languagecode) {
+            for (LanguageNode child : getLanguageNodes()) {
+                if (languagecode.equalsIgnoreCase(child.getLanguageCode()))
+                    return child;
+            }
+            return null;
         }
     }
 
@@ -73,7 +81,7 @@ public class AcmContent {
             return null;
         }
 
-        public List<PlaylistNode> getPlaylists() {
+        public List<PlaylistNode> getPlaylistNodes() {
             if (super.children == null) {
                 return new ArrayList<>();
             } else {
@@ -109,7 +117,7 @@ public class AcmContent {
             return (Enumeration<AudioItemNode>)super.children();
         }
 
-        public List<AudioItemNode> getAudioItems() {
+        public List<AudioItemNode> getAudioItemNodes() {
             if (super.children == null) {
                 return new ArrayList<>();
             } else {

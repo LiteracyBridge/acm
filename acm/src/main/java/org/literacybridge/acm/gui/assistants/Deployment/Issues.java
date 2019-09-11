@@ -29,13 +29,15 @@ public class Issues {
     }
 
     public enum Area {
+        FIRMWARE("Firmware"),
         LANGUAGES("Languages"),
+        INTRO_MESSAGE("Intro Message"),
         CONTENT("Content"),
         PLAYLISTS("Playlists"),
         CATEGORY_PROMPTS("Prompts"),
         SYSTEM_PROMPTS("Sys Prompts"),
         CUSTOM_GREETINGS("Greetings"),
-        FIRMWARE("Firmware");
+        ;
 
         String displayName;
 
