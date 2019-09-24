@@ -281,6 +281,14 @@ public class FeedbackImporter {
    */
   private void openFeedbackProjectDb(File projectDir, File updateDir)
           throws Exception {
+    if (params.importACM != null) {
+      if (!ACMConfiguration.getInstance().setCurrentDB(params.importACM)) {
+        AccessControl.AccessStatus status = ACMConfiguration.getInstance().getCurrentDB().getDbAccessStatus();
+        throw new Exception(String.format("Couldn't open or create DB '%s': %s", params.importACM, status));
+      }
+      return;
+    }
+
     // Pattern to match & remove XYZ- at the start of a string.
     Pattern updatePattern = Pattern.compile("^(\\p{Alpha}+-)(.*)$");
 
@@ -444,6 +452,9 @@ public class FeedbackImporter {
    * @return True if the update should be skipped, False if it should be imported.
    */
   private boolean shouldUpdateBeSkipped(String project, String deployment) {
+    if (params.importACM != null) {
+      return false;
+    }
     Whitelister whitelister = getDeploymentsWhitelistForProject(project);
     // Function is "isSkipped", opposite of "isIncluded"
     return ! whitelister.isIncluded(deployment);
@@ -697,6 +708,9 @@ public class FeedbackImporter {
 
     @Option(name="--report", usage="Generate a report to this file. If *.html, format as HTML.")
     File report;
+
+    @Option(name="--ACM", usage="Force all input to be imported here.")
+    String importACM;
 
     @Argument(usage="Directory(ies) to import.")
     List<String> dirNames;
