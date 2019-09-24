@@ -1,5 +1,5 @@
 taxonomy:
-  revision: 61
+  revision: 62
   categories:
     '0' : 
       name: Other Messages
@@ -576,6 +576,39 @@ taxonomy:
           children:
             '90-29-1':
               name: Social Needs
+
+        '90-30':
+          name: Headporters
+          children:
+            '90-30-1':
+              name: Effects on Education
+            '90-30-2':
+              name: Causes
+        '90-31':
+          name: Illegal Mining
+          children:
+            '90-31-1':
+              name: Effects on Education
+            '90-31-2':
+              name: Causes
+        '90-32':
+          name: Maternal Depression
+          children:
+            '90-32-1':
+              name: Effects
+            '90-32-2': 
+              name: Causes
+        '90-33':
+          name: Menstrual Hygiene
+        '90-34':
+          name: Sexual abuse
+          children:
+            '90-34-1':
+              name: Abuse in School
+            '90-34-2':
+              name: Abuse at Home
+        '90-35':
+          name: Community Development
 
         '90-100':
           name: ANC
