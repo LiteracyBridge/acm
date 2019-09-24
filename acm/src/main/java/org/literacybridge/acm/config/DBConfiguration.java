@@ -5,13 +5,7 @@ import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.CachingRepository;
 import org.literacybridge.acm.repository.FileSystemGarbageCollector;
 import org.literacybridge.acm.repository.FileSystemRepository;
-import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.LuceneMetadataStore;
-import org.literacybridge.acm.store.MetadataStore;
-import org.literacybridge.acm.store.MetadataValue;
-import org.literacybridge.acm.store.RFC3066LanguageCode;
-import org.literacybridge.acm.store.Taxonomy;
-import org.literacybridge.acm.store.Transaction;
+import org.literacybridge.acm.store.*;
 
 import javax.swing.*;
 import java.io.BufferedInputStream;
@@ -335,7 +329,7 @@ public class DBConfiguration { //extends Properties {
           parseLanguageLabels();
 
           fixupLanguageCodes();
-
+          
           initialized = true;
       }
     }
@@ -658,7 +652,46 @@ public class DBConfiguration { //extends Properties {
         setRepository(new AudioItemRepository(cachingRepository));
     }
 
-    
+
+//    private void fixupCategories() {
+//        long timer = -System.currentTimeMillis();
+//
+//        Category genHealth = this.store.getCategory("2-0");
+//
+//        Transaction transaction = this.store.newTransaction();
+//        Collection<AudioItem> items = this.store.getAudioItems();
+//        int itemsFixed = 0;
+//
+//        boolean success = false;
+//        try {
+//            for (AudioItem audioItem : items) {
+//                if (audioItem.getCategoryList().contains(genHealth)) {
+//                    audioItem.removeCategory(genHealth);
+//                    transaction.add(audioItem);
+//                    itemsFixed++;
+//                }
+//            }
+//            transaction.commit();
+//            success = true;
+//        } catch (IOException e1) {
+//            e1.printStackTrace();
+//        } finally {
+//            if (!success) {
+//                try {
+//                    transaction.rollback();
+//                } catch (IOException e) {
+//                    LOG.log(Level.SEVERE, "Unable to rollback transaction.", e);
+//                }
+//            }
+//        }
+//
+//        timer += System.currentTimeMillis();
+//        // If we did anything, or if the delay was perceptable (1/10th second), show the time.
+//        if (itemsFixed > 0 || timer > 100) {
+//            System.out.printf("Took %d ms to fix %d categories%n", timer, itemsFixed);
+//        }
+//    }
+
     /**
      * A number of years ago (I write this on 2018-05-10), we needed a new language, Tumu Sisaala.
      * The person implementing the language did not know the ISO 639-3 code, nor did he know that
