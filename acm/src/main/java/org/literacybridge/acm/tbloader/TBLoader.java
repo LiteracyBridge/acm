@@ -165,7 +165,7 @@ public class TBLoader extends JFrame {
         @Argument(usage = "Project or ACM name to export.", index = 0, required = true, metaVar = "ACM")
         String project;
 
-        @Argument(usage = "Serial number prefix, default '-b'.", index = 1, metaVar = "SRN_PREFIX")
+        @Argument(usage = "Serial number prefix, default 'B-'.", index = 1, metaVar = "SRN_PREFIX")
         String srnPrefix = null;
     }
 
@@ -227,11 +227,11 @@ public class TBLoader extends JFrame {
         applicationWindow = this;
 
         if (tbArgs.srnPrefix != null)
-            srnPrefix = tbArgs.srnPrefix.toLowerCase();
+            srnPrefix = tbArgs.srnPrefix.toUpperCase();
         else if (tbArgs.oldTbs)
-            srnPrefix = "a-";
+            srnPrefix = "A-";
         else
-            srnPrefix = "b-"; // for latest Talking Book hardware
+            srnPrefix = "B-"; // for latest Talking Book hardware
 
         this.deploymentChoice = tbArgs.choices;
         this.allowPackageChoice = tbArgs.choices;

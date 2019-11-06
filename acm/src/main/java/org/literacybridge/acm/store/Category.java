@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -28,6 +29,9 @@ public class Category implements Cloneable {
         public Category build() {
             if (this.id == null) throw new IllegalArgumentException("Category ID must be given");
             if (this.name == null) throw new IllegalArgumentException("Category Name must be given");
+            if (this.aka != null) {
+                this.aka = this.aka.stream().map(String::toLowerCase).collect(Collectors.toSet());
+            }
             return new Category(this);
         }
         public CategoryBuilder withName(String name) {this.name = name; return this;}
