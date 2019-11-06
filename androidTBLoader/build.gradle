@@ -70,11 +70,11 @@ android {
             storePassword keystoreProperties['storePassword']
         }
     }
-    compileSdkVersion 27
+    compileSdkVersion 28
     defaultConfig {
         applicationId "org.literacybridge.androidtbloader"
         minSdkVersion 25
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode code
         versionName "1.1.0 (${code})"
         buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"    }
@@ -86,8 +86,8 @@ android {
     }
 
         compileOptions {
-            sourceCompatibility 1.8
-            targetCompatibility 1.8
+            sourceCompatibility JavaVersion.VERSION_1_8
+            targetCompatibility JavaVersion.VERSION_1_8
         }
 
 }
@@ -99,9 +99,7 @@ clean.doLast  {
 
 dependencies {
     implementation project(':core')
-
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-
     // These version numbers are lifted from a sample on the android site.
     // If you find docs on a better way to pick the versions, put a link
     // to the URL here.
@@ -112,6 +110,5 @@ dependencies {
     implementation files('libs/json_simple-1.1.jar')
     implementation 'com.amazonaws:aws-android-sdk-s3:2.2.+'
     implementation 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.3.2'
-
     testImplementation 'junit:junit:4.12'
 }
