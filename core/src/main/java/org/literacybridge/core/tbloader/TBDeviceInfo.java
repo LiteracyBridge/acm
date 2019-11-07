@@ -1,5 +1,6 @@
 package org.literacybridge.core.tbloader;
 
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.core.fs.TbFile;
 
 import java.io.BufferedReader;
@@ -10,6 +11,8 @@ import java.io.InputStreamReader;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.literacybridge.core.tbloader.TBLoaderConstants.BINARY_STATS_ALTERNATIVE_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.BINARY_STATS_PATH;
@@ -214,6 +217,22 @@ public final class TBDeviceInfo {
                 } else {
                     serialNumber = getSerialNumberFromFileSystem(tbRoot);
                     src = "marker";
+                }
+            }
+            if (serialNumber.equalsIgnoreCase(UNKNOWN) && StringUtils.isNotEmpty(getLabel())) {
+                try {
+                    Pattern pattern = Pattern.compile("(?i)^([ab]-[0-9a-f]{8}).*");
+                    Matcher matcher = pattern.matcher(getLabel());
+                    if (matcher.matches()) {
+                        String labelSn = matcher.group(1);
+                        if (isSerialNumberFormatGood(tbPrefix, labelSn)
+                            && isSerialNumberFormatGood2(labelSn)) {
+                            serialNumber = labelSn;
+                            src = "label";
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // Continue with 'UNKNOWN'.
                 }
             }
             serialNumber = serialNumber.toUpperCase();
