@@ -826,7 +826,7 @@ public class AudioItemRenameDialog extends JDialog {
                 transaction.add(item);
             });
         }
-        if (addToPlaylist.isSelected()) {
+        if (addToPlaylist != null && addToPlaylist.isSelected()) {
             getPlaylistsForItemWithTitle(toRename, newTitle)
                 .forEach(triple -> {
                     AudioItem item = triple.getLeft();
