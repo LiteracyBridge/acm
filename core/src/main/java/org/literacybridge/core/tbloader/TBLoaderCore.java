@@ -55,6 +55,7 @@ import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateSyst
 import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.OPERATIONAL_DATA;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.SYS_DATA_TXT;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LANGUAGES_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_MESSAGES_PATH;
@@ -185,7 +186,7 @@ public class TBLoaderCore {
     }
 
     // The Talking Book is hard coded to expect the MS-DOS line ending.
-    static final String MSDOS_LINE_ENDING = new String(new byte[] { 0x0d, 0x0a });
+    private static final String MSDOS_LINE_ENDING = new String(new byte[] { 0x0d, 0x0a });
 
     public static class Builder {
         private TBLoaderConfig mTbLoaderConfig;
@@ -302,6 +303,8 @@ public class TBLoaderCore {
     private boolean mForceFirmware;
     private TbFile mDeploymentDirectory;
     private ProgressListener mProgressListener;
+
+    private boolean mClearedFlashStatistics;
 
     // For tracking the progress of individual update steps.
     private ProgressListener.Steps mCurrentStep;
@@ -456,7 +459,7 @@ public class TBLoaderCore {
                     .toUpperCase() + ",");
             bw.write(mLocation.toUpperCase() + ",");
             bw.write(action + ",");
-            bw.write(Integer.toString(durationSeconds) + ",");
+            bw.write(durationSeconds + ",");
             bw.write(mTbDeviceInfo.getSerialNumber().toUpperCase() + ",");
             bw.write(mStatsOnly?",":mNewDeploymentInfo.getDeploymentName().toUpperCase() + ",");
             bw.write(mStatsOnly?",":mNewDeploymentInfo.getPackageName().toUpperCase() + ",");
@@ -618,7 +621,7 @@ public class TBLoaderCore {
                     .put("flash_applied", countApplied)
                     .put("flash_useless", countUseless);
 
-                final String N[] = {"0", "1", "2", "3", "4"};
+                final String[] N = {"0", "1", "2", "3", "4"};
                 for (int r = 0; r < numRotations; r++) {
                     statsInfo
                         .put("flash_seconds_"+N[r], mTtbFlashData.totalPlayedSecondsPerRotation(r))
@@ -687,7 +690,8 @@ public class TBLoaderCore {
      * go wrong.
      */
     public static class Result {
-        public enum FORMAT_OP {noFormat, succeeded, failed};
+        public enum FORMAT_OP {noFormat, succeeded, failed}
+
         public final boolean gotStatistics;
         public final boolean corrupted;
         public final FORMAT_OP reformatOp;
@@ -760,6 +764,7 @@ public class TBLoaderCore {
         };
 
         mUpdateStartTime = System.nanoTime();
+        mClearedFlashStatistics = false;
 
         // Get the roots for the Talking Book, the Temp directory, and the Staging Directory.
         mTalkingBookRoot = mTbDeviceInfo.getRootFile();
@@ -794,8 +799,6 @@ public class TBLoaderCore {
 
             clearFeedbackCategories();
 
-            zipAndCopyFiles(projectCollectedData);
-
             gotStatistics = true;
         } catch (Exception e) {
             LOG.log(Level.WARNING, "TBL!: Unable to get stats:", e);
@@ -827,18 +830,29 @@ public class TBLoaderCore {
                 listDeviceFilesPostUpdate();
 
                 delayForAndroid();
-
             }
 
-            writeTbLog(gotStatistics, verified);
+        } catch (Throwable e) {
+            LOG.log(Level.WARNING, "TBL!: Unable to update Talking Book:", e);
+            mProgressListener.log("Unable to update Talking Book");
+            mProgressListener.log(getStackTrace(e));
+        }
+
+        // Must not write to the Talking Book after this point.
+        try {
+            String action = getActionString(gotStatistics, verified);
+
+            zipAndCopyFiles(projectCollectedData, action);
+
+            writeTbLog(action);
 
             if (!mTbHasDiskCorruption) {
                 disconnectDevice();
             }
 
         } catch (Throwable e) {
-            LOG.log(Level.WARNING, "TBL!: Unable to update Talking Book:", e);
-            mProgressListener.log("Unable to update Talking Book");
+            LOG.log(Level.WARNING, "TBL!: Unable to zip Talking Book statistics:", e);
+            mProgressListener.log("Unable to zip Talking Book statistics");
             mProgressListener.log(getStackTrace(e));
         }
 
@@ -1094,26 +1108,6 @@ public class TBLoaderCore {
 
         mStepBytesCount += TbFile.copyDir(mTalkingBookRoot, mTalkingBookDataRoot, copyFilesFilter, mCopyListener);
 
-        // Create statsCollected.properties in the mTalkingBookDataRoot directory.
-        // Include a newly allocated UUID, which will be written to tbData.log,
-        // action, tbcdid, username, update_date_time, location, coordinates (if we have them)
-        // Objective is to leave the mTalkingBookDataRoot with everythign known about the stats
-        // collection, so that it can be processed without needing tbData.
-
-        // 'properties' format file, with useful information for statistics processing.
-        PropsWriter props = new PropsWriter();
-        props
-            .append(TBLoaderConstants.ACTION_PROPERTY, mStatsOnly?"stats":"update")
-            .append(TBLoaderConstants.TIMESTAMP_PROPERTY, mUpdateTimestampISO)
-            .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserName())
-            .append(TBLoaderConstants.TBCDID_PROPERTY, mTbLoaderConfig.getTbLoaderId())
-            .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation)
-            .append(TBLoaderConstants.STATS_COLLECTED_UUID_PROPERTY, mStatsCollectedUUID);
-        if (mCoordinates != null && mCoordinates.length() > 0) {
-            props.append(TBLoaderConstants.COORDINATES_PROPERTY, mCoordinates);
-        }
-        eraseAndOverwriteFile(mTalkingBookDataRoot.open(TBLoaderConstants.STATS_COLLECTED_PROPERTIES_NAME), props.toString());
-
         finishStep();
     }
 
@@ -1158,7 +1152,7 @@ public class TBLoaderCore {
     /**
      * Erases files from the log, log-archive, and statistics directories on the Talking Book.
      */
-    private void clearStatistics() {
+    private void clearStatistics() throws IOException {
         startStep(clearStats);
 
         // rem Deleting Usage Statistics
@@ -1171,6 +1165,16 @@ public class TBLoaderCore {
         mTalkingBookRoot.open("log").delete(contentRecursive);
         mTalkingBookRoot.open("log-archive").delete(contentRecursive);
         mTalkingBookRoot.open("statistics").delete(contentRecursive);
+
+        // If there is a system/sysdata.txt, copy it to the root. This will trigger the TB
+        // to re-initialize the flash, and as a side effect, clear the flash statistics.
+        TbFile system = mTalkingBookRoot.open("system");
+        TbFile sysdata = system.open(SYS_DATA_TXT);
+        if (system.isDirectory() && sysdata.exists()) {
+            TbFile rootSysData = mTalkingBookRoot.open(SYS_DATA_TXT);
+            TbFile.copy(sysdata, rootSysData);
+            mClearedFlashStatistics = true;
+        }
 
         finishStep();
     }
@@ -1236,10 +1240,33 @@ public class TBLoaderCore {
      * Zips the statistics, logs, and other files, and copies them to the collected data directory.
      *
      * @param projectCollectedData The files will be zipped into a file in this directory.
+     * @param action
      * @throws IOException If the .zip can't be created.
      */
-    private void zipAndCopyFiles(TbFile projectCollectedData) throws IOException {
+    private void zipAndCopyFiles(TbFile projectCollectedData, String action) throws IOException {
         startStep(copyStatsAndFiles);
+
+        // Create statsCollected.properties in the mTalkingBookDataRoot directory.
+        // Include a newly allocated UUID, which will be written to tbData.log,
+        // action, tbcdid, username, update_date_time, location, coordinates (if we have them)
+        // Objective is to leave the mTalkingBookDataRoot with everythign known about the stats
+        // collection, so that it can be processed without needing tbData.
+
+        // 'properties' format file, with useful information for statistics processing.
+        PropsWriter props = new PropsWriter();
+        props
+            .append(TBLoaderConstants.ACTION_PROPERTY, mStatsOnly?"stats":"update")
+            .append(TBLoaderConstants.CLEARED_FLASH_PROPERTY, mClearedFlashStatistics)
+            .append(TBLoaderConstants.TB_LOG_ACTION_PROPERTY, action)
+            .append(TBLoaderConstants.TIMESTAMP_PROPERTY, mUpdateTimestampISO)
+            .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserName())
+            .append(TBLoaderConstants.TBCDID_PROPERTY, mTbLoaderConfig.getTbLoaderId())
+            .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation)
+            .append(TBLoaderConstants.STATS_COLLECTED_UUID_PROPERTY, mStatsCollectedUUID);
+        if (mCoordinates != null && mCoordinates.length() > 0) {
+            props.append(TBLoaderConstants.COORDINATES_PROPERTY, mCoordinates);
+        }
+        eraseAndOverwriteFile(mTalkingBookDataRoot.open(TBLoaderConstants.STATS_COLLECTED_PROPERTIES_NAME), props.toString());
 
         // Same name and location as the tempDirectory, but a file with a .zip extension.
         TbFile tempZip = mTalkingBookDataRoot.getParent().open(mCollectionTempName + ".zip");
@@ -1248,10 +1275,10 @@ public class TBLoaderCore {
         File tempZipFile = new File(tempZip.getAbsolutePath());
         ZipUnzip.zip(sourceFilesDir, tempZipFile, true);
 
-        // Maybe
-        TbFile outputZip = projectCollectedData
-                .open(mTalkingBookDataZipPath);
+        // Where the .zip is supposed to go.
+        TbFile outputZip = projectCollectedData.open(mTalkingBookDataZipPath);
 
+        // Make the directory to hold the .zip, if necessary, then put it there.
         outputZip.getParent().mkdirs();
         mStepBytesCount += TbFile.copy(tempZip, outputZip);
 
@@ -1435,6 +1462,8 @@ public class TBLoaderCore {
                 String.format("DATE:%s%s", dateInMonth, MSDOS_LINE_ENDING) +
                 String.format("PROJECT:%s%s", projectName, MSDOS_LINE_ENDING);
         eraseAndOverwriteFile(mTalkingBookRoot.open(TBLoaderConstants.SYS_DATA_TXT), sysDataTxt);
+        // A side effect of the sysdata.txt file is to clear the flash statistics.
+        mClearedFlashStatistics = true;
         eraseAndOverwriteFile(mTalkingBookRoot.open("inspect"), ".");
         eraseAndOverwriteFile(mTalkingBookRoot.open("0h1m0s.rtc"), ".");
 
@@ -1586,12 +1615,12 @@ public class TBLoaderCore {
     }
 
     /**
-     * Writes the TB data log file.
-     *
-     * @param gotStatistics Did we successfully collect stats from the TB?
-     * @param verified Did the Talking Book seem good after the update?
+     * Determines the string to log for "action" in the tb log file.
+     * @param gotStatistics Whether statistics were successfully retrieved.
+     * @param verified Whether the TB was successfully verified after deployment.
+     * @return the string best describing the action.
      */
-    private void writeTbLog(boolean gotStatistics, boolean verified) throws IOException {
+    private String getActionString(boolean gotStatistics, boolean verified) {
         String action;
         if (mStatsOnly) {
             if (gotStatistics) {
@@ -1613,10 +1642,17 @@ public class TBLoaderCore {
                 action += "-stats-error";
             }
         }
+        return action;
+    }
 
+    /**
+     * Writes the TB data log file.
+     *
+     * @param action The string describing the action.
+     */
+    private void writeTbLog(String action) throws IOException {
         mProgressListener.log("Logging TB data");
-        logTBData(action,
-            getDurationInSeconds(mUpdateStartTime));
+        logTBData(action, getDurationInSeconds(mUpdateStartTime));
     }
 
     /**
@@ -1724,10 +1760,9 @@ public class TBLoaderCore {
         if (durationSeconds > 60) {
             durationMinutes = durationSeconds / 60;
             durationSeconds -= durationMinutes * 60;
-            elapsedTime = Integer.toString(durationMinutes) + " minutes " + Integer.toString(
-                    durationSeconds) + " seconds";
+            elapsedTime = durationMinutes + " minutes " + durationSeconds + " seconds";
         } else
-            elapsedTime = Integer.toString(durationSeconds) + " seconds";
+            elapsedTime = durationSeconds + " seconds";
         return elapsedTime;
     }
 

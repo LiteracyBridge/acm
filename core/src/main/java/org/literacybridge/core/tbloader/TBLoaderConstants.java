@@ -63,7 +63,9 @@ public class TBLoaderConstants {
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
     public static final DateFormat ISO8601 = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
 
-    public static final String ACTION_PROPERTY = "ACTION";
+    public static final String ACTION_PROPERTY = "ACTION";      // The action that was requested.
+    public static final String CLEARED_FLASH_PROPERTY = "CLEARED_FLASH";
+    public static final String TB_LOG_ACTION_PROPERTY = "TB_LOG_ACTION"; // The action as it was logged in the tb log file.
     public static final String PROJECT_PROPERTY = "PROJECT";
     public static final String DEPLOYMENT_PROPERTY = "DEPLOYMENT";
     public static final String PACKAGE_PROPERTY = "PACKAGE";
