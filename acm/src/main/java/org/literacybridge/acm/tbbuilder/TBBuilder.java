@@ -869,14 +869,24 @@ public class TBBuilder {
         }
     }
 
+    /**
+     * Given a TB-Loader "published" directory and a Deployment name, find the next revision
+     * for the Deployment, and create a .rev file with that revision. Return the revision.
+     * @param publishTbLoadersDir The directory in which the deployments are published.
+     * @param deployment The Deployment (name) for which we want the next revision suffix.
+     * @return the revision suffix as a String. Like "a", "b"... "aa"... "aaaaba", etc
+     * @throws Exception if the new .rev file can't be created.
+     */
     static String getNextDeploymentRevision(File publishTbLoadersDir, final String deployment) throws Exception {
-        String revision = "a";
+        String revision = "a"; // If we don't find anything higher, start with 'a'.
 
         String highestRevision = "";
+        // Find all the revisions of the given deployment.
         String[] fileNames = publishTbLoadersDir.list((dir, name) ->
             name.toLowerCase().startsWith(deployment.toLowerCase()));
         if (fileNames != null && fileNames.length > 0) {
             for (String fileName : fileNames) {
+                // Extract just the revision string.
                 String fileRevision = "";
                 Matcher deplMatcher = DEPLOYMENT_REVISION_PATTERN.matcher(fileName);
                 if (deplMatcher.matches()) {
