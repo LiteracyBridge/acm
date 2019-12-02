@@ -131,9 +131,13 @@ public class DBExporter {
     ACMConfiguration.initialize(params);
 
     for (int i = 1; i < argCount; i++) {
-      String prefix = args[i].substring(TBBuilder.ACM_PREFIX.length()) + "-";
-      DBExporter exporter = new DBExporter(args[i], exportDir, prefix);
-      exporter.export();
+      try {
+        String prefix = args[i].substring(TBBuilder.ACM_PREFIX.length()) + "-";
+        DBExporter exporter = new DBExporter(args[i], exportDir, prefix);
+        exporter.export();
+      } catch (IllegalArgumentException ex) {
+        System.out.println(String.format("Failed to export %s: %s", args[i], ex.getMessage()));
+      }
     }
   }
 }
