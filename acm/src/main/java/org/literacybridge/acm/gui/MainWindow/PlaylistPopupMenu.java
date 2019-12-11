@@ -100,21 +100,25 @@ class PlaylistPopupMenu extends JPopupMenu {
         if (n == 1) {
             try {
                 for (PlaylistLabel selectedPlaylist : selectedPlaylists) {
+                    Playlist playlist = selectedPlaylist.getPlaylist();
                     try {
                         List<String> audioItems = Lists.newLinkedList(selectedPlaylist.getPlaylist()
                             .getAudioItemList());
-                        for (String audioItemUuid : audioItems) {
+                        for (String audioItemId : audioItems) {
                             AudioItem audioItem = ACMConfiguration.getInstance()
                                 .getCurrentDB()
                                 .getMetadataStore()
-                                .getAudioItem(audioItemUuid);
-                            audioItem.removePlaylist(selectedPlaylist.getPlaylist());
-                            ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(audioItem);
+                                .getAudioItem(audioItemId);
+                            if (audioItem != null && audioItem.hasPlaylist(playlist)) {
+                                audioItem.removePlaylist(playlist);
+                                ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(audioItem);
+                            }
+                            playlist.removeAudioItem(audioItemId);
                         }
                         ACMConfiguration.getInstance()
                             .getCurrentDB()
                             .getMetadataStore()
-                            .deletePlaylist(selectedPlaylist.getPlaylist().getId());
+                            .deletePlaylist(playlist.getId());
                         ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().commit(selectedPlaylist.getPlaylist());
                     } catch (Exception ex) {
                         LOG.log(Level.WARNING,
