@@ -26,7 +26,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:layout_marginLeft="20dp"
+        android:layout_marginStart="20dp"
         android:layout_marginTop="10dp"
         android:orientation="horizontal">
 
@@ -36,17 +36,8 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
-            android:layout_marginRight="3dp"
-            android:text="@string/main_greeting_label"
-            android:textSize="24sp"/>
-
-        <TextView
-            android:id="@+id/main_greeting_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_toRightOf="@+id/main_greeting_label"
-            android:text="Friend!"
+            android:layout_marginEnd="3dp"
+            android:text="@string/main_greeting_default"
             android:textSize="24sp"/>
 
         <TextView
@@ -89,8 +80,7 @@
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_toEndOf="@+id/main_manage_content_button"
-            android:layout_weight="1"
-            android:paddingLeft="20dp"
+            android:paddingStart="20dp"
             android:text="@string/main_label_manage_content"
             android:textAlignment="viewStart"
             android:textSize="18sp"
@@ -126,8 +116,7 @@
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_toEndOf="@+id/main_checkin_button"
-            android:layout_weight="1"
-            android:paddingLeft="20dp"
+            android:paddingStart="20dp"
             android:text="@string/main_label_check_in"
             android:textAlignment="viewStart"
             android:textSize="18sp"
@@ -162,9 +151,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
-            android:layout_toRightOf="@+id/main_update_talking_books_button"
-            android:layout_weight="1"
-            android:paddingLeft="20dp"
+            android:layout_toEndOf="@+id/main_update_talking_books_button"
+            android:paddingStart="20dp"
             android:text="@string/main_label_update_talking_books"
             android:textAlignment="viewEnd"
             android:textSize="18sp"/>
@@ -199,9 +187,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
-            android:layout_toRightOf="@+id/main_get_stats_talking_books_button"
-            android:layout_weight="1"
-            android:paddingLeft="20dp"
+            android:layout_toEndOf="@+id/main_get_stats_talking_books_button"
+            android:paddingStart="20dp"
             android:text="@string/main_label_get_statistics_only"
             android:textAlignment="viewEnd"
             android:textSize="18sp" />

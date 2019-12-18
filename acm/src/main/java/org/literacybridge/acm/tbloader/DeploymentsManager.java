@@ -1,18 +1,21 @@
 package org.literacybridge.acm.tbloader;
 
 import org.apache.commons.io.FilenameUtils;
+import org.literacybridge.acm.cloud.Authenticator;
+import org.literacybridge.acm.cloud.ProjectsHelper;
+import org.literacybridge.acm.cloud.ProjectsHelper.DeploymentInfo;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.fs.ZipUnzip;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -33,8 +36,17 @@ class DeploymentsManager {
 
     private State state = State.Unset;
 
+    // TODO: Remove when Dropbox completely de-implemented.
+    private boolean useDropboxDeployments = false;
     DeploymentsManager(String project) {
+        this(project, false);
+    }
+
+    // TODO: Remove 'useDropbox' hwen Dropbox completely de-implemented
+    DeploymentsManager(String project, boolean useDropbox) {
         this.project = project;
+        this.useDropboxDeployments = useDropbox;
+        // ~/LiteracyBridge/TB-Loaders/{project}
         localProjectDir = ACMConfiguration.getInstance().getLocalTbLoaderDirFor(project);
     }
 
@@ -47,7 +59,7 @@ class DeploymentsManager {
             AvailableDeployments ad = getAvailableDeployments();
             LocalDeployment ld = getLocalDeployment();
 
-            if (ad.isMissingLatest) {
+            if (ad.isMissingLatest()) {
                 state = State.Missing_Latest;
             } else if (ld.errorMessage != null) {
                 state = State.Bad_Local;
@@ -55,7 +67,9 @@ class DeploymentsManager {
                 state = State.No_Deployment;
             } else if (ld.isUnpublished) {
                 state = State.OK_Unpublished;
-            } else if (ld.localRevision.equalsIgnoreCase(ad.latestRevision)) {
+            } else if (ad.isOffline()) {
+                state = State.OK_Cached;
+            } else if (ld.localRevision.equalsIgnoreCase(ad.getCurrentRevId())) {
                 state = State.OK_Latest;
             } else {
                 state = State.Not_Latest;
@@ -150,110 +164,26 @@ class DeploymentsManager {
     }
 
     /**
-     * Examines the TB-Loaders/published directory to find the deployments there. For every
+     * Examines S3 to find the deployments there. For every
      * deployment found, keeps track of the highest suffix (-a, -b, etc), and keeps track
      * of any .rev files found. (There should be only one.)
      * @return an AvailableDeployments object, with a map of deployment to highest revision, and
      * the latest published deployment.
      */
     private AvailableDeployments findAvailableDeployments() {
-        // Map deployment name (w/o the -x suffix) to File for the directory.
-        Map<String, File> orderedDeployments = new LinkedHashMap<>();
-        String latestPublishedRevMarker = null;
-        boolean multiPublishedRev = false;
-        String ACMName = ACMConfiguration.cannonicalAcmDirectoryName(project);
-        File publishedDir = new File(ACMConfiguration.getInstance().getTbLoaderDirFor(ACMName),
-            "published");
-        File[] publishedFiles = publishedDir.listFiles();
-        if (publishedFiles != null) {
-            Map<String, File> directoriesByDeployment = new HashMap<>();
-            // Get the deployments, and their latest versions (based on the -x suffix).
-            for (File pf: publishedFiles) {
-                // Only consider non-hidden files and directories.
-                if (!pf.isHidden() && !pf.getName().startsWith(".")) {
-                    // Expecting to see at most one .rev file.
-                    if (pf.isFile() && pf.getName().endsWith(".rev")) {
-                        // Found the marker for the most recent TB-Builder PUBLISH. It SHOULD match
-                        // the name of the file ~/LiteracyBridge/TB-Loaders/{project}/*.rev
-                        multiPublishedRev = latestPublishedRevMarker != null;
-                        latestPublishedRevMarker = FilenameUtils.removeExtension(pf.getName());
-
-                    } else if (pf.isDirectory()) {
-                        Matcher deplMatcher = DEPLOYMENT_REVISION_PATTERN.matcher(pf.getName());
-                        if (deplMatcher.matches()) {
-                            // Found a published directory. Ensure it contains the expected zip file.
-                            File zip = new File(pf, "content-" + pf.getName() + ".zip");
-                            if (zip.exists() && zip.isFile()) {
-                                // Based on the -x suffix, keep the latest published instance of this deployment.
-                                String deployment = deplMatcher.group(1);
-                                if (directoriesByDeployment.containsKey(deployment)) {
-                                    // Compare file names. If new name is greater, store file.
-                                    int cmp = compareByRevision(pf.getName(), directoriesByDeployment.get(deployment).getName());
-                                    if (cmp > 0) {
-                                        directoriesByDeployment.put(deployment, pf);
-                                    }
-                                } else {
-                                    directoriesByDeployment.put(deployment, pf);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            // If there is more than one, we don't know which is real.
-            if (multiPublishedRev) {
-                latestPublishedRevMarker = null;
-            }
-            // Sort newest to oldest.
-            List<String> deploymentNames = new ArrayList<>(directoriesByDeployment.keySet());
-            deploymentNames.sort((a,b)-> LASTMODIFIED_REVERSE.compare(directoriesByDeployment.get(a), directoriesByDeployment.get(b)));
-            // Build a new map, preserving order.
-            for (String n: deploymentNames) {
-                orderedDeployments.put(n, directoriesByDeployment.get(n));
-            }
+        if (useDropboxDeployments) {
+            return new AvailableDropboxDeployments();
         }
-        return new AvailableDeployments(orderedDeployments, latestPublishedRevMarker);
-    }
-
-    /**
-     * Standard compare function
-     * @param a One value to compare.
-     * @param b The other value.
-     * @return 0 if the strings are equal, a value less than zero if a is lexicographically less
-     *  than b, and greater than 0 if a is greater than b.
-     */
-    private int compareByRevision(String a, String b) {
-        // A longer string must have a longer revision component. Since there are no "leading
-        // zeros", a longer revision string is a larger value. And since the strings are the
-        // same except for their revision parts, if the lengths are the same, we can simply
-        // compare the strings.
-        int result = a.length() - b.length();
-        if (result == 0) {
-            result = a.compareTo(b);
+        
+        if (!Authenticator.getInstance().isOnline()) {
+            return new NoAvailableOfflineDeployments();
         }
-        return result;
-    }
 
-    /**
-     * Unzips a deployment from Dropbox to ~/LiteracyBridge. The zip is in
-     * ~/Dropbox/ACM-{proj}/TB-Loaders/published/{deployment-rev}/content-{deployment-rev}.zip
-     * It's contents are in a tree like content/{deployment}/...
-     * The "-rev" part is a hyphen and a version letter, starting with 'a'.
-     * @param directory The directory containing the zip file, named as above.
-     * @throws IOException if the zip can't be read, or the deployment can't be written.
-     */
-    private void fetchDeployment(File directory) throws IOException {
-        //    7z x -y -o"%userprofile%\LiteracyBridge\TB-Loaders\%project%" "..\ACM-%project%\TB-Loaders\published\%latestUpdate%\content-%latestUpdate%.zip"
-        String zipFileName = String.format("content-%s.zip", directory.getName());
-        File zipFile = new File(directory, zipFileName);
-        ZipUnzip.unzip(zipFile, localProjectDir);
+//        return new AvailableDropboxDeployments(orderedDeployments, latestPublishedRevMarker);
+        AvailableCloudDeployments depls = new AvailableCloudDeployments();
+        depls.findDeployments();
+        return depls;
 
-        // Leave a marker to indicate what is here.
-        String revFileName = directory.getName() + ".rev";
-        File revFile = new File(localProjectDir, revFileName);
-        if (!revFile.createNewFile()) {
-            LOG.warning(String.format("Could not create file '%s'", revFile.getAbsolutePath()));
-        }
     }
 
     /**
@@ -270,13 +200,12 @@ class DeploymentsManager {
 
     /**
      * Retrieves the Deployment from the given directory.
-     * @param desired Name of desired Deployment
+     * @param desiredDeployment Name of desired Deployment
      * @throws IOException if the Deployment can't be unzipped.
      */
-    void getDeployment(String desired) throws IOException {
-        File directory = availableDeployments.deployments.get(desired);
+    void getDeployment(String desiredDeployment, BiConsumer<Long, Long> progressHandler) throws IOException {
         clearLocalDeployments();
-        fetchDeployment(directory);
+        availableDeployments.fetchDeployment(desiredDeployment, localProjectDir, progressHandler);
     }
 
     /**
@@ -297,7 +226,8 @@ class DeploymentsManager {
         No_Deployment,  // No deployment, simply copy latest.
         OK_Unpublished, // Unpublished deployment.
         OK_Latest,      // Local is latest, seems OK.
-        Not_Latest      // Local is not latest.
+        Not_Latest,     // Local is not latest.
+        OK_Cached       // We have a local that looks fine, but are offline.
     }
 
 
@@ -305,11 +235,11 @@ class DeploymentsManager {
      * Class to describe the local Deployment, if any.
      */
     static class LocalDeployment {
-        String localDeployment;
-        String localRevision;
-        boolean isUnpublished;
-        File localContent;
-        String errorMessage;
+        String localDeployment;     // "TEST-19-1"
+        String localRevision;       // "'"a" or "UNPUBLISHED"
+        boolean isUnpublished;      // True if unpublished
+        File localContent;          // Local directory with deployment. "TEST-19-1"
+        String errorMessage;        // If there is no local deployment, this contains explanation.
 
         private LocalDeployment() {
             this(null, null);
@@ -331,10 +261,8 @@ class DeploymentsManager {
                     Matcher unpubMatcher = UNPUBLISHED_DEPLOYMENT_PATTERN.matcher(localRevMarkerName);
                     if (unpubMatcher.matches()) {
                         this.localDeployment = unpubMatcher.group(2);
-                        this.localRevision = UNPUBLISHED_REV;
-                    } else {
-                        this.localRevision = UNPUBLISHED_REV;
                     }
+                    this.localRevision = UNPUBLISHED_REV;
                 } else {
                     Matcher pubMatcher = DEPLOYMENT_REVISION_PATTERN.matcher(localRevMarkerName);
                     if (pubMatcher.matches()) {
@@ -354,43 +282,308 @@ class DeploymentsManager {
         }
     }
 
+    public interface AvailableDeployments {
+        String getRevIdForDeployment(String desiredDeployment);
+        boolean isOffline();
+        boolean isMissingLatest();
+        String getCurrentRevId();
+        String getCurrentDeployment();
+
+        void fetchDeployment(String desiredDeployment,
+            File localProjectDir,
+            BiConsumer<Long, Long> progressHandler) throws IOException;
+
+        /**
+         * @return Map of Deployment name to Deployment Details.
+         */
+        Map<String, String> getDeploymentDescriptions();
+    }
+
     /**
      * Class to describe the available & latest Deployments, if any.
      */
-    static class AvailableDeployments {
+    class AvailableDropboxDeployments implements AvailableDeployments {
         Map<String, File> deployments;
-        String latestDeployment;
-        String latestRevision;
+        String currentDeployment;   // like TEST-19-2
+        String currentRevId;            // Like "c" from "TEST-19-2-c"
         boolean isMissingLatest;
 
-        /**
-         * Constructs the list of available deployments.
-         * @param deployments A map of deployment name (sans any version suffix) to the
-         *                    Deployment directory.
-         * @param latestRevMarker The name of the .rev marker file. This is a concatenation
-         *                        of the deployment name and the latest version of that
-         *                        deployment, 'a', 'b'...'aa', etc.
-         */
-        private AvailableDeployments(Map<String, File> deployments, String latestRevMarker) {
-            this.deployments = deployments;
-            if (latestRevMarker!=null) {
-                Matcher deplMatcher = DEPLOYMENT_REVISION_PATTERN.matcher(latestRevMarker);
+        private AvailableDropboxDeployments() {
+            // Map deployment name (w/o the -x suffix) to File for the directory.
+            Map<String, File> orderedDeployments = new LinkedHashMap<>();
+            String latestPublishedRevMarker = null;
+            boolean multiPublishedRev = false;
+            String ACMName = ACMConfiguration.cannonicalAcmDirectoryName(project);
+            File publishedDir = new File(ACMConfiguration.getInstance().getTbLoaderDirFor(ACMName),
+                "published");
+            File[] publishedFiles = publishedDir.listFiles();
+            if (publishedFiles != null) {
+                Map<String, File> directoriesByDeployment = new HashMap<>();
+                // Get the deployments, and their latest versions (based on the -x suffix).
+                for (File pf: publishedFiles) {
+                    // Only consider non-hidden files and directories.
+                    if (!pf.isHidden() && !pf.getName().startsWith(".")) {
+                        // Expecting to see at most one .rev file.
+                        if (pf.isFile() && pf.getName().endsWith(".rev")) {
+                            // Found the marker for the most recent TB-Builder PUBLISH. It SHOULD match
+                            // the name of the file ~/LiteracyBridge/TB-Loaders/{project}/*.rev
+                            multiPublishedRev = latestPublishedRevMarker != null;
+                            latestPublishedRevMarker = FilenameUtils.removeExtension(pf.getName());
+
+                        } else if (pf.isDirectory()) {
+                            Matcher deplMatcher = DEPLOYMENT_REVISION_PATTERN.matcher(pf.getName());
+                            if (deplMatcher.matches()) {
+                                // Found a published directory. Ensure it contains the expected zip file.
+                                File zip = new File(pf, "content-" + pf.getName() + ".zip");
+                                if (zip.exists() && zip.isFile()) {
+                                    // Based on the -x suffix, keep the latest published instance of this deployment.
+                                    String deployment = deplMatcher.group(1);
+                                    if (directoriesByDeployment.containsKey(deployment)) {
+                                        // Compare file names. If new name is greater, store file.
+                                        int cmp = compareByRevision(pf.getName(), directoriesByDeployment.get(deployment).getName());
+                                        if (cmp > 0) {
+                                            directoriesByDeployment.put(deployment, pf);
+                                        }
+                                    } else {
+                                        directoriesByDeployment.put(deployment, pf);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // If there is more than one, we don't know which is real.
+                if (multiPublishedRev) {
+                    latestPublishedRevMarker = null;
+                }
+                // Sort newest to oldest.
+                orderedDeployments = directoriesByDeployment.entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue(LASTMODIFIED_REVERSE))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+            }
+
+            this.deployments = orderedDeployments;
+            if (latestPublishedRevMarker !=null) {
+                Matcher deplMatcher = DEPLOYMENT_REVISION_PATTERN.matcher(latestPublishedRevMarker);
                 if (deplMatcher.matches()) {
-                    this.latestDeployment = deplMatcher.group(1);
-                    this.latestRevision = deplMatcher.group(2);
+                    this.currentDeployment = deplMatcher.group(1); // like "TEST-19-2-c"
+                    this.currentRevId = deplMatcher.group(2); // like "c"
                 }
             }
-            isMissingLatest = latestRevMarker==null || !deployments.containsKey(latestDeployment);
+            isMissingLatest = latestPublishedRevMarker == null || !deployments.containsKey(currentDeployment);
+
         }
 
-        String getRevisionForDeployment(String desiredDeployment) {
+        public String getRevIdForDeployment(String desiredDeployment) {
+            // The directory for the deployment includes the RevId as a suffix.
             File deploymentDir = deployments.get(desiredDeployment);
             Matcher deplMatcher = DEPLOYMENT_REVISION_PATTERN.matcher(deploymentDir.getName());
             if (deplMatcher.matches()) {
+                // Group 1 is the deployment name, group 2 is the revid.
                 return deplMatcher.group(2);
             }
             return null;
         }
+
+        @Override
+        public boolean isOffline() {
+            return false;
+        }
+
+        @Override
+        public boolean isMissingLatest() {
+            return isMissingLatest;
+        }
+
+        /**
+         * Gets the revision marker for the latest deployment.
+         * @return the revision marker for the latest deployment, like "c".
+         */
+        @Override
+        public String getCurrentRevId() {
+            return currentRevId;
+        }
+
+        @Override
+        public String getCurrentDeployment() {
+            return currentDeployment;
+        }
+
+        /**
+         * Unzips a deployment from Dropbox to ~/LiteracyBridge. The zip is in
+         * ~/Dropbox/ACM-{proj}/TB-Loaders/published/{deployment-rev}/content-{deployment-rev}.zip
+         * It's contents are in a tree like content/{deployment}/...
+         * The "-rev" part is a hyphen and a version letter, starting with 'a'.
+         * @param desiredDeployment The desired deployment, like TEST-19-1
+         * @param localProjectDir Where to put the deployment files.
+         * @throws IOException if the zip can't be read, or the deployment can't be written.
+         */
+        @Override
+        public void fetchDeployment(String desiredDeployment, File localProjectDir, BiConsumer<Long, Long> progressHandler)
+            throws IOException
+        {
+            File srcDirectory = deployments.get(desiredDeployment);
+
+            //    7z x -y -o"%userprofile%\LiteracyBridge\TB-Loaders\%project%" "..\ACM-%project%\TB-Loaders\published\%latestUpdate%\content-%latestUpdate%.zip"
+            String zipFileName = String.format("content-%s.zip", srcDirectory.getName());
+            File zipFile = new File(srcDirectory, zipFileName);
+            ZipUnzip.unzip(zipFile, localProjectDir);
+
+            // Leave a marker to indicate what is here.
+            String revFileName = srcDirectory.getName() + ".rev";
+            File revFile = new File(localProjectDir, revFileName);
+            if (!revFile.createNewFile()) {
+                LOG.warning(String.format("Could not create file '%s'", revFile.getAbsolutePath()));
+            }
+        }
+
+        @Override
+        public Map<String, String> getDeploymentDescriptions() {
+            Map<String, String> result = new LinkedHashMap<>();
+            for (Map.Entry<String, File> e : deployments.entrySet()) {
+                result.put(e.getKey(), e.getValue().getName());
+            }
+            return result;
+        }
+
+        /**
+         * Standard compare function
+         * @param a One value to compare.
+         * @param b The other value.
+         * @return 0 if the strings are equal, a value less than zero if a is lexicographically less
+         *  than b, and greater than 0 if a is greater than b.
+         */
+        private int compareByRevision(String a, String b) {
+            // A longer string must have a longer revision component. Since there are no "leading
+            // zeros", a longer revision string is a larger value. And since the strings are the
+            // same except for their revision parts, if the lengths are the same, we can simply
+            // compare the strings.
+            int result = a.length() - b.length();
+            if (result == 0) {
+                result = a.compareTo(b);
+            }
+            return result;
+        }
     }
 
-}
+    /**
+     * There aren't any available Deployments when we're offline. Of course.
+     */
+    static class NoAvailableOfflineDeployments implements AvailableDeployments {
+
+        @Override
+        public String getRevIdForDeployment(String desiredDeployment) {
+            return null;
+        }
+
+        @Override
+        public boolean isOffline() {
+            return true;
+        }
+
+        @Override
+        public boolean isMissingLatest() {
+            return false;
+        }
+
+        @Override
+        public String getCurrentRevId() {
+            return null;
+        }
+
+        @Override
+        public String getCurrentDeployment() {
+            return null;
+        }
+
+        @Override
+        public void fetchDeployment(String desiredDeployment,
+            File localProjectDir,
+            BiConsumer<Long, Long> progressHandler)
+        {
+
+        }
+
+        @Override
+        public Map<String, String> getDeploymentDescriptions() {
+            return new HashMap<String,String>();
+        }
+    }
+
+    /**
+     * Describes the deployments available in the cloud.
+     */
+    class AvailableCloudDeployments implements AvailableDeployments {
+        Map<String, DeploymentInfo> deploymentsInfo;
+        DeploymentInfo currentDeploymentInfo;
+
+        void findDeployments() {
+            Authenticator authInstance = Authenticator.getInstance();
+            ProjectsHelper projectsHelper = authInstance.getProjectsHelper();
+            deploymentsInfo = projectsHelper.getDeploymentInfo(project);
+            currentDeploymentInfo = deploymentsInfo.values().stream().filter(DeploymentInfo::isCurrent).findAny().orElse(null);
+        }
+
+        @Override
+        public String getRevIdForDeployment(String desiredDeployment) {
+            DeploymentInfo di = deploymentsInfo.get(desiredDeployment);
+            return di == null ? null : di.getRevId();
+        }
+
+        @Override
+        public boolean isOffline() {
+            return false;
+        }
+
+        @Override
+        public boolean isMissingLatest() {
+            return deploymentsInfo.values().stream().noneMatch(DeploymentInfo::isCurrent);
+        }
+
+        @Override
+        public String getCurrentRevId() {
+            return currentDeploymentInfo == null ? null : currentDeploymentInfo.getRevId();
+        }
+
+        @Override
+        public String getCurrentDeployment() {
+            return currentDeploymentInfo == null ? null : currentDeploymentInfo.getDeploymentName();
+        }
+
+        @Override
+        public void fetchDeployment(String desiredDeployment, File localProjectDir, BiConsumer<Long, Long> progressHandler)
+            throws IOException
+        {
+            DeploymentInfo di = deploymentsInfo.get(desiredDeployment);
+            File tempDir = Files.createTempDirectory("tbloader-tmp").toFile();
+            File tempFile = new File(tempDir, di.getFileName());
+
+            Authenticator authInstance = Authenticator.getInstance();
+            ProjectsHelper projectsHelper = authInstance.getProjectsHelper();
+            projectsHelper.downloadDeployment(di, tempFile, progressHandler/*(p,t)->{System.out.printf("%d/%d\n",p,t);}*/);
+
+            //    7z x -y -o"%userprofile%\LiteracyBridge\TB-Loaders\%project%" "..\ACM-%project%\TB-Loaders\published\%latestUpdate%\content-%latestUpdate%.zip"
+            ZipUnzip.unzip(tempFile, localProjectDir);
+
+            // Leave a marker to indicate what is here.
+            String revFileName = di.getVersionMarker() + ".rev";
+            File revFile = new File(localProjectDir, revFileName);
+            if (!revFile.createNewFile()) {
+                LOG.warning(String.format("Could not create file '%s'", revFile.getAbsolutePath()));
+            }
+
+        }
+
+        @Override
+        public Map<String, String> getDeploymentDescriptions() {
+            Map<String,String> result = new LinkedHashMap<>();
+            for (Map.Entry<String,DeploymentInfo> e : deploymentsInfo.entrySet()) {
+                result.put(e.getKey(), e.getValue().getVersionMarker());
+            }
+            return result;
+        }
+
+    }
+
+    }

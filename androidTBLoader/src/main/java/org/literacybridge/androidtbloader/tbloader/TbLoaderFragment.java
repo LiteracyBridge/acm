@@ -1,6 +1,5 @@
 package org.literacybridge.androidtbloader.tbloader;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
@@ -30,6 +29,7 @@ import org.literacybridge.androidtbloader.talkingbook.TalkingBookConnectionManag
 import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.PathsProvider;
+import org.literacybridge.androidtbloader.util.Util;
 import org.literacybridge.core.fs.FsFile;
 import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
@@ -152,6 +152,16 @@ public class TbLoaderFragment extends Fragment {
             }
             mTalkingBookConnectionManager.setSimulatedTalkingBook(new TalkingBookConnectionManager.TalkingBook(tbRoot, "B-000CFFFF", "B-000CFFFF", null));
         }
+        // Uncomment to force some allocations whenever the page loads. For testing the SRN management.
+//        if (isDebug) {
+//            TBLoaderAppContext.getInstance().getConfig().allocateDeviceSerialNumber((srn)-> {
+//                    Log.d(TAG, "new serial number is " + srn);
+//                },
+//                (ex)->{
+//                    Log.d(TAG, "Could not allocate serial number", ex);
+//                });
+//
+//        }
         // Debug code
         ////////////////////////////////////////////////////////////////////////////////
 
@@ -284,10 +294,8 @@ public class TbLoaderFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        switch (requestCode) {
-            case REQUEST_CODE_SELECT_RECIPIENT:
-                onGotCommunity(resultCode, data);
-                break;
+        if (requestCode == REQUEST_CODE_SELECT_RECIPIENT) {
+            onGotCommunity(resultCode, data);
         }
     }
 
@@ -327,9 +335,28 @@ public class TbLoaderFragment extends Fragment {
             mCollapseCommunityName = true;
             setButtonState();
 
+            TBDeviceInfo tbDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
+                mConnectedDevice.getDeviceLabel(),
+                mSrnPrefix);
+
+            String deviceSerialNumber = tbDeviceInfo.getSerialNumber();
+            if (!mStatsOnly && tbDeviceInfo.needNewSerialNumber()) {
+                TBLoaderAppContext.getInstance().getConfig().allocateDeviceSerialNumber((srn)-> doPerformUpdate(tbDeviceInfo, srn),
+                    (ex)->{
+                        mTalkingBookWarningsTextView.setText(getString(R.string.CANT_ALLOCATE_SRN));
+                        mSpinner.setVisibility(View.INVISIBLE);
+                        mUpdateInProgress = false;
+                        setButtonState();
+                    });
+            } else {
+                doPerformUpdate(tbDeviceInfo, deviceSerialNumber);
+            }
+        }
+
+        private void doPerformUpdate(TBDeviceInfo tbDeviceInfo, String deviceSerialNumber) {
             Executors.newSingleThreadExecutor().submit(() -> {
                 try {
-                    performOperation();
+                    performOperation(tbDeviceInfo, deviceSerialNumber);
                 } catch (Exception e) {
                     Log.d(TAG, "Unexpected exception updating Talking Book", e);
                     /*
@@ -503,7 +530,7 @@ public class TbLoaderFragment extends Fragment {
     /**
      * Listens to progress from the tbloader, updates the progress display.
      */
-    abstract class MyProgressListener extends ProgressListener {
+    abstract static class MyProgressListener extends ProgressListener {
         abstract public void clear();
         abstract public void refresh();
         abstract public void extraStep(String step);
@@ -591,13 +618,10 @@ public class TbLoaderFragment extends Fragment {
     /**
      * Updates the Talking Book
      */
-    private void performOperation() {
+    private void performOperation(TBDeviceInfo tbDeviceInfo, String deviceSerialNumber) {
         OperationLog.Operation opLog = OperationLog.startOperation(
             mStatsOnly ? "CollectStatistics" : "UpdateTalkingBook");
         Config config = TBLoaderAppContext.getInstance().getConfig();
-        TBDeviceInfo tbDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
-                                                     mConnectedDevice.getDeviceLabel(),
-                                                     mSrnPrefix);
 
         long startTime = System.currentTimeMillis();
 
@@ -647,6 +671,7 @@ public class TbLoaderFragment extends Fragment {
             // The directory with images. {project}/content/{Deployment}
             File deploymentDirectory = getLocalDeploymentDirectory(mProject);
             DeploymentInfo newDeploymentInfo = getUpdateDeploymentInfo(opLog, tbDeviceInfo,
+                                                        deviceSerialNumber,
                                                         collectionTimestamp, todaysDate,
                                                         collectedDataDirectory,
                                                         deploymentDirectory
@@ -672,9 +697,9 @@ public class TbLoaderFragment extends Fragment {
             collectedDataTbFile.deleteDirectory();
 
             mAppContext.getUploadService().uploadFileAsName(uploadableZipFile, collectedDataZipName);
-            String message = String.format("Zipped statistics and user feedback in %s", formatElapsedTime(System.currentTimeMillis()-zipStart));
+            String message = String.format("Zipped statistics and user feedback in %s", Util.formatElapsedTime(System.currentTimeMillis()-zipStart));
             mProgressListener.log(message);
-            message = String.format("TB-Loader completed in %s", formatElapsedTime(System.currentTimeMillis()-startTime));
+            message = String.format("TB-Loader completed in %s", Util.formatElapsedTime(System.currentTimeMillis()-startTime));
             mProgressListener.log(message);
             mProgressListener.extraStep("Finished");
         } catch (IOException e) {
@@ -688,6 +713,7 @@ public class TbLoaderFragment extends Fragment {
 
     private DeploymentInfo getUpdateDeploymentInfo(OperationLog.Operation opLog,
                                                    TBDeviceInfo tbDeviceInfo,
+                                                   String deviceSerialNumber,
                                                    String collectionTimestamp, String todaysDate,
                                                    File collectedDataDirectory,
                                                    File deploymentDirectory) {
@@ -698,10 +724,6 @@ public class TbLoaderFragment extends Fragment {
         // What firmware comes with this Deployment?
         String firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(deploymentDirectory);
 
-        String deviceSerialNumber = tbDeviceInfo.getSerialNumber();
-        if (tbDeviceInfo.needNewSerialNumber()) {
-            deviceSerialNumber = getNewDeviceSerialNumber();
-        }
         String recipientid = mRecipient.recipientid;
 
         DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
@@ -728,38 +750,6 @@ public class TbLoaderFragment extends Fragment {
             .put("username", config.getUsername())
             .put("timestamp", collectionTimestamp);
         return newDeploymentInfo;
-    }
-
-    @SuppressLint("DefaultLocale")
-    private String formatElapsedTime(Long millis) {
-        if (millis < 1000) {
-            // Less than one second
-            return String.format("%d ms", millis);
-        } else if (millis < 60000) {
-            // Less than one minute. Format like '1.25 s' or '25.3 s' (3 digits).
-            String time = String.format("%f", millis / 1000.0);
-            return time.substring(0, 4) + " s";
-        } else {
-            long minutes = millis / 60000;
-            long seconds = (millis % 60000) / 1000;
-            return String.format("%d:%02d", minutes, seconds);
-        }
-    }
-
-    /**
-     * Allocates a new serial number, and builds the string from prefix, tb-loader device id, and the serial number.
-     * NOTE: To avoid collisions with the PC assigned serial numbers, this sets the high bit of the tb-loader device id.
-     * @return The serial number string.
-     */
-    private String getNewDeviceSerialNumber() {
-        int tbcdid = Integer.parseInt(TBLoaderAppContext.getInstance().getConfig().getTbcdid(), 16);
-        tbcdid |= 0x8000;
-
-        int newSrn = TBLoaderAppContext.getInstance().getConfig().allocateDeviceSerialNumber();
-
-        String newSerialNumber = String.format("%s%04x%04x", mSrnPrefix, tbcdid, newSrn).toUpperCase();
-        OperationLog.log("AllocateSerialNumber").put("srn", newSerialNumber).finish();
-        return newSerialNumber;
     }
 
 }

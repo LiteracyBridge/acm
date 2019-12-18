@@ -473,9 +473,11 @@ public class ContentManager {
                     if (parts.length == 3 && parts[2].endsWith(".current")) {
                         // The key is like projects/CARE/2016-4-d.current
                         String project = parts[1];
-                        String current = parts[2].substring(0, parts[2].indexOf("."));
-                        ContentInfo info = new ContentInfo(project).withVersion(current).withStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED);
-                        projects.put(project, info);
+                        if (applicationContext.getConfig().isUsersProject(project)) {
+                            String current = parts[2].substring(0, parts[2].indexOf("."));
+                            ContentInfo info = new ContentInfo(project).withVersion(current).withStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED);
+                            projects.put(project, info);
+                        }
                     }
                 }
 
@@ -488,12 +490,13 @@ public class ContentManager {
                     if (parts.length == 3 && parts[2].endsWith(".zip")) {
                         String project = parts[1];
                         ContentInfo info = projects.get(project);
-
-                        // What are the .zip files in the Deployment?
-                        String contentZip = "content-" + info.getVersion() + ".zip";
-                        // Is this file one of them?
-                        if (parts[2].equalsIgnoreCase(contentZip)) {
-                            info.addToSize(summary.getSize());
+                        if (info != null) {
+                            // What are the .zip files in the Deployment?
+                            String contentZip = "content-" + info.getVersion() + ".zip";
+                            // Is this file one of them?
+                            if (parts[2].equalsIgnoreCase(contentZip)) {
+                                info.addToSize(summary.getSize());
+                            }
                         }
                     }
                 }

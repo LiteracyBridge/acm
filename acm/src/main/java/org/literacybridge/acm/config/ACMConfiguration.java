@@ -3,7 +3,7 @@ package org.literacybridge.acm.config;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.utils.DropboxFinder;
@@ -300,7 +300,6 @@ public class ACMConfiguration {
         File propsFile = newDbConfiguration.getConfigurationPropertiesFile();
         try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(propsFile))) {
             newDbProps.load(in);
-            newDbProps.setProperty(Constants.USE_AWS_LOCKING, Boolean.TRUE.toString());
             try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(propsFile))) {
                 newDbProps.store(out, null);
             }
@@ -543,7 +542,7 @@ public class ACMConfiguration {
      * @param acmName The ACM for which the configuration file is desired.
      * @return The File.
      */
-    File getSharedConfigurationFileFor(String acmName) {
+    public File getSharedConfigurationFileFor(String acmName) {
         // ~/Dropbox/ACM-DEMO/config.properties
         return new File(getSharedAcmDirectoryFor(acmName), Constants.CONFIG_PROPERTIES);
     }

@@ -1,6 +1,6 @@
 package org.literacybridge.acm.gui.assistants.GreetingsImport;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.gui.assistants.Matcher.Target;
 import org.literacybridge.core.spec.RecipientList;
 

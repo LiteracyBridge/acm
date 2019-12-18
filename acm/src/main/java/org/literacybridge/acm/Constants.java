@@ -13,6 +13,9 @@ public class Constants {
   public final static String RepositoryHomeDir = "content";
   public final static String LuceneIndexDir = "index";
   public final static String TBLoadersHomeDir = "TB-Loaders";
+  public final static String TBLoadersLogDir = "tbl-logs";
+  public final static String TbCollectionWorkDir = "collectiondir";
+  public final static String uploadQueue = "uploadqueue";
   public final static String ProgramSpecDir = "programspec";
   public final static String DefaultSharedDB = "ACM-test/" + DBHomeDir;
   public final static String DefaultSharedRepository = "ACM-test/"
@@ -42,15 +45,13 @@ public class Constants {
   public final static String STRICT_DEPLOYMENT_NAMING = "STRICT_DEPLOYMENT_NAMING";
   public final static String USER_FEEDBACK_HIDDEN = "USER_FEEDBACK_HIDDEN";
   public final static String CONFIGURATION_DIALOG = "CONFIGURATION_DIALOG";
-  public final static String USE_AWS_LOCKING = "USE_AWS_LOCKING";
-  public final static String DEPLOYMENT_CHOICE = "DEPLOYMENT_CHOICE";
   public final static String BATCH_RECORD = "record.log";
   public final static String S3_BUCKET = "acm-logging";
   public final static String FUZZY_THRESHOLD = "FUZZY_THRESHOLD";
   public final static String NOTIFY_LIST = "NOTIFY_LIST";
 
   // Gather obsolete property names here. We could write code to remove these from the properties file.
-  public final static String[] OBSOLETE_PROPERTY_NAMES = {"NEXT_CORRELATION_ID"};
+  public final static String[] OBSOLETE_PROPERTY_NAMES = {"NEXT_CORRELATION_ID", "DEPLOYMENT_CHOICE", "USE_AWS_LOCKING"};
 
   public final static String CATEGORY_GENERAL_OTHER = "0-0";
   public final static String CATEGORY_TB_SYSTEM = "0-4-1";

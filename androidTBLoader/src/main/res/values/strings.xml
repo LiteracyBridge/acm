@@ -97,7 +97,7 @@
     <string name="pref_summary_location_preference">When checked, the device will try first to get location from the network, which may be faster, but less accurate, and may not work in remote areas. When unchecked, the device will try first to get location from GPS, which will be more accurate, and works in remote areas, but may be slower.</string>
 
     <string name="edit_greeting">Edit preferred greeting</string>
-    <string name="main_greeting_label">Hello, </string>
+    <string name="main_greeting_default">Hello, Friend!</string>
     <string name="main_open_app_notifications_body">TB-Loader can display a notification icon in the status bar whenever there are statistics or user feedback waiting to be uploaded. To enable this feature, turn on the \'Important Notice\' setting for TB-Loader.\n\nIf you choose not to enable the feature, notifications will be displayed in a secondary area, indicated by \'…\' in the status bar.\n\nTap Ok to open the \'App notifications\' settings. Then choose \'Set to important notice.\'</string>
     <string name="main_open_app_notifications_title">Open App Notifications</string>
     <string name="main_no_stats_files_to_upload">No statistics files to upload.</string>
@@ -136,5 +136,6 @@
     \
 
     <string name="recipient_chooser_project_label">Selecting recipient(s) for project</string>
+    <string name="CANT_ALLOCATE_SRN">Could not allocate a new Serial Number.</string>
 
 </resources>

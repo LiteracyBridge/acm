@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 
 import javax.swing.table.AbstractTableModel;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;

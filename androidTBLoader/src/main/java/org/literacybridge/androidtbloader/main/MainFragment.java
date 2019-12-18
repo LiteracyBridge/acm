@@ -9,13 +9,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
-import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
@@ -38,8 +36,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttributes;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDeliveryDetails;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GetDetailsHandler;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.UpdateAttributesHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.androidtbloader.BuildConfig;
@@ -66,7 +62,6 @@ import org.literacybridge.core.tbloader.TBDeviceInfo;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -94,6 +89,7 @@ public class MainFragment extends Fragment {
     private static final int REQUEST_CODE_UPDATE_UPLOAD_STATUS = 104;
 
     private TBLoaderAppContext mApplicationContext;
+    private Config mConfig;
 
     private DrawerLayout mDrawer;
 
@@ -123,10 +119,8 @@ public class MainFragment extends Fragment {
 
     private AlertDialog userDialog;
     private ProgressDialog waitDialog;
-    private Map<String, String> mUserDetails;
 
-    private boolean awaitingUserDetails = true;
-    private boolean awaitingUserConfig = true;
+    // We also wait until mHaveConfig is true.
     private boolean awaitingLocationPermission = true;
 
     private boolean mTestingDeployment = false;
@@ -137,6 +131,7 @@ public class MainFragment extends Fragment {
         super.onCreate(savedInstanceState);
         mApplicationContext = (TBLoaderAppContext)getActivity().getApplicationContext();
         mContentManager = mApplicationContext.getContentManager();
+        mConfig = mApplicationContext.getConfig();
         mUserid = UserHelper.getUserId();
         mUserName = UserHelper.getUsername();
         mApplicationContext.getTalkingBookConnectionManager().canAccessConnectedDevice();
@@ -167,7 +162,7 @@ public class MainFragment extends Fragment {
             return null;
         }
 
-        mGreetingName = view.findViewById(R.id.main_greeting_name);
+        mGreetingName = view.findViewById(R.id.main_greeting_label);
         mGreetingEmail = view.findViewById(R.id.main_greeting_email);
 
         mManageGroup = view.findViewById(R.id.main_manage_content_group);
@@ -218,11 +213,10 @@ public class MainFragment extends Fragment {
 
         setButtonState();
         showWaitDialog("Loading...");
-        getUserConfig();
         getUserDetails();
 
         fillUploadValues();
-        updateGreeting();
+        showGreeting();
 
         mContentManager.fetchContentList();
 
@@ -310,7 +304,7 @@ public class MainFragment extends Fragment {
     }
 
     private void checkStartupInformationComplete() {
-        if (awaitingUserConfig || awaitingUserDetails || awaitingLocationPermission) {
+        if (!mHaveConfig || awaitingLocationPermission) {
             return;
         }
         closeWaitDialog();
@@ -319,12 +313,13 @@ public class MainFragment extends Fragment {
     }
 
     @SuppressLint("SetTextI18n")
-    private void updateGreeting() {
-        final SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(
-                mApplicationContext);
-        String greeting = userPrefs.getString("greeting", "Friend");
-        String email = userPrefs.getString("email", "");
-        mGreetingName.setText(greeting + "!");
+    private void showGreeting() {
+        String greeting = mConfig.getGreeting();
+        if (StringUtils.isEmpty(greeting)) {
+            greeting = getString(R.string.main_greeting_default);
+        }
+        String email = mConfig.getEmail();
+        mGreetingName.setText(greeting);
         mGreetingEmail.setText(email);
     }
 
@@ -342,7 +337,7 @@ public class MainFragment extends Fragment {
             case R.id.nav_user_sign_out:
                 UserHelper.getPool().getUser(mUserid).signOut();
                 UserHelper.getCredentialsProvider(getActivity().getApplicationContext()).clear();
-                TBLoaderAppContext.getInstance().getConfig().onSignOut();
+                mConfig.onSignOut();
                 Intent intent = new Intent();
                 intent.putExtra(Constants.SIGNOUT, true);
                 getActivity().setResult(RESULT_OK, intent);
@@ -374,7 +369,7 @@ public class MainFragment extends Fragment {
                 break;
 
             case R.id.nav_user_edit_greeting:
-                editPreferredGreeting(mUserDetails.get("custom:greeting"));
+                editPreferredGreeting(mConfig.getGreeting());
                 break;
 
 
@@ -394,70 +389,26 @@ public class MainFragment extends Fragment {
     private void getUserDetails() {
         final OperationLog.Operation opLog = OperationLog.startOperation("GetUserDetails");
 
-        GetDetailsHandler detailsHandler = new GetDetailsHandler() {
-            @Override
-            public void onSuccess(CognitoUserDetails cognitoUserDetails) {
-                Log.d(TAG, "detailsHandler success: " + cognitoUserDetails.getAttributes().getAttributes().toString());
-                // Store details in the AppHandler
-                UserHelper.setUserDetails(cognitoUserDetails);
-                mUserDetails = cognitoUserDetails.getAttributes().getAttributes();
-                opLog.finish(mUserDetails);
-                final SharedPreferences userPrefs = PreferenceManager.getDefaultSharedPreferences(
-                        mApplicationContext);
-                SharedPreferences.Editor prefsEditor = userPrefs.edit();
-                prefsEditor.putString("greeting", mUserDetails.get("custom:greeting"));
-                prefsEditor.putString("email", mUserDetails.get("email"));
-                prefsEditor.apply();
+        Map<String,String> mUserDetails = UserHelper.getAuthenticationPayload();
+        mConfig.applyUserDetails(mUserDetails);
 
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        updateGreeting();
-                        setButtonState();
-                    }
-                });
-                Log.d(TAG, "User Attributes: " + mUserDetails.toString());
-                awaitingUserDetails = false;
-                checkStartupInformationComplete();
-            }
+        if (mUserDetails.size() > 0) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    showGreeting();
+                    setButtonState();
+                }
+            });
+        }
 
-            @Override
-            public void onFailure(Exception exception) {
-                // Probably a network issue.
-                awaitingUserDetails = false;
-                opLog.put("failed", true).finish();
-                checkStartupInformationComplete();
-            }
-        };
+        checkStartupInformationComplete();
 
-        String userId = UserHelper.getUserId();
-        Log.d(TAG, "getDetails for user " + userId);
-        UserHelper.getPool().getUser(userId).getDetailsInBackground(detailsHandler);
-    }
-
-    /**
-     * Ensures that we have a user config, or exits the application. First tries to check if the
-     * config is up to date w.r.t. the server, failing that, falls back to a cached config.
-     */
-    private void getUserConfig() {
-        final OperationLog.Operation opLog = OperationLog.startOperation("GetUserConfig");
-        final Config config = TBLoaderAppContext.getInstance().getConfig();
-        final String username = UserHelper.getUsername();
-
-        Config.Listener listener = new Config.Listener() {
+        mConfig.prepareForSerialNumberAllocation(new Config.Listener() {
             @Override
             public void onSuccess() {
-                // Excellent! Continue.
                 mHaveConfig = true;
-                awaitingUserConfig = false;
-                Map<String,String> prefsMap = new HashMap<>();
-                Map<String,?> allPrefs = PreferenceManager.getDefaultSharedPreferences(
-                        mApplicationContext).getAll();
-                for (Map.Entry<String,?>entry : allPrefs.entrySet()) {
-                    String v = entry.getValue()!=null?entry.getValue().toString():"(null)";
-                    prefsMap.put(entry.getKey(), v);
-                }
-                opLog.finish(prefsMap);
+                opLog.finish(mUserDetails);
                 checkStartupInformationComplete();
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -473,17 +424,7 @@ public class MainFragment extends Fragment {
                 opLog.put("failed", true).finish();
                 showDialogMessage(CANT_LAUNCH_TITLE, configErrorMessage(Errors.NoConfig), true);
             }
-        };
-
-        if (username == null) {
-            if (config.haveCachedConfig()) {
-                listener.onSuccess();
-            } else {
-                listener.onError();
-            }
-        } else {
-            config.getServerSideUserConfig(username, listener);
-        }
+        });
     }
 
     private OnClickListener manageListener = new OnClickListener() {
@@ -677,6 +618,28 @@ public class MainFragment extends Fragment {
 
     // Update attributes
     private void updateAttribute(String attributeType, String attributeValue) {
+        UpdateAttributesHandler updateHandler = new UpdateAttributesHandler() {
+            @Override
+            public void onSuccess(List<CognitoUserCodeDeliveryDetails> attributesVerificationList) {
+                // Update successful
+                closeWaitDialog();
+                if(attributesVerificationList.size() > 0) {
+                    showDialogMessage("Updated", "The updated attributes has to be verified",  false);
+                }
+                if (attributeType.equals(UserHelper.getSignUpFieldsC2O().get("Preferred Greeting"))) {
+                    mApplicationContext.getConfig().updateGreeting(attributeValue);
+                }
+                showGreeting();
+            }
+
+            @Override
+            public void onFailure(Exception exception) {
+                // Update failed
+                closeWaitDialog();
+                showDialogMessage("Update failed", UserHelper.formatException(exception), false);
+            }
+        };
+
         if(attributeType == null || attributeType.length() < 1) {
             closeWaitDialog();
             return;
@@ -686,24 +649,6 @@ public class MainFragment extends Fragment {
         showWaitDialog("Updating...");
         UserHelper.getPool().getUser(UserHelper.getUserId()).updateAttributesInBackground(updatedUserAttributes, updateHandler);
     }
-
-    private UpdateAttributesHandler updateHandler = new UpdateAttributesHandler() {
-        @Override
-        public void onSuccess(List<CognitoUserCodeDeliveryDetails> attributesVerificationList) {
-            // Update successful
-            if(attributesVerificationList.size() > 0) {
-                showDialogMessage("Updated", "The updated attributes has to be verified",  false);
-            }
-            getUserDetails();
-        }
-
-        @Override
-        public void onFailure(Exception exception) {
-            // Update failed
-            closeWaitDialog();
-            showDialogMessage("Update failed", UserHelper.formatException(exception), false);
-        }
-    };
 
     private void closeUserDialog() {
         if (userDialog != null) {

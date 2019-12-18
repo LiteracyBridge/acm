@@ -124,14 +124,14 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
     }
 
     protected int scoreMatch(T l, T r, boolean tokens) {
+        BiFunction<String,String,Integer> fn =
+            tokens ? FuzzySearch::tokenSortRatio
+                    : FuzzySearch::ratio;
+
         int score;
         String left = l.getLeft().toString();
         String right = r.getRight().toString();
-        if (tokens) {
-            score = FuzzySearch.tokenSortRatio(left, right);
-        } else {
-            score = FuzzySearch.ratio(left, right);
-        }
+        score = fn.apply(left, right);
         return score;
     }
 
@@ -174,11 +174,11 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
         if (leftList.size() == 0 || rightList.size() == 0) return result;
         // Perform all comparisons, then pick the best ones.
         List<Comparison> comparisons = new ArrayList<>();
-        for (T matchableItem1 : leftList) {
-            for (T matchableItem : rightList) {
+        for (T matchableItemL : leftList) {
+            for (T matchableItemR : rightList) {
                 result.comparisons++;
-                int score = scoreMatch(matchableItem1, matchableItem, tokens);
-                comparisons.add(new Comparison(matchableItem1, matchableItem, score));
+                int score = scoreMatch(matchableItemL, matchableItemR, tokens);
+                comparisons.add(new Comparison(matchableItemL, matchableItemR, score));
             }
         }
         // Sort the best ones to the start of the list.

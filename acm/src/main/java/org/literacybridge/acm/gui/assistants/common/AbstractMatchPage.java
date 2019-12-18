@@ -1,6 +1,6 @@
 package org.literacybridge.acm.gui.assistants.common;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.PlaceholderTextField;
 import org.literacybridge.acm.gui.assistants.Matcher.AbstractMatchTableModel;

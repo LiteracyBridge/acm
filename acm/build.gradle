@@ -76,6 +76,7 @@ compileJava {
 File distDir = file("$projectDir/dist")
 
 task copyLibs(type: Sync) {
+    println "Copy libs to $distDir/lib "
     // configurations.runtime is the set of runtime dependencies, ie, everything
     // in the '"dependencies" section that is included by a "compile" line.
     from configurations.runtime
@@ -124,21 +125,23 @@ buildscript {
     }
 }
 apply plugin: "io.spring.dependency-management"
-dependencyManagement {
-    imports {
-        mavenBom 'com.amazonaws:aws-java-sdk-bom:1.10.47'
-    }
-}
+//dependencyManagement {
+
+//    imports {
+//        mavenBom 'com.amazonaws:aws-java-sdk-bom:1.10.47'
+//    }
+//}
 // End code to allow dynamically including the most up-to-date AWS libs
 
 dependencies {
     compile project(':core')
 
+
     compile 'org.apache.lucene:lucene-core:5.5.0'
     compile 'org.apache.lucene:lucene-facet:5.5.0'
     compile 'org.apache.lucene:lucene-analyzers-common:5.5.0'
     compile 'org.apache.avro:avro:1.7.7'
-    compile 'commons-lang:commons-lang:2.4'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
     compile 'org.slf4j:slf4j-api:1.7.16'
     compile 'org.slf4j:slf4j-simple:1.7.16'
     compile 'javax.media:jmf:2.1.1e'
@@ -153,9 +156,17 @@ dependencies {
     compile 'org.swinglabs:swingx:1.6.1'
     compile 'args4j:args4j:2.0.16'
     compile 'commons-io:commons-io:2.4'
-    compile 'net.sf.opencsv:opencsv:2.3'
+    compile 'com.opencsv:opencsv:4.3.1'
     // https://mvnrepository.com/artifact/me.xdrop/fuzzywuzzy
     compile group: 'me.xdrop', name: 'fuzzywuzzy', version: '1.1.6'
+
+//    implementation platform('com.amazonaws:aws-java-sdk-bom:1.11.228')
+    // was "implementation 'com.amazonaws:..."
+    compile 'com.amazonaws:aws-java-sdk-core:1.11.228'
+    compile 'com.amazonaws:aws-java-sdk-cognitoidp:1.11.228'
+    compile 'com.amazonaws:aws-java-sdk-cognitoidentity:1.11.228'
+    compile 'com.amazonaws:aws-java-sdk-s3:1.11.228'
+
 
     compile files(fileTree('3rdparty').include('*.jar'))
 

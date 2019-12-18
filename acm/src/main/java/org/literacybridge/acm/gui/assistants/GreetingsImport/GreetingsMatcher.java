@@ -2,7 +2,7 @@ package org.literacybridge.acm.gui.assistants.GreetingsImport;
 
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 import org.literacybridge.core.spec.RecipientList.RecipientAdapter;

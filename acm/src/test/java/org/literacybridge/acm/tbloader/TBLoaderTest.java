@@ -42,136 +42,136 @@ public class TBLoaderTest {
         tbcdDir.mkdirs();
     }
 
-    @Test
-    public void testCreateSrnFiles() throws IOException {
-        int srNo = 123;
-        configureDirectories();
-        TBLoader.saveSerialNumber(deviceId, srNo, tbcdDir);
-        TBLoader.saveSerialNumber(deviceId, srNo, homeDir);
+//    @Test
+//    public void testCreateSrnFiles() throws IOException {
+//        int srNo = 123;
+//        configureDirectories();
+//        TBLoader.saveSerialNumber(deviceId, srNo, tbcdDir);
+//        TBLoader.saveSerialNumber(deviceId, srNo, homeDir);
+//
+//        File homeBin = new File(homeDir, binaryFn);
+//        assertTrue("Expected "+binaryFn+" to exist.", homeBin.exists());
+//        assertTrue("Expected "+binaryFn+" to be file.", homeBin.isFile());
+//
+//        File homeHex = new File(homeDir, hexFn);
+//        assertTrue("Expected "+hexFn+" to exist.", homeHex.exists());
+//        assertTrue("Expected "+hexFn+" to be file.", homeHex.isFile());
+//
+//        File homeText = new File(homeDir, textFn);
+//        assertFalse("Expected "+textFn+" to not exist.", homeText.exists());
+//    }
 
-        File homeBin = new File(homeDir, binaryFn);
-        assertTrue("Expected "+binaryFn+" to exist.", homeBin.exists());
-        assertTrue("Expected "+binaryFn+" to be file.", homeBin.isFile());
+//    @Test
+//    public void testReadSrnFiles() throws IOException {
+//        int srNo = 123;
+//        configureDirectories();
+//        TBLoader.saveSerialNumber(deviceId, srNo, tbcdDir);
+//        TBLoader.saveSerialNumber(deviceId, srNo, homeDir);
+//
+//        int homeNo = TBLoader.loadSerialNumber(deviceId, homeDir);
+//        int tbcdNo = TBLoader.loadSerialNumber(deviceId, tbcdDir);
+//
+//        assertEquals("SRN read should be SRN saved.", srNo, homeNo);
+//        assertEquals("SRN read should be SRN saved.", srNo, tbcdNo);
+//    }
 
-        File homeHex = new File(homeDir, hexFn);
-        assertTrue("Expected "+hexFn+" to exist.", homeHex.exists());
-        assertTrue("Expected "+hexFn+" to be file.", homeHex.isFile());
+//    @Test
+//    public void testReadSrnBinary() throws IOException {
+//        int srNo = 456;
+//        configureDirectories();
+//        writeBinary(new File(homeDir, binaryFn), srNo);
+//
+//        int readNo = TBLoader.loadSerialNumber(deviceId, homeDir);
+//        assertEquals("SRN read should be SRN saved.", srNo, readNo);
+//    }
 
-        File homeText = new File(homeDir, textFn);
-        assertFalse("Expected "+textFn+" to not exist.", homeText.exists());
-    }
+//    @Test
+//    public void testReadSrnHex() throws IOException {
+//        int srNo = 789;
+//        configureDirectories();
+//        writeHex(new File(homeDir, hexFn), srNo);
+//
+//        int readNo = TBLoader.loadSerialNumber(deviceId, homeDir);
+//        assertEquals("SRN read should be SRN saved.", srNo, readNo);
+//    }
 
-    @Test
-    public void testReadSrnFiles() throws IOException {
-        int srNo = 123;
-        configureDirectories();
-        TBLoader.saveSerialNumber(deviceId, srNo, tbcdDir);
-        TBLoader.saveSerialNumber(deviceId, srNo, homeDir);
+//    @Test
+//    public void testReadSrnTxt() throws IOException {
+//        int srNo = 234;
+//        configureDirectories();
+//
+//        writeHex(new File(homeDir, textFn), srNo);
+//
+//        int readNo = TBLoader.loadSerialNumber(deviceId, homeDir);
+//        assertEquals("SRN read should be SRN saved.", srNo, readNo);
+//    }
 
-        int homeNo = TBLoader.loadSerialNumber(deviceId, homeDir);
-        int tbcdNo = TBLoader.loadSerialNumber(deviceId, tbcdDir);
+//    @Test
+//    public void testReadSrnBinaryLarger() throws IOException {
+//        int smallNo = 123;
+//        int largeNo = 124;
+//        configureDirectories();
+//
+//        writeHex(new File(homeDir, hexFn), smallNo);
+//        writeBinary(new File(homeDir, binaryFn), largeNo);
+//
+//        int readNo = TBLoader.loadSerialNumber(deviceId, homeDir);
+//        assertEquals("SRN read should be SRN saved.", largeNo, readNo);
+//    }
 
-        assertEquals("SRN read should be SRN saved.", srNo, homeNo);
-        assertEquals("SRN read should be SRN saved.", srNo, tbcdNo);
-    }
+//    @Test
+//    public void testReadSrnHexLarger() throws IOException {
+//        int smallNo = 123;
+//        int largeNo = 124;
+//        configureDirectories();
+//
+//        writeHex(new File(homeDir, hexFn), largeNo);
+//        writeBinary(new File(homeDir, binaryFn), smallNo);
+//
+//        int readNo = TBLoader.loadSerialNumber(deviceId, homeDir);
+//        assertEquals("SRN read should be SRN saved.", largeNo, readNo);
+//    }
 
-    @Test
-    public void testReadSrnBinary() throws IOException {
-        int srNo = 456;
-        configureDirectories();
-        writeBinary(new File(homeDir, binaryFn), srNo);
+//    @Test
+//    public void testCleanTxtFile() throws IOException {
+//        int srNo = 345;
+//        configureDirectories();
+//
+//        writeHex(new File(homeDir, textFn), srNo+1);
+//
+//        TBLoader.saveSerialNumber(deviceId, srNo, homeDir);
+//
+//        File homeTxt = new File(homeDir, textFn);
+//        assertFalse("Expected "+textFn+" to not exist.", homeTxt.exists());
+//
+//        int readNo = TBLoader.loadSerialNumber(deviceId, homeDir);
+//        assertEquals("SRN read should be SRN saved.", srNo, readNo);
+//    }
 
-        int readNo = TBLoader.loadSerialNumber(deviceId, homeDir);
-        assertEquals("SRN read should be SRN saved.", srNo, readNo);
-    }
-
-    @Test
-    public void testReadSrnHex() throws IOException {
-        int srNo = 789;
-        configureDirectories();
-        writeHex(new File(homeDir, hexFn), srNo);
-
-        int readNo = TBLoader.loadSerialNumber(deviceId, homeDir);
-        assertEquals("SRN read should be SRN saved.", srNo, readNo);
-    }
-
-    @Test
-    public void testReadSrnTxt() throws IOException {
-        int srNo = 234;
-        configureDirectories();
-
-        writeHex(new File(homeDir, textFn), srNo);
-
-        int readNo = TBLoader.loadSerialNumber(deviceId, homeDir);
-        assertEquals("SRN read should be SRN saved.", srNo, readNo);
-    }
-
-    @Test
-    public void testReadSrnBinaryLarger() throws IOException {
-        int smallNo = 123;
-        int largeNo = 124;
-        configureDirectories();
-
-        writeHex(new File(homeDir, hexFn), smallNo);
-        writeBinary(new File(homeDir, binaryFn), largeNo);
-
-        int readNo = TBLoader.loadSerialNumber(deviceId, homeDir);
-        assertEquals("SRN read should be SRN saved.", largeNo, readNo);
-    }
-
-    @Test
-    public void testReadSrnHexLarger() throws IOException {
-        int smallNo = 123;
-        int largeNo = 124;
-        configureDirectories();
-
-        writeHex(new File(homeDir, hexFn), largeNo);
-        writeBinary(new File(homeDir, binaryFn), smallNo);
-
-        int readNo = TBLoader.loadSerialNumber(deviceId, homeDir);
-        assertEquals("SRN read should be SRN saved.", largeNo, readNo);
-    }
-
-    @Test
-    public void testCleanTxtFile() throws IOException {
-        int srNo = 345;
-        configureDirectories();
-
-        writeHex(new File(homeDir, textFn), srNo+1);
-
-        TBLoader.saveSerialNumber(deviceId, srNo, homeDir);
-
-        File homeTxt = new File(homeDir, textFn);
-        assertFalse("Expected "+textFn+" to not exist.", homeTxt.exists());
-
-        int readNo = TBLoader.loadSerialNumber(deviceId, homeDir);
-        assertEquals("SRN read should be SRN saved.", srNo, readNo);
-    }
-
-    @Test
-    public void testAllSame() throws IOException {
-        int srNo = 345;
-        configureDirectories();
-
-        TBLoader.saveSerialNumber(deviceId, srNo, homeDir);
-
-        File homeBin = new File(homeDir, binaryFn);
-        int readNo;
-        try (DataInputStream is = new DataInputStream(new FileInputStream(homeBin))) {
-            readNo = is.readInt();
-        }
-        assertEquals("SRN read should be SRN saved.", srNo, readNo);
-
-        File homeHex = new File(homeDir, hexFn);
-        try (FileReader fr = new FileReader(homeHex);
-            BufferedReader br = new BufferedReader(fr)) {
-            String line = br.readLine().trim();
-            if (line.length() == 4) {
-                readNo = Integer.parseInt(line, 16);
-            }
-        }
-        assertEquals("SRN read should be SRN saved.", srNo, readNo);
-    }
+//    @Test
+//    public void testAllSame() throws IOException {
+//        int srNo = 345;
+//        configureDirectories();
+//
+//        TBLoader.saveSerialNumber(deviceId, srNo, homeDir);
+//
+//        File homeBin = new File(homeDir, binaryFn);
+//        int readNo;
+//        try (DataInputStream is = new DataInputStream(new FileInputStream(homeBin))) {
+//            readNo = is.readInt();
+//        }
+//        assertEquals("SRN read should be SRN saved.", srNo, readNo);
+//
+//        File homeHex = new File(homeDir, hexFn);
+//        try (FileReader fr = new FileReader(homeHex);
+//            BufferedReader br = new BufferedReader(fr)) {
+//            String line = br.readLine().trim();
+//            if (line.length() == 4) {
+//                readNo = Integer.parseInt(line, 16);
+//            }
+//        }
+//        assertEquals("SRN read should be SRN saved.", srNo, readNo);
+//    }
 
     private void writeBinary(File file, int serialnumber) throws IOException {
         try (DataOutputStream os = new DataOutputStream(new FileOutputStream(file))) {

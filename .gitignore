@@ -6,12 +6,9 @@ bin/
 .project
 .classpath
 local.properties
-.idea/
-*.iml
-*.ipr
-*.iws
 out/
-local.properties
 keystore.*
 *.apk
 captures
+workspace.xml
+

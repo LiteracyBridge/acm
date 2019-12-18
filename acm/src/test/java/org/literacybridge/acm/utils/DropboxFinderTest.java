@@ -132,6 +132,7 @@ public class DropboxFinderTest {
   public void testParseDrobpoxPersonal() throws IOException {
     File dbxDirPer = mockDropbox(true);
     String dbxPathPer = dbxDirPer.getAbsolutePath();
+    dbxPathPer = dbxPathPer.replace('\\', '/');
     DropboxFinder dbFinder = new DropboxFinder();
     // String jsonString = "{\"business\": {\"path\": \"/Users/bill/Dropbox
     // (Literacy Bridge)\", \"host\": 4929547026}}";
@@ -153,6 +154,7 @@ public class DropboxFinderTest {
   public void testParseDrobpoxBusiness() throws IOException {
     File dbxDirBus = mockDropbox(true);
     String dbxPathBus = dbxDirBus.getAbsolutePath();
+    dbxPathBus = dbxPathBus.replace('\\', '/');
     DropboxFinder dbFinder = new DropboxFinder();
     String jsonString = "{\"business\": {\"path\": \""+dbxPathBus+"\", \"host\": 4929547026}}";
     // String jsonString = "{\"personal\": {\"path\": \"/Users/LB/Dropbox\",
@@ -174,8 +176,10 @@ public class DropboxFinderTest {
   public void testParseDrobpoxBoth() throws IOException {
     File dbxDirPer = mockDropbox(false);
     String dbxPathPer = dbxDirPer.getAbsolutePath();
+    dbxPathPer = dbxPathPer.replace('\\', '/');
     File dbxDirBus = mockDropbox(true);
     String dbxPathBus = dbxDirBus.getAbsolutePath();
+    dbxPathBus = dbxPathBus.replace('\\', '/');
     DropboxFinder dbFinder = new DropboxFinder();
     String jsonString = "{\"business\": {\"path\": \""+dbxPathBus+"\", \"host\": 4929547026},"
         + "\"personal\": {\"path\": \"/Users/LB/Dropbox\", \"host\": 4929547026}}";

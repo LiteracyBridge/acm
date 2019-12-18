@@ -1,7 +1,6 @@
 package org.literacybridge.acm.importexport;
 
-import org.apache.commons.lang.StringUtils;
-import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
@@ -15,7 +14,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-import static org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.*;
+import static org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import static org.literacybridge.acm.store.MetadataSpecification.ALL_METADATA_FIELDS;
 
 /**

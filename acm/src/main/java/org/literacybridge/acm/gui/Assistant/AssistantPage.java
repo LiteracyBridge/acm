@@ -1,6 +1,6 @@
 package org.literacybridge.acm.gui.Assistant;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.MetadataStore;
 

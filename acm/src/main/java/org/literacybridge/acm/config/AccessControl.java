@@ -234,16 +234,19 @@ public class AccessControl {
             // TODO: Notify the user so they have some slim chance of getting around the problem.
         }
     }
-
+    
     /**
      * Do we seem to actually have network connectivity?
      * @return True if we can reach literacybridge.org.
      */
-    static boolean isOnline() {
+    public static boolean isOnline() {
         boolean result = false;
         try {
-            URLConnection connection = new URL("http://literacybridge.org").openConnection();
+//            long startTime = System.nanoTime();
+            URLConnection connection = new URL("http://amplio.org").openConnection();
             connection.connect();
+//            long validatedTime = System.nanoTime();
+//            System.out.printf("Online test in %.2f msec\n", (validatedTime-startTime)/1000000.0);
             result = true;
         } catch (MalformedURLException e) {
             // this should not ever happen (if the URL above is good)
@@ -674,10 +677,8 @@ public class AccessControl {
             LOG.info(String.format("%s: %s\n          %s\n", action, request.toString(), jsonResponse.toString()));
         } catch (IOException ex) {
             ex.printStackTrace();
-            // If this is the only locking, rethrow the exception, so caller knows we can't get to server.
-            if (dbConfiguration.isUseAwsLocking()) {
-                throw ex;
-            }
+            // Rethrow the exception, so caller knows we can't get to server.
+            throw ex;
         }
         httpUtility.disconnect();
 

@@ -1,6 +1,6 @@
 package org.literacybridge.acm.tools;
 
-import au.com.bytecode.opencsv.CSVWriter;
+import com.opencsv.CSVWriter;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;

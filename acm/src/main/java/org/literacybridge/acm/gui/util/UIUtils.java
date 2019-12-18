@@ -1,24 +1,28 @@
 package org.literacybridge.acm.gui.util;
 
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.Frame;
-import java.awt.Rectangle;
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
-
-import javax.swing.*;
-import javax.swing.text.JTextComponent;
-
-import org.apache.commons.lang.StringUtils;
+import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
+import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.dialogs.BusyDialog;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Playlist;
 
-import com.google.common.collect.Lists;
+import javax.swing.*;
+import javax.swing.text.JTextComponent;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.Window;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class UIUtils {
-  public static <T extends Container> T showDialog(Frame parent, final T dialog) {
+  public static <T extends Container> T showDialog(Window parent, final T dialog) {
     final Dimension frameSize = parent.getSize();
     final int x = (frameSize.width - dialog.getWidth()) / 2;
     final int y = (frameSize.height - dialog.getHeight()) / 2;
@@ -36,6 +40,48 @@ public class UIUtils {
     dialog.setLocation(x, y);
     setVisible(dialog, true);
     return dialog;
+  }
+
+  /**
+   * Runs some code with a wait spinner, with a callback when the work is done.
+   * @param waitParent The parent window for the spinner.
+   * @param runnable The code with the work to be done.
+   * @param onFinished Called when the work has finished.
+   * @param waitUiOptions Options for the placement of the spinner window.
+   */
+  public static void runWithWaitSpinner(Window waitParent, Runnable runnable, Runnable onFinished, UiOptions... waitUiOptions) {
+    final Runnable job = new Runnable() {
+      BusyDialog dialog;
+
+      @Override
+      public void run() {
+        Application app = Application.getApplication();
+        dialog = UIUtils.showDialog(waitParent,
+            new BusyDialog(LabelProvider.getLabel("Attempting Sign In"), waitParent));
+        UIUtils.centerWindow(dialog, waitUiOptions);
+        try {
+          runnable.run();
+        } finally {
+          UIUtils.hideDialog(dialog);
+          SwingUtilities.invokeLater(onFinished);
+        }
+      }
+    };
+    new Thread(job).start();
+  }
+
+  public enum UiOptions { TOP_THIRD, SHIFT_DOWN }
+  public static <T extends Container> T centerWindow(final T window, UiOptions... optionFlags) {
+    Set<UiOptions> options = new HashSet<>(Arrays.asList(optionFlags));
+    int yDivisor = options.contains(UiOptions.TOP_THIRD) ? 3 : 2;
+    // Center horizontally and in the top half or 2/3 of screen.
+    Rectangle deviceBounds = window.getGraphicsConfiguration().getDevice().getDefaultConfiguration().getBounds();
+    int x = Math.max(0, (int)(deviceBounds.x + deviceBounds.getWidth()/2 - window.getWidth()/2));
+    int y = Math.max(0, (int)(deviceBounds.y + deviceBounds.getHeight()/yDivisor - window.getHeight()/2));
+    if (options.contains(UiOptions.SHIFT_DOWN)) y += 30;
+    window.setLocation(x, y);
+
+    return window;
   }
 
   public static void hideDialog(final Container dialog) {

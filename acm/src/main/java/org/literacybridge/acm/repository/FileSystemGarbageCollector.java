@@ -1,7 +1,7 @@
 package org.literacybridge.acm.repository;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.mutable.MutableLong;
+import org.apache.commons.lang3.mutable.MutableLong;
 import org.literacybridge.acm.utils.IOUtils;
 
 import java.io.File;

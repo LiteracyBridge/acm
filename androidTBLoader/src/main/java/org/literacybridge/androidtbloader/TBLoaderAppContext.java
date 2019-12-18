@@ -7,7 +7,6 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.widget.Toast;
-
 import org.literacybridge.androidtbloader.content.ContentManager;
 import org.literacybridge.androidtbloader.talkingbook.TalkingBookConnectionManager;
 import org.literacybridge.androidtbloader.uploader.UploadService;

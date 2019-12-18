@@ -413,18 +413,6 @@ public class DBConfiguration { //extends Properties {
     return ret;
   }
 
-  /**
-   * Should locking be maintained in AWS. If not, it runs in the WordPress
-   * server. Reads USE_AWS_LOCKING = true|false from config file.
-   * Currently defaults to false. Next, default to true. Then remove old
-   * WordPress code and remove this entirely.
-   */
-  boolean isUseAwsLocking() {
-    String awsLocking = dbProperties.getProperty(Constants.USE_AWS_LOCKING);
-    return awsLocking == null || !awsLocking.equalsIgnoreCase("false");
-  }
-
-
    public boolean isStrictDeploymentNaming() {
         String strictNaming = dbProperties.getProperty(Constants.STRICT_DEPLOYMENT_NAMING);
         return strictNaming == null || !strictNaming.equalsIgnoreCase("false");

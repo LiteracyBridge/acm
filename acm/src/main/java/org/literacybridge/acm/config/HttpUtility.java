@@ -5,9 +5,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -30,6 +34,31 @@ public class HttpUtility {
      * Represents an HTTP connection
      */
     private HttpURLConnection httpConn;
+
+    private HttpURLConnection sendRequest(String method,
+        String requestURL,
+        JSONObject params,
+        Map<String, String> headers) throws IOException
+    {
+        URL url = new URL(requestURL);
+        httpConn = (HttpURLConnection) url.openConnection();
+        httpConn.setUseCaches(false);
+        httpConn.setDoInput(true); // true indicates the server returns response
+        headers.forEach((key, value) -> httpConn.setRequestProperty(key, value));
+        httpConn.setRequestMethod(method);
+
+        if (params != null && params.size() > 0) {
+
+            httpConn.setDoOutput(true); // true indicates POST request
+
+            // sends POST data
+            OutputStreamWriter writer = new OutputStreamWriter(httpConn.getOutputStream());
+            writer.write(params.toString());
+            writer.flush();
+        }
+
+        return httpConn;
+    }
     /**
      * Makes an HTTP request using POST method to the specified URL.
      *
@@ -42,28 +71,25 @@ public class HttpUtility {
      *             thrown if any I/O error occurred
      */
     public HttpURLConnection sendPostRequest(String requestURL,
-                                                    JSONObject params) throws IOException {
+        JSONObject params,
+        Map<String, String> headers) throws IOException
+    {
+        Map<String, String> allHeaders = new LinkedHashMap<>();
+        if (headers != null) allHeaders.putAll(headers);
+        allHeaders.put("Content-Type", "application/json");
+        allHeaders.put("Accept", "application/json");
 
-        URL url = new URL(requestURL);
-        httpConn = (HttpURLConnection) url.openConnection();
-        httpConn.setUseCaches(false);
-        httpConn.setDoInput(true); // true indicates the server returns response
-        httpConn.setRequestProperty("Content-Type", "application/json");
-        httpConn.setRequestProperty("Accept", "application/json");
-        httpConn.setRequestMethod("POST");
-
-        if (params != null && params.size() > 0) {
-
-            httpConn.setDoOutput(true); // true indicates POST request
-
-            // sends POST data
-            OutputStreamWriter writer = new OutputStreamWriter(
-                    httpConn.getOutputStream());
-            writer.write(params.toString());
-            writer.flush();
-        }
-
-        return httpConn;
+        return sendRequest("POST", requestURL, params, allHeaders);
+    }
+    public HttpURLConnection sendPostRequest(String requestURL,
+        JSONObject params) throws IOException
+    {
+        return sendPostRequest(requestURL, params, null);
+    }
+    public HttpURLConnection sendGetRequest(String requestURL, Map<String, String> headers)
+        throws IOException
+    {
+        return sendRequest("GET", requestURL, null, headers);
     }
 
     private InputStream getInputStream() throws IOException {

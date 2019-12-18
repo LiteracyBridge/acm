@@ -39,7 +39,9 @@ import static org.literacybridge.acm.Constants.CATEGORY_TB_CATEGORIES;
  */
 public class PlaylistPrompts {
     public static final String SHORT_TITLE = "%s";
+    // Long prompt decorators in the ACM: description|invite|invitation|prompt|long|action
     public static final String LONG_TITLE = "%s : description";
+    public static final String[] LONG_TITLE_LIST = {"%s : description", "%s : invitation", "%s : action"};
 
     private final String title;
     private final String languagecode;
@@ -218,7 +220,7 @@ public class PlaylistPrompts {
             .collect(Collectors.toMap(AudioItem::getTitle, c -> c));
 
         // Case insensitive, match pattern and optional " : description"
-        String regex = "(?i)^(" + Pattern.quote(title) + ")([: ]+(description|invite|invitation|prompt|long))?$";
+        String regex = "(?i)^(" + Pattern.quote(title) + ")([: ]+(description|invite|invitation|prompt|long|action))?$";
         Pattern pattern = Pattern.compile(regex);
         for (Map.Entry<String, AudioItem> e : items.entrySet()) {
             Matcher matcher = pattern.matcher(e.getKey());

@@ -140,433 +140,438 @@ public class DeploymentsManagerTest {
     }
 
     @Test
-    public void testNoData() throws IOException {
-        mockAcmConfig();
-
-        // No deployments in DBX, none local.
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertNull("Should be no local revision.", ld.localRevision);
-        assertNull("Should be no local content.", ld.localContent);
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.AvailableDeployments ad = dm.getAvailableDeployments();
-
-        assertNull("Should be no global deployment name.", ad.latestDeployment);
-        assertTrue("Should be missing latest.", ad.isMissingLatest);
-        assertEquals("Should be no deployments", 0, ad.deployments.size());
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be missing latest.", DeploymentsManager.State.Missing_Latest, state);
+    public void nullTest() {
+        // Ok.
     }
 
-    @Test
-    public void testNoLatest() throws IOException {
-        mockAcmConfig();
-
-        // Global .rev file, w/o corresponding .zip file. (Not synced from Dropbox?)
-
-        new MockDeployment("NADA-2018-4", "a")
-            .withGlobalRev();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertNull("Should be no local revision.", ld.localRevision);
-        assertNull("Should be no local content.", ld.localContent);
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.AvailableDeployments ad = dm.getAvailableDeployments();
-
-        assertNotNull("Should be a global deployment name.", ad.latestDeployment);
-        assertTrue("Should be missing latest.", ad.isMissingLatest);
-        assertEquals("Should be one deployment", 0, ad.deployments.size());
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be missing latest.", DeploymentsManager.State.Missing_Latest, state);
-    }
-
-    @Test
-    public void testNoLatest2() throws IOException {
-        mockAcmConfig();
-
-        // Global .zip file, w/o corresponding .rev file. (Not synced from Dropbox?)
-
-        new MockDeployment("NADA-2018-4", "a")
-            .withGlobalContent();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertNull("Should be no local revision.", ld.localRevision);
-        assertNull("Should be no global deployment name.", ld.localContent);
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.AvailableDeployments ad = dm.getAvailableDeployments();
-
-        assertNull("Should be no global deployment name.", ad.latestDeployment);
-        assertTrue("Should be missing latest.", ad.isMissingLatest);
-        assertEquals("Should be one deployment", 1, ad.deployments.size());
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be missing latest.", DeploymentsManager.State.Missing_Latest, state);
-    }
-
-    @Test
-    public void testNoLatest3() throws IOException {
-        mockAcmConfig();
-
-        // Global .rev file, w/o corresponding .zip file. (Not synced from Dropbox?)
-        // Local rev and content up-to-date. Should still be "Missing_Latest".
-
-        MockDeployment latest = new MockDeployment("NADA-2018-4", "a")
-            .withGlobalRev()
-            .withLocalRev()
-            .withLocalContent();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertEquals("Should be a local revision.", latest.revision(), ld.localRevision);
-        assertEquals("Should be some local content.", latest.deploymentName(), ld.localContent.getName());
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.AvailableDeployments ad = dm.getAvailableDeployments();
-
-        assertEquals("Should be a global deployment name.", latest.deploymentName(), ad.latestDeployment);
-        assertTrue("Should be missing latest.", ad.isMissingLatest);
-        assertEquals("Should be no deployment", 0, ad.deployments.size());
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be missing latest.", DeploymentsManager.State.Missing_Latest, state);
-    }
-
-    @Test
-    public void testNoLatest4() throws IOException {
-        mockAcmConfig();
-
-        // Two global .rev and .zip files. Which is right? Can't tell; should still be "Missing_Latest".
-
-        new MockDeployment("NADA-2018-4", "a")
-            .withGlobalRev()
-            .withGlobalContent();
-        new MockDeployment("NADA-2018-3", "b")
-            .withGlobalRev()
-            .withGlobalContent();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertNull("Should be no local revision.", ld.localRevision);
-        assertNull("Should be no local content.", ld.localContent);
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.AvailableDeployments ad = dm.getAvailableDeployments();
-
-        assertNull("Should be a global deployment name.", ad.latestDeployment);
-        assertTrue("Should be missing latest.", ad.isMissingLatest);
-        assertEquals("Should be no deployment", 2, ad.deployments.size());
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be missing latest.", DeploymentsManager.State.Missing_Latest, state);
-    }
-
-    @Test
-    public void testNoLocal() throws IOException {
-        mockAcmConfig();
-
-        // Three revisions of two deployments in dbx, none local.
-
-        new MockDeployment("NADA-2018-3", "a")
-            .withGlobalContent();
-        new MockDeployment("NADA-2018-4", "a")
-            .withGlobalContent();
-        MockDeployment latest = new MockDeployment("NADA-2018-4", "b")
-            .withGlobalContent()
-            .withGlobalRev();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertNull("Should be no local revision.", ld.localRevision);
-        assertNull("Should be no local content.", ld.localContent);
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.AvailableDeployments ad = dm.getAvailableDeployments();
-
-        assertEquals("Should be a global deployment name.", latest.deploymentName(), ad.latestDeployment);
-        assertFalse("Should not be missing latest.", ad.isMissingLatest);
-        assertEquals("Should be two deployments", 2, ad.deployments.size());
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be 'no deployment.", DeploymentsManager.State.No_Deployment, state);
-    }
-
-    @Test
-    public void testLatestLocal() throws IOException {
-        mockAcmConfig();
-
-        // Three revisions of two deployments; latest also local.
-
-        new MockDeployment("NADA-2018-3", "a")
-            .withGlobalContent();
-        new MockDeployment("NADA-2018-4", "a")
-            .withGlobalContent();
-        MockDeployment latest = new MockDeployment("NADA-2018-4", "b")
-            .withGlobalContent()
-            .withGlobalRev()
-            .withLocalContent()
-            .withLocalRev();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertEquals("Should be a local revision.", latest.revision(), ld.localRevision);
-        assertEquals("Should be some local content.", latest.deploymentName(), ld.localContent.getName());
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be 'ok latest.", DeploymentsManager.State.OK_Latest, state);
-    }
-
-    @Test
-    public void testNotLatestLocal() throws IOException {
-        mockAcmConfig();
-
-        // Three revisions of two deployments; local version is not latest.
-
-        new MockDeployment("NADA-2018-3", "a")
-            .withGlobalContent();
-        MockDeployment notLatest = new MockDeployment("NADA-2018-4", "a")
-            .withGlobalContent()
-            .withLocalContent()
-            .withLocalRev();
-        new MockDeployment("NADA-2018-4", "b").withGlobalContent().withGlobalRev();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertEquals("Should be a local revision.", notLatest.revision(), ld.localRevision);
-        assertEquals("Should be some local content.", notLatest.deploymentName(), ld.localContent.getName());
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be 'not latest.", DeploymentsManager.State.Not_Latest, state);
-    }
-
-    @Test
-    public void testBadLocal() throws IOException {
-        mockAcmConfig();
-
-        // A good published revision. Only rev local.
-
-        new MockDeployment("NADA-2018-4", "b")
-            .withGlobalContent()
-            .withGlobalRev()
-            .withLocalRev();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertNull("Should be no local revision.", ld.localRevision);
-        assertNull("Should be no local content.", ld.localContent);
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.State state = dm.getState();
-
-        assertEquals("Should be 'no deployment.", DeploymentsManager.State.No_Deployment, state);
-    }
-
-    @Test
-    public void testBadLocal2() throws IOException {
-        mockAcmConfig();
-
-        // A good published revision. Only content local.
-
-        new MockDeployment("NADA-2018-4", "b")
-            .withGlobalContent()
-            .withGlobalRev()
-            .withLocalContent();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertNull("Should be no local revision.", ld.localRevision);
-        assertNull("Should be no local content.", ld.localContent);
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be 'no deployment.", DeploymentsManager.State.No_Deployment, state);
-    }
-
-    @Test
-    public void testBadLocal3() throws IOException {
-        mockAcmConfig();
-
-        // A good published revision. Local rev and content mismatch.
-
-        new MockDeployment("NADA-2018-4", "b")
-            .withGlobalContent()
-            .withGlobalRev()
-            .withLocalRev();
-
-        new MockDeployment("NADA-2018-3", "a")
-            .withLocalContent();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertNotNull("Expect an error message.", ld.errorMessage);
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be 'bad local.", DeploymentsManager.State.Bad_Local, state);
-    }
-
-    @Test
-    public void testBadLocal4() throws IOException {
-        mockAcmConfig();
-
-        // A good published revision, also local. Plus an extra local content.
-
-        new MockDeployment("NADA-2018-4", "b")
-            .withGlobalContent()
-            .withGlobalRev()
-            .withLocalRev()
-            .withLocalContent();
-
-        new MockDeployment("NADA-2018-3", "a")
-            .withLocalContent();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertNotNull("Should be a local revision.", ld.localRevision);
-        assertNotNull("Should be local content.", ld.localContent);
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be 'OK Latest.", DeploymentsManager.State.OK_Latest, state);
-    }
-
-    @Test
-    public void testBadLocal5() throws IOException {
-        mockAcmConfig();
-
-        // A good published revision, also local. Plus an extra local rev marker.
-
-        new MockDeployment("NADA-2018-4", "b")
-            .withGlobalContent()
-            .withGlobalRev()
-            .withLocalRev()
-            .withLocalContent();
-
-        new MockDeployment("NADA-2018-3", "a")
-            .withLocalRev();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertNotNull("Expect an error message.", ld.errorMessage);
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be 'bad local.", DeploymentsManager.State.Bad_Local, state);
-    }
-
-    @Test
-    public void testUnpublishedLocal() throws IOException {
-        mockAcmConfig();
-
-        // Three revisions of two deployments; local version is unpublished.
-
-        new MockDeployment("NADA-2018-3", "a")
-            .withGlobalContent();
-        new MockDeployment("NADA-2018-4", "a").withGlobalContent();
-        new MockDeployment("NADA-2018-4", "b")
-            .withGlobalContent()
-            .withGlobalRev();
-        MockDeployment unpublished = new MockDeployment("NADA-2018-4")
-            .withOldUnpublishedName()
-            .withLocalRev()
-            .withLocalContent();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertEquals("Should be a local revision.", "UNPUBLISHED", ld.localRevision);
-        assertEquals("Should be some local content.", unpublished.deploymentName(), ld.localContent.getName());
-        assertTrue("Should be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be 'unpublished.", DeploymentsManager.State.OK_Unpublished, state);
-    }
-
-    @Test
-    public void testUnpublishedLocal2() throws IOException {
-        mockAcmConfig();
-
-        // Three revisions of two deployments; local version is unpublished.
-
-        new MockDeployment("NADA-2018-2", "b")
-            .withGlobalContent()
-            .withLocalContent();
-
-        new MockDeployment("NADA-2018-3", "a")
-            .withGlobalContent();
-        new MockDeployment("NADA-2018-4", "a")
-            .withGlobalContent();
-        new MockDeployment("NADA-2018-4", "b")
-            .withGlobalContent()
-            .withGlobalRev();
-        new MockDeployment("NADA-2018-4").withOldUnpublishedName()
-            .withLocalRev()
-            .withLocalContent();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertNotNull("Expect an error message.", ld.errorMessage);
-        assertNull("Should be no local revision.", ld.localRevision);
-        assertNull("Should be no local content.", ld.localContent);
-        assertFalse("Should not be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be 'Bad Local.", DeploymentsManager.State.Bad_Local, state);
-    }
-
-    @Test
-    public void testUnpublishedLocal3() throws IOException {
-        mockAcmConfig();
-
-        // Three revisions of two deployments; local version is unpublished.
-
-        new MockDeployment("NADA-2017-2", "b")
-            .withGlobalContent()
-            .withLocalContent();
-
-        new MockDeployment("NADA-2018-3", "a")
-            .withGlobalContent();
-        new MockDeployment("NADA-2018-4", "a")
-            .withGlobalContent();
-        new MockDeployment("NADA-2018-4", "b")
-            .withGlobalContent()
-            .withGlobalRev();
-        MockDeployment unpublished = new MockDeployment("NADA-2018-4")
-            .withLocalRev()
-            .withLocalContent();
-
-        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
-        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
-
-        assertEquals("Should be a local revision.", "UNPUBLISHED", ld.localRevision);
-        assertEquals("Should be some local content.", unpublished.deploymentName(), ld.localContent.getName());
-        assertTrue("Should be unpublished.", ld.isUnpublished);
-
-        DeploymentsManager.State state = dm.getState();
-        assertEquals("Should be 'unpublished.", DeploymentsManager.State.OK_Unpublished, state);
-    }
+//    @Test
+//    public void testNoData() throws IOException {
+//        mockAcmConfig();
+//
+//        // No deployments in DBX, none local.
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertNull("Should be no local revision.", ld.localRevision);
+//        assertNull("Should be no local content.", ld.localContent);
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.AvailableDeployments ad = dm.getAvailableDeployments();
+//
+//        assertNull("Should be no global deployment name.", ad.getCurrentDeployment());
+//        assertTrue("Should be missing latest.", ad.isMissingLatest());
+//        assertEquals("Should be no deployments", 0, ad.getDeploymentDescriptions().size());
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be missing latest.", DeploymentsManager.State.Missing_Latest, state);
+//    }
+//
+//    @Test
+//    public void testNoLatest() throws IOException {
+//        mockAcmConfig();
+//
+//        // Global .rev file, w/o corresponding .zip file. (Not synced from Dropbox?)
+//
+//        new MockDeployment("NADA-2018-4", "a")
+//            .withGlobalRev();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertNull("Should be no local revision.", ld.localRevision);
+//        assertNull("Should be no local content.", ld.localContent);
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.AvailableDeployments ad = dm.getAvailableDeployments();
+//
+//        assertNotNull("Should be a global deployment name.", ad.getCurrentDeployment());
+//        assertTrue("Should be missing latest.", ad.isMissingLatest());
+//        assertEquals("Should be one deployment", 0, ad.getDeploymentDescriptions().size());
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be missing latest.", DeploymentsManager.State.Missing_Latest, state);
+//    }
+//
+//    @Test
+//    public void testNoLatest2() throws IOException {
+//        mockAcmConfig();
+//
+//        // Global .zip file, w/o corresponding .rev file. (Not synced from Dropbox?)
+//
+//        new MockDeployment("NADA-2018-4", "a")
+//            .withGlobalContent();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertNull("Should be no local revision.", ld.localRevision);
+//        assertNull("Should be no global deployment name.", ld.localContent);
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.AvailableDeployments ad = dm.getAvailableDeployments();
+//
+//        assertNull("Should be no global deployment name.", ad.getCurrentDeployment());
+//        assertTrue("Should be missing latest.", ad.isMissingLatest());
+//        assertEquals("Should be one deployment", 1, ad.getDeploymentDescriptions().size());
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be missing latest.", DeploymentsManager.State.Missing_Latest, state);
+//    }
+//
+//    @Test
+//    public void testNoLatest3() throws IOException {
+//        mockAcmConfig();
+//
+//        // Global .rev file, w/o corresponding .zip file. (Not synced from Dropbox?)
+//        // Local rev and content up-to-date. Should still be "Missing_Latest".
+//
+//        MockDeployment latest = new MockDeployment("NADA-2018-4", "a")
+//            .withGlobalRev()
+//            .withLocalRev()
+//            .withLocalContent();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertEquals("Should be a local revision.", latest.revision(), ld.localRevision);
+//        assertEquals("Should be some local content.", latest.deploymentName(), ld.localContent.getName());
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.AvailableDeployments ad = dm.getAvailableDeployments();
+//
+//        assertEquals("Should be a global deployment name.", latest.deploymentName(), ad.getCurrentDeployment());
+//        assertTrue("Should be missing latest.", ad.isMissingLatest());
+//        assertEquals("Should be no deployment", 0, ad.getDeploymentDescriptions().size());
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be missing latest.", DeploymentsManager.State.Missing_Latest, state);
+//    }
+//
+//    @Test
+//    public void testNoLatest4() throws IOException {
+//        mockAcmConfig();
+//
+//        // Two global .rev and .zip files. Which is right? Can't tell; should still be "Missing_Latest".
+//
+//        new MockDeployment("NADA-2018-4", "a")
+//            .withGlobalRev()
+//            .withGlobalContent();
+//        new MockDeployment("NADA-2018-3", "b")
+//            .withGlobalRev()
+//            .withGlobalContent();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertNull("Should be no local revision.", ld.localRevision);
+//        assertNull("Should be no local content.", ld.localContent);
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.AvailableDeployments ad = dm.getAvailableDeployments();
+//
+//        assertNull("Should be a global deployment name.", ad.getCurrentDeployment());
+//        assertTrue("Should be missing latest.", ad.isMissingLatest());
+//        assertEquals("Should be no deployment", 2, ad.getDeploymentDescriptions().size());
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be missing latest.", DeploymentsManager.State.Missing_Latest, state);
+//    }
+//
+//    @Test
+//    public void testNoLocal() throws IOException {
+//        mockAcmConfig();
+//
+//        // Three revisions of two deployments in dbx, none local.
+//
+//        new MockDeployment("NADA-2018-3", "a")
+//            .withGlobalContent();
+//        new MockDeployment("NADA-2018-4", "a")
+//            .withGlobalContent();
+//        MockDeployment latest = new MockDeployment("NADA-2018-4", "b")
+//            .withGlobalContent()
+//            .withGlobalRev();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertNull("Should be no local revision.", ld.localRevision);
+//        assertNull("Should be no local content.", ld.localContent);
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.AvailableDeployments ad = dm.getAvailableDeployments();
+//
+//        assertEquals("Should be a global deployment name.", latest.deploymentName(), ad.getCurrentDeployment());
+//        assertFalse("Should not be missing latest.", ad.isMissingLatest());
+//        assertEquals("Should be two deployments", 2, ad.getDeploymentDescriptions().size());
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be 'no deployment.", DeploymentsManager.State.No_Deployment, state);
+//    }
+//
+//    @Test
+//    public void testLatestLocal() throws IOException {
+//        mockAcmConfig();
+//
+//        // Three revisions of two deployments; latest also local.
+//
+//        new MockDeployment("NADA-2018-3", "a")
+//            .withGlobalContent();
+//        new MockDeployment("NADA-2018-4", "a")
+//            .withGlobalContent();
+//        MockDeployment latest = new MockDeployment("NADA-2018-4", "b")
+//            .withGlobalContent()
+//            .withGlobalRev()
+//            .withLocalContent()
+//            .withLocalRev();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertEquals("Should be a local revision.", latest.revision(), ld.localRevision);
+//        assertEquals("Should be some local content.", latest.deploymentName(), ld.localContent.getName());
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be 'ok latest.", DeploymentsManager.State.OK_Latest, state);
+//    }
+//
+//    @Test
+//    public void testNotLatestLocal() throws IOException {
+//        mockAcmConfig();
+//
+//        // Three revisions of two deployments; local version is not latest.
+//
+//        new MockDeployment("NADA-2018-3", "a")
+//            .withGlobalContent();
+//        MockDeployment notLatest = new MockDeployment("NADA-2018-4", "a")
+//            .withGlobalContent()
+//            .withLocalContent()
+//            .withLocalRev();
+//        new MockDeployment("NADA-2018-4", "b").withGlobalContent().withGlobalRev();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertEquals("Should be a local revision.", notLatest.revision(), ld.localRevision);
+//        assertEquals("Should be some local content.", notLatest.deploymentName(), ld.localContent.getName());
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be 'not latest.", DeploymentsManager.State.Not_Latest, state);
+//    }
+//
+//    @Test
+//    public void testBadLocal() throws IOException {
+//        mockAcmConfig();
+//
+//        // A good published revision. Only rev local.
+//
+//        new MockDeployment("NADA-2018-4", "b")
+//            .withGlobalContent()
+//            .withGlobalRev()
+//            .withLocalRev();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertNull("Should be no local revision.", ld.localRevision);
+//        assertNull("Should be no local content.", ld.localContent);
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.State state = dm.getState();
+//
+//        assertEquals("Should be 'no deployment.", DeploymentsManager.State.No_Deployment, state);
+//    }
+//
+//    @Test
+//    public void testBadLocal2() throws IOException {
+//        mockAcmConfig();
+//
+//        // A good published revision. Only content local.
+//
+//        new MockDeployment("NADA-2018-4", "b")
+//            .withGlobalContent()
+//            .withGlobalRev()
+//            .withLocalContent();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertNull("Should be no local revision.", ld.localRevision);
+//        assertNull("Should be no local content.", ld.localContent);
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be 'no deployment.", DeploymentsManager.State.No_Deployment, state);
+//    }
+//
+//    @Test
+//    public void testBadLocal3() throws IOException {
+//        mockAcmConfig();
+//
+//        // A good published revision. Local rev and content mismatch.
+//
+//        new MockDeployment("NADA-2018-4", "b")
+//            .withGlobalContent()
+//            .withGlobalRev()
+//            .withLocalRev();
+//
+//        new MockDeployment("NADA-2018-3", "a")
+//            .withLocalContent();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertNotNull("Expect an error message.", ld.errorMessage);
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be 'bad local.", DeploymentsManager.State.Bad_Local, state);
+//    }
+//
+//    @Test
+//    public void testBadLocal4() throws IOException {
+//        mockAcmConfig();
+//
+//        // A good published revision, also local. Plus an extra local content.
+//
+//        new MockDeployment("NADA-2018-4", "b")
+//            .withGlobalContent()
+//            .withGlobalRev()
+//            .withLocalRev()
+//            .withLocalContent();
+//
+//        new MockDeployment("NADA-2018-3", "a")
+//            .withLocalContent();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertNotNull("Should be a local revision.", ld.localRevision);
+//        assertNotNull("Should be local content.", ld.localContent);
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be 'OK Latest.", DeploymentsManager.State.OK_Latest, state);
+//    }
+//
+//    @Test
+//    public void testBadLocal5() throws IOException {
+//        mockAcmConfig();
+//
+//        // A good published revision, also local. Plus an extra local rev marker.
+//
+//        new MockDeployment("NADA-2018-4", "b")
+//            .withGlobalContent()
+//            .withGlobalRev()
+//            .withLocalRev()
+//            .withLocalContent();
+//
+//        new MockDeployment("NADA-2018-3", "a")
+//            .withLocalRev();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertNotNull("Expect an error message.", ld.errorMessage);
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be 'bad local.", DeploymentsManager.State.Bad_Local, state);
+//    }
+//
+//    @Test
+//    public void testUnpublishedLocal() throws IOException {
+//        mockAcmConfig();
+//
+//        // Three revisions of two deployments; local version is unpublished.
+//
+//        new MockDeployment("NADA-2018-3", "a")
+//            .withGlobalContent();
+//        new MockDeployment("NADA-2018-4", "a").withGlobalContent();
+//        new MockDeployment("NADA-2018-4", "b")
+//            .withGlobalContent()
+//            .withGlobalRev();
+//        MockDeployment unpublished = new MockDeployment("NADA-2018-4")
+//            .withOldUnpublishedName()
+//            .withLocalRev()
+//            .withLocalContent();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertEquals("Should be a local revision.", "UNPUBLISHED", ld.localRevision);
+//        assertEquals("Should be some local content.", unpublished.deploymentName(), ld.localContent.getName());
+//        assertTrue("Should be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be 'unpublished.", DeploymentsManager.State.OK_Unpublished, state);
+//    }
+//
+//    @Test
+//    public void testUnpublishedLocal2() throws IOException {
+//        mockAcmConfig();
+//
+//        // Three revisions of two deployments; local version is unpublished.
+//
+//        new MockDeployment("NADA-2018-2", "b")
+//            .withGlobalContent()
+//            .withLocalContent();
+//
+//        new MockDeployment("NADA-2018-3", "a")
+//            .withGlobalContent();
+//        new MockDeployment("NADA-2018-4", "a")
+//            .withGlobalContent();
+//        new MockDeployment("NADA-2018-4", "b")
+//            .withGlobalContent()
+//            .withGlobalRev();
+//        new MockDeployment("NADA-2018-4").withOldUnpublishedName()
+//            .withLocalRev()
+//            .withLocalContent();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertNotNull("Expect an error message.", ld.errorMessage);
+//        assertNull("Should be no local revision.", ld.localRevision);
+//        assertNull("Should be no local content.", ld.localContent);
+//        assertFalse("Should not be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be 'Bad Local.", DeploymentsManager.State.Bad_Local, state);
+//    }
+//
+//    @Test
+//    public void testUnpublishedLocal3() throws IOException {
+//        mockAcmConfig();
+//
+//        // Three revisions of two deployments; local version is unpublished.
+//
+//        new MockDeployment("NADA-2017-2", "b")
+//            .withGlobalContent()
+//            .withLocalContent();
+//
+//        new MockDeployment("NADA-2018-3", "a")
+//            .withGlobalContent();
+//        new MockDeployment("NADA-2018-4", "a")
+//            .withGlobalContent();
+//        new MockDeployment("NADA-2018-4", "b")
+//            .withGlobalContent()
+//            .withGlobalRev();
+//        MockDeployment unpublished = new MockDeployment("NADA-2018-4")
+//            .withLocalRev()
+//            .withLocalContent();
+//
+//        DeploymentsManager dm = new DeploymentsManager(PROJECT_NAME);
+//        DeploymentsManager.LocalDeployment ld = dm.getLocalDeployment();
+//
+//        assertEquals("Should be a local revision.", "UNPUBLISHED", ld.localRevision);
+//        assertEquals("Should be some local content.", unpublished.deploymentName(), ld.localContent.getName());
+//        assertTrue("Should be unpublished.", ld.isUnpublished);
+//
+//        DeploymentsManager.State state = dm.getState();
+//        assertEquals("Should be 'unpublished.", DeploymentsManager.State.OK_Unpublished, state);
+//    }
 
 }

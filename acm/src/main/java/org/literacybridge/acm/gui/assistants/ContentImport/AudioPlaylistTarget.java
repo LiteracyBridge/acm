@@ -6,7 +6,11 @@ import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ContentSpec.MessageSpec;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class AudioPlaylistTarget extends AudioTarget {
     private static final String SHORT_PROMPT = "\"%s\"";
@@ -25,6 +29,21 @@ public class AudioPlaylistTarget extends AudioTarget {
     public String getTitle() {
         return String.format(isLong?PlaylistPrompts.LONG_TITLE:PlaylistPrompts.SHORT_TITLE, playlistSpec.getPlaylistTitle());
     }
+
+    /**
+     * See super class for more details. If this is the long-form playlist title, return a list
+     * of all the possible names for the long-form title ("Playlist title - invitation", etc.).
+     * If NOT a long-form playlist title, let the super class decide what to do.
+     * @return a list of one or more playlist titles.
+     */
+    public List<String> getTitles() {
+        if (!isLong) return super.getTitles();
+        String title = playlistSpec.getPlaylistTitle();
+        return Arrays.stream(PlaylistPrompts.LONG_TITLE_LIST)
+            .map(s -> String.format(s, title))
+            .collect(Collectors.toList());
+    }
+
     public String getPromptString() {
         return String.format(isLong?LONG_PROMPT:SHORT_PROMPT, playlistSpec.getPlaylistTitle());
     }

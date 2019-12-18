@@ -1,6 +1,6 @@
 package org.literacybridge.acm.tbloader;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 
 import javax.swing.*;
@@ -17,7 +17,7 @@ import java.util.Vector;
  * Deployments.
  */
 class ManageDeploymentsDialog extends JDialog {
-    private Map<String, File> deployments;
+    private Map<String, String> deployments;
     private Vector<String> deploymentNames;
 
     public String selection;
@@ -31,7 +31,7 @@ class ManageDeploymentsDialog extends JDialog {
      *                    we build the list of Deployments and their versions (-a, -b, ...).
      * @param localDeployment The Deployment currently copied locally, if any.
      */
-    ManageDeploymentsDialog(Frame owner, Map<String, File> deployments, String localDeployment) {
+    ManageDeploymentsDialog(Frame owner, Map<String, String> deployments, String localDeployment) {
         super(owner);
         setTitle("Choose Deployment for TB-Loader");
 
@@ -196,9 +196,9 @@ class ManageDeploymentsDialog extends JDialog {
             label.setForeground(fg);
 
             String str = "<html>" + value;
-            File f = deployments.get(value);
+            String f = deployments.get(value);
             if (f != null) {
-                str += "<br>" + f.getName();
+                str += "<br>" + f;
             }
 
             label.setText(str);

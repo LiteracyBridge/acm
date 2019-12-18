@@ -20,32 +20,29 @@ package org.literacybridge.androidtbloader.signin;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.util.Base64;
 import android.util.Log;
-
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.auth.CognitoCredentialsProvider;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoDevice;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttributes;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserPool;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession;
 import com.amazonaws.regions.Region;
 import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProvider;
 import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProviderClient;
-import com.amazonaws.services.cognitoidentityprovider.model.AttributeType;
-
 import com.amazonaws.services.cognitoidentityprovider.model.GetUserRequest;
 import com.amazonaws.services.cognitoidentityprovider.model.GetUserResult;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.literacybridge.androidtbloader.util.Constants;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidParameterException;
+import java.util.*;
+
+import static android.util.Base64.DEFAULT;
 
 public class UserHelper {
     private static final String TAG= "TBL!:" + "UserHelper";
@@ -63,19 +60,6 @@ public class UserHelper {
      */
     private static String username;
     private static String user;
-    private static CognitoDevice newDevice;
-
-    private static CognitoUserAttributes attributesChanged;
-    private static List<AttributeType> attributesToDelete;
-
-    private static List<ItemToDisplay> currDisplayedItems;
-    private static  int itemCount;
-
-    private static List<ItemToDisplay> trustedDevices;
-    private static int trustedDevicesCount;
-    private static List<CognitoDevice> deviceDetails;
-    private static CognitoDevice thisDevice;
-    private static boolean thisDeviceTrustState;
 
     private static List<ItemToDisplay> firstTimeLogInDetails;
     private static Map<String, String> firstTimeLogInUserAttributes;
@@ -86,9 +70,8 @@ public class UserHelper {
 
     // Change the next three lines of code to run this demo on your user pool
 
-    // User details from the service
+    // The session describes this signon.
     private static CognitoUserSession currSession;
-    private static CognitoUserDetails userDetails;
 
     private static AmazonCognitoIdentityProvider cipClient;
     private static CognitoCredentialsProvider credentialsProvider;
@@ -97,10 +80,7 @@ public class UserHelper {
     private static boolean phoneVerified;
     private static boolean emailVerified;
 
-    private static boolean phoneAvailable;
-    private static boolean emailAvailable;
-
-    private static Set<String> currUserAttributes;
+    private static Map<String,String> mAuthenticationPayload;
 
     public static void init(Context context) {
         setData();
@@ -129,19 +109,15 @@ public class UserHelper {
         }
 
         phoneVerified = false;
-        phoneAvailable = false;
         emailVerified = false;
-        emailAvailable = false;
 
-        currUserAttributes = new HashSet<String>();
-        currDisplayedItems = new ArrayList<ItemToDisplay>();
-        trustedDevices = new ArrayList<ItemToDisplay>();
-        firstTimeLogInDetails = new ArrayList<ItemToDisplay>();
-        firstTimeLogInUpDatedAttributes= new HashMap<String, String>();
+        Set<String> currUserAttributes = new HashSet<>();
+        List<ItemToDisplay> trustedDevices = new ArrayList<>();
+        firstTimeLogInDetails = new ArrayList<>();
+        firstTimeLogInUpDatedAttributes= new HashMap<>();
 
-        newDevice = null;
-        thisDevice = null;
-        thisDeviceTrustState = false;
+        CognitoDevice thisDevice = null;
+        boolean thisDeviceTrustState = false;
     }
 
     public static CognitoCredentialsProvider getCredentialsProvider(Context context) {
@@ -162,19 +138,13 @@ public class UserHelper {
         return signUpFieldsC2O;
     }
 
-    public static  Map<String, String> getSignUpFieldsO2C() {
-        return signUpFieldsO2C;
-    }
-
-    public static List<String> getAttributeDisplaySeq() {
-        return attributeDisplaySeq;
-    }
-
     public static void setCurrSession(Context applicationContext, CognitoUserSession session, final Runnable done) {
         currSession = session;
+        mAuthenticationPayload = null;
+        Map<String,String> payload = getAuthenticationPayload();
         credentialsProvider = getCredentialsProvider(applicationContext);
 
-        Map<String, String> logins = new HashMap<String, String>();
+        Map<String, String> logins = new HashMap<>();
         logins.put(Constants.COGNITO_USER_POOL_LOGIN_STRING, currSession.getIdToken().getJWTToken());
         credentialsProvider.setLogins(logins);
 
@@ -224,13 +194,14 @@ public class UserHelper {
         return currSession;
     }
 
-    public static void setUserDetails(CognitoUserDetails details) {
-        userDetails = details;
-        refreshWithSync();
+    public static String getJwtToken() {
+        return currSession == null ? null : currSession.getIdToken().getJWTToken();
     }
-
-    public static  CognitoUserDetails getUserDetails() {
-        return userDetails;
+    public static String getAccessToken() {
+        return currSession == null ? null : currSession.getAccessToken().getJWTToken();
+    }
+    public static String getRefreshToken() {
+        return currSession == null ? null : currSession.getRefreshToken().getToken();
     }
 
     public static String getUserId() {
@@ -239,56 +210,6 @@ public class UserHelper {
 
     public static void setUserId(String newUser) {
         user = newUser;
-    }
-
-    public static boolean isPhoneVerified() {
-        return phoneVerified;
-    }
-
-    public static boolean isEmailVerified() {
-        return emailVerified;
-    }
-
-    public static boolean isPhoneAvailable() {
-        return phoneAvailable;
-    }
-
-    public static boolean isEmailAvailable() {
-        return emailAvailable;
-    }
-
-    public static void setPhoneVerified(boolean phoneVerif) {
-        phoneVerified = phoneVerif;
-    }
-
-    public static void setEmailVerified(boolean emailVerif) {
-        emailVerified = emailVerif;
-    }
-
-    public static void setPhoneAvailable(boolean phoneAvail) {
-        phoneAvailable = phoneAvail;
-    }
-
-    public static void setEmailAvailable(boolean emailAvail) {
-        emailAvailable = emailAvail;
-    }
-
-    public static void clearCurrUserAttributes() {
-        currUserAttributes.clear();
-    }
-
-    public static void addCurrUserattribute(String attribute) {
-        currUserAttributes.add(attribute);
-    }
-
-    public static List<String> getNewAvailableOptions() {
-        List<String> newOption = new ArrayList<String>();
-        for(String attribute : attributeDisplaySeq) {
-            if(!(currUserAttributes.contains(attribute))) {
-                newOption.add(attribute);
-            }
-        }
-        return  newOption;
     }
 
     public static String formatException(Exception exception) {
@@ -308,27 +229,8 @@ public class UserHelper {
         return  formattedString;
     }
 
-    public  static  int getItemCount() {
-        return itemCount;
-    }
-
-    public static int getDevicesCount() {
-        return trustedDevicesCount;
-    }
-
     public static int getFirstTimeLogInItemsCount() {
         return  firstTimeLogInItemsCount;
-    }
-
-    public  static ItemToDisplay getItemForDisplay(int position) {
-        return  currDisplayedItems.get(position);
-    }
-
-    public static ItemToDisplay getDeviceForDisplay(int position) {
-        if (position >= trustedDevices.size()) {
-            return new ItemToDisplay(" ", " ", " ", Color.BLACK, Color.DKGRAY, Color.parseColor("#37A51C"), 0, null);
-        }
-        return trustedDevices.get(position);
     }
 
     public static ItemToDisplay getUserAttributeForFirstLogInCheck(int position) {
@@ -338,13 +240,13 @@ public class UserHelper {
     public static void setUserAttributeForDisplayFirstLogIn(Map<String, String> currAttributes, List<String> requiredAttributes) {
         firstTimeLogInUserAttributes = currAttributes;
         firstTimeLogInRequiredAttributes = requiredAttributes;
-        firstTimeLogInUpDatedAttributes = new HashMap<String, String>();
+        firstTimeLogInUpDatedAttributes = new HashMap<>();
         refreshDisplayItemsForFirstTimeLogin();
     }
 
     public static void setUserAttributeForFirstTimeLogin(String attributeName, String attributeValue) {
         if (firstTimeLogInUserAttributes ==  null) {
-            firstTimeLogInUserAttributes = new HashMap<String, String>();
+            firstTimeLogInUserAttributes = new HashMap<>();
         }
         firstTimeLogInUserAttributes.put(attributeName, attributeValue);
         firstTimeLogInUpDatedAttributes.put(attributeName, attributeValue);
@@ -365,7 +267,7 @@ public class UserHelper {
 
     private static void refreshDisplayItemsForFirstTimeLogin() {
         firstTimeLogInItemsCount = 0;
-        firstTimeLogInDetails = new ArrayList<ItemToDisplay>();
+        firstTimeLogInDetails = new ArrayList<>();
 
         for(Map.Entry<String, String> attr: firstTimeLogInUserAttributes.entrySet()) {
             if ("phone_number_verified".equals(attr.getKey()) || "email_verified".equals(attr.getKey())) {
@@ -391,55 +293,11 @@ public class UserHelper {
     }
 
     public static void newDevice(CognitoDevice device) {
-        newDevice = device;
-    }
-
-    public static void setDevicesForDisplay(List<CognitoDevice> devicesList) {
-        trustedDevicesCount = 0;
-        thisDeviceTrustState = false;
-        deviceDetails = devicesList;
-        trustedDevices = new ArrayList<ItemToDisplay>();
-        for(CognitoDevice device: devicesList) {
-            if (thisDevice != null && thisDevice.getDeviceKey().equals(device.getDeviceKey())) {
-                thisDeviceTrustState = true;
-            } else {
-                ItemToDisplay item = new ItemToDisplay("", device.getDeviceName(), device.getCreateDate().toString(), Color.BLACK, Color.DKGRAY, Color.parseColor("#329AD6"), 0, null);
-                item.setDataDrawable("checked");
-                trustedDevices.add(item);
-                trustedDevicesCount++;
-            }
-        }
-    }
-
-    public static CognitoDevice getDeviceDetail(int position) {
-        if (position <= trustedDevicesCount) {
-            return deviceDetails.get(position);
-        } else {
-            return null;
-        }
-    }
-
-    //public static
-
-    public static CognitoDevice getNewDevice() {
-        return newDevice;
-    }
-
-    public static CognitoDevice getThisDevice() {
-        return thisDevice;
-    }
-
-    public static void setThisDevice(CognitoDevice device) {
-        thisDevice = device;
-    }
-
-    public static boolean getThisDeviceTrustState() {
-        return thisDeviceTrustState;
     }
 
     private static void setData() {
         // Set attribute display sequence
-        attributeDisplaySeq = new ArrayList<String>();
+        attributeDisplaySeq = new ArrayList<>();
 //        attributeDisplaySeq.add("given_name");
 //        attributeDisplaySeq.add("middle_name");
 //        attributeDisplaySeq.add("family_name");
@@ -448,7 +306,7 @@ public class UserHelper {
         attributeDisplaySeq.add("email");
         attributeDisplaySeq.add("custom:greeting");
 
-        signUpFieldsC2O = new HashMap<String, String>();
+        signUpFieldsC2O = new HashMap<>();
 //        signUpFieldsC2O.put("Given name", "given_name");
 //        signUpFieldsC2O.put("Family name", "family_name");
 //        signUpFieldsC2O.put("Nick name", "nickname");
@@ -459,7 +317,7 @@ public class UserHelper {
 //        signUpFieldsC2O.put("Middle name","middle_name");
         signUpFieldsC2O.put("Preferred Greeting","custom:greeting");
 
-        signUpFieldsO2C = new HashMap<String, String>();
+        signUpFieldsO2C = new HashMap<>();
 //        signUpFieldsO2C.put("given_name", "Given name");
 //        signUpFieldsO2C.put("family_name", "Family name");
 //        signUpFieldsO2C.put("nickname", "Nick name");
@@ -480,14 +338,7 @@ public class UserHelper {
         emailVerified = false;
         phoneVerified = false;
 
-        emailAvailable = false;
-        phoneAvailable = false;
-
-        currDisplayedItems = new ArrayList<ItemToDisplay>();
-        currUserAttributes.clear();
-        itemCount = 0;
-
-        for(Map.Entry<String, String> attr: userDetails.getAttributes().getAttributes().entrySet()) {
+        for(Map.Entry<String, String> attr: mAuthenticationPayload.entrySet()) {
 
             tempKeys.add(attr.getKey());
             tempValues.add(attr.getValue());
@@ -500,10 +351,8 @@ public class UserHelper {
             }
 
             if(attr.getKey().equals("email")) {
-                emailAvailable = true;
             }
             else if(attr.getKey().equals("phone_number")) {
-                phoneAvailable = true;
             }
         }
 
@@ -540,21 +389,65 @@ public class UserHelper {
                         item.setMessageColor(Color.parseColor("#E94700"));
                     }
                 }
-                
-                currDisplayedItems.add(item);
-                currUserAttributes.add(det);
-                itemCount++;
             }
         }
     }
 
-    private static void modifyAttribute(String attributeName, String newValue) {
-        //
-
+    public static synchronized Map<String,String> getAuthenticationPayload() {
+        if (mAuthenticationPayload == null) {
+            JSONObject jsonPayload = getPayloadFromJwt(currSession.getIdToken().getJWTToken());
+            Map<String,String> payload = new HashMap<>();
+            Set<Map.Entry> eset = jsonPayload.entrySet();
+            for (Map.Entry e : eset) {
+                payload.put(e.getKey().toString(), e.getValue().toString());
+            }
+            if (payload.size() > 0) {
+                mAuthenticationPayload = payload;
+                refreshWithSync();
+            }
+        }
+        return mAuthenticationPayload;
+    }
+    public static String getAuthenticationPayload(String key) {
+        Map<String, String> props = getAuthenticationPayload();
+        return props==null ? null : props.get(key);
     }
 
-    private static void deleteAttribute(String attributeName) {
-
+    private static final int HEADER = 0;
+    private static final int PAYLOAD = 1;
+    private static final int SIGNATURE = 2;
+    private static final int JWT_PARTS = 3;
+    /**
+     * Returns payload of a JWT as a JSON object.
+     *
+     * @param jwt REQUIRED: valid JSON Web Token as String.
+     * @return payload as a JSONObject.
+     */
+    public static JSONObject getPayloadFromJwt(String jwt) {
+        try {
+            validateJWT(jwt);
+            final String payload = jwt.split("\\.")[PAYLOAD];
+            final byte[] sectionDecoded = Base64.decode(payload, DEFAULT);
+            final String jwtSection = new String(sectionDecoded, "UTF-8");
+            return (JSONObject) JSONValue.parse(jwtSection);
+        } catch (final UnsupportedEncodingException e) {
+            throw new InvalidParameterException(e.getMessage());
+        } catch (final Exception e) {
+            throw new InvalidParameterException("error in parsing JSON");
+        }
     }
+    /**
+     * Checks if {@code JWT} is a valid JSON Web Token.
+     *
+     * @param jwt REQUIRED: The JWT as a {@link String}.
+     */
+    private static void validateJWT(String jwt) {
+        // Check if the the JWT has the three parts
+        final String[] jwtParts = jwt.split("\\.");
+        if (jwtParts.length != JWT_PARTS) {
+            throw new InvalidParameterException("not a JSON Web Token");
+        }
+    }
+
 }
 
