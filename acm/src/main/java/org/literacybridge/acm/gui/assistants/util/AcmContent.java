@@ -133,6 +133,7 @@ public class AcmContent {
      * within the language.
      */
     public static class AudioItemNode extends DefaultMutableTreeNode {
+        public AudioItemNode(AudioItemNode other) {this(other.getAudioItem());}
         public AudioItemNode(AudioItem item) {
             super(item);
         }

@@ -174,7 +174,7 @@ class PlaylistPopupMenu extends JPopupMenu {
             // an initial value; user can leave that alone to continue exporting playlists
             // into the package, or can enter a new name, to start a new package.
             String packageName = promptWithMaxLength("Export Playlist",
-                "Enter Content Package name:", MAX_PACKAGE_NAME_LENGTH, previousPackageName);
+                "Enter Content Package name:", Constants.MAX_PACKAGE_NAME_LENGTH, previousPackageName);
 
             if (!StringUtils.isEmpty(packageName)) {
                 // If the user actually entered anything, create the directory for the package.
@@ -334,11 +334,6 @@ class PlaylistPopupMenu extends JPopupMenu {
         return sourceActiveListsFile;
     }
 
-
-    /**
-     * Prompts for a string, with a maximum length.
-     */
-    private static final int MAX_PACKAGE_NAME_LENGTH = 20;
     private JLabel charsRemainingPrompt;
 
     private String promptWithMaxLength(String title, String prompt, int maxLen, String initialValue) {

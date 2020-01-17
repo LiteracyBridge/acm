@@ -66,4 +66,7 @@ public class Constants {
   public static final int FUZZY_THRESHOLD_MAXIMUM = 100;
   public static final int FUZZY_THRESHOLD_DEFAULT = 80;
   public static final int FUZZY_THRESHOLD_MINIMUM = 60;
+
+  // Maximum length of a package name. This is a TB firmware restriction.
+  public static final int MAX_PACKAGE_NAME_LENGTH = 20;
 }

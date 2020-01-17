@@ -42,7 +42,7 @@ public class UIUtils {
     setVisible(dialog, false);
   }
 
-  private static void setVisible(final Container dialog, final boolean visible) {
+  public static void setVisible(final Container dialog, final boolean visible) {
     if (!SwingUtilities.isEventDispatchThread()) {
       SwingUtilities.invokeLater(() -> dialog.setVisible(visible));
     } else {

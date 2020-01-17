@@ -93,6 +93,10 @@ public class JRecipientChooser extends JPanel {
         return recipientMap.get(recipient.recipientid);
     }
 
+    Recipient getSelectedRecipient() {
+        return recipients.getRecipient(selections);
+    }
+
     void setSelectedCommunity(String community, String recipientid) {
         if (programSpec == null) return;
         boolean didSelect = false;

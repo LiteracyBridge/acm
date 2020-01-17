@@ -16,7 +16,8 @@ public class Recipient {
         numtbs,
         supportentity, /*model,*/
         language, /*coordinates*/
-        agent
+        agent, /*,latitude,longitude,*/
+        variant
     };
 
     public static String[] columnNames;
@@ -39,6 +40,7 @@ public class Recipient {
     public final String supportentity;
     public final String language;
     public final String agent;
+    public final String variant;
     
     public Recipient(Map<String, String> properties) {
         this.recipientid = properties.get(columns.recipientid.name());
@@ -53,6 +55,7 @@ public class Recipient {
         this.agent = properties.get(agentKey);
         this.supportentity = properties.get(columns.supportentity.name());
         this.language = properties.get(columns.language.name());
+        this.variant = properties.getOrDefault(columns.variant.name(), "");
     }
 
     public String getName() {

@@ -1,11 +1,11 @@
 package org.literacybridge.core.spec;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class ContentSpec {
@@ -79,17 +79,21 @@ public class ContentSpec {
             return playlistSpecs;
         }
         public List<PlaylistSpec> getPlaylistSpecsForLanguage(String language) {
+            return getPlaylistSpecsForLanguageAndVariant(language, null);
+        }
+        public List<PlaylistSpec> getPlaylistSpecsForLanguageAndVariant(String language, String variant) {
+            Predicate<MessageSpec> included = variant != null
+                ? (msg) -> msg.includesLanguage(language) && msg.includesVariant(variant)
+                : (msg) -> msg.includesLanguage(language);
+
             List<PlaylistSpec> result = new ArrayList<>();
             // For all of the playlists (in every language) in the deployment...
             for (PlaylistSpec playlistSpec : playlistSpecs) {
                 PlaylistSpec plCopy = new PlaylistSpec(playlistSpec.deploymentNumber, playlistSpec.playlistTitle);
-                // For all the messages in the playlist...
-                for (MessageSpec msg : playlistSpec.getMessageSpecs()) {
-                    // If the message should be in the deployment in the given language, add it to the result.
-                    if (StringUtils.isAllBlank(msg.language) || new StringFilter(msg.language).test(language)) {
-                        plCopy.addMessage(msg);
-                    }
-                }
+                // For all the messages in the playlist, if included, add to the copy.
+                playlistSpec.getMessageSpecs().stream()
+                    .filter(included)
+                    .forEach(plCopy::addMessage);
                 // If the playlist has any messages in the language, keep it.
                 if (plCopy.messageSpecs.size() > 0) {
                     result.add(plCopy);
@@ -165,6 +169,12 @@ public class ContentSpec {
                 .filter(msg -> msg.includesLanguage(languageCode))
                 .collect(Collectors.toList());
         }
+        public List<MessageSpec> getMessagesForLanguageAndVariant(String languageCode, String variant) {
+            return messageSpecs
+                .stream()
+                .filter(msg -> msg.includesLanguage(languageCode) && msg.includesVariant(variant))
+                .collect(Collectors.toList());
+        }
 
         void addMessage(MessageSpec messageSpec) {
             int ix = getMessageIx(messageSpec);
@@ -203,6 +213,9 @@ public class ContentSpec {
         public final String language;
         private StringFilter languageFilter;
 
+        public final String variant;
+        private StringFilter variantFilter;
+
         public final String default_category;
         public final String sdg_goals;
         public final String sdg_targets;
@@ -213,16 +226,25 @@ public class ContentSpec {
             this.title = properties.get(columns.title.externalName);
             this.keyPoints = properties.get(columns.keyPoints.externalName);
             this.format = properties.get(columns.format.externalName);
-            this.language = properties.get(columns.language.externalName);
+            this.language = properties.getOrDefault(columns.language.externalName, "");
+            this.variant = properties.getOrDefault(columns.variant.externalName, "");
             this.default_category = properties.get(columns.default_category.externalName);
             this.sdg_goals = properties.get(columns.sdg_goals.externalName);
             this.sdg_targets = properties.get(columns.sdg_targets.externalName);
+
             this.languageFilter = new StringFilter(this.language);
+            this.variantFilter = new StringFilter(this.variant);
         }
 
         public boolean includesLanguage(String languageCode) {
             return languageFilter.test(languageCode);
         }
+
+        public boolean includesVariant(String variant) {
+            return variantFilter.test(variant);
+        }
+
+        public Collection<String> variantItems() { return variantFilter.items(); }
 
         public String getName() {
             return String.format("%d / %s / %s", deploymentNumber, playlistTitle, title);
@@ -276,6 +298,7 @@ public class ContentSpec {
         keyPoints("key_points"),
         format,
         language("language"),
+        variant("variant"),
         sdg_goals("sdg_goals"),
         sdg_targets("sdg_targets"),
         default_category;

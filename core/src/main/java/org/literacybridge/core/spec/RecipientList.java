@@ -49,7 +49,7 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
         return n;
     }
 
-    private RecipientAdapter getRecipient(String recipientid) {
+    public RecipientAdapter getRecipient(String recipientid) {
         for (RecipientAdapter recip : this) {
             if (recip.recipientid.equals(recipientid))
                 return recip;

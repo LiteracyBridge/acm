@@ -87,6 +87,7 @@ public class TBBuilder {
     private File sourceTbOptionsDir;
 
     private File stagedDeploymentDir;
+    private File stagedProgramspecDir;
     private CSVWriter contentInPackageCSVWriter;
     private CSVWriter categoriesInPackageCSVWriter;
     private CSVWriter packagesInDeploymentCSVWriter;
@@ -112,6 +113,10 @@ public class TBBuilder {
      */
     public String getRevision() {
         return revision;
+    }
+
+    public File getStagedProgramspecDir() {
+        return stagedProgramspecDir;
     }
 
     /**
@@ -205,6 +210,8 @@ public class TBBuilder {
             Constants.TBLoadersHomeDir);
         // Like ~/LiteracyBridge/TB-Loaders/UWR
         stagingDir = new File(localTbLoadersDir, project);
+        stagedDeploymentDir = new File(stagingDir, "content" + File.separator + this.deploymentName);
+        stagedProgramspecDir = new File(stagedDeploymentDir, Constants.ProgramSpecDir);
     }
 
     /**
@@ -294,10 +301,7 @@ public class TBBuilder {
      * @throws Exception if there is an IO error.
      */
     private void createDeployment() throws Exception {
-        File stagedContentDir = new File(stagingDir, "content" );
-        stagedDeploymentDir = new File(stagedContentDir, this.deploymentName);
         File stagedMetadataDir = new File(stagingDir, "metadata" + File.separator + this.deploymentName);
-        File stagedProgramspecDir = new File(stagedDeploymentDir, Constants.ProgramSpecDir);
         DateFormat ISO8601time = new SimpleDateFormat("HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
         ISO8601time.setTimeZone(TBLoaderConstants.UTC);
         String timeStr = ISO8601time.format(new Date());
@@ -958,8 +962,6 @@ public class TBBuilder {
 
         revision = getNextDeploymentRevision(publishBaseDir, deploymentName);
         final String publishDistributionName = deploymentName + "-" + revision; // e.g.
-        // '2015-6-c'
-        stagedDeploymentDir = new File(stagingDir, "content" + File.separator + this.deploymentName);
         // Remove any .rev file that we had left to mark the deployment as unpublished.
         deleteRevFiles(stagedDeploymentDir);
 
@@ -968,7 +970,6 @@ public class TBBuilder {
         publishDistributionDir.mkdirs();
 
         // Copy the program spec to a directory outside of the .zip file.
-        File stagedProgramspecDir = new File(stagedDeploymentDir, Constants.ProgramSpecDir);
         if (stagedProgramspecDir.exists() && stagedProgramspecDir.isDirectory()) {
             File publishedProgramSpecDir = new File(publishDistributionDir, Constants.ProgramSpecDir);
             FileUtils.copyDirectory(stagedProgramspecDir, publishedProgramSpecDir);

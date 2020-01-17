@@ -1,5 +1,6 @@
 package org.literacybridge.acm.tbloader;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jdesktop.swingx.JXDatePicker;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineParser;
@@ -16,6 +17,7 @@ import org.literacybridge.core.fs.FsFile;
 import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.spec.ProgramSpec;
+import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbloader.ProgressListener;
 import org.literacybridge.core.tbloader.TBDeviceInfo;
@@ -29,7 +31,16 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.filechooser.FileSystemView;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.WindowAdapter;
@@ -969,6 +980,10 @@ public class TBLoader extends JFrame {
         return communityDir;
     }
 
+    private Recipient getSelectedRecipient() {
+        return recipientChooser.getSelectedRecipient();
+    }
+
     private void selectCommunityFromCurrentDrive() {
         String community = oldCommunityText.getText();
         String recipientid = null;
@@ -979,7 +994,7 @@ public class TBLoader extends JFrame {
             recipientid = oldDeploymentInfo.getRecipientid();
         }
         recipientChooser.setSelectedCommunity(community, recipientid);
-        fillPackageFromCommunity(community);
+        fillPackage(programSpec.getRecipients().getRecipient(recipientid), community);
     }
 
     private void fillPackageList() {
@@ -1244,6 +1259,30 @@ public class TBLoader extends JFrame {
         }
     };
 
+    private void fillPackage(Recipient recipient, String community) {
+        if (recipient == null || !fillPackageFromRecipient(recipient)) {
+            fillPackageFromCommunity(community);
+        }
+    }
+
+    private boolean fillPackageFromRecipient(Recipient recipient) {
+        Properties deploymentProperties = programSpec.getDeploymentProperties();
+        String key = recipient.language;
+        if (StringUtils.isNotEmpty(recipient.variant)) {
+            key = key + ',' + recipient.variant;
+        }
+        String imageName = deploymentProperties.getProperty(key);
+        if (imageName == null) {
+            imageName = deploymentProperties.getProperty(recipient.language);
+        }
+        boolean ok = imageName != null;
+        if (!ok) {
+            imageName = "";
+        }
+        setNewPackage(imageName);
+        return ok;
+    }
+
     private void fillPackageFromCommunity(String community) {
         // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}
         File deploymentDirectory = new File(localTbLoaderDir,
@@ -1375,8 +1414,9 @@ public class TBLoader extends JFrame {
             return;
 
         String dir = recipientChooser.getCommunityDirectory();
+        Recipient recipient = recipientChooser.getSelectedRecipient();
         if (dir != null) {
-            fillPackageFromCommunity(dir);
+            fillPackage(recipient, dir);
         } else {
             setNewPackage("");
         }
@@ -1583,7 +1623,7 @@ public class TBLoader extends JFrame {
                 statusDisplay.setStatus("STATUS: " + TBLoaderConstants.NO_DRIVE);
             }
             if (getSelectedCommunity() != null) {
-                fillPackageFromCommunity(getSelectedCommunity());
+                fillPackage(getSelectedRecipient(), getSelectedCommunity());
             }
         }
     }
@@ -1721,6 +1761,8 @@ public class TBLoader extends JFrame {
 
         private void update() {
             String community = getSelectedCommunity();
+            String recipientid = getSelectedRecipient().recipientid;
+            assert(recipientid.equals(getRecipientIdForCommunity(community)));
             DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
                 .withSerialNumber(newSrnText.getText())
                 .withNewSerialNumber(isNewSerialNumber)
@@ -1731,7 +1773,7 @@ public class TBLoader extends JFrame {
                 .withUpdateTimestamp(dateRotation)
                 .withFirmwareRevision(newFirmwareVersionText.getText())
                 .withCommunity(community)
-                .withRecipientid(getRecipientIdForCommunity(community))
+                .withRecipientid(recipientid)
                 .asTestDeployment(testDeployment.isSelected());
             DeploymentInfo newDeploymentInfo = builder.build();
 

@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
@@ -24,6 +25,7 @@ import org.literacybridge.core.spec.ContentSpec.DeploymentSpec;
 import org.literacybridge.core.spec.ContentSpec.MessageSpec;
 import org.literacybridge.core.spec.ContentSpec.PlaylistSpec;
 import org.literacybridge.core.spec.Deployment;
+import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -32,8 +34,10 @@ import java.awt.Cursor;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -44,10 +48,12 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -67,6 +73,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     private DateTimeFormatter localDateFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL)
         .withZone(ZoneId.systemDefault());
     private StringBuilder summaryMessage;
+    private final JLabel revisionText;
 
     FinishDeploymentPage(PageHelper<DeploymentContext> listener) {
         super(listener);
@@ -94,9 +101,13 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         // The status line. Could be updated as the deployment progresses.
         hbox = Box.createHorizontalBox();
         JLabel summary = new JLabel();
-        summary.setText(String.format("Creating Deployment %d as %s.",
+        summary.setText(String.format("Creating Deployment %d as %s",
             context.deploymentNo, deploymentName()));
         hbox.add(summary);
+        revisionText = new JLabel();
+        revisionText.setVisible(false);
+        hbox.add(revisionText);
+        hbox.add(new JLabel("."));
         hbox.add(Box.createHorizontalStrut(5));
         viewErrorsButton = new JButton("View Errors");
         viewErrorsButton.setVisible(false);
@@ -124,7 +135,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     @Override
     protected void onPageEntered(boolean progressing) {
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        SwingWorker worker = new SwingWorker<Integer, Void>() {
+        SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
             @Override
             protected Integer doInBackground() {
                 summaryMessage = new StringBuilder("<html>");
@@ -221,7 +232,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         }
 
         // Create the files in TB-Loaders/packages to match exporting playlists.
-        Map<String, String> pkgs = exportLists();
+        Map<String, Map<String, String>> pkgs = exportPackages();
 
         try {
             String acmName = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
@@ -229,18 +240,24 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
             // Create.
             final List<String> args = new ArrayList<>();
-            pkgs.forEach((key, value) -> {
-                args.add(value); // package
-                args.add(key);   // language
-                args.add(key);   // group
-            });
+            pkgs.forEach((language, values) -> values.forEach((variant, pkg) ->{
+                if (StringUtils.isBlank(variant)) {
+                    variant = language;
+                }
+                args.add(pkg); // package
+                args.add(language);   // language
+                args.add(variant);   // group
+            }));
             tbb.createDeployment(args);
 
             // Publish.
             if (context.isPublish()) {
+                saveDeploymentInfoToProgramSpec(tbb, pkgs);
                 args.clear();
                 args.add(deploymentName());
                 tbb.publishDeployment(args);
+                UIUtils.setLabelText(revisionText, String.format(" (revision '%s')", tbb.getRevision()));
+                UIUtils.setVisible(revisionText, true);
             } else {
                 publishNotification.setVisible(true);
             }
@@ -256,6 +273,31 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     }
 
     /**
+     * Save some information about the Deployment to the programspec directory.
+     * @param tbb the TB-Builder; knows the directory into which to write the properties.
+     * @param pkgs a map of {language : { variant : package}}
+     */
+    private void saveDeploymentInfoToProgramSpec(TBBuilder tbb,
+        Map<String, Map<String, String>> pkgs) {
+        Properties deploymentProperties = new Properties();
+        deploymentProperties.setProperty("DEPLOYMENT_NUMBER", Integer.toString(context.deploymentNo));
+        // Map of language, variant : package
+        pkgs.forEach((language, values) -> values.forEach((variant, pkg) ->{
+            String key = language;
+            if (StringUtils.isNotBlank(variant)) key = key + "," + variant;
+            deploymentProperties.put(key, pkg);
+        }));
+
+        File stagedProgramSpecDir = tbb.getStagedProgramspecDir();
+        File propsFile = new File(stagedProgramSpecDir, ProgramSpec.DEPLOYMENT_PROPERTIES_NAME);
+        try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(propsFile))) {
+            deploymentProperties.store(out, null);
+        } catch (IOException e) {
+            // Ignore and continue without deployment properties.
+        }
+    }
+
+    /**
      * Reports status & state from the TB-Builder to the user.
      * @param state to be reported.
      */
@@ -267,51 +309,87 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
      * Builds the lists of content, and the list of lists. Returns a map
      * of language to package name. Will extract any content prompts to a
      * packages/${package}/prompts directory.
-     * @return {language : pkgName}
+     * @return {language : {variant: pkgName}}
      */
-    private Map<String, String> exportLists() {
-        Map<String, String> result = new LinkedHashMap<>();
+    private Map<String, Map<String, String>> exportPackages() {
+        Map<String, Map<String, String>> result = new LinkedHashMap<>();
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
         File packagesDir = new File(tbLoadersDir, "packages");
+        Collection<String> variants = context.programSpec.getVariantsForDeployment(context.deploymentNo);
+        DeploymentSpec deploymentSpec = context.programSpec.getContentSpec().getDeployment(context.deploymentNo);
 
         for (LanguageNode languageNode : context.playlistRootNode.getLanguageNodes()) {
             String language = languageNode.getLanguageCode();
+            Map<String, String> languageResult = new LinkedHashMap<>();
+            List<PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(language);
 
-            // one entry in the language : package-name map.
-            String packageName = packageName(language);
-            result.put(language, packageName);
-            File packageDir = new File(packagesDir, packageName);
-            File listsDir = new File(packageDir, "messages"+File.separator+"lists"+File.separator+"1");
-            File promptsDir = new File(packageDir, "prompts"+File.separator+language+File.separator+"cat");
+            for (String variant : variants) {
+                // one entry in the language : package-name map.
+                String packageName = packageName(language, variant);
+                languageResult.put(variant, packageName);
+                File packageDir = new File(packagesDir, packageName);
+                File listsDir = new File(packageDir,
+                    "messages" + File.separator + "lists" + File.separator + "1");
+                File promptsDir = new File(packageDir,
+                    "prompts" + File.separator + language + File.separator + "cat");
 
-            // Create the list files, and copy the non-predefined prompts.
-            File activeLists = new File(listsDir, "_activeLists.txt");
-            String title = null;
-            try (PrintWriter activeListsWriter = new PrintWriter(activeLists)) {
-                Map<String, PlaylistPrompts> playlistsPrompts = context.prompts.get(language);
-                for (PlaylistNode playlistNode : languageNode.getPlaylistNodes()) {
-                    title = playlistNode.getTitle();
-                    PlaylistPrompts prompts = playlistsPrompts.get(title);
-                    int promptIx = new ArrayList<>(playlistsPrompts.keySet()).indexOf(title);
+                // Create the list files, and copy the non-predefined prompts.
+                File activeLists = new File(listsDir, "_activeLists.txt");
+                String title = null;
+                try (PrintWriter activeListsWriter = new PrintWriter(activeLists)) {
+                    Map<String, PlaylistPrompts> playlistsPrompts = context.prompts.get(language);
+                    for (PlaylistNode playlistNode : languageNode.getPlaylistNodes()) {
+                        title = playlistNode.getTitle();
+                        PlaylistPrompts prompts = playlistsPrompts.get(title);
+                        int promptIx = new ArrayList<>(playlistsPrompts.keySet()).indexOf(title);
 
-                    String promptCat = getPromptCategoryAndFiles(prompts, promptIx, promptsDir);
-                    // The intro message is handled specially, in the control file.
-                    // User feedback category is added later. The best way to have feedback from
-                    // users is a category named "Selected Feedback from Users" or some such.
-                    if (!(promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE) ||
-                          promptCat.equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK))) {
-                        activeListsWriter.println("!"+promptCat);
+                        String promptCat = getPromptCategoryAndFiles(prompts, promptIx, promptsDir);
+                        // The intro message is handled specially, in the control file.
+                        // User feedback category is added later. The best way to have feedback from
+                        // users is a category named "Selected Feedback from Users" or some such.
+                        if (!(promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE)
+                            || promptCat.equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK))) {
+                            activeListsWriter.println("!" + promptCat);
+                        }
+                        // Filter the playlist by the variants specified in the program specification.
+                        // We're not filtering by language, because this ACM playlist is already
+                        // filtered by language.
+                        PlaylistNode filteredNode = playlistNode;
+                        String plTitle = title;
+                        PlaylistSpec playlistSpec = playlistSpecs.stream()
+                            .filter(pls->pls.getPlaylistTitle().equals(plTitle))
+                            .findFirst()
+                            .orElse(null);
+                        if (playlistSpec != null) {
+                            PlaylistNode newNode = new PlaylistNode(playlistNode.getPlaylist());
+                            for (AudioItemNode audioItemNode : playlistNode.getAudioItemNodes()) {
+                                String msgTitle = audioItemNode.getAudioItem().getTitle();
+                                MessageSpec messageSpec = playlistSpec.getMessageSpecs().stream()
+                                    .filter(mss->mss.getTitle().equals(msgTitle))
+                                    .findFirst()
+                                    .orElse(null);
+                                if (messageSpec == null || messageSpec.includesVariant(variant)) {
+                                    newNode.add(new AudioItemNode(audioItemNode));
+                                }
+                            }
+                            filteredNode = newNode;
+                        }
+
+                        createListFile(filteredNode, promptCat, listsDir);
                     }
-                    createListFile(playlistNode, promptCat, listsDir);
-                }
 
-                if (context.includeUfCategory)
-                    activeListsWriter.println(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
-                if (context.includeTbCategory)
-                    activeListsWriter.println("$"+ Constants.CATEGORY_TB_INSTRUCTIONS);
-            } catch (IOException | BaseAudioConverter.ConversionException e) {
-                errors.add(new DeploymentException(String.format("Error exporting playlist '%s'", title), e));
-                e.printStackTrace();
+                    if (context.includeUfCategory) activeListsWriter.println(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
+                    if (context.includeTbCategory)
+                        activeListsWriter.println("$" + Constants.CATEGORY_TB_INSTRUCTIONS);
+                } catch (IOException | BaseAudioConverter.ConversionException e) {
+                    errors.add(new DeploymentException(String.format("Error exporting playlist '%s'",
+                        title), e));
+                    e.printStackTrace();
+                }
+            }
+
+            if (languageResult.size() > 0) {
+                result.put(language, languageResult);
             }
         }
         return result;
@@ -329,34 +407,38 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             errors.add(new MakeDirectoryException("packages", packagesDir));
             return false;
         }
+        Collection<String> variants = context.programSpec.getVariantsForDeployment(context.deploymentNo);
 
         for (LanguageNode languageNode : context.playlistRootNode.getLanguageNodes()) {
             String language = languageNode.getLanguageCode();
 
-            // Create the directories.
-            String packageName = packageName(language);
-            File packageDir = new File(packagesDir, packageName);
-            // Clean any old data.
-            IOUtils.deleteRecursive(packageDir);
-            if (packageDir.exists()) {
-                // Couldn't clean up.
-                errors.add(new RemoveDirectoryException(packageDir));
-                return false;
+            for (String variant: variants) {
+                // Create the directories.
+                String packageName = packageName(language, variant);
+                File packageDir = new File(packagesDir, packageName);
+                // Clean any old data.
+                IOUtils.deleteRecursive(packageDir);
+                if (packageDir.exists()) {
+                    // Couldn't clean up.
+                    errors.add(new RemoveDirectoryException(packageDir));
+                    return false;
+                }
+                if (!packageDir.mkdirs()) {
+                    // Can't make package directory
+                    errors.add(new MakeDirectoryException("package", packageDir));
+                    return false;
+                }
+                File listsDir = new File(packageDir,
+                    "messages" + File.separator + "lists" + File.separator + "1");
+                if (!listsDir.mkdirs()) {
+                    // Can't make lists directory
+                    errors.add(new MakeDirectoryException("lists", listsDir));
+                    return false;
+                }
+                // This directory won't be created until it is needed. But if we're able to get here, we're almost
+                // certainly able to create the prompts directory.
+                //File promptsDir = new File(packageDir, "prompts"+File.separator+language+File.separator+"cat");
             }
-            if (!packageDir.mkdirs()) {
-                // Can't make package directory
-                errors.add(new MakeDirectoryException("package", packageDir));
-                return false;
-            }
-            File listsDir = new File(packageDir, "messages"+File.separator+"lists"+File.separator+"1");
-            if (!listsDir.mkdirs()) {
-                // Can't make lists directory
-                errors.add(new MakeDirectoryException("lists", listsDir));
-                return false;
-            }
-            // This directory won't be created until it is needed. But if we're able to get here, we're almost
-            // certainly able to create the prompts directory.
-            //File promptsDir = new File(packageDir, "prompts"+File.separator+language+File.separator+"cat");
 
         }
         return true;
@@ -443,8 +525,28 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         return promptCat;
     }
 
-    private String packageName(String languagecode) {
-        return String.format("%s-%s", deploymentName(), languagecode.toLowerCase());
+    private String packageName(String languagecode, String variant) {
+        StringBuilder temp = new StringBuilder();
+        temp.append(deploymentName())
+            .append('-')
+            .append(languagecode.toLowerCase());
+        if (StringUtils.isNotBlank(variant)) {
+            temp.append('-').append(variant.toLowerCase());
+        }
+        String result = temp.toString();
+        // If too long, eliminate hyphens.
+        if (result.length() > Constants.MAX_PACKAGE_NAME_LENGTH) {
+            result = result.replace("-", "");
+        }
+        // If still too long, eliminate vowels
+        if (result.length() > Constants.MAX_PACKAGE_NAME_LENGTH) {
+            result = result.replaceAll("[aeiouAEIOU]", "");
+        }
+        // IF still too long, truncate
+        if (result.length() > Constants.MAX_PACKAGE_NAME_LENGTH) {
+            result = result.substring(0, Constants.MAX_PACKAGE_NAME_LENGTH);                         
+        }
+        return result;
     }
 
     private String deploymentName() {

@@ -3,11 +3,14 @@ package org.literacybridge.core.spec;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class StringFilter implements Predicate<String> {
+    private static final Set<String> emptySet = new HashSet<>();
     private boolean acceptsAll = false;
     private boolean isWhitelist = true;
     private Set<String> filteredItems;
@@ -30,5 +33,9 @@ public class StringFilter implements Predicate<String> {
     public boolean test(String s) {
         // If the item is present && it's a whitelist, or if the item isn't present and it isn't a whitelist.
         return acceptsAll || filteredItems.contains(s.trim().toLowerCase()) == isWhitelist;
+    }
+
+    public Collection<String> items() {
+        return acceptsAll ? emptySet : new HashSet<>(this.filteredItems);
     }
 }
