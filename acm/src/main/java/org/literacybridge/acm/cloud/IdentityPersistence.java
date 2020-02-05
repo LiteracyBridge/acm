@@ -3,6 +3,7 @@ package org.literacybridge.acm.cloud;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.tbloader.TBLoader;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,10 +20,19 @@ import java.util.Map;
 import java.util.Properties;
 
 class IdentityPersistence {
-    private static final String CREDENTIALS_NAME = "credentials.info";
-    private static ACMConfiguration acmConfiguration = ACMConfiguration.getInstance();
-    private static File credentialsFile = new File(acmConfiguration.getApplicationHomeDirectory(),
-        CREDENTIALS_NAME);
+    private static Map<String,String> CREDENTIALS_NAMES = new HashMap<>();
+    static {
+        CREDENTIALS_NAMES.put(TBLoader.class.getName(), "tbl_credentials.info");
+    }
+    private static final String DEFAULT_CREDENTIALS_NAME = "credentials.info";
+
+    private ACMConfiguration acmConfiguration = ACMConfiguration.getInstance();
+    private final File credentialsFile;
+
+    public IdentityPersistence(String className) {
+        String fn = CREDENTIALS_NAMES.getOrDefault(className, DEFAULT_CREDENTIALS_NAME);
+        credentialsFile = new File(acmConfiguration.getApplicationHomeDirectory(), fn);
+    }
 
     /**
      * Obfuscate a string based on another string.

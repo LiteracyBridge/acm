@@ -37,10 +37,13 @@ public class Authenticator {
 
     public static synchronized Authenticator getInstance() {
         if (instance == null) {
-            instance = new Authenticator();
+            instance = new Authenticator(Thread.currentThread().getStackTrace()[2].getClassName());
         }
         return instance;
     }
+
+    // This is used to provide different persistance for different callers.
+    private final String applicationClassName;
 
     private AuthenticationHelper.AuthenticationResult authenticationResult;
     private CognitoHelper cognitoHelper;
@@ -53,11 +56,13 @@ public class Authenticator {
     private String userEmail;
 
     // Cached helpers. Ones not used internally are lazy allocated.
-    private IdentityPersistence identityPersistence = new IdentityPersistence();
+    private IdentityPersistence identityPersistence;
     private TbSrnHelper tbSrnHelper = null;
     private ProjectsHelper projectsHelper = null;
 
-    private Authenticator() {
+    private Authenticator(String applicationClassName) {
+        this.applicationClassName = applicationClassName;
+        this.identityPersistence = new IdentityPersistence(applicationClassName);
         cognitoHelper = new CognitoHelper();
     }
 
