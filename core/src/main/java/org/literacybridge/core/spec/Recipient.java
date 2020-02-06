@@ -54,8 +54,8 @@ public class Recipient {
         String agentKey = properties.containsKey(columns.agent.name()) ? columns.agent.name() : columns.supportentity.name();
         this.agent = properties.get(agentKey);
         this.supportentity = properties.get(columns.supportentity.name());
-        this.language = properties.get(columns.language.name());
-        this.variant = properties.getOrDefault(columns.variant.name(), "");
+        this.language = properties.get(columns.language.name()).toLowerCase();
+        this.variant = properties.getOrDefault(columns.variant.name(), "").toLowerCase();
     }
 
     public String getName() {
