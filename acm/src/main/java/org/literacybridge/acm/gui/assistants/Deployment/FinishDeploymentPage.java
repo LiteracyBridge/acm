@@ -343,31 +343,33 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                         PlaylistPrompts prompts = playlistsPrompts.get(title);
                         int promptIx = new ArrayList<>(playlistsPrompts.keySet()).indexOf(title);
 
-                        String promptCat = getPromptCategoryAndFiles(prompts, promptIx, promptsDir);
-                        // The intro message is handled specially, in the control file.
-                        // User feedback category is added later. The best way to have feedback from
-                        // users is a category named "Selected Feedback from Users" or some such.
-                        if (!(promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE)
-                            || promptCat.equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK))) {
-                            activeListsWriter.println("!" + promptCat);
-                        }
                         // Filter the playlist by the variants specified in the program specification.
                         // We're not filtering by language, because this ACM playlist is already
                         // filtered by language.
+                        // Fall back is the playlist node as found in the ACM.
                         PlaylistNode filteredNode = playlistNode;
                         String plTitle = title;
+                        // Try to find a playlist in the spec that matches the playlist from the ACM.
                         PlaylistSpec playlistSpec = playlistSpecs.stream()
                             .filter(pls->pls.getPlaylistTitle().equals(plTitle))
                             .findFirst()
                             .orElse(null);
+                        // If we found a playlist in the spec...
                         if (playlistSpec != null) {
+                            // Create a new node to receive all the messages that are not
+                            // filtered out by the variant.
                             PlaylistNode newNode = new PlaylistNode(playlistNode.getPlaylist());
+                            // Examine the audio items in the playlist
                             for (AudioItemNode audioItemNode : playlistNode.getAudioItemNodes()) {
                                 String msgTitle = audioItemNode.getAudioItem().getTitle();
+                                // Try to find a message in the spec that matches the message in
+                                // the ACM.
                                 MessageSpec messageSpec = playlistSpec.getMessageSpecs().stream()
                                     .filter(mss->mss.getTitle().equals(msgTitle))
                                     .findFirst()
                                     .orElse(null);
+                                // If the message isn't in the spec, it was added manually, so keep
+                                // it. If it is in the spec, check the variant for inclusion.
                                 if (messageSpec == null || messageSpec.includesVariant(variant)) {
                                     newNode.add(new AudioItemNode(audioItemNode));
                                 }
@@ -375,7 +377,17 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                             filteredNode = newNode;
                         }
 
-                        createListFile(filteredNode, promptCat, listsDir);
+                        if (filteredNode.getAudioItemNodes().size() > 0) {
+                            String promptCat = getPromptCategoryAndFiles(prompts, promptIx, promptsDir);
+                            // The intro message is handled specially, in the control file.
+                            // User feedback category is added later. The best way to have feedback from
+                            // users is a category named "Selected Feedback from Users" or some such.
+                            if (!(promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE)
+                                || promptCat.equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK))) {
+                                activeListsWriter.println("!" + promptCat);
+                            }
+                            createListFile(filteredNode, promptCat, listsDir);
+                        }
                     }
 
                     if (context.includeUfCategory) activeListsWriter.println(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
