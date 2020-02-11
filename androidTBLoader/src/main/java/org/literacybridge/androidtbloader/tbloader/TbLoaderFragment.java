@@ -21,6 +21,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.checkin.LocationProvider;
@@ -54,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Executors;
 
 import static android.app.Activity.RESULT_OK;
@@ -718,13 +720,17 @@ public class TbLoaderFragment extends Fragment {
                                                    File collectedDataDirectory,
                                                    File deploymentDirectory) {
         Config config = TBLoaderAppContext.getInstance().getConfig();
-        // Find the image with the community's language and/or group (such as a/b test group).
-        String imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, mCommunityDirectory);
+
+        String recipientid = mRecipient.recipientid;
+        // Get image for recipient; if not founc, fall back to directory.
+        String imageName = getPackageForRecipient(mRecipient);
+        if (StringUtils.isEmpty(imageName)) {
+            // Find the image with the community's language and/or group (such as a/b test group).
+            imageName = TBLoaderUtils.getImageForCommunity(deploymentDirectory, mCommunityDirectory);
+        }
 
         // What firmware comes with this Deployment?
         String firmwareRevision = TBLoaderUtils.getFirmwareVersionNumbers(deploymentDirectory);
-
-        String recipientid = mRecipient.recipientid;
 
         DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
                 .withSerialNumber(deviceSerialNumber)
@@ -750,6 +756,23 @@ public class TbLoaderFragment extends Fragment {
             .put("username", config.getUsername())
             .put("timestamp", collectionTimestamp);
         return newDeploymentInfo;
+    }
+
+    private String getPackageForRecipient(Recipient recipient) {
+        Properties deploymentProperties = mAppContext.getProgramSpec().getDeploymentProperties();
+        String key = recipient.language;
+        if (StringUtils.isNotEmpty(recipient.variant)) {
+            key = key + ',' + recipient.variant;
+        }
+        String imageName = deploymentProperties.getProperty(key);
+        if (imageName == null) {
+            imageName = deploymentProperties.getProperty(recipient.language);
+        }
+        boolean ok = imageName != null;
+        if (!ok) {
+            imageName = "";
+        }
+        return imageName;
     }
 
 }
