@@ -11,6 +11,7 @@ import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import org.apache.commons.lang3.tuple.Triple;
 import org.json.simple.JSONObject;
+import org.literacybridge.acm.cloud.AuthenticationDialog.DialogController;
 import org.literacybridge.acm.cloud.cognito.AuthenticationHelper;
 import org.literacybridge.acm.cloud.cognito.CognitoHelper;
 import org.literacybridge.acm.cloud.cognito.CognitoJWTParser;
@@ -36,6 +37,13 @@ public class Authenticator {
     private static AmazonS3 s3Client = null;
 
     public static synchronized Authenticator getInstance() {
+        if (instance == null) {
+            instance = new Authenticator(null);
+        }
+        return instance;
+    }
+
+    public static synchronized Authenticator getScopedInstance() {
         if (instance == null) {
             instance = new Authenticator(Thread.currentThread().getStackTrace()[2].getClassName());
         }
@@ -95,11 +103,11 @@ public class Authenticator {
      * @param username or email address.
      * @param password of the user id.
      */
-    void authenticate(String username, String password) {
+    public void authenticate(String username, String password) {
         authenticationResult = cognitoHelper.ValidateUser(username, password);
         String jwtToken = authenticationResult.getJwtToken();
         if (jwtToken != null) {
-            authenticationInfo = new HashMap<String,String>();
+            authenticationInfo = new HashMap<>();
             JSONObject payload = CognitoJWTParser.getPayload(jwtToken);
             for (Object k : payload.keySet()) {
                 authenticationInfo.put(k.toString(), payload.get(k).toString());
@@ -129,7 +137,7 @@ public class Authenticator {
      *
      * @param username that needs a password reset.
      */
-    void resetPassword(String username) {
+    public void resetPassword(String username) {
         cognitoHelper.ResetPassword(username);
     }
 
@@ -142,8 +150,20 @@ public class Authenticator {
      * @param pin reset code sent via email.
      * @return an empty string :(
      */
-    String updatePassword(String username, String password, String pin) {
+    public String updatePassword(String username, String password, String pin) {
         return cognitoHelper.UpdatePassword(username, password, pin);
+    }
+
+    public String signUpUser(String username, String password, String email, String phonenumber) {
+        return cognitoHelper.SignUpUser(username, password, email, phonenumber);
+    }
+
+    public String verifyAccessCode(String username, String code) {
+        return cognitoHelper.VerifyAccessCode(username, code);
+    }
+
+    public void resendAccessCode(String username) {
+        cognitoHelper.ResendAccessCode(username);
     }
 
     /**
@@ -181,7 +201,7 @@ public class Authenticator {
     /**
      * @return "Authenticated" or the failure message from authentication.
      */
-    String getAuthMessage() {
+    public String getAuthMessage() {
         if (authenticationResult == null) return null;
         return authenticationResult.getMessage();
     }
@@ -227,13 +247,13 @@ public class Authenticator {
     public SigninResult doSignIn(Window parent) {
         Triple<String, String, String> savedSignInDetails = identityPersistence.retrieveSignInDetails();
 
-        SigninResult signinResult = SigninResult.NONE;
+        SigninResult signinResult;
         if (isOnline()) {
-            SigninDialog dialog = new SigninDialog(parent, "Amplio");
+            DialogController dialog = new DialogController(parent);
             if (savedSignInDetails != null) {
                 dialog.setSavedCredentials(savedSignInDetails.getLeft(), savedSignInDetails.getRight());
             }
-            dialog.doSignin();
+            dialog.setVisible(true);
 
             if (isAuthenticated()) {
                 userName = authenticationInfo.get("cognito:username");
@@ -254,8 +274,9 @@ public class Authenticator {
                     // ]
 
                     Map<String, String> props = new HashMap<>();
-                    authenticationInfo.forEach((k,v)->{props.put(k, v);});
-                    identityPersistence.saveSignInDetails(userName, userEmail, dialog.getPasswordText(), props);
+                    authenticationInfo.forEach(props::put);
+                    String password = dialog.getPassword();
+                    identityPersistence.saveSignInDetails(userName, userEmail, password, props);
                 } else {
                     identityPersistence.clearSignInDetails();
                 }
@@ -305,7 +326,6 @@ public class Authenticator {
     public boolean downloadS3Object(String bucket, String key, File of, BiConsumer<Long,Long> progressHandler) {
         long startTime = System.nanoTime();
         AmazonS3 s3Client = getS3Client(credentials);
-        boolean done = false;
         long bytesExpected=0, bytesDownloaded=0;
 
         try (S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, key));
@@ -324,7 +344,6 @@ public class Authenticator {
                 }
             }
 
-            done = true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;

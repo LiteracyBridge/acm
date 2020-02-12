@@ -21,6 +21,8 @@ import com.amazonaws.services.cognitoidp.model.ConfirmSignUpRequest;
 import com.amazonaws.services.cognitoidp.model.ConfirmSignUpResult;
 import com.amazonaws.services.cognitoidp.model.ForgotPasswordRequest;
 import com.amazonaws.services.cognitoidp.model.ForgotPasswordResult;
+import com.amazonaws.services.cognitoidp.model.ResendConfirmationCodeRequest;
+import com.amazonaws.services.cognitoidp.model.ResendConfirmationCodeResult;
 import com.amazonaws.services.cognitoidp.model.SignUpRequest;
 import com.amazonaws.services.cognitoidp.model.SignUpResult;
 import com.amazonaws.services.s3.AmazonS3;
@@ -99,9 +101,9 @@ public class CognitoHelper {
      * @param password    Password for the sign up
      * @param email       email used to sign up
      * @param phonenumber phone number to sign up.
-     * @return whether the call was successful or not.
+     * @return Error message or null if no error.
      */
-    boolean SignUpUser(String username, String password, String email, String phonenumber) {
+    public String SignUpUser(String username, String password, String email, String phonenumber) {
         AnonymousAWSCredentials awsCreds = new AnonymousAWSCredentials();
         AWSCognitoIdentityProvider cognitoIdentityProvider = AWSCognitoIdentityProviderClientBuilder
                 .standard()
@@ -132,9 +134,9 @@ public class CognitoHelper {
             System.out.println(result);
         } catch (Exception e) {
             System.out.println(e);
-            return false;
+            return e.getLocalizedMessage();
         }
-        return true;
+        return null;
     }
 
     /**
@@ -142,9 +144,9 @@ public class CognitoHelper {
      *
      * @param username User for which we are submitting the verification code.
      * @param code     Verification code delivered to the user.
-     * @return if the verification is successful.
+     * @return error message or null.
      */
-    boolean VerifyAccessCode(String username, String code) {
+    public String VerifyAccessCode(String username, String code) {
         AnonymousAWSCredentials awsCreds = new AnonymousAWSCredentials();
         AWSCognitoIdentityProvider cognitoIdentityProvider = AWSCognitoIdentityProviderClientBuilder
                 .standard()
@@ -166,9 +168,22 @@ public class CognitoHelper {
             System.out.println("confirmSignupResult=" + confirmSignUpResult.toString());
         } catch (Exception ex) {
             System.out.println(ex);
-            return false;
+            return ex.getLocalizedMessage();
         }
-        return true;
+        return null;
+    }
+
+    public void ResendAccessCode(String username) {
+        ResendConfirmationCodeRequest request = new ResendConfirmationCodeRequest()
+            .withUsername(username)
+            .withClientId(CLIENTAPP_ID);
+        AnonymousAWSCredentials awsCreds = new AnonymousAWSCredentials();
+        AWSCognitoIdentityProvider cognitoIdentityProvider = AWSCognitoIdentityProviderClientBuilder
+            .standard()
+            .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+            .withRegion(Regions.fromName(REGION))
+            .build();
+        ResendConfirmationCodeResult result = cognitoIdentityProvider.resendConfirmationCode(request);
     }
 
     /**

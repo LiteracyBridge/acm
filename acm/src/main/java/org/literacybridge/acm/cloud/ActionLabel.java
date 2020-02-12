@@ -29,7 +29,7 @@ import java.util.Map;
  * Label that behaves a bit like a link. When the mouse hovers over it, it becomes underlined.
  * Users of the class can call addActionListener() to get action events.
  */
-class ActionLabel extends JLabel {
+public class ActionLabel extends JLabel {
     private static Color linkColor = new Color(0x337ab7);
     private static Border focusedBorder = new RoundedLineBorder(linkColor, 1, 4, 2);
     private static Border unfocusedBorder = new EmptyBorder(2, 2, 2, 2);
@@ -38,7 +38,7 @@ class ActionLabel extends JLabel {
 
     private String actionCommand;
 
-    ActionLabel(String text) {
+    public ActionLabel(String text) {
         super(text);
 
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));

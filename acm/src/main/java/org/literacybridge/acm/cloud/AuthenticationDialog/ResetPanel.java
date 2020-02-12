@@ -1,34 +1,23 @@
-package org.literacybridge.acm.cloud;
+package org.literacybridge.acm.cloud.AuthenticationDialog;
 
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Triple;
+import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.gui.Assistant.PlaceholderTextField;
-import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
-import org.literacybridge.acm.gui.util.UIUtils;
-import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
 
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
-import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.SHIFT_DOWN;
-import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 
-/**
- * A dialog class to assist in resetting a cognito based password. User is prompted to enter
- * their new password, typing it twice, and the reset code from the server, sent via email.
- */
-public class ResetDialog extends JDialog {
+public class ResetPanel extends DialogPanel {
+    private final static String DIALOG_TITLE = "Reset Password";
 
     private final PlaceholderTextField usernameField;
     private final PlaceholderTextField passwordField1;
@@ -38,24 +27,9 @@ public class ResetDialog extends JDialog {
     private final PlaceholderTextField resetCode;
     private final JButton changePassword;
 
-    private boolean didOk = false;
-
-    private ResetDialog(Window owner, String username) {
-        super(owner, "Reset Password", ModalityType.DOCUMENT_MODAL);
-
-        // Set an empty border on the panel, to give some blank space around the content.
-        setLayout(new BorderLayout());
-
-        JPanel borderPanel = new JPanel();
-        Border outerBorder = new EmptyBorder(12, 12, 12, 12);
-        Border innerBorder = new RoundedLineBorder(Color.GRAY, 1, 6, 2);
-        borderPanel.setBorder(new CompoundBorder(outerBorder, innerBorder));
-        add(borderPanel, BorderLayout.CENTER);
-        borderPanel.setLayout(new BorderLayout());
-
-        JPanel dialogPanel = new JPanel();
-        borderPanel.add(dialogPanel, BorderLayout.CENTER);
-        dialogPanel.setBorder(new EmptyBorder(6, 6, 6, 6));
+    public ResetPanel(DialogController dialogController) {
+        super(dialogController, DIALOG_TITLE);
+        JPanel dialogPanel = this;
 
         // The GUI
         dialogPanel.setLayout(new GridBagLayout());
@@ -63,7 +37,7 @@ public class ResetDialog extends JDialog {
         gbc.insets.bottom = 12; // tighter bottom spacing.
 
         // User name
-        usernameField = new PlaceholderTextField(username);
+        usernameField = new PlaceholderTextField();
         usernameField.setEnabled(false);
 //        usernameField.setPlaceholder("User Name or Email Address");
         usernameField.getDocument().addDocumentListener(passwordDocListener);
@@ -128,31 +102,42 @@ public class ResetDialog extends JDialog {
         gbc.insets.bottom = 0; // no bottom spacing.
         dialogPanel.add(hBox, gbc);
 
-        SwingUtils.addEscapeListener(this);
-        setMinimumSize(new Dimension(450, 280));
-
-        // Center horizontally and in the top 2/3 of screen.
-        UIUtils.centerWindow(this, TOP_THIRD, SHIFT_DOWN);
+        addComponentListener(componentAdapter);
     }
 
-    private void onCancel(ActionEvent actionEvent) {
-        this.setVisible(false);
+    /**
+     * Gets the password and the state of "show password".
+     * @return a Triple of password, allow show, do show.
+     */
+    Triple<String,Boolean,Boolean> getPassword() {
+        return new ImmutableTriple<>(passwordField1.getText(),
+            showPassword.isEnabled(), showPassword.isSelected());
+    }
+
+
+    void onCancel(ActionEvent actionEvent) {
+        dialogController.cancel(this);
     }
 
     private void onOk(ActionEvent actionEvent) {
         // Unfortunately, cognito doesn't return any success/failure status on this call.
         Authenticator.getInstance().updatePassword(usernameField.getText(), passwordField1.getText(), resetCode.getText());
-        didOk = true;
-        this.setVisible(false);
+        dialogController.ok(this);
     }
 
     /**
-     * Retrieve the new password.
-     * @return the new password, if the user clicked OK. Null otherwise.
+     * Handles any actions that need to be taken when the panel is shown or hidden.
      */
-    String getNewPassword() {
-        return didOk ? passwordField1.getText() : null;
+    @Override
+    void onShown() {
+        String username = dialogController.getUsername();
+        usernameField.setText(username);
+        passwordField1.setText(null);
+        passwordField2.setText(null);
+        showPassword.setSelected(false);
+        onShowPassword(null);
     }
+
 
     /**
      * As the user types into various text boxes, sets the mismatch warning and enables/disables
@@ -190,9 +175,4 @@ public class ResetDialog extends JDialog {
         passwordField2.setMaskChar(showPassword.isSelected() ? (char)0 : '*');
     }
 
-    public static String showDialog(Window parent, String username) {
-        ResetDialog dialog = new ResetDialog(parent, username);
-        dialog.setVisible(true);
-        return dialog.getNewPassword();
-    }
 }
