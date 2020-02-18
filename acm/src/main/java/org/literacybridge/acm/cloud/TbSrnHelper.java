@@ -25,7 +25,7 @@ public class TbSrnHelper {
     private static final File tblInfoFileNew = new File(ACMConfiguration.getInstance()
         .getApplicationHomeDirectory(), TBL_INFO_NAME+".new");
 
-    private static final int BLOCK_SIZE = 4;
+    private static final int BLOCK_SIZE = 512;
 
     private final Authenticator authInstance = Authenticator.getInstance();
 
