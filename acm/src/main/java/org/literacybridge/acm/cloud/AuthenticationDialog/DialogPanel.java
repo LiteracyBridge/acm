@@ -16,15 +16,6 @@ class DialogPanel extends JPanel {
         this.dialogController = dialogController;
         this.dialogTitle = dialogTitle;
 
-        ActionListener enterListener = (e) -> onEnter();
-
-        dialogController.getRootPane()
-            .registerKeyboardAction(enterListener,
-                KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
-                JComponent.WHEN_IN_FOCUSED_WINDOW);
-        dialogController.getRootPane().setDefaultButton(null);
-
-
         addComponentListener(componentAdapter);
     }
 

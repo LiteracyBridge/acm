@@ -30,6 +30,10 @@ public class TbSrnAllocationInfo {
     {
         this.tbloaderid = tbloaderid;
         this.tbloaderidHex = tbloaderidHex;
+        // Some of the hex ids were pre-pended with 0x. Fix any we encounter.
+        if (this.tbloaderidHex.toLowerCase().startsWith("0x")) {
+            this.tbloaderidHex = this.tbloaderidHex.substring(2);
+        }
         this.nextSrn = nextSrn;
         this.primaryBegin = primaryBegin;
         this.primaryEnd = primaryEnd;

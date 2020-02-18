@@ -240,7 +240,7 @@ public class AuthenticationHelper {
                 RespondToAuthChallengeResult result = cognitoIdentityProvider.respondToAuthChallenge(
                     challengeRequest);
                 //System.out.println(result);
-                System.out.println(CognitoJWTParser.getPayload(result.getAuthenticationResult().getIdToken()));
+                //System.out.println(CognitoJWTParser.getPayload(result.getAuthenticationResult().getIdToken()));
                 authresult = new AuthenticationResult(result.getAuthenticationResult());
             }
         }

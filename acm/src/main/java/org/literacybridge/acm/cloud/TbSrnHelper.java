@@ -99,6 +99,10 @@ public class TbSrnHelper {
             // Persist to disk before we return to caller.
             Properties newTbLoaderInfo = saveSrnInfo(newTbSrnAllocationInfo);
             if (storePropertiesFile(newTbLoaderInfo)) {
+                System.out.printf("Allocated TB SRN, id: %04x, srn: %04x, next: %04x, primary: %d-%d, backup: %d-%d\n",
+                    newTbSrnAllocationInfo.getTbloaderid(), next, newTbSrnAllocationInfo.getNextSrn(),
+                    newTbSrnAllocationInfo.getPrimaryBegin(), newTbSrnAllocationInfo.getPrimaryEnd(),
+                    newTbSrnAllocationInfo.getBackupBegin(), newTbSrnAllocationInfo.getBackupEnd());
                 tbSrnAllocationInfo = newTbSrnAllocationInfo;
                 tbSrnStore = newTbLoaderInfo;
                 allocated = next;
@@ -275,6 +279,7 @@ public class TbSrnHelper {
         long id_l = (Long) srnAllocation.getOrDefault("id", -1);
         int id = (int) id_l;
         String hexid = (String) srnAllocation.getOrDefault("hexid", "");
+        System.out.printf("TB SRN allocation, begin: %d, end: %d, id: %04x\n", begin, end, id);
         return tbSrnAllocationInfo.applyReservation(id, hexid, begin, end);
     }
 

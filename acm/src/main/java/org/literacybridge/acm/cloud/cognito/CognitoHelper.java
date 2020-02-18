@@ -131,7 +131,7 @@ public class CognitoHelper {
 
         try {
             SignUpResult result = cognitoIdentityProvider.signUp(signUpRequest);
-            System.out.println(result);
+            //System.out.println(result);
         } catch (Exception e) {
             System.out.println(e);
             return e.getLocalizedMessage();
@@ -159,13 +159,13 @@ public class CognitoHelper {
         confirmSignUpRequest.setConfirmationCode(code);
         confirmSignUpRequest.setClientId(CLIENTAPP_ID);
 
-        System.out.println("username=" + username);
-        System.out.println("code=" + code);
-        System.out.println("clientid=" + CLIENTAPP_ID);
+//        System.out.println("username=" + username);
+//        System.out.println("code=" + code);
+//        System.out.println("clientid=" + CLIENTAPP_ID);
 
         try {
             ConfirmSignUpResult confirmSignUpResult = cognitoIdentityProvider.confirmSignUp(confirmSignUpRequest);
-            System.out.println("confirmSignupResult=" + confirmSignUpResult.toString());
+//            System.out.println("confirmSignupResult=" + confirmSignUpResult.toString());
         } catch (Exception ex) {
             System.out.println(ex);
             return ex.getLocalizedMessage();

@@ -75,6 +75,14 @@ public class DialogController extends JDialog {
             KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
             JComponent.WHEN_IN_FOCUSED_WINDOW);
 
+        ActionListener enterListener = e -> currentPanel.onEnter();
+
+        getRootPane().registerKeyboardAction(enterListener,
+            KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW);
+        getRootPane().setDefaultButton(null);
+
+
         activateCard(SIGNIN_CARD);
 
         // Center horizontally and in the top 2/3 of screen.
@@ -105,14 +113,6 @@ public class DialogController extends JDialog {
     }
 
     private void activateCard(String card) {
-        ActionListener enterListener = (e) -> {
-        };
-
-        getRootPane().registerKeyboardAction(enterListener,
-            KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
-            JComponent.WHEN_IN_FOCUSED_WINDOW);
-        getRootPane().setDefaultButton(null);
-
         currentPanel = dialogPanelMap.get(card);
         cardLayout.show(cardPanel, card);
     }
