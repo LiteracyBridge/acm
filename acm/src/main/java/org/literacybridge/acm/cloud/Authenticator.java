@@ -2,6 +2,7 @@ package org.literacybridge.acm.cloud;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicSessionCredentials;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cognitoidentity.model.Credentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -79,20 +80,21 @@ public class Authenticator {
      * @param credentials from a cognito sign-in.
      * @return the S3 client object.
      */
-    static AmazonS3 getS3Client(Credentials credentials) {
+    static AmazonS3 getS3Client(Credentials credentials, Regions region) {
         if (s3Client == null) {
             BasicSessionCredentials awsCreds = new BasicSessionCredentials(credentials.getAccessKeyId(),
                 credentials.getSecretKey(),
                 credentials.getSessionToken());
             s3Client = AmazonS3ClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+                .withRegion(region)
                 .build();
         }
         return s3Client;
     }
 
     AmazonS3 getS3Client() {
-        return getS3Client(credentials);
+        return getS3Client(credentials, cognitoHelper.getRegion());
     }
 
     /**
@@ -325,7 +327,7 @@ public class Authenticator {
      */
     public boolean downloadS3Object(String bucket, String key, File of, BiConsumer<Long,Long> progressHandler) {
         long startTime = System.nanoTime();
-        AmazonS3 s3Client = getS3Client(credentials);
+        AmazonS3 s3Client = getS3Client();
         long bytesExpected=0, bytesDownloaded=0;
 
         try (S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, key));

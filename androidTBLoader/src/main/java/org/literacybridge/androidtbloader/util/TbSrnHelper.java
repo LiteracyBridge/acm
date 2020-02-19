@@ -111,7 +111,7 @@ public class TbSrnHelper {
     private int _blocksize = -1;
     private int blocksize() {
         if (_blocksize < 0) {
-            _blocksize = (UserHelper.getAuthenticationPayload("email").equals("bill@amplio.org")) ? 2 : 20;
+            _blocksize = (UserHelper.getAuthenticationPayload("email").equals("bill@amplio.org")) ? 2 : 512;
         }
         return _blocksize;
     }

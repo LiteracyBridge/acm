@@ -346,4 +346,8 @@ public class CognitoHelper {
         }
         return bucketslist.toString();
     }
+
+    public Regions getRegion() {
+        return Regions.fromName(REGION);
+    }
 }
