@@ -63,8 +63,8 @@ public class PlaylistPrompts {
     }
 
     public void findPrompts() {
-        findCategoryPrompts();
-        findContentPrompts();
+        findPromptsInLanguageFiless();
+        findPromptsInAcmContent();
     }
 
     public String getTitle() {
@@ -115,7 +115,7 @@ public class PlaylistPrompts {
      * Look for prompts named like "2-0.a18" and "i2-0.a18" in the TB_Options/languages/{lang}/cat
      * directory.
      */
-    private void findCategoryPrompts() {
+    private void findPromptsInLanguageFiless() {
         List<String> categoryIds = getCategoryIds();
         // If we know the category...
         if (categoryIds.size() == 1 && categoryIds.get(0).equals(Constants.CATEGORY_INTRO_MESSAGE)) {
@@ -207,7 +207,7 @@ public class PlaylistPrompts {
      * Look in the content for audio items with a title that matches the playlist
      * title, and for one that matches the playlist title + " : description".
      */
-    private void findContentPrompts() {
+    private void findPromptsInAcmContent() {
         // Get any audio items in "TB Categories", given language, that textually match the playlist title.
         List<Category> categoryList = Collections.singletonList(store.getTaxonomy()
             .getCategory(CATEGORY_TB_CATEGORIES));
