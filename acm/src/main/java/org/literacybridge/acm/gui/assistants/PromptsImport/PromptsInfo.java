@@ -67,6 +67,7 @@ public class PromptsInfo {
         }
     }
 
+    // Map from the id (1, 2, 3, '9-0', '$0-1') to PromptInfo.
     Map<String, PromptInfo> promptsMap = new LinkedHashMap<>();
     List<String> ids;
     public PromptsInfo() {

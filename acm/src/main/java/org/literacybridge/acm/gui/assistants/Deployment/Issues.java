@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.assistants.Deployment;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -57,17 +58,22 @@ public class Issues {
         issues.clear();
     }
 
-    public void add(Severity severity, Area area, String message, Object... args) {
+    public Issue add(Severity severity, Area area, String message, Object... args) {
         Issue issue = new Issue(severity, area, message, args);
         issues.add(issue);
+        return issue;
     }
 
     void addToTree(DefaultMutableTreeNode issueTreeRoot) {
         for (Issue issue : issues) {
             Severity severity = issue.severity;
             Area area = issue.area;
-            // Get the node for severity.
+            // Find or insert the node for severity. It may already exist under issueTreeRoot, or
+            // it may need to be created. The severity nodes are ordered from most-severe
+            // to least severe, so search until we find a node of equal (use it) or lesser
+            // (insert before it) severity.
             SeverityNode severityNode = null;
+            @SuppressWarnings("rawtypes")
             Enumeration e = issueTreeRoot.children();
             while (e.hasMoreElements() && severityNode == null) {
                 SeverityNode sNode = (SeverityNode) e.nextElement();
@@ -84,7 +90,8 @@ public class Issues {
                 severityNode = new SeverityNode(issue);
                 issueTreeRoot.add(severityNode);
             }
-            // Get the node for the area.
+
+            // Find or insert the node for the area, under the severity node.
             AreaNode areaNode = null;
             e = severityNode.children();
             while (e.hasMoreElements() && areaNode==null) {
@@ -98,6 +105,8 @@ public class Issues {
                 areaNode = new AreaNode(issue);
                 severityNode.add(areaNode);
             }
+
+            // Add the issue to its area.
             areaNode.add(new IssueNode(issue));
         }
     }
@@ -129,13 +138,14 @@ public class Issues {
 
 
     /**
-     * Encapsulates a single issue.
+     * Encapsulates a single issue. Details are optional.
      */
     public static class Issue {
         Severity severity;
         Area area;
         String message;
         Object[] args;
+        List<String> details;
 
         Severity getSeverity() {
             return severity;
@@ -150,6 +160,21 @@ public class Issues {
 
         public String format() {
             return String.format(message, args);
+        }
+
+        public void addDetail(String detail) {
+            if (this.details == null) {
+                this.details = new ArrayList<>();
+            }
+            this.details.add(detail);
+        }
+
+        public boolean hasDetails() {
+            return this.details != null && this.details.size() > 0;
+        }
+
+        public Collection<String> getDetails() {
+            return details;
         }
     }
 
@@ -200,6 +225,11 @@ public class Issues {
     static class IssueNode extends DefaultMutableTreeNode {
         IssueNode(Issue issue) {
             super(issue, true);
+            if (issue.hasDetails()) {
+                for (String detail : issue.getDetails()) {
+                    this.add(new IssueDetailNode(detail));
+                }
+            }
         }
 
         @Override
@@ -210,5 +240,15 @@ public class Issues {
         }
     }
 
+    static class IssueDetailNode extends DefaultMutableTreeNode {
+        IssueDetailNode(String detail) {
+            super(detail, false);
+        }
+
+        @Override
+        public String toString() {
+            return getUserObject().toString();
+        }
+    }
 
 }

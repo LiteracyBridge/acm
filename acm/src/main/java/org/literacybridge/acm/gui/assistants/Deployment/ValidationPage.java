@@ -5,6 +5,8 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
+import org.literacybridge.acm.gui.assistants.PromptsImport.PromptImportAssistant;
+import org.literacybridge.acm.gui.assistants.PromptsImport.PromptsInfo;
 import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
@@ -339,6 +341,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
         String languagesPath = "TB_Options" + File.separator + "languages";
         File languagesDir = new File(tbLoadersDir, languagesPath);
+        // { id : description }
+        PromptsInfo promptsInfo = null;
 
         for (String language : languages) {
             File languageDir = IOUtils.FileIgnoreCase(languagesDir, language);
@@ -376,10 +380,18 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     prevN = n;
                 }
                 msg.insert(0, "System prompts are missing for language '%s': ");
-                context.issues.add(Issues.Severity.ERROR,
+                Issues.Issue issue = context.issues.add(Issues.Severity.ERROR,
                     Issues.Area.SYSTEM_PROMPTS,
                     msg.toString(),
                     getLanguageAndName(language));
+                // Add details on the individual missing messages.
+                if (promptsInfo == null) {
+                    promptsInfo = new PromptsInfo();
+                }
+                for (int n : missing) {
+                    PromptsInfo.PromptInfo pi = promptsInfo.getPrompt(Integer.toString(n));
+                    issue.addDetail(String.format("(%d) %s - \"%s\"", n, pi.getFilename(), pi.getText()));
+                }
             }
         }
     }
@@ -387,32 +399,37 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     /**
      * Validates that the playlist prompts exist (short and long) for all playlists in all
      * languages.
-     *
      */
     private void validatePlaylistPrompts() {
+        // Validate prompts for each language independently.
         for (AcmContent.LanguageNode languageNode: context.playlistRootNode.getLanguageNodes()) {
             String language = languageNode.getLanguageCode();
             Map<String, PlaylistPrompts> promptsMap = new HashMap<>();
             context.prompts.put(language, promptsMap);
 
+            // Get all of the playlists with content in this language, and get those playlist titles.
             List<String> playlistTitles = languageNode.getPlaylistNodes()
                 .stream()
                 .map(AcmContent.PlaylistNode::getTitle)
                 .collect(Collectors.toList());
-            // Add the UF category if the TB *may* contain user feedback.
+            // Users can always record feedback, which will be played back to them at least once,
+            // and is announced as it is played back. Thus, we always need the user feedback
+            // category. Add the UF category if it is not already present.
             Category ufCategory = store.getCategory(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
             String ufTitle = ufCategory.getCategoryName();
-            if (context.includeUfCategory && !playlistTitles.contains(ufTitle)) {
+            if (!playlistTitles.contains(ufTitle)) {
                 playlistTitles.add(ufTitle);
             }
 
+            // Determine if we have both long and short prompts for each playlist in the language.
             for (String title : playlistTitles) {
-
+                // Look for the audio recordings of the prompts. As a side effect, this will
+                // find the categoryId for the prompt.
                 PlaylistPrompts prompts = new PlaylistPrompts(title, language);
                 prompts.findPrompts();
                 promptsMap.put(title, prompts);
 
-                // Don't need a prompt for the Intro Message; only care about the others.
+                // We don't use a prompt for the Intro Message; only care about the others.
                 if (!Constants.CATEGORY_INTRO_MESSAGE.equals(prompts.categoryId)) {
                     if (!prompts.hasBothPrompts()) {
                         StringBuilder msg = new StringBuilder();

@@ -6,6 +6,8 @@ import java.util.Comparator;
 
 public class PromptImportAssistant {
 
+    private static final String PROMPTS_CSV_FILE_NAME = "prompts.csv";
+
     public static Assistant<PromptImportContext> create() {
 
         // Development debugging
