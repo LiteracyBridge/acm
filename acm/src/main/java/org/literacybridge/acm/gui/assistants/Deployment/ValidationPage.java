@@ -6,6 +6,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.util.AcmContent;
+import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.spec.ContentSpec;
@@ -394,8 +395,18 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             Map<String, PlaylistPrompts> promptsMap = new HashMap<>();
             context.prompts.put(language, promptsMap);
 
-            for (AcmContent.PlaylistNode playlistNode : languageNode.getPlaylistNodes()) {
-                String title = playlistNode.getTitle();
+            List<String> playlistTitles = languageNode.getPlaylistNodes()
+                .stream()
+                .map(AcmContent.PlaylistNode::getTitle)
+                .collect(Collectors.toList());
+            // Add the UF category if the TB *may* contain user feedback.
+            Category ufCategory = store.getCategory(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
+            String ufTitle = ufCategory.getCategoryName();
+            if (context.includeUfCategory && !playlistTitles.contains(ufTitle)) {
+                playlistTitles.add(ufTitle);
+            }
+
+            for (String title : playlistTitles) {
 
                 PlaylistPrompts prompts = new PlaylistPrompts(title, language);
                 prompts.findPrompts();
