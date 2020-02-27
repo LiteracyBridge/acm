@@ -162,8 +162,8 @@ public class TbSrnAllocationInfo {
      */
     public int available() {
         int available = 0;
-        if (primaryBegin > 0 && primaryEnd > primaryBegin) {
-            available += primaryEnd - primaryBegin;
+        if (primaryBegin > 0 && nextSrn >= primaryBegin && primaryEnd > primaryBegin) {
+            available += primaryEnd - nextSrn;
         }
         if (backupBegin > 0 && backupEnd > backupBegin) {
             available += backupEnd - backupBegin;
