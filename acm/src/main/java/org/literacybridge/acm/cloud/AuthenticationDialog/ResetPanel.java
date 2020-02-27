@@ -2,7 +2,6 @@ package org.literacybridge.acm.cloud.AuthenticationDialog;
 
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
-import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.gui.Assistant.PlaceholderTextField;
 
 import javax.swing.*;
@@ -121,7 +120,7 @@ public class ResetPanel extends DialogPanel {
 
     private void onOk(ActionEvent actionEvent) {
         // Unfortunately, cognito doesn't return any success/failure status on this call.
-        Authenticator.getInstance().updatePassword(usernameField.getText(), passwordField1.getText(), resetCode.getText());
+        dialogController.cognitoInterface.updatePassword(usernameField.getText(), passwordField1.getText(), resetCode.getText());
         dialogController.ok(this);
     }
 

@@ -1,6 +1,7 @@
 package org.literacybridge.acm.cloud.AuthenticationDialog;
 
 import org.apache.commons.lang3.tuple.Triple;
+import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.utils.SwingUtils;
@@ -38,8 +39,11 @@ public class DialogController extends JDialog {
     private Map<String,DialogPanel> dialogPanelMap = new HashMap<>();
     private DialogPanel currentPanel = null;
 
-    public DialogController(Window owner) {
+    Authenticator.CognitoInterface cognitoInterface;
+
+    public DialogController(Window owner, Authenticator.CognitoInterface cognitoInterface) {
         super(owner, "Amplio Sign In", ModalityType.DOCUMENT_MODAL);
+        this.cognitoInterface = cognitoInterface;
 
         // Set an empty border on the panel, to give some blank space around the content.
         setLayout(new BorderLayout());

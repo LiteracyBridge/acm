@@ -6,6 +6,7 @@ package org.literacybridge.acm.cloud.cognito;
  */
 
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.regions.Regions;
@@ -71,6 +72,12 @@ public class AuthenticationHelper {
 
         public Exception getAuthException() {
             return authException;
+        }
+        public boolean isSdkClientException() {
+            return authException instanceof SdkClientException;
+        }
+        public boolean isSuccess() {
+            return getJwtToken() != null;
         }
     }
 

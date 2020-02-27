@@ -2,7 +2,6 @@ package org.literacybridge.acm.cloud.AuthenticationDialog;
 
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
-import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.gui.Assistant.PlaceholderTextField;
 
 import javax.swing.*;
@@ -136,8 +135,7 @@ public class SignUpPanel extends DialogPanel {
 
     private void onCreate(ActionEvent actionEvent) {
         dialogController.clearMessage();
-        String signUpResult = Authenticator.getInstance()
-            .signUpUser(usernameField.getText(),
+        String signUpResult = dialogController.cognitoInterface.signUpUser(usernameField.getText(),
                 passwordField1.getText(),
                 emailField.getText(),
                 phoneNumberField.getText());
@@ -152,7 +150,7 @@ public class SignUpPanel extends DialogPanel {
 
     /**
      * User clicked "Have code", meaning that they
-     * @param actionEvent
+     * @param actionEvent is unused
      */
     private void haveCode(ActionEvent actionEvent) {
         dialogController.gotoConfirmationCard();

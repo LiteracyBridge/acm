@@ -175,7 +175,7 @@ class DeploymentsManager {
             return new AvailableDropboxDeployments();
         }
         
-        if (!Authenticator.getInstance().isOnline()) {
+        if (!Authenticator.getInstance().isAuthenticated()) {
             return new NoAvailableOfflineDeployments();
         }
 

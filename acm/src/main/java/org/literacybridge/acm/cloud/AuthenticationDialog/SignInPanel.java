@@ -13,7 +13,6 @@ import javax.swing.event.DocumentListener;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -153,7 +152,7 @@ public class SignInPanel extends DialogPanel {
         }
         dialogController.clearMessage();
         // Comment out next line to NOT reset the password, to test the GUI aspect of the reset dialog.
-        Authenticator.getInstance().resetPassword(usernameField.getText());
+        dialogController.cognitoInterface.resetPassword(usernameField.getText());
 
         dialogController.gotoResetCard();
     }
@@ -171,10 +170,8 @@ public class SignInPanel extends DialogPanel {
      * @param actionEvent is ignored.
      */
     private void onSignin(ActionEvent actionEvent) {
-        Authenticator authenticator = Authenticator.getInstance();
-
         UIUtils.runWithWaitSpinner(dialogController,
-            () -> authenticator.authenticate(usernameField.getText(), passwordField.getText()),
+            () -> dialogController.cognitoInterface.authenticate(usernameField.getText(), passwordField.getText()),
             this::onSigninReturned,
             TOP_THIRD);
     }
@@ -183,11 +180,14 @@ public class SignInPanel extends DialogPanel {
      * Called after the "authenticate" call returns.
      */
     private void onSigninReturned() {
-        Authenticator authenticator = Authenticator.getInstance();
-        if (!authenticator.isAuthenticated()) {
-            dialogController.setMessage(authenticator.getAuthMessage());
-        } else {
+        // ok and cancel do the same thing, but one succeeded and one failed, so it is best to
+        // keep them separate, in case this semantic changes in the future.
+        if (dialogController.cognitoInterface.isAuthenticated()) {
             dialogController.ok(this);
+        } else if(dialogController.cognitoInterface.isSdkClientException()) {
+            dialogController.cancel(this);
+        } else {
+            dialogController.setMessage(dialogController.cognitoInterface.getAuthMessage());
         }
     }
 

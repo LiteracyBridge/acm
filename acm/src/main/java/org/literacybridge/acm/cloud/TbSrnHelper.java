@@ -1,8 +1,8 @@
 package org.literacybridge.acm.cloud;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.literacybridge.core.tbloader.TbSrnAllocationInfo;
 
 import java.io.File;
@@ -15,6 +15,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.literacybridge.core.tbloader.TbSrnAllocationInfo.*;
 
@@ -29,14 +31,108 @@ public class TbSrnHelper {
 
     private final Authenticator authInstance = Authenticator.getInstance();
 
-    private final String email;
+    private final String usersEmail;
+    private String currentEmail;
     private Properties tbSrnStore;
     private TbSrnAllocationInfo tbSrnAllocationInfo;
 
-    TbSrnHelper(String email) {
-        this.email = email;
+    /**
+     * Creates an SRN helper, for the given user, otherwise for user with the "best" SRN
+     * allocation, where "best" means most available SRNs.
+     * @param usersEmail for whom to use saved SRN allocations.
+     */
+    TbSrnHelper(String usersEmail) {
+        this.usersEmail = usersEmail;
+        currentEmail = usersEmail;
         tbSrnStore = loadPropertiesFile();
-        tbSrnAllocationInfo = loadSrnInfo();
+        tbSrnAllocationInfo = loadSrnInfoForEmail(currentEmail);
+    }
+
+    private static class AllocTracker {
+        int primaryBegin = -1;
+        int primaryEnd = -1;
+        int backupBegin = -1;
+        int backupEnd = -1;
+        int nextSrn = -1;
+        AllocTracker add(String value, int n) {
+            if (value.equals("primarybegin"))
+                primaryBegin = n;
+            else if (value.equals("primaryend"))
+                primaryEnd = n;
+            else if (value.equals("backupbegin"))
+                backupBegin = n;
+            else if (value.equals("backupend"))
+                backupEnd = n;
+            else if (value.equals("nextsrn"))
+                nextSrn = n;
+            return this;
+        }
+        boolean isComplete() {
+            return primaryBegin > 0 &&
+                nextSrn >= primaryBegin &&
+                primaryEnd > nextSrn &&
+                backupBegin >= primaryEnd &&
+                backupEnd > backupBegin;
+        }
+        int size() {
+            if (!isComplete()) return 0;
+            return primaryEnd - nextSrn - 1 + backupEnd - backupBegin - 1;
+        }
+    }
+
+    /**
+     * Finds the email address, if any, of the user with the largest available SRN allocation.
+     * @return the email address, or null if no email address has available allocations.
+     */
+    private String findBestSrnAllocationEmail() {
+        // me@example.com=123
+        Pattern emailPattern = Pattern.compile("([\\w.-]+@[\\w.-]+)");
+        // 123.primarybegin=234
+        Pattern allocPattern = Pattern.compile("(\\d+)\\.(primarybegin|primaryend|backupbegin|backupend|nextsrn)");
+        if (tbSrnStore == null) return null;
+        Map<Integer, String> emails = new HashMap<>();  // note email and their ids here
+        Map<Integer, AllocTracker> sizes = new HashMap<>(); // accumulate counts for ids here
+        // Look at all of the properties.
+        tbSrnStore.forEach((k, v) -> {
+            String key = k.toString();
+            String value = v.toString();
+            // If this is (begin|end)(begin|end), count it.
+            Matcher matcher = allocPattern.matcher(key);
+            if (matcher.matches()) {
+                int id = Integer.parseInt(matcher.group(1));
+                AllocTracker tracker = sizes.getOrDefault(id, new AllocTracker())
+                    .add(matcher.group(2), Integer.parseInt(value));
+                sizes.putIfAbsent(id, tracker);
+            } else {
+                // If this is email=id, remember it.
+                matcher = emailPattern.matcher(key);
+                if (matcher.matches()) {
+                    emails.put(Integer.parseInt(value), key);
+                }
+            }
+        });
+        // Find the id with the largest allocation
+        int maxSize = 0;
+        int idOfMax = 0;
+        for (Map.Entry<Integer, AllocTracker> entry : sizes.entrySet()) {
+            int size = entry.getValue().size();
+            if (size > maxSize) {
+                maxSize = size;
+                idOfMax = entry.getKey();
+            }
+        }
+        if (idOfMax > 0) {
+            return emails.get(idOfMax);
+        }
+        return null;
+    }
+
+    /**
+     * Tells when the srns are from some other email address.
+     * @return true if being used by a different email address.
+     */
+    public boolean isBorrowedId() {
+        return !usersEmail.equals(currentEmail);
     }
 
     /**
@@ -67,7 +163,22 @@ public class TbSrnHelper {
                         this.tbSrnStore = newTbSrnStore;
                     }
                 } // begin > 0 && end > begin
-            } // isAuthenticated
+            } else {
+                // The user doesn't have allocations, and we're not authenticated online. The only
+                // chance for allocations is if there is another user who has an allocation block
+                // on this computer.
+                currentEmail = findBestSrnAllocationEmail();
+                tbSrnAllocationInfo = loadSrnInfoForEmail(currentEmail);
+            }
+        }
+        if (tbSrnAllocationInfo == null) {
+            System.out.println("No TB SRN allocation possible.");
+        } else {
+            System.out.printf("TB SRN info, id: %04x, avail: %d, next: %04x(%d), primary: %d-%d, backup: %d-%d\n",
+                tbSrnAllocationInfo.getTbloaderid(), tbSrnAllocationInfo.available(),
+                tbSrnAllocationInfo.getNextSrn(), tbSrnAllocationInfo.getNextSrn(),
+                tbSrnAllocationInfo.getPrimaryBegin(), tbSrnAllocationInfo.getPrimaryEnd(),
+                tbSrnAllocationInfo.getBackupBegin(), tbSrnAllocationInfo.getBackupEnd());
         }
 
         return tbSrnAllocationInfo != null ? tbSrnAllocationInfo.available() : 0;
@@ -92,15 +203,17 @@ public class TbSrnHelper {
             TbSrnAllocationInfo newTbSrnAllocationInfo = new TbSrnAllocationInfo(tbSrnAllocationInfo);
             int next = newTbSrnAllocationInfo.allocateNext();
             // If we don't have a backup block, and we're authenticated & online, try to get one now.
-            if (!newTbSrnAllocationInfo.hasBackup() && authInstance.isAuthenticated() && authInstance.isOnline()) {
+            if (!newTbSrnAllocationInfo.hasBackup() && authInstance.isAuthenticated()
+                    && authInstance.isOnline() && !isBorrowedId()) {
                 Map<String, Object> srnAllocation = allocateTbSrnBlock(BLOCK_SIZE);
                 applyReservation(newTbSrnAllocationInfo, srnAllocation);
             }
             // Persist to disk before we return to caller.
             Properties newTbLoaderInfo = saveSrnInfo(newTbSrnAllocationInfo);
             if (storePropertiesFile(newTbLoaderInfo)) {
-                System.out.printf("Allocated TB SRN, id: %04x, srn: %04x, next: %04x, primary: %d-%d, backup: %d-%d\n",
-                    newTbSrnAllocationInfo.getTbloaderid(), next, newTbSrnAllocationInfo.getNextSrn(),
+                System.out.printf("Allocated TB SRN, id: %04x, avail: %d, srn: %04x, next: %04x, primary: %d-%d, backup: %d-%d\n",
+                    newTbSrnAllocationInfo.getTbloaderid(), newTbSrnAllocationInfo.available(),
+                    next, newTbSrnAllocationInfo.getNextSrn(),
                     newTbSrnAllocationInfo.getPrimaryBegin(), newTbSrnAllocationInfo.getPrimaryEnd(),
                     newTbSrnAllocationInfo.getBackupBegin(), newTbSrnAllocationInfo.getBackupEnd());
                 tbSrnAllocationInfo = newTbSrnAllocationInfo;
@@ -118,12 +231,13 @@ public class TbSrnHelper {
     /**
      * Extract, for the current user, the TbSrnInfo from the TbSrnStore (ie, from the
      * properties file).
+     * @param email for which to get SrnInfo.
      * @return the TbSrnInfo for the current user, or null if there is none or it can't be read.
      */
-    public TbSrnAllocationInfo loadSrnInfo() {
+    public TbSrnAllocationInfo loadSrnInfoForEmail(String email) {
         TbSrnAllocationInfo tbSrnAllocationInfo;
         if (tbSrnStore == null) return null;
-        int tbLoaderId = getTbLoaderId();
+        int tbLoaderId = getTbLoaderIdForEmail(email);
         if (tbLoaderId <= 0) return null;
         String prefix = String.format("%d.", tbLoaderId);
 
@@ -163,7 +277,7 @@ public class TbSrnHelper {
         String prefix = String.format("%d.", tbLoaderId);
 
         // Associate the email address with the tbloader id
-        newTbLoaderInfo.setProperty(email, String.valueOf(tbLoaderId));
+        newTbLoaderInfo.setProperty(usersEmail, String.valueOf(tbLoaderId));
 
         newTbLoaderInfo.setProperty(prefix + TB_SRN_ID_NAME, String.valueOf(tbSrnAllocationInfo.getTbloaderid()));
         newTbLoaderInfo.setProperty(prefix + TB_SRN_HEXID_NAME, tbSrnAllocationInfo.getTbloaderidHex());
@@ -178,11 +292,12 @@ public class TbSrnHelper {
 
     /**
      * Gets the TB-Loader ID for the current user (by email).
+     * @param email for which to get SrnInfo.
      * @return the TB-Loader id, or -1 if none or can't be read.
      */
-    private int getTbLoaderId() {
+    private int getTbLoaderIdForEmail(String email) {
         int id = -1;
-        if (tbSrnStore != null) {
+        if (tbSrnStore != null && StringUtils.isNotEmpty(email)) {
             String tbloaderId = tbSrnStore.getProperty(email, "-1");
             try {
                 id = Integer.parseInt(tbloaderId);
@@ -249,7 +364,7 @@ public class TbSrnHelper {
         String requestURL = baseURL + "/reserve";
         if (n > 0) requestURL += "?n="+String.valueOf(n);
 
-        JSONObject jsonResponse = authInstance.authenticatedRestCall(requestURL);
+        JSONObject jsonResponse = authInstance.getAwsInterface().authenticatedRestCall(requestURL);
 
         if (jsonResponse != null) {
             Object o = jsonResponse.get("result");

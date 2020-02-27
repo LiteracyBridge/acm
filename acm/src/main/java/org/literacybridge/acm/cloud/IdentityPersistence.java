@@ -1,9 +1,9 @@
 package org.literacybridge.acm.cloud;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.tbloader.TBLoader;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,23 +15,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 class IdentityPersistence {
-    private static Map<String,String> CREDENTIALS_NAMES = new HashMap<>();
-    static {
-        CREDENTIALS_NAMES.put(TBLoader.class.getName(), "tbl_credentials.info");
-    }
     private static final String DEFAULT_CREDENTIALS_NAME = "credentials.info";
 
-    private ACMConfiguration acmConfiguration = ACMConfiguration.getInstance();
     private final File credentialsFile;
 
-    public IdentityPersistence(String className) {
-        String fn = CREDENTIALS_NAMES.getOrDefault(className, DEFAULT_CREDENTIALS_NAME);
-        credentialsFile = new File(acmConfiguration.getApplicationHomeDirectory(), fn);
+    public IdentityPersistence() {
+        ACMConfiguration acmConfiguration = ACMConfiguration.getInstance();
+        credentialsFile = new File(acmConfiguration.getApplicationHomeDirectory(),
+            DEFAULT_CREDENTIALS_NAME);
     }
 
     /**
@@ -67,12 +62,15 @@ class IdentityPersistence {
         Properties credentialProps = new Properties();
         credentialProps.setProperty("identity", user);
         credentialProps.setProperty("email", email);
-        credentialProps.setProperty("secret", rotate(password, user, false));
+        if (StringUtils.isNotEmpty(password)) {
+            credentialProps.setProperty("secret", rotate(password, user, false));
+        }
         extraProperties.forEach((k,v) -> credentialProps.put("@"+k, v));
 
         return writePropertiesFile(credentialProps);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     boolean saveProjectList(Collection<String> projects) {
         String joined = String.join(",", projects);
         Properties props = readPropertiesFile();
@@ -87,8 +85,7 @@ class IdentityPersistence {
         Properties props = readPropertiesFile();
         if (props != null) {
             String joined = props.getProperty("$projects", "");
-            List<String> projects = Arrays.asList(joined.split(","));
-            return projects;
+            return Arrays.asList(joined.split(","));
         }
         return new ArrayList<>();
     }

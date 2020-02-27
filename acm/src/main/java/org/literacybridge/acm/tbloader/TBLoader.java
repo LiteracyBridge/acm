@@ -85,6 +85,7 @@ import static java.lang.Math.max;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.literacybridge.acm.Constants.TBLoadersLogDir;
 import static org.literacybridge.acm.Constants.TbCollectionWorkDir;
+import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.OFFLINE_EMAIL_CHOICE;
 import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
@@ -297,8 +298,12 @@ public class TBLoader extends JFrame {
         }
 
         // TODO (TBLOADER_DROPBOX): remove if (...) when Dropbox completely de-implemented.
-        if (!useDropbox)
+        if (!useDropbox) {
+            // Don't count authentication time in startup -- user wait time.
+            startupTimer += System.currentTimeMillis();
             authenticate();
+            startupTimer -= System.currentTimeMillis();
+        }
         setDeviceIdAndPaths();
 
         // Initialized java logging, as well as operational logging.
@@ -341,17 +346,11 @@ public class TBLoader extends JFrame {
      */
     private void authenticate() {
         Authenticator authInstance = Authenticator.getInstance();
-        Authenticator.SigninResult result = authInstance.doSignIn(this);
+        Authenticator.SigninResult result = authInstance.getUserIdentity(this, OFFLINE_EMAIL_CHOICE);
         if (result == Authenticator.SigninResult.FAILURE) {
             JOptionPane.showMessageDialog(this,
                 "Authentication is required to use the TB-Loader.",
                 "Authentication Failure",
-                JOptionPane.ERROR_MESSAGE);
-            System.exit(13);
-        } else if (result == Authenticator.SigninResult.OFFLINE) {
-            JOptionPane.showMessageDialog(this,
-                "Not online, and no saved user credentials.\nPlease connect to the internet and try again.",
-                "Unable to Sign In",
                 JOptionPane.ERROR_MESSAGE);
             System.exit(13);
         }
@@ -594,7 +593,7 @@ public class TBLoader extends JFrame {
                     Path keyPath = Paths.get(next.getAbsolutePath());
                     Path relativePath = uploadQueuePath.relativize(keyPath);
                     String key = relativePath.toString();
-                    if (authInstance.uploadS3Object(bucket, key, next)) {
+                    if (authInstance.getAwsInterface().uploadS3Object(bucket, key, next)) {
                         next.delete();
                     }
                     Thread.sleep(2000);
@@ -714,7 +713,7 @@ public class TBLoader extends JFrame {
             break;
         case OK_Cached:
             DeploymentsManager.LocalDeployment localDeployment = dm.getLocalDeployment();
-            message = "Signed in with saved user credentials.\n"
+            message = "Signed in with email address.\n"
                 + "Talking Books will be loaded with saved\n"
                 + "Deployment "
                 + String.format("'%s' (revision '%s').", localDeployment.localDeployment, localDeployment.localRevision);
@@ -1031,8 +1030,10 @@ public class TBLoader extends JFrame {
         }
 
         greetingBox = Box.createHorizontalBox();
-        String greetingString = String.format("<html><nobr>%s<b>!</b> <i><span style='font-size:0.85em;color:gray'>(TB-Loader ID: %s)</span></i></nobr></html>",
+        boolean isBorrowed = Authenticator.getInstance().getTbSrnHelper().isBorrowedId();
+        String greetingString = String.format("<html><nobr>%s<b>!</b> <i><span style='font-size:0.85em;color:gray'>(%sTB-Loader ID: %s)</span></i></nobr></html>",
             getGreeting(),
+            isBorrowed?"Using ":"",
             deviceIdHex);
         JLabel greeting = new JLabel(greetingString);
         greetingBox.add(greeting);

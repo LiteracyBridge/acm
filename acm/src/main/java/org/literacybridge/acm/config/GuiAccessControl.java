@@ -1,6 +1,9 @@
 package org.literacybridge.acm.config;
 
+import org.literacybridge.acm.gui.Application;
+
 import javax.swing.*;
+import java.awt.Component;
 import java.util.logging.Logger;
 
 import static javax.swing.JOptionPane.NO_OPTION;
@@ -15,6 +18,7 @@ import static javax.swing.JOptionPane.YES_OPTION;
 public class GuiAccessControl extends AccessControl {
     private static final Logger LOG = Logger.getLogger(GuiAccessControl.class.getName());
 
+    private Component parent = Application.getApplication();
     GuiAccessControl(DBConfiguration config) {
         super(config);
     }
@@ -41,32 +45,32 @@ public class GuiAccessControl extends AccessControl {
                 throw new IllegalStateException("Should not happen");
             case lockError:
                 String msg = "Can't open ACM - another instance is already running";
-                JOptionPane.showMessageDialog(null, msg);
+                JOptionPane.showMessageDialog(parent, msg);
                 stackTraceExit(1);
                 break;
             case processError:
                 msg = "Can't open ACM";
-                JOptionPane.showMessageDialog(null, msg);
+                JOptionPane.showMessageDialog(parent, msg);
                 stackTraceExit(1);
                 break;
             case previouslyCheckedOutError:
                 msg = "Sandbox mode forced, but DB is currently checked out. Check DB in and restart with sandbox flag.";
-                JOptionPane.showMessageDialog(null, msg);
+                JOptionPane.showMessageDialog(parent, msg);
                 stackTraceExit(1);
                 break;
             case noNetworkNoDbError:
                 msg = "Cannot connect to Amplio server and no available database. Shutting down.";
-                JOptionPane.showMessageDialog(null, msg);
+                JOptionPane.showMessageDialog(parent, msg);
                 stackTraceExit(1);
                 break;
             case noDbError:
                 msg = "There is no copy of this ACM database on this computer.\nIt may be that the database has not been uploaded and downloaded yet.\nShutting down.";
-                JOptionPane.showMessageDialog(null, msg);
+                JOptionPane.showMessageDialog(parent, msg);
                 stackTraceExit(0);
                 break;
             case checkedOut:
                 msg = "You have already checked out this ACM.\nYou can now continue making changes to it.";
-                JOptionPane.showMessageDialog(null, msg);
+                JOptionPane.showMessageDialog(parent, msg);
                 break statusLoop;
             case newDatabase:
                 // Nothing to ask.
@@ -76,7 +80,7 @@ public class GuiAccessControl extends AccessControl {
                 Object[] options = { "Try again", "Use Demo Mode" };
                 msg = "Cannot reach Amplio server.  Do you want to get online now and try again or use Demo Mode?";
                 String title = "Cannot Connect to Server";
-                buttonIx = JOptionPane.showOptionDialog(null, msg, title,
+                buttonIx = JOptionPane.showOptionDialog(parent, msg, title,
                                                         JOptionPane.YES_NO_CANCEL_OPTION,
                                                         JOptionPane.QUESTION_MESSAGE, null, options,
                                                         options[0]);
@@ -108,7 +112,7 @@ public class GuiAccessControl extends AccessControl {
                                         openby, opendate, computername);
                 }
                 String title = "Cannot Get Write Access";
-                buttonIx = JOptionPane.showOptionDialog(null, msg, title,
+                buttonIx = JOptionPane.showOptionDialog(parent, msg, title,
                                                         JOptionPane.YES_NO_CANCEL_OPTION,
                                                         JOptionPane.QUESTION_MESSAGE, null, options,
                                                         options[0]);
@@ -137,7 +141,7 @@ public class GuiAccessControl extends AccessControl {
                 Object[] options = { "Update Shared Database", "Use Demo Mode" };
                 msg = "Do you want to update the shared database?";
                 String title = "Update or Demo Mode?";
-                buttonIx = JOptionPane.showOptionDialog(null, msg, title, JOptionPane.YES_NO_OPTION,
+                buttonIx = JOptionPane.showOptionDialog(parent, msg, title, JOptionPane.YES_NO_OPTION,
                                                         JOptionPane.QUESTION_MESSAGE, null, options,
                                                         options[0]);
                 switch (buttonIx) {
@@ -161,7 +165,7 @@ public class GuiAccessControl extends AccessControl {
             throw new IllegalStateException("Should not happen");
         case serverError:
             String msg = "Cannot connect to Amplio server to check out database. Shutting down.";
-            JOptionPane.showMessageDialog(null, msg);
+            JOptionPane.showMessageDialog(parent, msg);
             stackTraceExit(1);
             break;
         case notAvailableError:
@@ -175,7 +179,7 @@ public class GuiAccessControl extends AccessControl {
                             + "\nAfter clicking OK, the ACM will shut down."
                             + "\nOpen by %s at %s on computer %s.",
                     openby, openby, opendate, computername);
-            JOptionPane.showMessageDialog(null, msg);
+            JOptionPane.showMessageDialog(parent, msg);
             stackTraceExit(1);
             break;
         case opened:
@@ -184,12 +188,12 @@ public class GuiAccessControl extends AccessControl {
             break;
         case newDatabase:
             msg = "ACM does not exist yet. Creating a new ACM and giving you write access.";
-            JOptionPane.showMessageDialog(null, msg);
+            JOptionPane.showMessageDialog(parent, msg);
             break;
         case openedSandboxed:
             if (!ACMConfiguration.getInstance().isForceSandbox()) {
                 msg = "The ACM is running in demonstration mode.\nPlease remember that your changes will not be saved.";
-                JOptionPane.showMessageDialog(null, msg);
+                JOptionPane.showMessageDialog(parent, msg);
             }
             break;
         }
@@ -215,13 +219,13 @@ public class GuiAccessControl extends AccessControl {
         Object[] optionsSaveWork = { "Save Work", "Throw Away Your Latest Changes" };
         String msg = "If you made a mistake you can throw away all your changes now.";
         String title = "Save Work?";
-        buttonIx = JOptionPane.showOptionDialog(null, msg, title, JOptionPane.YES_NO_CANCEL_OPTION,
+        buttonIx = JOptionPane.showOptionDialog(parent, msg, title, JOptionPane.YES_NO_CANCEL_OPTION,
                                                 JOptionPane.QUESTION_MESSAGE, null, optionsSaveWork,
                                                 optionsSaveWork[0]);
         if (buttonIx == 1) {
             msg = "Are you sure you want to throw away all your work since opening the ACM?";
             title = "Are You Sure?";
-            buttonIx = JOptionPane.showOptionDialog(null, msg, title, JOptionPane.OK_CANCEL_OPTION,
+            buttonIx = JOptionPane.showOptionDialog(parent, msg, title, JOptionPane.OK_CANCEL_OPTION,
                                                     JOptionPane.WARNING_MESSAGE, null, null,
                                                     JOptionPane.CANCEL_OPTION);
             if (buttonIx == JOptionPane.OK_OPTION) {
@@ -238,7 +242,7 @@ public class GuiAccessControl extends AccessControl {
                 break checkinLoop;
             case denied:
                 msg = "Someone has forced control of this ACM, so you cannot check-in your changes.\nIf you are worried about losing a lot of work, contact techsupport@literacybridge.org for assistance.";
-                JOptionPane.showMessageDialog(null, msg);
+                JOptionPane.showMessageDialog(parent, msg);
                 // To indicate that work was not saved. Will prevent deleting old .zip files, which we may need later.
                 // There is really nothing more we can do here, however.
                 saveWork = false;
@@ -247,7 +251,7 @@ public class GuiAccessControl extends AccessControl {
                 Object[] options = { "Try again", "Shutdown" };
                 msg = "Cannot reach Amplio server.\nDo you want to get online and try again or shutdown and try later?";
                 title = "Cannot Connect to Server";
-                buttonIx = JOptionPane.showOptionDialog(null, msg, title,
+                buttonIx = JOptionPane.showOptionDialog(parent, msg, title,
                                                         JOptionPane.YES_NO_CANCEL_OPTION,
                                                         JOptionPane.QUESTION_MESSAGE, null, options,
                                                         options[0]);
@@ -261,7 +265,7 @@ public class GuiAccessControl extends AccessControl {
                 Object[] options = { "Keep Your Changes", "Throw Away Your Latest Changes" };
                 msg = "There is a problem getting your changes into Dropbox.  Do you want to keep your changes and try to get this problem fixed or throw away your latest changes?";
                 title = "Problem creating zip file on Dropbox";
-                buttonIx = JOptionPane.showOptionDialog(null, msg, title,
+                buttonIx = JOptionPane.showOptionDialog(parent, msg, title,
                                                         JOptionPane.YES_NO_CANCEL_OPTION,
                                                         JOptionPane.WARNING_MESSAGE, null, options,
                                                         options[0]);
@@ -289,7 +293,7 @@ public class GuiAccessControl extends AccessControl {
             }
         }
         if (msg != null)
-            JOptionPane.showMessageDialog(null, msg);
+            JOptionPane.showMessageDialog(parent, msg);
 
     }
 

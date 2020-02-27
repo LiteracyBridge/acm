@@ -75,7 +75,7 @@ public class CommandLineUtils {
         errorLine = dosErrorCheck(line);
       }
     } while (line != null);
-    LOG.log(Level.INFO, outBuf.toString());
+    LOG.log(Level.WARNING, outBuf.toString());
     return errorLine;
   }
 

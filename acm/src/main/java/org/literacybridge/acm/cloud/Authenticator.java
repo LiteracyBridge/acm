@@ -10,6 +10,7 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.json.simple.JSONObject;
 import org.literacybridge.acm.cloud.AuthenticationDialog.DialogController;
@@ -19,40 +20,43 @@ import org.literacybridge.acm.cloud.cognito.CognitoJWTParser;
 import org.literacybridge.acm.config.AccessControl;
 import org.literacybridge.acm.config.HttpUtility;
 
+import javax.swing.*;
 import java.awt.Window;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
+
+import static javax.swing.JOptionPane.QUESTION_MESSAGE;
 
 /**
  * Helper class to provide a simpler interface to cognito authentication.
  */
 public class Authenticator {
     private static Authenticator instance;
-    private static AmazonS3 s3Client = null;
+    private SigninResult signinResult = SigninResult.NONE;
 
     public static synchronized Authenticator getInstance() {
         if (instance == null) {
-            instance = new Authenticator(null);
+            instance = new Authenticator();
         }
         return instance;
     }
 
-    public static synchronized Authenticator getScopedInstance() {
-        if (instance == null) {
-            instance = new Authenticator(Thread.currentThread().getStackTrace()[2].getClassName());
-        }
-        return instance;
-    }
+    // Provides access to Cognito helpers
+    CognitoInterface cognitoInterface = new CognitoInterface();
 
-    // This is used to provide different persistance for different callers.
-    private final String applicationClassName;
+    // Provides access to authenticated AWS calls.
+    AwsInterface awsInterface = new AwsInterface();
+    public AwsInterface getAwsInterface() { return awsInterface; }
 
     private AuthenticationHelper.AuthenticationResult authenticationResult;
     private CognitoHelper cognitoHelper;
@@ -69,55 +73,9 @@ public class Authenticator {
     private TbSrnHelper tbSrnHelper = null;
     private ProjectsHelper projectsHelper = null;
 
-    private Authenticator(String applicationClassName) {
-        this.applicationClassName = applicationClassName;
-        this.identityPersistence = new IdentityPersistence(applicationClassName);
+    private Authenticator() {
+        this.identityPersistence = new IdentityPersistence();
         cognitoHelper = new CognitoHelper();
-    }
-
-    /**
-     * Gets an S3 client object, through which we can upload or download files to S3.
-     * @param credentials from a cognito sign-in.
-     * @return the S3 client object.
-     */
-    static AmazonS3 getS3Client(Credentials credentials, Regions region) {
-        if (s3Client == null) {
-            BasicSessionCredentials awsCreds = new BasicSessionCredentials(credentials.getAccessKeyId(),
-                credentials.getSecretKey(),
-                credentials.getSessionToken());
-            s3Client = AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-                .withRegion(region)
-                .build();
-        }
-        return s3Client;
-    }
-
-    AmazonS3 getS3Client() {
-        return getS3Client(credentials, cognitoHelper.getRegion());
-    }
-
-    /**
-     * Given a username (or email) and password, attempt to sign-in to Cognito. Sets members
-     * authenticationResult with the results of the sign-in attempt.
-     * authenticationInfo with the info returned by a successful sign-in.
-     * credentials with the credentials returned by a successful sign-in.
-     * @param username or email address.
-     * @param password of the user id.
-     */
-    public void authenticate(String username, String password) {
-        authenticationResult = cognitoHelper.ValidateUser(username, password);
-        String jwtToken = authenticationResult.getJwtToken();
-        if (jwtToken != null) {
-            authenticationInfo = new HashMap<>();
-            JSONObject payload = CognitoJWTParser.getPayload(jwtToken);
-            for (Object k : payload.keySet()) {
-                authenticationInfo.put(k.toString(), payload.get(k).toString());
-            }
-            String provider = authenticationInfo.get("iss").replace("https://", "");
-
-            credentials = cognitoHelper.GetCredentials(provider, jwtToken);
-        }
     }
 
     /**
@@ -127,52 +85,8 @@ public class Authenticator {
      * @return the value associated with propertyName, or defaultValue.
      */
     public String getUserProperty(String propertyName, String defaultValue) {
-       return authenticationInfo.getOrDefault(propertyName, defaultValue);
-    }
-
-    /**
-     * Starts a password reset process. Triggers the Cognito server to send a reset code to
-     * the email address associated with the given user name.
-     *
-     * Note: This does not actually reset any passwords, only sends the code to allow the
-     * user to reset their password.
-     *
-     * @param username that needs a password reset.
-     */
-    public void resetPassword(String username) {
-        cognitoHelper.ResetPassword(username);
-    }
-
-    /**
-     * Completes a password reset. Given a user id and the reset code sent to the user id's
-     * associated email address, and a new password, sets the password to the new value (if
-     * it is a valid password, of course).
-     * @param username of the password to reset.
-     * @param password the new password.
-     * @param pin reset code sent via email.
-     * @return an empty string :(
-     */
-    public String updatePassword(String username, String password, String pin) {
-        return cognitoHelper.UpdatePassword(username, password, pin);
-    }
-
-    public String signUpUser(String username, String password, String email, String phonenumber) {
-        return cognitoHelper.SignUpUser(username, password, email, phonenumber);
-    }
-
-    public String verifyAccessCode(String username, String code) {
-        return cognitoHelper.VerifyAccessCode(username, code);
-    }
-
-    public void resendAccessCode(String username) {
-        cognitoHelper.ResendAccessCode(username);
-    }
-
-    /**
-     * @return the IdentityPersistence helper.
-     */
-    IdentityPersistence getIdentityPersistence() {
-        return identityPersistence;
+        if (authenticationInfo == null) return defaultValue;
+        return authenticationInfo.getOrDefault(propertyName, defaultValue);
     }
 
     /**
@@ -185,27 +99,10 @@ public class Authenticator {
     }
 
     /**
-     * Signid in means that we know who the user is, and they have authenticated at some point,
-     * but not necessarily this session.
-     * @return True if the user is signed in.
-     */
-    public boolean isSignedIn() {
-        return userEmail != null;
-    }
-
-    /**
      * @return true if we can access amplio.org, false otherwise.
      */
     public boolean isOnline() {
         return AccessControl.isOnline();
-    }
-
-    /**
-     * @return "Authenticated" or the failure message from authentication.
-     */
-    public String getAuthMessage() {
-        if (authenticationResult == null) return null;
-        return authenticationResult.getMessage();
     }
 
     public String getUserName() {
@@ -217,7 +114,9 @@ public class Authenticator {
 
     public TbSrnHelper getTbSrnHelper() {
         if (tbSrnHelper == null) {
-            if (userEmail == null) return null;
+            if (!signinResult.signedIn()) {
+                throw new IllegalStateException("Must sign in first.");
+            }
             tbSrnHelper = new TbSrnHelper(userEmail);
         }
         return tbSrnHelper;
@@ -229,29 +128,35 @@ public class Authenticator {
      */
     public ProjectsHelper getProjectsHelper() {
         if (projectsHelper == null) {
-            projectsHelper = new ProjectsHelper();
+            projectsHelper = new ProjectsHelper(identityPersistence);
         }
         return projectsHelper;
     }
 
-    public enum SigninResult {NONE, FAILURE, SUCCESS, CACHED_OFFLINE, OFFLINE}
+    public enum SigninResult {NONE, FAILURE, SUCCESS, CACHED_OFFLINE, OFFLINE;
+        boolean signedIn() {
+            return this==SUCCESS || this==CACHED_OFFLINE || this==OFFLINE;
+        }
+    }
+    public enum SigninOptions {OFFLINE_EMAIL_CHOICE}
 
     /**
-     * Sign in. If online:
-     * - if there are saved userid and password, use them to pre-populate the dialog
-     * - run the sign-in dialog
-     * If offline:
-     * - if there are saved userid and password, us them as the sign-in. If we're offline,
-     *   we can't upload or download anything anyway, so no need for network credentials.
-     * @param parent the parent window for the dialog.
-     * @return the SigninResult.
+     * Determine who the user is. If we can access an authentication server, the user must
+     * authenticate. (We need the user to be authenticated in order to check for new content,
+     * or to download any new content found.) If we can not, we simply ask for their email
+     * address, defaulting to the email of the last user who successfully authenticated.
+     * @param parent window for the dialog.
+     * @param signinFlags options for the sign-in.
+     * @return a SignInResult from the process.
      */
-    public SigninResult doSignIn(Window parent) {
+    public SigninResult getUserIdentity(Window parent, SigninOptions... signinFlags) {
+        Set<SigninOptions> options = new HashSet<>(Arrays.asList(signinFlags));
         Triple<String, String, String> savedSignInDetails = identityPersistence.retrieveSignInDetails();
+        signinResult = SigninResult.NONE;
+        boolean onlineAuthentication = isOnline();
 
-        SigninResult signinResult;
-        if (isOnline()) {
-            DialogController dialog = new DialogController(parent);
+        if (onlineAuthentication) {
+            DialogController dialog = new DialogController(parent, cognitoInterface);
             if (savedSignInDetails != null) {
                 dialog.setSavedCredentials(savedSignInDetails.getLeft(), savedSignInDetails.getRight());
             }
@@ -260,52 +165,61 @@ public class Authenticator {
             if (isAuthenticated()) {
                 userName = authenticationInfo.get("cognito:username");
                 userEmail = authenticationInfo.get("email");
+                String password = dialog.isRememberMeSelected() ? dialog.getPassword() : null;
+                // These are the values that we get from the Cognito signin. As of 2019-12-24
+                // [sub, exp, iat, token_use, event_id, aud, iss, phone_number_verified, auth_time # Cognito values
+                // custom:greeting # what the user asked to be called.
+                // email_verified # will always be true if they're here; means they responded to their email.
+                // edit # regex of projects the user can edit.
+                // admin # if true, user is an admin in their projects.
+                // cognito:username # sign-in user name. These are unique, but are chosen by the user.
+                // view # regex of projects the user can view.
+                // phone_number # user's phone number, if they provided one.
+                // email # user's email. We use this for unique identity.
+                // ]
+                Map<String, String> props = new HashMap<>();
+                authenticationInfo.forEach(props::put);
+                identityPersistence.saveSignInDetails(userName, userEmail, password, props);
                 signinResult = SigninResult.SUCCESS;
-
-                if (dialog.isRememberMeSelected()) {
-                    // These are the values that we get from the Cognito signin. As of 2019-12-24
-                    // [sub, exp, iat, token_use, event_id, aud, iss, phone_number_verified, auth_time # Cognito values
-                    // custom:greeting # what the user asked to be called.
-                    // email_verified # will always be true if they're here; means they responded to their email.
-                    // edit # regex of projects the user can edit.
-                    // admin # if true, user is an admin in their projects.
-                    // cognito:username # sign-in user name. These are unique, but are chosen by the user.
-                    // view # regex of projects the user can view.
-                    // phone_number # user's phone number, if they provided one.
-                    // email # user's email. We use this for unique identity.
-                    // ]
-
-                    Map<String, String> props = new HashMap<>();
-                    authenticationInfo.forEach(props::put);
-                    String password = dialog.getPassword();
-                    identityPersistence.saveSignInDetails(userName, userEmail, password, props);
-                } else {
-                    identityPersistence.clearSignInDetails();
-                }
-
+            } else if (cognitoInterface.isSdkClientException()) {
+                // Couldn't authenticate; network problem; fall back to offline authentication scheme
+                onlineAuthentication = false;
             } else {
                 identityPersistence.clearSignInDetails();
                 signinResult = SigninResult.FAILURE;
             }
-        } else {
+        }
+
+        if (!onlineAuthentication) {
             // Not online.
-            if (savedSignInDetails != null) {
+            String email = (savedSignInDetails != null) ? savedSignInDetails.getMiddle() : "";
+            if (options.contains(SigninOptions.OFFLINE_EMAIL_CHOICE)) {
+                email = JOptionPane.showInputDialog(parent, "What is your email address?",
+                    "Email Address", QUESTION_MESSAGE, null, null,
+                    email).toString();
+            }
+
+            if (StringUtils.isEmpty(email)) {
+                signinResult = SigninResult.FAILURE;
+            } else if (savedSignInDetails != null && savedSignInDetails.getMiddle().equalsIgnoreCase(email)) {
                 userName = savedSignInDetails.getLeft();
                 userEmail = savedSignInDetails.getMiddle();
-
                 authenticationInfo = identityPersistence.getExtraProperties();
-
                 signinResult = SigninResult.CACHED_OFFLINE;
             } else {
+                userName = email;
+                userEmail = email;
                 signinResult = SigninResult.OFFLINE;
             }
         }
         return signinResult;
     }
 
+
     /**
      * Signs out. Not used.
      */
+    @SuppressWarnings("unused")
     public void doSignoutAndForgetUser() {
         // Since "signing in" merely obtains credentials for use in future calls, signing out
         // is a matter of forgetting the credentials.
@@ -319,75 +233,189 @@ public class Authenticator {
     }
 
     /**
-     * Downloads an object from S3, using the credentials of the current signed-in user.
-     * @param bucket containing the object
-     * @param key of the object
-     * @param of output File
-     * @param progressHandler optional handler called periodically with (received, expected) bytes.
+     * Encapsulates helpers to make authenticated AWS calls.
      */
-    public boolean downloadS3Object(String bucket, String key, File of, BiConsumer<Long,Long> progressHandler) {
-        long startTime = System.nanoTime();
-        AmazonS3 s3Client = getS3Client();
-        long bytesExpected=0, bytesDownloaded=0;
+    public class AwsInterface {
+        private AmazonS3 s3Client = null;
 
-        try (S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, key));
-            FileOutputStream fos = new FileOutputStream(of);
-            BufferedOutputStream bos = new BufferedOutputStream(fos)) {
-            InputStream is = s3Object.getObjectContent();
-            bytesExpected = s3Object.getObjectMetadata().getContentLength();
-
-            byte[] buffer = new byte[65536];
-            int bytesRead;
-            while ((bytesRead = is.read(buffer)) > 0) {
-                bos.write(buffer, 0, bytesRead);
-                bytesDownloaded += bytesRead;
-                if (progressHandler != null) {
-                    progressHandler.accept(bytesDownloaded, bytesExpected);
-                }
+        /**
+         * Gets an S3 client object, through which we can upload or download files to S3.
+         * @return the S3 client object.
+         */
+        AmazonS3 getS3Client() {
+            if (s3Client == null) {
+                Regions region = cognitoHelper.getRegion();
+                BasicSessionCredentials awsCreds = new BasicSessionCredentials(credentials.getAccessKeyId(),
+                    credentials.getSecretKey(),
+                    credentials.getSessionToken());
+                s3Client = AmazonS3ClientBuilder.standard()
+                    .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+                    .withRegion(region)
+                    .build();
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            return s3Client;
         }
-        return true;
-    }
 
-    public boolean uploadS3Object(String bucket, String key, File inputFile) {
-        boolean result = false;
-        try {
-            PutObjectRequest request = new PutObjectRequest(bucket, key, inputFile);
-            PutObjectResult putResult = s3Client.putObject(request);
-            result = true;
-        } catch (Exception ex) {
-            // Ignore and return false
-            // ex.printStackTrace();
+        /**
+         * Downloads an object from S3, using the credentials of the current signed-in user.
+         * @param bucket containing the object
+         * @param key of the object
+         * @param of output File
+         * @param progressHandler optional handler called periodically with (received, expected) bytes.
+         */
+        public boolean downloadS3Object(String bucket, String key, File of, BiConsumer<Long,Long> progressHandler) {
+            AmazonS3 s3Client = getS3Client();
+            long bytesExpected, bytesDownloaded=0;
+
+            try (S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, key));
+                FileOutputStream fos = new FileOutputStream(of);
+                BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                InputStream is = s3Object.getObjectContent();
+                bytesExpected = s3Object.getObjectMetadata().getContentLength();
+
+                byte[] buffer = new byte[65536];
+                int bytesRead;
+                while ((bytesRead = is.read(buffer)) > 0) {
+                    bos.write(buffer, 0, bytesRead);
+                    bytesDownloaded += bytesRead;
+                    if (progressHandler != null) {
+                        progressHandler.accept(bytesDownloaded, bytesExpected);
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+            return true;
         }
-        return result;
+
+        public boolean uploadS3Object(String bucket, String key, File inputFile) {
+            boolean result = false;
+            try {
+                PutObjectRequest request = new PutObjectRequest(bucket, key, inputFile);
+                @SuppressWarnings("unused")
+                PutObjectResult putResult = s3Client.putObject(request);
+                result = true;
+            } catch (Exception ex) {
+                // Ignore and return false
+                // ex.printStackTrace();
+            }
+            return result;
+        }
+
+        /**
+         * Make a REST call with the current signed-in credentials. We use this to make Lambda calls.
+         * @param requestURL URL to request.
+         * @return result in a JSON object.
+         */
+        public JSONObject authenticatedRestCall(String requestURL) {
+            if (!isAuthenticated()) return null;
+            Map<String,String> headers = new LinkedHashMap<>();
+            headers.put("Accept", "application/json");
+            headers.put("Content-Type", "text/plain");
+            String idToken = authenticationResult.getIdToken();
+            headers.put("Authorization", idToken);
+
+            HttpUtility httpUtility = new HttpUtility();
+            JSONObject jsonResponse = null;
+            try {
+                httpUtility.sendGetRequest(requestURL, headers);
+                jsonResponse = httpUtility.readJSONObject();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            httpUtility.disconnect();
+            return jsonResponse;
+        }
+
     }
 
     /**
-     * Make a REST call with the current signed-in credentials. We use this to make Lambda calls.
-     * @param requestURL URL to request.
-     * @return result in a JSON object.
+     * Wrapper class to encapsulate the Cognito helpers. These are provided to the sign-in /
+     * sign-up dialog only.
      */
-    public JSONObject authenticatedRestCall(String requestURL) {
-        if (!isAuthenticated()) return null;
-        Map<String,String> headers = new LinkedHashMap<>();
-        headers.put("Accept", "application/json");
-        headers.put("Content-Type", "text/plain");
-        String idToken = authenticationResult.getIdToken();
-        headers.put("Authorization", idToken);
+    public class CognitoInterface {
+        /**
+         * Given a username (or email) and password, attempt to sign-in to Cognito. Sets members
+         * authenticationResult with the results of the sign-in attempt.
+         * authenticationInfo with the info returned by a successful sign-in.
+         * credentials with the credentials returned by a successful sign-in.
+         * @param username or email address.
+         * @param password of the user id.
+         */
+        public void authenticate(String username, String password) {
+            authenticationResult = cognitoHelper.ValidateUser(username, password);
+            String jwtToken = authenticationResult.getJwtToken();
+            if (jwtToken != null) {
+                authenticationInfo = new HashMap<>();
+                JSONObject payload = CognitoJWTParser.getPayload(jwtToken);
+                for (Object k : payload.keySet()) {
+                    authenticationInfo.put(k.toString(), payload.get(k).toString());
+                }
+                String provider = authenticationInfo.get("iss").replace("https://", "");
 
-        HttpUtility httpUtility = new HttpUtility();
-        JSONObject jsonResponse = null;
-        try {
-            httpUtility.sendGetRequest(requestURL, headers);
-            jsonResponse = httpUtility.readJSONObject();
-        } catch (IOException ex) {
-            ex.printStackTrace();
+                credentials = cognitoHelper.GetCredentials(provider, jwtToken);
+            }
         }
-        httpUtility.disconnect();
-        return jsonResponse;
+
+        /**
+         * Starts a password reset process. Triggers the Cognito server to send a reset code to
+         * the email address associated with the given user name.
+         *
+         * Note: This does not actually reset any passwords, only sends the code to allow the
+         * user to reset their password.
+         *
+         * @param username that needs a password reset.
+         */
+        public void resetPassword(String username) {
+            cognitoHelper.ResetPassword(username);
+        }
+
+        /**
+         * Completes a password reset. Given a user id and the reset code sent to the user id's
+         * associated email address, and a new password, sets the password to the new value (if
+         * it is a valid password, of course).
+         * @param username of the password to reset.
+         * @param password the new password.
+         * @param pin reset code sent via email.
+         */
+        public void updatePassword(String username, String password, String pin) {
+            cognitoHelper.UpdatePassword(username, password, pin);
+        }
+
+        public String signUpUser(String username, String password, String email, String phonenumber) {
+            return cognitoHelper.SignUpUser(username, password, email, phonenumber);
+        }
+
+        public String verifyAccessCode(String username, String code) {
+            return cognitoHelper.VerifyAccessCode(username, code);
+        }
+
+        public void resendAccessCode(String username) {
+            cognitoHelper.ResendAccessCode(username);
+        }
+
+        /**
+         * Authenticated means that we have successfully given sign-in credentials to Cognito. We
+         * have a token, and can make authenticated server calls.
+         * @return True if the user is authenticated, false otherwise
+         */
+        public boolean isAuthenticated() {
+            return credentials != null;
+        }
+
+        public boolean isSdkClientException() {
+            return authenticationResult.isSdkClientException();
+        }
+
+        /**
+         * @return "Authenticated" or the failure message from authentication.
+         */
+        public String getAuthMessage() {
+            if (authenticationResult == null) return null;
+            return authenticationResult.getMessage();
+        }
+
     }
 }

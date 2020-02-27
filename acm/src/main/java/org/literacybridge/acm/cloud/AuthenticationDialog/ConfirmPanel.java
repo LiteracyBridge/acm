@@ -1,6 +1,5 @@
 package org.literacybridge.acm.cloud.AuthenticationDialog;
 
-import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.gui.Assistant.PlaceholderTextField;
 
 import javax.swing.*;
@@ -9,8 +8,6 @@ import javax.swing.event.DocumentListener;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
@@ -72,13 +69,12 @@ public class ConfirmPanel extends DialogPanel {
     private void onOk(ActionEvent actionEvent) {
         // Unfortunately, cognito doesn't return any success/failure status on this call.
         @SuppressWarnings("unused")
-        String result = Authenticator.getInstance()
-            .verifyAccessCode(username, confirmationField.getText());
+        String result = dialogController.cognitoInterface.verifyAccessCode(username, confirmationField.getText());
         dialogController.ok(this);
     }
 
     private void onResend(@SuppressWarnings("unused") ActionEvent actionEvent) {
-        Authenticator.getInstance().resendAccessCode(username);
+        dialogController.cognitoInterface.resendAccessCode(username);
     }
 
     void onCancel(ActionEvent actionEvent) {

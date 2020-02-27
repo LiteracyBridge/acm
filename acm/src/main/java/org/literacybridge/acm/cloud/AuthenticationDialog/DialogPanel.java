@@ -2,10 +2,8 @@ package org.literacybridge.acm.cloud.AuthenticationDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.KeyEvent;
 
 class DialogPanel extends JPanel {
 

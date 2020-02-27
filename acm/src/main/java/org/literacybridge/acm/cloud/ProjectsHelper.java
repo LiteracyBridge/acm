@@ -21,8 +21,13 @@ import java.util.stream.Collectors;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class ProjectsHelper {
-
     static final String DEPLOYMENTS_BUCKET_NAME = "acm-content-updates";
+
+    IdentityPersistence identityPersistence;
+
+    public ProjectsHelper(IdentityPersistence identityPersistence) {
+        this.identityPersistence = identityPersistence;
+    }
 
     public static class DeploymentInfo {
         String project;         // Like UNICEF-CHPS
@@ -93,7 +98,7 @@ public class ProjectsHelper {
     public Map<String, DeploymentInfo> getDeploymentInfo(String project) {
         Map<String, DeploymentInfo> deplInfo = new HashMap<>();
 
-        AmazonS3 s3Client = authInstance.getS3Client();
+        AmazonS3 s3Client = authInstance.getAwsInterface().getS3Client();
         ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request().withBucketName(
             ProjectsHelper.DEPLOYMENTS_BUCKET_NAME).withPrefix("projects/" + project + "/");
 
@@ -141,7 +146,7 @@ public class ProjectsHelper {
         BiConsumer<Long, Long> progressHandler)
     {
         if (authInstance.isAuthenticated() && authInstance.isOnline()) {
-            return authInstance.downloadS3Object(DEPLOYMENTS_BUCKET_NAME,
+            return authInstance.getAwsInterface().downloadS3Object(DEPLOYMENTS_BUCKET_NAME,
                 "projects/" + deploymentInfo.project + "/" + deploymentInfo.getFileName(),
                 outputFile,
                 progressHandler);
@@ -156,7 +161,7 @@ public class ProjectsHelper {
                 String baseURL = "https://y06knefb5j.execute-api.us-west-2.amazonaws.com/Devo";
                 String requestURL = baseURL + "/projects";
 
-                JSONObject jsonResponse = authInstance.authenticatedRestCall(requestURL);
+                JSONObject jsonResponse = authInstance.getAwsInterface().authenticatedRestCall(requestURL);
 
                 Object o;
                 if (jsonResponse != null) {
@@ -172,9 +177,9 @@ public class ProjectsHelper {
                     }
                 }
                 if (projects == null) projects = new ArrayList<>();
-                authInstance.getIdentityPersistence().saveProjectList(projects);
+                identityPersistence.saveProjectList(projects);
             } else {
-                projects = authInstance.getIdentityPersistence().retrieveProjectList();
+                projects = identityPersistence.retrieveProjectList();
             }
         }
         return projects;
