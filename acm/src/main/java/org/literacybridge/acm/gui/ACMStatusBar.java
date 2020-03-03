@@ -2,11 +2,7 @@ package org.literacybridge.acm.gui;
 
 import java.awt.Dimension;
 
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JProgressBar;
-import javax.swing.JSeparator;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 
 import org.jdesktop.swingx.JXStatusBar;
 import org.jdesktop.swingx.plaf.basic.BasicStatusBarUI;
@@ -42,8 +38,23 @@ public class ACMStatusBar extends JXStatusBar {
   }
 
   public void setStatusMessage(String message) {
+    setStatusMessage(message, 0);
+  }
+
+  private Timer eraseTimer;
+  public void setStatusMessage(String message, int diplayDurationMillis) {
+    if (eraseTimer != null) {
+      eraseTimer.stop();
+      eraseTimer = null;
+    }
+    if (diplayDurationMillis > 0) {
+      // We don't really need to create a new timer each time. But this is simpler, and it is very low volume.
+      eraseTimer = new Timer(diplayDurationMillis, e->{eraseTimer.stop();eraseTimer=null;statusLabel.setText("");});
+      eraseTimer.start();
+    }
     statusLabel.setText(message);
   }
+
 
   public void setProgressMessage(String message) {
     progressLabel.setText(message);

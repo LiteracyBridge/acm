@@ -141,7 +141,9 @@ class PlaylistPopupMenu extends JPopupMenu {
         String playlistName = (String) JOptionPane.showInputDialog(
             PlaylistPopupMenu.this, "Enter playlist name:", "Edit playlist",
             JOptionPane.PLAIN_MESSAGE, null, null, selectedPlaylist.getPlaylist().getName());
-        if (!StringUtils.isEmpty(playlistName)) {
+        if (StringUtils.isBlank(playlistName)) {
+            Application.getApplication().setStatusMessage("Blank playlist name ignored.", 3000);
+        } else {
             try {
                 selectedPlaylist.getPlaylist().setName(playlistName);
                 ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()

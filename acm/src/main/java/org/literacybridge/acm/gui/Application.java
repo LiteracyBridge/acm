@@ -167,6 +167,10 @@ public class Application extends JXFrame {
     statusBar.setStatusMessage(message);
   }
 
+  public void setStatusMessage(String message, int displayDurationMillis) {
+    statusBar.setStatusMessage(message, displayDurationMillis);
+  }
+
   public void setProgressMessage(String message) {
     statusBar.setProgressMessage(message);
     ;

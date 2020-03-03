@@ -885,7 +885,9 @@ public class SidebarView extends ACMContainer implements Observer {
             "Enter playlist name:", "Add new playlist", JOptionPane.PLAIN_MESSAGE,
             null, null, "");
         playlistName = (playlistName != null) ? playlistName.trim(): playlistName;
-        if (!StringUtils.isEmpty(playlistName)) {
+        if (StringUtils.isBlank(playlistName)) {
+            Application.getApplication().setStatusMessage("Blank playlist name ignored.", 3000);
+        } else {
             MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
                 .getMetadataStore();
             Playlist playlist = store.newPlaylist(playlistName);
