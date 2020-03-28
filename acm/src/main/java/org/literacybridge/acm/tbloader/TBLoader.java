@@ -1623,13 +1623,13 @@ public class TBLoader extends JFrame {
 
     private boolean fillPackageFromRecipient(Recipient recipient) {
         Properties deploymentProperties = programSpec.getDeploymentProperties();
-        String key = recipient.language;
+        String key = recipient.languagecode;
         if (StringUtils.isNotEmpty(recipient.variant)) {
             key = key + ',' + recipient.variant;
         }
         String imageName = deploymentProperties.getProperty(key);
         if (imageName == null) {
-            imageName = deploymentProperties.getProperty(recipient.language);
+            imageName = deploymentProperties.getProperty(recipient.languagecode);
         }
         boolean ok = imageName != null;
         if (!ok) {

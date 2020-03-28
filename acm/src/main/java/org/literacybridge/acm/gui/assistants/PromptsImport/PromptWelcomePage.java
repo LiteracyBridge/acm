@@ -173,7 +173,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
         File programSpecDir = ACMConfiguration.getInstance().getProgramSpecDirFor(project);
 
         context.programSpec = new ProgramSpec(programSpecDir);
-        context.specLanguagecodes = context.programSpec.getLanguages();
+        context.specLanguagecodes = context.programSpec.getLanguageCodes();
         context.configLanguagecodes = dbConfig.getAudioLanguages().stream().map(Locale::getLanguage).collect(Collectors.toSet());
     }
 

@@ -171,15 +171,15 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     }
 
     /**
-     * Get the languages and playlists for the given deployment.
+     * Get the languages codes and playlists for the given deployment.
      * @param deploymentNo that we are creating.
      */
     private void collectDeploymentInformation(int deploymentNo) {
         RecipientList recipients = context.programSpec.getRecipientsForDeployment(deploymentNo);
-        context.languages = recipients.stream().map(r -> r.language).collect(Collectors.toSet());
+        context.languageCodes = recipients.stream().map(r -> r.languagecode).collect(Collectors.toSet());
 
-        context.allProgramSpecPlaylists = getProgramSpecPlaylists(deploymentNo, context.languages);
-        context.allAcmPlaylists = getAcmPlaylists(deploymentNo, context.languages);
+        context.allProgramSpecPlaylists = getProgramSpecPlaylists(deploymentNo, context.languageCodes);
+        context.allAcmPlaylists = getAcmPlaylists(deploymentNo, context.languageCodes);
     }
 
     /**
@@ -431,17 +431,17 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
      * may be different between languages, due to missing content in some languages.
      *
      * @param deploymentNo of the Deployment.
-     * @param languages    of all the Recipients in the Deployment.
+     * @param languageCodes    of all the Recipients in the Deployment.
      * @return a map of { language : [ContentSpec.PlaylistSpec ] }
      */
     private Map<String, List<ContentSpec.PlaylistSpec>> getProgramSpecPlaylists(int deploymentNo,
-        Set<String> languages)
+        Set<String> languageCodes)
     {
         ContentSpec contentSpec = context.programSpec.getContentSpec();
         ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
         Map<String, List<ContentSpec.PlaylistSpec>> programSpecPlaylists = new HashMap<>();
-        for (String language : languages) {
-            programSpecPlaylists.put(language, deploymentSpec.getPlaylistSpecsForLanguage(language));
+        for (String languageCode : languageCodes) {
+            programSpecPlaylists.put(languageCode, deploymentSpec.getPlaylistSpecsForLanguage(languageCode));
         }
         return programSpecPlaylists;
     }

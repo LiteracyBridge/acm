@@ -334,6 +334,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                     "prompts" + File.separator + language + File.separator + "cat");
 
                 // Create the list files, and copy the non-predefined prompts.
+                boolean haveUserFeedbackListFile = false;
                 File activeLists = new File(listsDir, "_activeLists.txt");
                 String title = null;
                 try (PrintWriter activeListsWriter = new PrintWriter(activeLists)) {
@@ -377,6 +378,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                             filteredNode = newNode;
                         }
 
+                        // If any audio items remain after filtering, create the {playlist}.txt file.
                         if (filteredNode.getAudioItemNodes().size() > 0) {
                             String promptCat = getPromptCategoryAndFiles(prompts, promptIx, promptsDir);
                             // The intro message is handled specially, in the control file.
@@ -387,12 +389,19 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                                 activeListsWriter.println("!" + promptCat);
                             }
                             createListFile(filteredNode, promptCat, listsDir);
+                            haveUserFeedbackListFile |= promptCat.equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
                         }
                     }
 
-                    if (context.includeUfCategory) activeListsWriter.println(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
+                    if (context.includeUfCategory)
+                        activeListsWriter.println(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
                     if (context.includeTbCategory)
                         activeListsWriter.println("$" + Constants.CATEGORY_TB_INSTRUCTIONS);
+                    if (!haveUserFeedbackListFile) {
+                        // Create an empty "9-0.txt" file if there isn't already such a file. Needed so that the
+                        // first UF message recorded can be reviewed by the user.
+                        createListFile(new PlaylistNode(null), Constants.CATEGORY_UNCATEGORIZED_FEEDBACK, listsDir);
+                    }
                 } catch (IOException | BaseAudioConverter.ConversionException e) {
                     errors.add(new DeploymentException(String.format("Error exporting playlist '%s'",
                         title), e));
@@ -575,7 +584,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         String msg;
 
         // For each language in the deployment
-        for (String language : context.languages) {
+        for (String language : context.languageCodes) {
             // Print the language name
             LanguageNode languageNode = context.playlistRootNode.find(language);
             if (languageNode == null) {

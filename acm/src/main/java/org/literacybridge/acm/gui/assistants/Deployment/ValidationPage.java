@@ -184,13 +184,13 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
         // Get the languages, and playlists for each language.
         // Check that all languages are a language in the ACM.
-        validateDeploymentLanguages(context.languages);
+        validateDeploymentLanguages(context.languageCodes);
 
         // Check that we have all messages in all playlists; check if anything was added.
-        validatePlaylists(deploymentNo, context.languages);
+        validatePlaylists(deploymentNo, context.languageCodes);
 
         // Check that we have all system prompts in all languages.
-        validateSystemPrompts(context.languages);
+        validateSystemPrompts(context.languageCodes);
 
         // Check that we have all category prompts for categories in each language.
         validatePlaylistPrompts();
@@ -276,7 +276,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                 if (playlistNode == null) {
                     context.issues.add(Issues.Severity.WARNING,
                         Issues.Area.PLAYLISTS,
-                        "Playlist '%s' is missing in the ACM.",
+                        "Playlist '%s' is missing for language '%s' in the ACM.",
+                        getLanguageAndName(language),
                         qualifiedPlaylistName);
                 } else {
                     // ...otherwise, we have the playlist, so add to the list of ACM playlists, and check the contents.
@@ -294,9 +295,10 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                         if (audioItemNode == null) {
                             context.issues.add(Issues.Severity.WARNING,
                                 Issues.Area.CONTENT,
-                                "Title '%s' is missing in playlist '%s' in the ACM.",
+                                "Title '%s' is missing in playlist '%s' for language '%s' in the ACM.",
                                 messageSpec.title,
-                                playlistNode.getTitle());
+                                playlistNode.getTitle(),
+                                getLanguageAndName(language));
                         } else {
                             foundItems.add(audioItemNode);
                         }
@@ -514,13 +516,13 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     recipName(recipient));
             } else {
                 File languagesDir = IOUtils.FileIgnoreCase(recipientDir, "languages");
-                File languageDir = IOUtils.FileIgnoreCase(languagesDir, recipient.language);
+                File languageDir = IOUtils.FileIgnoreCase(languagesDir, recipient.languagecode);
                 File promptFile = IOUtils.FileIgnoreCase(languageDir, "10.a18");
                 if (!languageDir.exists() || !languageDir.isDirectory()) {
                     context.issues.add(Issues.Severity.WARNING,
                         Issues.Area.CATEGORY_PROMPTS,
                         "Missing 'languages/%s' directory for recipient '%s'.",
-                        recipient.language,
+                        recipient.languagecode,
                         recipName(recipient));
                 } else if (!promptFile.exists()) {
                     context.issues.add(Issues.Severity.WARNING,

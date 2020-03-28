@@ -78,13 +78,13 @@ public class ContentSpec {
         public List<PlaylistSpec> getPlaylistSpecs() {
             return playlistSpecs;
         }
-        public List<PlaylistSpec> getPlaylistSpecsForLanguage(String language) {
-            return getPlaylistSpecsForLanguageAndVariant(language, null);
+        public List<PlaylistSpec> getPlaylistSpecsForLanguage(String languagecode) {
+            return getPlaylistSpecsForLanguageAndVariant(languagecode, null);
         }
-        public List<PlaylistSpec> getPlaylistSpecsForLanguageAndVariant(String language, String variant) {
+        public List<PlaylistSpec> getPlaylistSpecsForLanguageAndVariant(String languagecode, String variant) {
             Predicate<MessageSpec> included = variant != null
-                ? (msg) -> msg.includesLanguage(language) && msg.includesVariant(variant)
-                : (msg) -> msg.includesLanguage(language);
+                ? (msg) -> msg.includesLanguage(languagecode) && msg.includesVariant(variant)
+                : (msg) -> msg.includesLanguage(languagecode);
 
             List<PlaylistSpec> result = new ArrayList<>();
             // For all of the playlists (in every language) in the deployment...
@@ -163,16 +163,16 @@ public class ContentSpec {
             }
             return -1;
         }
-        public List<MessageSpec> getMessagesForLanguage(String languageCode) {
+        public List<MessageSpec> getMessagesForLanguage(String languagecode) {
             return messageSpecs
                 .stream()
-                .filter(msg -> msg.includesLanguage(languageCode))
+                .filter(msg -> msg.includesLanguage(languagecode))
                 .collect(Collectors.toList());
         }
-        public List<MessageSpec> getMessagesForLanguageAndVariant(String languageCode, String variant) {
+        public List<MessageSpec> getMessagesForLanguageAndVariant(String languagecode, String variant) {
             return messageSpecs
                 .stream()
-                .filter(msg -> msg.includesLanguage(languageCode) && msg.includesVariant(variant))
+                .filter(msg -> msg.includesLanguage(languagecode) && msg.includesVariant(variant))
                 .collect(Collectors.toList());
         }
 
@@ -210,7 +210,7 @@ public class ContentSpec {
          * This is a language *filter*. In which languages is (or is not) the message expected to
          * be present? If no filter, all languages in the deployment.
          */
-        public final String language;
+        public final String languagecode;
         private StringFilter languageFilter;
 
         public final String variant;
@@ -226,18 +226,19 @@ public class ContentSpec {
             this.title = properties.get(columns.title.externalName);
             this.keyPoints = properties.get(columns.keyPoints.externalName);
             this.format = properties.get(columns.format.externalName);
-            this.language = properties.getOrDefault(columns.language.externalName, "");
+            String language = properties.getOrDefault(columns.language.externalName, "");
+            this.languagecode = properties.getOrDefault(columns.languagecode.externalName, language).toLowerCase();
             this.variant = properties.getOrDefault(columns.variant.externalName, "");
             this.default_category = properties.get(columns.default_category.externalName);
             this.sdg_goals = properties.get(columns.sdg_goals.externalName);
             this.sdg_targets = properties.get(columns.sdg_targets.externalName);
 
-            this.languageFilter = new StringFilter(this.language);
+            this.languageFilter = new StringFilter(this.languagecode);
             this.variantFilter = new StringFilter(this.variant);
         }
 
-        public boolean includesLanguage(String languageCode) {
-            return languageFilter.test(languageCode);
+        public boolean includesLanguage(String languagecode) {
+            return languageFilter.test(languagecode);
         }
 
         public boolean includesVariant(String variant) {
@@ -297,7 +298,8 @@ public class ContentSpec {
         title("message_title"),
         keyPoints("key_points"),
         format,
-        language("language"),
+        language("language"),   // deprecated in favor of languagecode
+        languagecode("languagecode"),
         variant("variant"),
         sdg_goals("sdg_goals"),
         sdg_targets("sdg_targets"),

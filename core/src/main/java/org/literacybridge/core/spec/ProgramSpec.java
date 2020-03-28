@@ -113,7 +113,7 @@ public class ProgramSpec {
      */
     public Set<String> getLanguagesForDeployment(int deploymentNumber) {
         RecipientList recipients = getRecipientsForDeployment(deploymentNumber);
-        Set<String> languages = recipients.stream().map(r -> r.language).collect(Collectors.toSet());
+        Set<String> languages = recipients.stream().map(r -> r.languagecode).collect(Collectors.toSet());
         return languages;
     }
 
@@ -162,8 +162,8 @@ public class ProgramSpec {
      * A list of languages declared for any recipient in the project.
      * @return a list (in a set) of the ISO 639-3 language codes.
      */
-    public Set<String> getLanguages() {
-        return getRecipients().stream().map(r -> r.language).collect(Collectors.toSet());
+    public Set<String> getLanguageCodes() {
+        return getRecipients().stream().map(r -> r.languagecode).collect(Collectors.toSet());
     }
     /**
      * Gets a list of used components in the Program. (That is, components which have recipient

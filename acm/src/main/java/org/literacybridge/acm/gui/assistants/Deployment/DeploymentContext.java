@@ -15,7 +15,7 @@ class DeploymentContext {
 
     int deploymentNo = -1;
     ProgramSpec programSpec;
-    Set<String> languages;
+    Set<String> languageCodes;
 
     // Map of {languagecode : [playlistspec, ...], ...}
     Map<String, List<ContentSpec.PlaylistSpec>> allProgramSpecPlaylists;

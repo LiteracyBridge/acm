@@ -15,7 +15,8 @@ public class Recipient {
         district, /*numhouseholds, */
         numtbs,
         supportentity, /*model,*/
-        language, /*coordinates*/
+        language, // deprecated in favor of languagecode
+        languagecode, /*coordinates*/
         agent, /*,latitude,longitude,*/
         variant
     };
@@ -38,7 +39,7 @@ public class Recipient {
     public final String district;
     public final int numtbs;
     public final String supportentity;
-    public final String language;
+    public final String languagecode;
     public final String agent;
     public final String variant;
     
@@ -54,7 +55,8 @@ public class Recipient {
         String agentKey = properties.containsKey(columns.agent.name()) ? columns.agent.name() : columns.supportentity.name();
         this.agent = properties.get(agentKey);
         this.supportentity = properties.get(columns.supportentity.name());
-        this.language = properties.get(columns.language.name()).toLowerCase();
+        String language = properties.get(columns.language.name());
+        this.languagecode = properties.getOrDefault(columns.languagecode.name(), language).toLowerCase();
         this.variant = properties.getOrDefault(columns.variant.name(), "").toLowerCase();
     }
 

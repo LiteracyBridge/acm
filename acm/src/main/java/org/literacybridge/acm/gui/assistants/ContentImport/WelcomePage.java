@@ -73,7 +73,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         hbox.add(new JLabel("and the Language: "));
         languageChooser = new LanguageChooser();
         languageChooser.addActionListener(this::onSelection);
-        Set<String> languageStrings = context.programSpec.getLanguages()
+        Set<String> languageStrings = context.programSpec.getLanguageCodes()
             .stream()
             .map(AcmAssistantPage::getLanguageAndName)
             .collect(Collectors.toSet());

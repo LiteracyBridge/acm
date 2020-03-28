@@ -212,7 +212,7 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
                     UIUtils.setLabelText(currentMessage, item.getLeft().toString());
                     File recipientDir = new File(communitiesDir, recipientsMap.get(recipient.recipientid));
                     File languagesDir = new File(recipientDir, "languages");
-                    File languageDir = new File(languagesDir, recipient.language);
+                    File languageDir = new File(languagesDir, recipient.languagecode);
                     File greeting = new File(languageDir, "10.a18");
                     boolean isReplace = greeting.exists();
                     summaryTable.append(new EmailHelper.TR(isReplace?"Replace":"Import", item.getLeft().toString(), item.getRight().getFile().toString()));
@@ -226,7 +226,7 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
                             if (!systemDir.mkdirs()) throw new Exception(String.format("Unable to create directory '%s'",systemDir.getAbsolutePath()));
                             summaryTable.append(new EmailHelper.TR(new TD(), new TD("Created system directory")));
                         }
-                        File grpFile = new File(systemDir, recipient.language + TBLoaderConstants.GROUP_FILE_EXTENSION);
+                        File grpFile = new File(systemDir, recipient.languagecode + TBLoaderConstants.GROUP_FILE_EXTENSION);
                         if (!grpFile.exists()) {
                             if (!grpFile.createNewFile()) throw new Exception(String.format("Unable to create 'grp' file '%s'", grpFile.getAbsolutePath()));
                             summaryTable.append(new EmailHelper.TR(new TD(), new TD("Created .grp file")));
@@ -234,7 +234,7 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
                     }
                     // Import the audio.
                     File sourceFile = item.getRight().getFile();
-                    AudioUtils.copyOrConvert(item.getLeft().toString(), item.getLeft().getRecipient().language, sourceFile, greeting);
+                    AudioUtils.copyOrConvert(item.getLeft().toString(), item.getLeft().getRecipient().languagecode, sourceFile, greeting);
 
                     if (isReplace) {
                         updateCount++;
