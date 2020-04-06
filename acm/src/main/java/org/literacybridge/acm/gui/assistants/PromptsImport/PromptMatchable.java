@@ -6,7 +6,7 @@ import org.literacybridge.acm.gui.assistants.Matcher.MATCH;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableFileItem;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
 
-public class PromptMatchable extends MatchableFileItem<PromptTarget> {
+public class PromptMatchable extends MatchableFileItem<PromptTarget, ImportableFile> {
 
     PromptMatchable(PromptTarget left, ImportableFile right) {
         super(left, right);
@@ -18,7 +18,7 @@ public class PromptMatchable extends MatchableFileItem<PromptTarget> {
     }
 
     boolean containsText(String filterText) {
-        if (getRight() != null && getRight().getFile().getName().toLowerCase().contains(filterText))
+        if (getRight() != null && getRight().getTitle().toLowerCase().contains(filterText))
             return true;
         if (getLeft() != null) {
             PromptTarget target = getLeft();

@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class GreetingsMatchPage extends AbstractMatchPage<GreetingsImportContext, GreetingTarget, ImportableFile, GreetingMatchable> {
+public class GreetingsMatchPage extends AbstractMatchPage<GreetingsImportContext, GreetingTarget, GreetingFile, GreetingMatchable> {
 
     private GreetingsMatchFilter greetingsMatchFilter;
     private GreetingsMatchModel greetingsMatchModel;
@@ -112,8 +112,8 @@ public class GreetingsMatchPage extends AbstractMatchPage<GreetingsImportContext
     protected void onPageEntered(boolean progressing) {
         if (progressing) {
             // List of files (right side list)
-            List<ImportableFile> files = context.importableFiles.stream()
-                .map(ImportableFile::new)
+            List<GreetingFile> files = context.importableFiles.stream()
+                .map(GreetingFile::new)
                 .collect(Collectors.toList());
             List<GreetingTarget> recipients = context.programSpec.getRecipients().stream()
                 .map(recipientAdapter -> {

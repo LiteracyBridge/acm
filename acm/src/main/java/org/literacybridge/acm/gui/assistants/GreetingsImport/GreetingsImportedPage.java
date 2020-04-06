@@ -248,7 +248,7 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
                     errors.add(e);
                     errorCount++;
                     UIUtils.setLabelText(errorMessagesLabel, Integer.toString(errorCount));
-                    summaryTable.append(new EmailHelper.TR("Exception importing", item.getRight().getFile().getName(), e.toString())
+                    summaryTable.append(new EmailHelper.TR("Exception importing", item.getRight().getTitle(), e.toString())
                         .withStyler(pinkZebra));
                 }
                 UIUtils.setProgressBarValue(progressBar, ++progressCount);

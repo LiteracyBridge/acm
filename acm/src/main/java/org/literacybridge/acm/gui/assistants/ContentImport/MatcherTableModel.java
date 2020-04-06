@@ -140,7 +140,7 @@ public class MatcherTableModel extends AbstractTableModel implements
         sorter.setComparator(Columns.Right.ordinal(), (ImportableFile o1, ImportableFile o2) -> {
             if (o1==null) return 1;
             if (o2==null) return -1;
-            return o1.getFile().getName().compareToIgnoreCase(o2.getFile().getName());
+            return o1.getTitle().compareToIgnoreCase(o2.getTitle());
         });
         sorter.setComparator(Columns.Update.ordinal(), (Boolean o1, Boolean o2) -> {
             if (o1==null) return 1;

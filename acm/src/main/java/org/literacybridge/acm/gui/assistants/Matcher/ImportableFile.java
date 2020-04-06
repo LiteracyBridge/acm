@@ -14,6 +14,9 @@ public class ImportableFile {
     public File getFile() {
         return file;
     }
+    public String getTitle() {
+        return toString();
+    }
 
     @Override
     public String toString() {

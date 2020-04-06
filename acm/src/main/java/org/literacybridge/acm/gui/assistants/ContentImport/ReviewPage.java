@@ -7,6 +7,7 @@ import org.literacybridge.acm.gui.Assistant.Assistant;
 import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.assistants.ContentImport.ContentImportBase.ImportReminderLine;
 import org.literacybridge.acm.gui.assistants.Matcher.ColumnProvider;
+import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableFileItem;
 import org.literacybridge.acm.gui.assistants.Matcher.Target;
 import org.literacybridge.acm.gui.assistants.common.AbstractReviewPage;
@@ -145,7 +146,7 @@ public class ReviewPage extends AbstractReviewPage<ContentImportContext, AudioMa
         }
     }
 
-    private class ImportPreviewTreeTableRenderer<U extends MatchableFileItem<? extends Target>>
+    private class ImportPreviewTreeTableRenderer<U extends MatchableFileItem<? extends Target, ? extends ImportableFile>>
         extends AbstractReviewPage.ImportPreviewTreeTableRenderer {
 
         private final Font normalFont;

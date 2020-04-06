@@ -6,19 +6,19 @@ import org.literacybridge.acm.gui.assistants.Matcher.MatchableFileItem;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
 import org.literacybridge.core.spec.Recipient;
 
-public class GreetingMatchable extends MatchableFileItem<GreetingTarget> {
+public class GreetingMatchable extends MatchableFileItem<GreetingTarget, GreetingFile> {
 
-    GreetingMatchable(GreetingTarget left, ImportableFile right) {
+    GreetingMatchable(GreetingTarget left, GreetingFile right) {
         super(left, right);
     }
 
-    private GreetingMatchable(GreetingTarget left, ImportableFile right, MATCH match)
+    private GreetingMatchable(GreetingTarget left, GreetingFile right, MATCH match)
     {
         super(left, right, match);
     }
 
     boolean containsText(String filterText) {
-        if (getRight() != null && getRight().getFile().getName().toLowerCase().contains(filterText))
+        if (getRight() != null && getRight().getTitle().toLowerCase().contains(filterText))
             return true;
         if (getLeft() != null) {
             Recipient recipient = getLeft().getRecipient();

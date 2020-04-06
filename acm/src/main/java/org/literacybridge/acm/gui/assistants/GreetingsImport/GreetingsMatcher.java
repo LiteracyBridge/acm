@@ -12,17 +12,17 @@ import java.util.function.BiFunction;
 /**
  * Class to match custom greetings with recipients. Provides a specialized scoring function
  */
-public class GreetingsMatcher extends Matcher<GreetingTarget, ImportableFile, GreetingMatchable> {
+public class GreetingsMatcher extends Matcher<GreetingTarget, GreetingFile, GreetingMatchable> {
 
     @Override
     protected int scoreMatch(GreetingMatchable l, GreetingMatchable r, boolean tokens) {
         RecipientAdapter recipient = l.getLeft().getRecipient();
-        ImportableFile file = r.getRight();
+        GreetingFile gf = r.getRight();
 
         // Which compare function are we using?
         BiFunction<String, String, Integer> fn = tokens ? FuzzySearch::tokenSortRatio : FuzzySearch::ratio;
 
-        String fileName = FilenameUtils.removeExtension(file.getFile().getName());
+        String fileName = gf.getTitle();
         int score;
 
         if (StringUtils.isEmpty(recipient.groupname) && StringUtils.isEmpty(recipient.agent)) {

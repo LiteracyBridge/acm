@@ -1,16 +1,16 @@
 package org.literacybridge.acm.gui.assistants.Matcher;
 
-public class MatchableFileItem<L extends Target> extends MatchableItem<L, ImportableFile> {
+public class MatchableFileItem<L extends Target, R extends ImportableFile> extends MatchableItem<L, R> {
 
-    protected MatchableFileItem(L left, ImportableFile right) {
+    protected MatchableFileItem(L left, R right) {
         super(left, right);
     }
 
-    protected MatchableFileItem(L left, ImportableFile right, MATCH match) {
+    protected MatchableFileItem(L left, R right, MATCH match) {
         super(left, right, match);
     }
 
-    protected MatchableFileItem(L left, ImportableFile right, MATCH match, int score) {
+    protected MatchableFileItem(L left, R right, MATCH match, int score) {
         super(left, right, match, score);
     }
 }
