@@ -13,6 +13,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -217,38 +219,38 @@ public class AudioItemContextMenuDialog extends JDialog {
                 null, options, options[0]);
 
         if (n == 1) {
-          for (AudioItem a : selectedAudioItems) {
-            try {
-              ACMConfiguration.getInstance()
-                      .getCurrentDB()
-                      .getMetadataStore()
-                      .deleteAudioItem(a.getId());
-              ACMConfiguration.getInstance()
-                      .getCurrentDB()
-                      .getMetadataStore()
-                      .commit(a);
-              // TODO: It is NOT OKAY to not delete from the file system. It is simply harder
-              // to do it right. But, unless we delete the file system, we accumulate obsolete
-              // cruft forever. However, we would need to defer the actual deletions until the
-              // db is committed. So, let them accumulate.
+          MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
+          Transaction transaction = store.newTransaction();
+          try {
+            for (AudioItem item : selectedAudioItems) {
+              try {
+                // Remove the audio item from any playlists.
+                // Copy to a new collection because we will modify the existing collection.
+                Collection<Playlist> playlists = new ArrayList<>(item.getPlaylists());
+                playlists.forEach(pl -> {
+                  item.removePlaylist(pl);
+                  pl.removeAudioItem(item.getId());
+                  transaction.add(pl);
+                });
+                // Then remove the item itself.
+                item.delete();
+                transaction.add(item);
 
-              // TODO: implement a "sweep files" function.
+                // TODO: It is NOT OKAY to not delete from the file system. It is simply harder
+                // to do it right. But, unless we delete the file system, we accumulate obsolete
+                // cruft forever. However, we would need to defer the actual deletions until the
+                // db is committed. So, let them accumulate.
 
-              // it's okay to delete from DB but cannot delete the .a18 file
-              // since that's in the shared (dropbox) repository
-//              if (!ACMConfiguration.getInstance()
-//                      .getCurrentDB()
-//                      .isSandboxed()) {
-//                  ACMConfiguration.getInstance()
-//                      .getCurrentDB()
-//                      .getRepository()
-//                      .delete(a);
-//              }
-            } catch (Exception e) {
-              // TODO: fix all of these silently ignored exceptions
-              LOG.log(Level.WARNING,
-                      "Unable to delete audioitem id=" + a.getId(), e);
+                // it's okay to delete from DB but cannot delete the .a18 file
+                // since that's in the shared (dropbox) repository
+              } catch (Exception e) {
+                // TODO: fix all of these silently ignored exceptions
+                LOG.log(Level.WARNING, "Unable to delete audioitem id=" + item.getId(), e);
+              }
             }
+            transaction.commit();
+          } catch (IOException ignored) {
+            // ignored
           }
           Application.getFilterState().updateResult(true);
         }

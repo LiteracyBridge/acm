@@ -28,7 +28,7 @@ import java.util.List;
 
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 
-public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends MatchableFileItem<? extends Target>> extends AcmAssistantPage<CONTEXT_T> {
+public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends MatchableFileItem<? extends Target, ? extends ImportableFile>> extends AcmAssistantPage<CONTEXT_T> {
 
     private final ColumnProvider<MATCHABLE_T> targetColumnProvider;
     protected final DefaultMutableTreeTableNode importPreviewRoot;
@@ -176,7 +176,7 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
                 case 1:
                     return matchable.getOperation();
                 case 2:
-                    return matchable.getRight().getFile().getName();
+                    return matchable.getRight().getTitle();
                 default:
                     return "";
                 }
@@ -191,7 +191,7 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
     /**
      * TreeTable model for the import preview.
      */
-    protected static class ImportPreviewTreeTableModel<U extends MatchableFileItem<? extends Target>> extends DefaultTreeTableModel {
+    protected static class ImportPreviewTreeTableModel<U extends MatchableFileItem<? extends Target, ? extends ImportableFile>> extends DefaultTreeTableModel {
         String[] nonTargetColumns = { "Operation", "Audio File" };
         ColumnProvider<U> targetColumnProvider;
 
@@ -274,7 +274,7 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
 
     protected abstract class AbstractTreeTableRenderer extends JLabel implements TreeCellRenderer, TableCellRenderer {};
 
-    protected class ImportPreviewTreeTableRenderer<U extends MatchableFileItem<? extends Target>> extends AbstractTreeTableRenderer {
+    protected class ImportPreviewTreeTableRenderer<U extends MatchableFileItem<? extends Target, ? extends ImportableFile>> extends AbstractTreeTableRenderer {
         protected ImportPreviewTreeTableModel<U> model;
 
         private String renderValue(Object value, boolean isSelected, int column) {

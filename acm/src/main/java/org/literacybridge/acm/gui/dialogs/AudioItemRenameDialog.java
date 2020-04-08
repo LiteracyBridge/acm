@@ -822,6 +822,7 @@ public class AudioItemRenameDialog extends JDialog {
                 playlists.forEach(pl -> {
                     item.removePlaylist(pl);
                     pl.removeAudioItem(item.getId());
+                    transaction.add(pl);
                 });
                 transaction.add(item);
             });
