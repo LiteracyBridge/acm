@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.assistants.PromptsImport;
 
+import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
@@ -20,6 +21,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
@@ -36,12 +38,15 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
     private final JProgressBar progressBar;
     private final JLabel importedMessagesLabel;
     private final JLabel updatedMessagesLabel;
+    private final JLabel standardFileMessagesLabel;
     private final JLabel errorMessagesLabel;
     private final JButton viewErrorsButton;
     private final JLabel currentMessage;
 
     private int importCount;
     private int updateCount;
+    private int standardFileCount;
+    private Box standardLabelBox;
     private int errorCount;
     private int progressCount;
     private StringBuilder summaryMessage;
@@ -70,6 +75,14 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
         updatedMessagesLabel = makeBoxedLabel("no");
         hbox.add(updatedMessagesLabel);
         hbox.add(new JLabel(" prompt(s). "));
+        standardLabelBox = Box.createHorizontalBox();
+        standardLabelBox.add(new JLabel("Installed "));
+        standardFileMessagesLabel = makeBoxedLabel("no");
+        standardLabelBox.add(standardFileMessagesLabel);
+        standardLabelBox.add(new JLabel(" standard files. "));
+        standardLabelBox.setVisible(false);
+        hbox.add(standardLabelBox);
+
         errorMessagesLabel = makeBoxedLabel("No");
         hbox.add(errorMessagesLabel);
         hbox.add(new JLabel(" error(s)."));
@@ -113,7 +126,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
 
         progressBar.setMaximum(matches.size()+1);
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        SwingWorker worker = new SwingWorker<Integer, Void>() {
+        SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
             @Override
             protected Integer doInBackground() {
                 summaryMessage = new StringBuilder("<html>");
@@ -193,10 +206,6 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
     private void performImports(List<PromptMatchable> matches) {
         String languagecode = context.languagecode;
         dbConfig = ACMConfiguration.getInstance().getCurrentDB();
-        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
-        File tbOptionsDir = new File(tbLoadersDir, "TB_Options");
-        File languagesDir = new File(tbOptionsDir, "languages");
-        File languageDir = new File(languagesDir, languagecode);
 
         summaryMessage.append(String.format("<h2>Project %s</h2>", dbConfig.getProjectName()));
         summaryMessage.append(String.format("<h3>%s</h3>", localDateTimeFormatter.format(LocalDateTime.now())));
@@ -204,6 +213,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
 
         importCount = 0;
         updateCount = 0;
+        standardFileCount = 0;
         errorCount = 0;
         progressCount = 0;
 
@@ -212,14 +222,16 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
             .forEach((item) -> {
                 try {
                     // Make sure the directories exist. Create the .grp file if it doesn't exist.
-                    String promptId = item.getLeft().getPromptId(); // 0, 1, etc.
+                    PromptsInfo.PromptInfo promptInfo = item.getLeft().getPromptInfo();
+                    String promptId = promptInfo.getId(); // 0, 1, etc.
                     UIUtils.setLabelText(currentMessage, item.getLeft().toString()); // 0: bell,...
-                    File promptFile = new File(languageDir, promptId+".a18");
+                    File destDir = promptInfo.isTutorialPrompt() ? context.promptsDir : context.languageDir;
+                    File promptFile = new File(destDir, promptId+".a18");
                     boolean isReplace = promptFile.exists();
                     summaryTable.append(new EmailHelper.TR(isReplace?"Replace":"Import", item.getLeft().toString(), item.getRight().getFile().toString()));
                     if (!promptFile.exists()) {
-                        if (!languageDir.exists()) {
-                            if (!languageDir.mkdirs()) throw new Exception(String.format("Unable to create directory '%s'", languageDir.getAbsolutePath()));
+                        if (!destDir.exists()) {
+                            if (!destDir.mkdirs()) throw new Exception(String.format("Unable to create directory '%s'", destDir.getAbsolutePath()));
                             summaryTable.append(new EmailHelper.TR(new TD(), new TD("Created language directory")));
                         }
                     }
@@ -247,6 +259,33 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                     // Ignore
                 }
             });
+
+        importBoilerplateFiles("$0-1.txt");
+        importBoilerplateFiles("0.a18");
+    }
+
+    /**
+     * Files that don't depend on program or language, the bell, and the .txt file for the tutorial.
+     * @param name
+     */
+    private void importBoilerplateFiles(String name) {
+        File destFile = new File(context.languageDir, name);
+        if (!destFile.exists()) {
+            InputStream srcStream = PromptImportedPage.class.getClassLoader().getResourceAsStream(name);
+            try {
+                // srcStream may be null, in which case we'll catch and report the exception.
+                //noinspection ConstantConditions
+                FileUtils.copyInputStreamToFile(srcStream, destFile);
+                UIUtils.setVisible(standardLabelBox, true);
+                UIUtils.setLabelText(standardFileMessagesLabel, Integer.toString(++standardFileCount));
+            } catch (Exception e) {
+                errors.add(e);
+                errorCount++;
+                UIUtils.setLabelText(errorMessagesLabel, Integer.toString(errorCount));
+                summaryTable.append(new EmailHelper.TR("Exception saving standard file", name)
+                    .withStyler(pinkZebra));
+            }
+        }
     }
 
     @Override

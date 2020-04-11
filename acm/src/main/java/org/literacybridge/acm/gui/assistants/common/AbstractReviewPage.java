@@ -11,7 +11,6 @@ import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableFileItem;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchableItem;
 import org.literacybridge.acm.gui.assistants.Matcher.Target;
-import org.literacybridge.acm.store.Playlist;
 
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
@@ -32,7 +31,7 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
 
     private final ColumnProvider<MATCHABLE_T> targetColumnProvider;
     protected final DefaultMutableTreeTableNode importPreviewRoot;
-    protected final ImportPreviewTreeTableModel importPreviewTreeTableModel;
+    protected final ImportPreviewTreeTableModel<MATCHABLE_T> importPreviewTreeTableModel;
     protected final ImportPreviewTreeTable importPreviewTreeTable;
 
     protected AbstractReviewPage(PageHelper<CONTEXT_T> listener) {
@@ -80,9 +79,9 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
 
     protected abstract List<JComponent> getPageIntro();
     protected abstract ColumnProvider<MATCHABLE_T> getColumnProvider();
-    protected abstract ImportPreviewTreeTableModel getTreeModel(MutableTreeTableNode root);
-    protected AbstractTreeTableRenderer getTreeTableRenderer(ImportPreviewTreeTableModel model) {
-        return new ImportPreviewTreeTableRenderer(model);
+    protected abstract ImportPreviewTreeTableModel<MATCHABLE_T> getTreeModel(MutableTreeTableNode root);
+    protected AbstractTreeTableRenderer getTreeTableRenderer(ImportPreviewTreeTableModel<MATCHABLE_T> model) {
+        return new ImportPreviewTreeTableRenderer<>(model);
     }
 
     @Override
@@ -130,7 +129,7 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
         return params;
     }
 
-    protected class ImportPreviewTreeTable extends JXTreeTable {
+    protected static class ImportPreviewTreeTable extends JXTreeTable {
         ImportPreviewTreeTable(ImportPreviewTreeTableModel fileTreeModel) {
             super(fileTreeModel);
         }
@@ -150,17 +149,17 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
 //        }
     }
 
-    private class PlaylistNode extends DefaultMutableTreeTableNode {
-        PlaylistNode(Playlist playlist) {
-            super(playlist, true);
-        }
-
-        @Override
-        public Object getValueAt(int column) {
-            if (column == 0) return undecoratedPlaylistName(((Playlist)getUserObject()).getName());
-            return "";
-        }
-    }
+//    private static class PlaylistNode extends DefaultMutableTreeTableNode {
+//        PlaylistNode(Playlist playlist) {
+//            super(playlist, true);
+//        }
+//
+//        @Override
+//        public Object getValueAt(int column) {
+//            if (column == 0) return undecoratedPlaylistName(((Playlist)getUserObject()).getName());
+//            return "";
+//        }
+//    }
     protected static class PreviewTargetNode<U> extends DefaultMutableTreeTableNode {
         public PreviewTargetNode(U matchable) {
             super(matchable, false);
@@ -169,7 +168,7 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
         public Object getValueAt(int column) {
             if (getUserObject() instanceof MatchableItem) {
                 @SuppressWarnings("unchecked")
-                MatchableItem<? extends Target, ? extends ImportableFile> matchable = (MatchableItem) getUserObject();
+                MatchableItem<? extends Target, ? extends ImportableFile> matchable = (MatchableItem<? extends Target, ? extends ImportableFile>) getUserObject();
                 switch (column) {
                 case 0:
                     return matchable.getLeft().getTitle();
@@ -184,6 +183,7 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
             return "";
         }
         public U getMatchable() {
+            //noinspection unchecked
             return (U)getUserObject();
         }
     }
@@ -191,6 +191,7 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
     /**
      * TreeTable model for the import preview.
      */
+    @SuppressWarnings("unused")
     protected static class ImportPreviewTreeTableModel<U extends MatchableFileItem<? extends Target, ? extends ImportableFile>> extends DefaultTreeTableModel {
         String[] nonTargetColumns = { "Operation", "Audio File" };
         ColumnProvider<U> targetColumnProvider;
@@ -202,6 +203,7 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
             this.targetColumnProvider = targetColumnProvider;
         }
 
+        @SuppressWarnings("unused")
         boolean isEmpty() {
             return getRoot().getChildCount() == 0;
         }
@@ -225,6 +227,7 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
                 Object userObject = ((DefaultMutableTreeTableNode) node).getUserObject();
                 if (userObject == null) return null;
                 if (node instanceof AbstractReviewPage.PreviewTargetNode) {
+                    @SuppressWarnings("unchecked")
                     U matchable = (U) userObject;
                     return targetColumnProvider.getValueAt(matchable, column);
                 } else {
@@ -272,11 +275,12 @@ public abstract class AbstractReviewPage<CONTEXT_T, MATCHABLE_T extends Matchabl
         }
     }
 
-    protected abstract class AbstractTreeTableRenderer extends JLabel implements TreeCellRenderer, TableCellRenderer {};
+    protected abstract static class AbstractTreeTableRenderer extends JLabel implements TreeCellRenderer, TableCellRenderer {}
 
     protected class ImportPreviewTreeTableRenderer<U extends MatchableFileItem<? extends Target, ? extends ImportableFile>> extends AbstractTreeTableRenderer {
         protected ImportPreviewTreeTableModel<U> model;
 
+        @SuppressWarnings("unused")
         private String renderValue(Object value, boolean isSelected, int column) {
             if (value == null) return "(null)";
             return value.toString();

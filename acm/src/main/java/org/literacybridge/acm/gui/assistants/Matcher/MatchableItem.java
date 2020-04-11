@@ -8,7 +8,7 @@ import java.util.Objects;
  * @param <L>
  * @param <R>
  */
-public class MatchableItem<L extends Target, R> implements Comparable<MatchableItem> {
+public class MatchableItem<L extends Target, R> implements Comparable<MatchableItem<L,R>> {
     private L left;
 
     public L getLeft() {
@@ -73,25 +73,34 @@ public class MatchableItem<L extends Target, R> implements Comparable<MatchableI
         this.setScore(score);
     }
 
-    public MatchableItem disassociate() {
+    public MatchableItem<L,R> disassociate() {
         @SuppressWarnings("unchecked")
-        MatchableItem disassociated = new MatchableItem(null, getRight(), MATCH.RIGHT_ONLY);
+        MatchableItem<L,R> disassociated = new MatchableItem<>(null, getRight(), MATCH.RIGHT_ONLY);
         setRight(null);
         setMatch(MATCH.LEFT_ONLY);
         setScore(0);
         return disassociated;
     }
 
-    boolean isMatchableWith(MatchableItem other) {
+    boolean isMatchableWith(MatchableItem<L,R> other) {
         return other != null && this.getMatch().isUnmatched() && other.getMatch().isUnmatched()
             && this.getMatch() != other.getMatch();
+    }
+
+    public boolean isExactMatch(MatchableItem<L,R> other) {
+        if (getMatch() == MATCH.LEFT_ONLY && other.getMatch() == MATCH.RIGHT_ONLY) {
+            // we have a left and a right. Compare them, and then move on.
+            return getLeft().toString().equals(other.getRight().toString());
+        }
+        return false;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof MatchableItem)) return false;
-        MatchableItem matchableItem = (MatchableItem) o;
+        @SuppressWarnings("unchecked")
+        MatchableItem<L,R> matchableItem = (MatchableItem<L,R>) o;
         return Objects.equals(left, matchableItem.left) && Objects.equals(right,
             matchableItem.right) && match == matchableItem.match;
     }

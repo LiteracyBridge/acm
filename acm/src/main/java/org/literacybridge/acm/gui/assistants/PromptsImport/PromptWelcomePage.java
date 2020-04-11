@@ -17,12 +17,10 @@ import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
@@ -81,7 +79,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
         promptTable.setDefaultRenderer(Object.class, new RecipientCellRenderer());
 
         TableRowSorter<PromptModel> sorter = new TableRowSorter<>(promptModel);
-        sorter.setComparator(0, Comparator.comparingInt((ToIntFunction<String>) Integer::parseInt));
+        sorter.setComparator(0, new PromptImportAssistant.PromptIdSorter());
         promptFilter = new PromptFilter();
         sorter.setRowFilter(promptFilter);
         promptTable.setRowSorter(sorter);
@@ -157,6 +155,14 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
         String languagecode = getSelectedLanguage();
         languageChooser.setBorder(languagecode == null ? redBorder : blankBorder);
 
+        if (languagecode != null) {
+            context.tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
+            context.tbOptionsDir = new File(context.tbLoadersDir, "TB_Options");
+            context.languagesDir = new File(context.tbOptionsDir, "languages");
+            context.languageDir = new File(context.languagesDir, languagecode);
+            context.promptsDir = new File(context.languageDir, "cat");
+        }
+
         fillPromptList();
 
         setComplete(languagecode != null);
@@ -185,13 +191,10 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
         context.promptHasRecording.clear();
         String languagecode = getSelectedLanguage();
         if (StringUtils.isNotEmpty(languagecode)) {
-            File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
-            File tbOptionsDir = new File(tbLoadersDir, "TB_Options");
-            File languagesDir = new File(tbOptionsDir, "languages");
-            File languageDir = new File(languagesDir, languagecode);
-            for (String promptId : context.promptIds) {
+            for (String promptId : context.promptsInfo.getIds()) {
+                PromptsInfo.PromptInfo promptInfo = context.promptsInfo.getPrompt(promptId);
                 String filename = promptId + ".a18";
-                File promptFile = new File(languageDir, filename);
+                File promptFile = new File(promptInfo.isTutorialPrompt() ? context.promptsDir : context.languageDir, filename);
                 context.promptHasRecording.put(promptId, promptFile.exists());
             }
         }
@@ -229,7 +232,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
                 column);
             if (column == 0) {
                 int modelRow = promptTable.convertRowIndexToModel(row);
-                String id = context.promptIds.get(modelRow);
+                String id = context.promptsInfo.getIds().get(modelRow);
                 setIcon(context.promptHasRecording.getOrDefault(id, true) ? soundImage : noSoundImage);
             } else {
                 setIcon(null);
@@ -249,7 +252,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
         public boolean include(Entry<? extends PromptModel, ? extends Integer> entry) {
             if (predicate == null) return true;
             int rowIx = entry.getIdentifier();
-            String promptId = context.promptIds.get(rowIx);
+            String promptId = context.promptsInfo.getIds().get(rowIx);
             return predicate.test(promptId);
         }
     }
@@ -262,26 +265,29 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
 
         @Override
         public int getColumnCount() {
-            return 2;
+            return 3;
         }
 
         @Override
         public String getColumnName(int column) {
             switch (column) {
             case 0: return "Id";
-            case 1: return "Definition";
+            case 1: return "Filename";
+            case 2: return "Definition";
             }
             return "";
         }
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
-            String id = context.promptIds.get(rowIndex);
+            String id = context.promptsInfo.getIds().get(rowIndex);
             switch (columnIndex) {
             case 0:
                 return id;
             case 1:
-                return context.promptDefinitions.get(id);
+                return context.promptsInfo.getPrompt(id).getFilename();
+            case 2:
+                return context.promptsInfo.getPrompt(id).getText();
             }
             return null;
         }

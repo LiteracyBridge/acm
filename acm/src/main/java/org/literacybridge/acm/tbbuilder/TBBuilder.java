@@ -720,7 +720,7 @@ public class TBBuilder {
                     // uncategorized feedback because it will be created on demand, and we
                     // don't check for the TB long description because it is provided in
                     // the languages directory.
-                    if (!line.equals("9-0") && !line.equals("$0-1")) {
+                    if (!line.equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK) && !line.equals(Constants.CATEGORY_TUTORIAL)) {
                         File pList = new File(sourceListsDir, line + ".txt");
                         if (!pList.exists()) {
                             errorMessages.add(

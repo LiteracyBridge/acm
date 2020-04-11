@@ -1,6 +1,7 @@
 package org.literacybridge.acm.gui.assistants.ContentImport;
 
 import me.xdrop.fuzzywuzzy.FuzzySearch;
+import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 
@@ -63,7 +64,7 @@ class AudioMatcher extends Matcher<AudioTarget, ImportableFile, AudioMatchable> 
     @Override
     protected int scoreMatch(AudioMatchable l, AudioMatchable r, boolean tokens) {
         List<String> leftList = l.getLeft().getTitles();
-        String right = r.getRight().toString();
+        String right = FilenameUtils.getBaseName(r.getRight().getFile().getName());
 
         BiFunction<String,String,Integer> fn =
             tokens ? FuzzySearch::tokenSortRatio

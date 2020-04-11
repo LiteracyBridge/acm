@@ -57,35 +57,23 @@ public class Matcher<L extends Target, R, T extends MatchableItem<L, R>> {
 
     private MatchStats findExactMatches() {
         MatchStats result = new MatchStats();
-        // The array is sorted, so matching strings will already be adjacent. And the "left"
-        // strings sort earlier than the "right" strings. So, all we need to do is walk the
-        // list, and compare every "left" item to the next item. Note that there are "left",
-        // "right", and other items.
-        int ix = 0;
-        while (ix < matchableItems.size() - 1) {
-            T item1 = matchableItems.get(ix);
+
+        // Compare left items with right items, looking for exact matches. We assume that there is
+        // only one exact match.
+        for (int ix1=0; ix1 < matchableItems.size()-1; ix1++) {
+            T item1 = matchableItems.get(ix1);
             if (item1.getMatch() == MATCH.LEFT_ONLY) {
-                T item2 = matchableItems.get(ix + 1);
-                if (item2.getMatch() == MATCH.RIGHT_ONLY) {
-                    result.comparisons++;
-                    // we have a left and a right. Compare them, and then move on.
-                    if (item1.getLeft().toString().equals(item2.getRight().toString())) {
-//                    if (item1.getLeft().equals(item2.getRight())) {
-                        result.matches++;
-                        recordMatch(item1, item2, MATCH.EXACT, 0);
+                for (int ix2=ix1+1; ix2 < matchableItems.size(); ix2++) {
+                    T item2 = matchableItems.get(ix2);
+                    if (item2.getMatch() == MATCH.RIGHT_ONLY) {
+                        result.comparisons++;
+                        if (item1.isExactMatch(item2)) {
+                            result.matches++;
+                            recordMatch(item1, item2, MATCH.EXACT, 0);
+                            break;
+                        }
                     }
-                    ix += 2;
-                } else if (item2.getMatch() == MATCH.LEFT_ONLY) {
-                    // the second item is another LEFT; we want to look at it next time,
-                    // so advance only one.
-                    ix++;
-                } else {
-                    // the second item is not a RIGHT, so we don't need to test it. It's also
-                    // not a LEFT, so we don't need to see it again. Advance two.
-                    ix += 2;
                 }
-            } else {
-                ix++;
             }
         }
 

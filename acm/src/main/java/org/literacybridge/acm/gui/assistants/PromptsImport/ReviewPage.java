@@ -50,8 +50,8 @@ public class ReviewPage extends AbstractReviewPage<PromptImportContext, PromptMa
     }
 
     @Override
-    protected ImportPreviewTreeTableModel getTreeModel(MutableTreeTableNode root) {
-        return new PromptPreviewTreeModel(root,  new PromptTargetColumnProvider());
+    protected ImportPreviewTreeTableModel<PromptMatchable> getTreeModel(MutableTreeTableNode root) {
+        return new PromptPreviewTreeModel(root, new PromptTargetColumnProvider());
     }
 
     @Override
@@ -62,18 +62,18 @@ public class ReviewPage extends AbstractReviewPage<PromptImportContext, PromptMa
             .collect(Collectors.toList());
 
         for (PromptMatchable importable : importables) {
-            PreviewTargetNode node = new PreviewTargetNode(importable);
+            PreviewTargetNode<PromptMatchable> node = new PreviewTargetNode<>(importable);
             importPreviewTreeTableModel.insertNodeInto(node, importPreviewRoot, importPreviewRoot.getChildCount());
         }
     }
 
-    private class PromptPreviewTreeModel extends ImportPreviewTreeTableModel {
-         PromptPreviewTreeModel(MutableTreeTableNode root,  ColumnProvider columnProvider) {
+    private static class PromptPreviewTreeModel extends ImportPreviewTreeTableModel<PromptMatchable> {
+         PromptPreviewTreeModel(MutableTreeTableNode root,  ColumnProvider<PromptMatchable> columnProvider) {
             super(root, columnProvider);
         }
     }
 
-    private class PromptTargetColumnProvider implements ColumnProvider<PromptMatchable> {
+    private static class PromptTargetColumnProvider implements ColumnProvider<PromptMatchable> {
 
         @Override
         public int getColumnCount() {
@@ -89,10 +89,7 @@ public class ReviewPage extends AbstractReviewPage<PromptImportContext, PromptMa
         }
 
         @Override
-        public Class getColumnClass(int columnIndex) {
-            if (columnIndex == 0) {
-                return String.class;
-            }
+        public Class<String> getColumnClass(int columnIndex) {
             return String.class;
         }
 
@@ -103,7 +100,7 @@ public class ReviewPage extends AbstractReviewPage<PromptImportContext, PromptMa
             if (columnIndex == 0) {
                 return target.getPromptId();
             }
-            return target.getPromptDefinition();
+            return target.getPromptText();
         }
     }
 

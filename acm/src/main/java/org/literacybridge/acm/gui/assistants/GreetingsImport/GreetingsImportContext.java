@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class GreetingsImportContext
-    implements AbstractFilesPage.FileImportContext, AbstractMatchPage.MatchContext {
+    implements AbstractFilesPage.FileImportContext, AbstractMatchPage.MatchContext<GreetingTarget, GreetingFile, GreetingMatchable> {
     private final static List<String> RecipientColumnsOfInterest = Arrays.asList("Community","Group","Agent");
 
     public ProgramSpec programSpec;

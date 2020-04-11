@@ -1,15 +1,8 @@
 package org.literacybridge.acm.gui.assistants.PromptsImport;
 
-import com.opencsv.CSVReader;
-import org.apache.commons.io.input.BOMInputStream;
 import org.literacybridge.acm.gui.Assistant.Assistant;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.Comparator;
 
 public class PromptImportAssistant {
 
@@ -21,8 +14,7 @@ public class PromptImportAssistant {
 //        if (ACMConfiguration.isTestData()) {
 //        }
 
-        context.promptDefinitions = loadSystemPrompts();
-        context.promptIds = new ArrayList<>(context.promptDefinitions.keySet());
+        context.promptsInfo = new PromptsInfo();
         //context.promptDefinitions.forEach((k,v)->context.promptHasRecording.put(k,false));
 
         @SuppressWarnings("UnnecessaryLocalVariable")
@@ -40,33 +32,48 @@ public class PromptImportAssistant {
     }
 
     /**
-     * Reads a .csv file of "id,definition" pairs from a resource.
-     * @return A map of {id : definition}.
+     * Implements a sorter for prompt ids. The id may be pure numeric, in which case we want to
+     * sort by numeric value, or may be a string ($1-0), in which case we want to sort alphanumerially.
      */
-    private static Map<String, String> loadSystemPrompts() {
-        Map<String, String> result = null;
-        String promptsFileName = "prompts.csv";
-        InputStream csvStream = PromptImportAssistant.class.getClassLoader().getResourceAsStream(promptsFileName);
-        try (BOMInputStream bis = new BOMInputStream(csvStream);
-            Reader ir = new InputStreamReader(bis);
-            CSVReader reader = new CSVReader(ir)) {
+    public static class PromptIdSorter implements Comparator<String> {
 
-            Map<String,String> prompts = new LinkedHashMap<>();
-
-            String[] nextLine;
-            nextLine = reader.readNext();
-
-            if (nextLine.length == 2 && nextLine[0].equals("id")
-                && nextLine[1].equals("definition")) {
-                for (String[] line : reader.readAll()) {
-                    prompts.put(line[0], line[1]);
-                }
+        @Override
+        public int compare(String o1, String o2) {
+            Integer i1=null, i2=null;
+            try {
+                i1 = Integer.parseInt(o1);
+            } catch(Exception ignored) { }
+            try {
+                i2 = Integer.parseInt(o2);
+            } catch(Exception ignored) { }
+            // Both numeric
+            if (i1 != null && i2 != null) {
+                return i1-i2;
             }
-            result = prompts;
-        } catch (Exception ignored) {
-            // Ignore; return null
+            // Neither numeric
+            if (i1==null && i2==null) {
+                int l1 = o1.length();
+                int l2 = o2.length();
+                if (l1!=0 && l2!=0) {
+                    // Two non-empty strings.
+                    return o1.compareToIgnoreCase(o2);
+                }
+                // At least one is empty. Let a non-empty one be smaller.
+                if (l1>0) return -1;
+                if (l2>0) return 1;
+                // Both empty, equal.
+                return 0;
+            }
+            // Only one numeric. Let the numeric one be "smaller".
+            if (i1!=null) {
+                return -1;
+            }
+            return 1;
         }
-        return result;
-    }
 
+        @Override
+        public boolean equals(Object obj) {
+            return obj == this;
+        }
+    }
 }

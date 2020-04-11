@@ -3,22 +3,24 @@ package org.literacybridge.acm.gui.assistants.PromptsImport;
 import org.literacybridge.acm.gui.assistants.Matcher.Target;
 
 public class PromptTarget extends Target {
-    private String promptId;
-    private String promptDefinition;
+    private PromptsInfo.PromptInfo promptInfo;
 
     // Is there already an audio file for the System Prompt in the ACM?
     private boolean hasPrompt;
 
-    PromptTarget(String promptId, String promptDefinition) {
-        this.promptId = promptId;
-        this.promptDefinition = promptDefinition;
+    PromptTarget(PromptsInfo.PromptInfo promptInfo) {
+        this.promptInfo = promptInfo;
     }
 
-    String getPromptId() {
-        return promptId;
+    public PromptsInfo.PromptInfo getPromptInfo() {
+        return promptInfo;
     }
-    String getPromptDefinition() {
-        return promptDefinition;
+    String getPromptId() {
+        return promptInfo.getId();
+    }
+    String getPromptFilename() { return promptInfo.getFilename(); }
+    String getPromptText() {
+        return promptInfo.getText();
     }
     private boolean hasPrompt() {
         return hasPrompt;
@@ -34,8 +36,7 @@ public class PromptTarget extends Target {
 
     @Override
     public String toString() {
-        return promptId + ": " + promptDefinition;
+        return getPromptId() + ": " + promptInfo.getFilename() + ": " + getPromptText();
     }
 
-    
 }

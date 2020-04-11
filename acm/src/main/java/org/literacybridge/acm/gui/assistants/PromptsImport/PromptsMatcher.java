@@ -23,13 +23,15 @@ public class PromptsMatcher extends Matcher<PromptTarget, ImportableFile, Prompt
 
         // Try to match with both the prompt id and definition.
         int score = fn.apply(prompt.getPromptId(), fileName);
-        score = Math.max(score, fn.apply(prompt.getPromptDefinition(), fileName));
+        score = Math.max(score, fn.apply(prompt.getPromptFilename(), fileName));
+        score = Math.max(score, fn.apply(prompt.getPromptText(), fileName));
 
         if (tokens) {
-            int t1 = FuzzySearch.weightedRatio(prompt.getPromptDefinition(), fileName);
+            int t1 = FuzzySearch.weightedRatio(prompt.getPromptText(), fileName);
+            int t2 = FuzzySearch.weightedRatio(prompt.getPromptFilename(), fileName);
             int t3 = FuzzySearch.weightedRatio(prompt.getPromptId(), fileName);
             if (t1 > 86) {
-                System.out.printf("%d, %s :: %s\n", t1, fileName, prompt.getPromptDefinition());
+                System.out.printf("%d, %s :: %s\n", t1, fileName, prompt.getPromptText());
             }
             if (t3 > 90) {
                 System.out.printf("%d, %s :: %s\n", t3, fileName, prompt.getPromptId());

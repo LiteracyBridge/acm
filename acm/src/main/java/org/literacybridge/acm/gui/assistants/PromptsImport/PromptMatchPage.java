@@ -13,6 +13,7 @@ import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableRowSorter;
 import java.awt.Component;
 import java.util.List;
 import java.util.function.Predicate;
@@ -25,6 +26,11 @@ public class PromptMatchPage extends
 
     PromptMatchPage(PageHelper<PromptImportContext> listener) {
         super(listener);
+    }
+
+    @Override
+    protected void setRowComparators(TableRowSorter<AbstractMatchTableModel<PromptTarget, PromptMatchable>> sorter) {
+        sorter.setComparator(0, new PromptImportAssistant.PromptIdSorter());
     }
 
     @Override
@@ -97,16 +103,16 @@ public class PromptMatchPage extends
             List<ImportableFile> files = context.importableFiles.stream()
                 .map(ImportableFile::new)
                 .collect(Collectors.toList());
-            List<PromptTarget> recipients = context.promptIds.stream()
-                .map(promptId -> {
-                    PromptTarget target = new PromptTarget(promptId, context.promptDefinitions.get(promptId));
-                    target.setHasPrompt(context.promptHasRecording.get(promptId));
+            List<PromptTarget> prompts = context.promptsInfo.getPrompts().stream()
+                .map(promptInfo -> {
+                    PromptTarget target = new PromptTarget(promptInfo);
+                    target.setHasPrompt(context.promptHasRecording.get(promptInfo.getId()));
                     return target;
                 })
                 .collect(Collectors.toList());
 
-            context.matcher.setData(recipients, files, PromptMatchable::new);
-            context.matcher.autoMatch(60);
+            context.matcher.setData(prompts, files, PromptMatchable::new);
+            context.matcher.autoMatch(90);
 
         }
         promptMatchModel.fireTableDataChanged();
@@ -186,7 +192,7 @@ public class PromptMatchPage extends
         }
     }
 
-    class PromptMatchFilter extends RowFilter<AbstractMatchTableModel<PromptTarget, PromptMatchable>, Integer> {
+    static class PromptMatchFilter extends RowFilter<AbstractMatchTableModel<PromptTarget, PromptMatchable>, Integer> {
         private Predicate<PromptMatchable> predicate;
         void setPredicate(Predicate<PromptMatchable> predicate) {
             this.predicate = predicate;
@@ -219,21 +225,22 @@ public class PromptMatchPage extends
         }
     }
 
-    public class PromptColumnProvider implements ColumnProvider<PromptTarget> {
+    public static class PromptColumnProvider implements ColumnProvider<PromptTarget> {
 
         @Override
         public int getColumnCount() {
-            return 2;
+            return 3;
         }
 
         @Override
         public String getColumnName(int columnIndex) {
             if (columnIndex == 0) return "Id";
+            if (columnIndex == 1) return "Filename";
             return "Definition";
         }
 
         @Override
-        public Class getColumnClass(int columnIndex) {
+        public Class<String> getColumnClass(int columnIndex) {
             return String.class;
         }
 
@@ -241,7 +248,8 @@ public class PromptMatchPage extends
         public Object getValueAt(PromptTarget target, int columnIndex) {
             if (target == null) return null;
             if (columnIndex == 0) return target.getPromptId();
-            return target.getPromptDefinition();
+            if (columnIndex == 1) return target.getPromptFilename();
+            return target.getPromptText();
         }
     }
 }

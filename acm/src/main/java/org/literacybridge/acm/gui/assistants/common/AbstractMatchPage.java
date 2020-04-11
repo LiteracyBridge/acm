@@ -32,7 +32,7 @@ import java.awt.event.MouseListener;
  * @param <R> The "R" or Source type fo the matchable.
  * @param <M> The MatchableItem type.
  */
-public abstract class AbstractMatchPage<Context extends AbstractMatchPage.MatchContext,
+public abstract class AbstractMatchPage<Context extends AbstractMatchPage.MatchContext<L,R,M>,
                                         L extends Target,
                                         R,
                                         M extends MatchableItem<L,R>> extends AcmAssistantPage<Context> {
@@ -131,6 +131,7 @@ public abstract class AbstractMatchPage<Context extends AbstractMatchPage.MatchC
         TableRowSorter<AbstractMatchTableModel<L, M>> sorter = new TableRowSorter<>(tableModel);
         RowFilter<AbstractMatchTableModel<L, M>, Integer> rowFilter = getFilter();
         sorter.setRowFilter(rowFilter);
+        setRowComparators(sorter);
         table.setRowSorter(sorter);
 
         // Selection model
@@ -147,7 +148,6 @@ public abstract class AbstractMatchPage<Context extends AbstractMatchPage.MatchC
 
         TransferHandler matchTableTransferHandler = new MatcherTableTransferHandler<M>(table,
             tableModel) {
-            @SuppressWarnings("unchecked")
             public void onMatched(M sourceRow, M targetRow) {
                 context.getMatcher().setMatch(sourceRow, targetRow);
                 tableModel.fireTableDataChanged();
@@ -162,6 +162,10 @@ public abstract class AbstractMatchPage<Context extends AbstractMatchPage.MatchC
         table.addMouseListener(tableMouseListener);
 
         return scrollPane;
+    }
+
+    protected void setRowComparators(TableRowSorter<AbstractMatchTableModel<L,M>> sorter) {
+        // Overriders can provide an implementation, if desired.
     }
 
     private MouseListener tableMouseListener = new MouseAdapter() {
@@ -222,7 +226,7 @@ public abstract class AbstractMatchPage<Context extends AbstractMatchPage.MatchC
      * dialog, and performs any match chosen.
      * @param actionEvent is ignored.
      */
-    @SuppressWarnings({ "unused", "unchecked" })
+    @SuppressWarnings({ "unused" })
     private void onManualMatch(ActionEvent actionEvent) {
         M selectedRow = selectedRow();
         M chosenMatch = null;
