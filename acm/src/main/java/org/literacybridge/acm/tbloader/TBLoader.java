@@ -593,6 +593,9 @@ public class TBLoader extends JFrame {
                     Path keyPath = Paths.get(next.getAbsolutePath());
                     Path relativePath = uploadQueuePath.relativize(keyPath);
                     String key = relativePath.toString();
+                    System.out.printf("%s => ", key);
+                    key = key.replaceAll("\\\\", "/");
+                    System.out.printf("%s\n", key);
                     if (authInstance.getAwsInterface().uploadS3Object(bucket, key, next)) {
                         next.delete();
                     }
