@@ -22,6 +22,7 @@ public class PlaceholderTextField extends JTextField {
     private String placeholder;
 
     public PlaceholderTextField() {
+        super();
     }
 
     public PlaceholderTextField(

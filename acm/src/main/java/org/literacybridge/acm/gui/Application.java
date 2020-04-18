@@ -1,9 +1,11 @@
 package org.literacybridge.acm.gui;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jdesktop.swingx.JXFrame;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
@@ -32,13 +34,20 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.CHOOSE_PROGRAM;
+import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.LOCAL_DATA_ONLY;
+import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.OFFER_DEMO_MODE;
+import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.OFFLINE_EMAIL_CHOICE;
 
 public class Application extends JXFrame {
   private static final Logger LOG = Logger
@@ -64,7 +73,7 @@ public class Application extends JXFrame {
   }
 
   // message pump
-  private static SimpleMessageService simpleMessageService = new SimpleMessageService();
+  private static final SimpleMessageService simpleMessageService = new SimpleMessageService();
 
   private Color backgroundColor;
   private final ACMStatusBar statusBar;
@@ -72,16 +81,16 @@ public class Application extends JXFrame {
 
   public static SimpleMessageService getMessageService() {
     return simpleMessageService;
-  };
+  }
 
   // file system monitor for the audio devices
-  private static FileSystemMonitor fileSystemMonitor = new FileSystemMonitor();
+  private static final FileSystemMonitor fileSystemMonitor = new FileSystemMonitor();
 
   public static FileSystemMonitor getFileSystemMonitor() {
     return fileSystemMonitor;
   }
 
-  private static FilterState filterState = new FilterState();
+  private static final FilterState filterState = new FilterState();
 
   public static FilterState getFilterState() {
     return filterState;
@@ -94,7 +103,7 @@ public class Application extends JXFrame {
     return application;
   }
 
-  private SimpleSoundPlayer player = new SimpleSoundPlayer();
+  private final SimpleSoundPlayer player = new SimpleSoundPlayer();
 
   private Application(SplashScreen splashScreen) throws IOException {
     super();
@@ -115,13 +124,18 @@ public class Application extends JXFrame {
       }
     });
 
+    Authenticator authInstance = Authenticator.getInstance();
+    String greeting = authInstance.getUserProperty("custom:greeting", null);
+    if (StringUtils.isEmpty(greeting)) {
+      greeting = String.format("Hello, %s", authInstance.getUserName());
+    }
     String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
-        "               CHANGES WILL *NOT* BE SAVED!   ":"";
+        "  --  CHANGES WILL *NOT* BE SAVED!":"";
 
-    String title = String.format("%s (%s)   User: '%s'    %s (v%d)%s",
+    String title = String.format("%s  --  %s (%s)  --  %s (v%d)%s",
+        greeting,
         LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
         Constants.ACM_VERSION,
-        ACMConfiguration.getInstance().getUserName(),
         ACMConfiguration.getInstance().getTitle(),
         ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion(),
         sandboxWarning);
@@ -173,7 +187,6 @@ public class Application extends JXFrame {
 
   public void setProgressMessage(String message) {
     statusBar.setProgressMessage(message);
-    ;
   }
 
   public BackgroundTaskManager getTaskManager() {
@@ -245,6 +258,7 @@ public class Application extends JXFrame {
     // String dbDirName = null, repositoryDirName= null;
     // initialize config and generate random ID for this acm instance
 //    splash.setProgressLabel("Initializing...");
+    params.update = true; // may be overridden later.
     ACMConfiguration.initialize(params);
 
     getAcmToOpen(params);
@@ -317,17 +331,30 @@ public class Application extends JXFrame {
    * @param params from the command line.
    */
   private static void getAcmToOpen(CommandLineParams params) {
-    if (isNotEmpty(params.sharedACM)) {
-      return;
+    Authenticator authInstance = Authenticator.getInstance();
+    authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getKnownAcms());
+    Authenticator.SigninResult result = authInstance.getUserIdentity(null,
+        ACMConfiguration.cannonicalProjectName(params.sharedACM),
+        OFFLINE_EMAIL_CHOICE,
+        CHOOSE_PROGRAM,
+        LOCAL_DATA_ONLY,
+        OFFER_DEMO_MODE);
+    if (result == Authenticator.SigninResult.FAILURE) {
+      JOptionPane.showMessageDialog(null,
+          "Authentication is required to use the ACM.",
+          "Authentication Failure",
+          JOptionPane.ERROR_MESSAGE);
+      System.exit(13);
     }
 
-    AcmChooserDialog dialog = new AcmChooserDialog(ACMConfiguration.getInstance().getKnownAcms(),
-        ACMConfiguration.getInstance().isForceSandbox());
-    String acmName = dialog.getSelectedItem();
-    if (isNotEmpty(acmName)) {
-      params.sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(acmName);
-      ACMConfiguration.getInstance().setForceSandbox(dialog.getForceSandbox());
+    params.sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(authInstance.getUserProgram());
+    boolean sandbox = authInstance.isSandboxSelected();
+    if (!sandbox) {
+      List<String> ACM_ROLES = Arrays.asList("*","AD","PM","CO");
+      Set<String> roles = authInstance.getUserRoles();
+      sandbox = Collections.disjoint(roles, ACM_ROLES);
     }
+    ACMConfiguration.getInstance().setForceSandbox(sandbox);
   }
 
   /**

@@ -88,6 +88,7 @@ import static java.lang.Math.max;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.literacybridge.acm.Constants.TBLoadersLogDir;
 import static org.literacybridge.acm.Constants.TbCollectionWorkDir;
+import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.CHOOSE_PROGRAM;
 import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.OFFLINE_EMAIL_CHOICE;
 import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
@@ -199,7 +200,7 @@ public class TBLoader extends JFrame {
         @Option(name = "--choose", aliases = "-c", usage = "Choose Deployment and/or Package.")
         boolean choices = false;
 
-        @Argument(usage = "Project or ACM name to export.", index = 0, required = true, metaVar = "ACM")
+        @Argument(usage = "Project or ACM name to export.", index = 0, metaVar = "ACM")
         String project;
 
         @Argument(usage = "Serial number prefix, default 'B-'.", index = 1, metaVar = "SRN_PREFIX")
@@ -287,19 +288,9 @@ public class TBLoader extends JFrame {
             applicationWindow.setIconImage(iconImage);
         }
 
-        // Set options that are controlled by project config file.
-        Properties config = ACMConfiguration.getInstance().getConfigPropertiesFor(newProject);
-        if (config != null) {
-            String valStr = config.getProperty("PACKAGE_CHOICE", "FALSE");
-            this.allowPackageChoice |= Boolean.parseBoolean(valStr);
-
-            valStr = config.getProperty("ALLOW_FORCE_SRN", "FALSE");
-            this.allowForceSrn |= Boolean.parseBoolean(valStr);
-
-            // TODO (TBLOADER_DROPBOX): remove when Dropbox completely de-implemented.
-            valStr = config.getProperty("TBLOADER_DROPBOX", "FALSE");
-            useDropbox = valStr.equalsIgnoreCase("true");
-        }
+        String valStr = ACMConfiguration.getInstance().getUserConfigurationItem("TBLOADER_DROPBOX", "FALSE");
+        // TODO (TBLOADER_DROPBOX): remove when Dropbox completely de-implemented.
+        useDropbox = valStr.equalsIgnoreCase("true");
 
         // TODO (TBLOADER_DROPBOX): remove if (...) when Dropbox completely de-implemented.
         if (!useDropbox) {
@@ -308,6 +299,17 @@ public class TBLoader extends JFrame {
             authenticate();
             startupTimer -= System.currentTimeMillis();
         }
+
+        // Set options that are controlled by project config file.
+        Properties config = ACMConfiguration.getInstance().getConfigPropertiesFor(newProject);
+        if (config != null) {
+            valStr = config.getProperty("PACKAGE_CHOICE", "FALSE");
+            this.allowPackageChoice |= Boolean.parseBoolean(valStr);
+
+            valStr = config.getProperty("ALLOW_FORCE_SRN", "FALSE");
+            this.allowForceSrn |= Boolean.parseBoolean(valStr);
+        }
+
         setDeviceIdAndPaths();
 
         // Initialized java logging, as well as operational logging.
@@ -367,7 +369,8 @@ public class TBLoader extends JFrame {
      */
     private void authenticate() {
         Authenticator authInstance = Authenticator.getInstance();
-        Authenticator.SigninResult result = authInstance.getUserIdentity(this, OFFLINE_EMAIL_CHOICE);
+        authInstance.setLocallyAvailablePrograms(DeploymentsManager.getLocalPrograms());
+        Authenticator.SigninResult result = authInstance.getUserIdentity(this, newProject, OFFLINE_EMAIL_CHOICE, CHOOSE_PROGRAM);
         if (result == Authenticator.SigninResult.FAILURE) {
             JOptionPane.showMessageDialog(this,
                 "Authentication is required to use the TB-Loader.",
@@ -378,6 +381,7 @@ public class TBLoader extends JFrame {
 
         TbSrnHelper srnHelper = authInstance.getTbSrnHelper();
         int n = srnHelper.prepareForAllocation();
+        newProject = authInstance.getUserProgram();
     }
 
     // TODO (TBLOADER_DROPBOX): clean up when Dropbox completely de-implemented.

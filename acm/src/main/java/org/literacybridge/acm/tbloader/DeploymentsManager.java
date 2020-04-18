@@ -11,9 +11,11 @@ import org.literacybridge.core.fs.ZipUnzip;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -90,6 +92,28 @@ class DeploymentsManager {
             localDeployment = findLocalDeployment();
         }
         return localDeployment;
+    }
+
+    /**
+     * Returns a list of the programs with locally cached deployments.
+     * @return the list.
+     */
+    public static List<String> getLocalPrograms() {
+        File localProgramsDir = ACMConfiguration.getInstance().getLocalTbLoadersDir();
+
+        List<String> result = new ArrayList<>();
+        File[] programDirs = localProgramsDir.listFiles(File::isDirectory);
+        if (programDirs != null) {
+            for (File programDir : programDirs) {
+                File[] revFiles = programDir.listFiles(f -> f.isFile() && f.getName()
+                    .toLowerCase()
+                    .endsWith(".rev"));
+                if (revFiles != null && revFiles.length > 0) {
+                    result.add(programDir.getName());
+                }
+            }
+        }
+        return result;
     }
 
     private LocalDeployment findLocalDeployment() {

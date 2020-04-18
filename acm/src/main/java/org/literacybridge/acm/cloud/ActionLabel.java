@@ -30,9 +30,9 @@ import java.util.Map;
  * Users of the class can call addActionListener() to get action events.
  */
 public class ActionLabel extends JLabel {
-    private static Color linkColor = new Color(0x337ab7);
-    private static Border focusedBorder = new RoundedLineBorder(linkColor, 1, 4, 2);
-    private static Border unfocusedBorder = new EmptyBorder(2, 2, 2, 2);
+    private static final Color linkColor = new Color(0x337ab7);
+    private static final Border focusedBorder = new RoundedLineBorder(linkColor, 1, 4, 2);
+    private static final Border unfocusedBorder = new EmptyBorder(2, 2, 2, 2);
     private static Font hoveredFont = null;
     private static Font normalFont = null;
 
@@ -48,6 +48,7 @@ public class ActionLabel extends JLabel {
         // Normal and hover fonts for label.
         if (normalFont == null) {
             normalFont = getFont();
+            @SuppressWarnings("rawtypes")
             Map attributes = normalFont.getAttributes();
             //noinspection unchecked
             attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
@@ -65,7 +66,7 @@ public class ActionLabel extends JLabel {
     }
 
     @SuppressWarnings("FieldCanBeLocal")
-    private KeyListener labelKeyListener = new KeyAdapter() {
+    private final KeyListener labelKeyListener = new KeyAdapter() {
         @Override
         public void keyTyped(KeyEvent e) {
             if (e.getKeyChar() == ' ') fireActionPerformed();
@@ -73,7 +74,7 @@ public class ActionLabel extends JLabel {
     };
 
     @SuppressWarnings("FieldCanBeLocal")
-    private MouseListener labelMouseListener = new MouseAdapter() {
+    private final MouseListener labelMouseListener = new MouseAdapter() {
         /**
          * Mouse clicked on the label. Fire the action event.
          * @param e the mouse event.

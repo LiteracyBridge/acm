@@ -71,4 +71,8 @@ public class Constants {
 
   // Maximum length of a package name. This is a TB firmware restriction.
   public static final int MAX_PACKAGE_NAME_LENGTH = 20;
+
+  public static final int AMPLIO_GREEN_R = 40;  // 0x28;
+  public static final int AMPLIO_GREEN_G = 154; // 0x9a;
+  public static final int AMPLIO_GREEN_B = 106; // 0x6a;
 }

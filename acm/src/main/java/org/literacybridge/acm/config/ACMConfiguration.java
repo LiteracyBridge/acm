@@ -341,6 +341,11 @@ public class ACMConfiguration {
         return uuid;
     }
 
+    public String getUserConfigurationItem(String name, String defaultValue) {
+        String value = UsersConfigurationProperties.getProperty(name);
+        return (value == null) ? defaultValue : value;
+    }
+
     private String getDeviceID() throws IOException {
         String value = UsersConfigurationProperties.getProperty(Constants.DEVICE_ID_PROP);
         if (value == null) {
@@ -516,6 +521,15 @@ public class ACMConfiguration {
             }
         }
         return acmDir;
+    }
+
+    /**
+     * ~/LiteracyBridge/TB-Loaders
+     * This directory may contain one or more local TB-Loader directories for programs.
+     * @return The directory.
+     */
+    public File getLocalTbLoadersDir() {
+        return new File(getApplicationHomeDirectory(), Constants.TBLoadersHomeDir);
     }
 
     /**

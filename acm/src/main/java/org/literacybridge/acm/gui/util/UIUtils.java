@@ -2,7 +2,6 @@ package org.literacybridge.acm.gui.util;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
-import org.literacybridge.acm.cloud.AuthenticationDialog.SignInPanel;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.dialogs.BusyDialog;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;

@@ -11,31 +11,35 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Triple;
 import org.json.simple.JSONObject;
-import org.literacybridge.acm.cloud.AuthenticationDialog.DialogController;
+import org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog;
+import org.literacybridge.acm.cloud.IdentityPersistence.SigninDetails;
 import org.literacybridge.acm.cloud.cognito.AuthenticationHelper;
 import org.literacybridge.acm.cloud.cognito.CognitoHelper;
 import org.literacybridge.acm.cloud.cognito.CognitoJWTParser;
 import org.literacybridge.acm.config.AccessControl;
 import org.literacybridge.acm.config.HttpUtility;
 
-import javax.swing.*;
 import java.awt.Window;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
-import static javax.swing.JOptionPane.QUESTION_MESSAGE;
+import static java.util.Arrays.stream;
 
 /**
  * Helper class to provide a simpler interface to cognito authentication.
@@ -56,30 +60,47 @@ public class Authenticator {
 
     // Provides access to authenticated AWS calls.
     AwsInterface awsInterface = new AwsInterface();
+
     public AwsInterface getAwsInterface() { return awsInterface; }
 
     private AuthenticationHelper.AuthenticationResult authenticationResult;
-    private CognitoHelper cognitoHelper;
+    private final CognitoHelper cognitoHelper;
     // A map of {String:String} with the info provided by the auth process.
-    private Map<String,String> authenticationInfo;
+    private Map<String, String> authenticationInfo;
     // We need these to make authenticated calls to, eg, S3, or Lambda.
     private Credentials credentials;
 
     private String userName;
     private String userEmail;
+    // { program : roles-string }
+    private Map<String, String> userPrograms = new HashMap<>();
+    private String userProgram;
+    private boolean sandboxSelected = false;
 
     // Cached helpers. Ones not used internally are lazy allocated.
-    private IdentityPersistence identityPersistence;
+    private final IdentityPersistence identityPersistence;
     private TbSrnHelper tbSrnHelper = null;
     private ProjectsHelper projectsHelper = null;
+
+    // Programs available in local storage.
+    private List<String> locallyAvailablePrograms = new LinkedList<>();
 
     private Authenticator() {
         this.identityPersistence = new IdentityPersistence();
         cognitoHelper = new CognitoHelper();
     }
 
+    public List<String> getLocallyAvailablePrograms() {
+        return locallyAvailablePrograms;
+    }
+
+    public void setLocallyAvailablePrograms(Collection<String> locallyAvailablePrograms) {
+        this.locallyAvailablePrograms = new ArrayList<>(locallyAvailablePrograms);
+    }
+
     /**
      * Retrieve one of the bits of information returned by the sign-in.
+     *
      * @param propertyName to be returned.
      * @param defaultValue if there is no such value.
      * @return the value associated with propertyName, or defaultValue.
@@ -92,6 +113,7 @@ public class Authenticator {
     /**
      * Authenticated means that we have successfully given sign-in credentials to Cognito. We
      * have a token, and can make authenticated server calls.
+     *
      * @return True if the user is authenticated, false otherwise
      */
     public boolean isAuthenticated() {
@@ -108,8 +130,35 @@ public class Authenticator {
     public String getUserName() {
         return userName;
     }
+
     public String getuserEmail() {
         return userEmail;
+    }
+
+    public String getUserProgram() {
+        return userProgram;
+    }
+
+    /**
+     * Gets the list of roles, if any, that are defined for the user in the selected program.
+     * This will be empty if offline.
+     * @return the set of roles.
+     */
+    public Set<String> getUserRoles() {
+        Set<String> result = new HashSet<>();
+        String roleStr = userPrograms.get(userProgram);
+        if (roleStr != null) {
+            String[] roles = roleStr.split(",");
+            result.addAll(Arrays.asList(roles));
+        }
+        return result;
+    }
+
+    public boolean isSandboxSelected() {
+        return this.sandboxSelected;
+    }
+    void setSandboxSelected(boolean isSelected) {
+        this.sandboxSelected = isSelected;
     }
 
     public TbSrnHelper getTbSrnHelper() {
@@ -124,6 +173,7 @@ public class Authenticator {
 
     /**
      * The ProjectsHelper can list and retrieve the Deployment(s) for a project.
+     *
      * @return the helper.
      */
     public ProjectsHelper getProjectsHelper() {
@@ -133,38 +183,43 @@ public class Authenticator {
         return projectsHelper;
     }
 
-    public enum SigninResult {NONE, FAILURE, SUCCESS, CACHED_OFFLINE, OFFLINE;
+    public enum SigninResult {
+        NONE, FAILURE, SUCCESS, CACHED_OFFLINE, OFFLINE;
+
         boolean signedIn() {
-            return this==SUCCESS || this==CACHED_OFFLINE || this==OFFLINE;
+            return this == SUCCESS || this == CACHED_OFFLINE || this == OFFLINE;
         }
     }
-    public enum SigninOptions {OFFLINE_EMAIL_CHOICE}
+
+    public enum SigninOptions {OFFLINE_EMAIL_CHOICE, CHOOSE_PROGRAM, LOCAL_DATA_ONLY, OFFER_DEMO_MODE}
 
     /**
      * Determine who the user is. If we can access an authentication server, the user must
      * authenticate. (We need the user to be authenticated in order to check for new content,
      * or to download any new content found.) If we can not, we simply ask for their email
      * address, defaulting to the email of the last user who successfully authenticated.
-     * @param parent window for the dialog.
+     *
+     * @param parent      window for the dialog.
      * @param signinFlags options for the sign-in.
      * @return a SignInResult from the process.
      */
-    public SigninResult getUserIdentity(Window parent, SigninOptions... signinFlags) {
+    public SigninResult getUserIdentity(Window parent, String defaultProgram, SigninOptions... signinFlags) {
         Set<SigninOptions> options = new HashSet<>(Arrays.asList(signinFlags));
-        Triple<String, String, String> savedSignInDetails = identityPersistence.retrieveSignInDetails();
+        SigninDetails savedSignInDetails = identityPersistence.retrieveSignInDetails();
         signinResult = SigninResult.NONE;
         boolean onlineAuthentication = isOnline();
 
-        if (onlineAuthentication) {
-            DialogController dialog = new DialogController(parent, cognitoInterface);
-            if (savedSignInDetails != null) {
-                dialog.setSavedCredentials(savedSignInDetails.getLeft(), savedSignInDetails.getRight());
-            }
-            dialog.setVisible(true);
+        WelcomeDialog dialog = new WelcomeDialog(parent, defaultProgram, options, cognitoInterface);
+        if (savedSignInDetails != null) {
+            dialog.setSavedCredentials(savedSignInDetails.identity,
+                savedSignInDetails.email,
+                savedSignInDetails.secret);
+        }
+        dialog.setVisible(true);
 
+        if (dialog.isSuccess()) {
             if (isAuthenticated()) {
-                userName = authenticationInfo.get("cognito:username");
-                userEmail = authenticationInfo.get("email");
+                // Authenticated with Cognito.
                 String password = dialog.isRememberMeSelected() ? dialog.getPassword() : null;
                 // These are the values that we get from the Cognito signin. As of 2019-12-24
                 // [sub, exp, iat, token_use, event_id, aud, iss, phone_number_verified, auth_time # Cognito values
@@ -180,42 +235,67 @@ public class Authenticator {
                 Map<String, String> props = new HashMap<>();
                 authenticationInfo.forEach(props::put);
                 identityPersistence.saveSignInDetails(userName, userEmail, password, props);
+                userProgram = dialog.getProgram();
+                sandboxSelected = dialog.isSandboxSelected();
                 signinResult = SigninResult.SUCCESS;
-            } else if (cognitoInterface.isSdkClientException()) {
-                // Couldn't authenticate; network problem; fall back to offline authentication scheme
-                onlineAuthentication = false;
             } else {
-                identityPersistence.clearSignInDetails();
-                signinResult = SigninResult.FAILURE;
+                // Couldn't get to Cognito; only have user's email.
+                String email = dialog.getEmail();
+                if (StringUtils.isEmpty(email)) {
+                    // And if we don't even have an email, declare failure.
+                    signinResult = SigninResult.FAILURE;
+                } else if (savedSignInDetails != null && savedSignInDetails.email.equalsIgnoreCase(
+                    // If the email is the same as the recently saved email, use those saved details.
+                    email)) {
+                    userName = savedSignInDetails.identity;
+                    userEmail = savedSignInDetails.email;
+                    authenticationInfo = identityPersistence.getExtraProperties();
+                    signinResult = SigninResult.CACHED_OFFLINE;
+                    if (authenticationInfo.containsKey("programs")) {
+                        userPrograms = parseProgramList(authenticationInfo.get("programs"));
+                    }
+                    userProgram = dialog.getProgram();
+                    sandboxSelected = dialog.isSandboxSelected();
+                    signinResult = SigninResult.SUCCESS;
+                } else {
+                    // If some new email with no saved details, use what we have.
+                    userName = email;
+                    userEmail = email;
+                    signinResult = SigninResult.OFFLINE;
+                }
             }
-        }
-
-        if (!onlineAuthentication) {
-            // Not online.
-            String email = (savedSignInDetails != null) ? savedSignInDetails.getMiddle() : "";
-            if (options.contains(SigninOptions.OFFLINE_EMAIL_CHOICE)) {
-                email = JOptionPane.showInputDialog(parent, "What is your email address?",
-                    "Email Address", QUESTION_MESSAGE, null, null,
-                    email).toString();
-            }
-
-            if (StringUtils.isEmpty(email)) {
-                signinResult = SigninResult.FAILURE;
-            } else if (savedSignInDetails != null && savedSignInDetails.getMiddle().equalsIgnoreCase(email)) {
-                userName = savedSignInDetails.getLeft();
-                userEmail = savedSignInDetails.getMiddle();
-                authenticationInfo = identityPersistence.getExtraProperties();
-                signinResult = SigninResult.CACHED_OFFLINE;
-            } else {
-                userName = email;
-                userEmail = email;
-                signinResult = SigninResult.OFFLINE;
-            }
+        } else {
+            // User cancelled the dialog.
+            identityPersistence.clearSignInDetails();
+            signinResult = SigninResult.FAILURE;
         }
 
         return signinResult;
     }
 
+    private void onAuthenticated(String jwtToken) {
+        authenticationInfo = new HashMap<>();
+        JSONObject payload = CognitoJWTParser.getPayload(jwtToken);
+        for (Object k : payload.keySet()) {
+            authenticationInfo.put(k.toString(), payload.get(k).toString());
+        }
+        String provider = authenticationInfo.get("iss").replace("https://", "");
+        credentials = cognitoHelper.GetCredentials(provider, jwtToken);
+
+        userName = authenticationInfo.get("cognito:username");
+        userEmail = authenticationInfo.get("email");
+        if (authenticationInfo.containsKey("programs")) {
+            userPrograms = parseProgramList(authenticationInfo.get("programs"));
+        }
+    }
+
+    private Map<String, String> parseProgramList(String list) {
+        Map<String, String> result;
+        String[] programs = list.split(";");
+        result = stream(programs).map(s -> s.split(":"))
+            .collect(Collectors.toMap(e -> e[0], e -> e[1]));
+        return result;
+    }
 
     /**
      * Signs out. Not used.
@@ -228,9 +308,7 @@ public class Authenticator {
         authenticationInfo = null;
         userEmail = null;
         userName = null;
-        if (identityPersistence != null) {
-            identityPersistence.clearSignInDetails();
-        }
+        identityPersistence.clearSignInDetails();
     }
 
     /**
@@ -241,6 +319,7 @@ public class Authenticator {
 
         /**
          * Gets an S3 client object, through which we can upload or download files to S3.
+         *
          * @return the S3 client object.
          */
         AmazonS3 getS3Client() {
@@ -282,15 +361,20 @@ public class Authenticator {
 
         /**
          * Downloads an object from S3, using the credentials of the current signed-in user.
-         * @param bucket containing the object
-         * @param key of the object
-         * @param of output File
+         *
+         * @param bucket          containing the object
+         * @param key             of the object
+         * @param of              output File
          * @param progressHandler optional handler called periodically with (received, expected) bytes.
          */
-        public boolean downloadS3Object(String bucket, String key, File of, BiConsumer<Long,Long> progressHandler) {
+        public boolean downloadS3Object(String bucket,
+            String key,
+            File of,
+            BiConsumer<Long, Long> progressHandler)
+        {
             if (!isAuthenticated()) return false;
             AmazonS3 s3Client = getS3Client();
-            long bytesExpected, bytesDownloaded=0;
+            long bytesExpected, bytesDownloaded = 0;
 
             try (S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, key));
                 FileOutputStream fos = new FileOutputStream(of);
@@ -334,6 +418,7 @@ public class Authenticator {
 
         /**
          * Make a REST call with the current signed-in credentials. We use this to make Lambda calls.
+         *
          * @param requestURL URL to request.
          * @return result in a JSON object.
          */
@@ -365,11 +450,16 @@ public class Authenticator {
      * sign-up dialog only.
      */
     public class CognitoInterface {
+        public boolean isOnline() {
+            return Authenticator.this.isOnline();
+        }
+
         /**
          * Given a username (or email) and password, attempt to sign-in to Cognito. Sets members
          * authenticationResult with the results of the sign-in attempt.
          * authenticationInfo with the info returned by a successful sign-in.
          * credentials with the credentials returned by a successful sign-in.
+         *
          * @param username or email address.
          * @param password of the user id.
          */
@@ -382,21 +472,14 @@ public class Authenticator {
             Authenticator.this.authenticationResult = authenticationResult;
             String jwtToken = authenticationResult.getJwtToken();
             if (jwtToken != null) {
-                authenticationInfo = new HashMap<>();
-                JSONObject payload = CognitoJWTParser.getPayload(jwtToken);
-                for (Object k : payload.keySet()) {
-                    authenticationInfo.put(k.toString(), payload.get(k).toString());
-                }
-                String provider = authenticationInfo.get("iss").replace("https://", "");
-
-                credentials = cognitoHelper.GetCredentials(provider, jwtToken);
+                onAuthenticated(jwtToken);
             }
         }
 
         /**
          * Starts a password reset process. Triggers the Cognito server to send a reset code to
          * the email address associated with the given user name.
-         *
+         * <p>
          * Note: This does not actually reset any passwords, only sends the code to allow the
          * user to reset their password.
          *
@@ -410,15 +493,20 @@ public class Authenticator {
          * Completes a password reset. Given a user id and the reset code sent to the user id's
          * associated email address, and a new password, sets the password to the new value (if
          * it is a valid password, of course).
+         *
          * @param username of the password to reset.
          * @param password the new password.
-         * @param pin reset code sent via email.
+         * @param pin      reset code sent via email.
          */
         public void updatePassword(String username, String password, String pin) {
             cognitoHelper.UpdatePassword(username, password, pin);
         }
 
-        public String signUpUser(String username, String password, String email, String phonenumber) {
+        public String signUpUser(String username,
+            String password,
+            String email,
+            String phonenumber)
+        {
             return cognitoHelper.SignUpUser(username, password, email, phonenumber);
         }
 
@@ -433,6 +521,7 @@ public class Authenticator {
         /**
          * Authenticated means that we have successfully given sign-in credentials to Cognito. We
          * have a token, and can make authenticated server calls.
+         *
          * @return True if the user is authenticated, false otherwise
          */
         public boolean isAuthenticated() {
@@ -440,7 +529,11 @@ public class Authenticator {
         }
 
         public boolean isSdkClientException() {
-            return authenticationResult.isSdkClientException();
+            return authenticationResult != null && authenticationResult.isSdkClientException();
+        }
+
+        public Map<String, String> getPrograms() {
+            return userPrograms;
         }
 
         /**

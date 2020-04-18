@@ -1,8 +1,6 @@
 package org.literacybridge.acm.cloud;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
 import org.literacybridge.acm.config.ACMConfiguration;
 
 import java.io.File;
@@ -114,15 +112,15 @@ class IdentityPersistence {
      * THAT stringent.
      * @return a Pair, consisting of the user id and password.
      */
-    Triple<String, String, String> retrieveSignInDetails() {
-        Triple<String, String, String> result = null;
+    SigninDetails retrieveSignInDetails() {
+        SigninDetails result = null;
         Properties credentialProps = readPropertiesFile();
         if (credentialProps != null) {
             String user = credentialProps.getProperty("identity", "");
             String email = credentialProps.getProperty("email", "");
             String pwd = credentialProps.getProperty("secret", "");
             pwd = rotate(pwd, user, true);
-            result = new ImmutableTriple<>(user, email, pwd);
+            result = new SigninDetails(user, email, pwd);
         }
         return result;
     }
@@ -163,5 +161,17 @@ class IdentityPersistence {
     void clearSignInDetails() {
         //noinspection ResultOfMethodCallIgnored
         credentialsFile.delete();
+    }
+
+    public static class SigninDetails {
+        public final String identity;
+        public final String email;
+        public final String secret;
+
+        public SigninDetails(String identity, String email, String secret) {
+            this.identity = identity;
+            this.email = email;
+            this.secret = secret;
+        }
     }
 }
