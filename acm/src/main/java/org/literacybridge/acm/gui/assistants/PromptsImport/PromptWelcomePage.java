@@ -17,10 +17,14 @@ import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
@@ -180,7 +184,11 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
 
         context.programSpec = new ProgramSpec(programSpecDir);
         context.specLanguagecodes = context.programSpec.getLanguageCodes();
-        context.configLanguagecodes = dbConfig.getAudioLanguages().stream().map(Locale::getLanguage).collect(Collectors.toSet());
+        // Use a linked hash set to preserve the order of languages, as specified in the config file.
+        context.configLanguagecodes = dbConfig.getAudioLanguages()
+            .stream()
+            .map(Locale::getLanguage)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private void fillPromptList() {

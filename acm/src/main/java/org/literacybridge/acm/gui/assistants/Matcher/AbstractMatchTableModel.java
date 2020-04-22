@@ -1,6 +1,9 @@
 package org.literacybridge.acm.gui.assistants.Matcher;
 
+import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableCellRenderer;
+import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -24,6 +27,10 @@ public abstract class AbstractMatchTableModel<TargetType extends Target, Matchab
     }
     public int getFileColumnNo() { return fileColumnNo; }
 
+    /**
+     * A base class for a matcher table.
+     * @param columnProvider provides columns to the left, the "target" columns.
+     */
     protected AbstractMatchTableModel(ColumnProvider<TargetType> columnProvider) {
         this.columnProvider = columnProvider;
 
@@ -94,6 +101,7 @@ public abstract class AbstractMatchTableModel<TargetType extends Target, Matchab
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
+        // Only the "Replace?" column is editable.
         if (columnIndex != replaceColumnNo) return false;
         MatchableType item = getRowAt(rowIndex);
         if (item == null) return false;

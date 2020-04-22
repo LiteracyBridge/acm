@@ -37,6 +37,8 @@ public abstract class AbstractMatchPage<Context extends AbstractMatchPage.MatchC
                                         R,
                                         M extends MatchableItem<L,R>> extends AcmAssistantPage<Context> {
 
+    private final JCheckBox replaceAll;
+
     /**
      * The Context type must implement this, to provide access to the Matcher.
      * @param <L>
@@ -82,28 +84,35 @@ public abstract class AbstractMatchPage<Context extends AbstractMatchPage.MatchC
         add(getWelcome(), gbc);
 
         gbc.insets.bottom = 0;
-        Box hbox;
+
+        Box hbox = Box.createHorizontalBox();
         String filterSwitchPrompt = getFilterSwitchPrompt();
         if (StringUtils.isNotBlank(filterSwitchPrompt)) {
-            hbox = Box.createHorizontalBox();
             showOnlyMissing = new JCheckBox(filterSwitchPrompt, false);
-            showOnlyMissing.addActionListener(ev-> updateFilter() );
+            showOnlyMissing.addActionListener(ev -> updateFilter());
             hbox.add(showOnlyMissing);
             hbox.add(Box.createHorizontalStrut(15));
-            hbox.add(new JLabel("Filter: "));
-            filterText = new PlaceholderTextField();
-            filterText.setPlaceholder("Enter filter text");
-            filterText.addKeyListener(new KeyAdapter() {
-                @Override
-                public void keyReleased(KeyEvent e) {
-                    updateFilter();
-                }
-            });
-            hbox.add(filterText);
-            hbox.add(Box.createHorizontalStrut(15));
-            hbox.add(Box.createHorizontalGlue());
-            add(hbox, gbc);
         }
+
+        replaceAll = new JCheckBox("Replace All");
+        hbox.add(replaceAll);
+        hbox.add(Box.createHorizontalStrut(15));
+        replaceAll.addActionListener(this::onReplaceAll);
+
+        hbox.add(new JLabel("Filter: "));
+        filterText = new PlaceholderTextField();
+        filterText.setPlaceholder("Enter filter text");
+        filterText.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                updateFilter();
+            }
+        });
+        hbox.add(filterText);
+        hbox.add(Box.createHorizontalStrut(15));
+
+        hbox.add(Box.createHorizontalGlue());
+        add(hbox, gbc);
 
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weighty = 1.0;
@@ -117,6 +126,25 @@ public abstract class AbstractMatchPage<Context extends AbstractMatchPage.MatchC
         //add(new JLabel(), gbc);
 
 
+    }
+
+    private void onReplaceAll(ActionEvent actionEvent) {
+        boolean updatedAny = false;
+        boolean replace = replaceAll.isSelected();
+        for (int iRow = 0; iRow < tableModel.getRowCount(); iRow++) {
+            M row = tableModel.getRowAt(iRow);
+            // If the row is a match AND has an existing audio item, enable the [ ] Replace checkbox.
+            if (row.getMatch().isMatch() && row.getLeft().targetExists()) {
+                boolean prev = row.getLeft().isReplaceOk();
+                if (prev != replace) {
+                    row.getLeft().setReplaceOk(replace);
+                    updatedAny = true;
+                }
+            }
+        }
+        if (updatedAny) {
+            tableModel.fireTableDataChanged();
+        }
     }
 
     /**
