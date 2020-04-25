@@ -225,7 +225,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                     PromptsInfo.PromptInfo promptInfo = item.getLeft().getPromptInfo();
                     String promptId = promptInfo.getId(); // 0, 1, etc.
                     UIUtils.setLabelText(currentMessage, item.getLeft().toString()); // 0: bell,...
-                    File destDir = promptInfo.isTutorialPrompt() ? context.promptsDir : context.languageDir;
+                    File destDir = promptInfo.isPlaylistPrompt() ? context.promptsDir : context.languageDir;
                     File promptFile = new File(destDir, promptId+".a18");
                     boolean isReplace = promptFile.exists();
                     summaryTable.append(new EmailHelper.TR(isReplace?"Replace":"Import", item.getLeft().toString(), item.getRight().getFile().toString()));

@@ -275,20 +275,24 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
         // Remove multiples that differ only by extension.
         Map<String, File> keepers = new HashMap<>();
         for (File newFile : files) {
-            String key = FilenameUtils.removeExtension(newFile.getName()).toLowerCase();
-            if (keepers.containsKey(key)) {
-                File keptFile = keepers.get(key);
-                String keptExt = FilenameUtils.getExtension(keptFile.getName()).toLowerCase();
-                String newExt = FilenameUtils.getExtension(newFile.getName()).toLowerCase();
-                // If we don't like the new one better, just continue, and keep the old one.
-                int keptWeight = AUDIO_EXTS.getWeight(keptExt);
-                int newWeight = AUDIO_EXTS.getWeight(newExt);
-                // Highest weight is most preferred.
-                if (newWeight <= keptWeight) {
-                    continue;
+            if (newFile.isDirectory()) {
+                keepers.put(newFile.getName()+".directory", newFile);
+            } else {
+                String key = FilenameUtils.removeExtension(newFile.getName()).toLowerCase();
+                if (keepers.containsKey(key)) {
+                    File keptFile = keepers.get(key);
+                    String keptExt = FilenameUtils.getExtension(keptFile.getName()).toLowerCase();
+                    String newExt = FilenameUtils.getExtension(newFile.getName()).toLowerCase();
+                    // If we don't like the new one better, just continue, and keep the old one.
+                    int keptWeight = AUDIO_EXTS.getWeight(keptExt);
+                    int newWeight = AUDIO_EXTS.getWeight(newExt);
+                    // Highest weight is most preferred.
+                    if (newWeight <= keptWeight) {
+                        continue;
+                    }
                 }
+                keepers.put(key, newFile);
             }
-            keepers.put(key, newFile);
         }
         return new ArrayList<>(keepers.values());
     }

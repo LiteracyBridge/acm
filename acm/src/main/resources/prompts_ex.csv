@@ -32,3 +32,5 @@
 54,skip ahead,"If you want to skip beyond part of a message, hold down the right hand.",Instruction. How to skip forward in a message. 
 $0-1,talking book,Talking Book,This is the short prompt for the Talking Book instruction series.
 i$0-1,talking book  - invitation,"To learn about this device, press the tree.",This is the invitation to listen to the Talking Book instruction series.
+9-0,user feedback,"User Feedback",This is the short prompt for the User Feedback playlist.
+i9-0,user feedback  - invitation,"To listen to feedback from users, press the tree.",This is the invitation to listen to the User Feedback playlist.

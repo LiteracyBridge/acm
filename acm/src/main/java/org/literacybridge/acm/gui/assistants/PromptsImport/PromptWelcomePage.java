@@ -17,14 +17,11 @@ import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
@@ -202,7 +199,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
             for (String promptId : context.promptsInfo.getIds()) {
                 PromptsInfo.PromptInfo promptInfo = context.promptsInfo.getPrompt(promptId);
                 String filename = promptId + ".a18";
-                File promptFile = new File(promptInfo.isTutorialPrompt() ? context.promptsDir : context.languageDir, filename);
+                File promptFile = new File(promptInfo.isPlaylistPrompt() ? context.promptsDir : context.languageDir, filename);
                 context.promptHasRecording.put(promptId, promptFile.exists());
             }
         }

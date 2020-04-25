@@ -2,7 +2,6 @@ package org.literacybridge.acm.gui.assistants.PromptsImport;
 
 import com.opencsv.CSVReader;
 import org.apache.commons.io.input.BOMInputStream;
-import org.literacybridge.acm.Constants;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -17,26 +16,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PromptsInfo {
-    private static Pattern tutorialPattern = Pattern.compile("^(i)?(\\"+ Constants.CATEGORY_TUTORIAL+")$");
+    // i?$?\d*(-\d*)+
+    private static final Pattern playlistPromptPattern = Pattern.compile("^(i)?((?:\\$)?\\d*(?:-\\d*)+)$");
 
     @SuppressWarnings("unused")
     public static class PromptInfo {
-        private String id;
-        private String filename;
-        private String text;
-        private String explanation;
-        private boolean tutorialPrompt = false;
-        private boolean tutorialInvitation = false;
+        private final String id;
+        private final String filename;
+        private final String text;
+        private final String explanation;
+        private boolean playlistPrompt = false;
+        private boolean playlistInvitation = false;
 
         public PromptInfo(String id, String filename, String text, String explanation) {
             this.id = id;
             this.filename = filename;
             this.text = text;
             this.explanation = explanation;
-            Matcher matcher = tutorialPattern.matcher(id);
+            Matcher matcher = playlistPromptPattern.matcher(id);
             if (matcher.matches()) {
-                tutorialPrompt = true;
-                tutorialInvitation = matcher.groupCount() > 1;
+                playlistPrompt = true;
+                playlistInvitation = matcher.groupCount() > 1;
             }
         }
         public PromptInfo(String[] info) {
@@ -59,11 +59,11 @@ public class PromptsInfo {
             return explanation;
         }
 
-        public boolean isTutorialPrompt() {
-            return tutorialPrompt;
+        public boolean isPlaylistPrompt() {
+            return playlistPrompt;
         }
-        public boolean isTutorialInvitation() {
-            return tutorialInvitation;
+        public boolean isPlaylistInvitation() {
+            return playlistInvitation;
         }
     }
 
