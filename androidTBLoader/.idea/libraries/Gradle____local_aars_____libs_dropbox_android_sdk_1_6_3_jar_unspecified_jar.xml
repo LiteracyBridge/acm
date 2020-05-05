@@ -1,5 +1,5 @@
 <component name="libraryTable">
-  <library name="Gradle: __local_aars__:/Users/bill/workspace/acm/androidTBLoader/libs/dropbox-android-sdk-1.6.3.jar:unspecified@jar">
+  <library name="Gradle: __local_aars__:./libs/dropbox-android-sdk-1.6.3.jar:unspecified@jar">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/libs/dropbox-android-sdk-1.6.3.jar!/" />
     </CLASSES>

@@ -13,10 +13,6 @@
     <string name="pref_title_project_filter">Project Filter</string>
     <string name="pref_summary_no_project_filter">No project filter. Will show all projects.</string>
 
-    <string name="pref_dropbox_credentials">Dropbox Account Settings</string>
-    <string name="pref_summary_dropbox_configured">Dropbox account configured.</string>
-    <string name="pref_summary_dropbox_not_configured">No Dropbox account is configured.</string>
-
     <string name="pref_title_tb_access">Talking Book Default Access Permission</string>
     <string name="pref_summary_tb_access_granted">Default permission granted.</string>
     <string name="pref_summary_tb_access_not_granted">Default permission not granted.</string>
@@ -46,11 +42,6 @@
     <string name="talking_book_connection_status_text">Connected to Talking Book: %1$s</string>
     <string name="talking_book_not_connected_status_text">No Talking Book connected</string>
 
-    <string name="dropbox_connection_status_text">Connected to Dropbox: %1$s</string>
-    <string name="dropbox_not_connected_status_text">Offline</string>
-    <string name="dropbox_not_configured">Dropbox account not configured</string>
-
-
     <string name="pick_project_dialog_title">Select Project</string>
     <string name="pick_community_dialog_title">Select Community</string>
 
@@ -67,7 +58,7 @@
     <string name="Password">Password</string>
     <string name="Menu">Menu</string>
     <string name="title_activity_about_app">AboutApp</string>
-    <string name="about">Copyright 2016-2018 Literacy Bridge. Talking Book Loader application, for use by Literacy Bridge and partner organizations.</string>
+    <string name="about">Copyright 2016-2020 Literacy Bridge. Talking Book Loader application, for use by Literacy Bridge and partner organizations.</string>
     <string name="more_info">This is a highly portable Talking Book Loader.</string>
     <string name="title_activity_sign_up_confirm">SignUpConfirm</string>
     <string name="title_activity_mfa">MFAActivity</string>

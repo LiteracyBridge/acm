@@ -338,6 +338,7 @@ public class MainFragment extends Fragment {
                 UserHelper.getPool().getUser(mUserid).signOut();
                 UserHelper.getCredentialsProvider(getActivity().getApplicationContext()).clear();
                 mConfig.onSignOut();
+                mContentManager.onSignOut();
                 Intent intent = new Intent();
                 intent.putExtra(Constants.SIGNOUT, true);
                 getActivity().setResult(RESULT_OK, intent);

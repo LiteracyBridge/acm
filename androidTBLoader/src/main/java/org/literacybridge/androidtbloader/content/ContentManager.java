@@ -79,6 +79,11 @@ public class ContentManager {
         this.applicationContext = applicationContext;
     }
 
+    public void onSignOut() {
+        mContentList.clear();
+        mContentListTime = 0;
+    }
+
     void startDownload(ContentInfo info, final ContentDownloader.DownloadListener listener) {
         info.startDownload(applicationContext, new ContentDownloader.DownloadListener() {
             @Override

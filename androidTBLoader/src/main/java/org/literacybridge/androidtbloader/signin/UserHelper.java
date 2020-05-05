@@ -34,8 +34,8 @@ import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProvi
 import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProviderClient;
 import com.amazonaws.services.cognitoidentityprovider.model.GetUserRequest;
 import com.amazonaws.services.cognitoidentityprovider.model.GetUserResult;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.literacybridge.androidtbloader.util.Constants;
 
 import java.io.UnsupportedEncodingException;
@@ -397,9 +397,15 @@ public class UserHelper {
         if (mAuthenticationPayload == null) {
             JSONObject jsonPayload = getPayloadFromJwt(currSession.getIdToken().getJWTToken());
             Map<String,String> payload = new HashMap<>();
-            Set<Map.Entry> eset = jsonPayload.entrySet();
-            for (Map.Entry e : eset) {
-                payload.put(e.getKey().toString(), e.getValue().toString());
+            for (Iterator<String> it = jsonPayload.keys(); it.hasNext(); ) {
+                String key = it.next();
+                String value = null;
+                try {
+                    value = jsonPayload.getString(key);
+                    payload.put(key, value);
+                } catch (JSONException e) {
+                    // Ignore the key. Should not happen IRL.
+                }
             }
             if (payload.size() > 0) {
                 mAuthenticationPayload = payload;
@@ -429,7 +435,7 @@ public class UserHelper {
             final String payload = jwt.split("\\.")[PAYLOAD];
             final byte[] sectionDecoded = Base64.decode(payload, DEFAULT);
             final String jwtSection = new String(sectionDecoded, "UTF-8");
-            return (JSONObject) JSONValue.parse(jwtSection);
+            return new JSONObject(jwtSection);
         } catch (final UnsupportedEncodingException e) {
             throw new InvalidParameterException(e.getMessage());
         } catch (final Exception e) {

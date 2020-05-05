@@ -1,15 +1,17 @@
 package org.literacybridge.androidtbloader.util;
 
+import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import org.apache.commons.lang3.StringUtils;
+import android.util.Log;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.core.fs.OperationLog;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Configuration for the current user.
@@ -33,9 +35,6 @@ public class Config {
     private static final String USERNAME_PROP = "cognito:username";
     private static final String EMAIL_PROP = "email";
     private static final String GREETING_PROP = "custom:greeting";
-    private static final String EDIT_PROP = "edit";
-    private static final String VIEW_PROP = "view";
-    private static final String ADMIN_PROP = "admin";
 
     private static final String TBCDID_PROP = "tbcd";
 
@@ -50,7 +49,7 @@ public class Config {
 
     private TbSrnHelper mTbSrnHelper;
 
-    private Pattern mProjectPattern;
+    private Set<String> mUserPrograms;
 
     public String getTbcdid() {
         return mUserPrefs.getString(TBCDID_PROP, null);
@@ -87,10 +86,11 @@ public class Config {
             TBLoaderAppContext.getInstance());
         SharedPreferences.Editor editor = userPrefs.edit();
         editor.clear().apply();
-        mProjectPattern = null;
         mTbSrnHelper = null;
+        mUserPrograms = null;
     }
 
+    @SuppressLint("ApplySharedPref")
     public void applyUserDetails(Map<String, String> details) {
         String prevEmail = getEmail();
         if (details != null && details.size() > 0) {
@@ -100,11 +100,13 @@ public class Config {
             for (Map.Entry<String, String> e : details.entrySet()) {
                 prefsEditor.putString(e.getKey(), e.getValue());
                 opLog.put(e.getKey(), e.getValue());
+                Log.d(TAG, String.format("Config: %s => %s", e.getKey(), e.getValue()));
             }
             prefsEditor.putString("greeting", details.get("custom:greeting"));
 
             // If the email has changed, then we need to clear the stale TBCD value. It will be re-filled
             // in prepareForSerialNumberAllocation
+            //noinspection ConstantConditions
             if (!mUserPrefs.getString(EMAIL_PROP, "").equalsIgnoreCase(prevEmail)) {
                 prefsEditor.remove(TBCDID_PROP);
             }
@@ -126,30 +128,24 @@ public class Config {
      * @return true if the current user should see the project, false otherwise.
      */
     public boolean isUsersProject(String projectName) {
-        if (mProjectPattern == null) {
-            String editable = mUserPrefs.getString(EDIT_PROP, "");
-            String viewable = mUserPrefs.getString(VIEW_PROP, "");
-            // Case insensitive. Match start of string....
-            StringBuilder pattern = new StringBuilder().append("(?i)^(");
-            if (!StringUtils.isEmpty(editable)) {
-                // Match editables...
-                pattern.append(editable);
-                if (!StringUtils.isEmpty(viewable)) {
-                    // or...
-                    pattern.append('|');
-                }
-            }
-            if (!StringUtils.isEmpty(viewable)) {
-                // ...match vieweables
-                pattern.append(viewable);
-            }
-            // Match end of string.
-            pattern.append(")$");
-
-            mProjectPattern = Pattern.compile(pattern.toString());
+        if (mUserPrograms == null) {
+            mUserPrograms = new HashSet<>();
+            // As of this writing, 2020-05-04, if the user has any role, they can use tb-loader. At
+            // this time, checking for roles is redundant.
+//            Pattern loaderPattern = Pattern.compile("\\*|AD|PM|CO|FO");
+            String programsString = mUserPrefs.getString("programs", "DEMO:FO");
+            Arrays.asList(programsString.split(";"))
+                .forEach( programRoles -> {
+                    // Split program:roles
+                    String[] parts = programRoles.split(":");
+                    // Check if the user has a TB-Loader role in the program.
+                    mUserPrograms.add(parts[0]);
+                });
         }
-        Matcher m = mProjectPattern.matcher(projectName);
-        return m.matches();
+        if (mUserPrograms.contains(projectName)) {
+            return true;
+        }
+        return false;
     }
 
     /**

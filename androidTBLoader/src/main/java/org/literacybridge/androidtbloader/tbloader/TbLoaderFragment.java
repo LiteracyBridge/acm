@@ -760,13 +760,13 @@ public class TbLoaderFragment extends Fragment {
 
     private String getPackageForRecipient(Recipient recipient) {
         Properties deploymentProperties = mAppContext.getProgramSpec().getDeploymentProperties();
-        String key = recipient.language;
+        String key = recipient.languagecode;
         if (StringUtils.isNotEmpty(recipient.variant)) {
             key = key + ',' + recipient.variant;
         }
         String imageName = deploymentProperties.getProperty(key);
         if (imageName == null) {
-            imageName = deploymentProperties.getProperty(recipient.language);
+            imageName = deploymentProperties.getProperty(recipient.languagecode);
         }
         boolean ok = imageName != null;
         if (!ok) {
