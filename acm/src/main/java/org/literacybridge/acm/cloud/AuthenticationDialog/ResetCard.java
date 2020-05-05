@@ -38,6 +38,10 @@ public class ResetCard extends CardContent {
         JLabel logoLabel = new JLabel(getScaledLogo());
         dialogPanel.add(logoLabel, gbc);
 
+        dialogPanel.add(new JLabel("<html>Check email for <span style='font-size:1.1em'>\"Your Amplio verification code\"</span>. Enter your " +
+            "new password and the verification code, then click Change Password. If you remember your password, " +
+            "simply click Cancel to return the previous screen."), gbc);
+
         // User name
         usernameField = new FlexTextField();
         usernameField.setFont(getTextFont());
@@ -50,25 +54,26 @@ public class ResetCard extends CardContent {
         gbc.insets.bottom = 5; // tighter bottom spacing.
         passwordField1 = new FlexTextField();
         passwordField1.setFont(getTextFont());
-        passwordField1.setPlaceholder("Password");
+        passwordField1.setPlaceholder("Your chosen new password");
         passwordField1.setIsPassword(true).setRevealPasswordEnabled(true);
         passwordField1.getDocument().addDocumentListener(passwordDocListener);
         dialogPanel.add(passwordField1, gbc);
 
         // Password, again
         passwordField2 = new FlexTextField();
+        passwordField2.setSynchronizedPasswordView(passwordField1);
         passwordField2.setFont(getTextFont());
-        passwordField2.setPlaceholder("Repeat password");
+        passwordField2.setPlaceholder("Repeat your new password");
         passwordField2.setIsPassword(true).setRevealPasswordEnabled(true);
         passwordField2.getDocument().addDocumentListener(passwordDocListener);
         dialogPanel.add(passwordField2, gbc);
 
-        // Option checkboxes, and Password mismatch warning.
+        // Password mismatch warning.
         Box hBox = Box.createHorizontalBox();
         mismatchWarning = new JLabel("Passwords don't match.");
         mismatchWarning.setForeground(Color.RED);
         Font font = mismatchWarning.getFont();
-        font = new Font(font.getName(), font.getStyle()|Font.ITALIC, font.getSize());
+        font = new Font(font.getName(), font.getStyle()|Font.ITALIC, font.getSize()-1);
         mismatchWarning.setFont(font);
         mismatchWarning.setVisible(false);
         hBox.add(mismatchWarning);
@@ -79,7 +84,7 @@ public class ResetCard extends CardContent {
         // Reset code from server
         resetCode = new FlexTextField();
         resetCode.setFont(getTextFont());
-        resetCode.setPlaceholder("Enter reset code");
+        resetCode.setPlaceholder("Verification code from email");
         resetCode.getDocument().addDocumentListener(passwordDocListener);
         dialogPanel.add(resetCode, gbc);
 

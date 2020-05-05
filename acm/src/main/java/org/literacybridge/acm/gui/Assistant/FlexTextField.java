@@ -35,6 +35,8 @@ public class FlexTextField extends PlaceholderTextField {
     private static ImageIcon eyeIcon;
     private static ImageIcon noEyeIcon;
 
+    private FlexTextField synchronizedPasswordView;
+
     public FlexTextField() {
         this(null, null, 0);
     }
@@ -99,12 +101,9 @@ public class FlexTextField extends PlaceholderTextField {
             if (password) {
                 revealPasswordEnabled = false;
                 isPasswordRevealed = false;
-                setMaskChar(MASK_CHAR);
-            } else {
-                setMaskChar(NOMASK_CHAR);
             }
-            setIcon(null);
             isPassword = password;
+            setPasswordDecorations();
         }
         return this;
     }
@@ -115,13 +114,8 @@ public class FlexTextField extends PlaceholderTextField {
 
     public FlexTextField setRevealPasswordEnabled(boolean revealPasswordEnabled) {
         if (this.revealPasswordEnabled != revealPasswordEnabled) {
-            if (revealPasswordEnabled) {
-                setIconRight(true);
-                setIcon(getEyeIcon());
-            } else {
-                setIcon(null);
-            }
             this.revealPasswordEnabled = revealPasswordEnabled;
+            setPasswordDecorations();
         }
         return this;
     }
@@ -135,13 +129,59 @@ public class FlexTextField extends PlaceholderTextField {
         return this;
     }
 
-    private void revealPassword(boolean reveal) {
-        if (reveal == isPasswordRevealed) return;
-        isPasswordRevealed = reveal;
-        setMaskChar(reveal?NOMASK_CHAR:MASK_CHAR);
-        if (revealPasswordEnabled) {
-            setIcon(reveal ? getNoEyeIcon() : getEyeIcon());
+    public boolean setSynchronizedPasswordView(FlexTextField other) {
+        if (other == null) {
+            // Disconnect.
+            if (synchronizedPasswordView != null) {
+                synchronizedPasswordView.setSynchronizedPasswordView(null);
+                synchronizedPasswordView = null;
+            }
+            return true;
+        } else {
+            // Connect.
+            if (synchronizedPasswordView != null) {
+                // Already connected.
+                return false;
+            } else {
+                synchronizedPasswordView = other;
+                if (other.setSynchronizedPasswordView(this)) {
+                    // This is the first one, if that matters.
+                }
+                return true;
+            }
         }
+    }
+    boolean synchronizing = false;
+    private void synchronizePasswordView() {
+        if (synchronizing || synchronizedPasswordView==null) return;
+        synchronizing = true;
+        try {
+            synchronizedPasswordView.synchronizePasswordView(revealPasswordEnabled, isPasswordRevealed);
+        } finally {
+            synchronizing = false;
+        }
+    }
+    private void synchronizePasswordView(boolean revealEnabled, boolean revealed) {
+        if (synchronizing || synchronizedPasswordView==null) return;
+        synchronizing = true;
+        try {
+            revealPasswordEnabled = revealEnabled;
+            isPasswordRevealed = revealed;
+            setPasswordDecorations();
+        } finally {
+            synchronizing = false;
+        }
+    }
+
+    private void setPasswordDecorations() {
+        setMaskChar(isPasswordRevealed?NOMASK_CHAR:MASK_CHAR);
+        if (revealPasswordEnabled) {
+            setIconRight(true);
+            setIcon(isPasswordRevealed ? getEyeIcon() : getNoEyeIcon());
+        } else {
+            setIcon(null);
+        }
+        synchronizePasswordView();
     }
 
     private void onClicked() {
@@ -149,13 +189,14 @@ public class FlexTextField extends PlaceholderTextField {
             return;
         }
         isPasswordRevealed = !isPasswordRevealed;
-        if (isPasswordRevealed) {
-            setMaskChar(NOMASK_CHAR);
-            setIcon(getNoEyeIcon());
-        } else {
-            setMaskChar(MASK_CHAR);
-            setIcon(getEyeIcon());
-        }
+        setPasswordDecorations();
+//        if (isPasswordRevealed) {
+//            setMaskChar(NOMASK_CHAR);
+//            setIcon(getNoEyeIcon());
+//        } else {
+//            setMaskChar(MASK_CHAR);
+//            setIcon(getEyeIcon());
+//        }
     }
 
     private ImageIcon getEyeIcon() {
@@ -306,9 +347,11 @@ public class FlexTextField extends PlaceholderTextField {
         }
 
         void onSetIcon(ImageIcon icon) {
-            this.scaledIcon = null;
-            this.givenIcon = icon;
-            resetBorder();
+            if (icon != this.givenIcon) {
+                this.scaledIcon = null;
+                this.givenIcon = icon;
+                resetBorder();
+            }
         }
 
         private void resetBorder() {

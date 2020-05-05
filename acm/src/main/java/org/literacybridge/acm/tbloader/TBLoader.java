@@ -200,6 +200,9 @@ public class TBLoader extends JFrame {
         @Option(name = "--choose", aliases = "-c", usage = "Choose Deployment and/or Package.")
         boolean choices = false;
 
+        @Option(name="--nimbus", usage="Use 'Nimbus' look-and-feel.")
+        boolean nimbus = false;
+
         @Argument(usage = "Project or ACM name to export.", index = 0, metaVar = "ACM")
         String project;
 
@@ -277,6 +280,8 @@ public class TBLoader extends JFrame {
         OsUtils.enableOSXQuitStrategy();
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.addWindowListener(new WindowEventHandler());
+        this.backgroundColor = getBackground();
+        SwingUtils.setLookAndFeel("seaglass");
 
         boolean oldTbs = srnPrefix.equalsIgnoreCase("a-");
         String iconName = oldTbs ? "/tb_loader-OLD-TBs.png" : "/tb_loader.png";
@@ -873,10 +878,10 @@ public class TBLoader extends JFrame {
     }
 
     private void initializeGui() {
-        this.backgroundColor = getBackground();
-
-        SwingUtils.setLookAndFeel("seaglass");
-
+//        this.backgroundColor = getBackground();
+//
+//        SwingUtils.setLookAndFeel("seaglass");
+//
         JPanel panel = createComponents();
 
         layoutComponents(panel);

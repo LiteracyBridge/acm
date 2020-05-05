@@ -58,21 +58,21 @@ public class WelcomeDialog extends JDialog {
         return email;
     }
 
+    void setEmail(String email) {
+        this.email = email;
+    }
+
     public String getProgram() {
         return program;
     }
 
-    void setEmail(String email) {
-        this.email = email;
+    void setProgram(String program) {
+        this.program = program;
     }
 
     void setPassword(String password) {
         this.password = password;
         this.isSavedPassword = false;
-    }
-
-    void setProgram(String program) {
-        this.program = program;
     }
 
     public boolean isSavedPassword() {
@@ -89,9 +89,9 @@ public class WelcomeDialog extends JDialog {
     enum Cards {
         NullCard(100, CardContent::new),
         SignInCard(555, SignInCard::new),
-        SignUpCard(550, SignUpCard::new),
-        ResetCard(555, ResetCard::new),
-        ConfirmCard(410, ConfirmCard::new),
+        SignUpCard(645, SignUpCard::new),
+        ResetCard(620, ResetCard::new),
+        ConfirmCard(475, ConfirmCard::new),
         EmailCard(415, EmailCard::new),
         ProgramCard(580, ProgramCard::new);
 
@@ -194,12 +194,12 @@ public class WelcomeDialog extends JDialog {
         setAlwaysOnTop(true);
 
         // For debugging sizing issues.
-//        addComponentListener(new ComponentAdapter() {
-//            @Override
-//            public void componentResized(ComponentEvent e) {
-//                System.out.println(String.format("Size %dx%d", WelcomeDialog.this.getWidth(), WelcomeDialog.this.getHeight()));
-//            }
-//        });
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                System.out.println(String.format("Size %dx%d", WelcomeDialog.this.getWidth(), WelcomeDialog.this.getHeight()));
+            }
+        });
     }
 
     private void dialogShown() {

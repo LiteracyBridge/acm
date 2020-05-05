@@ -253,7 +253,7 @@ public class Application extends JXFrame {
     OsUtils.enableOSXQuitStrategy();
 
       // set look & feel; we use Sea Glass by default.
-      SwingUtils.setLookAndFeel("");
+      SwingUtils.setLookAndFeel(params.nimbus?"nimbus":"");
 
     // String dbDirName = null, repositoryDirName= null;
     // initialize config and generate random ID for this acm instance

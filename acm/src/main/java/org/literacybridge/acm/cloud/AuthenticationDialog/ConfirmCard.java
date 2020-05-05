@@ -31,6 +31,10 @@ public class ConfirmCard extends CardContent {
         JLabel logoLabel = new JLabel(getScaledLogo());
         dialogPanel.add(logoLabel, gbc);
 
+        dialogPanel.add(new JLabel("<html>Check email for <span style='font-size:1.1em'>\"Your " +
+            "Amplio verification code\"</span> and enter it below, then click Confirm. " +
+            "If you did not receive a code, click Resend Code."), gbc);
+
         // User name
         confirmationField = new FlexTextField();
         confirmationField.setFont(getTextFont());

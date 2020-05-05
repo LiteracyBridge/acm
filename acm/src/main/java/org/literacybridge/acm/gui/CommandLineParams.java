@@ -31,6 +31,9 @@ public class CommandLineParams {
   @Option(name="--testdata", usage="Synthesize test data, for more convenient test iteration.")
   public boolean testData;
 
+  @Option(name="--nimbus", usage="Use 'Nimbus' look-and-feel.")
+  public boolean nimbus;
+
   @Argument(required=false)
   public String sharedACM;
 }

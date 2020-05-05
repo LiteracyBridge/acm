@@ -5,6 +5,7 @@
 package org.literacybridge.acm.utils;
 
 import javax.swing.*;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Point;
@@ -418,6 +419,11 @@ public final class SwingUtils {
             try {
                 for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                     if ("Nimbus".equals(info.getName())) {
+
+                        // TODO: Find enough overrides to go here to make nimbus look acceptable.
+                        // Background colors are the big thing. Also need a scroll bar painter.
+                        UIManager.put("control", Color.white);
+
                         UIManager.setLookAndFeel(info.getClassName());
                         System.out.println("Set l&f to Nimbus.");
                         return;

@@ -97,6 +97,9 @@ public class AuthenticationHelper {
         public Exception getAuthException() {
             return authException;
         }
+        public boolean isNotAuthorizedException() {
+            return authException instanceof NotAuthorizedException;
+        }
         public boolean isSdkClientException() {
             return authException instanceof SdkClientException;
         }

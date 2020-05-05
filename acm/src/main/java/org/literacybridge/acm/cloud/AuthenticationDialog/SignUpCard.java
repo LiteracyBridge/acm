@@ -38,6 +38,10 @@ public class SignUpCard extends CardContent {
         JLabel logoLabel = new JLabel(getScaledLogo());
         dialogPanel.add(logoLabel, gbc);
 
+        dialogPanel.add(new JLabel("<html>Pick a user name, enter your email address, and optional phone number " +
+            "(format +18885551212), and a password, and click Create User ID. You will be taken to a new screen in which to " +
+            "enter a verification code that you will receive by email. If you already have the code, click Have Code."), gbc);
+
         // User name
         usernameField = new FlexTextField();
         usernameField.setFont(getTextFont());
@@ -70,6 +74,7 @@ public class SignUpCard extends CardContent {
 
         // Password, again
         passwordField2 = new FlexTextField();
+        passwordField2.setSynchronizedPasswordView(passwordField1);
         passwordField2.setFont(getTextFont());
         passwordField2.setPlaceholder("Repeat password");
         passwordField2.setIsPassword(true).setRevealPasswordEnabled(true);
@@ -80,7 +85,7 @@ public class SignUpCard extends CardContent {
         mismatchWarning = new JLabel("Passwords don't match.");
         mismatchWarning.setForeground(Color.RED);
         Font font = mismatchWarning.getFont();
-        font = new Font(font.getName(), font.getStyle() | Font.ITALIC, font.getSize());
+        font = new Font(font.getName(), font.getStyle() | Font.ITALIC, font.getSize()-1);
         mismatchWarning.setFont(font);
         mismatchWarning.setVisible(false);
         hBox.add(mismatchWarning);

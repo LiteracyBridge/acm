@@ -155,6 +155,9 @@ public class SignInCard extends CardContent {
                 welcomeDialog.setPassword(passwordField.getText());
             }
             ok();
+        } else if(welcomeDialog.cognitoInterface.isNotAuthorizedException()) {
+            // Probably bad user / password. Inform user, let them try again.
+            welcomeDialog.setMessage(welcomeDialog.cognitoInterface.getAuthMessage());
         } else if(welcomeDialog.cognitoInterface.isSdkClientException()) {
             // No connectivity. Can't sign in with Cognito.
             welcomeDialog.SdkClientException(this);

@@ -261,6 +261,8 @@ public class Authenticator {
                     // If some new email with no saved details, use what we have.
                     userName = email;
                     userEmail = email;
+                    userProgram = dialog.getProgram();
+                    sandboxSelected = dialog.isSandboxSelected();
                     signinResult = SigninResult.OFFLINE;
                 }
             }
@@ -526,6 +528,10 @@ public class Authenticator {
          */
         public boolean isAuthenticated() {
             return credentials != null;
+        }
+
+        public boolean isNotAuthorizedException() {
+            return authenticationResult != null && authenticationResult.isNotAuthorizedException();
         }
 
         public boolean isSdkClientException() {
