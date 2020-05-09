@@ -1336,8 +1336,12 @@ public class TBLoader extends JFrame {
         } else if (oldDeploymentInfo != null) {
             recipientid = oldDeploymentInfo.getRecipientid();
         }
-        recipientChooser.setSelectedCommunity(community, recipientid);
-        fillPackage(programSpec.getRecipients().getRecipient(recipientid), community);
+        // If we think we know this recipient, pre-select it in the recipient chooser.
+        if (programSpec.getRecipients().getRecipient(recipientid) != null) {
+            System.out.printf("setSelectedCommunity r:%s\n", recipientid);
+            recipientChooser.setSelectedCommunity(community, recipientid);
+            fillPackage(programSpec.getRecipients().getRecipient(recipientid), community);
+        }
     }
 
     private void fillPackageList() {
