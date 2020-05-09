@@ -88,7 +88,7 @@ function updateJar() {
     if $beta; then
         excludedPath="thiswon'tbefound"
     fi
-    for f in $(find ${dropbox} -not -path ${excludedPath} -iname acm.jar); do
+    for f in $(find "${dropbox}/LB-software" -not -path ${excludedPath} -iname acm.jar); do
         if ! cmp -s acm.jar "$f" ; then
             updated=true
             cpcmd=(cp -pv "acm.jar" "$f")
@@ -109,7 +109,7 @@ function updateSplash() {
     if $beta; then
         excludedPath="thiswon'tbefound"
     fi
-    for f in $(find ${dropbox} -not -path ${excludedPath} -iname ${filename}); do
+    for f in $(find "${dropbox}/LB-software" -not -path ${excludedPath} -iname ${filename}); do
         if ! cmp -s ${filename} "$f" ; then
             updated=true
             cpcmd=(cp -pv "${filename}" "$f")
@@ -213,7 +213,7 @@ function readArguments() {
     execute=true
     $dryrun && execute=false
     $dryrun && echo "Dry run, no files will be changed."
-    $execute && prefix="Ex: "
+    $execute && prefix=""
     $dryrun && prefix="No-ex: "
 
     verbose=true
