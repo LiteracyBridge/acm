@@ -317,11 +317,22 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
 
     @SuppressWarnings("FieldCanBeLocal")
     private TreeCellRenderer treeCellRenderer = new DefaultTreeCellRenderer() {
-        Font normalFont = getFont();
-//        Font italicFont = new Font(normalFont.getName(),
-//                normalFont.getStyle()|Font.ITALIC,
-//            normalFont.getSize());
-        Font italicFont = LabelButton.fontResource(LabelButton.AVENIR).deriveFont((float)normalFont.getSize()).deriveFont(Font.ITALIC);
+        private Font normalFont;
+        private Font italicFont;
+        public Font getItalicFont() {
+            if (italicFont == null) {
+                italicFont = LabelButton.fontResource(LabelButton.AVENIR).deriveFont((float) getNormalFont()
+                    .getSize()).deriveFont(Font.ITALIC);
+            }
+            return italicFont;
+        }
+        public Font getNormalFont() {
+            if (normalFont == null) {
+                normalFont = getFont();
+            }
+            return normalFont;
+        }
+
 
 
         @Override
@@ -333,7 +344,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
             int row,
             boolean hasFocus)
         {
-            Font font = normalFont;
+            Font font = getNormalFont();
             ImageIcon icon = null;
             String tooltip = null;
             if (value instanceof PSContent.MessageNode) {
@@ -355,7 +366,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
                     tooltip = String.format("%s playlist prompt for %s",
                         promptNode.isLongPrompt() ? "Long" : "Short",
                         title);
-                    font = italicFont;
+                    font = getItalicFont();
                 }
             }
             JLabel comp = (JLabel) super.getTreeCellRendererComponent(tree, value,
