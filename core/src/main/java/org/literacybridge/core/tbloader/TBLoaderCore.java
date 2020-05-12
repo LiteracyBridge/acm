@@ -319,6 +319,7 @@ public class TBLoaderCore {
     private RelativePath mTalkingBookDataDirectoryPath;
     private RelativePath mTalkingBookDataZipPath;
 
+    private final TbFile mLogDirectory;
     private final TbFile mCollectedDataDirectory;
     private final String mUpdateTimestampISO;
     private final String mUpdateTimestamp;
@@ -359,6 +360,13 @@ public class TBLoaderCore {
         mForceFirmware = builder.mRefreshFirmware;
         mDeploymentDirectory = builder.mDeploymentDirectory;
         mProgressListener = builder.mProgressListener;
+
+        // "tbData"
+        mLogDirectory = mCollectedDataDirectory         // like /Users/alice/Dropbox/tbcd000c
+            .open(mOldDeploymentInfo.getProjectName())  // {tbloaderConfig.project}
+            .open(OPERATIONAL_DATA)                     // "OperationalData"
+            .open(mTbLoaderConfig.getTbLoaderId())      // {tbloaderConfig.tbLoaderId}
+            .open("tbData");
 
         // This is the path name for the "TalkingBookData" from this TB. In particular, this is the path
         // name for the directory that will contain the collected data, and then the .zip file of that data.
@@ -423,14 +431,8 @@ public class TBLoaderCore {
                                         strDate,
                                         mTbLoaderConfig.getTbLoaderId());
 
-        TbFile logDir = mCollectedDataDirectory             // like /Users/alice/Dropbox/tbcd000c
-                .open(mOldDeploymentInfo.getProjectName())  // {tbloaderConfig.project}
-                .open(OPERATIONAL_DATA)         // "OperationalData"
-                .open(mTbLoaderConfig.getTbLoaderId())      // {tbloaderConfig.tbLoaderId}
-                .open("tbData");                            // "tbData"
-
         // like /Users/alice/Dropbox/tbcd000c/{PROJECT}/OperationalData/{TBCDID}/tbdata-v03-{YYYYyMMmDDd}-{TBCDID}.csv
-        TbFile csvFile = logDir.open(csvFilename);
+        TbFile csvFile = mLogDirectory.open(csvFilename);
 
         try {
             csvFile.getParent().mkdirs();
@@ -666,10 +668,10 @@ public class TBLoaderCore {
             String logSuffix = String.format("-%s-%s.log",
                 strDate,
                 mTbLoaderConfig.getTbLoaderId());
-            writeLogDataToFile(opLog, logDir.open("tbData"+logSuffix));
-            writeLogDataToFile(statsLog, logDir.open("statsData"+logSuffix));
+            writeLogDataToFile(opLog, mLogDirectory.open("tbData"+logSuffix));
+            writeLogDataToFile(statsLog, mLogDirectory.open("statsData"+logSuffix));
             if (!mStatsOnly) {
-                writeLogDataToFile(deploymentLog, logDir.open("deployments" + logSuffix));
+                writeLogDataToFile(deploymentLog, mLogDirectory.open("deployments" + logSuffix));
             }
 
         } catch (Exception e) {
@@ -899,9 +901,9 @@ public class TBLoaderCore {
             if (mTbHasDiskCorruption) {
                 mTbDeviceInfo.setCorrupted();
                 mProgressListener.log("Storage corrupted, attempting repair.");
-                CommandLineUtils.checkDiskAndFix(mTbDeviceInfo.getRootFile().getAbsolutePath(),
-                                           new RelativePath(mTalkingBookDataDirectoryPath,
-                                "chkdsk-reformat.txt").asString());
+                String tbPath = mTbDeviceInfo.getRootFile().getAbsolutePath();
+                String logFileName = mLogDirectory.open("chkdsk-reformat.txt").getAbsolutePath();
+                CommandLineUtils.checkDiskAndFix(tbPath, logFileName);
                 finishStep("Attempted repair of Talking Book storage");
             } else {
                 finishStep("storage good");
