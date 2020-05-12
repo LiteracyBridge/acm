@@ -3,6 +3,7 @@ package org.literacybridge.acm.gui.assistants.Deployment;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
+import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Application;
@@ -14,7 +15,6 @@ import org.literacybridge.acm.gui.assistants.util.AcmContent.PlaylistNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.store.ISO8601Date;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.EmailHelper.TD;
@@ -283,12 +283,14 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     private void saveDeploymentInfoToProgramSpec(TBBuilder tbb,
         Map<String, Map<String, String>> pkgs) {
         Properties deploymentProperties = new Properties();
-        deploymentProperties.setProperty("DEPLOYMENT_NUMBER", Integer.toString(context.deploymentNo));
+        deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_NUMBER, Integer.toString(context.deploymentNo));
         Date now = new Date();
-        deploymentProperties.setProperty("DEPLOYMENT_DATE", TBLoaderConstants.ISO8601date.format(now));
-        deploymentProperties.setProperty("DEPLOYMENT_TIME", TBLoaderConstants.ISO8601time.format(now));
-        deploymentProperties.setProperty("DEPLOYMENT_USER", ACMConfiguration.getInstance().getUserName());
         deploymentProperties.setProperty(TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS, String.join(",", tbb.allFirmwareImageVersions()));
+        deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_CREATION_TIMESTAMP, TBLoaderConstants.ISO8601.format(now));
+        String userName = Authenticator.getInstance().getUserName();
+        String userEmail = Authenticator.getInstance().getuserEmail();
+        String user = (StringUtils.isEmpty(userName)?"":'('+userName+") ") + userEmail;         
+        deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_CREATION_USER, user);
         // Map of language, variant : package
         pkgs.forEach((language, values) -> values.forEach((variant, pkg) ->{
             String key = language;

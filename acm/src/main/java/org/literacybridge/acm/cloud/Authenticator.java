@@ -191,7 +191,13 @@ public class Authenticator {
         }
     }
 
-    public enum SigninOptions {OFFLINE_EMAIL_CHOICE, CHOOSE_PROGRAM, LOCAL_DATA_ONLY, OFFER_DEMO_MODE}
+    public enum SigninOptions {OFFLINE_EMAIL_CHOICE,
+        CHOOSE_PROGRAM,
+        LOCAL_DATA_ONLY,
+        OFFER_DEMO_MODE,
+        SUGGEST_DEMO_MODE,
+        INCLUDE_FB_ACMS
+    }
 
     /**
      * Determine who the user is. If we can access an authentication server, the user must
@@ -205,6 +211,9 @@ public class Authenticator {
      */
     public SigninResult getUserIdentity(Window parent, String defaultProgram, SigninOptions... signinFlags) {
         Set<SigninOptions> options = new HashSet<>(Arrays.asList(signinFlags));
+        if (options.contains(SigninOptions.SUGGEST_DEMO_MODE)) {
+            options.add(SigninOptions.OFFER_DEMO_MODE);
+        }
         SigninDetails savedSignInDetails = identityPersistence.retrieveSignInDetails();
         signinResult = SigninResult.NONE;
         boolean onlineAuthentication = isOnline();

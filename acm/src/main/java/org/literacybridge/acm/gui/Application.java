@@ -45,9 +45,11 @@ import java.util.logging.Logger;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.CHOOSE_PROGRAM;
+import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.INCLUDE_FB_ACMS;
 import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.LOCAL_DATA_ONLY;
 import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.OFFER_DEMO_MODE;
 import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.OFFLINE_EMAIL_CHOICE;
+import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.SUGGEST_DEMO_MODE;
 
 public class Application extends JXFrame {
   private static final Logger LOG = Logger
@@ -338,7 +340,8 @@ public class Application extends JXFrame {
         OFFLINE_EMAIL_CHOICE,
         CHOOSE_PROGRAM,
         LOCAL_DATA_ONLY,
-        OFFER_DEMO_MODE);
+        params.sandbox?SUGGEST_DEMO_MODE:OFFER_DEMO_MODE,
+        INCLUDE_FB_ACMS);
     if (result == Authenticator.SigninResult.FAILURE) {
       JOptionPane.showMessageDialog(null,
           "Authentication is required to use the ACM.",

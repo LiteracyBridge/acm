@@ -64,12 +64,15 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -98,6 +101,8 @@ import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberForma
 @SuppressWarnings({ "serial", "ResultOfMethodCallIgnored", "ConstantConditions" })
 public class TBLoader extends JFrame {
     private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
+    private static final String OLD_TBS_PREFIX = "A-";
+    private static final String NEW_TBS_PREFIX = "B-";
 
     private JFrame applicationWindow;
 
@@ -220,6 +225,19 @@ public class TBLoader extends JFrame {
     // Metadata about the project. Optional, may be null.
     private ProgramSpec programSpec = null;
 
+    ProgramSpec getProgramSpec() {
+        if (programSpec == null) {
+            try {
+                File programspecDir = new File(localTbLoaderDir,
+                    TBLoaderConstants.CONTENT_SUBDIR + File.separator + newDeployment + File.separator + Constants.ProgramSpecDir);
+                programSpec = new ProgramSpec(programspecDir);
+            } catch (Exception ignored) {
+                // leave null
+            }
+        }
+        return programSpec;
+    }
+
     // Options.
     private boolean allowPackageChoice = false;
     private boolean allowForceSrn = false;
@@ -242,6 +260,8 @@ public class TBLoader extends JFrame {
     private boolean startUpDone = false;
     private boolean refreshingDriveInfo = false;
     private boolean updatingTB = false;
+
+
 
     public static void main(String[] args) throws Exception {
         System.out.println("starting main()");
@@ -268,8 +288,8 @@ public class TBLoader extends JFrame {
         applicationWindow = this;
 
         if (tbArgs.srnPrefix != null) srnPrefix = tbArgs.srnPrefix.toUpperCase();
-        else if (tbArgs.oldTbs) srnPrefix = "A-";
-        else srnPrefix = "B-"; // for latest Talking Book hardware
+        else if (tbArgs.oldTbs) srnPrefix = OLD_TBS_PREFIX;
+        else srnPrefix = NEW_TBS_PREFIX; // for latest Talking Book hardware
 
         this.allowPackageChoice = tbArgs.choices;
     }
@@ -283,7 +303,7 @@ public class TBLoader extends JFrame {
         this.backgroundColor = getBackground();
         SwingUtils.setLookAndFeel("seaglass");
 
-        boolean oldTbs = srnPrefix.equalsIgnoreCase("a-");
+        boolean oldTbs = srnPrefix.equalsIgnoreCase(OLD_TBS_PREFIX);
         String iconName = oldTbs ? "/tb_loader-OLD-TBs.png" : "/tb_loader.png";
         URL iconURL = Application.class.getResource(iconName);
         Image iconImage = new ImageIcon(iconURL).getImage();
@@ -744,12 +764,39 @@ public class TBLoader extends JFrame {
         case OK_Latest:
             // good to go
             break;
-        case OK_Cached:
+        case OK_Cached: // enum value meaning dm.getAvailableDeployments().isOffline()
             DeploymentsManager.LocalDeployment localDeployment = dm.getLocalDeployment();
+            // If we're offline, we have only whatever we have locally.
+            newDeployment = localDeployment.localDeployment;
+            String newRevision = localDeployment.localRevision;
+            newDeploymentDescription = String.format("%s (%s)", newDeployment, newRevision);
+
+            ProgramSpec programSpec = getProgramSpec();
+            String deploymentUser=null, deploymentTimestamp=null;
+            if (programSpec != null) {
+                Properties properties = programSpec.getDeploymentProperties();
+                if (properties != null) {
+                    deploymentTimestamp = properties.getProperty(TBLoaderConstants.DEPLOYMENT_CREATION_TIMESTAMP, null);
+                    deploymentUser = properties.getProperty(TBLoaderConstants.DEPLOYMENT_CREATION_USER, null);
+                }
+            }
             message = "Signed in with email address.\n"
                 + "Talking Books will be loaded with saved\n"
                 + "Deployment "
-                + String.format("'%s' (revision '%s').", localDeployment.localDeployment, localDeployment.localRevision);
+                + String.format("'%s' (revision '%s').", newDeployment, newRevision);
+            if (deploymentTimestamp != null || deploymentUser != null) {
+                message += "\nCreated ";
+                if (deploymentTimestamp != null) {
+                    try {
+                        Date timestamp = ISO8601.parse(deploymentTimestamp);
+                        DateFormat dateFormat = new SimpleDateFormat("'on' yyyy-MM-dd 'at' H:mm:ss aa z ", Locale.getDefault());
+                        message += dateFormat.format(timestamp);
+                    } catch (Exception ignored) {
+                        // Can't add deployment timestamp.
+                    }
+                }
+                if (deploymentUser != null) message += "by " + deploymentUser;
+            }
             title = "Offline Operation";
 
             answer = JOptionPane.showOptionDialog(this,
@@ -767,7 +814,7 @@ public class TBLoader extends JFrame {
         if (keepUnpublished) {
             newDeployment = dm.getLocalDeployment().localContent.getName();
             newDeploymentDescription = String.format("UNPUBLISHED: %s", newDeployment);
-        } else {
+        } else if (state != DeploymentsManager.State.OK_Cached) {
             newDeployment = selectDeployment(dm);
             newDeploymentDescription = String.format("%s (%s)",
                 newDeployment,
@@ -1057,7 +1104,7 @@ public class TBLoader extends JFrame {
     private JPanel createComponents() {
         JPanel panel = new JPanel();
 
-        if (srnPrefix.equals("a-")) {
+        if (srnPrefix.equalsIgnoreCase(OLD_TBS_PREFIX)) {
             panel.setBackground(Color.CYAN);
         } else {
         }
@@ -1348,7 +1395,7 @@ public class TBLoader extends JFrame {
         files = fCommunityDir.listFiles((dir, name) -> dir.isDirectory());
 
         try {
-            recipientChooser.populate(programSpec, files);
+            recipientChooser.populate(getProgramSpec(), files);
             validate();
         } catch (Exception ignored) {
         }
@@ -1382,10 +1429,10 @@ public class TBLoader extends JFrame {
             recipientid = oldDeploymentInfo.getRecipientid();
         }
         // If we think we know this recipient, pre-select it in the recipient chooser.
-        if (programSpec.getRecipients().getRecipient(recipientid) != null) {
+        if (getProgramSpec().getRecipients().getRecipient(recipientid) != null) {
             System.out.printf("setSelectedCommunity r:%s\n", recipientid);
             recipientChooser.setSelectedCommunity(community, recipientid);
-            fillPackage(programSpec.getRecipients().getRecipient(recipientid), community);
+            fillPackage(getProgramSpec().getRecipients().getRecipient(recipientid), community);
         }
     }
 
@@ -1674,7 +1721,7 @@ public class TBLoader extends JFrame {
     }
 
     private boolean fillPackageFromRecipient(Recipient recipient) {
-        Properties deploymentProperties = programSpec.getDeploymentProperties();
+        Properties deploymentProperties = getProgramSpec().getDeploymentProperties();
         String key = recipient.languagecode;
         if (StringUtils.isNotEmpty(recipient.variant)) {
             key = key + ',' + recipient.variant;
@@ -1723,13 +1770,13 @@ public class TBLoader extends JFrame {
 
         if (!isSerialNumberFormatGood(srnPrefix, sn)) {
             if (sn != null && sn.length() > 2 && sn.substring(1, 2).equals("-")) {
-                if (sn.compareToIgnoreCase("a-") == 0) {
+                if (sn.compareToIgnoreCase(OLD_TBS_PREFIX) == 0) {
                     JOptionPane.showMessageDialog(applicationWindow,
                         "This appears to be an OLD TB.  If so, please close this program and open the TB Loader for old TBs.",
                         "OLD TB!",
                         JOptionPane.WARNING_MESSAGE);
                     return;
-                } else if (sn.compareToIgnoreCase("b-") == 0) {
+                } else if (sn.compareToIgnoreCase(NEW_TBS_PREFIX) == 0) {
                     JOptionPane.showMessageDialog(applicationWindow,
                         "This appears to be a NEW TB.  If so, please close this program and open the TB Loader for new TBs.",
                         "NEW TB!",

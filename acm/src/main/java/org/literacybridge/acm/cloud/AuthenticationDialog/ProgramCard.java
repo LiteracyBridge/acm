@@ -76,6 +76,7 @@ public class ProgramCard extends CardContent {
                 forceSandbox.setSelected(true);
                 forceSandbox.setEnabled(false);
             }
+            forceSandbox.setToolTipText("In DEMO mode (or TRAINING mode), you can make changes, but they will be discarded when you are done.");
         }
 
         okButton = new PanelButton("Ok");
@@ -97,6 +98,7 @@ public class ProgramCard extends CardContent {
     @Override
     void onShown() {
         Set<String> updatingRoles = new HashSet<>(Arrays.asList("*", "AD", "PM", "CO"));
+        String ALL_ROLES = "AD,PM,CO";
         // Build the list of ACM names from which to choose. The list depends on whether we're
         // authenticated (not being authenticated is roughly equivalent to not having network
         // access, so we give access to all local programs). The list also depends on the option
@@ -109,8 +111,20 @@ public class ProgramCard extends CardContent {
             // If data must already be local, filter the list to those ACMs that are local.
             if (welcomeDialog.options.contains(Authenticator.SigninOptions.LOCAL_DATA_ONLY)) {
                 List<String> localNames = Authenticator.getInstance().getLocallyAvailablePrograms();
-                acmNames = acmNames.stream()
-                    .filter(localNames::contains)
+//                acmNames = acmNames.stream()
+//                    .filter(localNames::contains)
+//                    .collect(Collectors.toList());
+                final List<String> usersPrograms = acmNames;
+                acmNames = localNames.stream()
+                    .filter(name -> {
+                        if (usersPrograms.contains(name)) return true;
+                        if (welcomeDialog.options.contains(Authenticator.SigninOptions.INCLUDE_FB_ACMS) &&
+                            name.contains("-FB-")) {
+                            int fb = name.indexOf("-FB-");
+                            if (usersPrograms.contains(name.substring(0, fb))) return true;
+                        }
+                        return false;
+                    })
                     .collect(Collectors.toList());
             }
             // If updating (not sandboxing) is an option, determine which ACMs will be sandbox
@@ -118,7 +132,7 @@ public class ProgramCard extends CardContent {
             if (welcomeDialog.options.contains(Authenticator.SigninOptions.OFFER_DEMO_MODE)) {
                 updateAllowed = acmNames.stream()
                     .filter(name->{
-                        Set<String> roles = Arrays.stream(programs.get(name).split(","))
+                        Set<String> roles = Arrays.stream(programs.getOrDefault(name, ALL_ROLES).split(","))
                             .collect(Collectors.toSet());
                         roles.retainAll(updatingRoles);
                         return roles.size()>0;
@@ -128,6 +142,7 @@ public class ProgramCard extends CardContent {
         } else {
             acmNames = Authenticator.getInstance().getLocallyAvailablePrograms();
         }
+        acmNames.sort(String::compareToIgnoreCase);
         choicesList.setListData(acmNames.toArray(new String[0]));
 
         // If there are no choices to be made, either program or sandbox, we're done.
@@ -191,8 +206,9 @@ public class ProgramCard extends CardContent {
         if (haveSelection) {
             boolean canUpdate = updateAllowed.contains(selectedProgram);
             if (canUpdate) {
+                boolean suggestSandbox = welcomeDialog.options.contains(Authenticator.SigninOptions.SUGGEST_DEMO_MODE);
                 forceSandbox.setEnabled(true);
-                forceSandbox.setSelected(explicitSandbox!=null?explicitSandbox:false);
+                forceSandbox.setSelected(explicitSandbox!=null?explicitSandbox:suggestSandbox);
             } else {
                 forceSandbox.setEnabled(false);
                 forceSandbox.setSelected(true);
