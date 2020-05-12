@@ -5,7 +5,6 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
-import org.literacybridge.acm.gui.assistants.PromptsImport.PromptImportAssistant;
 import org.literacybridge.acm.gui.assistants.PromptsImport.PromptsInfo;
 import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.store.Category;
@@ -164,7 +163,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         validateDeployment(context.deploymentNo);
 
         issuesTreeRoot.removeAllChildren();
-        context.issues.addToTree(issuesTreeRoot);
+        context.issues.fillNodeFromList(issuesTreeRoot);
         issuesTreeModel.reload();
         for (int ix = 0; ix < issuesTree.getRowCount(); ix++) {
             issuesTree.expandRow(ix);

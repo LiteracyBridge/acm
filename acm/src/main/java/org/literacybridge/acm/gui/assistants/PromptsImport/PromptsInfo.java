@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 public class PromptsInfo {
     // i?$?\d*(-\d*)+
     private static final Pattern playlistPromptPattern = Pattern.compile("^(i)?((?:\\$)?\\d*(?:-\\d*)+)$");
+    public static final String PROMPTS_FILE_NAME = "prompts_ex.csv";
 
     @SuppressWarnings("unused")
     public static class PromptInfo {
@@ -93,8 +94,8 @@ public class PromptsInfo {
      * Reads a .csv file of "id,filename,text,explanation" tuples from a resource.
 \     */
     private void loadPromptsInfo() {
-        String promptsFileName = "prompts_ex.csv";
-        InputStream csvStream = PromptImportAssistant.class.getClassLoader().getResourceAsStream(promptsFileName);
+        InputStream csvStream = PromptImportAssistant.class.getClassLoader()
+            .getResourceAsStream(PROMPTS_FILE_NAME);
         try (BOMInputStream bis = new BOMInputStream(csvStream);
             Reader ir = new InputStreamReader(bis);
             CSVReader reader = new CSVReader(ir)) {

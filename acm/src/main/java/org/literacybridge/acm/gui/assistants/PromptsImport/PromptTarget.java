@@ -3,7 +3,7 @@ package org.literacybridge.acm.gui.assistants.PromptsImport;
 import org.literacybridge.acm.gui.assistants.Matcher.Target;
 
 public class PromptTarget extends Target {
-    private PromptsInfo.PromptInfo promptInfo;
+    private final PromptsInfo.PromptInfo promptInfo;
 
     // Is there already an audio file for the System Prompt in the ACM?
     private boolean hasPrompt;
@@ -15,6 +15,12 @@ public class PromptTarget extends Target {
     public PromptsInfo.PromptInfo getPromptInfo() {
         return promptInfo;
     }
+
+    /**
+     * The TB id of the prompt. The pure system prompts are numeric, like "1", "2", ... There
+     * are also required playlist prompts with names "9-0" and "$0-1".
+     * @return the prompt's id.
+     */
     String getPromptId() {
         return promptInfo.getId();
     }

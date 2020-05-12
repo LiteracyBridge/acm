@@ -52,7 +52,15 @@ public class PromptMatchable extends MatchableFileItem<PromptTarget, ImportableF
         String l = comparableStringFor(this);
         @SuppressWarnings("unchecked")
         String r = comparableStringFor(o);
-        int rslt = l.compareTo(r);
+        // If the values are both integers, compare them numerically. Otherwise, as strings.
+        int rslt;
+        try {
+            int intL = Integer.parseInt(l);
+            int intR = Integer.parseInt(r);
+            rslt = intL - intR;
+        } catch (NumberFormatException ignored) {
+            rslt = l.compareTo(r);
+        }
         // If strings are equal, LEFT_ONLY is less than RIGHT_ONLY
         if (rslt == 0 && this.getMatch() == MATCH.RIGHT_ONLY && o.getMatch() != MATCH.RIGHT_ONLY)
             rslt = 1;
@@ -61,15 +69,20 @@ public class PromptMatchable extends MatchableFileItem<PromptTarget, ImportableF
         return rslt;
     }
 
-    private static String comparableStringFor(MatchableItem<PromptTarget, ImportableFile> it) {
-        if (it instanceof PromptMatchable) {
+    /**
+     * Gets a string, suitable for comparison, for the matchable item. If there is a left, the string
+     * is the prompt's id; otherwise if there is a right the string is the file's base name.
+     * @param item for which the comparable string is desired.
+     * @return the string.
+     */
+    private static String comparableStringFor(MatchableItem<PromptTarget, ImportableFile> item) {
+        if (item instanceof PromptMatchable) {
             String result = "";
-            PromptMatchable pit = (PromptMatchable)it;
+            PromptMatchable pit = (PromptMatchable)item;
             if (pit.getLeft() != null) result = pit.getLeft().getPromptId();
             else if (pit.getRight() != null) result = FilenameUtils.removeExtension(pit.getRight().getFile().getName());
-            if (result.length() < 2) result = "0" + result;
             return result;
         }
-        return it.toString();
+        return item.toString();
     }
 }

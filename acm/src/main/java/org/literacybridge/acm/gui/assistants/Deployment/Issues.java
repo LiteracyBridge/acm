@@ -52,19 +52,31 @@ public class Issues {
         }
     }
 
-    private List<Issue> issues = new ArrayList<>();
+    private final List<Issue> issues = new ArrayList<>();
 
     void clear() {
         issues.clear();
     }
 
+    /**
+     * Creates an Issue and adds it to the list of issues.
+     * @param severity of the issue.
+     * @param area to which the issue relates.
+     * @param message informative message about the issue.
+     * @param args arguments to String.format(message, args)
+     * @return the issue.
+     */
     public Issue add(Severity severity, Area area, String message, Object... args) {
         Issue issue = new Issue(severity, area, message, args);
         issues.add(issue);
         return issue;
     }
 
-    void addToTree(DefaultMutableTreeNode issueTreeRoot) {
+    /**
+     * Adds our issues to the given tree. It may be, but doesn't have to be, empty.
+     * @param issueTreeRoot to be filled
+     */
+    void fillNodeFromList(DefaultMutableTreeNode issueTreeRoot) {
         for (Issue issue : issues) {
             Severity severity = issue.severity;
             Area area = issue.area;
@@ -111,6 +123,11 @@ public class Issues {
         }
     }
 
+    /**
+     * Determine if there is any issue with a given severity
+     * @param severity of interest
+     * @return true is such an issue exists
+     */
     private boolean hasIssue(Severity severity) {
         Issue issue = issues
             .stream()

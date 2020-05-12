@@ -14,6 +14,7 @@ import org.literacybridge.acm.gui.assistants.util.AcmContent.PlaylistNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.ISO8601Date;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.EmailHelper.TD;
@@ -26,6 +27,7 @@ import org.literacybridge.core.spec.ContentSpec.MessageSpec;
 import org.literacybridge.core.spec.ContentSpec.PlaylistSpec;
 import org.literacybridge.core.spec.Deployment;
 import org.literacybridge.core.spec.ProgramSpec;
+import org.literacybridge.core.tbloader.TBLoaderConstants;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -49,6 +51,7 @@ import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -216,7 +219,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
         ProblemReviewDialog dialog = new ProblemReviewDialog(Application.getApplication(), "Errors While Importing");
         DefaultMutableTreeNode issues = new DefaultMutableTreeNode();
-        context.issues.addToTree(issues);
+        context.issues.fillNodeFromList(issues);
         dialog.showProblems(message, reportHeading, issues, errors);
     }
 
@@ -281,6 +284,10 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         Map<String, Map<String, String>> pkgs) {
         Properties deploymentProperties = new Properties();
         deploymentProperties.setProperty("DEPLOYMENT_NUMBER", Integer.toString(context.deploymentNo));
+        Date now = new Date();
+        deploymentProperties.setProperty("DEPLOYMENT_DATE", TBLoaderConstants.ISO8601date.format(now));
+        deploymentProperties.setProperty("DEPLOYMENT_TIME", TBLoaderConstants.ISO8601time.format(now));
+        deploymentProperties.setProperty("DEPLOYMENT_USER", ACMConfiguration.getInstance().getUserName());
         // Map of language, variant : package
         pkgs.forEach((language, values) -> values.forEach((variant, pkg) ->{
             String key = language;
