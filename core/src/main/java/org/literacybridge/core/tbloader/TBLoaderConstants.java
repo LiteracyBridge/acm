@@ -62,6 +62,8 @@ public class TBLoaderConstants {
 
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
     public static final DateFormat ISO8601 = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
+    public static final DateFormat ISO8601date = new SimpleDateFormat("yyyyMMdd", Locale.US);
+    public static final DateFormat ISO8601time = new SimpleDateFormat("HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
 
     public static final String ACTION_PROPERTY = "ACTION";      // The action that was requested.
     public static final String CLEARED_FLASH_PROPERTY = "CLEARED_FLASH";
