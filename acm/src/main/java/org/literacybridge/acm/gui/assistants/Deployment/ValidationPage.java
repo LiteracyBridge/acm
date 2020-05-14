@@ -312,9 +312,10 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                         .filter(i -> !foundItems.contains(i))
                         .forEach(i -> context.issues.add(Issues.Severity.INFO,
                             Issues.Area.CONTENT,
-                            "Title '%s' was added to playlist '%s' in the ACM.",
+                            "Title '%s' was added to playlist '%s' for language '%s' in the ACM.",
                             i.toString(),
-                            playlistNode.getTitle()));
+                            playlistNode.getTitle(),
+                            getLanguageAndName(language)));
                 }
             }
             // Report the playlists in the ACM list but not the Program Specification list.
