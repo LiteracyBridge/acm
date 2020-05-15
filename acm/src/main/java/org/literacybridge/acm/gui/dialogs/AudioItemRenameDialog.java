@@ -6,7 +6,6 @@ import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
-import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.store.AudioItem;
@@ -428,7 +427,7 @@ public class AudioItemRenameDialog extends JDialog {
                 String languagecode = item.getLanguageCode();
                 if (ms.includesLanguage(languagecode)) {
                     // return that {item : playlist name} pair.
-                    result.add(new ImmutableTriple<>(item, ms, AssistantPage.decoratedPlaylistName(
+                    result.add(new ImmutableTriple<>(item, ms, AudioUtils.decoratedPlaylistName(
                         ms.getPlaylistTitle(),
                         ms.deploymentNumber,
                         languagecode)));

@@ -251,46 +251,6 @@ public abstract class AssistantPage<Context> extends JPanel {
 
     // Helpers to convert between decorated and un-decorated playlist names.
 
-    /**
-     * Given a playlist title, a deployment, and a language, build the decorated playlist name,
-     * like 1-Health-swh
-     * @param title of the playlist
-     * @param deploymentNo of the deployment
-     * @param languagecode of the playlist
-     * @return the decorated name.
-     */
-    public static String decoratedPlaylistName(String title, int deploymentNo, String languagecode) {
-        title = normalizePlaylistTitle(title);
-        return String.format("%d-%s-%s", deploymentNo, title, languagecode);
-    }
-
-    private static Pattern playlistPattern = Pattern.compile("\\d+-(.*)-\\w+");
-
-    /**
-     * Given a decorated playlist name, strip off the deployment and language, and return just
-     * the name. Underscores are converted (back) to spaces.
-     * @param decoratedName to be un-decorated.
-     * @return the un-decorated name.
-     */
-    public static String undecoratedPlaylistName(String decoratedName) {
-        Matcher matcher = playlistPattern.matcher(decoratedName);
-        if (matcher.matches() && matcher.groupCount()==1) {
-            return matcher.group(1).replaceAll("_", " ");
-        }
-        return decoratedName;
-    }
-
-    /**
-     * Given a playlist title, trim leading and trailing spaces, and replace remaining spaces
-     * with underscores.
-     * @param title, possibly with spaces.
-     * @return title without spaces.
-     */
-    private static String normalizePlaylistTitle(String title) {
-        title = title.trim().replaceAll(" ", "_");
-        return title;
-    }
-
     public static <T> Stream<T> enumerationAsStream(Enumeration<T> e) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<T>() {
             public T next() {

@@ -8,6 +8,7 @@ import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.AudioItemNode;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.LanguageNode;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.PlaylistNode;
+import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ContentSpec;
@@ -470,7 +471,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
                 if (plMatcher.matches()) {
                     langPlaylists.add(pl);
                     // Remember which playlists were "Intro Message" categories.
-                    if (introMessageCategoryName.equals(undecoratedPlaylistName(pl.getName()))) {
+                    if (introMessageCategoryName.equals(AudioUtils.undecoratedPlaylistName(pl.getName()))) {
                         introMessageCategories.add(pl);
                     }
                 }
@@ -485,8 +486,8 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
                 if (introMessageCategories.contains(a)) return -1;
                 if (introMessageCategories.contains(b)) return 1;
                 // Get the names, to look up in the programspec.
-                String nameA = undecoratedPlaylistName(a.getName());
-                String nameB = undecoratedPlaylistName(b.getName());
+                String nameA = AudioUtils.undecoratedPlaylistName(a.getName());
+                String nameB = AudioUtils.undecoratedPlaylistName(b.getName());
 
                 ContentSpec.PlaylistSpec psA = specPlaylists.get(nameA);
                 ContentSpec.PlaylistSpec psB = specPlaylists.get(nameB);

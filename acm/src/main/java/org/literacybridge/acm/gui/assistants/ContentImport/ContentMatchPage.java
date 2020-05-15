@@ -10,6 +10,7 @@ import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.Matcher.MatchTableRenderers;
 import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
+import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ContentSpec;
@@ -150,7 +151,7 @@ public class ContentMatchPage extends
                                                                                  .getPlaylistSpecsForLanguage(context.languagecode);
 
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
-            String playlistName = WelcomePage.decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
+            String playlistName = AudioUtils.decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             Playlist playlist = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().findPlaylistByName(playlistName);
 
             // If this isn't the special "Intro Message" playlist, add playlist prompts to the list of items that may be imported.

@@ -6,6 +6,7 @@ import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.MainWindow.SidebarView;
 import org.literacybridge.acm.gui.assistants.Deployment.PlaylistPrompts;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
+import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.gui.assistants.util.PSContent;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataStore;
@@ -384,7 +385,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
                                                                                  .getDeployment(deploymentNo)
                                                                                  .getPlaylistSpecsForLanguage(languagecode);
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
-            String plName = decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
+            String plName = AudioUtils.decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             if (!acmPlaylists.containsKey(plName)) {
                 Playlist playlist = store.newPlaylist(plName);
                 try {

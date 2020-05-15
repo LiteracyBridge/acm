@@ -7,6 +7,7 @@ import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.PromptsImport.PromptsInfo;
 import org.literacybridge.acm.gui.assistants.util.AcmContent;
+import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
@@ -266,7 +267,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             // Try to find all the playlists from the Program Spec in the adjusted ACM playlists...
             for (ContentSpec.PlaylistSpec programSpecPlaylistSpec : programSpecPlaylistSpecs) {
                 // Get the corresponding adjusted ACM playlist, if it exists.
-                String qualifiedPlaylistName = decoratedPlaylistName(programSpecPlaylistSpec.getPlaylistTitle(),
+                String qualifiedPlaylistName = AudioUtils.decoratedPlaylistName(programSpecPlaylistSpec.getPlaylistTitle(),
                     deploymentNo,
                     language);
                 AcmContent.PlaylistNode playlistNode = adjustedPlaylists.stream()

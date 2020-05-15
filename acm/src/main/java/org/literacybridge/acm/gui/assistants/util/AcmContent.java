@@ -1,7 +1,6 @@
 package org.literacybridge.acm.gui.assistants.util;
 
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Playlist;
 
@@ -103,10 +102,10 @@ public class AcmContent {
             return (Playlist)getUserObject();
         }
         public String toString() {
-            return AssistantPage.undecoratedPlaylistName(getPlaylist().getName());
+            return AudioUtils.undecoratedPlaylistName(getPlaylist().getName());
         }
         public String getTitle() {
-            return AssistantPage.undecoratedPlaylistName(getPlaylist().getName());
+            return AudioUtils.undecoratedPlaylistName(getPlaylist().getName());
         }
         public String getDecoratedTitle() {
             return getPlaylist().getName();

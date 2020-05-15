@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
@@ -26,6 +28,8 @@ import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
 
 public class AudioUtils {
+
+    private static Pattern playlistPattern = Pattern.compile("(\\d+)-(.*)-(\\w+)");
 
     public static void copyOrConvert(String title, String languagecode, File fromFile, File toFile)
         throws BaseAudioConverter.ConversionException, IOException
@@ -116,5 +120,76 @@ public class AudioUtils {
         // Didn't find any neighbors. Put this at the beginning. Next item, for which this will be
         // a neighbor, will get placed appropriately after or before this one.
         return 0;
+    }
+
+    // TODO: Under construction
+//    /**
+//     * Brings a playlist into better conformance with the program specification. If messages are
+//     * missing from the playlist, but exist in the ACM, adds them. If any messages are out of order
+//     * wrt the spec, re-orders them.
+//     * @param playlist from the ACM.
+//     * @param playlistSpec to which the playlist should conform.
+//     */
+//    public static void reorderPlaylistToSpecification(Playlist playlist, ContentSpec.PlaylistSpec playlistSpec) {
+//        String languageCode = undecoratedPlaylistLanguagecode(playlist.getName());
+//        List<ContentSpec.MessageSpec> messageList = playlistSpec.getMessagesForLanguage(languageCode);
+//        for (ContentSpec.MessageSpec messageSpec : messageList) {
+//
+//        }
+//
+//    }
+
+    /**
+     * Given a playlist title, a deployment, and a language, build the decorated playlist name,
+     * like 1-Health-swh
+     * @param title of the playlist
+     * @param deploymentNo of the deployment
+     * @param languagecode of the playlist
+     * @return the decorated name.
+     */
+    public static String decoratedPlaylistName(String title, int deploymentNo, String languagecode) {
+        title = normalizePlaylistTitle(title);
+        return String.format("%d-%s-%s", deploymentNo, title, languagecode);
+    }
+
+    /**
+     * Given a decorated playlist name, strip off the deployment and language, and return just
+     * the name. Underscores are converted (back) to spaces.
+     * @param decoratedName to be un-decorated.
+     * @return the un-decorated name.
+     */
+    public static String undecoratedPlaylistName(String decoratedName) {
+        Matcher matcher = playlistPattern.matcher(decoratedName);
+        if (matcher.matches() && matcher.groupCount()==3) {
+            return matcher.group(2).replaceAll("_", " ");
+        }
+        return decoratedName;
+    }
+
+    public static int undecoratedPlaylistDeployment(String decoratedName) {
+        Matcher matcher = playlistPattern.matcher(decoratedName);
+        if (matcher.matches() && matcher.groupCount()==3) {
+            return Integer.parseInt(matcher.group(1));
+        }
+        return -1;
+    }
+
+    public static String undecoratedPlaylistLanguagecode(String decoratedName) {
+        Matcher matcher = playlistPattern.matcher(decoratedName);
+        if (matcher.matches() && matcher.groupCount()==3) {
+            return matcher.group(3).replaceAll("_", " ");
+        }
+        return null;
+    }
+
+    /**
+     * Given a playlist title, trim leading and trailing spaces, and replace remaining spaces
+     * with underscores.
+     * @param title, possibly with spaces.
+     * @return title without spaces.
+     */
+    private static String normalizePlaylistTitle(String title) {
+        title = title.trim().replaceAll(" ", "_");
+        return title;
     }
 }

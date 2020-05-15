@@ -12,6 +12,7 @@ import org.literacybridge.acm.gui.assistants.Matcher.MatchableFileItem;
 import org.literacybridge.acm.gui.assistants.Matcher.Target;
 import org.literacybridge.acm.gui.assistants.common.AbstractReviewPage;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
+import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.store.Playlist;
 
 import javax.swing.*;
@@ -117,7 +118,7 @@ public class ReviewPage extends AbstractReviewPage<ContentImportContext, AudioMa
 
         @Override
         public String toString() {
-            return undecoratedPlaylistName(((Playlist) getUserObject()).getName());
+            return AudioUtils.undecoratedPlaylistName(((Playlist) getUserObject()).getName());
         }
     }
 
