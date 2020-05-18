@@ -32,8 +32,8 @@ public class FlexTextField extends PlaceholderTextField {
     private boolean revealPasswordEnabled = false;
     private boolean isPasswordRevealed = false;
 
-    private static ImageIcon eyeIcon;
-    private static ImageIcon noEyeIcon;
+    private static ImageIcon hideIcon;
+    private static ImageIcon revealIcon;
 
     private FlexTextField synchronizedPasswordView;
 
@@ -177,7 +177,7 @@ public class FlexTextField extends PlaceholderTextField {
         setMaskChar(isPasswordRevealed?NOMASK_CHAR:MASK_CHAR);
         if (revealPasswordEnabled) {
             setIconRight(true);
-            setIcon(isPasswordRevealed ? getEyeIcon() : getNoEyeIcon());
+            setIcon(isPasswordRevealed ? getHideIcon() : getRevealIcon());
         } else {
             setIcon(null);
         }
@@ -199,18 +199,18 @@ public class FlexTextField extends PlaceholderTextField {
 //        }
     }
 
-    private ImageIcon getEyeIcon() {
-        if (eyeIcon == null) {
-            eyeIcon = new ImageIcon(UIConstants.getResource("eye_256.png"));
+    private ImageIcon getHideIcon() {
+        if (hideIcon == null) {
+            hideIcon = new ImageIcon(UIConstants.getResource("no-eye_256.png"));
         }
-        return eyeIcon;
+        return hideIcon;
     }
 
-    private ImageIcon getNoEyeIcon() {
-        if (noEyeIcon == null) {
-            noEyeIcon = new ImageIcon(UIConstants.getResource("no-eye_256.png"));
+    private ImageIcon getRevealIcon() {
+        if (revealIcon == null) {
+            revealIcon = new ImageIcon(UIConstants.getResource("eye_256.png"));
         }
-        return noEyeIcon;
+        return revealIcon;
     }
 
     class IconHelper {
