@@ -64,15 +64,12 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -347,6 +344,7 @@ public class TBLoader extends JFrame {
         // Looks in Dropbox and in ~/LiteracyBridge for deployments. May prompt user for which
         // Deployment version, or update to latest.
         getCurrentDeployments();
+        confirmDeployment();
 
         initializeProgramSpec();
 
@@ -395,7 +393,7 @@ public class TBLoader extends JFrame {
     private void authenticate() {
         Authenticator authInstance = Authenticator.getInstance();
         authInstance.setLocallyAvailablePrograms(DeploymentsManager.getLocalPrograms());
-        Authenticator.SigninResult result = authInstance.getUserIdentity(this, newProject, OFFLINE_EMAIL_CHOICE, CHOOSE_PROGRAM);
+        Authenticator.SigninResult result = authInstance.getUserIdentity(this, "TB-Loader", newProject, OFFLINE_EMAIL_CHOICE, CHOOSE_PROGRAM);
         if (result == Authenticator.SigninResult.FAILURE) {
             JOptionPane.showMessageDialog(this,
                 "Authentication is required to use the TB-Loader.",
@@ -696,6 +694,51 @@ public class TBLoader extends JFrame {
     }
 
     /**
+     * Show the user what deployment will be placed onto Talking Books.
+     */
+    private void confirmDeployment() {
+        ProgramSpec programSpec = getProgramSpec();
+        String deploymentUser=null, deploymentTime=null, deploymentDate=null;
+        if (programSpec != null) {
+            Properties properties = programSpec.getDeploymentProperties();
+            if (properties != null) {
+                deploymentDate = properties.getProperty(TBLoaderConstants.DEPLOYMENT_CREATION_DATE, null);
+                deploymentTime = properties.getProperty(TBLoaderConstants.DEPLOYMENT_CREATION_TIME, null);
+                deploymentUser = properties.getProperty(TBLoaderConstants.DEPLOYMENT_CREATION_USER, null);
+            }
+        }
+        Authenticator auth = Authenticator.getInstance();
+        String title;
+        StringBuilder message = new StringBuilder();
+        if (auth.isAuthenticated()) {
+            message.append(String.format("Signed in as %s (%s)\n", auth.getUserName(), auth.getuserEmail()));
+            message.append("Latest deployment is:\n");
+            title = "Current Deployment";
+        } else {
+            message.append(String.format("Signed in as %s\n", auth.getuserEmail()));
+            message.append("Talking Books will be loaded with saved deployment:\n");
+            title = "Locally Cached Deployment";                                                                    git 
+        }
+        message.append("  ").append(newDeploymentDescription);
+        if (deploymentDate != null || deploymentTime != null || deploymentUser != null) {
+            message.append("\nCreated");
+            if (deploymentDate != null) message.append(" on " + deploymentDate);
+            if (deploymentTime != null) message.append(" at " + deploymentTime);
+            // If all three, split onto two lines for better feng shui.
+            if (deploymentDate != null && deploymentTime != null && deploymentUser != null) message.append("\n  ");
+            if (deploymentUser != null) message.append(" by " + deploymentUser);
+        }
+
+        int answer = JOptionPane.showOptionDialog(this,
+            message, title,
+            JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, null, null);
+        if (answer == JOptionPane.CLOSED_OPTION) {
+            // User closed the dialog (we didn't offer a "no" choice).
+            System.exit(1);
+        }
+    }
+
+    /**
      * Determines the most recent deployment in ~/LiteracyBridge.
      */
     private void getCurrentDeployments() throws IOException {
@@ -769,44 +812,37 @@ public class TBLoader extends JFrame {
             // If we're offline, we have only whatever we have locally.
             newDeployment = localDeployment.localDeployment;
             String newRevision = localDeployment.localRevision;
-            newDeploymentDescription = String.format("%s (%s)", newDeployment, newRevision);
+            newDeploymentDescription = String.format("%s (rev: %s)", newDeployment, newRevision);
 
-            ProgramSpec programSpec = getProgramSpec();
-            String deploymentUser=null, deploymentTimestamp=null;
-            if (programSpec != null) {
-                Properties properties = programSpec.getDeploymentProperties();
-                if (properties != null) {
-                    deploymentTimestamp = properties.getProperty(TBLoaderConstants.DEPLOYMENT_CREATION_TIMESTAMP, null);
-                    deploymentUser = properties.getProperty(TBLoaderConstants.DEPLOYMENT_CREATION_USER, null);
-                }
-            }
-            message = "Signed in with email address.\n"
-                + "Talking Books will be loaded with saved\n"
-                + "Deployment "
-                + String.format("'%s' (revision '%s').", newDeployment, newRevision);
-            if (deploymentTimestamp != null || deploymentUser != null) {
-                message += "\nCreated ";
-                if (deploymentTimestamp != null) {
-                    try {
-                        Date timestamp = ISO8601.parse(deploymentTimestamp);
-                        DateFormat dateFormat = new SimpleDateFormat("'on' yyyy-MM-dd 'at' H:mm:ss aa z ", Locale.getDefault());
-                        message += dateFormat.format(timestamp);
-                    } catch (Exception ignored) {
-                        // Can't add deployment timestamp.
-                    }
-                }
-                if (deploymentUser != null) message += "by " + deploymentUser;
-            }
-            title = "Offline Operation";
-
-            answer = JOptionPane.showOptionDialog(this,
-                message, title,
-                JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, null, null);
-            if (answer == JOptionPane.CLOSED_OPTION) {
-                // User closed the dialog (we didn't offer a "no" choice).
-                System.exit(1);
-            }
-
+//            ProgramSpec programSpec = getProgramSpec();
+//            String deploymentUser=null, deploymentTime=null, deploymentDate=null;
+//            if (programSpec != null) {
+//                Properties properties = programSpec.getDeploymentProperties();
+//                if (properties != null) {
+//                    deploymentDate = properties.getProperty(TBLoaderConstants.DEPLOYMENT_CREATION_DATE, null);
+//                    deploymentTime = properties.getProperty(TBLoaderConstants.DEPLOYMENT_CREATION_TIME, null);
+//                    deploymentUser = properties.getProperty(TBLoaderConstants.DEPLOYMENT_CREATION_USER, null);
+//                }
+//            }
+//            message = "Signed in with email address.\n"
+//                + "Talking Books will be loaded with saved deployment\n"
+//                + String.format("'%s' (revision '%s').", newDeployment, newRevision);
+//            if (deploymentDate != null || deploymentTime != null || deploymentUser != null) {
+//                message += "\nCreated";
+//                if (deploymentDate != null) message += " on " + deploymentDate;
+//                if (deploymentTime != null) message += " at " + deploymentTime;
+//                if (deploymentUser != null) message += " by " + deploymentUser;
+//            }
+//            title = "Offline Operation";
+//
+//            answer = JOptionPane.showOptionDialog(this,
+//                message, title,
+//                JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, null, null);
+//            if (answer == JOptionPane.CLOSED_OPTION) {
+//                // User closed the dialog (we didn't offer a "no" choice).
+//                System.exit(1);
+//            }
+//
             // Good to go
             break;
         }
@@ -816,7 +852,7 @@ public class TBLoader extends JFrame {
             newDeploymentDescription = String.format("UNPUBLISHED: %s", newDeployment);
         } else if (state != DeploymentsManager.State.OK_Cached) {
             newDeployment = selectDeployment(dm);
-            newDeploymentDescription = String.format("%s (%s)",
+            newDeploymentDescription = String.format("%s (rev: %s)",
                 newDeployment,
                 dm.getLocalDeployment().localRevision);
         }

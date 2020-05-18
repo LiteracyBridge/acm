@@ -87,7 +87,8 @@ public class TBLoaderConstants {
     public static final String LATEST_FIRMWARE_PROPERTY = "LATEST_FIRMWARE";
     public static final String DEPLOYMENT_UUID_PROPERTY = "DEPLOYEDUUID";
     public static final String STATS_COLLECTED_UUID_PROPERTY = "STATSUUID";
-    public static final String DEPLOYMENT_CREATION_TIMESTAMP = "DEPLOYMENT_CREATION_TIMESTAMP";
+    public static final String DEPLOYMENT_CREATION_DATE = "DEPLOYMENT_CREATION_DATE";
+    public static final String DEPLOYMENT_CREATION_TIME = "DEPLOYMENT_CREATION_TIME";
     public static final String DEPLOYMENT_CREATION_USER = "DEPLOYMENT_CREATION_USER";
     public static final String DEPLOYMENT_NUMBER = "DEPLOYMENT_NUMBER";
 
