@@ -128,6 +128,7 @@ public class ResetCard extends CardContent {
      */
     @Override
     void onShown() {
+        super.onShown();
         usernameField.setText(welcomeDialog.getUsername());
         passwordField1.setText(null);
         passwordField2.setText(null);

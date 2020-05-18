@@ -717,7 +717,7 @@ public class TBLoader extends JFrame {
         } else {
             message.append(String.format("Signed in as %s\n", auth.getuserEmail()));
             message.append("Talking Books will be loaded with saved deployment:\n");
-            title = "Locally Cached Deployment";                                                                    git 
+            title = "Locally Cached Deployment";
         }
         message.append("  ").append(newDeploymentDescription);
         if (deploymentDate != null || deploymentTime != null || deploymentUser != null) {

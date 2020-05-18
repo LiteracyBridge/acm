@@ -18,7 +18,7 @@ import static java.awt.GridBagConstraints.NONE;
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class EmailCard extends CardContent {
-    private static final String DIALOG_TITLE = "Email address";
+    private static final String DIALOG_TITLE = "Sign In to %s";
 
     private final PanelButton okButton;
     private final FlexTextField emailField;
@@ -26,7 +26,7 @@ public class EmailCard extends CardContent {
     public EmailCard(WelcomeDialog welcomeDialog,
         WelcomeDialog.Cards panel)
     {
-        super(welcomeDialog, DIALOG_TITLE, panel);
+        super(welcomeDialog, String.format(DIALOG_TITLE, welcomeDialog.applicationName), panel);
         JPanel dialogPanel = this;
         // The GUI
         dialogPanel.setLayout(new GridBagLayout());
@@ -69,6 +69,7 @@ public class EmailCard extends CardContent {
 
     @Override
     void onShown() {
+        super.onShown();
         emailField.setText(welcomeDialog.getEmail());
         emailField.setRequestFocusEnabled(true);
         emailField.requestFocusInWindow();

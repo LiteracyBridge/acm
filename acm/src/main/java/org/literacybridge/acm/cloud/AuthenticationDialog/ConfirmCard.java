@@ -99,6 +99,7 @@ public class ConfirmCard extends CardContent {
      */
     @Override
     void onShown() {
+        super.onShown();
         confirmationField.setText(null);
         confirmationField.setRequestFocusEnabled(true);
         confirmationField.requestFocusInWindow();

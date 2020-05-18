@@ -23,7 +23,7 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 
 public class SignInCard extends CardContent {
-    private static final String DIALOG_TITLE = "Amplio Sign In";
+    private static final String DIALOG_TITLE = "Sign In to %s";
 
     private final PanelButton signIn;
     private final FlexTextField usernameField;
@@ -31,7 +31,7 @@ public class SignInCard extends CardContent {
     private final JCheckBox rememberMe;
 
     public SignInCard(WelcomeDialog welcomeDialog, WelcomeDialog.Cards panel) {
-        super(welcomeDialog, DIALOG_TITLE, panel);
+        super(welcomeDialog, String.format(DIALOG_TITLE, welcomeDialog.applicationName), panel);
         JPanel dialogPanel = this;
         // The GUI
         dialogPanel.setLayout(new GridBagLayout());

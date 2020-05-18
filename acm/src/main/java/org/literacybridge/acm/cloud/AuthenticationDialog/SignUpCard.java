@@ -170,6 +170,7 @@ public class SignUpCard extends CardContent {
      */
     @Override
     void onShown() {
+        super.onShown();
         usernameField.setText(null);
         passwordField1.setText(null);
         passwordField2.setText(null);

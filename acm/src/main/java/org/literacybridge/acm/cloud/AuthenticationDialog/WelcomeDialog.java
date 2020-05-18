@@ -113,6 +113,7 @@ public class WelcomeDialog extends JDialog {
 
     final Authenticator.CognitoInterface cognitoInterface;
     final Set<Authenticator.SigninOptions> options;
+    final String applicationName;
     final String defaultProgram;
 
     /**
@@ -136,12 +137,14 @@ public class WelcomeDialog extends JDialog {
      *                         query and set values in the Authenticator.
      */
     public WelcomeDialog(Window owner,
+        String applicationName,
         String defaultProgram,
         Set<Authenticator.SigninOptions> options,
         Authenticator.CognitoInterface cognitoInterface) {
         super(owner, "Amplio Sign In", ModalityType.DOCUMENT_MODAL);
         this.cognitoInterface = cognitoInterface;
         this.options = options;
+        this.applicationName = applicationName;
         this.defaultProgram = defaultProgram;
 
         // Set an empty border on the panel, to give some blank space around the content.

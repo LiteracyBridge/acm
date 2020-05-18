@@ -61,7 +61,6 @@ class CardContent extends JPanel {
         this.panel = panel;
 
         addComponentListener(componentAdapter);
-
     }
 
     CardContent(WelcomeDialog welcomeDialog, WelcomeDialog.Cards panel) {
@@ -83,6 +82,7 @@ class CardContent extends JPanel {
      * Called when the card is shown.
      */
     void onShown() {
+        welcomeDialog.setTitle(dialogTitle);
         // Override as needed
     }
 

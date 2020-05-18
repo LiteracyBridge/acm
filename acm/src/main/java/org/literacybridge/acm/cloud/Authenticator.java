@@ -206,10 +206,11 @@ public class Authenticator {
      * address, defaulting to the email of the last user who successfully authenticated.
      *
      * @param parent      window for the dialog.
+     * @param applicationName the name of the application authenticating (for credentials dialog)
      * @param signinFlags options for the sign-in.
      * @return a SignInResult from the process.
      */
-    public SigninResult getUserIdentity(Window parent, String defaultProgram, SigninOptions... signinFlags) {
+    public SigninResult getUserIdentity(Window parent, String applicationName, String defaultProgram, SigninOptions... signinFlags) {
         Set<SigninOptions> options = new HashSet<>(Arrays.asList(signinFlags));
         if (options.contains(SigninOptions.SUGGEST_DEMO_MODE)) {
             options.add(SigninOptions.OFFER_DEMO_MODE);
@@ -218,7 +219,7 @@ public class Authenticator {
         signinResult = SigninResult.NONE;
         boolean onlineAuthentication = isOnline();
 
-        WelcomeDialog dialog = new WelcomeDialog(parent, defaultProgram, options, cognitoInterface);
+        WelcomeDialog dialog = new WelcomeDialog(parent, applicationName, defaultProgram, options, cognitoInterface);
         if (savedSignInDetails != null) {
             dialog.setSavedCredentials(savedSignInDetails.identity,
                 savedSignInDetails.email,

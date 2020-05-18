@@ -97,6 +97,7 @@ public class ProgramCard extends CardContent {
 
     @Override
     void onShown() {
+        super.onShown();
         Set<String> updatingRoles = new HashSet<>(Arrays.asList("*", "AD", "PM", "CO"));
         String ALL_ROLES = "AD,PM,CO";
         // Build the list of ACM names from which to choose. The list depends on whether we're
