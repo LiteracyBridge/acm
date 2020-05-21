@@ -43,25 +43,49 @@ import java.util.SimpleTimeZone;
  */
 public class AuthenticationHelper {
     public static class AuthenticationResult {
+        private static final int EXPIRY_BUFFER = 60;
         AuthenticationResultType authResult;
+        long expirationTime;
         String message;
         Exception authException;
         AuthenticationResult(AuthenticationResultType authResult) {
             this.authResult = authResult;
+            // Refresh 60 seconds before expiration. Nominal expiration is 1 hour.
+            this.expirationTime = System.currentTimeMillis() + (authResult.getExpiresIn() - EXPIRY_BUFFER)*1000;
             this.message = "Authenticated";
+        }
+        /**
+         * After refreshing the auth token, the returned result doesn't include a refresh token.
+         * Instead, we need to keep the existing refresh token.
+         * @param authResult New authentication result.
+         * @param refreshToken Existing refresh token.
+         */
+        AuthenticationResult(AuthenticationResultType authResult, String refreshToken) {
+            this(authResult);
+            this.authResult.setRefreshToken(refreshToken);
         }
         AuthenticationResult(AmazonServiceException authException) {
             this.authException = authException;
+            this.expirationTime = Long.MAX_VALUE;
             this.message = authException.getErrorMessage();
         }
         AuthenticationResult(String message, Exception authException) {
             this.message = message;
+            this.expirationTime = Long.MAX_VALUE;
             this.authException = authException;
+        }
+
+        public boolean isExpired() {
+            return System.currentTimeMillis() > expirationTime;
         }
 
         public String getJwtToken() {
             if (authResult == null) return null;
             return authResult.getIdToken();
+        }
+        public String getRefreshToken() {
+            if (authResult == null) return null;
+            return authResult.getRefreshToken();
         }
         public String getIdToken() {
             return getJwtToken();
@@ -278,6 +302,51 @@ public class AuthenticationHelper {
         return initiateAuthRequest;
     }
 
+    /**
+     * Method to orchestrate refreshing session.
+     * @param refreshToken from the existing (previous) session.
+     * @return An AuthenticationResult encapsulating success or failure of the call.
+     */
+    AuthenticationResult RefreshSession(String refreshToken) {
+        AuthenticationResult authresult = null;
+
+        System.out.println("Attempting refresh");
+        InitiateAuthRequest initiateAuthRequest = initiateRefreshRequest(refreshToken);
+        try {
+            AnonymousAWSCredentials awsCreds = new AnonymousAWSCredentials();
+            AWSCognitoIdentityProvider cognitoIdentityProvider = AWSCognitoIdentityProviderClientBuilder
+                .standard()
+                .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+                .withRegion(Regions.fromName(this.region))
+                .build();
+            InitiateAuthResult initiateAuthResult = cognitoIdentityProvider.initiateAuth(
+                initiateAuthRequest);
+            authresult = new AuthenticationResult(initiateAuthResult.getAuthenticationResult(), refreshToken);
+            System.out.println("Successfully called refresh");  
+        }
+        catch (final NotAuthorizedException ex) {
+            System.out.println("NotAuthorized exception refreshing");
+            authresult = new AuthenticationResult(ex);
+        } catch (final Exception ex) {
+            System.out.println("Exception refreshing: " + ex);
+            authresult = new AuthenticationResult("Exception authenticating.", ex);
+        }
+        return authresult;
+    }
+
+    /**
+     * Initialize an authentication request for a refresh.
+     * @param refreshToken from a previous successful authentication.
+     * @return the InitiateAuthRequest object.
+     */
+    private InitiateAuthRequest initiateRefreshRequest(String refreshToken) {
+        InitiateAuthRequest initiateAuthRequest = new InitiateAuthRequest();
+        initiateAuthRequest.setAuthFlow(AuthFlowType.REFRESH_TOKEN_AUTH);
+        initiateAuthRequest.setClientId(this.clientId);
+        initiateAuthRequest.addAuthParametersEntry("REFRESH_TOKEN", refreshToken);
+
+        return initiateAuthRequest;
+    }
 
     /**
      * Method is used to respond to the Auth challange from the user pool

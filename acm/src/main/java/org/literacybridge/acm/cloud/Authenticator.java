@@ -212,6 +212,7 @@ public class Authenticator {
                 signinResult = SigninResult.OFFLINE;
             }
         }
+
         return signinResult;
     }
 
@@ -243,6 +244,7 @@ public class Authenticator {
          * @return the S3 client object.
          */
         AmazonS3 getS3Client() {
+            checkSession();
             if (s3Client == null) {
                 Regions region = cognitoHelper.getRegion();
                 BasicSessionCredentials awsCreds = new BasicSessionCredentials(credentials.getAccessKeyId(),
@@ -256,6 +258,28 @@ public class Authenticator {
             return s3Client;
         }
 
+        void refreshSession() {
+            if (authenticationResult.isSuccess()) {
+                String refreshToken = authenticationResult.getRefreshToken();
+                AuthenticationHelper.AuthenticationResult refreshResult =
+                    cognitoHelper.RefreshSession(refreshToken);
+                if (refreshResult.isSuccess()) {
+                    cognitoInterface.parseAuthenticationResult(refreshResult);
+                    s3Client = null;
+                    System.out.println("Refreshed session");
+                } else {
+                    System.out.println("Failed to refresh.");
+                }
+            }
+        }
+
+        void checkSession() {
+            if (authenticationResult.isExpired()) {
+                System.out.println("Refreshing session after timeout.");
+                refreshSession();
+            }
+        }
+
         /**
          * Downloads an object from S3, using the credentials of the current signed-in user.
          * @param bucket containing the object
@@ -264,6 +288,7 @@ public class Authenticator {
          * @param progressHandler optional handler called periodically with (received, expected) bytes.
          */
         public boolean downloadS3Object(String bucket, String key, File of, BiConsumer<Long,Long> progressHandler) {
+            if (!isAuthenticated()) return false;
             AmazonS3 s3Client = getS3Client();
             long bytesExpected, bytesDownloaded=0;
 
@@ -292,12 +317,15 @@ public class Authenticator {
 
         public boolean uploadS3Object(String bucket, String key, File inputFile) {
             boolean result = false;
+            if (!isAuthenticated()) return false;
             try {
                 PutObjectRequest request = new PutObjectRequest(bucket, key, inputFile);
                 @SuppressWarnings("unused")
-                PutObjectResult putResult = s3Client.putObject(request);
+                PutObjectResult putResult = getS3Client().putObject(request);
                 result = true;
             } catch (Exception ex) {
+                System.out.println("Refreshing session after exception.");
+                refreshSession();
                 // Ignore and return false
                 // ex.printStackTrace();
             }
@@ -311,6 +339,7 @@ public class Authenticator {
          */
         public JSONObject authenticatedRestCall(String requestURL) {
             if (!isAuthenticated()) return null;
+            checkSession();
             Map<String,String> headers = new LinkedHashMap<>();
             headers.put("Accept", "application/json");
             headers.put("Content-Type", "text/plain");
@@ -345,7 +374,12 @@ public class Authenticator {
          * @param password of the user id.
          */
         public void authenticate(String username, String password) {
-            authenticationResult = cognitoHelper.ValidateUser(username, password);
+            AuthenticationHelper.AuthenticationResult validationResult = cognitoHelper.ValidateUser(username, password);
+            parseAuthenticationResult(validationResult);
+        }
+
+        private void parseAuthenticationResult(AuthenticationHelper.AuthenticationResult authenticationResult) {
+            Authenticator.this.authenticationResult = authenticationResult;
             String jwtToken = authenticationResult.getJwtToken();
             if (jwtToken != null) {
                 authenticationInfo = new HashMap<>();

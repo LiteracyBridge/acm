@@ -199,6 +199,12 @@ public class CognitoHelper {
         return result;
     }
 
+    public AuthenticationHelper.AuthenticationResult RefreshSession(String refreshToken) {
+        AuthenticationHelper helper = new AuthenticationHelper(POOL_ID, CLIENTAPP_ID, "");
+        AuthenticationHelper.AuthenticationResult result = helper.RefreshSession(refreshToken);
+        return result;
+    }
+
     /**
      * Returns the AWS credentials
      *
