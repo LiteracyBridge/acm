@@ -445,12 +445,19 @@ public class TbLoaderFragment extends Fragment {
         if (mConnectedDeviceInfo != null) {
             String deviceCommunity = mConnectedDeviceInfo.getCommunityName();
             String deviceProject = mConnectedDeviceInfo.getProjectName();
+            String deviceRecipient = mConnectedDeviceInfo.getRecipientid();
             if (!mStatsOnly) {
                 boolean projectMismatch = !deviceProject.equalsIgnoreCase(mProject) &&
                     !deviceProject.equalsIgnoreCase("UNKNOWN");
-                boolean communityMismatch =
-                    mRecipient != null && !deviceCommunity.equalsIgnoreCase(mRecipient.getName()) &&
+                boolean communityMismatch;
+                if (mRecipient==null) {
+                    communityMismatch = false;
+                } else if (StringUtils.isNotEmpty(mRecipient.recipientid) && StringUtils.isNotEmpty(deviceRecipient)) {
+                    communityMismatch = !mRecipient.recipientid.equals(deviceRecipient);
+                } else {
+                    communityMismatch = mRecipient != null && !deviceCommunity.equalsIgnoreCase(mRecipient.getName()) &&
                         !deviceCommunity.equalsIgnoreCase("UNKNOWN");
+                }
                 if (projectMismatch || communityMismatch) {
                     message = "Warning: This Talking Book was previously part of";
                     if (projectMismatch)
@@ -518,7 +525,13 @@ public class TbLoaderFragment extends Fragment {
         mTalkingBookIdTextView.setText(srn);
 
         if (mStatsOnly) {
-            String deviceCommunity = mConnectedDeviceInfo.getCommunityName();
+            String deviceRecipientid = mConnectedDeviceInfo.getRecipientid();
+            String deviceCommunity;
+            if (StringUtils.isNotEmpty(deviceRecipientid)) {
+                deviceCommunity = mAppContext.getProgramSpec().getRecipients().getRecipient(deviceRecipientid).getName();
+            } else {
+                deviceCommunity = mConnectedDeviceInfo.getCommunityName();
+            }
             String deviceProject = mConnectedDeviceInfo.getProjectName();
             if (mProject == null || !deviceProject.equalsIgnoreCase("unknown")) {
                 mProject = deviceProject;

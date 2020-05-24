@@ -134,6 +134,11 @@ public class MainFragment extends Fragment {
         mConfig = mApplicationContext.getConfig();
         mUserid = UserHelper.getUserId();
         mUserName = UserHelper.getUsername();
+        if (mUserName == null) {
+            // If we didn't get a user name, that means we've signed in with cached credentials.
+            // Get the username from saved config.
+            mUserName = mConfig.getUsername();
+        }
         mApplicationContext.getTalkingBookConnectionManager().canAccessConnectedDevice();
 
         OperationLog.Operation opLog = OperationLog.log("MainFragment.onCreate")
@@ -393,15 +398,13 @@ public class MainFragment extends Fragment {
         Map<String,String> mUserDetails = UserHelper.getAuthenticationPayload();
         mConfig.applyUserDetails(mUserDetails);
 
-        if (mUserDetails.size() > 0) {
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    showGreeting();
-                    setButtonState();
-                }
-            });
-        }
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                showGreeting();
+                setButtonState();
+            }
+        });
 
         checkStartupInformationComplete();
 

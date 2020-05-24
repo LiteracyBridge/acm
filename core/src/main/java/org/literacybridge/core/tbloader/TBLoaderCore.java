@@ -1513,11 +1513,16 @@ public class TBLoaderCore {
     /**
      * Creates a file like a properties file.
      */
-    private static class PropsWriter {
+    private /*static*/ class PropsWriter {
         private StringBuilder props = new StringBuilder();
         public String toString() { return props.toString(); }
         public PropsWriter append(String name, Object value) {
-            props.append(name).append('=').append(value.toString()).append(MSDOS_LINE_ENDING);
+            try {
+                String strv = value.toString();
+                props.append(name).append('=').append(value.toString()).append(MSDOS_LINE_ENDING);
+            } catch (Exception ex) {
+                mProgressListener.log("Exception adding property "+name);
+            }
             return this;
         }
     }

@@ -180,7 +180,8 @@ public class OperationLog {
 
         @Override
         public void finish(Map<String, String> info) {
-            this.info.putAll(info);
+            if (info != null && info.size() > 0)
+                this.info.putAll(info);
             finish();
         }
 

@@ -8,7 +8,6 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 
-import com.amazonaws.services.cognitoidentity.model.NotAuthorizedException;
 import org.literacybridge.androidtbloader.signin.UnattendedAuthenticator;
 import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.PathsProvider;
@@ -17,6 +16,7 @@ import org.literacybridge.core.fs.ZipUnzip;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Supplier;
 
 /**
  * Performs download of a Deployment
@@ -120,11 +120,93 @@ class ContentDownloader {
         File file = fileForDownload("content");
         file.getParentFile().mkdirs();
         // key in S3 bucket of the zip file object
-        String key = "projects/" + mContentInfo.getProjectName() + "/" + file.getName();
+        String key = "projects/" + mContentInfo.getProjectName() + "/" + mContentInfo.getFilename();
 
         // Initiate the download
         mObserver = S3Helper.getTransferUtility().download(Constants.DEPLOYMENTS_BUCKET_NAME, key, file);
         mObserver.setTransferListener(listener);
+    }
+
+    private static class BackgroundDownloader extends AsyncTask<Void, Void, Void> {
+        private final int id;
+        private final TransferState state;
+        private final DownloadListener downloadListener;
+        private final ContentInfo contentInfo;
+        private final File downloadedZip;
+        private final File projectDir;
+        private final Supplier<Boolean> isCancelRequested;
+        final long t1 = System.currentTimeMillis();
+        private Exception thrown = null;
+
+        private BackgroundDownloader(int id,
+            TransferState state,
+            DownloadListener downloadListener,
+            ContentInfo contentInfo,
+            File downloadedZip,
+            File projectDir,
+            Supplier<Boolean> isCancelRequested)
+        {
+            this.id = id;
+            this.state = state;
+            this.downloadListener = downloadListener;
+            this.contentInfo = contentInfo;
+            this.downloadedZip = downloadedZip;
+            this.projectDir = projectDir;
+            this.isCancelRequested = isCancelRequested;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Log.d(TAG, "Unzipping file");
+            try {
+                ZipUnzip.unzip(downloadedZip, downloadedZip.getParentFile(), new ZipUnzip.UnzipListener() {
+                    @Override
+                    public boolean progress(long current, long total) {
+                        downloadListener.onUnzipProgress(id, current, total);
+                        return !isCancelRequested.get(); // true: continue unzipping
+                    }
+                });
+            } catch (Exception ex) {
+                thrown = ex;
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            if (thrown != null) {
+                Log.d(TAG, String.format("Exception unzipping %s", downloadedZip.getName()), thrown);
+                // Simulate an S3 exception, by onError() then onStateChanged().
+                downloadListener.onError(id, thrown);
+                downloadListener.onStateChanged(id, TransferState.FAILED);
+                return;
+            }
+
+            if (isCancelRequested.get()) {
+                // Simulate download cancelled. We can only be here if the actual last state was
+                // COMPLETED. We know that the transfer has already been deleted.
+                downloadListener.onStateChanged(id, TransferState.CANCELED);
+                return;
+            }
+
+            Log.d(TAG,
+                String.format("Unzipped %s, %dms",
+                    downloadedZip.getName(),
+                    System.currentTimeMillis() - t1));
+            // Create the mVersion marker. Like DEMO-2017-2-a.current
+            String filename = contentInfo.getVersionedDeployment() + ".current";
+            File marker = new File(projectDir, filename);
+            try {
+                marker.createNewFile();
+                downloadedZip.delete();
+            } catch (IOException e) {
+                // This really should never happen. But if it does, we won't recognize this downloaded content.
+                // If we leave it, we'll clean it up next time. Return the error, and leave the mess 'til then.
+                downloadListener.onError(id, e);
+                return;
+            }
+            downloadListener.onStateChanged(id, state);
+        }
     }
 
     /**
@@ -139,62 +221,64 @@ class ContentDownloader {
         // The file is like content-2016-03-c.zip, and contains a top level directory "content".
         final File downloadedZip = fileForDownload("content");
 
+        new BackgroundDownloader(id, state, mDownloadListener, mContentInfo, downloadedZip, mProjectDir, ()->mCancelRequested).execute();
         // Unzip the content. This is lengthy, so use an async thread.
-        new AsyncTask<Void, Void, Void>() {
-            Exception thrown = null;
-
-            @Override
-            protected Void doInBackground(Void... params) {
-                Log.d(TAG, "Unzipping file");
-                try {
-                    ZipUnzip.unzip(downloadedZip, downloadedZip.getParentFile(), new ZipUnzip.UnzipListener() {
-                        @Override
-                        public boolean progress(long current, long total) {
-                            mDownloadListener.onUnzipProgress(id, current, total);
-                            return !mCancelRequested; // true: continue unzipping
-                        }
-                    });
-                } catch (Exception ex) {
-                    thrown = ex;
-                }
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void result) {
-                if (thrown != null) {
-                    Log.d(TAG, String.format("Exception unzipping %s", downloadedZip.getName()), thrown);
-                    // Simulate an S3 exception, by onError() then onStateChanged().
-                    mDownloadListener.onError(id, thrown);
-                    mDownloadListener.onStateChanged(id, TransferState.FAILED);
-                    return;
-                }
-
-                if (mCancelRequested) {
-                    // Simulate download cancelled. We can only be here if the actual last state was
-                    // COMPLETED. We know that the transfer has already been deleted.
-                    mDownloadListener.onStateChanged(id, TransferState.CANCELED);
-                    return;
-                }
-
-                Log.d(TAG,
-                    String.format("Unzipped %s, %dms",
-                        downloadedZip.getName(),
-                        System.currentTimeMillis() - t1));
-                // Create the mVersion marker. Like DEMO-2017-2-a.current
-                String filename = mContentInfo.getVersion() + ".current";
-                File marker = new File(mProjectDir, filename);
-                try {
-                    marker.createNewFile();
-                } catch (IOException e) {
-                    // This really should never happen. But if it does, we won't recognize this downloaded content.
-                    // If we leave it, we'll clean it up next time. Return the error, and leave the mess 'til then.
-                    mDownloadListener.onError(id, e);
-                    return;
-                }
-                mDownloadListener.onStateChanged(id, state);
-            }
-        }.execute();
+//        new AsyncTask<Void, Void, Void>() {
+//            Exception thrown = null;
+//
+//            @Override
+//            protected Void doInBackground(Void... params) {
+//                Log.d(TAG, "Unzipping file");
+//                try {
+//                    ZipUnzip.unzip(downloadedZip, downloadedZip.getParentFile(), new ZipUnzip.UnzipListener() {
+//                        @Override
+//                        public boolean progress(long current, long total) {
+//                            mDownloadListener.onUnzipProgress(id, current, total);
+//                            return !mCancelRequested; // true: continue unzipping
+//                        }
+//                    });
+//                } catch (Exception ex) {
+//                    thrown = ex;
+//                }
+//                return null;
+//            }
+//
+//            @Override
+//            protected void onPostExecute(Void result) {
+//                if (thrown != null) {
+//                    Log.d(TAG, String.format("Exception unzipping %s", downloadedZip.getName()), thrown);
+//                    // Simulate an S3 exception, by onError() then onStateChanged().
+//                    mDownloadListener.onError(id, thrown);
+//                    mDownloadListener.onStateChanged(id, TransferState.FAILED);
+//                    return;
+//                }
+//
+//                if (mCancelRequested) {
+//                    // Simulate download cancelled. We can only be here if the actual last state was
+//                    // COMPLETED. We know that the transfer has already been deleted.
+//                    mDownloadListener.onStateChanged(id, TransferState.CANCELED);
+//                    return;
+//                }
+//
+//                Log.d(TAG,
+//                    String.format("Unzipped %s, %dms",
+//                        downloadedZip.getName(),
+//                        System.currentTimeMillis() - t1));
+//                // Create the mVersion marker. Like DEMO-2017-2-a.current
+//                String filename = mContentInfo.getVersionedDeployment() + ".current";
+//                File marker = new File(mProjectDir, filename);
+//                try {
+//                    marker.createNewFile();
+//                    // TODO: Delete the .zip file!
+//                } catch (IOException e) {
+//                    // This really should never happen. But if it does, we won't recognize this downloaded content.
+//                    // If we leave it, we'll clean it up next time. Return the error, and leave the mess 'til then.
+//                    mDownloadListener.onError(id, e);
+//                    return;
+//                }
+//                mDownloadListener.onStateChanged(id, state);
+//            }
+//        }.execute();
 
     }
 
@@ -204,7 +288,7 @@ class ContentDownloader {
      * @return The name of the object in s3, like "content-DEMO-2017-2-a"
      */
     private File fileForDownload(String component) {
-        String filename = component + "-" + mContentInfo.getVersion() + ".zip";
+        String filename = component + "-" + mContentInfo.getVersionedDeployment() + ".zip";
         return new File(mProjectDir, filename);
     }
 

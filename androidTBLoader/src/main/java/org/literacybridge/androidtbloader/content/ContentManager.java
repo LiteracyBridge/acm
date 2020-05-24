@@ -24,11 +24,14 @@ import org.literacybridge.core.fs.OperationLog;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Manages lists of available Deployments for projects.
@@ -64,12 +67,12 @@ public class ContentManager {
         public void onFailure(Exception ex) {}
     }
 
-    private TBLoaderAppContext applicationContext;
+    private final TBLoaderAppContext applicationContext;
 
     // A list of all the projects found in s3
-    private Map<String, ContentInfo> mProjects = new HashMap<>();
+    private final Map<String, ContentInfo> mProjects = new HashMap<>();
 
-    private List<ContentInfo> mContentList = new ArrayList<>();
+    private final List<ContentInfo> mContentList = new ArrayList<>();
     private long mContentListTime = 0;  // To determine freshness.
 
     // A cache of community names for projects, as contained in the Deployments.
@@ -213,6 +216,7 @@ public class ContentManager {
 
 
     private void onContentListChanged() {
+        mContentList.sort(Comparator.comparing(ContentInfo::getProjectName));
         mContentListTime = System.currentTimeMillis();
         Intent intent = new Intent(CONTENT_LIST_CHANGED_EVENT);
         LocalBroadcastManager.getInstance(TBLoaderAppContext.getInstance()).sendBroadcast(intent);
@@ -352,7 +356,7 @@ public class ContentManager {
             ContentInfo cloudItem = cv.getValue();
             // Local version, if we have one.
             ContentInfo localItem = localVersions.get(project);
-            String localVersion = localItem == null ? null : localItem.getVersion();
+            String localVersion = localItem == null ? null : localItem.getVersionedDeployment();
             if (localVersion == null || localVersion.equals(NO_LOCAL_VERSION)) {
                 // No local version, so a cloud item.
                 if (BuildConfig.DEBUG && (cloudItem.getDownloadStatus() != ContentInfo.DownloadStatus.NEVER_DOWNLOADED)) {
@@ -360,7 +364,7 @@ public class ContentManager {
                 }
                 mContentList.add(cloudItem);
                 mProjects.put(cloudItem.getProjectName(), cloudItem);
-            } else if (!cloudItem.getVersion().equalsIgnoreCase(localVersion)) {
+            } else if (!cloudItem.getVersionedDeployment().equalsIgnoreCase(localVersion)) {
                 // Stale local version, or unknown local version. Remove it; a cloud item.
                 projectsToClear.add(project);
                 cloudItem.setDownloadStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED);
@@ -378,6 +382,61 @@ public class ContentManager {
         removeContent(projectsToClear, projectsToRemove, onFinished);
     }
 
+    private static class BackgroundCleaner extends AsyncTask<Void, Void, Void> {
+        final List<String> projectsToClear;
+        final List<String> projectsToRemove;
+        final Runnable onFinished;
+        final OperationLog.Operation opLog;
+
+        public BackgroundCleaner(List<String> projectsToClear,
+            List<String> projectsToRemove,
+            Runnable onFinished,
+            OperationLog.Operation opLog)
+        {
+            super();
+            this.projectsToClear = projectsToClear;
+            this.projectsToRemove = projectsToRemove;
+            this.onFinished = onFinished;
+            this.opLog = opLog;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Log.i(TAG, "Removing obsolete projects and content");
+            File projectsDir = PathsProvider.getLocalContentDirectory();
+            try {
+                // Projects
+                for (String project : projectsToRemove) {
+                    Log.d(TAG, String.format("Completely removing %s", project));
+                    File projectDir = new File(projectsDir, project);
+                    if (projectDir.exists()) {
+                        deleteDirectory(projectDir);
+                    }
+                }
+                // Content only
+                for (String project : projectsToClear) {
+                    Log.d(TAG, String.format("Removing content from %s", project));
+                    File projectDir = new File(projectsDir, project);
+                    if (projectDir.exists()) {
+                        emptyDirectory(projectDir);
+                    }
+                }
+            } catch (Exception e) {
+                opLog.put("exception", e);
+                Log.d(TAG, "Exception removing files", e);
+            }
+            Log.i(TAG, "Done removing files");
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            Log.d(TAG, "Back from deleting files");
+            opLog.finish();
+            onFinished.run();
+        }
+    }
+
     private void removeContent(final List<String> projectsToClear, final List<String> projectsToRemove, final Runnable onFinished) {
         final OperationLog.Operation opLog = OperationLog.startOperation("RemoveLocalContent");
         if (projectsToClear.size() > 0) {
@@ -386,49 +445,15 @@ public class ContentManager {
         if (projectsToRemove.size() > 0) {
             opLog.put("toRemove", projectsToRemove);
         }
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                Log.i(TAG, "Removing obsolete projects and content");
-                File projectsDir = PathsProvider.getLocalContentDirectory();
-                try {
-                    // Projects
-                    for (String project : projectsToRemove) {
-                        Log.d(TAG, String.format("Completely removing %s", project));
-                        File projectDir = new File(projectsDir, project);
-                        if (projectDir.exists()) {
-                            deleteDirectory(projectDir);
-                        }
-                    }
-                    // Content only
-                    for (String project : projectsToClear) {
-                        Log.d(TAG, String.format("Removing content from %s", project));
-                        File projectDir = new File(projectsDir, project);
-                        if (projectDir.exists()) {
-                            emptyDirectory(projectDir);
-                        }
-                    }
-                } catch (Exception e) {
-                    opLog.put("exception", e);
-                    Log.d(TAG, "Exception removing files", e);
-                }
-                Log.i(TAG, "Done removing files");
-                return null;
-            }
-            @Override
-            protected void onPostExecute(Void result) {
-                Log.d(TAG, "Back from deleting files");
-                opLog.finish();
-                onFinished.run();
-            }
-        }.execute();
+
+        new BackgroundCleaner(projectsToClear, projectsToRemove, onFinished, opLog).execute();
     }
 
     /**
      * Helper to remove the contents of a directory.
      * @param dir File object representing the directory to be emptied.
      */
-    private void emptyDirectory(File dir) {
+    private static void emptyDirectory(File dir) {
         if (!dir.exists() || !dir.isDirectory())
             return;
         File[] contents = dir.listFiles();
@@ -440,7 +465,7 @@ public class ContentManager {
      * Helper to remove a file or a directory and all of its contents.
      * @param dir File object representing the directory to be removed.
      */
-    private void deleteDirectory(File dir) {
+    private static void deleteDirectory(File dir) {
         if (!dir.exists())
             return;
         if (!dir.isDirectory()) {
@@ -452,6 +477,19 @@ public class ContentManager {
             deleteDirectory(c);
         dir.delete();
     }
+
+    // Matches deploymentName-suffix.current or .rev. Like TEST-19-2-ab.rev
+    // group(0) is entire string, like 'TEST-19-2-ab.rev'
+    // group(1) is deployment + revision, like 'TEST-19-2-ab'
+    // group(2) is deployment, like 'TEST-19-2'
+    // group(3) is revision, like 'ab'
+    private final Pattern markerPattern = Pattern.compile("((\\w+(?:-\\w+)*)-(\\w+))\\.(current|rev)", Pattern.CASE_INSENSITIVE);
+
+    // group(0) is entire string, like 'content-TEST-19-2-ab.zip' or 'TEST-19-2-ab.zip'
+    // group(1) is deployment + revision, like 'TEST-19-2-ab'
+    // group(2) is the deployment, like 'TEST-19-2'
+    // group(3) is the deployment, like 'ab'
+    private final Pattern zipfilePattern = Pattern.compile("((?:content-)?(\\w+(?:-\\w+)*)-(\\w+))\\.zip", Pattern.CASE_INSENSITIVE);
 
     /**
      * Retrieves a list of the projects and current Deployments, from the S3 bucket.
@@ -471,17 +509,30 @@ public class ContentManager {
 
                 // Examine all the objects, and figure out the projects, their sizes, and current update.
 
-                // First, look for all of the ".current" files. This will let us know what versions
+                // First, look for all of the ".current" (or ".rev") files. This will let us know what versions
                 // we are current in s3.
                 for (S3ObjectSummary summary : s3ObjectSummaries) {
                     String [] parts = summary.getKey().split("/");
-                    if (parts.length == 3 && parts[2].endsWith(".current")) {
-                        // The key is like projects/CARE/2016-4-d.current
-                        String project = parts[1];
-                        if (applicationContext.getConfig().isUsersProject(project)) {
-                            String current = parts[2].substring(0, parts[2].indexOf("."));
-                            ContentInfo info = new ContentInfo(project).withVersion(current).withStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED);
-                            projects.put(project, info);
+                    if (parts.length == 3) {
+                        Matcher matcher = markerPattern.matcher(parts[2]);
+                        if (matcher.matches()) {
+                            // The key is like projects/TEST/TEST-19-2-ab.rev
+                            String project = parts[1];
+                            String deployment = matcher.group(2);
+                            String revision = matcher.group(3);
+                            if (applicationContext.getConfig().isUsersProject(project)) {
+                                String current = parts[2].substring(0, parts[2].indexOf("."));
+                                ContentInfo info = new ContentInfo(project).withDeployment(
+                                    deployment)
+                                    .withRevision(revision)
+                                    .withStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED);
+                                ContentInfo previous = projects.get(project);
+                                // If we've already found a marker file. See if this one is
+                                // newer, and if so, replace the previous one.
+                                if (previous == null || info.isNewerRevisionThan(previous)) {
+                                    projects.put(project, info);
+                                }
+                            }
                         }
                     }
                 }
@@ -490,17 +541,22 @@ public class ContentManager {
                 for (S3ObjectSummary summary : s3ObjectSummaries) {
                     Log.i(TAG, String.format("project item (%d) %s", summary.getSize(), summary.getKey()));
 
-                    // The S3 key is like projects/CARE/software-2016-4-d.zip
+                    // The S3 key is like projects/TEST/content-TEST-19-2-ab.zip or projects/TEST/TEST-19-2-ab.zip
                     String [] parts = summary.getKey().split("/");
-                    if (parts.length == 3 && parts[2].endsWith(".zip")) {
-                        String project = parts[1];
-                        ContentInfo info = projects.get(project);
-                        if (info != null) {
-                            // What are the .zip files in the Deployment?
-                            String contentZip = "content-" + info.getVersion() + ".zip";
-                            // Is this file one of them?
-                            if (parts[2].equalsIgnoreCase(contentZip)) {
-                                info.addToSize(summary.getSize());
+                    if (parts.length == 3) {
+                        Matcher matcher = zipfilePattern.matcher(parts[2]);
+                        if (matcher.matches()) {
+                            String filename = parts[2];
+                            String project = parts[1];
+                            String deployment = matcher.group(2);
+                            String revision = matcher.group(3);
+                            ContentInfo info = projects.get(project);
+                            // If this zip file matches the revision marker, get the size and key.
+                            if (info != null && info.getDeployment()
+                                    .equalsIgnoreCase(deployment) && info.getRevision()
+                                    .equalsIgnoreCase(revision)) {
+                                info.setSize(summary.getSize());
+                                info.setFilename(filename);
                             }
                         }
                     }
@@ -538,24 +594,31 @@ public class ContentManager {
                     File[] versionFile = project.listFiles(new FilenameFilter() {
                         @Override
                         public boolean accept(File dir, String filename) {
-                            return filename.toLowerCase().endsWith(".current");
+                            return markerPattern.matcher(filename).matches();//filename.toLowerCase().endsWith(".current");
                         }
                     });
                     if (versionFile.length == 1) {
                         // Exactly one .current file, so it's the one.
                         String fileName = versionFile[0].getName();
-                        String localVersion = fileName.substring(0, fileName.indexOf('.'));
-                        ContentInfo info = new ContentInfo(projectName).withVersion(localVersion).withStatus(ContentInfo.DownloadStatus.DOWNLOADED);
+                        Matcher matcher = markerPattern.matcher(fileName);
+                        matcher.matches();
+                        String deployment = matcher.group(2);
+                        String revision = matcher.group(3);
+                        ContentInfo info = new ContentInfo(projectName)
+                            .withDeployment(deployment)
+                            .withRevision(revision)
+                            .withStatus(ContentInfo.DownloadStatus.DOWNLOADED)
+                            .withFilename(fileName);
                         localVersions.put(projectName, info);
-                        Log.i(TAG, String.format("Found version data for %s: %s", project, localVersion));
+                        Log.i(TAG, String.format("Found version data for %s: %s", project, info.getVersionedDeployment()));
                         // We'll keep this one even if we can't connect to the network.
                         mProjects.put(projectName, info);
                     } else if (versionFile.length == 0) {
-                        localVersions.put(projectName, new ContentInfo(projectName).withVersion(NO_LOCAL_VERSION).withStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED));
+                        localVersions.put(projectName, new ContentInfo(projectName).withDeployment(NO_LOCAL_VERSION).withStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED));
                         Log.i(TAG, String.format("No content, but empty directory for %s", project));
                     } else {
                         // Too many: can't determine version.
-                        localVersions.put(projectName, new ContentInfo(projectName).withVersion(UNKNOWN_LOCAL_VERSION).withStatus(ContentInfo.DownloadStatus.DOWNLOAD_FAILED));
+                        localVersions.put(projectName, new ContentInfo(projectName).withDeployment(UNKNOWN_LOCAL_VERSION).withStatus(ContentInfo.DownloadStatus.DOWNLOAD_FAILED));
                         Log.d(TAG, String.format("Found content, but no version data for %s", project));
                     }
                 }

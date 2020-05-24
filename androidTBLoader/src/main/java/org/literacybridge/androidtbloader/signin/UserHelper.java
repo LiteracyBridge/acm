@@ -394,7 +394,7 @@ public class UserHelper {
     }
 
     public static synchronized Map<String,String> getAuthenticationPayload() {
-        if (mAuthenticationPayload == null) {
+        if (mAuthenticationPayload == null && currSession != null) {
             JSONObject jsonPayload = getPayloadFromJwt(currSession.getIdToken().getJWTToken());
             Map<String,String> payload = new HashMap<>();
             for (Iterator<String> it = jsonPayload.keys(); it.hasNext(); ) {

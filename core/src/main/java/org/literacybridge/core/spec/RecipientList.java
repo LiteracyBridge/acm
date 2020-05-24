@@ -29,6 +29,9 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
     }
 
     public Recipient getRecipient(List<String> path) {
+        if (path == null || path.size() == 0) {
+            return null;
+        }
         return getItemAtPath(path);
     }
 

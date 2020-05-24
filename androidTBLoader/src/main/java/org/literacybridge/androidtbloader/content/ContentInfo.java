@@ -1,6 +1,7 @@
 package org.literacybridge.androidtbloader.content;
 
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.checkin.KnownLocations;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
@@ -36,11 +37,17 @@ public class ContentInfo {
     // Like "UWR"
     private String mProjectName;
 
-    // Like "DEMO-2017-2-a"
-    private String mVersion;
+    // Like "TEST-19-1"
+    private String mDeployment;
 
-    // Date that the Deployment expires, if any
-    private Date mExpiration;
+    // Like "ab"
+    private String mRevision;
+
+    // Like "DEMO-2017-2-a"
+//    private String mVersion;
+
+    // Like "content-TEST-19-1-ab.zip"
+    private String mFilename;
 
     // Size of the download, the "content-DEMO-2016-2.zip" file
     private long mSize;
@@ -64,22 +71,41 @@ public class ContentInfo {
     ContentInfo(String projectName) {
         this.mDownloadStatus = DownloadStatus.NONE;
         this.mProjectName = projectName;
-        this.mVersion = "";
+        this.mDeployment = "";
+        this.mRevision = "";
+//        this.mVersion = "";
     }
 
-    ContentInfo withVersion(String version) {
-        this.mVersion = version;
+//    ContentInfo withVersion(String version) {
+//        this.mVersion = version;
+//        return this;
+//    }
+
+    ContentInfo withDeployment(String deployment) {
+        this.mDeployment = deployment;
         return this;
     }
 
-    public ContentInfo withExpiration(Date expiration) {
-        this.mExpiration = expiration;
+    ContentInfo withRevision(String revision) {
+        this.mRevision = revision;
         return this;
     }
 
-    public ContentInfo withSize(long size) {
+    public boolean isNewerRevisionThan(ContentInfo previous) {
+        return mRevision.compareToIgnoreCase(previous.getRevision()) > 0;
+    }
+
+    ContentInfo withFilename(String filename) {
+        this.mFilename = filename;
+        return this;
+    }
+
+    void setFilename(String filename) {
+        this.mFilename = filename;
+    }
+
+    void setSize(long size) {
         this.mSize = size;
-        return this;
     }
 
     ContentInfo withStatus(ContentInfo.DownloadStatus status) {
@@ -89,31 +115,38 @@ public class ContentInfo {
 
     @Override
     public String toString() {
-        return String.format("%s: %s (%d)", mProjectName, mVersion, mSize);
+        return String.format("%s: %s (%d)", mProjectName, mFilename, mSize);
     }
 
     String getProjectName() {
         return mProjectName;
     }
 
-    public String getVersion() {
-        return mVersion;
+//    public String getVersion() {
+//        return mVersion;
+//    }
+
+    public String getDeployment() {
+        return mDeployment;
     }
 
-    Date getExpiration() {
-        return mExpiration;
+    public String getRevision() {
+        return mRevision;
     }
-    boolean hasExpiration() {
-        return mExpiration != null && mExpiration.getTime() != 0;
+
+    public String getVersionedDeployment() {
+        String result = mDeployment;
+        if (StringUtils.isNotBlank(mRevision))
+            result += "-" + mRevision;
+        return result;
+    }
+
+    public String getFilename() {
+        return mFilename;
     }
 
     public long getSize() {
         return mSize;
-    }
-
-    long addToSize(long size) {
-        this.mSize += size;
-        return this.mSize;
     }
 
     DownloadStatus getDownloadStatus() {
@@ -182,7 +215,8 @@ public class ContentInfo {
         mListener = listener;
         mOpLog = OperationLog.startOperation("DownloadContent")
             .put("projectname", getProjectName())
-            .put("version", getVersion())
+            .put("version", getVersionedDeployment())
+            .put("filename", getFilename())
             .put("bytesToDownload", getSize());
         mContentDownloader = new ContentDownloader(this, myDownloadListener);
         mContentDownloader.start();

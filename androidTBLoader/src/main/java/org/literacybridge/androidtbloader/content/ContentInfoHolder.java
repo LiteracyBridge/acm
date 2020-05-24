@@ -252,7 +252,7 @@ class ContentInfoHolder extends RecyclerView.ViewHolder {
         // Update the parts of the view that never change.
         mProjectTextView.setText(contentInfo.getProjectName());
         mVersionTextView.setText(
-            getString(R.string.deployment_version, mContentInfo.getVersion()));
+            getString(R.string.deployment_version, mContentInfo.getVersionedDeployment()));
 //        final String expiration;
 //        if (contentInfo.hasExpiration()) {
 //            expiration = EXPIRATION_DATE_FORMAT.format(contentInfo.getExpiration());

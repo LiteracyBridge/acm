@@ -140,9 +140,8 @@ public class RecipientChooserFragment extends Fragment {
     private OnClickListener preSelectListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            int toLevel = Math.max(selectionLevel, 0);
             Intent intent = new Intent();
-            ArrayList<String> subselection = new ArrayList<>(selections.subList(0, toLevel+1));
+            ArrayList<String> subselection = new ArrayList<>(selections.subList(0, selectionLevel+1));
             intent.putStringArrayListExtra(Constants.PRESELECTED_RECIPIENTS, subselection);
             getActivity().setResult(RESULT_OK, intent);
             getActivity().finish();
