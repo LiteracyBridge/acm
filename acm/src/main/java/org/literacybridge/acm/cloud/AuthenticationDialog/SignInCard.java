@@ -24,6 +24,7 @@ import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 
 public class SignInCard extends CardContent {
     private static final String DIALOG_TITLE = "Sign In to %s";
+    protected static final int CARD_HEIGHT = 555;
 
     private final PanelButton signIn;
     private final FlexTextField usernameField;

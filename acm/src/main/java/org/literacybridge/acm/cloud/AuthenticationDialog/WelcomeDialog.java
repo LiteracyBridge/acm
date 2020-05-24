@@ -88,12 +88,12 @@ public class WelcomeDialog extends JDialog {
 
     enum Cards {
         NullCard(100, CardContent::new),
-        SignInCard(555, SignInCard::new),
-        SignUpCard(645, SignUpCard::new),
-        ResetCard(620, ResetCard::new),
-        ConfirmCard(475, ConfirmCard::new),
-        EmailCard(415, EmailCard::new),
-        ProgramCard(580, ProgramCard::new);
+        SignInCard(org.literacybridge.acm.cloud.AuthenticationDialog.SignInCard.CARD_HEIGHT, SignInCard::new),
+        SignUpCard(org.literacybridge.acm.cloud.AuthenticationDialog.SignUpCard.CARD_HEIGHT, SignUpCard::new),
+        ResetCard(org.literacybridge.acm.cloud.AuthenticationDialog.ResetCard.CARD_HEIGHT, ResetCard::new),
+        ConfirmCard(org.literacybridge.acm.cloud.AuthenticationDialog.ConfirmCard.CARD_HEIGHT, ConfirmCard::new),
+        EmailCard(org.literacybridge.acm.cloud.AuthenticationDialog.EmailCard.CARD_HEIGHT, EmailCard::new),
+        ProgramCard(org.literacybridge.acm.cloud.AuthenticationDialog.ProgramCard.CARD_HEIGHT, ProgramCard::new);
 
         int minimumHeight;
         BiFunction<WelcomeDialog, Cards, CardContent> ctor;

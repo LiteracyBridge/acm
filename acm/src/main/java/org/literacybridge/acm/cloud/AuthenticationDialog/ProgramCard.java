@@ -32,6 +32,7 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class ProgramCard extends CardContent {
     private static final String DIALOG_TITLE = "Select Program";
+    protected static final int CARD_HEIGHT = 580;
 
     private final PanelButton okButton;
     private final JList<String> choicesList;

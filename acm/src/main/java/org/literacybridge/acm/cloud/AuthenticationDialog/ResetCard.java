@@ -17,11 +17,13 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class ResetCard extends CardContent {
     private final static String DIALOG_TITLE = "Reset Password";
+//    protected static final int CARD_HEIGHT = 620;
+    protected static final int CARD_HEIGHT = 580;
 
     private final FlexTextField usernameField;
     private final FlexTextField passwordField1;
-    private final FlexTextField passwordField2;
-    private final JLabel mismatchWarning;
+//    private final FlexTextField passwordField2;
+//    private final JLabel mismatchWarning;
     private final FlexTextField resetCode;
     private final PanelButton changePassword;
 
@@ -60,26 +62,26 @@ public class ResetCard extends CardContent {
         dialogPanel.add(passwordField1, gbc);
 
         // Password, again
-        passwordField2 = new FlexTextField();
-        passwordField2.setSynchronizedPasswordView(passwordField1);
-        passwordField2.setFont(getTextFont());
-        passwordField2.setPlaceholder("Repeat your new password");
-        passwordField2.setIsPassword(true).setRevealPasswordEnabled(true);
-        passwordField2.getDocument().addDocumentListener(passwordDocListener);
-        dialogPanel.add(passwordField2, gbc);
+//        passwordField2 = new FlexTextField();
+//        passwordField2.setSynchronizedPasswordView(passwordField1);
+//        passwordField2.setFont(getTextFont());
+//        passwordField2.setPlaceholder("Repeat your new password");
+//        passwordField2.setIsPassword(true).setRevealPasswordEnabled(true);
+//        passwordField2.getDocument().addDocumentListener(passwordDocListener);
+//        dialogPanel.add(passwordField2, gbc);
 
         // Password mismatch warning.
         Box hBox = Box.createHorizontalBox();
-        mismatchWarning = new JLabel("Passwords don't match.");
-        mismatchWarning.setForeground(Color.RED);
-        Font font = mismatchWarning.getFont();
-        font = new Font(font.getName(), font.getStyle()|Font.ITALIC, font.getSize()-1);
-        mismatchWarning.setFont(font);
-        mismatchWarning.setVisible(false);
-        hBox.add(mismatchWarning);
-        hBox.add(Box.createHorizontalGlue());
+//        mismatchWarning = new JLabel("Passwords don't match.");
+//        mismatchWarning.setForeground(Color.RED);
+//        Font font = mismatchWarning.getFont();
+//        font = new Font(font.getName(), font.getStyle()|Font.ITALIC, font.getSize()-1);
+//        mismatchWarning.setFont(font);
+//        mismatchWarning.setVisible(false);
+//        hBox.add(mismatchWarning);
+//        hBox.add(Box.createHorizontalGlue());
         gbc.insets.bottom = 12;
-        dialogPanel.add(hBox, gbc);
+//        dialogPanel.add(hBox, gbc);
 
         // Reset code from server
         resetCode = new FlexTextField();
@@ -131,9 +133,9 @@ public class ResetCard extends CardContent {
         super.onShown();
         usernameField.setText(welcomeDialog.getUsername());
         passwordField1.setText(null);
-        passwordField2.setText(null);
+//        passwordField2.setText(null);
         passwordField1.setRevealPasswordEnabled(true).setPasswordRevealed(false);
-        passwordField2.setRevealPasswordEnabled(true).setPasswordRevealed(false);
+//        passwordField2.setRevealPasswordEnabled(true).setPasswordRevealed(false);
         passwordField1.setRequestFocusEnabled(true);
         passwordField1.requestFocusInWindow();
     }
@@ -147,10 +149,10 @@ public class ResetCard extends CardContent {
         private void check() {
             String name = usernameField.getText();
             String p1 = passwordField1.getText();
-            String p2 = passwordField2.getText();
+//            String p2 = passwordField2.getText();
             String pin = resetCode.getText();
-            mismatchWarning.setVisible(p1.length() > 0 && p2.length() > 0 && !p1.equals(p2));
-            changePassword.setEnabled(name.length() > 0 && p1.length() > 0 && p1.equals(p2) && pin.length() > 5);
+//            mismatchWarning.setVisible(p1.length() > 0 && p2.length() > 0 && !p1.equals(p2));
+            changePassword.setEnabled(name.length() > 0 && p1.length() > 0 && /*p1.equals(p2) &&*/ pin.length() > 5);
         }
         @Override
         public void insertUpdate(DocumentEvent e) {

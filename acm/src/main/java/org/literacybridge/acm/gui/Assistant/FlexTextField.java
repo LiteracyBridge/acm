@@ -35,7 +35,7 @@ public class FlexTextField extends PlaceholderTextField {
     private static ImageIcon hideIcon;
     private static ImageIcon revealIcon;
 
-    private FlexTextField synchronizedPasswordView;
+//    private FlexTextField synchronizedPasswordView;
 
     public FlexTextField() {
         this(null, null, 0);
@@ -129,49 +129,49 @@ public class FlexTextField extends PlaceholderTextField {
         return this;
     }
 
-    public boolean setSynchronizedPasswordView(FlexTextField other) {
-        if (other == null) {
-            // Disconnect.
-            if (synchronizedPasswordView != null) {
-                synchronizedPasswordView.setSynchronizedPasswordView(null);
-                synchronizedPasswordView = null;
-            }
-            return true;
-        } else {
-            // Connect.
-            if (synchronizedPasswordView != null) {
-                // Already connected.
-                return false;
-            } else {
-                synchronizedPasswordView = other;
-                if (other.setSynchronizedPasswordView(this)) {
-                    // This is the first one, if that matters.
-                }
-                return true;
-            }
-        }
-    }
-    boolean synchronizing = false;
-    private void synchronizePasswordView() {
-        if (synchronizing || synchronizedPasswordView==null) return;
-        synchronizing = true;
-        try {
-            synchronizedPasswordView.synchronizePasswordView(revealPasswordEnabled, isPasswordRevealed);
-        } finally {
-            synchronizing = false;
-        }
-    }
-    private void synchronizePasswordView(boolean revealEnabled, boolean revealed) {
-        if (synchronizing || synchronizedPasswordView==null) return;
-        synchronizing = true;
-        try {
-            revealPasswordEnabled = revealEnabled;
-            isPasswordRevealed = revealed;
-            setPasswordDecorations();
-        } finally {
-            synchronizing = false;
-        }
-    }
+//    public boolean setSynchronizedPasswordView(FlexTextField other) {
+//        if (other == null) {
+//            // Disconnect.
+//            if (synchronizedPasswordView != null) {
+//                synchronizedPasswordView.setSynchronizedPasswordView(null);
+//                synchronizedPasswordView = null;
+//            }
+//            return true;
+//        } else {
+//            // Connect.
+//            if (synchronizedPasswordView != null) {
+//                // Already connected.
+//                return false;
+//            } else {
+//                synchronizedPasswordView = other;
+//                if (other.setSynchronizedPasswordView(this)) {
+//                    // This is the first one, if that matters.
+//                }
+//                return true;
+//            }
+//        }
+//    }
+//    boolean synchronizing = false;
+//    private void synchronizePasswordView() {
+//        if (synchronizing || synchronizedPasswordView==null) return;
+//        synchronizing = true;
+//        try {
+//            synchronizedPasswordView.synchronizePasswordView(revealPasswordEnabled, isPasswordRevealed);
+//        } finally {
+//            synchronizing = false;
+//        }
+//    }
+//    private void synchronizePasswordView(boolean revealEnabled, boolean revealed) {
+//        if (synchronizing || synchronizedPasswordView==null) return;
+//        synchronizing = true;
+//        try {
+//            revealPasswordEnabled = revealEnabled;
+//            isPasswordRevealed = revealed;
+//            setPasswordDecorations();
+//        } finally {
+//            synchronizing = false;
+//        }
+//    }
 
     private void setPasswordDecorations() {
         setMaskChar(isPasswordRevealed?NOMASK_CHAR:MASK_CHAR);
@@ -181,7 +181,7 @@ public class FlexTextField extends PlaceholderTextField {
         } else {
             setIcon(null);
         }
-        synchronizePasswordView();
+//        synchronizePasswordView();
     }
 
     private void onClicked() {

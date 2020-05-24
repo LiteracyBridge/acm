@@ -19,6 +19,7 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class EmailCard extends CardContent {
     private static final String DIALOG_TITLE = "Sign In to %s";
+    protected static final int CARD_HEIGHT = 415;
 
     private final PanelButton okButton;
     private final FlexTextField emailField;

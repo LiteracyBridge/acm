@@ -14,6 +14,7 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class ConfirmCard extends CardContent {
     private static final String DIALOG_TITLE = "Confirm User ID";
+    protected static final int CARD_HEIGHT = 475;
 
     private final FlexTextField confirmationField;
     private final PanelButton confirm;
