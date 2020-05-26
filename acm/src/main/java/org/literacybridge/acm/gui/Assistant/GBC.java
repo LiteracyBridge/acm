@@ -99,12 +99,12 @@ public class GBC extends GridBagConstraints {
         return clone;
     }
 
-    GBC setGridx(int newValue) {
+    public GBC setGridx(int newValue) {
         this.gridx = newValue;
         return this;
     }
 
-    GBC setGridy(int newValue) {
+    public GBC setGridy(int newValue) {
         this.gridy = newValue;
         return this;
     }
@@ -119,12 +119,12 @@ public class GBC extends GridBagConstraints {
         return this;
     }
 
-    GBC setWeightx(double newValue) {
+    public GBC setWeightx(double newValue) {
         this.weightx = newValue;
         return this;
     }
 
-    GBC setWeighty(double newValue) {
+    public GBC setWeighty(double newValue) {
         this.weighty = newValue;
         return this;
     }
@@ -144,12 +144,12 @@ public class GBC extends GridBagConstraints {
         return this;
     }
 
-    GBC setIpadx(int newValue) {
+    public GBC setIpadx(int newValue) {
         this.ipadx = newValue;
         return this;
     }
 
-    GBC setIpady(int newValue) {
+    public GBC setIpady(int newValue) {
         this.ipady = newValue;
         return this;
     }

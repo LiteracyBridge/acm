@@ -33,6 +33,7 @@ public final class SettingsDialog extends JDialog {
 
     private static final String GENERAL = "General";
     private static final String VISIBLE_CATEGORIES = "Visible Categories";
+    private static final String DESKTOP_SHORTCUTS = "Desktop Shortcuts";
 
     /**
      * Interface by which the settings panels can communicate with this dialog.
@@ -101,6 +102,10 @@ public final class SettingsDialog extends JDialog {
         iconBar.add(Box.createVerticalStrut(15));
         iconBar.add(makeSettingsPanel(UIConstants.TREE_64_PNG, VISIBLE_CATEGORIES,
             VisibleCategoriesPanel::new));
+
+        iconBar.add(Box.createVerticalStrut(15));
+        iconBar.add(makeSettingsPanel(UIConstants.SHORTCUTS_64_PNG, DESKTOP_SHORTCUTS,
+            DesktopShortcutsPanel::new));
 
         // If we need an import specific settings panel:
 //        iconBar.add(Box.createVerticalStrut(15));
