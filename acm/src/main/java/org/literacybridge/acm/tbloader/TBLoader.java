@@ -1,6 +1,7 @@
 package org.literacybridge.acm.tbloader;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jdesktop.swingx.JXDatePicker;
 import org.kohsuke.args4j.Argument;
@@ -64,6 +65,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
@@ -73,6 +75,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static java.awt.GridBagConstraints.BOTH;
 import static java.awt.GridBagConstraints.CENTER;
@@ -187,6 +190,7 @@ public class TBLoader extends JFrame {
     // TODO (TBLOADER_DROPBOX): remove when Dropbox completely de-implemented
     private boolean useDropbox;
     private TBLoaderConfig sharedTbLoaderConfig = null;
+    private Set<String> acceptableFirmwareVersions = new HashSet<>();
 
     private static class TbLoaderArgs {
         @Option(name = "--oldtbs", aliases = "-o", usage = "Target OLD Talking Books.")
@@ -317,6 +321,8 @@ public class TBLoader extends JFrame {
         // Deployment version, or update to latest.
         getCurrentDeployments();
 
+        initializeProgramSpec();
+
         initializeGui();
 
         // Populate various fields, choices.
@@ -339,6 +345,21 @@ public class TBLoader extends JFrame {
         // TODO (TBLOADER_DROPBOX): remove if (...) when Dropbox completely de-implemented.
         if (!useDropbox)
             zipAndUpload();
+    }
+
+    private void initializeProgramSpec() {
+        File programspecDir = new File(localTbLoaderDir,
+            TBLoaderConstants.CONTENT_SUBDIR + File.separator + newDeployment + File.separator
+                + Constants.ProgramSpecDir);
+        programSpec = new ProgramSpec(programspecDir);
+        String acceptables = programSpec.getDeploymentProperties().getProperty(
+            TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS);
+        if (StringUtils.isNotBlank(acceptables)) {
+            acceptableFirmwareVersions.addAll(Arrays.stream(acceptables.split(","))
+                .map(String::trim)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toList()));
+        }
     }
 
     /**
@@ -1072,6 +1093,7 @@ public class TBLoader extends JFrame {
         forceFirmware.setSelected(false);
         forceFirmware.setToolTipText(
             "Check to force a re-flash of the firmware. This should almost never be needed.");
+        forceFirmware.addActionListener((e)->setOldFirmwareText());
 
         testDeployment = new JCheckBox();
         testDeployment.setText("Deploying today for testing only.");
@@ -1271,8 +1293,8 @@ public class TBLoader extends JFrame {
                 });
                 if (files.length > 1) firmwareVersion = "(Multiple Firmwares!)";
                 else if (files.length == 1) {
-                    firmwareVersion = files[0].getName();
-                    firmwareVersion = firmwareVersion.substring(0, firmwareVersion.length() - 4);
+                    firmwareVersion = FilenameUtils.removeExtension(files[0].getName());
+                    acceptableFirmwareVersions.add(firmwareVersion);
                 }
                 newFirmwareVersionText.setText(firmwareVersion);
             }
@@ -1280,6 +1302,24 @@ public class TBLoader extends JFrame {
             LOG.log(Level.WARNING, "exception - ignore and keep going with default string", ex);
         }
 
+    }
+
+    private void setOldFirmwareText() {setOldFirmwareText(null);}
+    private void setOldFirmwareText(String oldRevision) {
+        if (oldRevision == null) {
+            oldRevision = oldFirmwareVersionText.getText();
+        } else {
+            oldFirmwareVersionText.setText(oldRevision);
+        }
+        String firmwareLabel = "Firmware";
+        if (StringUtils.isBlank(oldRevision)) {
+            firmwareLabel += ":";
+        } else if (acceptableFirmwareVersions.contains(oldRevision) && !forceFirmware.isSelected()) {
+            firmwareLabel += " (keep):";
+        } else {
+            firmwareLabel += " (update):";
+        }
+        firmwareVersionLabel.setText(firmwareLabel);
     }
 
     private File prevSelected = null;
@@ -1298,11 +1338,7 @@ public class TBLoader extends JFrame {
 
         files = fCommunityDir.listFiles((dir, name) -> dir.isDirectory());
 
-        File programspecDir = new File(localTbLoaderDir,
-            TBLoaderConstants.CONTENT_SUBDIR + File.separator + newDeployment + File.separator
-                + Constants.ProgramSpecDir);
         try {
-            programSpec = new ProgramSpec(programspecDir);
             recipientChooser.populate(programSpec, files);
             validate();
         } catch (Exception ignored) {
@@ -1697,7 +1733,7 @@ public class TBLoader extends JFrame {
         oldDeploymentInfo = currentTbDevice.createDeploymentInfo(newProject);
         if (oldDeploymentInfo != null) {
             oldSrnText.setText(oldDeploymentInfo.getSerialNumber());
-            oldFirmwareVersionText.setText(oldDeploymentInfo.getFirmwareRevision());
+            setOldFirmwareText(oldDeploymentInfo.getFirmwareRevision());
             oldPackageText.setText(oldDeploymentInfo.getPackageName());
             oldDeploymentText.setText(oldDeploymentInfo.getDeploymentName());
             lastUpdatedText.setText(oldDeploymentInfo.getUpdateTimestamp());
@@ -1729,7 +1765,7 @@ public class TBLoader extends JFrame {
             forceSrn.setSelected(false);
 
             oldSrnText.setText("");
-            oldFirmwareVersionText.setText("");
+            setOldFirmwareText("");
             oldPackageText.setText("");
             oldDeploymentText.setText("");
             lastUpdatedText.setText("");
@@ -1976,7 +2012,7 @@ public class TBLoader extends JFrame {
             if (!connected) {
                 oldDeploymentText.setText("");
                 oldCommunityText.setText("");
-                oldFirmwareVersionText.setText("");
+                setOldFirmwareText("");
                 forceFirmware.setSelected(false);
                 oldPackageText.setText("");
                 newSrnText.setText("");
@@ -2179,12 +2215,15 @@ public class TBLoader extends JFrame {
             TBLoaderCore.Result result = null;
             try {
                 TBLoaderConfig tbLoaderConfig = getTbLoaderConfig();
+                String acceptableFirmwareVersions = programSpec.getDeploymentProperties().getProperty(
+                    TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS);
 
                 TBLoaderCore tbLoader = new TBLoaderCore.Builder().withTbLoaderConfig(tbLoaderConfig)
                     .withTbDeviceInfo(currentTbDevice)
                     .withDeploymentDirectory(sourceImage)
                     .withOldDeploymentInfo(oldDeploymentInfo)
                     .withNewDeploymentInfo(newDeploymentInfo)
+                    .withAcceptableFirmware(acceptableFirmwareVersions)
                     .withLocation(currentLocationChooser.getSelectedItem().toString())
                     .withRefreshFirmware(forceFirmware.isSelected())
                     .withProgressListener(statusDisplay)

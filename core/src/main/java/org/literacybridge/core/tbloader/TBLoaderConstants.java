@@ -65,6 +65,8 @@ public class TBLoaderConstants {
     public static final DateFormat ISO8601date = new SimpleDateFormat("yyyyMMdd", Locale.US);
     public static final DateFormat ISO8601time = new SimpleDateFormat("HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
 
+    public static final String ACCEPTABLE_FIRMWARE_VERSIONS = "ACCEPTABLE_FIRMWARE_VERSIONS";
+
     public static final String ACTION_PROPERTY = "ACTION";      // The action that was requested.
     public static final String CLEARED_FLASH_PROPERTY = "CLEARED_FLASH";
     public static final String TB_LOG_ACTION_PROPERTY = "TB_LOG_ACTION"; // The action as it was logged in the tb log file.
@@ -82,6 +84,7 @@ public class TBLoaderConstants {
     public static final String TBCDID_PROPERTY = "TBCDID";
     public static final String NEW_SERIAL_NUMBER_PROPERTY = "NEWTBID";
     public static final String FIRMWARE_PROPERTY = "FIRMWARE";
+    public static final String LATEST_FIRMWARE_PROPERTY = "LATEST_FIRMWARE";
     public static final String DEPLOYMENT_UUID_PROPERTY = "DEPLOYEDUUID";
     public static final String STATS_COLLECTED_UUID_PROPERTY = "STATSUUID";
 

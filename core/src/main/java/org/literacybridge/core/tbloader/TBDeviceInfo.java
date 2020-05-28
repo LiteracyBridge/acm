@@ -1,5 +1,6 @@
 package org.literacybridge.core.tbloader;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.core.fs.TbFile;
 
@@ -47,7 +48,7 @@ public final class TBDeviceInfo {
 
     // Computed or cached properties.
     private final TbFile tbSystem;
-    private TbFlashData tbFlashData;
+    private final TbFlashData tbFlashData;
     private Properties tbDeploymentProperties;
     private boolean corrupted = false;
 
@@ -61,6 +62,7 @@ public final class TBDeviceInfo {
     private String communityName = null;
 
 
+    @SuppressWarnings("unused")
     public static TBDeviceInfo getNullDeviceInfo() {
         return new TBDeviceInfo(NO_DRIVE, null);
     }
@@ -118,6 +120,7 @@ public final class TBDeviceInfo {
      * @param checkHasSystem If true, look for additional specific directories expected to exist.
      * @return True if probably is a Talking Book, false if maybe not.
      */
+    @SuppressWarnings("unused")
     public boolean checkConnection(boolean checkHasSystem) {
 
         if (tbRoot == null || !tbRoot.exists() || !tbRoot.isDirectory()) {
@@ -204,7 +207,7 @@ public final class TBDeviceInfo {
      */
     public String getSerialNumber() {
         if (serialNumber == null) {
-            serialNumber = getProperty(TALKING_BOOK_ID_PROPERTY, UNKNOWN);
+            serialNumber = getProperty(TALKING_BOOK_ID_PROPERTY);
             String src = "properties";
 
             // If we didn't have it in properties, look for the flash data or marker file(s).
@@ -248,7 +251,6 @@ public final class TBDeviceInfo {
      *
      * NOTE: this is a static function so that the Talking Book Connection manager can get the device serial
      * number quickly and cheaply (basically, without parsing the flash data).
-     * @TODO: Is that really necessary?
      *
      * @param tbRoot The root of the Talking Book file system.
      * @return The file's name found (minus extension), or UNKNOWN
@@ -267,12 +269,9 @@ public final class TBDeviceInfo {
             String[] files;
 
             if (tbSystem.exists()) {
-                files = tbSystem.list(new TbFile.FilenameFilter() {
-                    @Override
-                    public boolean accept(TbFile parent, String name) {
-                        String lowercase = name.toLowerCase();
-                        return lowercase.endsWith(".srn") && !lowercase.startsWith("-erase");
-                    }
+                files = tbSystem.list((parent, name) -> {
+                    String lowercase = name.toLowerCase();
+                    return lowercase.endsWith(".srn") && !lowercase.startsWith("-erase");
                 });
                 if (files.length > 0) {
                     String tsnFileName = files[0];
@@ -301,7 +300,7 @@ public final class TBDeviceInfo {
      */
     public String getProjectName() {
         if (projectName == null) {
-            projectName = getProperty(PROJECT_PROPERTY, UNKNOWN);
+            projectName = getProperty(PROJECT_PROPERTY);
             String src = "properties";
 
             // If we didn't have it in properties, look for marker file(s).
@@ -309,12 +308,9 @@ public final class TBDeviceInfo {
 
                 String[] prjFiles;
                 if (tbSystem.exists()) {
-                    prjFiles = tbSystem.list(new TbFile.FilenameFilter() {
-                        @Override
-                        public boolean accept(TbFile parent, String name) {
-                            String lowercase = name.toLowerCase();
-                            return lowercase.endsWith(PROJECT_FILE_EXTENSION);
-                        }
+                    prjFiles = tbSystem.list((parent, name) -> {
+                        String lowercase = name.toLowerCase();
+                        return lowercase.endsWith(PROJECT_FILE_EXTENSION);
                     });
                     // Pick one at random, get the name, drop the extension.
                     if (prjFiles.length > 0) {
@@ -330,40 +326,26 @@ public final class TBDeviceInfo {
     }
 
     /**
-     * Looks in the TalkingBook's system directory for any files with a ".rev" or ".img" extension. If any such files
-     * are found, returns the name (without extension) of the first .rev file found, else the name of the first .img file
-     * found (ie, chosen somewhat at random.).
+     * Looks in the TalkingBook's system directory for files with a ".rev" or ".img" extension. If
+     * exactly one *.rev file exists, the basename is returned as the revision. If no .rev files,
+     * but there is exactly one *.img file, that basename is returned as the revision.
      *
      * @return The file's name found (minus extension), or UNKNOWN if no file found, or if the file name consists
      * only of the extension (eg, a file named ".img" will return UNKNOWN).
      */
     private String getFirmwareVersion() {
         String rev = UNKNOWN;
-        String revFileName = null;
-        String imgFileName = null;
-        String[] files;
 
         if (tbSystem.exists()) {
-            files = tbSystem.list(new TbFile.FilenameFilter() {
-                @Override
-                public boolean accept(TbFile parent, String name) {
-                    String lowercase = name.toLowerCase();
-                    return lowercase.length() > 4 && (lowercase.endsWith(".img") || lowercase.endsWith(".rev"));
-                }
-            });
-
-            for (String file : files) {
-                String fn = file;
-                fn = fn.substring(0, fn.length() - 4);
-                String ext = file.substring(fn.length());
-                if (ext.equalsIgnoreCase(".img") && imgFileName == null) {
-                    imgFileName = fn;
-                } else if (revFileName == null) {
-                    revFileName = fn;
+            String[] revNames = tbSystem.list((dir, name) -> name.length() > 4 && (name.toLowerCase().endsWith(".rev")));
+            if (revNames.length == 1) {
+                rev = FilenameUtils.removeExtension(revNames[0]).toLowerCase();
+            } else if (revNames.length == 0) {
+                String[] imgNames = tbSystem.list((dir, name) -> name.length() > 4 && (name.toLowerCase().endsWith(".img")));
+                if (imgNames.length == 1) {
+                    rev = FilenameUtils.removeExtension(imgNames[0]).toLowerCase();
                 }
             }
-            // Found .rev? .img?
-            rev = (revFileName!=null) ? revFileName : ((imgFileName!=null) ? imgFileName : rev);
         }
 
         return rev;
@@ -378,7 +360,7 @@ public final class TBDeviceInfo {
      */
     private String getPackageName() {
         if (packageName == null) {
-            packageName = getProperty(PACKAGE_PROPERTY, UNKNOWN);
+            packageName = getProperty(PACKAGE_PROPERTY);
             String src = "properties";
 
             // If we didn't have it in properties, look for the flash data or marker file(s).
@@ -390,12 +372,9 @@ public final class TBDeviceInfo {
                     packageName = getFlashData().getImageName();
                     src = "flash";
                 } else if (tbSystem.exists()) {
-                    files = tbSystem.list(new TbFile.FilenameFilter() {
-                        @Override
-                        public boolean accept(TbFile parent, String name) {
-                            String lowercase = name.toLowerCase();
-                            return lowercase.endsWith(".pkg");
-                        }
+                    files = tbSystem.list((parent, name) -> {
+                        String lowercase = name.toLowerCase();
+                        return lowercase.endsWith(".pkg");
                     });
 
                     if (files.length == 1) {
@@ -418,7 +397,7 @@ public final class TBDeviceInfo {
      */
     public String getDeploymentName() {
         if (deploymentName == null) {
-            deploymentName = getProperty(DEPLOYMENT_PROPERTY, UNKNOWN);
+            deploymentName = getProperty(DEPLOYMENT_PROPERTY);
             String src = "properties";
 
             // If we didn't have it in properties, look for the flash data or marker file(s).
@@ -430,12 +409,9 @@ public final class TBDeviceInfo {
                     deploymentName = getFlashData().getDeploymentNumber();
                     src = "flash";
                 } else if (tbSystem.exists()) {
-                    files = tbSystem.list(new TbFile.FilenameFilter() {
-                        @Override
-                        public boolean accept(TbFile parent, String name) {
-                            String lowercase = name.toLowerCase();
-                            return lowercase.endsWith(".dep");
-                        }
+                    files = tbSystem.list((parent, name) -> {
+                        String lowercase = name.toLowerCase();
+                        return lowercase.endsWith(".dep");
                     });
                     if (files.length == 1) {
                         deploymentName = files[0].substring(0, files[0].length() - 4);
@@ -467,7 +443,6 @@ public final class TBDeviceInfo {
                 if ((strLine = br.readLine()) != null) {
                     lastSynchDir = strLine;
                 }
-                in.close();
             } catch (Exception e) { //Catch and ignore exception if any
                 LOG.log(Level.WARNING, "Ignoring error: ", e.getMessage());
             }
@@ -486,7 +461,7 @@ public final class TBDeviceInfo {
      */
     public String getCommunityName() {
         if (communityName == null) {
-            communityName = getProperty(COMMUNITY_PROPERTY, UNKNOWN);
+            communityName = getProperty(COMMUNITY_PROPERTY);
             String src = "properties";
 
             // If we didn't have it in properties, look for the flash data or marker file(s).
@@ -501,12 +476,9 @@ public final class TBDeviceInfo {
                         String[] files;
                         // get Location file info
                         // check root first, in case tbDeviceInfo was just assigned a new community (e.g. from this app)
-                        files = tbRoot.list(new TbFile.FilenameFilter() {
-                            @Override
-                            public boolean accept(TbFile parent, String name) {
-                                String lowercase = name.toLowerCase();
-                                return lowercase.endsWith(".loc");
-                            }
+                        files = tbRoot.list((parent, name) -> {
+                            String lowercase = name.toLowerCase();
+                            return lowercase.endsWith(".loc");
                         });
                         if (files == null) {
                             LOG.log(Level.INFO,
@@ -518,12 +490,9 @@ public final class TBDeviceInfo {
                             src = "root marker";
                         } else if (files.length == 0 && tbSystem.exists()) {
                             // get Location file info
-                            files = tbSystem.list(new TbFile.FilenameFilter() {
-                                @Override
-                                public boolean accept(TbFile parent, String name) {
-                                    String lowercase = name.toLowerCase();
-                                    return lowercase.endsWith(".loc");
-                                }
+                            files = tbSystem.list((parent, name) -> {
+                                String lowercase = name.toLowerCase();
+                                return lowercase.endsWith(".loc");
                             });
                             if (files.length == 1) {
                                 String locFileName = files[0];
@@ -531,8 +500,8 @@ public final class TBDeviceInfo {
                                 src = "system marker";
                             }
                         }
-                    } catch (Exception ignore) {
-                        LOG.log(Level.WARNING, "TBL!: Exception while reading community", ignore);
+                    } catch (Exception ex) {
+                        LOG.log(Level.WARNING, "TBL!: Exception while reading community", ex);
                         // ignore and keep going with empty string
                         src = "nowhere";
                     }
@@ -555,7 +524,7 @@ public final class TBDeviceInfo {
             recipientid = properties.getProperty(RECIPIENTID_PROPERTY, null);
             LOG.log(Level.FINE, String.format("TBL!: recipientid: %s", recipientid));
         } else {
-            LOG.log(Level.FINE, String.format("TBL!: recipientid: (null) (no deployment.properties)"));
+            LOG.log(Level.FINE, "TBL!: recipientid: (null) (no deployment.properties)");
         }
 
         return recipientid;
@@ -574,7 +543,7 @@ public final class TBDeviceInfo {
             uuid = properties.getProperty(DEPLOYMENT_UUID_PROPERTY, null);
             LOG.log(Level.FINE, String.format("TBL!: deployment UUID: %s", uuid));
         } else {
-            LOG.log(Level.FINE, String.format("TBL!: deployment UUID: (null) (no deployment.properties)"));
+            LOG.log(Level.FINE, "TBL!: deployment UUID: (null) (no deployment.properties)");
         }
 
         return uuid;
@@ -586,6 +555,7 @@ public final class TBDeviceInfo {
      * recent previous Deployment.
      * @return The deploying user's name, or null if it can not be determines.
      */
+    @SuppressWarnings("unused")
     public String getDeploymentUsername() {
         String username = null;
         Properties properties = loadDeploymentProperties();
@@ -593,7 +563,7 @@ public final class TBDeviceInfo {
             username = properties.getProperty(USERNAME_PROPERTY, null);
             LOG.log(Level.FINE, String.format("TBL!: deployment username: %s", username));
         } else {
-            LOG.log(Level.FINE, String.format("TBL!: deployment username: (null) (no deployment.properties)"));
+            LOG.log(Level.FINE, "TBL!: deployment username: (null) (no deployment.properties)");
         }
 
         return username;
@@ -605,6 +575,7 @@ public final class TBDeviceInfo {
      * recent previous Deployment.
      * @return The deployment tbcd id, or null if it can not be determines.
      */
+    @SuppressWarnings("unused")
     public String getDeploymentTbcdid() {
         String tbcdid = null;
         Properties properties = loadDeploymentProperties();
@@ -612,7 +583,7 @@ public final class TBDeviceInfo {
             tbcdid = properties.getProperty(TBCDID_PROPERTY, null);
             LOG.log(Level.FINE, String.format("TBL!: deployment tbcdid: %s", tbcdid));
         } else {
-            LOG.log(Level.FINE, String.format("TBL!: deployment tbcdid: (null) (no deployment.properties)"));
+            LOG.log(Level.FINE, "TBL!: deployment tbcdid: (null) (no deployment.properties)");
         }
 
         return tbcdid;
@@ -637,14 +608,13 @@ public final class TBDeviceInfo {
      * If there is a deployment.properties file (already loaded), and it has a value for the
      * desired property, return that value. Otherwise return the default value.
      * @param name of the desired property.
-     * @param defaultValue if there is no properties file, or if it does not contain the property.
      * @return the property, or the default value.
      */
-    private String getProperty(String name, String defaultValue) {
+    private String getProperty(String name) {
         if (tbDeploymentProperties != null) {
-            return tbDeploymentProperties.getProperty(name, defaultValue);
+            return tbDeploymentProperties.getProperty(name, TBLoaderConstants.UNKNOWN);
         }
-        return defaultValue;
+        return TBLoaderConstants.UNKNOWN;
     }
 
     /**
@@ -663,10 +633,8 @@ public final class TBDeviceInfo {
         if (tbSystem != null && tbSystem.exists()) {
             TbFile propsFile = tbSystem.open(DEPLOYMENT_PROPERTIES_NAME);
             if (propsFile.exists()) {
-                try (InputStream istream = propsFile.openFileInputStream();
-                ) {
+                try (InputStream istream = propsFile.openFileInputStream()) {
                     props.load(istream);
-                    istream.close();
                 } catch (Exception e) { //Catch and ignore exception if any
                     LOG.log(Level.WARNING, "Ignoring error: ", e.getMessage());
                 }
@@ -722,8 +690,8 @@ public final class TBDeviceInfo {
                     .asTestDeployment(isTestDeployment());
             deploymentInfo = builder.build();
 
-        } catch (Exception ignore) {
-            LOG.log(Level.WARNING, "TBL!: exception - ignore and keep going with empty strings", ignore);
+        } catch (Exception ex) {
+            LOG.log(Level.WARNING, "TBL!: exception - ignore and keep going with empty strings", ex);
         }
 
         return deploymentInfo;

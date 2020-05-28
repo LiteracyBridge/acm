@@ -40,6 +40,7 @@ import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbloader.ProgressListener;
 import org.literacybridge.core.tbloader.TBDeviceInfo;
 import org.literacybridge.core.tbloader.TBLoaderConfig;
+import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.literacybridge.core.tbloader.TBLoaderCore;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
 
@@ -667,6 +668,8 @@ public class TbLoaderFragment extends Fragment {
         DeploymentInfo oldDeploymentInfo = tbDeviceInfo.createDeploymentInfo(mProject);
 
         getActivity().runOnUiThread(() -> mTalkingBookWarningsTextView.setText(getString(R.string.do_not_disconnect)));
+        String acceptableFirmwareVersions = mAppContext.getProgramSpec()
+            .getDeploymentProperties().getProperty(TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS);
 
         TBLoaderCore.Builder builder = new TBLoaderCore.Builder()
             .withTbLoaderConfig(tbLoaderConfig)
@@ -674,6 +677,7 @@ public class TbLoaderFragment extends Fragment {
             .withOldDeploymentInfo(oldDeploymentInfo)
             .withLocation(mLocation)
             .withCoordinates(mCoordinates) // May be null; ok because it's optional anyway.
+            .withAcceptableFirmware(acceptableFirmwareVersions)
             .withRefreshFirmware(mRefreshFirmwareCheckBox.isChecked())
             .withProgressListener(mProgressListener)
             .withStatsOnly(mStatsOnly)

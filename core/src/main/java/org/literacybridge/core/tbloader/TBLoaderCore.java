@@ -1,5 +1,6 @@
 package org.literacybridge.core.tbloader;
 
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.RelativePath;
@@ -20,16 +21,17 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static org.literacybridge.core.fs.TbFile.Flags.append;
 import static org.literacybridge.core.fs.TbFile.Flags.contentRecursive;
@@ -59,6 +61,7 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.SYS_DATA_TXT;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LANGUAGES_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_MESSAGES_PATH;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getBytesString;
 
 
@@ -179,6 +182,7 @@ public class TBLoaderCore {
     private static final Logger LOG = Logger.getLogger(TBLoaderCore.class.getName());
     private Result.FORMAT_OP mFormatOp;
 
+    @SuppressWarnings("unused")
     public enum Action {
         DEPLOY,
         STATSONLY,
@@ -188,6 +192,7 @@ public class TBLoaderCore {
     // The Talking Book is hard coded to expect the MS-DOS line ending.
     private static final String MSDOS_LINE_ENDING = new String(new byte[] { 0x0d, 0x0a });
 
+    @SuppressWarnings("unused")
     public static class Builder {
         private TBLoaderConfig mTbLoaderConfig;
         private TBDeviceInfo mTbDeviceInfo;
@@ -200,6 +205,7 @@ public class TBLoaderCore {
         private boolean mStatsOnly = false;
         private boolean mRefreshFirmware = false;
         private int mPostUpdateDelayMillis = 0;
+        private final Set<String> mAcceptableFirmware = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
         public Builder() {}
 
@@ -286,6 +292,21 @@ public class TBLoaderCore {
             return this;
         }
 
+        /**
+         * A list of the firmware versions that are acceptable to this deployment.
+         * @param acceptables versions, as a comma separated list of strings.
+         * @return the builder
+         */
+        public Builder withAcceptableFirmware(String acceptables) {
+            if (StringUtils.isNotBlank(acceptables)) {
+                this.mAcceptableFirmware.addAll(Arrays.stream(acceptables.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotBlank)
+                    .collect(Collectors.toList()));
+            }
+            return this;
+        }
+
     }
 
     private final Builder mBuilder;
@@ -293,16 +314,15 @@ public class TBLoaderCore {
     private final TBLoaderConfig mTbLoaderConfig;
     private final TBDeviceInfo mTbDeviceInfo;
 
-    private DeploymentInfo mOldDeploymentInfo;
-    private DeploymentInfo mNewDeploymentInfo;
+    private final DeploymentInfo mOldDeploymentInfo;
+    private final DeploymentInfo mNewDeploymentInfo;
     // A description of the location, like "Community", "WA Office", "Other".
-    private String mLocation;
+    private final String mLocation;
     // latitude longitude
-    private String mCoordinates;
-    private boolean mStatsOnly;
-    private boolean mForceFirmware;
-    private TbFile mDeploymentDirectory;
-    private ProgressListener mProgressListener;
+    private final String mCoordinates;
+    private final boolean mStatsOnly;
+    private final TbFile mDeploymentDirectory;
+    private final ProgressListener mProgressListener;
 
     private boolean mClearedFlashStatistics;
 
@@ -314,10 +334,10 @@ public class TBLoaderCore {
     private OperationLog.Operation mStepsLog;
     private TbFile.CopyProgress mCopyListener;
 
-    private TbFlashData mTtbFlashData;
+    private final TbFlashData mTtbFlashData;
 
-    private RelativePath mTalkingBookDataDirectoryPath;
-    private RelativePath mTalkingBookDataZipPath;
+    private final RelativePath mTalkingBookDataDirectoryPath;
+    private final RelativePath mTalkingBookDataZipPath;
 
     private final TbFile mLogDirectory;
     private final TbFile mCollectedDataDirectory;
@@ -357,7 +377,8 @@ public class TBLoaderCore {
         mLocation = builder.mLocation;
         mCoordinates = builder.mCoordinates;
         mStatsOnly = builder.mStatsOnly;
-        mForceFirmware = builder.mRefreshFirmware;
+        // The provided firmware is always acceptable, so ensure it is in the list.
+        builder.mAcceptableFirmware.add(builder.mNewDeploymentInfo.getFirmwareRevision());
         mDeploymentDirectory = builder.mDeploymentDirectory;
         mProgressListener = builder.mProgressListener;
 
@@ -424,6 +445,8 @@ public class TBLoaderCore {
         final String VERSION_TBDATA = "v03";
         BufferedWriter bw;
 
+        // This is a format for a date format used a lot in TB statistics.
+        //noinspection SuspiciousDateFormat
         SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy'y'MM'm'dd'd'", Locale.US);
         String strDate = sdfDate.format(new Date());
         String csvFilename = String.format("tbData-%s-%s-%s.csv",
@@ -757,12 +780,9 @@ public class TBLoaderCore {
         mStepsLog = OperationLog.startOperation(mStatsOnly ? "CorTalkingBookCollectStatistics" : "CoreTalkingBookUpdate");
         mProgressListener.step(starting);
 
-        mCopyListener = new TbFile.CopyProgress() {
-            @Override
-            public void copying(String filename) {
-                mStepFileCount++;
-                mProgressListener.detail(filename);
-            }
+        mCopyListener = filename -> {
+            mStepFileCount++;
+            mProgressListener.detail(filename);
         };
 
         mUpdateStartTime = System.nanoTime();
@@ -977,13 +997,10 @@ public class TBLoaderCore {
     private DirectoryCount listDirectory(String rootPath, TbFile directory, StringBuilder buffer) {
         DirectoryCount myCount = new DirectoryCount();
         TbFile[] children = directory.listFiles();
-        Arrays.sort(children, new Comparator<TbFile>() {
-            @Override
-            public int compare(TbFile o1, TbFile o2) {
-                String n1 = o1.getName();
-                String n2 = o2.getName();
-                return n1.compareToIgnoreCase(n2);
-            }
+        Arrays.sort(children, (o1, o2) -> {
+            String n1 = o1.getName();
+            String n2 = o2.getName();
+            return n1.compareToIgnoreCase(n2);
         });
 
         // Header for a directory listing.
@@ -1021,11 +1038,11 @@ public class TBLoaderCore {
                 counts.files,
                 counts.size));
         builder.append(String.format(Locale.US, "%10c%6d Dir(s)", ' ', counts.dirs));
-        mProgressListener.log(String.format("%d files, %d dirs, %,d bytes", counts.files, counts.dirs, counts.size));
+        mProgressListener.log(String.format(Locale.US, "%d files, %d dirs, %,d bytes", counts.files, counts.dirs, counts.size));
         long free = mTalkingBookRoot.getFreeSpace();
         if (free > 0) {
             builder.append(String.format(Locale.US, " %,15d bytes free", free));
-            mProgressListener.log(true, String.format("%,d bytes free", free));
+            mProgressListener.log(true, String.format(Locale.US, "%,d bytes free", free));
         }
         builder.append("\n");
         return builder.toString();
@@ -1079,7 +1096,7 @@ public class TBLoaderCore {
         //    /c : Ignores errors.
         // Filter to exclude certain named files or directories, anything starting with ".", or ending with ".img" or ".old".
         TbFile.CopyFilter copyFilesFilter = new TbFile.CopyFilter() {
-            Set excludedNames = new HashSet<>(Arrays.asList("languages",
+            final Set<String> excludedNames = new HashSet<>(Arrays.asList("languages",
                     "audio",
                     "ostats",
                     "inbox",
@@ -1101,10 +1118,7 @@ public class TBLoaderCore {
                     return false;
                 }
                 // Image or backup file? Skip them.
-                if (name.endsWith(".img") || name.endsWith(".old")) {
-                    return false;
-                }
-                return true;
+                return !name.endsWith(".img") && !name.endsWith(".old");
             }
         };
 
@@ -1136,13 +1150,10 @@ public class TBLoaderCore {
                 .open(mTbLoaderConfig.getTbLoaderId())         // like "000C"
                 .open(mOldDeploymentInfo.getCommunity());      // like "VING VING"
 
-        TbFile.CopyFilter copyRecordingsFilter = new TbFile.CopyFilter() {
-            @Override
-            public boolean accept(TbFile file) {
-                String name = file.getName();
-                // match *_9_*.a18 or *_9-0_*.a18
-                return name.matches("(?i).*(?:_9_|_9-0_).*\\.a18");
-            }
+        TbFile.CopyFilter copyRecordingsFilter = file -> {
+            String name = file.getName();
+            // match *_9_*.a18 or *_9-0_*.a18
+            return name.matches("(?i).*(?:_9_|_9-0_).*\\.a18");
         };
         if (recordingsSrc.exists()) {
             mStepBytesCount += TbFile.copyDir(recordingsSrc, recordingsDst, copyRecordingsFilter, mCopyListener);
@@ -1191,12 +1202,9 @@ public class TBLoaderCore {
         // del ${device_drive}\messages\audio\*_9_*.a18 /Q
         // del ${device_drive}\messages\audio\*_9-0_*.a18 /Q
         TbFile audioDirectory = mTalkingBookRoot.open(TBLoaderConstants.TB_AUDIO_PATH);
-        String[] names = audioDirectory.list(new TbFile.FilenameFilter() {
-            @Override
-            public boolean accept(TbFile parent, String name) {
-                // match *_9_*.a18 or *_9-0_*.a18
-                return name.matches("(?i).*(?:_9_|_9-0_).*\\.a18");
-            }
+        String[] names = audioDirectory.list((parent, name) -> {
+            // match *_9_*.a18 or *_9-0_*.a18
+            return name.matches("(?i).*(?:_9_|_9-0_).*\\.a18");
         });
         if (names != null) {
             for (String name : names) {
@@ -1221,12 +1229,8 @@ public class TBLoaderCore {
         if (names != null) {
             for (String name : names) {
                 TbFile listDirectory = listsDirectory.open(name);
-                String[] toDelete = listDirectory.list(new TbFile.FilenameFilter() {
-                    @Override
-                    public boolean accept(TbFile parent, String name) {
-                        return name.startsWith("9") && name.toLowerCase().endsWith(".txt");
-                    }
-                });
+                String[] toDelete = listDirectory.list((parent, name1) ->
+                    name1.startsWith("9") && name1.toLowerCase().endsWith(".txt"));
                 if (toDelete != null) {
                     for (String d : toDelete) {
                         listDirectory.open(d).delete();
@@ -1242,7 +1246,7 @@ public class TBLoaderCore {
      * Zips the statistics, logs, and other files, and copies them to the collected data directory.
      *
      * @param projectCollectedData The files will be zipped into a file in this directory.
-     * @param action
+     * @param action to be logged, for statistics.
      * @throws IOException If the .zip can't be created.
      */
     private void zipAndCopyFiles(TbFile projectCollectedData, String action) throws IOException {
@@ -1298,38 +1302,38 @@ public class TBLoaderCore {
      * @throws IOException if the format or relabel fails.
      */
     private Result reformatRelabel() throws IOException {
+        Result result = null;
         boolean goodCard;
         if (mTbHasDiskCorruption) {
             mProgressListener.step(reformatting);
             if (!OSChecker.WINDOWS) {
                 // distinction without a difference... has corruption, reformat didn't fail because
                 // no reformat was attempted.
-                return new Result(0, false, true, Result.FORMAT_OP.noFormat, false);
-            }
-            goodCard = CommandLineUtils.formatDisk(mTbDeviceInfo.getRootFile().getAbsolutePath(),
-                                                   mTbDeviceInfo.getSerialNumber().toUpperCase());
-            if (!goodCard) {
-                mProgressListener.log("Reformat failed");
-                mFormatOp = Result.FORMAT_OP.failed;
-                return new Result(0, false, true, Result.FORMAT_OP.failed, false);
+                result = new Result(0, false, true, Result.FORMAT_OP.noFormat, false);
             } else {
-                mFormatOp = Result.FORMAT_OP.succeeded;
-                mProgressListener.log(String.format("Reformatted card, %s", getStepTime()));
+                goodCard = CommandLineUtils.formatDisk(mTbDeviceInfo.getRootFile()
+                    .getAbsolutePath(), mTbDeviceInfo.getSerialNumber().toUpperCase());
+                if (!goodCard) {
+                    mProgressListener.log("Reformat failed");
+                    mFormatOp = Result.FORMAT_OP.failed;
+                    result = new Result(0, false, true, Result.FORMAT_OP.failed, false);
+                } else {
+                    mFormatOp = Result.FORMAT_OP.succeeded;
+                    mProgressListener.log(String.format("Reformatted card, %s", getStepTime()));
+                }
             }
         } else {
-            if (!mNewDeploymentInfo.getSerialNumber()
-                    .equalsIgnoreCase(
-                            mTbDeviceInfo.getLabelWithoutDriveLetter())) {
+            if (!mNewDeploymentInfo.getSerialNumber().equalsIgnoreCase(mTbDeviceInfo.getLabelWithoutDriveLetter())) {
                 if (!OSChecker.WINDOWS) {
                     mProgressListener.log("Skipping relabeling; not supported on this OS.");
                 } else {
                     mProgressListener.step(relabelling);
                     CommandLineUtils.relabel(mTbDeviceInfo.getRootFile().getAbsolutePath(),
-                                             mNewDeploymentInfo.getSerialNumber());
+                        mNewDeploymentInfo.getSerialNumber());
                 }
             }
         }
-        return null;
+        return result;
     }
 
     /**
@@ -1337,9 +1341,8 @@ public class TBLoaderCore {
      * <p>
      * Derived from the "update.txt" file.
      *
-     * @throws IOException if a file can't be deleted.
      */
-    private void clearSystemFiles() throws IOException {
+    private void clearSystemFiles() {
         startStep(clearSystem);
 
         mStepFileCount += mTalkingBookRoot.open("archive").delete(TbFile.Flags.recursive);
@@ -1348,26 +1351,23 @@ public class TBLoaderCore {
         mStepFileCount += mTalkingBookRoot.open(TB_LANGUAGES_PATH).delete(TbFile.Flags.recursive);
 
         // Delete files from /
-        String[] names = mTalkingBookRoot.list(new TbFile.FilenameFilter() {
-            @Override
-            public boolean accept(TbFile parent, String name) {
-                name = name.toLowerCase();
-                // Files with a particular extension.
-                if (name.endsWith(".img") || name.endsWith(".rtc")) {
+        String[] names = mTalkingBookRoot.list((parent, name) -> {
+            name = name.toLowerCase();
+            // Files with a particular extension.
+            if (name.endsWith(".img") || name.endsWith(".rtc")) {
+                return true;
+            }
+            // Anything starting with ".", but not "." or ".." (!)
+            if (name.startsWith(".")) {
+                if (name.length() > 2 ||
+                    (name.length() == 2 && name.charAt(1) != '.')) {
                     return true;
                 }
-                // Anything starting with ".", but not "." or ".." (!)
-                if (name.startsWith(".")) {
-                    if (name.length() > 2 ||
-                        (name.length() == 2 && name.charAt(1) != '.')) {
-                        return true;
-                    }
-                }
-                // Directories that Android and Windows like to spew wherever possible. (macOS's files all
-                // start with ".", so handled above.)
-                return name.equals("android") || name.equals("music") || name.equals(
-                    "system volume information");
             }
+            // Directories that Android and Windows like to spew wherever possible. (macOS's files all
+            // start with ".", so handled above.)
+            return name.equals("android") || name.equals("music") || name.equals(
+                "system volume information");
         });
         if (names != null) {
             for (String name : names) {
@@ -1378,19 +1378,16 @@ public class TBLoaderCore {
 
         // Delete files from /system
         TbFile system = mTalkingBookRoot.open("system");
-        names = system.list(new TbFile.FilenameFilter() {
-            @Override
-            public boolean accept(TbFile parent, String name) {
-                name = name.toLowerCase();
-                return name.endsWith(".dep") ||
-                        name.endsWith(".grp") ||
-                        name.endsWith(".loc") ||
-                        name.endsWith(".pkg") ||
-                        name.endsWith(".prj") ||
-                        name.endsWith(".rtc") ||
-                        name.endsWith(".srn") ||
-                        name.endsWith(".txt");
-            }
+        names = system.list((parent, name) -> {
+            name = name.toLowerCase();
+            return name.endsWith(".dep") ||
+                    name.endsWith(".grp") ||
+                    name.endsWith(".loc") ||
+                    name.endsWith(".pkg") ||
+                    name.endsWith(".prj") ||
+                    name.endsWith(".rtc") ||
+                    name.endsWith(".srn") ||
+                    name.endsWith(".txt");
         });
         if (names != null) {
             for (String name : names) {
@@ -1434,17 +1431,24 @@ public class TBLoaderCore {
         //      /XD   : eXclude Directories matching given names/paths.
         //      /XA:H : eXclude files with any of the given Attributes set.
         //      /XF   : eXclude Files matching given names/paths/wildcards.
-        TbFile.CopyFilter basicFilter = new TbFile.CopyFilter() {
-            @Override
-            public boolean accept(TbFile file) {
+        String currentFirmware = mOldDeploymentInfo.getFirmwareRevision();
+        boolean needFirmware = !(mBuilder.mAcceptableFirmware.contains(currentFirmware)) ||
+            currentFirmware.equals(UNKNOWN) || mBuilder.mRefreshFirmware;
+        if (needFirmware) {
+            TbFile.CopyFilter basicFilter = file -> {
                 String name = file.getName();
                 return !name.endsWith(".srn") && !name.endsWith(".rev");
-            }
-        };
-        mStepBytesCount += TbFile.copyDir(mDeploymentDirectory.open(TBLoaderConstants.CONTENT_BASIC_SUBDIR),
-                       mTalkingBookRoot, basicFilter,
-                       mCopyListener);
-
+            };
+            mStepBytesCount += TbFile.copyDir(mDeploymentDirectory.open(TBLoaderConstants.CONTENT_BASIC_SUBDIR),
+                mTalkingBookRoot,
+                basicFilter,
+                mCopyListener);
+        } else {
+            mProgressListener.log(String.format(Locale.US,
+                "Keeping firmware version %s (%s is latest)",
+                currentFirmware,
+                mNewDeploymentInfo.getFirmwareRevision()));
+        }
         Calendar cal = Calendar.getInstance();
         String month = String.valueOf(cal.get(Calendar.MONTH) + 1);
         String dateInMonth = String.valueOf(cal.get(Calendar.DAY_OF_MONTH));
@@ -1490,7 +1494,6 @@ public class TBLoaderCore {
             .append(TBLoaderConstants.DEPLOYMENT_PROPERTY, mNewDeploymentInfo.getDeploymentName())
             .append(TBLoaderConstants.PACKAGE_PROPERTY, mNewDeploymentInfo.getPackageName())
             .append(TBLoaderConstants.COMMUNITY_PROPERTY, mNewDeploymentInfo.getCommunity())
-            .append(TBLoaderConstants.FIRMWARE_PROPERTY, mNewDeploymentInfo.getFirmwareRevision())
             .append(TBLoaderConstants.TIMESTAMP_PROPERTY, mUpdateTimestampISO)
             .append(
                 TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY, mNewDeploymentInfo.isTestDeployment())
@@ -1499,6 +1502,12 @@ public class TBLoaderCore {
             .append(TBLoaderConstants.NEW_SERIAL_NUMBER_PROPERTY, mNewDeploymentInfo.isNewSerialNumber())
             .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation)
             .append(TBLoaderConstants.DEPLOYMENT_UUID_PROPERTY, mDeploymentUUID);
+        if (needFirmware) {
+            props.append(TBLoaderConstants.FIRMWARE_PROPERTY, mNewDeploymentInfo.getFirmwareRevision());
+        } else {
+            props.append(TBLoaderConstants.LATEST_FIRMWARE_PROPERTY, mNewDeploymentInfo.getFirmwareRevision())
+                .append(TBLoaderConstants.FIRMWARE_PROPERTY, mOldDeploymentInfo.getFirmwareRevision());
+        }
         if (mCoordinates != null && mCoordinates.length() > 0) {
             props.append(TBLoaderConstants.COORDINATES_PROPERTY, mCoordinates);
         }
@@ -1514,11 +1523,10 @@ public class TBLoaderCore {
      * Creates a file like a properties file.
      */
     private /*static*/ class PropsWriter {
-        private StringBuilder props = new StringBuilder();
+        private final StringBuilder props = new StringBuilder();
         public String toString() { return props.toString(); }
         public PropsWriter append(String name, Object value) {
             try {
-                String strv = value.toString();
                 props.append(name).append('=').append(value.toString()).append(MSDOS_LINE_ENDING);
             } catch (Exception ex) {
                 mProgressListener.log("Exception adding property "+name);
@@ -1556,13 +1564,10 @@ public class TBLoaderCore {
     private void updateCommunity() throws IOException {
         startStep(updateCommunity);
         // Keep 10.a18 and foo.grp files; skip recipient.id
-        TbFile.CopyFilter filter = new TbFile.CopyFilter() {
-            @Override
-            public boolean accept(TbFile file) {
-                if (file.isDirectory()) return true;
-                String name = file.getName().toLowerCase();
-                return name.endsWith(".a18") || name.endsWith("*.grp");
-            }
+        TbFile.CopyFilter filter = file -> {
+            if (file.isDirectory()) return true;
+            String name = file.getName().toLowerCase();
+            return name.endsWith(".a18") || name.endsWith("*.grp");
         };
 
         TbFile communityPath = mDeploymentDirectory.open(TBLoaderConstants.COMMUNITIES_SUBDIR).open(
@@ -1582,10 +1587,11 @@ public class TBLoaderCore {
             Random r = new Random();
             startStep(delay);
             while (elapsed < mBuilder.mPostUpdateDelayMillis) {
-                mProgressListener.detail(String.format("Finalizing part %d", ++n));
+                mProgressListener.detail(String.format(Locale.US, "Finalizing part %d", ++n));
                 int interval = 500 + r.nextInt(1000);
                 elapsed += interval;
                 try {
+                    //noinspection BusyWait
                     Thread.sleep(interval);
                 } catch (InterruptedException e) {
                     // Ignore and continue
@@ -1613,7 +1619,7 @@ public class TBLoaderCore {
      * By renaming the firmware to "system.img", the firmware will be reloaded, regardless of version match.
      */
     private void forceFirmwareRefresh() {// rename firmware at root to system.img to force TB to update itself
-        if (mForceFirmware) {
+        if (mBuilder.mRefreshFirmware) {
             mProgressListener.log("Forcing firmware refresh");
             TbFile firmware = mTalkingBookRoot.open(mNewDeploymentInfo.getFirmwareRevision() + ".img");
             TbFile newFirmware = mTalkingBookRoot.open("system.img");
@@ -1637,7 +1643,7 @@ public class TBLoaderCore {
             }
         } else {
             if (verified) {
-                if (mForceFirmware) {
+                if (mBuilder.mRefreshFirmware) {
                     action = "update-fw";
                 } else {
                     action = "update";

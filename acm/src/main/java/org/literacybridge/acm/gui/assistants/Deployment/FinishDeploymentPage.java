@@ -239,7 +239,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
         try {
             String acmName = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
-            TBBuilder tbb = new TBBuilder(acmName, deploymentName(), this::reportState);
+            TBBuilder tbBuilder = new TBBuilder(acmName, deploymentName(), this::reportState);
 
             // Create.
             final List<String> args = new ArrayList<>();
@@ -251,15 +251,15 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                 args.add(language);   // language
                 args.add(variant);   // group
             }));
-            tbb.createDeployment(args);
+            tbBuilder.createDeployment(args);
 
             // Publish.
             if (context.isPublish()) {
-                saveDeploymentInfoToProgramSpec(tbb, pkgs);
+                saveDeploymentInfoToProgramSpec(tbBuilder, pkgs);
                 args.clear();
                 args.add(deploymentName());
-                tbb.publishDeployment(args);
-                UIUtils.setLabelText(revisionText, String.format(" (revision '%s')", tbb.getRevision()));
+                tbBuilder.publishDeployment(args);
+                UIUtils.setLabelText(revisionText, String.format(" (revision '%s')", tbBuilder.getRevision()));
                 UIUtils.setVisible(revisionText, true);
             } else {
                 publishNotification.setVisible(true);
@@ -288,6 +288,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         deploymentProperties.setProperty("DEPLOYMENT_DATE", TBLoaderConstants.ISO8601date.format(now));
         deploymentProperties.setProperty("DEPLOYMENT_TIME", TBLoaderConstants.ISO8601time.format(now));
         deploymentProperties.setProperty("DEPLOYMENT_USER", ACMConfiguration.getInstance().getUserName());
+        deploymentProperties.setProperty(TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS, String.join(",", tbb.allFirmwareImageVersions()));
         // Map of language, variant : package
         pkgs.forEach((language, values) -> values.forEach((variant, pkg) ->{
             String key = language;

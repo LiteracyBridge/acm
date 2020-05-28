@@ -3,6 +3,7 @@ package org.literacybridge.acm.tbbuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
@@ -22,6 +23,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.DateFormat;
@@ -372,6 +374,23 @@ public class TBBuilder {
             }
         }
         return latestFirmware;
+    }
+
+    /**
+     * Gets a list of all of the firmware versions in the program. While only the latest will be
+     * *installed*, any of the ones present are considered acceptable.
+     * @return A list, possibly empty, of the firmware versions in the program.
+     */
+    public List<String> allFirmwareImageVersions() {
+        File[] firmwareVersions = new File(sourceTbOptionsDir, "firmware")
+            .listFiles((dir, name) -> name.endsWith(".img"));
+        if (firmwareVersions != null) {
+            return Arrays.stream(firmwareVersions)
+                .map(File::getName)
+                .map(FilenameUtils::getBaseName)
+                .collect(Collectors.toList());
+        }
+        return new ArrayList<>();
     }
 
     /**
@@ -876,8 +895,9 @@ public class TBBuilder {
     /**
      * Given a TB-Loader "published" directory and a Deployment name, find the next revision
      * for the Deployment, and create a .rev file with that revision. Return the revision.
+     *
      * @param publishTbLoadersDir The directory in which the deployments are published.
-     * @param deployment The Deployment (name) for which we want the next revision suffix.
+     * @param deployment          The Deployment (name) for which we want the next revision suffix.
      * @return the revision suffix as a String. Like "a", "b"... "aa"... "aaaaba", etc
      * @throws Exception if the new .rev file can't be created.
      */
@@ -919,6 +939,7 @@ public class TBBuilder {
 
     /**
      * Given a revision string, like "a", or "zz", create the next higher value, like "b" or "aaa".
+     *
      * @param revision to be incremented
      * @return the incremented value
      */
