@@ -84,19 +84,27 @@ function updateLibs() {
 # Update the acm.jar file wherever it exists in Dropbox. By now, really only 1 place.
 function updateJar() {
     # Update the acm.jar. 
-    local excludedPath='*/ACM-beta/*'
     if $beta; then
-        excludedPath="thiswon'tbefound"
-    fi
-    for f in $(find "${dropbox}/LB-software" -not -path ${excludedPath} -iname acm.jar); do
+        updated=true
+        f="${acmDir}/acm.jar"
         if ! cmp -s acm.jar "$f" ; then
-            updated=true
             cpcmd=(cp -pv "acm.jar" "$f")
 
             $verbose && echo $prefix "${cpcmd[@]}">>${report}
             $execute && "${cpcmd[@]}"
         fi
-    done
+    else
+        local excludedPath='*/ACM-beta/*'
+        for f in $(find "${dropbox}/LB-software" -not -path ${excludedPath} -iname acm.jar); do
+            if ! cmp -s acm.jar "$f" ; then
+                updated=true
+                cpcmd=(cp -pv "acm.jar" "$f")
+
+                $verbose && echo $prefix "${cpcmd[@]}">>${report}
+                $execute && "${cpcmd[@]}"
+            fi
+        done
+    fi
     # Here in bizarro-world, we need an empty echo to keep going.
     echo >/dev/null
 }
@@ -105,19 +113,28 @@ function updateJar() {
 function updateSplash() {
     # Update the splash-acm.jpg. 
     local filename=splash-acm.jpg
-    local excludedPath='*/ACM-beta/*'
     if $beta; then
         excludedPath="thiswon'tbefound"
-    fi
-    for f in $(find "${dropbox}/LB-software" -not -path ${excludedPath} -iname ${filename}); do
+        updated=true
+        f="${acmDir}/${filename}"
         if ! cmp -s ${filename} "$f" ; then
-            updated=true
             cpcmd=(cp -pv "${filename}" "$f")
 
             $verbose && echo $prefix "${cpcmd[@]}">>${report}
             $execute && "${cpcmd[@]}"
         fi
-    done
+    else
+        local excludedPath='*/ACM-beta/*'
+        for f in $(find "${dropbox}/LB-software" -not -path ${excludedPath} -iname ${filename}); do
+            if ! cmp -s ${filename} "$f" ; then
+                updated=true
+                cpcmd=(cp -pv "${filename}" "$f")
+
+                $verbose && echo $prefix "${cpcmd[@]}">>${report}
+                $execute && "${cpcmd[@]}"
+            fi
+        done
+    fi
     # Here in bizarro-world, we need an empty echo to keep going.
     echo >/dev/null
 }

@@ -714,7 +714,11 @@ public class DBConfiguration { //extends Properties {
                     itemsFixed++;
                 }
             }
-            transaction.commit();
+            if (transaction.size() > 0) {
+                transaction.commit();
+            } else {
+                transaction.rollback();
+            }
             success = true;
         } catch (IOException e1) {
             e1.printStackTrace();

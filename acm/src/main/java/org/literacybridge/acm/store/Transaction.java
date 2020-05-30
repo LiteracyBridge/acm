@@ -29,6 +29,10 @@ public class Transaction {
     return active;
   }
 
+  public final int size() {
+    return objects.size();
+  }
+
   private final void prepareCommit(Transaction t, MetadataStore store,
       Iterable<Committable> objects) {
     List<Committable> additionalObjects = Lists.newArrayList();

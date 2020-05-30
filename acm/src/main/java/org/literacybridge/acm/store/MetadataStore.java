@@ -11,6 +11,7 @@ public abstract class MetadataStore {
   private final Taxonomy taxonomy;
 
   private final List<DataChangeListener> dataChangeListeners;
+  private boolean haveChanges = false;
 
   public abstract Transaction newTransaction();
 
@@ -32,6 +33,10 @@ public abstract class MetadataStore {
 
   public abstract Collection<Playlist> getPlaylists();
 
+  public boolean hasChanges() {
+    return haveChanges;
+  }
+
   public MetadataStore(Taxonomy taxonomy) {
     this.taxonomy = taxonomy;
     dataChangeListeners = Lists.newLinkedList();
@@ -50,6 +55,7 @@ public abstract class MetadataStore {
   }
 
   protected final void fireChangeEvent(List<DataChangeEvent> events) {
+    haveChanges = true;
     for (DataChangeListener listener : dataChangeListeners) {
       listener.dataChanged(events);
     }

@@ -216,6 +216,11 @@ public class GuiAccessControl extends AccessControl {
             throw new IllegalStateException("Can't call this function without UI");
         }
 
+        if (!super.dbConfiguration.getMetadataStore().hasChanges()) {
+            super.discardDbChanges();
+            return;
+        }
+
         Object[] optionsSaveWork = { "Save Work", "Throw Away Your Latest Changes" };
         String msg = "If you made a mistake you can throw away all your changes now.";
         String title = "Save Work?";

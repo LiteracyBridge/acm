@@ -465,8 +465,9 @@ public class AccessControl {
         return commitOrDiscard(CloseDisposition.save);
     }
 
+    CloseDisposition discardDisposition = CloseDisposition.discard;
     UpdateDbStatus discardDbChanges() {
-        return commitOrDiscard(CloseDisposition.discard);
+        return commitOrDiscard(discardDisposition);
     }
 
     /**
