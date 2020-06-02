@@ -17,8 +17,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import static org.literacybridge.acm.store.MetadataSpecification.*;
+import static org.literacybridge.acm.store.MetadataSpecification.ALL_METADATA_FIELDS;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
+import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
+import static org.literacybridge.acm.store.MetadataSpecification.DTB_REVISION;
 
 /**
  * Abstract base class for an audio file importer.
@@ -46,8 +49,7 @@ abstract class AudioFileImporter {
     protected abstract Set<Category> getCategories();
 
     AudioItem importSingleFile(AudioImporter.AudioItemProcessor itemProcessor)
-        throws IOException, AudioItemRepository.UnsupportedFormatException
-    {
+            throws IOException, AudioItemRepository.UnsupportedFormatException, AudioItemRepository.DuplicateItemException {
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
 
         AudioItem audioItem = createAudioItem();
@@ -66,7 +68,7 @@ abstract class AudioFileImporter {
         // A U D I O   I M P O R T   H A P P E N S   H E R E
         //
         // Here is where the actual conversion and import happens.
-        repository.storeAudioFile(audioItem, audioFile);
+        repository.addAudioItem(audioItem, audioFile);
         //
         ////////////////////////////////////////////////////////////////////////////////////////////
 

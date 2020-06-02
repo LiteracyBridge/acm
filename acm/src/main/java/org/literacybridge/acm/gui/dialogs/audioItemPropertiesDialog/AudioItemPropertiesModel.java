@@ -19,7 +19,6 @@ import static org.literacybridge.acm.store.MetadataSpecification.LB_STATUS;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_TARGET_AUDIENCE;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_TIMING;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +34,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Metadata;
@@ -208,9 +208,12 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
 
       @Override
       public String getValue(AudioItem audioItem) {
-        File file = ACMConfiguration.getInstance().getCurrentDB()
-            .getRepository().getAudioFile(audioItem, AudioFormat.A18);
-        return file != null ? file.getName() : null;
+        AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
+        if (repository.hasAudioFileWithFormat(audioItem, AudioFormat.A18)) {
+          return repository.getAudioFilename(audioItem, AudioFormat.A18);
+        } else {
+          return null;
+        }
       }
 
       @Override

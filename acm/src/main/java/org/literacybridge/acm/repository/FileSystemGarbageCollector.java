@@ -9,11 +9,11 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.List;
 
-public class FileSystemGarbageCollector {
+class FileSystemGarbageCollector {
     private final long maxSizeInBytes;
     private final FilenameFilter filesToDelete;
 
-    public FileSystemGarbageCollector(long maxSizeInBytes, FilenameFilter filesToDelete) {
+    FileSystemGarbageCollector(long maxSizeInBytes, FilenameFilter filesToDelete) {
         this.maxSizeInBytes = maxSizeInBytes;
         this.filesToDelete = filesToDelete;
     }

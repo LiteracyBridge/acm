@@ -13,6 +13,7 @@ public class DeploymentAssistant {
         if (ACMConfiguration.isTestData()) {
             context.deploymentNo = 1;
         }
+        context.setNoPublish(ACMConfiguration.isSandbox());
 
         @SuppressWarnings("UnnecessaryLocalVariable")
         Assistant<DeploymentContext> assistant = new Assistant.Factory<DeploymentContext>()

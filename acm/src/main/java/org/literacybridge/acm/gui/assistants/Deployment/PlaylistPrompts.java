@@ -63,7 +63,7 @@ public class PlaylistPrompts {
     }
 
     public void findPrompts() {
-        findPromptsInLanguageFiless();
+        findPromptsInLanguageFiles();
         findPromptsInAcmContent();
     }
 
@@ -115,8 +115,8 @@ public class PlaylistPrompts {
      * Look for prompts named like "2-0.a18" and "i2-0.a18" in the TB_Options/languages/{lang}/cat
      * directory.
      */
-    private void findPromptsInLanguageFiless() {
-        List<String> categoryIds = getCategoryIds();
+    private void findPromptsInLanguageFiles() {
+        List<String> categoryIds = getCategoryIds(); // zero, one, or two items.
         // If we know the category...
         if (categoryIds.size() == 1 && categoryIds.get(0).equals(Constants.CATEGORY_INTRO_MESSAGE)) {
             // The intro message has no prompts; only a category. The intro message is handled specially
@@ -157,7 +157,7 @@ public class PlaylistPrompts {
             }
 
             if (foundShort && foundLong && !foundBoth) {
-                // Found both recordings, but for different categories, and never together.
+                // Found both recordings, but for different category ids, and never together.
                 this.longPromptFile = null;
                 this.shortPromptFile = null;
                 this.categoryId = null;
@@ -168,6 +168,8 @@ public class PlaylistPrompts {
     /**
      * Look for a category name that matches the playlist title, only considering leaf nodes.
      * If the bare title isn't found, look for "General ${category}".
+     *
+     * @return any potential category ids that were found. May be none, one, or two category ids.
      */
     private List<String> getCategoryIds() {
         List<String> result = new ArrayList<>();

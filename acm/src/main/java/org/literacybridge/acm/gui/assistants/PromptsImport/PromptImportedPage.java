@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
+import static org.literacybridge.acm.Constants.BELL_SOUND;
+import static org.literacybridge.acm.Constants.CATEGORY_TUTORIAL;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
 public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
@@ -260,8 +262,8 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                 }
             });
 
-        importBoilerplateFiles("$0-1.txt");
-        importBoilerplateFiles("0.a18");
+        importBoilerplateFiles(CATEGORY_TUTORIAL);
+        importBoilerplateFiles(BELL_SOUND);
     }
 
     /**

@@ -15,6 +15,7 @@ public class Constants {
   public final static String TBLoadersHomeDir = "TB-Loaders";
   public final static String TBLoadersLogDir = "tbl-logs";
   public final static String TbCollectionWorkDir = "collectiondir";
+  public final static String CommunitiesDir = "communities";
   public final static String uploadQueue = "uploadqueue";
   public final static String ProgramSpecDir = "programspec";
   public final static String DefaultSharedDB = "ACM-test/" + DBHomeDir;
@@ -44,7 +45,9 @@ public class Constants {
   public final static String CACHE_SIZE_PROP_NAME = "CACHE_SIZE_IN_BYTES";
   public final static String STRICT_DEPLOYMENT_NAMING = "STRICT_DEPLOYMENT_NAMING";
   public final static String USER_FEEDBACK_HIDDEN = "USER_FEEDBACK_HIDDEN";
+  public final static String DE_DUPLICATE_AUDIO = "DE_DUPLICATE_AUDIO";
   public final static String CONFIGURATION_DIALOG = "CONFIGURATION_DIALOG";
+  public final static String NATIVE_AUDIO_FORMATS = "NATIVE_AUDIO_FORMATS";
   public final static String BATCH_RECORD = "record.log";
   public final static String S3_BUCKET = "acm-logging";
   public final static String FUZZY_THRESHOLD = "FUZZY_THRESHOLD";
@@ -64,6 +67,9 @@ public class Constants {
   public static final String CATEGORY_TB_INSTRUCTIONS = "0-1";
   public static final String CATEGORY_COMMUNITIES = "0-3";
   public static final String CATEGORY_TUTORIAL = "$0-1";
+
+  public static final String BELL_SOUND = "0.a18";
+  public static final String CUSTOM_GREETING = "10.a18";
 
   public static final int FUZZY_THRESHOLD_MAXIMUM = 100;
   public static final int FUZZY_THRESHOLD_DEFAULT = 80;

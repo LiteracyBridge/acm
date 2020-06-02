@@ -160,7 +160,7 @@ public class CmdLineImporter {
                 System.out.println(String.format("%sImporting file %d of %d: %s" , params.dryrun?"NOT ":"", ++count, filesToImport.size(), file));
                 if (params.dryrun) continue;
 
-                importer.importFile(file, (item) -> {
+                importer.importOrUpdateAudioItemFromFile(file, (item) -> {
                     if (categories != null) {
                         item.removeAllCategories();
                         item.addCategories(categories);

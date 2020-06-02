@@ -49,7 +49,7 @@ abstract class AudioFileExporter {
             .getRepository();
 
         // Get a version of the file in the right format.
-        File sourceFile = repository.convert(audioItem, targetFormat);
+        File sourceFile = repository.getAudioFile(audioItem, targetFormat);
 
         if (sourceFile == null || ! sourceFile.exists()) {
             // Count file that couldn't be exported.

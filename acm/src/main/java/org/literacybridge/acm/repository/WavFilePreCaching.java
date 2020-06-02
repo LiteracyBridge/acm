@@ -36,7 +36,7 @@ public class WavFilePreCaching {
             .getCurrentDB()
             .getMetadataStore()
             .getAudioItems()) {
-            if (!repository.hasAudioItemFormat(audioItem, AudioFormat.WAV)) {
+            if (!repository.hasAudioFileWithFormat(audioItem, AudioFormat.WAV)) {
                 uncachedAudioItems.add(audioItem);
             }
         }
@@ -63,7 +63,7 @@ public class WavFilePreCaching {
                     ACMConfiguration.getInstance()
                         .getCurrentDB()
                         .getRepository()
-                        .convert(item, AudioFormat.WAV);
+                        .getAudioFile(item, AudioFormat.WAV);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

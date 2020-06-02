@@ -7,6 +7,7 @@ import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.importexport.AudioExporter;
 import org.literacybridge.acm.importexport.CSVExporter;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
+import org.literacybridge.acm.repository.AudioItemRepositoryImpl;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.utils.OsUtils;
 import org.literacybridge.acm.utils.SwingUtils;
@@ -16,10 +17,9 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.FileChooserUI;
-import java.awt.Color;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileWriter;
@@ -32,21 +32,17 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.literacybridge.acm.repository.AudioItemRepository.audioFormatForExtension;
-
 public class ExportDialog extends JDialog {
     private static final Logger LOG = Logger.getLogger(ExportDialog.class.getName());
     // For a hack to work around a Swing bug:
     private Color backgroundColor = getBackground();
 
-    private TYPE exportType;
+    private final TYPE exportType;
 
     // To remember the last directory to which the user navigated.
     private static File recentDirectory = new File(System.getProperty("user.home"));
 
-    private File csvFile = new File("metadata.csv");
-
-    private JFileChooser fileChooser;
+    private final JFileChooser fileChooser;
     private String chosenFiletype;
 
     // For selecting how the file names are constructed.
@@ -71,7 +67,51 @@ public class ExportDialog extends JDialog {
         add(dialogPanel);
 
         fileChooser = new JFileChooser(recentDirectory);
+        /*
+         * Watches for property changes in the file chooser dialog. The ones we care about are
+         * changes to the file filter property. Keep track of the last file extension chosen.
+         */
+        PropertyChangeListener fileTypeListener = evt -> {
+//            System.out.printf("Property change %s, selection: %s\n", evt.getPropertyName(), fileChooser
+//                .getSelectedFile());
+
+            if (evt.getPropertyName().equals(JFileChooser.FILE_FILTER_CHANGED_PROPERTY)) {
+                FileNameExtensionFilter newFilter = (FileNameExtensionFilter) evt.getNewValue();
+                if (newFilter != null) {
+                    chosenFiletype = newFilter.getExtensions()[0]; // There can be only one.
+                }
+//            } else {
+//                System.out.printf("%s: %s\n", evt.getPropertyName(), evt);
+            }
+        };
         fileChooser.addPropertyChangeListener(fileTypeListener);
+        /*
+         * This is called when the dialog is accepted or cancelled.
+         * The current directory in the fileChooser doesn't work on Windows. Get it from the
+         * selection.
+         */
+        ActionListener chooserActionListener = evt -> {
+            if (OsUtils.WINDOWS) {
+                // The current directory in the fileChooser doesn't work on Windows. Get it from the
+                // selection.
+                File chosen = fileChooser.getSelectedFile();
+                if (chosen != null && chosen.isFile()) {
+                    recentDirectory = chosen.getParentFile();
+                } else if (chosen != null && chosen.isDirectory()) {
+                    recentDirectory = chosen;
+                }
+            } else {
+                recentDirectory = fileChooser.getCurrentDirectory();
+            }
+            if (evt.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)) {
+                if (exportType == TYPE.Audio) {
+                    exportAudio(fileChooser.getSelectedFile());
+                } else {
+                    exportMetadata(fileChooser.getSelectedFile());
+                }
+            }
+            ExportDialog.this.setVisible(false);
+        };
         fileChooser.addActionListener(chooserActionListener);
 
         // Move the JFileChooser's border to the dialog.
@@ -109,6 +149,7 @@ public class ExportDialog extends JDialog {
 
             // Saving metadata to a single file only.
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            File csvFile = new File("metadata.csv");
             fileChooser.setSelectedFile(csvFile);
         }
         setTitle(LabelProvider.getLabel(titleName));
@@ -138,6 +179,26 @@ public class ExportDialog extends JDialog {
         Box buttonBox = Box.createHorizontalBox();
         buttonBox.add(Box.createHorizontalGlue());
         JButton exportButton = new JButton(LabelProvider.getLabel("EXPORT"));
+        /*
+         * When using JFileChooser.setControlButtonsAreShown(false) to control the
+         * buttons, there's no good way to actually click "OK", or simulate it.
+         * This hack simulates it (using the Look & Feel framework). This code
+         * assumes that the L&F has a default button, and that it is "OK".
+         *
+         * Nothing need go here, the actionPerformed method (with the above arguments) will trigger the respective listener
+         */
+        ActionListener approvalButtonPusher = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                FileChooserUI ui = fileChooser.getUI();
+                JButton defaultButton = ui.getDefaultButton(fileChooser);
+                for (ActionListener a : defaultButton.getActionListeners()) {
+                    a.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null) {
+                        //Nothing need go here, the actionPerformed method (with the above arguments) will trigger the respective listener
+                    });
+                }
+            }
+        };
         exportButton.addActionListener(approvalButtonPusher);
         //exportButton.setEnabled(false);
         buttonBox.add(exportButton);
@@ -152,75 +213,6 @@ public class ExportDialog extends JDialog {
     }
 
     /**
-     * When using JFileChooser.setControlButtonsAreShown(false) to control the
-     * buttons, there's no good way to actually click "OK", or simulate it.
-     * This hack simulates it (using the Look & Feel framework). This code
-     * assumes that the L&F has a default button, and that it is "OK".
-     */
-    private ActionListener approvalButtonPusher = new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            FileChooserUI ui = fileChooser.getUI();
-            JButton defaultButton = ui.getDefaultButton(fileChooser);
-            for (ActionListener a : defaultButton.getActionListeners()) {
-                a.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null) {
-                    //Nothing need go here, the actionPerformed method (with the above arguments) will trigger the respective listener
-                });
-            }
-        }
-    };
-
-    /**
-     * Watches for property changes in the file chooser dialog. The ones we care about are
-     * changes to the file filter property. Keep track of the last file extension chosen.
-     */
-    private PropertyChangeListener fileTypeListener = new PropertyChangeListener() {
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) {
-//            System.out.printf("Property change %s, selection: %s\n", evt.getPropertyName(), fileChooser
-//                .getSelectedFile());
-
-            if (evt.getPropertyName().equals(JFileChooser.FILE_FILTER_CHANGED_PROPERTY)) {
-                FileNameExtensionFilter newFilter = (FileNameExtensionFilter) evt.getNewValue();
-                if (newFilter != null) {
-                    chosenFiletype = newFilter.getExtensions()[0]; // There can be only one.
-                }
-//            } else {
-//                System.out.printf("%s: %s\n", evt.getPropertyName(), evt);
-            }
-        }
-    };
-
-    /**
-     * This is called when the dialog is accepted or cancelled.
-     */
-    private ActionListener chooserActionListener = new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if (OsUtils.WINDOWS) {
-                // The current directory in the fileChooser doesn't work on Windows. Get it from the
-                // selection.
-                File chosen = fileChooser.getSelectedFile();
-                if (chosen != null && chosen.isFile()) {
-                    recentDirectory = chosen.getParentFile();
-                } else if (chosen != null && chosen.isDirectory()) {
-                    recentDirectory = chosen;
-                }
-            } else {
-                recentDirectory = fileChooser.getCurrentDirectory();
-            }
-            if (e.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)) {
-                if (exportType == TYPE.Audio) {
-                    exportAudio(fileChooser.getSelectedFile());
-                } else {
-                    exportMetadata(fileChooser.getSelectedFile());
-                }
-            }
-            ExportDialog.this.setVisible(false);
-        }
-    };
-
-    /**
      * Performs the export.
      *
      * @param selectedFile The selection from the file chooser
@@ -228,21 +220,18 @@ public class ExportDialog extends JDialog {
     private void exportMetadata(final File selectedFile) {
         final int numItems = ExportDialog.this.selectedAudioItems.length;
 
-        final Runnable job = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Writer targetWriter = new FileWriter(selectedFile);
-                    CSVExporter.exportMessages(Lists.newArrayList(ExportDialog.this.selectedAudioItems),
-                        targetWriter);
-                    Application.getApplication()
-                        .setStatusMessage(String.format("%d Item(s) exported.", numItems));
-                } catch (IOException e) {
-                    Application.getApplication()
-                        .setStatusMessage(String.format("Exporting %d audio item(s) failed.",
-                            numItems));
-                    LOG.log(Level.WARNING, "Exporting audio items failed", e);
-                }
+        final Runnable job = () -> {
+            try {
+                Writer targetWriter = new FileWriter(selectedFile);
+                CSVExporter.exportMessages(Lists.newArrayList(ExportDialog.this.selectedAudioItems),
+                    targetWriter);
+                Application.getApplication()
+                    .setStatusMessage(String.format("%d Item(s) exported.", numItems));
+            } catch (IOException e) {
+                Application.getApplication()
+                    .setStatusMessage(String.format("Exporting %d audio item(s) failed.",
+                        numItems));
+                LOG.log(Level.WARNING, "Exporting audio items failed", e);
             }
         };
 
@@ -257,11 +246,11 @@ public class ExportDialog extends JDialog {
     private void exportAudio(final File selectedDirectory) {
         final int numItems = ExportDialog.this.selectedAudioItems.length;
 
-        final AudioFormat targetFormat = audioFormatForExtension(chosenFiletype);
+        final AudioFormat targetFormat = AudioItemRepositoryImpl.audioFormatForExtension(chosenFiletype);
         final String nameFormat = (String) nameFormatCombo.getSelectedItem();
-        final boolean idInFilename = nameFormat.equals(idOnly) || nameFormat.equals(titlePlusId);
-        final boolean titleInFilename =
-            nameFormat.equals(titleOnly) || nameFormat.equals(titlePlusId);
+        final boolean idInFilename = nameFormat != null && (nameFormat.equals(idOnly) || nameFormat.equals(titlePlusId));
+        final boolean titleInFilename = nameFormat != null && (
+            nameFormat.equals(titleOnly) || nameFormat.equals(titlePlusId));
         if (targetFormat == null) {
             throw new IllegalStateException("Unknown audio format in ExportDialog.");
         }
@@ -274,7 +263,7 @@ public class ExportDialog extends JDialog {
                 dialog.update(String.format(template, n, m));
                 return !dialog.isStopRequested();
             }
-            String template = LabelProvider.getLabel("EXPORTED_N_OF_M");
+            final String template = LabelProvider.getLabel("EXPORTED_N_OF_M");
             int numExported = 0;
 
             BusyDialog dialog;

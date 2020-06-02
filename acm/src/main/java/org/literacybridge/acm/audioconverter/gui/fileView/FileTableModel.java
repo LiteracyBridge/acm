@@ -99,8 +99,8 @@ public class FileTableModel extends AbstractTableModel {
     if (model != null) {
       if (col == COL_CONVERT) {
         FileInfo fi = (FileInfo) model.getFileInfoList().get(row);
-        boolean convert = ((Boolean) value).booleanValue();
-        fi.setConvert(convert);
+        boolean booleanValue = ((Boolean) value).booleanValue();
+        fi.setConvert(booleanValue);
       }
     }
 

@@ -157,4 +157,9 @@ public class AudioItem extends Committable {
   public String getTitle() {
       return metadata.getMetadataValue(MetadataSpecification.DC_TITLE).getValue();
   }
+
+  @Override
+  public String toString() {
+    return getTitle();
+  }
 }

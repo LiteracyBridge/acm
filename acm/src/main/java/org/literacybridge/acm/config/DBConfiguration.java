@@ -1,34 +1,21 @@
 package org.literacybridge.acm.config;
 
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.repository.CachingRepository;
-import org.literacybridge.acm.repository.FileSystemGarbageCollector;
-import org.literacybridge.acm.repository.FileSystemRepository;
-import org.literacybridge.acm.store.*;
+import org.literacybridge.acm.repository.AudioItemRepositoryImpl;
+import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.store.LuceneMetadataStore;
+import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.store.MetadataValue;
+import org.literacybridge.acm.store.RFC3066LanguageCode;
+import org.literacybridge.acm.store.Taxonomy;
+import org.literacybridge.acm.store.Transaction;
 
 import javax.swing.*;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
+import java.util.function.Predicate;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -56,9 +43,9 @@ public class DBConfiguration { //extends Properties {
   private File sharedACMDirectory;
   private String acmName = null;
   private List<Locale> audioLanguages = null;
-  private Map<Locale, String> languageLabels = new HashMap<Locale, String>();
+  private final Map<Locale, String> languageLabels = new HashMap<Locale, String>();
 
-  private AudioItemRepository repository;
+  private AudioItemRepositoryImpl repository;
   private MetadataStore store;
 
   private boolean sandboxed;
@@ -73,8 +60,12 @@ public class DBConfiguration { //extends Properties {
     return repository;
   }
 
-  private void setRepository(AudioItemRepository newRepository) {
-    repository = newRepository;
+  public void setupWavCaching(Predicate<Long> queryGc) throws IOException {
+      repository.setupWavCaching(queryGc);
+  }
+
+  public AudioItemRepositoryImpl.CleanResult cleanUnreferencedFiles() {
+      return repository.cleanUnreferencedFiles();
   }
 
     public MetadataStore getMetadataStore() {
@@ -160,7 +151,7 @@ public class DBConfiguration { //extends Properties {
    * ~/Dropbox/ACM-FOO/content
    * @return The File object for the content directory.
    */
-  File getGlobalRepositoryDirectory() {
+  public File getGlobalRepositoryDirectory() {
     if (globalRepositoryDirectory == null) {
       // ~/Dropbox/ACM-DEMO/content
       globalRepositoryDirectory = new File(getSharedACMDirectory(), Constants.RepositoryHomeDir);
@@ -171,9 +162,9 @@ public class DBConfiguration { //extends Properties {
     /**
      * Gets a file representing the location of the local non-a18 content cache, like
      * ~/LiteracyBridge/ACM/cache/ACM-FOO
-     * @return
+     * @return the file object for the local cache.
      */
-  File getLocalCacheDirectory() {
+    public File getLocalCacheDirectory() {
     if (localCacheDirectory == null) {
       // ~/LiteracyBridge/ACM/cache/ACM-DEMO
       localCacheDirectory = new File(getHomeAcmDirectory(),
@@ -187,7 +178,7 @@ public class DBConfiguration { //extends Properties {
      * ~/LiteracyBridge/ACM/temp/ACM-FOO/content
      * @return The File object for the sandbox directory.
      */
-    File getSandboxDirectory() {
+    public File getSandboxDirectory() {
         File fSandbox = null;
         if (isSandboxed()) {
             fSandbox = new File(getTempACMsDirectory(),
@@ -207,6 +198,10 @@ public class DBConfiguration { //extends Properties {
               Constants.TBLoadersHomeDir);
     }
     return tbLoadersDirectory;
+  }
+
+  public File getCommunitiesDirectory() {
+    return new File(getTBLoadersDirectory(), Constants.CommunitiesDir);
   }
 
     /**
@@ -382,7 +377,7 @@ public class DBConfiguration { //extends Properties {
         }
     }
 
-    long getCacheSizeInBytes() {
+    public long getCacheSizeInBytes() {
     long size = Constants.DEFAULT_CACHE_SIZE_IN_BYTES;
     String value = dbProperties.getProperty(Constants.CACHE_SIZE_PROP_NAME);
     if (value != null) {
@@ -424,6 +419,19 @@ public class DBConfiguration { //extends Properties {
     }
 
     /**
+     * Switch to control leaving a zero-byte marker file in images, with a single copy of the actual
+     * (audio) file. Saves significant space in multi-variant deployments.
+     *
+     * Default to false.
+     *
+     * @return true if audio files should be de-duplicated.
+     */
+    public boolean isDeDuplicateAudio() {
+        String deDuplicateAudio = dbProperties.getProperty(Constants.DE_DUPLICATE_AUDIO);
+        return deDuplicateAudio != null && deDuplicateAudio.equalsIgnoreCase("true");
+    }
+
+    /**
      * If true, add a toolbar button for configuration. Default is false; override in properties.config.
      * @return true if we should add a toolbar button for configuration.
      */
@@ -433,7 +441,18 @@ public class DBConfiguration { //extends Properties {
             (configurable != null && configurable.equalsIgnoreCase("true"));
     }
 
-    
+    /**
+     * Returns the list of native audio formats for this program. If no value is specified, the value is "a18".
+     * @return a collection of strings.
+     */
+    public List<String> getNativeAudioFormats() {
+        String formats = dbProperties.getProperty(Constants.NATIVE_AUDIO_FORMATS, AudioItemRepository.AudioFormat.A18.getFileExtension());
+        return Arrays.stream(formats.split("[;, ]"))
+                .filter(StringUtils::isNotBlank)
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .collect(Collectors.toList());
+    }
 
     /**
      * The configured value of the fuzzy match threshold, for content matching. If no
@@ -615,29 +634,7 @@ public class DBConfiguration { //extends Properties {
             userHasWriteAccess(user),
             AccessControl.isOnline()));
 
-        String wavExt = "." + AudioItemRepository.AudioFormat.WAV.getFileExtension();
-        FileSystemGarbageCollector fsgc = new FileSystemGarbageCollector(
-            getCacheSizeInBytes(),
-            (file, name) -> name.toLowerCase().endsWith(wavExt));
-        // The localCacheRepository lives in ~/LiteracyBridge/ACM/cache/ACM-FOO. It is used for all
-        // non-A18 files. When .wav files (but not, say, mp3s) exceed max cache size, they'll be gc-ed.
-        FileSystemRepository localCacheRepository = new FileSystemRepository(getLocalCacheDirectory(), fsgc);
-        // If there is no sandbox directory, all A18s are read from and written to this directory. If there
-        // IS a sandbox directory, then A18s are written there, and read from here if they're not in the
-        // sandbox. (That behaviour is broken because there is no mechanism to clean out stale items from
-        // the sandbox.)
-        FileSystemRepository globalSharedRepository = new FileSystemRepository(getGlobalRepositoryDirectory());
-        // If the ACM is opened in "sandbox" mode, all A18s are written here. A18s are read from here if
-        // present, but read from the global shared repository if absent from the sandbox. Note that
-        // if not sandboxed, this one will be null.
-        FileSystemRepository sandboxRepository
-            = isSandboxed() ? new FileSystemRepository(getSandboxDirectory()) : null;
-
-        // The caching repository directs resolve requests to one of the three above file based
-        // repositories.
-        CachingRepository cachingRepository
-            = new CachingRepository(localCacheRepository, globalSharedRepository, sandboxRepository);
-        setRepository(new AudioItemRepository(cachingRepository));
+        repository = AudioItemRepositoryImpl.buildAudioItemRepository(this);
     }
 
 

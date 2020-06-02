@@ -3,7 +3,7 @@ package org.literacybridge.acm.tools;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.AccessControl;
 import org.literacybridge.acm.gui.CommandLineParams;
-import org.literacybridge.acm.repository.AudioItemRepository.CleanResult;
+import org.literacybridge.acm.repository.AudioItemRepositoryImpl;
 import org.literacybridge.acm.utils.LogHelper;
 
 public class AcmCleaner {
@@ -35,7 +35,7 @@ public class AcmCleaner {
                 return;
             }
             // Do the work.
-            CleanResult result = ACMConfiguration.getInstance().getCurrentDB().getRepository().cleanUnreferencedFiles();
+            AudioItemRepositoryImpl.CleanResult result = ACMConfiguration.getInstance().getCurrentDB().cleanUnreferencedFiles();
             // This closes the db without saving the database. We only deleted un-referenced files, so we don't need
             // a new database.
             ACMConfiguration.getInstance().getCurrentDB().closeDb();

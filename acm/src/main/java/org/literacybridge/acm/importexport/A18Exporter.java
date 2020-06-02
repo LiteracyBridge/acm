@@ -1,5 +1,6 @@
 package org.literacybridge.acm.importexport;
 
+import org.literacybridge.acm.repository.A18Utils;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.utils.IOUtils;
@@ -16,6 +17,6 @@ class A18Exporter extends AudioFileExporter {
     void saveWithMetadata(File audioNoMetadata) throws IOException {
         IOUtils.copy(audioNoMetadata, targetFile);
 
-        AudioItemRepository.appendMetadataToA18(audioItem, targetFile);
+        A18Utils.appendMetadataToA18(audioItem, targetFile);
     }
 }

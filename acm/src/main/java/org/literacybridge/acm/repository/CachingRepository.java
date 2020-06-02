@@ -5,35 +5,49 @@ import org.literacybridge.acm.store.AudioItem;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * A repository implementation that stores .a18 files in a shared repository,
  * and all other files in a local cache.
  */
-public class CachingRepository implements FileRepositoryInterface {
+class CachingRepository implements FileRepositoryInterface {
     private final FileRepositoryInterface localCacheRepository;
     private final FileRepositoryInterface globalSharedRepository;
     private final FileRepositoryInterface sandboxRepository;
+    private final Set<AudioFormat> nativeFormats;
 
     public CachingRepository(FileRepositoryInterface localCacheRepository,
-        FileRepositoryInterface globalSharedRepository,
-        FileRepositoryInterface sandboxRepository)
+                             FileRepositoryInterface globalSharedRepository,
+                             FileRepositoryInterface sandboxRepository,
+                             Collection<AudioFormat> nativeFormats)
     {
         this.localCacheRepository = localCacheRepository;
         this.globalSharedRepository = globalSharedRepository;
         this.sandboxRepository = sandboxRepository;
+        this.nativeFormats = new HashSet<>();
+
+        this.nativeFormats.addAll(nativeFormats);
+    }
+
+    private boolean isNativeFormat(AudioFormat format) {
+        return nativeFormats.contains(format);
     }
 
     @Override
     public File resolveFile(AudioItem audioItem, AudioFormat format, boolean writeAccess) {
-        if (format == AudioFormat.A18) {
+        if (isNativeFormat(format)) {
             File f;
-            if (sandboxRepository == null)
+            if (sandboxRepository == null) {
+                // If no sandbox, file must be in the global shared repository, or doesn't exist.
                 f = globalSharedRepository.resolveFile(audioItem, format, writeAccess);
-            else if (writeAccess) {
+                if (writeAccess) {
+                    System.out.printf("From global: %s is %s\n", audioItem.getTitle(), f);
+                }
+            } else if (writeAccess) {
+                // Have a sandbox, and want to write, so put into sandbox.
                 f = sandboxRepository.resolveFile(audioItem, format, writeAccess);
+                System.out.printf("From sandbox: %s is %s\n", audioItem.getTitle(), f);
             } else {
                 // read-access: check sandbox first; if missing, check shared repo
                 f = sandboxRepository.resolveFile(audioItem, format, writeAccess);
@@ -44,6 +58,7 @@ public class CachingRepository implements FileRepositoryInterface {
             }
             return f;
         } else {
+            // Not a format we persist, so it must be in local cache, or doesn't exist.
             return localCacheRepository.resolveFile(audioItem, format, writeAccess);
         }
     }

@@ -1,7 +1,8 @@
 package org.literacybridge.acm.importexport;
 
 import com.google.common.collect.Sets;
-import com.opencsv.CSVWriter;
+import com.opencsv.CSVWriterBuilder;
+import com.opencsv.ICSVWriter;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.store.AudioItem;
@@ -95,7 +96,7 @@ public class CSVExporter {
             throw new IllegalStateException("missing columns");
         }
 
-        CSVWriter writer = new CSVWriter(targetWriter, ',');
+        ICSVWriter writer = new CSVWriterBuilder(targetWriter).build();
 
         String[] values = new String[NUMBER_OF_COLUMNS];
 
@@ -103,6 +104,7 @@ public class CSVExporter {
             // first write header (column names)
             for (int i = 0; i < NUMBER_OF_COLUMNS; i++) {
                 if (columns[i] != null)
+                    //noinspection ConstantConditions
                     values[i] = columns[i].getName();
             }
             values[CATEGORY_COLUMN_INDEX] = CATEGORY_COLUMN_NAME;
@@ -151,7 +153,7 @@ public class CSVExporter {
     /**
      * Given a string mm:ssq, parse the mm:ss into seconds.
      *
-     * @param value
+     * @param value as a string
      * @return Value in seconds.
      */
     private static DurationAndQuality durationAndQualityFromValue(String value) {
@@ -181,11 +183,12 @@ public class CSVExporter {
      * @param value An integer valued string.
      * @return The encoded string, or an empty string.
      */
+    @SuppressWarnings("unused")
     private static String correlationIdFromValue(String value) {
         String id = "";
         if (value.length() > 0) {
             try {
-                int intValue = Integer.valueOf(value);
+                int intValue = Integer.parseInt(value);
                 id = B26RotatingEncoding.encode(intValue);
             } catch (Exception ignored) {
                 // ignore, return empty string.
@@ -212,7 +215,7 @@ public class CSVExporter {
      * Helper class to export category ids and names.
      */
     private static class CategoryExporter {
-        CSVWriter writer;
+        ICSVWriter writer;
         String [] values;
         boolean listFullCategories;
 
@@ -220,7 +223,7 @@ public class CSVExporter {
             Set<OPTION> opts = Sets.newHashSet(options);
             boolean noheader = opts.contains(OPTION.NO_HEADER);
 
-            writer = new CSVWriter(targetWriter, ',');
+            writer = new CSVWriterBuilder(targetWriter).build();
             this.listFullCategories = opts.contains(OPTION.CATEGORY_AS_FULL_NAME);
 
             // If listFullCategories, we have 3 columns; otherwise only 2
@@ -259,7 +262,7 @@ public class CSVExporter {
          * @param writer Where to write
          * @param node   What to write
          */
-        private void exportCategoryCodes(CSVWriter writer, Category node) {
+        private void exportCategoryCodes(ICSVWriter writer, Category node) {
             values[0] = node.getId();
             values[1] = node.getCategoryName();
             if (listFullCategories) {

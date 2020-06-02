@@ -9,16 +9,16 @@ import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
 
-public class FileSystemRepository implements FileRepositoryInterface {
+class FileSystemRepository implements FileRepositoryInterface {
 
     private final File baseDir;
     private final FileSystemGarbageCollector garbageCollector;
 
-    public FileSystemRepository(File baseDir) {
+    FileSystemRepository(File baseDir) {
         this(baseDir, null);
     }
 
-    public FileSystemRepository(File baseDir, FileSystemGarbageCollector garbageCollector) {
+    FileSystemRepository(File baseDir, FileSystemGarbageCollector garbageCollector) {
         this.baseDir = baseDir;
         this.garbageCollector = garbageCollector;
     }

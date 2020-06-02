@@ -242,7 +242,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
         try {
             String acmName = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
-            TBBuilder tbBuilder = new TBBuilder(acmName, deploymentName(), this::reportState);
+            TBBuilder tbBuilder = new TBBuilder(acmName, deploymentName(), this::reportState, this::logException);
 
             // Create.
             final List<String> args = new ArrayList<>();
@@ -255,10 +255,10 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                 args.add(variant);   // group
             }));
             tbBuilder.createDeployment(args);
+            saveDeploymentInfoToProgramSpec(tbBuilder, pkgs);
 
             // Publish.
             if (context.isPublish()) {
-                saveDeploymentInfoToProgramSpec(tbBuilder, pkgs);
                 args.clear();
                 args.add(deploymentName());
                 tbBuilder.publishDeployment(args);
@@ -288,7 +288,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         Properties deploymentProperties = new Properties();
         deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_NUMBER, Integer.toString(context.deploymentNo));
         Date now = new Date();
-        deploymentProperties.setProperty(TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS, String.join(",", tbb.allFirmwareImageVersions()));
+        deploymentProperties.setProperty(TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS, String.join(",", tbb.getAcceptableFirmwareVersions()));
         DateFormat localTime = new SimpleDateFormat("HH:mm:ss a z", Locale.getDefault());
         DateFormat localDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_CREATION_TIME, localTime.format(now));
@@ -321,6 +321,10 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         UIUtils.setLabelText(currentState, state);
     }
 
+    private void logException(Exception exception) {
+        errors.add(exception);
+    }
+
     /**
      * Builds the lists of content, and the list of lists. Returns a map
      * of language to package name. Will extract any content prompts to a
@@ -331,13 +335,13 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         Map<String, Map<String, String>> result = new LinkedHashMap<>();
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
         File packagesDir = new File(tbLoadersDir, "packages");
-        Collection<String> variants = context.programSpec.getVariantsForDeployment(context.deploymentNo);
         DeploymentSpec deploymentSpec = context.programSpec.getContentSpec().getDeployment(context.deploymentNo);
 
         for (LanguageNode languageNode : context.playlistRootNode.getLanguageNodes()) {
             String language = languageNode.getLanguageCode();
             Map<String, String> languageResult = new LinkedHashMap<>();
             List<PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(language);
+            Collection<String> variants = context.programSpec.getVariantsForDeploymentAndLanguage(context.deploymentNo, language);
 
             for (String variant : variants) {
                 // one entry in the language : package-name map.
@@ -412,7 +416,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                     if (context.includeUfCategory)
                         activeListsWriter.println(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
                     if (context.includeTbCategory)
-                        activeListsWriter.println("$" + Constants.CATEGORY_TB_INSTRUCTIONS);
+                        activeListsWriter.println(Constants.CATEGORY_TUTORIAL);
                     if (!haveUserFeedbackListFile) {
                         // Create an empty "9-0.txt" file if there isn't already such a file. Needed so that the
                         // first UF message recorded can be reviewed by the user.
@@ -533,8 +537,8 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         } else {
             // If we weren't able to find a category id, then this must have been a prompt from 
             // content. But if we can't find the category item, just make up a category id.
-            AudioItem promptITem = prompts.getShortItem();
-            if (promptITem != null) {
+            AudioItem promptItem = prompts.getShortItem();
+            if (promptItem != null) {
                 promptCat = prompts.getShortItem().getId();
             } else {
                 promptCat = String.format("100-0-%d-%d", context.deploymentNo, promptIx);
@@ -544,46 +548,69 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
         // If there is not a pre-defined set of prompt files, we'll need to extract the
         // content audio to the promptsDir.
+        Properties idProperties = null;
         if (/*prompts.shortPromptFile == null &&*/ prompts.shortPromptItem != null) {
             if (!promptsDir.exists()) {
                 if (!promptsDir.mkdirs()) errors.add(new MakeDirectoryException("prompts", promptsDir));
             }
-            repository.exportA18WithMetadataToFile(prompts.shortPromptItem,
-                new File(promptsDir, promptCat+".a18"));
+            repository.exportAudioFileWithFormat(prompts.shortPromptItem,
+                new File(promptsDir, promptCat+".a18"), AudioItemRepository.AudioFormat.A18);
+            idProperties = new Properties();
+            idProperties.put("name", prompts.shortPromptItem.getId());
         }
         if (/*prompts.longPromptFile == null &&*/ prompts.longPromptItem != null) {
             if (!promptsDir.exists()) {
                 if (!promptsDir.mkdirs()) errors.add(new MakeDirectoryException("prompts", promptsDir));
             }
-            repository.exportA18WithMetadataToFile(prompts.longPromptItem,
-                new File(promptsDir, "i"+promptCat+".a18"));
+            repository.exportAudioFileWithFormat(prompts.longPromptItem,
+                new File(promptsDir, "i"+promptCat+".a18"), AudioItemRepository.AudioFormat.A18);
+            if (idProperties == null) {
+                idProperties = new Properties();
+            }
+            idProperties.put("invitation", prompts.longPromptItem.getId());
         }
 
+        if (idProperties != null) {
+            File propsFile = new File(promptsDir, promptCat + ".ids");
+            try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(propsFile))) {
+                idProperties.store(out, null);
+            }
+        }
+        
         return promptCat;
     }
 
     private String packageName(String languagecode, String variant) {
-        StringBuilder temp = new StringBuilder();
-        temp.append(deploymentName())
-            .append('-')
-            .append(languagecode.toLowerCase());
-        if (StringUtils.isNotBlank(variant)) {
-            temp.append('-').append(variant.toLowerCase());
-        }
-        String result = temp.toString();
+        String projectStr = ACMConfiguration.cannonicalProjectName(ACMConfiguration.getInstance().getCurrentDB().getSharedACMname());
+        String deploymentStr = Integer.toString(context.deploymentNo);
+        String variantStr = StringUtils.isNotBlank(variant) ? '-'+variant.toLowerCase() : "";
+        String packageName = projectStr + '-' + deploymentStr + '-' + languagecode + variantStr;
         // If too long, eliminate hyphens.
-        if (result.length() > Constants.MAX_PACKAGE_NAME_LENGTH) {
-            result = result.replace("-", "");
+        if (packageName.length() > Constants.MAX_PACKAGE_NAME_LENGTH) {
+            variantStr = StringUtils.isNotBlank(variant) ? variant.toLowerCase() : "";
+            packageName = projectStr + deploymentStr + languagecode + variantStr;
         }
-        // If still too long, eliminate vowels
-        if (result.length() > Constants.MAX_PACKAGE_NAME_LENGTH) {
-            result = result.replaceAll("[aeiouAEIOU]", "");
+        // If thats still too long, eliminate vowels in project name.
+        if (packageName.length() > Constants.MAX_PACKAGE_NAME_LENGTH) {
+            projectStr = projectStr.replaceAll("[aeiouAEIOU]", "");
+            packageName = projectStr + deploymentStr + languagecode + variantStr;
         }
-        // IF still too long, truncate
-        if (result.length() > Constants.MAX_PACKAGE_NAME_LENGTH) {
-            result = result.substring(0, Constants.MAX_PACKAGE_NAME_LENGTH);                         
+        // If still too long, truncate project name.
+        if (packageName.length() > Constants.MAX_PACKAGE_NAME_LENGTH) {
+            int keep = projectStr.length() - (Constants.MAX_PACKAGE_NAME_LENGTH - packageName.length());
+            if (keep > 0) {
+                projectStr = projectStr.substring(0, keep);
+                packageName = projectStr + deploymentStr + languagecode + variantStr;
+            } else {
+                // This means either a very long variant or a very long language. Should never happen.
+                // Use the hashcode of the string, and hope?
+                // Put the vowels back
+                projectStr = ACMConfiguration.cannonicalProjectName(ACMConfiguration.getInstance().getCurrentDB().getSharedACMname());
+                packageName = projectStr + deploymentStr + languagecode + variantStr;
+                packageName = Integer.toHexString(packageName.hashCode());
+            }
         }
-        return result;
+        return packageName;
     }
 
     private String deploymentName() {

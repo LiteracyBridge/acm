@@ -1,15 +1,16 @@
 package org.literacybridge.acm.importexport;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.repository.AudioItemRepositoryImpl;
 import org.literacybridge.acm.store.AudioItem;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class A18DeviceExporter {
   private static final Logger LOG = Logger
@@ -45,10 +46,13 @@ public class A18DeviceExporter {
       return false;
     }
 
-    AudioItemRepository repository = ACMConfiguration.getInstance()
-        .getCurrentDB().getRepository();
     try {
-      repository.exportA18WithMetadata(item, deviceLocation);
+      AudioItemRepositoryImpl repository = (AudioItemRepositoryImpl) ACMConfiguration.getInstance()
+              .getCurrentDB()
+              .getRepository();
+      repository.exportAudioFileWithFormat(item,
+              new File(deviceLocation, repository.getAudioFilename(item, AudioItemRepository.AudioFormat.A18)),
+              AudioItemRepository.AudioFormat.A18);
     } catch (ConversionException e) {
       LOG.log(Level.WARNING, "Error converting audio file.", e);
       return false;

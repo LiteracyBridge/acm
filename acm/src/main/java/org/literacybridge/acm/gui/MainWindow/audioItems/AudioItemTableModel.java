@@ -10,6 +10,7 @@ import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.AudioItemNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.gui.util.language.LanguageUtil;
+import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Committable;
@@ -93,11 +94,9 @@ public class AudioItemTableModel extends AbstractTableModel {
             @Override
             protected AudioItemNode<String> getValue(AudioItem audioItem) {
                 String value = "";
-                File file = ACMConfiguration.getInstance()
-                    .getCurrentDB()
-                    .getRepository()
-                    .getAudioFile(audioItem, AudioFormat.A18);
-                if (file != null) {
+                AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
+                if (repository.hasAudioFileWithFormat(audioItem, AudioFormat.A18)) {
+                    File file = repository.findFileWithFormat(audioItem, AudioFormat.A18);
                     Date date = new Date(file.lastModified());
                     value = DATE_FORMAT.format(date);
                 }

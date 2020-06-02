@@ -15,20 +15,20 @@ public class DataModel {
     private String fileExtension;
     private String fileSize;
     File fileRef;
-    boolean convert = false;
+    boolean doConvert = false;
     boolean valid = true;
 
     public FileInfo(String fileName, String fileExtension, String fileSize,
-        File fileRef, boolean convert) {
+        File fileRef, boolean doConvert) {
       this.fileName = fileName;
       this.fileExtension = fileExtension;
       this.fileSize = fileSize;
       this.fileRef = fileRef;
-      this.convert = convert;
+      this.doConvert = doConvert;
     }
 
-    public void setConvert(boolean convert) {
-      this.convert = convert;
+    public void setConvert(boolean doConvert) {
+      this.doConvert = doConvert;
     }
 
     public String getFileName() {
@@ -48,7 +48,7 @@ public class DataModel {
     }
 
     public boolean doConvert() {
-      return convert;
+      return doConvert;
     }
 
     public boolean isValid() {

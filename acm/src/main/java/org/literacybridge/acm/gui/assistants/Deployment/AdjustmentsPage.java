@@ -100,9 +100,8 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         add(includeTbCategory, gbc);
         includeTbCategory.addActionListener(this::onSelection);
         noPublish = new JCheckBox("Do not publish the deployment. Create only.");
-        // Always allow publish from a test database.
-        // Do not allow publish from production if running sandboxed.
-        noPublish.setSelected(!ACMConfiguration.isTestAcm() && ACMConfiguration.isSandbox());
+        // Default to no-publish if running sandboxed.
+        noPublish.setSelected(ACMConfiguration.isSandbox());
         noPublish.addActionListener(this::onSelection);
         add(noPublish, gbc);
 

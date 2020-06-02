@@ -14,8 +14,6 @@ import org.literacybridge.acm.gui.MainWindow.ToolbarView;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
-import org.literacybridge.acm.repository.FileSystemGarbageCollector.GCInfo;
-import org.literacybridge.acm.repository.WavFilePreCaching;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
@@ -25,9 +23,7 @@ import org.literacybridge.acm.utils.OsUtils;
 import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Image;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -43,7 +39,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.CHOOSE_PROGRAM;
 import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.INCLUDE_FB_ACMS;
 import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.LOCAL_DATA_ONLY;
@@ -231,7 +226,7 @@ public class Application extends JXFrame {
     startUp(params);
 
     if (params.cleanUnreferenced) {
-      ACMConfiguration.getInstance().getCurrentDB().getRepository().cleanUnreferencedFiles();
+      ACMConfiguration.getInstance().getCurrentDB().cleanUnreferencedFiles();
     }
   }
 
@@ -301,29 +296,14 @@ public class Application extends JXFrame {
         splash.close();
 
       LOG.log(Level.INFO, "ACM successfully started.");
-      WavFilePreCaching caching = new WavFilePreCaching();
-      GCInfo gcInfo = ACMConfiguration.getInstance().getCurrentDB().getRepository().getGcInfo();
-
-      if (gcInfo.isGcRecommended()) {
-        long sizeMB = gcInfo.getCurrentSizeInBytes() / 1024 / 1024;
-        if (!caching.hasUncachedA18Files()) {
-          int answer = JOptionPane.showOptionDialog(null,
-              "The WAV cache is currently using " + sizeMB
-                  + " MB disk space and a cleanup is recommended. Perform cleanup?",
-              "WAV Cache", JOptionPane.YES_NO_OPTION,
-              JOptionPane.QUESTION_MESSAGE, null, null, JOptionPane.YES_OPTION);
-          JOptionPane.showMessageDialog(null,
-              "Not enough memory available for JVM. Please make sure your"
-                  + " java command contains the argument -XMX512m (or more).");
-
-          if (answer == JOptionPane.YES_OPTION) {
-            ACMConfiguration.getInstance().getCurrentDB().getRepository().gc();
-          }
-        }
-      }
-      if (ACMConfiguration.getInstance().getCurrentDB().isShouldPreCacheWav()) {
-        caching.cacheNewA18Files();
-      }
+      ACMConfiguration.getInstance().getCurrentDB().setupWavCaching(sizeMB->{
+        int answer = JOptionPane.showOptionDialog(null,
+                "The WAV cache is currently using " + sizeMB
+                        + " MB disk space and a cleanup is recommended. Perform cleanup?",
+                "WAV Cache", JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE, null, null, JOptionPane.YES_OPTION);
+        return (answer == JOptionPane.YES_OPTION);
+      });
 
       application.mainView.audioItemView.requestFocusInWindow();
   }
@@ -367,12 +347,13 @@ public class Application extends JXFrame {
    */
   private static void preRunChecks() {
     // Check system memory. If insufficient, show a message and exit.
-    if (Runtime.getRuntime().maxMemory() < 400 * 1024 * 1024) {
-      JOptionPane.showMessageDialog(null,
-          "Not enough memory available for JVM. Please make sure your"
-              + " java command contains the argument -XMX512m (or more).");
-      System.exit(0);
-    }
+    // This doesn't seem to still be necessary. be: 2020-07-30
+//    if (Runtime.getRuntime().maxMemory() < 400 * 1024 * 1024) {
+//      JOptionPane.showMessageDialog(null,
+//          "Not enough memory available for JVM. Please make sure your"
+//              + " java command contains the argument -XMX512m (or more).");
+//      System.exit(0);
+//    }
 
     // Prompt the user to update to Java 8. Can't fail.
     if (JAVA_VERSION < 1.8) {

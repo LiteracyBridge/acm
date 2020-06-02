@@ -1548,10 +1548,66 @@ public class TBLoaderCore {
     private void updateContent() throws IOException {
         startStep(updateContent);
 
-        TbFile imagePath = mDeploymentDirectory.open(IMAGES_SUBDIR)
-                .open(mNewDeploymentInfo.getPackageName());
+        // Where files are copied from.
+        TbFile imagePath = mDeploymentDirectory.open(IMAGES_SUBDIR).open(mNewDeploymentInfo.getPackageName());
+
+        // To perform relative path operations. Damn Google for breaking "File" access to removable media.
+        int imagePathLength = imagePath.getAbsolutePath().length();
+        // The real files to replace zero-byte marker files.
+        TbFile shadowFilesDir = mDeploymentDirectory.open("shadowFiles");
+        // Directories in which to look for zero-byte marker files.
+        TbFile audioShadowedDir = imagePath.open("messages").open("audio");
+        TbFile languagesShadowedDir = imagePath.open("languages");
+        List<String> shadowedDirs = new ArrayList<>();
+        shadowedDirs.add(audioShadowedDir.getAbsolutePath());
+        shadowedDirs.add(languagesShadowedDir.getAbsolutePath());
+        // Remember the zero-byte marker files here. Fix them up later.
+        List<TbFile> shadowedFiles = new ArrayList<>();
+
+        // Filter to intercept zero-byte marker files, and track them for copying from their cache.
+        TbFile.CopyFilter markerInterceptor = new TbFile.CopyFilter() {
+            @Override
+            public boolean accept(TbFile file) {
+                // If this is a zero-byte file...
+                if (file.exists() && file.length() == 0) {
+                    // See if there is a corresponding shadow file.
+                    String parentDirName = file.getParent().getAbsolutePath();
+                    for (String shadowedDirName : shadowedDirs) {
+                        if (parentDirName.startsWith(shadowedDirName)) {
+                            // We found a matching shadow directory, see if the shadow contains this file.
+                            String relativeParent = parentDirName.substring(imagePathLength);
+                            TbFile shadowFile = shadowFilesDir.open(relativeParent).open(file.getName());
+                            if (shadowFile.exists()) {
+                                shadowedFiles.add(file);
+                                return false;
+                            }
+                            // There wasn't a cached file; legitimately a 0-byte file.
+                            return true;
+                        }
+                    }
+                }
+                return true;
+            }
+        };
+        
         if (imagePath.exists()) {
-            mStepBytesCount += TbFile.copyDir(imagePath, mTalkingBookRoot, null, mCopyListener);
+            mStepBytesCount += TbFile.copyDir(imagePath, mTalkingBookRoot, markerInterceptor, mCopyListener);
+        }
+        // If we found zero-byte files that need to be replaced with real content, do that now.
+        if (shadowedFiles.size()>0) {
+            for (TbFile file : shadowedFiles) {
+                String parentDirName = file.getParent().getAbsolutePath();
+                String relativeParent = parentDirName.substring(imagePathLength);
+                TbFile targetFile = mTalkingBookRoot.open(RelativePath.parse(relativeParent)).open(file.getName());
+                // The single-file copy won't create directories, and it may not have been created in the
+                // copy, so ensure it exists.
+                TbFile targetDir = targetFile.getParent();
+                if (!targetDir.exists()) {
+                    targetDir.mkdirs();
+                }
+                TbFile shadowFile = shadowFilesDir.open(relativeParent).open(file.getName());
+                TbFile.copy(shadowFile, targetFile);
+            }
         }
 
         finishStep();

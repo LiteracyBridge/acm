@@ -76,7 +76,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     @SuppressWarnings("FieldCanBeLocal")
     private final String noIssuesWelcome =
         "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
-            + "<br/>Click \"Next\" to proceed. " + "</html>";
+            + "<br/>Click \"Finish\" to proceed. " + "</html>";
     private final JLabel welcomeLabel;
 
     ValidationPage(PageHelper<DeploymentContext> listener) {
@@ -88,7 +88,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
         welcomeLabel = new JLabel(
             "<html>" + "<span style='font-size:2.5em'>Validate the Deployment</span>" + "</ul>"
-                + "<br/>Examine any issues, and click \"Next\" if you wish to proceed. "
+                + "<br/>Examine any issues, and click \"Finish\" if you wish to proceed. "
 
                 + "</html>");
         add(welcomeLabel, gbc);
@@ -335,9 +335,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      * @param languages to be checked.
      */
     private void validateSystemPrompts(Collection<String> languages) {
-        String[] required_messages = context.includeUfCategory ?
-                                     TBBuilder.REQUIRED_SYSTEM_MESSAGES_UF :
-                                     TBBuilder.REQUIRED_SYSTEM_MESSAGES_NO_UF;
+        String[] required_messages = TBBuilder.REQUIRED_SYSTEM_MESSAGES;
 
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
         String languagesPath = "TB_Options" + File.separator + "languages";
@@ -467,9 +465,9 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                             title);
 
                     } else if (prompts.hasMixedPrompts()) {
-                        context.issues.add(Issues.Severity.INFO,
+                        context.issues.add(Issues.Severity.ERROR,
                             Issues.Area.PLAYLISTS,
-                            "One ACM message and one category prompt was found in language '%s' for playlist '%s'.",
+                            "One ACM message and one category prompt was found in language '%s' for playlist '%s'. A complete set in one location is required.",
                             getLanguageAndName(language),
                             title);
                     }

@@ -8,8 +8,6 @@ import org.cmc.music.myid3.MyID3;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.Metadata;
-import org.literacybridge.acm.store.MetadataSpecification;
-import org.literacybridge.acm.utils.IOUtils;
 
 import java.io.File;
 import java.io.IOException;

@@ -106,6 +106,21 @@ public class ProgramSpec {
     }
 
     /**
+     * Get the recipients whose components are configured to receive the given deployment, and which are
+     * configured with the given language.
+     * @param deploymentNumber of interest.
+     * @param languagecode of interest.
+     * @return the Recipients in that deployment, with that language.
+     */
+    public RecipientList getRecipientsForDeploymentAndLanguage(int deploymentNumber, String languagecode) {
+        RecipientList filteredRecipients = new RecipientList();
+        getRecipientsForDeployment(deploymentNumber).stream()
+                .filter(r -> r.languagecode.equals(languagecode))
+                .forEach(filteredRecipients::add);
+        return filteredRecipients;
+    }
+
+    /**
      * Gets the languages configured for the recipients who should receive a given
      * deployment.
      * @param deploymentNumber of interest
@@ -129,6 +144,28 @@ public class ProgramSpec {
         Set<String> messageVariants = new HashSet<>();
         messageVariants.add("");
         for (ContentSpec.PlaylistSpec playlistSpec : getContentSpec().getDeployment(deploymentNumber).getPlaylistSpecs()) {
+            for (ContentSpec.MessageSpec messageSpec: playlistSpec.getMessageSpecs()) {
+                messageVariants.addAll(messageSpec.variantItems());
+            }
+        }
+        messageVariants.retainAll(recipientVariants);
+        return messageVariants;
+    }
+
+    /**
+     * Get the variants used in a given deployment for messages of a given language. Like getVariantsForDeployment()
+     * but also limited to a particular language.
+     * @param deploymentNumber of interest.
+     * @param languagecode of interest.
+     * @return a Set of the variants in the deployment for messages in the given language.
+     */
+    public Set<String> getVariantsForDeploymentAndLanguage(int deploymentNumber, String languagecode) {
+        RecipientList recipients = getRecipientsForDeploymentAndLanguage(deploymentNumber, languagecode);
+        Set<String> recipientVariants = recipients.stream().map(r -> r.variant).collect(Collectors.toSet());
+        // Find all of the message variants for that language in the deployment.
+        Set<String> messageVariants = new HashSet<>();
+        messageVariants.add("");
+        for (ContentSpec.PlaylistSpec playlistSpec : getContentSpec().getDeployment(deploymentNumber).getPlaylistSpecsForLanguage(languagecode)) {
             for (ContentSpec.MessageSpec messageSpec: playlistSpec.getMessageSpecs()) {
                 messageVariants.addAll(messageSpec.variantItems());
             }

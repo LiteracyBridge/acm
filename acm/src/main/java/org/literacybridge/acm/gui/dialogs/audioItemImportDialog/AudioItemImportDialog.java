@@ -14,7 +14,6 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 
 import org.literacybridge.acm.device.DeviceContents;
 import org.literacybridge.acm.device.DeviceInfo;
@@ -150,7 +149,7 @@ public class AudioItemImportDialog extends JDialog {
               int count = 0;
               for (File file : files) {
                 try {
-                  AudioImporter.getInstance().importFile(file);
+                  AudioImporter.getInstance().importOrUpdateAudioItemFromFile(file, null);
                 } catch (Exception e) {
                   LOG.log(Level.WARNING, "Importing file '" + file + "' failed.", e);
                 }

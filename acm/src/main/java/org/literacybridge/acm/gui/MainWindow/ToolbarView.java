@@ -276,7 +276,7 @@ public class ToolbarView extends JToolBar  {
       Application parent = Application.getApplication();
       parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
       File f = ACMConfiguration.getInstance().getCurrentDB().getRepository()
-          .convert(item, AudioFormat.WAV);
+          .getAudioFile(item, AudioFormat.WAV);
       parent.setCursor(Cursor.getDefaultCursor());
       Application.getFilterState().updateResult();
       initPlayer(f);

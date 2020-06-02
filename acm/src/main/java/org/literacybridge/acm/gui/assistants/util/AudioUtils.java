@@ -7,6 +7,7 @@ import org.literacybridge.acm.audioconverter.api.ExternalConverter;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.importexport.AudioImporter;
+import org.literacybridge.acm.repository.A18Utils;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Metadata;
@@ -31,6 +32,18 @@ public class AudioUtils {
 
     private static Pattern playlistPattern = Pattern.compile("(\\d+)-(.*)-(\\w+)");
 
+    /**
+     * Copies the given fromFile as the toFile, converting to A18 format if the file is not already an A18.
+     *
+     * THIS IS ONLY FOR NON-AUDIO-REPOSITORY FILES. CONTENT SHOULD USE THE REPOSITORY API.
+     *
+     * @param title The title to be added as metadata. (Why? We don't keep the metadata.)
+     * @param languagecode The language code to add as metadat. (Why?)
+     * @param fromFile File to copy from. May be any format.
+     * @param toFile File to copy to.
+     * @throws BaseAudioConverter.ConversionException
+     * @throws IOException
+     */
     public static void copyOrConvert(String title, String languagecode, File fromFile, File toFile)
         throws BaseAudioConverter.ConversionException, IOException
     {
@@ -49,13 +62,13 @@ public class AudioUtils {
         categories.add(communities);
 
         if (FilenameUtils.getExtension(fromFile.getName()).equalsIgnoreCase(AudioItemRepository.AudioFormat.A18.getFileExtension())) {
-            AudioItemRepository.copyA18WithoutMetadata(fromFile, toFile);
+            A18Utils.copyA18WithoutMetadata(fromFile, toFile);
         } else {
             AudioConversionFormat audioConversionFormat = AudioItemRepository.AudioFormat.A18.getAudioConversionFormat();
             new ExternalConverter().convert(fromFile, toFile, audioConversionFormat, true);
         }
 
-        AudioItemRepository.appendMetadataToA18(metadata, categories, toFile);
+        A18Utils.appendMetadataToA18(metadata, categories, toFile);
     }
 
     /**

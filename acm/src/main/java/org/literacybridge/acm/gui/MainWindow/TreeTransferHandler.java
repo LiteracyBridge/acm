@@ -20,7 +20,10 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,7 +32,7 @@ public class TreeTransferHandler extends TransferHandler {
     private static final long serialVersionUID = 1L;
     private static final Logger LOG = Logger.getLogger(TreeTransferHandler.class.getName());
 
-    private static DataFlavor[] supportedFlavors = new DataFlavor[]{
+    private static final DataFlavor[] supportedFlavors = new DataFlavor[]{
             DataFlavor.javaFileListFlavor,
             AudioItemView.AudioItemDataFlavor
     };
@@ -113,10 +116,11 @@ public class TreeTransferHandler extends TransferHandler {
             TransferHandler.TransferSupport support, final Category category)
             throws IOException, UnsupportedFlavorException {
         Transferable t = support.getTransferable();
+        //noinspection unchecked
         final List<File> files = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
-
         // don't piggyback on the drag&drop thread
         Runnable job = new Runnable() {
+            private final FileFilter audioFilesFilter = AudioImporter.getInstance().getImportableFilesFilter();
             BusyDialog dialog = null;
 
             /**
@@ -131,16 +135,35 @@ public class TreeTransferHandler extends TransferHandler {
                 return !dialog.isStopRequested();
             }
 
-            String template = LabelProvider.getLabel("IMPORTED_N_OF_M");
+            final String template = LabelProvider.getLabel("IMPORTED_N_OF_M");
             int numImported = 0;
 
             @Override
             public void run() {
+                // Iterate over any directories in the dropped files.
+                List<File> filesToImport = new LinkedList<>();
+                files.forEach(f -> gatherFiles(f, filesToImport));
+
                 Application parent = Application.getApplication();
                 dialog = UIUtils.showDialog(parent,
                         new BusyDialog(LabelProvider.getLabel("IMPORTING_FILES"), parent, true));
+
                 try {
-                    AudioImporter.getInstance().importFiles(files, category, this::onProgress);
+                    int numImported = 0;
+                    for (File f : filesToImport) {
+                        try {
+                            // TODO: See if an audio item of this name exists.
+                            // TODO: Query user for the language to apply to the audio item
+                            AudioImporter.getInstance().importOrUpdateAudioItemFromFile(f, item -> item.addCategory(category));
+                        } catch (Exception e) {
+                            LOG.log(Level.WARNING, "Failed to import file " + f, e);
+                        }
+                        boolean okToContinue=onProgress(++numImported, filesToImport.size());
+                        if (!okToContinue) {
+                            break;
+                        }
+                    }
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
@@ -149,11 +172,40 @@ public class TreeTransferHandler extends TransferHandler {
                     Application.getApplication().setStatusMessage(String.format("%d Item(s) imported.", numImported));
                 }
             }
+
+            private void gatherFiles(File dir, List<File> filesToImport) {
+                if (!dir.isDirectory()) {
+                    filesToImport.add(dir);
+                } else {
+                    File[] files = dir.listFiles(audioFilesFilter);
+                    Collections.addAll(filesToImport, files);
+
+                    File[] subdirs = dir.listFiles(new FileFilter() {
+                        @Override
+                        public boolean accept(File pathname) {
+                            return pathname.isDirectory();
+                        }
+                    });
+
+                    for (File subDir : subdirs) {
+                        gatherFiles(subDir, filesToImport);
+                    }
+                }
+            }
+
+
         };
 
         new Thread(job).start();
     }
 
+    /**
+     * Handles dropping from audio items window onto a category.
+     * @param support drop helper object from Swing
+     * @param target where the object(s) was(were) dropped
+     * @throws IOException is probably never thrown
+     * @throws UnsupportedFlavorException ??
+     */
     private void assignCategory(TransferHandler.TransferSupport support,
                                 final CategoryTreeNodeObject target)
             throws IOException, UnsupportedFlavorException {

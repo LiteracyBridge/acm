@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.List;
 
 interface FileRepositoryInterface {
-    public enum Repository {
+    enum Repository {
         global,
         cache,
         sandbox

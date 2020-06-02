@@ -311,9 +311,9 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
             boolean isUpdate = matchableItem.getLeft().hasAudioItem(); // to update proper counter after success
             if (isUpdate) {
                 AudioItem existingItem = matchableItem.getLeft().getItem();
-                importer.updateAudioItem(existingItem, importableFile, handler);
+                importer.updateAudioItemFromFile(existingItem, importableFile, handler);
             } else {
-                AudioItem audioItem = importer.importFile(importableFile, handler);
+                AudioItem audioItem = importer.importAudioItemFromFile(importableFile, handler);
                 matchableItem.getLeft().setItem(audioItem);
             }
 

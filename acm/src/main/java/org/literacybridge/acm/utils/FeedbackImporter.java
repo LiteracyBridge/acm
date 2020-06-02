@@ -399,13 +399,12 @@ public class FeedbackImporter {
         }
         // Reset the value, because the lambda may not be called, if the file is already in DB.
         tweaks[0] = ImportResults.TWEAKS.NO_CHANGE;
-        importer.importFile(file,
+        importer.importAudioItemFromFile(file,
                             (item)->{
                                 // TODO: item.getMetadata().put(LB_CORRELATION_ID, (id++))
                                 item.getMetadata().addValuesFromOtherWithExclusions(metadata);
                                 tweaks[0] = adjustCategoriesForDuration(item);
-                            },
-                            AudioImporter.Option.addNewOnly);
+                            });
         results.fileImported(file.getName(), tweaks[0]);
       } catch (Exception e) {
         System.err.println(String.format("Failed to import '%s': %s", file.getName(), e.getMessage()));
