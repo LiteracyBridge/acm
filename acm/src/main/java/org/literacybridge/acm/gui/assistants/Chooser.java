@@ -30,9 +30,18 @@ import static org.literacybridge.acm.utils.SwingUtils.getApplicationRelativeLoca
 
 public class Chooser extends JDialog {
     private static final Logger LOG = Logger.getLogger(Chooser.class.getName());
+    private static Chooser dialog;
 
-    public static void showChooserMenu(@SuppressWarnings("unused") ActionEvent actionEvent) {
-        Chooser dialog = new Chooser(Application.getApplication());
+    synchronized private static void deactivate() {
+        if (dialog != null) {
+            dialog.setVisible(false);
+            dialog = null;
+        }
+    }
+
+    synchronized public static void showChooserMenu(@SuppressWarnings("unused") ActionEvent actionEvent) {
+        deactivate();
+        dialog = new Chooser(Application.getApplication());
         // Place the new dialog within the application frame. This is hacky, but if it fails, the dialog
         // simply winds up in a funny place. Unfortunately, Swing only lets us get the location of a
         // component relative to its parent.
@@ -47,7 +56,6 @@ public class Chooser extends JDialog {
 
     private Chooser(JFrame parent) {
         super(parent, "", false);
-        System.out.println(this.isVisible());
         setResizable(false);
         setUndecorated(true);
 
@@ -136,7 +144,7 @@ public class Chooser extends JDialog {
     private WindowListener windowListener = new WindowAdapter() {
         @Override
         public void windowDeactivated(WindowEvent e) {
-            setVisible(false);
+            deactivate();
         }
     };
 
