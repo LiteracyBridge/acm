@@ -890,15 +890,15 @@ public class SidebarView extends ACMContainer implements Observer {
         } else {
             MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
                 .getMetadataStore();
-            Playlist playlist = store.newPlaylist(playlistName);
-            try {
-                store.commit(playlist);
-            } catch (IOException e) {
-                LOG.log(Level.WARNING, "Unable to create playlist with name " + playlistName,
-                    e);
+            if (store.findPlaylistByName(playlistName) == null) {
+                Playlist playlist = store.newPlaylist(playlistName);
+                try {
+                    store.commit(playlist);
+                    Application.getMessageService().pumpMessage(new PlaylistsChanged());
+                } catch (IOException e) {
+                    LOG.log(Level.WARNING, "Unable to create playlist with name " + playlistName, e);
+                }
             }
-
-            Application.getMessageService().pumpMessage(new PlaylistsChanged());
         }
     }
 
