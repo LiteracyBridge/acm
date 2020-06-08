@@ -46,7 +46,7 @@ public class DesktopShortcutsPanel extends AbstractSettingsBase {
         return "Desktop Shortcuts";
     }
 
-    DesktopShortcutsPanel(SettingsDialog.SettingsHelper helper) {
+    public DesktopShortcutsPanel(AcmSettingsDialog.SettingsHelper helper) {
         super(helper);
 
         // Set an empty border on the panel, to give some blank space around the content.

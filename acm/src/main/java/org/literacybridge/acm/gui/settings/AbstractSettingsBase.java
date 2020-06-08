@@ -3,9 +3,9 @@ package org.literacybridge.acm.gui.settings;
 import javax.swing.*;
 
 public abstract class AbstractSettingsBase extends JPanel {
-    protected SettingsDialog.SettingsHelper helper;
+    protected AcmSettingsDialog.SettingsHelper helper;
 
-    AbstractSettingsBase(SettingsDialog.SettingsHelper helper) {
+    protected AbstractSettingsBase(AcmSettingsDialog.SettingsHelper helper) {
         super();
         this.helper = helper;
     }

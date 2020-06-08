@@ -13,7 +13,7 @@ import org.literacybridge.acm.gui.messages.SearchRequestMessage;
 import org.literacybridge.acm.gui.playerAPI.PlayerStateDetails;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
-import org.literacybridge.acm.gui.settings.SettingsDialog;
+import org.literacybridge.acm.gui.settings.AcmSettingsDialog;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataSpecification;
@@ -119,7 +119,7 @@ public class ToolbarView extends JToolBar  {
     // go straight to that dialog. If and when we have more configurations, this will
     // open some sort of configuration container.
 
-    configureButton.addActionListener(SettingsDialog::showDialog);
+    configureButton.addActionListener(AcmSettingsDialog::showDialog);
 //    configureButton.addActionListener(VisibleCategoriesDialog::showDialog);
     assistantButton.addActionListener(Chooser::showChooserMenu);
   }

@@ -199,12 +199,12 @@ public class WelcomeDialog extends JDialog {
         setAlwaysOnTop(true);
 
         // For debugging sizing issues.
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                System.out.println(String.format("Size %dx%d", WelcomeDialog.this.getWidth(), WelcomeDialog.this.getHeight()));
-            }
-        });
+//        addComponentListener(new ComponentAdapter() {
+//            @Override
+//            public void componentResized(ComponentEvent e) {
+//                System.out.println(String.format("Size %dx%d", WelcomeDialog.this.getWidth(), WelcomeDialog.this.getHeight()));
+//            }
+//        });
     }
 
     private void dialogShown() {
@@ -251,12 +251,13 @@ public class WelcomeDialog extends JDialog {
             makeCard(newCard);
         }
         int deltaFromNominal = getHeight()- currentCard.panel.minimumHeight;
-        System.out.printf("transition card %s -> %s, cur height: %d, cur min: %d, new min: %d, delta: %d\n",
-            currentCard.panel.name(), newCard.name(),
-            getHeight(),
-            currentCard.panel.minimumHeight,
-            newCard.minimumHeight,
-            deltaFromNominal);
+        // For debugging card transitions.
+//        System.out.printf("transition card %s -> %s, cur height: %d, cur min: %d, new min: %d, delta: %d\n",
+//            currentCard.panel.name(), newCard.name(),
+//            getHeight(),
+//            currentCard.panel.minimumHeight,
+//            newCard.minimumHeight,
+//            deltaFromNominal);
         if (getHeight() != newCard.minimumHeight+deltaFromNominal) {
             setMinimumSize(new Dimension(getWidth(), newCard.minimumHeight));
             setSize(new Dimension(getWidth(), newCard.minimumHeight+deltaFromNominal));

@@ -22,7 +22,7 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
  * Log operations of the applications. Uploaded to server, to extract app metrics, usage, and updates.
  */
 
-public class OperationLogImpl implements OperationLog.Implementation{
+class OperationLogImpl implements OperationLog.Implementation{
     // This log is, of course, the application log, where we log debugging information about the
     // operation log (this class' function).
     private static final Logger LOG = Logger.getLogger(OperationLogImpl.class.getName());

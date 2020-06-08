@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class GeneralSettingsPanel extends AbstractSettingsBase {
+public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     private final PlaceholderTextArea email;
     private final JTextField fuzzyThreshold;
     private final String emailAddresses;
@@ -32,7 +32,7 @@ public class GeneralSettingsPanel extends AbstractSettingsBase {
         return "General Settings";
     }
 
-    GeneralSettingsPanel(SettingsDialog.SettingsHelper helper) {
+    AcmGeneralSettingsPanel(AcmSettingsDialog.SettingsHelper helper) {
         super(helper);
 
         // Set an empty border on the panel, to give some blank space around the content.

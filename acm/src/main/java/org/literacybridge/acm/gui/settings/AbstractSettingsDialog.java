@@ -1,8 +1,6 @@
 package org.literacybridge.acm.gui.settings;
 
-import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.LabelButton;
-import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 
 import javax.swing.*;
@@ -13,7 +11,6 @@ import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
@@ -23,25 +20,19 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static org.literacybridge.acm.gui.UIConstants.getResource;
-import static org.literacybridge.acm.utils.SwingUtils.getApplicationRelativeLocation;
 
 /**
  * A dialog to implement a set of settings pages. Each page should be a logical grouping of
  * settings.
  */
-public final class SettingsDialog extends JDialog {
-
-    private static final String GENERAL = "General";
-    private static final String VISIBLE_CATEGORIES = "Visible Categories";
-    private static final String DESKTOP_SHORTCUTS = "Desktop Shortcuts";
-
+public abstract class AbstractSettingsDialog extends JDialog {
     /**
      * Interface by which the settings panels can communicate with this dialog.
      */
     public interface SettingsHelper {
         void setValid(boolean valid);
     }
-    private SettingsHelper settingsHelper = new SettingsHelper() {
+    SettingsHelper settingsHelper = new SettingsHelper() {
         @Override
         public void setValid(boolean valid) {
             okButton.setEnabled(valid);
@@ -58,11 +49,11 @@ public final class SettingsDialog extends JDialog {
     private final JPanel settingsPanel;
     private final JButton okButton;
 
-    private Map<String, AbstractSettingsBase> settingsPanels = new LinkedHashMap<>();
+    private final Map<String, AbstractSettingsBase> settingsPanels = new LinkedHashMap<>();
     private String currentTag = null;
 
-    private SettingsDialog(Window owner) {
-        super(owner, "Settings", ModalityType.APPLICATION_MODAL);
+    protected AbstractSettingsDialog(Window owner, String title) {
+        super(owner, title, ModalityType.APPLICATION_MODAL);
 
         JPanel dialogPanel = new JPanel();
         dialogPanel.setLayout(new BorderLayout());
@@ -96,28 +87,7 @@ public final class SettingsDialog extends JDialog {
         Box iconBar = Box.createVerticalBox();
         iconBar.setBorder(new LineBorder(Color.lightGray, 1, true));
 
-        iconBar.add(Box.createVerticalStrut(15));
-        iconBar.add(makeSettingsPanel(UIConstants.GEARS_64_PNG, GENERAL, GeneralSettingsPanel::new));
-
-        iconBar.add(Box.createVerticalStrut(15));
-        iconBar.add(makeSettingsPanel(UIConstants.TREE_64_PNG, VISIBLE_CATEGORIES,
-            VisibleCategoriesPanel::new));
-
-        iconBar.add(Box.createVerticalStrut(15));
-        iconBar.add(makeSettingsPanel(UIConstants.SHORTCUTS_64_PNG, DESKTOP_SHORTCUTS,
-            DesktopShortcutsPanel::new));
-
-        // If we need an import specific settings panel:
-//        iconBar.add(Box.createVerticalStrut(15));
-//        iconBar.add(makeSettingsPanel("usb_64.png", "Content Importer", EmptySettingsPanel::new));
-//
-        // If we need a deployment specific settings panel:
-//        iconBar.add(Box.createVerticalStrut(15));
-//        iconBar.add(makeSettingsPanel("tb_64g.png", "Deployment Creation", EmptySettingsPanel::new));
-//
-        // For a future "Languages in project" panel:
-//        iconBar.add(Box.createVerticalStrut(15));
-//        iconBar.add(makeSettingsPanel("language_64.png", "Languages", EmptySettingsPanel::new));
+        String firstPanel = addSettingsPanels(iconBar);
 
         iconBar.add(Box.createVerticalGlue());
         Dimension size = iconBar.getPreferredSize();
@@ -140,7 +110,7 @@ public final class SettingsDialog extends JDialog {
         });
 
         // Activate the first settings panel.
-        onAction(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, GENERAL));
+        onAction(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, firstPanel));
 
         setSize(BUTTONS_WIDTH + PANEL_WIDTH, DIALOG_HEIGHT);
         // For debugging sizing issues.
@@ -153,6 +123,8 @@ public final class SettingsDialog extends JDialog {
 
     }
 
+    protected abstract String addSettingsPanels(Box iconBar);
+
     /**
      * Makes one settings panel and adds it to the settings panel holder panel.
      * @param iconResource The name of the file with the icon for the settings button.
@@ -160,7 +132,7 @@ public final class SettingsDialog extends JDialog {
      * @param ctor Constructor for the panel. Takes a SettingsHelper parameter.
      * @return The button.
      */
-    private JComponent makeSettingsPanel(String iconResource,
+    protected JComponent makeSettingsPanel(String iconResource,
         String caption,
         Function<SettingsHelper, AbstractSettingsBase> ctor)
     {
@@ -217,23 +189,7 @@ public final class SettingsDialog extends JDialog {
         settingsLayout.show(settingsPanel, actionCommand);
         currentTag = actionCommand;
         setTitle(settingsPanels.get(currentTag).getTitle());
-        okButton.setEnabled(settingsPanels.get(currentTag).isValid());
-    }
-
-    /**
-     * Constructs, positions, and shows the dialog.
-     * @param e is ignored.
-     */
-    public static void showDialog(ActionEvent e) {
-        SettingsDialog dialog = new SettingsDialog(Application.getApplication());
-        // Place the new dialog within the application frame. This is hacky, but if it fails, the dialog
-        // simply winds up in a funny place. Unfortunately, Swing only lets us get the location of a
-        // component relative to its parent.
-        Point pAudio = getApplicationRelativeLocation(Application.getApplication()
-            .getMainView()
-            .getAudioItemView());
-        dialog.setLocation(pAudio);
-        dialog.setVisible(true);
+        okButton.setEnabled(settingsPanels.get(currentTag).settingsValid());
     }
 
 }

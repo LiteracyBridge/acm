@@ -33,13 +33,13 @@ public class GBC extends GridBagConstraints {
             anchor, fill, insets, ipadx, ipady);
     }
 
-    GBC withGridx(int newValue) {
+    public GBC withGridx(int newValue) {
         GBC clone = (GBC) this.clone();
         clone.gridx = newValue;
         return clone;
     }
 
-    GBC withGridy(int newValue) {
+    public GBC withGridy(int newValue) {
         GBC clone = (GBC) this.clone();
         clone.gridy = newValue;
         return clone;
@@ -57,7 +57,7 @@ public class GBC extends GridBagConstraints {
         return clone;
     }
 
-    GBC withWeightx(double newValue) {
+    public GBC withWeightx(double newValue) {
         GBC clone = (GBC) this.clone();
         clone.weightx = newValue;
         return clone;
@@ -109,12 +109,12 @@ public class GBC extends GridBagConstraints {
         return this;
     }
 
-    GBC setGridwidth(int newValue) {
+    public GBC setGridwidth(int newValue) {
         this.gridwidth = newValue;
         return this;
     }
 
-    GBC setGridheight(int newValue) {
+    public GBC setGridheight(int newValue) {
         this.gridheight = newValue;
         return this;
     }
@@ -139,7 +139,7 @@ public class GBC extends GridBagConstraints {
         return this;
     }
 
-    GBC setInsets(Insets newValue) {
+    public GBC setInsets(Insets newValue) {
         this.insets = newValue;
         return this;
     }

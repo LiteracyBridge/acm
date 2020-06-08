@@ -1,26 +1,19 @@
 package org.literacybridge.acm.tbloader;
 
-import com.google.common.collect.ImmutableBiMap;
-import org.jdesktop.swingx.prompt.PromptSupport;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
-import java.util.stream.Collectors;
 
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.LINE_START;
@@ -42,13 +35,6 @@ public class JRecipientChooser extends JPanel {
     private final List<String> selections = new ArrayList<>();
     private final List<JComboBox<String>> choosers = new ArrayList<>();
 
-    // For the case with only a list of filenames.
-    private FilteringComboBoxModel<String> communityModel;
-    private JTextField communityFilter;
-    private JComboBox<String> communityChooser;
-    private String selectedCommunity;
-
-
     JRecipientChooser() {
         super(new GridBagLayout());
     }
@@ -60,86 +46,40 @@ public class JRecipientChooser extends JPanel {
     /**
      * Populates the recipient chooser from the program spec and list of files.
      * @param programSpec for the project
-     * @param files in the communities directory
+     *
      */
-    void populate(ProgramSpec programSpec, File[] files) {
+    void populate(ProgramSpec programSpec) {
         this.programSpec = programSpec;
         clear();
         RecipientList recipients = programSpec.getRecipients();
-        if (recipients != null)
-            populateRecipients(recipients);
-        else
-            populateCommunities(files);
-    }
-
-    /**
-     * Returns the directory for the selected community. If the community was selected via a
-     * RecipientList, then the directory is looked up in the recipient map from the recipient id.
-     *
-     * If the community was selected via a list of directories, the directory is selected
-     * directly.
-     */
-    String getCommunityDirectory() {
-        if (!haveChoice) {
-            return null;
+        if (recipients == null) {
+            throw new IllegalStateException("Recipients are required.");
         }
-        // Selection by community directory?
-        if (selectedCommunity != null) {
-            return selectedCommunity;
-        }
-        // Selection by recipient hierarchy.
-        Recipient recipient = recipients.getRecipient(selections);
-        Map<String,String> recipientMap = programSpec.getRecipientsMap();
-        return recipientMap.get(recipient.recipientid);
+        populateRecipients(recipients);
     }
 
     Recipient getSelectedRecipient() {
         return recipients.getRecipient(selections);
     }
 
-    void setSelectedCommunity(String community, String recipientid) {
+    void setSelectedRecipient(String recipientid) {
         if (programSpec == null) return;
         boolean didSelect = false;
-        
-        if (communityChooser != null) {
-            int count = communityChooser.getItemCount();
-            if (count == 1) {
-                // Only one recipient; might as well select them.
-                communityChooser.setSelectedIndex(0);
-                didSelect = true;
-            } else {
-                for (int i = 0; i < count; i++) {
-                    if (communityChooser.getItemAt(i).equalsIgnoreCase(community)) {
-                        communityChooser.setSelectedIndex(i);
-                        selectedCommunity = communityChooser.getSelectedItem().toString();
-                        didSelect = true;
-                        break;
-                    }
-                }
-            }
-        } else {
-            if (recipients.size() == 1) {
-                // Only one recipient; auto-select them, by grabbing the one-and-only recipientid.
-                Recipient recipient = recipients.get(0);
-                recipientid = recipient.recipientid;
-            }
-            if (recipientid == null) {
-                ImmutableBiMap<String, String> dir2id = new ImmutableBiMap.Builder<String, String>()
-                    .putAll(programSpec.getRecipientsMap())
-                    .build()
-                    .inverse();
-                recipientid = dir2id.get(community);
-            }
-            List<String> path = recipients.getPath(recipientid);
-            // If we have a full path...
-            if (path.size() == maxHierarchy + 1) {
-                didSelect = setSelectionWithPath(path);
-            } else {
-                // Otherwise, just reset to the base level.
-                didSelect = false;
-                fillChoosers(0);
-            }
+
+        if (recipients.size() == 1) {
+            // Only one recipient; auto-select them, by grabbing the one-and-only recipientid.
+            Recipient recipient = recipients.get(0);
+            recipientid = recipient.recipientid;
         }
+        List<String> path = recipients.getPath(recipientid);
+        // If we have a full path...
+        if (path.size() == maxHierarchy + 1) {
+            didSelect = setSelectionWithPath(path);
+        } else {
+            // Otherwise, just reset to the base level.
+            fillChoosers(0);
+        }
+
         setDone(didSelect);
     }
 
@@ -147,49 +87,6 @@ public class JRecipientChooser extends JPanel {
         removeAll();
         choosers.clear();
         selections.clear();
-
-        if (communityFilter != null) remove(communityFilter);
-        if (communityChooser != null) remove(communityChooser);
-        communityFilter = null;
-        communityChooser = null;
-        selectedCommunity = null;
-    }
-
-    private void populateCommunities(File[] communityDirs) {
-        setDone(false);
-
-        GridBagConstraints c;
-        int y=0;
-
-        c = gbc(y++, false);
-        c.weightx = 1;
-        communityModel = new FilteringComboBoxModel<>();
-        communityFilter = new JTextField("", 40);
-        communityFilter.getDocument().addDocumentListener(communityFilterListener);
-        PromptSupport.setPrompt("Type to filter...", communityFilter);
-        Box box = Box.createHorizontalBox();
-        box.add(communityFilter);
-        box.add(Box.createHorizontalGlue());
-        add(communityFilter, c);
-
-        // Select community.
-        c = gbc(y++, true);
-        communityChooser = new JComboBox<>(communityModel);
-        communityChooser.setRenderer(new MyComboBoxRenderer(communityChooser, "Choose community", ""));
-        communityChooser.addActionListener(this::communityActionListener);
-        box = Box.createHorizontalBox();
-        box.add(communityChooser);
-        box.add(Box.createHorizontalGlue());
-        add(communityChooser, c);
-
-        List<String> names = Arrays.stream(communityDirs)
-            .map(File::getName)
-            .sorted(String::compareToIgnoreCase)
-            .collect(Collectors.toList());
-        for (String name : names) {
-            communityChooser.addItem(name);
-        }
-        communityChooser.setSelectedItem(-1);
     }
 
     /**
@@ -383,18 +280,12 @@ public class JRecipientChooser extends JPanel {
     private class MyComboBoxRenderer extends DefaultListCellRenderer // JLabel implements ListCellRenderer
     {
         private int level = -1;
-        private String prompt;
-        private String empty;
-        private Component component;
+        private final String prompt;
+        private final String empty;
+        private final Component component;
         // We can determine that we want to format an item in italic at a different place than we
         // actually do the formatting.
         private boolean wantItalic = false;
-
-        MyComboBoxRenderer(Component component, String prompt, String emptyValue) {
-            this.component = component;
-            this.prompt = prompt;
-            this.empty = emptyValue;
-        }
 
         MyComboBoxRenderer(int level)
         {
@@ -411,8 +302,7 @@ public class JRecipientChooser extends JPanel {
          */
         String getNumTbsLabel(String entity) {
             if (level < 0) return "";
-            List<String> path = new ArrayList<>();
-            path.addAll(selections.subList(0, level));
+            List<String> path = new ArrayList<>(selections.subList(0, level));
             path.add(entity);
             int n = recipients.getNumTbs(path);
             return String.format(" (%d TB%s)", n, n==1?"":"s");
@@ -467,29 +357,6 @@ public class JRecipientChooser extends JPanel {
             return this;
         }
     }
-
-
-    /**
-     * Handles combo box selections for the Community list.
-     *
-     * @param unused The combo selection event.
-     */
-    private void communityActionListener(ActionEvent unused) {
-        Object selectedItem = communityChooser.getSelectedItem();
-        selectedCommunity = selectedItem != null ? selectedItem.toString() : null;
-        setDone(selectedCommunity != null);
-    }
-
-    /**
-     * Listens for changes to the community filter text box, and updates the filter itself.
-     */
-    private DocumentListener communityFilterListener = new DocumentListener() {
-        // Listen for any change to the text
-        public void changedUpdate(DocumentEvent e) { common(); }
-        public void removeUpdate(DocumentEvent e) { common(); }
-        public void insertUpdate(DocumentEvent e) { common(); }
-        void common() { communityModel.setFilterString(communityFilter.getText()); }
-    };
 
     private boolean firingActionEvent = false;
     private void fireActionEvent() {

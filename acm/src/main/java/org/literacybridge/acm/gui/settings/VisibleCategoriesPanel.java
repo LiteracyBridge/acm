@@ -29,7 +29,7 @@ public class VisibleCategoriesPanel extends AbstractSettingsBase {
     private final DefaultMutableTreeNode categoryRootNode;
     private CheckboxTree categoryTree;
 
-    VisibleCategoriesPanel(SettingsDialog.SettingsHelper helper) {
+    VisibleCategoriesPanel(AcmSettingsDialog.SettingsHelper helper) {
         super(helper);
         preserveState();
         setLayout(new BorderLayout());

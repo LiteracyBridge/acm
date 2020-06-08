@@ -14,7 +14,7 @@ public class TbFlashData {
 
   // struct SystemData
   // int structType
-  private boolean debug = true;
+  private boolean debug = false;
   private String serialNumber;
   private String deploymentNumber;
   private short countReflashes;

@@ -199,7 +199,7 @@ public class TBLoaderCore {
         private DeploymentInfo mOldDeploymentInfo;
         private DeploymentInfo mNewDeploymentInfo;
         private TbFile mDeploymentDirectory;
-        private String mLocation;
+        private String mLocation = "Other";
         private String mCoordinates;
         private ProgressListener mProgressListener;
         private boolean mStatsOnly = false;

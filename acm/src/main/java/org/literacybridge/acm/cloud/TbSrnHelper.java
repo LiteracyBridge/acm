@@ -146,6 +146,7 @@ public class TbSrnHelper {
      *
      * @return the number of available tb srns.
      */
+    @SuppressWarnings("UnusedReturnValue")
     public int prepareForAllocation() {
         if (tbSrnAllocationInfo == null || tbSrnAllocationInfo.getPrimaryBegin() == 0 || tbSrnAllocationInfo.getBackupBegin() == 0) {
             int nBlocks = (tbSrnAllocationInfo ==null || (
