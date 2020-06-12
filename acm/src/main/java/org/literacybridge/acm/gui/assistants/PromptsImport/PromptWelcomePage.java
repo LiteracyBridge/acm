@@ -108,31 +108,12 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
     }
 
     private void fillLanguageChooser() {
-        languageChooser.removeAllItems();
-        languageChooser.insertItemAt("Choose...", 0);
-        context.configLanguagecodes.forEach(languageChooser::addItem);
-
-        Set<String> languageStrings = context.configLanguagecodes
-            .stream()
-            .map(AcmAssistantPage::getLanguageAndName)
-            .collect(Collectors.toSet());
-        setComboWidth(languageChooser, languageStrings, "Choose...");
-        languageChooser.setMaximumSize(languageChooser.getPreferredSize());
-
-        if (context.configLanguagecodes.size() == 1) {
-            languageChooser.setSelectedIndex(1);
-        } else {
-            languageChooser.setSelectedIndex(0);
-        }
+        fillLanguageChooser(languageChooser, context.configLanguagecodes, context.languagecode);
     }
 
     @Override
     protected void onPageEntered(boolean progressing) {
-        if (StringUtils.isNotBlank(context.languagecode)) {
-            languageChooser.setSelectedItem(context.languagecode);
-        } else {
-            languageChooser.setSelectedIndex(0);
-        }
+        fillLanguageChooser();
         onSelection(null);
     }
 

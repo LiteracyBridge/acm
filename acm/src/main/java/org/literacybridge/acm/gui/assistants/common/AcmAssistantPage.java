@@ -12,6 +12,7 @@ import org.literacybridge.core.spec.ProgramSpec;
 import javax.swing.*;
 import java.awt.Color;
 import java.awt.Component;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
@@ -61,16 +62,22 @@ public abstract class AcmAssistantPage<Context> extends AssistantPage<Context> {
     protected static void fillLanguageChooser(JComboBox<String> languageChooser,
         int deploymentNo,
         ProgramSpec programSpec,
-        String languagecode) {
+        String defaultLanguageCode) {
+        Set<String> languages = programSpec.getLanguagesForDeployment(deploymentNo);
+        fillLanguageChooser(languageChooser, languages, defaultLanguageCode);
+    }
+
+    protected static void fillLanguageChooser(JComboBox<String> languageChooser,
+        Collection<String> languageCodes,
+        String defaultLanguageCode) {
         languageChooser.removeAllItems();
         languageChooser.insertItemAt("Choose...", 0);
-        Set<String> languages = programSpec.getLanguagesForDeployment(deploymentNo);
-        languages.forEach(languageChooser::addItem);
+        languageCodes.forEach(languageChooser::addItem);
 
         if (languageChooser.getItemCount() == 2) {
             languageChooser.setSelectedIndex(1); // only item after "choose..."
-        } else if (StringUtils.isNotEmpty(languagecode)) {
-            languageChooser.setSelectedItem(languagecode);
+        } else if (StringUtils.isNotEmpty(defaultLanguageCode)) {
+            languageChooser.setSelectedItem(defaultLanguageCode);
         } else {
             // Select "Choose..."
             languageChooser.setSelectedIndex(0);

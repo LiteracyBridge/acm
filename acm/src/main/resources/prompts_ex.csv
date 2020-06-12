@@ -34,3 +34,11 @@ $0-1,talking book,Talking Book,This is the short prompt for the Talking Book ins
 i$0-1,talking book - invitation,"To learn about this device, press the tree.",This is the invitation to listen to the Talking Book instruction series.
 9-0,user feedback,"User Feedback",This is the short prompt for the User Feedback playlist.
 i9-0,user feedback - invitation,"To listen to feedback from users, press the tree.",This is the invitation to listen to the User Feedback playlist.
+0-0,general,"Other Messages","Messages not otherwise categorized"
+i0-0,general - invitation,"Other Messages","This is the invitation to listen to Messages not otherwise categorized"
+1-0,farming,"Farming","This is the short prompt for the general agriculture"
+i1-0,farming - invitation,"Farming","This is the invitation to listen to the general agriculture"
+2-0,health,"Health","This is the short prompt for the Health category"
+i2-0,health - invitation,"Health","This is the invitation to listen to the Health category"
+3-0,education,"Education","This is the short prompt for the Education category"
+i3-0,education - invitation,"Education","This is the invitation to listen to the Education category"

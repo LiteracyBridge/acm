@@ -40,8 +40,8 @@ class DeploymentContext {
     boolean isPublish() {
         return !noPublish;
     }
-    boolean isPublishAllowed() {
-        return ACMConfiguration.isTestData() || !ACMConfiguration.isSandbox();
+    boolean isNoPublishDefault() {
+        return ACMConfiguration.isTestData() || ACMConfiguration.isSandbox();
     }
 
 

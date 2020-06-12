@@ -16,8 +16,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PromptsInfo {
-    // i?$?\d*(-\d*)+
-    private static final Pattern playlistPromptPattern = Pattern.compile("^(i)?((?:\\$)?\\d*(?:-\\d*)+)$");
+    // i?$?\d*(-\d*)+   matches 1-2, i1-2, or 1-2-3, ...
+    static final Pattern playlistPromptPattern = Pattern.compile("^(i)?((?:\\$)?\\d*(?:-\\d*)+)$");
     public static final String PROMPTS_FILE_NAME = "prompts_ex.csv";
 
     @SuppressWarnings("unused")
@@ -37,7 +37,7 @@ public class PromptsInfo {
             Matcher matcher = playlistPromptPattern.matcher(id);
             if (matcher.matches()) {
                 playlistPrompt = true;
-                playlistInvitation = matcher.groupCount() > 1;
+                playlistInvitation = matcher.groupCount() > 1 && matcher.group(1) != null;
             }
         }
         public PromptInfo(String[] info) {

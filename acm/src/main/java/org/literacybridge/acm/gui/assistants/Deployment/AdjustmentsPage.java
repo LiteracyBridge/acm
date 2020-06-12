@@ -361,10 +361,6 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
      * @param actionEvent is ignored.
      */
     private void onSelection(@SuppressWarnings("unused") ActionEvent actionEvent) {
-        boolean okToPublish = context.isPublishAllowed();
-        if (!okToPublish) {
-            noPublish.setSelected(true);
-        }
         setComplete();
     }
 
