@@ -26,6 +26,7 @@ import java.util.function.BiFunction;
 
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ConfirmCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.EmailCard;
+import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ForgotPasswordCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ProgramCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ResetCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.SignInCard;
@@ -90,6 +91,7 @@ public class WelcomeDialog extends JDialog {
         NullCard(100, CardContent::new),
         SignInCard(org.literacybridge.acm.cloud.AuthenticationDialog.SignInCard.CARD_HEIGHT, SignInCard::new),
         SignUpCard(org.literacybridge.acm.cloud.AuthenticationDialog.SignUpCard.CARD_HEIGHT, SignUpCard::new),
+        ForgotPasswordCard(org.literacybridge.acm.cloud.AuthenticationDialog.ForgotPasswordCard.CARD_HEIGHT, ForgotPasswordCard::new),
         ResetCard(org.literacybridge.acm.cloud.AuthenticationDialog.ResetCard.CARD_HEIGHT, ResetCard::new),
         ConfirmCard(org.literacybridge.acm.cloud.AuthenticationDialog.ConfirmCard.CARD_HEIGHT, ConfirmCard::new),
         EmailCard(org.literacybridge.acm.cloud.AuthenticationDialog.EmailCard.CARD_HEIGHT, EmailCard::new),
@@ -292,10 +294,10 @@ public class WelcomeDialog extends JDialog {
     }
 
     /**
-     * Navigates to the password reset card, in response to "Forgot password?"
+     * Navigates to the forgot password card, in response to "Forgot password?"
      */
-    void gotoResetCard() {
-        activateCard(ResetCard);
+    void gotoForgotPasswordCard() {
+        activateCard(ForgotPasswordCard);
     }
 
     /**
@@ -326,6 +328,10 @@ public class WelcomeDialog extends JDialog {
         case SignInCard:
         case EmailCard:
             gotoProgramSelection();
+            break;
+
+        case ForgotPasswordCard:
+            activateCard(ResetCard);
             break;
 
         case ResetCard:
@@ -359,6 +365,7 @@ public class WelcomeDialog extends JDialog {
             break;
 
         case SignUpCard:
+        case ForgotPasswordCard:
         case ResetCard:
             activateCard(SignInCard);
             break;

@@ -7,8 +7,6 @@ import org.literacybridge.acm.gui.Assistant.PanelButton;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import java.awt.Color;
-import java.awt.Font;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 
@@ -16,15 +14,12 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class SignUpCard extends CardContent {
     private static final String DIALOG_TITLE = "Create User ID";
-//    protected static final int CARD_HEIGHT = 645;
     protected static final int CARD_HEIGHT = 610;
 
     private final FlexTextField usernameField;
     private final FlexTextField emailField;
     private final FlexTextField phoneNumberField;
-    private final FlexTextField passwordField1;
-//    private final FlexTextField passwordField2;
-//    private final JLabel mismatchWarning;
+    private final FlexTextField passwordField;
     private final PanelButton createAccount;
     private final PanelButton haveCode;
 
@@ -67,33 +62,19 @@ public class SignUpCard extends CardContent {
         dialogPanel.add(phoneNumberField, gbc);
 
         // Password
-        passwordField1 = new FlexTextField();
-        passwordField1.setFont(getTextFont());
-        passwordField1.setPlaceholder("Password");
-        passwordField1.setIsPassword(true).setRevealPasswordEnabled(true);
-        passwordField1.getDocument().addDocumentListener(passwordDocListener);
-        dialogPanel.add(passwordField1, gbc);
+        passwordField = new FlexTextField();
+        passwordField.setFont(getTextFont());
+        passwordField.setPlaceholder("Password");
+        passwordField.setIsPassword(true).setRevealPasswordEnabled(true);
+        passwordField.getDocument().addDocumentListener(passwordDocListener);
+        dialogPanel.add(passwordField, gbc);
+        gbc.insets.bottom = 12;
 
-//        // Password, again
-//        passwordField2 = new FlexTextField();
-//        passwordField2.setSynchronizedPasswordView(passwordField1);
-//        passwordField2.setFont(getTextFont());
-//        passwordField2.setPlaceholder("Repeat password");
-//        passwordField2.setIsPassword(true).setRevealPasswordEnabled(true);
-//        passwordField2.getDocument().addDocumentListener(passwordDocListener);
-//        dialogPanel.add(passwordField2, gbc);
+        JLabel rules = new JLabel(PASSWORD_RULES_FORMATTED);
+        dialogPanel.add(rules, gbc);
 
         Box hBox = Box.createHorizontalBox();
-//        mismatchWarning = new JLabel("Passwords don't match.");
-//        mismatchWarning.setForeground(Color.RED);
-//        Font font = mismatchWarning.getFont();
-//        font = new Font(font.getName(), font.getStyle() | Font.ITALIC, font.getSize()-1);
-//        mismatchWarning.setFont(font);
-//        mismatchWarning.setVisible(false);
-//        hBox.add(mismatchWarning);
-//        hBox.add(Box.createHorizontalGlue());
         gbc.insets.bottom = 12; // tighter bottom spacing.
-//        dialogPanel.add(hBox, gbc);
 
         // Consume all vertical space here.
         dialogPanel.add(new JLabel(""), gbc.withWeighty(1.0));
@@ -141,7 +122,7 @@ public class SignUpCard extends CardContent {
     private void onCreate(ActionEvent actionEvent) {
         welcomeDialog.clearMessage();
         String signUpResult = welcomeDialog.cognitoInterface.signUpUser(usernameField.getText(),
-            passwordField1.getText(),
+            passwordField.getText(),
             emailField.getText(),
             phoneNumberField.getText());
 
@@ -150,7 +131,7 @@ public class SignUpCard extends CardContent {
             return;
         }
         welcomeDialog.setUsername(usernameField.getText());
-        welcomeDialog.setPassword(passwordField1.getText());
+        welcomeDialog.setPassword(passwordField.getText());
         welcomeDialog.gotoConfirmationCard();
     }
 
@@ -174,10 +155,8 @@ public class SignUpCard extends CardContent {
     void onShown() {
         super.onShown();
         usernameField.setText(null);
-        passwordField1.setText(null);
-//        passwordField2.setText(null);
-        passwordField1.setRevealPasswordEnabled(true).setPasswordRevealed(false);
-//        passwordField2.setRevealPasswordEnabled(true).setPasswordRevealed(false);
+        passwordField.setText(null);
+        passwordField.setRevealPasswordEnabled(true).setPasswordRevealed(false);
         emailField.setText(null);
         phoneNumberField.setText(null);
         usernameField.setRequestFocusEnabled(true);
@@ -192,12 +171,10 @@ public class SignUpCard extends CardContent {
     private final DocumentListener passwordDocListener = new DocumentListener() {
         private void check() {
             String name = usernameField.getText();
-            String p1 = passwordField1.getText();
-//            String p2 = passwordField2.getText();
+            String p1 = passwordField.getText();
             String email = emailField.getText();
-//            mismatchWarning.setVisible(p1.length() > 0 && p2.length() > 0 && !p1.equals(p2));
-            createAccount.setEnabled(
-                name.length() > 0 && p1.length() > 0 && /*p1.equals(p2) &&&*/ email.length() > 5);
+            boolean pValid = PASSWORD_PATTERN.matcher(p1).matches();
+            createAccount.setEnabled(name.length() > 0 && pValid  && email.length() > 5);
             haveCode.setEnabled(name.length() > 0);
         }
 

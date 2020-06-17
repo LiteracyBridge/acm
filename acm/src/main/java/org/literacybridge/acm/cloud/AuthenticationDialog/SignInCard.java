@@ -121,16 +121,9 @@ public class SignInCard extends CardContent {
      * @param actionEvent is ignored.
      */
     private void onForgotPassword(ActionEvent actionEvent) {
-        if (StringUtils.isEmpty(usernameField.getText())) {
-            welcomeDialog.setMessage("Please enter the user id or email for which to reset the password.");
-            return;
-        }
         welcomeDialog.setUsername(usernameField.getText());
         welcomeDialog.clearMessage();
-        // Comment out next line to NOT reset the password, to test the GUI aspect of the reset dialog.
-        welcomeDialog.cognitoInterface.resetPassword(usernameField.getText());
-
-        welcomeDialog.gotoResetCard();
+        welcomeDialog.gotoForgotPasswordCard();
     }
 
     /**

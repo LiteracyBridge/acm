@@ -279,7 +279,7 @@ public class FlexTextField extends PlaceholderTextField {
                     int h = FlexTextField.this.getFontMetrics(FlexTextField.this.getFont()).getHeight();
                     if (h != height) {
                         IconHelper.this.height = h;
-                        System.out.printf("Resized to height %d\n", h);
+//                        System.out.printf("Resized to height %d\n", h);
                         resetBorder();
                     }
                 }

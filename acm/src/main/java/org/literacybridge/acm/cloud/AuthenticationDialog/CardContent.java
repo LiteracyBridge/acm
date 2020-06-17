@@ -11,6 +11,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.regex.Pattern;
 
 import static org.literacybridge.acm.Constants.AMPLIO_GREEN_B;
 import static org.literacybridge.acm.Constants.AMPLIO_GREEN_G;
@@ -18,6 +19,10 @@ import static org.literacybridge.acm.Constants.AMPLIO_GREEN_R;
 
 class CardContent extends JPanel {
     public static final Color AMPLIO_GREEN = new Color(AMPLIO_GREEN_R, AMPLIO_GREEN_G, AMPLIO_GREEN_B);
+
+    static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])\\S{8,99}$");
+    static final String PASSWORD_RULES = "At least 8 characters, with lowercase, UPPERCASE, and digit(s).";
+    static final String PASSWORD_RULES_FORMATTED = "<html><span style='font-size:0.9em;'><i>" + PASSWORD_RULES + "</i></span></html>";
 
     final WelcomeDialog welcomeDialog;
     final WelcomeDialog.Cards panel;
