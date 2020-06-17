@@ -153,7 +153,7 @@ public class MetadataTest {
         md.put(DC_RELATION, "relation");
 
         Metadata md2 = new Metadata();
-        md2.addValuesFrom(md);
+        md2.addValuesFromOtherWithExclusions(md);
         assertEquals("Should have added three fields", 3, md2.size());
         assertEquals("Title should be 'title'", "title", md2.get(DC_TITLE));
         assertEquals("Identifier should be 'id'", "id", md2.get(DC_IDENTIFIER));
@@ -163,7 +163,7 @@ public class MetadataTest {
         md2.put(DC_TITLE, "not title");
         md2.put(DC_IDENTIFIER, "not id");
         md2.put(DC_RELATION, "not relation");
-        md2.addValuesFrom(md);
+        md2.addValuesFromOtherWithExclusions(md);
         assertEquals("Title should be 'title'", "title", md2.get(DC_TITLE));
         assertEquals("Identifier should be 'id'", "id", md2.get(DC_IDENTIFIER));
         assertEquals("Relation should be 'relation'", "relation", md2.get(DC_RELATION));
@@ -172,7 +172,7 @@ public class MetadataTest {
         md2.put(DC_TITLE, "not title");
         md2.put(DC_IDENTIFIER, "not id");
         md2.put(DC_RELATION, "not relation");
-        md2.addValuesFrom(md, false);
+        md2.addValuesFromOtherWithExclusions(md, false);
         assertEquals("Title should be 'not-title'", "not title", md2.get(DC_TITLE));
         assertEquals("Identifier should be 'not-id'", "not id", md2.get(DC_IDENTIFIER));
         assertEquals("Relation should be 'not-relation'", "not relation", md2.get(DC_RELATION));

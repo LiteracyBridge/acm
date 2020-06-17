@@ -402,7 +402,7 @@ public class FeedbackImporter {
         importer.importFile(file,
                             (item)->{
                                 // TODO: item.getMetadata().put(LB_CORRELATION_ID, (id++))
-                                item.getMetadata().addValuesFrom(metadata);
+                                item.getMetadata().addValuesFromOtherWithExclusions(metadata);
                                 tweaks[0] = adjustCategoriesForDuration(item);
                             },
                             AudioImporter.Option.addNewOnly);

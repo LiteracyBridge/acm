@@ -1,10 +1,12 @@
 package org.literacybridge.acm.store;
 
 import java.lang.reflect.Constructor;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.store.LBMetadataIDs.FieldToIDMap;
 
@@ -120,13 +122,17 @@ public class Metadata {
    * already exists, in this object, it will be overwritten.
    * 
    * @param otherMetadata Another metadata object from which to get values.
+   * @param ignoring Optional list of metadata field types to be ignored.
    */
-  public void addValuesFrom(Metadata otherMetadata) {
-    addValuesFrom(otherMetadata, true);
+  public void addValuesFromOtherWithExclusions(Metadata otherMetadata, MetadataField<?>... ignoring) {
+    addValuesFromOtherWithExclusions(otherMetadata, true, ignoring);
   }
-  public void addValuesFrom(Metadata otherMetadata, boolean replaceExisting) {
+  public void addValuesFromOtherWithExclusions(Metadata otherMetadata, boolean replaceExisting, MetadataField<?>... ignoring) {
+    Set<String> ignored = Arrays.stream(ignoring)
+                                .map(MetadataField::getName)
+                                .collect(Collectors.toSet());
     for (MetadataField<?> field : otherMetadata.fields.keySet()) {
-      if (replaceExisting || !this.containsField(field)) {
+      if (!ignored.contains(field.getName()) && (replaceExisting || !this.containsField(field))) {
         this.fields.put(field, otherMetadata.fields.get(field));
       }
     }

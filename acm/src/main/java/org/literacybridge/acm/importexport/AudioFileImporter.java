@@ -104,9 +104,10 @@ abstract class AudioFileImporter {
         AudioItem audioItem = store.newAudioItem(id);
         Metadata metadata = audioItem.getMetadata();
 
-        // If there is existing metadata, add it to the AudioItem.
+        // If there is existing metadata, add it to the AudioItem. Don't copy the ID.
         if (loadedMetadata != null) {
-            metadata.addValuesFrom(loadedMetadata);
+            // Don't copy any id from the imported item.a
+            metadata.addValuesFromOtherWithExclusions(loadedMetadata, DC_IDENTIFIER);
         }
 
         // Add defaults for missing required values.
