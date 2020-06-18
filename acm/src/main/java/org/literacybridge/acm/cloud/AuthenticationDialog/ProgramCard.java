@@ -82,7 +82,6 @@ public class ProgramCard extends CardContent {
 
         okButton = new PanelButton("Ok");
         okButton.setFont(getTextFont());
-        okButton.setPadding(4.0, 0);
         okButton.setBgColorPalette(AMPLIO_GREEN);
         okButton.addActionListener(e -> onOk());
         okButton.setEnabled(false);
@@ -123,7 +122,8 @@ public class ProgramCard extends CardContent {
                         if (welcomeDialog.options.contains(Authenticator.SigninOptions.INCLUDE_FB_ACMS) &&
                             name.contains("-FB-")) {
                             int fb = name.indexOf("-FB-");
-                            if (usersPrograms.contains(name.substring(0, fb))) return true;
+                            // Is the part before the "-FB-" one of the user's programs?
+                            return usersPrograms.contains(name.substring(0, fb));
                         }
                         return false;
                     })

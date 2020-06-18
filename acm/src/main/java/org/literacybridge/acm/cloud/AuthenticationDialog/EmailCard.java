@@ -52,8 +52,6 @@ public class EmailCard extends CardContent {
         // Sign In button and Sign Up link.
         okButton = new PanelButton("OK");
         okButton.setFont(getTextFont());
-        // Make the OK button extra wide, because "OK" is pretty short.
-        okButton.setPadding(4.0, 0);
         okButton.setBgColorPalette(AMPLIO_GREEN);
         okButton.addActionListener(this::onOk);
         okButton.setEnabled(false);

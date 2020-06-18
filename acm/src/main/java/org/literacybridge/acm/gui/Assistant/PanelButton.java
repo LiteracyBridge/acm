@@ -12,6 +12,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -57,8 +58,7 @@ public class PanelButton extends JPanel {
     private Border disabledBorder = new LineBorder(bgColor, 2);
 
     private String text;
-    private double xPad = 2.0;
-    private double yPad = 2.0;
+    private Insets padding = new Insets(8, 20, 8, 20);
 
     //    int nCh = 0;
     private synchronized void ev(char c) {
@@ -207,6 +207,13 @@ public class PanelButton extends JPanel {
         super.setBorder(border);
     }
 
+    public Insets getPadding() {
+        return new Insets(padding.top, padding.left, padding.bottom, padding.right);
+    }
+    public void setPadding(Insets padding) {
+        this.padding = new Insets(padding.top, padding.left, padding.bottom, padding.right);
+    }
+
     /**
      * Applies the current background to the panel.
      */
@@ -236,8 +243,10 @@ public class PanelButton extends JPanel {
     private void setSizes() {
         if (text != null) {
             FontMetrics fm = getFontMetrics(getFont());
-            int h = (int) (yPad * fm.getHeight());
-            int w = (int) (xPad * fm.stringWidth(text));
+            int mh = fm.getHeight();
+            int mw = fm.stringWidth(text);
+            int h = mh + padding.top + padding.bottom;
+            int w = mw + padding.left + padding.right;
             Dimension d = new Dimension(w, h);
             setMinimumSize(d);
             setPreferredSize(d);
@@ -260,22 +269,6 @@ public class PanelButton extends JPanel {
     @Override
     public void setFont(Font font) {
         super.setFont(font);
-        setSizes();
-    }
-
-    /**
-     * This is a padding factor, how many times the width and height of the text should the
-     * panel be?
-     * @param xPad factor for the width
-     * @param yPad factor for the height
-     */
-    public void setPadding(double xPad, double yPad) {
-        if (xPad != 0.0) {
-            this.xPad = xPad;
-        }
-        if (yPad != 0.0) {
-            this.yPad = yPad;
-        }
         setSizes();
     }
 

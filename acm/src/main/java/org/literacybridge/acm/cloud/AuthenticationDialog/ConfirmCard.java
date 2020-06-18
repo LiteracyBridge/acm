@@ -8,6 +8,7 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
@@ -47,12 +48,12 @@ public class ConfirmCard extends CardContent {
         dialogPanel.add(new JLabel(""), gbc.withWeighty(1.0));
 
         // Buttons.
-        double xPad = 1.25; // Squeeze the buttons horizontally, so they'll fit.
-        double yPad = 1.5;  // Make the buttons a little shorter. Looks a little better.
         Box hBox = Box.createHorizontalBox();
         confirm = new PanelButton("Confirm");
         confirm.setFont(getTextFont());
-        confirm.setPadding(xPad, yPad);
+        Insets padding = confirm.getPadding();
+        padding.left = padding.right = 15;
+        confirm.setPadding(padding);
         confirm.setBgColorPalette(AMPLIO_GREEN);
         confirm.addActionListener(this::onOk);
         confirm.setEnabled(false);
@@ -61,7 +62,7 @@ public class ConfirmCard extends CardContent {
         hBox.add(Box.createHorizontalStrut(20));
         PanelButton resend = new PanelButton("Resend Code");
         resend.setFont(getTextFont());
-        resend.setPadding(xPad, yPad);
+        resend.setPadding(padding);
         resend.setBgColorPalette(AMPLIO_GREEN);
         resend.addActionListener(this::onResend);
         resend.setEnabled(true);
@@ -70,7 +71,7 @@ public class ConfirmCard extends CardContent {
         hBox.add(Box.createHorizontalStrut(20));
         PanelButton cancel = new PanelButton("Cancel");
         cancel.setFont(getTextFont());
-        cancel.setPadding(xPad, yPad);
+        cancel.setPadding(padding);
         cancel.setBgColorPalette(AMPLIO_GREEN);
         cancel.addActionListener(this::onCancel);
         hBox.add(cancel);

@@ -21,9 +21,9 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class ResetCard extends CardContent {
     private final static String DIALOG_TITLE = "Reset Password";
-    protected static final int CARD_HEIGHT = 580;
+    protected static final int CARD_HEIGHT = 595;
 
-    private final JLabel usernameField;
+    private final JLabel emailField;
     private final FlexTextField passwordField;
     private final FlexTextField resetCode;
     private final PanelButton changePassword;
@@ -46,20 +46,13 @@ public class ResetCard extends CardContent {
             "simply click Cancel to return the sign-in screen."), gbc);
 
         // User name
-//        usernameField = new FlexTextField();
-//        usernameField.setFont(getTextFont());
-//        usernameField.setIcon(getPersonIcon());
-//        usernameField.setEnabled(true);
-//        usernameField.getDocument().addDocumentListener(passwordDocListener);
-//        dialogPanel.add(usernameField, gbc);
-
-        usernameField = new JLabel();
+        emailField = new JLabel();
         int iconsize = 16;
         ImageIcon person = new ImageIcon(getPersonIcon().getImage().getScaledInstance(iconsize, iconsize, Image.SCALE_SMOOTH));
-        usernameField.setIcon(person);
-        Border nameBorder = new CompoundBorder(new RoundedLineBorder(Color.DARK_GRAY, 1, 8), new EmptyBorder(3,3,2,2));
-        usernameField.setBorder(nameBorder);
-        dialogPanel.add(usernameField, gbc);
+        emailField.setIcon(person);
+        Border nameBorder = new CompoundBorder(new RoundedLineBorder(Color.DARK_GRAY, 1, 8), new EmptyBorder(3,7,2,2));
+        emailField.setBorder(nameBorder);
+        dialogPanel.add(emailField, gbc);
 
         // Password
         gbc.insets.bottom = 5; // tighter bottom spacing.
@@ -75,9 +68,6 @@ public class ResetCard extends CardContent {
         JLabel rules = new JLabel(PASSWORD_RULES_FORMATTED);
         dialogPanel.add(rules, gbc);
 
-
-        Box hBox = Box.createHorizontalBox();
-
         // Reset code from server
         resetCode = new FlexTextField();
         resetCode.setFont(getTextFont());
@@ -89,7 +79,8 @@ public class ResetCard extends CardContent {
         dialogPanel.add(new JLabel(""), gbc.withWeighty(1.0));
 
         // Buttons
-        hBox = Box.createHorizontalBox();
+        Box hBox = Box.createHorizontalBox();
+        hBox.add(Box.createHorizontalGlue());
         changePassword = new PanelButton("Change Password");
         changePassword.setFont(getTextFont());
         changePassword.setBgColorPalette(AMPLIO_GREEN);
@@ -115,7 +106,7 @@ public class ResetCard extends CardContent {
 
     private void onOk(ActionEvent actionEvent) {
         // Unfortunately, cognito doesn't return any success/failure status on this call.
-        welcomeDialog.cognitoInterface.updatePassword(usernameField.getText(), passwordField.getText(), resetCode.getText());
+        welcomeDialog.cognitoInterface.updatePassword(emailField.getText(), passwordField.getText(), resetCode.getText());
         welcomeDialog.setPassword(passwordField.getText());
         ok();
     }
@@ -126,7 +117,7 @@ public class ResetCard extends CardContent {
     @Override
     void onShown() {
         super.onShown();
-        usernameField.setText(welcomeDialog.getEmail());
+        emailField.setText(welcomeDialog.getEmail());
         passwordField.setText(null);
         passwordField.setRevealPasswordEnabled(true).setPasswordRevealed(false);
         passwordField.setRequestFocusEnabled(true);
@@ -140,10 +131,9 @@ public class ResetCard extends CardContent {
     @SuppressWarnings("FieldCanBeLocal")
     private final DocumentListener passwordDocListener = new DocumentListener() {
         private void check() {
-            String name = usernameField.getText();
-            String p1 = passwordField.getText();
+            String name = emailField.getText();
             String pin = resetCode.getText();
-            boolean pValid = PASSWORD_PATTERN.matcher(p1).matches();
+            boolean pValid = PASSWORD_PATTERN.matcher(passwordField.getText()).matches();
             changePassword.setEnabled(name.length() > 0 && pValid && pin.length() > 5);
         }
         @Override

@@ -1,6 +1,5 @@
 package org.literacybridge.acm.cloud.AuthenticationDialog;
 
-import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.cloud.ActionLabel;
 import org.literacybridge.acm.gui.Assistant.FlexTextField;
 import org.literacybridge.acm.gui.Assistant.GBC;

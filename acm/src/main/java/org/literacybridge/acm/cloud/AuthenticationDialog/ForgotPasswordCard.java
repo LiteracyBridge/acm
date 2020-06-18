@@ -51,7 +51,7 @@ public class ForgotPasswordCard extends CardContent {
         // Consume all vertical space here.
         dialogPanel.add(new JLabel(""), gbc.withWeighty(1.0));
 
-        // Buttons
+        // Reset button
         resetPassword = new PanelButton("Send password reset email");
         resetPassword.setFont(getTextFont());
         resetPassword.setBgColorPalette(AMPLIO_GREEN);
