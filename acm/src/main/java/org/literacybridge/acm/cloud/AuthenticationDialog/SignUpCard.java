@@ -79,18 +79,18 @@ public class SignUpCard extends CardContent {
 
         // Buttons.
         Box hBox = Box.createHorizontalBox();
-        hBox.add(Box.createHorizontalGlue());
         createAccount = new PanelButton("Create User ID");
         createAccount.setFont(getTextFont());
         Insets padding = createAccount.getPadding();
-        padding.left = padding.right = 15;
+        padding.left = padding.right = 8;
         createAccount.setPadding(padding);
         createAccount.setBgColorPalette(AMPLIO_GREEN);
         createAccount.addActionListener(this::onCreate);
         createAccount.setEnabled(false);
         hBox.add(createAccount);
 
-        hBox.add(Box.createHorizontalStrut(20));
+        hBox.add(Box.createHorizontalStrut(15));
+        hBox.add(Box.createHorizontalGlue());
         haveCode = new PanelButton("Have Code");
         haveCode.setFont(getTextFont());
         haveCode.setPadding(padding);
@@ -99,14 +99,14 @@ public class SignUpCard extends CardContent {
         haveCode.setEnabled(false);
         hBox.add(haveCode);
 
-        hBox.add(Box.createHorizontalStrut(20));
+        hBox.add(Box.createHorizontalGlue());
+        hBox.add(Box.createHorizontalStrut(15));
         PanelButton cancel = new PanelButton("Cancel");
         cancel.setFont(getTextFont());
         cancel.setPadding(padding);
         cancel.setBgColorPalette(AMPLIO_GREEN);
         cancel.addActionListener(this::onCancel);
         hBox.add(cancel);
-        hBox.add(Box.createHorizontalGlue());
 
         dialogPanel.add(hBox, gbc);
 
