@@ -204,6 +204,7 @@ public class TBLoader extends JFrame {
         startupTimer -= System.currentTimeMillis();
 
         // Set options that are controlled by project config file.
+        System.out.printf("Starting TB-Loader for %s\n", newProject);
         Properties config = ACMConfiguration.getInstance().getConfigPropertiesFor(newProject);
         if (config != null) {
             String valStr = config.getProperty("PACKAGE_CHOICE", "FALSE");

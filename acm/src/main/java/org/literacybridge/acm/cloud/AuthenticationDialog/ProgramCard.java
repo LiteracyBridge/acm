@@ -152,6 +152,7 @@ public class ProgramCard extends CardContent {
         if (acmNames.size() == 1 && !updateAllowed.contains(acmNames.get(0)) &&
             (StringUtils.isBlank(welcomeDialog.defaultProgram) ||
                 acmNames.get(0).equals(welcomeDialog.defaultProgram))) {
+            choicesList.setSelectedIndex(0); // so onOk() can find the proper value.
             onOk();
         } else if (StringUtils.isNotBlank(welcomeDialog.defaultProgram)) {
             // There are choices. If there's a pre-defined program, pre-select it.
