@@ -121,10 +121,11 @@ public class ResetCard extends CardContent {
 
     /**
      * Handles any actions that need to be taken when the panel is shown or hidden.
+     * @param actionEvent
      */
     @Override
-    void onShown() {
-        super.onShown();
+    void onShown(ActionEvent actionEvent) {
+        super.onShown(actionEvent);
         emailField.setText(welcomeDialog.getIdentity());
         passwordField.setText(null);
         passwordField.setRevealPasswordEnabled(true).setPasswordRevealed(false);

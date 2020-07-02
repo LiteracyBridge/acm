@@ -41,7 +41,7 @@ public class EmailCard extends CardContent {
         // User name
         emailField = new FlexTextField();
         emailField.setFont(getTextFont());
-        emailField.setPlaceholder("Enter email Address");
+        emailField.setPlaceholder("Enter your email address");
         emailField.addKeyListener(textKeyListener);
         emailField.getDocument().addDocumentListener(textDocumentListener);
         dialogPanel.add(emailField, gbc);
@@ -67,8 +67,8 @@ public class EmailCard extends CardContent {
     }
 
     @Override
-    void onShown() {
-        super.onShown();
+    void onShown(ActionEvent actionEvent) {
+        super.onShown(actionEvent);
         emailField.setText(welcomeDialog.getEmail());
         emailField.setRequestFocusEnabled(true);
         emailField.requestFocusInWindow();

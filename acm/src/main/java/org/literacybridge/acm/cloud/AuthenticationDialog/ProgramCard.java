@@ -18,7 +18,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +27,8 @@ import static java.awt.GridBagConstraints.BOTH;
 import static java.awt.GridBagConstraints.CENTER;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
+import static org.literacybridge.acm.cloud.Authenticator.UPDATING_ROLES;
+import static org.literacybridge.acm.cloud.Authenticator.ALL_USER_ROLES;
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class ProgramCard extends CardContent {
@@ -38,7 +39,7 @@ public class ProgramCard extends CardContent {
     private final JList<String> choicesList;
     private final JCheckBox forceSandbox;
     private final JScrollPane choicesListScrollPane;
-    private List<String> updateAllowed = new ArrayList<>();
+    private List<String> programsAllowingUpdates = new ArrayList<>();
 
     public ProgramCard(WelcomeDialog welcomeDialog,
         WelcomeDialog.Cards panel)
@@ -96,10 +97,9 @@ public class ProgramCard extends CardContent {
     }
 
     @Override
-    void onShown() {
-        super.onShown();
-        Set<String> updatingRoles = new HashSet<>(Arrays.asList("*", "AD", "PM", "CO"));
-        String ALL_ROLES = "AD,PM,CO";
+    void onShown(ActionEvent actionEvent) {
+        super.onShown(actionEvent);
+        String ALL_ROLES = String.join(",", ALL_USER_ROLES);
         // Build the list of ACM names from which to choose. The list depends on whether we're
         // authenticated (not being authenticated is roughly equivalent to not having network
         // access, so we give access to all local programs). The list also depends on the option
@@ -112,9 +112,6 @@ public class ProgramCard extends CardContent {
             // If data must already be local, filter the list to those ACMs that are local.
             if (welcomeDialog.options.contains(Authenticator.SigninOptions.LOCAL_DATA_ONLY)) {
                 List<String> localNames = Authenticator.getInstance().getLocallyAvailablePrograms();
-//                acmNames = acmNames.stream()
-//                    .filter(localNames::contains)
-//                    .collect(Collectors.toList());
                 final List<String> usersPrograms = acmNames;
                 acmNames = localNames.stream()
                     .filter(name -> {
@@ -132,14 +129,15 @@ public class ProgramCard extends CardContent {
             // If updating (not sandboxing) is an option, determine which ACMs will be sandbox
             // only, and which allow a choice.
             if (welcomeDialog.options.contains(Authenticator.SigninOptions.OFFER_DEMO_MODE)) {
-                updateAllowed = acmNames.stream()
-                    .filter(name->{
-                        Set<String> roles = Arrays.stream(programs.getOrDefault(name, ALL_ROLES).split(","))
-                            .collect(Collectors.toSet());
-                        roles.retainAll(updatingRoles);
-                        return roles.size()>0;
-                    })
-                    .collect(Collectors.toList());
+                programsAllowingUpdates = acmNames
+                        .stream()
+                        .filter(name -> {
+                            Set<String> roles = Arrays.stream(programs.getOrDefault(name, ALL_ROLES).split(","))
+                                    .collect(Collectors.toSet());
+                            roles.retainAll(UPDATING_ROLES);
+                            return roles.size() > 0;
+                        })
+                        .collect(Collectors.toList());
             }
         } else {
             acmNames = Authenticator.getInstance().getLocallyAvailablePrograms();
@@ -149,7 +147,7 @@ public class ProgramCard extends CardContent {
 
         // If there are no choices to be made, either program or sandbox, we're done.
         // - Only one program, not updatable, matches default (if any)
-        if (acmNames.size() == 1 && !updateAllowed.contains(acmNames.get(0)) &&
+        if (acmNames.size() == 1 && !programsAllowingUpdates.contains(acmNames.get(0)) &&
             (StringUtils.isBlank(welcomeDialog.defaultProgram) ||
                 acmNames.get(0).equals(welcomeDialog.defaultProgram))) {
             choicesList.setSelectedIndex(0); // so onOk() can find the proper value.
@@ -207,7 +205,7 @@ public class ProgramCard extends CardContent {
         okButton.setEnabled(haveSelection);
         setListBorder();
         if (haveSelection) {
-            boolean canUpdate = updateAllowed.contains(selectedProgram);
+            boolean canUpdate = programsAllowingUpdates.contains(selectedProgram);
             if (canUpdate) {
                 boolean suggestSandbox = welcomeDialog.options.contains(Authenticator.SigninOptions.SUGGEST_DEMO_MODE);
                 forceSandbox.setEnabled(true);

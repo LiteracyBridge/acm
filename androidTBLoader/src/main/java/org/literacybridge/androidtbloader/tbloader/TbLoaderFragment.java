@@ -662,7 +662,7 @@ public class TbLoaderFragment extends Fragment {
             .withTbLoaderId(config.getTbcdid())
             .withCollectedDataDirectory(collectedDataTbFile)
             .withTempDirectory(tempTbFile)
-            .withUserName(mUserName)
+            .withUserEmail(mUserName)
             .build();
 
         DeploymentInfo oldDeploymentInfo = tbDeviceInfo.createDeploymentInfo(mProject);

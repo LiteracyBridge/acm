@@ -83,8 +83,9 @@ class CardContent extends JPanel {
 
     /**
      * Called when the card is shown.
+     * @param actionEvent
      */
-    void onShown() {
+    void onShown(ActionEvent actionEvent) {
         welcomeDialog.setTitle(dialogTitle);
         // Override as needed
     }

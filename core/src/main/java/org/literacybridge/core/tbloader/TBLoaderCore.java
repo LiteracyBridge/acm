@@ -511,7 +511,8 @@ public class TBLoaderCore {
             operationInfo
                 .put("action", action)
                 .put("tbcdid", mTbLoaderConfig.getTbLoaderId())
-                .put("username", mTbLoaderConfig.getUserName())
+                .put("username", mTbLoaderConfig.getUserEmail())
+                .put("useremail", mTbLoaderConfig.getUserEmail())
                 .put("project", mOldDeploymentInfo.getProjectName().toUpperCase())
                 .put("update_date_time", mUpdateTimestamp.toUpperCase())
                 .put("out_synch_dir", mUpdateTimestamp.toUpperCase() + "-" + mTbLoaderConfig.getTbLoaderId()
@@ -540,7 +541,8 @@ public class TBLoaderCore {
                 deploymentLog
                     .put("action", action)
                     .put("tbcdid", mTbLoaderConfig.getTbLoaderId())
-                    .put("username", mTbLoaderConfig.getUserName())
+                    .put("username", mTbLoaderConfig.getUserEmail())
+                    .put("useremail", mTbLoaderConfig.getUserEmail())
                     .put("sn", mTbDeviceInfo.getSerialNumber().toUpperCase())
                     .put("newsn", mNewDeploymentInfo.isNewSerialNumber())
                     .put("project", mNewDeploymentInfo.getProjectName().toUpperCase())
@@ -1267,7 +1269,8 @@ public class TBLoaderCore {
             .append(TBLoaderConstants.CLEARED_FLASH_PROPERTY, mClearedFlashStatistics)
             .append(TBLoaderConstants.TB_LOG_ACTION_PROPERTY, action)
             .append(TBLoaderConstants.TIMESTAMP_PROPERTY, mUpdateTimestampISO)
-            .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserName())
+            .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserEmail())
+            .append(TBLoaderConstants.USEREMAIL_PROPERTY, mTbLoaderConfig.getUserEmail())
             .append(TBLoaderConstants.TBCDID_PROPERTY, mTbLoaderConfig.getTbLoaderId())
             .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation)
             .append(TBLoaderConstants.STATS_COLLECTED_UUID_PROPERTY, mStatsCollectedUUID);
@@ -1499,7 +1502,8 @@ public class TBLoaderCore {
             .append(TBLoaderConstants.TIMESTAMP_PROPERTY, mUpdateTimestampISO)
             .append(
                 TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY, mNewDeploymentInfo.isTestDeployment())
-            .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserName())
+            .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserEmail())
+            .append(TBLoaderConstants.USEREMAIL_PROPERTY, mTbLoaderConfig.getUserEmail())
             .append(TBLoaderConstants.TBCDID_PROPERTY, mTbLoaderConfig.getTbLoaderId())
             .append(TBLoaderConstants.NEW_SERIAL_NUMBER_PROPERTY, mNewDeploymentInfo.isNewSerialNumber())
             .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation)

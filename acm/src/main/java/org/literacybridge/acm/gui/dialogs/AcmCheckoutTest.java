@@ -29,11 +29,9 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.List;
 
 import static java.awt.Dialog.ModalityType.APPLICATION_MODAL;
 
@@ -88,11 +86,11 @@ public class AcmCheckoutTest extends JDialog {
         dialogPanel.add(programField, gbc_controls);
 
         dialogPanel.add(new JLabel("Name:"), gbc_labels);
-        nameField = new JTextField(authenticator.getuserEmail());
+        nameField = new JTextField(authenticator.getUserEmail());
         dialogPanel.add(nameField, gbc_controls);
 
         dialogPanel.add(new JLabel("Phone:"), gbc_labels);
-        phoneField = new JTextField(authenticator.getUserName());
+        phoneField = new JTextField(authenticator.getName());
         dialogPanel.add(phoneField, gbc_controls);
 
         dialogPanel.add(new JLabel("Version:"), gbc_labels);
@@ -118,11 +116,11 @@ public class AcmCheckoutTest extends JDialog {
         dialogPanel.add(filenameField, gbc_controls);
 
         dialogPanel.add(new JLabel("From:"), gbc_labels);
-        fromField = new JTextField(authenticator.getuserEmail());
+        fromField = new JTextField(authenticator.getUserEmail());
         dialogPanel.add(fromField, gbc_controls);
 
         dialogPanel.add(new JLabel("To:"), gbc_labels);
-        toField = new JTextField(authenticator.getuserEmail());
+        toField = new JTextField(authenticator.getUserEmail());
         dialogPanel.add(toField, gbc_controls);
 
         dialogPanel.add(new JLabel("Comments:"), gbc_labels);
@@ -179,7 +177,7 @@ public class AcmCheckoutTest extends JDialog {
         url.append(paramString("filename", filenameField));
         url.append(paramString("comments", commentsField));
 
-        JSONObject result=null;
+        JSONObject result;
         AwsInterface awsInterface = authenticator.getAwsInterface();
         if (functionChooser.getSelectedItem().equals("report")) {
             JSONObject requestBody = new JSONObject();

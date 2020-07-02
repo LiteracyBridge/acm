@@ -103,7 +103,7 @@ public class Application extends JXFrame {
 
   private final SimpleSoundPlayer player = new SimpleSoundPlayer();
 
-  private Application(SplashScreen splashScreen) throws IOException {
+  private Application(SplashScreen splashScreen) {
     super();
     this.backgroundColor = getBackground();
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -128,16 +128,14 @@ public class Application extends JXFrame {
       menuBar.add(menu);
       JMenuItem menuItem = new JMenuItem("Access Control...");
       menu.add(menuItem);
-      menuItem.addActionListener(e -> {
-        new AcmCheckoutTest(this).setVisible(true);
-      });
+      menuItem.addActionListener(e -> new AcmCheckoutTest(this).setVisible(true));
       setJMenuBar(menuBar);
     }
 
     Authenticator authInstance = Authenticator.getInstance();
-    String greeting = authInstance.getUserProperty("custom:greeting", null);
+    String greeting = authInstance.getName();
     if (StringUtils.isEmpty(greeting)) {
-      greeting = String.format("Hello, %s", authInstance.getUserName());
+      greeting = String.format("Hello, %s", authInstance.getUserEmail());
     }
     String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
         "  --  CHANGES WILL *NOT* BE SAVED!":"";
@@ -279,7 +277,7 @@ public class Application extends JXFrame {
     params.update = true; // may be overridden later.
     ACMConfiguration.initialize(params);
 
-    getAcmToOpen(params);
+    authenticateAndSelectProgram(params);
 
     if (isEmpty(params.sharedACM)) {
       JOptionPane.showMessageDialog(null,
@@ -325,7 +323,6 @@ public class Application extends JXFrame {
                 JOptionPane.QUESTION_MESSAGE, null, null, JOptionPane.YES_OPTION);
         return (answer == JOptionPane.YES_OPTION);
       });
-
       application.mainView.audioItemView.requestFocusInWindow();
   }
 
@@ -333,7 +330,7 @@ public class Application extends JXFrame {
    * If there is no ACM specified on the command line, query the user.
    * @param params from the command line.
    */
-  private static void getAcmToOpen(CommandLineParams params) {
+  private static void authenticateAndSelectProgram(CommandLineParams params) {
     Authenticator authInstance = Authenticator.getInstance();
     authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getKnownAcms());
     Authenticator.SigninResult result = authInstance.getUserIdentity(null,
@@ -371,8 +368,8 @@ public class Application extends JXFrame {
     // This doesn't seem to still be necessary. be: 2020-07-30
 //    if (Runtime.getRuntime().maxMemory() < 400 * 1024 * 1024) {
 //      JOptionPane.showMessageDialog(null,
-//          "Not enough memory available for JVM. Please make sure your"
-//              + " java command contains the argument -XMX512m (or more).");
+//              "Not enough memory available for JVM. Please make sure your"
+//                      + " java command contains the argument -Xmx512m (or more).");
 //      System.exit(0);
 //    }
 
@@ -456,21 +453,14 @@ public class Application extends JXFrame {
       }
 
       // call UI back
-      Runnable updateUI = new Runnable() {
-        @Override
-        public void run() {
-          Application.getMessageService().pumpMessage(result);
-        }
-      };
+      Runnable updateUI = () -> Application.getMessageService().pumpMessage(result);
 
       if (SwingUtilities.isEventDispatchThread()) {
         updateUI.run();
       } else {
         try {
           SwingUtilities.invokeAndWait(updateUI);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        } catch (InvocationTargetException e) {
+        } catch (InterruptedException | InvocationTargetException e) {
           e.printStackTrace();
         }
       }

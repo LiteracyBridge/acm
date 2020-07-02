@@ -294,8 +294,8 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         DateFormat localDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_CREATION_TIME, localTime.format(now));
         deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_CREATION_DATE, localDate.format(now));
-        String userName = Authenticator.getInstance().getUserName();
-        String userEmail = Authenticator.getInstance().getuserEmail();
+        String userName = ""; // TODO: replace with greeting? full name? Authenticator.getInstance().getUserName();
+        String userEmail = Authenticator.getInstance().getUserEmail();
         String user = (StringUtils.isEmpty(userName)?"":'('+userName+") ") + userEmail;         
         deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_CREATION_USER, user);
         // Map of language, variant : package

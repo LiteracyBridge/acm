@@ -53,6 +53,14 @@ public class CognitoHelper {
     private String CUSTOMDOMAIN;
     private String REGION;
 
+    public CognitoHelper(Map<String,String> prop) {
+        POOL_ID = prop.get("POOL_ID");
+        CLIENTAPP_ID = prop.get("CLIENTAPP_ID");
+        FED_POOL_ID = prop.get("FED_POOL_ID");
+        CUSTOMDOMAIN = prop.get("CUSTOMDOMAIN");
+        REGION = prop.get("REGION");
+    }
+    
     public CognitoHelper() {
 
         Properties prop = new Properties();
@@ -102,10 +110,9 @@ public class CognitoHelper {
      * @param username    User name for the sign up
      * @param password    Password for the sign up
      * @param email       email used to sign up
-     * @param phonenumber phone number to sign up.
      * @return Error message or null if no error.
      */
-    public String SignUpUser(String username, String password, String email, String phonenumber) {
+    public String SignUpUser(String username, String password, String email, Map<String,String> attributes) {
         AnonymousAWSCredentials awsCreds = new AnonymousAWSCredentials();
         AWSCognitoIdentityProvider cognitoIdentityProvider = AWSCognitoIdentityProviderClientBuilder
                 .standard()
@@ -119,15 +126,27 @@ public class CognitoHelper {
         signUpRequest.setPassword(password);
         List<AttributeType> list = new ArrayList<>();
 
-        AttributeType attributeType = new AttributeType();
-        attributeType.setName("phone_number");
-        attributeType.setValue(phonenumber);
-        list.add(attributeType);
+        for (Map.Entry<String,String> entry : attributes.entrySet()) {
+            AttributeType attributeType = new AttributeType();
+            attributeType.setName(entry.getKey());
+            attributeType.setValue(entry.getValue());
+            list.add(attributeType);
+        }
+//        AttributeType attributeType = new AttributeType();
+//        attributeType.setName("phone_number");
+//        attributeType.setValue(phoneNumber);
+//        list.add(attributeType);
 
         AttributeType attributeType1 = new AttributeType();
         attributeType1.setName("email");
         attributeType1.setValue(email);
         list.add(attributeType1);
+
+        // Example adding the "name" attribute at signup.
+//        AttributeType nameAttribute = new AttributeType()
+//                .withName("name")
+//                .withValue("Livro Falante");
+//        list.add(nameAttribute);
 
         signUpRequest.setUserAttributes(list);
 
@@ -135,7 +154,7 @@ public class CognitoHelper {
             SignUpResult result = cognitoIdentityProvider.signUp(signUpRequest);
             //System.out.println(result);
         } catch (Exception e) {
-            System.out.println(e);
+            e.printStackTrace();
             return e.getLocalizedMessage();
         }
         return null;
@@ -169,7 +188,7 @@ public class CognitoHelper {
             ConfirmSignUpResult confirmSignUpResult = cognitoIdentityProvider.confirmSignUp(confirmSignUpRequest);
 //            System.out.println("confirmSignupResult=" + confirmSignUpResult.toString());
         } catch (Exception ex) {
-            System.out.println(ex);
+            ex.printStackTrace();
             return ex.getLocalizedMessage();
         }
         return null;
@@ -197,8 +216,7 @@ public class CognitoHelper {
      */
     public AuthenticationHelper.AuthenticationResult ValidateUser(String username, String password) {
         AuthenticationHelper helper = new AuthenticationHelper(POOL_ID, CLIENTAPP_ID, "");
-        AuthenticationHelper.AuthenticationResult result = helper.PerformSRPAuthentication(username, password);
-        return result;
+        return helper.PerformSRPAuthentication(username, password);
     }
 
     public AuthenticationHelper.AuthenticationResult RefreshSession(String refreshToken) {
@@ -208,8 +226,7 @@ public class CognitoHelper {
 
     public AuthenticationHelper.AuthenticationResult ProvideNewPassword(AuthenticationHelper.AuthenticationResult previousChallengeResult, String username, String password) {
         AuthenticationHelper helper = new AuthenticationHelper(POOL_ID, CLIENTAPP_ID, "");
-        AuthenticationHelper.AuthenticationResult result = helper.ProvideNewPassword(previousChallengeResult.getPreviousChallengeResult(), username, password);
-        return result;
+        return helper.ProvideNewPassword(previousChallengeResult.getPreviousChallengeResult(), username, password);
     }
 
     /**
@@ -250,7 +267,7 @@ public class CognitoHelper {
         Credentials credentials = null;
 
         try {
-            Map<String, String> httpBodyParams = new HashMap<String, String>();
+            Map<String, String> httpBodyParams = new HashMap<>();
             httpBodyParams.put(Constants.TOKEN_GRANT_TYPE, Constants.TOKEN_GRANT_TYPE_AUTH_CODE);
             httpBodyParams.put(Constants.DOMAIN_QUERY_PARAM_CLIENT_ID, CLIENTAPP_ID);
             httpBodyParams.put(Constants.DOMAIN_QUERY_PARAM_REDIRECT_URI, Constants.REDIRECT_URL);
@@ -267,7 +284,7 @@ public class CognitoHelper {
 
             return credentials;
         } catch (Exception exp) {
-            System.out.println(exp);
+            exp.printStackTrace();
         }
         return credentials;
     }
@@ -334,7 +351,7 @@ public class CognitoHelper {
      * This method returns the details of the user and bucket lists.
      *
      * @param credentials Credentials to be used for displaying buckets
-     * @return
+     * @return the buckets, mushed together into a single string.
      */
     String ListBucketsForUser(Credentials credentials) {
         BasicSessionCredentials awsCreds = new BasicSessionCredentials(credentials.getAccessKeyId(), credentials.getSecretKey(), credentials.getSessionToken());
@@ -345,9 +362,9 @@ public class CognitoHelper {
         StringBuilder bucketslist = new StringBuilder();
 
         bucketslist.append("===========Credentials Details.=========== \n");
-        bucketslist.append("Accesskey = " + credentials.getAccessKeyId() + "\n");
-        bucketslist.append("Secret = " + credentials.getSecretKey() + "\n");
-        bucketslist.append("SessionToken = " + credentials.getSessionToken() + "\n");
+        bucketslist.append("Accesskey = ").append(credentials.getAccessKeyId()).append("\n");
+        bucketslist.append("Secret = ").append(credentials.getSecretKey()).append("\n");
+        bucketslist.append("SessionToken = ").append(credentials.getSessionToken()).append("\n");
         bucketslist.append("============Bucket Lists===========\n");
 
         for (Bucket bucket : s3Client.listBuckets()) {

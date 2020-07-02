@@ -55,16 +55,23 @@ public class TbSrnHelper {
         int backupEnd = -1;
         int nextSrn = -1;
         AllocTracker add(String value, int n) {
-            if (value.equals("primarybegin"))
-                primaryBegin = n;
-            else if (value.equals("primaryend"))
-                primaryEnd = n;
-            else if (value.equals("backupbegin"))
-                backupBegin = n;
-            else if (value.equals("backupend"))
-                backupEnd = n;
-            else if (value.equals("nextsrn"))
-                nextSrn = n;
+            switch (value) {
+                case "primarybegin":
+                    primaryBegin = n;
+                    break;
+                case "primaryend":
+                    primaryEnd = n;
+                    break;
+                case "backupbegin":
+                    backupBegin = n;
+                    break;
+                case "backupend":
+                    backupEnd = n;
+                    break;
+                case "nextsrn":
+                    nextSrn = n;
+                    break;
+            }
             return this;
         }
         boolean isComplete() {
@@ -189,6 +196,7 @@ public class TbSrnHelper {
      * Query whether an SRN can be allocated.
      * @return true if there is any available SRN.
      */
+    @SuppressWarnings("unused")
     public boolean hasAvailableSrn() {
         return tbSrnAllocationInfo != null && tbSrnAllocationInfo.hasNext();
     }
@@ -361,9 +369,9 @@ public class TbSrnHelper {
     private Map<String, Object> allocateTbSrnBlock(int n) {
         Map<String,Object> result = new HashMap<>();
 
-        String baseURL = "https://lj82ei7mce.execute-api.us-west-2.amazonaws.com/Prod";
+        String baseURL = Authenticator.TBL_HELPER_API;
         String requestURL = baseURL + "/reserve";
-        if (n > 0) requestURL += "?n="+String.valueOf(n);
+        if (n > 0) requestURL += "?n=" + n;
 
         JSONObject jsonResponse = authInstance.getAwsInterface().authenticatedGetCall(requestURL);
 

@@ -23,10 +23,10 @@ import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 
 public class SignInCard extends CardContent {
     private static final String DIALOG_TITLE = "Sign In to %s";
-    protected static final int CARD_HEIGHT = 555;
+    protected static final int CARD_HEIGHT = 540;
 
     private final PanelButton signIn;
-    private final FlexTextField usernameField;
+    private final FlexTextField emailField;
     private final FlexTextField passwordField;
     private final JCheckBox rememberMe;
 
@@ -42,20 +42,20 @@ public class SignInCard extends CardContent {
         JLabel logoLabel = new JLabel(getScaledLogo());
         dialogPanel.add(logoLabel, gbc);
 
-        // User name
-        usernameField = new FlexTextField();
-        usernameField.setFont(getTextFont());
-        usernameField.setIcon(getPersonIcon());
-        usernameField.setPlaceholder("User Name or Email Address");
-        usernameField.addKeyListener(textKeyListener);
-        usernameField.getDocument().addDocumentListener(textDocumentListener);
-        dialogPanel.add(usernameField, gbc);
+        // Email
+        emailField = new FlexTextField();
+        emailField.setFont(getTextFont());
+        emailField.setIcon(getPersonIcon());
+        emailField.setPlaceholder("Enter your email address");
+        emailField.addKeyListener(textKeyListener);
+        emailField.getDocument().addDocumentListener(textDocumentListener);
+        dialogPanel.add(emailField, gbc);
 
         // Password
         passwordField = new FlexTextField();
         passwordField.setFont(getTextFont());
         passwordField.setIsPassword(true);
-        passwordField.setPlaceholder("Password");
+        passwordField.setPlaceholder("Enter your password");
         passwordField.addKeyListener(textKeyListener);
         passwordField.getDocument().addDocumentListener(textDocumentListener);
         dialogPanel.add(passwordField, gbc);
@@ -79,7 +79,7 @@ public class SignInCard extends CardContent {
         dialogPanel.add(signIn, gbc.withFill(NONE));
 
         // Sign-up link.
-        ActionLabel signUp = new ActionLabel("No user id? Click here!");
+        ActionLabel signUp = new ActionLabel("Not registered yet? Click here!");
         signUp.addActionListener(this::onSignUp);
         dialogPanel.add(signUp, gbc.withFill(NONE));
 
@@ -87,15 +87,15 @@ public class SignInCard extends CardContent {
     }
 
     @Override
-    void onShown() {
-        super.onShown();
-        usernameField.setText(welcomeDialog.getUsername());
+    void onShown(ActionEvent actionEvent) {
+        super.onShown(actionEvent);
+        emailField.setText(welcomeDialog.getEmail());
         passwordField.setText(welcomeDialog.getPassword());
         passwordField.setPasswordRevealed(false);
         passwordField.setText(welcomeDialog.getPassword());
         passwordField.setRevealPasswordEnabled(!welcomeDialog.isSavedPassword());
-        usernameField.setRequestFocusEnabled(true);
-        usernameField.requestFocusInWindow();
+        emailField.setRequestFocusEnabled(true);
+        emailField.requestFocusInWindow();
     }
 
     public boolean isRememberMeSelected() {
@@ -112,7 +112,8 @@ public class SignInCard extends CardContent {
      * @param actionEvent is ignored.
      */
     private void onSignUp(ActionEvent actionEvent) {
-        welcomeDialog.gotoSignUpCard();
+        
+        welcomeDialog.gotoSignUpCard(actionEvent);
     }
 
     /**
@@ -120,7 +121,7 @@ public class SignInCard extends CardContent {
      * @param actionEvent is ignored.
      */
     private void onForgotPassword(ActionEvent actionEvent) {
-        welcomeDialog.setUsername(usernameField.getText());
+        welcomeDialog.setEmail(emailField.getText());
         welcomeDialog.clearMessage();
         welcomeDialog.gotoForgotPasswordCard();
     }
@@ -131,7 +132,7 @@ public class SignInCard extends CardContent {
      */
     private void onSignin(ActionEvent actionEvent) {
         UIUtils.runWithWaitSpinner(welcomeDialog,
-            () -> welcomeDialog.cognitoInterface.authenticate(usernameField.getText(), passwordField.getText()),
+            () -> welcomeDialog.cognitoInterface.authenticate(emailField.getText(), passwordField.getText()),
             this::onSigninReturned,
             TOP_THIRD);
     }
@@ -150,7 +151,7 @@ public class SignInCard extends CardContent {
             ok();
         } else if(welcomeDialog.cognitoInterface.isPasswordResetRequired()) {
             // The password has been reset. Prompt user for new password.
-            welcomeDialog.setUsername(usernameField.getText());
+            welcomeDialog.setEmail(emailField.getText());
             welcomeDialog.gotoResetCard();
             welcomeDialog.setMessage("Your password has been reset. Please choose a new password.");
         } else if(welcomeDialog.cognitoInterface.isNotAuthorizedException()) {
@@ -161,7 +162,7 @@ public class SignInCard extends CardContent {
             welcomeDialog.SdkClientException(this);
         } else if(welcomeDialog.cognitoInterface.isNewPasswordRequired()) {
             // Server requires user to reset password.
-            welcomeDialog.setUsername(usernameField.getText());
+            welcomeDialog.setEmail(emailField.getText());
             welcomeDialog.gotoNewPasswordRequiredCard();
         } else {
             // Probably bad user / password. Inform user, let them try again.
@@ -173,7 +174,8 @@ public class SignInCard extends CardContent {
      * Sets the enabled state of controls, based on which other controls have contents.
      */
     private void enableControls() {
-        boolean enableSignIn = (usernameField.getText().length() > 0 && passwordField.getText().length() > 0);
+        boolean enableSignIn = (
+            emailField.getText().length() > 0 && passwordField.getText().length() > 0);
         signIn.setEnabled(enableSignIn);
         if (passwordField.getText().length() == 0) {
             passwordField.setRevealPasswordEnabled(true);

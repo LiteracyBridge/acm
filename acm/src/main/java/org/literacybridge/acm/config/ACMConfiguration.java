@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.utils.DropboxFinder;
 
@@ -163,23 +164,6 @@ public class ACMConfiguration {
                 System.out.println("Found DB " + config.getSharedACMname());
             }
         }
-
-        if (StringUtils.isEmpty(UsersConfigurationProperties.getProperty(Constants.USER_NAME))) {
-            String username = JOptionPane.showInputDialog(null, "Enter Username:",
-                                                          "Missing Username",
-                                                          JOptionPane.PLAIN_MESSAGE);
-            UsersConfigurationProperties.put(Constants.USER_NAME, username);
-            // propsChanged = true;
-        }
-        if (StringUtils.isEmpty(UsersConfigurationProperties.getProperty(Constants.USER_CONTACT_INFO))) {
-            String contactinfo = JOptionPane.showInputDialog(null, "Enter Phone #:",
-                                                             "Missing Contact Info",
-                                                             JOptionPane.PLAIN_MESSAGE);
-            UsersConfigurationProperties.put(Constants.USER_CONTACT_INFO, contactinfo);
-            // propsChanged = true;
-        }
-
-        writeUserProps();
     }
 
     /**
@@ -313,11 +297,35 @@ public class ACMConfiguration {
     }
 
     public String getUserName() {
-        return UsersConfigurationProperties.getProperty("USER_NAME");
+        String username = UsersConfigurationProperties.getProperty("USER_NAME");
+        if (StringUtils.isEmpty(username)) {
+            username = Authenticator.getInstance().getUserEmail();
+            if (StringUtils.isEmpty(username)) {
+                username = JOptionPane.showInputDialog(null, "Enter Username:",
+                    "Missing Username",
+                    JOptionPane.PLAIN_MESSAGE);
+            }
+            UsersConfigurationProperties.put(Constants.USER_NAME, username);
+            // propsChanged = true;
+        }
+        writeUserProps();
+        return username;
     }
 
     public String getUserContact() {
-        return UsersConfigurationProperties.getProperty(Constants.USER_CONTACT_INFO);
+        String contactinfo = UsersConfigurationProperties.getProperty(Constants.USER_CONTACT_INFO);
+        if (StringUtils.isEmpty(contactinfo)) {
+            contactinfo = Authenticator.getInstance().getUserEmail();
+            if (StringUtils.isEmpty(contactinfo)) {
+                contactinfo = JOptionPane.showInputDialog(null, "Enter email:",
+                    "Missing Contact Info",
+                    JOptionPane.PLAIN_MESSAGE);
+            }
+            UsersConfigurationProperties.put(Constants.USER_CONTACT_INFO, contactinfo);
+            // propsChanged = true;
+        }
+        writeUserProps();
+        return contactinfo;
     }
 
     private String getRecordingCounter() {

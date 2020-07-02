@@ -128,5 +128,6 @@
 
     <string name="recipient_chooser_project_label">Selecting recipient(s) for project</string>
     <string name="CANT_ALLOCATE_SRN">Could not allocate a new Serial Number.</string>
+    <string name="email_address">Email address</string>
 
 </resources>

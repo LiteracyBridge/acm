@@ -35,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -52,8 +53,18 @@ public class Authenticator {
     public static final String FIELD_OFFICER_ROLE_STRING = "FO";
     public final static Set<String> UPDATING_ROLES = new HashSet<>(Arrays.asList(SUPER_ADMIN_ROLE_STRING,
             ADMIN_ROLE_STRING, PROGRAM_MANAGER_ROLE_STRING, CONTENT_OFFICER_ROLE_STRING));
+    public final static Set<String> ALL_USER_ROLES = new HashSet<>(Arrays.asList(ADMIN_ROLE_STRING,
+            PROGRAM_MANAGER_ROLE_STRING, CONTENT_OFFICER_ROLE_STRING, FIELD_OFFICER_ROLE_STRING));
 
-    public static final String ACCESS_CONTROL_API = "https://cqmltfugtl.execute-api.us-west-2.amazonaws.com/prod";
+    public static final String ACCESS_CONTROL_API_OLDAUTH = "https://cqmltfugtl.execute-api.us-west-2.amazonaws.com/prod";
+//    public static final String ACCESS_CONTROL_API_CLONE = "https://g393rs12t5.execute-api.us-west-2.amazonaws.com/prod";
+    public static final String ACCESS_CONTROL_API_EMAILAUTH = "https://oxn3lknwre.execute-api.us-west-2.amazonaws.com/prod";
+    public static String ACCESS_CONTROL_API = ACCESS_CONTROL_API_EMAILAUTH;
+
+    public static final String TBL_HELPER_API_OLDAUTH = "https://lj82ei7mce.execute-api.us-west-2.amazonaws.com/Prod";
+    public static final String TBL_HELPER_API_EMAILAUTH= "https://1rhce42l9a.execute-api.us-west-2.amazonaws.com/prod";
+    public static String TBL_HELPER_API = TBL_HELPER_API_EMAILAUTH;
+
 
     private static Authenticator instance;
     private SigninResult signinResult = SigninResult.NONE;
@@ -74,13 +85,12 @@ public class Authenticator {
     public AwsInterface getAwsInterface() { return awsInterface; }
 
     private AuthenticationHelper.AuthenticationResult authenticationResult;
-    private final CognitoHelper cognitoHelper;
+    private CognitoHelper cognitoHelper;
     // A map of {String:String} with the info provided by the auth process.
     private Map<String, String> authenticationInfo;
     // We need these to make authenticated calls to, eg, S3, or Lambda.
     private Credentials credentials;
 
-    private String userName;
     private String userEmail;
     // { program : roles-string }
     private Map<String, String> userPrograms = new HashMap<>();
@@ -137,11 +147,14 @@ public class Authenticator {
         return AccessControl.isOnline();
     }
 
-    public String getUserName() {
-        return userName;
+    public String getName() {
+        String result = getUserProperty("name", null);
+        if (StringUtils.isBlank(result)) result = getUserProperty("custom:greeting", null);
+        if (StringUtils.isBlank(result)) result = getUserProperty("email", "");
+        return result;
     }
 
-    public String getuserEmail() {
+    public String getUserEmail() {
         return userEmail;
     }
 
@@ -175,9 +188,6 @@ public class Authenticator {
 
     public boolean isSandboxSelected() {
         return this.sandboxSelected;
-    }
-    void setSandboxSelected(boolean isSelected) {
-        this.sandboxSelected = isSelected;
     }
 
     public TbSrnHelper getTbSrnHelper() {
@@ -236,12 +246,10 @@ public class Authenticator {
         }
         SigninDetails savedSignInDetails = identityPersistence.retrieveSignInDetails();
         signinResult = SigninResult.NONE;
-        boolean onlineAuthentication = isOnline();
 
         WelcomeDialog dialog = new WelcomeDialog(parent, applicationName, defaultProgram, options, cognitoInterface);
         if (savedSignInDetails != null) {
-            dialog.setSavedCredentials(savedSignInDetails.identity,
-                savedSignInDetails.email,
+            dialog.setSavedCredentials(savedSignInDetails.email,
                 savedSignInDetails.secret);
         }
         dialog.setVisible(true);
@@ -263,7 +271,7 @@ public class Authenticator {
                 // ]
                 Map<String, String> props = new HashMap<>();
                 authenticationInfo.forEach(props::put);
-                identityPersistence.saveSignInDetails(userName, userEmail, password, props);
+                identityPersistence.saveSignInDetails(userEmail, password, props);
                 userProgram = dialog.getProgram();
                 sandboxSelected = dialog.isSandboxSelected();
                 signinResult = SigninResult.SUCCESS;
@@ -276,7 +284,6 @@ public class Authenticator {
                 } else if (savedSignInDetails != null && savedSignInDetails.email.equalsIgnoreCase(
                     // If the email is the same as the recently saved email, use those saved details.
                     email)) {
-                    userName = savedSignInDetails.identity;
                     userEmail = savedSignInDetails.email;
                     authenticationInfo = identityPersistence.getExtraProperties();
                     signinResult = SigninResult.CACHED_OFFLINE;
@@ -288,7 +295,6 @@ public class Authenticator {
                     signinResult = SigninResult.SUCCESS;
                 } else {
                     // If some new email with no saved details, use what we have.
-                    userName = email;
                     userEmail = email;
                     userProgram = dialog.getProgram();
                     sandboxSelected = dialog.isSandboxSelected();
@@ -313,7 +319,6 @@ public class Authenticator {
         String provider = authenticationInfo.get("iss").replace("https://", "");
         credentials = cognitoHelper.GetCredentials(provider, jwtToken);
 
-        userName = authenticationInfo.get("cognito:username");
         userEmail = authenticationInfo.get("email");
         if (authenticationInfo.containsKey("programs")) {
             userPrograms = parseProgramList(authenticationInfo.get("programs"));
@@ -338,7 +343,6 @@ public class Authenticator {
         credentials = null;
         authenticationInfo = null;
         userEmail = null;
-        userName = null;
         identityPersistence.clearSignInDetails();
     }
 
@@ -517,11 +521,33 @@ public class Authenticator {
          * authenticationInfo with the info returned by a successful sign-in.
          * credentials with the credentials returned by a successful sign-in.
          *
-         * @param username or email address.
+         * @param usernameOrEmail username or email address.
          * @param password of the user id.
          */
-        public void authenticate(String username, String password) {
-            AuthenticationHelper.AuthenticationResult validationResult = cognitoHelper.ValidateUser(username, password);
+        public void authenticate(String usernameOrEmail, String password) {
+            AuthenticationHelper.AuthenticationResult validationResult = cognitoHelper.ValidateUser(usernameOrEmail, password);
+
+            // On failure, try again with "_FALLBACK" values.
+            if (!validationResult.isSuccess() && !validationResult.isPasswordResetRequired() && !validationResult.isNewPasswordRequired()) {
+                Map<String, String> fallback = new HashMap<>();
+                try (InputStream input = getClass().getClassLoader().getResourceAsStream("config.properties")) {
+                    Properties props = new Properties();
+                    props.load(input);
+                    for (String propName : new String[]{"POOL_ID", "CLIENTAPP_ID", "FED_POOL_ID", "CUSTOMDOMAIN", "REGION"}) {
+                        fallback.put(propName, props.getProperty(propName+"_FALLBACK", props.getProperty(propName)));
+                    }
+                    CognitoHelper fallbackHelper = new CognitoHelper(fallback);
+                    AuthenticationHelper.AuthenticationResult fallbackResult = fallbackHelper.ValidateUser(usernameOrEmail, password);
+                    if (fallbackResult.isSuccess()) {
+                        ACCESS_CONTROL_API = ACCESS_CONTROL_API_OLDAUTH;
+                        TBL_HELPER_API = TBL_HELPER_API_OLDAUTH;
+                        cognitoHelper = fallbackHelper;
+                        validationResult = fallbackResult;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             parseAuthenticationResult(validationResult);
         }
 
@@ -540,10 +566,10 @@ public class Authenticator {
          * Note: This does not actually reset any passwords, only sends the code to allow the
          * user to reset their password.
          *
-         * @param username that needs a password reset.
+         * @param usernameOrEmail username or email that needs a password reset.
          */
-        public void resetPassword(String username) {
-            cognitoHelper.ResetPassword(username);
+        public void resetPassword(String usernameOrEmail) {
+            cognitoHelper.ResetPassword(usernameOrEmail);
         }
 
         /**
@@ -551,12 +577,12 @@ public class Authenticator {
          * associated email address, and a new password, sets the password to the new value (if
          * it is a valid password, of course).
          *
-         * @param username of the password to reset.
+         * @param usernameOrEmail username or email of the password to reset.
          * @param password the new password.
          * @param pin      reset code sent via email.
          */
-        public void updatePassword(String username, String password, String pin) {
-            cognitoHelper.UpdatePassword(username, password, pin);
+        public void updatePassword(String usernameOrEmail, String password, String pin) {
+            cognitoHelper.UpdatePassword(usernameOrEmail, password, pin);
         }
 
         /**
@@ -573,14 +599,14 @@ public class Authenticator {
             parseAuthenticationResult(newPasswordResult);
         }
 
-        public String signUpUser(String username,
+        public String signUpUser(String email,
             String password,
-            String email,
-            String phonenumber)
+            Map<String,String> attributes)
         {
-            return cognitoHelper.SignUpUser(username, password, email, phonenumber);
+            return cognitoHelper.SignUpUser(email, password, email, attributes);
         }
 
+        @SuppressWarnings("UnusedReturnValue")
         public String verifyAccessCode(String username, String code) {
             return cognitoHelper.VerifyAccessCode(username, code);
         }
@@ -626,6 +652,11 @@ public class Authenticator {
         public String getAuthMessage() {
             if (authenticationResult == null) return null;
             return authenticationResult.getMessage();
+        }
+
+        public String getAuthenticationAttribute(String attributeName) {
+            if (authenticationInfo == null) return null;
+            return authenticationInfo.get(attributeName);
         }
 
     }

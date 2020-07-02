@@ -320,11 +320,12 @@ public class TbLoaderPanel extends JPanel {
         JPanel outerGreetingBox = new JPanel();
         outerGreetingBox.setLayout(new BorderLayout());
 
+        Authenticator authInstance = Authenticator.getInstance();
         Box greetingBox = Box.createHorizontalBox();
         boolean isBorrowed = Authenticator.getInstance().getTbSrnHelper().isBorrowedId();
         String deviceIdHex = "000C";
-        String greetingString = String.format("<html><nobr>%s<b>!</b> <i><span style='font-size:0.85em;color:gray'>(%sTB-Loader ID: %s)</span></i></nobr></html>",
-            getGreeting(),
+        String greetingString = String.format("<html><nobr>Hello <b>%s</b>! <i><span style='font-size:0.85em;color:gray'>(%sTB-Loader ID: %s)</span></i></nobr></html>",
+                authInstance.getName(),
             isBorrowed?"Using ":"", deviceIdHex);
         JLabel greeting = new JLabel(greetingString);
         greetingBox.add(greeting);
@@ -663,18 +664,6 @@ public class TbLoaderPanel extends JPanel {
         operation = isUpdate ? TBLoader.Operation.Update : TBLoader.Operation.CollectStats;
         goListener.accept(operation);
     }
-
-    private String getGreeting() {
-        Authenticator authInstance = Authenticator.getInstance();
-        String greeting = authInstance.getUserProperty("custom:greeting", null);
-        if (StringUtils.isEmpty(greeting)) {
-            greeting = String.format("Hello, <b>%s</b>", authInstance.getUserName());
-        } else {
-            greeting = "<b>" + greeting + "</b>";
-        }
-        return greeting;
-    }
-
 
     private void setEnabledStates() {
         // Must have device. Update must not be in progress.

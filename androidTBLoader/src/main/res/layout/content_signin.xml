@@ -89,16 +89,16 @@
         android:textSize="@dimen/activity_text_size_small"/>
 
     <EditText
-            android:id="@+id/editTextUserId"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/activity_text_height"
-            android:layout_below="@+id/textViewUserIdLabel"
-            android:layout_centerHorizontal="true"
-            android:background="@drawable/text_border_selector"
-            android:hint="Email address"
-            android:inputType="textPersonName"
-            android:paddingLeft="@dimen/activity_text_padding"
-            android:paddingRight="@dimen/activity_text_padding" />
+        android:id="@+id/editTextUserId"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/activity_text_height"
+        android:layout_below="@+id/textViewUserIdLabel"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/text_border_selector"
+        android:hint="@string/email_address"
+        android:inputType="textPersonName"
+        android:paddingLeft="@dimen/activity_text_padding"
+        android:paddingRight="@dimen/activity_text_padding" />
 
     <TextView
         android:id="@+id/textViewUserIdMessage"

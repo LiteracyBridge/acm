@@ -13,7 +13,6 @@ import org.literacybridge.core.tbloader.TBDeviceInfo;
 import org.literacybridge.core.tbloader.TBLoaderConfig;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.literacybridge.core.tbloader.TBLoaderCore;
-import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -83,7 +82,7 @@ public class TBLoaderIntegrationTest {
             .withCollectedDataDirectory(collectedDataDir)
             .withTempDirectory(tempDir)
             .withWindowsUtilsDirectory(null)
-            .withUserName(testUser)
+            .withUserEmail(testUser)
             .build();
 
         assertEquals(tbLoaderConfig.getTbLoaderId(), tbcdId);
@@ -152,7 +151,7 @@ public class TBLoaderIntegrationTest {
             .withCollectedDataDirectory(collectedDataDir)
             .withTempDirectory(tempDir)
             .withWindowsUtilsDirectory(null)
-            .withUserName(testUser)
+            .withUserEmail(testUser)
             .build();
 
         StatusDisplay statusDisplay = new StatusDisplay();

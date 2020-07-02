@@ -11,6 +11,7 @@ public class LockACM {
   private static File lockFile;
   private static FileChannel channel;
   private static FileLock lock;
+  private static String acmName;
 
   public static class MultipleInstanceException extends RuntimeException {
       public MultipleInstanceException(String msg) {
@@ -20,6 +21,12 @@ public class LockACM {
 
     public static void lockDb(DBConfiguration config) {
     try {
+      if (acmName != null) {
+        if (acmName.equals(config.getSharedACMname())) {
+          return;
+        }
+        throw new IllegalStateException("This instance is already locked to another database.");
+      }
       lockFile = new File(config.getTempACMsDirectory() + "/"
           + config.getSharedACMname() + ".lock");
       // Opens the file if it exists, otherwise creates it.

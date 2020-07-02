@@ -192,10 +192,9 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
             "support. The button below will send this report to Amplio."+
             "</html>";
         String reportHeading = String.format("Error report from System Prompts Import Assistant\n\n" +
-                "Program %s, User %s (%s), Computer %s, Language %s\nSystem Prompts Import at %s\n" +
+                "Program %s, User %s, Computer %s, Language %s\nSystem Prompts Import at %s\n" +
                 "ACM Version %s, built %s\n",
             dbConfig.getProjectName(),
-            ACMConfiguration.getInstance().getUserName(),
             ACMConfiguration.getInstance().getUserContact(),
             computerName, getLanguageAndName(context.languagecode),
             localDateTimeFormatter.format(LocalDateTime.now()),

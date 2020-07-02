@@ -88,7 +88,7 @@ public class TBLoader extends JFrame {
 
     private TbFile softwareDir;
     private String deviceIdHex;
-    private String userName;
+    private String userEmail;
     private File collectionWorkDir;
     private File uploadQueueDeviceDir;
     private File uploadQueueDir;
@@ -288,7 +288,7 @@ public class TBLoader extends JFrame {
         try {
             TbSrnHelper srnHelper = Authenticator.getInstance().getTbSrnHelper();
             deviceIdHex = srnHelper.getTbSrnAllocationInfo().getTbloaderidHex();
-            userName = Authenticator.getInstance().getUserName();
+            userEmail = Authenticator.getInstance().getUserEmail();
 
             localTbLoaderDir = ACMConfiguration.getInstance().getLocalTbLoaderDirFor(newProject);
             localTbLoaderDir.mkdirs();
@@ -422,7 +422,7 @@ public class TBLoader extends JFrame {
             .withCollectedDataDirectory(collectedDataTbFile)
             .withTempDirectory(temporaryDir)
             .withWindowsUtilsDirectory(softwareDir)
-            .withUserName(userName)
+            .withUserEmail(userEmail)
             .build();
     }
 

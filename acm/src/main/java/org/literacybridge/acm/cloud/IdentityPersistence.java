@@ -49,19 +49,17 @@ class IdentityPersistence {
     /**
      * Persists sign in credentials to some persistent store. Intended to be called after a
      * successful sign-in.
-     * @param user The user id.
      * @param password The password.
      * @return True if the credentials were saved successfully, false otherwise.
      */
     @SuppressWarnings("UnusedReturnValue")
-    boolean saveSignInDetails(String user, String email, String password, Map<String,String> extraProperties) {
+    boolean saveSignInDetails(String email, String password, Map<String,String> extraProperties) {
         // This is not intended to be "secure". It simply prevents casual browsing of the
         // password.
         Properties credentialProps = new Properties();
-        credentialProps.setProperty("identity", user);
         credentialProps.setProperty("email", email);
         if (StringUtils.isNotEmpty(password)) {
-            credentialProps.setProperty("secret", rotate(password, user, false));
+            credentialProps.setProperty("secret", rotate(password, email, false));
         }
         extraProperties.forEach((k,v) -> credentialProps.put("@"+k, v));
 
@@ -116,11 +114,12 @@ class IdentityPersistence {
         SigninDetails result = null;
         Properties credentialProps = readPropertiesFile();
         if (credentialProps != null) {
-            String user = credentialProps.getProperty("identity", "");
             String email = credentialProps.getProperty("email", "");
+            // If there is an "identity" property, use that to unrotate. Default is email.
+            String identity = credentialProps.getProperty("identity", email);
             String pwd = credentialProps.getProperty("secret", "");
-            pwd = rotate(pwd, user, true);
-            result = new SigninDetails(user, email, pwd);
+            pwd = rotate(pwd, identity, true);
+            result = new SigninDetails(email, pwd);
         }
         return result;
     }
@@ -164,12 +163,10 @@ class IdentityPersistence {
     }
 
     public static class SigninDetails {
-        public final String identity;
         public final String email;
         public final String secret;
 
-        public SigninDetails(String identity, String email, String secret) {
-            this.identity = identity;
+        public SigninDetails(String email, String secret) {
             this.email = email;
             this.secret = secret;
         }

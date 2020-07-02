@@ -208,7 +208,6 @@ public class AccessControlTest {
 
         DBConfiguration dbConfig = getMockDbConfig();
         populateAcm();
-        String user = ACMConfiguration.getInstance().getUserName();
         when(dbConfig.userIsReadOnly()).thenReturn(false);
 
         AccessControl ac = new AccessControl(dbConfig);

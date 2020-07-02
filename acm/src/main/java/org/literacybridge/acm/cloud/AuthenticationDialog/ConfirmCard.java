@@ -14,7 +14,7 @@ import java.awt.event.ActionEvent;
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class ConfirmCard extends CardContent {
-    private static final String DIALOG_TITLE = "Confirm User ID";
+    private static final String DIALOG_TITLE = "Confirm Registration";
     protected static final int CARD_HEIGHT = 475;
 
     private final FlexTextField confirmationField;
@@ -34,7 +34,7 @@ public class ConfirmCard extends CardContent {
         dialogPanel.add(logoLabel, gbc);
 
         dialogPanel.add(new JLabel("<html>Check email for <span style='font-size:1.1em'>\"Your " +
-            "Amplio verification code\"</span> and enter it below, then click Confirm. " +
+            "Amplio confirmation code\"</span> and enter it below, then click Confirm. " +
             "If you did not receive a code, click Resend Code."), gbc);
 
         // User name
@@ -84,12 +84,12 @@ public class ConfirmCard extends CardContent {
 
     private void onOk(ActionEvent actionEvent) {
         // Unfortunately, cognito doesn't return any success/failure status on this call.
-        welcomeDialog.cognitoInterface.verifyAccessCode(welcomeDialog.getUsername(), confirmationField.getText());
+        welcomeDialog.cognitoInterface.verifyAccessCode(welcomeDialog.getEmail(), confirmationField.getText());
         ok();
     }
 
     private void onResend(@SuppressWarnings("unused") ActionEvent actionEvent) {
-        welcomeDialog.cognitoInterface.resendAccessCode(welcomeDialog.getUsername());
+        welcomeDialog.cognitoInterface.resendAccessCode(welcomeDialog.getEmail());
     }
 
     void onCancel(ActionEvent actionEvent) {
@@ -98,10 +98,11 @@ public class ConfirmCard extends CardContent {
 
     /**
      * Handles any actions that need to be taken when the panel is shown or hidden.
+     * @param actionEvent is passed to super.
      */
     @Override
-    void onShown() {
-        super.onShown();
+    void onShown(ActionEvent actionEvent) {
+        super.onShown(actionEvent);
         confirmationField.setText(null);
         confirmationField.setRequestFocusEnabled(true);
         confirmationField.requestFocusInWindow();

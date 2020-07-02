@@ -79,6 +79,7 @@ public class TBLoaderConstants {
     public static final String TIMESTAMP_PROPERTY = "TIMESTAMP";
     public static final String TEST_DEPLOYMENT_PROPERTY = "TESTDEPLOYMENT";
     public static final String USERNAME_PROPERTY = "USERNAME";
+    public static final String USEREMAIL_PROPERTY = "USEREMAIL";
     public static final String LOCATION_PROPERTY = "LOCATION";
     public static final String COORDINATES_PROPERTY = "COORDINATES";
     public static final String TBCDID_PROPERTY = "TBCDID";

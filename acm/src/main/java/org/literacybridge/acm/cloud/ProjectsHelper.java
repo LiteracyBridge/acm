@@ -154,47 +154,4 @@ public class ProjectsHelper {
         }
         return false;
     }
-
-    public Collection<String> getProjects() {
-        if (projects == null) {
-            if (authInstance.isAuthenticated() && authInstance.isOnline()) {
-                // Statistics, configured in AWS Application Gateway
-                String baseURL = "https://y06knefb5j.execute-api.us-west-2.amazonaws.com/Devo";
-                String requestURL = baseURL + "/projects";
-
-                JSONObject jsonResponse = authInstance.getAwsInterface().authenticatedGetCall(requestURL);
-
-                if (jsonResponse != null) {
-                    Object o = jsonResponse.get("result");
-                    if (o instanceof Map) {
-                        //noinspection rawtypes
-                        Object l = ((Map) o).get("values");
-                        if (l instanceof List) {
-                            //noinspection unchecked
-                            projects = ((List<String>) l).stream()
-                                .filter(this::canViewProject)
-                                .collect(Collectors.toList());
-                        }
-                    }
-                }
-                if (projects == null) projects = new ArrayList<>();
-                identityPersistence.saveProjectList(projects);
-            } else {
-                projects = identityPersistence.retrieveProjectList();
-            }
-        }
-        return projects;
-    }
-
-    @SuppressWarnings("unchecked")
-    private boolean canViewProject(String project) {
-        if (!authInstance.isAuthenticated()) return false;
-        String viewParam = authInstance.getUserProperty("view", "");
-        String editParam = authInstance.getUserProperty("edit", "");
-        Pattern viewPattern = Pattern.compile(viewParam, CASE_INSENSITIVE);
-        Pattern editPattern = Pattern.compile(editParam, CASE_INSENSITIVE);
-
-        return viewPattern.matcher(project).matches() || editPattern.matcher(project).matches();
-    }
-
 }

@@ -143,7 +143,6 @@ public class ActionLabel extends JLabel {
     /**
      * Action support. Copied directly from Swing.
      */
-    private ActionEvent actionEvent = null;
 
     public void addActionListener(ActionListener l) {
         listenerList.add(ActionListener.class, l);
@@ -156,6 +155,7 @@ public class ActionLabel extends JLabel {
 
     @SuppressWarnings("DuplicatedCode")
     private void fireActionPerformed() {
+        ActionEvent actionEvent = null;
         // Guaranteed to return a non-null array
         Object[] listeners = listenerList.getListenerList();
         // Process the listeners last to first, notifying

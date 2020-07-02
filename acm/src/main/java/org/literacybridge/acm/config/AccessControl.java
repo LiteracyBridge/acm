@@ -533,7 +533,7 @@ public class AccessControl {
         requestUrl.append('/').append(action);
         requestUrl.append('/').append(db);
         requestUrl.append("?version=").append(Constants.ACM_VERSION);
-        requestUrl.append("&name=").append(authenticator.getuserEmail());
+        requestUrl.append("&name=").append(authenticator.getUserEmail());
         requestUrl.append("&contact=").append(authenticator.getUserProperty("phone_number", ""));
         requestUrl.append("&computername=").append(computerName);
 
@@ -681,7 +681,7 @@ public class AccessControl {
         requestUrl.append("?version=").append(Constants.ACM_VERSION);
         requestUrl.append("&filename=").append(filename);
         requestUrl.append("&key=").append(dbInfo.getCheckoutKey());
-        requestUrl.append("&name=").append(authenticator.getuserEmail());
+        requestUrl.append("&name=").append(authenticator.getUserEmail());
         requestUrl.append("&contact=").append(authenticator.getUserProperty("phone_number", ""));
         requestUrl.append("&computername=").append(computerName);
 

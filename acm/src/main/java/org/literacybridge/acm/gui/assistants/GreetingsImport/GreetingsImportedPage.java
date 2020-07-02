@@ -175,10 +175,9 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
             "support. The button below will send this report to Amplio."+
             "</html>";
         String reportHeading = String.format("Error report from Greetings Import Assistant%n%n" +
-                "Project %s, User %s (%s), Computer %s%nGreetings Import at %s%n" +
+                "Project %s, User %s, Computer %s%nGreetings Import at %s%n" +
                 "ACM Version %s, built %s%n",
             dbConfig.getProjectName(),
-            ACMConfiguration.getInstance().getUserName(),
             ACMConfiguration.getInstance().getUserContact(),
             computerName,
             localDateTimeFormatter.format(LocalDateTime.now()),

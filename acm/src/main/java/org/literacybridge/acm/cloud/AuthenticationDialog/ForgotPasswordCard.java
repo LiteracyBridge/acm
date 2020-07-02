@@ -19,7 +19,7 @@ public class ForgotPasswordCard extends CardContent {
     private final static String DIALOG_TITLE = "Forgot Password";
     protected static final int CARD_HEIGHT = 515;
 
-    private final FlexTextField usernameField;
+    private final FlexTextField emailField;
     private final PanelButton resetPassword;
 
     public ForgotPasswordCard(WelcomeDialog welcomeDialog, WelcomeDialog.Cards panel) {
@@ -37,16 +37,14 @@ public class ForgotPasswordCard extends CardContent {
 
         dialogPanel.add(new JLabel("<html>Enter your email address and click 'Send password reset email'. On the next panel, enter the code which you will receive in your email."), gbc);
 
-        // User name
-        usernameField = new FlexTextField();
-        usernameField.setFont(getTextFont());
-        usernameField.setIcon(getPersonIcon());
-        usernameField.setEnabled(true);
-        usernameField.setPlaceholder("Enter your email address");
-        usernameField.getDocument().addDocumentListener(passwordDocListener);
-        dialogPanel.add(usernameField, gbc);
-
-        gbc.insets.bottom = 12;
+        // Email
+        emailField = new FlexTextField();
+        emailField.setFont(getTextFont());
+        emailField.setIcon(getPersonIcon());
+        emailField.setEnabled(true);
+        emailField.setPlaceholder("Enter your email address");
+        emailField.getDocument().addDocumentListener(passwordDocListener);
+        dialogPanel.add(emailField, gbc);
 
         // Consume all vertical space here.
         dialogPanel.add(new JLabel(""), gbc.withWeighty(1.0));
@@ -60,8 +58,8 @@ public class ForgotPasswordCard extends CardContent {
         dialogPanel.add(resetPassword, gbc.withFill(NONE));
 
         Box hBox = Box.createHorizontalBox();
-        hBox.add(new JLabel("Already have login and password? "));
-        ActionLabel signIn = new ActionLabel("Sign in");
+        hBox.add(new JLabel("Remembered your password? "));
+        ActionLabel signIn = new ActionLabel("Go back to sign in.");
         signIn.addActionListener(this::onCancel);
         hBox.add(signIn);
         dialogPanel.add(hBox, gbc.withFill(NONE));
@@ -74,21 +72,22 @@ public class ForgotPasswordCard extends CardContent {
     }
 
     private void onOk(ActionEvent actionEvent) {
-        welcomeDialog.setUsername(usernameField.getText());
+        welcomeDialog.setEmail(emailField.getText());
         welcomeDialog.clearMessage();
         // Comment out next line to NOT reset the password, to test the GUI aspect of the reset dialog.
-        welcomeDialog.cognitoInterface.resetPassword(usernameField.getText());
+        welcomeDialog.cognitoInterface.resetPassword(emailField.getText());
 
         ok();
     }
 
     /**
      * Handles any actions that need to be taken when the panel is shown or hidden.
+     * @param actionEvent is not used locally.
      */
     @Override
-    void onShown() {
-        super.onShown();
-        usernameField.setText(welcomeDialog.getEmail());
+    void onShown(ActionEvent actionEvent) {
+        super.onShown(actionEvent);
+        emailField.setText(welcomeDialog.getEmail());
     }
 
    /**
@@ -98,7 +97,7 @@ public class ForgotPasswordCard extends CardContent {
     @SuppressWarnings("FieldCanBeLocal")
     private final DocumentListener passwordDocListener = new DocumentListener() {
         private void check() {
-            String name = usernameField.getText();
+            String name = emailField.getText();
             resetPassword.setEnabled(name.length() > 0);
         }
         @Override
