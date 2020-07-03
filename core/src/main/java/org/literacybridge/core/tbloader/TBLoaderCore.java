@@ -377,8 +377,11 @@ public class TBLoaderCore {
         mLocation = builder.mLocation;
         mCoordinates = builder.mCoordinates;
         mStatsOnly = builder.mStatsOnly;
-        // The provided firmware is always acceptable, so ensure it is in the list.
-        builder.mAcceptableFirmware.add(builder.mNewDeploymentInfo.getFirmwareRevision());
+        if (!mStatsOnly) {
+            // There is only a firmware if we're doing an update.
+            // The provided firmware is always acceptable, so ensure it is in the list.
+            builder.mAcceptableFirmware.add(builder.mNewDeploymentInfo.getFirmwareRevision());
+        }
         mDeploymentDirectory = builder.mDeploymentDirectory;
         mProgressListener = builder.mProgressListener;
 
