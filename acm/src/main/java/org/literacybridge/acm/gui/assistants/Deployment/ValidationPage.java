@@ -67,7 +67,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     @SuppressWarnings("FieldCanBeLocal")
     private final String fatalIssuesWelcome =
         "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
-            + "<br/>Severe errors were found. The Deployment can not be created. Click \"Cancel\" to exit."
+            + "<br/>Severe errors were found. The deployment can not be created. Click \"Cancel\" to exit."
             + "</html>";
     @SuppressWarnings("FieldCanBeLocal")
     private final String issuesWelcome =
@@ -87,7 +87,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         GridBagConstraints gbc = getGBC();
 
         welcomeLabel = new JLabel(
-            "<html>" + "<span style='font-size:2.5em'>Validation</span>" + "</ul>"
+            "<html>" + "<span style='font-size:2.5em'>Validate the Deployment</span>" + "</ul>"
                 + "<br/>Examine any issues, and click \"Next\" if you wish to proceed. "
 
                 + "</html>");
@@ -101,11 +101,11 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         add(hbox, gbc);
 
         deployWithWarnings = new JCheckBox(
-            "Create Deployment despite warnings. This may not conform to the Program Spec.");
+            "Create deployment despite warnings. This may not conform to the Program Specification.");
         add(deployWithWarnings, gbc);
         deployWithWarnings.addActionListener(this::onSelection);
         deployWithErrors = new JCheckBox(
-            "<html>Create Deployment despite errors. <em>This will probably fail on some Talking Books</em>.</html>");
+            "<html>Create deployment despite errors. <em>This will probably fail on some Talking Books</em>.</html>");
         add(deployWithErrors, gbc);
         deployWithErrors.addActionListener(this::onSelection);
 
@@ -233,7 +233,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             if (!locales.contains(locale)) {
                 context.issues.add(Issues.Severity.ERROR,
                     Issues.Area.LANGUAGES,
-                    "Language '%s' is used in the Deployment, but is not defined in the ACM.",
+                    "Language '%s' is used in the deployment, but is not defined in the ACM.",
                     getLanguageAndName(language));
             }
         }
@@ -529,7 +529,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         if (!communitiesDir.exists() || !communitiesDir.isDirectory()) {
             context.issues.add(Issues.Severity.ERROR,
                 Issues.Area.CUSTOM_GREETINGS,
-                "The 'communities' directory is missing in this project.");
+                "The 'communities' directory is missing in this program.");
             return;
         }
 

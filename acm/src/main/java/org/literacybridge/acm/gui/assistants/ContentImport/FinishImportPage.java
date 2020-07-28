@@ -215,8 +215,8 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
             "support. The button below will send this report to Amplio."+
             "</html>";
         String reportHeading = String.format("Error report from Content Import Assistant%n%n" +
-                "Project %s, User %s (%s), Computer %s%nContent Import at %s%n" +
-                "Importing content for Deployment %d, in language %s%n"+
+                "Program %s, User %s (%s), Computer %s%nContent Import at %s%n" +
+                "Importing content for deployment %d, in language %s%n"+
                 "ACM Version %s, built %s%n",
             dbConfig.getProjectName(),
             ACMConfiguration.getInstance().getUserName(),
@@ -240,7 +240,7 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
         summaryMessage.append(String.format("<h2>Project %s</h2>", dbConfig.getProjectName()));
         summaryMessage.append(String.format("<h3>%s</h3>", localDateTimeFormatter.format(LocalDateTime.now())));
         summaryMessage.append(String.format(
-            "<p>Importing content for Deployment %d, in language %s</p>",
+            "<p>Importing content for deployment %d, in language %s</p>",
             context.deploymentNo,
             dbConfig.getLanguageLabel(new Locale(context.languagecode))));
 

@@ -63,7 +63,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
 
         // Deployment # and language chooser, in a HorizontalBox.
         Box hbox = Box.createHorizontalBox();
-        hbox.add(new JLabel("Choose the Deployment: "));
+        hbox.add(new JLabel("Choose the deployment: "));
         deploymentChooser = new JComboBox<>();
         deploymentChooser.addActionListener(this::onSelection);
         setComboWidth(deploymentChooser, "Choose...");
@@ -71,7 +71,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         hbox.add(deploymentChooser);
         hbox.add(Box.createHorizontalStrut(10));
 
-        hbox.add(new JLabel("and the Language: "));
+        hbox.add(new JLabel("and the language: "));
         languageChooser = new LanguageChooser();
         languageChooser.addActionListener(this::onSelection);
         Set<String> languageStrings = context.programSpec.getLanguageCodes()
@@ -84,16 +84,8 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
-        // Title preview.
-        titlePreviewBox = Box.createHorizontalBox();
-        titlePreviewBox.add(new JLabel(getTitlePreviewProlog()));
-        titlePreviewBox.add(new JLabel(soundImage));
-        titlePreviewBox.add(new JLabel(" already have content in the ACM, with "));
-        titlePreviewBox.add(new JLabel(noSoundImage));
-        titlePreviewBox.add(new JLabel("do not.):"));
-
-        titlePreviewBox.add(Box.createHorizontalGlue());
-
+        // Title preview. Shown and hidden based on selections.
+        titlePreviewBox = getTitlePreviewBox();
         gbc.insets = new Insets(0,0,0,0);
         add(titlePreviewBox, gbc);
 
@@ -177,28 +169,29 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
     private String getWelcomeIntro() {
         String content = "<html>"
             + "<span style='font-size:2.5em'>Welcome to the Content Import Assistant.</span>"
-            + "<br/><br/><p>This assistant will guide you through importing audio content "
-            + "into your project. Steps to import:</p>"
+            + "<br/><br/><p>This Assistant will guide you through importing audio content "
+            + "for your program. Here are the steps:</p>"
             + "<ol>"
-            + "<li> Choose the Deployment # and the Language of the content you wish to import.</li>"
-            + "<li> Choose the files and folders containing the audio.</li>"
-            + "<li> The assistant will automatically match as many imported files as it can. You will "
-            + "have an opportunity to match remaining files, or to \"unmatch\" files as needed.</li>"
-            + "<li> Review and approve the final message-to-file matches.</li>"
-            + "<li> The audio files are imported into the ACM, and placed in appropriate playlists.</li>"
+            + "<li> Choose the deployment number and the language of the audio content you wish to import.</li>"
+            + "<li> Choose the files and folders containing the audio content.</li>"
+            + "<li> The Assistant will automatically match as many imported files as it can from the "
+            + "information you provided in the Program Specification. You will "
+            + "have an opportunity to match remaining files, or \"unmatch\" files as needed.</li>"
+            + "<li> Review and approve the final file matches.</li>"
+            + "<li> The audio files are imported into the ACM, and placed into their assigned playlists.</li>"
             + "</ol>"
             + "</html>";
 
         String playlists = "<html>"
             + "<span style='font-size:2.5em'>Welcome to the Playlist Prompt Assistant.</span>"
-            + "<br/><br/><p>This assistant will guide you through importing playlist prompts "
-            + "into your project. Steps to import:</p>"
+            + "<br/><br/><p>This Assistant will guide you through importing playlist prompts "
+            + "for your project. Here are the:</p>"
             + "<ol>"
-            + "<li> Choose the Deployment # and the Language of the prompts you wish to import.</li>"
+            + "<li> Choose the deployment number and the language of the prompts you wish to import.</li>"
             + "<li> Choose the files and folders containing the prompts.</li>"
-            + "<li> The assistant will automatically match as many imported files as it can. You will "
+            + "<li> The Assistant will automatically match as many imported files as it can. You will "
             + "have an opportunity to match remaining files, or to \"unmatch\" files as needed.</li>"
-            + "<li> Review and approve the final prompt-to-file matches.</li>"
+            + "<li> Review and approve the final file matches.</li>"
             + "<li> The audio files are imported into the ACM.</li>"
             + "</ol>"
             + "</html>";
@@ -206,12 +199,35 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         return context.promptsOnly ? playlists : content;
     }
 
-    private String getTitlePreviewProlog() {
+    private Box getTitlePreviewBox() {
+        String[] labels;
         if (context.promptsOnly) {
-            return "Playlist prompts in the Deployment. (Prompts with ";
-        } else {
-            return "Prompts and message titles in the Deployment. (Titles with ";
+            labels = new String[]{"Playlist prompts in the deployment: (Note: Prompts with ",
+                    " already have content",
+                    "in the ACM. Prompts with ",
+                    "do not.)"};
         }
+        else {
+            labels = new String[]{"Prompts and message titles in the deployment: (Note: Titles with ",
+                    " already have content",
+                    "in the ACM. Titles with ",
+                    "<html>do not. Prompts are listed in <i><span style='font-weight:100'>italics</span></i>.)</html>"};
+        }
+        int ix=0;
+        Box vBox = Box.createVerticalBox();
+        Box hBox = Box.createHorizontalBox();
+        hBox.add(new JLabel(labels[ix++]));
+        hBox.add(new JLabel(soundImage));
+        hBox.add(new JLabel(labels[ix++]));
+        hBox.add(Box.createHorizontalGlue());
+        vBox.add(hBox);
+        hBox = Box.createHorizontalBox();
+        hBox.add(new JLabel(labels[ix++]));
+        hBox.add(new JLabel(noSoundImage));
+        hBox.add(new JLabel(labels[ix]));
+        hBox.add(Box.createHorizontalGlue());
+        vBox.add(hBox);
+        return vBox;
     }
 
     /**

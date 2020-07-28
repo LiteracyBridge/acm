@@ -194,7 +194,7 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
         File communitiesDir = new File(tbLoadersDir, "communities");
 
-        summaryMessage.append(String.format("<h2>Project %s</h2>", dbConfig.getProjectName()));
+        summaryMessage.append(String.format("<h2>Program %s</h2>", dbConfig.getProjectName()));
         summaryMessage.append(String.format("<h3>%s</h3>", localDateTimeFormatter.format(LocalDateTime.now())));
         summaryMessage.append("<p>Importing Greetings.</p>");
 

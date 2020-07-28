@@ -15,7 +15,7 @@ public class ContentImportAssistant {
         context.notifyList = ACMConfiguration.getInstance().getCurrentDB().getNotifyList();
         context.promptsOnly = promptsOnly;
 
-        String title = promptsOnly ? "Playlist Prompts Assistant" : "Content Import Assistant";
+        String title = promptsOnly ? "Playlist Prompts Assistant" : "Import Assistant";
         // Debugging & development:
         if (ACMConfiguration.isTestData()) {
             context.deploymentNo = 1;

@@ -45,14 +45,14 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
 
         JLabel welcome = new JLabel("<html>"
             + "<span style='font-size:2.5em'>Welcome to the System Prompts Assistant.</span>"
-            + "<br/><br/><p>This assistant will guide you through importing system prompts for a language. Steps to import prompts:</p>"
+            + "<br/><br/><p>This Assistant will guide you through importing system prompts for a language. Here are the steps:</p>"
             + "<ol>"
             + "<li> Choose the language for which you need to import prompts. Review the prompts that need audio, in the list below.</li>"
             + "<li> Choose the files and folders containing the audio for the prompts.</li>"
-            + "<li> The Assistant will automatically make any matches that it can. You then "
-            + "have an opportunity to match remaining files, or to \"unmatch\" files as needed.</li>"
-            + "<li> You review and approve the final prompt-to-file matches.</li>"
-            + "<li> The audio files are copied into the project, and placed in appropriate folders.</li>"
+            + "<li> The Assistant will automatically match as many prompts as it can. You will "
+            + "have an opportunity to match remaining files or \"unmatch\" files as needed.</li>"
+            + "<li> You review and approve the final file matches.</li>"
+            + "<li> The audio files are copied into the program.</li>"
             + "</ol>"
 
             + "</html>");

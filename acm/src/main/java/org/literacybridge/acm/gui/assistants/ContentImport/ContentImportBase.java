@@ -37,7 +37,7 @@ abstract class ContentImportBase<Context> extends AcmAssistantPage<Context> {
 
         ImportReminderLine() {
             hbox = Box.createHorizontalBox();
-            hbox.add(new JLabel("Importing message content for deployment "));
+            hbox.add(new JLabel("Importing content for deployment "));
             deployment = makeBoxedLabel();
             hbox.add(deployment);
             hbox.add(new JLabel(" and language "));

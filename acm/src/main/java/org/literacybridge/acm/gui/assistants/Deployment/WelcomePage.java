@@ -27,19 +27,20 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
         GridBagConstraints gbc = getGBC();
 
         JLabel welcome = new JLabel("<html>"
-            + "<span style='font-size:2.5em'>Welcome to the Deployment Creation Assistant.</span>"
-            + "<br/><br/><p>This assistant will guide you through creating a Deployment. Steps to create the Deployment:</p>"
-            + "<ol>" + "<li> Choose the Deployment # you are creating.</li>"
-            + "<li> The assistant will automatically determine if the required files and content are available, per the program specification.</li>"
-            + "<li> You will then have an opportunity to make minor modifications to the Deployment playlists."
-            + "<li> Once the configuration of the Deployment is satisfactory, you can give your approval, and the Deployment will be created and published.</li>"
-            + "</ol>" + "<br/>Choose the Deployment, then click \"Next\" to get started. "
+            + "<span style='font-size:2.5em'>Welcome to the Deployment Assistant.</span>"
+            + "<br/><br/><p>The Assistant will guide you through creating a deployment. Here are the steps:</p>"
+            + "<ol>" + "<li> Choose the deployment number you want to create.</li>"
+            + "<li> The Assistant will see if the required files are available, based on information from the Program Specification. "
+            + "If files are missing, you may receive a warning message.</li>"
+            + "<li> If needed, you can then make minor changes to the deployment playlists.</li>"
+            + "<li> Once you are happy with the deployment, you will give your approval and the deployment will be created and published.</li>"
+            + "</ol>" + "<br/>Choose the deployment, and then click \"Next\" to get started. "
 
             + "</html>");
         add(welcome, gbc);
 
         Box hbox = Box.createHorizontalBox();
-        hbox.add(new JLabel("Create Deployment: "));
+        hbox.add(new JLabel("Create deployment: "));
         deploymentChooser = new JComboBox<>();
         deploymentChooser.addActionListener(this::onSelection);
         setComboWidth(deploymentChooser, "Choose...");

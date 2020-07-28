@@ -66,9 +66,9 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
 
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2.5em'>Adjustments</span>" + "</ul>"
-                + "<br/>Changes made here affect only the created Deployment. No changes will be made "
-                + "to the ACM or to the Program Specification."
-                + "<br/>Make any final adjustments, and click \"Next\" to create the Deployment. "
+                + "<br/>Changes made here affect only the created deployment. No changes will be made "
+                + "to the ACM or Program Specification."
+                + "<br/>Make any final adjustments, and then click \"Next\" to create the deployment. "
 
                 + "</html>");
         add(welcome, gbc);
@@ -84,7 +84,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         includeUfCategory = new JCheckBox("Make User Feedback visible.");
         if (ACMConfiguration.getInstance().getCurrentDB().isUserFeedbackHidden()) {
             includeUfCategory.setSelected(false);
-            JLabel label = new JLabel("User Feedback is hidden for this project.");
+            JLabel label = new JLabel("User Feedback is hidden for this program.");
             Font normalFont = label.getFont();
             Font italicFont = new Font(normalFont.getName(),normalFont.getStyle()|Font.ITALIC, normalFont.getSize());
             label.setFont(italicFont);
@@ -95,11 +95,11 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
             includeUfCategory.addActionListener(this::onSelection);
         }
         
-        includeTbCategory = new JCheckBox("Include Talking Book category ('Talking Book. To learn about this device, press the tree ...')");
+        includeTbCategory = new JCheckBox("Include Talking Book playlist ('Talking Book. To learn about this device, press the tree ...')");
         includeTbCategory.setSelected(true);
         add(includeTbCategory, gbc);
         includeTbCategory.addActionListener(this::onSelection);
-        noPublish = new JCheckBox("Do not publish the Deployment; create only.");
+        noPublish = new JCheckBox("Do not publish the deployment. Create only.");
         // Always allow publish from a test database.
         // Do not allow publish from production if running sandboxed.
         noPublish.setSelected(!ACMConfiguration.isTestAcm() && ACMConfiguration.isSandbox());
@@ -134,7 +134,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         hbox.add(Box.createHorizontalStrut(5));
         remove = new JButton("Remove");
         remove.addActionListener(this::onRemove);
-        remove.setToolTipText("Remove the Playlist or Audio Item from the Deployment");
+        remove.setToolTipText("Remove the playlist or audio item from the deployment");
         hbox.add(remove);
 
         hbox.add(Box.createHorizontalGlue());

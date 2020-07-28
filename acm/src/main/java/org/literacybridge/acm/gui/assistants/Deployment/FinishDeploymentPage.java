@@ -88,7 +88,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         GridBagConstraints gbc = getGBC();
 
         JLabel welcome = new JLabel(
-            "<html>" + "<span style='font-size:2.5em'>Finished Creating Deployment</span>"
+            "<html>" + "<span style='font-size:2.5em'>Finished creating deployment</span>"
                 + "</html>");
         add(welcome, gbc);
 
@@ -99,15 +99,15 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
 
-        publishNotification = new JLabel("<html>The Deployment was <u>not</u> published. To publish, start the "
-            +"Deployment Assistant again, and do <u>not</u> select the 'Do not publish the Deployment.' option.</html>");
+        publishNotification = new JLabel("<html>The deployment was <u>not</u> published. To publish, start the "
+            +"Deployment Assistant again, and do <u>not</u> select the 'Do not publish the deployment.' option.</html>");
         add(publishNotification, gbc);
         publishNotification.setVisible(false);
 
         // The status line. Could be updated as the deployment progresses.
         hbox = Box.createHorizontalBox();
         JLabel summary = new JLabel();
-        summary.setText(String.format("Creating Deployment %d as %s",
+        summary.setText(String.format("Creating deployment %d as %s",
             context.deploymentNo, deploymentName()));
         hbox.add(summary);
         revisionText = new JLabel();
@@ -145,7 +145,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             @Override
             protected Integer doInBackground() {
                 summaryMessage = new StringBuilder("<html>");
-                summaryMessage.append(String.format("<h1>Deployment %d for Project %s</h1>",
+                summaryMessage.append(String.format("<h1>Deployment %d for Program %s</h1>",
                     context.deploymentNo, dbConfig.getProjectName()));
                 summaryMessage.append(String.format("<h3>Created on %s</h3>", localDateFormatter.format(LocalDateTime.now())));
 
@@ -205,7 +205,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             computerName = "UNKNOWN";
         }
 
-        String message = "<html>The following error(s) occurred when attempting to create the Deployment. " +
+        String message = "<html>The following error(s) occurred when attempting to create the deployment. " +
             "If the problem persists, contact Amplio technical support. The button below will send this report to Amplio."+
             "</html>";
         String reportHeading = String.format("Error report from Deployment Assistant%n%n" +

@@ -54,9 +54,9 @@ public class ContentMatchPage extends
     protected Component getWelcome() {
         JLabel welcome = new JLabel(
             "<html>" + "<span style='font-size:2em'>Match Files with Content.</span>"
-                + "<br/><br/><p>The Assistant has automatically matched files as possible with content. "
-                + "Only high-confidence matches are performed, so manual matching may be required. "
-                + "Perform any additional matching (or un-matching) as required, then click \"Next\" to continue.</p>"
+                + "<br/><br/><p>The Assistant has automatically matched as many files as possible with content. "
+                + "Only high-confidence matches are performed, so you may need to match some files manually. "
+                + "Match or unmatch files as needed, and then click \"Next\" to continue.</p>"
                 + "</html>");
         importReminderLine = new ContentImportBase.ImportReminderLine();
 
