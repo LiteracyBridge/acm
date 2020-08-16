@@ -53,10 +53,15 @@ public class DelayeredHierarchicalList<T extends IHierarchicalRecord> extends Hi
         }
     }
 
+    public boolean isOmitted(int ix) {
+        return omitted[ix];
+    }
+
     /**
      * Given a path based on the delayered view of the hierarchy, recreate the full path.
      * @param path a delayered path.
-     * @return the same path, re-layered.
+     * @return the same path, re-layered. If the path can not be re-layered (because a provided
+     * value does not exist, return null).
      */
     private List<String> reLayerPath(List<String> path) {
         List<String> result = new ArrayList<>();
@@ -67,6 +72,8 @@ public class DelayeredHierarchicalList<T extends IHierarchicalRecord> extends Hi
             // If this level was omitted, that means there are no choices. Get the one-and-only
             // value at the level and plug it in.
             if (omitted[ix]) {
+                Collection<String> childrenAtOmittedLevel = super.getChildrenOfPath(result);
+                if (childrenAtOmittedLevel == null) return null;
                 List<String> omittedValue = new ArrayList<>(super.getChildrenOfPath(result));
                 if (omittedValue.size() != 1) {
                     throw new IllegalStateException("Unexpected children found re-layering path");
@@ -109,21 +116,21 @@ public class DelayeredHierarchicalList<T extends IHierarchicalRecord> extends Hi
     public Collection<String> getChildrenOfPath(List<String> parentKeys) {
         checkInit();
         List<String> delayeredKeys = reLayerPath(parentKeys);
-        return super.getChildrenOfPath(delayeredKeys);
+        return delayeredKeys==null ? null : super.getChildrenOfPath(delayeredKeys);
     }
 
     @Override
     public T getItemAtPath(List<String> path) {
         checkInit();
         List<String> delayeredPath = reLayerPath(path);
-        return super.getItemAtPath(delayeredPath);
+        return delayeredPath==null ? null : super.getItemAtPath(delayeredPath);
     }
 
     @Override
     public List<T> getItemsAtPath(List<String> path) {
         checkInit();
         List<String> delayeredPath = reLayerPath(path);
-        return super.getItemsAtPath(delayeredPath);
+        return delayeredPath==null ? null : super.getItemsAtPath(delayeredPath);
     }
 
     @Override

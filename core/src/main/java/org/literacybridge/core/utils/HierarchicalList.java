@@ -159,7 +159,7 @@ public class HierarchicalList<T extends IHierarchicalRecord> extends ArrayList<T
     @Override
     public Collection<String> getChildrenOfPath(List<String> parentKeys) {
         Node node = nodeAtPath(parentKeys);
-        return new TreeSet<>(node.keySet());
+        return node==null ? null : new TreeSet<>(node.keySet());
     }
 
     @Override
