@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Gradle: androidTBLoader.core.core">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../core/android_build/libs/core.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

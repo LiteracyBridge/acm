@@ -6,7 +6,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.6.0-rc01'
+        classpath 'com.android.tools.build:gradle:4.0.0'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -107,7 +107,7 @@ dependencies {
     implementation 'com.android.support:design:28.0.0'
     implementation 'com.android.support:support-v4:28.0.0'
     implementation files('libs/json_simple-1.1.jar')
-    implementation 'com.amazonaws:aws-android-sdk-s3:2.2.+'
+    implementation 'com.amazonaws:aws-android-sdk-s3:2.2.22'
     implementation 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.3.2'
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
 
