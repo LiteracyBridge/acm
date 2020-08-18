@@ -415,8 +415,8 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
                     if (context.includeUfCategory)
                         activeListsWriter.println(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
-                    if (context.includeTbCategory)
-                        activeListsWriter.println(Constants.CATEGORY_TUTORIAL);
+                    if (context.includeTbTutorial)
+                        activeListsWriter.println('!' + Constants.CATEGORY_TUTORIAL);
                     if (!haveUserFeedbackListFile) {
                         // Create an empty "9-0.txt" file if there isn't already such a file. Needed so that the
                         // first UF message recorded can be reviewed by the user.
@@ -592,6 +592,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         }
         // If thats still too long, eliminate vowels in project name.
         if (packageName.length() > Constants.MAX_PACKAGE_NAME_LENGTH) {
+            assert projectStr != null;
             projectStr = projectStr.replaceAll("[aeiouAEIOU]", "");
             packageName = projectStr + deploymentStr + languagecode + variantStr;
         }

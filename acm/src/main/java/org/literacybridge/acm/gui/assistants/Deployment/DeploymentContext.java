@@ -25,8 +25,8 @@ class DeploymentContext {
     // Should these be per-contentpackage properties?
     // "User Feedback..."
     boolean includeUfCategory = !ACMConfiguration.getInstance().getCurrentDB().isUserFeedbackHidden();
-    // "The Talking Book is an audio computer that shares knowledge..."
-    boolean includeTbCategory;
+    // "Talking Book. To learn about this device, press the tree."
+    boolean includeTbTutorial;
 
     // Don't publish, only create.
     private boolean noPublish;

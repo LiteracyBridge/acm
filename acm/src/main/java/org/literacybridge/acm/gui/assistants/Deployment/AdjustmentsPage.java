@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     private final JLabel deployment;
     private final JCheckBox includeUfCategory;
-    private final JCheckBox includeTbCategory;
+    private final JCheckBox includeTbTutorial;
     private final JCheckBox noPublish;
     private final JTree playlistTree;
     private final JButton remove;
@@ -95,10 +95,10 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
             includeUfCategory.addActionListener(this::onSelection);
         }
         
-        includeTbCategory = new JCheckBox("Include Talking Book playlist ('Talking Book. To learn about this device, press the tree ...')");
-        includeTbCategory.setSelected(true);
-        add(includeTbCategory, gbc);
-        includeTbCategory.addActionListener(this::onSelection);
+        includeTbTutorial = new JCheckBox("Include Talking Book tutorial ('Talking Book. To learn about this device, press the tree ...')");
+        includeTbTutorial.setSelected(true);
+        add(includeTbTutorial, gbc);
+        includeTbTutorial.addActionListener(this::onSelection);
         noPublish = new JCheckBox("Do not publish the deployment. Create only.");
         // Default to no-publish if running sandboxed.
         noPublish.setSelected(ACMConfiguration.isSandbox());
@@ -146,7 +146,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         deployment.setText(Integer.toString(context.deploymentNo));
 
         includeUfCategory.setSelected(context.includeUfCategory);
-        includeTbCategory.setSelected(context.includeTbCategory);
+        includeTbTutorial.setSelected(context.includeTbTutorial);
 
         if (progressing) {
             collectDeploymentInformation(context.deploymentNo);
@@ -160,7 +160,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     @Override
     protected void onPageLeaving(boolean progressing) {
         context.includeUfCategory = includeUfCategory.isSelected();
-        context.includeTbCategory = includeTbCategory.isSelected();
+        context.includeTbTutorial = includeTbTutorial.isSelected();
         // Don't publish if user chose "no publish" option. Also don't publish if running in sandbox.
         context.setNoPublish(noPublish.isSelected());
     }
@@ -205,12 +205,12 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         if (selectedIx < parent.getChildCount()-1) {
             // Yes.
             selectedIx++;
-            System.out.println(String.format("Moving %s to position %d", selected, selectedIx));
+            System.out.printf("Moving %s to position %d%n", selected, selectedIx);
         } else {
             // No. If the selected node is an audio item, move it to next playlist. Get the auntie node.
             parent = parent.getNextSibling();
             selectedIx = 0;
-            System.out.println(String.format("Moving %s to %s", selected, parent));
+            System.out.printf("Moving %s to %s%n", selected, parent);
         }
 
         // Perform the move and restore the tree state.
@@ -230,12 +230,12 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         if (selectedIx > 0) {
             // Yes.
             selectedIx--;
-            System.out.println(String.format("Moving %s to position %d", selected, selectedIx));
+            System.out.printf("Moving %s to position %d%n", selected, selectedIx);
         } else {
             // No. If the selected node is an audio item, move it to previous playlist. Get the auntie node.
             parent = parent.getPreviousSibling();
             selectedIx = parent.getChildCount();
-            System.out.println(String.format("Moving %s to %s", selected, parent));
+            System.out.printf("Moving %s to %s%n", selected, parent);
         }
 
         // Perform the move and restore the tree state.
@@ -367,6 +367,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
      * Expands all nodes in the tree.
      */
     private void expandTree() {
+        //noinspection rawtypes
         Enumeration e = context.playlistRootNode.breadthFirstEnumeration();
         while(e.hasMoreElements()) {
             DefaultMutableTreeNode node =
