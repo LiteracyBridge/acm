@@ -547,13 +547,13 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                 File promptFile = IOUtils.FileIgnoreCase(languageDir, "10.a18");
                 if (!languageDir.exists() || !languageDir.isDirectory()) {
                     context.issues.add(Issues.Severity.WARNING,
-                        Issues.Area.CATEGORY_PROMPTS,
+                        Issues.Area.CUSTOM_GREETINGS,
                         "Missing 'languages/%s' directory for recipient '%s'.",
                         recipient.languagecode,
                         recipName(recipient));
                 } else if (!promptFile.exists()) {
                     context.issues.add(Issues.Severity.WARNING,
-                        Issues.Area.CATEGORY_PROMPTS,
+                        Issues.Area.CUSTOM_GREETINGS,
                         "No custom greeting for recipient '%s'.",
                         recipName(recipient));
                 }
@@ -563,12 +563,12 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     .endsWith(GROUP_FILE_EXTENSION));
                 if (!systemDir.exists() || !systemDir.isDirectory()) {
                     context.issues.add(Issues.Severity.WARNING,
-                        Issues.Area.CATEGORY_PROMPTS,
+                        Issues.Area.CUSTOM_GREETINGS,
                         "Missing 'system' directory for recipient '%s'.",
                         recipName(recipient));
                 } else if (groupDirs == null || groupDirs.length == 0) {
                     context.issues.add(Issues.Severity.WARNING,
-                        Issues.Area.CATEGORY_PROMPTS,
+                        Issues.Area.CUSTOM_GREETINGS,
                         "No '.grp' file for recipient '%s'.",
                         recipName(recipient));
                 }
