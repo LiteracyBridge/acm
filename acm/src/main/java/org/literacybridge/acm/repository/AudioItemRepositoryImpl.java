@@ -37,7 +37,7 @@ import static org.literacybridge.acm.repository.FileRepositoryInterface.Reposito
  */
 public class AudioItemRepositoryImpl implements AudioItemRepository {
     private final static File TMP_DIR = new File(System.getProperty("java.io.tmpdir"));
-    private final static Pattern categoryPattern = Pattern.compile("^\\$?\\d(-\\d)+$");
+    private final static Pattern categoryPattern = Pattern.compile("^\\$?\\d+(-\\d+)+$");
     private WavFilePreCaching caching = null;
 
     public static AudioItemRepositoryImpl buildAudioItemRepository(DBConfiguration dbConfiguration) {
