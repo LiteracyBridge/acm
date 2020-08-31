@@ -162,6 +162,7 @@ public class ProgramSpec {
     public Set<String> getVariantsForDeploymentAndLanguage(int deploymentNumber, String languagecode) {
         RecipientList recipients = getRecipientsForDeploymentAndLanguage(deploymentNumber, languagecode);
         Set<String> recipientVariants = recipients.stream().map(r -> r.variant).collect(Collectors.toSet());
+        recipientVariants.add("");
         // Find all of the message variants for that language in the deployment.
         Set<String> messageVariants = new HashSet<>();
         messageVariants.add("");
