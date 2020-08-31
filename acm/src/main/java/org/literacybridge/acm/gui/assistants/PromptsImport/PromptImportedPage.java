@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
 import static org.literacybridge.acm.Constants.BELL_SOUND;
-import static org.literacybridge.acm.Constants.CATEGORY_TUTORIAL;
+import static org.literacybridge.acm.Constants.TUTORIAL_LIST;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
 public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
@@ -177,7 +177,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
      * Shows the errors to the user, and gives them an opportunity to send an error report to Amplio.
      * @param actionEvent is unused.
      */
-    private void onViewErrors(@SuppressWarnings("unused") ActionEvent actionEvent) {
+    private void onViewErrors(ActionEvent actionEvent) {
         DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
         String computerName;
         try {
@@ -262,13 +262,13 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
                 }
             });
 
-        importBoilerplateFiles(CATEGORY_TUTORIAL);
+        importBoilerplateFiles(TUTORIAL_LIST);
         importBoilerplateFiles(BELL_SOUND);
     }
 
     /**
      * Files that don't depend on program or language, the bell, and the .txt file for the tutorial.
-     * @param name
+     * @param name of the boilerplate file.
      */
     private void importBoilerplateFiles(String name) {
         File destFile = new File(context.languageDir, name);

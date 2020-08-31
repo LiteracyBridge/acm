@@ -83,7 +83,7 @@ public abstract class BaseAudioConverter {
           : proc.getInputStream();
       InputStreamReader isr = new InputStreamReader(stderr);
       BufferedReader br = new BufferedReader(isr);
-      String line = null;
+      String line;
 
       while ((line = br.readLine()) != null) {
         responseBuilder.append(line);
@@ -92,10 +92,10 @@ public abstract class BaseAudioConverter {
 
       // check for converter error
       success = (proc.waitFor() == 0);
-    } catch (Exception e) {
-      success = false;
+    } catch (Exception ignored) {
     } finally {
       if (!success) {
+        //noinspection ThrowFromFinallyBlock
         throw new ConversionException(
             "Converter: Internal error while converting file: '" + inputFileName
                 + "'");
@@ -111,9 +111,9 @@ public abstract class BaseAudioConverter {
         : proc.getInputStream();
     InputStreamReader isr = new InputStreamReader(stderr);
     BufferedReader br = new BufferedReader(isr);
-    String line = null;
 
-    while ((line = br.readLine()) != null)
+    //noinspection StatementWithEmptyBody
+    while (br.readLine() != null)
       ;
   }
 
@@ -128,14 +128,13 @@ public abstract class BaseAudioConverter {
 
     boolean success = false;
     try {
-      String cmd = exePath;
 
-      Process proc = Runtime.getRuntime().exec(cmd);
+      Process proc = Runtime.getRuntime().exec(exePath);
       InputStream stderr = listenToStdErr ? proc.getErrorStream()
           : proc.getInputStream();
       InputStreamReader isr = new InputStreamReader(stderr);
       BufferedReader br = new BufferedReader(isr);
-      String line = null;
+      String line;
 
       while ((line = br.readLine()) != null) {
         if (line.startsWith(outputPrefix)) {
@@ -148,6 +147,7 @@ public abstract class BaseAudioConverter {
       // nothing to do - finally block will throw exception
     } finally {
       if (!success) {
+        //noinspection ThrowFromFinallyBlock
         throw new AudioConverterInitializationException(
             "Converter executable could not be executed.");
       }
@@ -177,6 +177,16 @@ public abstract class BaseAudioConverter {
     public ConversionException(String msg) {
       super(msg);
     }
+  }
+
+  public static class ConversionSourceMissingException extends ConversionException {
+    private final String filename;
+
+    public ConversionSourceMissingException(String msg, String filename) {
+      super(msg);
+      this.filename = filename;
+    }
+
   }
 
   static class ConversionResult {

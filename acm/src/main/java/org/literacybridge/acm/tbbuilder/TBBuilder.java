@@ -48,6 +48,7 @@ public class TBBuilder {
     // Begin instance data
 
     static class BuilderContext {
+        boolean isAssistantLaunched = true; // Unless command line tool.
         String project;         // like "TEST"
         String deploymentName;  // like "TEST-20-2"
         String revision;        // like "a", or "b", ...
@@ -142,6 +143,7 @@ public class TBBuilder {
         String deploymentName = args[2].toUpperCase();
 
         TBBuilder tbb = new TBBuilder(project, deploymentName, System.out::print, Exception::printStackTrace);
+        tbb.builderContext.isAssistantLaunched = false;
 
         try {
             if (command.equals("CREATE")) {

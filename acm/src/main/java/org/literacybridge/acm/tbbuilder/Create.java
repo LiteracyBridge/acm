@@ -451,7 +451,7 @@ class Create {
 
         for (String prompt : playlistCategories) {
             String promptFilename = prompt + '.' + pi.audioFormat.getFileExtension();
-            File exportFile = new File(shadowCatDir, promptFilename);
+            File exportFile;
             try {
                 if (builderContext.deDuplicateAudio) {
                     // Create both marker files
@@ -461,7 +461,8 @@ class Create {
                     markerFile.createNewFile();
                     // The name of the short prompt, in the shadow directory.
                     exportFile = new File(shadowCatDir, promptFilename);
-                } else {
+                }
+                else {
                     // The name of the short prompt, in the non-shadowed target directory.
                     exportFile = new File(stagedCatDir, promptFilename);
                 }
@@ -473,7 +474,12 @@ class Create {
                             pi.language,
                             pi.audioFormat);
                 }
-            } catch(Exception ex) {
+            } catch (BaseAudioConverter.ConversionSourceMissingException missingEx) {
+                // If these errors were already warned of, in the deployment assistant, ignore them here.
+                if (!builderContext.isAssistantLaunched) {
+                    builderContext.logException(missingEx);
+                }
+            }catch(Exception ex) {
                 // Keep going after failing to export a prompt.
                 builderContext.logException(ex);
             }

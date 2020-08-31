@@ -6,6 +6,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.audioconverter.api.ExternalConverter;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
+import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionSourceMissingException;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.importexport.AudioExporter;
@@ -260,7 +261,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         }
 
         if (sourceFile == null) {
-            throw new ConversionException(String.format("Can't find file to convert for: %s", source.toString()));
+            throw new ConversionSourceMissingException(String.format("Can't find file to convert for: %s", source.toString()), source.toString());
         }
         // Target file has same name, and is in same directory as source, but with proper extension.
         File targetFile = ExternalConverter.targetFile(sourceFile, targetDirectory, targetFormat.getAudioConversionFormat());
