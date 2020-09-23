@@ -113,7 +113,7 @@ class Validator {
                 if (!found) {
                     String invalidMessage = String.format("'%s' is not a valid deployment for ACM '%s'.",
                             builderContext.deploymentName,
-                            ACMConfiguration.cannonicalProjectName(builderContext.project));
+                            builderContext.project);
                     if (StringUtils.isNotEmpty(nextDeploymentName) || StringUtils.isNotEmpty(prevDeploymentName)) {
                         String name = StringUtils.defaultIfEmpty(nextDeploymentName, prevDeploymentName);
                         invalidMessage += " (Did you mean '" + name + "'?)";

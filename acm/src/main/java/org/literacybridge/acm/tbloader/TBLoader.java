@@ -335,7 +335,7 @@ public class TBLoader extends JFrame {
             softwareDir = new FsFile(ACMConfiguration.getInstance().getSoftwareDir());
 
             File appHome = ACMConfiguration.getInstance().getApplicationHomeDirectory();
-            collectionWorkDir = new File(appHome, TbCollectionWorkDir);
+            collectionWorkDir = new File(appHome, Constants.TbCollectionWorkDir);
             uploadQueueDir = new File(appHome, Constants.uploadQueue);
             uploadQueueCDDir = new File(uploadQueueDir, "collected-data");
             uploadQueueDeviceDir = new File(uploadQueueCDDir,"tbcd" + deviceIdHex);

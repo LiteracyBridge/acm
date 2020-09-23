@@ -337,7 +337,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     private void validateSystemPrompts(Collection<String> languages) {
         String[] required_messages = TBBuilder.REQUIRED_SYSTEM_MESSAGES;
 
-        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
+        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
         String languagesPath = "TB_Options" + File.separator + "languages";
         File languagesDir = new File(tbLoadersDir, languagesPath);
         // { id : description }
@@ -530,7 +530,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
 
         RecipientList recipients = context.programSpec.getRecipientsForDeployment(deploymentNo);
         Map<String, String> recipientsMap = context.programSpec.getRecipientsMap();
-        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
+        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
         File communitiesDir = IOUtils.FileIgnoreCase(tbLoadersDir, "communities");
         if (!communitiesDir.exists() || !communitiesDir.isDirectory()) {
             context.issues.add(Issues.Severity.ERROR,
@@ -594,10 +594,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         // version currently in the project.
         if (!context.includeUfCategory) {
             // Find the lexically greatest filename of firmware. Works because we'll never exceed 4 digits.
-            String project = ACMConfiguration.cannonicalProjectName(ACMConfiguration.getInstance()
-                .getCurrentDB()
-                .getSharedACMname());
-            File sourceTbLoadersDir = ACMConfiguration.getInstance().getTbLoaderDirFor(project);
+            File sourceTbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getPathProvider().getProgramTbLoadersDir();
             File sourceTbOptionsDir = new File(sourceTbLoadersDir, "TB_Options");
             File latestFirmware = null;
             File[] firmwareVersions = new File(sourceTbOptionsDir, "firmware").listFiles();

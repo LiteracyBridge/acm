@@ -17,7 +17,7 @@ public class AcmCleaner {
             System.exit(1);
         }
 
-        String dbName = ACMConfiguration.cannonicalAcmDirectoryName(args[0]);
+        String dbName = args[0];
 
         CommandLineParams params = new CommandLineParams();
         params.disableUI = true;

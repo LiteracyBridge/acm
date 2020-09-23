@@ -79,7 +79,7 @@ public class CmdLineImporter {
         try {
             CommandLineParams acmParams = new CommandLineParams();
             acmParams.disableUI = true;
-            acmParams.sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(params.acmName);
+            acmParams.sharedACM = params.acmName;
             ACMConfiguration.initialize(acmParams);
             ACMConfiguration.getInstance().setCurrentDB(acmParams.sharedACM);
 

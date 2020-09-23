@@ -4,6 +4,7 @@ import com.opencsv.ICSVWriter;
 import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.PathsProvider;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.utils.LogHelper;
@@ -187,7 +188,7 @@ public class TBBuilder {
      * @throws Exception if the database can't be initialized.
      */
     public TBBuilder(String sharedACM, String deploymentName, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) throws Exception {
-        sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(sharedACM);
+//        sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(sharedACM);
         if (!ACMConfiguration.isInitialized()) {
             CommandLineParams params = new CommandLineParams();
             params.disableUI = true;
@@ -195,7 +196,7 @@ public class TBBuilder {
             params.sharedACM = sharedACM;
             ACMConfiguration.initialize(params);
             ACMConfiguration.getInstance().setCurrentDB(params.sharedACM);
-        } else if (!ACMConfiguration.getInstance().getCurrentDB().getSharedACMname().equals(sharedACM)) {
+        } else if (!ACMConfiguration.getInstance().getCurrentDB().getAcmDbDirName().equals(sharedACM)) {
             throw new IllegalArgumentException("Passed ACM Name must equal already-opened ACM name.");
         }
 
@@ -208,12 +209,14 @@ public class TBBuilder {
 
         builderContext.statusWriter = statusWriter;
         builderContext.exceptionLogger = exceptionLogger;
-        builderContext.project = ACMConfiguration.cannonicalProjectName(sharedACM);
+        builderContext.project = ACMConfiguration.getInstance().getCurrentDB().getProgramName();
         builderContext.deploymentName = deploymentName;
+
+        PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(sharedACM);
         // Like ~/Dropbox/ACM-UWR/TB-Loaders
-        builderContext.sourceTbLoadersDir = ACMConfiguration.getInstance().getTbLoaderDirFor(sharedACM);
+        builderContext.sourceTbLoadersDir = pathsProvider.getProgramTbLoadersDir();
         builderContext.sourceTbOptionsDir = new File(builderContext.sourceTbLoadersDir, "TB_Options");
-        builderContext.sourceProgramspecDir = ACMConfiguration.getInstance().getProgramSpecDirFor(sharedACM);
+        builderContext.sourceProgramspecDir = pathsProvider.getProgramSpecDir();
         builderContext.programSpec = new ProgramSpec(builderContext.sourceProgramspecDir);
         // ~/LiteracyBridge/TB-Loaders
         File localTbLoadersDir = new File(

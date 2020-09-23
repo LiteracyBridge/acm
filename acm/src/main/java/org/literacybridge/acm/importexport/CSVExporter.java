@@ -82,7 +82,7 @@ public class CSVExporter {
         boolean categoriesAsCodes = opts.contains(OPTION.CATEGORIES_AS_CODES);
         boolean categoryFullNames = opts.contains(OPTION.CATEGORY_AS_FULL_NAME);
         boolean noHeader = opts.contains(OPTION.NO_HEADER);
-        String project = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
+        String project = ACMConfiguration.getInstance().getCurrentDB().getAcmDbDirName();
         if (project.toLowerCase().startsWith("acm-")) {
             project = project.substring(4);
         }

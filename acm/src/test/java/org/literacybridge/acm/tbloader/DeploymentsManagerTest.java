@@ -56,7 +56,6 @@ public class DeploymentsManagerTest {
 
         ACMConfiguration acmConfig = PowerMockito.mock(ACMConfiguration.class);
         when(acmConfig.getLocalTbLoaderDirFor(PROJECT_NAME)).thenReturn(localProjectDir);
-        when(acmConfig.getTbLoaderDirFor(ACM_NAME)).thenReturn(tbLoaderDir);
 
         PowerMockito.mockStatic(ACMConfiguration.class);
         PowerMockito.when(ACMConfiguration.cannonicalAcmDirectoryName(PROJECT_NAME)).thenReturn(ACM_NAME);

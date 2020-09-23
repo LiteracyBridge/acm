@@ -97,10 +97,10 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
     }
 
     private void getProgramInformation() {
-        String project = ACMConfiguration.cannonicalProjectName(ACMConfiguration.getInstance()
-            .getCurrentDB()
-            .getSharedACMname());
-        File programSpecDir = ACMConfiguration.getInstance().getProgramSpecDirFor(project);
+        File programSpecDir = ACMConfiguration.getInstance()
+                .getCurrentDB()
+                .getPathProvider()
+                .getProgramSpecDir();
 
         context.programSpec = new ProgramSpec(programSpecDir);
         context.recipientColumnProvider = context.new RecipientColumnProvider();
@@ -108,7 +108,7 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
 
     private void findRecipientsWithRecordings() {
         Map<String, String> recipientsMap = context.programSpec.getRecipientsMap();
-        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
+        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
         File communitiesDir = new File(tbLoadersDir, "communities");
 
         for (Recipient recipient : context.programSpec.getRecipients()) {

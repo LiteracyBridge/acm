@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -138,7 +137,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
         languageChooser.setBorder(languagecode == null ? redBorder : blankBorder);
 
         if (languagecode != null) {
-            context.tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
+            context.tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
             context.tbOptionsDir = new File(context.tbLoadersDir, "TB_Options");
             context.languagesDir = new File(context.tbOptionsDir, "languages");
             context.languageDir = new File(context.languagesDir, languagecode);
@@ -157,8 +156,10 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
     }
 
     private void getProgramInformation() {
-        String project = ACMConfiguration.cannonicalProjectName(dbConfig.getSharedACMname());
-        File programSpecDir = ACMConfiguration.getInstance().getProgramSpecDirFor(project);
+        File programSpecDir = ACMConfiguration.getInstance()
+                .getCurrentDB()
+                .getPathProvider()
+                .getProgramSpecDir();
 
         context.programSpec = new ProgramSpec(programSpecDir);
         context.specLanguagecodes = context.programSpec.getLanguageCodes();

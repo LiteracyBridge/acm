@@ -116,11 +116,10 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
     }
 
     private void getProgramInformation() {
-        String project = ACMConfiguration.cannonicalProjectName(ACMConfiguration.getInstance()
-            .getCurrentDB()
-            .getSharedACMname());
-        File programSpecDir = ACMConfiguration.getInstance().getProgramSpecDirFor(project);
-
+        File programSpecDir = ACMConfiguration.getInstance()
+                .getCurrentDB()
+                .getPathProvider()
+                .getProgramSpecDir();
         context.programSpec = new ProgramSpec(programSpecDir);
     }
 

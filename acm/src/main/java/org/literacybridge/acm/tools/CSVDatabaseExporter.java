@@ -43,8 +43,7 @@ public class CSVDatabaseExporter {
         configParams.disableUI = true;
         configParams.sandbox = true;
         ACMConfiguration.initialize(configParams);
-        String acmName = ACMConfiguration.cannonicalAcmDirectoryName(params.acmName);
-        ACMConfiguration.getInstance().setCurrentDB(acmName);
+        ACMConfiguration.getInstance().setCurrentDB(params.acmName);
     }
 
     private void export() throws IOException {

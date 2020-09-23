@@ -7,6 +7,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.AmplioHome;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.MainWindow.MainView;
@@ -16,6 +17,7 @@ import org.literacybridge.acm.gui.dialogs.LafTester;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
+import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
@@ -36,6 +38,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -140,20 +145,24 @@ public class Application extends JXFrame {
     }
 
     Authenticator authInstance = Authenticator.getInstance();
-    String greeting = authInstance.getUserName();
+    String greeting = authInstance.getUserSelfName();
     if (StringUtils.isEmpty(greeting)) {
       greeting = String.format("Hello, %s", authInstance.getUserEmail());
     }
     String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
         "  --  CHANGES WILL *NOT* BE SAVED!":"";
+    StringBuilder dbVersion = new StringBuilder('v')
+            .append(ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion())
+            .append(AmplioHome.isOldStyleHomeDirectory()?"⚠️":"")
+            .append(ACMConfiguration.getInstance().getCurrentDB().getPathProvider().isDropboxDb()?"🦤️":"✓");
 
-    String title = String.format("%s  --  %s (%s)  --  %s (v%d)%s",
-        greeting,
-        LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
-        Constants.ACM_VERSION,
-        ACMConfiguration.getInstance().getTitle(),
-        ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion(),
-        sandboxWarning);
+    String title = String.format("%s  --  %s (%s)  --  %s (%s)%s",
+            greeting,
+            LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
+            Constants.ACM_VERSION,
+            ACMConfiguration.getInstance().getTitle(),
+            dbVersion.toString(),
+            sandboxWarning);
 
     setTitle(title);
     // toolbar view on top
@@ -239,7 +248,7 @@ public class Application extends JXFrame {
     CmdLineParser parser = new CmdLineParser(params);
     try {
       parser.parseArgument(args);
-      params.sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(params.sharedACM);
+//      params.sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(params.sharedACM);
     } catch (CmdLineException e) {
       System.err.println(e.getMessage());
       System.err.println(
@@ -284,7 +293,7 @@ public class Application extends JXFrame {
     params.update = true; // may be overridden later.
     ACMConfiguration.initialize(params);
 
-    authenticateAndSelectProgram(params);
+    authenticateAndChooseProgram(params);
 
     if (isEmpty(params.sharedACM)) {
       JOptionPane.showMessageDialog(null,
@@ -294,15 +303,16 @@ public class Application extends JXFrame {
 
     // init database
     try {
-      // TODO: when we have a homescreen this call will be delayed until the
-      // user selects a DB
-      // TODO: createEmtpyDB should be factored out when the UI has a create DB
-      // button.
-      ACMConfiguration.getInstance().setCurrentDB(params.sharedACM, true);
+      String text = "Syncing database for " + params.sharedACM;
+      ACMConfiguration.getInstance().setCurrentDB(params.sharedACM,
+              (a,b) -> {
+                UIUtils.runWithWaitSpinner(text, null, a,
+                        b, UIUtils.UiOptions.TOP_THIRD);
+              });
     } catch (Exception e) {
       e.printStackTrace();
       JOptionPane.showMessageDialog(null,
-          "Unable to connect to database. Please try restarting the ACM.");
+              "Unable to connect to database. Please try restarting the ACM.");
       System.exit(1);
     }
 
@@ -337,9 +347,9 @@ public class Application extends JXFrame {
    * If there is no ACM specified on the command line, query the user.
    * @param params from the command line.
    */
-  private static void authenticateAndSelectProgram(CommandLineParams params) {
+  private static void authenticateAndChooseProgram(CommandLineParams params) {
     Authenticator authInstance = Authenticator.getInstance();
-    authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalProgramDbs());
+    authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalDbs());
     Authenticator.LoginResult result = authInstance.getUserIdentity(null,
         LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
         ACMConfiguration.cannonicalProjectName(params.sharedACM),
@@ -356,7 +366,7 @@ public class Application extends JXFrame {
       System.exit(13);
     }
 
-    params.sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(authInstance.getUserProgram());
+    params.sharedACM = authInstance.getUserProgram();
     boolean sandbox = authInstance.isSandboxSelected();
     if (!sandbox) {
       List<String> ACM_ROLES = Arrays.asList("*","AD","PM","CO");

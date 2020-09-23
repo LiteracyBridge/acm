@@ -23,7 +23,7 @@ import java.util.Set;
 
 public class UIUtils {
   public static <T extends Container> T showDialog(Window parent, final T dialog) {
-    final Dimension frameSize = parent.getSize();
+    final Dimension frameSize = parent!=null?parent.getSize():new Dimension(0,0);
     final int x = (frameSize.width - dialog.getWidth()) / 2;
     final int y = (frameSize.height - dialog.getHeight()) / 2;
     return showDialog(dialog, x, y);
@@ -59,7 +59,7 @@ public class UIUtils {
    * @param onFinished Called when the work has finished.
    * @param waitUiOptions Options for the placement of the spinner window.
    */
-  public static void runWithWaitSpinner(Window waitParent, Runnable runnable, Runnable onFinished, UiOptions... waitUiOptions) {
+  public static void runWithWaitSpinner(String text, Window waitParent, Runnable runnable, Runnable onFinished, UiOptions... waitUiOptions) {
     final Runnable job = new Runnable() {
       BusyDialog dialog;
 
@@ -67,7 +67,7 @@ public class UIUtils {
       public void run() {
         Application app = Application.getApplication();
         dialog = UIUtils.showDialog(waitParent,
-            new BusyDialog(LabelProvider.getLabel("Attempting Login"), waitParent));
+            new BusyDialog(LabelProvider.getLabel(text), waitParent));
         UIUtils.centerWindow(dialog, waitUiOptions);
         try {
           runnable.run();

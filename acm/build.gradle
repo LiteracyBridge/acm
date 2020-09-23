@@ -157,7 +157,7 @@ dependencies {
     compile group: 'org.swinglabs.swingx', name: 'swingx-all', version: '1.6.5-1'
 //    compile 'org.swinglabs:swingx:1.6.1'
     compile 'args4j:args4j:2.0.16'
-    compile 'commons-io:commons-io:2.4'
+    compile 'commons-io:commons-io:2.8.0'
     compile 'com.opencsv:opencsv:4.3.1'
     // https://mvnrepository.com/artifact/me.xdrop/fuzzywuzzy
     compile group: 'me.xdrop', name: 'fuzzywuzzy', version: '1.1.6'
@@ -170,6 +170,9 @@ dependencies {
     compile 'com.amazonaws:aws-java-sdk-s3:1.11.228'
 
     compile 'com.formdev:flatlaf:1.0'
+
+    // TODO: Merge projects.
+    compile files('../../S3Sync/CloudSync/build/libs/CloudSync-1.0.jar')
 
     compile files(fileTree('3rdparty').include('*.jar'))
 

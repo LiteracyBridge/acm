@@ -55,7 +55,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         // IS a sandbox directory, then A18s are written there, and read from here if they're not in the
         // sandbox. (That behaviour is broken because there is no mechanism to clean out stale items from
         // the sandbox.)
-        FileSystemRepository globalSharedRepository = new FileSystemRepository(dbConfiguration.getGlobalRepositoryDirectory());
+        FileSystemRepository globalSharedRepository = new FileSystemRepository(dbConfiguration.getProgramContentDir());
         // If the ACM is opened in "sandbox" mode, all A18s are written here. A18s are read from here if
         // present, but read from the global shared repository if absent from the sandbox. Note that
         // if not sandboxed, this one will be null.
@@ -338,7 +338,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
             targetFile = new File(targetFile.getParent(),
                     FilenameUtils.removeExtension(targetFile.getName()) + '.' + defaultExtension);
         }
-        File TbOptionsDir = new File(ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory(), "TB_Options");
+        File TbOptionsDir = new File(ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir(), "TB_Options");
         File promptsDir = new File(TbOptionsDir, "languages" + File.separator + language);
         // Does the file already exist in the right format?
         File sourceFile = new File(promptsDir, targetFile.getName());
@@ -381,11 +381,11 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         Matcher matcher = categoryPattern.matcher(prompt);
         if (matcher.matches()) {
             // It is a TB_Options prompt. Set up the source to point there.
-            File TbOptionsDir = new File(ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory(),"TB_Options");
+            File TbOptionsDir = new File(ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir(),"TB_Options");
             promptsDir = new File(TbOptionsDir, "languages" + File.separator + language + File.separator + "cat");
         } else {
             // The prompts are from the ACM content. There should be a ".ids" file with the two prompt item ids.
-            File packagesDir = new File(ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory(),"packages");
+            File packagesDir = new File(ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir(),"packages");
             File packageDir = new File(packagesDir, packageName);
             promptsDir = new File(packageDir, "prompts" + File.separator + language + File.separator + "cat");
             File propsFile = new File(promptsDir, prompt + ".ids");

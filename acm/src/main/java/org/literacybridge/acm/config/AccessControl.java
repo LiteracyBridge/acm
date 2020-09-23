@@ -212,9 +212,7 @@ public class AccessControl {
             // deleting old local DB so that next startup knows everything shutdown
             // normally
             // Like ~/LiteracyBridge/ACM/temp/ACM-CARE
-            File oldDB = new File(dbConfiguration.getTempACMsDirectory(),
-                                  dbConfiguration.getSharedACMname());
-            FileUtils.deleteDirectory(oldDB);
+            FileUtils.deleteDirectory(dbConfiguration.getPathProvider().getLocalAcmTempDir());
         } catch (IOException e) {
             e.printStackTrace();
             // TODO: Notify the user so they have some slim chance of getting around the problem.
@@ -270,8 +268,8 @@ public class AccessControl {
      */
     public AccessStatus init() {
         try {
-            LockACM.lockDb(dbConfiguration);
-        } catch (LockACM.MultipleInstanceException e) {
+            AcmLocker.lockDb(dbConfiguration);
+        } catch (AcmLocker.MultipleInstanceException e) {
             String msg = "Can't open ACM";
             if (e.getMessage() != null && e.getMessage().length() > 0) {
                 msg = msg + ": " + e.getMessage();
@@ -312,7 +310,7 @@ public class AccessControl {
      */
     OpenStatus open(boolean useSandbox) {
         OpenStatus openStatus;
-        if (!LockACM.isLocked() || dbInfo == null) {
+        if (!AcmLocker.isLocked() || dbInfo == null) {
             throw new IllegalStateException("Call to open() without call to init()");
         }
 
@@ -364,7 +362,7 @@ public class AccessControl {
             // Try to check out on server.
             boolean dbAvailable;
             try {
-                dbAvailable = checkOutDB(dbConfiguration.getSharedACMname(), "checkout");
+                dbAvailable = checkOutDB(dbConfiguration.getAcmDbDirName(), "checkout");
                 openStatus = dbAvailable ? OpenStatus.opened : OpenStatus.notAvailableError;
             } catch (IOException e) {
                 openStatus = OpenStatus.serverError;
@@ -415,7 +413,7 @@ public class AccessControl {
         }
 
         try {
-            boolean dbAvailable = checkOutDB(dbConfiguration.getSharedACMname(), "statusCheck");
+            boolean dbAvailable = checkOutDB(dbConfiguration.getAcmDbDirName(), "statusCheck");
             if (!dbAvailable) {
                 return AccessStatus.notAvailable;
             }
@@ -485,7 +483,7 @@ public class AccessControl {
 
         boolean checkedInOk;
         try {
-            checkedInOk = checkInDB(dbConfiguration.getSharedACMname(), filename);
+            checkedInOk = checkInDB(dbConfiguration.getAcmDbDirName(), filename);
         } catch (IOException ex) {
             return UpdateDbStatus.networkError;
         }
@@ -710,8 +708,8 @@ public class AccessControl {
             return;
         }
         try {
-            File outDirectory = dbConfiguration.getTempDatabaseDirectory();
-            File inZipFile = new File(dbConfiguration.getSharedACMDirectory(), zipFileName);
+            File outDirectory = dbConfiguration.getLocalTempDbDir();
+            File inZipFile = new File(dbConfiguration.getProgramDir(), zipFileName);
             Calendar cal = Calendar.getInstance();
             LOG.info(String.format("Started DB Mirror: %2d:%02d.%03d\n",
                     cal.get(Calendar.MINUTE),
@@ -741,8 +739,8 @@ public class AccessControl {
         try {
             // The name previously decided for the next zip file name.
             filename = getNextZipFilename();
-            File outZipFile = new File(dbConfiguration.getSharedACMDirectory(), filename);
-            File inDirectory = dbConfiguration.getTempDatabaseDirectory();
+            File outZipFile = new File(dbConfiguration.getProgramDir(), filename);
+            File inDirectory = dbConfiguration.getLocalTempDbDir();
             ZipUnzip.zip(inDirectory, outZipFile);
         } catch (IOException ex) {
             return null;
@@ -758,7 +756,7 @@ public class AccessControl {
     @SuppressWarnings("SameParameterValue")
     private void deleteOldZipFiles(int numFilesToKeep) {
         List<File> files = Lists.newArrayList(
-                dbConfiguration.getSharedACMDirectory().listFiles((dir, name) -> {
+                dbConfiguration.getProgramDir().listFiles((dir, name) -> {
                     String lowercase = name.toLowerCase();
                     return lowercase.endsWith(".zip");
                 }));
@@ -781,7 +779,7 @@ public class AccessControl {
     private File findNewestModifiedZipFile() {
         File[] files;
         File latestModifiedFile = null;
-        files = dbConfiguration.getSharedACMDirectory().listFiles(new FilenameFilter() {
+        files = dbConfiguration.getProgramDir().listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
                 String lowercase = name.toLowerCase();
@@ -827,7 +825,7 @@ public class AccessControl {
         if (filenameShouldHave.equalsIgnoreCase(AccessControl.DB_DOES_NOT_EXIST))
             return true; // if the ACM is new, you have the latest there is (nothing)
 
-        File fileShouldHave = new File(dbConfiguration.getSharedACMDirectory(), filenameShouldHave);
+        File fileShouldHave = new File(dbConfiguration.getProgramDir(), filenameShouldHave);
         return fileShouldHave.exists();
     }
 

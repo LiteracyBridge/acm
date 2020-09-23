@@ -183,7 +183,7 @@ class PlaylistPopupMenu extends JPopupMenu {
                 previousPackageName = packageName;
                 File packageMessagesListsDir = new File(
                     ACMConfiguration.getInstance().getCurrentDB()
-                        .getTBLoadersDirectory(),
+                        .getProgramTbLoadersDir(),
                     "packages/" + packageName + "/messages/lists/"
                         + TBBuilder.firstMessageListName);
                 if (!packageMessagesListsDir.exists()) {
@@ -301,7 +301,7 @@ class PlaylistPopupMenu extends JPopupMenu {
      */
     private File getActiveListsForExport() {
         File listDirectory = new File(ACMConfiguration.getInstance()
-            .getCurrentDB().getTBLoadersDirectory(), "TB_Options/activeLists");
+            .getCurrentDB().getProgramTbLoadersDir(), "TB_Options/activeLists");
         File sourceActiveListsFile;
         Map<String, File> listCollection = Maps.newHashMap();
         if (listDirectory.listFiles().length > 1) {

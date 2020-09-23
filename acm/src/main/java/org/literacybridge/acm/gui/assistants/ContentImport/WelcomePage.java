@@ -248,10 +248,10 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
      * Reads the Program Specification to get information about the project and its Deployments.
      */
     private void getProjectInfo() {
-        String project = ACMConfiguration.cannonicalProjectName(ACMConfiguration.getInstance()
-            .getCurrentDB()
-            .getSharedACMname());
-        File programSpecDir = ACMConfiguration.getInstance().getProgramSpecDirFor(project);
+        File programSpecDir = ACMConfiguration.getInstance()
+                .getCurrentDB()
+                .getPathProvider()
+                .getProgramSpecDir();
 
         context.programSpec = new ProgramSpec(programSpecDir);
     }

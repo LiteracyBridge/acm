@@ -61,7 +61,7 @@ public class FeedbackImporter {
       printUsage(parser);
       System.exit(100);
     }
-     
+
     ImportResults results = importer.doImports();
 
     System.exit(results.getExitCode());
@@ -167,7 +167,7 @@ public class FeedbackImporter {
           projectResults.add(importDirectory(projectDir, updateDir));
           processedUpdate(projectDir, updateDir);
         }
-        
+
         // Accumulate results from the project
         dirResults.add(projectResults);
 
@@ -210,7 +210,7 @@ public class FeedbackImporter {
 
   /**
    * Attempts to move a directory to another directory. If there is already
-   * a directory of the same name, falls back to copy and delete. Ignores 
+   * a directory of the same name, falls back to copy and delete. Ignores
    * exceptions.
    * @param sourceDir The directory to be moved.
    * @param targetDir The target directory into which the source directory
@@ -462,7 +462,7 @@ public class FeedbackImporter {
     project = project.toUpperCase();
     Includelister includelister = deploymentsIncludelistCache.get(project);
     if (includelister == null) {
-      File includelistFile = ACMConfiguration.getInstance().getUserFeedbackIncludelistFileFor(project);
+      File includelistFile = ACMConfiguration.getInstance().getPathProvider(project).getProgramUserFeedbackInclusionFile();
       // Create, and save for next time.
       includelister = new Includelister(includelistFile, Includelister.OPTIONS.regex);
       deploymentsIncludelistCache.put(project, includelister);
@@ -489,7 +489,7 @@ public class FeedbackImporter {
     List<String> updatesFailedToImport = new ArrayList<>();
     List<String> projectsSkipped = new ArrayList<>();
     List<String> updatesSkipped = new ArrayList<>();
-    
+
     void fileImported(String filename) {
       fileImported(filename, TWEAKS.NO_CHANGE);
     }
@@ -527,7 +527,7 @@ public class FeedbackImporter {
     void updateSkipped(String projectName, String updateName) {
       updatesSkipped.add(String.format("%s / %s", projectName, updateName));
     }
-    
+
     public ImportResults add(ImportResults moreResults) {
       filesImported.addAll(moreResults.filesImported);
       filesFailedToImport.addAll(moreResults.filesFailedToImport);
@@ -587,7 +587,7 @@ public class FeedbackImporter {
     private class Report {
         PrintStream ps;
         boolean html;
-        
+
         Report(PrintStream ps, boolean html) {
           this.ps = ps;
           this.html = html;
@@ -682,7 +682,7 @@ public class FeedbackImporter {
 
     }
   }
-  
+
   private static void printUsage(CmdLineParser parser) {
     System.err.println(
             "java -cp acm.jar:lib/* org.literacybridge.acm.utils.FeedbackImporter [--verbose] <dir1> [<dir2> ...]");

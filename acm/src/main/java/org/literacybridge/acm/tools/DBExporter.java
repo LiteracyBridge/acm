@@ -37,7 +37,7 @@ public class DBExporter {
     project = dbName.substring(TBBuilder.ACM_PREFIX.length());
     filenamePrefix = prefix;
 
-    ACMConfiguration.getInstance().setCurrentDB(dbName, false);
+    ACMConfiguration.getInstance().setCurrentDB(dbName);
   }
 
   public void export() {

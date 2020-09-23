@@ -164,7 +164,7 @@ public class MessageExtractor {
 //            ok = false;
 //            System.err.println(String.format("Directory '%s' is not empty.", params.destination));
 //        }
-        acmDirectoryName = ACMConfiguration.cannonicalAcmDirectoryName(params.acmName);
+        acmDirectoryName = ACMConfiguration.getInstance().getPathProvider(params.acmName).getProgramDir().getName();
 
         if (ok && params.verbose) {
             System.out.println(String.format("Extract from %s to %s, %f, %s files after export",

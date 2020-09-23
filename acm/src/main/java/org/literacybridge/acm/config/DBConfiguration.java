@@ -13,15 +13,28 @@ import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.store.Taxonomy;
 import org.literacybridge.acm.store.Transaction;
 
-import javax.swing.*;
-import java.io.*;
-import java.util.*;
+import javax.swing.JOptionPane;
+import java.awt.GraphicsEnvironment;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.function.Predicate;
-import java.util.logging.FileHandler;
-import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -29,19 +42,14 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
-public class DBConfiguration { //extends Properties {
-  private static final Logger LOG = Logger
-      .getLogger(DBConfiguration.class.getName());
+@SuppressWarnings("serial")
+public class DBConfiguration {
+  private static final Logger LOG = Logger.getLogger(DBConfiguration.class.getName());
 
   private Properties dbProperties;
+  private final PathsProvider pathsProvider;
 
   private boolean initialized = false;
-  private File globalRepositoryDirectory;
-  private File localCacheDirectory;
-  private File dbDirectory;
-  private File tbLoadersDirectory;
-  private File sharedACMDirectory;
-  private String acmName;
   private List<Locale> audioLanguages = null;
   private final Map<Locale, String> languageLabels = new HashMap<>();
 
@@ -52,41 +60,17 @@ public class DBConfiguration { //extends Properties {
 
   private AccessControl accessControl;
 
-  DBConfiguration(String acmName) {
-    this(ACMConfiguration.getInstance().getSharedConfigurationFileFor(acmName), acmName);
+  DBConfiguration(String programDirName) {
+    this.pathsProvider = ACMConfiguration.getInstance().getPathProvider(programDirName);
+    System.out.printf("Program %s uses %s for storage.\n", this.pathsProvider.getProgramName(), this.pathsProvider.isDropboxDb()?"Dropbox":"S3");
   }
 
-    DBConfiguration(File dbConfigFile, String acmName) {
-        this.acmName = acmName;
-
-        // like ~/Dropbox/ACM-UWR/config.properties
-        if (dbConfigFile.exists()) {
-            try (FileInputStream fis = new FileInputStream(dbConfigFile);
-                 BufferedInputStream in = new BufferedInputStream(fis)) {
-                dbProperties = new Properties();
-                dbProperties.load(in);
-            } catch (IOException e) {
-                throw new RuntimeException("Unable to load configuration file: "
-                    + dbConfigFile, e);
-            }
-        }
+    public DBConfiguration(PathsProvider pathsProvider) {
+        this.pathsProvider = pathsProvider;
+        System.out.printf("Program %s uses %s for storage.\n", this.pathsProvider.getProgramName(), this.pathsProvider.isDropboxDb()?"Dropbox":"S3");
     }
 
-    /**
-     *  Gets the name of the ACM directory, like "ACM-DEMO".
-     * @return The name of this content database, including "ACM-".
-     */
-    public String getSharedACMname() {
-        return acmName;
-    }
-    public String getProjectName() {
-        return ACMConfiguration.cannonicalProjectName(acmName);
-    }
-    public String getProgramId() {
-        return ACMConfiguration.cannonicalProjectName(acmName);
-    }
-
-  public AudioItemRepository getRepository() {
+    public AudioItemRepository getRepository() {
     return repository;
   }
 
@@ -102,32 +86,37 @@ public class DBConfiguration { //extends Properties {
         return store;
     }
 
+    /**
+   *  Gets the name of the ACM directory, like "ACM-DEMO".
+   * @return The name of this content database, including "ACM-", if the directory name has an "ACM-" prefix.
+   */
+  public String getAcmDbDirName() {
+    return pathsProvider.getProgramDirName();
+  }
+  @Deprecated
+  public String getProjectName() {
+      return pathsProvider.getProgramName();
+  }
+
+    /**
+     * Gets the program id of the program in the ACM database.
+     * @return the program id.
+     */
+  public String getProgramName() {
+      return pathsProvider.getProgramName();
+  }
+
+  public PathsProvider getPathProvider() {
+      return pathsProvider;
+  }
+
   /**
    * Gets a File representing global (ie, Dropbox) ACM directory.
    * Like ~/Dropbox/ACM-TEST
    * @return The global File for this content database.
    */
-  public File getSharedACMDirectory() {
-    if (sharedACMDirectory == null) {
-      sharedACMDirectory = new File(
-              ACMConfiguration.getInstance().getGlobalShareDir(),
-              getSharedACMname());
-    }
-    return sharedACMDirectory;
-  }
-
-
-    /**
-     * The application's home directory.
-     *  The non-shared directory root for config, content, cache, builds, etc...
-     * @return ~/LiteracyBridge/ACM
-     */
-  private String getHomeAcmDirectory() {
-    // ~/LiteracyBridge/ACM
-    File acm = new File(ACMConfiguration.getInstance().getApplicationHomeDirectory(), Constants.ACM_DIR_NAME);
-    if (!acm.exists())
-      acm.mkdirs();
-    return acm.getAbsolutePath();
+  public File getProgramDir() {
+    return pathsProvider.getProgramDir();
   }
 
   /**
@@ -136,46 +125,37 @@ public class DBConfiguration { //extends Properties {
    * @return ~/LiteracyBridge/ACM/temp
    */
   String getTempACMsDirectory() {
-    // ~/LiteracyBridge/ACM/temp
-    File temp = new File(getHomeAcmDirectory(), Constants.TempDir);
-    if (!temp.exists())
-      temp.mkdirs();
+    File temp = AmplioHome.getTempsDir();
     return temp.getAbsolutePath();
   }
 
     /**
    * Gets a File representing the temporary database directory.
+   * ~/Amplio/ACM/temp/${acmDbDirName}/db
    * @return The File object for the directory.
    */
-  File getTempDatabaseDirectory() {
-    if (dbDirectory == null)
-      // ~/LiteracyBridge/temp/ACM-DEMO/db
-      dbDirectory = new File(getTempACMsDirectory(),
-          getSharedACMname() + File.separator + Constants.DBHomeDir);
-    return dbDirectory;
+  File getLocalTempDbDir() {
+    return pathsProvider.getLocalTempDbDir();
   }
 
   /**
    * Gets a File representing the location of the lucene index, in the
    * temporary database directory.
+   * ~/Amplio/ACM/temp/${acmDbDirName}/db/index
    * @return The File object for the lucene directory.
    */
-  private File getLuceneIndexDirectory() {
+  private File getLocalLuceneIndexDir() {
     // ~/LiteracyBridge/temp/ACM-DEMO/db/index
-    return new File(getTempDatabaseDirectory(), Constants.LuceneIndexDir);
+    return new File(getLocalTempDbDir(), Constants.LuceneIndexDir);
   }
 
   /**
    * Gets a File representing the location of the content repository, like
-   * ~/Dropbox/ACM-FOO/content
+   * ~/Dropbox/${programDbDir}/content or ~/Amplio/acm-dbs/${programDbDir}/content
    * @return The File object for the content directory.
    */
-  public File getGlobalRepositoryDirectory() {
-    if (globalRepositoryDirectory == null) {
-      // ~/Dropbox/ACM-DEMO/content
-      globalRepositoryDirectory = new File(getSharedACMDirectory(), Constants.RepositoryHomeDir);
-    }
-    return globalRepositoryDirectory;
+  public File getProgramContentDir() {
+    return pathsProvider.getProgramContentDir();
   }
 
     /**
@@ -184,12 +164,13 @@ public class DBConfiguration { //extends Properties {
      * @return the file object for the local cache.
      */
     public File getLocalCacheDirectory() {
-    if (localCacheDirectory == null) {
-      // ~/LiteracyBridge/ACM/cache/ACM-DEMO
-      localCacheDirectory = new File(getHomeAcmDirectory(),
-              Constants.CACHE_DIR_NAME + "/" + getSharedACMname());
-    }
-    return localCacheDirectory;
+//    if (localCacheDirectory == null) {
+//      // ~/LiteracyBridge/ACM/cache/ACM-DEMO
+//      localCacheDirectory = new File(getAppAcmPath(),
+//              Constants.CACHE_DIR_NAME + "/" + getSharedACMname());
+//    }
+//    return localCacheDirectory;
+    return pathsProvider.getLocalAcmCacheDir();
   }
 
     /**
@@ -198,46 +179,27 @@ public class DBConfiguration { //extends Properties {
      * @return The File object for the sandbox directory.
      */
     public File getSandboxDirectory() {
-        File fSandbox = null;
-        if (isSandboxed()) {
-            fSandbox = new File(getTempACMsDirectory(),
-                getSharedACMname() + "/" + Constants.RepositoryHomeDir);
-        }
-        return fSandbox;
+//            fSandbox = new File(getTempACMsDirectory(),
+//                getSharedACMname() + "/" + Constants.RepositoryHomeDir);
+        return isSandboxed() ? pathsProvider.getLocalAcmSandboxDir()
+                             : null;
     }
 
     /**
      * The global TB-Loaders directory, where content updates are published.
      * @return The global directory.
      */
-  public File getTBLoadersDirectory() {
-    if (tbLoadersDirectory == null) {
-      // ~/Dropbox/ACM-DEMO/TB-Loaders
-      tbLoadersDirectory = new File(getSharedACMDirectory(),
-              Constants.TBLoadersHomeDir);
-    }
-    return tbLoadersDirectory;
+  public File getProgramTbLoadersDir() {
+//    if (tbLoadersDirectory == null) {
+//      // ~/Dropbox/ACM-DEMO/TB-Loaders
+//      tbLoadersDirectory = new File(getProgramDir(),
+//              Constants.TBLoadersHomeDir);
+//    }
+//    return tbLoadersDirectory;
+    return pathsProvider.getProgramTbLoadersDir();
   }
 
-  public File getCommunitiesDirectory() {
-    return new File(getTBLoadersDirectory(), Constants.CommunitiesDir);
-  }
-
-    /**
-     * The local TB-Loaders directory. New content update distributions are CREATEd here, before
-     * being PUBLISHed to the global directory. Also, content update distributions are expanded
-     * here, before being opened by TB-Loader.
-     * @return the local TB-Loaders directory
-     */
-  public File getLocalTbLoadersDirectory() {
-      File tbLoaders = new File(ACMConfiguration.getInstance().getApplicationHomeDirectory(),
-                                Constants.TBLoadersHomeDir + File.separator + getProjectName());
-      if (!tbLoaders.exists())
-          tbLoaders.mkdirs();
-      return tbLoaders;
-  }
-
-  public boolean isSandboxed() {
+    public boolean isSandboxed() {
       return sandboxed;
   }
   void setSandboxed(boolean sandboxed) {
@@ -261,21 +223,21 @@ public class DBConfiguration { //extends Properties {
    * Gets a File containing the configuration properties for this ACM database.
    * @return The File.
    */
-  File getConfigurationPropertiesFile() {
+  File getProgramConfigFile() {
     // ~/Dropbox/ACM-DEMO/config.properties
-    return ACMConfiguration.getInstance().getSharedConfigurationFileFor(getSharedACMname());
+//    return ACMConfiguration.getInstance().getSharedConfigurationFileFor(getSharedACMname());
+    return pathsProvider.getProgramConfigFile();
   }
 
   public boolean writeCategoryFilter(Taxonomy taxonomy) {
       // If sandboxed, *pretend* that we wrote it OK.
       if (isSandboxed()) return true;
-      return CategoryFilter.writeCategoryFilter(sharedACMDirectory, taxonomy);
+      return CategoryFilter.writeCategoryFilter(getProgramDir(), taxonomy);
   }
 
   boolean init() throws Exception {
     if (!initialized) {
       InitializeAcmConfiguration();
-      initializeLogger();
       // This is pretty hackey, knowing if we're GUI or not, here, deep in the guts.
       accessControl = (ACMConfiguration.getInstance().isDisableUI()) ? new AccessControl(this) : new GuiAccessControl(this);
       accessControl.initDb();
@@ -283,8 +245,8 @@ public class DBConfiguration { //extends Properties {
       if (accessControl.openStatus.isOpen()) {
           initializeRepositories();
 
-          final Taxonomy taxonomy = Taxonomy.createTaxonomy(sharedACMDirectory);
-          this.store = new LuceneMetadataStore(taxonomy, getLuceneIndexDirectory());
+          final Taxonomy taxonomy = Taxonomy.createTaxonomy(getProgramDir());
+          this.store = new LuceneMetadataStore(taxonomy, getLocalLuceneIndexDir());
 
           parseLanguageLabels();
 
@@ -332,13 +294,13 @@ public class DBConfiguration { //extends Properties {
   public void writeProps() {
         try {
             BufferedOutputStream out = new BufferedOutputStream(
-                new FileOutputStream(getConfigurationPropertiesFile()));
+                new FileOutputStream(getProgramConfigFile()));
             dbProperties.store(out, null);
             out.flush();
             out.close();
         } catch (IOException e) {
             throw new RuntimeException("Unable to write configuration file: "
-                + getConfigurationPropertiesFile(), e);
+                + getProgramConfigFile(), e);
         }
     }
 
@@ -550,39 +512,34 @@ public class DBConfiguration { //extends Properties {
 
   private void InitializeAcmConfiguration() {
 
-    if (!getSharedACMDirectory().exists()) {
-      // TODO: Get all UI out of this configuration object!!
-      JOptionPane.showMessageDialog(null, "ACM database " + getSharedACMname()
-              + " is not found within Dropbox.\n\nBe sure that you have accepted the Dropbox invitation\nto share the folder"
-              + " by logging into your account at\nhttp://dropbox.com and click on the 'Sharing' link.\n\nShutting down.");
+    if (!getProgramDir().exists()) {
+      if (GraphicsEnvironment.isHeadless()) {
+          System.err.println("ACM database " + getAcmDbDirName() + " not found. Aborting.");
+          LOG.log(Level.SEVERE, "ACM database " + getAcmDbDirName() + " not found. Aborting.");
+      } else {
+          JOptionPane.showMessageDialog(null, "ACM database " + getAcmDbDirName()
+                  + " is not found within Dropbox.\n\nBe sure that you have accepted the Dropbox invitation\nto share the folder"
+                  + " by logging into your account at\nhttp://dropbox.com and click on the 'Sharing' link.\n\nShutting down.");
+      }
       System.exit(1);
     }
 
     // Create the cache directory before it's actually needed, to trigger any security exceptions.
     getLocalCacheDirectory().mkdirs();
 
-  }
-
-  private void initializeLogger() {
-    try {
-      // Get the global logger to configure it
-      // TODO: WTF? Shouldn't the *global* logger be initialized in some
-      // *global* constructor? Or better yet, static initializer?
-      Logger logger = Logger.getLogger("");
-
-      logger.setLevel(Level.INFO);
-      String fileNamePattern = getHomeAcmDirectory() + File.separator
-          + "acm.log.%g.%u.txt";
-      FileHandler fileTxt = new FileHandler(fileNamePattern);
-
-      Formatter formatterTxt = new SimpleFormatter();
-      fileTxt.setFormatter(formatterTxt);
-      logger.addHandler(fileTxt);
-    } catch (IOException e) {
-      e.printStackTrace();
-      System.err.println(
-          "Unable to initialize log file. Will be logging to stdout instead.");
+    // like ~/Dropbox/ACM-UWR/config.properties
+    if (getProgramConfigFile().exists()) {
+      try {
+        BufferedInputStream in = new BufferedInputStream(
+            new FileInputStream(getProgramConfigFile()));
+          dbProperties = new Properties();
+          dbProperties.load(in);
+      } catch (IOException e) {
+        throw new RuntimeException("Unable to load configuration file: "
+            + getProgramConfigFile(), e);
+      }
     }
+
   }
 
     private void initializeRepositories() {
@@ -595,8 +552,8 @@ public class DBConfiguration { //extends Properties {
                 "  user:                           %s\n" +
                 "  UserRWAccess:                   %s\n" +
                 "  online:                         %s\n",
-            getGlobalRepositoryDirectory(),
-            getTempDatabaseDirectory(),
+            getProgramContentDir(),
+            getLocalTempDbDir(),
             getSandboxDirectory(),
             user,
             Authenticator.getInstance().hasUpdatingRole(),

@@ -1,7 +1,6 @@
 package org.literacybridge.acm.cloud;
 
 import org.apache.commons.lang3.StringUtils;
-import org.literacybridge.acm.config.ACMConfiguration;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,10 +20,8 @@ class IdentityPersistence {
 
     private final File credentialsFile;
 
-    public IdentityPersistence() {
-        ACMConfiguration acmConfiguration = ACMConfiguration.getInstance();
-        credentialsFile = new File(acmConfiguration.getApplicationHomeDirectory(),
-            DEFAULT_CREDENTIALS_NAME);
+    public IdentityPersistence(File amplioHomeDir) {
+        credentialsFile = new File(amplioHomeDir, DEFAULT_CREDENTIALS_NAME);
     }
 
     /**

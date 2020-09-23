@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 public class Constants {
   public final static String ACM_VERSION = "r2105241"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
+  public final static String AmplioHomeDirName = "Amplio";
   public final static String ACM_DIR_NAME = "ACM";
   public final static String CACHE_DIR_NAME = "cache";
   public final static String TempDir = "temp";
@@ -59,7 +60,8 @@ public class Constants {
   public final static String NOTIFY_LIST = "NOTIFY_LIST";
 
   // Gather obsolete property names here. We could write code to remove these from the properties file.
-  public final static String[] OBSOLETE_PROPERTY_NAMES = {"NEXT_CORRELATION_ID", "DEPLOYMENT_CHOICE", "USE_AWS_LOCKING"};
+  public final static String[] OBSOLETE_PROPERTY_NAMES = {"NEXT_CORRELATION_ID", "DEPLOYMENT_CHOICE", "USE_AWS_LOCKING",
+                                /*"USER_NAME", "USER_CONTACT_INFO"*/};
 
   public final static String CATEGORY_GENERAL_OTHER = "0-0";
   public final static String CATEGORY_TB_SYSTEM = "0-4-1";

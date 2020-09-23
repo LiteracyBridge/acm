@@ -15,8 +15,7 @@ public class TB {
         acm(org.literacybridge.acm.gui.Application.class),
         tbloader(org.literacybridge.acm.tbloader.TBLoader.class, "loader", "tbl"),
         tbbuilder(org.literacybridge.acm.tbbuilder.TBBuilder.class, "builder"),
-        acmcleaner(org.literacybridge.acm.tools.AcmCleaner.class, "clean", "cleaner"),
-        acmclone(org.literacybridge.acm.utils.CloneACM.class, "clone");
+        acmcleaner(org.literacybridge.acm.tools.AcmCleaner.class, "clean", "cleaner");
 
         private Class clazz;
         private Set<String> aliases = new HashSet<>();

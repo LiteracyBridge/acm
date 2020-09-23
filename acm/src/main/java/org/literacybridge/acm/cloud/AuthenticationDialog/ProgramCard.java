@@ -233,6 +233,7 @@ public class ProgramCard extends CardContent {
             }
         } else {
             shownProgramids = welcomeDialog.cognitoInterface.getLocallyAvailablePrograms().keySet();
+            // Note that "allowedToBeUpdated" is left empty in this case.
         }
     }
 

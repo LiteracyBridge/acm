@@ -243,7 +243,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         Map<String, Map<String, String>> pkgs = exportPackages();
 
         try {
-            String acmName = ACMConfiguration.getInstance().getCurrentDB().getSharedACMname();
+            String acmName = ACMConfiguration.getInstance().getCurrentDB().getAcmDbDirName();
             TBBuilder tbBuilder = new TBBuilder(acmName, deploymentName(), this::reportState, this::logException);
 
             // Create.
@@ -338,7 +338,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
      */
     private Map<String, Map<String, String>> exportPackages() {
         Map<String, Map<String, String>> result = new LinkedHashMap<>();
-        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
+        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
         File packagesDir = new File(tbLoadersDir, "packages");
         DeploymentSpec deploymentSpec = context.programSpec.getContentSpec().getDeployment(context.deploymentNo);
 
@@ -446,7 +446,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
      * @return true if the directories were created successfully.
      */
     private boolean makeDirectories() {
-        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
+        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
         File packagesDir = new File(tbLoadersDir, "packages");
         if ((packagesDir.exists() && !packagesDir.isDirectory()) || (!packagesDir.exists() && !packagesDir.mkdirs())) {
             // Can't make packages directory.
@@ -586,7 +586,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     }
 
     private String packageName(String languagecode, String variant) {
-        String projectStr = ACMConfiguration.cannonicalProjectName(ACMConfiguration.getInstance().getCurrentDB().getSharedACMname());
+        String projectStr = ACMConfiguration.getInstance().getCurrentDB().getProgramName();
         String deploymentStr = Integer.toString(context.deploymentNo);
         String variantStr = StringUtils.isNotBlank(variant) ? '-'+variant.toLowerCase() : "";
         String packageName = projectStr + '-' + deploymentStr + '-' + languagecode + variantStr;
@@ -611,7 +611,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                 // This means either a very long variant or a very long language. Should never happen.
                 // Use the hashcode of the string, and hope?
                 // Put the vowels back
-                projectStr = ACMConfiguration.cannonicalProjectName(ACMConfiguration.getInstance().getCurrentDB().getSharedACMname());
+                projectStr = ACMConfiguration.getInstance().getCurrentDB().getProgramName();
                 packageName = projectStr + deploymentStr + languagecode + variantStr;
                 packageName = Integer.toHexString(packageName.hashCode());
             }
@@ -620,7 +620,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     }
 
     private String deploymentName() {
-        String project = ACMConfiguration.cannonicalProjectName(ACMConfiguration.getInstance().getCurrentDB().getSharedACMname());
+        String project = ACMConfiguration.getInstance().getCurrentDB().getProgramName();
         Deployment depl = context.programSpec.getDeployment(context.deploymentNo);
         Calendar start = Calendar.getInstance();
         start.setTime(depl.startdate);

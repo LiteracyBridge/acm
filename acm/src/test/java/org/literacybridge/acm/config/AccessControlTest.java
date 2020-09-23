@@ -4,6 +4,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.literacybridge.acm.cloud.Authenticator;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -22,7 +23,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
  * Created by bill on 3/6/17.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ AccessControlTest.class, AccessControl.class })
+@PrepareForTest({ AccessControlTest.class, AccessControl.class, ACMConfiguration.class, PathsProvider.class })
 public class AccessControlTest {
     @Rule
     TemporaryFolder folder = new TemporaryFolder();
@@ -40,11 +41,28 @@ public class AccessControlTest {
         dbx = folder.newFolder("dbx");
         acmDir = new File(dbx, "ACM-NADA");
         acmDir.mkdirs();
-        
+
+        AmplioHome testInstance = new AmplioHome() {
+            @Override
+            protected File getTempDirectory() {
+                return temp;
+            }
+        };
+        AmplioHome.getInstance(testInstance);
+
+        PathsProvider ppConfig = new PathsProvider("ACM-NADA", true) {
+        };
+
+        ACMConfiguration mockConfig = PowerMockito.mock(ACMConfiguration.class);
+        PowerMockito.mockStatic(ACMConfiguration.class);
+        PowerMockito.when(ACMConfiguration.getInstance()).thenReturn(mockConfig);
+        PowerMockito.when(mockConfig.getPathProvider("ACM-NADA")).thenReturn(ppConfig);
+
         DBConfiguration dbConfig = PowerMockito.mock(DBConfiguration.class);
+        when(dbConfig.getPathProvider()).thenReturn(ppConfig);
         when(dbConfig.getTempACMsDirectory()).thenReturn(temp.getAbsolutePath());
-        when(dbConfig.getSharedACMname()).thenReturn("ACM-NADA");
-        when(dbConfig.getSharedACMDirectory()).thenReturn(acmDir);
+        when(dbConfig.getAcmDbDirName()).thenReturn("ACM-NADA");
+        when(dbConfig.getProgramDir()).thenReturn(acmDir);
         return dbConfig;
     }
 
@@ -73,7 +91,7 @@ public class AccessControlTest {
 
         AccessControl.AccessStatus status = ac.init();
 
-        assertEquals(status, AccessControl.AccessStatus.noNetworkNoDbError);
+        assertEquals(AccessControl.AccessStatus.noNetworkNoDbError, status);
     }
 
     @Test
@@ -87,7 +105,7 @@ public class AccessControlTest {
 
         AccessControl.AccessStatus status = ac.init();
 
-        assertEquals(status, AccessControl.AccessStatus.noServer);
+        assertEquals(AccessControl.AccessStatus.noServer, status);
     }
 
 
@@ -106,7 +124,7 @@ public class AccessControlTest {
 
         AccessControl.AccessStatus status = spy.init();
 
-        assertEquals(status, AccessControl.AccessStatus.noDbError);
+        assertEquals(AccessControl.AccessStatus.noDbError, status);
     }
 
 
@@ -124,7 +142,7 @@ public class AccessControlTest {
 
         AccessControl.AccessStatus status = spy.init();
 
-        assertEquals(status, AccessControl.AccessStatus.notAvailable);
+        assertEquals(AccessControl.AccessStatus.notAvailable, status);
     }
 
     @Test
@@ -141,7 +159,7 @@ public class AccessControlTest {
 
         AccessControl.AccessStatus status = spy.init();
 
-        assertEquals(status, AccessControl.AccessStatus.noServer);
+        assertEquals(AccessControl.AccessStatus.noServer, status);
     }
 
 //    @Test
@@ -179,7 +197,7 @@ public class AccessControlTest {
 
         AccessControl.AccessStatus status = spy.init();
 
-        assertEquals(status, AccessControl.AccessStatus.outdatedDb);
+        assertEquals(AccessControl.AccessStatus.outdatedDb, status);
     }
 
     @Test
@@ -190,6 +208,10 @@ public class AccessControlTest {
         DBConfiguration dbConfig = getMockDbConfig();
         populateAcm();
         when(dbConfig.userIsReadOnly()).thenReturn(true);
+        Authenticator.setDebugInstance(new Authenticator(){
+            @Override
+            public boolean hasUpdatingRole() { return false; }
+        });
 
         AccessControl ac = new AccessControl(dbConfig);
         AccessControl spy = spy(ac);
@@ -198,7 +220,7 @@ public class AccessControlTest {
 
         AccessControl.AccessStatus status = spy.init();
 
-        assertEquals(status, AccessControl.AccessStatus.userReadOnly);
+        assertEquals(AccessControl.AccessStatus.userReadOnly, status);
     }
 
     @Test
@@ -209,6 +231,10 @@ public class AccessControlTest {
         DBConfiguration dbConfig = getMockDbConfig();
         populateAcm();
         when(dbConfig.userIsReadOnly()).thenReturn(false);
+        Authenticator.setDebugInstance(new Authenticator(){
+            @Override
+            public boolean hasUpdatingRole() { return true; }
+        });
 
         AccessControl ac = new AccessControl(dbConfig);
         AccessControl spy = spy(ac);
@@ -217,6 +243,6 @@ public class AccessControlTest {
 
         AccessControl.AccessStatus status = spy.init();
 
-        assertEquals(status, AccessControl.AccessStatus.available);
+        assertEquals(AccessControl.AccessStatus.available, status);
     }
 }

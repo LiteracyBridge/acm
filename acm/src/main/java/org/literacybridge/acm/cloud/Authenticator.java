@@ -18,6 +18,7 @@ import org.literacybridge.acm.cloud.cognito.AuthenticationHelper;
 import org.literacybridge.acm.cloud.cognito.CognitoHelper;
 import org.literacybridge.acm.cloud.cognito.CognitoJWTParser;
 import org.literacybridge.acm.config.AccessControl;
+import org.literacybridge.acm.config.AmplioHome;
 import org.literacybridge.acm.config.HttpUtility;
 
 import java.awt.Window;
@@ -77,6 +78,10 @@ public class Authenticator {
         return instance;
     }
 
+    public static synchronized void setDebugInstance(Authenticator authenticator) {
+        instance = authenticator;
+    }
+
     // Provides access to Cognito helpers
     CognitoInterface cognitoInterface = new CognitoInterface();
 
@@ -108,8 +113,8 @@ public class Authenticator {
     // Programs available in local storage. A Map of {programid: description}
     private Map<String, String> locallyAvailablePrograms = new HashMap<>();
 
-    private Authenticator() {
-        this.identityPersistence = new IdentityPersistence();
+    protected Authenticator() {
+        this.identityPersistence = new IdentityPersistence(AmplioHome.getDirectory());
         cognitoHelper = new CognitoHelper();
     }
 
@@ -149,11 +154,30 @@ public class Authenticator {
         return AccessControl.isOnline();
     }
 
+    public String getUserContact() {
+        String contact = userEmail;
+        if (authenticationInfo != null) {
+            String ph = authenticationInfo.get("phone_number");
+            if (ph != null)
+                contact += ", " + ph;
+        }
+        return contact;
+    }
+    public String getUserSelfName() {
+        String[] SELF_NAME_PROPERTIES = {"custom:greeting", "nickname", "name", "cognito:username"};
+        String name = null;
+        if (authenticationInfo != null) {
+            for (String prop : SELF_NAME_PROPERTIES) {
+                name = authenticationInfo.get(prop);
+                if (name != null)
+                    break;
+            }
+        }
+        return name;
+    }
+
     public String getUserName() {
-        String result = getUserProperty("name", null);
-        if (StringUtils.isBlank(result)) result = getUserProperty("custom:greeting", null);
-        if (StringUtils.isBlank(result)) result = getUserProperty("email", "");
-        return result;
+        return getUserSelfName();
     }
 
     public String getUserEmail() {
@@ -186,7 +210,6 @@ public class Authenticator {
         userRoles.retainAll(UPDATING_ROLES);
         return userRoles.size() > 0;
     }
-
 
     public boolean isSandboxSelected() {
         return this.sandboxSelected;
@@ -307,7 +330,6 @@ public class Authenticator {
             }
         } else {
             // User cancelled the dialog.
-            identityPersistence.clearLoginDetails();
             loginResult = LoginResult.FAILURE;
         }
 

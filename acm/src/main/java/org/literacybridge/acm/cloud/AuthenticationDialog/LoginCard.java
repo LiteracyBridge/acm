@@ -4,6 +4,7 @@ import org.literacybridge.acm.cloud.ActionLabel;
 import org.literacybridge.acm.gui.Assistant.FlexTextField;
 import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.PanelButton;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 
 import javax.swing.JCheckBox;
@@ -133,10 +134,11 @@ public class LoginCard extends CardContent {
      */
     private void onLogin(ActionEvent actionEvent) {
         welcomeDialog.clearMessage();
-        UIUtils.runWithWaitSpinner(welcomeDialog,
-                () -> welcomeDialog.cognitoInterface.authenticate(emailField.getText(), passwordField.getText()),
-                this::onLoginReturned,
-                TOP_THIRD);
+        String text = LabelProvider.getLabel("Attempting Login");
+        UIUtils.runWithWaitSpinner(text, welcomeDialog,
+            () -> welcomeDialog.cognitoInterface.authenticate(emailField.getText(), passwordField.getText()),
+            this::onLoginReturned,
+            TOP_THIRD);
     }
 
     /**

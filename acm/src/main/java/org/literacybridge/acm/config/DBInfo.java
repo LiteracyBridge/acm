@@ -90,7 +90,7 @@ public class DBInfo extends Properties {
 
   public void writeProps() {
     try {
-      File dbDir = config.getTempDatabaseDirectory();
+      File dbDir = config.getLocalTempDbDir();
       if (!dbDir.exists())
         dbDir.mkdirs();
       BufferedOutputStream out = new BufferedOutputStream(
@@ -111,9 +111,7 @@ public class DBInfo extends Properties {
   }
 
   private File getCheckedOutPropertiesFile() {
-    File fDB = new File(config.getTempACMsDirectory());
-    return new File(fDB,
-        config.getSharedACMname() + Constants.CHECKOUT_PROPERTIES_SUFFIX);
+    return config.getPathProvider().getLocalCheckoutFile();
   }
 
   public DBInfo(DBConfiguration config) {

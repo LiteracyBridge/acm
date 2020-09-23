@@ -132,7 +132,7 @@ public class PlaylistPrompts {
 
         } else if (categoryIds.size() > 0) {
             // Where to look for category prompts.
-            File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();
+            File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
             String languagesPath =
                 "TB_Options" + File.separator + "languages" + File.separator + languagecode + File.separator + "cat";
             File categoriesDir = new File(tbLoadersDir, languagesPath);

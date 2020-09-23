@@ -863,12 +863,12 @@ public class AudioItemRenameDialog extends JDialog {
      * Load the program spec, and populate specTitles.
      */
     private void loadProgramSpec() {
-        String project = ACMConfiguration.cannonicalProjectName(ACMConfiguration.getInstance()
-            .getCurrentDB()
-            .getSharedACMname());
         specTitles.clear();
         this.messageSpecs.clear();
-        File programSpecDir = ACMConfiguration.getInstance().getProgramSpecDirFor(project);
+        File programSpecDir = ACMConfiguration.getInstance()
+                .getCurrentDB()
+                .getPathProvider()
+                .getProgramSpecDir();
         ProgramSpec programSpec = new ProgramSpec(programSpecDir);
 
         ContentSpec content = programSpec.getContentSpec();
