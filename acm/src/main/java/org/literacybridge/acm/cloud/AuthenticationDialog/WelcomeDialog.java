@@ -309,6 +309,13 @@ public class WelcomeDialog extends JDialog {
     }
 
     /**
+     * Navigates to the card to enter a new password. Should also have a reset code.
+     */
+    void gotoResetCard() {
+        activateCard(ResetCard);
+    }
+
+    /**
      * Navigates to the program selection card, after signing in or entering email address.
      */
     void gotoProgramSelection() {

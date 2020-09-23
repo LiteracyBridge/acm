@@ -100,6 +100,9 @@ public class AuthenticationHelper {
         public boolean isNotAuthorizedException() {
             return authException instanceof NotAuthorizedException;
         }
+        public boolean isPasswordResetRequired() {
+            return authException instanceof PasswordResetRequiredException;
+        }
         public boolean isSdkClientException() {
             return authException instanceof SdkClientException;
         }

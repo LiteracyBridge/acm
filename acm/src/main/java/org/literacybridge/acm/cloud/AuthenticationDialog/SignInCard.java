@@ -148,6 +148,10 @@ public class SignInCard extends CardContent {
                 welcomeDialog.setPassword(passwordField.getText());
             }
             ok();
+        } else if(welcomeDialog.cognitoInterface.isPasswordResetRequired()) {
+            // The password has been reset. Prompt user for new password.
+            welcomeDialog.gotoResetCard();
+            welcomeDialog.setMessage("Your password has been reset. Please choose a new password.");
         } else if(welcomeDialog.cognitoInterface.isNotAuthorizedException()) {
             // Probably bad user / password. Inform user, let them try again.
             welcomeDialog.setMessage(welcomeDialog.cognitoInterface.getAuthMessage());

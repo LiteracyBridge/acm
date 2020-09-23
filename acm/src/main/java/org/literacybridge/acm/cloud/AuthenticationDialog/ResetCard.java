@@ -1,5 +1,6 @@
 package org.literacybridge.acm.cloud.AuthenticationDialog;
 
+import org.literacybridge.acm.cloud.ActionLabel;
 import org.literacybridge.acm.gui.Assistant.FlexTextField;
 import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.PanelButton;
@@ -17,11 +18,12 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 
 import static java.awt.GridBagConstraints.CENTER;
+import static java.awt.GridBagConstraints.NONE;
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class ResetCard extends CardContent {
     private final static String DIALOG_TITLE = "Reset Password";
-    protected static final int CARD_HEIGHT = 595;
+    protected static final int CARD_HEIGHT = 658;
 
     private final JLabel emailField;
     private final FlexTextField passwordField;
@@ -96,6 +98,12 @@ public class ResetCard extends CardContent {
         hBox.add(Box.createHorizontalGlue());
 
         dialogPanel.add(hBox, gbc);
+
+        // Sign-up link.
+        ActionLabel signUp = new ActionLabel("No code? Request another.");
+        signUp.addActionListener(e->welcomeDialog.cognitoInterface.resetPassword(emailField.getText()));
+        dialogPanel.add(signUp, gbc.withFill(NONE));
+
 
         addComponentListener(componentAdapter);
     }

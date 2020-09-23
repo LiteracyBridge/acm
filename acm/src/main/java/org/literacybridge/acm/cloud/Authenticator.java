@@ -544,6 +544,10 @@ public class Authenticator {
             return authenticationResult != null && authenticationResult.isNotAuthorizedException();
         }
 
+        public boolean isPasswordResetRequired() {
+            return authenticationResult != null && authenticationResult.isPasswordResetRequired();
+        }
+
         public boolean isSdkClientException() {
             return authenticationResult != null && authenticationResult.isSdkClientException();
         }
