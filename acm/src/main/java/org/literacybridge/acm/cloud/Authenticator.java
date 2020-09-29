@@ -45,6 +45,14 @@ import static java.util.Arrays.stream;
  * Helper class to provide a simpler interface to cognito authentication.
  */
 public class Authenticator {
+    public static final String SUPER_ADMIN_ROLE_STRING = "*";
+    public static final String ADMIN_ROLE_STRING = "AD";
+    public static final String PROGRAM_MANAGER_ROLE_STRING = "PM";
+    public static final String CONTENT_OFFICER_ROLE_STRING = "CO";
+    public static final String FIELD_OFFICER_ROLE_STRING = "FO";
+    public final static Set<String> UPDATING_ROLES = new HashSet<>(Arrays.asList(SUPER_ADMIN_ROLE_STRING,
+            ADMIN_ROLE_STRING, PROGRAM_MANAGER_ROLE_STRING, CONTENT_OFFICER_ROLE_STRING));
+
     private static Authenticator instance;
     private SigninResult signinResult = SigninResult.NONE;
 
@@ -153,6 +161,15 @@ public class Authenticator {
         }
         return result;
     }
+
+    public boolean hasUpdatingRole() {
+        // We can't do updates when offline.
+        if (!isAuthenticated()) return false;
+        Set<String> userRoles = getUserRoles();
+        userRoles.retainAll(UPDATING_ROLES);
+        return userRoles.size() > 0;
+    }
+
 
     public boolean isSandboxSelected() {
         return this.sandboxSelected;

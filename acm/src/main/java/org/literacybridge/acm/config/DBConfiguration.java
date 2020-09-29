@@ -2,6 +2,7 @@ package org.literacybridge.acm.config;
 
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepositoryImpl;
 import org.literacybridge.acm.store.AudioItem;
@@ -289,10 +290,12 @@ public class DBConfiguration { //extends Properties {
     }
 
     public boolean userIsReadOnly() {
-        return !userHasWriteAccess(ACMConfiguration.getInstance().getUserName());
+//        return !userHasWriteAccess(ACMConfiguration.getInstance().getUserName());
+        return !Authenticator.getInstance().hasUpdatingRole();
     }
 
-  /**
+
+    /**
    * Gets a File containing the configuration properties for this ACM database.
    * @return The File.
    */
@@ -631,7 +634,7 @@ public class DBConfiguration { //extends Properties {
             getTempDatabaseDirectory(),
             getSandboxDirectory(),
             user,
-            userHasWriteAccess(user),
+            Authenticator.getInstance().hasUpdatingRole(),
             AccessControl.isOnline()));
 
         repository = AudioItemRepositoryImpl.buildAudioItemRepository(this);
