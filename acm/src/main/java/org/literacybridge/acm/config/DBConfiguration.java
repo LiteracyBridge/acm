@@ -235,66 +235,10 @@ public class DBConfiguration { //extends Properties {
         return accessControl != null && accessControl.getOpenStatus().isOpen() && !sandboxed;
     }
 
-
-    private File getDBAccessListFile() {
-        return new File(getSharedACMDirectory(), Constants.DB_ACCESS_FILENAME);
-    }
-
-    /**
-     * Does the user named in ~/LiteracyBridge/acm_config.properties have write access to the
-     * current database? (Is their name in the accessList.txt file?)
-     * @param user The user in question.
-     * @return true if user has write permission.
-     */
-    public boolean userHasWriteAccess(String user) {
-        String writeUser;
-        boolean userHasWriteAccess = false;
-
-        user = user.trim();
-        if (user == null) {
-            // No User Name found in ~/LB/acm_config.properties. Forcing Read-Only mode.
-            return userHasWriteAccess;
-        }
-        File f = getDBAccessListFile();
-        if (f.exists()) {
-            try {
-                BufferedReader in = new BufferedReader(new FileReader(f));
-                while ((writeUser = in.readLine()) != null) {
-                    if (writeUser.trim().equalsIgnoreCase(user)) {
-                        userHasWriteAccess = true;
-                        break;
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else if (getSharedACMDirectory().list().length == 0) {
-            // TODO: The "create new ACM" function should pre-populate the accessList.txt file,
-            // rather than relying on this questionable side-effect.
-
-            // empty directory -- which means that a new directory was created to
-            // start an ACM in
-            // Since the directory already exists, it is not the case that the user
-            // just hasn't accepted the dropbox invitaiton yet.
-            // So, give this user write access to the newly created ACM
-            userHasWriteAccess = true;
-            try {
-                BufferedWriter out = new BufferedWriter(new FileWriter(f));
-                out.write(user + "\n");
-                out.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return userHasWriteAccess;
-    }
-
     public boolean userIsReadOnly() {
-//        return !userHasWriteAccess(ACMConfiguration.getInstance().getUserName());
         return !Authenticator.getInstance().hasUpdatingRole();
     }
-
-
+    
     /**
    * Gets a File containing the configuration properties for this ACM database.
    * @return The File.

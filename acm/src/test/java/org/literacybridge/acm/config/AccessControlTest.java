@@ -188,7 +188,7 @@ public class AccessControlTest {
 
         DBConfiguration dbConfig = getMockDbConfig();
         populateAcm();
-        when(dbConfig.userHasWriteAccess("")).thenReturn(false);
+        when(dbConfig.userIsReadOnly()).thenReturn(true);
 
         AccessControl ac = new AccessControl(dbConfig);
         AccessControl spy = spy(ac);
@@ -208,7 +208,7 @@ public class AccessControlTest {
         DBConfiguration dbConfig = getMockDbConfig();
         populateAcm();
         String user = ACMConfiguration.getInstance().getUserName();
-        when(dbConfig.userHasWriteAccess(user)).thenReturn(true);
+        when(dbConfig.userIsReadOnly()).thenReturn(false);
 
         AccessControl ac = new AccessControl(dbConfig);
         AccessControl spy = spy(ac);

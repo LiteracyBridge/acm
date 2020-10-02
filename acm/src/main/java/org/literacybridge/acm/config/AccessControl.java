@@ -449,7 +449,7 @@ public class AccessControl {
             // Out of date .zip file. This can still be successful, in sandbox mode.
             return AccessStatus.outdatedDb;
         }
-        if (!dbConfiguration.userHasWriteAccess(ACMConfiguration.getInstance().getUserName())) {
+        if (dbConfiguration.userIsReadOnly()) {
             // User has RO access. This can still be successful, in sandbox mode.
             return AccessStatus.userReadOnly;
         }
