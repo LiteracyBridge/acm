@@ -158,6 +158,9 @@ public class SignInCard extends CardContent {
         } else if(welcomeDialog.cognitoInterface.isSdkClientException()) {
             // No connectivity. Can't sign in with Cognito.
             welcomeDialog.SdkClientException(this);
+        } else if(welcomeDialog.cognitoInterface.isNewPasswordRequired()) {
+            // Server requires user to reset password.
+            welcomeDialog.gotoNewPasswordRequiredCard();
         } else {
             // Probably bad user / password. Inform user, let them try again.
             welcomeDialog.setMessage(welcomeDialog.cognitoInterface.getAuthMessage());

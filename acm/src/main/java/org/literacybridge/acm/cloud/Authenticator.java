@@ -531,6 +531,20 @@ public class Authenticator {
             cognitoHelper.UpdatePassword(username, password, pin);
         }
 
+        /**
+         * Called in response to a NEW_PASSWORD_REQUIRED result. This sets the new password, and completes the signin.
+         * @param username of user signing in.
+         * @param password the new password chosen by the user.
+         */
+        public void provideNewPassword(String username, String password) {
+            // Authentication result from last time.
+            if (!authenticationResult.isNewPasswordRequired()) {
+                throw new IllegalStateException("Illegal call to provideNewPassword");
+            }
+            AuthenticationHelper.AuthenticationResult newPasswordResult = cognitoHelper.ProvideNewPassword(authenticationResult, username, password);
+            parseAuthenticationResult(newPasswordResult);
+        }
+
         public String signUpUser(String username,
             String password,
             String email,
@@ -568,6 +582,11 @@ public class Authenticator {
         public boolean isSdkClientException() {
             return authenticationResult != null && authenticationResult.isSdkClientException();
         }
+
+        public boolean isNewPasswordRequired() {
+            return authenticationResult != null && authenticationResult.isNewPasswordRequired();
+        }
+
 
         public Map<String, String> getPrograms() {
             return userPrograms;

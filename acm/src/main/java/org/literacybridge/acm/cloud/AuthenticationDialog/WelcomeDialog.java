@@ -29,6 +29,7 @@ import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Ca
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ForgotPasswordCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ProgramCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ResetCard;
+import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.NewPasswordRequiredCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.SignInCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.SignUpCard;
 import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
@@ -93,6 +94,7 @@ public class WelcomeDialog extends JDialog {
         SignUpCard(org.literacybridge.acm.cloud.AuthenticationDialog.SignUpCard.CARD_HEIGHT, SignUpCard::new),
         ForgotPasswordCard(org.literacybridge.acm.cloud.AuthenticationDialog.ForgotPasswordCard.CARD_HEIGHT, ForgotPasswordCard::new),
         ResetCard(org.literacybridge.acm.cloud.AuthenticationDialog.ResetCard.CARD_HEIGHT, ResetCard::new),
+        NewPasswordRequiredCard(org.literacybridge.acm.cloud.AuthenticationDialog.NewPasswordRequiredCard.CARD_HEIGHT, NewPasswordRequiredCard::new),
         ConfirmCard(org.literacybridge.acm.cloud.AuthenticationDialog.ConfirmCard.CARD_HEIGHT, ConfirmCard::new),
         EmailCard(org.literacybridge.acm.cloud.AuthenticationDialog.EmailCard.CARD_HEIGHT, EmailCard::new),
         ProgramCard(org.literacybridge.acm.cloud.AuthenticationDialog.ProgramCard.CARD_HEIGHT, ProgramCard::new);
@@ -316,6 +318,13 @@ public class WelcomeDialog extends JDialog {
     }
 
     /**
+     * Navigates to the "NewPassword" card. In response to a password change forced by server.
+     */
+    public void gotoNewPasswordRequiredCard() {
+        activateCard(NewPasswordRequiredCard);
+    }
+
+    /**
      * Navigates to the program selection card, after signing in or entering email address.
      */
     void gotoProgramSelection() {
@@ -335,6 +344,7 @@ public class WelcomeDialog extends JDialog {
         switch (senderCard.panel) {
         case SignInCard:
         case EmailCard:
+        case NewPasswordRequiredCard:             
             gotoProgramSelection();
             break;
 

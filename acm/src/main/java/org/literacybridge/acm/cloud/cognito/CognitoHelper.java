@@ -11,7 +11,11 @@ import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cognitoidentity.AmazonCognitoIdentity;
 import com.amazonaws.services.cognitoidentity.AmazonCognitoIdentityClientBuilder;
-import com.amazonaws.services.cognitoidentity.model.*;
+import com.amazonaws.services.cognitoidentity.model.Credentials;
+import com.amazonaws.services.cognitoidentity.model.GetCredentialsForIdentityRequest;
+import com.amazonaws.services.cognitoidentity.model.GetCredentialsForIdentityResult;
+import com.amazonaws.services.cognitoidentity.model.GetIdRequest;
+import com.amazonaws.services.cognitoidentity.model.GetIdResult;
 import com.amazonaws.services.cognitoidp.AWSCognitoIdentityProvider;
 import com.amazonaws.services.cognitoidp.AWSCognitoIdentityProviderClientBuilder;
 import com.amazonaws.services.cognitoidp.model.AttributeType;
@@ -28,9 +32,7 @@ import com.amazonaws.services.cognitoidp.model.SignUpResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
-//import org.json.JSONObject;
 import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -201,7 +203,12 @@ public class CognitoHelper {
 
     public AuthenticationHelper.AuthenticationResult RefreshSession(String refreshToken) {
         AuthenticationHelper helper = new AuthenticationHelper(POOL_ID, CLIENTAPP_ID, "");
-        AuthenticationHelper.AuthenticationResult result = helper.RefreshSession(refreshToken);
+        return helper.RefreshSession(refreshToken);
+    }
+
+    public AuthenticationHelper.AuthenticationResult ProvideNewPassword(AuthenticationHelper.AuthenticationResult previousChallengeResult, String username, String password) {
+        AuthenticationHelper helper = new AuthenticationHelper(POOL_ID, CLIENTAPP_ID, "");
+        AuthenticationHelper.AuthenticationResult result = helper.ProvideNewPassword(previousChallengeResult.getPreviousChallengeResult(), username, password);
         return result;
     }
 
@@ -322,7 +329,6 @@ public class CognitoHelper {
         }
         return confirmPasswordResult.toString();
     }
-
 
     /**
      * This method returns the details of the user and bucket lists.

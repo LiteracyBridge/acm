@@ -44,10 +44,12 @@ import java.util.SimpleTimeZone;
 public class AuthenticationHelper {
     public static class AuthenticationResult {
         private static final int EXPIRY_BUFFER = 60;
+        RespondToAuthChallengeResult challengeResult;
         AuthenticationResultType authResult;
         long expirationTime;
         String message;
         Exception authException;
+
         AuthenticationResult(AuthenticationResultType authResult) {
             this.authResult = authResult;
             // Refresh 60 seconds before expiration. Nominal expiration is 1 hour.
@@ -73,6 +75,10 @@ public class AuthenticationHelper {
             this.message = message;
             this.expirationTime = Long.MAX_VALUE;
             this.authException = authException;
+        }
+
+        public AuthenticationResult(RespondToAuthChallengeResult challengeResult) {
+            this.challengeResult = challengeResult;
         }
 
         public boolean isExpired() {
@@ -102,6 +108,12 @@ public class AuthenticationHelper {
         }
         public boolean isPasswordResetRequired() {
             return authException instanceof PasswordResetRequiredException;
+        }
+        public boolean isNewPasswordRequired() {
+            return challengeResult != null && challengeResult.getChallengeName().equals(ChallengeNameType.NEW_PASSWORD_REQUIRED.toString());
+        }
+        public RespondToAuthChallengeResult getPreviousChallengeResult() {
+            return challengeResult;
         }
         public boolean isSdkClientException() {
             return authException instanceof SdkClientException;
@@ -278,7 +290,12 @@ public class AuthenticationHelper {
                     challengeRequest);
                 //System.out.println(result);
                 //System.out.println(CognitoJWTParser.getPayload(result.getAuthenticationResult().getIdToken()));
-                authresult = new AuthenticationResult(result.getAuthenticationResult());
+
+                if (result.getChallengeName() != null && result.getChallengeName().equals(ChallengeNameType.NEW_PASSWORD_REQUIRED.toString())) {
+                    authresult = new AuthenticationResult(result);
+                } else {
+                    authresult = new AuthenticationResult(result.getAuthenticationResult());
+                }
             }
         }
         catch (final NotAuthorizedException ex) {
@@ -287,6 +304,44 @@ public class AuthenticationHelper {
             System.out.println("Exception" + ex);
             authresult = new AuthenticationResult("Exception authenticating.", ex);
         }
+        return authresult;
+    }
+
+    AuthenticationResult ProvideNewPassword(RespondToAuthChallengeResult previousChallengeResult, String username, String password) {
+        AuthenticationResult authresult = null;
+
+        try {
+            AnonymousAWSCredentials awsCreds = new AnonymousAWSCredentials();
+            AWSCognitoIdentityProvider cognitoIdentityProvider = AWSCognitoIdentityProviderClientBuilder
+                    .standard()
+                    .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+                    .withRegion(Regions.fromName(this.region))
+                    .build();
+
+            Map<String, String> srpAuthResponses = new HashMap<>();
+            srpAuthResponses.put("USERNAME", username);
+            srpAuthResponses.put("NEW_PASSWORD", password);
+
+            RespondToAuthChallengeRequest authChallengeRequest = new RespondToAuthChallengeRequest();
+            authChallengeRequest.setChallengeName(previousChallengeResult.getChallengeName());
+            authChallengeRequest.setClientId(clientId);
+            authChallengeRequest.setSession(previousChallengeResult.getSession());
+            authChallengeRequest.setChallengeResponses(srpAuthResponses);
+
+            RespondToAuthChallengeResult result = cognitoIdentityProvider.respondToAuthChallenge(
+                    authChallengeRequest);
+            System.out.println(result);
+
+            authresult = new AuthenticationResult(result.getAuthenticationResult());
+
+        }
+        catch (final NotAuthorizedException ex) {
+            authresult = new AuthenticationResult(ex);
+        } catch (final Exception ex) {
+            System.out.println("Exception" + ex);
+            authresult = new AuthenticationResult("Exception authenticating.", ex);
+        }
+
         return authresult;
     }
 
