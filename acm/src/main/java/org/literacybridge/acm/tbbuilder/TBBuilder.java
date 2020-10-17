@@ -1,6 +1,7 @@
 package org.literacybridge.acm.tbbuilder;
 
 import com.opencsv.ICSVWriter;
+import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.CommandLineParams;
@@ -20,6 +21,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class TBBuilder {
     static final String[] CSV_COLUMNS_CONTENT_IN_PACKAGE = { "project",
@@ -94,7 +96,16 @@ public class TBBuilder {
     public String getRevision() {
         return builderContext.revision;
     }
-    public List<String> getAcceptableFirmwareVersions() { return utils.allFirmwareImageVersions(); }
+    public List<String> getAcceptableFirmwareVersions(boolean isUserFeedbackHidden) {
+        List<String> versions = utils.allFirmwareImageVersions();
+        String minVersion = FilenameUtils.getBaseName(MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE);
+        if (isUserFeedbackHidden) {
+            versions = versions.stream()
+                .filter(verStr -> verStr.compareToIgnoreCase(minVersion) >= 0)
+                .collect(Collectors.toList());
+        }
+        return versions;
+    }
     public File getStagedProgramspecDir() {
         return builderContext.stagedProgramspecDir;
     }

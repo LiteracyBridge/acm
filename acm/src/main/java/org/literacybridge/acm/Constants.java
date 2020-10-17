@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 public class Constants {
-  public final static String ACM_VERSION = "r2010021"; // yy mm dd n
+  public final static String ACM_VERSION = "r2010161"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String ACM_DIR_NAME = "ACM";
   public final static String CACHE_DIR_NAME = "cache";
@@ -51,6 +51,7 @@ public class Constants {
   public final static String BATCH_RECORD = "record.log";
   public final static String S3_BUCKET = "acm-logging";
   public final static String FUZZY_THRESHOLD = "FUZZY_THRESHOLD";
+  public final static String WARN_FOR_MISSING_GREETINGS = "WARN_FOR_MISSING_GREETINGS";
   public final static String NOTIFY_LIST = "NOTIFY_LIST";
 
   // Gather obsolete property names here. We could write code to remove these from the properties file.

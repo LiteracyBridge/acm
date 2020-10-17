@@ -423,6 +423,15 @@ public class DBConfiguration { //extends Properties {
         dbProperties.setProperty(Constants.FUZZY_THRESHOLD, Integer.toString(threshold));
     }
 
+    public boolean getWarnForMissingGreetings() {
+        String value = dbProperties.getProperty(Constants.WARN_FOR_MISSING_GREETINGS);
+        return Boolean.parseBoolean(value);
+    }
+
+    public void setWarnForMissingGreetings(boolean warnForMissingGreetings) {
+        dbProperties.setProperty(Constants.WARN_FOR_MISSING_GREETINGS, Boolean.toString(warnForMissingGreetings));
+    }
+
     /**
      * The configured value of "interested parties" for events in the ACM. This should
      * be a list of email addresses, separated by commas.

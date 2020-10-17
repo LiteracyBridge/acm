@@ -520,6 +520,11 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     }
 
     private void validateRecipients(int deploymentNo) {
+        boolean warnForMissingGreetings = ACMConfiguration.getInstance().getCurrentDB().getWarnForMissingGreetings();
+        if (!warnForMissingGreetings) {
+            return;
+        }
+
         RecipientList recipients = context.programSpec.getRecipientsForDeployment(deploymentNo);
         Map<String, String> recipientsMap = context.programSpec.getRecipientsMap();
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getTBLoadersDirectory();

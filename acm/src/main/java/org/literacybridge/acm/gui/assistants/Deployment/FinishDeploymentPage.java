@@ -288,7 +288,8 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         Properties deploymentProperties = new Properties();
         deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_NUMBER, Integer.toString(context.deploymentNo));
         Date now = new Date();
-        deploymentProperties.setProperty(TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS, String.join(",", tbb.getAcceptableFirmwareVersions()));
+        List<String> acceptableFirmwareVersions = tbb.getAcceptableFirmwareVersions(!context.includeUfCategory);
+        deploymentProperties.setProperty(TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS, String.join(",", acceptableFirmwareVersions));
         DateFormat localTime = new SimpleDateFormat("HH:mm:ss a z", Locale.getDefault());
         DateFormat localDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_CREATION_TIME, localTime.format(now));

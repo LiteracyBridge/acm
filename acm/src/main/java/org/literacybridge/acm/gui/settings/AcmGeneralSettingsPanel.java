@@ -25,7 +25,9 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     private final JTextField fuzzyThreshold;
     private final String emailAddresses;
     private final int threshold;
+    private final boolean warnForMissingGreetings;
     private final JLabel fuzzyThresholdError;
+    private final JCheckBox greetingWarnings;
 
     @Override
     public String getTitle() {
@@ -34,6 +36,12 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
     AcmGeneralSettingsPanel(AcmSettingsDialog.SettingsHelper helper) {
         super(helper);
+
+        // Get values from the global configuration.
+        threshold = ACMConfiguration.getInstance().getCurrentDB().getFuzzyThreshold();
+        emailAddresses = String.join(", ",
+                ACMConfiguration.getInstance().getCurrentDB().getNotifyList());
+        warnForMissingGreetings = ACMConfiguration.getInstance().getCurrentDB().getWarnForMissingGreetings();
 
         // Set an empty border on the panel, to give some blank space around the content.
         setLayout(new BorderLayout());
@@ -108,16 +116,22 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         vbox.add(fuzzyThresholdError);
         gridPanel.add(vbox, gbcRight);
 
+        // Third setting: warn for missing custom greetings.
+        gbcLeft.gridy++;
+        gbcLeft.anchor = GridBagConstraints.BASELINE_TRAILING;
+        gridPanel.add(new JLabel("Greetings warnings:"), gbcLeft);
+        gbcRight.gridx = 1;
+        gbcRight.anchor = GridBagConstraints.BASELINE_LEADING;
+        greetingWarnings = new JCheckBox("Warn if greetings are missing for deployment", warnForMissingGreetings);
+        greetingWarnings.setToolTipText(
+                "When creating a Deployment, should you be warned if any Recipients are missing custom greetings?");
+        gridPanel.add(greetingWarnings, gbcRight);
+
         // Consume any blank space.
         gbcLeft.gridy++;
         gbcRight.gridx = 0;
         gbcLeft.weighty = 1.0;
         gridPanel.add(new JLabel(), gbcLeft);
-
-        // Get values from the global configuration.
-        threshold = ACMConfiguration.getInstance().getCurrentDB().getFuzzyThreshold();
-        emailAddresses = String.join(", ",
-            ACMConfiguration.getInstance().getCurrentDB().getNotifyList());
 
         email.setText(emailAddresses);
         fuzzyThreshold.setText(String.format("%d", threshold));
@@ -146,6 +160,11 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
         if (getThreshold() != threshold) {
             ACMConfiguration.getInstance().getCurrentDB().setFuzzyThreshold(getThreshold());
+            haveChanges = true;
+        }
+
+        if (greetingWarnings.isSelected() != warnForMissingGreetings) {
+            ACMConfiguration.getInstance().getCurrentDB().setWarnForMissingGreetings(greetingWarnings.isSelected());
             haveChanges = true;
         }
 

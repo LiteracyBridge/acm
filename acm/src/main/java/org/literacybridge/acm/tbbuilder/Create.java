@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -215,7 +216,11 @@ class Create {
         // System and category prompts
         File sourceLanguageDir = new File(builderContext.sourceTbOptionsDir, "languages"+File.separator + pi.language);
         exportSystemPrompts(shadowLanguageDir, stagedLanguageDir, pi.language, pi.audioFormat);
-        exportPlaylistPrompts(pi, exportedCategories, shadowLanguageDir, stagedLanguageDir);
+        // The prompt "9-0" is always needed to announce where user feedback is recorded. "i9-0" is only needed
+        // if user feedback is public.
+        Set<String> neededPrompts = new HashSet<>(exportedCategories);
+        neededPrompts.add(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
+        exportPlaylistPrompts(pi, neededPrompts, shadowLanguageDir, stagedLanguageDir);
 
         // If the deployment has the tutorial, copy necessary files.
         if (exportedCategories.contains(Constants.CATEGORY_TUTORIAL)) {
