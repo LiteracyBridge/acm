@@ -59,8 +59,8 @@ public class MoveStats {
     private static final Logger logger = LoggerFactory.getLogger(MoveStats.class);
 
     private final Params params;
-    private Set<String> whitelistedIds = null;
-    private Set<String> blacklistedIds = null;
+    private Set<String> includedIds = null;
+    private Set<String> excludedIds = null;
 
     public static void main(String[] args) throws IOException, CmdLineException {
         Params params = new Params();
@@ -117,25 +117,25 @@ public class MoveStats {
             }
         }
 
-        if (params.whiteListFile != null) {
-            whitelistedIds = new HashSet<>();
+        if (params.includelistFile != null) {
+            includedIds = new HashSet<>();
             try {
-                IOUtils.readLines(params.whiteListFile, whitelistedIds);
-                whitelistedIds = whitelistedIds.stream().map(String::toLowerCase).collect(Collectors.toSet());
+                IOUtils.readLines(params.includelistFile, includedIds);
+                includedIds = includedIds.stream().map(String::toLowerCase).collect(Collectors.toSet());
             } catch (IOException e) {
-                System.err.println(String.format("Can't read whitelist file: %s", e.getMessage()));
+                System.err.println(String.format("Can't read includelist file: %s", e.getMessage()));
                 filesOk = false;
             }
 
         }
 
-        if (params.blackListFile != null) {
-            blacklistedIds = new HashSet<>();
+        if (params.excludelistFile != null) {
+            excludedIds = new HashSet<>();
             try  {
-                IOUtils.readLines(params.blackListFile, blacklistedIds);
-                blacklistedIds = blacklistedIds.stream().map(String::toLowerCase).collect(Collectors.toSet());
+                IOUtils.readLines(params.excludelistFile, excludedIds);
+                excludedIds = excludedIds.stream().map(String::toLowerCase).collect(Collectors.toSet());
             } catch (IOException e) {
-                System.err.println(String.format("Can't read blacklist file: %s", e.getMessage()));
+                System.err.println(String.format("Can't read excludelist file: %s", e.getMessage()));
                 filesOk = false;
             }
 
@@ -201,12 +201,12 @@ public class MoveStats {
         if (tbcdIdName.startsWith(".")) {
             return false;
         }
-        // blacklisted?
-        if (blacklistedIds != null && blacklistedIds.contains(tbcdIdName)) {
+        // excludelisted?
+        if (excludedIds != null && excludedIds.contains(tbcdIdName)) {
             return false;
         }
-        // not whitelisted?
-        if (whitelistedIds != null && ! whitelistedIds.contains(tbcdIdName)) {
+        // not includelisted?
+        if (includedIds != null && ! includedIds.contains(tbcdIdName)) {
             return false;
         }
         return true;
@@ -924,11 +924,11 @@ public class MoveStats {
         @Option(name = "--report", usage = "Generate a report to this file. If *.html, format as HTML.")
         File report;
 
-        @Option(name = "--whitelist", aliases = "-w", usage = "File with whitelisted tbcd ids, one per line. If omitted, all tbcd ids are included (except blacklisted).")
-        File whiteListFile;
+        @Option(name = "--includelist", aliases = "-w", usage = "File with includelisted tbcd ids, one per line. If omitted, all tbcd ids are included (except excludelisted).")
+        File includelistFile;
 
-        @Option(name = "--blacklist", aliases = "-b", metaVar = "blacklist", usage = "File with blacklisted tbcd ids, one per line. Takes precedence over whitelist.")
-        File blackListFile;
+        @Option(name = "--excludelist", aliases = "-b", metaVar = "excludelist", usage = "File with excludelisted tbcd ids, one per line. Takes precedence over includelist.")
+        File excludelistFile;
 
         @Argument(usage = "Directory containing tbcd{tbcd id} directories.", index = 0, metaVar = "source")
         File sourceDir;

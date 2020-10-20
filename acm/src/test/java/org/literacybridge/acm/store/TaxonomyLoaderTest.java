@@ -101,10 +101,10 @@ public class TaxonomyLoaderTest {
     }
 
     @Test
-    public void testWhitelisting() throws IOException {
+    public void testIncludelisting() throws IOException {
         File tempDir = tmp.newFolder();
         writePrivateYaml(tempDir);
-        writeWhitelist(tempDir);
+        writeIncludelist(tempDir);
         Taxonomy override = Taxonomy.createTaxonomy(tempDir);
         assertNotNull("Expected to load override Taxonomy", override);
         assertEquals("Expected to find Taxonomy Root",
@@ -133,16 +133,16 @@ public class TaxonomyLoaderTest {
         assertNotNull("Expected to find '0-3-1'", cat);
         assertFalse("Expected '0-3-1' to not be visible", cat.isVisible());
 
-        assertTrue("Should require whitelist semantics", CategoryFilter.requiresWhitelistSemantics(override));
-        List<String> wlData = CategoryFilter.buildWhitelistData(override);
+        assertTrue("Should require includelist semantics", CategoryFilter.requiresIncludelistSemantics(override));
+        List<String> wlData = CategoryFilter.buildIncludelistData(override);
         System.out.println(wlData);
     }
 
     @Test
-    public void testBlacklisting() throws IOException {
+    public void testExcludelisting() throws IOException {
         File tempDir = tmp.newFolder();
         writePrivateYaml(tempDir);
-        writeBlacklist(tempDir);
+        writeExcludelist(tempDir);
         Taxonomy override = Taxonomy.createTaxonomy(tempDir);
         assertNotNull("Expected to load override Taxonomy", override);
         assertEquals("Expected to find Taxonomy Root",
@@ -171,8 +171,8 @@ public class TaxonomyLoaderTest {
         assertNotNull("Expected to find '0-3-1'", cat);
         assertFalse("Expected '0-3-1' to not be visible", cat.isVisible());
 
-        assertFalse("Shouldn't require whitelist semantics", CategoryFilter.requiresWhitelistSemantics(override));
-        List<String> wlData = CategoryFilter.buildWhitelistData(override);
+        assertFalse("Shouldn't require includelist semantics", CategoryFilter.requiresIncludelistSemantics(override));
+        List<String> wlData = CategoryFilter.buildIncludelistData(override);
         System.out.println(wlData);
     }
 
@@ -212,8 +212,8 @@ public class TaxonomyLoaderTest {
         assertNotNull("Expected to find '0-3-1'", cat);
         assertFalse("Expected '0-3-1' to not be visible", cat.isVisible());
 
-        assertTrue("Should require whitelist semantics", CategoryFilter.requiresWhitelistSemantics(override));
-        List<String> wlData = CategoryFilter.buildWhitelistData(override);
+        assertTrue("Should require includelist semantics", CategoryFilter.requiresIncludelistSemantics(override));
+        List<String> wlData = CategoryFilter.buildIncludelistData(override);
         System.out.println(wlData);
     }
 
@@ -323,20 +323,20 @@ public class TaxonomyLoaderTest {
         }
     }
 
-    private void writeWhitelist(File tempDir) throws IOException {
-        File taxonomyFile = new File(tempDir, CategoryFilter.WHITELIST_FILENAME);
+    private void writeIncludelist(File tempDir) throws IOException {
+        File taxonomyFile = new File(tempDir, CategoryFilter.INCLUDELIST_FILENAME);
         try (PrintWriter out = new PrintWriter(taxonomyFile)) {
             out.println("0-2");
         }
     }
-    private void writeBlacklist(File tempDir) throws IOException {
-        File taxonomyFile = new File(tempDir, CategoryFilter.WHITELIST_FILENAME);
+    private void writeExcludelist(File tempDir) throws IOException {
+        File taxonomyFile = new File(tempDir, CategoryFilter.INCLUDELIST_FILENAME);
         try (PrintWriter out = new PrintWriter(taxonomyFile)) {
             out.println("~ 0-1-1");
         }
     }
     private void writeMixedlist(File tempDir) throws IOException {
-        File taxonomyFile = new File(tempDir, CategoryFilter.WHITELIST_FILENAME);
+        File taxonomyFile = new File(tempDir, CategoryFilter.INCLUDELIST_FILENAME);
         try (PrintWriter out = new PrintWriter(taxonomyFile)) {
             out.println("0-1");
             out.println("~ 0-1-1");

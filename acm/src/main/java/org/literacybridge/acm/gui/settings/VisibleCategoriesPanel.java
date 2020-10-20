@@ -174,7 +174,7 @@ public class VisibleCategoriesPanel extends AbstractSettingsBase {
                 .spliterator(), false).collect(Collectors.toMap(Category::getId, Category::isVisible));
             ACMConfiguration.getInstance().getCurrentDB().getMetadataStore().getTaxonomy().updateCategoryVisibility(visiblityStates);
 
-            // Persist the visibility in the "category.whitelist" file.
+            // Persist the visibility in the "category.includelist" file.
             ACMConfiguration.getInstance().getCurrentDB().writeCategoryFilter(taxonomy);
         }
     }

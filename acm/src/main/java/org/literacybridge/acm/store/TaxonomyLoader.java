@@ -81,8 +81,8 @@ public class TaxonomyLoader {
     }
 
     private void loadLatestTaxonomy() {
-        // Note that if there is a whitelist, and it does not have "LB_TAX_1.0" in it,
-        // then anything that is to be visible must be explicitly whitelisted.
+        // Note that if there is an includelist, and it does not have "LB_TAX_1.0" in it,
+        // then anything that is to be visible must be explicitly included.
         Category rootCategory = taxonomy.getRootCategory();
         rootCategory.updateVisibility(categoryFilter.getVisibilityFor(rootCategory, null));
 

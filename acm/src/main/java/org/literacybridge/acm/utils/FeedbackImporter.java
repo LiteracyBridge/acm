@@ -48,8 +48,8 @@ public class FeedbackImporter {
           Collections.singletonList("a18"));
   private static final String FEEDBACK_IMPORT_REPORT = "feedbackImport.txt";
   private final Params params;
-  // Cache for whitelisted content updates (only whitelisted updates are to be imported).
-  private Map<String, Whitelister> deploymentsWhitelistCache = new HashMap<>();
+  // Cache for includelisted content updates (only includelisted updates are to be imported).
+  private Map<String, Includelister> deploymentsIncludelistCache = new HashMap<>();
 
   public static void main(String[] args) throws Exception {
     Params params = new Params();
@@ -454,26 +454,26 @@ public class FeedbackImporter {
     if (params.importACM != null) {
       return false;
     }
-    Whitelister whitelister = getDeploymentsWhitelistForProject(project);
+    Includelister includelister = getDeploymentsIncludelistForProject(project);
     // Function is "isSkipped", opposite of "isIncluded"
-    return ! whitelister.isIncluded(deployment);
+    return ! includelister.isIncluded(deployment);
   }
 
   /**
-   * Gets the whitelist of deployments for which user feedback should be processed.
+   * Gets the includelist of deployments for which user feedback should be processed.
    * @param project The project name.
-   * @return a Whitelist object that will filter deployments.
+   * @return an includelist object that will filter deployments.
    */
-  private Whitelister getDeploymentsWhitelistForProject(String project) {
+  private Includelister getDeploymentsIncludelistForProject(String project) {
     project = project.toUpperCase();
-    Whitelister whitelister = deploymentsWhitelistCache.get(project);
-    if (whitelister == null) {
-      File whitelistFile = ACMConfiguration.getInstance().getUserFeedbackWhitelistFileFor(project);
+    Includelister includelister = deploymentsIncludelistCache.get(project);
+    if (includelister == null) {
+      File includelistFile = ACMConfiguration.getInstance().getUserFeedbackIncludelistFileFor(project);
       // Create, and save for next time.
-      whitelister = new Whitelister(whitelistFile, Whitelister.OPTIONS.regex);
-      deploymentsWhitelistCache.put(project, whitelister);
+      includelister = new Includelister(includelistFile, Includelister.OPTIONS.regex);
+      deploymentsIncludelistCache.put(project, includelister);
     }
-    return whitelister;
+    return includelister;
   }
 
   /**

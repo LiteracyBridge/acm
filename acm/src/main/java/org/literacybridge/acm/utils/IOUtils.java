@@ -304,7 +304,7 @@ public class IOUtils {
 
     /**
      * Reads a file, line by line. '#' introduces a comment. comments & whitespace are trimmed.
-     * Places the lines into a collection, so this is really good for whitelists, blacklists, etc.
+     * Places the lines into a collection, so this is really good for includelists, excludelists, etc.
      * @param file File of lines
      * @param lines Place lines into this collection.
      * @throws IOException if there is an error reading the file.

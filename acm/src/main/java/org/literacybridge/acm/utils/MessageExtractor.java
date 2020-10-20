@@ -43,19 +43,19 @@ import static org.literacybridge.acm.Constants.CATEGORY_UNCATEGORIZED_FEEDBACK;
  *   --- repeat as needed ---
  *
  * The messages to be extracted can be filtered by language and/or category id. The filters can
- * be a blacklist, a whitelist, or both. To whitelist a language, use "--language en", to
- * blacklist, use "--language !en". The filters are applied in the following order:
- *  -- if the language appears in the blacklist, it is excluded
- *  -- if the language appears in the whitelist, it is included
- *  -- if the whitelist is not empty, the language is excluded (that is, there is a whitelist, but
+ * be an excludelist, an includelist, or both. To includelist a language, use "--language en", to
+ * excludelist, use "--language !en". The filters are applied in the following order:
+ *  -- if the language appears in the excludelist, it is excluded
+ *  -- if the language appears in the includelist, it is included
+ *  -- if the includelist is not empty, the language is excluded (that is, there is an includelist, but
  *      this language is not in it)
  *  -- otherwise the language is included
- * Multiple whitelist and/or blacklist arguments are allowed.
+ * Multiple includelist and/or excludelist arguments are allowed.
  *
  * Category processing works similarly. However, messages can have multiple categories. Thus, if
- * ANY of a message's categories is blacklisted, the message is blacklisted, and if ANY of a
- * message's categories is whitelisted, the message is whitelisted. Blacklisting still overrides
- * whitelisting. Use like --category 2-0 or --category !2-0. Multiple whitelist and/or blacklist
+ * ANY of a message's categories is excludelisted, the message is excludelisted, and if ANY of a
+ * message's categories is includelisted, the message is includelisted. Excludelisting still overrides
+ * includelisting. Use like --category 2-0 or --category !2-0. Multiple includelist and/or excludelist
  * arguments are allowed.
  *
  * A shortcut for "--category !9-0" is --categorized.
@@ -99,24 +99,22 @@ public class MessageExtractor {
     private final Params params;
 
     private String acmDirectoryName;
-    private Set<String> languageWhitelist = new HashSet<>();
-    private Set<String> languageBlacklist = new HashSet<>();
-    private Set<String> categoryIdWhitelist = new HashSet<>();
-    private Set<String> categoryIdBlacklist = new HashSet<>();
+    private Set<String> languageIncludelist = new HashSet<>();
+    private Set<String> languageExcludelist = new HashSet<>();
+    private Set<String> categoryIdIncludelist = new HashSet<>();
+    private Set<String> categoryIdExcludelist = new HashSet<>();
     private File destinationDirectory;
 
     private MessageExtractor(Params params) {
         this.params = params;
     }
 
-    private void addItemToList(String item, Set<String> blacklist, Set<String> whitelist) {
+    private void addItemToList(String item, Set<String> excludelist, Set<String> includelist) {
         item = item.toLowerCase();
         if (item.charAt(0) == '!') {
-            // blacklist
-            blacklist.add(item.substring(1));
+            excludelist.add(item.substring(1));
         } else {
-            // whitelist
-            whitelist.add(item);
+            includelist.add(item);
         }
     }
 
@@ -128,7 +126,7 @@ public class MessageExtractor {
         boolean ok = true;
         if (params.languages != null) {
             for (String language: params.languages) {
-                addItemToList(language, languageBlacklist, languageWhitelist);
+                addItemToList(language, languageExcludelist, languageIncludelist);
             }
         }
         if (params.categoryIds != null) {
@@ -138,7 +136,7 @@ public class MessageExtractor {
                 System.err.println("May not specify --category and either of --categorized or --uncategorized");
             }
             for (String categoryId: params.categoryIds) {
-                addItemToList(categoryId, categoryIdBlacklist, categoryIdWhitelist);
+                addItemToList(categoryId, categoryIdExcludelist, categoryIdIncludelist);
             }
         } else {
             // No explicit categories specified, so use GENERAL_FEEDBACK ("9-0")
@@ -146,9 +144,9 @@ public class MessageExtractor {
                 ok = false;
                 System.err.println("May not specify both --categorized and --uncategorized");
             } else if (params.categorized) {
-                categoryIdBlacklist.add(CATEGORY_UNCATEGORIZED_FEEDBACK);
+                categoryIdExcludelist.add(CATEGORY_UNCATEGORIZED_FEEDBACK);
             } else if (params.uncategorized){
-                categoryIdWhitelist.add(CATEGORY_UNCATEGORIZED_FEEDBACK);
+                categoryIdIncludelist.add(CATEGORY_UNCATEGORIZED_FEEDBACK);
             }
         }
         destinationDirectory = new File(params.destination);
@@ -171,17 +169,17 @@ public class MessageExtractor {
         if (ok && params.verbose) {
             System.out.println(String.format("Extract from %s to %s, %f, %s files after export",
                 acmDirectoryName, destinationDirectory, params.maxFiles, params.keep?"keep":"delete"));
-            if (languageWhitelist.size()>0) {
-                System.out.println(String.format("Include languages: %s", languageWhitelist));
+            if (languageIncludelist.size()>0) {
+                System.out.println(String.format("Include languages: %s", languageIncludelist));
             }
-            if (languageBlacklist.size()>0) {
-                System.out.println(String.format("Exclude languages: %s", languageBlacklist));
+            if (languageExcludelist.size()>0) {
+                System.out.println(String.format("Exclude languages: %s", languageExcludelist));
             }
-            if (categoryIdWhitelist.size()>0) {
-                System.out.println(String.format("Include categoryIds: %s", categoryIdWhitelist));
+            if (categoryIdIncludelist.size()>0) {
+                System.out.println(String.format("Include categoryIds: %s", categoryIdIncludelist));
             }
-            if (categoryIdBlacklist.size()>0) {
-                System.out.println(String.format("Exclude categoryIds: %s", categoryIdBlacklist));
+            if (categoryIdExcludelist.size()>0) {
+                System.out.println(String.format("Exclude categoryIds: %s", categoryIdExcludelist));
             }
         }
         
@@ -194,44 +192,44 @@ public class MessageExtractor {
      * @return true if the language should be included.
      */
     private boolean includeLanguage(String language) {
-        // "no language" can't be in either list. So it isn't blacklisted, but also isn't whitelisted.
-        // So, "no language" is included if there is no whitelist.
-        if (language == null) return languageWhitelist.size()==0;
+        // null, "no language", can't be in either list, so it is neither excluded nor included.
+        // Therefore, "no language" is included if there is no includelist.
+        if (language == null) return languageIncludelist.size()==0;
         
         language = language.toLowerCase();
 
-        // If there's a blacklist, and this language is in it, don't include the language.
-        if (languageBlacklist.contains(language)) {
+        // If there's an excludelist, and this language is in it, don't include the language.
+        if (languageExcludelist.contains(language)) {
             return false;
         }
-        // If there's a whitelist, include this language only if it's whitelisted.
-        if (languageWhitelist.size()>0) {
-            return languageWhitelist.contains(language);
+        // If there's an includelist, include this language only if it's in it.
+        if (languageIncludelist.size()>0) {
+            return languageIncludelist.contains(language);
         }
         // Otherwise, include everything
         return true;
     }
 
     /**
-     * Tests whether the categories in the given list should be extracted. If any are blacklisted,
-     * do not extract. If there is a whitelist, but none are whitelisted, do not extract.
+     * Tests whether the categories in the given list should be extracted. If any are excluded,
+     * do not extract. If there is an includelist, but none are included, do not extract.
      * @param categoryList List of category ids to examine.
      * @return true if the category list represents an item to be extracted.
      */
     private boolean includedCategory(Iterable<Category> categoryList) {
-        boolean atLeastOneWhitelisted = false;
+        boolean atLeastOneIncludelisted = false;
         for (Category category : categoryList) {
             String catId = category.getId();
-            // If there's a blacklist, and this id is in it, don't include the category.
-            if (categoryIdBlacklist.contains(catId)) {
+            // If there's an excludelist, and this id is in it, don't include the category.
+            if (categoryIdExcludelist.contains(catId)) {
                 return false;
             }
-            // If there's a whitelist, and this id is in it, remember that fact.
-            atLeastOneWhitelisted |= categoryIdWhitelist.contains(catId);
+            // If there's an includelist, and this id is in it, remember that fact.
+            atLeastOneIncludelisted |= categoryIdIncludelist.contains(catId);
         }
-        // No category was blacklisted. If at least one was whitelisted, or there's no whitelist,
+        // No category was excluded. If at least one was includd, or there's no includelist,
         // then include the category.
-        return categoryIdWhitelist.size()==0 || atLeastOneWhitelisted;
+        return categoryIdIncludelist.size()==0 || atLeastOneIncludelisted;
     }
 
     private boolean doExtract() {

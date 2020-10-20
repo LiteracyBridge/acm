@@ -16,7 +16,7 @@ public class CommandLineParams {
   @Option(name = "--headless", aliases = {"-no_ui", "--no_ui"}, usage = "start the system without showing the UI")
   public boolean disableUI;
 
-  @Option(name = "--allcategories", usage = "show all categories, regardless of whitelisting")
+  @Option(name = "--allcategories", usage = "show all categories, regardless of includelisting")
   public boolean allCategories;
 
   @Option(name = "--clean", usage = "Clean up un-referenced audio files")

@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 public class StringFilter implements Predicate<String> {
     private static final Set<String> emptySet = new HashSet<>();
     private boolean acceptsAll = false;
-    private boolean isWhitelist = true;
+    private boolean isIncludelist = true;
     private Set<String> filteredItems;
 
     public StringFilter(String filter) {
@@ -23,7 +23,7 @@ public class StringFilter implements Predicate<String> {
         filter = filter.trim().toLowerCase();
         if (filter.charAt(0) == '!' || filter.charAt(0) == '~') {
             filter = filter.substring(1).trim();
-            isWhitelist = false;
+            isIncludelist = false;
         }
         String[] items = filter.split(",");
         filteredItems = Arrays.stream(items).map(String::trim).collect(Collectors.toSet());
@@ -31,8 +31,8 @@ public class StringFilter implements Predicate<String> {
 
     @Override
     public boolean test(String s) {
-        // If the item is present && it's a whitelist, or if the item isn't present and it isn't a whitelist.
-        return acceptsAll || filteredItems.contains(s.trim().toLowerCase()) == isWhitelist;
+        // If the item is present && it's an includelist, or if the item isn't present and it isn't an includelist.
+        return acceptsAll || filteredItems.contains(s.trim().toLowerCase()) == isIncludelist;
     }
 
     public Collection<String> items() {

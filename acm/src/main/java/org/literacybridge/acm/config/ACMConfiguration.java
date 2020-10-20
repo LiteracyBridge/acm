@@ -260,7 +260,7 @@ public class ACMConfiguration {
     public synchronized void createNewDb(String templateDbName, String newDbName) throws Exception {
         final String[] templateFilenames = new String[] { "config.properties",
                 "accessList.txt", "Install-ACM.bat" };
-        final String[] optionalFilenames = new String[] {"category.whitelist", "lb_taxonomy.yaml"};
+        final String[] optionalFilenames = new String[] {"category.includelist", "lb_taxonomy.yaml"};
 
         // Validate the arguments.
         if (allDBs.get(newDbName) != null) {
@@ -587,17 +587,17 @@ public class ACMConfiguration {
         return progspecDir;
     }
 
-    public File getUserFeedbackWhitelistFileFor(String acmName) {
-        File whitelistFile = null;
+    public File getUserFeedbackIncludelistFileFor(String acmName) {
+        File includelistFile = null;
         File acmDir = getAcmDirFor(acmName);
 
         if (acmDir != null) {
-            whitelistFile = new File(acmDir, Constants.USER_FEEDBACK_WHITELIST_FILENAME);
-            if (!whitelistFile.exists() || !whitelistFile.isFile()) {
-                whitelistFile = null;
+            includelistFile = new File(acmDir, Constants.USER_FEEDBACK_INCLUDELIST_FILENAME);
+            if (!includelistFile.exists() || !includelistFile.isFile()) {
+                includelistFile = null;
             }
         }
-        return whitelistFile;
+        return includelistFile;
     }
 
     private File getConfigFileFor(String acmName) {
