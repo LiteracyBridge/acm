@@ -64,6 +64,17 @@ public class WelcomeDialog extends JDialog {
         this.email = email;
     }
 
+    /**
+     * Returns email if we know it, otherwise username.
+     * @return the best identity we have for the user.
+     */
+    public String getIdentity() {
+        if (StringUtils.isNotBlank(this.email)) {
+            return this.email;
+        }
+        return this.username;
+    }
+
     public String getProgram() {
         return program;
     }

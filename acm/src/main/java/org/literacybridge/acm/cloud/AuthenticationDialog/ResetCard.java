@@ -125,7 +125,7 @@ public class ResetCard extends CardContent {
     @Override
     void onShown() {
         super.onShown();
-        emailField.setText(welcomeDialog.getEmail());
+        emailField.setText(welcomeDialog.getIdentity());
         passwordField.setText(null);
         passwordField.setRevealPasswordEnabled(true).setPasswordRevealed(false);
         passwordField.setRequestFocusEnabled(true);
