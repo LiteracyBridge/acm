@@ -1112,7 +1112,6 @@ public class TBLoaderCore {
             @Override
             public boolean accept(TbFile file) {
                 String name = file.getName().toLowerCase();
-                // Black-listed name? Skip them.
                 if (excludedNames.contains(name)) {
                     return false;
                 }

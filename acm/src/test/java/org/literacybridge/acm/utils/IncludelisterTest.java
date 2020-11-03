@@ -128,7 +128,7 @@ public class IncludelisterTest {
     }
 
     @Test
-    public void testBlackAndIncludelist() throws IOException {
+    public void testExcludeAndIncludelist() throws IOException {
         File tempDir = tmp.newFolder();
         File includelistFile = writeFile(tempDir, "~line-one", "line-one", "line-three");
 
@@ -139,7 +139,7 @@ public class IncludelisterTest {
     }
 
     @Test
-    public void testBlackAndIncludelistRegex() throws IOException {
+    public void testExcludeAndIncludelistRegex() throws IOException {
         File tempDir = tmp.newFolder();
         File includelistFile = writeFile(tempDir, "TEST-[0-9]+.*", "~TEST-18-1");
 
@@ -151,7 +151,7 @@ public class IncludelisterTest {
     }
 
     @Test
-    public void testBlackAndIncludelistRegex2() throws IOException {
+    public void testExcludeAndIncludelistRegex2() throws IOException {
         File tempDir = tmp.newFolder();
         File includelistFile = writeFile(tempDir, "TEST-1[78](-.*)?", "~TEST-18-1*");
 
