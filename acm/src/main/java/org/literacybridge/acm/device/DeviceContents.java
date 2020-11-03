@@ -17,7 +17,6 @@ public class DeviceContents {
   public final static String TOPICS_FILE = "topics.txt";
 
   public final static String LANGUAGES_SUBFOLDER_PROPERTY_NAME = "LANGUAGES_PATH";
-  public final static String LIST_MASTER_PROPERTY_NAME = "LIST_MASTER";
   public final static String LISTS_SUBFOLDER_PROPERTY_NAME = "LISTS_PATH";
   public final static String USER_SUBFOLDER_PROPERTY_NAME = "USER_PATH";
   public final static String LIST_TXT_FILE_SUFFIX = ".txt";

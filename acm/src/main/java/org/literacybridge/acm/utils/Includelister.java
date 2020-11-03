@@ -42,7 +42,7 @@ public class Includelister {
 
     /**
      * Construct the Includelister with the given file.
-     * @param includelistFile The file containing white- and/or black-list items.
+     * @param includelistFile The file containing include- and/or exclude-list items.
      */
     public Includelister(File includelistFile, OPTIONS... options) {
         this.options = new HashSet<OPTIONS>(Arrays.asList(options));
