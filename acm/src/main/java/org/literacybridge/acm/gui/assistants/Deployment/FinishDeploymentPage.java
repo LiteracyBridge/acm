@@ -401,7 +401,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
                         // If any audio items remain after filtering, create the {playlist}.txt file.
                         if (filteredNode.getAudioItemNodes().size() > 0) {
-                            String promptCat = getPromptCategoryAndFiles(prompts, promptIx, promptsDir);
+                            String promptCat = getPromptCategoryAndFiles(prompts, promptIx, promptsDir, language);
                             // The intro message is handled specially, in the control file.
                             // User feedback category is added later. The best way to have feedback from
                             // users is a category named "Selected Feedback from Users" or some such.
@@ -519,31 +519,30 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
      * @param promptIx The index of the playlist in the Deployment. Used to synthesize the
      *                 category name when there isn't one already existing.
      * @param promptsDir The directory to which any content prompts should be extracted.
+     * @param language
      * @return the category, as a String.
      * @throws IOException if the audio file can't be written.
      * @throws BaseAudioConverter.ConversionException If the audio file can't be converted
      *          to .a18 format.
      */
-    private String getPromptCategoryAndFiles(PlaylistPrompts prompts, int promptIx, File promptsDir)
+    private String getPromptCategoryAndFiles(PlaylistPrompts prompts,
+            int promptIx,
+            File promptsDir,
+            String language)
         throws IOException, BaseAudioConverter.ConversionException
     {
         // If there is a categoryId, that's the "prompt category".
         String promptCat;
-        if (prompts.categoryId != null) {
-            promptCat = prompts.categoryId;
-            // For the intro message, we don't actually need or want a prompt file. The intro
-            // is played automatically, right after "Welcome to the Talking Book!".  It can't be
-            // selected by the user, so it needs no prompt.
-            if (promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE)) return promptCat;
+        // If we're using a prompt from the content database, use the short prompt audio id
+        // as the category id.
+        if (prompts.getShortItem() != null) {
+            promptCat = prompts.getShortItem().getId();
         } else {
-            // If we weren't able to find a category id, then this must have been a prompt from 
-            // content. But if we can't find the category item, just make up a category id.
-            AudioItem promptItem = prompts.getShortItem();
-            if (promptItem != null) {
-                promptCat = prompts.getShortItem().getId();
-            } else {
-                promptCat = String.format("100-0-%d-%d", context.deploymentNo, promptIx);
+            // We need a category ID to be able to proceed.
+            if (prompts.categoryId == null) {
+                throw new IllegalStateException(String.format("Missing prompt id for category '%s' in language '%s'.", prompts.getTitle(), language));
             }
+            promptCat = prompts.categoryId;
         }
 
         AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
