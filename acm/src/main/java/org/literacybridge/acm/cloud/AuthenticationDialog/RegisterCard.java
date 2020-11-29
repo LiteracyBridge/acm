@@ -19,7 +19,7 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class RegisterCard extends CardContent {
     private static final String DIALOG_TITLE = "Register User";
-    protected static final int CARD_HEIGHT = 590;
+    protected static final int CARD_HEIGHT = 325;
 
     private final FlexTextField emailField;
     private final FlexTextField passwordField;
@@ -36,8 +36,7 @@ public class RegisterCard extends CardContent {
         gbc.insets.bottom = 5; // tighter bottom spacing.
 
         // Amplio logo
-        JLabel logoLabel = new JLabel(getScaledLogo());
-        dialogPanel.add(logoLabel, gbc);
+        addScaledLogo();
 
         dialogPanel.add(new JLabel("<html>Enter your email address and a password, and click \"Register User\". " +
             "You will be taken to a new screen in which to " +
@@ -58,17 +57,16 @@ public class RegisterCard extends CardContent {
         passwordField.getDocument().addDocumentListener(passwordDocListener);
         dialogPanel.add(passwordField, gbc);
 
+        JLabel rules = new JLabel(PASSWORD_RULES_FORMATTED);
+        dialogPanel.add(rules, gbc);
+
         nameField = new FlexTextField();
         nameField.setFont(getTextFont());
         nameField.setPlaceholder("Please enter your full name");
         nameField.setIsPassword(false);
         nameField.getDocument().addDocumentListener(passwordDocListener);
-        dialogPanel.add(nameField, gbc);
         gbc.insets.bottom = 12;
-
-
-        JLabel rules = new JLabel(PASSWORD_RULES_FORMATTED);
-        dialogPanel.add(rules, gbc);
+        dialogPanel.add(nameField, gbc);
 
         // Consume all vertical space here.
         dialogPanel.add(new JLabel(""), gbc.withWeighty(1.0));

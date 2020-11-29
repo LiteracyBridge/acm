@@ -17,9 +17,9 @@ public class MatcherTableModel extends AbstractTableModel implements
         Status(String.class, "Status"),
         Update(Boolean.class, "Update?");
 
-        Columns(Class theClass, String heading) { this.theClass = theClass; this.heading = heading;}
-        private Class<?> theClass;
-        private String heading;
+        Columns(Class<?> theClass, String heading) { this.theClass = theClass; this.heading = heading;}
+        private final Class<?> theClass;
+        private final String heading;
         public String heading() { return this.heading; }
         public Class<?> theClass() { return this.theClass; }
     }
@@ -28,14 +28,14 @@ public class MatcherTableModel extends AbstractTableModel implements
         .map(Columns::heading)
         .collect(Collectors.toList())
         .toArray(new String[0]);
-    private static final Class[] columnClasses = Arrays
+    private static final Class<?>[] columnClasses = Arrays
         .stream(Columns.values())
         .map(Columns::theClass)
         .collect(Collectors.toList())
         .toArray(new Class<?>[0]);
 
 
-    private MatcherTable table;
+    private final MatcherTable table;
     private List<AudioMatchable> data;
 
     MatcherTableModel(MatcherTable table) {

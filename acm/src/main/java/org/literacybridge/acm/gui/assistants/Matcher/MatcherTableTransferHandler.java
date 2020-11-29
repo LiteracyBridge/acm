@@ -1,9 +1,21 @@
 package org.literacybridge.acm.gui.assistants.Matcher;
 
-import javax.swing.*;
+import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
+import org.literacybridge.core.OSChecker;
+
+import javax.swing.JComponent;
+import javax.swing.JTable;
+import javax.swing.TransferHandler;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 
 /**
  * This class provides support for dragging and dropping between "right" and "left" columns
@@ -13,8 +25,9 @@ import java.awt.datatransfer.UnsupportedFlavorException;
  * @param <T> The type of the MatchableItem sub-class.
  */
 @SuppressWarnings("unchecked")
-public abstract class MatcherTableTransferHandler<T extends MatchableItem> extends TransferHandler {
-    private DataFlavor matchableFlavor = new DataFlavor(MatchableItem.class,"MatchableItem");
+public abstract class MatcherTableTransferHandler<T extends MatchableItem<?,?>> extends TransferHandler {
+    private final DataFlavor matchableFlavor = new DataFlavor(MatchableItem.class,"MatchableItem");
+    private Point dragStart = new Point();
 
     private class MatchableSelection implements Transferable {
         final T matchable;
@@ -65,9 +78,50 @@ public abstract class MatcherTableTransferHandler<T extends MatchableItem> exten
 
         // Can only drag from a left-ish column of a left-only row or a right-ish column of a right-only row.
         if (isColumnUnmatchedInRow(modelCol, row)) {
+            int viewRow = table.getSelectionModel().getLeadSelectionIndex();
+            int modelRow = table.convertRowIndexToModel(viewRow);
+            Rectangle cellRect = table.getCellRect(viewRow, viewCol, true);
+
+            // How to draw our own drag image. Instructed by:
+            // https://github.com/alanwhite/drag-artist/blob/master/SwingPlayPen/src/DragginSwing3.java
+            BufferedImage bi = new BufferedImage(cellRect.width, cellRect.height, BufferedImage.TYPE_INT_ARGB);
+            Graphics g = bi.createGraphics();
+            Color dc = MatchTableRenderers.selectionColor;
+            // On windows the image is faded out with a gradient, so give windows the full intensity image.
+            Color dragColor = OSChecker.WINDOWS ? dc : new Color(dc.getRed(), dc.getGreen(), dc.getBlue(), 100);
+
+            // Color the center with the same color used to show selection.
+            g.setColor(dragColor);
+            g.fillRect(1, 1, cellRect.width-2, cellRect.height-2);
+
+            // Grey border.
+            RoundedLineBorder.roundedRect(g, 0,0, cellRect.width-1, cellRect.height-1, 4, 1, Color.gray);
+
+            // Put the text into the box, as a hint. This really isn't visible on Windows, due to how the image is shown.
+            // I don't think it adds anything - be.
+//            String dragString = row.toString();
+//            Rectangle stringBounds = g.getFontMetrics().getStringBounds(dragString, g).getBounds();
+//            int x = row.getMatch()==MATCH.LEFT_ONLY ? 2 : cellRect.width - stringBounds.width - 4;
+//            g.setColor(new Color(128, 128, 128, 128));
+//            g.drawString(dragString, x , cellRect.height-4);
+
+            setDragImage(bi);
+            Point imageOffset = new Point(cellRect.x-dragStart.x, cellRect.y-dragStart.y);
+            // stupid java inconsistency between platforms
+            if (OSChecker.WINDOWS) {
+                imageOffset = new Point(-imageOffset.x,-imageOffset.y);
+            }
+
+            setDragImageOffset(imageOffset);
+
             return new MatchableSelection(row);
         }
         return null;
+    }
+
+    @Override
+    public Point getDragImageOffset() {
+        return super.getDragImageOffset();
     }
 
     @Override
@@ -117,6 +171,12 @@ public abstract class MatcherTableTransferHandler<T extends MatchableItem> exten
         T targetRow = model.getRowAt(targetModelRow);
         onMatched(sourceRow, targetRow);
         return true;
+    }
+
+    @Override
+    public void exportAsDrag(JComponent comp, InputEvent e, int action) {
+        dragStart = ((MouseEvent) e).getPoint();
+        super.exportAsDrag(comp, e, action);
     }
 
     /**

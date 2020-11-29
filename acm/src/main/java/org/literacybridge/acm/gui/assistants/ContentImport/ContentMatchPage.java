@@ -100,8 +100,7 @@ public class ContentMatchPage extends
 
     @Override
     protected void setCellRenderers() {
-        @SuppressWarnings("unchecked")
-        MatchTableRenderers mtr = new MatchTableRenderers(table, tableModel);
+        MatchTableRenderers<?> mtr = new MatchTableRenderers<>(table, tableModel);
 
         TableColumn columnModel = table.getColumnModel().getColumn(0);
         columnModel.setCellRenderer(mtr.getAudioItemRenderer());
@@ -247,8 +246,8 @@ public class ContentMatchPage extends
         }
 
         @Override
-        public Class getColumnClass(int columnIndex) {
-            return String.class;
+        public Class<?> getColumnClass(int columnIndex) {
+            return AudioTarget.class;
         }
 
         @Override

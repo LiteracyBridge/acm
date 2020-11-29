@@ -198,7 +198,7 @@ public class WelcomeDialog extends JDialog {
         });
 
         // Center horizontally and in the top 2/3 of screen.
-        setMinimumSize(new Dimension(450, currentCard.panel.minimumHeight));
+        setMinimumSize(new Dimension(450, currentCard.panel.minimumHeight + CardContent.logoHeight));
         UIUtils.centerWindow(this, TOP_THIRD);
         setAlwaysOnTop(true);
 

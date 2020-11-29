@@ -23,7 +23,7 @@ import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 
 public class LoginCard extends CardContent {
     private static final String DIALOG_TITLE = "Login to %s";
-    protected static final int CARD_HEIGHT = 540;
+    protected static final int CARD_HEIGHT = 275;
 
     private final PanelButton login;
     private final FlexTextField emailField;
@@ -39,8 +39,7 @@ public class LoginCard extends CardContent {
         gbc.insets.bottom = 12; // tighter bottom spacing.
 
         // Amplio logo
-        JLabel logoLabel = new JLabel(getScaledLogo());
-        dialogPanel.add(logoLabel, gbc);
+        addScaledLogo();
 
         // Email
         emailField = new FlexTextField();

@@ -23,7 +23,7 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class ResetCard extends CardContent {
     private final static String DIALOG_TITLE = "Reset Password";
-    protected static final int CARD_HEIGHT = 658;
+    protected static final int CARD_HEIGHT = 390;
 
     private final JLabel emailField;
     private final FlexTextField passwordField;
@@ -40,8 +40,7 @@ public class ResetCard extends CardContent {
         gbc.insets.bottom = 12; // tighter bottom spacing.
 
         // Amplio logo
-        JLabel logoLabel = new JLabel(getScaledLogo());
-        dialogPanel.add(logoLabel, gbc);
+        addScaledLogo();
 
         dialogPanel.add(new JLabel("<html>Check email for <span style='font-size:1.1em'>\"Your Amplio verification code\"</span>. Enter your " +
             "new password and the verification code, then click Change Password. If you remember your password, " +
@@ -121,7 +120,7 @@ public class ResetCard extends CardContent {
 
     /**
      * Handles any actions that need to be taken when the panel is shown or hidden.
-     * @param actionEvent
+     * @param actionEvent is passed to super(), but unused locally.
      */
     @Override
     void onShown(ActionEvent actionEvent) {

@@ -17,7 +17,7 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class ForgotPasswordCard extends CardContent {
     private final static String DIALOG_TITLE = "Forgot Password";
-    protected static final int CARD_HEIGHT = 515;
+    protected static final int CARD_HEIGHT = 250;
 
     private final FlexTextField emailField;
     private final PanelButton resetPassword;
@@ -32,8 +32,7 @@ public class ForgotPasswordCard extends CardContent {
         gbc.insets.bottom = 12; // tighter bottom spacing.
 
         // Amplio logo
-        JLabel logoLabel = new JLabel(getScaledLogo());
-        dialogPanel.add(logoLabel, gbc);
+        addScaledLogo();
 
         dialogPanel.add(new JLabel("<html>Enter your email address and click 'Send password reset email'. On the next panel, enter the code which you will receive in your email."), gbc);
 

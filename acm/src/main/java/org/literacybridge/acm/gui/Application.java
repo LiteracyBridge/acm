@@ -12,6 +12,7 @@ import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.MainWindow.MainView;
 import org.literacybridge.acm.gui.MainWindow.ToolbarView;
 import org.literacybridge.acm.gui.dialogs.AcmCheckoutTest;
+import org.literacybridge.acm.gui.dialogs.LafTester;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
@@ -127,7 +128,14 @@ public class Application extends JXFrame {
       menuBar.add(menu);
       JMenuItem menuItem = new JMenuItem("Access Control...");
       menu.add(menuItem);
-      menuItem.addActionListener(e -> new AcmCheckoutTest(this).setVisible(true));
+      menuItem.addActionListener(e -> {
+        new AcmCheckoutTest(this).setVisible(true);
+      });
+      menuItem = new JMenuItem("UI Defaults...");
+      menu.add(menuItem);
+      menuItem.addActionListener(e -> {
+        new LafTester(this).setVisible(true);
+      });
       setJMenuBar(menuBar);
     }
 

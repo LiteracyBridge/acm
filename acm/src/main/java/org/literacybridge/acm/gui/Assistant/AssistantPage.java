@@ -57,6 +57,10 @@ public abstract class AssistantPage<Context> extends JPanel {
      */
     private static final int baseComboWidth = new JComboBox().getPreferredSize().width + 6;
 
+    public static void setComboWidth(JComboBox cb, String... strings) {
+        List<String> stringsList = Arrays.asList(strings);
+        setComboWidth(cb, stringsList);
+    }
     protected static void setComboWidth(JComboBox cb, Collection<String> strings, String string) {
         Collection<String> allStrings = new HashSet<>(strings);
         allStrings.add(string);

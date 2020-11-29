@@ -4,10 +4,13 @@
  */
 package org.literacybridge.acm.utils;
 
+import com.formdev.flatlaf.FlatLightLaf;
+
 import javax.swing.*;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Font;
 import java.awt.Point;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -446,9 +449,32 @@ public final class SwingUtils {
             }
         }
 
-        // Fall back to SeaGlass
+        // Fall back to FlatLaf
         try {
-            UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
+            // from com.formdev.flatlaf.FlatLaf
+
+            UIManager.setLookAndFeel( new FlatLightLaf() );
+            Icon icon = new ImageIcon();
+            UIManager.put("Tree.closedIcon", icon);
+            UIManager.put("Tree.openIcon", icon);
+            UIManager.put("Tree.leafIcon", icon);
+
+            // These are hacks to make drop targets visible. A better solution may involve the
+            // renderers, but this is quick, and works OK (doesn't work well with theming).
+            UIManager.put("Tree.dropCellForeground", Color.YELLOW);
+            UIManager.put("Tree.textBackground", new Color(255,255,255,0));
+            UIManager.put("Table.dropCellForeground", Color.YELLOW);
+            UIManager.put("Table.dropCellBackground", new Color(63,143,217)); // Same as tree background
+
+            // SeaGlass used Lucida Grande, and it is a little larger and more open.
+            // "Lucida Grande", Font.PLAIN , 13)
+            try {
+                Font newFont = new Font("Lucida Grande", Font.PLAIN, 13);
+                UIManager.put("defaultFont", newFont);
+            } catch (Exception ignored) {
+                // continue with previous default font.
+            }
+
         } catch (Exception e) {
             try {
                 LOG.log(Level.WARNING, "Unable to set look and feel.", e);

@@ -3,7 +3,7 @@ package org.literacybridge.acm.tbloader;
 import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
 import org.literacybridge.acm.gui.settings.AbstractSettingsBase;
-import org.literacybridge.acm.gui.settings.AcmSettingsDialog;
+import org.literacybridge.acm.gui.settings.AbstractSettingsDialog;
 import org.literacybridge.core.OSChecker;
 
 import javax.swing.*;
@@ -29,7 +29,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         return "General Settings";
     }
 
-    TblGeneralSettingsPanel(AcmSettingsDialog.SettingsHelper helper) {
+    TblGeneralSettingsPanel(AbstractSettingsDialog.SettingsHelper helper) {
         super(helper);
 
         // Set an empty border on the panel, to give some blank space around the content.

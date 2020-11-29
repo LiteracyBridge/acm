@@ -17,7 +17,7 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class ModCard extends CardContent {
     private static final String DIALOG_TITLE = "Message of the Day";
-    protected static final int CARD_HEIGHT = 580;
+    protected static final int CARD_HEIGHT = 315;
 
     public ModCard(WelcomeDialog welcomeDialog,
             WelcomeDialog.Cards panel) {
@@ -30,8 +30,7 @@ public class ModCard extends CardContent {
         gbc.insets.bottom = 12; // tighter bottom spacing.
 
         // Amplio logo
-        JLabel logoLabel = new JLabel(getScaledLogo());
-        dialogPanel.add(logoLabel, gbc);
+        addScaledLogo();
 
         JLabel promptLabel = new JLabel("<html>A message from Amplio.</html>");
         dialogPanel.add(promptLabel, gbc);

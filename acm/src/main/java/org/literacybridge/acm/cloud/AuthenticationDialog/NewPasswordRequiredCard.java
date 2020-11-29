@@ -24,7 +24,7 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class NewPasswordRequiredCard extends CardContent {
     private final static String DIALOG_TITLE = "New Password Required";
-    protected static final int CARD_HEIGHT = 520;
+    protected static final int CARD_HEIGHT = 255;
 
     private final JLabel emailField;
     private final FlexTextField passwordField;
@@ -40,8 +40,7 @@ public class NewPasswordRequiredCard extends CardContent {
         gbc.insets.bottom = 12; // tighter bottom spacing.
 
         // Amplio logo
-        JLabel logoLabel = new JLabel(getScaledLogo());
-        dialogPanel.add(logoLabel, gbc);
+        addScaledLogo();
 
         dialogPanel.add(new JLabel("<html>A new password is required for your account.\nPlease choose a new password, then click Change Password."), gbc);
 
@@ -105,7 +104,7 @@ public class NewPasswordRequiredCard extends CardContent {
 
     /**
      * Handles any actions that need to be taken when the panel is shown or hidden.
-     * @param actionEvent
+     * @param actionEvent is passed to super(), but unused locally.
      */
     @Override
     void onShown(ActionEvent actionEvent) {

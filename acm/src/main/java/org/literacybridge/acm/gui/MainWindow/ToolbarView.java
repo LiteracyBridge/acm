@@ -271,13 +271,12 @@ public class ToolbarView extends JToolBar  {
       updatePlayerStateTimer.stop();
     }
     System.out.println("Audio Item to play:" + item.getId());
+    Application parent = Application.getApplication();
     try {
       // convert on the fly if necessary
-      Application parent = Application.getApplication();
       parent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
       File f = ACMConfiguration.getInstance().getCurrentDB().getRepository()
           .getAudioFile(item, AudioFormat.WAV);
-      parent.setCursor(Cursor.getDefaultCursor());
       Application.getFilterState().updateResult();
       initPlayer(f);
       player.play();
@@ -285,12 +284,17 @@ public class ToolbarView extends JToolBar  {
       titleInfoLbl.setText(item.getMetadata()
           .getMetadataValue(MetadataSpecification.DC_TITLE).getValue());
     } catch (IOException | ConversionException e) {
-      throw new RuntimeException(e);
+        // There really isn't anything to do with this exception.
+//      throw new RuntimeException(e);
+    } finally {
+        parent.setCursor(Cursor.getDefaultCursor());
     }
   }
 
   private void onApplicationUpdate(Observable o, Object arg) {
-    if (arg instanceof PlayAudioItemMessage && OsUtils.WINDOWS) {
+    // The player won't work unless we have or can get a .wav file. But if we can get a .wav file, the
+    // player works fine.
+    if (arg instanceof PlayAudioItemMessage) { // && OsUtils.WINDOWS) {
       PlayAudioItemMessage item = (PlayAudioItemMessage) arg;
       play(item.getAudioItem());
     }
@@ -345,7 +349,7 @@ public class ToolbarView extends JToolBar  {
     remainingTimeLbl.setText("00:00:00");
     titleInfoLbl.setText(" ");
     Font f = titleInfoLbl.getFont();
-    titleInfoLbl.setFont(f.deriveFont(f.getStyle() | Font.BOLD));
+    titleInfoLbl.setFont(f.deriveFont(f.getStyle() | Font.ITALIC));
 
     defaultTextfieldFont = searchTF.getFont();
     searchLabel.setIcon(searchImageIcon);

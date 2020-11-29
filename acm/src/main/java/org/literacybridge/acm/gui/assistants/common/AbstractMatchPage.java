@@ -9,7 +9,16 @@ import org.literacybridge.acm.gui.assistants.Matcher.Matcher;
 import org.literacybridge.acm.gui.assistants.Matcher.MatcherTableTransferHandler;
 import org.literacybridge.acm.gui.assistants.Matcher.Target;
 
-import javax.swing.*;
+import javax.swing.Box;
+import javax.swing.DropMode;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
+import javax.swing.TransferHandler;
 import javax.swing.table.TableRowSorter;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
@@ -167,6 +176,9 @@ public abstract class AbstractMatchPage<Context extends AbstractMatchPage.MatchC
         table.setRowSelectionAllowed(false);
         table.setColumnSelectionAllowed(false);
 
+        // Example setting column headings to left aligned.
+//        table.getTableHeader().setDefaultRenderer(new MatchTableHeaderRenderer(table));
+
         // Renderers
         setCellRenderers();
 
@@ -291,5 +303,21 @@ public abstract class AbstractMatchPage<Context extends AbstractMatchPage.MatchC
         }
         return row;
     }
+
+    // Example setting column headings to left aligned.
+//    public static class MatchTableHeaderRenderer implements TableCellRenderer {
+//        TableCellRenderer defaultRenderer;
+//        MatchTableHeaderRenderer(JTable table) {
+//            defaultRenderer = table.getTableHeader().getDefaultRenderer();
+//        }
+//        @Override
+//        public Component getTableCellRendererComponent(JTable jTable, Object o, boolean b, boolean b1, int i, int i1) {
+//            Component renderer = defaultRenderer.getTableCellRendererComponent(jTable, o, b, b1, i, i1);
+//            if (renderer instanceof JLabel) {
+//                ((JLabel)renderer).setHorizontalAlignment(SwingConstants.LEFT);
+//            }
+//            return renderer;
+//        }
+//    }
 
 }

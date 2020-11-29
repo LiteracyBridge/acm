@@ -46,7 +46,7 @@ public class DesktopShortcutsPanel extends AbstractSettingsBase {
         return "Desktop Shortcuts";
     }
 
-    public DesktopShortcutsPanel(AcmSettingsDialog.SettingsHelper helper) {
+    public DesktopShortcutsPanel(AbstractSettingsDialog.SettingsHelper helper) {
         super(helper);
 
         // Set an empty border on the panel, to give some blank space around the content.
@@ -95,6 +95,10 @@ public class DesktopShortcutsPanel extends AbstractSettingsBase {
         JScrollPane shortcutScrollPane = new JScrollPane(shortcutsTree);
 
         shortcuts = getDesktopShortcuts();
+        if (shortcuts.size() == 0) {
+            helper.setEnabled(false);
+            helper.setToolTip("No desktop shortcuts found.");
+        }
         // Add the shortcuts to the list, initial state is checked.
         for (File shortcut : shortcuts) {
             DefaultMutableTreeNode node = new DefaultMutableTreeNode(FilenameUtils.removeExtension(shortcut.getName()));

@@ -993,7 +993,7 @@ public class SidebarView extends ACMContainer implements Observer {
         }
     }
 
-    private static final TreeSelectionModel NO_SELECTION_MODEL = new DefaultTreeSelectionModel() {
+    public static final TreeSelectionModel NO_SELECTION_MODEL = new DefaultTreeSelectionModel() {
         @Override
         public void addSelectionPath(TreePath path) {
         }

@@ -1,7 +1,10 @@
 package org.literacybridge.acm.gui.settings;
 
+import com.formdev.flatlaf.FlatLaf;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.gui.Assistant.AssistantPage;
+import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.PlaceholderTextArea;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
 
@@ -14,9 +17,13 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,7 +41,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         return "General Settings";
     }
 
-    AcmGeneralSettingsPanel(AcmSettingsDialog.SettingsHelper helper) {
+    AcmGeneralSettingsPanel(AbstractSettingsDialog.SettingsHelper helper) {
         super(helper);
 
         // Get values from the global configuration.
@@ -58,27 +65,26 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         gridPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
         // Constraints for the left column.
-        GridBagConstraints gbcLeft = new GridBagConstraints();
-        gbcLeft.anchor = GridBagConstraints.FIRST_LINE_END; // upper left (in rtl)
-        gbcLeft.fill = GridBagConstraints.NONE;
-        gbcLeft.ipady = 10;
+        GBC gbcLeft = new GBC()
+                .setAnchor(GridBagConstraints.FIRST_LINE_END)
+                .setFill(GridBagConstraints.NONE)
+                .setIpady(10)
+                .setGridx(0);
         // Constraints for the right column.
-        GridBagConstraints gbcRight = new GridBagConstraints();
-        gbcRight.anchor = GridBagConstraints.LINE_START;
-        gbcRight.fill = GridBagConstraints.HORIZONTAL;
-        gbcRight.ipady = 10;
-        gbcRight.weightx = 1.0;
+        GBC gbcRight = new GBC()
+                .setAnchor(GridBagConstraints.LINE_START)
+                .setFill(GridBagConstraints.HORIZONTAL)
+                .setIpady(10)
+                .setWeightx(1.0)
+                .setGridx(1);
 
         // First setting: notification email addresses.
-        gbcLeft.gridy = 0;
-        gbcRight.gridx = 0;
         gridPanel.add(new JLabel("Email notifications:"), gbcLeft);
-        gbcRight.gridx++;
         email = new PlaceholderTextArea("", 3, 0);
         email.setPlaceholder("me@example.com, you@example.com");
         email.setToolTipText(
             "A list of email addresses, separated by commas or spaces,\nto receive notifications about content import and deployments.");
-        // We don't want/need tab characters, so use the for navigation. As the user would expect.
+        // We don't want/need tab characters, so use them for navigation. As the user would expect.
         email.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -95,13 +101,12 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
         email.setLineWrap(true);
         email.setWrapStyleWord(true);
-        gridPanel.add(email, gbcRight);
+        Insets insets = gbcRight.insets;
+        // Add a little padding on the bottom, so the email box doesn't sit right on top of the fuzzy edit box.
+        gridPanel.add(email, gbcRight.withInsets(new Insets(insets.top, insets.left, 8, insets.right)));
 
-        // Second setting: fuzzy matching threshold.
-        gbcLeft.gridy++;
-        gbcRight.gridx = 0;
+        // Setting: fuzzy matching threshold.
         gridPanel.add(new JLabel("Fuzzy threshold:"), gbcLeft);
-        gbcRight.gridx++;
         Box vbox = Box.createVerticalBox();
         fuzzyThreshold = new JTextField("80");
         fuzzyThreshold.setInputVerifier(thresholdVerifier);
@@ -114,27 +119,58 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         fuzzyThresholdError.setForeground(Color.RED);
         fuzzyThresholdError.setVisible(false);
         vbox.add(fuzzyThresholdError);
-        gridPanel.add(vbox, gbcRight);
+        gridPanel.add(vbox, gbcRight.setFill(GridBagConstraints.NONE));
 
-        // Third setting: warn for missing custom greetings.
-        gbcLeft.gridy++;
+        // Setting: warn for missing custom greetings.
         gbcLeft.anchor = GridBagConstraints.BASELINE_TRAILING;
         gridPanel.add(new JLabel("Greetings warnings:"), gbcLeft);
-        gbcRight.gridx = 1;
         gbcRight.anchor = GridBagConstraints.BASELINE_LEADING;
         greetingWarnings = new JCheckBox("Warn if greetings are missing for deployment", warnForMissingGreetings);
         greetingWarnings.setToolTipText(
                 "When creating a Deployment, should you be warned if any Recipients are missing custom greetings?");
         gridPanel.add(greetingWarnings, gbcRight);
 
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //
+        // EXPERIMENTAL!! The assistants don't play well with themes.
+        //
+        // Setting: dark/light theme
+        gridPanel.add(new JLabel("Theme:"), gbcLeft);
+        String[] themes = {"Light", "Dark", "IntelliJ", "Darcula"};
+        JComboBox<String> themeChooser = new JComboBox<>(themes);
+        AssistantPage.setComboWidth(themeChooser, themes);
+        themeChooser.addActionListener(this::onThemeSelected);
+        gridPanel.add(themeChooser, gbcRight.setFill(GridBagConstraints.NONE));
+        //
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         // Consume any blank space.
-        gbcLeft.gridy++;
-        gbcRight.gridx = 0;
         gbcLeft.weighty = 1.0;
         gridPanel.add(new JLabel(), gbcLeft);
 
         email.setText(emailAddresses);
         fuzzyThreshold.setText(String.format("%d", threshold));
+    }
+
+    private static Map<String, String> themeClasses;
+    static {
+        themeClasses = new HashMap<>();
+        themeClasses.put("Light", "com.formdev.flatlaf.FlatLightLaf");
+        themeClasses.put("Dark", "com.formdev.flatlaf.FlatDarkLaf");
+        themeClasses.put("IntelliJ", "com.formdev.flatlaf.FlatIntelliJLaf");
+        themeClasses.put("Darcula", "com.formdev.flatlaf.FlatDarculaLaf");
+    }
+    private void onThemeSelected(ActionEvent actionEvent) {
+        Object o = actionEvent.getSource();
+        if (o instanceof JComboBox) {
+            String theme = ((JComboBox)o).getSelectedItem().toString();
+            try {
+                UIManager.setLookAndFeel(themeClasses.get(theme));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            FlatLaf.updateUI();
+        }
     }
 
     @Override

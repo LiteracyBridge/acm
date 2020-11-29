@@ -51,8 +51,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -409,19 +411,21 @@ public class AudioItemRenameDialog extends JDialog {
     }
 
     /**
-     * Given a message title, get all of the playlist titles in which the message should appear.
+     * Given a message title, get all of the playlist titles in which the message should appear. We're also given a
+     * list of audio items, which are the messages being renamed. Get the languages of those messages, to find the
+     * relevant playlists.
      * @param title of the message.
      * @return a list of { AudioItem, String } pairs, mapping messages to playlist titles.
      */
     private List<Triple<AudioItem, ContentSpec.MessageSpec, String>> getPlaylistsForItemWithTitle(List<AudioItem> items, String title) {
         List<Triple<AudioItem, ContentSpec.MessageSpec, String>> result = new ArrayList<>();
-        // Message specs for all occurances of messages in the program spec with this title.
+        // Get the MesageSpec(s) for the title (title in all deployments)
         List<ContentSpec.MessageSpec> specList = messageSpecs.get(title);
 
         // For all of the message specs that match the title... (one message spec for
         // every deployment in which the title occurs)
         for (ContentSpec.MessageSpec ms : specList) {
-            // For every item (generally, one for each language) ...
+            // For every item that was selected for renaming (generally, hopefully, one for each language) ...
             for (AudioItem item : items) {
                 // If the item's language is included in the playlist (per program spec)...
                 String languagecode = item.getLanguageCode();
@@ -467,9 +471,10 @@ public class AudioItemRenameDialog extends JDialog {
             addToPlaylist.setEnabled(true);
 
             Vector<String> newPlaylists = getPlaylistsForItemWithTitle(toRename, newTitle)
-                .stream()
-                .map(Triple::getRight)
-                .collect(Collectors.toCollection(Vector::new));
+                    .stream()
+                    .map(Triple::getRight)
+                    .distinct()
+                    .collect(Collectors.toCollection(Vector::new));
 
             playlistList.setListData(newPlaylists);
             playlistList.setVisible(newPlaylists.size() > 0);
@@ -868,20 +873,20 @@ public class AudioItemRenameDialog extends JDialog {
 
         ContentSpec content = programSpec.getContentSpec();
         if (content != null) {
-            // Find all the titles, and the playlists in which they appear.
-            Map<String, List<ContentSpec.MessageSpec>> messageSpecs = new HashMap<>();
+            // Find all the titles, and their message specs. (From message spec, we can get playlist.)
+            Map<String, List<ContentSpec.MessageSpec>> foundMessageSpecs = new HashMap<>();
             for (ContentSpec.DeploymentSpec ds : content.getDeploymentSpecs())
                 for (ContentSpec.PlaylistSpec ps : ds.getPlaylistSpecs())
                     for (ContentSpec.MessageSpec ms : ps.getMessageSpecs()) {
-                        // Keep track of all the playlists (ie, in multiple deployments) with the title.
-                        List<ContentSpec.MessageSpec> msList = messageSpecs.computeIfAbsent(ms.getTitle(),
+                        // Keep track of all the messages (ie, in multiple deployments) with the title.
+                        List<ContentSpec.MessageSpec> msList = foundMessageSpecs.computeIfAbsent(ms.getTitle(),
                             k -> new ArrayList<>());
                         msList.add(ms);
                     }
             // Sort by title.
-            specTitles.addAll(messageSpecs.keySet());
+            specTitles.addAll(foundMessageSpecs.keySet());
             specTitles.sort(String::compareToIgnoreCase);
-            specTitles.forEach(str -> this.messageSpecs.put(str, messageSpecs.get(str)));
+            specTitles.forEach(str -> this.messageSpecs.put(str, foundMessageSpecs.get(str)));
             suggestedTitlesModel.fireContentChanged();
             haveProgramSpec = this.messageSpecs.size()>0;
         }

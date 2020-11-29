@@ -5,6 +5,7 @@ import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingEvent;
 import it.cnr.imaa.essi.lablib.gui.checkboxtree.TreeCheckingModel;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.MainWindow.SidebarView;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Taxonomy;
@@ -29,7 +30,7 @@ public class VisibleCategoriesPanel extends AbstractSettingsBase {
     private final DefaultMutableTreeNode categoryRootNode;
     private CheckboxTree categoryTree;
 
-    VisibleCategoriesPanel(AcmSettingsDialog.SettingsHelper helper) {
+    VisibleCategoriesPanel(AbstractSettingsDialog.SettingsHelper helper) {
         super(helper);
         preserveState();
         setLayout(new BorderLayout());
@@ -42,8 +43,9 @@ public class VisibleCategoriesPanel extends AbstractSettingsBase {
         // The tree. Note that the root does not hold the taxonomy root. (TODO: why not?)
         categoryRootNode = new DefaultMutableTreeNode();
         categoryTree = new CheckboxTree(categoryRootNode);
-        categoryTree.getCheckingModel().setCheckingMode(TreeCheckingModel.CheckingMode.PROPAGATE_PRESERVING_CHECK);
         categoryTree.setRootVisible(false);
+        categoryTree.setSelectionModel(SidebarView.NO_SELECTION_MODEL);
+        categoryTree.getCheckingModel().setCheckingMode(TreeCheckingModel.CheckingMode.PROPAGATE_PRESERVING_CHECK);
         categoryTree.addTreeCheckingListener(this::categoryCheckedHandler);
         JScrollPane categoryScrollPane = new JScrollPane(categoryTree);
         // Set the size large, so it will take up most of the Vertical Box.

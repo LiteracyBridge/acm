@@ -81,7 +81,7 @@ public class GBC extends GridBagConstraints {
         return clone;
     }
 
-    GBC withInsets(Insets newValue) {
+    public GBC withInsets(Insets newValue) {
         GBC clone = (GBC) this.clone();
         clone.insets = newValue;
         return clone;

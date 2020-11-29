@@ -60,7 +60,7 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
         public static int getWeight(String ext) { return exts.indexOf(ext);}
     }
 
-    private String[] columns = { "Audio File", "Timestamp", "Size" };
+    private final String[] columns = { "Audio File", "Timestamp", "Size" };
 
     private final JLabel choosePrompt;
     private final JButton chooseFiles;
@@ -96,6 +96,7 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
 
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout(0, 0));
+        panel.setBackground(getBackground());
 
         fileTreeRootNode = new DirectoryNode(new File(""));
         fileTreeModel = new FileTreeModel(fileTreeRootNode);
@@ -136,7 +137,7 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
     /**
      * Filter for the choose file dialog. Accepts directories and audio files.
      */
-    private FileFilter chooserFilter = new FileFilter() {
+    private final FileFilter chooserFilter = new FileFilter() {
         @Override
         public boolean accept(File f) {
             // Ignore hidden files.
@@ -211,7 +212,7 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
             File file = workQueue.remove(0);
             if (file.isDirectory()) {
 
-                File[] dirContents = file.listFiles(dirfile -> chooserFilter.accept(dirfile));
+                File[] dirContents = file.listFiles(chooserFilter::accept);
                 if (dirContents != null) workQueue.addAll(Arrays.asList(dirContents));
             } else {
                 result.add(file);
@@ -264,7 +265,7 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
     }
 
     private List<File> filesInDirectory(File directory) {
-        File[] dirContents = directory.listFiles(dirfile -> chooserFilter.accept(dirfile));
+        File[] dirContents = directory.listFiles(chooserFilter::accept);
         if (dirContents != null)
             return Arrays.asList(dirContents);
         return new ArrayList<>();
@@ -444,8 +445,8 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
         @Override
         public int getIndexOfChild(Object parent, Object child) {
             if (parent instanceof AbstractFilesPage.DirectoryNode)
-                return ((AbstractFilesPage.DirectoryNode) parent).getIndex((AbstractFilesPage.AbstractFileNode) child);
-            return getRoot().getIndex((AbstractFilesPage.AbstractFileNode) child);
+                return ((AbstractFilesPage.DirectoryNode) parent).getIndex((AbstractFileNode) child);
+            return getRoot().getIndex((AbstractFileNode) child);
         }
 
         @Override
@@ -575,7 +576,7 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
                 .get(Calendar.YEAR)) {
                 formatter = DateTimeFormatter.ofPattern("MMM ppd ppH:mm");
             } else {
-                formatter = DateTimeFormatter.ofPattern("MMM ppd  YYYY");
+                formatter = DateTimeFormatter.ofPattern("MMM ppd  yyyy");
             }
             return formatter.format(ldt);
         }

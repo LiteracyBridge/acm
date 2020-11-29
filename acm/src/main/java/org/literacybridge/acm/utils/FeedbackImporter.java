@@ -86,37 +86,31 @@ public class FeedbackImporter {
     for (String dirName : params.dirNames) {
       File dir = new File(dirName);
       if (!dir.isDirectory()) {
-        System.err.println(
-                String.format("'%s' is not a directory", dirName));
+        System.err.printf("'%s' is not a directory%n", dirName);
         filesOk = false;
       }
       if (!dir.exists()) {
-        System.err.println(
-                String.format("Directory '%s' does not exist", dirName));
+        System.err.printf("Directory '%s' does not exist%n", dirName);
         filesOk = false;
       }
     }
 
     if (params.processed != null) {
       if (!params.processed.isDirectory()) {
-        System.err.println(
-                String.format("'%s' is not a directory", params.processed.getName()));
+        System.err.printf("'%s' is not a directory%n", params.processed.getName());
         filesOk = false;
       } else if (!params.processed.exists()) {
-        System.err.println(
-                String.format("'%s' does not exist", params.processed.getName()));
+        System.err.printf("'%s' does not exist%n", params.processed.getName());
         filesOk = false;
       }
     }
 
     if (params.skipped != null) {
       if (!params.skipped.isDirectory()) {
-        System.err.println(
-                String.format("'%s' is not a directory", params.skipped.getName()));
+        System.err.printf("'%s' is not a directory%n", params.skipped.getName());
         filesOk = false;
       } else if (!params.skipped.exists()) {
-        System.err.println(
-                String.format("'%s' does not exist", params.skipped.getName()));
+        System.err.printf("'%s' does not exist%n", params.skipped.getName());
         filesOk = false;
       }
     }
@@ -124,8 +118,8 @@ public class FeedbackImporter {
     if (params.report != null) {
       if (params.report.exists()) {
         if (params.report.isDirectory()) {
-          System.err.println(String.format("'%s' is a directory.", params.report
-                  .getName()));
+          System.err.printf("'%s' is a directory.%n", params.report
+                  .getName());
           filesOk = false;
         }
       }
@@ -179,7 +173,8 @@ public class FeedbackImporter {
 
         // We've updated the project. If the directory is empty, we can remove it. If it doesn't
         // remove, that's fine.
-        projectDir.delete();
+          //noinspection ResultOfMethodCallIgnored
+          projectDir.delete();
       }
       // Make a per command line import directory report, in the import directory.
       dirResults.makeReport(new File(dirName, FEEDBACK_IMPORT_REPORT));
@@ -337,7 +332,7 @@ public class FeedbackImporter {
         Pattern durationPattern = Pattern.compile("^(\\d\\d+):(\\d\\d).*$");
         MetadataValue<String> metaString = item.getMetadata().getMetadataValue(
                 MetadataSpecification.LB_DURATION);
-        int seconds = 0;
+        int seconds;
         ImportResults.TWEAKS result = ImportResults.TWEAKS.NO_CHANGE;
         String newCategory = null;
         if (metaString != null) {
@@ -394,20 +389,19 @@ public class FeedbackImporter {
     for (File file : filesToImport) {
       try {
         if (params.verbose) {
-          System.out.println(String.format("Importing %d of %d: %s", ++count, filesToImport.size(), file.getName()));
+          System.out.printf("Importing %d of %d: %s%n", ++count, filesToImport.size(), file.getName());
           logger.info(String.format("        Importing %d of %d: %s", ++count, filesToImport.size(), file.getName()));
         }
         // Reset the value, because the lambda may not be called, if the file is already in DB.
         tweaks[0] = ImportResults.TWEAKS.NO_CHANGE;
         importer.importAudioItemFromFile(file,
                             (item)->{
-                                // TODO: item.getMetadata().put(LB_CORRELATION_ID, (id++))
                                 item.getMetadata().addValuesFromOtherWithExclusions(metadata);
                                 tweaks[0] = adjustCategoriesForDuration(item);
                             });
         results.fileImported(file.getName(), tweaks[0]);
       } catch (Exception e) {
-        System.err.println(String.format("Failed to import '%s': %s", file.getName(), e.getMessage()));
+        System.err.printf("Failed to import '%s': %s%n", file.getName(), e.getMessage());
         logger.info(String.format("Failed to import '%s': %s", file.getName(), e.getMessage()));
         results.fileFailedToImport(file.getName());
       }
@@ -483,7 +477,7 @@ public class FeedbackImporter {
    * individual and aggregate results.
    */
   private static class ImportResults {
-    public enum TWEAKS {NO_CHANGE, TOO_SHORT, TOO_LONG, INDETERMINATE};
+    public enum TWEAKS {NO_CHANGE, TOO_SHORT, TOO_LONG, INDETERMINATE}
 
     List<String> filesImported = new ArrayList<>();
     int filesTooShort = 0;
@@ -565,10 +559,10 @@ public class FeedbackImporter {
     int getExitCode() {
       if (updatesFailedToImport.size() == 0) {
         if (filesImported.size() > 0 && filesFailedToImport.size() == 0)  return 0;
-        if (filesImported.size() > 0 && filesFailedToImport.size() > 0)   return 1;
-        if (filesImported.size() == 0 && filesFailedToImport.size() == 0) return 2;
+        if (filesImported.size() > 0)   return 1;
+        if (filesFailedToImport.size() == 0) return 2;
         // There were files, but all of them failed to import. Strange.
-        if (filesImported.size() == 0 && filesFailedToImport.size() > 0)  return 20;
+        return 20;
       }
 
       // There were projects that failed to open. Should not happen.
@@ -638,7 +632,7 @@ public class FeedbackImporter {
        */
       private void reportDetailLine(String title, List<String> details) {
         if (html) ps.print("<li>");
-        ps.print(String.format("%4d %s", details.size(), title));
+        ps.printf("%4d %s", details.size(), title);
         if (details.size() > 0) {
           if (html)
               ps.print("<ul>");
@@ -649,7 +643,7 @@ public class FeedbackImporter {
               ps.print("<li>");
             else
               ps.print("       ");
-            ps.print(String.format("%s", d));
+            ps.printf("%s", d);
             if (html)
               ps.print("</li>");
             else

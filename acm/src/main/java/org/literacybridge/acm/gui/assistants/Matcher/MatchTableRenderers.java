@@ -13,19 +13,19 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 
-public class MatchTableRenderers<T extends MatchableItem> {
-    private static Color selectionColor = new Color(0xFA8072);
-    private static Color exactColor = new Color(0xffffe0);
-    private static Color fuzzyColor = new Color(0xfff0ff);
-    private static Color tokenColor = new Color(0xe8ffff);
-    private static Color leftColor = new Color(0xFFC0CB);
-    private static Color rightColor = new Color(0xADD8E6);
+public class MatchTableRenderers<T extends MatchableItem<?,?>> {
+    public static final Color selectionColor = new Color(0xFA8072);
+    private static final Color exactColor = new Color(0xffffe0);
+    private static final Color fuzzyColor = new Color(0xfff0ff);
+    private static final Color tokenColor = new Color(0xe8ffff);
+    private static final Color leftColor = new Color(0xFFC0CB);
+    private static final Color rightColor = new Color(0xADD8E6);
 
     public static boolean colorCodeMatches = false;
     public static boolean isColorCoded = true;
 
-    private JTable table;
-    private IMatcherTableModel<T> model;
+    private final JTable table;
+    private final IMatcherTableModel<T> model;
 
     public MatchTableRenderers(JTable table, IMatcherTableModel<T> model) {
         this.table = table;
@@ -103,7 +103,7 @@ public class MatchTableRenderers<T extends MatchableItem> {
         int g=color.getGreen();
         int b=color.getBlue();
         //int a=color.getAlpha();
-        int cmax = (r > g) ? r : g;
+        int cmax = Math.max(r, g);
         if (b > cmax) cmax = b;
         if (cmax > 128) return lighten(color);
         else return darken(color);
@@ -131,6 +131,8 @@ public class MatchTableRenderers<T extends MatchableItem> {
      */
     public class MatcherRenderer extends DefaultTableCellRenderer {
         Font normalFont, italicFont;
+        Color normalColor, dropForeground, dropBackground;
+
         MatcherRenderer() {
             super();
             normalFont = getFont();
@@ -138,12 +140,25 @@ public class MatchTableRenderers<T extends MatchableItem> {
 //                normalFont.getStyle()|Font.ITALIC,
 //                normalFont.getSize());
             italicFont = LabelButton.fontResource(LabelButton.AVENIR).deriveFont((float)normalFont.getSize()).deriveFont(Font.ITALIC);
-
+            normalColor = getForeground();
+            dropForeground = (Color)UIManager.get("Table.dropCellForeground");
+            dropBackground = (Color)UIManager.get("Table.dropCellBackground");
         }
 
         private void setBackground(int viewRow, int viewColumn, boolean isSelected) {
+            // If there is a drag-and-drop operation in progress, and this cell
+            // is the drop target, format it specially.
+            JTable.DropLocation dl = table.getDropLocation();
+            if (dl != null) {
+                if (dl.getRow()==viewRow && dl.getColumn()==viewColumn) {
+                    setBackground(dropBackground);
+                    setForeground(dropForeground);
+                    return;
+                }
+            }
             Color bg = getBG(viewRow, viewColumn, isSelected);
             setBackground(bg);
+            setForeground(normalColor);
         }
 
         @Override
@@ -257,7 +272,7 @@ public class MatchTableRenderers<T extends MatchableItem> {
     public class UpdatableBooleanRenderer extends JCheckBox implements TableCellRenderer {
         private final Border noFocusBorder = new EmptyBorder(1, 1, 1, 1);
         // When we don't want to display a checkbox, we return the dummy label instead of "this" checkbox.
-        private JLabel dummy;
+        private final JLabel dummy;
 
         UpdatableBooleanRenderer() {
             super();

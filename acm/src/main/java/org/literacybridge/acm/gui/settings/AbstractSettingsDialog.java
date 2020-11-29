@@ -27,15 +27,22 @@ import static org.literacybridge.acm.gui.UIConstants.getResource;
  */
 public abstract class AbstractSettingsDialog extends JDialog {
     /**
-     * Interface by which the settings panels can communicate with this dialog.
+     * Class by which the settings panels can communicate with this dialog.
      */
-    public interface SettingsHelper {
-        void setValid(boolean valid);
-    }
-    SettingsHelper settingsHelper = new SettingsHelper() {
-        @Override
+    public class SettingsHelper {
+        private final LabelButton button;
+
+        SettingsHelper(LabelButton button) {
+            this.button = button;
+        }
         public void setValid(boolean valid) {
             okButton.setEnabled(valid);
+        }
+        public void setEnabled(boolean enabled) {
+            this.button.setEnabled(enabled);
+        }
+        public void setToolTip(String toolTipText) {
+            this.button.setToolTipText(toolTipText);
         }
     };
 
@@ -138,6 +145,7 @@ public abstract class AbstractSettingsDialog extends JDialog {
     {
         ImageIcon icon = new ImageIcon(getResource(iconResource));
         LabelButton button = new LabelButton(icon);
+        button.setToolTipText(caption);
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
         button.setVerticalTextPosition(JLabel.BOTTOM);
         button.setHorizontalTextPosition(JLabel.CENTER);
@@ -149,7 +157,7 @@ public abstract class AbstractSettingsDialog extends JDialog {
         button.setActionCommand(caption);
         button.addActionListener(this::onAction);
 
-        AbstractSettingsBase settingsPanel = ctor.apply(settingsHelper);
+        AbstractSettingsBase settingsPanel = ctor.apply(new SettingsHelper(button));
         settingsPanels.put(caption, settingsPanel);
 
         this.settingsPanel.add(caption, settingsPanel);

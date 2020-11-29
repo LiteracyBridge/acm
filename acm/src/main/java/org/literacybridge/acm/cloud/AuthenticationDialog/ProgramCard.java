@@ -33,7 +33,7 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class ProgramCard extends CardContent {
     private static final String DIALOG_TITLE = "Select Program";
-    protected static final int CARD_HEIGHT = 580;
+    protected static final int CARD_HEIGHT = 315;
 
     private final PanelButton okButton;
     private final JList<String> choicesList;
@@ -53,8 +53,7 @@ public class ProgramCard extends CardContent {
         gbc.insets.bottom = 12; // tighter bottom spacing.
 
         // Amplio logo
-        JLabel logoLabel = new JLabel(getScaledLogo());
-        dialogPanel.add(logoLabel, gbc);
+        addScaledLogo();
 
         JLabel promptLabel = new JLabel("<html>Choose the ACM to open.</html>");
         dialogPanel.add(promptLabel, gbc);

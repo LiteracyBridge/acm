@@ -1,6 +1,6 @@
 project.ext {
-    codeStyleDir = "${rootProject.projectDir}/../codeStyle"
-    javaLanguageLevel = "1.8"
+    codeStyleDir = "${rootProject.projectDir}/../codeStyle" as Object
+    javaLanguageLevel = "1.8" as Object
 }
 
 apply plugin: 'java'
@@ -22,7 +22,7 @@ allprojects {
 task updateVersion() {
     group = 'build setup'
     def versionPropsFile = file('src/main/resources/version.properties')
-    def Properties versionProps = new Properties()
+    Properties versionProps = new Properties()
     def timestamp = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
     def buildDate = new Date().format("yyMMdd")
     def buildNumber = 1
@@ -169,6 +169,7 @@ dependencies {
     compile 'com.amazonaws:aws-java-sdk-cognitoidentity:1.11.228'
     compile 'com.amazonaws:aws-java-sdk-s3:1.11.228'
 
+    compile 'com.formdev:flatlaf:1.0'
 
     compile files(fileTree('3rdparty').include('*.jar'))
 
@@ -220,7 +221,7 @@ def customizeIdeaCodeSyle(project) {
 }
 
 // Search component with given name
-def findComponent(project, name) {
+static def findComponent(project, name) {
     project.component.find { it.@name == name }
 }
 

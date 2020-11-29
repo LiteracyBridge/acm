@@ -1,19 +1,23 @@
 package org.literacybridge.acm.cloud.AuthenticationDialog;
 
+import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.UIConstants;
 
 import javax.swing.*;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.regex.Pattern;
 
+import static java.awt.GridBagConstraints.CENTER;
 import static org.literacybridge.acm.Constants.AMPLIO_GREEN_B;
 import static org.literacybridge.acm.Constants.AMPLIO_GREEN_G;
 import static org.literacybridge.acm.Constants.AMPLIO_GREEN_R;
+import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 class CardContent extends JPanel {
     public static final Color AMPLIO_GREEN = new Color(AMPLIO_GREEN_R, AMPLIO_GREEN_G, AMPLIO_GREEN_B);
@@ -43,17 +47,26 @@ class CardContent extends JPanel {
         return personIcon;
     }
 
-    private static final int iconSize = 256;
+    public static int logoHeight = 0;
+    private static final int iconSize = 350;
     private static ImageIcon logoIcon;
     private static ImageIcon scaledIcon;
+    private static final GBC gbc = new GBC(getGBC()).withAnchor(CENTER).withInsets(new Insets(10,0,20,0));
+
     ImageIcon getScaledLogo() {
         if (logoIcon == null) {
-            logoIcon = new ImageIcon(UIConstants.getResource("Amplio-Logo-NoTagline-FullColor-Square.png"));
-            scaledIcon = new ImageIcon(logoIcon.getImage().getScaledInstance(iconSize, iconSize, Image.SCALE_SMOOTH));
+//            logoIcon = new ImageIcon(UIConstants.getResource("Amplio-Logo-NoTagline-FullColor-Square.png"));
+            logoIcon = new ImageIcon(UIConstants.getResource("Amplio_horiz_color_HiRes.png"));
+            scaledIcon = new ImageIcon(logoIcon.getImage().getScaledInstance(iconSize, -1, Image.SCALE_SMOOTH));
+            logoHeight = scaledIcon.getIconHeight() + gbc.insets.top + gbc.insets.bottom;
         }
         return scaledIcon;
     }
 
+    void addScaledLogo() {
+        JLabel logoLabel = new JLabel(getScaledLogo());
+        this.add(logoLabel, gbc);
+    }
 
     CardContent(WelcomeDialog welcomeDialog,
         String dialogTitle,
@@ -83,7 +96,7 @@ class CardContent extends JPanel {
 
     /**
      * Called when the card is shown.
-     * @param actionEvent
+     * @param actionEvent is unused
      */
     void onShown(ActionEvent actionEvent) {
         welcomeDialog.setTitle(dialogTitle);

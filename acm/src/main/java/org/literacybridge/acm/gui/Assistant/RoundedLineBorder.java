@@ -31,17 +31,25 @@ public class RoundedLineBorder extends LineBorder {
 
     @Override
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-        if ((this.thickness > 0) && (g instanceof Graphics2D)) {
+        roundedRect(g, x, y, width, height, this.radius, this.thickness, this.lineColor);
+    }
+
+    @Override
+    public Insets getBorderInsets(Component c, Insets insets) {
+        insets.set(insetThickness, insetThickness, insetThickness, insetThickness);
+        return insets;
+    }
+
+    public static void roundedRect(Graphics g, int x, int y, int width, int height, int radius, int thickness, Color lineColor) {
+        if ((thickness > 0) && (g instanceof Graphics2D)) {
             Graphics2D g2d = (Graphics2D) g;
             Color oldColor = g2d.getColor();
 
-            g2d.setColor(this.lineColor);
-            int offs = this.thickness;
-            int size = offs + offs;
-            float outerArc = radius;
-            float innerArc = outerArc - offs;
-            Shape outer = new RoundRectangle2D.Float(x, y, width, height, outerArc, outerArc);
-            Shape inner = new RoundRectangle2D.Float(x + offs, y + offs, width - size, height - size, innerArc, innerArc);
+            g2d.setColor(lineColor);
+            int size = thickness + thickness;
+            float innerArc = (float) radius - thickness;
+            Shape outer = new RoundRectangle2D.Float(x, y, width, height, (float) radius, (float) radius);
+            Shape inner = new RoundRectangle2D.Float(x + thickness, y + thickness, width - size, height - size, innerArc, innerArc);
             Path2D path = new Path2D.Float(Path2D.WIND_EVEN_ODD);
             path.append(outer, false);
             path.append(inner, false);
@@ -49,12 +57,6 @@ public class RoundedLineBorder extends LineBorder {
 
             g2d.setColor(oldColor);
         }
-    }
-
-    @Override
-    public Insets getBorderInsets(Component c, Insets insets) {
-        insets.set(insetThickness, insetThickness, insetThickness, insetThickness);
-        return insets;
     }
 
 }

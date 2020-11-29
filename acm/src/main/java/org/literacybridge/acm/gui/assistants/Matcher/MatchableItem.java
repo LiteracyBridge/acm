@@ -74,7 +74,6 @@ public class MatchableItem<L extends Target, R> implements Comparable<MatchableI
     }
 
     public MatchableItem<L,R> disassociate() {
-        @SuppressWarnings("unchecked")
         MatchableItem<L,R> disassociated = new MatchableItem<>(null, getRight(), MATCH.RIGHT_ONLY);
         setRight(null);
         setMatch(MATCH.LEFT_ONLY);
@@ -82,7 +81,7 @@ public class MatchableItem<L extends Target, R> implements Comparable<MatchableI
         return disassociated;
     }
 
-    boolean isMatchableWith(MatchableItem<L,R> other) {
+    boolean isMatchableWith(MatchableItem<?, ?> other) {
         return other != null && this.getMatch().isUnmatched() && other.getMatch().isUnmatched()
             && this.getMatch() != other.getMatch();
     }

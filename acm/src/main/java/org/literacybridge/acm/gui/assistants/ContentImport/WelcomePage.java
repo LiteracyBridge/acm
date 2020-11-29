@@ -19,7 +19,9 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreeNode;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -91,6 +93,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
 
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout(0,0));
+        panel.setBackground(getBackground());
 
         // Preview of the titles will be built here, after user chooses Depl# & language.
         progSpecRootNode = new DefaultMutableTreeNode();
@@ -98,6 +101,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         progSpecTreeModel = (DefaultTreeModel) progSpecTree.getModel();
         progSpecTree.setRootVisible(false);
         progSpecTree.setCellRenderer(treeCellRenderer);
+
         javax.swing.ToolTipManager.sharedInstance().registerComponent(progSpecTree);
 
         titlePreviewScroller = new JScrollPane(progSpecTree);
@@ -323,7 +327,9 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
     }
 
     private boolean hasContent(DefaultMutableTreeNode node) {
-        for (Enumeration e = node.breadthFirstEnumeration(); e.hasMoreElements(); ) {
+        for (
+            //noinspection rawtypes
+                Enumeration e = node.breadthFirstEnumeration(); e.hasMoreElements(); ) {
             DefaultMutableTreeNode current = (DefaultMutableTreeNode) e.nextElement();
             if (current instanceof PSContent.MessageNode || current instanceof PSContent.PromptNode)
                 return true;
@@ -332,7 +338,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
     }
 
     @SuppressWarnings("FieldCanBeLocal")
-    private TreeCellRenderer treeCellRenderer = new DefaultTreeCellRenderer() {
+    private final TreeCellRenderer treeCellRenderer = new DefaultTreeCellRenderer() {
         private Font normalFont;
         private Font italicFont;
         public Font getItalicFont() {

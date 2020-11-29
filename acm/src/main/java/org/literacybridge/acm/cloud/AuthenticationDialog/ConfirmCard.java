@@ -15,7 +15,7 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class ConfirmCard extends CardContent {
     private static final String DIALOG_TITLE = "Confirm Registration";
-    protected static final int CARD_HEIGHT = 475;
+    protected static final int CARD_HEIGHT = 210;
 
     private final FlexTextField confirmationField;
     private final PanelButton confirm;
@@ -30,8 +30,7 @@ public class ConfirmCard extends CardContent {
         gbc.insets.bottom = 12; // tighter bottom spacing.
 
         // Amplio logo
-        JLabel logoLabel = new JLabel(getScaledLogo());
-        dialogPanel.add(logoLabel, gbc);
+        addScaledLogo();
 
         dialogPanel.add(new JLabel("<html>Check email for <span style='font-size:1.1em'>\"Your " +
             "Amplio confirmation code\"</span> and enter it below, then click Confirm. " +

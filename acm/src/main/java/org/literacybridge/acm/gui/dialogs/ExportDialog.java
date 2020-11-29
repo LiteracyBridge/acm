@@ -1,6 +1,7 @@
 package org.literacybridge.acm.gui.dialogs;
 
 import com.google.common.collect.Lists;
+import org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
@@ -20,6 +21,8 @@ import javax.swing.plaf.FileChooserUI;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileWriter;
@@ -208,7 +211,14 @@ public class ExportDialog extends JDialog {
         buttonBox.add(cancelButton);
         dialogPanel.add(buttonBox);
 
-        setSize(600, 400);
+        setSize(600, 465);
+        // For debugging sizing issues.
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                System.out.printf("Size %dx%d%n", ExportDialog.this.getWidth(), ExportDialog.this.getHeight());
+            }
+        });
         setAlwaysOnTop(true);
     }
 
