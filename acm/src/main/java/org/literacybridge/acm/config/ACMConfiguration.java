@@ -351,6 +351,20 @@ public class ACMConfiguration {
         return uuid;
     }
 
+    /**
+     * Only intended for software testing, to allow more frequent allocations in test.
+     * @return the size of the blocks of TB serial numbers that should be allocated at one time.
+     */
+    public int getTbSrnAllocationSize() {
+        String value = getUserConfigurationItem(Constants.TB_SRN_ALLOCATION_SIZE, Constants.TB_SRN_ALLOCATION_SIZE_DEFAULT.toString());
+        try {
+            return Integer.parseInt(value);
+        } catch (Exception ignored) {
+            // ignore
+        }
+        return Constants.TB_SRN_ALLOCATION_SIZE_DEFAULT;
+    }
+
     public String getUserConfigurationItem(String name, String defaultValue) {
         String value = UsersConfigurationProperties.getProperty(name);
         return (value == null) ? defaultValue : value;

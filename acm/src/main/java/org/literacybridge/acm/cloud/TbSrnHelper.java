@@ -27,14 +27,14 @@ public class TbSrnHelper {
     private static final File tblInfoFileNew = new File(ACMConfiguration.getInstance()
         .getApplicationHomeDirectory(), TBL_INFO_NAME+".new");
 
-    private static final int BLOCK_SIZE = 512;
-
     private final Authenticator authInstance = Authenticator.getInstance();
 
     private final String usersEmail;
     private String currentEmail;
     private Properties tbSrnStore;
     private TbSrnAllocationInfo tbSrnAllocationInfo;
+
+    private int tbSrnAllocationSize;
 
     /**
      * Creates an SRN helper, for the given user, otherwise for user with the "best" SRN
@@ -46,6 +46,7 @@ public class TbSrnHelper {
         currentEmail = usersEmail;
         tbSrnStore = loadPropertiesFile();
         tbSrnAllocationInfo = loadSrnInfoForEmail(currentEmail);
+        tbSrnAllocationSize = ACMConfiguration.getInstance().getTbSrnAllocationSize();
     }
 
     private static class AllocTracker {
@@ -161,7 +162,7 @@ public class TbSrnHelper {
             TbSrnAllocationInfo newTbSrnAllocationInfo = new TbSrnAllocationInfo(tbSrnAllocationInfo);
             // We need at least one block of numbers.
             if (authInstance.isAuthenticated() && authInstance.isOnline()) {
-                Map<String,Object> srnAllocation = allocateTbSrnBlock(BLOCK_SIZE * nBlocks);
+                Map<String,Object> srnAllocation = allocateTbSrnBlock(tbSrnAllocationSize * nBlocks);
                 if (applyReservation(newTbSrnAllocationInfo, srnAllocation)) {
                     // We've successfully allocated a new block of SRNs. Try to persist it.
                     Properties newTbSrnStore = saveSrnInfo(newTbSrnAllocationInfo);
@@ -214,7 +215,7 @@ public class TbSrnHelper {
             // If we don't have a backup block, and we're authenticated & online, try to get one now.
             if (!newTbSrnAllocationInfo.hasBackup() && authInstance.isAuthenticated()
                     && authInstance.isOnline() && !isBorrowedId()) {
-                Map<String, Object> srnAllocation = allocateTbSrnBlock(BLOCK_SIZE);
+                Map<String, Object> srnAllocation = allocateTbSrnBlock(tbSrnAllocationSize);
                 applyReservation(newTbSrnAllocationInfo, srnAllocation);
             }
             // Persist to disk before we return to caller.
