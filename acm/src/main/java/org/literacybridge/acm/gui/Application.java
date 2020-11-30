@@ -11,6 +11,7 @@ import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.MainWindow.MainView;
 import org.literacybridge.acm.gui.MainWindow.ToolbarView;
+import org.literacybridge.acm.gui.dialogs.AcmCheckoutTest;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
@@ -54,7 +55,7 @@ public class Application extends JXFrame {
 
   public static double JAVA_VERSION = getJavaVersion();
 
-  private static boolean OWN_SPLASH = false;
+//  private static boolean OWN_SPLASH = false;
 
   private final MainView mainView;
 
@@ -121,6 +122,18 @@ public class Application extends JXFrame {
       }
     });
 
+    if (ACMConfiguration.getInstance().isDevo()) {
+      JMenuBar menuBar = new JMenuBar();
+      JMenu menu = new JMenu("Developer");
+      menuBar.add(menu);
+      JMenuItem menuItem = new JMenuItem("Access Control...");
+      menu.add(menuItem);
+      menuItem.addActionListener(e -> {
+        new AcmCheckoutTest(this).setVisible(true);
+      });
+      setJMenuBar(menuBar);
+    }
+
     Authenticator authInstance = Authenticator.getInstance();
     String greeting = authInstance.getUserProperty("custom:greeting", null);
     if (StringUtils.isEmpty(greeting)) {
@@ -148,12 +161,12 @@ public class Application extends JXFrame {
     setStatusBar(statusBar);
     taskManager = new BackgroundTaskManager(statusBar);
 
-    try {
-      if (OWN_SPLASH)
-        splashScreen.setProgressLabel("Updating index...");
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+//    try {
+//      if (OWN_SPLASH)
+//        splashScreen.setProgressLabel("Updating index...");
+//    } catch (Exception e) {
+//      e.printStackTrace();
+//    }
 
     // starts file system monitor after UI has been initialized
     fileSystemMonitor
@@ -203,7 +216,15 @@ public class Application extends JXFrame {
       new LogHelper().withName("ACM.log").initialize();
 
     // We can use this to put the menu in the right place on MacOS. When we have a menu.
-    //System.setProperty("apple.laf.useScreenMenuBar", "true");
+    System.setProperty("apple.laf.useScreenMenuBar", "true");
+//    JMenuBar menuBar = new JMenuBar();
+//    JMenu menu = new JMenu("My Menu");
+//    menuBar.add(menu);
+//    JMenuItem menuItem = new JMenuItem("Just testing...");
+//    menu.add(menuItem);
+//    menuItem.addActionListener(e->{
+//      System.out.println("Hello, world!");
+//    });
     // This doesn't work because somehow the property has already been read by this point.
     // Something to do with the AppKit thread starting earlier than this.
     //System.setProperty("apple.eawt.quitStrategy", "CLOSE_ALL_WINDOWS");
@@ -221,7 +242,7 @@ public class Application extends JXFrame {
       parser.printUsage(System.err);
       return;
     }
-    if (params.noSplash) OWN_SPLASH = false;
+//    if (params.noSplash) OWN_SPLASH = false;
 
     startUp(params);
 
@@ -234,18 +255,18 @@ public class Application extends JXFrame {
     preRunChecks();
 
     SplashScreen splash = null;
-    if (OWN_SPLASH) {
-      splash = new SplashScreen();
-      splash.showSplashScreen();
-    }
+//    if (OWN_SPLASH) {
+//      splash = new SplashScreen();
+//      splash.showSplashScreen();
+//    }
 //      URL iconURL = Application.class.getResource("/tb_headset.png");
     URL iconURL = Application.class.getResource("/tb.png");
     Image iconImage = new ImageIcon(iconURL).getImage();
     if (OsUtils.MAC_OS) {
       OsUtils.setOSXApplicationIcon(iconImage);
-    } else {
-      if (OWN_SPLASH)
-        splash.setIconImage(iconImage);
+//    } else {
+//      if (OWN_SPLASH)
+//        splash.setIconImage(iconImage);
     }
     OsUtils.enableOSXQuitStrategy();
 
@@ -285,15 +306,15 @@ public class Application extends JXFrame {
       if (!OsUtils.MAC_OS) {
         application.setIconImage(iconImage);
       }
-      if (OWN_SPLASH)
-        splash.setProgressLabel("Initialization complete. Launching UI...");
+//      if (OWN_SPLASH)
+//        splash.setProgressLabel("Initialization complete. Launching UI...");
       application.setSize(1000, 725);
       application.setLocation(20, 20);
 
       application.setVisible(true);
       application.toFront();
-      if (OWN_SPLASH)
-        splash.close();
+//      if (OWN_SPLASH)
+//        splash.close();
 
       LOG.log(Level.INFO, "ACM successfully started.");
       ACMConfiguration.getInstance().getCurrentDB().setupWavCaching(sizeMB->{

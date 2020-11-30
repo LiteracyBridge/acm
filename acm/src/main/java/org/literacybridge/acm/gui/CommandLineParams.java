@@ -34,6 +34,9 @@ public class CommandLineParams {
   @Option(name="--nimbus", usage="Use 'Nimbus' look-and-feel.")
   public boolean nimbus;
 
+  @Option(name="--devo", aliases={"--dev"}, usage="Enable 'developer' features.")
+  public boolean devo;
+
   @Argument(required=false)
   public String sharedACM;
 }

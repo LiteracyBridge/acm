@@ -3,6 +3,7 @@ package org.literacybridge.acm.utils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.HttpUtility;
 
@@ -28,17 +29,16 @@ public class EmailHelper {
     // The response when the email was sent.
     private static final int EMAIL_SENT_RESPONSE = 200;
 
-    public static boolean sendEmail(String sender, String recipient, String subject, String body, boolean html) throws
-                                                                                                       IOException {
+    public static boolean sendEmail(String sender, String recipient, String subject, String body, boolean html) {
         List<String> recipientList = Collections.singletonList(recipient);
         return sendEmail(sender, recipientList, subject, body, html);
     }
 
 
     @SuppressWarnings("unchecked")
-    public static boolean sendEmail(String from, Collection<String> recipientList, String subject, String body, boolean html) throws
-                                                                                                       IOException
-    {
+    public static boolean sendEmail(String from, Collection<String> recipientList, String subject, String body, boolean html) {
+        Authenticator authenticator = Authenticator.getInstance();
+        Authenticator.AwsInterface awsInterface = authenticator.getAwsInterface();
         String computerName;
         boolean status_aws = true;
 
@@ -49,44 +49,37 @@ public class EmailHelper {
             computerName = "UNKNOWN";
         }
 
-        // send POST request to AWS API gateway to invoke acmCheckOut lambda function
-        String requestURL = "https://7z4pu4vzqk.execute-api.us-west-2.amazonaws.com/prod";
-        JSONObject request = new JSONObject();
+        // send POST request to AWS API gateway to invoke "report" lambda function
+        String requestURL = Authenticator.ACCESS_CONTROL_API + "/report";
+        JSONObject requestBody = new JSONObject();
 
         String db = ACMConfiguration.cannonicalProjectName(ACMConfiguration.getInstance().getCurrentDB().getSharedACMname());
-        request.put("db", db);
-        request.put("action", "report");
-        request.put("name", ACMConfiguration.getInstance().getUserName());
-        request.put("contact", ACMConfiguration.getInstance().getUserContact());
-        request.put("version", Constants.ACM_VERSION);
-        request.put("computername", computerName);
-        request.put("from", from);
-        request.put("subject", subject);
+        requestBody.put("db", db);
+        requestBody.put("action", "report");
+        requestBody.put("name", ACMConfiguration.getInstance().getUserName());
+        requestBody.put("contact", ACMConfiguration.getInstance().getUserContact());
+        requestBody.put("version", Constants.ACM_VERSION);
+        requestBody.put("computername", computerName);
+        requestBody.put("from", from);
+        requestBody.put("subject", subject);
         JSONArray recipients = new JSONArray();
         recipients.addAll(recipientList);
-        request.put("recipient", recipients);
-        request.put("body", body);
-        request.put("html", html);
+        requestBody.put("recipient", recipients);
+        requestBody.put("body", body);
+        requestBody.put("html", html);
 
-        HttpUtility httpUtility = new HttpUtility();
         JSONObject jsonResponse;
-        try {
-            httpUtility.sendPostRequest(requestURL, request);
-            jsonResponse = httpUtility.readJSONObject();
+        jsonResponse = awsInterface.authenticatedPostCall(requestURL, requestBody);
+        if (jsonResponse != null) {
             Object o = jsonResponse.get("ResponseMetadata");
             if (o instanceof JSONObject) {
-                o = ((JSONObject)o).get("HTTPStatusCode");
+                o = ((JSONObject) o).get("HTTPStatusCode");
             }
             if (o instanceof Long) {
-                status_aws = ((Long)o) == EMAIL_SENT_RESPONSE;
+                status_aws = ((Long) o) == EMAIL_SENT_RESPONSE;
             }
-            LOG.info(String.format("email: %s\n          %s\n", request.toString(), jsonResponse.toString()));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            throw ex;
+            LOG.info(String.format("email: %s\n          %s\n", requestBody.toString(), jsonResponse.toString()));
         }
-        httpUtility.disconnect();
-
         // parse response
         System.out.println(jsonResponse);
 
@@ -107,15 +100,11 @@ public class EmailHelper {
     public static void sendNotificationEmail(String subject, String body) {
         Collection<String> recipients = ACMConfiguration.getInstance().getCurrentDB().getNotifyList();
         if (recipients.size() > 0) {
-            try {
-                sendEmail("ictnotifications@amplio.org",
-                    recipients,
-                    subject,
-                    body,
-                    true);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            sendEmail("ictnotifications@amplio.org",
+                recipients,
+                subject,
+                body,
+                true);
         }
     }
 

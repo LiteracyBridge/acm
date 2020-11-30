@@ -16,14 +16,16 @@ import java.util.Properties;
 public class DBInfo extends Properties {
   private static final Logger LOG = LoggerFactory.getLogger(DBInfo.class);
 
-  private boolean checkedOut;
+  private boolean isCheckedOut;
   private final static String DB_NAME = "DB_NAME";
-  private final static String DB_KEY = "DB_KEY";
+  private final static String DB_CHECKOUT_KEY = "DB_KEY";
   //for AWS
   private final static String AWS_KEY = "AWS_KEY";
   //
   private final static String DB_CURRENT_FILENAME = "DB_CURRENT_FILENAME";
   private final static String DB_NEXT_FILENAME = "DB_NEXT_FILENAME";
+
+  private final static String DB_IS_NEW_CHECKOUT = "DB_IS_NEW_CHECKOUT";
   private final DBConfiguration config;
 
   public String getDbName() {
@@ -34,23 +36,17 @@ public class DBInfo extends Properties {
     setProperty(DBInfo.DB_NAME, dbName);
   }
 
-  public String getDbKey() {
-    return getProperty(DBInfo.DB_KEY);
+  public String getCheckoutKey() {
+    String key = getProperty(DBInfo.AWS_KEY);
+    if (key == null) {
+      key = getProperty(DBInfo.DB_CHECKOUT_KEY);
+    }
+    return key;
   }
 
-  public void setDbKey(String dbKey) {
-    setProperty(DBInfo.DB_KEY, dbKey);
+  public void setCheckoutKey(String dbKey) {
+    setProperty(DBInfo.DB_CHECKOUT_KEY, dbKey);
   }
-
-  // for AWS integration
-  public String getAWSKey() {
-    return getProperty(DBInfo.AWS_KEY);
-  }
-
-  public void setAWSKey(String AWSKey) {
-    setProperty(DBInfo.AWS_KEY, AWSKey);
-  }
-  //
 
   public String getCurrentFilename() {
     return getProperty(DBInfo.DB_CURRENT_FILENAME);
@@ -66,15 +62,30 @@ public class DBInfo extends Properties {
   }
 
   public boolean isCheckedOut() {
-    return checkedOut;
+    return isCheckedOut;
   }
 
-  public void setCheckedOut(boolean checkedOut) {
-    this.checkedOut = checkedOut;
-    if (checkedOut) {
+  public void setCheckedOut() {
+    // Already set? If not, persist it.
+    boolean needWrite = !this.isCheckedOut;
+    this.isCheckedOut = true;
+    if (needWrite) {
         writeProps(); // this is the only time we need to write properties to disk
     LOG.info("Wrote checkout marker file.");
     }
+  }
+
+  public boolean isNewCheckoutRecord() {
+    String prop = getProperty(DB_IS_NEW_CHECKOUT);
+    return prop != null;
+  }
+  public void setNewCheckoutRecord() {
+    setProperty(DB_IS_NEW_CHECKOUT, "true");
+    // If the db is checked out, the file has been written. Update it with this info.
+    // If the db is not checked out, it won't be saved, unless it is checked out
+    // first, in which case the properties are persisted.
+    if (isCheckedOut)
+      writeProps();
   }
 
   public void writeProps() {
@@ -114,10 +125,10 @@ public class DBInfo extends Properties {
             new FileInputStream(f));
         load(in);
         in.close();
-        checkedOut = true; // using the setter would cause an immediate rewrite of the same file
+        isCheckedOut = true; // using the setter would cause an immediate rewrite of the same file
           System.out.printf("Checkout marker file exists, db is checked out.\n");
       } catch (IOException e) {
-        checkedOut = false;
+        isCheckedOut = false;
           System.out.printf("Can't read checkout marker file, but it exists; db is NOT checked out.\n");
       }
     }

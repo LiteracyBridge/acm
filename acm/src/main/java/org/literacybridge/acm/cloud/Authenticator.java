@@ -53,6 +53,8 @@ public class Authenticator {
     public final static Set<String> UPDATING_ROLES = new HashSet<>(Arrays.asList(SUPER_ADMIN_ROLE_STRING,
             ADMIN_ROLE_STRING, PROGRAM_MANAGER_ROLE_STRING, CONTENT_OFFICER_ROLE_STRING));
 
+    public static final String ACCESS_CONTROL_API = "https://cqmltfugtl.execute-api.us-west-2.amazonaws.com/prod";
+
     private static Authenticator instance;
     private SigninResult signinResult = SigninResult.NONE;
 
@@ -445,31 +447,57 @@ public class Authenticator {
             return result;
         }
 
+        private JSONObject authenticatedRestCall(String verb, String requestURL, JSONObject body, Map<String, String> headers) {
+            if (!isAuthenticated()) return null;
+            checkSession();
+            Map<String, String> allHeaders = new LinkedHashMap<>();
+            if (headers != null) {
+                allHeaders.putAll(headers);
+            }
+            String idToken = authenticationResult.getIdToken();
+            allHeaders.put("Authorization", idToken);
+
+            HttpUtility httpUtility = new HttpUtility();
+            JSONObject jsonResponse = null;
+
+            try {
+                if (verb.equals("POST")) {
+                    httpUtility.sendPostRequest(requestURL, body, allHeaders);
+                }
+                else if (verb.equals("GET")) {
+                    httpUtility.sendGetRequest(requestURL, allHeaders);
+                }
+                jsonResponse = httpUtility.readJSONObject();
+            } catch (IOException ex) {
+                // Stack trace & ignore.
+                ex.printStackTrace();
+            } finally {
+                httpUtility.disconnect();
+            }
+            return jsonResponse;
+        }
+
         /**
-         * Make a REST call with the current signed-in credentials. We use this to make Lambda calls.
+         * Make a REST GET call with the current signed-in credentials. We use this to make Lambda calls.
          *
          * @param requestURL URL to request.
          * @return result in a JSON object.
          */
-        public JSONObject authenticatedRestCall(String requestURL) {
-            if (!isAuthenticated()) return null;
-            checkSession();
-            Map<String,String> headers = new LinkedHashMap<>();
+        public JSONObject authenticatedGetCall(String requestURL) {
+            Map<String, String> headers = new HashMap<>();
             headers.put("Accept", "application/json");
-            headers.put("Content-Type", "text/plain");
-            String idToken = authenticationResult.getIdToken();
-            headers.put("Authorization", idToken);
+            return authenticatedRestCall("GET", requestURL, null, headers);
+        }
 
-            HttpUtility httpUtility = new HttpUtility();
-            JSONObject jsonResponse = null;
-            try {
-                httpUtility.sendGetRequest(requestURL, headers);
-                jsonResponse = httpUtility.readJSONObject();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-            httpUtility.disconnect();
-            return jsonResponse;
+        /**
+         * Make a REST POST call with the current signed-in credentials. We use this to make Lambda calls.
+         *
+         * @param requestURL URL to request.
+         * @param body JSON object to pass as request body.
+         * @return result in a JSON object.
+         */
+        public JSONObject authenticatedPostCall(String requestURL, JSONObject body) {
+            return authenticatedRestCall("POST", requestURL, body, null);
         }
 
     }

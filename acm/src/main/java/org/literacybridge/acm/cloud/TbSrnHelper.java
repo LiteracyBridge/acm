@@ -365,7 +365,7 @@ public class TbSrnHelper {
         String requestURL = baseURL + "/reserve";
         if (n > 0) requestURL += "?n="+String.valueOf(n);
 
-        JSONObject jsonResponse = authInstance.getAwsInterface().authenticatedRestCall(requestURL);
+        JSONObject jsonResponse = authInstance.getAwsInterface().authenticatedGetCall(requestURL);
 
         if (jsonResponse != null) {
             Object o = jsonResponse.get("result");

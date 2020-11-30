@@ -50,6 +50,7 @@ public class ACMConfiguration {
     private boolean verbose = false; // TODO: some means to set it true.
     // If true, don't lock (or unlock) the database. For testing purposes.
     private boolean noDbCheckout;
+    private boolean devo = false;
 
     private final Properties UsersConfigurationProperties = new Properties();
     private File globalShareDir;
@@ -152,6 +153,7 @@ public class ACMConfiguration {
         allCategories = params.allCategories;
         showConfiguration = params.config;
         testData = params.testData;
+        devo = params.devo;
 
         setupACMGlobalPaths();
 
@@ -479,6 +481,10 @@ public class ACMConfiguration {
 
     public boolean isShowConfiguration() {
         return showConfiguration;
+    }
+
+    public boolean isDevo() {
+        return devo;
     }
 
     public File getGlobalShareDir() {

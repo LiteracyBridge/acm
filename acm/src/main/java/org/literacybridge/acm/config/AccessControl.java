@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.core.fs.ZipUnzip;
 
 import java.io.File;
@@ -24,6 +25,7 @@ import java.util.logging.Logger;
 // TESTING: required for AWS check-out platform
 
 public class AccessControl {
+
     /**
      * These are the status values that can be returned by init()
      */
@@ -119,22 +121,6 @@ public class AccessControl {
 
     AccessControl(DBConfiguration dbConfiguration) {
         this.dbConfiguration = dbConfiguration;
-    }
-
-    private void setDBKey(String key) {
-        dbInfo.setDbKey(key);
-    }
-
-    private String getDBKey() {
-        return dbInfo.getDbKey();
-    }
-
-    private void setAWSKey(String key) {
-        dbInfo.setAWSKey(key);
-    }
-
-    private String getAWSKey() {
-        return dbInfo.getAWSKey();
     }
 
     private void setPossessor(Map<String,String>  name) {
@@ -237,7 +223,7 @@ public class AccessControl {
     
     /**
      * Do we seem to actually have network connectivity?
-     * @return True if we can reach literacybridge.org.
+     * @return True if we can reach amplio.org.
      */
     public static boolean isOnline() {
         boolean result = false;
@@ -361,7 +347,8 @@ public class AccessControl {
         // Good to go...
         case newDatabase:
             // Sets the key to "force" to force creation of the new record.
-            setDBKey(DB_KEY_OVERRIDE);
+            dbInfo.setCheckoutKey(DB_KEY_OVERRIDE);
+            dbInfo.setNewCheckoutRecord();
             break;
         case available:
             break;
@@ -400,8 +387,9 @@ public class AccessControl {
                 }
                 createDBMirror();
                 // Is this newly created, as far as server knows?
-                if (!useSandbox && getCurrentZipFilename().equalsIgnoreCase(DB_DOES_NOT_EXIST)) {
-                    setDBKey(DB_KEY_OVERRIDE);
+                if (!useSandbox && (getCurrentZipFilename()==null || getCurrentZipFilename().equalsIgnoreCase(DB_DOES_NOT_EXIST))) {
+                    dbInfo.setCheckoutKey(DB_KEY_OVERRIDE);
+                    dbInfo.setNewCheckoutRecord();
                 }
             }
         }
@@ -436,7 +424,7 @@ public class AccessControl {
             return AccessStatus.noServer;
         }
 
-        if (getCurrentZipFilename().equalsIgnoreCase(DB_DOES_NOT_EXIST)) {
+        if (dbInfo.isNewCheckoutRecord()) {
             // The database doesn't exist yet. We will create a new database.
             return AccessStatus.newDatabase;
         }
@@ -491,6 +479,8 @@ public class AccessControl {
             if (filename == null) {
                 return UpdateDbStatus.zipError;
             }
+        } else if (dbInfo.isNewCheckoutRecord()) {
+            filename = getCurrentZipFilename();
         }
 
         boolean checkedInOk;
@@ -516,9 +506,12 @@ public class AccessControl {
 
     @SuppressWarnings("unchecked")
     boolean checkOutDB(String db, String action) throws IOException {
+        Authenticator authenticator = Authenticator.getInstance();
+        Authenticator.AwsInterface awsInterface = authenticator.getAwsInterface();
         String computerName;
-        boolean status_aws = true;
-        String filename_aws = null, key_aws = null, possessor_aws = null;
+        boolean statusOk = false;
+        boolean nodb = false;
+        String currentZipFilename = null, checkoutKey = null;
 
         // Code for testing. This is 'true' when dropbox is overridden by environment variable,
         // that is, not a real ACM in dropbox.
@@ -535,52 +528,81 @@ public class AccessControl {
             computerName = "UNKNOWN";
         }
 
-        // send POST request to AWS API gateway to invoke acmCheckOut lambda function
-        String requestURL = "https://7z4pu4vzqk.execute-api.us-west-2.amazonaws.com/prod";
-        JSONObject request = new JSONObject();
+        StringBuilder requestUrl = new StringBuilder(Authenticator.ACCESS_CONTROL_API);
+        requestUrl.append("/acm");
+        requestUrl.append('/').append(action);
+        requestUrl.append('/').append(db);
+        requestUrl.append("?version=").append(Constants.ACM_VERSION);
+        requestUrl.append("&name=").append(authenticator.getuserEmail());
+        requestUrl.append("&contact=").append(authenticator.getUserProperty("phone_number", ""));
+        requestUrl.append("&computername=").append(computerName);
 
-        if (action.equals("checkout")) {
-            action = "checkOut";
+        JSONObject jsonResponse = awsInterface.authenticatedGetCall(requestUrl.toString());
+        if (jsonResponse == null) {
+            throw new IOException("Can't reach network");
         }
-
-        request.put("db", db);
-        request.put("action", action);
-        request.put("name", ACMConfiguration.getInstance().getUserName());
-        request.put("contact", ACMConfiguration.getInstance().getUserContact());
-        request.put("version", Constants.ACM_VERSION);
-        request.put("computername", computerName);
-        //request.put("comment", comment);   for possible future use, allows any string input
-
-        HttpUtility httpUtility = new HttpUtility();
-        JSONObject jsonResponse;
-        try {
-            httpUtility.sendPostRequest(requestURL, request);
-            jsonResponse = httpUtility.readJSONObject();
-            LOG.info(String.format("%s: %s\n          %s\n", action, request.toString(), jsonResponse.toString()));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            throw ex;
-        }
-        httpUtility.disconnect();
+        LOG.info(String.format("%s: %s\n          %s\n", action, requestUrl.toString(), jsonResponse.toString()));
 
         // parse response
         Map<String,String> posessor = new HashMap<>();
         Object o = jsonResponse.get("status");
         if (o instanceof String) {
             String str = (String)o;
-            status_aws = str.equalsIgnoreCase("ok");
+            if (str.equalsIgnoreCase("ok")) {
+                statusOk = true;
+            } else if (str.equalsIgnoreCase("nodb")) {
+                statusOk = true;
+                nodb = true;
+            }
         }
+        o = jsonResponse.get("state");
+        if (o instanceof JSONObject) {
+            JSONObject state = (JSONObject)o;
+            //        acm_comment String:	Created ACM
+            //        acm_name String:	ACM-LBG-COVID19
+            //        acm_state String:	CHECKED_OUT
+            //        last_in_comment Null:	true
+            //        last_in_contact String:	425-830-4327
+            //        last_in_date String:	2020-08-19 16:24:24.837178
+            //        last_in_file_name String:	db57.zip
+            //        last_in_name String:	bill
+            //        last_in_version String:	c202002160
+            //        now_out_comment Null:	true
+            //        now_out_computername String:	DESKTOP-0NGHQ8K
+            //        now_out_contact String:	0203839826
+            //        now_out_date String:	2020-11-17 08:36:03.208980
+            //        now_out_key String:	1190441
+            //        now_out_name String:	Fidelis
+            //        now_out_version String:   r2011111
+            o = state.get("last_in_file_name");
+            if (o instanceof String) {
+                currentZipFilename = (String)o;
+            }
+            o = state.get("now_out_name");
+            if (o instanceof String) {
+                posessor.put("openby", (String)o);
+            }
+            o = state.get("now_out_date");
+            if (o instanceof String) {
+                posessor.put("opendate", (String)o);
+            }
+            o = state.get("now_out_computername");
+            if (o instanceof String) {
+                posessor.put("computername", (String)o);
+            }
+        }
+        
         o = jsonResponse.get("key");
         if (o instanceof String) {
-            key_aws = (String)o;
+            checkoutKey = (String)o;
         }
         o = jsonResponse.get("filename");
         if (o instanceof String) {
-            filename_aws = (String)o;
+            currentZipFilename = (String)o;
         }
+
         o = jsonResponse.get("openby");
         if (o instanceof String) {
-            possessor_aws = (String)o;
             posessor.put("openby", (String)o);
         }
         o = jsonResponse.get("opendate");
@@ -592,23 +614,23 @@ public class AccessControl {
             posessor.put("computername", (String)o);
         }
 
-        if (status_aws) {
-            if (key_aws != null) {
-                setAWSKey(key_aws);
-            }
+        if (currentZipFilename != null)
+            setZipFilenames(currentZipFilename);
+        if (nodb) {
+            dbInfo.setNewCheckoutRecord();
+            // This hack is because the php implementation used to return the text "null" when there was no checkout
+            // for the database.
+            setZipFilenames(DB_DOES_NOT_EXIST);
         }
-
-        if (filename_aws != null)
-            setZipFilenames(filename_aws);
-        if (status_aws) {
-            if (key_aws != null) {
-                setDBKey(key_aws);
-                dbInfo.setCheckedOut(true);
+        if (statusOk) {
+            if (checkoutKey != null) {
+                dbInfo.setCheckoutKey(checkoutKey);
+                dbInfo.setCheckedOut();
             }
         } else if (posessor.size() != 0) {
             setPossessor(posessor);
         }
-        return status_aws;
+        return statusOk;
 
     }
 
@@ -617,16 +639,18 @@ public class AccessControl {
      * provided key against the server's saved version of the key for the ACM. A null filename
      * means that the checkout is simply being discarded.
      *
-     * @param db       The ACM name, like "ACM-DEMO".
+     * @param acmName       The ACM name, like "ACM-DEMO".
      * @param filename The name of the file, dbNN.zip, or null to discard checkout
      * @return true if
      * @throws IOException if server is inaccessible
      */
     @SuppressWarnings("unchecked")
-    private boolean checkInDB(String db, String filename) throws IOException {
+    private boolean checkInDB(String acmName, String filename) throws IOException {
+        Authenticator authenticator = Authenticator.getInstance();
+        Authenticator.AwsInterface awsInterface = authenticator.getAwsInterface();
         String computerName;
         String action;
-        String key = getDBKey();
+        String key = dbInfo.getCheckoutKey();
 
         if (ACMConfiguration.getInstance().isNoDbCheckout()) {
             return true;
@@ -635,7 +659,9 @@ public class AccessControl {
         // for AWS parallel integration tests
         boolean status_aws = false;
 
-        if (filename == null) {
+        if (dbInfo.isNewCheckoutRecord()) {
+            action = "create";
+        } else if (filename == null) {
             action = "discard";
             filename = "";
         } else {
@@ -648,47 +674,27 @@ public class AccessControl {
             computerName = "UNKNOWN";
         }
 
-        // AWS check-in, configured in AWS Application Gateway
-        String requestURL = "https://7z4pu4vzqk.execute-api.us-west-2.amazonaws.com/prod";
-        JSONObject request = new JSONObject();
+        StringBuilder requestUrl = new StringBuilder(Authenticator.ACCESS_CONTROL_API);
+        requestUrl.append("/acm");
+        requestUrl.append('/').append(action);
+        requestUrl.append('/').append(acmName);
+        requestUrl.append("?version=").append(Constants.ACM_VERSION);
+        requestUrl.append("&filename=").append(filename);
+        requestUrl.append("&key=").append(dbInfo.getCheckoutKey());
+        requestUrl.append("&name=").append(authenticator.getuserEmail());
+        requestUrl.append("&contact=").append(authenticator.getUserProperty("phone_number", ""));
+        requestUrl.append("&computername=").append(computerName);
 
-        if (key != null && key.equals("force")) {
-            setAWSKey("new");
+        JSONObject jsonResponse = awsInterface.authenticatedGetCall(requestUrl.toString());
+        if (jsonResponse == null) {
+            throw new IOException("Can't reach server");
         }
+        LOG.info(String.format("%s: %s\n          %s\n", action, requestUrl.toString(), jsonResponse.toString()));
 
-        if (action.equals("checkin")) {
-            action = "checkIn";
-        }
-
-        request.put("db", db);
-        request.put("action", action);
-        request.put("key", getAWSKey());
-        request.put("filename", filename);
-        request.put("name", ACMConfiguration.getInstance().getUserName());
-        request.put("contact", ACMConfiguration.getInstance().getUserContact());
-        request.put("version", Constants.ACM_VERSION);
-        request.put("computername", computerName);
-        //request.put("comment", comment); for possible future use, allows string input
-        
-        HttpUtility httpUtility = new HttpUtility();
-        JSONObject jsonResponse = null;
-        try {
-            httpUtility.sendPostRequest(requestURL, request);
-            jsonResponse = httpUtility.readJSONObject();
-            LOG.info(String.format("%s: %s\n          %s\n", action, request.toString(), jsonResponse.toString()));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            // Rethrow the exception, so caller knows we can't get to server.
-            throw ex;
-        }
-        httpUtility.disconnect();
-
-        if (jsonResponse != null) {
-            Object o = jsonResponse.getOrDefault("status", "");
-            if (o instanceof String) {
-                String str = (String) o;
-                status_aws = str.equalsIgnoreCase("ok");
-            }
+        Object o = jsonResponse.get("status");
+        if (o instanceof String) {
+            String str = (String) o;
+            status_aws = str.equalsIgnoreCase("ok");
         }
 
         return status_aws;
@@ -699,7 +705,7 @@ public class AccessControl {
      */
     private void createDBMirror() {
         String zipFileName = getCurrentZipFilename();
-        if (zipFileName.equals(AccessControl.DB_DOES_NOT_EXIST)) {
+        if (zipFileName == null || zipFileName.equals(AccessControl.DB_DOES_NOT_EXIST)) {
             // Nothing to mirror.
             return;
         }
@@ -749,6 +755,7 @@ public class AccessControl {
      *
      * @param numFilesToKeep Number of files to leave in ACM- directory.
      */
+    @SuppressWarnings("SameParameterValue")
     private void deleteOldZipFiles(int numFilesToKeep) {
         List<File> files = Lists.newArrayList(
                 dbConfiguration.getSharedACMDirectory().listFiles((dir, name) -> {

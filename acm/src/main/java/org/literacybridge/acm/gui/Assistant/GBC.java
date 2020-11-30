@@ -45,7 +45,7 @@ public class GBC extends GridBagConstraints {
         return clone;
     }
 
-    GBC withGridwidth(int newValue) {
+    public GBC withGridwidth(int newValue) {
         GBC clone = (GBC) this.clone();
         clone.gridwidth = newValue;
         return clone;

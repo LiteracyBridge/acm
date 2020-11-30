@@ -37,7 +37,7 @@ public class HttpUtility {
 
     private HttpURLConnection sendRequest(String method,
         String requestURL,
-        JSONObject params,
+        JSONObject body,
         Map<String, String> headers) throws IOException
     {
         URL url = new URL(requestURL);
@@ -47,13 +47,13 @@ public class HttpUtility {
         headers.forEach((key, value) -> httpConn.setRequestProperty(key, value));
         httpConn.setRequestMethod(method);
 
-        if (params != null && params.size() > 0) {
+        if (body != null && body.size() > 0) {
 
             httpConn.setDoOutput(true); // true indicates POST request
 
             // sends POST data
             OutputStreamWriter writer = new OutputStreamWriter(httpConn.getOutputStream());
-            writer.write(params.toString());
+            writer.write(body.toString());
             writer.flush();
         }
 
@@ -64,14 +64,14 @@ public class HttpUtility {
      *
      * @param requestURL
      *            the URL of the remote server
-     * @param params
+     * @param body
      *            A map containing POST data in form of key-value pairs
      * @return An HttpURLConnection object
      * @throws IOException
      *             thrown if any I/O error occurred
      */
     public HttpURLConnection sendPostRequest(String requestURL,
-        JSONObject params,
+        JSONObject body,
         Map<String, String> headers) throws IOException
     {
         Map<String, String> allHeaders = new LinkedHashMap<>();
@@ -79,12 +79,12 @@ public class HttpUtility {
         allHeaders.put("Content-Type", "application/json");
         allHeaders.put("Accept", "application/json");
 
-        return sendRequest("POST", requestURL, params, allHeaders);
+        return sendRequest("POST", requestURL, body, allHeaders);
     }
     public HttpURLConnection sendPostRequest(String requestURL,
-        JSONObject params) throws IOException
+        JSONObject body) throws IOException
     {
-        return sendPostRequest(requestURL, params, null);
+        return sendPostRequest(requestURL, body, null);
     }
     public HttpURLConnection sendGetRequest(String requestURL, Map<String, String> headers)
         throws IOException

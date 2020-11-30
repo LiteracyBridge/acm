@@ -208,6 +208,7 @@ public class GuiAccessControl extends AccessControl {
      */
     @Override
     public void updateDb() {
+        boolean checkoutRevoked = false;
         boolean checkinOk = false;
         boolean saveWork = true;
         int buttonIx;
@@ -246,11 +247,12 @@ public class GuiAccessControl extends AccessControl {
                 checkinOk = true;
                 break checkinLoop;
             case denied:
-                msg = "Someone has forced control of this ACM, so you cannot check-in your changes.\nIf you are worried about losing a lot of work, contact techsupport@literacybridge.org for assistance.";
+                msg = "Someone has forced control of this ACM, so you cannot check-in your changes.\nIf you are worried about losing a lot of work, contact support@amplio.org for assistance.";
                 JOptionPane.showMessageDialog(parent, msg);
                 // To indicate that work was not saved. Will prevent deleting old .zip files, which we may need later.
                 // There is really nothing more we can do here, however.
                 saveWork = false;
+                checkoutRevoked = true;
                 break checkinLoop;
             case networkError: {
                 Object[] options = { "Try again", "Shutdown" };
@@ -284,7 +286,10 @@ public class GuiAccessControl extends AccessControl {
             }
         }
 
-        if (checkinOk) {
+        if (checkoutRevoked) {
+            // Already gave message above
+            msg = null;
+        } else if (checkinOk) {
             if (saveWork) {
                 msg = "Your changes have been checked in.\n\nPlease stay online for a few minutes so your changes\ncan be uploaded (until Dropbox is 'Up to date').";
             } else {

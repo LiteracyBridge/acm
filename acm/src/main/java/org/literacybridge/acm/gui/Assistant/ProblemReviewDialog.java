@@ -169,11 +169,7 @@ public class ProblemReviewDialog extends JDialog {
         String subject = "Error report from content import";
 
         SwingUtilities.invokeLater(() -> {
-            try {
-                sendEmail(from, to, subject, body.toString(), false);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            sendEmail(from, to, subject, body.toString(), false);
             closeButton.setEnabled(true);
             getRootPane().setDefaultButton(closeButton);
         });

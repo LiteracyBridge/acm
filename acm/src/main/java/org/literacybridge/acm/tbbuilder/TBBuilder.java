@@ -144,7 +144,7 @@ public class TBBuilder {
         System.out.println("\n================================================================================\n\n"+
                 "The command line TB-Builder is deprecated and may not work correctly.\n\n"+
                 "All users are strongly encouraged to use the Deployment Assistant in the ACM.\n\n"+
-                "Contact Amplio (techsupport@amplio.org) with questions or for assistance.\n\n"+
+                "Contact Amplio (support@amplio.org) with questions or for assistance.\n\n"+
                 "================================================================================\n\n");
         if (args.length < 3) {
             printUsage();

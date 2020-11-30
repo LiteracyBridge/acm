@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.json.simple.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -161,12 +162,12 @@ public class ProjectsHelper {
                 String baseURL = "https://y06knefb5j.execute-api.us-west-2.amazonaws.com/Devo";
                 String requestURL = baseURL + "/projects";
 
-                JSONObject jsonResponse = authInstance.getAwsInterface().authenticatedRestCall(requestURL);
+                JSONObject jsonResponse = authInstance.getAwsInterface().authenticatedGetCall(requestURL);
 
-                Object o;
                 if (jsonResponse != null) {
-                    o = jsonResponse.get("result");
+                    Object o = jsonResponse.get("result");
                     if (o instanceof Map) {
+                        //noinspection rawtypes
                         Object l = ((Map) o).get("values");
                         if (l instanceof List) {
                             //noinspection unchecked

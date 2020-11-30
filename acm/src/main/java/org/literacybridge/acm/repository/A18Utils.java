@@ -43,6 +43,17 @@ public class A18Utils {
     }
   }
 
+    /**
+     * The a18 file has a 4-byte, little-endian size field, followed by size bytes of data.
+     *
+     * We simply append metadata after the audio data. The a18 player ignores everything after the size bytes
+     * of audio data.
+     *
+     * The metadata is created by LBMetadataSerializer.
+     * @param audioItem The audio item with metadata.
+     * @param a18File The a18 file to receive the serialized metadata.
+     * @throws IOException if the metadata can't be written.
+     */
   public static void appendMetadataToA18(AudioItem audioItem, File a18File) throws IOException {
       Metadata metadata = audioItem.getMetadata();
       Collection<Category> categories = audioItem.getCategoryList();
