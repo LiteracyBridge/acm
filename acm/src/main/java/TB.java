@@ -1,9 +1,7 @@
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -72,12 +70,7 @@ public class TB {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        // First argument is the utility name.
-        String utilName = args[0].toLowerCase();
-        // Remainder are passed through.
-        args = Arrays.copyOfRange(args, 1, args.length);
-
+    public static void run(String utilName, String[] args) throws Exception {
         // Known Util?
         Util util = Util.lookup(utilName);
         if (util != null) {
@@ -86,6 +79,14 @@ public class TB {
             System.err.printf("Unknown Util: %s\n", utilName);
             Util.print();
         }
+    }
 
+    public static void main(String[] args) throws Exception {
+        // First argument is the utility name.
+        String utilName = args[0].toLowerCase();
+        // Remainder are passed through.
+        args = Arrays.copyOfRange(args, 1, args.length);
+        
+        run(utilName, args);
     }
 }
