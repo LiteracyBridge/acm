@@ -45,7 +45,7 @@ public abstract class AbstractFilesPage<T extends AbstractFilesPage.FileImportCo
     }
 
     protected enum AUDIO_EXTS {
-        MP3, OGG, M4a, WMA, WAV, A18;
+        MP3, OGG, M4a, WMA, WAV, A18, AAC;
 
         public static boolean isAudioFile(String name) {
             String ext = FilenameUtils.getExtension(name);
