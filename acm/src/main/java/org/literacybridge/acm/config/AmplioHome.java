@@ -77,10 +77,18 @@ public class AmplioHome {
     private static final Logger LOG = Logger.getLogger(AmplioHome.class.getName());
 
     private final static File USER_HOME_DIR = new File(System.getProperty("user.home", "."));
-    private final static String LiteracybridgeHomeDirName = "LiteracyBridge";
-    private final static String AmplioHomeDirName = "Amplio";
 
     private static final String ACM_DB_DIRS_ROOT = "acm-dbs";
+
+    public enum VERSION {
+        v1("LiteracyBridge"),       // "classic", LiteracyBridge home directory.
+        v2("Amplio");               // Amplio home directory
+
+        VERSION(String directoryName) {
+            this.directoryName = directoryName;
+        }
+        String directoryName;
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -88,8 +96,8 @@ public class AmplioHome {
     //
     // Where we keep app specific data. This is config files, cached data, logs and stats queued for
     // upload, content data, etc.
+    private VERSION version;
     private File homeDirectory;
-    private boolean oldStyleHomeDirectory;
     AmplioHome() {
         this.homeDirectory = new File("Does not exist");
     }
@@ -100,13 +108,14 @@ public class AmplioHome {
 
     protected File getTempDirectory() {
         File dir;
-        if (oldStyleHomeDirectory) {
+        if (version == VERSION.v1) {
             dir = new File(getAppAcmDir(), Constants.TempDir);
         }
         else {
             dir = new File(getHomeDirectory(), Constants.TempDir);
         }
-        if (!dir.exists()) dir.mkdirs();
+        if (!dir.exists()) //noinspection ResultOfMethodCallIgnored
+            dir.mkdirs();
         return dir;
     }
     //
@@ -142,12 +151,12 @@ public class AmplioHome {
     }
 
     public static boolean isOldStyleHomeDirectory() {
-        return getInstance().oldStyleHomeDirectory;
+        return getInstance().version == VERSION.v1;
     }
 
-    private static File findHomeDirectory(AmplioHome instance) {
+    private static void findHomeDirectory(AmplioHome instance) {
         File homeDir = null;
-        boolean isOldStyle = false;
+        VERSION version = VERSION.v1; // If we can't tell.
         // Look for the directory from which we're running.
         File executableFile = new File(AmplioHome.class.getProtectionDomain().getCodeSource().getLocation().getPath());
         if (executableFile.exists() && executableFile.isFile()) {
@@ -170,9 +179,9 @@ public class AmplioHome {
             if (foundHome) {
                 for (File dir : parentDirs) {
                     String name = dir.getName();
-                    if (name.equalsIgnoreCase(AmplioHomeDirName) || name.equalsIgnoreCase(LiteracybridgeHomeDirName)) {
+                    if (name.equalsIgnoreCase(VERSION.v1.directoryName) || name.equalsIgnoreCase(VERSION.v2.directoryName)) {
                         homeDir = dir;
-                        isOldStyle = name.equalsIgnoreCase(LiteracybridgeHomeDirName);
+                        version = name.equalsIgnoreCase(VERSION.v1.directoryName) ? VERSION.v1 : VERSION.v2;
                         break;
                     }
                 }
@@ -181,20 +190,21 @@ public class AmplioHome {
         // If we didn't find the running code's parent to be Amplio or LiteracyBridge, in the user's home
         // directory tree, look for those two directly.
         if (homeDir == null) {
-            homeDir = new File(USER_HOME_DIR, AmplioHomeDirName);
-            if (!homeDir.exists() || !homeDir.isDirectory()) {
-                File legacyDir = new File(USER_HOME_DIR, LiteracybridgeHomeDirName);
+            homeDir = new File(USER_HOME_DIR, VERSION.v2.directoryName);
+            if (homeDir.exists() && homeDir.isDirectory()) {
+                version = VERSION.v2;
+            } else {
+                File legacyDir = new File(USER_HOME_DIR, VERSION.v1.directoryName);
                 if (legacyDir.exists() && legacyDir.isDirectory()) {
                     homeDir = legacyDir;
-                    isOldStyle = true;
+                    version = VERSION.v1;
                 }
             }
         }
         // Either ~/LiteracyBridge or ~/Amplio
         instance.homeDirectory = homeDir;
-        instance.oldStyleHomeDirectory = isOldStyle;
-        System.out.printf("Found %sAmplio home directory in %s\n", isOldStyle?"old-style ":"", homeDir.getName());
-        return homeDir;
+        instance.version = version;
+        System.out.printf("Found %s Amplio home directory in %s\n", version.toString(), homeDir.getName());
     }
 
 
@@ -229,7 +239,15 @@ public class AmplioHome {
      * @return ~/Amplio/ACM/software
      */
     public static File getAppSoftwareDir() {
-        return new File(getAppAcmDir(), "software");
+        if (getInstance().version == VERSION.v1) {
+            return new File(getAppAcmDir(), "software");
+        } else {
+            return getAppAcmDir();
+        }
+    }
+
+    public static File getLogsDir() {
+        return new File(getDirectory(), "logs");
     }
 
     /**
@@ -245,19 +263,20 @@ public class AmplioHome {
      * Audio files in alternate formats. We don't want to upload them, but we also don't want to
      * have to re-create them again. So cache them here.
      *
-     * @return ~/Amplio/ACM/cache
+     * @return ~/Amplio/cache or ~/LiteracyBridge/ACM/cache
      */
     public static File getCachesDir() {
-        if (getInstance().oldStyleHomeDirectory) {
+        if (getInstance().version == VERSION.v1) {
             return new File(getAppAcmDir(), Constants.CACHE_DIR_NAME);
         } else {
-            return new File(getDropboxDir(), Constants.CACHE_DIR_NAME);
+            return new File(getDirectory(), Constants.CACHE_DIR_NAME);
         }
     }
 
 
     /**
-     * The ~/LiteracyBridge/acm_config.properties file. Per computer information (dropbox path).
+     * The ~/Amplio/acm_config.properties or ~/LiteracyBridge/acm_config.properties file.
+     * Per computer information (dropbox path).
      *
      * @return it.
      */
@@ -268,7 +287,7 @@ public class AmplioHome {
     /**
      * TB-Loaders are built here, and downloaded and expanded here.
      *
-     * @return ~/Amplio/TB-Loaders
+     * @return ~/Amplio/TB-Loaders or ~/LiteracyBridge/TB-Loaders
      */
     public static File getLocalTbLoadersDir() {
         return new File(getDirectory(), Constants.TBLoadersHomeDir);
@@ -288,7 +307,7 @@ public class AmplioHome {
         if (dropboxDir != null) return dropboxDir;
 
         Properties userConfig = new Properties();
-        File userConfigFile = getUserConfigFile();;
+        File userConfigFile = getUserConfigFile();
         boolean dirUpdated = false;
         // If there is an environment override for 'dropbox', use that for the
         // global directory.

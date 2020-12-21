@@ -137,7 +137,7 @@ public class CmdLineImporter {
         boolean success = false;
         try {
             boolean allImportedOk = importFiles();
-            ACMConfiguration.getInstance().getCurrentDB().commitDbChanges();
+            ACMConfiguration.getInstance().commitCurrentDB();
             success = allImportedOk;
         } catch(Exception ex) {
             ACMConfiguration.getInstance().closeCurrentDB();

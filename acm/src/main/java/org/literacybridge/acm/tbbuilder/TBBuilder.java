@@ -4,6 +4,7 @@ import com.opencsv.ICSVWriter;
 import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.AmplioHome;
 import org.literacybridge.acm.config.PathsProvider;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.repository.AudioItemRepository;
@@ -137,7 +138,7 @@ public class TBBuilder {
     }
 
     public static void main(String[] args) throws Exception {
-        File lbDir = new File(Constants.USER_HOME_DIR, Constants.LiteracybridgeHomeDirName);
+        File lbDir = AmplioHome.getDirectory();
         File logDir = new File(lbDir, "logs");
         new LogHelper().inDirectory(logDir).withName("TBBuilder.log").absolute().initialize();
 

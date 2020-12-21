@@ -7,17 +7,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /*
-    File structure.
+    File structure of a Dropbox program.
         ~/Dropbox (Amplio)
             ACM-${programid             # various config files for the program
                 TB-Loaders              # bat files to run TB-Loader
-                    TB_Options
-                        activeLists
-                        basic
-                        config_files
-                        firmware
-                        languages
-                        system_menus
+                    TB_Options          # various sub-directories used in creating a deployment
+                        activeLists, basic, config_files, firmware, languages, system_menus
                     communities
                     metadata            # Partial metadata snapshot (This is incomplete)
                     packages            # "Packages" are exported here. These could be cleaned up immediately.
@@ -25,6 +20,7 @@ import java.util.logging.Logger;
                 content                 # Deeply nested directory
                 programspec             # Currently active program spec is cached here
 
+    File structure of a Dropbox-less program.
         ~/Amplio
             acm-dbs
                 ${programid}
@@ -62,14 +58,14 @@ public class PathsProvider {
         programHomeDir.mkdirs();
     }
 
-    /**************************************************************************
+    /* ************************************************************************
      * Directories and files of the ACM Database. These are either in dropbox
      * or are synced with S3.
      * These files are shared and synchronized among all users.
      *
      * Wherever you see only ~/Amplio, it might also be ~/LiteracyBridge, and
      * only ~/Amplio/acm-dbs might also be ~/Dropbox
-     **************************************************************************/
+     * ************************************************************************/
 
     /**
      *

@@ -396,7 +396,7 @@ public class TbLoaderPanel extends JPanel {
         boolean isBorrowed = Authenticator.getInstance().getTbSrnHelper().isBorrowedId();
         String deviceIdHex = "000C";
         String greetingString = String.format("<html><nobr>Hello <b>%s</b>! <i><span style='font-size:0.85em;color:gray'>(%sTB-Loader ID: %s)</span></i></nobr></html>",
-                authInstance.getUserName(),
+                authInstance.getUserSelfName(),
             isBorrowed?"Using ":"", deviceIdHex);
         JLabel greeting = new JLabel(greetingString);
         greetingBox.add(greeting);

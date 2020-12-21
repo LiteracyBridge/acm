@@ -250,7 +250,7 @@ public class FeedbackImporter {
     }
 
     results = importFiles(filesToImport);
-    ACMConfiguration.getInstance().getCurrentDB().commitDbChanges();
+    ACMConfiguration.getInstance().commitCurrentDB();
     ACMConfiguration.getInstance().closeCurrentDB();
     if (results.isSuccess()) {
       results.updateImportedNoErrors(projectDir.getName(), updateDir.getName(),

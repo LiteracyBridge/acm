@@ -27,7 +27,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -112,17 +114,32 @@ public class Authenticator {
 
     // Programs available in local storage. A Map of {programid: description}
     private Map<String, String> locallyAvailablePrograms = new HashMap<>();
+    // Programs available in local dropbox.
+    private HashSet<String> locallyAvailableDbxPrograms;
+    // Programs configured for cloud storage in S3.
+    private List<String> s3RepositoryList;
 
     protected Authenticator() {
         this.identityPersistence = new IdentityPersistence(AmplioHome.getDirectory());
         cognitoHelper = new CognitoHelper();
     }
 
-    public void setLocallyAvailablePrograms(Map<String, String> locallyAvailablePrograms) {
-        this.locallyAvailablePrograms = locallyAvailablePrograms;
+    public List<String> getLocallyAvailablePrograms() {
+        return new ArrayList<>(locallyAvailablePrograms.keySet());
     }
-    public void setLocallyAvailablePrograms(List<String> locallyAvailablePrograms) {
+    public boolean isLocallyDropbox(String program) {
+        return locallyAvailableDbxPrograms.contains(program);
+    }
+
+    public void setLocallyAvailablePrograms(Map<String, String> locallyAvailablePrograms,
+        List<String> locallyAvailableDbxPrograms) {
+        this.locallyAvailablePrograms = locallyAvailablePrograms;
+        this.locallyAvailableDbxPrograms = new HashSet<>(locallyAvailableDbxPrograms);
+    }
+    public void setLocallyAvailablePrograms(List<String> locallyAvailablePrograms,
+        List<String> locallyAvailableDbxPrograms) {
         this.locallyAvailablePrograms = locallyAvailablePrograms.stream().collect(Collectors.toMap(e->e, e->e));
+        this.locallyAvailableDbxPrograms = new HashSet<>(locallyAvailableDbxPrograms);
     }
 
     /**
@@ -215,6 +232,10 @@ public class Authenticator {
         return this.sandboxSelected;
     }
 
+    public boolean isProgramS3(String program) {
+        return s3RepositoryList != null && s3RepositoryList.contains(program);
+    }
+
     public TbSrnHelper getTbSrnHelper() {
         if (tbSrnHelper == null) {
             if (!loginResult.signedIn()) {
@@ -248,9 +269,47 @@ public class Authenticator {
     public enum LoginOptions {OFFLINE_EMAIL_CHOICE,
         CHOOSE_PROGRAM,
         LOCAL_DATA_ONLY,
+        LOCAL_OR_S3(LOCAL_DATA_ONLY),
         OFFER_DEMO_MODE,
         SUGGEST_DEMO_MODE,
-        INCLUDE_FB_ACMS
+        INCLUDE_FB_ACMS,
+        NO_WAIT,
+        NOP; // to alternate with another option: isFoo ? XYZ : NOP
+
+        private List<LoginOptions> incompatible;
+        LoginOptions() { }
+        LoginOptions(LoginOptions... incompatible) {
+            this.incompatible = Arrays.asList(incompatible);
+        }
+        boolean isCompatible(LoginOptions... toTest) {
+            if (incompatible == null) return true;
+            for (LoginOptions t : toTest) {
+                if (incompatible.contains(t))
+                    return false;
+            }
+            return true;
+        }
+        static boolean allCompatible(LoginOptions... options) {
+            for (LoginOptions so : options) {
+                if (!so.isCompatible(options)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        static String getIncompatibles(LoginOptions... options) {
+            List<String> result = new ArrayList<>();
+            for (LoginOptions so : options) {
+                if (so.incompatible != null) {
+                    for (LoginOptions other : options) {
+                        if (so.incompatible.contains(other)) {
+                            result.add(so.name() + " and " + other.name());
+                        }
+                    }
+                }
+            }
+            return String.join(", ", result);
+        }
     }
 
     /**
@@ -265,6 +324,9 @@ public class Authenticator {
      * @return a LoginResult from the process.
      */
     public LoginResult getUserIdentity(Window parent, String applicationName, String defaultProgram, LoginOptions... loginFlags) {
+        if (!LoginOptions.allCompatible(loginFlags)) {
+            throw new IllegalArgumentException("Incompatible options specified: " + LoginOptions.getIncompatibles(loginFlags));
+        }
         Set<LoginOptions> options = new HashSet<>(Arrays.asList(loginFlags));
         if (options.contains(LoginOptions.SUGGEST_DEMO_MODE)) {
             options.add(LoginOptions.OFFER_DEMO_MODE);
@@ -337,11 +399,11 @@ public class Authenticator {
     }
 
     private void onAuthenticated(String jwtToken) {
-        authenticationInfo = new HashMap<>();
         JSONObject payload = CognitoJWTParser.getPayload(jwtToken);
-        for (Object k : payload.keySet()) {
-            authenticationInfo.put(k.toString(), payload.get(k).toString());
-        }
+        @SuppressWarnings("unchecked")
+        Set<Map.Entry<Object,Object>> payloadEntries = payload.entrySet();
+        authenticationInfo = payloadEntries.stream().collect(Collectors.toMap(e->e.getKey().toString(), e->e.getValue().toString()));
+
         String provider = authenticationInfo.get("iss").replace("https://", "");
         credentials = cognitoHelper.GetCredentials(provider, jwtToken);
 
@@ -350,6 +412,17 @@ public class Authenticator {
             userProgramsAndRoles = parseProgramList(authenticationInfo.get("programs"));
         }
         parseDescriptions(authenticationInfo.get("descriptions"));
+        if (authenticationInfo.containsKey("repositories")) {
+            s3RepositoryList = new ArrayList<>();
+            String repository_list = authenticationInfo.get("repositories");
+            String[] repository_groups = repository_list.split(";");
+            for (String repoString : repository_groups) {
+                String[] parts = repoString.split(":");
+                if (parts.length == 2 && parts[0].equalsIgnoreCase("s3")) {
+                    s3RepositoryList.addAll(Arrays.asList(parts[1].split(",")));
+                }
+            }
+        }
     }
 
     private Map<String, String> parseProgramList(String list) {

@@ -57,6 +57,7 @@ public class DBConfiguration {
   private MetadataStore store;
 
   private boolean sandboxed;
+  private boolean syncFailure;
 
   private AccessControl accessControl;
 
@@ -119,7 +120,14 @@ public class DBConfiguration {
     return pathsProvider.getProgramHomeDir();
   }
 
-  /**
+    public boolean isSyncFailure() {
+      return syncFailure;
+    }
+    public void setSyncFailure(boolean syncFailure) {
+      this.syncFailure = syncFailure;
+    }
+
+    /**
    * Gets the name of the local temp file directory. Each ACM has a sub-directory; those sub-dirs
    * are cleaned up at app exit.
    * @return ~/LiteracyBridge/ACM/temp
@@ -258,8 +266,8 @@ public class DBConfiguration {
     return initialized;
   }
 
-  public void updateDb() {
-      accessControl.updateDb();
+  public boolean updateDb() {
+      return accessControl.updateDb();
   }
 
   public boolean commitDbChanges() {

@@ -31,12 +31,7 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 public class ACMConfiguration {
     private static final Logger LOG = Logger.getLogger(ACMConfiguration.class.getName());
 
-//    private final Map<String, DBConfiguration> allDBs = new HashMap<>();
-    private final Map<String, PathsProvider> knownDbs = new HashMap<>();
-    // @TODO: There isn't an apparent reason for this to be an AtomicReference; we're not
-    //   using any of the 'compareAnd...' operations. All we're getting (that I can see -- b.e.)
-    //   is a wrapper around a 'volatile currentDB'.
-    //private final AtomicReferenAtomicReferencece<DBConfiguration> currentDB = new AtomicReference<>();
+    private final Map<String, DBConfiguration> knownDbs = new HashMap<>();
     private DBConfiguration currentDB = null;
 
     private String title;
@@ -181,6 +176,45 @@ public class ACMConfiguration {
     }
 
     /**
+     * @return a map {programid:description} }of the known ACMs (those found on this machine).
+     */
+    public Map<String, String> getLocalProgramDbs() {
+        Map<String, String> programDbs = knownDbs.entrySet()
+            .stream()
+            .collect(Collectors.toMap(e->ACMConfiguration.cannonicalProjectName(e.getKey()), e->e.getValue().getDescription()));
+        return programDbs;
+    }
+
+    public List<String> getLocalDbxDbs() {
+        return knownDbs.entrySet()
+                .stream()
+                .filter(e->e.getValue().getPathProvider().isDropboxDb())
+                .map(Map.Entry<String,DBConfiguration>::getKey)
+                .map(ACMConfiguration::cannonicalProjectName)
+                .filter(Objects::nonNull)
+                .sorted(String::compareToIgnoreCase)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Try to sync with S3.
+     * @param program to be synchronized.
+     * @return true if the sync is successful, false if an exception is thrown.
+     */
+    private boolean tryCloudSync(String program) {
+        try {
+            CloudSync.RemoteResponse response;
+            response = CloudSync.sync(program + "_PROGSPEC");
+            if (response.responseHasError) return false;
+            response = CloudSync.sync(program + "_DB");
+            if (response.responseHasError) return false;
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    /**
      * Starts the background sync process if it is not already running.
      * Syncs the given program.
      * The first sync (or several) will fail if we had to start the background process. When a failure
@@ -190,13 +224,12 @@ public class ACMConfiguration {
      * @return true if the sync was successful.
      */
     private boolean cloudStartAndSync(String program) {
-        CloudSync.start();
+        CloudSync.start(true);
         long delay = 250;
         for (int i=0; i<=7; i++) {
-            try {
-                CloudSync.sync(program);
+            if (tryCloudSync(program)) {
                 return true;
-            } catch (Exception ignored) {
+            } else {
                 try {
                     System.out.printf("Exception syncing, waiting %dms to try again...", delay);
                     Thread.sleep(delay);
@@ -209,6 +242,12 @@ public class ACMConfiguration {
         return false;
     }
 
+    public enum S3SyncState {
+        REQUIRED_FOR_S3,
+        FAILED,
+        NOT_REQUIRED
+    }
+
     /**
      * "Open" the given db. Globally locks the database if not opening "sandboxed". (Here, "global" mean
      * "on planet Earth".)
@@ -218,19 +257,20 @@ public class ACMConfiguration {
      * @return true
      * @throws Exception if the database can't be opened.
      */
-    public synchronized boolean setCurrentDB(String dbName, BiConsumer<Runnable,Runnable> waiter) throws Exception {
+    private synchronized boolean setCurrentDB(String dbName, S3SyncState syncState, BiConsumer<Runnable,Runnable> waiter) throws Exception {
         PathsProvider dbPathProvider = getPathProvider(dbName);
         if (dbPathProvider == null) {
             throw new IllegalArgumentException("DB '" + dbName + "' not known.");
         }
         DBConfiguration dbConfig = new DBConfiguration(dbPathProvider);
+        dbConfig.setSyncFailure(syncState==S3SyncState.FAILED);
 
         if (currentDB != null) {
             AcmLocker.unlockDb();
         }
 
         boolean[] inSync = {true};
-        if (!dbPathProvider.isDropboxDb()) {
+        if (!dbPathProvider.isDropboxDb() && syncState==S3SyncState.REQUIRED_FOR_S3) {
             // No permits, so acquire will wait until the release.
             Semaphore available = new Semaphore(0);
             waiter.accept(()-> {inSync[0] = cloudStartAndSync(dbPathProvider.getProgramName());}, available::release);
@@ -251,14 +291,37 @@ public class ACMConfiguration {
      * @throws Exception if the database can't be opened.
      */
     public boolean setCurrentDB(String dbName) throws Exception {
+        return setCurrentDB(dbName, S3SyncState.REQUIRED_FOR_S3);
+    }
+    public boolean setCurrentDB(String dbName, S3SyncState syncState) throws Exception {
         // Pass a Consumer that simply calls its passed Runnable.
-        return setCurrentDB(dbName, (a,b)->{a.run();b.run();});
+        return setCurrentDB(dbName, syncState, (a,b)->{a.run();b.run();});
+    }
+
+    /**
+     * Commits the current database. If running interactively, prompts the user first.
+     *
+     * TODO: Prompt the user before calling this.
+     */
+    public synchronized void commitCurrentDB() {
+        if (currentDB != null && !currentDB.isSandboxed()) {
+            boolean needSync = true;
+            if (isDisableUI()) {
+                // Headless version, immediately commits changes.
+                currentDB.commitDbChanges();
+            } else {
+                // Interactive version, prompts first.
+                needSync = currentDB.updateDb();
+            }
+            if (!currentDB.getPathProvider().isDropboxDb()) {
+                tryCloudSync(currentDB.getProgramName());
+            }
+        }
     }
 
     public synchronized void closeCurrentDB() {
-        DBConfiguration oldDB = currentDB;
-        if (oldDB != null) {
-            oldDB.closeDb();
+        if (currentDB != null) {
+            currentDB.closeDb();
             AcmLocker.unlockDb();
             currentDB = null;
         }
@@ -359,9 +422,9 @@ public class ACMConfiguration {
      * @return a PathProvider for the given project.
      */
     public PathsProvider getPathProvider(String programId) {
-        PathsProvider result = knownDbs.get(cannonicalProjectName(programId));
+        PathsProvider result = knownDbs.get(cannonicalProjectName(programId)).getPathProvider();
         if (result == null) {
-            result = knownDbs.get(cannonicalAcmDirectoryName(programId));
+            result = knownDbs.get(cannonicalAcmDirectoryName(programId)).getPathProvider();
         }
         return result;
     }
@@ -377,6 +440,14 @@ public class ACMConfiguration {
         knownDbs.putAll(findContainedAcmDbs(AmplioHome.getHomeDbsRootDir(), false));
     }
 
+    public void discoverDB(String program) {
+        program = cannonicalProjectName(program);
+        File programDir = new File(AmplioHome.getHomeDbsRootDir(), program);
+        if (programDir.isDirectory() && knownDbs.containsKey(program) && knownDbs.get(program).getPathProvider().isDropboxDb()) {
+            knownDbs.put(program, new DBConfiguration(new PathsProvider(program, false)));
+        }
+    }
+
     /**
      * Find the ACM databases in the given directory. An ACM database is recognized by virtue of containing
      * at least one "db123.zip" file. False positives are possible.
@@ -384,8 +455,8 @@ public class ACMConfiguration {
      * @param isDropbox true if this is the dropbox directory.
      * @return A map of {programid : PathsProvider}
      */
-    private Map<String, PathsProvider> findContainedAcmDbs(File containingDir, boolean isDropbox) {
-        Map<String, PathsProvider> result = new HashMap<>();
+    private Map<String, DBConfiguration> findContainedAcmDbs(File containingDir, boolean isDropbox) {
+        Map<String, DBConfiguration> result = new HashMap<>();
         // Regex to match & extract the number from strings like db123.zip
         String dbRegex = "^db(\\d+).zip$";
 
@@ -400,7 +471,8 @@ public class ACMConfiguration {
                         if (dbConfigFile.exists() && dbConfigFile.isFile() &&
                                 contentDir.exists() && contentDir.isDirectory() &&
                                 dbFiles != null && dbFiles.length>0) {
-                            result.put(cannonicalProjectName(d.getName()), new PathsProvider(d.getName(), isDropbox));
+                            PathsProvider pathsProvider = new PathsProvider(d.getName(), isDropbox);
+                            result.put(cannonicalProjectName(d.getName()), new DBConfiguration(pathsProvider));
                         }
                     }
                 }

@@ -6,12 +6,21 @@ import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.PanelButton;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
 
-import javax.swing.*;
+import javax.swing.Box;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.ListCellRenderer;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Component;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
@@ -28,12 +37,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.awt.GridBagConstraints.BOTH;
 import static java.awt.GridBagConstraints.CENTER;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.NO_WAIT;
 import static org.literacybridge.acm.cloud.Authenticator.UPDATING_ROLES;
 import static org.literacybridge.acm.cloud.Authenticator.ALL_USER_ROLES;
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
@@ -46,7 +57,8 @@ public class ProgramCard extends CardContent {
     private final JList<String> choicesList;
     private final JCheckBox forceSandbox;
     private final JScrollPane choicesListScrollPane;
-    private List<String> programsAllowingUpdates = new ArrayList<>();
+    private List<String> allowedToBeUpdated = new ArrayList<>();
+    private List<String> mustBeDownloaded;
 
     private final Map<String, String> descriptionToProgramid = new HashMap<>();
     private Set<String> shownProgramids;
@@ -54,8 +66,7 @@ public class ProgramCard extends CardContent {
     public static boolean giveChooserChoice = true; // an easy way to essentially #ifdef.
 
     public ProgramCard(WelcomeDialog welcomeDialog,
-        WelcomeDialog.Cards panel)
-    {
+            WelcomeDialog.Cards panel) {
         super(welcomeDialog, DIALOG_TITLE, panel);
         JPanel dialogPanel = this;
 
@@ -87,6 +98,7 @@ public class ProgramCard extends CardContent {
         choicesList.addListSelectionListener(this::listSelectionListener);
         choicesList.addFocusListener(listFocusListener);
         choicesList.addMouseListener(listMouseListener);
+        choicesList.setCellRenderer(listCellRenderer);
 
         choicesListScrollPane = new JScrollPane(choicesList);
         dialogPanel.add(choicesListScrollPane, gbc.withWeighty(1.0).withFill(BOTH));
@@ -101,7 +113,8 @@ public class ProgramCard extends CardContent {
                 forceSandbox.setSelected(true);
                 forceSandbox.setEnabled(false);
             }
-            forceSandbox.setToolTipText("In DEMO mode (or TRAINING mode), you can make changes, but they will be discarded when you are done.");
+            forceSandbox.setToolTipText(
+                    "In DEMO mode (or TRAINING mode), you can make changes, but they will be discarded when you are done.");
         }
 
         okButton = new PanelButton("Ok");
@@ -135,7 +148,7 @@ public class ProgramCard extends CardContent {
         // If there are no choices to be made, either program or sandbox, we're done.
         // - Only one program, not updatable, matches default (if any)
         List<String> programidList = new ArrayList<>(shownProgramids);
-        if (programidList.size() == 1 && !programsAllowingUpdates.contains(programidList.get(0)) &&
+        if (programidList.size() == 1 && !allowedToBeUpdated.contains(programidList.get(0)) &&
             (StringUtils.isBlank(welcomeDialog.defaultProgram) ||
                 programidList.get(0).equals(welcomeDialog.defaultProgram))) {
             choicesList.setSelectedIndex(0); // so onOk() can find the proper value.
@@ -159,6 +172,10 @@ public class ProgramCard extends CardContent {
             choicesList.setRequestFocusEnabled(true);
             choicesList.requestFocusInWindow();
         }
+
+        // If no_wait is specified, and we have everything we need, go!
+        if (welcomeDialog.options.contains(NO_WAIT) && okButton.isEnabled()) onOk();
+
     }
 
     /**
@@ -201,9 +218,9 @@ public class ProgramCard extends CardContent {
             Map<String, String> programs = welcomeDialog.cognitoInterface.getProgramRoles();
             shownProgramids = programs.keySet();
             // If data must already be local, filter the list to those ACMs that are local.
+            Map<String, String> localPrograms = welcomeDialog.cognitoInterface.getLocallyAvailablePrograms();
+            Set<String> localProgramids = localPrograms.keySet();
             if (welcomeDialog.options.contains(Authenticator.LoginOptions.LOCAL_DATA_ONLY)) {
-                Map<String, String> localPrograms = welcomeDialog.cognitoInterface.getLocallyAvailablePrograms();
-                Set<String> localProgramids = localPrograms.keySet();
                 final Set<String> usersPrograms = shownProgramids;
                 shownProgramids = localProgramids.stream()
                     .filter(name -> {
@@ -221,7 +238,7 @@ public class ProgramCard extends CardContent {
             // If updating (not sandboxing) is an option, determine which ACMs will be sandbox
             // only, and which allow a choice.
             if (welcomeDialog.options.contains(Authenticator.LoginOptions.OFFER_DEMO_MODE)) {
-                programsAllowingUpdates = shownProgramids
+                allowedToBeUpdated = shownProgramids
                     .stream()
                     .filter(name -> {
                         Set<String> roles = Arrays.stream(programs.getOrDefault(name, ALL_ROLES).split(","))
@@ -231,9 +248,17 @@ public class ProgramCard extends CardContent {
                     })
                     .collect(Collectors.toList());
             }
+
+            mustBeDownloaded = shownProgramids.stream()
+                .filter(name -> {
+                    // If the program is not available locally, or it is locally dropbox but is really an s3 program,
+                    // then it must be downloaded
+                    return !localProgramids.contains(name) ||
+                        (Authenticator.getInstance().isLocallyDropbox(name) && Authenticator.getInstance().isProgramS3(name));
+                }).collect(Collectors.toList());
+
         } else {
             shownProgramids = welcomeDialog.cognitoInterface.getLocallyAvailablePrograms().keySet();
-            // Note that "allowedToBeUpdated" is left empty in this case.
         }
     }
 
@@ -331,6 +356,66 @@ public class ProgramCard extends CardContent {
         ok();
     }
 
+    private List<String> getProgramIdsToShow() {
+        List<String> localProgramIds = Authenticator.getInstance().getLocallyAvailablePrograms();
+        boolean localOnly = welcomeDialog.options.contains(Authenticator.LoginOptions.LOCAL_DATA_ONLY);
+        boolean localOrS3 = welcomeDialog.options.contains(Authenticator.LoginOptions.LOCAL_OR_S3);
+        boolean includeUF = welcomeDialog.options.contains(Authenticator.LoginOptions.INCLUDE_FB_ACMS);
+
+        // If data must already be local, filter the list to those ACMs that are local.
+        // If "LOCAL_OR_S3" means local or S3 cloud, from whence we can download it.
+        Predicate<String> filter = name -> {
+            int fb = name.indexOf("-FB-");
+            if (fb > 0) {
+                // Use the part before the "-FB-" to determine if one of the user's programs?
+                if (includeUF) { name = name.substring(0, fb); } else { return false; }
+            }
+            if (localProgramIds.contains(name)) return true;
+            if (localOnly) return false;
+            return !localOrS3 || Authenticator.getInstance().isProgramS3(name);
+        };
+
+        List<String> usersPrograms = welcomeDialog.cognitoInterface.getProgramRoles().keySet().stream()
+                .filter(filter)
+                .collect(Collectors.toList());
+
+        mustBeDownloaded = usersPrograms.stream()
+                .filter(name -> {
+                    // If the program is not available locally, or it is locally dropbox but is really an s3 program,
+                    // then it must be downloaded
+                    return !localProgramIds.contains(name) ||
+                            (Authenticator.getInstance().isLocallyDropbox(name) && Authenticator.getInstance().isProgramS3(name));
+                }).collect(Collectors.toList());
+        return usersPrograms;
+    }
+
+    /**
+     * A renderer to add "(requires download)" to programs that can be opened, but aren't local, and therefore
+     * must be downloaded.
+     */
+    ListCellRenderer<? super String> listCellRenderer = new DefaultListCellRenderer() {
+        private void decorateDownloads(JLabel toBeDecorated, boolean decorate) {
+            if (decorate) {
+                String newText = String.format("<html>%s<em> (requires download)</em></html>", toBeDecorated.getText());
+                toBeDecorated.setText(newText);
+            }
+        }
+
+        @Override
+        public Component getListCellRendererComponent(
+                JList<?> list,
+                Object value,
+                int index,
+                boolean isSelected,
+                boolean cellHasFocus) {
+            Component result = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            String name = list.getModel().getElementAt(index).toString();
+            decorateDownloads((JLabel) result, mustBeDownloaded.contains(name));
+            return result;
+        }
+    };
+
+
     /**
      * Mouse listener so we can accept a match on a double click.
      */
@@ -344,6 +429,7 @@ public class ProgramCard extends CardContent {
 
     /**
      * Listens for list selection, and enables the OK button whenever an item is selected.
+     *
      * @param listSelectionEvent isunused.
      */
     private void listSelectionListener(@SuppressWarnings("unused") ListSelectionEvent listSelectionEvent) {
@@ -352,11 +438,11 @@ public class ProgramCard extends CardContent {
         okButton.setEnabled(haveSelection);
         setListBorder();
         if (haveSelection) {
-            boolean canUpdate = programsAllowingUpdates.contains(selectedProgram);
+            boolean canUpdate = allowedToBeUpdated.contains(selectedProgram);
             if (canUpdate) {
                 boolean suggestSandbox = welcomeDialog.options.contains(Authenticator.LoginOptions.SUGGEST_DEMO_MODE);
                 forceSandbox.setEnabled(true);
-                forceSandbox.setSelected(explicitSandbox!=null?explicitSandbox:suggestSandbox);
+                forceSandbox.setSelected(explicitSandbox != null ? explicitSandbox : suggestSandbox);
             } else {
                 forceSandbox.setEnabled(false);
                 forceSandbox.setSelected(true);
@@ -377,19 +463,23 @@ public class ProgramCard extends CardContent {
         }
     };
 
+    /**
+     * Sets the program list border. A wider border to indicate focus, and red to indicate that a selection
+     * is still needed.
+     */
     private void setListBorder() {
         boolean haveFocus = choicesList.hasFocus();
         boolean haveSelection = choicesList.getLeadSelectionIndex() >= 0;
-        int ix = (haveSelection?0:2) + (haveFocus?0:1);
+        int ix = (haveSelection ? 0 : 2) + (haveFocus ? 0 : 1);
         choicesListScrollPane.setBorder(borders[ix]);
     }
 
     private final Color borderColor = new Color(136, 176, 220);
     private final RoundedLineBorder[] borders = {
-        new RoundedLineBorder(borderColor, 2, 6),
-        new RoundedLineBorder(borderColor, 1, 6, 2),
-        new RoundedLineBorder(Color.RED, 2, 6),
-        new RoundedLineBorder(Color.RED, 1, 6, 2)
+            new RoundedLineBorder(borderColor, 2, 6),
+            new RoundedLineBorder(borderColor, 1, 6, 2),
+            new RoundedLineBorder(Color.RED, 2, 6),
+            new RoundedLineBorder(Color.RED, 1, 6, 2)
     };
 
     /**

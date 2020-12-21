@@ -41,8 +41,8 @@ public class AcmCheckoutTest extends JDialog {
     private JComboBox<String> functionChooser;
     private JTextField programField;
     private JTextArea results;
-    private JTextField phoneField;
     private JTextField nameField;
+    private JTextField emailField;
     private JTextField versionField;
     private JTextField computernameField;
     private JTextField keyField;
@@ -85,13 +85,13 @@ public class AcmCheckoutTest extends JDialog {
         programField = new JTextField(ACMConfiguration.getInstance().getCurrentDB().getProgramName());
         dialogPanel.add(programField, gbc_controls);
 
-        dialogPanel.add(new JLabel("Name:"), gbc_labels);
-        nameField = new JTextField(authenticator.getUserEmail());
-        dialogPanel.add(nameField, gbc_controls);
+        dialogPanel.add(new JLabel("Email:"), gbc_labels);
+        emailField = new JTextField(authenticator.getUserEmail());
+        dialogPanel.add(emailField, gbc_controls);
 
-        dialogPanel.add(new JLabel("Phone:"), gbc_labels);
-        phoneField = new JTextField(authenticator.getUserName());
-        dialogPanel.add(phoneField, gbc_controls);
+        dialogPanel.add(new JLabel("Name:"), gbc_labels);
+        nameField = new JTextField(authenticator.getUserSelfName());
+        dialogPanel.add(nameField, gbc_controls);
 
         dialogPanel.add(new JLabel("Version:"), gbc_labels);
         versionField = new JTextField(Constants.ACM_VERSION);
@@ -171,7 +171,7 @@ public class AcmCheckoutTest extends JDialog {
         url.append('/').append(functionChooser.getSelectedItem());
         url.append('/').append(programField.getText());
         url.append("?version=").append(versionField.getText());
-        url.append(paramString("name", nameField));
+        url.append(paramString("name", emailField));
         url.append(paramString("computername", computernameField));
         url.append(paramString("key", keyField));
         url.append(paramString("filename", filenameField));

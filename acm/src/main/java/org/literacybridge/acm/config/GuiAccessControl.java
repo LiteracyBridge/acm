@@ -81,21 +81,22 @@ public class GuiAccessControl extends AccessControl {
                 msg = "Cannot reach Amplio server.  Do you want to get online now and try again or use Demo Mode?";
                 String title = "Cannot Connect to Server";
                 buttonIx = JOptionPane.showOptionDialog(parent, msg, title,
-                                                        JOptionPane.YES_NO_CANCEL_OPTION,
-                                                        JOptionPane.QUESTION_MESSAGE, null, options,
-                                                        options[0]);
+                        JOptionPane.YES_NO_CANCEL_OPTION,
+                        JOptionPane.QUESTION_MESSAGE, null, options,
+                        options[0]);
                 switch (buttonIx) {
-                case JOptionPane.CLOSED_OPTION:
-                    stackTraceExit(1);
-                case JOptionPane.YES_OPTION:
-                    // Try again
-                    break;
-                case JOptionPane.NO_OPTION:
-                    useSandbox = true;
-                    break statusLoop;
+                    case JOptionPane.CLOSED_OPTION:
+                        stackTraceExit(1);
+                    case JOptionPane.YES_OPTION:
+                        // Try again
+                        break;
+                    case JOptionPane.NO_OPTION:
+                        useSandbox = true;
+                        break statusLoop;
                 }
             }
-            break;
+            case syncFailure:
+                // fall through to notAvailable
             case notAvailable:
                 // Another user has the db checked out. If user requested sandbox anyway, just honor that.
                 if (useSandbox) break statusLoop;
@@ -104,6 +105,8 @@ public class GuiAccessControl extends AccessControl {
                 Object[] options = { "Shutdown", "Use Demo Mode" };
                 if (accessStatus == AccessStatus.outdatedDb) {
                     msg = "The latest version of the ACM database has not yet downloaded to this computer.\nYou may shutdown and wait or begin demonstration mode with the previous version.";
+                } else if (accessStatus == AccessStatus.syncFailure) {
+                    msg = "Cannot synchronize with Amplio content server.\nYou may shutdown and wait or begin demonstration mode with the available content.";
                 } else {
                     String openby = super.getPosessor().getOrDefault("openby", "unknown user");
                     String opendate = super.getPosessor().getOrDefault("opendate", "unknown");
@@ -204,13 +207,14 @@ public class GuiAccessControl extends AccessControl {
      * Calls AccessControl commitDbChanges or discardDbChanges, with appropriate dialogs before and
      * after. This function doesn't actually DO anything, that's all deferred to AccessControl.
      *
-     * @return True if the update was successful.
+     * @return True if the update was saved successful.
      */
     @Override
-    public void updateDb() {
+    public boolean updateDb() {
         boolean checkoutRevoked = false;
         boolean checkinOk = false;
         boolean saveWork = true;
+        boolean savedWork = false; // was it actually saved OK.
         int buttonIx;
 
         if (ACMConfiguration.getInstance().isDisableUI()) {
@@ -219,7 +223,7 @@ public class GuiAccessControl extends AccessControl {
 
         if (!super.dbConfiguration.getMetadataStore().hasChanges()) {
             super.discardDbChanges();
-            return;
+            return savedWork;
         }
 
         Object[] optionsSaveWork = { "Save Work", "Throw Away Your Latest Changes" };
@@ -245,6 +249,7 @@ public class GuiAccessControl extends AccessControl {
             switch (updateStatus) {
             case ok:
                 checkinOk = true;
+                savedWork = saveWork; // We did what we set out to do.
                 break checkinLoop;
             case denied:
                 msg = "Someone has forced control of this ACM, so you cannot check-in your changes.\nIf you are worried about losing a lot of work, contact support@amplio.org for assistance.";
@@ -305,6 +310,7 @@ public class GuiAccessControl extends AccessControl {
         if (msg != null)
             JOptionPane.showMessageDialog(parent, msg);
 
+        return savedWork;
     }
 
     /**

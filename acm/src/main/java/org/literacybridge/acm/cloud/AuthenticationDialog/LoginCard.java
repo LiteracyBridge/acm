@@ -21,6 +21,7 @@ import java.awt.event.KeyListener;
 import static java.awt.GridBagConstraints.CENTER;
 import static java.awt.GridBagConstraints.EAST;
 import static java.awt.GridBagConstraints.NONE;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.NO_WAIT;
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 
@@ -98,6 +99,9 @@ public class LoginCard extends CardContent {
         passwordField.setRevealPasswordEnabled(!welcomeDialog.isSavedPassword());
         emailField.setRequestFocusEnabled(true);
         emailField.requestFocusInWindow();
+
+        // If no_wait is specified, and we have everything we need, go!
+        if (welcomeDialog.options.contains(NO_WAIT) && login.isEnabled()) onLogin(null);
     }
 
     public boolean isRememberMeSelected() {

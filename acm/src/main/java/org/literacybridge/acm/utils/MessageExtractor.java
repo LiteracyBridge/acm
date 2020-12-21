@@ -310,7 +310,7 @@ public class MessageExtractor {
                     metadataStore.deleteAudioItem(item.getId());
                     metadataStore.commit(item);
                 }
-                ACMConfiguration.getInstance().getCurrentDB().commitDbChanges();
+                ACMConfiguration.getInstance().commitCurrentDB();
             }
 
         } catch (Exception ex) {

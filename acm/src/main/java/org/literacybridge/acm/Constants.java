@@ -16,18 +16,11 @@ public class Constants {
   public final static String TBLoadersHomeDir = "TB-Loaders";
   public final static String TBLoadersLogDir = "tbl-logs";
   public final static String TbCollectionWorkDir = "collectiondir";
-  public final static String CommunitiesDir = "communities";
   public final static String uploadQueue = "uploadqueue";
   public final static String ProgramSpecDir = "programspec";
-  public final static String DefaultSharedDB = "ACM-test/" + DBHomeDir;
-  public final static String DefaultSharedRepository = "ACM-test/"
-      + RepositoryHomeDir;
-  public final static String TBDefinitionsHomeDirName = "TB-definitions";
   public final static String USERS_APPLICATION_PROPERTIES = "acm_config.properties";
   public final static String CONFIG_PROPERTIES = "config.properties";
   public final static String CHECKOUT_PROPERTIES_SUFFIX = "-checkedOut.properties";
-  public final static String USER_WRITE_LOCK_FILENAME = "locked.txt";
-  public final static String DB_ACCESS_FILENAME = "accessList.txt";
   public final static String USER_FEEDBACK_INCLUDELIST_FILENAME = "userfeedback.includelist";
 
   public final static File USER_HOME_DIR = new File(
@@ -36,8 +29,6 @@ public class Constants {
 
   public final static String USER_NAME = "USER_NAME";
   public final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";
-  // public final static String DEFAULT_REPOSITORY = "DEFAULT_REPOSITORY";
-  // public final static String DEFAULT_DB = "DEFAULT_DB";
   public final static String GLOBAL_SHARE_PATH = "GLOBAL_SHARE_PATH";
   public final static String RECORDING_COUNTER_PROP = "RECORDING_COUNTER";
   public final static String DEVICE_ID_PROP = "DEVICE_ID";

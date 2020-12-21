@@ -37,6 +37,9 @@ public class CommandLineParams {
   @Option(name="--devo", aliases={"--dev"}, usage="Enable 'developer' features.")
   public boolean devo;
 
+  @Option(name="--go", usage="Do not wait for user to override default values.")
+  public boolean go;
+
   @Argument(required=false)
   public String sharedACM;
 }

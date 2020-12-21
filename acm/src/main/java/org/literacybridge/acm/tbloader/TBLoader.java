@@ -50,7 +50,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.Constants.TBLoadersLogDir;
-import static org.literacybridge.acm.Constants.TbCollectionWorkDir;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.CHOOSE_PROGRAM;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.OFFLINE_EMAIL_CHOICE;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_NUMBER;
@@ -302,7 +301,8 @@ public class TBLoader extends JFrame {
      */
     private void authenticate() {
         Authenticator authInstance = Authenticator.getInstance();
-        authInstance.setLocallyAvailablePrograms(DeploymentsManager.getLocalPrograms());
+        authInstance.setLocallyAvailablePrograms(DeploymentsManager.getLocalPrograms(),
+                ACMConfiguration.getInstance().getLocalDbxDbs());
         Authenticator.LoginResult result = authInstance.getUserIdentity(this, "TB-Loader", newProject, OFFLINE_EMAIL_CHOICE, CHOOSE_PROGRAM);
         if (result == Authenticator.LoginResult.FAILURE) {
             JOptionPane.showMessageDialog(this,

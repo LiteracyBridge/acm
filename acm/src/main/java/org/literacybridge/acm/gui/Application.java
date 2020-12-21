@@ -8,12 +8,14 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.AmplioHome;
+import org.literacybridge.acm.config.PathsProvider;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
 import org.literacybridge.acm.gui.MainWindow.MainView;
 import org.literacybridge.acm.gui.MainWindow.ToolbarView;
 import org.literacybridge.acm.gui.dialogs.AcmCheckoutTest;
 import org.literacybridge.acm.gui.dialogs.LafTester;
+import org.literacybridge.acm.gui.dialogs.S3SyncDialog;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
@@ -38,16 +40,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.CHOOSE_PROGRAM;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.INCLUDE_FB_ACMS;
-import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.LOCAL_DATA_ONLY;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.LOCAL_OR_S3;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.NOP;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.NO_WAIT;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.OFFER_DEMO_MODE;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.OFFLINE_EMAIL_CHOICE;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.SUGGEST_DEMO_MODE;
@@ -59,8 +60,6 @@ public class Application extends JXFrame {
   private static final long serialVersionUID = -7011153239978361786L;
 
   public static double JAVA_VERSION = getJavaVersion();
-
-//  private static boolean OWN_SPLASH = false;
 
   private final MainView mainView;
 
@@ -118,7 +117,8 @@ public class Application extends JXFrame {
       public void windowClosing(WindowEvent e) {
         try {
           if (!ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) {
-              ACMConfiguration.getInstance().getCurrentDB().updateDb();
+              // Will ask user if they want to save.
+              ACMConfiguration.getInstance().commitCurrentDB();
           }
           ACMConfiguration.getInstance().closeCurrentDB();
         } catch (Exception e1) {
@@ -151,15 +151,21 @@ public class Application extends JXFrame {
     }
     String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
         "  --  CHANGES WILL *NOT* BE SAVED!":"";
-    StringBuilder dbVersion = new StringBuilder('v')
+    String cloudIndicator = ACMConfiguration.getInstance().getCurrentDB().getPathProvider().isDropboxDb()
+                            ? (OsUtils.WINDOWS ? "dbx" : "🦤️")
+                            : (OsUtils.WINDOWS ? "s3" : "✓");
+    String layoutIndicator = AmplioHome.isOldStyleHomeDirectory()
+                             ? (OsUtils.WINDOWS ? "v1" : "⚠️")
+                             : (OsUtils.WINDOWS ? "v2" : "✓");
+    StringBuilder dbVersion = new StringBuilder("v")
             .append(ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion())
-            .append(AmplioHome.isOldStyleHomeDirectory()?"⚠️":"")
-            .append(ACMConfiguration.getInstance().getCurrentDB().getPathProvider().isDropboxDb()?"🦤️":"✓");
+            .append(cloudIndicator);
 
-    String title = String.format("%s  --  %s (%s)  --  %s (%s)%s",
+    String title = String.format("%s  --  %s (%s%s)  --  %s (%s)%s",
             greeting,
             LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
             Constants.ACM_VERSION,
+            layoutIndicator,
             ACMConfiguration.getInstance().getTitle(),
             dbVersion.toString(),
             sandboxWarning);
@@ -174,13 +180,6 @@ public class Application extends JXFrame {
     statusBar = new ACMStatusBar();
     setStatusBar(statusBar);
     taskManager = new BackgroundTaskManager(statusBar);
-
-//    try {
-//      if (OWN_SPLASH)
-//        splashScreen.setProgressLabel("Updating index...");
-//    } catch (Exception e) {
-//      e.printStackTrace();
-//    }
 
     // starts file system monitor after UI has been initialized
     fileSystemMonitor
@@ -227,18 +226,10 @@ public class Application extends JXFrame {
    * @throws Exception if initialization fails.
    */
   public static void main(String[] args) throws Exception {
-      new LogHelper().withName("ACM.log").initialize();
+      new LogHelper().inDirectory(AmplioHome.getLogsDir()).withName("ACM.log").initialize();
 
     // We can use this to put the menu in the right place on MacOS. When we have a menu.
     System.setProperty("apple.laf.useScreenMenuBar", "true");
-//    JMenuBar menuBar = new JMenuBar();
-//    JMenu menu = new JMenu("My Menu");
-//    menuBar.add(menu);
-//    JMenuItem menuItem = new JMenuItem("Just testing...");
-//    menu.add(menuItem);
-//    menuItem.addActionListener(e->{
-//      System.out.println("Hello, world!");
-//    });
     // This doesn't work because somehow the property has already been read by this point.
     // Something to do with the AppKit thread starting earlier than this.
     //System.setProperty("apple.eawt.quitStrategy", "CLOSE_ALL_WINDOWS");
@@ -248,7 +239,6 @@ public class Application extends JXFrame {
     CmdLineParser parser = new CmdLineParser(params);
     try {
       parser.parseArgument(args);
-//      params.sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(params.sharedACM);
     } catch (CmdLineException e) {
       System.err.println(e.getMessage());
       System.err.println(
@@ -256,7 +246,6 @@ public class Application extends JXFrame {
       parser.printUsage(System.err);
       return;
     }
-//    if (params.noSplash) OWN_SPLASH = false;
 
     startUp(params);
 
@@ -269,27 +258,16 @@ public class Application extends JXFrame {
     preRunChecks();
 
     SplashScreen splash = null;
-//    if (OWN_SPLASH) {
-//      splash = new SplashScreen();
-//      splash.showSplashScreen();
-//    }
-//      URL iconURL = Application.class.getResource("/tb_headset.png");
     URL iconURL = Application.class.getResource("/tb.png");
     Image iconImage = new ImageIcon(iconURL).getImage();
     if (OsUtils.MAC_OS) {
       OsUtils.setOSXApplicationIcon(iconImage);
-//    } else {
-//      if (OWN_SPLASH)
-//        splash.setIconImage(iconImage);
     }
     OsUtils.enableOSXQuitStrategy();
 
       // set look & feel; we use Sea Glass by default.
       SwingUtils.setLookAndFeel(params.nimbus?"nimbus":"");
 
-    // String dbDirName = null, repositoryDirName= null;
-    // initialize config and generate random ID for this acm instance
-//    splash.setProgressLabel("Initializing...");
     params.update = true; // may be overridden later.
     ACMConfiguration.initialize(params);
 
@@ -301,35 +279,18 @@ public class Application extends JXFrame {
       System.exit(1);
     }
 
-    // init database
-    try {
-      String text = "Syncing database for " + params.sharedACM;
-      ACMConfiguration.getInstance().setCurrentDB(params.sharedACM,
-              (a,b) -> {
-                UIUtils.runWithWaitSpinner(text, null, a,
-                        b, UIUtils.UiOptions.TOP_THIRD);
-              });
-    } catch (Exception e) {
-      e.printStackTrace();
-      JOptionPane.showMessageDialog(null,
-              "Unable to connect to database. Please try restarting the ACM.");
-      System.exit(1);
-    }
+    openAcmDb(params.sharedACM);
 
-      application = new Application(null);
+    application = new Application(null);
       OsUtils.enableOSXFullscreen(application);
       if (!OsUtils.MAC_OS) {
         application.setIconImage(iconImage);
       }
-//      if (OWN_SPLASH)
-//        splash.setProgressLabel("Initialization complete. Launching UI...");
       application.setSize(1000, 725);
       application.setLocation(20, 20);
 
       application.setVisible(true);
       application.toFront();
-//      if (OWN_SPLASH)
-//        splash.close();
 
       LOG.log(Level.INFO, "ACM successfully started.");
       ACMConfiguration.getInstance().getCurrentDB().setupWavCaching(sizeMB->{
@@ -344,36 +305,93 @@ public class Application extends JXFrame {
   }
 
   /**
+   * Opens the ACM database. If the ACM is in S3, performs a sync. If the ACM has never been downloaded, that
+   * may take some time.
+   * @param sharedACM ACM to be opened.
+   */
+  private static void openAcmDb(String sharedACM) {
+      boolean syncOk = true;
+      // Migration from Dropbox to S3 required?
+      if (Authenticator.getInstance().isProgramS3(sharedACM)) {
+          PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(sharedACM);
+          if (pathsProvider == null) {
+              // The database doesn't exist locally, but it does exist in S3.
+              syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.DOWNLOAD, false);
+          } else if (pathsProvider.isDropboxDb()) {
+              // The database is configured to sync with S3, but locally it is still syncing with Dropbox
+              // TOOD: Move from Dropbox to S3.
+              syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.DOWNLOAD, true);
+          } else {
+              // Mere sync required.
+              syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.SYNC, false);
+          }
+      }
+
+      // init database
+      try {
+          String text = "Syncing database for " + sharedACM;
+          ACMConfiguration.S3SyncState syncState = syncOk
+                                                   ? ACMConfiguration.S3SyncState.NOT_REQUIRED
+                                                   : ACMConfiguration.S3SyncState.FAILED;
+          ACMConfiguration.getInstance().setCurrentDB(sharedACM, syncState);
+      } catch (Exception e) {
+          e.printStackTrace();
+          JOptionPane.showMessageDialog(null,
+                  "Unable to connect to database. Please try restarting the ACM.");
+          System.exit(1);
+      }
+  }
+
+  /**
+   * Sync the given program with S3.
+   * @param program The program to be synchronized.
+   * @param syncStyle DOWNLOAD or SYNC
+   * @param haveDropboxCopy is unused
+   * @return true if the sync completed successfully.
+   */
+  private static boolean syncFromS3(String program,
+          S3SyncDialog.SYNC_STYLE syncStyle,
+          boolean haveDropboxCopy) {
+      S3SyncDialog dialog = new S3SyncDialog(null, program, syncStyle);
+      dialog.go();
+      ACMConfiguration.getInstance().discoverDB(program);
+      return !dialog.hasSyncError();
+  }
+
+  /**
    * If there is no ACM specified on the command line, query the user.
    * @param params from the command line.
    */
   private static void authenticateAndChooseProgram(CommandLineParams params) {
-    Authenticator authInstance = Authenticator.getInstance();
-    authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalDbs());
-    Authenticator.LoginResult result = authInstance.getUserIdentity(null,
-        LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
-        ACMConfiguration.cannonicalProjectName(params.sharedACM),
-        OFFLINE_EMAIL_CHOICE,
-        CHOOSE_PROGRAM,
-        LOCAL_DATA_ONLY,
-        params.sandbox?SUGGEST_DEMO_MODE:OFFER_DEMO_MODE,
-        INCLUDE_FB_ACMS);
-    if (result == Authenticator.LoginResult.FAILURE) {
-      JOptionPane.showMessageDialog(null,
-          "Authentication is required to use the ACM.",
-          "Authentication Failure",
-          JOptionPane.ERROR_MESSAGE);
-      System.exit(13);
-    }
+      Authenticator authInstance = Authenticator.getInstance();
+      authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalDbs(),
+              ACMConfiguration.getInstance().getLocalDbxDbs());
+      Authenticator.LoginResult result = authInstance.getUserIdentity(null,
+              LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
+              ACMConfiguration.cannonicalProjectName(params.sharedACM),
+              OFFLINE_EMAIL_CHOICE,
+              CHOOSE_PROGRAM,
+              LOCAL_OR_S3, //LOCAL_DATA_ONLY,
+              params.sandbox ? SUGGEST_DEMO_MODE : OFFER_DEMO_MODE, // vs no demo mode at all
+              INCLUDE_FB_ACMS,
+              params.go ? NO_WAIT : NOP);
+      if (result == Authenticator.LoginResult.FAILURE) {
+          JOptionPane.showMessageDialog(null,
+                  "Authentication is required to use the ACM.",
+                  "Authentication Failure",
+                  JOptionPane.ERROR_MESSAGE);
+          System.exit(13);
+      }
 
-    params.sharedACM = authInstance.getUserProgram();
-    boolean sandbox = authInstance.isSandboxSelected();
-    if (!sandbox) {
-      List<String> ACM_ROLES = Arrays.asList("*","AD","PM","CO");
-      Set<String> roles = authInstance.getUserRoles();
-      sandbox = Collections.disjoint(roles, ACM_ROLES);
-    }
-    ACMConfiguration.getInstance().setForceSandbox(sandbox);
+      params.sharedACM = authInstance.getUserProgram();
+      boolean sandbox = authInstance.isSandboxSelected();
+      // Even if the user didn't ask for sandbox, if they have no role in the db they picked, force sandbox.
+      if (!sandbox) {
+          List<String> ACM_ROLES = Arrays.asList("*", "AD", "PM", "CO");
+          Set<String> roles = authInstance.getUserRoles();
+          sandbox = Collections.disjoint(roles, ACM_ROLES);
+      }
+      ACMConfiguration.getInstance().setForceSandbox(sandbox);
   }
 
   /**

@@ -68,7 +68,7 @@ public class LogHelper {
                 .relativize(Paths.get(directory.getAbsolutePath()));
             pattern.append("%h/").append(relativeLogPath.toString()).append("/");
         } else {
-            pattern.append(directory.getName()).append('/');
+            pattern.append(directory.getPath()).append('/');
         }
         pattern.append(logName);
 

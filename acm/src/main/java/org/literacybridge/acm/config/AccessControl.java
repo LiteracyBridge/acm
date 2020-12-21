@@ -39,6 +39,7 @@ public class AccessControl {
         checkedOut,                     // Already checked out. Just open it.
         newDatabase,                    // New database (on server). Just open it.
         noServer(true),                 // Can open, with sandbox
+        syncFailure(true),              // May be able to open, sandbox only.
         outdatedDb(true),               // Can open, with sandbox
         notAvailable(true, true),       // Can open with sandbox, may be outdated
         userReadOnly(true, true),       // Can open with sandbox, may be outdated
@@ -204,6 +205,10 @@ public class AccessControl {
         dbConfiguration.setSandboxed(isSandboxed);
     }
 
+    private boolean isSyncFailure() {
+        return dbConfiguration.isSyncFailure();
+    }
+
     /**
      * Cleans up the temp directory for this ACM
      */
@@ -334,6 +339,7 @@ public class AccessControl {
 
         // These are OK, provided useSandbox is true
         case noServer:
+        case syncFailure:
         case outdatedDb:
         case notAvailable:
         case userReadOnly:
@@ -410,6 +416,8 @@ public class AccessControl {
                 // Offline. This can still be successful, in sandbox mode.
                 return AccessStatus.noServer;
             }
+        } else if (isSyncFailure()) {
+            return AccessStatus.syncFailure;
         }
 
         try {
@@ -443,7 +451,7 @@ public class AccessControl {
         return AccessStatus.available;
     }
 
-    public void updateDb() {
+    public boolean updateDb() {
         throw new IllegalStateException("Only valid in sub-classes");
     }
 
