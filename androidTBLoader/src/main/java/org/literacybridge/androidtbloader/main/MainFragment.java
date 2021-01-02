@@ -132,8 +132,8 @@ public class MainFragment extends Fragment {
         mApplicationContext = (TBLoaderAppContext)getActivity().getApplicationContext();
         mContentManager = mApplicationContext.getContentManager();
         mConfig = mApplicationContext.getConfig();
-        mUserid = UserHelper.getUserId();
-        mUserName = UserHelper.getUsername();
+        mUserid = UserHelper.getInstance().getUserId();
+        mUserName = UserHelper.getInstance().getUsername();
         if (mUserName == null) {
             // If we didn't get a user name, that means we've signed in with cached credentials.
             // Get the username from saved config.
@@ -319,7 +319,7 @@ public class MainFragment extends Fragment {
 
     @SuppressLint("SetTextI18n")
     private void showGreeting() {
-        String greeting = mConfig.getGreeting();
+        String greeting = mConfig.getName();
         if (StringUtils.isEmpty(greeting)) {
             greeting = getString(R.string.main_greeting_default);
         }
@@ -340,8 +340,8 @@ public class MainFragment extends Fragment {
         // Find which item was selected
         switch(item.getItemId()) {
             case R.id.nav_user_sign_out:
-                UserHelper.getPool().getUser(mUserid).signOut();
-                UserHelper.getCredentialsProvider(getActivity().getApplicationContext()).clear();
+                UserHelper.getInstance().getPool().getUser(mUserid).signOut();
+                UserHelper.getInstance().getCredentialsProvider(getActivity().getApplicationContext()).clear();
                 mConfig.onSignOut();
                 mContentManager.onSignOut();
                 Intent intent = new Intent();
@@ -375,7 +375,7 @@ public class MainFragment extends Fragment {
                 break;
 
             case R.id.nav_user_edit_greeting:
-                editPreferredGreeting(mConfig.getGreeting());
+                editPreferredGreeting(mConfig.getName());
                 break;
 
 
@@ -395,7 +395,7 @@ public class MainFragment extends Fragment {
     private void getUserDetails() {
         final OperationLog.Operation opLog = OperationLog.startOperation("GetUserDetails");
 
-        Map<String,String> mUserDetails = UserHelper.getAuthenticationPayload();
+        Map<String,String> mUserDetails = UserHelper.getInstance().getAuthenticationPayload();
         mConfig.applyUserDetails(mUserDetails);
 
         getActivity().runOnUiThread(new Runnable() {
@@ -606,7 +606,7 @@ public class MainFragment extends Fragment {
                     String newValue = input.getText().toString();
                     if(!newValue.equals(attributeValue)) {
                         showWaitDialog("Updating...");
-                        updateAttribute(UserHelper.getSignUpFieldsC2O().get("Preferred Greeting"), newValue);
+                        updateAttribute(UserHelper.getInstance().getSignUpFieldsC2O().get("Preferred Greeting"), newValue);
                     }
                     userDialog.dismiss();
                 } catch (Exception e) {
@@ -630,8 +630,10 @@ public class MainFragment extends Fragment {
                 if(attributesVerificationList.size() > 0) {
                     showDialogMessage("Updated", "The updated attributes has to be verified",  false);
                 }
-                if (attributeType.equals(UserHelper.getSignUpFieldsC2O().get("Preferred Greeting"))) {
-                    mApplicationContext.getConfig().updateGreeting(attributeValue);
+                if (attributeType.equals(UserHelper.getInstance().getSignUpFieldsC2O().get("Preferred Greeting"))) {
+                    mApplicationContext.getConfig().updateName(attributeValue);
+                } else if (attributeType.equals(UserHelper.getInstance().getSignUpFieldsC2O().get("Name"))) {
+                    mApplicationContext.getConfig().updateName(attributeValue);
                 }
                 showGreeting();
             }
@@ -640,7 +642,7 @@ public class MainFragment extends Fragment {
             public void onFailure(Exception exception) {
                 // Update failed
                 closeWaitDialog();
-                showDialogMessage("Update failed", UserHelper.formatException(exception), false);
+                showDialogMessage("Update failed", UserHelper.getInstance().formatException(exception), false);
             }
         };
 
@@ -651,7 +653,7 @@ public class MainFragment extends Fragment {
         CognitoUserAttributes updatedUserAttributes = new CognitoUserAttributes();
         updatedUserAttributes.addAttribute(attributeType, attributeValue);
         showWaitDialog("Updating...");
-        UserHelper.getPool().getUser(UserHelper.getUserId()).updateAttributesInBackground(updatedUserAttributes, updateHandler);
+        UserHelper.getInstance().getPool().getUser(UserHelper.getInstance().getUserId()).updateAttributesInBackground(updatedUserAttributes, updateHandler);
     }
 
     private void closeUserDialog() {

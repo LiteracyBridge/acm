@@ -43,7 +43,7 @@ public class HttpHelper {
             super(url, jsonRequest, listener, errorListener);
             this.headers.put("Accept", "application/json");
             this.headers.put("Content-Type", "text/plain");
-            String jwtToken = UserHelper.getJwtToken();
+            String jwtToken = UserHelper.getInstance().getJwtToken();
             if (jwtToken != null) {
                 this.headers.put("Authorization", jwtToken);
             }

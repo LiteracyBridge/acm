@@ -38,12 +38,10 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.Verificat
 import org.literacybridge.androidtbloader.R;
 
 public class SignUpConfirm extends AppCompatActivity {
-    private EditText username;
-    private EditText confCode;
+    private EditText userEmailEditText;
+    private EditText confCodeEditText;
 
-    private Button confirm;
-    private TextView reqCode;
-    private String userName;
+    private String userEmail;
     private AlertDialog userDialog;
 
 
@@ -78,13 +76,13 @@ public class SignUpConfirm extends AppCompatActivity {
 
         Bundle extras = getIntent().getExtras();
         if (extras !=null) {
-            if(extras.containsKey("name")) {
-                userName = extras.getString("name");
-                username = (EditText) findViewById(R.id.editTextConfirmUserId);
-                username.setText(userName);
+            if(extras.containsKey("email")) {
+                userEmail = extras.getString("email");
+                userEmailEditText = (EditText) findViewById(R.id.editTextConfirmUserEmail);
+                userEmailEditText.setText(userEmail);
 
-                confCode = (EditText) findViewById(R.id.editTextConfirmCode);
-                confCode.requestFocus();
+                confCodeEditText = (EditText) findViewById(R.id.editTextConfirmCode);
+                confCodeEditText.requestFocus();
 
                 if(extras.containsKey("destination")) {
                     String dest = extras.getString("destination");
@@ -106,14 +104,14 @@ public class SignUpConfirm extends AppCompatActivity {
 
         }
 
-        username = (EditText) findViewById(R.id.editTextConfirmUserId);
-        username.addTextChangedListener(new TextWatcher() {
+        userEmailEditText = (EditText) findViewById(R.id.editTextConfirmUserEmail);
+        userEmailEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 if(s.length() == 0) {
                     TextView label = (TextView) findViewById(R.id.textViewConfirmUserIdLabel);
-                    label.setText(username.getHint());
-                    username.setBackground(getDrawable(R.drawable.text_border_selector));
+                    label.setText(userEmailEditText.getHint());
+                    userEmailEditText.setBackground(getDrawable(R.drawable.text_border_selector));
                 }
             }
 
@@ -132,14 +130,14 @@ public class SignUpConfirm extends AppCompatActivity {
             }
         });
 
-        confCode = (EditText) findViewById(R.id.editTextConfirmCode);
-        confCode.addTextChangedListener(new TextWatcher() {
+        confCodeEditText = (EditText) findViewById(R.id.editTextConfirmCode);
+        confCodeEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 if(s.length() == 0) {
                     TextView label = (TextView) findViewById(R.id.textViewConfirmCodeLabel);
-                    label.setText(confCode.getHint());
-                    confCode.setBackground(getDrawable(R.drawable.text_border_selector));
+                    label.setText(confCodeEditText.getHint());
+                    confCodeEditText.setBackground(getDrawable(R.drawable.text_border_selector));
                 }
             }
 
@@ -158,7 +156,7 @@ public class SignUpConfirm extends AppCompatActivity {
             }
         });
 
-        confirm = (Button) findViewById(R.id.confirm_button);
+        Button confirm = (Button) findViewById(R.id.confirm_button);
         confirm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -166,7 +164,7 @@ public class SignUpConfirm extends AppCompatActivity {
             }
         });
 
-        reqCode = (TextView) findViewById(R.id.resend_confirm_req);
+        TextView reqCode = (TextView) findViewById(R.id.resend_confirm_req);
         reqCode.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -177,55 +175,55 @@ public class SignUpConfirm extends AppCompatActivity {
 
 
     private void sendConfCode() {
-        userName = username.getText().toString();
-        String confirmCode = confCode.getText().toString();
+        userEmail = userEmailEditText.getText().toString();
+        String confirmCode = confCodeEditText.getText().toString();
 
-        if(userName == null || userName.length() < 1) {
+        if(userEmail == null || userEmail.length() < 1) {
             TextView label = (TextView) findViewById(R.id.textViewConfirmUserIdMessage);
-            label.setText(username.getHint()+" cannot be empty");
-            username.setBackground(getDrawable(R.drawable.text_border_error));
+            label.setText(userEmailEditText.getHint()+" cannot be empty");
+            userEmailEditText.setBackground(getDrawable(R.drawable.text_border_error));
             return;
         }
 
-        if(confirmCode == null || confirmCode.length() < 1) {
+        if(confirmCode.length() < 1) {
             TextView label = (TextView) findViewById(R.id.textViewConfirmCodeMessage);
-            label.setText(confCode.getHint()+" cannot be empty");
-            confCode.setBackground(getDrawable(R.drawable.text_border_error));
+            label.setText(confCodeEditText.getHint()+" cannot be empty");
+            confCodeEditText.setBackground(getDrawable(R.drawable.text_border_error));
             return;
         }
 
-        UserHelper.getPool().getUser(userName).confirmSignUpInBackground(confirmCode, true, confHandler);
+        UserHelper.getInstance().getPool().getUser(userEmail).confirmSignUpInBackground(confirmCode, true, confHandler);
     }
 
     private void reqConfCode() {
-        userName = username.getText().toString();
-        if(userName == null || userName.length() < 1) {
+        userEmail = userEmailEditText.getText().toString();
+        if(userEmail == null || userEmail.length() < 1) {
             TextView label = (TextView) findViewById(R.id.textViewConfirmUserIdMessage);
-            label.setText(username.getHint()+" cannot be empty");
-            username.setBackground(getDrawable(R.drawable.text_border_error));
+            label.setText(userEmailEditText.getHint()+" cannot be empty");
+            userEmailEditText.setBackground(getDrawable(R.drawable.text_border_error));
             return;
         }
-        UserHelper.getPool().getUser(userName).resendConfirmationCodeInBackground(resendConfCodeHandler);
+        UserHelper.getInstance().getPool().getUser(userEmail).resendConfirmationCodeInBackground(resendConfCodeHandler);
 
     }
 
     GenericHandler confHandler = new GenericHandler() {
         @Override
         public void onSuccess() {
-            showDialogMessage("Success!",userName+" has been confirmed!", true);
+            showDialogMessage("Success!", userEmail +" has been confirmed!", true);
         }
 
         @Override
         public void onFailure(Exception exception) {
             TextView label = (TextView) findViewById(R.id.textViewConfirmUserIdMessage);
             label.setText("Confirmation failed!");
-            username.setBackground(getDrawable(R.drawable.text_border_error));
+            userEmailEditText.setBackground(getDrawable(R.drawable.text_border_error));
 
             label = (TextView) findViewById(R.id.textViewConfirmCodeMessage);
             label.setText("Confirmation failed!");
-            confCode.setBackground(getDrawable(R.drawable.text_border_error));
+            confCodeEditText.setBackground(getDrawable(R.drawable.text_border_error));
 
-            showDialogMessage("Confirmation failed", UserHelper.formatException(exception), false);
+            showDialogMessage("Confirmation failed", UserHelper.getInstance().formatException(exception), false);
         }
     };
 
@@ -234,8 +232,8 @@ public class SignUpConfirm extends AppCompatActivity {
         public void onSuccess(CognitoUserCodeDeliveryDetails cognitoUserCodeDeliveryDetails) {
             TextView mainTitle = (TextView) findViewById(R.id.textViewConfirmTitle);
             mainTitle.setText("Confirm your account");
-            confCode = (EditText) findViewById(R.id.editTextConfirmCode);
-            confCode.requestFocus();
+            confCodeEditText = (EditText) findViewById(R.id.editTextConfirmCode);
+            confCodeEditText.requestFocus();
             showDialogMessage("Confirmation code sent.","Code sent to "+cognitoUserCodeDeliveryDetails.getDestination()+" via "+cognitoUserCodeDeliveryDetails.getDeliveryMedium()+".", false);
         }
 
@@ -243,8 +241,8 @@ public class SignUpConfirm extends AppCompatActivity {
         public void onFailure(Exception exception) {
             TextView label = (TextView) findViewById(R.id.textViewConfirmUserIdMessage);
             label.setText("Confirmation code resend failed");
-            username.setBackground(getDrawable(R.drawable.text_border_error));
-            showDialogMessage("Confirmation code request has failed", UserHelper.formatException(exception), false);
+            userEmailEditText.setBackground(getDrawable(R.drawable.text_border_error));
+            showDialogMessage("Confirmation code request has failed", UserHelper.getInstance().formatException(exception), false);
         }
     };
 
@@ -269,9 +267,9 @@ public class SignUpConfirm extends AppCompatActivity {
 
     private void exit() {
         Intent intent = new Intent();
-        if(userName == null)
-            userName = "";
-        intent.putExtra("name",userName);
+        if(userEmail == null)
+            userEmail = "";
+        intent.putExtra("name", userEmail);
         setResult(RESULT_OK, intent);
         finish();
     }

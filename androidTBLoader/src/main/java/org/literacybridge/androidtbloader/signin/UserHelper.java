@@ -22,11 +22,11 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.util.Base64;
 import android.util.Log;
+
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.auth.CognitoCredentialsProvider;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoDevice;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserPool;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession;
 import com.amazonaws.regions.Region;
@@ -34,185 +34,229 @@ import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProvi
 import com.amazonaws.services.cognitoidentityprovider.AmazonCognitoIdentityProviderClient;
 import com.amazonaws.services.cognitoidentityprovider.model.GetUserRequest;
 import com.amazonaws.services.cognitoidentityprovider.model.GetUserResult;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.literacybridge.androidtbloader.util.Constants;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static android.util.Base64.DEFAULT;
 
 public class UserHelper {
     private static final String TAG= "TBL!:" + "UserHelper";
+
     // App settings
 
+    private static UserHelper instance;
+    private boolean isFallbackInstance = false;
+    public static UserHelper getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("User Helper has not been initialized.");
+        }
+        return instance;
+    }
+    public static synchronized UserHelper initInstance(Context context, Constants.CognitoConfig config) {
+        if (instance == null) {
+            instance = new UserHelper(config);
+            instance.init(context);
+        }
+        return instance;
+    }
+    public static synchronized void setFallbackInstance(UserHelper fallbackInstance) {
+        fallbackInstance.isFallbackInstance = true;
+        instance = fallbackInstance;
+    }
+    public static synchronized UserHelper createInstance(Context context, Constants.CognitoConfig config) {
+        UserHelper trialInstance = new UserHelper(config);
+        trialInstance.init(context);
+        return trialInstance;
+    }
+
+    private final Constants.CognitoConfig config;
+    public UserHelper(Constants.CognitoConfig config) {
+        this.config = config;
+    }
+    
     private static List<String> attributeDisplaySeq;
     private static Map<String, String> signUpFieldsC2O;
     private static Map<String, String> signUpFieldsO2C;
 
-    private static UserHelper appHelper;
-    private static CognitoUserPool userPool;
+    private CognitoUserPool userPool;
     /**
      * This is the actual, unique, non-alias user id in the Cognito User Pool. Their official
      * term for this value is "username".
      */
-    private static String username;
-    private static String user;
+    private String username;
+    private String user;
 
-    private static List<ItemToDisplay> firstTimeLogInDetails;
-    private static Map<String, String> firstTimeLogInUserAttributes;
-    private static List<String> firstTimeLogInRequiredAttributes;
-    private static int firstTimeLogInItemsCount;
-    private static Map<String, String> firstTimeLogInUpDatedAttributes;
-    private static String firstTimeLoginNewPassword;
+    private List<ItemToDisplay> firstTimeLogInDetails;
+    private Map<String, String> firstTimeLogInUserAttributes;
+    private List<String> firstTimeLogInRequiredAttributes;
+    private int firstTimeLogInItemsCount;
+    private Map<String, String> firstTimeLogInUpDatedAttributes;
+    private String firstTimeLoginNewPassword;
 
     // Change the next three lines of code to run this demo on your user pool
 
     // The session describes this signon.
-    private static CognitoUserSession currSession;
+    private CognitoUserSession currSession;
 
-    private static AmazonCognitoIdentityProvider cipClient;
-    private static CognitoCredentialsProvider credentialsProvider;
+    private AmazonCognitoIdentityProvider cipClient;
+    private CognitoCredentialsProvider credentialsProvider;
 
     // User details to display - they are the current values, including any local modification
-    private static boolean phoneVerified;
-    private static boolean emailVerified;
+    private boolean phoneVerified;
+    private boolean emailVerified;
 
-    private static Map<String,String> mAuthenticationPayload;
+    private Map<String,String> mAuthenticationPayload;
 
-    public static void init(Context context) {
-        setData();
-
-        if (appHelper != null && userPool != null) {
-            return;
+    private void init(Context context) {
+        if (attributeDisplaySeq == null) {
+            setData();
         }
 
-        if (appHelper == null) {
-            appHelper = new UserHelper();
-        }
+        // Create a user pool with default ClientConfiguration
+        //userPool = new CognitoUserPool(context, config.COGNITO_USER_POOL_ID, config.COGNITO_APP_CLIENT_ID, config.COGNITO_APP_SECRET, config.COGNITO_REGION);
 
-        if (userPool == null) {
-
-            // Create a user pool with default ClientConfiguration
-            //userPool = new CognitoUserPool(context, Constants.COGNITO_USER_POOL_ID, Constants.COGNITO_APP_CLIENT_ID, Constants.COGNITO_APP_SECRET, Constants.COGNITO_REGION);
-
-            // This will also work
-            //*
-            ClientConfiguration clientConfiguration = new ClientConfiguration();
-            cipClient = new AmazonCognitoIdentityProviderClient(new AnonymousAWSCredentials(), clientConfiguration);
-            cipClient.setRegion(Region.getRegion(Constants.COGNITO_REGION));
-            userPool = new CognitoUserPool(context, Constants.COGNITO_USER_POOL_ID, Constants.COGNITO_APP_CLIENT_ID, Constants.COGNITO_APP_SECRET, cipClient);
-            // */
-
-        }
+        // This will also work
+        //*
+        ClientConfiguration clientConfiguration = new ClientConfiguration();
+        cipClient = new AmazonCognitoIdentityProviderClient(new AnonymousAWSCredentials(), clientConfiguration);
+        cipClient.setRegion(Region.getRegion(config.COGNITO_REGION));
+        userPool = new CognitoUserPool(context, config.COGNITO_USER_POOL_ID, config.COGNITO_APP_CLIENT_ID, config.COGNITO_APP_SECRET, cipClient);
+        // */
 
         phoneVerified = false;
         emailVerified = false;
 
-        Set<String> currUserAttributes = new HashSet<>();
-        List<ItemToDisplay> trustedDevices = new ArrayList<>();
         firstTimeLogInDetails = new ArrayList<>();
         firstTimeLogInUpDatedAttributes= new HashMap<>();
 
-        CognitoDevice thisDevice = null;
-        boolean thisDeviceTrustState = false;
     }
 
-    public static CognitoCredentialsProvider getCredentialsProvider(Context context) {
+    public CognitoCredentialsProvider getCredentialsProvider(Context context) {
         if (credentialsProvider == null) {
             credentialsProvider = new CognitoCachingCredentialsProvider(
                     context.getApplicationContext(),
-                    Constants.COGNITO_IDENTITY_POOL_ID,
-                    Constants.COGNITO_REGION);
+                    config.COGNITO_IDENTITY_POOL_ID,
+                    config.COGNITO_REGION);
         }
         return credentialsProvider;
     }
 
-    public static CognitoUserPool getPool() {
+    public Constants.CognitoConfig getConfig() {
+        return config;
+    }
+
+    public CognitoUserPool getPool() {
         return userPool;
     }
 
-    public static Map<String, String> getSignUpFieldsC2O() {
+    public Map<String, String> getSignUpFieldsC2O() {
         return signUpFieldsC2O;
     }
 
-    public static void setCurrSession(Context applicationContext, CognitoUserSession session, final Runnable done) {
+    public void setCurrSession(Context applicationContext, CognitoUserSession session, final Runnable done) {
         currSession = session;
         mAuthenticationPayload = null;
-        Map<String,String> payload = getAuthenticationPayload();
+        getAuthenticationPayload();
         credentialsProvider = getCredentialsProvider(applicationContext);
 
         Map<String, String> logins = new HashMap<>();
-        logins.put(Constants.COGNITO_USER_POOL_LOGIN_STRING, currSession.getIdToken().getJWTToken());
+        logins.put(config.COGNITO_USER_POOL_LOGIN_STRING, currSession.getIdToken().getJWTToken());
         credentialsProvider.setLogins(logins);
 
-        // May need to credentialsProvider.refresh(); use AsyncTask<> to do so.
-        new AsyncTask<Void, Void, Void>() {
-
-            @Override
-            protected Void doInBackground(Void... params) {
-                Log.d(TAG, "Refreshing credentials in background.");
-                try {
-                    credentialsProvider.refresh();
-                } catch (Exception ex) {
-                    Log.d(TAG, "Caught exception in refresh", ex);
-                }
-                return null;
-            }
-            @Override
-            protected void onPostExecute(Void result) {
-                getUsernameFromSession(done);
-            }
-        }.execute();
+        new CredentialsRefresher(credentialsProvider, ()->new UserNameGetter(this, done).execute()).execute();
     }
 
-    private static void getUsernameFromSession(final Runnable done) {
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                GetUserRequest getUserRequest = new GetUserRequest();
-                getUserRequest.setAccessToken(currSession.getAccessToken().getJWTToken());
-                GetUserResult userResult = cipClient.getUser(getUserRequest);
-                username = userResult.getUsername();
-                return null;
+    private static class CredentialsRefresher extends AsyncTask<Void, Void, Void> {
+        final CognitoCredentialsProvider credentialsProvider;
+        final Runnable onDone;
+
+        private CredentialsRefresher(CognitoCredentialsProvider credentialsProvider, Runnable onDone) {
+            this.credentialsProvider = credentialsProvider;
+            this.onDone = onDone;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Log.d(TAG, "Refreshing credentials in background.");
+            try {
+                credentialsProvider.refresh();
+            } catch (Exception ex) {
+                Log.d(TAG, "Caught exception in refresh", ex);
             }
-            @Override
-            protected void onPostExecute(Void result) {
-                Log.d(TAG, String.format("Retrieved user name: %s", username));
-                done.run();
-            }
-        }.execute();
+            return null;
+        }
+        @Override
+        protected void onPostExecute(Void result) {
+            onDone.run();
+        }
     }
 
-    public static String getUsername() {
+    private static class UserNameGetter extends AsyncTask<Void, Void, Void> {
+        final UserHelper helper;
+        final Runnable done;
+
+        private UserNameGetter(UserHelper helper, Runnable done) {
+            this.helper = helper;
+            this.done = done;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            GetUserRequest getUserRequest = new GetUserRequest();
+            getUserRequest.setAccessToken(helper.currSession.getAccessToken().getJWTToken());
+            GetUserResult userResult = helper.cipClient.getUser(getUserRequest);
+            helper.username = userResult.getUsername();
+            return null;
+        }
+        @Override
+        protected void onPostExecute(Void result) {
+            Log.d(TAG, String.format("Retrieved user name: %s", helper.username));
+            done.run();
+        }
+    }
+
+
+    public String getUsername() {
         return username;
     }
 
-    public static  CognitoUserSession getCurrSession() {
+    public  CognitoUserSession getCurrSession() {
         return currSession;
     }
 
-    public static String getJwtToken() {
+    public String getJwtToken() {
         return currSession == null ? null : currSession.getIdToken().getJWTToken();
     }
-    public static String getAccessToken() {
+    @SuppressWarnings("unused")
+    public String getAccessToken() {
         return currSession == null ? null : currSession.getAccessToken().getJWTToken();
     }
-    public static String getRefreshToken() {
+    @SuppressWarnings("unused")
+    public String getRefreshToken() {
         return currSession == null ? null : currSession.getRefreshToken().getToken();
     }
 
-    public static String getUserId() {
+    public String getUserId() {
         return user;
     }
 
-    public static void setUserId(String newUser) {
+    public void setUserId(String newUser) {
         user = newUser;
     }
 
-    public static String formatException(Exception exception) {
+    public String formatException(Exception exception) {
         String formattedString = "Internal Error";
         Log.e(TAG, exception.toString());
         Log.getStackTraceString(exception);
@@ -229,22 +273,22 @@ public class UserHelper {
         return  formattedString;
     }
 
-    public static int getFirstTimeLogInItemsCount() {
+    public int getFirstTimeLogInItemsCount() {
         return  firstTimeLogInItemsCount;
     }
 
-    public static ItemToDisplay getUserAttributeForFirstLogInCheck(int position) {
+    public ItemToDisplay getUserAttributeForFirstLogInCheck(int position) {
         return firstTimeLogInDetails.get(position);
     }
 
-    public static void setUserAttributeForDisplayFirstLogIn(Map<String, String> currAttributes, List<String> requiredAttributes) {
+    public void setUserAttributeForDisplayFirstLogIn(Map<String, String> currAttributes, List<String> requiredAttributes) {
         firstTimeLogInUserAttributes = currAttributes;
         firstTimeLogInRequiredAttributes = requiredAttributes;
         firstTimeLogInUpDatedAttributes = new HashMap<>();
         refreshDisplayItemsForFirstTimeLogin();
     }
 
-    public static void setUserAttributeForFirstTimeLogin(String attributeName, String attributeValue) {
+    public void setUserAttributeForFirstTimeLogin(String attributeName, String attributeValue) {
         if (firstTimeLogInUserAttributes ==  null) {
             firstTimeLogInUserAttributes = new HashMap<>();
         }
@@ -253,19 +297,19 @@ public class UserHelper {
         refreshDisplayItemsForFirstTimeLogin();
     }
 
-    public static Map<String, String> getUserAttributesForFirstTimeLogin() {
+    public Map<String, String> getUserAttributesForFirstTimeLogin() {
         return firstTimeLogInUpDatedAttributes;
     }
 
-    public static void setPasswordForFirstTimeLogin(String password) {
+    public void setPasswordForFirstTimeLogin(String password) {
         firstTimeLoginNewPassword = password;
     }
 
-    public static String getPasswordForFirstTimeLogin() {
+    public String getPasswordForFirstTimeLogin() {
         return firstTimeLoginNewPassword;
     }
 
-    private static void refreshDisplayItemsForFirstTimeLogin() {
+    private void refreshDisplayItemsForFirstTimeLogin() {
         firstTimeLogInItemsCount = 0;
         firstTimeLogInDetails = new ArrayList<>();
 
@@ -292,45 +336,11 @@ public class UserHelper {
         }
     }
 
-    public static void newDevice(CognitoDevice device) {
+    public void newDevice() {
     }
 
-    private static void setData() {
-        // Set attribute display sequence
-        attributeDisplaySeq = new ArrayList<>();
-//        attributeDisplaySeq.add("given_name");
-//        attributeDisplaySeq.add("middle_name");
-//        attributeDisplaySeq.add("family_name");
-//        attributeDisplaySeq.add("nickname");
-        attributeDisplaySeq.add("phone_number");
-        attributeDisplaySeq.add("email");
-        attributeDisplaySeq.add("custom:greeting");
 
-        signUpFieldsC2O = new HashMap<>();
-//        signUpFieldsC2O.put("Given name", "given_name");
-//        signUpFieldsC2O.put("Family name", "family_name");
-//        signUpFieldsC2O.put("Nick name", "nickname");
-        signUpFieldsC2O.put("Phone number", "phone_number");
-        signUpFieldsC2O.put("Phone number verified", "phone_number_verified");
-        signUpFieldsC2O.put("Email verified", "email_verified");
-        signUpFieldsC2O.put("Email","email");
-//        signUpFieldsC2O.put("Middle name","middle_name");
-        signUpFieldsC2O.put("Preferred Greeting","custom:greeting");
-
-        signUpFieldsO2C = new HashMap<>();
-//        signUpFieldsO2C.put("given_name", "Given name");
-//        signUpFieldsO2C.put("family_name", "Family name");
-//        signUpFieldsO2C.put("nickname", "Nick name");
-        signUpFieldsO2C.put("phone_number", "Phone number");
-        signUpFieldsO2C.put("phone_number_verified", "Phone number verified");
-        signUpFieldsO2C.put("email_verified", "Email verified");
-        signUpFieldsO2C.put("email", "Email");
-//        signUpFieldsO2C.put("middle_name", "Middle name");
-        signUpFieldsO2C.put("custom:greeting", "Preferred Greeting");
-
-    }
-
-    private static void refreshWithSync() {
+    private void refreshWithSync() {
         // This will refresh the current items to display list with the attributes fetched from service
         List<String> tempKeys = new ArrayList<>();
         List<String> tempValues = new ArrayList<>();
@@ -348,11 +358,6 @@ public class UserHelper {
             }
             else if(attr.getKey().contains("phone_number_verified")) {
                 phoneVerified = attr.getValue().contains("true");
-            }
-
-            if(attr.getKey().equals("email")) {
-            }
-            else if(attr.getKey().equals("phone_number")) {
             }
         }
 
@@ -393,15 +398,14 @@ public class UserHelper {
         }
     }
 
-    public static synchronized Map<String,String> getAuthenticationPayload() {
+    public synchronized Map<String,String> getAuthenticationPayload() {
         if (mAuthenticationPayload == null && currSession != null) {
             JSONObject jsonPayload = getPayloadFromJwt(currSession.getIdToken().getJWTToken());
             Map<String,String> payload = new HashMap<>();
             for (Iterator<String> it = jsonPayload.keys(); it.hasNext(); ) {
                 String key = it.next();
-                String value = null;
                 try {
-                    value = jsonPayload.getString(key);
+                    String value = jsonPayload.getString(key);
                     payload.put(key, value);
                 } catch (JSONException e) {
                     // Ignore the key. Should not happen IRL.
@@ -414,30 +418,32 @@ public class UserHelper {
         }
         return mAuthenticationPayload;
     }
-    public static String getAuthenticationPayload(String key) {
+    public String getAuthenticationPayload(String key) {
         Map<String, String> props = getAuthenticationPayload();
         return props==null ? null : props.get(key);
     }
 
-    private static final int HEADER = 0;
-    private static final int PAYLOAD = 1;
-    private static final int SIGNATURE = 2;
-    private static final int JWT_PARTS = 3;
+    @SuppressWarnings("unused")
+    private final int HEADER = 0;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final int PAYLOAD = 1;
+    @SuppressWarnings("unused")
+    private final int SIGNATURE = 2;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final int JWT_PARTS = 3;
     /**
      * Returns payload of a JWT as a JSON object.
      *
      * @param jwt REQUIRED: valid JSON Web Token as String.
      * @return payload as a JSONObject.
      */
-    public static JSONObject getPayloadFromJwt(String jwt) {
+    public JSONObject getPayloadFromJwt(String jwt) {
         try {
             validateJWT(jwt);
             final String payload = jwt.split("\\.")[PAYLOAD];
             final byte[] sectionDecoded = Base64.decode(payload, DEFAULT);
-            final String jwtSection = new String(sectionDecoded, "UTF-8");
+            final String jwtSection = new String(sectionDecoded, StandardCharsets.UTF_8);
             return new JSONObject(jwtSection);
-        } catch (final UnsupportedEncodingException e) {
-            throw new InvalidParameterException(e.getMessage());
         } catch (final Exception e) {
             throw new InvalidParameterException("error in parsing JSON");
         }
@@ -447,12 +453,50 @@ public class UserHelper {
      *
      * @param jwt REQUIRED: The JWT as a {@link String}.
      */
-    private static void validateJWT(String jwt) {
+    private void validateJWT(String jwt) {
         // Check if the the JWT has the three parts
         final String[] jwtParts = jwt.split("\\.");
         if (jwtParts.length != JWT_PARTS) {
             throw new InvalidParameterException("not a JSON Web Token");
         }
+    }
+
+    private static void setData() {
+        // Set attribute display sequence
+        attributeDisplaySeq = new ArrayList<>();
+//        attributeDisplaySeq.add("given_name");
+//        attributeDisplaySeq.add("middle_name");
+//        attributeDisplaySeq.add("family_name");
+//        attributeDisplaySeq.add("nickname");
+        attributeDisplaySeq.add("phone_number");
+        attributeDisplaySeq.add("email");
+        attributeDisplaySeq.add("name");
+        attributeDisplaySeq.add("custom:greeting");
+
+        signUpFieldsC2O = new HashMap<>();
+//        signUpFieldsC2O.put("Given name", "given_name");
+//        signUpFieldsC2O.put("Family name", "family_name");
+//        signUpFieldsC2O.put("Nick name", "nickname");
+        signUpFieldsC2O.put("Phone number", "phone_number");
+        signUpFieldsC2O.put("Phone number verified", "phone_number_verified");
+        signUpFieldsC2O.put("Email verified", "email_verified");
+        signUpFieldsC2O.put("Email","email");
+        signUpFieldsC2O.put("Name", "name");
+//        signUpFieldsC2O.put("Middle name","middle_name");
+        signUpFieldsC2O.put("Preferred Greeting","custom:greeting");
+
+        signUpFieldsO2C = new HashMap<>();
+//        signUpFieldsO2C.put("given_name", "Given name");
+//        signUpFieldsO2C.put("family_name", "Family name");
+//        signUpFieldsO2C.put("nickname", "Nick name");
+        signUpFieldsO2C.put("phone_number", "Phone number");
+        signUpFieldsO2C.put("phone_number_verified", "Phone number verified");
+        signUpFieldsO2C.put("email_verified", "Email verified");
+        signUpFieldsO2C.put("email", "Email");
+        signUpFieldsO2C.put("name", "Name");
+//        signUpFieldsO2C.put("middle_name", "Middle name");
+        signUpFieldsO2C.put("custom:greeting", "Preferred Greeting");
+
     }
 
 }

@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
+
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.core.fs.OperationLog;
 
@@ -34,9 +36,11 @@ public class Config {
 
     private static final String USERNAME_PROP = "cognito:username";
     private static final String EMAIL_PROP = "email";
-    private static final String GREETING_PROP = "custom:greeting";
+    private static final String NAME_PROP = "name"; // "custom:greeting";
 
     private static final String TBCDID_PROP = "tbcd";
+
+    private static final String IS_BACKUP_PROP = "is_backup";
 
     private final SharedPreferences mUserPrefs;
     private final TBLoaderAppContext mAppContext;
@@ -66,16 +70,26 @@ public class Config {
     public String getEmail() {
         return mUserPrefs.getString(EMAIL_PROP, null);
     }
-    public String getGreeting() { return mUserPrefs.getString(GREETING_PROP, ""); }
-    public void updateGreeting(String newGreeting) {
+    public String getName() { return mUserPrefs.getString(NAME_PROP, ""); }
+    public void updateName(String newName) {
         SharedPreferences.Editor prefsEditor = mUserPrefs.edit();
-        prefsEditor.putString(GREETING_PROP, newGreeting);
+        prefsEditor.putString(NAME_PROP, newName);
         prefsEditor.apply();
     }
 
     public Config(TBLoaderAppContext appContext) {
         mAppContext = appContext;
         mUserPrefs = PreferenceManager.getDefaultSharedPreferences(mAppContext);
+    }
+
+    public boolean isBackup() {
+        String value = mUserPrefs.getString(IS_BACKUP_PROP, "false");
+        return Boolean.parseBoolean(value);
+    }
+    public void setIsBackup(Boolean newValue) {
+        SharedPreferences.Editor prefsEditor = mUserPrefs.edit();
+        prefsEditor.putString(IS_BACKUP_PROP, newValue.toString());
+        prefsEditor.apply();
     }
 
     /**
@@ -102,7 +116,11 @@ public class Config {
                 opLog.put(e.getKey(), e.getValue());
                 Log.d(TAG, String.format("Config: %s => %s", e.getKey(), e.getValue()));
             }
-            prefsEditor.putString("greeting", details.get("custom:greeting"));
+            String name = details.get("name");
+            if (StringUtils.isBlank(name)) {
+                name = details.get("custom:greeting");
+            }
+            prefsEditor.putString("greeting", name);
 
             // If the email has changed, then we need to clear the stale TBCD value. It will be re-filled
             // in prepareForSerialNumberAllocation

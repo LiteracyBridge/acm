@@ -40,7 +40,7 @@ public class S3Helper {
             config.setConnectionTimeout(60 * 1000);
             config.setSocketTimeout(60 * 1000);
             config.setMaxErrorRetry(4);
-            AWSCredentialsProvider credentialsProvider = UserHelper.getCredentialsProvider(sApplicationContext);
+            AWSCredentialsProvider credentialsProvider = UserHelper.getInstance().getCredentialsProvider(sApplicationContext);
             sS3Client = new AmazonS3Client(credentialsProvider, config);
         }
         return sS3Client;

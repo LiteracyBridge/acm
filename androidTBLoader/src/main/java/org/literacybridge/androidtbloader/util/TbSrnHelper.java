@@ -111,7 +111,7 @@ public class TbSrnHelper {
     private int _blocksize = -1;
     private int blocksize() {
         if (_blocksize < 0) {
-            _blocksize = (UserHelper.getAuthenticationPayload("email").equals("bill@amplio.org")) ? 2 : 512;
+            _blocksize = (UserHelper.getInstance().getAuthenticationPayload("email").equals("bill@amplio.org")) ? 2 : 512;
         }
         return _blocksize;
     }
@@ -178,7 +178,7 @@ public class TbSrnHelper {
      * @param failureListener callback for failure.
      */
     private void allocateTbSrnBlock(int n, final AllocateTbSrnBlockSuccess successListener, Consumer<Exception> failureListener) {
-        String baseURL = "https://lj82ei7mce.execute-api.us-west-2.amazonaws.com/Prod";
+        String baseURL = UserHelper.getInstance().getConfig().SRN_HELPER_URL;
         String requestURL = baseURL + "/reserve";
         if (n > 0) requestURL += "?n=" + n;
 

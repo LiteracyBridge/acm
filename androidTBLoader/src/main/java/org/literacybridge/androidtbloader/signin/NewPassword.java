@@ -111,7 +111,7 @@ public class NewPassword extends AppCompatActivity {
             public void onClick(View v) {
                 String newUserPassword = newPassword.getText().toString();
                 if (newUserPassword != null) {
-                    UserHelper.setPasswordForFirstTimeLogin(newUserPassword);
+                    UserHelper.getInstance().setPasswordForFirstTimeLogin(newUserPassword);
                     if (checkAttributes()) {
                         exit(true);
                     }
@@ -159,7 +159,7 @@ public class NewPassword extends AppCompatActivity {
                 try {
                     String newValue = input.getText().toString();
                     if (!newValue.equals(attributeValue)) {
-                        UserHelper.setUserAttributeForFirstTimeLogin(attributeType, newValue);
+                        UserHelper.getInstance().setUserAttributeForFirstTimeLogin(attributeType, newValue);
                         refreshItemsDisplayed();
                     }
                     userDialog.dismiss();

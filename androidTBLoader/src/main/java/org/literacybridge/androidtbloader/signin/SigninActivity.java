@@ -18,6 +18,7 @@
 package org.literacybridge.androidtbloader.signin;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -32,9 +33,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -50,6 +53,7 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.NewP
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.AuthenticationHandler;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.ForgotPasswordHandler;
 
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.main.MainActivity;
@@ -58,10 +62,8 @@ import org.literacybridge.androidtbloader.util.Constants;
 import java.util.Locale;
 import java.util.Map;
 
-import static org.literacybridge.androidtbloader.util.Constants.COGNITO_APP_CLIENT_ID;
-
 public class SigninActivity extends AppCompatActivity {
-    private final String TAG="SigninActivity";
+    private final String TAG="TBL!:" + "SigninActivity";
 
     private final static int REGISTER_ACTIVITY_CODE = 1;
     private final static int CONFIRM_ACTIVITY_CODE = 2;
@@ -70,6 +72,7 @@ public class SigninActivity extends AppCompatActivity {
     private final static int MFA_ACTIVITY_CODE = 5;
     private final static int NEW_PASSWORD_ACTIVITY_CODE = 6;
 
+    private Button mSignInButton;
 
     private NavigationView nDrawer;
     private DrawerLayout mDrawer;
@@ -107,6 +110,8 @@ public class SigninActivity extends AppCompatActivity {
         main_title.setText("");
         setSupportActionBar(toolbar);
 
+        mSignInButton = (Button) findViewById(R.id.buttonLogIn);
+
         // Set navigation drawer for this screen
         mDrawer = (DrawerLayout) findViewById(R.id.signin_drawer_layout);
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.nav_drawer_open, R.string.nav_drawer_close);
@@ -116,10 +121,19 @@ public class SigninActivity extends AppCompatActivity {
         setNavDrawer();
 
         // Initialize application
-        UserHelper.init(getApplicationContext());
         initApp();
-        findCurrent();
+        UserHelper.initInstance(getApplicationContext(), Constants.cognitoConfig);
+        // If we last authenticated with the fallback user pool, don't try to use any cached credentials.
+        if (!((TBLoaderAppContext)getApplicationContext()).getConfig().isBackup()) {
+            findCurrent();
+        }
 
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mSignInButton.setEnabled(true);
     }
 
     @Override
@@ -158,7 +172,7 @@ public class SigninActivity extends AppCompatActivity {
                         // We have the user details, so sign in!
                         username = name;
                         password = userPasswd;
-                        UserHelper.getPool().getUser(username).getSessionInBackground(authenticationHandler);
+                        UserHelper.getInstance().getPool().getUser(username).getSessionInBackground(authenticationHandler);
                     }
                 }
                 break;
@@ -206,9 +220,11 @@ public class SigninActivity extends AppCompatActivity {
                     boolean signout = data.getBooleanExtra(Constants.SIGNOUT, false);
                     if (signout) {
                         clearInput();
-                        UserHelper.getPool().getCurrentUser().signOut();
-                        UserHelper.setUserId("");
-                        UserHelper.getCredentialsProvider(getApplicationContext()).clear();
+                        UserHelper.getInstance().getPool().getCurrentUser().signOut();
+                        UserHelper.getInstance().setUserId("");
+                        UserHelper.getInstance().getCredentialsProvider(getApplicationContext()).clear();
+                        // Clears any fallback instance.
+                        UserHelper.initInstance(getApplicationContext(), Constants.cognitoConfig);
                         ////////////////////////////////////////////////////////////////////////////
                         // @TODO: This is cheating; looking into the internals of Cognito.
                         try {
@@ -216,7 +232,7 @@ public class SigninActivity extends AppCompatActivity {
                             SharedPreferences csiCachedTokens =  getApplicationContext().getSharedPreferences("CognitoIdentityProviderCache", 0);
 
                             // Format "key" strings
-                            String csiLastAuthUserKey =  String.format("CognitoIdentityProvider.%s.LastAuthUser", COGNITO_APP_CLIENT_ID);
+                            String csiLastAuthUserKey =  String.format("CognitoIdentityProvider.%s.LastAuthUser", UserHelper.getInstance().getConfig().COGNITO_APP_CLIENT_ID);
 
                             SharedPreferences.Editor cacheEdit = csiCachedTokens.edit();
                             cacheEdit.remove(csiLastAuthUserKey);
@@ -326,17 +342,17 @@ public class SigninActivity extends AppCompatActivity {
 
     private void signInUser() {
         username = inUsername.getText().toString().trim();
-        if(username == null || username.length() < 1) {
+        if(username.length() < 1) {
             TextView label = (TextView) findViewById(R.id.textViewUserIdMessage);
             label.setText(inUsername.getHint()+" cannot be empty");
             inUsername.setBackground(getDrawable(R.drawable.text_border_error));
             return;
         }
 
-        UserHelper.setUserId(username);
+        UserHelper.getInstance().setUserId(username);
 
         password = inPassword.getText().toString().trim();
-        if(password == null || password.length() < 1) {
+        if(password.length() < 1) {
             TextView label = (TextView) findViewById(R.id.textViewUserPasswordMessage);
             label.setText(inPassword.getHint()+" cannot be empty");
             inPassword.setBackground(getDrawable(R.drawable.text_border_error));
@@ -349,17 +365,12 @@ public class SigninActivity extends AppCompatActivity {
 
         showWaitDialog("Signing in...");
         mExplicitSignIn = true;
-        UserHelper.getPool().getUser(uid).getSessionInBackground(authenticationHandler);
+        // TODO: Handle fallback
+        UserHelper.getInstance().getPool().getUser(uid).getSessionInBackground(authenticationHandler);
     }
 
     private void forgotpasswordUser() {
         username = inUsername.getText().toString();
-        if(username == null) {
-            TextView label = (TextView) findViewById(R.id.textViewUserIdMessage);
-            label.setText(inUsername.getHint()+" cannot be empty");
-            inUsername.setBackground(getDrawable(R.drawable.text_border_error));
-            return;
-        }
 
         if(username.length() < 1) {
             TextView label = (TextView) findViewById(R.id.textViewUserIdMessage);
@@ -369,7 +380,7 @@ public class SigninActivity extends AppCompatActivity {
         }
 
         showWaitDialog("");
-        UserHelper.getPool().getUser(username).forgotPasswordInBackground(forgotPasswordHandler);
+        UserHelper.getInstance().getPool().getUser(username).forgotPasswordInBackground(forgotPasswordHandler);
     }
 
     private void getForgotPasswordCode(ForgotPasswordContinuation forgotPasswordContinuation) {
@@ -393,8 +404,8 @@ public class SigninActivity extends AppCompatActivity {
     }
 
     private void continueWithFirstTimeSignIn() {
-        newPasswordContinuation.setPassword(UserHelper.getPasswordForFirstTimeLogin());
-        Map <String, String> newAttributes = UserHelper.getUserAttributesForFirstTimeLogin();
+        newPasswordContinuation.setPassword(UserHelper.getInstance().getPasswordForFirstTimeLogin());
+        Map <String, String> newAttributes = UserHelper.getInstance().getUserAttributesForFirstTimeLogin();
         if (newAttributes != null) {
             for(Map.Entry<String, String> attr: newAttributes.entrySet()) {
                 Log.e(TAG, String.format("Adding attribute: %s, %s", attr.getKey(), attr.getValue()));
@@ -413,7 +424,7 @@ public class SigninActivity extends AppCompatActivity {
             label.setText("Sign-in failed");
             inUsername.setBackground(getDrawable(R.drawable.text_border_error));
 
-            showDialogMessage("Sign-in failed", UserHelper.formatException(e));
+            showDialogMessage("Sign-in failed", UserHelper.getInstance().formatException(e));
         }
     }
 
@@ -431,13 +442,14 @@ public class SigninActivity extends AppCompatActivity {
 
     // Login if a user is already present
     private void findCurrent() {
-        CognitoUser user = UserHelper.getPool().getCurrentUser();
+        CognitoUser user = UserHelper.getInstance().getPool().getCurrentUser();
         username = user.getUserId();
         if(username != null) {
-            UserHelper.setUserId(username);
+            UserHelper.getInstance().setUserId(username);
             inUsername.setText(user.getUserId());
             if (((TBLoaderAppContext)getApplicationContext()).isCurrentlyConnected()) {
                 showWaitDialog("Attempting sign in...");
+                // TODO: Handle fallback
                 user.getSessionInBackground(authenticationHandler);
             } else {
                 Log.d(TAG, "Offline; continuing with cached user id");
@@ -449,18 +461,12 @@ public class SigninActivity extends AppCompatActivity {
     private void getUserAuthentication(AuthenticationContinuation continuation, String username) {
         if(username != null) {
             this.username = username;
-            UserHelper.setUserId(username);
+            UserHelper.getInstance().setUserId(username);
         }
         // We might have the password from the sign-up activity. If not, see if it is on the form.
         if(this.password == null) {
             inUsername.setText(username);
             password = inPassword.getText().toString();
-            if(password == null) {
-                TextView label = (TextView) findViewById(R.id.textViewUserPasswordMessage);
-                label.setText(inPassword.getHint()+" enter password");
-                inPassword.setBackground(getDrawable(R.drawable.text_border_error));
-                return;
-            }
 
             if(password.length() < 1) {
                 TextView label = (TextView) findViewById(R.id.textViewUserPasswordMessage);
@@ -555,21 +561,40 @@ public class SigninActivity extends AppCompatActivity {
         @Override
         public void onFailure(Exception e) {
             closeWaitDialog();
-            showDialogMessage("Forgot password failed", UserHelper.formatException(e));
+            showDialogMessage("Forgot password failed", UserHelper.getInstance().formatException(e));
         }
     };
 
     //
+    boolean tryFallbackAllowed = true;
+    boolean inFallback = false;
+    UserHelper fallbackHelperInstance = null;
     AuthenticationHandler authenticationHandler = new AuthenticationHandler() {
         @Override
         public void onSuccess(CognitoUserSession cognitoUserSession, final CognitoDevice device) {
             Log.e(TAG, "Auth Success");
-            UserHelper.setCurrSession(getApplicationContext(), cognitoUserSession, new Runnable() {
+            ((TBLoaderAppContext)getApplicationContext()).getConfig().setIsBackup(inFallback);
+            if (inFallback) {
+                Log.e(TAG, "Fallback signin was successful");
+                fallbackHelperInstance.setUserId(UserHelper.getInstance().getUserId());
+                UserHelper.setFallbackInstance(fallbackHelperInstance);
+                inFallback = false;
+                fallbackHelperInstance = null;
+            }
+
+            UserHelper.getInstance().setCurrSession(getApplicationContext(), cognitoUserSession, new Runnable() {
                 @Override
                 public void run() {
-                    UserHelper.newDevice(device);
+                    UserHelper.getInstance().newDevice();
                     closeWaitDialog();
-                    launchMainActivity();
+                    mSignInButton.setEnabled(false);
+                    String mod = UserHelper.getInstance().getAuthenticationPayload("mod");
+                    if (StringUtils.isNotBlank(mod)) {
+                        String buttonText = UserHelper.getInstance().getAuthenticationPayload("modButton");
+                        showDialogMessage("Message From Amplio", mod, buttonText, ()->launchMainActivity());
+                    } else {
+                        launchMainActivity();
+                    }
                 }
             });
         }
@@ -589,6 +614,16 @@ public class SigninActivity extends AppCompatActivity {
 
         @Override
         public void onFailure(Exception e) {
+            if (tryFallbackAllowed && !inFallback) {
+                Log.e(TAG, "Attempting fallback");
+                inFallback = true;
+                fallbackHelperInstance = UserHelper.createInstance(getApplicationContext(), Constants.cognitoFallbackConfig);
+                fallbackHelperInstance.setUserId(UserHelper.getInstance().getUserId());
+                CognitoUser cognitoUser = fallbackHelperInstance.getPool().getUser(username);
+                cognitoUser.getSessionInBackground(authenticationHandler);
+                return;
+            }
+
             closeWaitDialog();
             TextView label = (TextView) findViewById(R.id.textViewUserIdMessage);
             label.setText("Sign-in failed");
@@ -598,7 +633,7 @@ public class SigninActivity extends AppCompatActivity {
             label.setText("Sign-in failed");
             inUsername.setBackground(getDrawable(R.drawable.text_border_error));
 
-            showDialogMessage("Sign-in failed", UserHelper.formatException(e));
+            showDialogMessage("Sign-in failed", UserHelper.getInstance().formatException(e));
         }
 
         @Override
@@ -610,7 +645,7 @@ public class SigninActivity extends AppCompatActivity {
             if ("NEW_PASSWORD_REQUIRED".equals(continuation.getChallengeName())) {
                 // This is the first sign-in attempt for an admin created user
                 newPasswordContinuation = (NewPasswordContinuation) continuation;
-                UserHelper.setUserAttributeForDisplayFirstLogIn(newPasswordContinuation.getCurrentUserAttributes(),
+                UserHelper.getInstance().setUserAttributeForDisplayFirstLogIn(newPasswordContinuation.getCurrentUserAttributes(),
                         newPasswordContinuation.getRequiredAttributes());
                 closeWaitDialog();
                 firstTimeSignIn();
@@ -642,12 +677,18 @@ public class SigninActivity extends AppCompatActivity {
     }
 
     private void showDialogMessage(String title, String body) {
+        showDialogMessage(title, body, "OK", ()->{});
+    }
+
+    private void showDialogMessage(String title, String body, String buttonText, Runnable onClose) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(title).setMessage(body).setNeutralButton("OK", new DialogInterface.OnClickListener() {
+        if (StringUtils.isBlank(buttonText)) buttonText = "OK";
+        builder.setTitle(title).setMessage(body).setNeutralButton(buttonText, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 try {
                     userDialog.dismiss();
+                    if (onClose != null) onClose.run();
                 } catch (Exception e) {
                     //
                 }

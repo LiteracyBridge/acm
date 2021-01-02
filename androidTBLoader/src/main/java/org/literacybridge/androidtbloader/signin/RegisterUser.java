@@ -37,23 +37,21 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttribu
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDeliveryDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.SignUpHandler;
 
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.androidtbloader.R;
 
 public class RegisterUser extends AppCompatActivity {
     private final String TAG = "TBL!:" + "SignUp";
 
-    private EditText username;
-    private EditText password;
-    private EditText greeting;
-    private EditText familyName;
+    private EditText name;
     private EditText email;
-    private EditText phone;
+    private EditText password;
 
     private Button signUp;
     private AlertDialog userDialog;
     private ProgressDialog waitDialog;
-    private String usernameInput;
     private String userPasswd;
+    private String emailInput;
 
 
     @Override
@@ -91,31 +89,6 @@ public class RegisterUser extends AppCompatActivity {
 
     // This will create the list/form for registration
     private void init() {
-        username = (EditText) findViewById(R.id.editTextRegUserId);
-        username.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                if (s.length() == 0) {
-                    TextView label = (TextView) findViewById(R.id.textViewRegUserIdLabel);
-                    label.setText(username.getHint());
-                    username.setBackground(getDrawable(R.drawable.text_border_selector));
-                }
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                TextView label = (TextView) findViewById(R.id.textViewRegUserIdMessage);
-                label.setText("");
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (s.length() == 0) {
-                    TextView label = (TextView) findViewById(R.id.textViewRegUserIdLabel);
-                    label.setText("");
-                }
-            }
-        });
         //
         password = (EditText) findViewById(R.id.editTextRegUserPassword);
         password.addTextChangedListener(new TextWatcher() {
@@ -144,27 +117,27 @@ public class RegisterUser extends AppCompatActivity {
             }
         });
         //
-        greeting = (EditText) findViewById(R.id.editTextRegGreeting);
-        greeting.addTextChangedListener(new TextWatcher() {
+        name = (EditText) findViewById(R.id.editTextRegName);
+        name.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 if (s.length() == 0) {
-                    TextView label = (TextView) findViewById(R.id.textViewRegGreetingLabel);
-                    label.setText(greeting.getHint());
-                    greeting.setBackground(getDrawable(R.drawable.text_border_selector));
+                    TextView label = (TextView) findViewById(R.id.textViewRegNameLabel);
+                    label.setText(name.getHint());
+                    name.setBackground(getDrawable(R.drawable.text_border_selector));
                 }
             }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                TextView label = (TextView) findViewById(R.id.textViewRegGreetingMessage);
+                TextView label = (TextView) findViewById(R.id.textViewRegNameMessage);
                 label.setText("");
             }
 
             @Override
             public void afterTextChanged(Editable s) {
                 if (s.length() == 0) {
-                    TextView label = (TextView) findViewById(R.id.textViewRegGreetingLabel);
+                    TextView label = (TextView) findViewById(R.id.textViewRegNameLabel);
                     label.setText("");
                 }
             }
@@ -196,32 +169,7 @@ public class RegisterUser extends AppCompatActivity {
                 }
             }
         });
-        //
-        phone = (EditText) findViewById(R.id.editTextRegPhone);
-        phone.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                if (s.length() == 0) {
-                    TextView label = (TextView) findViewById(R.id.textViewRegPhoneLabel);
-                    label.setText(phone.getHint() + " with country code and no seperators");
-                    phone.setBackground(getDrawable(R.drawable.text_border_selector));
-                }
-            }
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                TextView label = (TextView) findViewById(R.id.textViewRegPhoneMessage);
-                label.setText("");
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (s.length() == 0) {
-                    TextView label = (TextView) findViewById(R.id.textViewRegPhoneLabel);
-                    label.setText("");
-                }
-            }
-        });
 
         signUp = (Button) findViewById(R.id.signUp);
         signUp.setOnClickListener(new View.OnClickListener() {
@@ -230,47 +178,34 @@ public class RegisterUser extends AppCompatActivity {
                 // Read user data and register
                 CognitoUserAttributes userAttributes = new CognitoUserAttributes();
 
-                usernameInput = username.getText().toString();
-                if (usernameInput == null || usernameInput.isEmpty()) {
-                    TextView view = (TextView) findViewById(R.id.textViewRegUserIdMessage);
-                    view.setText(username.getHint() + " cannot be empty");
-                    username.setBackground(getDrawable(R.drawable.text_border_error));
+                emailInput = email.getText().toString();
+                if (StringUtils.isBlank(emailInput)) {
+                    TextView view = (TextView) findViewById(R.id.textViewRegEmailMessage);
+                    view.setText(email.getHint() + " cannot be empty");
+                    email.setBackground(getDrawable(R.drawable.text_border_error));
                     return;
                 }
+                userAttributes.addAttribute("email", emailInput);
 
                 String userpasswordInput = password.getText().toString();
                 userPasswd = userpasswordInput;
-                if (userpasswordInput == null || userpasswordInput.isEmpty()) {
+                if (StringUtils.isBlank(userpasswordInput)) {
                     TextView view = (TextView) findViewById(R.id.textViewUserRegPasswordMessage);
                     view.setText(password.getHint() + " cannot be empty");
                     password.setBackground(getDrawable(R.drawable.text_border_error));
                     return;
                 }
 
-                String userInput = greeting.getText().toString();
+                String userInput = name.getText().toString();
                 if (userInput != null) {
                     if (userInput.length() > 0) {
-                        userAttributes.addAttribute(UserHelper.getSignUpFieldsC2O().get(greeting.getHint()).toString(), userInput);
-                    }
-                }
-
-                userInput = email.getText().toString();
-                if (userInput != null) {
-                    if (userInput.length() > 0) {
-                        userAttributes.addAttribute(UserHelper.getSignUpFieldsC2O().get(email.getHint()).toString(), userInput);
-                    }
-                }
-
-                userInput = phone.getText().toString();
-                if (userInput != null) {
-                    if (userInput.length() > 0) {
-                        userAttributes.addAttribute(UserHelper.getSignUpFieldsC2O().get(phone.getHint()).toString(), userInput);
+                        userAttributes.addAttribute("name", userInput);
                     }
                 }
 
                 showWaitDialog("Signing up...");
 
-                UserHelper.getPool().signUpInBackground(usernameInput, userpasswordInput, userAttributes, null, signUpHandler);
+                UserHelper.getInstance().getPool().signUpInBackground(emailInput, userpasswordInput, userAttributes, null, signUpHandler);
 
             }
         });
@@ -285,7 +220,7 @@ public class RegisterUser extends AppCompatActivity {
             Boolean regState = signUpConfirmationState;
             if (signUpConfirmationState) {
                 // User is already confirmed
-                showDialogMessage("Sign up successful!",usernameInput+" has been Confirmed", true);
+                showDialogMessage("Sign up successful!",emailInput+" has been Confirmed", true);
             }
             else {
                 // User is not confirmed
@@ -296,17 +231,17 @@ public class RegisterUser extends AppCompatActivity {
         @Override
         public void onFailure(Exception exception) {
             closeWaitDialog();
-            TextView label = (TextView) findViewById(R.id.textViewRegUserIdMessage);
+            TextView label = (TextView) findViewById(R.id.textViewRegEmailMessage);
             label.setText("Sign up failed");
-            username.setBackground(getDrawable(R.drawable.text_border_error));
-            showDialogMessage("Sign up failed", UserHelper.formatException(exception),false);
+            email.setBackground(getDrawable(R.drawable.text_border_error));
+            showDialogMessage("Sign up failed", UserHelper.getInstance().formatException(exception),false);
         }
     };
 
     private void confirmSignUp(CognitoUserCodeDeliveryDetails cognitoUserCodeDeliveryDetails) {
         Intent intent = new Intent(this, SignUpConfirm.class);
         intent.putExtra("source","signup");
-        intent.putExtra("name", usernameInput);
+        intent.putExtra("email", emailInput);
         intent.putExtra("destination", cognitoUserCodeDeliveryDetails.getDestination());
         intent.putExtra("deliveryMed", cognitoUserCodeDeliveryDetails.getDeliveryMedium());
         intent.putExtra("attribute", cognitoUserCodeDeliveryDetails.getAttributeName());
@@ -334,11 +269,11 @@ public class RegisterUser extends AppCompatActivity {
                 try {
                     userDialog.dismiss();
                     if(exit) {
-                        exit(usernameInput);
+                        exit(emailInput);
                     }
                 } catch (Exception e) {
                     if(exit) {
-                        exit(usernameInput);
+                        exit(emailInput);
                     }
                 }
             }

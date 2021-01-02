@@ -67,7 +67,7 @@ public class UploadStatusFragment extends Fragment {
         Intent intent = getActivity().getIntent();
         mUserid = intent.getStringExtra(Constants.USERID);
         if (mUserid == null || mUserid.length() == 0) {
-            mUserid = UserHelper.getUserId();
+            mUserid = UserHelper.getInstance().getUserId();
         }
 
         mCompletedItems = UploadService.getUploadHistory();
@@ -190,7 +190,7 @@ public class UploadStatusFragment extends Fragment {
                 mPendingItemsAdapter.notifyDataSetChanged();
                 mCompletedItemsAdapter.notifyDataSetChanged();
                 if (mUserid == null || mUserid.length() == 0) {
-                    mUserid = UserHelper.getUserId();
+                    mUserid = UserHelper.getInstance().getUserId();
                     mUserNameTextView.setText(mUserid);
                 }
             }

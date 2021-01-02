@@ -245,7 +245,7 @@ public class ContentManager {
     }
 
     private void authenticateAndFetchContentList(final boolean force) {
-        CognitoUserSession session = UserHelper.getCurrSession();
+        CognitoUserSession session = UserHelper.getInstance().getCurrSession();
         if (session == null || !session.isValid()) {
             Log.d(TAG, String.format("authenticateAndFetchContentList: %s session, trying to authenticate", session==null?"no":"invalid"));
 

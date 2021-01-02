@@ -35,7 +35,7 @@ public class FirstTimeLoginAttributesDisplayAdapter extends BaseAdapter {
     public FirstTimeLoginAttributesDisplayAdapter(Context context) {
         this.context = context;
 
-        count = UserHelper.getFirstTimeLogInItemsCount();
+        count = UserHelper.getInstance().getFirstTimeLogInItemsCount();
 
         layoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
@@ -71,7 +71,7 @@ public class FirstTimeLoginAttributesDisplayAdapter extends BaseAdapter {
             holder = (Holder) convertView.getTag();
         }
 
-        ItemToDisplay item = UserHelper.getUserAttributeForFirstLogInCheck(position);
+        ItemToDisplay item = UserHelper.getInstance().getUserAttributeForFirstLogInCheck(position);
         holder.label.setText(item.getLabelText());
         holder.label.setTextColor(item.getLabelColor());
         holder.data.setHint(item.getLabelText());

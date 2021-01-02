@@ -87,16 +87,16 @@
         android:layout_centerHorizontal="true" />
 
     <EditText
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/activity_text_height"
-        android:paddingLeft="@dimen/activity_text_padding"
-        android:paddingRight="@dimen/activity_text_padding"
-        android:id="@+id/editTextConfirmUserId"
-        android:layout_below="@id/textViewConfirmUserIdLabel"
-        android:layout_centerHorizontal="true"
-        android:background="@drawable/text_border_selector"
-        android:hint="Username"
-        android:inputType="textPersonName"/>
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/activity_text_height"
+            android:paddingLeft="@dimen/activity_text_padding"
+            android:paddingRight="@dimen/activity_text_padding"
+            android:id="@+id/editTextConfirmUserEmail"
+            android:layout_below="@id/textViewConfirmUserIdLabel"
+            android:layout_centerHorizontal="true"
+            android:background="@drawable/text_border_selector"
+            android:hint="Email address"
+            android:inputType="textPersonName" />
 
     <TextView
         android:layout_width="match_parent"
@@ -106,7 +106,7 @@
         android:text=" "
         android:textColor="@color/alert"
         android:id="@+id/textViewConfirmUserIdMessage"
-        android:layout_below="@id/editTextConfirmUserId"
+        android:layout_below="@id/editTextConfirmUserEmail"
         android:layout_centerHorizontal="true" />
 
     <TextView

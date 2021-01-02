@@ -70,13 +70,14 @@ public class UploadService extends JobService {
 
     private static File sUploadDirectory = PathsProvider.getUploadDirectory();
     private static PriorityQueue<UploadItem> sUploadQueue;
+    private static long sUploadQueueCheckTime = 0;
     private static List<UploadItem> sUploadHistory = new LinkedList<>();
 
     private static final Pattern TEXTFILE = Pattern.compile("(?i).*(.srn|.log)$");
 
     private JobParameters params;
     private boolean mSuccess = true;
-    private long mActiveDownloadSize = 0;
+    private long mActiveUploadSize = 0;
     private long mActiveUploadProgress = 0;
     private boolean mCancelRequested = false;
     private int mTransferId;
@@ -152,6 +153,9 @@ public class UploadService extends JobService {
      * @return the count of files waiting.
      */
     public int getUploadCount() {
+        if (sUploadQueue != null && mPendingUploadCount != sUploadQueue.size()) {
+            updateStatus();
+        }
         return mPendingUploadCount;
     }
 
@@ -187,6 +191,7 @@ public class UploadService extends JobService {
             return false;
         }
         startUploadService();
+        updateStatus();
         return true;
     }
 
@@ -209,51 +214,56 @@ public class UploadService extends JobService {
      */
     private void updateNotification() {
         Log.d(TAG, String.format("updateNotification, count:%d, size:%d, name:%s", mPendingUploadCount, mPendingUploadSize, mPendingUploadName));
-        NotificationManager mNotifyMgr = (NotificationManager) getSystemService(
-                NOTIFICATION_SERVICE);
-        if (mPendingUploadCount > 0 || sErrorMessage != null) {
-            int icon = R.drawable.talking_book_outline;
-            String title;
-            String content;
-            // If there is an error message, add it, and turn the icon red.
-            if (sErrorMessage != null) {
-                title = sErrorMessage;
-                content = String.format("%s in %d files waiting to upload.", TBLoaderUtils.getBytesString(mPendingUploadSize), mPendingUploadCount);
-                icon = R.drawable.talking_book_outline_red;
+        try {
+            NotificationManager mNotifyMgr = (NotificationManager) getSystemService(
+                    NOTIFICATION_SERVICE);
+            if (mPendingUploadCount > 0 || sErrorMessage != null) {
+                int icon = R.drawable.talking_book_outline;
+                String title;
+                String content;
+                // If there is an error message, add it, and turn the icon red.
+                if (sErrorMessage != null) {
+                    title = sErrorMessage;
+                    content = String.format("%s in %d files waiting to upload.", TBLoaderUtils.getBytesString(mPendingUploadSize), mPendingUploadCount);
+                    icon = R.drawable.talking_book_outline_red;
+                } else {
+                    title = "Pending Statistics Uploads";
+                    content = String.format("%s in %d files to be uploaded.", TBLoaderUtils.getBytesString(mPendingUploadSize), mPendingUploadCount);
+                }
+
+                NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+                    .setSmallIcon(icon)
+                    .setPriority(PRIORITY_HIGH)
+                    .setContentTitle(title)
+                    .setContentText(content);
+
+                Intent statusActivityIntent = new Intent(this, UploadStatusActivity.class);
+                statusActivityIntent.putExtra("hide_configure_button", true);
+
+                PendingIntent notificationIntent = PendingIntent.getActivities(this, 0,
+                    new Intent[] { statusActivityIntent }, PendingIntent.FLAG_UPDATE_CURRENT);
+                mBuilder.setContentIntent(notificationIntent);
+
+                Notification notification = mBuilder.build();
+                notification.flags |= Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT;
+
+                mNotifyMgr.notify(NOTIFICATION_ID, notification);
             } else {
-                title = "Pending Statistics Uploads";
-                content = String.format("%s in %d files to be uploaded.", TBLoaderUtils.getBytesString(mPendingUploadSize), mPendingUploadCount);
+                mNotifyMgr.cancel(NOTIFICATION_ID);
             }
-
-            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(icon)
-                .setPriority(PRIORITY_HIGH)
-                .setContentTitle(title)
-                .setContentText(content);
-
-            Intent statusActivityIntent = new Intent(this, UploadStatusActivity.class);
-            statusActivityIntent.putExtra("hide_configure_button", true);
-
-            PendingIntent notificationIntent = PendingIntent.getActivities(this, 0,
-                new Intent[] { statusActivityIntent }, PendingIntent.FLAG_UPDATE_CURRENT);
-            mBuilder.setContentIntent(notificationIntent);
-
-            Notification notification = mBuilder.build();
-            notification.flags |= Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT;
-
-            mNotifyMgr.notify(NOTIFICATION_ID, notification);
-        } else {
-            mNotifyMgr.cancel(NOTIFICATION_ID);
+        } catch (Exception ignored) {
+            // as it says on the tin...
         }
     }
 
     /**
      * Updates progress to notification area and UploadManager.
      */
-    private void updateStatus() {
+    private synchronized void updateStatus() {
         long size = 0;
         int count = 0;
         String name = "";
+        checkForUploads();
         if (sUploadQueue != null) {
             count = sUploadQueue.size();
             for (UploadItem item : sUploadQueue)
@@ -261,7 +271,7 @@ public class UploadService extends JobService {
             UploadItem item = sUploadQueue.peek();
             name = item == null ? "None" : item.file.getName();
             // Account for any currently active transfers.
-            size += mActiveDownloadSize - mActiveUploadProgress;
+            size += mActiveUploadSize - mActiveUploadProgress;
         }
 
         if (!name.equalsIgnoreCase(mPendingUploadName) || count != mPendingUploadCount || size != mPendingUploadSize) {
@@ -305,7 +315,7 @@ public class UploadService extends JobService {
         mConsecutiveErrors = 0;
         mAnySuccessThisJob = false; // so far
 
-        CognitoUserSession session = UserHelper.getCurrSession();
+        CognitoUserSession session = UserHelper.getInstance().getCurrSession();
         if (session == null || !session.isValid()) {
             Log.d(TAG, String.format("startUploads: %s session, trying to authenticate", session==null?"no":"invalid"));
 
@@ -336,7 +346,7 @@ public class UploadService extends JobService {
      */
     private void transferNext() {
         // No transfer active.
-        mActiveDownloadSize = 0;
+        mActiveUploadSize = 0;
         mActiveUploadProgress = 0;
         if (mCancelRequested) {
             return;
@@ -391,7 +401,7 @@ public class UploadService extends JobService {
      */
     private void transferOne(final UploadItem queuedItem) {
         final File file = queuedItem.file;
-        mActiveDownloadSize = file.length();
+        mActiveUploadSize = file.length();
         // Build a key from the file's relative position in the upload directory.
         String key = sUploadDirectory.toURI().relativize(file.toURI()).getPath();
         ObjectMetadata metadata = new ObjectMetadata();
@@ -459,7 +469,7 @@ public class UploadService extends JobService {
 
             @Override
             public void onError(int id, Exception ex) {
-                CognitoUserSession session = UserHelper.getCurrSession();
+                CognitoUserSession session = UserHelper.getInstance().getCurrSession();
                 Log.d(TAG, String.format("Transfer exception for %d:, session valid: %s", id, session==null?"no session":session.isValid()?"yes":"no"), ex);
             }
         });
@@ -528,6 +538,7 @@ public class UploadService extends JobService {
             }
         }
         Log.d(TAG, String.format("Queued %d files to upload", numAdded));
+        sUploadQueueCheckTime = System.currentTimeMillis();
 
         return sUploadQueue.size();
     }

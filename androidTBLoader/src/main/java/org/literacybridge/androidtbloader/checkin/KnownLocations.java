@@ -278,7 +278,7 @@ public class KnownLocations {
      * @param handler A Runnable for the completion callback.
      */
     private static void downloadLocationsFile(final S3ObjectSummary summary, final Runnable handler) {
-        Log.d(TAG, String.format("Fetching location info for %s", UserHelper.getUserId()));
+        Log.d(TAG, String.format("Fetching location info for %s", UserHelper.getInstance().getUserId()));
         String keyFileName = summary.getKey().substring(summary.getKey().indexOf('/')+1).toUpperCase();
         final String project = keyFileName.substring(0, keyFileName.lastIndexOf('.'));
         final File tempFile = new File(PathsProvider.getLocationsCacheDirectory(), project + LOCATION_FILE_EXTENSION + ".temp");

@@ -16,25 +16,25 @@
 package org.literacybridge.androidtbloader.util;
 
 import com.amazonaws.regions.Regions;
-import org.literacybridge.core.fs.OperationLog;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.HashSet;
 import java.util.Locale;
-import java.util.Set;
 import java.util.TimeZone;
 
 public class Constants {
 
-    public static final Regions COGNITO_REGION = Regions.US_WEST_2;
+    public static final CognitoConfig cognitoConfig = /* Amplio */ new CognitoConfig(Regions.US_WEST_2,
+            "us-west-2_3evpQGyi5",
+            "5oviumtu4cmhspn9qt2bvn130s",
+            "us-west-2:c57e8e17-b2ab-404d-a4a2-29d3865e28f7",
+            "https://1rhce42l9a.execute-api.us-west-2.amazonaws.com/prod");
 
-    public static final String COGNITO_IDENTITY_POOL_ID = "us-west-2:a544b58b-8be0-46db-aece-e6fe14d29124";
-    public static final String COGNITO_USER_POOL_ID = "us-west-2_6EKGzq75p";
-    public static final String COGNITO_USER_POOL_LOGIN_STRING = "cognito-idp.us-west-2.amazonaws.com/" + COGNITO_USER_POOL_ID;
-
-    public static final String COGNITO_APP_CLIENT_ID = "5h9tg11mb73p4j2ca1oii7bhkn";
-    public static final String COGNITO_APP_SECRET = null;
+    public static final CognitoConfig cognitoFallbackConfig = /* greetings */ new CognitoConfig(Regions.US_WEST_2,
+            "us-west-2_6EKGzq75p",
+            "5h9tg11mb73p4j2ca1oii7bhkn",
+            "us-west-2:a544b58b-8be0-46db-aece-e6fe14d29124",
+            "https://lj82ei7mce.execute-api.us-west-2.amazonaws.com/Prod");
 
     // Deployments come from here.
     public static final String DEPLOYMENTS_BUCKET_NAME = "acm-content-updates";
@@ -67,4 +67,24 @@ public class Constants {
 
     // Time to sit twiddling thumbs on Android, because we can't flush files on USB storage.
     public static final int androidPostUpdateSleepTime = 5000; // millis
+
+    public static class CognitoConfig {
+        public final Regions COGNITO_REGION;
+        public final String COGNITO_USER_POOL_ID;
+        public final String COGNITO_APP_CLIENT_ID;
+        public final String COGNITO_APP_SECRET;
+        public final String COGNITO_IDENTITY_POOL_ID;
+        public final String COGNITO_USER_POOL_LOGIN_STRING;
+        public final String SRN_HELPER_URL;
+
+        public CognitoConfig(Regions cognito_region, String cognito_user_pool_id, String cognito_app_client_id, String cognito_identity_pool_id, String srn_helper_url) {
+            COGNITO_REGION = cognito_region;
+            COGNITO_USER_POOL_ID = cognito_user_pool_id;
+            COGNITO_APP_CLIENT_ID = cognito_app_client_id;
+            COGNITO_APP_SECRET = null;
+            COGNITO_IDENTITY_POOL_ID = cognito_identity_pool_id;
+            COGNITO_USER_POOL_LOGIN_STRING = "cognito-idp." + cognito_region.getName() + ".amazonaws.com/" + cognito_user_pool_id;
+            SRN_HELPER_URL = srn_helper_url;
+        }
+    }
 }

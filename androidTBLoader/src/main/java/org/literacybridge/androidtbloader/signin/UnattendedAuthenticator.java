@@ -10,6 +10,7 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.Mult
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.AuthenticationHandler;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GenericHandler;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
+import org.literacybridge.androidtbloader.util.Constants;
 
 public class UnattendedAuthenticator {
     private static final String TAG = "TBL!:" + UnattendedAuthenticator.class.getName();
@@ -20,14 +21,14 @@ public class UnattendedAuthenticator {
     public UnattendedAuthenticator(GenericHandler handler) {
         this.handler = handler;
         Log.d(TAG, "ctor, initializing user helper");
-        UserHelper.init(sTbLoaderAppContext);
+        UserHelper.initInstance(sTbLoaderAppContext, Constants.cognitoConfig);
         Log.d(TAG, "ctor, user helper initialized");
     }
 
     // Login if a user is already present
     public void authenticate() {
         Log.d(TAG, "authenticate: getting current user");
-        CognitoUser user = UserHelper.getPool().getCurrentUser();
+        CognitoUser user = UserHelper.getInstance().getPool().getCurrentUser();
         if (user.getUserId() == null) {
             Log.e(TAG, "authenticate: no current user");
             handler.onFailure(new IllegalStateException("No cached current user"));
@@ -36,7 +37,8 @@ public class UnattendedAuthenticator {
             handler.onFailure(new IllegalStateException("Not currently connected"));
         } else {
             Log.d(TAG, String.format("authenticate: calling getSessionInBackground for user %s", user.getUserId()));
-            UserHelper.setUserId(user.getUserId());
+            UserHelper.getInstance().setUserId(user.getUserId());
+            // TODO: Handle fallback
             user.getSessionInBackground(authenticationHandler);
         }
     }
@@ -45,7 +47,7 @@ public class UnattendedAuthenticator {
         @Override
         public void onSuccess(CognitoUserSession cognitoUserSession, final CognitoDevice device) {
             Log.d(TAG, "authenticationHandler: Success");
-            UserHelper.setCurrSession(sTbLoaderAppContext, cognitoUserSession, new Runnable() {
+            UserHelper.getInstance().setCurrSession(sTbLoaderAppContext, cognitoUserSession, new Runnable() {
                 @Override
                 public void run() {
                     handler.onSuccess();
