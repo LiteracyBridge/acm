@@ -58,6 +58,9 @@ class IdentityPersistence {
         // password.
         Properties credentialProps = new Properties();
         credentialProps.setProperty("email", email);
+        // Save email as "identity" for as long as we *might* roll back to a version that reads only "identity"
+        credentialProps.setProperty("identity", email);
+
         if (StringUtils.isNotEmpty(password)) {
             credentialProps.setProperty("secret", rotate(password, email, false));
         }
