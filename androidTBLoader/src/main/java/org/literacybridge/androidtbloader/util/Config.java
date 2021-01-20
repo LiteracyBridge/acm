@@ -28,7 +28,7 @@ public class Config {
     // email_verified # will always be true if they're here; means they responded to their email. 
     // edit # regex of projects the user can edit. 
     // admin # if true, user is an admin in their projects. 
-    // cognito:username # sign-in user name. These are unique, but are chosen by the user.
+    // cognito:username # sign-in user name. These are UUIDs, assigned by the Cognito system.
     // view # regex of projects the user can view. 
     // phone_number # user's phone number, if they provided one. 
     // email # user's email. We use this for unique identity.

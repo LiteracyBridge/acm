@@ -339,7 +339,7 @@ public class MainFragment extends Fragment {
 
         // Find which item was selected
         switch(item.getItemId()) {
-            case R.id.nav_user_sign_out:
+            case R.id.nav_user_logout:
                 UserHelper.getInstance().getPool().getUser(mUserid).signOut();
                 UserHelper.getInstance().getCredentialsProvider(getActivity().getApplicationContext()).clear();
                 mConfig.onSignOut();

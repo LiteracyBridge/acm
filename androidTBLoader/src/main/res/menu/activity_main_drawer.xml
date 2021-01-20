@@ -27,8 +27,8 @@
             android:title="Change password" />
 
         <item
-            android:id="@+id/nav_user_sign_out"
-            android:title="Sign out" />
+                android:id="@+id/nav_user_logout"
+                android:title="Logout" />
     </group>
 
     <group

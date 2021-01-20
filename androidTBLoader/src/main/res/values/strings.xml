@@ -48,7 +48,7 @@
     <string name="dialog_tb_update_deployment_info">Project: %1$s\nDeployment: %2$s\nCommunity: %3$s</string>
 
     <!-- Copied from demo app -->
-    <string name="app_main_screen">Sign in</string>
+    <string name="app_main_screen">Login</string>
     <string name="app_main_screen_title">Talking Book Loader</string>
     <string name="app_main_desc">A very portable TB-Loader.</string>
     <string name="nav_drawer_open">Open navigation drawer</string>

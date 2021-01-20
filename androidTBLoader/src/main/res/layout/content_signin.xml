@@ -166,17 +166,17 @@
 
     <!-- Sign in button -->
     <Button
-        android:id="@+id/buttonLogIn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/space4"
-        android:layout_centerHorizontal="true"
-        android:background="@drawable/button_selector"
-        android:onClick="logIn"
-        android:text="Sign in"
-        android:textAllCaps="false"
-        android:textColor="@color/white"
-        android:textSize="@dimen/activity_button_text_size"/>
+            android:id="@+id/buttonLogIn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/space4"
+            android:layout_centerHorizontal="true"
+            android:background="@drawable/button_selector"
+            android:onClick="logIn"
+            android:text="Login"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="@dimen/activity_button_text_size" />
 
     <Space
         android:id="@+id/space5"

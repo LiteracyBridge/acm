@@ -770,7 +770,8 @@ public class TbLoaderFragment extends Fragment {
             .put("community", mCommunityDirectory)
             .put("sn", deviceSerialNumber)
             .put("tbloaderId", config.getTbcdid())
-            .put("username", config.getUsername())
+            .put("username", config.getName())
+            .put("useremail", config.getEmail())
             .put("timestamp", collectionTimestamp);
         return newDeploymentInfo;
     }

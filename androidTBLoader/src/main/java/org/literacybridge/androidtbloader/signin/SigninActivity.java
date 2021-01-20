@@ -105,7 +105,7 @@ public class SigninActivity extends AppCompatActivity {
 
         // Set toolbar for this screen
         toolbar = (Toolbar) findViewById(R.id.main_toolbar);
-        toolbar.setTitle("Sign In");
+        toolbar.setTitle("Login");
         TextView main_title = (TextView) findViewById(R.id.main_toolbar_title);
         main_title.setText("");
         setSupportActionBar(toolbar);
@@ -169,7 +169,7 @@ public class SigninActivity extends AppCompatActivity {
                         inPassword.setText(userPasswd);
                     }
                     if (!name.isEmpty() && !userPasswd.isEmpty()) {
-                        // We have the user details, so sign in!
+                        // We have the user details, so login!
                         username = name;
                         password = userPasswd;
                         UserHelper.getInstance().getPool().getUser(username).getSessionInBackground(authenticationHandler);
@@ -215,8 +215,8 @@ public class SigninActivity extends AppCompatActivity {
                         Log.d(TAG, String.format("Got an 'exitApplication'."));
                         onBackPressed();
                     }
-                    // No, need to sign in again.
-                    // Sign out first?
+                    // No, need to login again.
+                    // Logout first?
                     boolean signout = data.getBooleanExtra(Constants.SIGNOUT, false);
                     if (signout) {
                         clearInput();
@@ -282,7 +282,7 @@ public class SigninActivity extends AppCompatActivity {
     }
 
     /**
-     * Called implicitly from "Sign in" button
+     * Called implicitly from "Login" button
      * @param view - unused
      */
     public void logIn(View view) {
@@ -417,14 +417,14 @@ public class SigninActivity extends AppCompatActivity {
         } catch (Exception e) {
             closeWaitDialog();
             TextView label = (TextView) findViewById(R.id.textViewUserIdMessage);
-            label.setText("Sign-in failed");
+            label.setText("Login failed");
             inPassword.setBackground(getDrawable(R.drawable.text_border_error));
 
             label = (TextView) findViewById(R.id.textViewUserIdMessage);
-            label.setText("Sign-in failed");
+            label.setText("Login failed");
             inUsername.setBackground(getDrawable(R.drawable.text_border_error));
 
-            showDialogMessage("Sign-in failed", UserHelper.getInstance().formatException(e));
+            showDialogMessage("Login failed", UserHelper.getInstance().formatException(e));
         }
     }
 
@@ -448,7 +448,7 @@ public class SigninActivity extends AppCompatActivity {
             UserHelper.getInstance().setUserId(username);
             inUsername.setText(user.getUserId());
             if (((TBLoaderAppContext)getApplicationContext()).isCurrentlyConnected()) {
-                showWaitDialog("Attempting sign in...");
+                showWaitDialog("Attempting login...");
                 // TODO: Handle fallback
                 user.getSessionInBackground(authenticationHandler);
             } else {
@@ -626,14 +626,14 @@ public class SigninActivity extends AppCompatActivity {
 
             closeWaitDialog();
             TextView label = (TextView) findViewById(R.id.textViewUserIdMessage);
-            label.setText("Sign-in failed");
+            label.setText("Login failed");
             inPassword.setBackground(getDrawable(R.drawable.text_border_error));
 
             label = (TextView) findViewById(R.id.textViewUserIdMessage);
-            label.setText("Sign-in failed");
+            label.setText("Login failed");
             inUsername.setBackground(getDrawable(R.drawable.text_border_error));
 
-            showDialogMessage("Sign-in failed", UserHelper.getInstance().formatException(e));
+            showDialogMessage("Login failed", UserHelper.getInstance().formatException(e));
         }
 
         @Override
@@ -643,7 +643,7 @@ public class SigninActivity extends AppCompatActivity {
              * user and pass the user's responses to the continuation.
              */
             if ("NEW_PASSWORD_REQUIRED".equals(continuation.getChallengeName())) {
-                // This is the first sign-in attempt for an admin created user
+                // This is the first login attempt for an admin created user
                 newPasswordContinuation = (NewPasswordContinuation) continuation;
                 UserHelper.getInstance().setUserAttributeForDisplayFirstLogIn(newPasswordContinuation.getCurrentUserAttributes(),
                         newPasswordContinuation.getRequiredAttributes());
