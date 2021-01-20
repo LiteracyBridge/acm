@@ -57,7 +57,7 @@ public class UIUtils {
       public void run() {
         Application app = Application.getApplication();
         dialog = UIUtils.showDialog(waitParent,
-            new BusyDialog(LabelProvider.getLabel("Attempting Sign In"), waitParent));
+            new BusyDialog(LabelProvider.getLabel("Attempting Login"), waitParent));
         UIUtils.centerWindow(dialog, waitUiOptions);
         try {
           runnable.run();

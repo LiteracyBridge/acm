@@ -70,7 +70,7 @@ public class ProgramCard extends CardContent {
 
         forceSandbox = new JCheckBox("Use demo mode");
         forceSandbox.addActionListener(this::onSandbox);
-        if (welcomeDialog.options.contains(Authenticator.SigninOptions.OFFER_DEMO_MODE)) {
+        if (welcomeDialog.options.contains(Authenticator.LoginOptions.OFFER_DEMO_MODE)) {
             dialogPanel.add(forceSandbox, gbc.withAnchor(WEST).withFill(NONE));
             // If not authenticated (roughly ~offline), sandbox is the only option, so don't let
             // the user change it.
@@ -110,13 +110,13 @@ public class ProgramCard extends CardContent {
             Map<String, String> programs = welcomeDialog.cognitoInterface.getPrograms();
             acmNames = new ArrayList<>(programs.keySet());
             // If data must already be local, filter the list to those ACMs that are local.
-            if (welcomeDialog.options.contains(Authenticator.SigninOptions.LOCAL_DATA_ONLY)) {
+            if (welcomeDialog.options.contains(Authenticator.LoginOptions.LOCAL_DATA_ONLY)) {
                 List<String> localNames = Authenticator.getInstance().getLocallyAvailablePrograms();
                 final List<String> usersPrograms = acmNames;
                 acmNames = localNames.stream()
                     .filter(name -> {
                         if (usersPrograms.contains(name)) return true;
-                        if (welcomeDialog.options.contains(Authenticator.SigninOptions.INCLUDE_FB_ACMS) &&
+                        if (welcomeDialog.options.contains(Authenticator.LoginOptions.INCLUDE_FB_ACMS) &&
                             name.contains("-FB-")) {
                             int fb = name.indexOf("-FB-");
                             // Is the part before the "-FB-" one of the user's programs?
@@ -128,7 +128,7 @@ public class ProgramCard extends CardContent {
             }
             // If updating (not sandboxing) is an option, determine which ACMs will be sandbox
             // only, and which allow a choice.
-            if (welcomeDialog.options.contains(Authenticator.SigninOptions.OFFER_DEMO_MODE)) {
+            if (welcomeDialog.options.contains(Authenticator.LoginOptions.OFFER_DEMO_MODE)) {
                 programsAllowingUpdates = acmNames
                         .stream()
                         .filter(name -> {
@@ -160,7 +160,7 @@ public class ProgramCard extends CardContent {
         if (acmNames.size() == 1) {
             choicesList.setSelectedIndex(0);
             // Set the focus to the first actionable widget.
-            if (welcomeDialog.options.contains(Authenticator.SigninOptions.OFFER_DEMO_MODE)) {
+            if (welcomeDialog.options.contains(Authenticator.LoginOptions.OFFER_DEMO_MODE)) {
                 forceSandbox.setRequestFocusEnabled(true);
                 forceSandbox.requestFocusInWindow();
             } else {
@@ -207,7 +207,7 @@ public class ProgramCard extends CardContent {
         if (haveSelection) {
             boolean canUpdate = programsAllowingUpdates.contains(selectedProgram);
             if (canUpdate) {
-                boolean suggestSandbox = welcomeDialog.options.contains(Authenticator.SigninOptions.SUGGEST_DEMO_MODE);
+                boolean suggestSandbox = welcomeDialog.options.contains(Authenticator.LoginOptions.SUGGEST_DEMO_MODE);
                 forceSandbox.setEnabled(true);
                 forceSandbox.setSelected(explicitSandbox!=null?explicitSandbox:suggestSandbox);
             } else {

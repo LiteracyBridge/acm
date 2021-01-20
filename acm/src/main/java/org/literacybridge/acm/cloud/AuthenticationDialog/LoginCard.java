@@ -21,16 +21,16 @@ import static java.awt.GridBagConstraints.NONE;
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 
-public class SignInCard extends CardContent {
-    private static final String DIALOG_TITLE = "Sign In to %s";
+public class LoginCard extends CardContent {
+    private static final String DIALOG_TITLE = "Login to %s";
     protected static final int CARD_HEIGHT = 540;
 
-    private final PanelButton signIn;
+    private final PanelButton login;
     private final FlexTextField emailField;
     private final FlexTextField passwordField;
     private final JCheckBox rememberMe;
 
-    public SignInCard(WelcomeDialog welcomeDialog, WelcomeDialog.Cards panel) {
+    public LoginCard(WelcomeDialog welcomeDialog, WelcomeDialog.Cards panel) {
         super(welcomeDialog, String.format(DIALOG_TITLE, welcomeDialog.applicationName), panel);
         JPanel dialogPanel = this;
         // The GUI
@@ -70,13 +70,13 @@ public class SignInCard extends CardContent {
         // Consume all vertical space here.
         dialogPanel.add(new JLabel(""), gbc.withWeighty(1.0));
 
-        // Sign In button.
-        signIn = new PanelButton("Sign In");
-        signIn.setFont(getTextFont());
-        signIn.setBgColorPalette(AMPLIO_GREEN);
-        signIn.addActionListener(this::onSignin);
-        signIn.setEnabled(false);
-        dialogPanel.add(signIn, gbc.withFill(NONE));
+        // Login button.
+        login = new PanelButton("Login");
+        login.setFont(getTextFont());
+        login.setBgColorPalette(AMPLIO_GREEN);
+        login.addActionListener(this::onLogin);
+        login.setEnabled(false);
+        dialogPanel.add(login, gbc.withFill(NONE));
 
         // Sign-up link.
         ActionLabel signUp = new ActionLabel("Not registered yet? Click here!");
@@ -104,7 +104,7 @@ public class SignInCard extends CardContent {
 
     @Override
     void onEnter() {
-        if (signIn.isEnabled()) onSignin(null);
+        if (login.isEnabled()) onLogin(null);
     }
 
     /**
@@ -127,20 +127,20 @@ public class SignInCard extends CardContent {
     }
 
     /**
-     * User clicked "Sign in" pressed enter.
+     * User clicked "Login" or pressed enter.
      * @param actionEvent is ignored.
      */
-    private void onSignin(ActionEvent actionEvent) {
+    private void onLogin(ActionEvent actionEvent) {
         UIUtils.runWithWaitSpinner(welcomeDialog,
             () -> welcomeDialog.cognitoInterface.authenticate(emailField.getText(), passwordField.getText()),
-            this::onSigninReturned,
+            this::onLoginReturned,
             TOP_THIRD);
     }
 
     /**
      * Called after the "authenticate" call returns.
      */
-    private void onSigninReturned() {
+    private void onLoginReturned() {
         // ok and cancel do the same thing, but one succeeded and one failed, so it is best to
         // keep them separate, in case this semantic changes in the future.
         if (welcomeDialog.cognitoInterface.isAuthenticated()) {
@@ -158,7 +158,7 @@ public class SignInCard extends CardContent {
             // Probably bad user / password. Inform user, let them try again.
             welcomeDialog.setMessage(welcomeDialog.cognitoInterface.getAuthMessage());
         } else if(welcomeDialog.cognitoInterface.isSdkClientException()) {
-            // No connectivity. Can't sign in with Cognito.
+            // No connectivity. Can't login with Cognito.
             welcomeDialog.SdkClientException(this);
         } else if(welcomeDialog.cognitoInterface.isNewPasswordRequired()) {
             // Server requires user to reset password.
@@ -174,9 +174,9 @@ public class SignInCard extends CardContent {
      * Sets the enabled state of controls, based on which other controls have contents.
      */
     private void enableControls() {
-        boolean enableSignIn = (
+        boolean enableLogin = (
             emailField.getText().length() > 0 && passwordField.getText().length() > 0);
-        signIn.setEnabled(enableSignIn);
+        login.setEnabled(enableLogin);
         if (passwordField.getText().length() == 0) {
             passwordField.setRevealPasswordEnabled(true);
         }

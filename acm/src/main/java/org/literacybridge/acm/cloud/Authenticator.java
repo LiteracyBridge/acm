@@ -13,7 +13,6 @@ import com.amazonaws.services.s3.model.S3Object;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
 import org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog;
-import org.literacybridge.acm.cloud.IdentityPersistence.SigninDetails;
 import org.literacybridge.acm.cloud.cognito.AuthenticationHelper;
 import org.literacybridge.acm.cloud.cognito.CognitoHelper;
 import org.literacybridge.acm.cloud.cognito.CognitoJWTParser;
@@ -67,7 +66,7 @@ public class Authenticator {
 
 
     private static Authenticator instance;
-    private SigninResult signinResult = SigninResult.NONE;
+    private LoginResult loginResult = LoginResult.NONE;
 
     public static synchronized Authenticator getInstance() {
         if (instance == null) {
@@ -192,8 +191,8 @@ public class Authenticator {
 
     public TbSrnHelper getTbSrnHelper() {
         if (tbSrnHelper == null) {
-            if (!signinResult.signedIn()) {
-                throw new IllegalStateException("Must sign in first.");
+            if (!loginResult.signedIn()) {
+                throw new IllegalStateException("Must login first.");
             }
             tbSrnHelper = new TbSrnHelper(userEmail);
         }
@@ -212,7 +211,7 @@ public class Authenticator {
         return projectsHelper;
     }
 
-    public enum SigninResult {
+    public enum LoginResult {
         NONE, FAILURE, SUCCESS, CACHED_OFFLINE, OFFLINE;
 
         boolean signedIn() {
@@ -220,7 +219,7 @@ public class Authenticator {
         }
     }
 
-    public enum SigninOptions {OFFLINE_EMAIL_CHOICE,
+    public enum LoginOptions {OFFLINE_EMAIL_CHOICE,
         CHOOSE_PROGRAM,
         LOCAL_DATA_ONLY,
         OFFER_DEMO_MODE,
@@ -236,21 +235,21 @@ public class Authenticator {
      *
      * @param parent      window for the dialog.
      * @param applicationName the name of the application authenticating (for credentials dialog)
-     * @param signinFlags options for the sign-in.
-     * @return a SignInResult from the process.
+     * @param loginFlags options for the sign-in.
+     * @return a LoginResult from the process.
      */
-    public SigninResult getUserIdentity(Window parent, String applicationName, String defaultProgram, SigninOptions... signinFlags) {
-        Set<SigninOptions> options = new HashSet<>(Arrays.asList(signinFlags));
-        if (options.contains(SigninOptions.SUGGEST_DEMO_MODE)) {
-            options.add(SigninOptions.OFFER_DEMO_MODE);
+    public LoginResult getUserIdentity(Window parent, String applicationName, String defaultProgram, LoginOptions... loginFlags) {
+        Set<LoginOptions> options = new HashSet<>(Arrays.asList(loginFlags));
+        if (options.contains(LoginOptions.SUGGEST_DEMO_MODE)) {
+            options.add(LoginOptions.OFFER_DEMO_MODE);
         }
-        SigninDetails savedSignInDetails = identityPersistence.retrieveSignInDetails();
-        signinResult = SigninResult.NONE;
+        IdentityPersistence.LoginDetails savedLoginDetails = identityPersistence.retrieveLoginDetails();
+        loginResult = LoginResult.NONE;
 
         WelcomeDialog dialog = new WelcomeDialog(parent, applicationName, defaultProgram, options, cognitoInterface);
-        if (savedSignInDetails != null) {
-            dialog.setSavedCredentials(savedSignInDetails.email,
-                savedSignInDetails.secret);
+        if (savedLoginDetails != null) {
+            dialog.setSavedCredentials(savedLoginDetails.email,
+                savedLoginDetails.secret);
         }
         dialog.setVisible(true);
 
@@ -258,7 +257,7 @@ public class Authenticator {
             if (isAuthenticated()) {
                 // Authenticated with Cognito.
                 String password = dialog.isRememberMeSelected() ? dialog.getPassword() : null;
-                // These are the values that we get from the Cognito signin. As of 2019-12-24
+                // These are the values that we get from the Cognito login. As of 2019-12-24
                 // [sub, exp, iat, token_use, event_id, aud, iss, phone_number_verified, auth_time # Cognito values
                 // custom:greeting # what the user asked to be called.
                 // email_verified # will always be true if they're here; means they responded to their email.
@@ -271,43 +270,43 @@ public class Authenticator {
                 // ]
                 Map<String, String> props = new HashMap<>();
                 authenticationInfo.forEach(props::put);
-                identityPersistence.saveSignInDetails(userEmail, password, props);
+                identityPersistence.saveLoginDetails(userEmail, password, props);
                 userProgram = dialog.getProgram();
                 sandboxSelected = dialog.isSandboxSelected();
-                signinResult = SigninResult.SUCCESS;
+                loginResult = LoginResult.SUCCESS;
             } else {
                 // Couldn't get to Cognito; only have user's email.
                 String email = dialog.getEmail();
                 if (StringUtils.isEmpty(email)) {
                     // And if we don't even have an email, declare failure.
-                    signinResult = SigninResult.FAILURE;
-                } else if (savedSignInDetails != null && savedSignInDetails.email.equalsIgnoreCase(
+                    loginResult = LoginResult.FAILURE;
+                } else if (savedLoginDetails != null && savedLoginDetails.email.equalsIgnoreCase(
                     // If the email is the same as the recently saved email, use those saved details.
                     email)) {
-                    userEmail = savedSignInDetails.email;
+                    userEmail = savedLoginDetails.email;
                     authenticationInfo = identityPersistence.getExtraProperties();
-                    signinResult = SigninResult.CACHED_OFFLINE;
+                    loginResult = LoginResult.CACHED_OFFLINE;
                     if (authenticationInfo.containsKey("programs")) {
                         userPrograms = parseProgramList(authenticationInfo.get("programs"));
                     }
                     userProgram = dialog.getProgram();
                     sandboxSelected = dialog.isSandboxSelected();
-                    signinResult = SigninResult.SUCCESS;
+                    loginResult = LoginResult.SUCCESS;
                 } else {
                     // If some new email with no saved details, use what we have.
                     userEmail = email;
                     userProgram = dialog.getProgram();
                     sandboxSelected = dialog.isSandboxSelected();
-                    signinResult = SigninResult.OFFLINE;
+                    loginResult = LoginResult.OFFLINE;
                 }
             }
         } else {
             // User cancelled the dialog.
-            identityPersistence.clearSignInDetails();
-            signinResult = SigninResult.FAILURE;
+            identityPersistence.clearLoginDetails();
+            loginResult = LoginResult.FAILURE;
         }
 
-        return signinResult;
+        return loginResult;
     }
 
     private void onAuthenticated(String jwtToken) {
@@ -338,12 +337,12 @@ public class Authenticator {
      */
     @SuppressWarnings("unused")
     public void doSignoutAndForgetUser() {
-        // Since "signing in" merely obtains credentials for use in future calls, signing out
+        // Since "logging in" merely obtains credentials for use in future calls, logging out
         // is a matter of forgetting the credentials.
         credentials = null;
         authenticationInfo = null;
         userEmail = null;
-        identityPersistence.clearSignInDetails();
+        identityPersistence.clearLoginDetails();
     }
 
     /**
@@ -586,8 +585,8 @@ public class Authenticator {
         }
 
         /**
-         * Called in response to a NEW_PASSWORD_REQUIRED result. This sets the new password, and completes the signin.
-         * @param username of user signing in.
+         * Called in response to a NEW_PASSWORD_REQUIRED result. This sets the new password, and completes the login.
+         * @param username of user logging in.
          * @param password the new password chosen by the user.
          */
         public void provideNewPassword(String username, String password) {

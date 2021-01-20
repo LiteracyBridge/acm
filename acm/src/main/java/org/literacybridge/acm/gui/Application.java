@@ -27,7 +27,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -40,12 +39,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.CHOOSE_PROGRAM;
-import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.INCLUDE_FB_ACMS;
-import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.LOCAL_DATA_ONLY;
-import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.OFFER_DEMO_MODE;
-import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.OFFLINE_EMAIL_CHOICE;
-import static org.literacybridge.acm.cloud.Authenticator.SigninOptions.SUGGEST_DEMO_MODE;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.CHOOSE_PROGRAM;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.INCLUDE_FB_ACMS;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.LOCAL_DATA_ONLY;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.OFFER_DEMO_MODE;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.OFFLINE_EMAIL_CHOICE;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.SUGGEST_DEMO_MODE;
 
 public class Application extends JXFrame {
   private static final Logger LOG = Logger
@@ -333,7 +332,7 @@ public class Application extends JXFrame {
   private static void authenticateAndSelectProgram(CommandLineParams params) {
     Authenticator authInstance = Authenticator.getInstance();
     authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getKnownAcms());
-    Authenticator.SigninResult result = authInstance.getUserIdentity(null,
+    Authenticator.LoginResult result = authInstance.getUserIdentity(null,
         LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
         ACMConfiguration.cannonicalProjectName(params.sharedACM),
         OFFLINE_EMAIL_CHOICE,
@@ -341,7 +340,7 @@ public class Application extends JXFrame {
         LOCAL_DATA_ONLY,
         params.sandbox?SUGGEST_DEMO_MODE:OFFER_DEMO_MODE,
         INCLUDE_FB_ACMS);
-    if (result == Authenticator.SigninResult.FAILURE) {
+    if (result == Authenticator.LoginResult.FAILURE) {
       JOptionPane.showMessageDialog(null,
           "Authentication is required to use the ACM.",
           "Authentication Failure",

@@ -92,7 +92,7 @@ public class CognitoHelper {
         }
     }
 
-    String GetHostedSignInURL() {
+    String GetHostedLoginURL() {
         String customurl = "https://%s.auth.%s.amazoncognito.com/login?response_type=code&client_id=%s&redirect_uri=%s";
 
         return String.format(customurl, CUSTOMDOMAIN, REGION, CLIENTAPP_ID, Constants.REDIRECT_URL);
@@ -208,7 +208,7 @@ public class CognitoHelper {
     }
 
     /**
-     * Helper method to validate the user, that is, "sign in".
+     * Helper method to validate the user, that is, "login".
      *
      * @param username represents the username in the cognito user pool
      * @param password represents the password in the cognito user pool

@@ -59,9 +59,9 @@ public class ForgotPasswordCard extends CardContent {
 
         Box hBox = Box.createHorizontalBox();
         hBox.add(new JLabel("Remembered your password? "));
-        ActionLabel signIn = new ActionLabel("Go back to sign in.");
-        signIn.addActionListener(this::onCancel);
-        hBox.add(signIn);
+        ActionLabel login = new ActionLabel("Go back to login.");
+        login.addActionListener(this::onCancel);
+        hBox.add(login);
         dialogPanel.add(hBox, gbc.withFill(NONE));
 
         addComponentListener(componentAdapter);

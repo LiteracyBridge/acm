@@ -32,7 +32,7 @@ import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Ca
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ProgramCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ResetCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.NewPasswordRequiredCard;
-import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.SignInCard;
+import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.LoginCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.SignUpCard;
 import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 
@@ -91,7 +91,7 @@ public class WelcomeDialog extends JDialog {
 
     enum Cards {
         NullCard(100, CardContent::new),
-        SignInCard(org.literacybridge.acm.cloud.AuthenticationDialog.SignInCard.CARD_HEIGHT, SignInCard::new),
+        LoginCard(org.literacybridge.acm.cloud.AuthenticationDialog.LoginCard.CARD_HEIGHT, LoginCard::new),
         SignUpCard(RegisterCard.CARD_HEIGHT, RegisterCard::new),
         ForgotPasswordCard(org.literacybridge.acm.cloud.AuthenticationDialog.ForgotPasswordCard.CARD_HEIGHT, ForgotPasswordCard::new),
         ResetCard(org.literacybridge.acm.cloud.AuthenticationDialog.ResetCard.CARD_HEIGHT, ResetCard::new),
@@ -118,7 +118,7 @@ public class WelcomeDialog extends JDialog {
     private CardContent currentCard;
 
     final Authenticator.CognitoInterface cognitoInterface;
-    final Set<Authenticator.SigninOptions> options;
+    final Set<Authenticator.LoginOptions> options;
     final String applicationName;
     final String defaultProgram;
 
@@ -133,21 +133,21 @@ public class WelcomeDialog extends JDialog {
     }
 
     /**
-     * The Welcome dialog. Prompts the user to sign in when online, or enter their email when
+     * The Welcome dialog. Prompts the user to login when online, or enter their email when
      * offline. If there are multiple programs available, prompts the user to choose the desired
      * program.
      * @param owner Owner window.
      * @param defaultProgram The program to be selected by default (if it is an available program).
-     * @param options From Authenticator.SignInOptions
+     * @param options From Authenticator.LoginOptions
      * @param cognitoInterface a private interface inside Authenticator, by which the dialog can
      *                         query and set values in the Authenticator.
      */
     public WelcomeDialog(Window owner,
         String applicationName,
         String defaultProgram,
-        Set<Authenticator.SigninOptions> options,
+        Set<Authenticator.LoginOptions> options,
         Authenticator.CognitoInterface cognitoInterface) {
-        super(owner, "Amplio Sign In", ModalityType.DOCUMENT_MODAL);
+        super(owner, "Amplio Login", ModalityType.DOCUMENT_MODAL);
         this.cognitoInterface = cognitoInterface;
         this.options = options;
         this.applicationName = applicationName;
@@ -170,7 +170,7 @@ public class WelcomeDialog extends JDialog {
 
         // Create the panels, add them to the cardPanel, and to the dialogPanelMap.
         if (cognitoInterface.isOnline()) {
-            makeCard(SignInCard);
+            makeCard(LoginCard);
         } else {
             makeCard(EmailCard);
         }
@@ -217,12 +217,12 @@ public class WelcomeDialog extends JDialog {
 
 
 
-    private org.literacybridge.acm.cloud.AuthenticationDialog.SignInCard signInCard() {
-        return ((org.literacybridge.acm.cloud.AuthenticationDialog.SignInCard) cardMap.get(SignInCard));
+    private LoginCard loginCard() {
+        return ((LoginCard) cardMap.get(LoginCard));
     }
 
     public boolean isRememberMeSelected() {
-        return signInCard().isRememberMeSelected();
+        return loginCard().isRememberMeSelected();
     }
 
     /**
@@ -328,10 +328,10 @@ public class WelcomeDialog extends JDialog {
     }
 
     /**
-     * Navigates to the program selection card, after signing in or entering email address.
+     * Navigates to the program selection card, after logging in or entering email address.
      */
     void gotoProgramSelection() {
-        if (options.contains(Authenticator.SigninOptions.CHOOSE_PROGRAM)) {
+        if (options.contains(Authenticator.LoginOptions.CHOOSE_PROGRAM)) {
             activateCard(ProgramCard, null);
         } else {
             success = true;
@@ -345,7 +345,7 @@ public class WelcomeDialog extends JDialog {
      */
     void ok(CardContent senderCard) {
         switch (senderCard.panel) {
-        case SignInCard:
+        case LoginCard:
         case EmailCard:
         case NewPasswordRequiredCard:             
             gotoProgramSelection();
@@ -357,7 +357,7 @@ public class WelcomeDialog extends JDialog {
 
         case ResetCard:
         case ConfirmCard:
-            activateCard(SignInCard, null);
+            activateCard(LoginCard, null);
             break;
 
         case ProgramCard:
@@ -381,7 +381,7 @@ public class WelcomeDialog extends JDialog {
      */
     void cancel(CardContent senderCard) {
         switch (senderCard.panel) {
-        case SignInCard:
+        case LoginCard:
 
         case EmailCard:
         case ProgramCard:
@@ -395,19 +395,19 @@ public class WelcomeDialog extends JDialog {
         case SignUpCard:
         case ForgotPasswordCard:
         case ResetCard:
-            activateCard(SignInCard, null);
+            activateCard(LoginCard, null);
             break;
         }
     }
 
     /**
-     * Called when the signin card detects an SdkClientException. This is interpreted to mean
+     * Called when the login card detects an SdkClientException. This is interpreted to mean
      * that we are offline.
-     * @param senderCard The card that detected SdkClientException. Only the sign in card is valid.
+     * @param senderCard The card that detected SdkClientException. Only the login card is valid.
      */
     void SdkClientException(CardContent senderCard) {
-        if (senderCard.panel == SignInCard) {
-            if (options.contains(Authenticator.SigninOptions.OFFLINE_EMAIL_CHOICE)) {
+        if (senderCard.panel == LoginCard) {
+            if (options.contains(Authenticator.LoginOptions.OFFLINE_EMAIL_CHOICE)) {
                 activateCard(EmailCard, null);
             } else if (StringUtils.isNotBlank(email)) {
                 activateCard(ProgramCard, null);

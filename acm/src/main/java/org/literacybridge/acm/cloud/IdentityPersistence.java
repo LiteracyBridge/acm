@@ -47,13 +47,13 @@ class IdentityPersistence {
     }
 
     /**
-     * Persists sign in credentials to some persistent store. Intended to be called after a
-     * successful sign-in.
+     * Persists login credentials to some persistent store. Intended to be called after a
+     * successful login.
      * @param password The password.
      * @return True if the credentials were saved successfully, false otherwise.
      */
     @SuppressWarnings("UnusedReturnValue")
-    boolean saveSignInDetails(String email, String password, Map<String,String> extraProperties) {
+    boolean saveLoginDetails(String email, String password, Map<String,String> extraProperties) {
         // This is not intended to be "secure". It simply prevents casual browsing of the
         // password.
         Properties credentialProps = new Properties();
@@ -113,8 +113,8 @@ class IdentityPersistence {
      * THAT stringent.
      * @return a Pair, consisting of the user id and password.
      */
-    SigninDetails retrieveSignInDetails() {
-        SigninDetails result = null;
+    LoginDetails retrieveLoginDetails() {
+        LoginDetails result = null;
         Properties credentialProps = readPropertiesFile();
         if (credentialProps != null) {
             String email = credentialProps.getProperty("email", "");
@@ -122,7 +122,7 @@ class IdentityPersistence {
             String identity = credentialProps.getProperty("identity", email);
             String pwd = credentialProps.getProperty("secret", "");
             pwd = rotate(pwd, identity, true);
-            result = new SigninDetails(email, pwd);
+            result = new LoginDetails(email, pwd);
         }
         return result;
     }
@@ -160,16 +160,16 @@ class IdentityPersistence {
     /**
      * Removes any saved sign-in credentials.
      */
-    void clearSignInDetails() {
+    void clearLoginDetails() {
         //noinspection ResultOfMethodCallIgnored
         credentialsFile.delete();
     }
 
-    public static class SigninDetails {
+    public static class LoginDetails {
         public final String email;
         public final String secret;
 
-        public SigninDetails(String email, String secret) {
+        public LoginDetails(String email, String secret) {
             this.email = email;
             this.secret = secret;
         }

@@ -18,7 +18,7 @@ import static java.awt.GridBagConstraints.NONE;
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class EmailCard extends CardContent {
-    private static final String DIALOG_TITLE = "Sign In to %s";
+    private static final String DIALOG_TITLE = "Login to %s";
     protected static final int CARD_HEIGHT = 415;
 
     private final PanelButton okButton;
@@ -49,7 +49,7 @@ public class EmailCard extends CardContent {
         // Consume all vertical space here.
         dialogPanel.add(new JLabel(""), gbc.withWeighty(1.0));
 
-        // Sign In button and Sign Up link.
+        // Login button and Sign Up link.
         okButton = new PanelButton("OK");
         okButton.setFont(getTextFont());
         okButton.setBgColorPalette(AMPLIO_GREEN);
@@ -75,7 +75,7 @@ public class EmailCard extends CardContent {
     }
 
     /**
-     * User clicked "Sign in" pressed enter.
+     * User clicked "Login" or pressed enter.
      * @param actionEvent is ignored.
      */
     private void onOk(ActionEvent actionEvent) {
