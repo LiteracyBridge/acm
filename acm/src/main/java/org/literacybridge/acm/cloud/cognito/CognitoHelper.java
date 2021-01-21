@@ -29,6 +29,7 @@ import com.amazonaws.services.cognitoidp.model.ResendConfirmationCodeRequest;
 import com.amazonaws.services.cognitoidp.model.ResendConfirmationCodeResult;
 import com.amazonaws.services.cognitoidp.model.SignUpRequest;
 import com.amazonaws.services.cognitoidp.model.SignUpResult;
+import com.amazonaws.services.cognitoidp.model.UsernameExistsException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
@@ -150,14 +151,16 @@ public class CognitoHelper {
 
         signUpRequest.setUserAttributes(list);
 
+        String result = null;
         try {
-            SignUpResult result = cognitoIdentityProvider.signUp(signUpRequest);
+            SignUpResult signupResult = cognitoIdentityProvider.signUp(signUpRequest);
             //System.out.println(result);
+        } catch (UsernameExistsException exists) {
+            result = String.format("User '%s' already exists.", username);
         } catch (Exception e) {
-            e.printStackTrace();
-            return e.getLocalizedMessage();
+            result = e.getLocalizedMessage();
         }
-        return null;
+        return result;
     }
 
     /**
