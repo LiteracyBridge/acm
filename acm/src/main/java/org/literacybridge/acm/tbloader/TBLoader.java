@@ -54,6 +54,8 @@ import static org.literacybridge.acm.Constants.TbCollectionWorkDir;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.CHOOSE_PROGRAM;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.OFFLINE_EMAIL_CHOICE;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
+import static org.literacybridge.core.tbloader.TBLoaderUtils.getImageForCommunity;
+import static org.literacybridge.core.tbloader.TBLoaderUtils.getPackagesInDeployment;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
@@ -62,6 +64,8 @@ public class TBLoader extends JFrame {
     private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
 
     private static TBLoader tbLoader;
+    private File deploymentDir;
+
     public static TBLoader getApplication() {
         return tbLoader;
     }
@@ -324,9 +328,10 @@ public class TBLoader extends JFrame {
     }
 
     private void initializeProgramSpec() {
-        File programspecDir = new File(localTbLoaderDir,
-            TBLoaderConstants.CONTENT_SUBDIR + File.separator + deploymentChooser.getNewDeployment() + File.separator
-                + Constants.ProgramSpecDir);
+        deploymentDir = new File(localTbLoaderDir,
+                TBLoaderConstants.CONTENT_SUBDIR + File.separator + deploymentChooser.getNewDeployment());
+
+        File programspecDir = new File(deploymentDir, Constants.ProgramSpecDir);
         programSpec = new ProgramSpec(programspecDir);
         String acceptables = programSpec.getDeploymentProperties().getProperty(
             TBLoaderConstants.ACCEPTABLE_FIRMWARE_VERSIONS);
@@ -341,7 +346,14 @@ public class TBLoader extends JFrame {
     private void initializeGui() {
         setTitle(String.format("TB-Loader %s", newProject));
 
-        tbLoaderPanel = new TbLoaderPanel(getProgramSpec());
+        String[] packagesInDeployment = null;
+        Properties deploymentProperties = getProgramSpec().getDeploymentProperties();
+        allowPackageChoice = allowPackageChoice || deploymentProperties.size()==0;
+        if (allowPackageChoice) {
+            packagesInDeployment = getPackagesInDeployment(deploymentDir);
+        }
+
+        tbLoaderPanel = new TbLoaderPanel(getProgramSpec(), packagesInDeployment);
         tbLoaderPanel.setEnabled(false);
         tbLoaderPanel.setGoListener(this::onTbLoaderGo);
         tbLoaderPanel.setRecipientListener(this::onRecipientSelected);
@@ -386,7 +398,7 @@ public class TBLoader extends JFrame {
         try {
             File[] files;
             if (basicContentPath.exists()) {
-                // get Package
+                // get firmware for deployment
                 files = basicContentPath.listFiles((dir, name) -> {
                     String lowercase = name.toLowerCase();
                     return lowercase.endsWith(".img");
@@ -618,8 +630,20 @@ public class TBLoader extends JFrame {
             imageName = deploymentProperties.getProperty(recipient.languagecode);
         }
         boolean ok = imageName != null;
-        if (!ok) {
-            imageName = "";
+        if (StringUtils.isEmpty(imageName)) {
+            // Like ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/basic
+            File deploymentDir = new File(localTbLoaderDir,
+                    TBLoaderConstants.CONTENT_SUBDIR + File.separator + deploymentChooser.getNewDeployment());
+            Map<String, String> recipientMap = getProgramSpec().getRecipientsMap();
+            if (recipientMap != null) {
+                String recipientDirName = recipientMap.get(recipient.recipientid);
+                if (StringUtils.isNotEmpty(recipientDirName)) {
+                    imageName = getImageForCommunity(deploymentDir, recipientDirName);
+                }
+            }
+            if (StringUtils.isEmpty(imageName)) {
+                imageName = "";
+            }
         }
         tbLoaderPanel.setNewPackage(imageName);
     }

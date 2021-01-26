@@ -79,12 +79,14 @@ public class TbLoaderPanel extends JPanel {
     private JComboBox<String> actionChooser;
 
     private boolean allowPackageChoice;
-    private void enablePackageChooser(boolean enable) { allowPackageChoice = enable;}
     private boolean usePackageChooser() {
         return allowPackageChoice;
     }
 
     private String[] packagesInDeployment;
+    void setPackagesInDeployment(String[] packagesInDeployment) {
+        this.packagesInDeployment = packagesInDeployment;
+    }
 
     private static final String UPDATE_TB = "Update TB";
     private final String[] actionList = new String[] { UPDATE_TB, "Collect Stats" };
@@ -94,7 +96,9 @@ public class TbLoaderPanel extends JPanel {
     private final ProgressDisplayManager progressDisplayManager = new ProgressDisplayManager(this);
 
 
-    public TbLoaderPanel(ProgramSpec programSpec) {
+    public TbLoaderPanel(ProgramSpec programSpec, String[] packagesInDeployment) {
+        this.packagesInDeployment = packagesInDeployment;
+        this.allowPackageChoice = packagesInDeployment != null;
         this.programSpec = programSpec;
         layoutComponents();
     }
