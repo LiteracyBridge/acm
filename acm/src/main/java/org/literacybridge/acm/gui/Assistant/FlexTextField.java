@@ -17,7 +17,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class FlexTextField extends PlaceholderTextField {
-    private static final char MASK_CHAR = '●';
+    private static final char MASK_CHAR = '\u25CF'; // Black Circle;
     private static final char NOMASK_CHAR = (char)'\0';
     private IconHelper helper;
     private IconHelper getHelper() {
