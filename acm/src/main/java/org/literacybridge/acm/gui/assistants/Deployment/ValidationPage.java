@@ -389,7 +389,10 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                 }
                 for (int n : missing) {
                     PromptsInfo.PromptInfo pi = promptsInfo.getPrompt(Integer.toString(n));
-                    issue.addDetail(String.format("(%d) %s - \"%s\"", n, pi.getFilename(), pi.getText()));
+                    // The 'ding' doesn't have a filename.
+                    if (pi != null) {
+                        issue.addDetail(String.format("(%d) %s - \"%s\"", n, pi.getFilename(), pi.getText()));
+                    }
                 }
             }
         }

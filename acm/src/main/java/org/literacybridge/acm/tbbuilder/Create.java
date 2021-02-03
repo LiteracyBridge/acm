@@ -430,7 +430,17 @@ class Create {
                 exportFile = new File(stagedLanguageDir, promptFilename);
             }
             if (!exportFile.exists()) {
-                repository.exportSystemPromptFileWithFormat(prompt, exportFile, language, audioFormat);
+                try {
+                    repository.exportSystemPromptFileWithFormat(prompt, exportFile, language, audioFormat);
+                } catch (BaseAudioConverter.ConversionSourceMissingException missingEx) {
+                    // If these errors were already warned of, in the deployment assistant, ignore them here.
+                    if (!builderContext.isAssistantLaunched) {
+                        builderContext.logException(missingEx);
+                    }
+                }catch(Exception ex) {
+                    // Keep going after failing to export a prompt.
+                    builderContext.logException(ex);
+                }
             }
         }
     }
