@@ -152,10 +152,10 @@ public class Application extends JXFrame {
     String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
         "  --  CHANGES WILL *NOT* BE SAVED!":"";
     String cloudIndicator = ACMConfiguration.getInstance().getCurrentDB().getPathProvider().isDropboxDb()
-                            ? (OsUtils.WINDOWS ? "dbx" : "🦤️")
+                            ? (OsUtils.WINDOWS ? "dbx" : "∅")
                             : (OsUtils.WINDOWS ? "s3" : "✓");
     String layoutIndicator = AmplioHome.isOldStyleHomeDirectory()
-                             ? (OsUtils.WINDOWS ? "v1" : "⚠️")
+                             ? (OsUtils.WINDOWS ? "v1" : "∅")
                              : (OsUtils.WINDOWS ? "v2" : "✓");
     StringBuilder dbVersion = new StringBuilder("v")
             .append(ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion())

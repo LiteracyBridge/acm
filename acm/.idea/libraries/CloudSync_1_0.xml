@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="CloudSync-1.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../S3Sync/CloudSync/build/libs/CloudSync-1.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
