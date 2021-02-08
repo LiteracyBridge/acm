@@ -45,7 +45,7 @@ public class ACMConfiguration {
     private final boolean showConfiguration;
     // If true, don't lock (or unlock) the database. For testing purposes.
     private boolean noDbCheckout;
-    private boolean devo = false;
+    private boolean devo;
 
     private final Properties UsersConfigurationProperties = new Properties();
 
@@ -207,8 +207,7 @@ public class ACMConfiguration {
             response = CloudSync.sync(program + "_PROGSPEC");
             if (response.responseHasError) return false;
             response = CloudSync.sync(program + "_DB");
-            if (response.responseHasError) return false;
-            return true;
+            return !response.responseHasError;
         } catch (Exception ignored) {
             return false;
         }
@@ -269,11 +268,12 @@ public class ACMConfiguration {
             AcmLocker.unlockDb();
         }
 
+        //noinspection MismatchedReadAndWriteOfArray
         boolean[] inSync = {true};
         if (!dbPathProvider.isDropboxDb() && syncState==S3SyncState.REQUIRED_FOR_S3) {
             // No permits, so acquire will wait until the release.
             Semaphore available = new Semaphore(0);
-            waiter.accept(()-> {inSync[0] = cloudStartAndSync(dbPathProvider.getProgramName());}, available::release);
+            waiter.accept(()-> inSync[0] = cloudStartAndSync(dbPathProvider.getProgramName()), available::release);
             available.acquire();
         }
         // TODO: Do something with value of inSync
@@ -305,13 +305,12 @@ public class ACMConfiguration {
      */
     public synchronized void commitCurrentDB() {
         if (currentDB != null && !currentDB.isSandboxed()) {
-            boolean needSync = true;
             if (isDisableUI()) {
                 // Headless version, immediately commits changes.
                 currentDB.commitDbChanges();
             } else {
                 // Interactive version, prompts first.
-                needSync = currentDB.updateDb();
+                currentDB.updateDb();
             }
             if (!currentDB.getPathProvider().isDropboxDb()) {
                 tryCloudSync(currentDB.getProgramName());
@@ -331,8 +330,9 @@ public class ACMConfiguration {
         return currentDB;
     }
 
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
-    public synchronized void createNewDb(String templateDbName, String newDbName) throws Exception {
+    public synchronized void createNewDb(String templateDbName, String newDbName) {
         throw new NotImplementedException("createNewDb has been deimplemented.");
     }
 
@@ -407,6 +407,7 @@ public class ACMConfiguration {
     private void setupACMGlobalPaths() {
         File appHomeDir = getApplicationHomeDirectory();
         if (!appHomeDir.exists()) {
+            //noinspection ResultOfMethodCallIgnored
             appHomeDir.mkdirs();
         }
 
@@ -440,8 +441,13 @@ public class ACMConfiguration {
         knownDbs.putAll(findContainedAcmDbs(AmplioHome.getHomeDbsRootDir(), false));
     }
 
+    /**
+     * "Discover" a newly added program. Used after downloading program content from the cloud.
+     * @param program to be "discovered" and added to the list of known programs.
+     */
     public void discoverDB(String program) {
         program = cannonicalProjectName(program);
+        assert program != null;
         File programDir = new File(AmplioHome.getHomeDbsRootDir(), program);
         if (programDir.isDirectory() && knownDbs.containsKey(program) && knownDbs.get(program).getPathProvider().isDropboxDb()) {
             knownDbs.put(program, new DBConfiguration(new PathsProvider(program, false)));
@@ -562,7 +568,7 @@ public class ACMConfiguration {
         File configFile = getPathProvider(acmName).getProgramConfigFile();
         if (configFile != null) {
             try (FileInputStream fis = new FileInputStream(configFile);
-                 BufferedInputStream in = new BufferedInputStream(fis);) {
+                 BufferedInputStream in = new BufferedInputStream(fis)) {
                 properties = new Properties();
                 properties.load(in);
             } catch (IOException ignored) {
@@ -575,7 +581,7 @@ public class ACMConfiguration {
     private void loadUserProps() {
         if (AmplioHome.getUserConfigFile().exists()) {
             try (FileInputStream fis = new FileInputStream(AmplioHome.getUserConfigFile());
-                 BufferedInputStream in = new BufferedInputStream(fis);) {
+                 BufferedInputStream in = new BufferedInputStream(fis)) {
                 UsersConfigurationProperties.load(in);
             } catch (IOException e) {
                 throw new RuntimeException(
@@ -586,7 +592,7 @@ public class ACMConfiguration {
 
     private void writeUserProps() {
         try (FileOutputStream fos = new FileOutputStream(AmplioHome.getUserConfigFile());
-             BufferedOutputStream out = new BufferedOutputStream(fos);) {
+             BufferedOutputStream out = new BufferedOutputStream(fos)) {
             UsersConfigurationProperties.store(out, null);
         } catch (IOException e) {
             throw new RuntimeException(
