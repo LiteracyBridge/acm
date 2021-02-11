@@ -621,7 +621,7 @@ public final class TBDeviceInfo {
      * If there is a "deployment.properties" file in the system directory, loads it.
      * @return The Properties, or null if not found or unreadable.
      */
-    private Properties loadDeploymentProperties() {
+    public Properties loadDeploymentProperties() {
         if (tbDeploymentProperties == null) {
             tbDeploymentProperties = loadDeploymentProperties(tbSystem);
         }

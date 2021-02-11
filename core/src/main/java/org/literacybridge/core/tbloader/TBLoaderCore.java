@@ -1,5 +1,6 @@
 package org.literacybridge.core.tbloader;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.fs.OperationLog;
@@ -22,9 +23,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
@@ -785,9 +789,9 @@ public class TBLoaderCore {
         mStepsLog = OperationLog.startOperation(mStatsOnly ? "CorTalkingBookCollectStatistics" : "CoreTalkingBookUpdate");
         mProgressListener.step(starting);
 
-        mCopyListener = filename -> {
+        mCopyListener = (fromFile, toFile) -> {
             mStepFileCount++;
-            mProgressListener.detail(filename);
+            mProgressListener.detail(toFile.getName());
         };
 
         mUpdateStartTime = System.nanoTime();
@@ -1025,8 +1029,17 @@ public class TBLoaderCore {
         // List the child directories.
         for (TbFile child : children) {
             if (child.isDirectory()) {
-                mProgressListener.detail(child.getAbsolutePath().substring(rootPath.length())+"/*");
-                myCount.add(listDirectory(rootPath, child, buffer));
+                try {
+                    mProgressListener.detail(child.getAbsolutePath().substring(rootPath.length()) + "/*");
+                    myCount.add(listDirectory(rootPath, child, buffer));
+                } catch (Exception ex) {
+                    mProgressListener.detail(child.toString());
+                    Map<String,String> exceptionInfo = new HashMap<>();
+                    exceptionInfo.put("message", ex.getMessage());
+                    exceptionInfo.put("rootPath", rootPath.toString());
+                    exceptionInfo.put("child", child.toString());
+                    OperationLog.logEvent("listDirectory Exception", exceptionInfo);
+                }
             }
         }
 
@@ -1154,13 +1167,41 @@ public class TBLoaderCore {
                 .open(mTbLoaderConfig.getTbLoaderId())         // like "000C"
                 .open(mOldDeploymentInfo.getCommunity());      // like "VING VING"
 
+        // If there is a deployment.properties file on the device, we'll copy it as UF_FILENAME.properties for
+        // every UF file.
+        Properties feedbackProperties = new Properties();
+        feedbackProperties.putAll(mTbDeviceInfo.loadDeploymentProperties());
+        // Add the collection time properties. Prepend with "collection." to prevent collisions.
+        collectionProperties(null).getProperties()
+                .forEach((key, value) -> feedbackProperties.put("collection."+key.toString(), value.toString()));
+        ByteArrayOutputStream bos = null;
+        if (feedbackProperties.size() > 0) {
+            bos = new ByteArrayOutputStream();
+            feedbackProperties.store(bos, "User Feedback");
+        }
+        String deploymentPropertiesString = bos!=null ? bos.toString() : null;
+
+        TbFile.CopyProgress localListener = (fromFile, toFile) -> {
+            mCopyListener.copying(fromFile, toFile);
+            if (deploymentPropertiesString != null) {
+                try {
+                    String infoName = FilenameUtils.getBaseName(toFile.getName()) + ".properties";
+                    TbFile infoFile = toFile.getParent().open(infoName);
+                    eraseAndOverwriteFile(infoFile, deploymentPropertiesString);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        };
+
         TbFile.CopyFilter copyRecordingsFilter = file -> {
             String name = file.getName();
             // match *_9_*.a18 or *_9-0_*.a18
             return name.matches("(?i).*(?:_9_|_9-0_).*\\.a18");
         };
         if (recordingsSrc.exists()) {
-            mStepBytesCount += TbFile.copyDir(recordingsSrc, recordingsDst, copyRecordingsFilter, mCopyListener);
+            mStepBytesCount += TbFile.copyDir(recordingsSrc, recordingsDst, copyRecordingsFilter, localListener);
         }
 
         finishStep();
@@ -1246,6 +1287,24 @@ public class TBLoaderCore {
         finishStep();
     }
 
+    private PropsWriter collectionProperties(PropsWriter props) {
+        if (props == null)
+            props = new PropsWriter();
+        props
+                .append(TBLoaderConstants.ACTION_PROPERTY, mStatsOnly?"stats":"update")
+                .append(TBLoaderConstants.CLEARED_FLASH_PROPERTY, mClearedFlashStatistics)
+                .append(TBLoaderConstants.TIMESTAMP_PROPERTY, mUpdateTimestampISO)
+                .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserName())
+                .append(TBLoaderConstants.USEREMAIL_PROPERTY, mTbLoaderConfig.getUserEmail())
+                .append(TBLoaderConstants.TBCDID_PROPERTY, mTbLoaderConfig.getTbLoaderId())
+                .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation)
+                .append(TBLoaderConstants.STATS_COLLECTED_UUID_PROPERTY, mStatsCollectedUUID);
+        if (mCoordinates != null && mCoordinates.length() > 0) {
+            props.append(TBLoaderConstants.COORDINATES_PROPERTY, mCoordinates);
+        }
+        return props;
+    }
+
     /**
      * Zips the statistics, logs, and other files, and copies them to the collected data directory.
      *
@@ -1265,18 +1324,8 @@ public class TBLoaderCore {
         // 'properties' format file, with useful information for statistics processing.
         PropsWriter props = new PropsWriter();
         props
-            .append(TBLoaderConstants.ACTION_PROPERTY, mStatsOnly?"stats":"update")
-            .append(TBLoaderConstants.CLEARED_FLASH_PROPERTY, mClearedFlashStatistics)
-            .append(TBLoaderConstants.TB_LOG_ACTION_PROPERTY, action)
-            .append(TBLoaderConstants.TIMESTAMP_PROPERTY, mUpdateTimestampISO)
-            .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserEmail())
-            .append(TBLoaderConstants.USEREMAIL_PROPERTY, mTbLoaderConfig.getUserEmail())
-            .append(TBLoaderConstants.TBCDID_PROPERTY, mTbLoaderConfig.getTbLoaderId())
-            .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation)
-            .append(TBLoaderConstants.STATS_COLLECTED_UUID_PROPERTY, mStatsCollectedUUID);
-        if (mCoordinates != null && mCoordinates.length() > 0) {
-            props.append(TBLoaderConstants.COORDINATES_PROPERTY, mCoordinates);
-        }
+                .append(TBLoaderConstants.TB_LOG_ACTION_PROPERTY, action);
+        collectionProperties(props);
         eraseAndOverwriteFile(mTalkingBookDataRoot.open(TBLoaderConstants.STATS_COLLECTED_PROPERTIES_NAME), props.toString());
 
         // Same name and location as the tempDirectory, but a file with a .zip extension.
@@ -1502,7 +1551,7 @@ public class TBLoaderCore {
             .append(TBLoaderConstants.TIMESTAMP_PROPERTY, mUpdateTimestampISO)
             .append(
                 TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY, mNewDeploymentInfo.isTestDeployment())
-            .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserEmail())
+            .append(TBLoaderConstants.USERNAME_PROPERTY, mTbLoaderConfig.getUserName())
             .append(TBLoaderConstants.USEREMAIL_PROPERTY, mTbLoaderConfig.getUserEmail())
             .append(TBLoaderConstants.TBCDID_PROPERTY, mTbLoaderConfig.getTbLoaderId())
             .append(TBLoaderConstants.NEW_SERIAL_NUMBER_PROPERTY, mNewDeploymentInfo.isNewSerialNumber())
@@ -1529,10 +1578,15 @@ public class TBLoaderCore {
      * Creates a file like a properties file.
      */
     private /*static*/ class PropsWriter {
+        private final Properties properties = new Properties();
         private final StringBuilder props = new StringBuilder();
         public String toString() { return props.toString(); }
+        public Properties getProperties() {
+            return properties;
+        }
         public PropsWriter append(String name, Object value) {
             try {
+                properties.setProperty(name, value.toString());
                 props.append(name).append('=').append(value.toString()).append(MSDOS_LINE_ENDING);
             } catch (Exception ex) {
                 mProgressListener.log("Exception adding property "+name);

@@ -109,6 +109,7 @@ public class TbLoaderFragment extends Fragment {
     private boolean mCollapseCommunityName = false;
     private TextView mProjectNameTextView;
     private String mUserName;
+    private String mUserEmail;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -123,7 +124,8 @@ public class TbLoaderFragment extends Fragment {
         if (currentCoordinates != null) {
             mCoordinates = String.format("%+03.5f %+03.5f", currentCoordinates.getLatitude(), currentCoordinates.getLongitude());
         }
-        mUserName = intent.getStringExtra("username");
+        mUserName = intent.getStringExtra(Constants.USERNAME);
+        mUserEmail = intent.getStringExtra(Constants.USEREMAIL);
         if (!mStatsOnly) {
             if (intent.hasExtra(Constants.PRESELECTED_RECIPIENTS)) {
                 mPreselectedRecipients = intent.getStringArrayListExtra(Constants.PRESELECTED_RECIPIENTS);
@@ -662,7 +664,8 @@ public class TbLoaderFragment extends Fragment {
             .withTbLoaderId(config.getTbcdid())
             .withCollectedDataDirectory(collectedDataTbFile)
             .withTempDirectory(tempTbFile)
-            .withUserEmail(mUserName)
+            .withUserEmail(mUserEmail)
+            .withUserName(mUserName)
             .build();
 
         DeploymentInfo oldDeploymentInfo = tbDeviceInfo.createDeploymentInfo(mProject);

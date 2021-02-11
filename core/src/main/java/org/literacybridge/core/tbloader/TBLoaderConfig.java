@@ -21,12 +21,16 @@ public class TBLoaderConfig {
     // The user email, if known.
     private final String userEmail;
 
+    // The name by which the user is addressed, if known.
+    private final String userName;
+
     private TBLoaderConfig(Builder builder) {
         this.tbLoaderId = builder.tbLoaderId;
         this.collectedDataDirectory = builder.collectedDataDirectory;
         this.tempDirectory = builder.tempDirectory;
         this.windowsUtilsDirectory = builder.windowsUtilsDirectory;
         this.userEmail = builder.userEmail;
+        this.userName = builder.userName;
     }
 
     public String getTbLoaderId() {
@@ -49,12 +53,17 @@ public class TBLoaderConfig {
         return userEmail;
     }
 
+    String getUserName() {
+        return userName!=null ? userName : userEmail;
+    }
+
     public static class Builder {
         private String tbLoaderId;
         private TbFile collectedDataDirectory;
         private TbFile tempDirectory;
         private TbFile windowsUtilsDirectory = null;
         private String userEmail = null;
+        private String userName = null;
 
         public final TBLoaderConfig build() {
             List<String> missing = new ArrayList<>();
@@ -94,6 +103,11 @@ public class TBLoaderConfig {
 
         public Builder withUserEmail(String userEmail) {
             this.userEmail = userEmail;
+            return this;
+        }
+
+        public Builder withUserName(String userName) {
+            this.userName = userName;
             return this;
         }
     }
