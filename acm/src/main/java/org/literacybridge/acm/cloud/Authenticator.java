@@ -146,7 +146,7 @@ public class Authenticator {
         return AccessControl.isOnline();
     }
 
-    public String getName() {
+    public String getUserName() {
         String result = getUserProperty("name", null);
         if (StringUtils.isBlank(result)) result = getUserProperty("custom:greeting", null);
         if (StringUtils.isBlank(result)) result = getUserProperty("email", "");

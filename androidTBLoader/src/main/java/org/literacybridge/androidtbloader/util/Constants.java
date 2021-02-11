@@ -50,9 +50,11 @@ public class Constants {
     public static final String TESTING_DEPLOYMENT = "testing_deployment";
     public static final String STATSONLY = "statsonly";
     public static final String USERNAME = "username";
+    public static final String USEREMAIL = "useremail";
     public static final String PROJECT = "project";
-    public static final String USERID = "userid";
-    public static final String NAME = "name";
+    public static final String UPLOAD_STATUS_NAME = "status_name";
+    public static final String UPLOAD_STATUS_COUNT = "status_count";
+    public static final String UPLOAD_STATUS_SIZE = "status_size";
     public static final String LOCATION = "location";
     public static final String COMMUNITIES = "communities";
     public static final String PRESELECTED_RECIPIENTS = "preselected_recipients";

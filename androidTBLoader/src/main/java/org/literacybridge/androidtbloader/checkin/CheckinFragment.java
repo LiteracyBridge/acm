@@ -69,7 +69,6 @@ public class CheckinFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getActivity().getIntent();
-//        setChosenProject(intent.getStringExtra(Constants.PROJECT));
         if (intent.hasExtra(Constants.PRESELECTED_RECIPIENTS)) {
             mPreselectedRecipients = intent.getStringArrayListExtra(Constants.PRESELECTED_RECIPIENTS);
         }

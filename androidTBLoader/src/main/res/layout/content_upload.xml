@@ -10,11 +10,11 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/upload_user_id"
+        android:text="@string/upload_for_user"
         android:textSize="10sp"/>
 
     <TextView
-        android:id="@+id/upload_userid"
+        android:id="@+id/upload_user_email"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         tools:text="User ID"

@@ -1,5 +1,6 @@
 package org.literacybridge.androidtbloader.uploader;
 
+import android.app.Application;
 import android.app.Fragment;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -19,6 +20,8 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.signin.UserHelper;
@@ -47,9 +50,9 @@ public class UploadStatusFragment extends Fragment {
     private int successColor = ContextCompat.getColor(context, R.color.success);
     private int alertColor = ContextCompat.getColor(context, R.color.alert);
 
-    private String mUserid;
+    private String mUserEmail;
 
-    private TextView mUserNameTextView;
+    private TextView mUserEmailTextView;
     private TextView mUploadWarningsTextView;
     private TextView mPendingUploadsNoneTextView;
     private TextView mCompletedUploadsNoneTextView;
@@ -65,9 +68,9 @@ public class UploadStatusFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getActivity().getIntent();
-        mUserid = intent.getStringExtra(Constants.USERID);
-        if (mUserid == null || mUserid.length() == 0) {
-            mUserid = UserHelper.getInstance().getUserId();
+        mUserEmail = intent.getStringExtra(Constants.USEREMAIL);
+        if (StringUtils.isBlank(mUserEmail)) {
+            mUserEmail = ((TBLoaderAppContext)getActivity().getApplicationContext()).getConfig().getEmail();
         }
 
         mCompletedItems = UploadService.getUploadHistory();
@@ -100,8 +103,8 @@ public class UploadStatusFragment extends Fragment {
         });
 
         // User name
-        mUserNameTextView = (TextView) view.findViewById(R.id.upload_userid);
-        mUserNameTextView.setText(mUserid);
+        mUserEmailTextView = (TextView) view.findViewById(R.id.upload_user_email);
+        mUserEmailTextView.setText(mUserEmail);
         
         // Field for any warning text.
         mUploadWarningsTextView = (TextView)view.findViewById(R.id.upload_warnings);
@@ -189,9 +192,9 @@ public class UploadStatusFragment extends Fragment {
 
                 mPendingItemsAdapter.notifyDataSetChanged();
                 mCompletedItemsAdapter.notifyDataSetChanged();
-                if (mUserid == null || mUserid.length() == 0) {
-                    mUserid = UserHelper.getInstance().getUserId();
-                    mUserNameTextView.setText(mUserid);
+                if (mUserEmail == null || mUserEmail.length() == 0) {
+                    mUserEmail = UserHelper.getInstance().getUserId();
+                    mUserEmailTextView.setText(mUserEmail);
                 }
             }
         }

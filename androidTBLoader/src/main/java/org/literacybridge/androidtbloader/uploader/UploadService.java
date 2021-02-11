@@ -27,6 +27,7 @@ import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.signin.UnattendedAuthenticator;
 import org.literacybridge.androidtbloader.signin.UserHelper;
+import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.OperationLogImpl;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.androidtbloader.util.S3Helper;
@@ -281,9 +282,9 @@ public class UploadService extends JobService {
             Log.d(TAG, String.format("updateStatus, count:%d, size:%d, name:%s", mPendingUploadCount, mPendingUploadSize, mPendingUploadName));
 
             Intent intent = new Intent(UPLOADER_STATUS_EVENT);
-            intent.putExtra("count", mPendingUploadCount);
-            intent.putExtra("size", mPendingUploadSize);
-            intent.putExtra("name", mPendingUploadName);
+            intent.putExtra(Constants.UPLOAD_STATUS_COUNT, mPendingUploadCount);
+            intent.putExtra(Constants.UPLOAD_STATUS_SIZE, mPendingUploadSize);
+            intent.putExtra(Constants.UPLOAD_STATUS_NAME, mPendingUploadName);
             LocalBroadcastManager.getInstance(TBLoaderAppContext.getInstance()).sendBroadcast(intent);
 
             updateNotification();

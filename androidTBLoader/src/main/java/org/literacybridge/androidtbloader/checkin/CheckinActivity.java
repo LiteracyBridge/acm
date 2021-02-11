@@ -18,8 +18,7 @@ public class CheckinActivity extends SingleFragmentActivity {
 
     @Override
     protected Fragment createFragment() {
-        String project = getIntent().getStringExtra(Constants.PROJECT);
-        Log.d(TAG, String.format("Create fragment for project %s", project));
+        Log.d(TAG, "Create checkin fragment");
         return new CheckinFragment();
     }
 

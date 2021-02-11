@@ -18,8 +18,8 @@ public class UploadStatusActivity extends SingleFragmentActivity {
 
     @Override
     protected Fragment createFragment() {
-        String userid = getIntent().getStringExtra(Constants.USERID);
-        Log.d(TAG, String.format("Create fragment for user %s", userid));
+        String useremail = getIntent().getStringExtra(Constants.USEREMAIL);
+        Log.d(TAG, String.format("Create upload status fragment for user %s", useremail));
         return new UploadStatusFragment();
     }
 

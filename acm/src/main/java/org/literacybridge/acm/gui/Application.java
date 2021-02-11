@@ -132,7 +132,7 @@ public class Application extends JXFrame {
     }
 
     Authenticator authInstance = Authenticator.getInstance();
-    String greeting = authInstance.getName();
+    String greeting = authInstance.getUserName();
     if (StringUtils.isEmpty(greeting)) {
       greeting = String.format("Hello, %s", authInstance.getUserEmail());
     }

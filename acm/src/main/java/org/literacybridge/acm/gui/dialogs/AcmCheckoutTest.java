@@ -90,7 +90,7 @@ public class AcmCheckoutTest extends JDialog {
         dialogPanel.add(nameField, gbc_controls);
 
         dialogPanel.add(new JLabel("Phone:"), gbc_labels);
-        phoneField = new JTextField(authenticator.getName());
+        phoneField = new JTextField(authenticator.getUserName());
         dialogPanel.add(phoneField, gbc_controls);
 
         dialogPanel.add(new JLabel("Version:"), gbc_labels);

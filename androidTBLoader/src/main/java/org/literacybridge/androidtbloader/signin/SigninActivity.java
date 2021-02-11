@@ -18,7 +18,6 @@
 package org.literacybridge.androidtbloader.signin;
 
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -33,7 +32,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -124,7 +122,7 @@ public class SigninActivity extends AppCompatActivity {
         initApp();
         UserHelper.initInstance(getApplicationContext(), Constants.cognitoConfig);
         // If we last authenticated with the fallback user pool, don't try to use any cached credentials.
-        if (!((TBLoaderAppContext)getApplicationContext()).getConfig().isBackup()) {
+        if (!((TBLoaderAppContext)getApplicationContext()).getConfig().isFallbackLogin()) {
             findCurrent();
         }
 
@@ -566,14 +564,14 @@ public class SigninActivity extends AppCompatActivity {
     };
 
     //
-    boolean tryFallbackAllowed = true;
+    boolean tryFallbackAllowed = false;
     boolean inFallback = false;
     UserHelper fallbackHelperInstance = null;
     AuthenticationHandler authenticationHandler = new AuthenticationHandler() {
         @Override
         public void onSuccess(CognitoUserSession cognitoUserSession, final CognitoDevice device) {
             Log.e(TAG, "Auth Success");
-            ((TBLoaderAppContext)getApplicationContext()).getConfig().setIsBackup(inFallback);
+            ((TBLoaderAppContext)getApplicationContext()).getConfig().setIsFallbackLogin(inFallback);
             if (inFallback) {
                 Log.e(TAG, "Fallback signin was successful");
                 fallbackHelperInstance.setUserId(UserHelper.getInstance().getUserId());

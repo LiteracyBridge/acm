@@ -151,7 +151,7 @@ public abstract class TbFile {
     }
 
     public interface CopyProgress {
-        void copying(String filename);
+        void copying(TbFile from, TbFile to);
     }
 
     public interface CopyFilter {
@@ -195,7 +195,7 @@ public abstract class TbFile {
             dst.getParent().mkdirs();
             bytesCopied = src.length();
             long startTime = System.nanoTime();
-            if (progress != null) progress.copying(dst.getName());
+            if (progress != null) progress.copying(src, dst);
             try (InputStream content = src.openFileInputStream() ) {
                 dst.createNew(content);
             }

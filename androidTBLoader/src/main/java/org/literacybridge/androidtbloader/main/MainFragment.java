@@ -102,7 +102,6 @@ public class MainFragment extends Fragment {
     private ViewGroup mGetStatsGroup;
 
     private boolean mHaveConfig = false;
-    private String mUserName;
     private String mUserid;
 
     private String mCheckinLocation;
@@ -133,12 +132,6 @@ public class MainFragment extends Fragment {
         mContentManager = mApplicationContext.getContentManager();
         mConfig = mApplicationContext.getConfig();
         mUserid = UserHelper.getInstance().getUserId();
-        mUserName = UserHelper.getInstance().getUsername();
-        if (mUserName == null) {
-            // If we didn't get a user name, that means we've signed in with cached credentials.
-            // Get the username from saved config.
-            mUserName = mConfig.getUsername();
-        }
         mApplicationContext.getTalkingBookConnectionManager().canAccessConnectedDevice();
 
         OperationLog.Operation opLog = OperationLog.log("MainFragment.onCreate")
@@ -352,7 +345,7 @@ public class MainFragment extends Fragment {
 
             case R.id.nav_show_upload_status:
                 Intent userActivity = new Intent(getActivity(), UploadStatusActivity.class);
-                userActivity.putExtra(Constants.USERID, mUserid);
+                userActivity.putExtra(Constants.USEREMAIL, mConfig.getEmail());
                 startActivityForResult(userActivity, REQUEST_CODE_UPDATE_UPLOAD_STATUS);
                 break;
 
@@ -440,7 +433,7 @@ public class MainFragment extends Fragment {
 
     private void doManage() {
         Intent userActivity = new Intent(getActivity(), ManageContentActivity.class);
-        userActivity.putExtra(Constants.NAME, mUserid);
+//        userActivity.putExtra(Constants.NAME, mUserid);
         startActivityForResult(userActivity, REQUEST_CODE_MANAGE_CONTENT);
     }
 
@@ -449,7 +442,6 @@ public class MainFragment extends Fragment {
         public void onClick(View v) {
             Intent userActivity = new Intent(getActivity(), CheckinActivity.class);
             userActivity.putStringArrayListExtra(Constants.PRESELECTED_RECIPIENTS, (ArrayList<String>) mPreselectedRecipients);
-            userActivity.putExtra(Constants.NAME, mUserid);
             startActivityForResult(userActivity, REQUEST_CODE_CHECKIN);
         }
     };
@@ -458,7 +450,7 @@ public class MainFragment extends Fragment {
         @Override
         public void onClick(View v) {
             Intent userActivity = new Intent(getActivity(), UploadStatusActivity.class);
-            userActivity.putExtra(Constants.USERID, mUserid);
+            userActivity.putExtra(Constants.USEREMAIL, mConfig.getEmail());
             startActivityForResult(userActivity, REQUEST_CODE_UPDATE_UPLOAD_STATUS);
         }
     };
@@ -479,7 +471,8 @@ public class MainFragment extends Fragment {
 
     private void doUpdate(boolean statsOnly) {
         Intent userActivity = new Intent(getActivity(), TbLoaderActivity.class);
-        userActivity.putExtra(Constants.USERNAME, mUserName);
+        userActivity.putExtra(Constants.USERNAME, mConfig.getName());
+        userActivity.putExtra(Constants.USEREMAIL, mConfig.getEmail());
         userActivity.putExtra(Constants.STATSONLY, statsOnly);
         userActivity.putExtra(Constants.TESTING_DEPLOYMENT, mTestingDeployment);
         if (statsOnly) {
@@ -496,9 +489,9 @@ public class MainFragment extends Fragment {
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(UploadService.UPLOADER_STATUS_EVENT)) {
                 // Get extra data included in the Intent
-                String name = intent.getStringExtra(Constants.NAME);
-                int count = intent.getIntExtra("count", 0);
-                long size = intent.getLongExtra("size", 0);
+                String name = intent.getStringExtra(Constants.UPLOAD_STATUS_NAME);
+                int count = intent.getIntExtra(Constants.UPLOAD_STATUS_COUNT, 0);
+                long size = intent.getLongExtra(Constants.UPLOAD_STATUS_SIZE, 0);
                 Log.d(TAG,
                     String.format("got updateProgress, count:%d, size:%d, name:%s", count, size,
                         name));
@@ -557,8 +550,8 @@ public class MainFragment extends Fragment {
         mUpdateGroup.setAlpha(canUpdate ? 1.0f : 0.33f);
         mUpdateGroup.setEnabled(canUpdate);
 
-        mGetStatsGroup.setAlpha(canCheckin ? 1.0f : 0.33f);
-        mGetStatsGroup.setEnabled(canCheckin);
+        mGetStatsGroup.setAlpha(canUpdate ? 1.0f : 0.33f);
+        mGetStatsGroup.setEnabled(canUpdate);
     }
 
     private void updateTBStatus() {
@@ -606,7 +599,7 @@ public class MainFragment extends Fragment {
                     String newValue = input.getText().toString();
                     if(!newValue.equals(attributeValue)) {
                         showWaitDialog("Updating...");
-                        updateAttribute(UserHelper.getInstance().getSignUpFieldsC2O().get("Preferred Greeting"), newValue);
+                        updateAttribute(UserHelper.getInstance().getSignUpFieldsC2O().get("Name"), newValue);
                     }
                     userDialog.dismiss();
                 } catch (Exception e) {

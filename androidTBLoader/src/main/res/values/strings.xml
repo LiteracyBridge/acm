@@ -106,7 +106,7 @@
     <string name="establishing_connection">Establishing connection to Talking Book [%d]...</string>
     <string name="pref_summary_uploads_disabled">Uploads are disabled.</string>
     <string name="pref_summary_uploads_enabled">Uploads are enabled.</string>
-    <string name="upload_user_id">Upload User ID</string>
+    <string name="upload_for_user">Upload for user</string>
     <string name="show_upload_status">Show upload status</string>
     <string name="main_label_get_statistics_only">Collect Statistics Only</string>
     <string name="main_label_update_talking_books">Update Talking Books</string>

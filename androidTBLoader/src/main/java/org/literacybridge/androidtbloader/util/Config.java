@@ -40,7 +40,7 @@ public class Config {
 
     private static final String TBCDID_PROP = "tbcd";
 
-    private static final String IS_BACKUP_PROP = "is_backup";
+    private static final String IS_FALLBACK_LOGIN_PROP = "is_backup";
 
     private final SharedPreferences mUserPrefs;
     private final TBLoaderAppContext mAppContext;
@@ -63,7 +63,7 @@ public class Config {
         return getEmail().endsWith("@amplio.org");
     }
 
-    public String getUsername() {
+    public String getCognitoUserID() {
         return mUserPrefs.getString(USERNAME_PROP, null);
     }
 
@@ -82,13 +82,13 @@ public class Config {
         mUserPrefs = PreferenceManager.getDefaultSharedPreferences(mAppContext);
     }
 
-    public boolean isBackup() {
-        String value = mUserPrefs.getString(IS_BACKUP_PROP, "false");
+    public boolean isFallbackLogin() {
+        String value = mUserPrefs.getString(IS_FALLBACK_LOGIN_PROP, "false");
         return Boolean.parseBoolean(value);
     }
-    public void setIsBackup(Boolean newValue) {
+    public void setIsFallbackLogin(Boolean newValue) {
         SharedPreferences.Editor prefsEditor = mUserPrefs.edit();
-        prefsEditor.putString(IS_BACKUP_PROP, newValue.toString());
+        prefsEditor.putString(IS_FALLBACK_LOGIN_PROP, newValue.toString());
         prefsEditor.apply();
     }
 
