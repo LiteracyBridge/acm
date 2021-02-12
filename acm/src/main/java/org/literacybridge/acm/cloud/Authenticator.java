@@ -55,15 +55,15 @@ public class Authenticator {
     public final static Set<String> ALL_USER_ROLES = new HashSet<>(Arrays.asList(ADMIN_ROLE_STRING,
             PROGRAM_MANAGER_ROLE_STRING, CONTENT_OFFICER_ROLE_STRING, FIELD_OFFICER_ROLE_STRING));
 
-    public static final String ACCESS_CONTROL_API_OLDAUTH = "https://cqmltfugtl.execute-api.us-west-2.amazonaws.com/prod";
-//    public static final String ACCESS_CONTROL_API_CLONE = "https://g393rs12t5.execute-api.us-west-2.amazonaws.com/prod";
-    public static final String ACCESS_CONTROL_API_EMAILAUTH = "https://oxn3lknwre.execute-api.us-west-2.amazonaws.com/prod";
+    private final boolean FALLBACK_ENABLED = false;
+
+    private static final String ACCESS_CONTROL_API_OLDAUTH = "https://cqmltfugtl.execute-api.us-west-2.amazonaws.com/prod";
+    private static final String ACCESS_CONTROL_API_EMAILAUTH = "https://oxn3lknwre.execute-api.us-west-2.amazonaws.com/prod";
     public static String ACCESS_CONTROL_API = ACCESS_CONTROL_API_EMAILAUTH;
 
-    public static final String TBL_HELPER_API_OLDAUTH = "https://lj82ei7mce.execute-api.us-west-2.amazonaws.com/Prod";
-    public static final String TBL_HELPER_API_EMAILAUTH= "https://1rhce42l9a.execute-api.us-west-2.amazonaws.com/prod";
+    private static final String TBL_HELPER_API_OLDAUTH = "https://lj82ei7mce.execute-api.us-west-2.amazonaws.com/Prod";
+    private static final String TBL_HELPER_API_EMAILAUTH= "https://1rhce42l9a.execute-api.us-west-2.amazonaws.com/prod";
     public static String TBL_HELPER_API = TBL_HELPER_API_EMAILAUTH;
-
 
     private static Authenticator instance;
     private LoginResult loginResult = LoginResult.NONE;
@@ -526,8 +526,10 @@ public class Authenticator {
         public void authenticate(String usernameOrEmail, String password) {
             AuthenticationHelper.AuthenticationResult validationResult = cognitoHelper.ValidateUser(usernameOrEmail, password);
 
-            // On failure, try again with "_FALLBACK" values.
-            if (!validationResult.isSuccess() && !validationResult.isPasswordResetRequired() && !validationResult.isNewPasswordRequired()) {
+            // On failure, try again with "_FALLBACK" values. "PasswordReseqRequired" and "NewPasswordRequired" aren't
+            // failures for this purpose (the caller must be prepared to handle these results).
+            if (!validationResult.isSuccess() && FALLBACK_ENABLED
+                    && !validationResult.isPasswordResetRequired() && !validationResult.isNewPasswordRequired()) {
                 Map<String, String> fallback = new HashMap<>();
                 try (InputStream input = getClass().getClassLoader().getResourceAsStream("config.properties")) {
                     Properties props = new Properties();
