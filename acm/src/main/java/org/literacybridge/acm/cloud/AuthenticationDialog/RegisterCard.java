@@ -128,6 +128,12 @@ public class RegisterCard extends CardContent {
             attributes);
 
         if (signUpResult != null) {
+            // This is the message that Amazon returns when a user submits a proposed user name containing a space.
+            // "1 validation error detected: Value at 'username' failed to satisfy constraint: Member must satisfy regular expression pattern: [\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]+" = $1
+            // We'll substitute a more understandable message. Because we use email for the user id, we'll use that terminology.
+            if (signUpResult.contains("must satisfy regular expression")) {
+                signUpResult = "The Email Address may not contain spaces.";
+            }
             welcomeDialog.setMessage(signUpResult);
             return;
         }

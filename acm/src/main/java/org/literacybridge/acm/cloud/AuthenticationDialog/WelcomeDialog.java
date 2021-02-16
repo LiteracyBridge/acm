@@ -282,7 +282,8 @@ public class WelcomeDialog extends JDialog {
             authMessage.setBorder(new EmptyBorder(5,10,10, 5));
             add(authMessage, BorderLayout.SOUTH);
         }
-        authMessage.setText(message);
+        // Surround with <html> tag so text will wrap if necessary.
+        authMessage.setText(String.format("<html>%s</html>", message));
     }
 
     void clearMessage() {
