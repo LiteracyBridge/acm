@@ -558,6 +558,9 @@ public class TBLoaderCore {
                     .put("timestamp", mUpdateTimestampISO)
                     .put("duration", Integer.toString(durationSeconds))
                     .put("testing", mNewDeploymentInfo.isTestDeployment());
+                if (mNewDeploymentInfo.getDeploymentNumber() > 0) {
+                    deploymentLog.put("deploymentnumber", mNewDeploymentInfo.getDeploymentNumber());
+                }
                 if (mNewDeploymentInfo.getRecipientid() != null) {
                     opLog.put("out_recipientid", mNewDeploymentInfo.getRecipientid());
                     deploymentLog.put("recipientid", mNewDeploymentInfo.getRecipientid());
@@ -920,6 +923,7 @@ public class TBLoaderCore {
         // TODO: figure out something that sorta works.
         //goodCard = checkConnection(true);
         goodCard = true;
+        //noinspection ConstantConditions
         if (!goodCard) {
             return false;
         }
@@ -1036,7 +1040,7 @@ public class TBLoaderCore {
                     mProgressListener.detail(child.toString());
                     Map<String,String> exceptionInfo = new HashMap<>();
                     exceptionInfo.put("message", ex.getMessage());
-                    exceptionInfo.put("rootPath", rootPath.toString());
+                    exceptionInfo.put("rootPath", rootPath);
                     exceptionInfo.put("child", child.toString());
                     OperationLog.logEvent("listDirectory Exception", exceptionInfo);
                 }
@@ -1557,6 +1561,9 @@ public class TBLoaderCore {
             .append(TBLoaderConstants.NEW_SERIAL_NUMBER_PROPERTY, mNewDeploymentInfo.isNewSerialNumber())
             .append(TBLoaderConstants.LOCATION_PROPERTY, mLocation)
             .append(TBLoaderConstants.DEPLOYMENT_UUID_PROPERTY, mDeploymentUUID);
+        if (mNewDeploymentInfo.getDeploymentNumber() > 0) {
+            props.append(TBLoaderConstants.DEPLOYMENT_NUMBER_PROPERTY, mNewDeploymentInfo.getDeploymentNumber());
+        }
         if (needFirmware) {
             props.append(TBLoaderConstants.FIRMWARE_PROPERTY, mNewDeploymentInfo.getFirmwareRevision());
         } else {
@@ -1622,29 +1629,26 @@ public class TBLoaderCore {
         List<TbFile> shadowedFiles = new ArrayList<>();
 
         // Filter to intercept zero-byte marker files, and track them for copying from their cache.
-        TbFile.CopyFilter markerInterceptor = new TbFile.CopyFilter() {
-            @Override
-            public boolean accept(TbFile file) {
-                // If this is a zero-byte file...
-                if (file.exists() && file.length() == 0) {
-                    // See if there is a corresponding shadow file.
-                    String parentDirName = file.getParent().getAbsolutePath();
-                    for (String shadowedDirName : shadowedDirs) {
-                        if (parentDirName.startsWith(shadowedDirName)) {
-                            // We found a matching shadow directory, see if the shadow contains this file.
-                            String relativeParent = parentDirName.substring(imagePathLength);
-                            TbFile shadowFile = shadowFilesDir.open(relativeParent).open(file.getName());
-                            if (shadowFile.exists()) {
-                                shadowedFiles.add(file);
-                                return false;
-                            }
-                            // There wasn't a cached file; legitimately a 0-byte file.
-                            return true;
+        TbFile.CopyFilter markerInterceptor = file -> {
+            // If this is a zero-byte file...
+            if (file.exists() && file.length() == 0) {
+                // See if there is a corresponding shadow file.
+                String parentDirName = file.getParent().getAbsolutePath();
+                for (String shadowedDirName : shadowedDirs) {
+                    if (parentDirName.startsWith(shadowedDirName)) {
+                        // We found a matching shadow directory, see if the shadow contains this file.
+                        String relativeParent = parentDirName.substring(imagePathLength);
+                        TbFile shadowFile = shadowFilesDir.open(relativeParent).open(file.getName());
+                        if (shadowFile.exists()) {
+                            shadowedFiles.add(file);
+                            return false;
                         }
+                        // There wasn't a cached file; legitimately a 0-byte file.
+                        return true;
                     }
                 }
-                return true;
             }
+            return true;
         };
         
         if (imagePath.exists()) {

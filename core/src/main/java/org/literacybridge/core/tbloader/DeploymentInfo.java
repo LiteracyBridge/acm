@@ -16,6 +16,7 @@ public class DeploymentInfo {
     private final String projectName;
     // The name of the deployment previously deployed to the Talking Book.
     private final String deploymentName;
+    private final int deploymentNumber;
     // The name of the content package previously deployed to the Talking Book.
     private final String packageName;
 
@@ -41,6 +42,7 @@ public class DeploymentInfo {
         private boolean newSerialNumber = false;
         private String projectName = UNKNOWN;
         private String deploymentName = UNKNOWN;
+        private int deploymentNumber = -1;
         private String packageName = UNKNOWN;
         private String updateDirectory = null;
         private String updateTimestamp = null;
@@ -66,6 +68,11 @@ public class DeploymentInfo {
 
         public DeploymentInfoBuilder withDeploymentName(String deploymentName) {
             this.deploymentName = deploymentName;
+            return this;
+        }
+
+        public DeploymentInfoBuilder withDeploymentNumber(int deploymentNumber) {
+            this.deploymentNumber = deploymentNumber;
             return this;
         }
 
@@ -137,6 +144,7 @@ public class DeploymentInfo {
         this.newSerialNumber = builder.newSerialNumber;
         this.projectName = builder.projectName;
         this.deploymentName = builder.deploymentName;
+        this.deploymentNumber = builder.deploymentNumber;
         this.packageName = builder.packageName;
         this.updateDirectory = builder.updateDirectory;
         this.updateTimestamp = builder.updateTimestamp;
@@ -160,6 +168,10 @@ public class DeploymentInfo {
 
     public String getDeploymentName() {
         return deploymentName;
+    }
+
+    public int getDeploymentNumber() {
+        return deploymentNumber;
     }
 
     public String getPackageName() {
@@ -199,6 +211,6 @@ public class DeploymentInfo {
                 + "\nFirmware revision: " + firmwareRevision
                 + "\nCommunity: " + community
                 + ( (recipientid != null) ? ("\nRecipientid: "+recipientid) : ("") )
-                + "\nTest: " + (Boolean)testDeployment;
+                + "\nTest: " + testDeployment;
     }
 }

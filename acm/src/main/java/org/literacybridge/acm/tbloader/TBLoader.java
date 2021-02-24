@@ -53,13 +53,14 @@ import static org.literacybridge.acm.Constants.TBLoadersLogDir;
 import static org.literacybridge.acm.Constants.TbCollectionWorkDir;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.CHOOSE_PROGRAM;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.OFFLINE_EMAIL_CHOICE;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_NUMBER;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getImageForCommunity;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getPackagesInDeployment;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
-@SuppressWarnings({ "serial", "ResultOfMethodCallIgnored", "ConstantConditions" })
+@SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions" })
 public class TBLoader extends JFrame {
     private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
 
@@ -956,6 +957,13 @@ public class TBLoader extends JFrame {
                 .withCommunity(directory)
                 .withRecipientid(recipientid)
                 .asTestDeployment(tbLoaderPanel.isTestDeployment());
+            if (getProgramSpec() != null) {
+                String numberStr = getProgramSpec().getDeploymentProperties().getProperty(DEPLOYMENT_NUMBER);
+                if (numberStr != null) {
+                    builder.withDeploymentNumber(Integer.parseInt(numberStr));
+                }
+            }
+
             DeploymentInfo newDeploymentInfo = builder.build();
 
             String endMsg = null;
