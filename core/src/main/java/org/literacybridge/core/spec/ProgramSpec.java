@@ -80,7 +80,8 @@ public class ProgramSpec {
             try (InputStream is = getSpecStream(Recipient.FILENAME)) {
                 if (is != null) {
                     final RecipientList result = new RecipientList();
-                    CsvReader.read(is, Recipient.columnNames, result::add);
+                    Set<String> columnsInRecips = CsvReader.read(is, Recipient.columnNames, result::add);
+                    result.setFoundColumns(columnsInRecips);
                     recipients = result;
                 }
             } catch (IOException ignored) {
@@ -97,11 +98,18 @@ public class ProgramSpec {
      */
     public RecipientList getRecipientsForDeployment(int deploymentNumber) {
         RecipientList filteredRecipients = new RecipientList();
-        Deployment deployment = getDeployment(deploymentNumber);
-        StringFilter componentFilter = deployment.componentFilter;
-        getRecipients().stream()
-            .filter(r -> componentFilter.test(r.component))
-            .forEach(filteredRecipients::add);
+        RecipientList recipients = getRecipients();
+        if (recipients.hasDeploymentsColumn()) {
+            recipients.stream()
+                .filter(r -> r.deployments == null || r.deployments.size()==0 || r.deployments.contains(deploymentNumber))
+                .forEach(filteredRecipients::add);
+        } else {
+            Deployment deployment = getDeployment(deploymentNumber);
+            StringFilter componentFilter = deployment.componentFilter;
+            recipients.stream()
+                    .filter(r -> componentFilter.test(r.component))
+                    .forEach(filteredRecipients::add);
+        }
         return filteredRecipients;
     }
 
@@ -128,8 +136,7 @@ public class ProgramSpec {
      */
     public Set<String> getLanguagesForDeployment(int deploymentNumber) {
         RecipientList recipients = getRecipientsForDeployment(deploymentNumber);
-        Set<String> languages = recipients.stream().map(r -> r.languagecode).collect(Collectors.toSet());
-        return languages;
+        return recipients.stream().map(r -> r.languagecode).collect(Collectors.toSet());
     }
 
     /**
@@ -281,9 +288,12 @@ public class ProgramSpec {
         if (deploymentProperties == null) {
             deploymentProperties = new Properties();
 
-            try (InputStream fis = getSpecStream(DEPLOYMENT_PROPERTIES_NAME);
-                BufferedInputStream bis = new BufferedInputStream(fis)) {
-                deploymentProperties.load(bis);
+            try (InputStream fis = getSpecStream(DEPLOYMENT_PROPERTIES_NAME)) {
+                if (fis != null) {
+                    try (BufferedInputStream bis = new BufferedInputStream(fis)) {
+                        deploymentProperties.load(bis);
+                    }
+                }
             } catch (IOException e) {
                 // Ignore and continue without empty deployment properties.
             }

@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class RecipientList extends DelayeredHierarchicalList<RecipientList.RecipientAdapter> {
@@ -19,6 +20,14 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
     private final static String[] REQUIRED_ALWAYS = {"Community"};
     
     private final Map<String, Integer> numTbsCache = new HashMap<>();
+
+    // The 'deployments' column was added, and provides a different way than 'component' to determine if a recipient
+    // should receive a given deployment. Hence, the program spec needs to know if the recipients list even has
+    // a deployments column.
+    private boolean hasDeploymentsColumn = false;
+    public boolean hasDeploymentsColumn() {
+        return this.hasDeploymentsColumn;
+    }
 
     RecipientList() {
         super(new HierarchyInfo<>(NAMES, PLURALS, REQUIRED_ALWAYS));
@@ -80,6 +89,10 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
         List<String> namesList = Arrays.asList(NAMES);
         int[] result = new int[names.size()];
         return names.stream().map(namesList::indexOf).collect(Collectors.toList());
+    }
+
+    public void setFoundColumns(Set<String> columnsInRecips) {
+        this.hasDeploymentsColumn = columnsInRecips != null && columnsInRecips.contains(Recipient.columns.deployments.name());
     }
 
     /**

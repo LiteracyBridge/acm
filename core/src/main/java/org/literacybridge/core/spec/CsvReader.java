@@ -74,14 +74,15 @@ public class CsvReader {
      * @param csvStream of the csv data.
      * @param columns of interest.
      * @param handler to be called with each record.
+     * @return a Set of the names of the columns found in the .csv header, or an empty set if there is an error.
      */
-    static void read(InputStream csvStream, String[] columns, Handler handler) throws IOException {
+    static Set<String> read(InputStream csvStream, String[] columns, Handler handler) throws IOException {
         List<String[]> entries = null;
         BOMInputStream bis = new BOMInputStream(csvStream);
         try (Reader ir = new InputStreamReader(bis, StandardCharsets.UTF_8);
             CSVReader reader = new CSVReader(ir)) {
 
-            Map<String, Integer> indices = null;
+            Map<String, Integer> indices;
             String[] nextLine;
             nextLine = reader.readNext();
             if (nextLine != null) {
@@ -101,24 +102,25 @@ public class CsvReader {
                     }
                     handler.handle(record);
                 }
+                return indices.keySet();
             }
         }
+        return new HashSet<>();
     }
 
     /**
      * Given a list of columns of interest, and a csv header line, determine the column number of
      * each column of interest.
      * @param columns of interest.
-     * @param line of headers.
+     * @param csvLine of headers.
      * @return Map of column indices of columns of interest.
      */
-    private static Map<String, Integer> indicesOfColumns(String[] columns, String[] line) {
-        Set<String> list = new HashSet<>();
+    private static Map<String, Integer> indicesOfColumns(String[] columns, String[] csvLine) {
+        List<String> columnsOfInterest = Arrays.asList(columns);
         Map<String, Integer> indices = new HashMap<>();
-        Collections.addAll(list, columns);
-        for (int ix=0; ix<line.length; ix++) {
-            if (list.contains(line[ix])) {
-                indices.put(line[ix], ix);
+        for (int ix=0; ix<csvLine.length; ix++) {
+            if (columnsOfInterest.contains(csvLine[ix])) {
+                indices.put(csvLine[ix], ix);
             }
         }
         return indices;

@@ -1,11 +1,20 @@
 package org.literacybridge.core.spec;
 
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Recipient {
     final static String FILENAME = "recipients.csv";
+    final static Pattern DEPLOYMENTS_LIST = Pattern.compile("^\\[?([0-9, ]*)]?$");
 
-    private enum columns {
+    enum columns {
         recipientid, /*project, partner,*/
         communityname,
         groupname, /*affiliate,*/
@@ -18,8 +27,9 @@ public class Recipient {
         language, // deprecated in favor of languagecode
         languagecode, /*coordinates*/
         agent, /*,latitude,longitude,*/
-        variant
-    };
+        variant, /* group_size */
+        deployments, /* agent_gender, direct_beneficiaries,direct_beneficiaries_additional,indirect_beneficiaries */
+    }
 
     public static String[] columnNames;
 
@@ -42,6 +52,7 @@ public class Recipient {
     public final String languagecode;
     public final String agent;
     public final String variant;
+    public List<Integer> deployments;
     
     public Recipient(Map<String, String> properties) {
         this.recipientid = properties.get(columns.recipientid.name());
@@ -58,6 +69,20 @@ public class Recipient {
         String language = properties.get(columns.language.name());
         this.languagecode = properties.getOrDefault(columns.languagecode.name(), language).toLowerCase();
         this.variant = properties.getOrDefault(columns.variant.name(), "").toLowerCase();
+        // If deployments is present and consists of a list of integers, save that list.
+        String deployments_property = properties.getOrDefault(columns.deployments.name(), "");
+        Matcher deployments_matcher = DEPLOYMENTS_LIST.matcher(deployments_property);
+        if (deployments_matcher.matches()) {
+            String deployments_list = deployments_matcher.group(1).trim();
+            List<Integer> depls = Arrays.stream(deployments_list.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotBlank)
+                    .map(Integer::parseInt)
+                    .collect(Collectors.toList());
+            if (depls.size() > 0) {
+                this.deployments = depls;
+            }
+        }
     }
 
     public String getName() {
