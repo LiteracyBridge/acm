@@ -68,7 +68,7 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_MESSAGES_PAT
 import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getBytesString;
 
-
+//@formatter:off
 /*
   Implementation of the core of the TB-Loader. This code
   - copies files FROM the talking book, with statistics, signin recordings, and files (for
@@ -76,108 +76,108 @@ import static org.literacybridge.core.tbloader.TBLoaderUtils.getBytesString;
   with this directory structure:
   TEST
   ├── OperationalData
-  │   └── 000C
-  │       └── tbData
-  │           └── tbData-v03-2016y12m20d-000C.csv
+  │   └── 000C
+  │       └── tbData
+  │           └── tbData-v03-2016y12m20d-000C.csv
   ├── TalkingBookData
-  │   └── TEST-2016-1
-  │       └── 000C
-  │           └── demo-Seattle
-  │               └── B-000C0300
-  │                   └── 2016y12m20d08h48m37s-000C.zip
+  │   └── TEST-2016-1
+  │       └── 000C
+  │           └── demo-Seattle
+  │               └── B-000C0300
+  │                   └── 2016y12m20d08h48m37s-000C.zip
   └── UserRecordings
-  └── TEST-2016-1
-  └── 000C
-  └── demo-Seattle
-  ├── B-000C0300_9-0_071631C0.a18
-  ├── B-000C0300_9-0_4E1F2A05.a18
-  ├── B-000C0300_9-0_8125F26A.a18
-  └── B-000C0300_9-0_C9061DA6.a18
+     └── TEST-2016-1
+        └── 000C
+           └── demo-Seattle
+              ├── B-000C0300_9-0_071631C0.a18
+              ├── B-000C0300_9-0_4E1F2A05.a18
+              ├── B-000C0300_9-0_8125F26A.a18
+              └── B-000C0300_9-0_C9061DA6.a18
   <p>
   The .zip file is a copy of log files, statistics files, and files from the Talking Book's system
   directory, structured like this:
   <p>
   2016y12m20d08h48m37s-000C.zip
   └── 2016y12m20d08h48m37s-000C
-     ├── 10.a18
-     ├── dir.txt
-     ├── log
-     │   └── log.txt
-     ├── log-archive
-     │   ├── log_B-000C0300_0000_0001.txt
+     ├── 10.a18
+     ├── dir.txt
+     ├── log
+     │   └── log.txt
+     ├── log-archive
+     │   ├── log_B-000C0300_0000_0001.txt
   . . . more log files
-     │   └── log_B-000C0300_0005_0001.txt
-     ├── statistics
-     │   ├── ACM-TEST-2016-1-EN^B-000C0300_071631C0.stat
+     │   └── log_B-000C0300_0005_0001.txt
+     ├── statistics
+     │   ├── ACM-TEST-2016-1-EN^B-000C0300_071631C0.stat
   . . . more stat files
-     │   └── log_B-000C0300_0005_0001.txt
-     │   ├── ACM-TEST-2016-1-EN^a-265AC9DE_8BF48F08.stat
-     │   ├── B-000C0300.csv
-     │   ├── B-000C0300_016.vol
-     │   ├── SN.csv
-     │   └── flashData.bin
-     └── system
-         ├── ACM-TEST-2016-1-en.pkg
-         ├── B-000C0300.srn
+     │   └── log_B-000C0300_0005_0001.txt
+     │   ├── ACM-TEST-2016-1-EN^a-265AC9DE_8BF48F08.stat
+     │   ├── B-000C0300.csv
+     │   ├── B-000C0300_016.vol
+     │   ├── SN.csv
+     │   └── flashData.bin
+     └── system
+         ├── ACM-TEST-2016-1-en.pkg
+         ├── B-000C0300.srn
   . . . more files from system directory (but NOT *.img files)
-         ├── r1215.rev
-         ├── sig.grp
-         └── sysdata.txt
+         ├── r1215.rev
+         ├── sig.grp
+         └── sysdata.txt
   <p>
   <p>
   - copies files TO the Talking Book. The files are copied from a deployment directory, with
   this a structure like:
   content
   └── TEST-2016-1
-  ├── basic
-  │   └── r1215.img
-  ├── communities
-  │   ├── QONOS
-  . . . more communities
-  │   └── demo-Seattle
-  │       ├── languages
-  . . . files for each community
-  └── images
-  └── ACM-TEST-2016-1-en
-  ├── Inbox
-  ├── languages
-  │   └── en
-  │       ├── $0-1.txt
-  . . . system messages
-  │       ├── 9.a18
-  │       ├── cat
-  │       │   ├── $0-1.a18
-  . category prompts
-  │       │   └── i9-0.a18
-  │       ├── control.txt
-  │       └── intro.a18
-  . . . more languages as required
-  ├── log
-  ├── log-archive
-  ├── messages
-  │   ├── audio
-  │   │   ├── ECH_0236_63ED86F0.a18
-  . . . audio content
-  │   │   └── b-30373732_EB084B98.a18
-  │   └── lists
-  │       └── 1
-  │           ├── 1-0.txt
-  │           ├── 1-2.txt
-  │           ├── 2-0.txt
-  │           ├── 9-0.txt
-  │           └── _activeLists.txt
-  ├── statistics
-  └── system
-  ├── ACM-TEST-2016-1-en.pkg
-  ├── config.txt
-  ├── default.grp
-  └── profiles.txt
+     ├── basic
+     │   └── r1215.img
+     ├── communities
+     │   ├── QONOS
+     . . . more communities
+     │   └── demo-Seattle
+     │       ├── languages
+     . . . files for each community
+     └── images
+        └── ACM-TEST-2016-1-en
+           ├── Inbox
+           ├── languages
+           │   └── en
+           │       ├── $0-1.txt
+           . . . system messages
+           │       ├── 9.a18
+           │       ├── cat
+           │       │   ├── $0-1.a18
+           . category prompts
+           │       │   └── i9-0.a18
+           │       ├── control.txt
+           │       └── intro.a18
+           . . . more languages as required
+           ├── log
+           ├── log-archive
+           ├── messages
+           │   ├── audio
+           │   │   ├── ECH_0236_63ED86F0.a18
+           . . . audio content
+           │   │   └── b-30373732_EB084B98.a18
+           │   └── lists
+           │       └── 1
+           │           ├── 1-0.txt
+           │           ├── 1-2.txt
+           │           ├── 2-0.txt
+           │           ├── 9-0.txt
+           │           └── _activeLists.txt
+           ├── statistics
+           └── system
+              ├── ACM-TEST-2016-1-en.pkg
+              ├── config.txt
+              ├── default.grp
+              └── profiles.txt
   <p>
   Note that Inbox, log, log-archive, and statistics are empty directories, just to create the targets.
   <p>
   - creates new files on the Talking book.
  */
-
+//@formatter:on
 
 /**
  * Helper class to make building a TBLoaderCore easier.
@@ -1327,8 +1327,7 @@ public class TBLoaderCore {
 
         // 'properties' format file, with useful information for statistics processing.
         PropsWriter props = new PropsWriter();
-        props
-                .append(TBLoaderConstants.TB_LOG_ACTION_PROPERTY, action);
+        props.append(TBLoaderConstants.TB_LOG_ACTION_PROPERTY, action);
         collectionProperties(props);
         eraseAndOverwriteFile(mTalkingBookDataRoot.open(TBLoaderConstants.STATS_COLLECTED_PROPERTIES_NAME), props.toString());
 
