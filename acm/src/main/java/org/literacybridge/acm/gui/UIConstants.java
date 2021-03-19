@@ -11,10 +11,11 @@ public abstract class UIConstants {
   public static final String ICON_SETTINGS_16_PX = "gear-16px.png";
   public static final String ICON_LANGUAGE_24_PX = "language-24px.png";
 
-  public static final String ICON_BACKWARD_24_PX = "back-32px.png";
-  public static final String ICON_PAUSE_24_PX = "pause-32px.png";
-  public static final String ICON_PLAY_24_PX = "play-32px.png";
-  public static final String ICON_FORWARD_24_PX = "forward-32px.png";
+  public static final String ICON_BACKWARD_24_PX = "back.png";
+  public static final String ICON_STOP = "stop.png";
+  public static final String ICON_PAUSE_24_PX = "pause.png";
+  public static final String ICON_PLAY_24_PX = "play.png";
+  public static final String ICON_FORWARD_24_PX = "forward.png";
   public static final String ICON_CAT_TREE_32_PX = "cat-tree-32s.png";
   public static final String ICON_GEAR_32_PX = "gears-32.png";
   public static final String ICON_ASSISTANT_32_PX = "assistant-32b.png";
