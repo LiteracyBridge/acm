@@ -203,12 +203,12 @@ public class WelcomeDialog extends JDialog {
         setAlwaysOnTop(true);
 
         // For debugging sizing issues.
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                System.out.printf("Size %dx%d%n", WelcomeDialog.this.getWidth(), WelcomeDialog.this.getHeight());
-            }
-        });
+//        addComponentListener(new ComponentAdapter() {
+//            @Override
+//            public void componentResized(ComponentEvent e) {
+//                System.out.printf("Size %dx%d%n", WelcomeDialog.this.getWidth(), WelcomeDialog.this.getHeight());
+//            }
+//        });
     }
 
     private void dialogShown() {

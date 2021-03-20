@@ -20,8 +20,8 @@ public final class AcmSettingsDialog extends AbstractSettingsDialog {
     private static final String VISIBLE_CATEGORIES = "Visible Categories";
     private static final String DESKTOP_SHORTCUTS = "Desktop Shortcuts";
 
-    private AcmSettingsDialog(Window owner) {
-        super(owner, "Settings");
+    private AcmSettingsDialog(Window owner, boolean specialInvocation) {
+        super(owner, "Settings", specialInvocation);
     }
 
     @Override
@@ -51,7 +51,10 @@ public final class AcmSettingsDialog extends AbstractSettingsDialog {
      */
     @SuppressWarnings("unused")
     public static void showDialog(ActionEvent e) {
-        AcmSettingsDialog dialog = new AcmSettingsDialog(Application.getApplication());
+        // If invoked with CTRL+ALT, open the settings dialog in "advanced" mode.
+        int shiftMask = ActionEvent.ALT_MASK | ActionEvent.CTRL_MASK;
+        boolean ctrlShift = (e.getModifiers() &  shiftMask) == shiftMask;
+        AcmSettingsDialog dialog = new AcmSettingsDialog(Application.getApplication(), ctrlShift);
         // Place the new dialog within the application frame. This is hacky, but if it fails, the dialog
         // simply winds up in a funny place. Unfortunately, Swing only lets us get the location of a
         // component relative to its parent.

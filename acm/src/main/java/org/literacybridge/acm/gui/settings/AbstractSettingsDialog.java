@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static org.literacybridge.acm.gui.UIConstants.getResource;
+import static org.literacybridge.acm.utils.SwingUtils.addEscapeListener;
 
 /**
  * A dialog to implement a set of settings pages. Each page should be a logical grouping of
@@ -44,7 +45,11 @@ public abstract class AbstractSettingsDialog extends JDialog {
         public void setToolTip(String toolTipText) {
             this.button.setToolTipText(toolTipText);
         }
-    };
+
+        public boolean isAdvanced() {
+            return advanced;
+        }
+    }
 
     // Width of the settings topics buttons, on the left side.
     private static final int BUTTONS_WIDTH = 100;
@@ -59,8 +64,15 @@ public abstract class AbstractSettingsDialog extends JDialog {
     private final Map<String, AbstractSettingsBase> settingsPanels = new LinkedHashMap<>();
     private String currentTag = null;
 
+    private final boolean advanced;
+
     protected AbstractSettingsDialog(Window owner, String title) {
+        this(owner, title, false);
+    }
+    protected AbstractSettingsDialog(Window owner, String title, boolean advanced) {
         super(owner, title, ModalityType.APPLICATION_MODAL);
+
+        this.advanced = advanced;
 
         JPanel dialogPanel = new JPanel();
         dialogPanel.setLayout(new BorderLayout());
@@ -119,6 +131,7 @@ public abstract class AbstractSettingsDialog extends JDialog {
         // Activate the first settings panel.
         onAction(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, firstPanel));
 
+        addEscapeListener(this);
         setSize(BUTTONS_WIDTH + PANEL_WIDTH, DIALOG_HEIGHT);
         // For debugging sizing issues.
 //        addComponentListener(new ComponentAdapter() {

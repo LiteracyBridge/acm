@@ -135,12 +135,14 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         // EXPERIMENTAL!! The assistants don't play well with themes.
         //
         // Setting: dark/light theme
-        gridPanel.add(new JLabel("Theme:"), gbcLeft);
-        String[] themes = {"Light", "Dark", "IntelliJ", "Darcula"};
-        JComboBox<String> themeChooser = new JComboBox<>(themes);
-        AssistantPage.setComboWidth(themeChooser, themes);
-        themeChooser.addActionListener(this::onThemeSelected);
-        gridPanel.add(themeChooser, gbcRight.setFill(GridBagConstraints.NONE));
+        if (helper.isAdvanced() || ACMConfiguration.getInstance().isDevo()) {
+            gridPanel.add(new JLabel("Theme:"), gbcLeft);
+            String[] themes = {"Light", "Dark", "IntelliJ", "Darcula"};
+            JComboBox<String> themeChooser = new JComboBox<>(themes);
+            AssistantPage.setComboWidth(themeChooser, themes);
+            themeChooser.addActionListener(this::onThemeSelected);
+            gridPanel.add(themeChooser, gbcRight.setFill(GridBagConstraints.NONE));
+        }
         //
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -152,7 +154,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         fuzzyThreshold.setText(String.format("%d", threshold));
     }
 
-    private static Map<String, String> themeClasses;
+    private static final Map<String, String> themeClasses;
     static {
         themeClasses = new HashMap<>();
         themeClasses.put("Light", "com.formdev.flatlaf.FlatLightLaf");
@@ -163,8 +165,9 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     private void onThemeSelected(ActionEvent actionEvent) {
         Object o = actionEvent.getSource();
         if (o instanceof JComboBox) {
-            String theme = ((JComboBox)o).getSelectedItem().toString();
             try {
+                //noinspection ConstantConditions
+                String theme = ((JComboBox<?>)o).getSelectedItem().toString();
                 UIManager.setLookAndFeel(themeClasses.get(theme));
             } catch (Exception e) {
                 e.printStackTrace();
@@ -230,7 +233,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     /**
      * Listen to changes to the fuzzy match threshold, and validate whenever it changes.
      */
-    private DocumentListener thresholdDocumentListener = new DocumentListener() {
+    private final DocumentListener thresholdDocumentListener = new DocumentListener() {
         @Override
         public void insertUpdate(DocumentEvent e) {
             thresholdVerifier.verify(fuzzyThreshold);
@@ -250,7 +253,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     /**
      * Validator for the fuzzy match threshold field.
      */
-    private InputVerifier thresholdVerifier = new InputVerifier() {
+    private final InputVerifier thresholdVerifier = new InputVerifier() {
         @Override
         public boolean verify(JComponent input) {
             String newVal = fuzzyThreshold.getText();
