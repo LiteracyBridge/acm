@@ -89,7 +89,7 @@ public class AudioItemView extends Container {
     columnSelector.setColumnVisible(sdgTargetsColumn.getColumnIndex(), hasSdgFields);
 
     // Set the comparator (only the Playlist Order has such a thing).
-    TableSortController<AudioItemTableModel> tableRowSorter = (TableSortController<AudioItemTableModel>) audioItemTable
+    TableSortController<?> tableRowSorter = (TableSortController<?>) audioItemTable
         .getRowSorter();
     for (ColumnInfo<?> columnInfo : tableModel.getColumnInfos()) {
       Comparator<?> comparator = columnInfo.getComparator();
@@ -153,7 +153,7 @@ public class AudioItemView extends Container {
         audioItemTable.setRowFilter(new RowFilter<Object, Object>() {
           @Override
           public boolean include(
-              javax.swing.RowFilter.Entry<? extends Object, ? extends Object> entry) {
+              javax.swing.RowFilter.Entry<?, ?> entry) {
             return true;
           }
         });
@@ -173,50 +173,47 @@ public class AudioItemView extends Container {
   /**
    * Central message handler for the audio item view
    */
-  private Observer applicationMessageObserver = new Observer() {
-    @Override
-    public void update(Observable o, Object arg) {
-      if (arg instanceof SearchResult) {
-        currResult = (SearchResult) arg;
-        updateTable();
+  private Observer applicationMessageObserver = (o, arg) -> {
+    if (arg instanceof SearchResult) {
+      currResult = (SearchResult) arg;
+      updateTable();
+    }
+
+    if (arg instanceof UILanguageChanged) {
+      UILanguageChanged newLocale = (UILanguageChanged) arg;
+      updateControlLanguage(newLocale.getNewLocale());
+    }
+
+    if (arg instanceof AudioItemTableSortOrderMessage) {
+      AudioItemTableSortOrderMessage message = (AudioItemTableSortOrderMessage) arg;
+      audioItemTable.setSortOrder(message.getIdentifier(), message.getSortOrder());
+    }
+
+    if (arg instanceof RequestAudioItemMessage) {
+      RequestAudioItemMessage requestAudioItemMessage = (RequestAudioItemMessage) arg;
+
+      AudioItem audioItem = null;
+      switch (requestAudioItemMessage.getRequestType()) {
+      case Current:
+        audioItem = getCurrentAudioItem();
+        break;
+      case Next:
+        audioItem = getNextAudioItem();
+        break;
+      case Previews:
+        audioItem = getPreviousAudioItem();
+        break;
       }
 
-      if (arg instanceof UILanguageChanged) {
-        UILanguageChanged newLocale = (UILanguageChanged) arg;
-        updateControlLanguage(newLocale.getNewLocale());
-      }
+      if (audioItem != null) {
+        selectAudioItem(audioItem);
 
-      if (arg instanceof AudioItemTableSortOrderMessage) {
-        AudioItemTableSortOrderMessage message = (AudioItemTableSortOrderMessage) arg;
-        audioItemTable.setSortOrder(message.getIdentifier(), message.getSortOrder());
-      }
-
-      if (arg instanceof RequestAudioItemMessage) {
-        RequestAudioItemMessage requestAudioItemMessage = (RequestAudioItemMessage) arg;
-
-        AudioItem audioItem = null;
-        switch (requestAudioItemMessage.getRequestType()) {
-        case Current:
-          audioItem = getCurrentAudioItem();
-          break;
-        case Next:
-          audioItem = getNextAudioItem();
-          break;
-        case Previews:
-          audioItem = getPreviousAudioItem();
-          break;
-        }
-
-        if (audioItem != null) {
-          selectAudioItem(audioItem);
-
-          if (arg instanceof RequestAndSelectAudioItemMessage) {
-            RequestedAudioItemMessage newMsg = new RequestedAudioItemMessage(audioItem);
-            Application.getMessageService().pumpMessage(newMsg);
-          } else if (arg instanceof RequestAudioItemToPlayMessage) {
-            PlayAudioItemMessage newMsg = new PlayAudioItemMessage(audioItem);
-            Application.getMessageService().pumpMessage(newMsg);
-          }
+        if (arg instanceof RequestAndSelectAudioItemMessage) {
+          RequestedAudioItemMessage newMsg = new RequestedAudioItemMessage(audioItem);
+          Application.getMessageService().pumpMessage(newMsg);
+        } else if (arg instanceof RequestAudioItemToPlayMessage) {
+          PlayAudioItemMessage newMsg = new PlayAudioItemMessage(audioItem);
+          Application.getMessageService().pumpMessage(newMsg);
         }
       }
     }
@@ -249,7 +246,7 @@ public class AudioItemView extends Container {
     return audioItemTable.getSelectedRow() != -1;
   }
 
-  AudioItem getCurrentAudioItem() {
+  public AudioItem getCurrentAudioItem() {
     int tableRow = audioItemTable.getSelectedRow();
     if (tableRow == -1) {
       // select first row if available
@@ -295,7 +292,7 @@ public class AudioItemView extends Container {
 
     AudioItem item = null;
     if (o instanceof AudioItemNode) {
-      item = ((AudioItemNode) o).getAudioItem();
+      item = ((AudioItemNode<?>) o).getAudioItem();
     } else if (o instanceof AudioItem) {
       item = (AudioItem) o;
     }
@@ -402,53 +399,52 @@ public class AudioItemView extends Container {
     });
 
     audioItemTable.getSelectionModel()
-        .addListSelectionListener(new ListSelectionListener() {
-          @Override
-          public void valueChanged(ListSelectionEvent e) {
-            String message;
-            switch (audioItemTable.getSelectedRowCount()) {
-            case 0:
-              message = "";
-              break;
-            case 1:
-              message = "1 audio item selected.";
-              break;
-            default: {
-              Calendar cal = Calendar.getInstance();
+        .addListSelectionListener(e -> {
+          String message;
+          switch (audioItemTable.getSelectedRowCount()) {
+          case 0:
+            message = "";
+            break;
+          case 1:
+            message = "1 audio item selected.";
+            break;
+          default: {
+            Calendar cal = Calendar.getInstance();
+              //noinspection MagicConstant
               cal.set(0, 0, 0, 0, 0, 0);
 
-              for (int row : getCurrentSelectedRows()) {
-                AudioItem audioItem = getAudioItemAtTableRow(row);
-                if (audioItem != null) {
-                  MetadataValue<String> metadata = audioItem.getMetadata()
-                      .getMetadataValue(MetadataSpecification.LB_DURATION);
-                  if (metadata != null) {
-                    String duration = metadata.getValue();
-                    try {
-                      cal.add(Calendar.MINUTE,
-                          Integer.parseInt(duration.substring(0, 2)));
-                      cal.add(Calendar.SECOND,
-                          Integer.parseInt(duration.substring(3, 5)));
-                    } catch (NumberFormatException ex) {
-                      // ignore this audio item
-                    }
+            for (int row : getCurrentSelectedRows()) {
+              AudioItem audioItem = getAudioItemAtTableRow(row);
+              if (audioItem != null) {
+                MetadataValue<String> metadata = audioItem.getMetadata()
+                    .getMetadataValue(MetadataSpecification.LB_DURATION);
+                if (metadata != null) {
+                  String duration = metadata.getValue();
+                  try {
+                    cal.add(Calendar.MINUTE,
+                        Integer.parseInt(duration.substring(0, 2)));
+                    cal.add(Calendar.SECOND,
+                        Integer.parseInt(duration.substring(3, 5)));
+                  } catch (NumberFormatException ex) {
+                    // ignore this audio item
                   }
                 }
               }
+            }
 
-              Calendar cal1 = Calendar.getInstance();
+            Calendar cal1 = Calendar.getInstance();
+              //noinspection MagicConstant
               cal1.set(0, 0, 1, 0, 0, 0);
-              SimpleDateFormat format = cal.before(cal1)
-                  ? new SimpleDateFormat("HH:mm:ss")
-                  : new SimpleDateFormat("D 'd' HH:mm:ss");
-              message = audioItemTable.getSelectedRowCount()
-                  + " audio items selected. Total duration: "
-                  + format.format(cal.getTime());
-            }
-            }
-
-            Application.getApplication().setStatusMessage(message);
+            SimpleDateFormat format = cal.before(cal1)
+                ? new SimpleDateFormat("HH:mm:ss")
+                : new SimpleDateFormat("D 'd' HH:mm:ss");
+            message = audioItemTable.getSelectedRowCount()
+                + " audio items selected. Total duration: "
+                + format.format(cal.getTime());
           }
+          }
+
+          Application.getApplication().setStatusMessage(message);
         });
 
     mouseListener = new AudioItemViewMouseListener(this);
