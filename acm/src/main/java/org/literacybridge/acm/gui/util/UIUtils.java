@@ -29,18 +29,28 @@ public class UIUtils {
     return showDialog(dialog, x, y);
   }
 
-  public static <T extends Container> T showDialog(final T dialog, int x, int y) {
-    // If dialog extends past the bottom or right, move it back to fit. Don't go off top or left.
-    Rectangle deviceBounds = dialog.getGraphicsConfiguration().getDevice().getDefaultConfiguration().getBounds();
-    int dy = dialog.getHeight();
-    y = Math.max(0, Math.min(y, deviceBounds.height - dy - 20));
-    int dx = dialog.getWidth();
-    x = Math.max(0, Math.min(x, deviceBounds.width - dx - 10));
+    public static <T extends Container> T showDialog(final T dialog, int ox, int oy) {
+        // If dialog extends past the bottom or right, move it back to fit. Don't go off top or left.
 
-    dialog.setLocation(x, y);
-    setVisible(dialog, true);
-    return dialog;
-  }
+        Rectangle deviceBounds = dialog.getGraphicsConfiguration().getDevice().getDefaultConfiguration().getBounds();
+        int dx = dialog.getWidth();
+        int x = Math.min(ox, deviceBounds.x + deviceBounds.width - dx - 10);
+        int dy = dialog.getHeight();
+        int y = Math.min(oy, deviceBounds.y + deviceBounds.height - dy - 20);
+
+        // Uncomment to debug.
+//      System.out.printf("show dlg, bounds:(%d,%d, %dx%d), at:(%d,%d)->(%d,%d)\n",
+//              deviceBounds.x,
+//              deviceBounds.y,
+//              deviceBounds.width,
+//              deviceBounds.height,
+//              ox, oy, x,
+//              y);
+
+        dialog.setLocation(x, y);
+        setVisible(dialog, true);
+        return dialog;
+    }
 
   /**
    * Runs some code with a wait spinner, with a callback when the work is done.
@@ -106,7 +116,7 @@ public class UIUtils {
       SwingUtilities.invokeLater(() -> label.setText(text));
     } else {
       label.setText(text);
-      try {Thread.sleep(100);} catch(Exception ex) {}
+      try {Thread.sleep(100);} catch(Exception ignored) {}
     }
   }
 
@@ -124,9 +134,7 @@ public class UIUtils {
       final boolean prepend)
   {
     if (!SwingUtilities.isEventDispatchThread()) {
-      SwingUtilities.invokeLater(() -> {
-        doAppendText(textComponent, newText, prepend);
-      });
+      SwingUtilities.invokeLater(() -> doAppendText(textComponent, newText, prepend));
     } else {
       doAppendText(textComponent, newText, prepend);
     }

@@ -15,11 +15,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class AudioItemViewMouseListener extends MouseAdapter {
-  private AudioItemView adaptee;
+  private AudioItemView audioItemView;
   private SearchResult currentResult;
 
-  AudioItemViewMouseListener(AudioItemView adaptee) {
-    this.adaptee = adaptee;
+  AudioItemViewMouseListener(AudioItemView audioItemView) {
+    this.audioItemView = audioItemView;
   }
 
   @Override
@@ -40,14 +40,14 @@ public class AudioItemViewMouseListener extends MouseAdapter {
       boolean rightButtonClicked = e.getButton() == MouseEvent.BUTTON3;
 
       // Was the click on the info icon?
-      int col = adaptee.audioItemTable.columnAtPoint(e.getPoint());
-      int modelColumn = adaptee.audioItemTable.convertColumnIndexToModel(col);
+      int col = audioItemView.audioItemTable.columnAtPoint(e.getPoint());
+      int modelColumn = audioItemView.audioItemTable.convertColumnIndexToModel(col);
 
       boolean infoIconClicked = modelColumn == AudioItemTableModel.infoIconColumn.getColumnIndex();
 
       // Was the click on a selected row?
-      int row = headerClick ? -1 : adaptee.audioItemTable.rowAtPoint(e.getPoint());
-      int[] selectedRows = adaptee.audioItemTable.getSelectedRows();
+      int row = headerClick ? -1 : audioItemView.audioItemTable.rowAtPoint(e.getPoint());
+      int[] selectedRows = audioItemView.audioItemTable.getSelectedRows();
       boolean selectedRowClicked = false;
       for (int selected: selectedRows) {
           selectedRowClicked |= (row == selected);
@@ -65,7 +65,7 @@ public class AudioItemViewMouseListener extends MouseAdapter {
   }
 
     private void showRenameDlg(MouseEvent e) {
-        AudioItem audioItem = adaptee.getCurrentAudioItem();
+        AudioItem audioItem = audioItemView.getCurrentAudioItem();
         AudioItemRenameDialog dialog = new AudioItemRenameDialog(Application.getApplication(),
             audioItem);
         UIUtils.showDialog(dialog, e.getXOnScreen(), e.getYOnScreen());
@@ -73,24 +73,25 @@ public class AudioItemViewMouseListener extends MouseAdapter {
 
     private void showAudioItemDlg(MouseEvent e) {
         // always the first item of a selection.
-        AudioItem clickedAudioItem = adaptee.getCurrentAudioItem();
+        AudioItem clickedAudioItem = audioItemView.getCurrentAudioItem();
         if (clickedAudioItem != null) {
 
-            int[] selectedRows = adaptee.audioItemTable.getSelectedRows();
+            int[] selectedRows = audioItemView.audioItemTable.getSelectedRows();
             AudioItem[] selectedAudioItems = new AudioItem[selectedRows.length];
             for (int i = 0; i < selectedRows.length; i++) {
-                selectedAudioItems[i] = adaptee
+                selectedAudioItems[i] = audioItemView
                     .getAudioItemAtTableRow(selectedRows[i]);
             }
 
-            UIUtils.showDialog(
-                new AudioItemContextMenuDialog(Application.getApplication(),
-                    clickedAudioItem, selectedAudioItems, adaptee, currentResult),
-                e.getXOnScreen() + 2, e.getYOnScreen());
+            Point componentOrigin = e.getComponent().getLocationOnScreen();
+            AudioItemContextMenuDialog dlg = new AudioItemContextMenuDialog(Application.getApplication(),
+                    clickedAudioItem, selectedAudioItems, audioItemView, currentResult);
+            UIUtils.showDialog(dlg, componentOrigin.x + e.getX() + 2, componentOrigin.y + e.getY());
         }
     }
 
-  void setCurrentResult(SearchResult currentResult) {
+
+    void setCurrentResult(SearchResult currentResult) {
     this.currentResult = currentResult;
   }
 
