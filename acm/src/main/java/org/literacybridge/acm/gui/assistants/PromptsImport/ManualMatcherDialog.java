@@ -1,13 +1,14 @@
 package org.literacybridge.acm.gui.assistants.PromptsImport;
 
 import org.literacybridge.acm.gui.assistants.Matcher.AbstractManualMatcherDialog;
+import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
 
 import java.util.List;
 
 public class ManualMatcherDialog extends AbstractManualMatcherDialog<PromptMatchable> {
 
-    ManualMatcherDialog(PromptMatchable row, List<PromptMatchable> matchableItems) {
-        super(row, matchableItems);
+    ManualMatcherDialog(AbstractMatchPage<?,?,?,?> matchPage, PromptMatchable row, List<PromptMatchable> matchableItems) {
+        super(matchPage, row, matchableItems);
     }
 
     @Override

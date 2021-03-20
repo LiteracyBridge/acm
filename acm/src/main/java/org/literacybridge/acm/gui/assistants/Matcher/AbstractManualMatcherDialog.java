@@ -3,7 +3,9 @@ package org.literacybridge.acm.gui.assistants.Matcher;
 import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
 import org.literacybridge.acm.gui.assistants.ContentImport.AudioPlaylistTarget;
+import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
+import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -14,6 +16,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
+import java.awt.Point;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -31,14 +34,16 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.redBorder;
  * Dialog allows user to manually select the matching file or audio item for a selected
  * audio item or file.
  */
-public abstract class AbstractManualMatcherDialog<T extends MatchableItem> extends JDialog {
+public abstract class AbstractManualMatcherDialog<T extends MatchableItem<?,?>> extends JDialog {
     private final JList<String> choicesList;
     private final JLabel promptLabel;
     private JButton okButton;
     private final Map<String, T> unmatchedItems;
     private JScrollPane choicesListScrollPane;
 
-    public AbstractManualMatcherDialog(T row, List<T> matchableItems) {
+    public AbstractManualMatcherDialog(AbstractMatchPage<?,?,?,?> matchPage,
+            T row,
+            List<T> matchableItems) {
         super((Frame)null, "", true);
         setLayout(new BorderLayout());
         JPanel dialogPanel = new JPanel();
@@ -73,6 +78,9 @@ public abstract class AbstractManualMatcherDialog<T extends MatchableItem> exten
         getRootPane().setDefaultButton(null);
 
         setMinimumSize(new Dimension(500, 300));
+        Point p = SwingUtils.getContainingWindowRelativeLocation(matchPage);
+        setLocation(p);
+
         setVisible(true);
     }
 

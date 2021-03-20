@@ -5,13 +5,16 @@
 package org.literacybridge.acm.utils;
 
 import com.formdev.flatlaf.FlatLightLaf;
+import org.literacybridge.acm.gui.UIConstants;
 
 import javax.swing.*;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Font;
+import java.awt.Image;
 import java.awt.Point;
+import java.awt.Window;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
@@ -36,6 +39,68 @@ public final class SwingUtils {
 
     private SwingUtils() {
         throw new Error("SwingUtils is just a container for static methods");
+    }
+
+    /**
+     * Average two colors.
+     *
+     * @param c1 one color
+     * @param c2 another color
+     * @return average of the RGB values
+     */
+    public static Color average(Color c1, @SuppressWarnings("SameParameterValue") Color c2) {
+        return new Color((c1.getRed() + c2.getRed()) / 2,
+                (c1.getGreen() + c2.getGreen()) / 2,
+                (c1.getBlue() + c2.getBlue()) / 2,
+                (c1.getAlpha() + c2.getAlpha()) / 2);
+    }
+
+    /**
+     * Creates a new Color that is a darker version of the given color.
+     *
+     * Modified from Color.java
+     * @param color to be darkened.
+     * @param FACTOR by which to be darkened.
+     * @return the darkened color.
+     */
+    public static Color darker(Color color, @SuppressWarnings("SameParameterValue") double FACTOR) {
+        return new Color(Math.max((int) (color.getRed() * FACTOR + 0.5), 0),
+                Math.max((int) (color.getGreen() * FACTOR + 0.5), 0),
+                Math.max((int) (color.getBlue() * FACTOR + 0.5), 0),
+                255);
+    }
+
+    /**
+     * Creates a new Color that is a brighter version of the given Color.
+     *
+     * Modified from Color.java.
+     * @param color to be brightened.
+     * @param FACTOR by which to be brightened.
+     * @return the brightened color.
+     */
+    public static Color brighter(Color color, @SuppressWarnings("SameParameterValue") double FACTOR) {
+        int r = color.getRed();
+        int g = color.getGreen();
+        int b = color.getBlue();
+        int alpha = color.getAlpha();
+
+        /* From 2D group:
+         * 1. black.brighter() should return grey
+         * 2. applying brighter to blue will always return blue, brighter
+         * 3. non pure color (non zero rgb) will eventually return white
+         */
+        int i = (int)(1.0/(1.0-FACTOR));
+        if ( r == 0 && g == 0 && b == 0) {
+            return new Color(i, i, i, alpha);
+        }
+        if ( r > 0 && r < i ) r = i;
+        if ( g > 0 && g < i ) g = i;
+        if ( b > 0 && b < i ) b = i;
+
+        return new Color(Math.min((int)(r/FACTOR), 255),
+                Math.min((int)(g/FACTOR), 255),
+                Math.min((int)(b/FACTOR), 255),
+                alpha);
     }
 
     /**
@@ -393,6 +458,12 @@ public final class SwingUtils {
 //        setExclude.add("getGraphicsConfiguration");
 //    }
 
+    public static ImageIcon getScaledImage(String resource, int width, int height) {
+        ImageIcon logoIcon = new ImageIcon(UIConstants.getResource(resource));
+        return new ImageIcon(logoIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH));
+    }
+
+
     /**
      * Common code to set L&F.
      * @param laf Short name of desired L&F.
@@ -465,6 +536,11 @@ public final class SwingUtils {
             UIManager.put("Tree.textBackground", new Color(255,255,255,0));
             UIManager.put("Table.dropCellForeground", Color.YELLOW);
             UIManager.put("Table.dropCellBackground", new Color(63,143,217)); // Same as tree background
+            Color amplioGreen = new Color(42,155,106);
+            UIManager.put("Slider.thumbColor", amplioGreen);
+            UIManager.put("Slider.trackValueColor", amplioGreen);
+            UIManager.put("Slider.pressedThumbColor", amplioGreen.darker());
+            UIManager.put("Slider.hoverThumbColor", brighter(amplioGreen, 0.85));
 
             // SeaGlass used Lucida Grande, and it is a little larger and more open.
             // "Lucida Grande", Font.PLAIN , 13)
@@ -554,6 +630,18 @@ public final class SwingUtils {
         }
         return pComponent;
     }
+
+    public static Point getContainingWindowRelativeLocation(Component component) {
+        Point pComponent = component.getLocation();
+        if (component.getParent() != null && !(component instanceof Window)) {
+            Point pParent = getContainingWindowRelativeLocation(component.getParent());
+            pComponent.x += pParent.x;
+            pComponent.y += pParent.y;
+        }
+        return pComponent;
+    }
+
+
 
     /**
      * Handles otherwise unhandled Esc in dialogs.

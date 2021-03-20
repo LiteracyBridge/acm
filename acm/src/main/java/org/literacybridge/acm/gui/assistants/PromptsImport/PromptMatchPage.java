@@ -91,7 +91,7 @@ public class PromptMatchPage extends
 
     @Override
     protected PromptMatchable onManualMatch(PromptMatchable selectedRow) {
-        ManualMatcherDialog dialog = new ManualMatcherDialog(selectedRow, context.matcher.matchableItems);
+        ManualMatcherDialog dialog = new ManualMatcherDialog(this, selectedRow, context.matcher.matchableItems);
         return dialog.getSelectedItem();
     }
 

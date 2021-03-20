@@ -104,7 +104,7 @@ public class GreetingsMatchPage extends AbstractMatchPage<GreetingsImportContext
 
     @Override
     protected GreetingMatchable onManualMatch(GreetingMatchable selectedRow) {
-        ManualMatcherDialog dialog = new ManualMatcherDialog(selectedRow, context.matcher.matchableItems);
+        ManualMatcherDialog dialog = new ManualMatcherDialog(this, selectedRow, context.matcher.matchableItems);
         return dialog.getSelectedItem();
     }
 

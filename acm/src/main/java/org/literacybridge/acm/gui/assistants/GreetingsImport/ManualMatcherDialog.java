@@ -1,14 +1,15 @@
 package org.literacybridge.acm.gui.assistants.GreetingsImport;
 
 import org.literacybridge.acm.gui.assistants.Matcher.AbstractManualMatcherDialog;
+import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
 
 import java.util.List;
 
 public class ManualMatcherDialog extends AbstractManualMatcherDialog<GreetingMatchable> {
 
-    ManualMatcherDialog(GreetingMatchable row, List<GreetingMatchable> matchableItems)
+    ManualMatcherDialog(AbstractMatchPage<?,?,?,?> matchPage, GreetingMatchable row, List<GreetingMatchable> matchableItems)
     {
-        super(row, matchableItems);
+        super(matchPage, row, matchableItems);
     }
 
     @Override
