@@ -2,6 +2,7 @@ package org.literacybridge.acm.cloud.AuthenticationDialog;
 
 import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.UIConstants;
+import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
 import java.awt.Color;
@@ -49,15 +50,13 @@ class CardContent extends JPanel {
 
     public static int logoHeight = 0;
     private static final int iconSize = 350;
-    private static ImageIcon logoIcon;
     private static ImageIcon scaledIcon;
     private static final GBC gbc = new GBC(getGBC()).withAnchor(CENTER).withInsets(new Insets(10,0,20,0));
 
     ImageIcon getScaledLogo() {
-        if (logoIcon == null) {
+        if (scaledIcon == null) {
 //            logoIcon = new ImageIcon(UIConstants.getResource("Amplio-Logo-NoTagline-FullColor-Square.png"));
-            logoIcon = new ImageIcon(UIConstants.getResource("Amplio_horiz_color_HiRes.png"));
-            scaledIcon = new ImageIcon(logoIcon.getImage().getScaledInstance(iconSize, -1, Image.SCALE_SMOOTH));
+            scaledIcon = SwingUtils.getScaledImage("Amplio_horiz_color_HiRes.png", iconSize, -1);
             logoHeight = scaledIcon.getIconHeight() + gbc.insets.top + gbc.insets.bottom;
         }
         return scaledIcon;

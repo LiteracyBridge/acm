@@ -1,5 +1,7 @@
 package org.literacybridge.acm.gui.Assistant;
 
+import org.literacybridge.acm.utils.SwingUtils;
+
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
@@ -283,10 +285,12 @@ public class PanelButton extends JPanel {
 
         Graphics2D g2d = (Graphics2D) pG;
         // We should possibly get the current parent's current background color.
-        g2d.setColor(bgColor);
+//        g2d.setColor(bgColor);
+        g2d.setColor(getParent().getBackground());
         g2d.fillRect(0, 0, w, h);
 
         g2d.setColor(currentBgColor);
+        //noinspection ConstantConditions
         g2d.fillRoundRect(dw, dh, w - dw * 2, h - dh * 2, roundingRadius, roundingRadius);
 
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -301,31 +305,10 @@ public class PanelButton extends JPanel {
         g2d.drawString(text, x, y);
     }
 
-    /**
-     * Average two colors.
-     *
-     * @param c1 one color
-     * @param c2 another color
-     * @return average of the RGB values
-     */
-    private Color average(Color c1, @SuppressWarnings("SameParameterValue") Color c2) {
-        return new Color((c1.getRed() + c2.getRed()) / 2,
-            (c1.getGreen() + c2.getGreen()) / 2,
-            (c1.getBlue() + c2.getBlue()) / 2,
-            (c1.getAlpha() + c2.getAlpha()) / 2);
-    }
-
-    private Color darker(Color color, @SuppressWarnings("SameParameterValue") double FACTOR) {
-        return new Color(Math.max((int) (color.getRed() * FACTOR + 0.5), 0),
-            Math.max((int) (color.getGreen() * FACTOR + 0.5), 0),
-            Math.max((int) (color.getBlue() * FACTOR + 0.5), 0),
-            255);
-    }
-
     public void setBgColorPalette(Color normalColor) {
-        Color disabledColor = average(normalColor, Color.white);
-        Color hoverColor = darker(normalColor, 0.85);
-        Color pressedColor = darker(hoverColor, 0.85);
+        Color disabledColor = SwingUtils.average(normalColor, Color.white);
+        Color hoverColor = SwingUtils.darker(normalColor, 0.85);
+        Color pressedColor = SwingUtils.darker(hoverColor, 0.85);
         setBgColors(normalColor, disabledColor, hoverColor, disabledColor, pressedColor);
         // Try to pick a contrasting text color.
         if (normalColor.getRed() + normalColor.getGreen() + normalColor.getBlue() > 384) {
