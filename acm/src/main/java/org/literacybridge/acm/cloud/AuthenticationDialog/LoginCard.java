@@ -6,7 +6,9 @@ import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.PanelButton;
 import org.literacybridge.acm.gui.util.UIUtils;
 
-import javax.swing.*;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.GridBagLayout;
@@ -130,10 +132,11 @@ public class LoginCard extends CardContent {
      * @param actionEvent is ignored.
      */
     private void onLogin(ActionEvent actionEvent) {
+        welcomeDialog.clearMessage();
         UIUtils.runWithWaitSpinner(welcomeDialog,
-            () -> welcomeDialog.cognitoInterface.authenticate(emailField.getText(), passwordField.getText()),
-            this::onLoginReturned,
-            TOP_THIRD);
+                () -> welcomeDialog.cognitoInterface.authenticate(emailField.getText(), passwordField.getText()),
+                this::onLoginReturned,
+                TOP_THIRD);
     }
 
     /**

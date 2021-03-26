@@ -13,6 +13,7 @@ import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -279,6 +280,8 @@ public class WelcomeDialog extends JDialog {
     void setMessage(String message) {
         if (authMessage == null) {
             authMessage = new JLabel();
+            authMessage.setFont(authMessage.getFont().deriveFont(Font.BOLD));
+            authMessage.setForeground(Color.RED);
             authMessage.setBorder(new EmptyBorder(5,10,10, 5));
             add(authMessage, BorderLayout.SOUTH);
         }
@@ -289,6 +292,8 @@ public class WelcomeDialog extends JDialog {
     void clearMessage() {
         if (authMessage != null) {
             UIUtils.setLabelText(authMessage, "");
+            remove(authMessage);
+            authMessage = null;
         }
     }
 
