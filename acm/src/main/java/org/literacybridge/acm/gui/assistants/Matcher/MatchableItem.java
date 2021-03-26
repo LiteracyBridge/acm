@@ -126,7 +126,7 @@ public class MatchableItem<L extends Target, R> implements Comparable<MatchableI
     @Override
     public String toString() {
         if (this.getMatch() == MATCH.RIGHT_ONLY) return right.toString();
-        else if (this.getMatch() == MATCH.LEFT_ONLY) return left.toString();
+        else if (this.getMatch() == MATCH.LEFT_ONLY || this.getMatch().isMatch()) return left.toString();
         else return "";
     }
 

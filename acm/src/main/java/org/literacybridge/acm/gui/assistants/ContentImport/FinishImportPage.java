@@ -150,7 +150,7 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
     @Override
     protected void onPageEntered(boolean progressing) {
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        SwingWorker worker = new SwingWorker<Integer, Void>() {
+        SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
             @Override
             protected Integer doInBackground() {
                 summaryMessage = new StringBuilder("<html>");
@@ -444,23 +444,29 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
 
             // There really should be an item, but don't NPE if not.
             if (item != null) {
-                // If there is no category, add to the specified category.
-                if (item.getCategoryList().size() == 0) item.addCategory(category);
+                // If this is a playlist prompt, remove any other categories, and add the one given
+                if (matchableItem.getLeft().isPlaylist()) {
+                    item.removeAllCategories();
+                    item.addCategory(category);
+                } else if (item.getCategoryList().size() == 0) {
+                    // If there is no category, add to the specified category.
+                    item.addCategory(category);
+                }
                 // If the item didn't know what language it was, add to the selected language.
                 String existingLanguage = item.getLanguageCode();
                 if (!context.languagecode.equals(existingLanguage)) {
-                    System.out.println(String.format("Forcing language to '%s' was '%s'.",
+                    System.out.printf("Forcing language to '%s' was '%s'.%n",
                         context.languagecode,
-                        existingLanguage));
+                        existingLanguage);
                     item.getMetadata().put(MetadataSpecification.DC_LANGUAGE, context.languagecode);
                     summaryTable.append(new TR("Forcing language", context.languagecode, existingLanguage));
                 }
                 // Force the title.
                 String existingTitle = item.getTitle();
                 if (!importableAudio.getTitle().equals(existingTitle)) {
-                    System.out.println(String.format("Renaming '%s' to '%s'.",
+                    System.out.printf("Renaming '%s' to '%s'.%n",
                         existingTitle,
-                        importableAudio.getTitle()));
+                        importableAudio.getTitle());
                     summaryTable.append(new TR("Renaming", existingTitle, importableAudio.getTitle()));
                     item.getMetadata()
                         .put(MetadataSpecification.DC_TITLE, importableAudio.getTitle());

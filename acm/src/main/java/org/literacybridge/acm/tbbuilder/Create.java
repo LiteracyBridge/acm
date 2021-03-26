@@ -410,14 +410,12 @@ class Create {
      * @param language Language for which prompts are needed.
      * @param audioFormat Audio format for which prompts are needed.
      * @throws IOException If a file can't be copied, found, etc.
-     * @throws BaseAudioConverter.ConversionException If a file can't be converted to the desired format.
      */
     private void exportSystemPrompts(File shadowLanguageDir,
             File stagedLanguageDir,
             String language,
             AudioItemRepository.AudioFormat audioFormat) throws
-                                                         IOException,
-                                                         BaseAudioConverter.ConversionException {
+                                                         IOException {
         for (String prompt : TBBuilder.REQUIRED_SYSTEM_MESSAGES) {
             String promptFilename = prompt + '.' + audioFormat.getFileExtension();
 
@@ -432,12 +430,7 @@ class Create {
             if (!exportFile.exists()) {
                 try {
                     repository.exportSystemPromptFileWithFormat(prompt, exportFile, language, audioFormat);
-                } catch (BaseAudioConverter.ConversionSourceMissingException missingEx) {
-                    // If these errors were already warned of, in the deployment assistant, ignore them here.
-                    if (!builderContext.isAssistantLaunched) {
-                        builderContext.logException(missingEx);
-                    }
-                }catch(Exception ex) {
+                } catch(Exception ex) {
                     // Keep going after failing to export a prompt.
                     builderContext.logException(ex);
                 }
@@ -489,12 +482,7 @@ class Create {
                             pi.language,
                             pi.audioFormat);
                 }
-            } catch (BaseAudioConverter.ConversionSourceMissingException missingEx) {
-                // If these errors were already warned of, in the deployment assistant, ignore them here.
-                if (!builderContext.isAssistantLaunched) {
-                    builderContext.logException(missingEx);
-                }
-            }catch(Exception ex) {
+            } catch(Exception ex) {
                 // Keep going after failing to export a prompt.
                 builderContext.logException(ex);
             }
