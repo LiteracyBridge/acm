@@ -14,17 +14,37 @@ import java.util.Set;
  */
 public class PSContent {
     public enum PlDisposition {
-        IGNORE,
-        ADD,
-        ADD_WITH_PROMPTS
+        IGNORE,             // Do not add the playlist to the tree.
+        MESSAGES_ONLY,      // Add the playlist content to the tree.
+        BOTH,               // Add the playlist content and prompts to the tree.
+        PROMPTS_ONLY;       // Add only the playlist prompts to the tree.
+
+        boolean isaAddSomething() {
+            return this != IGNORE;
+        }
+        boolean isAddContent() {
+            return this == MESSAGES_ONLY || this == BOTH;
+        }
+        boolean isAddPrompt() {
+            return this == BOTH || this == PROMPTS_ONLY;
+        }
     }
     public static class PlaylistFilter {
         public PlDisposition filter(ContentSpec.PlaylistSpec playlistSpec) {
-            return PlDisposition.ADD_WITH_PROMPTS;
+            return PlDisposition.BOTH;
         }
     }
 
-
+    /**
+     * Given a tree node for a language, add playlist nodes and prompt and/or message sub-nodes.
+     * @param languageNode A DefaultMutableTreeNode that will contain any found playists.
+     * @param contentSpec of the content in the deployment, per the program spec.
+     * @param deploymentNo of interest.
+     * @param language of interest.
+     * @param playlistFilter a filter that is given a chance to examine each playlist to determine if
+     *                       the playlist should be included, and, if so, whether to include prompts,
+     *                       content messages, or both.
+     */
     private static void fillTreeForDeploymentAndLanguage(DefaultMutableTreeNode languageNode,
         ContentSpec contentSpec,
         int deploymentNo,
@@ -36,20 +56,22 @@ public class PSContent {
 
         List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(language);
         for (ContentSpec.PlaylistSpec playlistSpec : playlistSpecs) {
+            // If the caller wants this playlist...
             PlDisposition disposition = playlistFilter.filter(playlistSpec);
-            if (disposition != PlDisposition.IGNORE) {
+            if (disposition.isaAddSomething()) {
                 PlaylistNode playlistNode = new PlaylistNode(playlistSpec);
                 languageNode.add(playlistNode);
 
-                if (disposition == PlDisposition.ADD_WITH_PROMPTS) {
+                if (disposition.isAddPrompt()) {
                     playlistNode.add(new PromptNode(playlistSpec, false));
                     playlistNode.add(new PromptNode(playlistSpec, true));
                 }
 
-                List<ContentSpec.MessageSpec> messageSpecs = playlistSpec.getMessageSpecs();
-                for (ContentSpec.MessageSpec messageSpec : messageSpecs) {
-                    MessageNode messageNode = new MessageNode(messageSpec);
-                    playlistNode.add(messageNode);
+                if (disposition.isAddContent()) {
+                    List<ContentSpec.MessageSpec> messageSpecs = playlistSpec.getMessageSpecs();
+                    for (ContentSpec.MessageSpec messageSpec : messageSpecs) {
+                        playlistNode.add(new MessageNode(messageSpec));
+                    }
                 }
             }
         }
@@ -77,47 +99,6 @@ public class PSContent {
             root.add(languageNode);
 
             fillTreeForDeploymentAndLanguage(languageNode, contentSpec, deploymentNo, language, playlistFilter);
-        }
-    }
-
-    /**
-     * Given a ProgramSpec, returns a tree of MutableTreeNodes for a given deployment.
-     * @param root to be filled with playlistSpec data.
-     * @param programSpec  with content data.
-     * @param deploymentNo for which the playlistSpec tree is desired.
-     * @param languageCode for which the playlistSpec tree is desired.
-     */
-    public static void fillTreeWithPlaylistPromptsForDeployment(DefaultMutableTreeNode root,
-        ProgramSpec programSpec,
-        int deploymentNo,
-        String languageCode,
-        PlaylistFilter playlistFilter)
-    {
-        ContentSpec contentSpec = programSpec.getContentSpec();
-        LanguageNode languageNode = null;
-
-        ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
-        if (deploymentSpec == null) return;
-
-        List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(languageCode);
-        for (ContentSpec.PlaylistSpec playlistSpec : playlistSpecs) {
-            PlDisposition disposition = playlistFilter.filter(playlistSpec);
-            if (disposition != PlDisposition.IGNORE) {
-
-                if (languageNode == null) {
-                    languageNode = new LanguageNode(languageCode);
-                    root.add(languageNode);
-                }
-
-                PlaylistNode playlistNode = new PlaylistNode(playlistSpec);
-                languageNode.add(playlistNode);
-
-                if (disposition == PlDisposition.ADD_WITH_PROMPTS) {
-                    playlistNode.add(new PromptNode(playlistSpec, false));
-                    playlistNode.add(new PromptNode(playlistSpec, true));
-                }
-
-            }
         }
     }
 

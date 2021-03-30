@@ -28,19 +28,29 @@ abstract class ContentImportBase<Context> extends AcmAssistantPage<Context> {
 
     public static class ImportReminderLine {
         private final Box hbox;
+        private final JLabel prefix;
         private final JLabel deployment;
+        private final JLabel infix;
         private final JLabel language;
 
         public JComponent getLine() { return hbox; }
+        public JLabel getPrefix() { return prefix; }
         public JLabel getDeployment() { return deployment; }
+        public JLabel getInfix() { return infix; }
         public JLabel getLanguage() { return language; }
 
         ImportReminderLine() {
+            this("Importing content for deployment ");
+        }
+
+        ImportReminderLine(String prefixString) {
             hbox = Box.createHorizontalBox();
-            hbox.add(new JLabel("Importing content for deployment "));
+            prefix = new JLabel(prefixString);
+            hbox.add(prefix);
             deployment = makeBoxedLabel();
             hbox.add(deployment);
-            hbox.add(new JLabel(" and language "));
+            infix = new JLabel(" and language ");
+            hbox.add(infix);
             language = makeBoxedLabel();
             hbox.add(language);
             hbox.add(Box.createHorizontalGlue());

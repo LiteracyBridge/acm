@@ -14,6 +14,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.Vector;
 import java.util.stream.Collectors;
@@ -63,8 +64,15 @@ public abstract class AcmAssistantPage<Context> extends AssistantPage<Context> {
         int deploymentNo,
         ProgramSpec programSpec,
         String defaultLanguageCode) {
-        Set<String> languages = programSpec.getLanguagesForDeployment(deploymentNo);
-        fillLanguageChooser(languageChooser, languages, defaultLanguageCode);
+        // Languages from the program spec.
+        Set<String> languageCodes = programSpec.getLanguagesForDeployment(deploymentNo);
+        // Languages from the program's "properties.config"
+        Set<String> configLanguageCodes = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages()
+                .stream()
+                .map(Locale::getISO3Language)
+                .collect(Collectors.toSet());
+        languageCodes.addAll(configLanguageCodes);
+        fillLanguageChooser(languageChooser, languageCodes, defaultLanguageCode);
     }
 
     protected static void fillLanguageChooser(JComboBox<String> languageChooser,
@@ -91,7 +99,7 @@ public abstract class AcmAssistantPage<Context> extends AssistantPage<Context> {
         return label==null ? languagecode : (label + " (" + languagecode + ')');
     }
 
-    public class LanguageListCellRenderer extends DefaultListCellRenderer {
+    public static class LanguageListCellRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList<?> list,
             Object value,
@@ -107,7 +115,7 @@ public abstract class AcmAssistantPage<Context> extends AssistantPage<Context> {
     }
 
     @SuppressWarnings("unused")
-    public class LanguageChooser extends JComboBox<String> {
+    public static class LanguageChooser extends JComboBox<String> {
         public LanguageChooser(ComboBoxModel<String> aModel) {
             super(aModel);
             setRenderer(new LanguageListCellRenderer());

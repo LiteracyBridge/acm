@@ -2,15 +2,25 @@ package org.literacybridge.core.spec;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+/**
+ * The content specifications from a program specification. The ContentSpec consists of:
+ * - a list of DeploymentSpecs, each of which has (among other properties)
+ * -- a list of PlaylistSpecs, each of which has
+ * --- a list of MessageSpecs.
+ *
+ * MessageSpecs are fully self-contained, with information about their containing playlist
+ * and deployment. The hierarchy is created as an organizational convenience.
+ */
 public class ContentSpec {
 
-    private List<DeploymentSpec> deploymentSpecs = new ArrayList<>();
+    private final List<DeploymentSpec> deploymentSpecs = new ArrayList<>();
     public List<DeploymentSpec> getDeploymentSpecs() {
         return deploymentSpecs;
     }
@@ -21,26 +31,6 @@ public class ContentSpec {
             .findFirst()
             .orElse(null);
     }
-//    public List<PlaylistSpec> getPlaylists(int deploymentNumber) {
-//        DeploymentSpec deploymentSpec = getDeployment(deploymentNumber);
-//        if (deploymentSpec == null) return new ArrayList<PlaylistSpec>();
-//        return deploymentSpec.getPlaylistSpecs();
-//    }
-//    public List<PlaylistSpec> getPlaylists(int deploymentNumber, String language) {
-//        List<PlaylistSpec> result = new ArrayList<>();
-//        for (PlaylistSpec playlistSpec : getPlaylists(deploymentNumber)) {
-//            PlaylistSpec plCopy = new PlaylistSpec(playlistSpec.deploymentNumber, playlistSpec.playlistTitle);
-//            for (MessageSpec msg : playlistSpec.getMessageSpecs()) {
-//                if (StringUtils.isAllBlank(msg.language) || new StringFilter(msg.language).test(language)) {
-//                    plCopy.addMessage(msg);
-//                }
-//            }
-//            if (plCopy.messageSpecs.size() > 0) {
-//                result.add(plCopy);
-//            }
-//        }
-//        return result;
-//    }
 
     /**
      * Add a messageSpec to the list of messageSpecs. Messages know all about themselves, so we can
@@ -57,7 +47,7 @@ public class ContentSpec {
             deploymentSpec = new DeploymentSpec(messageSpec.deploymentNumber);
             deploymentSpecs.add(deploymentSpec);
             // Deployments are kept in deployment order; other lists are in found order.
-            deploymentSpecs.sort((a, b) -> a.deploymentNumber.compareTo(b.deploymentNumber));
+            deploymentSpecs.sort(Comparator.comparing(a -> a.deploymentNumber));
         }
 
         deploymentSpec.addMessage(messageSpec);
@@ -65,7 +55,7 @@ public class ContentSpec {
 
     public class DeploymentSpec {
         private final Integer deploymentNumber;
-        private List<PlaylistSpec> playlistSpecs = new ArrayList<>();
+        private final List<PlaylistSpec> playlistSpecs = new ArrayList<>();
 
         DeploymentSpec(Integer deploymentNumber) {
             this.deploymentNumber = deploymentNumber;
@@ -132,7 +122,7 @@ public class ContentSpec {
     public class PlaylistSpec {
         private final Integer deploymentNumber;
         private final String playlistTitle;
-        private List<MessageSpec> messageSpecs = new ArrayList<>();
+        private final List<MessageSpec> messageSpecs = new ArrayList<>();
 
         public PlaylistSpec(Integer deploymentNumber, String playlistTitle) {
             this.deploymentNumber = deploymentNumber;
@@ -211,10 +201,10 @@ public class ContentSpec {
          * be present? If no filter, all languages in the deployment.
          */
         public final String languagecode;
-        private StringFilter languageFilter;
+        private final StringFilter languageFilter;
 
         public final String variant;
-        private StringFilter variantFilter;
+        private final StringFilter variantFilter;
 
         public final String default_category;
         public final String sdg_goals;

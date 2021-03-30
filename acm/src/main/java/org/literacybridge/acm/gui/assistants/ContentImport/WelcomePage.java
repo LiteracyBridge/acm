@@ -19,9 +19,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellRenderer;
-import javax.swing.tree.TreeNode;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -47,6 +45,8 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
     private final JComboBox<String> languageChooser;
     private final Box titlePreviewBox;
     private final JScrollPane titlePreviewScroller;
+    private final JComponent noContentWarningBox;
+    private ContentImportBase.ImportReminderLine noContentWarningLine;
 
     private final DefaultMutableTreeNode progSpecRootNode;
     private final DefaultTreeModel progSpecTreeModel;
@@ -85,6 +85,16 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         hbox.add(languageChooser);
         hbox.add(Box.createHorizontalGlue());
         add(hbox, gbc);
+
+        // "No content" warning, when a deployment and language are selected that have no content defined in the program spec.
+        Font defaultFont = new JLabel().getFont();
+        Font boldFont = new Font(defaultFont.getName(), defaultFont.getStyle()|Font.BOLD, defaultFont.getSize());
+        noContentWarningLine = new ContentImportBase.ImportReminderLine("There are no messages defined for deployment ");
+        noContentWarningLine.getPrefix().setFont(boldFont);
+        noContentWarningLine.getInfix().setFont(boldFont);
+        noContentWarningBox = noContentWarningLine.getLine();
+        add(noContentWarningBox, gbc);
+        noContentWarningBox.setVisible(false);
 
         // Title preview. Shown and hidden based on selections.
         titlePreviewBox = getTitlePreviewBox();
@@ -139,7 +149,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
 
         fillTitleList();
 
-        setComplete(deploymentNo >= 0 && languagecode != null);
+        setComplete(deploymentNo >= 0 && languagecode != null  && hasContent(progSpecRootNode));
     }
 
     @Override
@@ -269,13 +279,21 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
      * Based on the selected Deployment fill the title preview.
      */
     private void fillTitleList() {
+        /*
+         * The playlist filter tells "fillTree...()" functions whether to:
+         * - add a playlist, or ignore it (this disposition is not used here)
+         * - add a playlist prompts and content to the tree (ADD_WITH_PROMPTS)
+         * - add a playlist's content only to the tree (ADD). (This is used for the intro message,
+         *   which looks like a playlist in the program spec, but is treated specially in the
+         *   deployment; what matters here is that it has no prompts.)
+         */
         PSContent.PlaylistFilter playlistFilter = new PSContent.PlaylistFilter() {
             public PSContent.PlDisposition filter(ContentSpec.PlaylistSpec playlistSpec) {
                 String title = playlistSpec.getPlaylistTitle();
                 if (context.introMessageCategoryName.equalsIgnoreCase(title)) {
-                    return PSContent.PlDisposition.ADD;
+                    return PSContent.PlDisposition.MESSAGES_ONLY;
                 }
-                return PSContent.PlDisposition.ADD_WITH_PROMPTS;
+                return context.promptsOnly?PSContent.PlDisposition.PROMPTS_ONLY:PSContent.PlDisposition.BOTH;
             }
         };
 
@@ -286,19 +304,11 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         if (deploymentNo >= 0 && languagecode != null) {
             // Find the playlist recordings so that we can paint the speaker to indicate existing prompts.
             findPlaylistRecordings(deploymentNo);
-            if (context.promptsOnly) {
-                PSContent.fillTreeWithPlaylistPromptsForDeployment(progSpecRootNode,
-                    context.programSpec,
-                    deploymentNo,
-                    languagecode,
-                    playlistFilter);
-            } else {
-                PSContent.fillTreeForDeployment(progSpecRootNode,
-                    context.programSpec,
-                    deploymentNo,
-                    languagecode,
-                    playlistFilter);
-            }
+            PSContent.fillTreeForDeployment(progSpecRootNode,
+                context.programSpec,
+                deploymentNo,
+                languagecode,
+                playlistFilter);
             progSpecTreeModel.reload();
             for (int i = 0; i < progSpecTree.getRowCount(); i++) {
                 progSpecTree.expandRow(i);
@@ -308,6 +318,14 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         boolean hasContent = hasContent(progSpecRootNode);
         titlePreviewScroller.setVisible(hasContent);
         titlePreviewBox.setVisible(hasContent);
+        if (!hasContent && deploymentNo >= 0 && languagecode != null) {
+            // Fill deployment and language in warning
+            noContentWarningLine.getDeployment().setText(Integer.toString(deploymentNo));
+            noContentWarningLine.getLanguage().setText(AcmAssistantPage.getLanguageAndName(languagecode));
+            noContentWarningBox.setVisible(true);
+        } else {
+            noContentWarningBox.setVisible(false);
+        }
     }
 
     private void findPlaylistRecordings(int deploymentNo) {
