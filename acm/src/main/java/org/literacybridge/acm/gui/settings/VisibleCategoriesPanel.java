@@ -28,7 +28,7 @@ public class VisibleCategoriesPanel extends AbstractSettingsBase {
 
     private Taxonomy taxonomy;
     private final DefaultMutableTreeNode categoryRootNode;
-    private CheckboxTree categoryTree;
+    private final CheckboxTree categoryTree;
 
     VisibleCategoriesPanel(AbstractSettingsDialog.SettingsHelper helper) {
         super(helper);
@@ -95,7 +95,7 @@ public class VisibleCategoriesPanel extends AbstractSettingsBase {
         // as it is hidden, it can't be collapsed.
         categoryTree.expandPath(new TreePath(categoryRootNode.getPath()));
 
-        Enumeration en = categoryRootNode.depthFirstEnumeration();
+        Enumeration<?> en = categoryRootNode.depthFirstEnumeration();
         while (en.hasMoreElements()) {
 
             // Unfortunately the enumeration isn't genericised so we need to downcast
