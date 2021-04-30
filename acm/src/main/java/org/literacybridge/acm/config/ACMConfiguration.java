@@ -447,12 +447,17 @@ public class ACMConfiguration {
                 }
             });
 
-            for (File d : dirs) {
-                if (d.exists() && d.isDirectory()) {
-                    File accessList = new File(d, Constants.DB_ACCESS_FILENAME);
-                    String dbFiles[] = d.list((dir, name) -> name.matches(dbRegex));
-                    if (accessList.exists() && dbFiles.length>0) {
-                        dbs.add(new DBConfiguration(d.getName()));
+            if (dirs != null) {
+                for (File d : dirs) {
+                    if (d.exists() && d.isDirectory()) {
+                        File accessList = new File(d, Constants.CONFIG_PROPERTIES);
+                        File contentDir = new File(d, Constants.RepositoryHomeDir);
+                        String[] dbFiles = d.list((dir, name) -> name.matches(dbRegex));
+                        if (accessList.exists() && accessList.isFile() &&
+                                contentDir.exists() && contentDir.isDirectory() &&
+                                dbFiles != null && dbFiles.length>0) {
+                            dbs.add(new DBConfiguration(d.getName()));
+                        }
                     }
                 }
             }
