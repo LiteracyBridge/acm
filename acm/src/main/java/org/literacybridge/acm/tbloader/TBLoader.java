@@ -69,6 +69,48 @@ public class TBLoader extends JFrame {
         return tbLoader;
     }
 
+    static final String OLD_TBS_PREFIX = "A-";
+    private static final String NEW_TBS_PREFIX = "B-";
+
+    public enum TB_ID_STRATEGY {
+        AUTOMATIC("A new Talking Book ID is allocated ony when needed."),
+        MANUAL("The user can also request a new Talking Book ID."),
+        AUTOMATIC_ON_PROGRAM_CHANGE("The Talking Book is assigned a new ID when moving between programs."),
+        MANUAL_ON_PROGRAM_CHANGE("New Talking Book ID when needed, on request, or for new programs.");
+
+        String description;
+        TB_ID_STRATEGY(String description) {
+            this.description = description;
+        }
+        boolean allowsManual() {
+            return this==MANUAL || this==MANUAL_ON_PROGRAM_CHANGE;
+        }
+        boolean onProgramChange() {
+            return this==AUTOMATIC_ON_PROGRAM_CHANGE || this==MANUAL_ON_PROGRAM_CHANGE;
+        }
+    }
+    TB_ID_STRATEGY tbIdStrategy = TB_ID_STRATEGY.AUTOMATIC;
+
+    public enum TEST_DEPLOYMENT_STRATEGY {
+        DEFAULT_OFF("'Test' is off unless explicitly turned on."),
+        RETAIN("The value from the Talking Book is retained."),
+        DEFAULT_ON("'Test' is on unless explicitly turned off.");
+
+        String description;
+        TEST_DEPLOYMENT_STRATEGY(String description) {
+            this.description = description;
+        }
+        boolean initFromTb(boolean tbValue) {
+            if (this == DEFAULT_OFF)
+                return false;
+            else if (this == DEFAULT_ON)
+                return true;
+            else // MAINTAIN
+                return tbValue;
+        }
+    }
+    TEST_DEPLOYMENT_STRATEGY testStrategy = TEST_DEPLOYMENT_STRATEGY.DEFAULT_OFF;
+
     private final JFrame applicationWindow;
 
     private String currentTbFirmware;
@@ -133,7 +175,6 @@ public class TBLoader extends JFrame {
     // Options.
     @SuppressWarnings("unused")
     private boolean allowPackageChoice;
-    private boolean allowForceSrn = false;
 
     static class WindowEventHandler extends WindowAdapter {
         @Override
@@ -210,14 +251,7 @@ public class TBLoader extends JFrame {
 
         // Set options that are controlled by project config file.
         System.out.printf("Starting TB-Loader for %s\n", newProject);
-        Properties config = ACMConfiguration.getInstance().getConfigPropertiesFor(newProject);
-        if (config != null) {
-            String valStr = config.getProperty("PACKAGE_CHOICE", "FALSE");
-            this.allowPackageChoice |= Boolean.parseBoolean(valStr);
-
-            valStr = config.getProperty("ALLOW_FORCE_SRN", "FALSE");
-            this.allowForceSrn |= Boolean.parseBoolean(valStr);
-        }
+        loadConfiguration();
 
         setDeviceIdAndPaths();
 
@@ -351,19 +385,22 @@ public class TBLoader extends JFrame {
         String[] packagesInDeployment = null;
         Properties deploymentProperties = getProgramSpec().getDeploymentProperties();
         allowPackageChoice = allowPackageChoice || deploymentProperties.size()==0;
-        if (allowPackageChoice) {
-            packagesInDeployment = getPackagesInDeployment(deploymentDir);
-        }
+        packagesInDeployment = getPackagesInDeployment(deploymentDir);
 
-        tbLoaderPanel = new TbLoaderPanel(getProgramSpec(), packagesInDeployment);
+        TbLoaderPanel.Builder builder = new TbLoaderPanel.Builder()
+            .withProgramSpec(programSpec)
+            .withPackagesInDeployment(packagesInDeployment)
+            .withSettingsClickedListener(TblSettingsDialog::showDialog)
+            .withGoListener(this::onTbLoaderGo)
+            .withRecipientListener(this::onRecipientSelected)
+            .withDeviceListener(this::onDeviceSelected)
+            .withForceFirmwareListener(this::onForceFirmwareChanged)
+            .withForceSrnListener(this::onForceSrnChanged)
+            .withTbIdStrategy(tbIdStrategy)
+            .withAllowPackageChoice(allowPackageChoice);
+
+        tbLoaderPanel = builder.build();
         tbLoaderPanel.setEnabled(false);
-        tbLoaderPanel.setGoListener(this::onTbLoaderGo);
-        tbLoaderPanel.setRecipientListener(this::onRecipientSelected);
-        tbLoaderPanel.setDeviceListener(this::onDeviceSelected);
-        tbLoaderPanel.setForceFirmwareListener(this::onForceFirmwareChanged);
-        tbLoaderPanel.setForceSrnListener(this::onForceSrnChanged);
-        tbLoaderPanel.enableForceSrn(allowForceSrn);
-        tbLoaderPanel.setSettingsListener(TblSettingsDialog::showDialog);
 
         // Make Old-Talking-Book-Mode really obvious.
         if (srnPrefix.equalsIgnoreCase(TBLoaderConstants.OLD_TB_SRN_PREFIX)) {
@@ -380,6 +417,70 @@ public class TBLoader extends JFrame {
 
         setVisible(true);
     }
+
+    // Configuration settings.
+    void loadConfiguration() {
+        Properties config = ACMConfiguration.getInstance().getConfigPropertiesFor(newProject);
+        if (config != null) {
+            String valStr = config.getProperty("PACKAGE_CHOICE", "FALSE");
+            this.allowPackageChoice |= Boolean.parseBoolean(valStr);
+
+            valStr = config.getProperty("ALLOW_FORCE_SRN", "FALSE");
+            if (Boolean.parseBoolean(valStr)) {
+                this.tbIdStrategy = TB_ID_STRATEGY.MANUAL;
+            }
+            valStr = config.getProperty("TB_ID_STRATEGY");
+            if (valStr != null) {
+                try {
+                    this.tbIdStrategy = TB_ID_STRATEGY.valueOf(valStr);
+                } catch(Exception ignored) { }
+            }
+
+            valStr = config.getProperty("TEST_DEPLOYMENT_STRATEGY");
+            if (valStr != null) {
+                try {
+                    this.testStrategy = TEST_DEPLOYMENT_STRATEGY.valueOf(valStr);
+                } catch(Exception ignored) { }
+            }
+
+        }
+    }
+
+    void setAllowPackageChoice(boolean allowPackageChoice) {
+        if (this.allowPackageChoice != allowPackageChoice) {
+            tbLoaderPanel.enablePackageChoice(allowPackageChoice);
+        }
+        this.allowPackageChoice = allowPackageChoice;
+    }
+    TB_ID_STRATEGY getTbIdStrategy() {
+        return this.tbIdStrategy;
+    }
+    void setTbIdStrategy(int srnStrategyOrdinal) {
+        setSrnStrategy(TB_ID_STRATEGY.values()[srnStrategyOrdinal]);
+    }
+    void setSrnStrategy(TB_ID_STRATEGY srnStrategy) {
+        if (srnStrategy != this.tbIdStrategy) {
+            tbLoaderPanel.setTbIdStrategy(srnStrategy);
+        }
+        this.tbIdStrategy = srnStrategy;
+    }
+    TEST_DEPLOYMENT_STRATEGY getTestStrategy() {
+        return this.testStrategy;
+    }
+    void setTestStrategy(int testStrategyOrdinal) {
+        setTestStrategy(TEST_DEPLOYMENT_STRATEGY.values()[testStrategyOrdinal]);
+    }
+    void setTestStrategy(TEST_DEPLOYMENT_STRATEGY testStrategy) {
+        if (testStrategy != this.testStrategy) {
+            if (oldDeploymentInfo != null) {
+                tbLoaderPanel.setTestDeployment(testStrategy.initFromTb(oldDeploymentInfo.isTestDeployment()));
+            } else {
+                tbLoaderPanel.setTestDeployment(testStrategy == TEST_DEPLOYMENT_STRATEGY.DEFAULT_ON);
+            }
+        }
+        this.testStrategy = testStrategy;
+    }
+    
 
     /**
      * Looks in the ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/basic directory
@@ -506,7 +607,7 @@ public class TBLoader extends JFrame {
                 newTbSrn = TBLoaderConstants.NEED_SERIAL_NUMBER;
                 tbLoaderPanel.setNewSrn(newTbSrn);
             } else {
-                tbLoaderPanel.setForceSrn(false);
+                tbLoaderPanel.setForceTbId(false);
             }
         } else {
             newTbSrn = currentTbSrn;
@@ -716,6 +817,8 @@ public class TBLoader extends JFrame {
             newTbSrn = TBLoaderConstants.NEED_SERIAL_NUMBER;
         }
         tbLoaderPanel.setNewSrn(newTbSrn);
+        // Apply the Test Deployment Strategy to the previous TB value.
+        tbLoaderPanel.setTestDeployment(testStrategy.initFromTb(oldDeploymentInfo.isTestDeployment()));
     }
 
     private void selectRecipientFromCurrentDrive() {

@@ -100,8 +100,10 @@ public class TBLoaderConstants {
     public static final String DEPLOYMENT_CREATION_TIME = "DEPLOYMENT_CREATION_TIME";
     public static final String DEPLOYMENT_CREATION_USER = "DEPLOYMENT_CREATION_USER";
     public static final String DEPLOYMENT_NUMBER = "DEPLOYMENT_NUMBER";
+    public static final String PROGRAM_DESCRIPTION_PROPERTY = "DESCRIPTION";
+    public static final String PROGRAM_ID_PROPERTY = "PROGRAMID";
 
-  static {
+    static {
         ISO8601.setTimeZone(UTC);
     }
 

@@ -339,7 +339,7 @@ public class Application extends JXFrame {
    */
   private static void authenticateAndSelectProgram(CommandLineParams params) {
     Authenticator authInstance = Authenticator.getInstance();
-    authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getKnownAcms());
+    authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalProgramDbs());
     Authenticator.LoginResult result = authInstance.getUserIdentity(null,
         LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
         ACMConfiguration.cannonicalProjectName(params.sharedACM),

@@ -20,7 +20,10 @@ import java.util.stream.Collectors;
  * Program Specification wrapper.
  */
 public class ProgramSpec {
-    public static final String DEPLOYMENT_PROPERTIES_NAME = "deployment.properties";
+    public static final String DEPLOYMENT_INFO_PROPERTIES_NAME = "deployment_info.properties";
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated
+    public static final String DEPLOYMENT_INFO_PROPERTIES_NAME_OLD = "deployment.properties";
 
     private final File programSpecDir;
     private final String resourceDirectory;
@@ -52,21 +55,26 @@ public class ProgramSpec {
 
     /**
      * Opens the named program specification file or resource.
-     * @param filename name of the program specification file, like "content.csv"
-     * @return the file or resource as a stream.
+     * @param filenames one or more name of the program specification file, like "content.csv"
+     * @return the first found file or resource, as a stream.
      */
-    private InputStream getSpecStream(String filename) {
-        if (programSpecDir != null) {
-            File csvFile = new File(programSpecDir, filename);
-            if (csvFile.exists()) {
-                try {
-                    return new FileInputStream(csvFile);
-                } catch (FileNotFoundException e) {
-                    // Ignore
+    private InputStream getSpecStream(String... filenames) {
+        for (String filename : filenames) {
+            if (programSpecDir != null) {
+                File csvFile = new File(programSpecDir, filename);
+                if (csvFile.exists()) {
+                    try {
+                        return new FileInputStream(csvFile);
+                    } catch (FileNotFoundException e) {
+                        // Ignore
+                    }
+                }
+            } else {
+                InputStream is = getClass().getResourceAsStream(resourceDirectory + '/' + filename);
+                if (is != null) {
+                    return is;
                 }
             }
-        } else {
-            return getClass().getResourceAsStream(resourceDirectory + '/' + filename);
         }
         return null;
     }
@@ -288,14 +296,14 @@ public class ProgramSpec {
         if (deploymentProperties == null) {
             deploymentProperties = new Properties();
 
-            try (InputStream fis = getSpecStream(DEPLOYMENT_PROPERTIES_NAME)) {
+            try (InputStream fis = getSpecStream(DEPLOYMENT_INFO_PROPERTIES_NAME, DEPLOYMENT_INFO_PROPERTIES_NAME_OLD)) {
                 if (fis != null) {
                     try (BufferedInputStream bis = new BufferedInputStream(fis)) {
                         deploymentProperties.load(bis);
                     }
                 }
             } catch (IOException e) {
-                // Ignore and continue without empty deployment properties.
+                // Ignore and continue with empty deployment properties.
             }
         }
         return deploymentProperties;

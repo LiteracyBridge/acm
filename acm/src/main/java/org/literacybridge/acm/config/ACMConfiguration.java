@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
@@ -167,15 +168,13 @@ public class ACMConfiguration {
     }
 
     /**
-     * @return a list of the known ACMs (those found on this machine).
+     * @return a map {programid:description} }of the known ACMs (those found on this machine).
      */
-    public List<String> getKnownAcms() {
-        List<String> dbs = allDBs.keySet()
+    public Map<String, String> getLocalProgramDbs() {
+        Map<String, String> programDbs = allDBs.entrySet()
             .stream()
-            .map(ACMConfiguration::cannonicalProjectName)
-            .collect(Collectors.toList());
-        dbs.sort(String::compareToIgnoreCase);
-        return dbs;
+            .collect(Collectors.toMap(e->ACMConfiguration.cannonicalProjectName(e.getKey()), e->e.getValue().getDescription()));
+        return programDbs;
     }
 
     /**
@@ -464,13 +463,13 @@ public class ACMConfiguration {
             if (dirs != null) {
                 for (File d : dirs) {
                     if (d.exists() && d.isDirectory()) {
-                        File accessList = new File(d, Constants.CONFIG_PROPERTIES);
+                        File dbConfigFile = new File(d, Constants.CONFIG_PROPERTIES);
                         File contentDir = new File(d, Constants.RepositoryHomeDir);
                         String[] dbFiles = d.list((dir, name) -> name.matches(dbRegex));
-                        if (accessList.exists() && accessList.isFile() &&
+                        if (dbConfigFile.exists() && dbConfigFile.isFile() &&
                                 contentDir.exists() && contentDir.isDirectory() &&
                                 dbFiles != null && dbFiles.length>0) {
-                            dbs.add(new DBConfiguration(d.getName()));
+                            dbs.add(new DBConfiguration(dbConfigFile, d.getName()));
                         }
                     }
                 }

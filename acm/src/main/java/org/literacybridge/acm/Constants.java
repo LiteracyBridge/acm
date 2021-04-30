@@ -43,6 +43,7 @@ public class Constants {
   public final static String AUDIO_LANGUAGES = "AUDIO_LANGUAGES";
   public final static String PRE_CACHE_WAV = "PRE_CACHE_WAV";
   public final static String CACHE_SIZE_PROP_NAME = "CACHE_SIZE_IN_BYTES";
+  public final static String DESCRIPTION_PROP_NAME = "DESCRIPTION";
   public final static String STRICT_DEPLOYMENT_NAMING = "STRICT_DEPLOYMENT_NAMING";
   public final static String USER_FEEDBACK_HIDDEN = "USER_FEEDBACK_HIDDEN";
   public final static String DE_DUPLICATE_AUDIO = "DE_DUPLICATE_AUDIO";

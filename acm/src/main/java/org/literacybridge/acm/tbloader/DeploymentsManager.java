@@ -1,12 +1,15 @@
 package org.literacybridge.acm.tbloader;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.cloud.ProjectsHelper;
 import org.literacybridge.acm.cloud.ProjectsHelper.DeploymentInfo;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.fs.ZipUnzip;
+import org.literacybridge.core.spec.ProgramSpec;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -24,6 +28,7 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_REVISION_PATTERN;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.PROGRAM_DESCRIPTION_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.UNPUBLISHED_DEPLOYMENT_PATTERN;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.UNPUBLISHED_REV;
 
@@ -89,10 +94,10 @@ class DeploymentsManager {
      * Returns a list of the programs with locally cached deployments.
      * @return the list.
      */
-    public static List<String> getLocalPrograms() {
+    public static Map<String, String> getLocalPrograms() {
         File localProgramsDir = ACMConfiguration.getInstance().getLocalTbLoadersDir();
 
-        List<String> result = new ArrayList<>();
+        Map<String, String> result = new HashMap<>();
         File[] programDirs = localProgramsDir.listFiles(File::isDirectory);
         if (programDirs != null) {
             for (File programDir : programDirs) {
@@ -100,14 +105,51 @@ class DeploymentsManager {
                     .toLowerCase()
                     .endsWith(".rev"));
                 if (revFiles != null && revFiles.length > 0) {
-                    result.add(programDir.getName());
+                    // We've found a local deployment, try to get the program description.
+                    String programid = programDir.getName();
+                    String programDescription = null;
+                    // Look in the deployment_info.properties file, if there is one.
+                    LocalDeployment ld = findLocalDeploymentIn(programDir);
+                    File contentDir = ld.localContent;
+                    File programSpecDir = new File(contentDir, "programspec");
+                    if (programSpecDir.isDirectory()) {
+                        ProgramSpec ps = new ProgramSpec(programSpecDir);
+                        Properties deploymentInfo = ps.getDeploymentProperties();
+                        programDescription = deploymentInfo.getProperty(PROGRAM_DESCRIPTION_PROPERTY);
+                    }
+                    // If no description, look in the ACM database.
+                    if (StringUtils.isBlank(programDescription)) {
+                        DBConfiguration dbConfig = ACMConfiguration.getInstance().getDb(programid);
+                        if (dbConfig != null) {
+                            programDescription = dbConfig.getDescription();
+                        }
+                    }
+                    // If still no description, fall back to the program id.
+                    if (StringUtils.isBlank(programDescription)) {
+                        programDescription = programid;
+                    }
+                    result.put(programid, programDescription);
                 }
             }
         }
         return result;
     }
 
+    /**
+     * Get the LocalDeployment object that describes the current local deployment for the current program.
+     * @return the LocalDeployment object.
+     */
     private LocalDeployment findLocalDeployment() {
+        return findLocalDeploymentIn(localProjectDir);
+    }
+
+    /**
+     * Given a directory with at least one deployment for a program, including a .rev file, get information
+     * about the lcoal deployment.
+     * @param localProjectDir Directory with deployment(s), like ~/LiteracyBridge/TB-Loaders/TEST
+     * @return a LocalDepllyment object describing the deployment.
+     */
+    private static LocalDeployment findLocalDeploymentIn(File localProjectDir) {
         // Get *.rev files. Expect at most one.
         File[] revFiles = localProjectDir.listFiles(f ->
             f.isFile() && f.getName().toLowerCase().endsWith(".rev"));
@@ -147,10 +189,12 @@ class DeploymentsManager {
                     }
                 }
             } else {
+                // There is one deployment; does it match the .rev file?
                 Matcher publishedMatcher = DEPLOYMENT_REVISION_PATTERN.matcher(localRevMarker);
                 if (publishedMatcher.matches()) {
                     String publishedDeployment = publishedMatcher.group(1);
                     if (localFilesMap.containsKey(publishedDeployment)) {
+                        // The deployment matches the marker.
                         return new LocalDeployment(localRev, localFilesMap.get(publishedDeployment));
                     } else {
                         // No local content for the local .rev file.

@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
-@SuppressWarnings("serial")
 public class DBConfiguration { //extends Properties {
   private static final Logger LOG = Logger
       .getLogger(DBConfiguration.class.getName());
@@ -42,9 +41,9 @@ public class DBConfiguration { //extends Properties {
   private File dbDirectory;
   private File tbLoadersDirectory;
   private File sharedACMDirectory;
-  private String acmName = null;
+  private String acmName;
   private List<Locale> audioLanguages = null;
-  private final Map<Locale, String> languageLabels = new HashMap<Locale, String>();
+  private final Map<Locale, String> languageLabels = new HashMap<>();
 
   private AudioItemRepositoryImpl repository;
   private MetadataStore store;
@@ -54,8 +53,38 @@ public class DBConfiguration { //extends Properties {
   private AccessControl accessControl;
 
   DBConfiguration(String acmName) {
-    this.acmName = acmName;
+    this(ACMConfiguration.getInstance().getSharedConfigurationFileFor(acmName), acmName);
   }
+
+    DBConfiguration(File dbConfigFile, String acmName) {
+        this.acmName = acmName;
+
+        // like ~/Dropbox/ACM-UWR/config.properties
+        if (dbConfigFile.exists()) {
+            try (FileInputStream fis = new FileInputStream(dbConfigFile);
+                 BufferedInputStream in = new BufferedInputStream(fis)) {
+                dbProperties = new Properties();
+                dbProperties.load(in);
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to load configuration file: "
+                    + dbConfigFile, e);
+            }
+        }
+    }
+
+    /**
+     *  Gets the name of the ACM directory, like "ACM-DEMO".
+     * @return The name of this content database, including "ACM-".
+     */
+    public String getSharedACMname() {
+        return acmName;
+    }
+    public String getProjectName() {
+        return ACMConfiguration.cannonicalProjectName(acmName);
+    }
+    public String getProgramId() {
+        return ACMConfiguration.cannonicalProjectName(acmName);
+    }
 
   public AudioItemRepository getRepository() {
     return repository;
@@ -72,17 +101,6 @@ public class DBConfiguration { //extends Properties {
     public MetadataStore getMetadataStore() {
         return store;
     }
-
-    /**
-   *  Gets the name of the ACM directory, like "ACM-DEMO".
-   * @return The name of this content database, including "ACM-".
-   */
-  public String getSharedACMname() {
-    return acmName;
-  }
-  public String getProjectName() {
-      return ACMConfiguration.cannonicalProjectName(acmName);
-  }
 
   /**
    * Gets a File representing global (ie, Dropbox) ACM directory.
@@ -325,19 +343,42 @@ public class DBConfiguration { //extends Properties {
     }
 
     public long getCacheSizeInBytes() {
-    long size = Constants.DEFAULT_CACHE_SIZE_IN_BYTES;
-    String value = dbProperties.getProperty(Constants.CACHE_SIZE_PROP_NAME);
-    if (value != null) {
-      try {
-        size = Long.parseLong(value);
-      } catch (NumberFormatException e) {
-        // ignore and use default value
-      }
+        long size = Constants.DEFAULT_CACHE_SIZE_IN_BYTES;
+        String value = dbProperties.getProperty(Constants.CACHE_SIZE_PROP_NAME);
+        if (value != null) {
+            try {
+                size = Long.parseLong(value);
+            } catch (NumberFormatException e) {
+                // ignore and use default value
+            }
+        }
+        return size;
     }
-    return size;
-  }
 
-  public String getLanguageLabel(Locale locale) {
+    public String getDescription() {
+        String description = getProjectName();
+        String value = dbProperties.getProperty(Constants.DESCRIPTION_PROP_NAME);
+        if (StringUtils.isNotBlank(value)) {
+            description = value;
+        }
+        return description;
+    }
+
+    public String getConfigLanguages() {
+        String languages = "en(\"English\")";
+        String value = dbProperties.getProperty(Constants.AUDIO_LANGUAGES);
+        if (StringUtils.isNotBlank(value)) {
+            try {
+                languages = value;
+            } catch (Exception e) {
+                // ignore and use default value
+            }
+        }
+        return languages;
+    }
+
+
+    public String getLanguageLabel(Locale locale) {
     return languageLabels.get(locale);
   }
 
@@ -347,12 +388,16 @@ public class DBConfiguration { //extends Properties {
     }
 
     public boolean isShouldPreCacheWav() {
-    boolean ret = false;
-    String preCache = dbProperties.getProperty(Constants.PRE_CACHE_WAV);
-    if (preCache.equalsIgnoreCase("TRUE")) {
-      ret = true;
-    }
-    return ret;
+        boolean preCacheWav = false;
+        String value = dbProperties.getProperty(Constants.PRE_CACHE_WAV);
+        if (value != null) {
+            try {
+                preCacheWav = Boolean.parseBoolean(value);
+            } catch (Exception e) {
+                // ignore and use default value
+            }
+        }
+        return preCacheWav;
   }
 
    public boolean isStrictDeploymentNaming() {
@@ -441,8 +486,7 @@ public class DBConfiguration { //extends Properties {
         Set<String> result;
         String list = dbProperties.getProperty(Constants.NOTIFY_LIST);
         if (list != null) {
-            result = Arrays.asList(list.split("[, ]+"))
-                .stream()
+            result = Arrays.stream(list.split("[, ]+"))
                 .map(String::trim)
                 .collect(Collectors.toSet());
         } else {
@@ -466,8 +510,8 @@ public class DBConfiguration { //extends Properties {
 
     private void parseLanguageLabels() {
         if (audioLanguages == null) {
-            audioLanguages = new ArrayList<Locale>();
-            String languagesProperty = dbProperties.getProperty(Constants.AUDIO_LANGUAGES);
+            audioLanguages = new ArrayList<>();
+            String languagesProperty = getConfigLanguages();
             if (languagesProperty != null) {
                 String[] languages = languagesProperty.split(",");
                 for (String language : languages) {
@@ -505,7 +549,6 @@ public class DBConfiguration { //extends Properties {
   }
 
   private void InitializeAcmConfiguration() {
-    boolean propsChanged = false;
 
     if (!getSharedACMDirectory().exists()) {
       // TODO: Get all UI out of this configuration object!!
@@ -518,37 +561,6 @@ public class DBConfiguration { //extends Properties {
     // Create the cache directory before it's actually needed, to trigger any security exceptions.
     getLocalCacheDirectory().mkdirs();
 
-    // like ~/Dropbox/ACM-UWR/config.properties
-    if (getConfigurationPropertiesFile().exists()) {
-      try {
-        BufferedInputStream in = new BufferedInputStream(
-            new FileInputStream(getConfigurationPropertiesFile()));
-          dbProperties = new Properties();
-          dbProperties.load(in);
-      } catch (IOException e) {
-        throw new RuntimeException("Unable to load configuration file: "
-            + getConfigurationPropertiesFile(), e);
-      }
-    }
-
-    if (!dbProperties.containsKey(Constants.PRE_CACHE_WAV)) {
-        dbProperties.put(Constants.PRE_CACHE_WAV, "FALSE");
-      propsChanged = true;
-    }
-    if (!dbProperties.containsKey(Constants.AUDIO_LANGUAGES)) {
-        dbProperties.put(Constants.AUDIO_LANGUAGES,
-          "en,dga(\"Dagaare\"),ssl(\"Sisaala\"),tw(\"Twi\"),"); // sfw(\"Sehwi\"),
-      propsChanged = true;
-    }
-    if (!dbProperties.containsKey(Constants.CACHE_SIZE_PROP_NAME)) {
-        dbProperties.put(Constants.CACHE_SIZE_PROP_NAME,
-          Long.toString(Constants.DEFAULT_CACHE_SIZE_IN_BYTES));
-      propsChanged = true;
-    }
-
-    if (propsChanged) {
-      writeProps();
-    }
   }
 
   private void initializeLogger() {
@@ -651,6 +663,7 @@ public class DBConfiguration { //extends Properties {
         String from = "ssl1";
         String to = "sil";
         RFC3066LanguageCode abstractLanguageCode = new RFC3066LanguageCode(to);
+        //noinspection unchecked
         MetadataValue<RFC3066LanguageCode> abstractMetadataLanguageCode = new MetadataValue(
             abstractLanguageCode);
 

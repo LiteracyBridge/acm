@@ -2,10 +2,12 @@ package org.literacybridge.acm.cloud.AuthenticationDialog;
 
 import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.UIConstants;
+import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.utils.SwingUtils;
 
 import javax.swing.*;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Image;
 import java.awt.Insets;
@@ -115,6 +117,13 @@ class CardContent extends JPanel {
     }
     void cancel() {
         welcomeDialog.cancel(this);
+    }
+
+    void resizeForWidth(int widest) {
+        Dimension d = welcomeDialog.getMinimumSize();
+        d.width = Math.max(d.width, widest + 108);
+        welcomeDialog.setMinimumSize(d);
+        UIUtils.centerWindow(welcomeDialog, UIUtils.UiOptions.HORIZONTAL_ONLY);
     }
 
 

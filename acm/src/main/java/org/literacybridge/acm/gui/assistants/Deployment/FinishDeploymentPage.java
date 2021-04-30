@@ -14,7 +14,6 @@ import org.literacybridge.acm.gui.assistants.util.AcmContent.LanguageNode;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.PlaylistNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.EmailHelper.TD;
@@ -209,9 +208,10 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             "If the problem persists, contact Amplio technical support. The button below will send this report to Amplio."+
             "</html>";
         String reportHeading = String.format("Error report from Deployment Assistant%n%n" +
-                "Project %s, User %s (%s), Computer %s%nCreate Deployment at %s%n" +
+                "Project %s (%s), User %s (%s), Computer %s%nCreate Deployment at %s%n" +
                 "Deployment %d%n"+
                 "ACM Version %s, built %s%n",
+            dbConfig.getDescription(),
             dbConfig.getProjectName(),
             ACMConfiguration.getInstance().getUserName(),
             ACMConfiguration.getInstance().getUserContact(),
@@ -288,6 +288,8 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     private void saveDeploymentInfoToProgramSpec(TBBuilder tbb,
         Map<String, Map<String, String>> pkgs) {
         Properties deploymentProperties = new Properties();
+        deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_DESCRIPTION_PROPERTY, dbConfig.getDescription());
+        deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_ID_PROPERTY, dbConfig.getDescription());
         deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_NUMBER, Integer.toString(context.deploymentNo));
         Date now = new Date();
         List<String> acceptableFirmwareVersions = tbb.getAcceptableFirmwareVersions(!context.includeUfCategory);
@@ -308,7 +310,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         }));
 
         File stagedProgramSpecDir = tbb.getStagedProgramspecDir();
-        File propsFile = new File(stagedProgramSpecDir, ProgramSpec.DEPLOYMENT_PROPERTIES_NAME);
+        File propsFile = new File(stagedProgramSpecDir, ProgramSpec.DEPLOYMENT_INFO_PROPERTIES_NAME);
         try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(propsFile))) {
             deploymentProperties.store(out, null);
         } catch (IOException e) {
@@ -521,7 +523,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
      * @param promptIx The index of the playlist in the Deployment. Used to synthesize the
      *                 category name when there isn't one already existing.
      * @param promptsDir The directory to which any content prompts should be extracted.
-     * @param language
+     * @param language The languagecode of the given prompts. Used only to give better error messages.
      * @return the category, as a String.
      * @throws IOException if the audio file can't be written.
      * @throws BaseAudioConverter.ConversionException If the audio file can't be converted

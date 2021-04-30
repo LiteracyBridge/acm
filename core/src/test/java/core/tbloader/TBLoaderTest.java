@@ -103,7 +103,7 @@ public class TBLoaderTest {
         String oldBSerialNo = prefix + "00ff0000";
 
         boolean isGoodSerialNo = TBLoaderUtils.isSerialNumberFormatGood(prefix, oldBSerialNo);
-        assertTrue("Expect b-00010124 is OK in isGoodSerialNo", isGoodSerialNo);
+        assertTrue("Expect "+oldBSerialNo+" is OK in isGoodSerialNo", isGoodSerialNo);
 
         boolean isGood2SerialNo = TBLoaderUtils.isSerialNumberFormatGood2(oldBSerialNo);
         assertTrue("Expect b-00010124 is OK in isGoodSerialNo2", isGood2SerialNo);

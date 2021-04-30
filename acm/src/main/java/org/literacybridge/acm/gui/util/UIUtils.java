@@ -80,15 +80,23 @@ public class UIUtils {
     new Thread(job).start();
   }
 
-  public enum UiOptions { TOP_THIRD, SHIFT_DOWN }
+  public enum UiOptions { TOP_THIRD, SHIFT_DOWN, HORIZONTAL_ONLY }
   public static <T extends Container> T centerWindow(final T window, UiOptions... optionFlags) {
     Set<UiOptions> options = new HashSet<>(Arrays.asList(optionFlags));
-    int yDivisor = options.contains(UiOptions.TOP_THIRD) ? 3 : 2;
     // Center horizontally and in the top half or 2/3 of screen.
     Rectangle deviceBounds = window.getGraphicsConfiguration().getDevice().getDefaultConfiguration().getBounds();
     int x = Math.max(0, (int)(deviceBounds.x + deviceBounds.getWidth()/2 - window.getWidth()/2));
-    int y = Math.max(0, (int)(deviceBounds.y + deviceBounds.getHeight()/yDivisor - window.getHeight()/2));
-    if (options.contains(UiOptions.SHIFT_DOWN)) y += 30;
+    int y;
+    if (options.contains(UiOptions.HORIZONTAL_ONLY)) {
+        y = window.getY();
+    } else {
+        int yDivisor = options.contains(UiOptions.TOP_THIRD) ? 3 : 2;
+        y = Math.max(0, (int)(deviceBounds.y + deviceBounds.getHeight()/yDivisor - window.getHeight()/2));
+        if (options.contains(UiOptions.SHIFT_DOWN)) {
+            y += 30;
+        }
+    }
+
     window.setLocation(x, y);
 
     return window;

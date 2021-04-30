@@ -12,6 +12,7 @@ import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog;
 import org.literacybridge.acm.cloud.cognito.AuthenticationHelper;
 import org.literacybridge.acm.cloud.cognito.CognitoHelper;
@@ -25,18 +26,17 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
@@ -45,6 +45,8 @@ import static java.util.Arrays.stream;
  * Helper class to provide a simpler interface to cognito authentication.
  */
 public class Authenticator {
+    private static final Logger LOG = Logger.getLogger(Authenticator.class.getName());
+
     public static final String SUPER_ADMIN_ROLE_STRING = "*";
     public static final String ADMIN_ROLE_STRING = "AD";
     public static final String PROGRAM_MANAGER_ROLE_STRING = "PM";
@@ -91,8 +93,10 @@ public class Authenticator {
     private Credentials credentials;
 
     private String userEmail;
+    // { program : description }
+    private Map<String, String> programDescriptions;
     // { program : roles-string }
-    private Map<String, String> userPrograms = new HashMap<>();
+    private Map<String, String> userProgramsAndRoles = new HashMap<>();
     private String userProgram;
     private boolean sandboxSelected = false;
 
@@ -101,20 +105,19 @@ public class Authenticator {
     private TbSrnHelper tbSrnHelper = null;
     private ProjectsHelper projectsHelper = null;
 
-    // Programs available in local storage.
-    private List<String> locallyAvailablePrograms = new LinkedList<>();
+    // Programs available in local storage. A Map of {programid: description}
+    private Map<String, String> locallyAvailablePrograms = new HashMap<>();
 
     private Authenticator() {
         this.identityPersistence = new IdentityPersistence();
         cognitoHelper = new CognitoHelper();
     }
 
-    public List<String> getLocallyAvailablePrograms() {
-        return locallyAvailablePrograms;
+    public void setLocallyAvailablePrograms(Map<String, String> locallyAvailablePrograms) {
+        this.locallyAvailablePrograms = locallyAvailablePrograms;
     }
-
-    public void setLocallyAvailablePrograms(Collection<String> locallyAvailablePrograms) {
-        this.locallyAvailablePrograms = new ArrayList<>(locallyAvailablePrograms);
+    public void setLocallyAvailablePrograms(List<String> locallyAvailablePrograms) {
+        this.locallyAvailablePrograms = locallyAvailablePrograms.stream().collect(Collectors.toMap(e->e, e->e));
     }
 
     /**
@@ -168,7 +171,7 @@ public class Authenticator {
      */
     public Set<String> getUserRoles() {
         Set<String> result = new HashSet<>();
-        String roleStr = userPrograms.get(userProgram);
+        String roleStr = userProgramsAndRoles.get(userProgram);
         if (roleStr != null) {
             String[] roles = roleStr.split(",");
             result.addAll(Arrays.asList(roles));
@@ -287,8 +290,10 @@ public class Authenticator {
                     authenticationInfo = identityPersistence.getExtraProperties();
                     loginResult = LoginResult.CACHED_OFFLINE;
                     if (authenticationInfo.containsKey("programs")) {
-                        userPrograms = parseProgramList(authenticationInfo.get("programs"));
+                        userProgramsAndRoles = parseProgramList(authenticationInfo.get("programs"));
                     }
+                    parseDescriptions(authenticationInfo.get("descriptions"));
+
                     userProgram = dialog.getProgram();
                     sandboxSelected = dialog.isSandboxSelected();
                     loginResult = LoginResult.SUCCESS;
@@ -320,8 +325,9 @@ public class Authenticator {
 
         userEmail = authenticationInfo.get("email");
         if (authenticationInfo.containsKey("programs")) {
-            userPrograms = parseProgramList(authenticationInfo.get("programs"));
+            userProgramsAndRoles = parseProgramList(authenticationInfo.get("programs"));
         }
+        parseDescriptions(authenticationInfo.get("descriptions"));
     }
 
     private Map<String, String> parseProgramList(String list) {
@@ -330,6 +336,45 @@ public class Authenticator {
         result = stream(programs).map(s -> s.split(":"))
             .collect(Collectors.toMap(e -> e[0], e -> e[1]));
         return result;
+    }
+
+    private void parseDescriptions(String json) {
+        this.programDescriptions = null;
+        try {
+            if (StringUtils.isNotEmpty(json)) {
+                // Get the map of programid to friendly name.
+                JSONObject descriptionsObject = (JSONObject) JSONValue.parse(json);
+                Map<String, String> descriptions = new HashMap<>();
+                for (Object k : descriptionsObject.keySet()) {
+                    descriptions.put(k.toString(), descriptionsObject.get(k).toString());
+                }
+                // See if the same description is used for multiple programs...
+                Map<String, String> reverseMap = new HashMap<>();
+                Set<String> needsQualification = new HashSet<>();
+                for (Map.Entry<String, String> item : descriptions.entrySet()) {
+                    if (reverseMap.containsKey(item.getValue())) {
+                        needsQualification.add(item.getKey());
+                        needsQualification.add(reverseMap.get(item.getValue()));
+                    } else {
+                        reverseMap.put(item.getValue(), item.getKey());
+                    }
+                }
+                // If so, decorate with the program id.
+                for (String programid : needsQualification) {
+                    // Decorate description with "... (programid)"
+                    String newDescription = String.format("%s (%s)", descriptions.get(programid), programid);
+                    descriptions.put(programid, newDescription);
+                }
+                this.programDescriptions = descriptions;
+            }
+        } catch (Exception ex) {
+            LOG.log(Level.WARNING, "Exception parsing descriptions JSON string.", ex);
+        }
+        if (this.programDescriptions == null) {
+            // Make a pseudo descriptions out of the program ids.
+            this.programDescriptions = this.userProgramsAndRoles.keySet().stream()
+                .collect(Collectors.toMap(e -> e, e -> e));
+        }
     }
 
     /**
@@ -643,8 +688,16 @@ public class Authenticator {
         }
 
 
-        public Map<String, String> getPrograms() {
-            return userPrograms;
+        public Map<String, String> getProgramRoles() {
+            return userProgramsAndRoles;
+        }
+
+        public Map<String, String> getProgramDescriptions() {
+            return programDescriptions;
+        }
+
+        public Map<String, String> getLocallyAvailablePrograms() {
+            return locallyAvailablePrograms;
         }
 
         /**

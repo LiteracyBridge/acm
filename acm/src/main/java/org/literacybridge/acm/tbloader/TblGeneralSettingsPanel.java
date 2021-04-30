@@ -2,6 +2,7 @@ package org.literacybridge.acm.tbloader;
 
 import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.settings.AbstractSettingsBase;
 import org.literacybridge.acm.gui.settings.AbstractSettingsDialog;
 import org.literacybridge.core.OSChecker;
@@ -12,6 +13,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.Arrays;
 
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.LINE_START;
@@ -23,6 +25,9 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
     private JCheckBox min2GB;
     private JCheckBox max16GiB;
     private JCheckBox asUsbDrive;
+    private JCheckBox allowPackageChoice;
+    private JComboBox<String> srnStrategyCombo;
+    private JComboBox<String> testStrategyCombo;
 
     @Override
     public String getTitle() {
@@ -51,9 +56,12 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
                             .setFill(HORIZONTAL);
         int y = 0;
 
-        layoutMinimumSize(y++);
-        layoutMaximumSize(y++);
-        layoutRequiredLabel(y++);
+        addMinimumUsbCapacitySetting(y++);
+        addMaximumUsbCapacitySetting(y++);
+        addRequiredLabelSetting(y++);
+        addSrnStrategy(y++);
+        addAllowPackageChoiceSetting(y++);
+        addTestStrategy(y++);
 
         // Consume any blank space.
         settingsPanel.add(new JLabel(), protoGbc.withGridy(y).setWeighty(1));
@@ -68,25 +76,56 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         helper.setValid(true);
     }
 
-    private void layoutMinimumSize(int y) {
-        GBC gbc = new GBC(protoGbc).setGridy(y);
+    private void addMinimumUsbCapacitySetting(int y) {
+        GBC gbc = protoGbc.withGridy(y);
         settingsPanel.add(new JLabel("TBs are not smaller than"), gbc.withGridx(0));
         min2GB = new JCheckBox("2 GB", true);
         settingsPanel.add(min2GB, gbc.withWeightx(1));
     }
 
-    private void layoutMaximumSize(int y) {
-        GBC gbc = new GBC(protoGbc).setGridy(y);
+    private void addMaximumUsbCapacitySetting(int y) {
+        GBC gbc = protoGbc.withGridy(y);
         settingsPanel.add(new JLabel("TBs are not larger than"), gbc.withGridx(0));
         max16GiB = new JCheckBox("16 GB", true);
         settingsPanel.add(max16GiB, gbc);
     }
 
-    private void layoutRequiredLabel(int y) {
-        GBC gbc = new GBC(protoGbc).setGridy(y);
+    private void addRequiredLabelSetting(int y) {
+        GBC gbc = protoGbc.withGridy(y);
         settingsPanel.add(new JLabel("TBs are labelled as"), gbc.withGridx(0));
         asUsbDrive = new JCheckBox("USB Drive", OSChecker.WINDOWS);
         settingsPanel.add(asUsbDrive, gbc);
+    }
+
+    private void addAllowPackageChoiceSetting(int y) {
+        GBC gbc = protoGbc.withGridy(y);
+        settingsPanel.add(new JLabel("Allow package override"), gbc.withGridx(0));
+        allowPackageChoice = new JCheckBox("Choose alternative package for recipients.");
+        settingsPanel.add(allowPackageChoice, gbc);
+    }
+
+    private void addSrnStrategy(int y) {
+        GBC gbc = protoGbc.withGridy(y);
+        settingsPanel.add(new JLabel("Talking Book IDs"), gbc.withGridx(0));
+        String[] srnStrategies = Arrays.stream(TBLoader.TB_ID_STRATEGY.values())
+                .map(v->v.description)
+                .map(LabelProvider::getLabel)
+                .toArray(String[]::new);
+        srnStrategyCombo = new JComboBox<>(srnStrategies);
+        srnStrategyCombo.setSelectedIndex(TBLoader.getApplication().getTbIdStrategy().ordinal());
+        settingsPanel.add(srnStrategyCombo, gbc);
+    }
+
+    private void addTestStrategy(int y) {
+        GBC gbc = protoGbc.withGridy(y);
+        settingsPanel.add(new JLabel("'Test deployment' strategy"), gbc.withGridx(0));
+        String[] srnStrategies = Arrays.stream(TBLoader.TEST_DEPLOYMENT_STRATEGY.values())
+                .map(v->v.description)
+                .map(LabelProvider::getLabel)
+                .toArray(String[]::new);
+        testStrategyCombo = new JComboBox<>(srnStrategies);
+        testStrategyCombo.setSelectedIndex(TBLoader.getApplication().getTestStrategy().ordinal());
+        settingsPanel.add(testStrategyCombo, gbc);
     }
 
     @Override
@@ -99,13 +138,17 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
      */
     @Override
     public void onOk() {
+        TBLoader tbLoaderApp = TBLoader.getApplication();
         FsRootMonitor.FilterParams filterParams = new FsRootMonitor.FilterParams();
 
         if (min2GB.isSelected()) filterParams.minimum(2);
         if (max16GiB.isSelected()) filterParams.maximum(16);
         if (asUsbDrive.isSelected()) filterParams.allowing("USB Drive");
 
-        TBLoader.getApplication().getFsRootMonitor().setFilterParams(filterParams);
+        tbLoaderApp.getFsRootMonitor().setFilterParams(filterParams);
+        tbLoaderApp.setTbIdStrategy(srnStrategyCombo.getSelectedIndex());
+        tbLoaderApp.setAllowPackageChoice(allowPackageChoice.isSelected());
+        tbLoaderApp.setTestStrategy(testStrategyCombo.getSelectedIndex());
     }
 
     /**

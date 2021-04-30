@@ -4,6 +4,7 @@ import org.jdesktop.swingx.JXDatePicker;
 import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.LabelButton;
+import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.spec.ProgramSpec;
@@ -13,9 +14,11 @@ import org.literacybridge.core.tbloader.TBDeviceInfo;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -37,7 +40,40 @@ import static java.lang.Math.max;
 
 @SuppressWarnings("unused")
 public class TbLoaderPanel extends JPanel {
+
+    private JPanel contentPanel;
+
+    public static class Builder {
+        private ProgramSpec programSpec;
+        private String[] packagesInDeployment;
+        private Consumer<ActionEvent> settingsIconClickedListener;
+        private Consumer<TBLoader.Operation> goListener;
+        private Consumer<Recipient> recipientListener;
+        private Consumer<TBDeviceInfo> deviceListener;
+        private Consumer<Boolean> forceFirmwareListener;
+        private Consumer<Boolean> forceSrnListener;
+        private TBLoader.TB_ID_STRATEGY tbIdStrategy;
+        private boolean allowPackageChoice;
+
+        public Builder withProgramSpec(ProgramSpec programSpec) {this.programSpec = programSpec; return this;}
+        public Builder withPackagesInDeployment(String[] packagesInDeployment) {this.packagesInDeployment = packagesInDeployment; return this;}
+        public Builder withSettingsClickedListener(Consumer<ActionEvent> settingsIconClickedListener) {this.settingsIconClickedListener = settingsIconClickedListener; return this;}
+        public Builder withGoListener(Consumer<TBLoader.Operation> goListener) {this.goListener = goListener; return this;}
+        public Builder withRecipientListener(Consumer<Recipient> recipientListener) {this.recipientListener = recipientListener; return this;}
+        public Builder withDeviceListener(Consumer<TBDeviceInfo> deviceListener) {this.deviceListener = deviceListener; return this;}
+        public Builder withForceFirmwareListener(Consumer<Boolean> forceFirmwareListener) {this.forceFirmwareListener = forceFirmwareListener; return this;}
+        public Builder withForceSrnListener(Consumer<Boolean> forceSrnListener) {this.forceSrnListener = forceSrnListener; return this;}
+
+        public Builder withTbIdStrategy(TBLoader.TB_ID_STRATEGY tbIdStrategy) {this.tbIdStrategy = tbIdStrategy; return this;}
+        public Builder withAllowPackageChoice(boolean allowPackageChoice) {this.allowPackageChoice = allowPackageChoice; return this;}
+        
+        public TbLoaderPanel build() {
+            return new TbLoaderPanel(this);
+        }
+    }
+
     private final ProgramSpec programSpec;
+    private final String[] packagesInDeployment;
 
     private JComboBox<String> currentLocationChooser;
     private final String[] currentLocationList = new String[] { "Select location...", "Community",
@@ -49,8 +85,6 @@ public class TbLoaderPanel extends JPanel {
     private JCheckBox forceFirmware;
     private String dateRotation;
 
-    private boolean allowForceSrn = false;
-    private JComponent newPackageComponent;
     private JButton goButton;
     private JLabel firmwareVersionLabel;
     private JTextField oldFirmwareVersionText;
@@ -67,25 +101,24 @@ public class TbLoaderPanel extends JPanel {
     private Box newFirmwareBox;
     private JLabel nextLabel;
     private JLabel prevLabel;
-    private JCheckBox forceSrn;
-    private JTextField newSrnText;
-    private JComboBox<String> newPackageChooser;
-    private JTextField newPackageText;
+    
+    private JCheckBox forceTbId;
+    private JTextField newTbIdText;
+
+    // New package display and/or choice (depending on "allowPackageChoice" setting)
+    private CardLayout newPackageLayout;            // To switch between the two different new package components.
+    private JPanel newPackageContainer;             // Container for the "newPackage" component. One at a time is "active".
+    private JComboBox<String> newPackageChooser;    // A combo box to choose the package.
+    private JTextField newPackageText;              // A text field that displays the package.
+
     JTextArea statusCurrent;
     JTextArea statusFilename;
     JTextArea statusLog;
     private JCheckBox testDeployment;
     private JComboBox<String> actionChooser;
 
+    private TBLoader.TB_ID_STRATEGY tbIdStrategy;
     private boolean allowPackageChoice;
-    private boolean usePackageChooser() {
-        return allowPackageChoice;
-    }
-
-    private String[] packagesInDeployment;
-    void setPackagesInDeployment(String[] packagesInDeployment) {
-        this.packagesInDeployment = packagesInDeployment;
-    }
 
     private static final String UPDATE_TB = "Update TB";
     private final String[] actionList = new String[] { UPDATE_TB, "Collect Stats" };
@@ -94,11 +127,18 @@ public class TbLoaderPanel extends JPanel {
 
     private final ProgressDisplayManager progressDisplayManager = new ProgressDisplayManager(this);
 
+    public TbLoaderPanel(Builder builder) {
+        this.programSpec = builder.programSpec;
+        this.packagesInDeployment = builder.packagesInDeployment;
+        this.settingsIconClickedListener = builder.settingsIconClickedListener;
+        this.goListener = builder.goListener;
+        this.recipientListener = builder.recipientListener;
+        this.deviceListener = builder.deviceListener;
+        this.forceFirmwareListener = builder.forceFirmwareListener;
+        this.forceSrnListener = builder.forceSrnListener;
+        this.tbIdStrategy = builder.tbIdStrategy;
+        this.allowPackageChoice = builder.allowPackageChoice;
 
-    public TbLoaderPanel(ProgramSpec programSpec, String[] packagesInDeployment) {
-        this.packagesInDeployment = packagesInDeployment;
-        this.allowPackageChoice = packagesInDeployment != null;
-        this.programSpec = programSpec;
         layoutComponents();
     }
 
@@ -126,25 +166,42 @@ public class TbLoaderPanel extends JPanel {
         return forceFirmware.isSelected();
     }
 
+    void enablePackageChoice(boolean allowPackageChoice) {
+        if (allowPackageChoice != this.allowPackageChoice) {
+            String newPackageSelected = getNewPackage();
+            this.allowPackageChoice = allowPackageChoice;
+            setNewPackage(newPackageSelected);
+            showNewPackage();
+        }
+    }
+    private void showNewPackage() {
+        newPackageLayout.show(newPackageContainer, allowPackageChoice ? "CHOICE" : "NOCHOICE");
+    }
+
+
+    // Talking Book ID
     public String getNewSrn() {
-        return newSrnText.getText();
+        return newTbIdText.getText();
     }
     public void setNewSrn(String newSrn) {
-        newSrnText.setText(newSrn);
+        newTbIdText.setText(newSrn);
     }
-    public boolean isForceSrn() {
-        return forceSrn.isSelected();
+    public boolean getForceTbId() {
+        return forceTbId.isSelected();
     }
-    public void setForceSrn(boolean force) {
-        forceSrn.setSelected(force);
+    public void setForceTbId(boolean force) {
+        forceTbId.setSelected(force);
     }
-    public void enableForceSrn(boolean enable) {
-        forceSrn.setVisible(enable);
-        allowForceSrn = enable;
+    void setTbIdStrategy(TBLoader.TB_ID_STRATEGY tbIdStrategy) {
+        this.tbIdStrategy = tbIdStrategy;
+        forceTbId.setVisible(tbIdStrategy.allowsManual());
     }
 
     public boolean isTestDeployment() {
         return testDeployment.isSelected();
+    }
+    public void setTestDeployment(boolean isTestDeployment) {
+        testDeployment.setSelected(isTestDeployment);
     }
 
     public void setNewDeployment(String description) {
@@ -163,14 +220,12 @@ public class TbLoaderPanel extends JPanel {
     }
 
     public void setNewPackage(String newPackage) {
-        if (usePackageChooser()) {
-            newPackageChooser.setSelectedItem(newPackage);
-        } else {
-            newPackageText.setText(newPackage);
-        }
+        // Set both; user may switch between views.
+        newPackageChooser.setSelectedItem(newPackage);
+        newPackageText.setText(newPackage);
     }
     public String getNewPackage() {
-        if (usePackageChooser()) {
+        if (allowPackageChoice) {
             return newPackageChooser.getSelectedItem().toString();
         } else {
             return newPackageText.getText();
@@ -200,15 +255,15 @@ public class TbLoaderPanel extends JPanel {
             oldDeploymentText.setText(oldDeploymentInfo.getDeploymentName());
             lastUpdatedText.setText(oldDeploymentInfo.getUpdateTimestamp());
 
-            forceSrn.setVisible(allowForceSrn);
-            forceSrn.setSelected(false);
+            forceTbId.setVisible(tbIdStrategy.allowsManual());
+            forceTbId.setSelected(false);
 
             oldCommunityText.setText(oldDeploymentInfo.getCommunity());
             testDeployment.setSelected(false);
 
         } else {
-            forceSrn.setVisible(false);
-            forceSrn.setSelected(false);
+            forceTbId.setVisible(false);
+            forceTbId.setSelected(false);
 
             oldSrnText.setText("");
             oldPackageText.setText("");
@@ -221,9 +276,9 @@ public class TbLoaderPanel extends JPanel {
 
     public void resetUi() {
         oldSrnText.setText("");
-        newSrnText.setText("");
-        forceSrn.setVisible(false);
-        forceSrn.setSelected(false);
+        newTbIdText.setText("");
+        forceTbId.setVisible(false);
+        forceTbId.setSelected(false);
     }
 
     private Consumer<TBLoader.Operation> goListener;
@@ -251,20 +306,33 @@ public class TbLoaderPanel extends JPanel {
         this.forceSrnListener = forceSrnListener;
     }
 
-    private Consumer<ActionEvent> settingsListener;
-    public void setSettingsListener(Consumer<ActionEvent> settingsListener) {
-        this.settingsListener = settingsListener;
+    // A listener for clicks on the settings icon.
+    private Consumer<ActionEvent> settingsIconClickedListener;
+
+    /**
+     * Allows our caller to receive notifications that the settings icon was clicked.
+     * @param settingsIconClickedListener A consumer to be called when the settings icon is clicked.
+     */
+    public void setSettingsIconClickedListener(Consumer<ActionEvent> settingsIconClickedListener) {
+        this.settingsIconClickedListener = settingsIconClickedListener;
     }
     /**
      * Our preferred default GridBagConstraint.
      */
     GBC protoGbc;
     private void layoutComponents() {
-        setBorder(new EmptyBorder(0, 10, 9, 9));
-        GridBagLayout layout = new GridBagLayout();
-        setLayout(layout);
+        // Set an empty border on the panel, to give some blank space around the content.
+        setLayout(new BorderLayout());
+        contentPanel = new JPanel();
+        Border outerBorder = new EmptyBorder(12, 12, 12, 12);
+        Border innerBorder = new RoundedLineBorder(Color.GRAY, 1, 6, 2);
+        contentPanel.setBorder(new CompoundBorder(outerBorder, innerBorder));
+        add(contentPanel, BorderLayout.CENTER);
 
-        protoGbc = new GBC().setInsets(new Insets(0,3,0,2)).setAnchor(LINE_START).setFill(HORIZONTAL);
+        GridBagLayout layout = new GridBagLayout();
+        contentPanel.setLayout(layout);
+
+        protoGbc = new GBC().setInsets(new Insets(0,3,1,2)).setAnchor(LINE_START).setFill(HORIZONTAL);
 
         int y = 0;
         layoutGreeting(y++);
@@ -300,7 +368,7 @@ public class TbLoaderPanel extends JPanel {
                 // This list need not contain prevLabel or nextLabel; we assume that those two
                 // are "small-ish", and won't actually provide the maximimum minimum width.
                 driveList, currentLocationChooser, newDeploymentText, oldDeploymentText,
-                recipientChooser, oldCommunityText, newPackageComponent, oldPackageText, datePicker,
+                recipientChooser, oldCommunityText, newPackageContainer, oldPackageText, datePicker,
                 lastUpdatedText, newFirmwareVersionText, oldFirmwareVersionText, newSrnBox,
                 oldSrnText, newFirmwareBox};
         }
@@ -367,10 +435,10 @@ public class TbLoaderPanel extends JPanel {
         configureButton.setIcon(gearImageIcon);
         configureButton.setToolTipText("Settings");
         configureButton.setMaximumSize(new Dimension(20,16));
-        configureButton.addActionListener(e->{if (settingsListener!=null) settingsListener.accept(e);});
+        configureButton.addActionListener(e->{if (settingsIconClickedListener !=null) settingsIconClickedListener.accept(e);});
         outerGreetingBox.add(configureButton, BorderLayout.EAST);
-        
-        add(outerGreetingBox, gbc);
+
+        contentPanel.add(outerGreetingBox, gbc);
     }
 
     private void layoutUploadStatus(int y) {
@@ -383,7 +451,7 @@ public class TbLoaderPanel extends JPanel {
         uploadStatus = new JLabel();
         uploadStatus.setVisible(false);
 
-        add(uploadStatus, gbc);
+        contentPanel.add(uploadStatus, gbc);
     }
 
     private void layoutDeviceStatus(int y) {
@@ -415,7 +483,7 @@ public class TbLoaderPanel extends JPanel {
 
         deviceBox.add(Box.createHorizontalGlue());
 
-        add(deviceBox, gbc);
+        contentPanel.add(deviceBox, gbc);
 
     }
 
@@ -428,8 +496,8 @@ public class TbLoaderPanel extends JPanel {
         nextLabel = new JLabel("Next");
         prevLabel = new JLabel("Previous");
 
-        add(nextLabel, gbc.withGridx(1));
-        add(prevLabel, gbc);
+        contentPanel.add(nextLabel, gbc.withGridx(1));
+        contentPanel.add(prevLabel, gbc);
     }
 
     private void layoutRecipient(int y) {
@@ -445,9 +513,9 @@ public class TbLoaderPanel extends JPanel {
         oldCommunityText.setEditable(false);
 
         // Recipient Chooser.
-        add(communityLabel, gbc.withGridx(0));
-        add(recipientChooser, gbc);
-        add(oldCommunityText, gbc);
+        contentPanel.add(communityLabel, gbc.withGridx(0));
+        contentPanel.add(recipientChooser, gbc);
+        contentPanel.add(oldCommunityText, gbc);
     }
 
     private void layoutDeployment(int y) {
@@ -466,9 +534,9 @@ public class TbLoaderPanel extends JPanel {
         newDeploymentText.setBackground(oldDeploymentText.getBackground());
         newDeploymentText.setBorder(oldDeploymentText.getBorder());
 
-        add(deploymentLabel, gbc.withGridx(0));
-        add(newDeploymentText, gbc);
-        add(oldDeploymentText, gbc);
+        contentPanel.add(deploymentLabel, gbc.withGridx(0));
+        contentPanel.add(newDeploymentText, gbc);
+        contentPanel.add(oldDeploymentText, gbc);
     }
 
     private void layoutPackage(int y) {
@@ -477,20 +545,24 @@ public class TbLoaderPanel extends JPanel {
 
         // Package (aka 'Content', aka 'image')
         JLabel contentPackageLabel = new JLabel("Content Package:");
-        if (usePackageChooser()) {
-            newPackageChooser = new JComboBox<>(packagesInDeployment);
-            newPackageComponent = newPackageChooser;
-        } else {
-            newPackageText = new JTextField();
-            newPackageText.setEditable(false);
-            newPackageComponent = newPackageText;
-        }
+        // For when 'allowPackageChoice' is true
+        newPackageChooser = new JComboBox<>(packagesInDeployment);
+        // For when it is false
+        newPackageText = new JTextField();
+        newPackageText.setEditable(false);
+
+        newPackageLayout = new CardLayout();
+        newPackageContainer = new JPanel(newPackageLayout);
+        newPackageContainer.add(newPackageChooser, "CHOICE");
+        newPackageContainer.add(newPackageText, "NOCHOICE");
+        showNewPackage();
+
         oldPackageText = new JTextField();
         oldPackageText.setEditable(false);
 
-        add(contentPackageLabel, gbc.withGridx(0));
-        add(newPackageComponent, gbc);
-        add(oldPackageText, gbc);
+        contentPanel.add(contentPackageLabel, gbc.withGridx(0));
+        contentPanel.add(newPackageContainer, gbc);
+        contentPanel.add(oldPackageText, gbc);
     }
 
     private void layoutDate(int y) {
@@ -508,9 +580,9 @@ public class TbLoaderPanel extends JPanel {
         lastUpdatedText = new JTextField();
         lastUpdatedText.setEditable(false);
 
-        add(dateLabel, gbc.withGridx(0));
-        add(datePicker, gbc);
-        add(lastUpdatedText, gbc);
+        contentPanel.add(dateLabel, gbc.withGridx(0));
+        contentPanel.add(datePicker, gbc);
+        contentPanel.add(lastUpdatedText, gbc);
 
     }
 
@@ -543,39 +615,39 @@ public class TbLoaderPanel extends JPanel {
         oldFirmwareVersionText = new JTextField();
         oldFirmwareVersionText.setEditable(false);
 
-        add(firmwareVersionLabel, gbc.withGridx(0));
-        add(newFirmwareBox, gbc);
-        add(oldFirmwareVersionText, gbc);
+        contentPanel.add(firmwareVersionLabel, gbc.withGridx(0));
+        contentPanel.add(newFirmwareBox, gbc);
+        contentPanel.add(oldFirmwareVersionText, gbc);
     }
 
     private void layoutSerialNumber(int y) {
         GBC gbc = new GBC(protoGbc)
             .setGridy(y);
 
-        forceSrn = new JCheckBox();
-        forceSrn.setText("Replace");
-        forceSrn.setSelected(false);
-        forceSrn.setToolTipText("Check to force a new Serial Number. DO NOT USE THIS unless "
-            + "you have a good reason to believe that this SRN has been "
+        forceTbId = new JCheckBox();
+        forceTbId.setText("Replace");
+        forceTbId.setSelected(false);
+        forceTbId.setToolTipText("Check to force a new Talking Book ID. DO NOT USE THIS unless "
+            + "you have a good reason to believe that this ID has been "
             + "duplicated to multiple Talking Books. This should be exceedingly rare.");
-        forceSrn.addActionListener(this::forceSrnListener);
-        forceSrn.setVisible(allowForceSrn);
+        forceTbId.addActionListener(this::forceSrnListener);
+        forceTbId.setVisible(tbIdStrategy.allowsManual());
 
         // Show serial number.
         JLabel srnLabel = new JLabel("Serial number:");
-        newSrnText = new JTextField();
-        newSrnText.setEditable(false);
+        newTbIdText = new JTextField();
+        newTbIdText.setEditable(false);
         newSrnBox = Box.createHorizontalBox();
-        newSrnBox.add(newSrnText);
+        newSrnBox.add(newTbIdText);
         newSrnBox.add(Box.createHorizontalStrut(10));
-        newSrnBox.add(forceSrn);
+        newSrnBox.add(forceTbId);
 
         oldSrnText = new JTextField();
         oldSrnText.setEditable(false);
 
-        add(srnLabel, gbc.withGridx(0));
-        add(newSrnBox, gbc);
-        add(oldSrnText, gbc);
+        contentPanel.add(srnLabel, gbc.withGridx(0));
+        contentPanel.add(newSrnBox, gbc);
+        contentPanel.add(oldSrnText, gbc);
     }
 
     private void layoutGoButton(int y) {
@@ -598,7 +670,7 @@ public class TbLoaderPanel extends JPanel {
         actionBox.add(goButton);
         actionBox.add(Box.createHorizontalGlue());
 
-        add(actionBox, gbc);
+        contentPanel.add(actionBox, gbc);
     }
 
     private void layoutStatus(int y) {
@@ -627,9 +699,9 @@ public class TbLoaderPanel extends JPanel {
         statusScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
         // Status display
-        add(statusCurrent, gbc.withGridy(y));
-        add(statusFilename, gbc);
-        add(statusScroller, gbc.withWeighty(1).setFill(BOTH));
+        contentPanel.add(statusCurrent, gbc.withGridy(y));
+        contentPanel.add(statusFilename, gbc);
+        contentPanel.add(statusScroller, gbc.withWeighty(1).setFill(BOTH));
     }
 
     private void onTbDeviceSelected(ItemEvent e) {
@@ -657,7 +729,7 @@ public class TbLoaderPanel extends JPanel {
      */
     private void forceSrnListener(ActionEvent actionEvent) {
         if (forceSrnListener != null) {
-            forceSrnListener.accept(forceSrn.isSelected());
+            forceSrnListener.accept(forceTbId.isSelected());
         }
     }
 
