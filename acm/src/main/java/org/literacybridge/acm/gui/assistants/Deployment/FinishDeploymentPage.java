@@ -522,7 +522,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
      * @param prompts The prompts that were found earlier, if any.
      * @param promptIx The index of the playlist in the Deployment. Used to synthesize the
      *                 category name when there isn't one already existing.
-     * @param promptsDir The directory to which any content prompts should be extracted.
+     * @param promptsDir The language-specific directory to which any content prompts should be extracted.
      * @param language The languagecode of the given prompts. Used only to give better error messages.
      * @return the category, as a String.
      * @throws IOException if the audio file can't be written.
@@ -542,7 +542,8 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         if (prompts.getShortItem() != null) {
             promptCat = prompts.getShortItem().getId();
         } else {
-            // We need a category ID to be able to proceed.
+            // If not using a prompt from the ACM, we need to have found a prompt in the languages/.../cat directory.
+            // If wd did not find such file(s), categoryId will still be null.
             if (prompts.categoryId == null) {
                 throw new IllegalStateException(String.format("Missing prompt id for category '%s' in language '%s'.", prompts.getTitle(), language));
             }
@@ -550,8 +551,8 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         }
 
         AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
-        // If there is not a pre-defined set of prompt files, we'll need to extract the
-        // content audio to the promptsDir.
+        // If there is not a pre-defined set of prompt files, we'll need to extract the content audio to the
+        // promptsDir. In that case record the extracted filenames in ${category}.ids properties file.
         Properties idProperties = null;
         if (/*prompts.shortPromptFile == null &&*/ prompts.shortPromptItem != null) {
             if (!promptsDir.exists()) {

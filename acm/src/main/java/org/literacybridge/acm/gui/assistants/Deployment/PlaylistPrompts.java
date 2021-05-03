@@ -51,9 +51,10 @@ public class PlaylistPrompts {
         .getMetadataStore();
     String categoryId;
 
-
+    // Files like "2-0.a18" and "i2-0.a18"
     private File shortPromptFile;
     private File longPromptFile;
+    // Audio items with titles like "Health" and "Health - invitation"
     AudioItem shortPromptItem;
     AudioItem longPromptItem;
 
@@ -112,10 +113,16 @@ public class PlaylistPrompts {
     }
 
     /**
-     * Look for prompts named like "2-0.a18" and "i2-0.a18" in the TB_Options/languages/{lang}/cat
+     * Look up the prompt in the taxonomy to find any matching category(ies) -- there may be two.
+     *
+     * Then look for files named like "2-0.a18" and "i2-0.a18" in the TB_Options/languages/{lang}/cat
      * directory.
+     *
+     * Sets the instance variable "categoryId" to the found category id, if matching file(s) found.
      */
     private void findPromptsInLanguageFiles() {
+        // Look in the taxonomy for categories that match the playlist name. Playlist "Health" will match both
+        // "2: Health" and "2-0: General Health" (ie "General" is more or less ignored).
         List<String> categoryIds = getCategoryIds(); // zero, one, or two items.
         // If we know the category...
         if (categoryIds.size() == 1 && categoryIds.get(0).equals(Constants.CATEGORY_INTRO_MESSAGE)) {
@@ -129,7 +136,8 @@ public class PlaylistPrompts {
             String languagesPath =
                 "TB_Options" + File.separator + "languages" + File.separator + languagecode + File.separator + "cat";
             File categoriesDir = new File(tbLoadersDir, languagesPath);
-
+            // Look for "${categoryId}.a18" and "i${categoryId}.a18", for all (1 or 2) found category ids. If
+            // both were found, the last one wins, which will be the most-nested one.
             boolean foundShort = false, foundLong = false, foundBoth = false;
             for (String categoryId : categoryIds) {
                 // Look for short and long files.
@@ -157,7 +165,7 @@ public class PlaylistPrompts {
             }
 
             if (foundShort && foundLong && !foundBoth) {
-                // Found both recordings, but for different category ids, and never together.
+                // Found both recordings, but for different category ids (like "2.a18" and "i2-0.a18"), and never together.
                 this.longPromptFile = null;
                 this.shortPromptFile = null;
                 this.categoryId = null;
