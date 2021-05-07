@@ -5,7 +5,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -48,7 +50,8 @@ public class LabelProvider {
   public static final String AUDIO_ITEM_TABLE_COLUMN_SOURCE = "AUDIO_ITEM_TABLE_COLUMN_SOURCE";
   public static final String AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED = "AUDIO_ITEM_TABLE_COLUMN_DATE_FILE_MODIFIED";
   public static final String AUDIO_ITEM_TABLE_COLUMN_SDG_GOALS = "AUDIO_ITEM_TABLE_COLUMN_SDG_GOALS";
-  public static final String AUDIO_ITEM_TABLE_COLUMN_SDG_TARGETS = "AUDIO_ITEM_TABLE_COLUMN_SDG_TARGETS";
+    public static final String AUDIO_ITEM_TABLE_COLUMN_SDG_TARGETS = "AUDIO_ITEM_TABLE_COLUMN_SDG_TARGETS";
+    public static final String AUDIO_ITEM_TABLE_COLUMN_CONTENTID = "Content ID";
 
   public static final class KeyValuePair<K, V> {
     private final K key;
@@ -71,9 +74,9 @@ public class LabelProvider {
   private static final String BUNDLE_NAME = "labels";
   private static final String METAFIELD_PROPERTY_PREFIX = "METAFIELD_";
 
-  private final static Map<Locale, ResourceBundle> bundles = new HashMap<Locale, ResourceBundle>();
+  private final static Map<Locale, ResourceBundle> bundles = new HashMap<>();
 
-  private static final ResourceBundle getResourceBundle(Locale locale) {
+  private static ResourceBundle getResourceBundle(Locale locale) {
     ResourceBundle bundle = bundles.get(locale);
     if (bundle == null) {
       bundle = loadUTF8Bundle(BUNDLE_NAME, locale);
@@ -99,6 +102,7 @@ public class LabelProvider {
     return getMetaFieldLabelsIterator(LanguageUtil.getUILanguage());
   }
 
+  @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated // Use the overload without locale
   public static Iterator<KeyValuePair<MetadataField<?>, String>> getMetaFieldLabelsIterator(
       final Locale locale) {
@@ -115,7 +119,7 @@ public class LabelProvider {
       public KeyValuePair<MetadataField<?>, String> next() {
         MetadataField<?> field = fieldIterator.next();
         String value = getLabel(field, locale);
-        return new KeyValuePair<MetadataField<?>, String>(field, value);
+        return new KeyValuePair<>(field, value);
       }
 
     };
@@ -123,8 +127,8 @@ public class LabelProvider {
 
   /**
    * Helper because we always pass LanguageUtil.getUILanguage() anyway...
-   * @param propertyName
-   * @return
+   * @param propertyName Name of the label for which we want the value.
+   * @return Value of the label.
    */
   public static String getLabel(String propertyName) {
      return getLabel(propertyName, LanguageUtil.getUILanguage());
@@ -159,13 +163,13 @@ public class LabelProvider {
           public List<String> getFormats(String baseName) {
             if (baseName == null)
               throw new NullPointerException();
-            return Arrays.asList("properties");
+            return Collections.singletonList("properties");
           }
 
           @Override
           public ResourceBundle newBundle(String baseName, Locale locale,
               String format, ClassLoader loader, boolean reload)
-              throws IllegalAccessException, InstantiationException,
+              throws
               IOException {
             if (baseName == null || locale == null || format == null
                 || loader == null)
@@ -190,8 +194,7 @@ public class LabelProvider {
                 stream = loader.getResourceAsStream(resourceName);
               }
               if (stream != null) {
-                InputStreamReader reader = new InputStreamReader(stream,
-                    "UTF-8");
+                InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
                 bundle = new PropertyResourceBundle(reader);
                 reader.close();
               }

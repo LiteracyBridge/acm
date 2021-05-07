@@ -117,6 +117,17 @@ public class AudioItemTableModel extends AbstractTableModel {
         140,
         MetadataSpecification.LB_SDG_TARGETS);
 
+    static final ColumnInfo<String> contentidColumn = ColumnInfo.newMetadataColumnInfo(
+        LabelProvider.AUDIO_ITEM_TABLE_COLUMN_CONTENTID,
+        ColumnInfo.WIDTH_NOT_SET,
+        140,
+        MetadataSpecification.DC_IDENTIFIER);
+
+    // DC_PUBLISHER
+    // LB_MESSAGE_FORMAT
+    // LB_TARGET_AUDIENCE
+    // LB_DATE_RECORDED
+    // LB_PRIMARY_SPEAKER
 
     public static final ColumnInfo<Integer> playlistOrderColumn = ColumnInfo.newColumnInfo(
         LabelProvider.AUDIO_ITEM_TABLE_COLUMN_PLAYLIST_ORDER,
@@ -140,17 +151,20 @@ public class AudioItemTableModel extends AbstractTableModel {
   private final List<AudioItemNodeRow> rowIndexToIdMap;
 
   private final ColumnInfo<?>[] columns;
+  final int[] defaultHiddenColumns;
 
-    AudioItemTableModel() {
+  AudioItemTableModel() {
       MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
           .getMetadataStore();
     this.uuidToRowIndexMap = Maps.newHashMap();
     this.rowIndexToIdMap = Lists.newArrayList();
 
-    columns = initializeColumnInfoArray(infoIconColumn, titleColumn,
+    columns = initializeColumnInfoArray(infoIconColumn, contentidColumn, titleColumn,
         durationColumn, categoriesColumn, sourceColumn, languagesColumn,
         dateFileModifiedColumn, /*correlationIdColumn,*/ sdgGoalsColumn,
         sdgTargetsColumn, playlistOrderColumn);
+
+    defaultHiddenColumns = new int[] {contentidColumn.getColumnIndex()};
 
     for (AudioItem item : store.getAudioItems()) {
       addNewAudioItem(item);

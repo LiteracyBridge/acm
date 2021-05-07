@@ -14,13 +14,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
@@ -48,6 +45,7 @@ import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.SearchResult;
 
 import static org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemTableModel.playlistOrderColumn;
+import static org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemTableModel.contentidColumn;
 import static org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemTableModel.sdgGoalsColumn;
 import static org.literacybridge.acm.gui.MainWindow.audioItems.AudioItemTableModel.sdgTargetsColumn;
 import static org.literacybridge.acm.store.MetadataSpecification.LB_SDG_GOALS;
@@ -87,6 +85,9 @@ public class AudioItemView extends Container {
     });
     columnSelector.setColumnVisible(sdgGoalsColumn.getColumnIndex(), hasSdgFields);
     columnSelector.setColumnVisible(sdgTargetsColumn.getColumnIndex(), hasSdgFields);
+    for (int ix : tableModel.defaultHiddenColumns) {
+        columnSelector.setColumnVisible(ix, false);
+    }
 
     // Set the comparator (only the Playlist Order has such a thing).
     TableSortController<?> tableRowSorter = (TableSortController<?>) audioItemTable
