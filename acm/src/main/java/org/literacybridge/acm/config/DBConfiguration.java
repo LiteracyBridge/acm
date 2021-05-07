@@ -115,8 +115,8 @@ public class DBConfiguration {
    * Like ~/Dropbox/ACM-TEST
    * @return The global File for this content database.
    */
-  public File getProgramDir() {
-    return pathsProvider.getProgramDir();
+  public File getProgramHomeDir() {
+    return pathsProvider.getProgramHomeDir();
   }
 
   /**
@@ -232,7 +232,7 @@ public class DBConfiguration {
   public boolean writeCategoryFilter(Taxonomy taxonomy) {
       // If sandboxed, *pretend* that we wrote it OK.
       if (isSandboxed()) return true;
-      return CategoryFilter.writeCategoryFilter(getProgramDir(), taxonomy);
+      return CategoryFilter.writeCategoryFilter(getProgramHomeDir(), taxonomy);
   }
 
   boolean init() throws Exception {
@@ -245,7 +245,7 @@ public class DBConfiguration {
       if (accessControl.openStatus.isOpen()) {
           initializeRepositories();
 
-          final Taxonomy taxonomy = Taxonomy.createTaxonomy(getProgramDir());
+          final Taxonomy taxonomy = Taxonomy.createTaxonomy(getProgramHomeDir());
           this.store = new LuceneMetadataStore(taxonomy, getLocalLuceneIndexDir());
 
           parseLanguageLabels();
@@ -512,7 +512,7 @@ public class DBConfiguration {
 
   private void InitializeAcmConfiguration() {
 
-    if (!getProgramDir().exists()) {
+    if (!getProgramHomeDir().exists()) {
       if (GraphicsEnvironment.isHeadless()) {
           System.err.println("ACM database " + getAcmDbDirName() + " not found. Aborting.");
           LOG.log(Level.SEVERE, "ACM database " + getAcmDbDirName() + " not found. Aborting.");

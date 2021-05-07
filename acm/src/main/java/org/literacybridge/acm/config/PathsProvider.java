@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 /*
     File structure.
         ~/Dropbox (Amplio)
-            ACM-PROG-NAME               # various config files for the program
+            ACM-${programid             # various config files for the program
                 TB-Loaders              # bat files to run TB-Loader
                     TB_Options
                         activeLists
@@ -26,6 +26,8 @@ import java.util.logging.Logger;
                 programspec             # Currently active program spec is cached here
 
         ~/Amplio
+            acm-dbs
+                ${programid}
             TB-Loaders                  # Per program directory of current deployment data
             ACM
                 software                # acm.jar, lib, FFMPEG, and a ton of junk
@@ -39,7 +41,7 @@ import java.util.logging.Logger;
 public class PathsProvider {
     private static final Logger LOG = Logger.getLogger(PathsProvider.class.getName());
     
-    private final File programDbDir;
+    private final File programHomeDir;
 
     private final String programName;
     private final String acmDbDirName;
@@ -52,12 +54,12 @@ public class PathsProvider {
         this.usesDropbox = usesDropbox;
 
         if (usesDropbox) {
-            programDbDir = new File(AmplioHome.getDropboxDir(), acmDbDirName);
+            programHomeDir = new File(AmplioHome.getDropboxDir(), acmDbDirName);
         } else {
-            programDbDir = new File(AmplioHome.getHomeDbsRootDir(), acmDbDirName);
+            programHomeDir = new File(AmplioHome.getHomeDbsRootDir(), acmDbDirName);
         }
         //noinspection ResultOfMethodCallIgnored
-        programDbDir.mkdirs();
+        programHomeDir.mkdirs();
     }
 
     /**************************************************************************
@@ -73,8 +75,8 @@ public class PathsProvider {
      *
      * @return ~/Dropbox/ACM-${programId} or ~/Amplio/acm-dbs/${programId}
      */
-    public File getProgramDir() {
-        return programDbDir;
+    public File getProgramHomeDir() {
+        return programHomeDir;
     }
 
     /**
@@ -89,7 +91,7 @@ public class PathsProvider {
      * @return ${programId} (if in Amplio) or ACM-${programId} (if in Dropbox)
      */
     public String getProgramDirName() {
-        return programDbDir.getName();
+        return programHomeDir.getName();
     }
 
     /**
@@ -97,7 +99,7 @@ public class PathsProvider {
      * @return ${programDbDir}/config.properties
      */
     public File getProgramConfigFile() {
-        return new File(programDbDir, Constants.CONFIG_PROPERTIES);
+        return new File(programHomeDir, Constants.CONFIG_PROPERTIES);
     }
 
     /**
@@ -105,7 +107,7 @@ public class PathsProvider {
      * @return ~/Dropbox/ACM-${programId}/content or ~/Amplio/acm-dbs/${programId}/content
      */
     public File getProgramContentDir() {
-        return new File(programDbDir, Constants.RepositoryHomeDir);
+        return new File(programHomeDir, Constants.RepositoryHomeDir);
     }
 
     /**
@@ -113,7 +115,7 @@ public class PathsProvider {
      * @return ~/Dropbox/ACM-${programId}/TB-Loaders or ~/Amplio/acm-dbs/${programId}
      */
     public File getProgramTbLoadersDir() {
-        return new File(programDbDir, Constants.TBLoadersHomeDir);
+        return new File(programHomeDir, Constants.TBLoadersHomeDir);
     }
 
     /**
@@ -121,7 +123,7 @@ public class PathsProvider {
      * @return ~/Amplio/acm-dbs/${programId}/programspec
      */
     public File getProgramSpecDir() {
-        return new File(programDbDir, Constants.ProgramSpecDir);
+        return new File(programHomeDir, Constants.ProgramSpecDir);
     }
 
     /**
@@ -129,7 +131,7 @@ public class PathsProvider {
      * @return ~/Amplio/acm-dbs/${programId}/userfeedback.includelist or null
      */
     public File getProgramUserFeedbackInclusionFile() {
-        File file = new File(programDbDir, Constants.USER_FEEDBACK_INCLUDELIST_FILENAME);
+        File file = new File(programHomeDir, Constants.USER_FEEDBACK_INCLUDELIST_FILENAME);
         if (file.exists() && file.isFile()) return file;
         return null;
     }

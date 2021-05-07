@@ -62,7 +62,7 @@ public class AccessControlTest {
         when(dbConfig.getPathProvider()).thenReturn(ppConfig);
         when(dbConfig.getTempACMsDirectory()).thenReturn(temp.getAbsolutePath());
         when(dbConfig.getAcmDbDirName()).thenReturn("ACM-NADA");
-        when(dbConfig.getProgramDir()).thenReturn(acmDir);
+        when(dbConfig.getProgramHomeDir()).thenReturn(acmDir);
         return dbConfig;
     }
 

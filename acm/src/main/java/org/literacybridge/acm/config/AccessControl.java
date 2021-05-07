@@ -709,7 +709,7 @@ public class AccessControl {
         }
         try {
             File outDirectory = dbConfiguration.getLocalTempDbDir();
-            File inZipFile = new File(dbConfiguration.getProgramDir(), zipFileName);
+            File inZipFile = new File(dbConfiguration.getProgramHomeDir(), zipFileName);
             Calendar cal = Calendar.getInstance();
             LOG.info(String.format("Started DB Mirror: %2d:%02d.%03d\n",
                     cal.get(Calendar.MINUTE),
@@ -739,7 +739,7 @@ public class AccessControl {
         try {
             // The name previously decided for the next zip file name.
             filename = getNextZipFilename();
-            File outZipFile = new File(dbConfiguration.getProgramDir(), filename);
+            File outZipFile = new File(dbConfiguration.getProgramHomeDir(), filename);
             File inDirectory = dbConfiguration.getLocalTempDbDir();
             ZipUnzip.zip(inDirectory, outZipFile);
         } catch (IOException ex) {
@@ -756,7 +756,7 @@ public class AccessControl {
     @SuppressWarnings("SameParameterValue")
     private void deleteOldZipFiles(int numFilesToKeep) {
         List<File> files = Lists.newArrayList(
-                dbConfiguration.getProgramDir().listFiles((dir, name) -> {
+                dbConfiguration.getProgramHomeDir().listFiles((dir, name) -> {
                     String lowercase = name.toLowerCase();
                     return lowercase.endsWith(".zip");
                 }));
@@ -779,7 +779,7 @@ public class AccessControl {
     private File findNewestModifiedZipFile() {
         File[] files;
         File latestModifiedFile = null;
-        files = dbConfiguration.getProgramDir().listFiles(new FilenameFilter() {
+        files = dbConfiguration.getProgramHomeDir().listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
                 String lowercase = name.toLowerCase();
@@ -825,7 +825,7 @@ public class AccessControl {
         if (filenameShouldHave.equalsIgnoreCase(AccessControl.DB_DOES_NOT_EXIST))
             return true; // if the ACM is new, you have the latest there is (nothing)
 
-        File fileShouldHave = new File(dbConfiguration.getProgramDir(), filenameShouldHave);
+        File fileShouldHave = new File(dbConfiguration.getProgramHomeDir(), filenameShouldHave);
         return fileShouldHave.exists();
     }
 
