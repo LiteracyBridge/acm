@@ -24,9 +24,7 @@ public class A18Utils {
       in.close();
       long sec = (f.length() * 8 + bps / 2) / bps;
       int min = (int) (sec / 60L);
-      // String test = String.valueOf(sec) + "/" + String.valueOf(bps) + "/" +
-      // String.valueOf(f.length());
-      sec -= min * 60;
+      sec -= min * 60L;
       String sMin = String.valueOf(min);
       String sSec = String.valueOf(sec);
       if (sMin.length() == 1)
@@ -37,7 +35,7 @@ public class A18Utils {
       // duration += test;
       audioItem.getMetadata().putMetadataField(
           MetadataSpecification.LB_DURATION,
-          new MetadataValue<String>(duration));
+          new MetadataValue<>(duration));
       ACMConfiguration.getInstance().getCurrentDB().getMetadataStore()
           .commit(audioItem);
     }
