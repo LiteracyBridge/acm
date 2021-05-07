@@ -185,6 +185,10 @@ public class ACMConfiguration {
         return programDbs;
     }
 
+    /**
+     * Gets a list of dropbox ACM databases on this machine.
+     * @return the list of dropbox ACMs.
+     */
     public List<String> getLocalDbxDbs() {
         return knownDbs.entrySet()
                 .stream()
