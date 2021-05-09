@@ -18,12 +18,8 @@ import org.literacybridge.acm.gui.dialogs.LafTester;
 import org.literacybridge.acm.gui.dialogs.S3SyncDialog;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+import org.literacybridge.acm.gui.util.FilterState;
 import org.literacybridge.acm.gui.util.SimpleMessageService;
-import org.literacybridge.acm.gui.util.UIUtils;
-import org.literacybridge.acm.store.Category;
-import org.literacybridge.acm.store.MetadataStore;
-import org.literacybridge.acm.store.Playlist;
-import org.literacybridge.acm.store.SearchResult;
 import org.literacybridge.acm.utils.LogHelper;
 import org.literacybridge.acm.utils.OsUtils;
 import org.literacybridge.acm.utils.SwingUtils;
@@ -32,13 +28,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -133,14 +126,10 @@ public class Application extends JXFrame {
       menuBar.add(menu);
       JMenuItem menuItem = new JMenuItem("Access Control...");
       menu.add(menuItem);
-      menuItem.addActionListener(e -> {
-        new AcmCheckoutTest(this).setVisible(true);
-      });
+      menuItem.addActionListener(e -> new AcmCheckoutTest(this).setVisible(true));
       menuItem = new JMenuItem("UI Defaults...");
       menu.add(menuItem);
-      menuItem.addActionListener(e -> {
-        new LafTester(this).setVisible(true);
-      });
+      menuItem.addActionListener(e -> new LafTester(this).setVisible(true));
       setJMenuBar(menuBar);
     }
 
@@ -157,17 +146,17 @@ public class Application extends JXFrame {
     String layoutIndicator = AmplioHome.isOldStyleHomeDirectory()
                              ? (OsUtils.WINDOWS ? "v1" : "∅")
                              : (OsUtils.WINDOWS ? "v2" : "✓");
-    StringBuilder dbVersion = new StringBuilder("v")
-            .append(ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion())
-            .append(cloudIndicator);
 
-    String title = String.format("%s  --  %s (%s%s)  --  %s (%s)%s",
+      String dbVersion = "v" +
+          ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion() +
+          cloudIndicator;
+      String title = String.format("%s  --  %s (%s%s)  --  %s (%s)%s",
             greeting,
             LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
             Constants.ACM_VERSION,
             layoutIndicator,
             ACMConfiguration.getInstance().getTitle(),
-            dbVersion.toString(),
+          dbVersion,
             sandboxWarning);
 
     setTitle(title);
@@ -259,6 +248,7 @@ public class Application extends JXFrame {
 
     SplashScreen splash = null;
     URL iconURL = Application.class.getResource("/tb.png");
+    assert iconURL != null;
     Image iconImage = new ImageIcon(iconURL).getImage();
     if (OsUtils.MAC_OS) {
       OsUtils.setOSXApplicationIcon(iconImage);
@@ -315,11 +305,12 @@ public class Application extends JXFrame {
       if (Authenticator.getInstance().isProgramS3(sharedACM)) {
           PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(sharedACM);
           if (pathsProvider == null) {
-              // The database doesn't exist locally, but it does exist in S3.
+              // The database doesn't exist locally, but it does exist in S3. ".DOWNLOAD" will set up
+              // synchronization with Dropbox.
               syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.DOWNLOAD, false);
           } else if (pathsProvider.isDropboxDb()) {
               // The database is configured to sync with S3, but locally it is still syncing with Dropbox
-              // TOOD: Move from Dropbox to S3.
+              // TOOD: Move from Dropbox to S3, to save the download. (Download works, but wastes time).
               syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.DOWNLOAD, true);
           } else {
               // Mere sync required.
@@ -417,115 +408,6 @@ public class Application extends JXFrame {
           "\nACM will continue to work normally." +
           "\n\nThank you!";
       JOptionPane.showMessageDialog(null, message, "Please Update Java", JOptionPane.INFORMATION_MESSAGE);
-    }
-  }
-
-  public static class FilterState {
-    private String previousFilterState = null;
-
-    private String filterString;
-    private List<Category> filterCategories = new ArrayList<>();
-    private List<Locale> filterLanguages = new ArrayList<>();
-    private Playlist selectedPlaylist;
-
-    public synchronized String getFilterString() {
-      return filterString;
-    }
-
-    public synchronized void setFilterString(String filterString) {
-      this.filterString = filterString;
-      updateResult();
-    }
-
-    public synchronized List<Category> getFilterCategories() {
-      return filterCategories;
-    }
-
-    public synchronized void setFilterCategories(
-        List<Category> filterCategories) {
-      this.filterCategories = filterCategories;
-      updateResult();
-    }
-
-    public synchronized List<Locale> getFilterLanguages() {
-      return filterLanguages;
-    }
-
-    public synchronized void setFilterLanguages(List<Locale> filterLanguages) {
-      this.filterLanguages = filterLanguages;
-      updateResult();
-    }
-
-    public synchronized void setSelectedPlaylist(Playlist selectedPlaylist) {
-      this.selectedPlaylist = selectedPlaylist;
-      updateResult();
-    }
-
-    public synchronized Playlist getSelectedPlaylist() {
-      return selectedPlaylist;
-    }
-
-    public void updateResult() {
-      updateResult(false);
-    }
-
-    public void updateResult(boolean force) {
-      if (!force && previousFilterState != null
-          && previousFilterState.equals(this.toString())) {
-        return;
-      }
-
-      previousFilterState = this.toString();
-
-      final MetadataStore store = ACMConfiguration.getInstance().getCurrentDB()
-          .getMetadataStore();
-      final SearchResult result;
-
-      if (selectedPlaylist == null) {
-        result = store.search(filterString, filterCategories, filterLanguages);
-      } else {
-        result = store.search(filterString, selectedPlaylist);
-      }
-
-      // call UI back
-      Runnable updateUI = () -> Application.getMessageService().pumpMessage(result);
-
-      if (SwingUtilities.isEventDispatchThread()) {
-        updateUI.run();
-      } else {
-        try {
-          SwingUtilities.invokeAndWait(updateUI);
-        } catch (InterruptedException | InvocationTargetException e) {
-          e.printStackTrace();
-        }
-      }
-    }
-
-    @Override
-    public String toString() {
-      StringBuilder builder = new StringBuilder();
-      if (filterString != null) {
-        builder.append("FS:").append(filterString);
-        builder.append(",");
-      }
-      if (filterCategories != null && !filterCategories.isEmpty()) {
-        for (Category cat : filterCategories) {
-          builder.append("FC:").append(cat.getId());
-          builder.append(",");
-        }
-      }
-      if (filterLanguages != null && !filterLanguages.isEmpty()) {
-        for (Locale lang : filterLanguages) {
-          builder.append("FL:").append(lang.getLanguage()).append("-")
-              .append(lang.getCountry());
-          builder.append(",");
-        }
-      }
-      if (selectedPlaylist != null) {
-        builder.append("ST:").append(selectedPlaylist.getName());
-        builder.append(",");
-      }
-      return builder.toString();
     }
   }
 
