@@ -259,13 +259,10 @@ public class DBConfiguration {
      * Listener for metadata changes. On the first change, create a marker file that will persist if we crash
      * or the comptuter shuts down.
      */
-    private final MetadataStore.DataChangeListener metadataChangeListener = new MetadataStore.DataChangeListener() {
-        @Override
-        public void dataChanged(List<MetadataStore.DataChangeEvent> events) {
-            if (!hasMetadataChange) {
-                hasMetadataChange = true;
-                writeMetadataChangeMarkerFile();
-            }
+    private final MetadataStore.DataChangeListener metadataChangeListener = events -> {
+        if (!hasMetadataChange) {
+            hasMetadataChange = true;
+            writeMetadataChangeMarkerFile();
         }
     };
 
@@ -325,7 +322,7 @@ public class DBConfiguration {
         File catFile = new File(getProgramHomeDir(), Constants.CATEGORY_INCLUDELIST_FILENAME);
         File bakFile = new File(getProgramHomeDir(), Constants.CATEGORY_INCLUDELIST_FILENAME + ".bak");
         try {
-            getSandbox().rename(catFile, bakFile);
+            getSandbox().moveFile(catFile, bakFile);
         } catch (Exception ignored) {}
         File newFile = getSandbox().outputFile(catFile.toPath());
         CategoryFilter.writeCategoryFilter(newFile, taxonomy);

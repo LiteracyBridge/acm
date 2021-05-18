@@ -2,16 +2,13 @@ package org.literacybridge.acm.sandbox;
 
 import org.apache.commons.io.FileUtils;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
@@ -79,6 +76,8 @@ public class Sandbox {
                         case 'D': workQueue.put(pKey, new DeleteOp()); break;
                         case 'A': workQueue.put(pKey, new AddOp()); break;
                         case 'O': workQueue.put(pKey, new MovedOutOp()); break;
+                        case 'K': workQueue.put(pKey, new MkDirOp()); break;
+                        case 'L': workQueue.put(pKey, new RmDirOp()); break;
                         case 'M': String strValue = (String)is.readObject();
                             Path pValue = baseDir.toPath().relativize(baseDir.toPath().resolve(strValue));
                             workQueue.put(pKey, new MoveOp(pValue));
@@ -152,6 +151,16 @@ public class Sandbox {
                 removedFileHandler.accept(movedFromFile);
                 System.out.printf(" moved: %s - [%s]\n", e.getKey(), ok?"ok":"error");
 
+            } else if (e.getValue() instanceof MkDirOp) {
+                File newDir = baseDir.toPath().resolve(e.getKey()).toFile();
+                boolean ok = newDir.exists() || newDir.mkdirs();
+                System.out.printf(" mkdir: %s [%s]\n", newDir.getAbsolutePath(), ok?"ok":"error");
+
+            } else if (e.getValue() instanceof RmDirOp ) {
+                File oldDir = baseDir.toPath().resolve(e.getKey()).toFile();
+                boolean ok = !oldDir.exists() || oldDir.delete();
+                System.out.printf(" rmdir: %s [%s]\n", oldDir.getAbsolutePath(), ok?"ok":"error");
+
             }
         }
         discard();
@@ -186,8 +195,6 @@ public class Sandbox {
     }
 
     public enum Options {recursive, quietly}
-
-    ;
 
     public void delete(File file, Options... options) {
         delete(file.toPath(), options);
@@ -249,8 +256,9 @@ public class Sandbox {
         }
         // Is anything being moved in? (Adds will have physical files, so no need to look for them.)
         workQueue.entrySet().stream()
-            .filter(e -> {return e.getValue() instanceof MoveOp && e.getKey().getParent() == relativePath;})
+            .filter(e->e.getValue() instanceof MoveOp)
             .map(Map.Entry::getKey)
+            .filter(k->k.getParent().toString().equals(relativePath.toString()))
             .forEach(result::add);
         // Add things in the shadow directory.
         files = shadowFile.listFiles();
@@ -409,11 +417,11 @@ public class Sandbox {
      * @param to   File or Path to be renamed/moved to.
      * @throws FileNotFoundException if the from file can't be found.
      */
-    public boolean rename(File from, File to) throws FileNotFoundException {
-        return rename(from.toPath(), to.toPath());
+    public boolean moveFile(File from, File to) throws FileNotFoundException {
+        return moveFile(from.toPath(), to.toPath());
     }
 
-    public boolean rename(Path from, Path to) throws FileNotFoundException {
+    public boolean moveFile(Path from, Path to) throws FileNotFoundException {
         boolean result = false;
         ensureValidPath(to);
         Path relativeToPath = to.isAbsolute() ? baseDir.toPath().relativize(to) : to;
@@ -424,7 +432,12 @@ public class Sandbox {
             File shadowedFromFile = shadowData.toPath().resolve(relativeFromPath).toFile();
             File baseFromFile = baseDir.toPath().resolve(relativeFromPath).toFile();
             if (shadowedFromFile.exists()) {
+                if (shadowedFromFile.isDirectory()) {
+                    throw new IllegalArgumentException("Argument to moveFile must not be a directory: "+shadowedFromFile.getAbsolutePath());
+                }
                 // Move the existing shadowed file.
+                File toParent = shadowedToFile.getParentFile();
+                if (!toParent.exists()) toParent.mkdirs();
                 if (shadowedFromFile.renameTo(shadowedToFile)) {
                     result = true;
                     workQueue.remove(relativeToPath);
@@ -436,6 +449,9 @@ public class Sandbox {
                     persistWorkQueue();
                 }
             } else if (baseFromFile.exists()) {
+                if (baseFromFile.isDirectory()) {
+                    throw new IllegalArgumentException("Argument to moveFile must not be a directory: "+baseFromFile.getAbsolutePath());
+                }
                 result = true; // we're assuming the rename will work in the future.
                 workQueue.remove(relativeToPath);
                 workQueue.put(relativeToPath, new MoveOp(relativeFromPath));
@@ -450,7 +466,11 @@ public class Sandbox {
             if (!from.isAbsolute()) {
                 throw new AbsolutePathRequired(from);
             }
-            if (from.toFile().renameTo(shadowedToFile)) {
+            File fromFile = from.toFile();
+            if (fromFile.isDirectory()) {
+                throw new IllegalArgumentException("Argument to moveFile must not be a directory: "+fromFile.getAbsolutePath());
+            }
+            if (fromFile.renameTo(shadowedToFile)) {
                 result = true;
                 workQueue.remove(relativeToPath);
                 workQueue.put(relativeToPath, new AddOp());
@@ -459,6 +479,38 @@ public class Sandbox {
         }
         return result;
     }
+
+    public boolean moveDirectory(File from, File to) throws FileNotFoundException {
+        return moveDirectory(from.toPath(), to.toPath());
+    }
+    public boolean moveDirectory(Path from, Path to) throws FileNotFoundException {
+        if (!isDirectory(from)) {
+            throw new NotASandboxedDirectory(from);
+        }
+        if (exists(to) && !isDirectory(to)) {
+            throw new NotASandboxedDirectory(to);
+        }
+        boolean ok = true;
+        ensureValidPath(to);
+        Path relativeToRoot = to.isAbsolute() ? baseDir.toPath().relativize(to) : to;
+        File shadowedToFile = shadowData.toPath().resolve(relativeToRoot).toFile();
+        Path relativeFromRoot = from.isAbsolute() ? baseDir.toPath().relativize(from) : from;
+        workQueue.put(relativeToRoot, new MkDirOp());
+        // Move the children individually.
+        Collection<Path> children = listPaths(from);
+        for (Path relativeFromChild : children) {
+            Path relativeDiff = relativeFromRoot.relativize(relativeFromChild);
+            Path relativeToChild = relativeToRoot.resolve(relativeDiff);
+            if (isDirectory(relativeFromChild)) {
+                ok &= moveDirectory(relativeFromChild, relativeToChild);
+            } else {
+                ok &= moveFile(relativeFromChild, relativeToChild);
+            }
+        }
+        workQueue.put(relativeFromRoot, new RmDirOp());
+        return ok;
+    }
+
 
     public boolean isSandboxedFile(File file) {
         return isSandboxedPath(file.toPath());
@@ -510,6 +562,16 @@ public class Sandbox {
         }
         @Override
         char getId() { return 'M'; }
+    }
+
+    static class MkDirOp extends FileOp {
+        @Override
+        char getId() { return 'K'; }
+    }
+
+    static class RmDirOp extends FileOp {
+        @Override
+        char getId() { return 'L'; }
     }
 
     /**

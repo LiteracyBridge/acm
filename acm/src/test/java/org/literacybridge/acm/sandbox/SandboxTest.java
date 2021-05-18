@@ -291,8 +291,8 @@ public class SandboxTest {
 
         addFile(c, ++fileNo);
 
-        sb.rename(a, b);    // Only marks the move.
-        sb.rename(c, a);    // Renames the sandboxed c as a
+        sb.moveFile(a, b);    // Only marks the move.
+        sb.moveFile(c, a);    // Renames the sandboxed c as a
         listOperationQueue("Add c, move a->b, move c->a");
 
         File[] sbFiles = sandboxData.listFiles();
@@ -316,8 +316,8 @@ public class SandboxTest {
         addFile(c, ++fileNo);
         addFile(d, ++fileNo);
 
-        sb.rename(a, b);
-        sb.rename(c, a);
+        sb.moveFile(a, b);
+        sb.moveFile(c, a);
         listOperationQueue("Add a, add c, add d, move a->b, move c->a");
 
         File[] sbFiles = sandboxData.listFiles();
@@ -353,13 +353,13 @@ public class SandboxTest {
 
         addFile(d, ++fileNo);
 
-        sb.rename(a, b);
-        sb.rename(c, a);
+        sb.moveFile(a, b);
+        sb.moveFile(c, a);
         listOperationQueue("Add a, add c, add d, move a->b, move c->a");
 
         addFile(c, ++fileNo);
-        sb.rename(a, b);
-        sb.rename(c, a);
+        sb.moveFile(a, b);
+        sb.moveFile(c, a);
         listOperationQueue("Add a, add c, add d, move a->b, move c->a, add c, move a->b, move c->a");
 
         File[] sbFiles = sandboxData.listFiles();
@@ -368,7 +368,7 @@ public class SandboxTest {
         assertEquals("Expected 3 sb files", 3, sbFiles == null ? 0 : sbFiles.length);
         assertEquals("Expected 3 base files", 3, bFiles == null ? 0 : bFiles.length);
 
-        sb.rename(myFile, myOther);
+        sb.moveFile(myFile, myOther);
         listOperationQueue(
             "Add a, add c, add d, move a->b, move c->a, add c, move a->b, move c->a, move myFile->myFile2");
 
@@ -395,7 +395,7 @@ public class SandboxTest {
 
         long newASize = ++fileNo;
         addFile(a, newASize);
-        sb.rename(a, b);
+        sb.moveFile(a, b);
 
         listOperationQueue("Add a, move a->b");
 
@@ -428,7 +428,7 @@ public class SandboxTest {
         File b = new File(base, "b");
         long bSize = b.length();
 
-        sb.rename(a, b);
+        sb.moveFile(a, b);
         long newASize = ++fileNo;
         addFile(a, newASize);
 
@@ -465,7 +465,7 @@ public class SandboxTest {
         File b = new File(base, "b");
         long bSize = b.length();
 
-        sb.rename(a, b);
+        sb.moveFile(a, b);
 
         listOperationQueue("Move a->b");
 
@@ -522,7 +522,7 @@ public class SandboxTest {
         Collection<Path> paths = sb.listPaths(subdir1.toPath());
         assertEquals("Expected 2 children", 2, paths.size());
 
-        sb.rename(subdir1, subdirX);
+        sb.moveDirectory(subdir1, subdirX);
         listOperationQueue("Rename subdir1->subdirX");
 
         paths = sb.listPaths(subdir1.toPath());
@@ -570,7 +570,7 @@ public class SandboxTest {
         sb.removeRecursive(subdir1.toPath());
         listOperationQueue("Create subdirX, remove subdir1");
 
-        sb.rename(subdirX, subdir1);
+        sb.moveDirectory(subdirX, subdir1);
         listOperationQueue("Create subdirX, remove subdir1, ename subdirX->subdir1");
 
         paths = sb.listPaths(subdir1.toPath());
@@ -631,13 +631,20 @@ public class SandboxTest {
                 System.out.printf("   add: %s\n", e.getKey());
             } else if (e.getValue() instanceof MoveOp) {
                 System.out.printf("  move: %s from %s\n", e.getKey(), ((MoveOp) e.getValue()).fromPath);
+            } else if (e.getValue() instanceof Sandbox.MovedOutOp) {
+                System.out.printf("  moved out: %s\n", e.getKey());
+            } else if (e.getValue() instanceof Sandbox.MkDirOp) {
+                System.out.printf("  mkdir: %s\n", e.getKey());
+            } else if (e.getValue() instanceof Sandbox.RmDirOp) {
+                System.out.printf("  rmdir: %s\n", e.getKey());
             }
         }
     }
 
     private void addFile(File newFile, long size) throws IOException {
-        FileOutputStream fos = sb.fileOutputStream(newFile);
-        makeData(fos, size);
+        try (FileOutputStream fos = sb.fileOutputStream(newFile)) {
+            makeData(fos, size);
+        }
     }
 
     private File makeData(boolean isExternal) throws IOException {
@@ -647,17 +654,16 @@ public class SandboxTest {
 
     private File makeData(String fn, int size, boolean isExternal) throws IOException {
         File newFile;
-        FileOutputStream fos;
         if (isExternal) {
             if (external == null) external = folder.newFolder("external");
             newFile = new File(external, fn);
-            fos = new FileOutputStream(newFile);
         } else {
             newFile = new File(base, fn);
-            fos = sb.fileOutputStream(newFile);
         }
-        // Give it an identifiable size.
-        makeData(fos, size);
+        try (FileOutputStream fos = isExternal?new FileOutputStream(newFile):sb.fileOutputStream(newFile)) {
+            // Give it an identifiable size.
+            makeData(fos, size);
+        }
         return newFile;
     }
 
