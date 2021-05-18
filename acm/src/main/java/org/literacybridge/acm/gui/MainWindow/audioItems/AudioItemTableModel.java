@@ -95,8 +95,8 @@ public class AudioItemTableModel extends AbstractTableModel {
             protected AudioItemNode<String> getValue(AudioItem audioItem) {
                 String value = "";
                 AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
-                if (repository.hasAudioFileWithFormat(audioItem, AudioFormat.A18)) {
-                    File file = repository.findFileWithFormat(audioItem, AudioFormat.A18);
+                File file = repository.findAudioFileWithFormat(audioItem, AudioFormat.A18);
+                if (file != null) {
                     Date date = new Date(file.lastModified());
                     value = DATE_FORMAT.format(date);
                 }

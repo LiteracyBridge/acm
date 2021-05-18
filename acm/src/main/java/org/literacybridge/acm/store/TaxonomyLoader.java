@@ -62,22 +62,27 @@ public class TaxonomyLoader {
      * Find the highest-versioned of the built-in taxonomy and a lb_taxonomy.yaml that may
      * exist in the given directory. Load that into the given taxonomy object.
      *
-     * @param acmDirectory possibly containing a lb_taxonomy.yaml file
+     * @param categoryFilter
+     * @param programHomeDir possibly containing a lb_taxonomy.yaml file
      * @param taxonomy     A taxonomy object containing only a root entry.
      */
-    public static void loadLatestTaxonomy(File acmDirectory, Taxonomy taxonomy) {
-        TaxonomyLoader loader = new TaxonomyLoader(acmDirectory, taxonomy);
+    public static void loadLatestTaxonomy(CategoryFilter categoryFilter,
+        File programHomeDir,
+        Taxonomy taxonomy) {
+        TaxonomyLoader loader = new TaxonomyLoader(categoryFilter, programHomeDir, taxonomy);
         loader.loadLatestTaxonomy();
     }
 
-    private File acmDirectory;
-    private Taxonomy taxonomy;
-    private CategoryFilter categoryFilter;
+    private final File programHomeDir;
+    private final Taxonomy taxonomy;
+    private final CategoryFilter categoryFilter;
 
-    private TaxonomyLoader(File acmDirectory, Taxonomy taxonomy) {
-        this.acmDirectory = acmDirectory;
+    private TaxonomyLoader(CategoryFilter categoryFilter,
+        File programHomeDir,
+        Taxonomy taxonomy) {
+        this.programHomeDir = programHomeDir;
         this.taxonomy = taxonomy;
-        categoryFilter = new CategoryFilter(acmDirectory);
+        this.categoryFilter = categoryFilter;
     }
 
     private void loadLatestTaxonomy() {
@@ -116,7 +121,7 @@ public class TaxonomyLoader {
             "/" + YAML_FILE_NAME));
 
         // check if there is a newer one in the acmDirectory.
-        File acmTaxonomyFile = new File(acmDirectory, YAML_FILE_NAME);
+        File acmTaxonomyFile = new File(programHomeDir, YAML_FILE_NAME);
         if (acmTaxonomyFile.exists()) {
             try (FileInputStream in = new FileInputStream(acmTaxonomyFile)) {
 

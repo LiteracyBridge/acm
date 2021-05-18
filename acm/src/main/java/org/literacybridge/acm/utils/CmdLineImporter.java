@@ -137,10 +137,10 @@ public class CmdLineImporter {
         boolean success = false;
         try {
             boolean allImportedOk = importFiles();
-            ACMConfiguration.getInstance().commitCurrentDB();
+            ACMConfiguration.getInstance().closeCurrentDb(ACMConfiguration.DB_CLOSE_DISPOSITION.COMMIT);
             success = allImportedOk;
         } catch(Exception ex) {
-            ACMConfiguration.getInstance().closeCurrentDB();
+            ex.printStackTrace();
         }
         return success;
     }

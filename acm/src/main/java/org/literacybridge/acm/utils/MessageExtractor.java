@@ -3,7 +3,6 @@ package org.literacybridge.acm.utils;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.AccessControl;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.importexport.AudioExporter;
 import org.literacybridge.acm.repository.AudioItemRepository;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.literacybridge.acm.Constants.CATEGORY_UNCATEGORIZED_FEEDBACK;
+import static org.literacybridge.acm.config.AccessControlResolver.*;
 
 /**
  * Utility to extract messages from an ACM database. In the simplest form, uncategorized user
@@ -240,7 +240,7 @@ public class MessageExtractor {
             ACMConfiguration.initialize(acmConfigParams);
             ACMConfiguration.getInstance().setCurrentDB(acmDirectoryName);
             if (!ACMConfiguration.getInstance().setCurrentDB(acmDirectoryName)) {
-                AccessControl.AccessStatus status = ACMConfiguration.getInstance().getCurrentDB().getDbAccessStatus();
+                AccessStatus status = ACMConfiguration.getInstance().getCurrentDB().getDbAccessStatus();
                 System.out.printf("Can't open db '%s': %s.\n", acmDirectoryName, status);
                 return false;
             }
@@ -310,14 +310,11 @@ public class MessageExtractor {
                     metadataStore.deleteAudioItem(item.getId());
                     metadataStore.commit(item);
                 }
-                ACMConfiguration.getInstance().commitCurrentDB();
+                ACMConfiguration.getInstance().closeCurrentDb(ACMConfiguration.DB_CLOSE_DISPOSITION.COMMIT);
             }
 
         } catch (Exception ex) {
             return false;
-        }
-        finally {
-            ACMConfiguration.getInstance().closeCurrentDB();
         }
 
         return true;

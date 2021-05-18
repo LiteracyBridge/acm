@@ -2,9 +2,12 @@ package org.literacybridge.acm.tools;
 
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.AccessControl;
+import org.literacybridge.acm.config.AccessControlResolver;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.repository.AudioItemRepositoryImpl;
 import org.literacybridge.acm.utils.LogHelper;
+
+import static org.literacybridge.acm.config.AccessControlResolver.*;
 
 public class AcmCleaner {
 
@@ -30,7 +33,7 @@ public class AcmCleaner {
             // just added a file, but not saved their work, it'll look like it's abandoned, when it's
             // actually just not committed yet.
             if (!ACMConfiguration.getInstance().setCurrentDB(dbName)) {
-                AccessControl.AccessStatus status = ACMConfiguration.getInstance().getCurrentDB().getDbAccessStatus();
+                AccessStatus status = ACMConfiguration.getInstance().getCurrentDB().getDbAccessStatus();
                 System.err.printf("Can't open db '%s': %s.\n", dbName, status);
                 return;
             }

@@ -1,5 +1,6 @@
 package org.literacybridge.acm.config;
 
+import org.literacybridge.acm.config.AccessControlResolver.AccessStatus;
 import org.literacybridge.acm.gui.Application;
 
 import javax.swing.*;
@@ -39,7 +40,7 @@ public class GuiAccessControl extends AccessControl {
         // Some of these try again, hence the loop.
         statusLoop:
         while (true) {
-            accessStatus = super.init();
+            accessStatus = super.determineAccessStatus();
             switch (accessStatus) {
             case none:
                 throw new IllegalStateException("Should not happen");
@@ -209,7 +210,6 @@ public class GuiAccessControl extends AccessControl {
      *
      * @return True if the update was saved successful.
      */
-    @Override
     public boolean updateDb() {
         boolean checkoutRevoked = false;
         boolean checkinOk = false;
@@ -245,7 +245,7 @@ public class GuiAccessControl extends AccessControl {
 
         checkinLoop:
         while (true) {
-            AccessControl.UpdateDbStatus updateStatus = saveWork ? super.commitDbChanges() : super.discardDbChanges();
+            AccessControlResolver.UpdateDbStatus updateStatus = saveWork ? super.commitDbChanges() : super.discardDbChanges();
             switch (updateStatus) {
             case ok:
                 checkinOk = true;

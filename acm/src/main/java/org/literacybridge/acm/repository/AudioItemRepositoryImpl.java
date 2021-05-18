@@ -17,7 +17,6 @@ import org.literacybridge.acm.utils.IOUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -26,10 +25,8 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
-import static org.literacybridge.acm.repository.FileRepositoryInterface.Repository;
 
 /**
  * This repository manages all audio files associated with the audio items that
@@ -39,38 +36,9 @@ import static org.literacybridge.acm.repository.FileRepositoryInterface.Reposito
 public class AudioItemRepositoryImpl implements AudioItemRepository {
     private final static File TMP_DIR = new File(System.getProperty("java.io.tmpdir"));
     private final static Pattern categoryPattern = Pattern.compile("^\\$?\\d+(-\\d+)+$");
-    private WavFilePreCaching caching = null;
 
-    public static AudioItemRepositoryImpl buildAudioItemRepository(DBConfiguration dbConfiguration) {
-        String wavExt = "." + AudioItemRepository.AudioFormat.WAV.getFileExtension();
-        FileSystemGarbageCollector fsgc = new FileSystemGarbageCollector(
-            dbConfiguration.getCacheSizeInBytes(),
-            (file, name) -> name.toLowerCase().endsWith(wavExt));
-        // The localCacheRepository lives in ~/LiteracyBridge/ACM/cache/ACM-FOO. It is used for all
-        // non-A18 files. When .wav files (but not, say, mp3s) exceed max cache size, they'll be gc-ed.
-        // The localCacheRepository lives in ~/LiteracyBridge/ACM/cache/ACM-FOO. It is used for all
-        // non-A18 files. When .wav files (but not, say, mp3s) exceed max cache size, they'll be gc-ed.
-        FileSystemRepository localCacheRepository = new FileSystemRepository(dbConfiguration.getLocalCacheDirectory(), fsgc);
-        // If there is no sandbox directory, all A18s are read from and written to this directory. If there
-        // IS a sandbox directory, then A18s are written there, and read from here if they're not in the
-        // sandbox. (That behaviour is broken because there is no mechanism to clean out stale items from
-        // the sandbox.)
-        FileSystemRepository globalSharedRepository = new FileSystemRepository(dbConfiguration.getProgramContentDir());
-        // If the ACM is opened in "sandbox" mode, all A18s are written here. A18s are read from here if
-        // present, but read from the global shared repository if absent from the sandbox. Note that
-        // if not sandboxed, this one will be null.
-        FileSystemRepository sandboxRepository
-            = dbConfiguration.isSandboxed() ? new FileSystemRepository(dbConfiguration.getSandboxDirectory()) : null;
-
-        // The caching repository directs resolve requests to one of the three above file based
-        // repositories.
-        Collection<AudioFormat> nativeFormats = dbConfiguration.getNativeAudioFormats()
-                .stream()
-                .map(AudioItemRepositoryImpl::audioFormatForExtension)
-                .collect(Collectors.toSet());
-
-        CachingRepository cachingRepository
-            = new CachingRepository(localCacheRepository, globalSharedRepository, sandboxRepository, nativeFormats);
+    public static AudioItemRepositoryImpl buildAudioItemRepository(DBConfiguration dbConfiguration) throws IOException {
+        CachingRepository cachingRepository = new CachingRepository(dbConfiguration);
         return new AudioItemRepositoryImpl(cachingRepository);
     }
 
@@ -95,22 +63,11 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      */
     private synchronized boolean hasAudioItem(AudioItem audioItem) {
         for (AudioFormat format : AudioFormat.values()) {
-            if (hasAudioFileWithFormat(audioItem, format)) {
+            if (findAudioFileWithFormat(audioItem, format) != null) {
                 return true;
             }
         }
-
         return false;
-    }
-
-    /**
-     * Returns true, if this audio item is stored in the given format in the
-     * repository.
-     */
-    @Override
-    public synchronized boolean hasAudioFileWithFormat(AudioItem audioItem, AudioFormat format) {
-        File file = findFileWithFormat(audioItem, format);
-        return file != null && file.exists();
     }
 
     /**
@@ -146,7 +103,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         // Determine in which formats the item is currently stored
         Set<AudioFormat> existingFormats = Sets.newHashSet();
         for (AudioFormat format : AudioFormat.values()) {
-            if (hasAudioFileWithFormat(audioItem, format)) {
+            if (findAudioFileWithFormat(audioItem, format) != null) {
                 existingFormats.add(format);
             }
         }
@@ -159,7 +116,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
 
         // Restore to all previously stored formats
         for (AudioFormat format : existingFormats) {
-            convert(audioItem, format);
+            convertAudioItem(audioItem, format);
         }
     }
 
@@ -184,7 +141,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
             IOUtils.copy(externalFile, toFile);
             try {
                 // convert file to A18 format right away
-                convert(audioItem, AudioFormat.A18);
+                convertAudioItem(audioItem, AudioFormat.A18);
             } catch (ConversionException e) {
                 throw new IOException(e);
             }
@@ -200,7 +157,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      * repository;
      */
     @Override
-    public synchronized File findFileWithFormat(AudioItem audioItem, AudioFormat format) {
+    public synchronized File findAudioFileWithFormat(AudioItem audioItem, AudioFormat format) {
         File file = resolveFile(audioItem, format, false);
         return file.exists() ? file : null;
     }
@@ -215,10 +172,13 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      * @throws ConversionException If an error occurs while converting.
      */
     @Override
-    public synchronized File getAudioFile(AudioItem audioItem, AudioFormat format) throws IOException, ConversionException {
+    public synchronized File getAudioFile(AudioItem audioItem, AudioFormat format) throws
+                                                                                   IOException,
+                                                                                   ConversionException,
+                                                                                   UnsupportedFormatException {
         File file = resolveFile(audioItem, format, false);
         if (file == null || !file.exists()) {
-            file = convert(audioItem, format);
+            file = convertAudioItem(audioItem, format);
         }
         return file;
     }
@@ -226,26 +186,70 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
     /**
      * Converts the audio item into the specified targetFormat and returns a
      * handle to the newly created file. The new file will be within the repository.
+     * @return the converted file.
      */
-    private synchronized File convert(AudioItem audioItem, AudioFormat targetFormat)
-        throws ConversionException, IOException
-    {
+    private synchronized File convertAudioItem(AudioItem audioItem, AudioFormat targetFormat)
+        throws ConversionException, IOException, UnsupportedFormatException {
 
-        File audioFile = resolveFile(audioItem, targetFormat, true);
-        if (!audioFile.exists() && targetFormat == AudioFormat.A18) {
+        File targetFile = resolveFile(audioItem, targetFormat, true);
+        if (!targetFile.exists() && targetFormat == AudioFormat.A18) {
             // Before creating a new a18 in the temp folder from a cached wave file,
             // just copy over the a18 file in dropbox over there if it exists.
             File audioFileShared = resolveFile(audioItem, targetFormat, false);
             if (audioFileShared.exists()) {
-                IOUtils.ensureDirectoryExists(audioFile);
-                IOUtils.copy(audioFileShared, audioFile, true);
+                IOUtils.ensureDirectoryExists(targetFile);
+                IOUtils.copy(audioFileShared, targetFile, true);
             }
         }
-        if (audioFile.exists()) {
-            return audioFile;
+        if (targetFile.exists()) {
+            return targetFile;
         }
 
-        return convertFile(audioItem, (item,format)-> findFileWithFormat((AudioItem)item, format), targetFormat, audioFile.getParentFile());
+        convertAudioItem(audioItem, targetFile);
+        return targetFile;
+    }
+
+    /**
+     * Converts the audio item into the specified target file. The format is implicit in the filename.
+     * @param audioItem to be exported.
+     * @param targetFile to be exported to.
+     * @throws ConversionSourceMissingException if no appropriate source file can be found in the repository.
+     */
+    private synchronized void convertAudioItem(AudioItem audioItem, File targetFile) throws
+                                                                                     ConversionException,
+                                                                                     UnsupportedFormatException {
+        File sourceFile = resolveFile(audioItem, AudioFormat.WAV, false);
+        if (!(sourceFile.exists() && sourceFile.isFile())) {
+            // no WAV, try any other format
+            for (AudioFormat sourceFormat : AudioFormat.values()) {
+                sourceFile = resolveFile(audioItem, sourceFormat, false);
+                if (sourceFile.exists() && sourceFile.isFile()) {
+                    break;
+                }
+            }
+        }
+        if (!(sourceFile.exists() && sourceFile.isFile())) {
+            throw new ConversionSourceMissingException(String.format("Can't find file to convert for: %s",
+                audioItem.toString()), audioItem.toString());
+        }
+        convertFile(sourceFile, targetFile);
+    }
+
+    /**
+     * Converts the given audio file into the specified target file. The format is implicit in the filename.
+     * @param sourceFile to be converted.
+     * @param targetFile to be converted to.
+     */
+    private synchronized void convertFile(File sourceFile, File targetFile) throws
+                                                                            ConversionException,
+                                                                            UnsupportedFormatException {
+        if (audioFileRepository.isSandboxedFile(targetFile)) {
+            throw new ConversionException("Target file should have been sandboxed.");
+        }
+        AudioFormat targetFormat = ensureKnownFormat(targetFile);
+        externalConverter.convert(sourceFile, targetFile,
+            TMP_DIR,
+            targetFormat.getAudioConversionFormat(), false);
     }
 
     private synchronized File convertFile(Object source, BiFunction<Object, AudioFormat, File> sourceFileFinder, AudioFormat targetFormat, File targetDirectory) throws ConversionException {
@@ -265,6 +269,9 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         }
         // Target file has same name, and is in same directory as source, but with proper extension.
         File targetFile = ExternalConverter.targetFile(sourceFile, targetDirectory, targetFormat.getAudioConversionFormat());
+        if (audioFileRepository.isSandboxedFile(targetFile)) {
+            throw new ConversionException("Target file should have been sandboxed.");
+        }
         IOUtils.ensureDirectoryExists(targetFile);
         externalConverter.convert(sourceFile, targetFile,
                 TMP_DIR,
@@ -278,14 +285,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      */
     @Override
     public synchronized void deleteAudioItem(AudioItem audioItem) {
-        // we need to loop over all formats, because the different formats
-        // could be stored in different directories (e.g. local cache)
-        for (AudioFormat format : AudioFormat.values()) {
-            File file = resolveFile(audioItem, format, true);
-            if (file != null) {
-                IOUtils.deleteRecursive(file.getParentFile());
-            }
-        }
+          audioFileRepository.delete(audioItem.getId());
     }
 
     @Override
@@ -308,12 +308,16 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      * @throws BaseAudioConverter.ConversionException If an existing file can't be converted to the desired format.
      */
     @Override
-    public synchronized File exportAudioFileWithFormat(AudioItem audioItem, File targetFile, AudioFormat targetFormat) throws IOException, ConversionException {
+    public synchronized File exportAudioFileWithFormat(AudioItem audioItem, File targetFile, AudioFormat targetFormat) throws
+                                                                                                                       IOException,
+                                                                                                                       ConversionException,
+                                                                                                                       UnsupportedFormatException {
         String defaultExtension = targetFormat.getFileExtension();
         String givenExtension = FilenameUtils.getExtension(targetFile.getName());
         if (!defaultExtension.equalsIgnoreCase(givenExtension)) {
-            targetFile = new File(targetFile.getParentFile(),
-                                  FilenameUtils.removeExtension(targetFile.getName()) + '.' + defaultExtension);
+            throw new ConversionException(String.format("'%s' is an illegal filename for '%s' audio format.", targetFile.getName(), targetFormat.name()));
+//            targetFile = new File(targetFile.getParentFile(),
+//                                  FilenameUtils.removeExtension(targetFile.getName()) + '.' + defaultExtension);
         }
         AudioExporter exporter = AudioExporter.getInstance();
         exporter.export(audioItem, targetFile, targetFormat);
@@ -335,8 +339,9 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         String defaultExtension = targetFormat.getFileExtension();
         String givenExtension = FilenameUtils.getExtension(targetFile.getName());
         if (!defaultExtension.equalsIgnoreCase(givenExtension)) {
-            targetFile = new File(targetFile.getParent(),
-                    FilenameUtils.removeExtension(targetFile.getName()) + '.' + defaultExtension);
+            throw new ConversionException(String.format("'%s' is an illegal filename for '%s' audio format.", targetFile.getName(), targetFormat.name()));
+//            targetFile = new File(targetFile.getParent(),
+//                    FilenameUtils.removeExtension(targetFile.getName()) + '.' + defaultExtension);
         }
         File TbOptionsDir = new File(ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir(), "TB_Options");
         File promptsDir = new File(TbOptionsDir, "languages" + File.separator + language);
@@ -369,12 +374,13 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
             String prompt,
             File targetFile,
             String language,
-            AudioFormat targetFormat) throws IOException, ConversionException {
+            AudioFormat targetFormat) throws IOException, ConversionException, UnsupportedFormatException {
         String defaultExtension = targetFormat.getFileExtension();
         String givenExtension = FilenameUtils.getExtension(targetFile.getName());
         if (!defaultExtension.equalsIgnoreCase(givenExtension)) {
-            targetFile = new File(targetFile.getParent(),
-                    FilenameUtils.removeExtension(targetFile.getName()) + '.' + defaultExtension);
+            throw new ConversionException(String.format("'%s' is an illegal filename for '%s' audio format.", targetFile.getName(), targetFormat.name()));
+//            targetFile = new File(targetFile.getParent(),
+//                    FilenameUtils.removeExtension(targetFile.getName()) + '.' + defaultExtension);
         }
         // Does this look like a TB_Options prompt ("0-1") or like an ACM database prompt ("LB-2_uzz71upxwm_11e")
         File promptsDir;
@@ -454,8 +460,9 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         String defaultExtension = targetFormat.getFileExtension();
         String givenExtension = FilenameUtils.getExtension(targetFile.getName());
         if (!defaultExtension.equalsIgnoreCase(givenExtension)) {
-            targetFile = new File(targetFile.getParent(),
-                    FilenameUtils.removeExtension(targetFile.getName()) + '.' + defaultExtension);
+            throw new ConversionException(String.format("'%s' is an illegal filename for '%s' audio format.", targetFile.getName(), targetFormat.name()));
+//            targetFile = new File(targetFile.getParent(),
+//                    FilenameUtils.removeExtension(targetFile.getName()) + '.' + defaultExtension);
         }
 
         File sourceFile = new File(sourceDir, FilenameUtils.removeExtension(CUSTOM_GREETING) + "." + defaultExtension);
@@ -479,39 +486,8 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         return audioFileRepository.resolveFile(audioItem, format, writeAccess);
     }
 
-    /**
-     * Returns whether this repository needs to perform gc.
-     */
-    public FileSystemGarbageCollector.GCInfo getGcInfo() throws IOException {
-        return audioFileRepository.getGcInfo();
-    }
-
-    /**
-     * Can optionally be overwritten by subclasses to performs a garbage
-     * collection in the repository to free up disk space.
-     */
-    public void gc() throws IOException {
-        audioFileRepository.gc();
-    }
-
     public synchronized void setupWavCaching(Predicate<Long> gcQuery) throws IOException {
-        if (caching == null) {
-            caching = new WavFilePreCaching();
-        }
-        FileSystemGarbageCollector.GCInfo gcInfo = getGcInfo();
-
-        if (gcInfo.isGcRecommended()) {
-            long sizeMB = gcInfo.getCurrentSizeInBytes() / 1024 / 1024;
-            if (!caching.hasUncachedA18Files()) {
-                if (gcQuery.test(sizeMB)) {
-                    gc();
-                }
-            }
-        }
-
-        if (ACMConfiguration.getInstance().getCurrentDB().isShouldPreCacheWav()) {
-            caching.cacheNewA18Files();
-        }
+        audioFileRepository.setupWavCaching(gcQuery);
     }
 
     /**
@@ -548,7 +524,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
 
     public CleanResult cleanUnreferencedFiles() {
         // This gets the list of directory names, which should correspond to item ids.
-        List<String> ids = audioFileRepository.getAudioItemIds(Repository.global);
+        List<String> ids = audioFileRepository.getAudioItemIds();
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         // Calculates the cumulative size of all of the files that will be removed.
         // For all ids, take the ones with no backing audio item, get the size, and sum.

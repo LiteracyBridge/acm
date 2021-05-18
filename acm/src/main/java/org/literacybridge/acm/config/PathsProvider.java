@@ -36,7 +36,8 @@ import java.util.logging.Logger;
  */
 public class PathsProvider {
     private static final Logger LOG = Logger.getLogger(PathsProvider.class.getName());
-    
+
+    // ~/LiteracyBridge/ACM-${programid} or ~/Amplio/acm-dbs/${programid}
     private final File programHomeDir;
 
     private final String programName;
@@ -157,7 +158,7 @@ public class PathsProvider {
     /**
      * @return ~/Amplio/ACM/temp/${acmDbDirName} (may include ACM-, for Dropbox programs)
      */
-    File getLocalAcmTempDir() {
+    File getLocalProgramTempDir() {
         File dir = new File(AmplioHome.getTempsDir(), acmDbDirName);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
@@ -171,7 +172,7 @@ public class PathsProvider {
      * @return ~/Amplio/ACM/temp/${acmDbDirName}/db
      */
     File getLocalTempDbDir() {
-        return new File(getLocalAcmTempDir(), Constants.DBHomeDir);
+        return new File(getLocalProgramTempDir(), Constants.DBHomeDir);
     }
 
     /**
@@ -184,8 +185,12 @@ public class PathsProvider {
     /**
      * @return ~/Amplio/ACM/temp/${acmDbDirName}/content (acmDbDirName may include ACM-, for Dropbox programs)
      */
-    File getLocalAcmSandboxDir() {
-        return new File(getLocalAcmTempDir(), Constants.RepositoryHomeDir);
+//    File getLocalAcmSandboxDir() {
+//        return new File(getLocalProgramTempDir(), Constants.RepositoryHomeDir);
+//    }
+
+    File getSandboxDir() {
+        return new File(AmplioHome.getSandboxesDir(), programName);
     }
 
     /**

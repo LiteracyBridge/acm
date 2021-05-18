@@ -43,7 +43,7 @@ abstract class AudioFileExporter {
      * @throws IOException If a file can't be read or written.
      * @throws ConversionException If the format conversion fails.
      */
-    void export() throws IOException, ConversionException {
+    void export() throws IOException, ConversionException, AudioItemRepository.UnsupportedFormatException {
         AudioItemRepository repository = ACMConfiguration.getInstance()
             .getCurrentDB()
             .getRepository();

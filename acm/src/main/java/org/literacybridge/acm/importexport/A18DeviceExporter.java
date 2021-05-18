@@ -53,7 +53,7 @@ public class A18DeviceExporter {
       repository.exportAudioFileWithFormat(item,
               new File(deviceLocation, repository.getAudioFilename(item, AudioItemRepository.AudioFormat.A18)),
               AudioItemRepository.AudioFormat.A18);
-    } catch (ConversionException e) {
+    } catch (ConversionException | AudioItemRepository.UnsupportedFormatException e) {
       LOG.log(Level.WARNING, "Error converting audio file.", e);
       return false;
     }

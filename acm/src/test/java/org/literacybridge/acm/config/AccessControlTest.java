@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.literacybridge.acm.cloud.Authenticator;
+import org.literacybridge.acm.sandbox.Sandbox;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -33,6 +34,7 @@ public class AccessControlTest {
     private File temp;  // Like ~/Literacybridge/temp
     private File dbx;   // Like ~/Dropbox
     private File acmDir; // Like ~/Dropbox/ACM-NADA
+    private File sandboxDir;
 
     private DBConfiguration getMockDbConfig() throws IOException {
         home = folder.newFolder("home");
@@ -41,6 +43,7 @@ public class AccessControlTest {
         dbx = folder.newFolder("dbx");
         acmDir = new File(dbx, "ACM-NADA");
         acmDir.mkdirs();
+        sandboxDir = folder.newFolder("sandbox");
 
         AmplioHome testInstance = new AmplioHome() {
             @Override
@@ -52,6 +55,7 @@ public class AccessControlTest {
 
         PathsProvider ppConfig = new PathsProvider("ACM-NADA", true) {
         };
+        Sandbox sandbox = new Sandbox(acmDir, sandboxDir);
 
         ACMConfiguration mockConfig = PowerMockito.mock(ACMConfiguration.class);
         PowerMockito.mockStatic(ACMConfiguration.class);
@@ -59,9 +63,9 @@ public class AccessControlTest {
         PowerMockito.when(mockConfig.getPathProvider("ACM-NADA")).thenReturn(ppConfig);
 
         DBConfiguration dbConfig = PowerMockito.mock(DBConfiguration.class);
+        when(dbConfig.getSandbox()).thenReturn(sandbox);
         when(dbConfig.getPathProvider()).thenReturn(ppConfig);
-        when(dbConfig.getTempACMsDirectory()).thenReturn(temp.getAbsolutePath());
-        when(dbConfig.getAcmDbDirName()).thenReturn("ACM-NADA");
+        when(dbConfig.getProgramHomeDirName()).thenReturn("ACM-NADA");
         when(dbConfig.getProgramHomeDir()).thenReturn(acmDir);
         return dbConfig;
     }
@@ -89,9 +93,9 @@ public class AccessControlTest {
         DBConfiguration dbConfig = getMockDbConfig();
         AccessControl ac = new AccessControl(dbConfig);
 
-        AccessControl.AccessStatus status = ac.init();
+        AccessControlResolver.AccessStatus status = ac.determineAccessStatus();
 
-        assertEquals(AccessControl.AccessStatus.noNetworkNoDbError, status);
+        assertEquals(AccessControlResolver.AccessStatus.noNetworkNoDbError, status);
     }
 
     @Test
@@ -103,9 +107,9 @@ public class AccessControlTest {
         populateAcm();
         AccessControl ac = new AccessControl(dbConfig);
 
-        AccessControl.AccessStatus status = ac.init();
+        AccessControlResolver.AccessStatus status = ac.determineAccessStatus();
 
-        assertEquals(AccessControl.AccessStatus.noServer, status);
+        assertEquals(AccessControlResolver.AccessStatus.noServer, status);
     }
 
 
@@ -118,13 +122,13 @@ public class AccessControlTest {
 
         AccessControl ac = new AccessControl(dbConfig);
         AccessControl spy = spy(ac);
-        doReturn(true).when(spy).checkOutDB("ACM-NADA", "statusCheck");
+        doReturn(true).when(spy).isDbAvailableToCheckout("ACM-NADA");
         // No db*.zip exists; we don't have any database at all.
         doReturn("db2.zip").when(spy).getCurrentZipFilename();
 
-        AccessControl.AccessStatus status = spy.init();
+        AccessControlResolver.AccessStatus status = spy.determineAccessStatus();
 
-        assertEquals(AccessControl.AccessStatus.noDbError, status);
+        assertEquals(AccessControlResolver.AccessStatus.noDbError, status);
     }
 
 
@@ -138,11 +142,11 @@ public class AccessControlTest {
 
         AccessControl ac = new AccessControl(dbConfig);
         AccessControl spy = spy(ac);
-        doReturn(false).when(spy).checkOutDB("ACM-NADA", "statusCheck");
+        doReturn(false).when(spy).isDbAvailableToCheckout("ACM-NADA");
 
-        AccessControl.AccessStatus status = spy.init();
+        AccessControlResolver.AccessStatus status = spy.determineAccessStatus();
 
-        assertEquals(AccessControl.AccessStatus.notAvailable, status);
+        assertEquals(AccessControlResolver.AccessStatus.notAvailable, status);
     }
 
     @Test
@@ -155,11 +159,11 @@ public class AccessControlTest {
 
         AccessControl ac = new AccessControl(dbConfig);
         AccessControl spy = spy(ac);
-        doThrow(new IOException("boo!")).when(spy).checkOutDB("ACM-NADA", "statusCheck");
+        doThrow(new IOException("boo!")).when(spy).isDbAvailableToCheckout("ACM-NADA");
 
-        AccessControl.AccessStatus status = spy.init();
+        AccessControlResolver.AccessStatus status = spy.determineAccessStatus();
 
-        assertEquals(AccessControl.AccessStatus.noServer, status);
+        assertEquals(AccessControlResolver.AccessStatus.noServer, status);
     }
 
 //    @Test
@@ -176,9 +180,9 @@ public class AccessControlTest {
 //        doReturn("null").when(spy).getCurrentZipFilename();
 //        doReturn(false).when(spy).isNewCheckoutRecord();
 //
-//        AccessControl.AccessStatus status = spy.init();
+//        AccessControlResolver.AccessStatus status = spy.init();
 //
-//        assertEquals(status, AccessControl.AccessStatus.newDatabase);
+//        assertEquals(status, AccessControlResolver.AccessStatus.newDatabase);
 //    }
 
     @Test
@@ -191,13 +195,13 @@ public class AccessControlTest {
 
         AccessControl ac = new AccessControl(dbConfig);
         AccessControl spy = spy(ac);
-        doReturn(true).when(spy).checkOutDB("ACM-NADA", "statusCheck");
+        doReturn(true).when(spy).isDbAvailableToCheckout("ACM-NADA");
         // Only db1.zip exists; we don't seem to have the latest.
         doReturn("db2.zip").when(spy).getCurrentZipFilename();
 
-        AccessControl.AccessStatus status = spy.init();
+        AccessControlResolver.AccessStatus status = spy.determineAccessStatus();
 
-        assertEquals(AccessControl.AccessStatus.outdatedDb, status);
+        assertEquals(AccessControlResolver.AccessStatus.outdatedDb, status);
     }
 
     @Test
@@ -215,12 +219,12 @@ public class AccessControlTest {
 
         AccessControl ac = new AccessControl(dbConfig);
         AccessControl spy = spy(ac);
-        doReturn(true).when(spy).checkOutDB("ACM-NADA", "statusCheck");
+        doReturn(true).when(spy).isDbAvailableToCheckout("ACM-NADA");
         doReturn("db1.zip").when(spy).getCurrentZipFilename();
 
-        AccessControl.AccessStatus status = spy.init();
+        AccessControlResolver.AccessStatus status = spy.determineAccessStatus();
 
-        assertEquals(AccessControl.AccessStatus.userReadOnly, status);
+        assertEquals(AccessControlResolver.AccessStatus.userReadOnly, status);
     }
 
     @Test
@@ -238,11 +242,11 @@ public class AccessControlTest {
 
         AccessControl ac = new AccessControl(dbConfig);
         AccessControl spy = spy(ac);
-        doReturn(true).when(spy).checkOutDB("ACM-NADA", "statusCheck");
+        doReturn(true).when(spy).isDbAvailableToCheckout("ACM-NADA");
         doReturn("db1.zip").when(spy).getCurrentZipFilename();
 
-        AccessControl.AccessStatus status = spy.init();
+        AccessControlResolver.AccessStatus status = spy.determineAccessStatus();
 
-        assertEquals(AccessControl.AccessStatus.available, status);
+        assertEquals(AccessControlResolver.AccessStatus.available, status);
     }
 }

@@ -1,107 +1,37 @@
 package org.literacybridge.acm.config;
 
-import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.cloud.Authenticator;
+import org.literacybridge.acm.config.AccessControlResolver.AccessStatus;
+import org.literacybridge.acm.config.AccessControlResolver.ACCESS_CHOICE;
+import org.literacybridge.acm.config.AccessControlResolver.OpenStatus;
 import org.literacybridge.core.fs.ZipUnzip;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 // TESTING: required for AWS check-out platform
 
 public class AccessControl {
-
-    /**
-     * These are the status values that can be returned by init()
-     */
-    public enum AccessStatus {
-        none,                           // No status yet
-        lockError,                      // Can't lock; ACM already open
-        processError,                   // Can't lock, don't know why
-        previouslyCheckedOutError,      // Already open this user, can't open with sandbox
-        noNetworkNoDbError,             // Can't get to server, and have no local database
-        noDbError,                      // No local database. Dropbox problem?
-        checkedOut,                     // Already checked out. Just open it.
-        newDatabase,                    // New database (on server). Just open it.
-        noServer(true),                 // Can open, with sandbox
-        syncFailure(true),              // May be able to open, sandbox only.
-        outdatedDb(true),               // Can open, with sandbox
-        notAvailable(true, true),       // Can open with sandbox, may be outdated
-        userReadOnly(true, true),       // Can open with sandbox, may be outdated
-        available;                      // Can open it
-
-        private final boolean okWithSandbox;
-        private final boolean mayBeOutdated;
-
-        AccessStatus() {
-            this(false, false);
-        }
-
-        AccessStatus(boolean okWithSandbox) {
-            this(okWithSandbox, false);
-        }
-
-        AccessStatus(boolean okWithSandbox, boolean mayBeOutdated) {
-            this.okWithSandbox = okWithSandbox;
-            this.mayBeOutdated = mayBeOutdated;
-        }
-
-        public boolean isOkWithSandbox() {
-            return okWithSandbox;
-        }
-
-        public boolean isMayBeOutdated() {
-            return mayBeOutdated;
-        }
-    }
-
-    /**
-     * THese are the status values that can be returned by open() and initDb().
-     */
-    public enum OpenStatus {
-        none,                           // No status yet.
-        serverError,                    // Error accessing server.
-        notAvailableError,              // Not available to checkout.
-        // Open states below here
-        opened,                         // Opened for read-write.
-        reopened,                       // Opened for read-write; it was already open.
-        newDatabase,                    // Brand new database. read-write.
-        openedSandboxed;                // Open, but sandboxed.
-
-        public boolean isOpen() {
-            return this.ordinal() >= opened.ordinal();
-        }
-    }
-
-    /**
-     * These are the values that can be returned by commitDbChanges().
-     */
-    public enum UpdateDbStatus {
-        ok,                             // Saved locally, checked in status on server.
-        denied,                         // Server denied checkin.
-        networkError,                   // Can't access server to checkin.
-        zipError                        // Error zipping the database (metadata).
-    }
-
-    public enum CloseDisposition {
-        save,
-        discard
-    }
 
     private static final Logger LOG = Logger.getLogger(AccessControl.class.getName());
     private static final int NUM_ZIP_FILES_TO_KEEP = 4;
@@ -109,27 +39,35 @@ public class AccessControl {
     private final static String DB_ZIP_FILENAME_PREFIX = Constants.DBHomeDir;
     private final static String DB_ZIP_FILENAME_INITIAL = DB_ZIP_FILENAME_PREFIX + "1.zip";
     private final static String DB_ZIP_FILENAME_FORMAT = DB_ZIP_FILENAME_PREFIX + "%d.zip";
+    private final static Pattern DB_ZIP_MATCHER = Pattern.compile("(?i)^db([0-9]+)\\.zip$");
     // The php checkout app returns the string "NULL" if no checkin file was found
     private final static String DB_DOES_NOT_EXIST = "NULL";
     private final static String DB_KEY_OVERRIDE = "force";
 
     protected final DBConfiguration dbConfiguration;
+    private final AccessControlResolver resolver;
 
     AccessStatus accessStatus = AccessStatus.none;
     OpenStatus openStatus = OpenStatus.none;
+
     private Map<String,String> possessor;
     private DBInfo dbInfo;
 
     AccessControl(DBConfiguration dbConfiguration) {
         this.dbConfiguration = dbConfiguration;
+        this.resolver = AccessControlResolver.getDefault();
+    }
+    AccessControl(DBConfiguration dbConfiguration, AccessControlResolver resolver) {
+        this.dbConfiguration = dbConfiguration;
+        this.resolver = resolver;
     }
 
     private void setPossessor(Map<String,String>  name) {
         possessor = name;
     }
 
-    Map<String,String>  getPosessor() {
-        return possessor;
+    public Map<String,String>  getPosessor() {
+        return new HashMap<>(possessor);
     }
 
     AccessStatus getAccessStatus() {
@@ -217,8 +155,9 @@ public class AccessControl {
             // deleting old local DB so that next startup knows everything shutdown
             // normally
             // Like ~/LiteracyBridge/ACM/temp/ACM-CARE
-            FileUtils.deleteDirectory(dbConfiguration.getPathProvider().getLocalAcmTempDir());
-        } catch (IOException e) {
+            FileUtils.deleteDirectory(dbConfiguration.getPathProvider().getLocalProgramTempDir());
+        } catch (Exception e) {
+            System.err.print("Caught exception deleting local db.\n");
             e.printStackTrace();
             // TODO: Notify the user so they have some slim chance of getting around the problem.
         }
@@ -252,13 +191,19 @@ public class AccessControl {
      */
     public void initDb() {
         boolean useSandbox = ACMConfiguration.getInstance().isForceSandbox();
-        accessStatus = init();
-        if (accessStatus == AccessStatus.available ||
-                accessStatus == AccessStatus.checkedOut ||
-                accessStatus == AccessStatus.newDatabase ||
-                accessStatus.isOkWithSandbox() && useSandbox) {
+        accessStatus = determineAccessStatus();
+
+        ACCESS_CHOICE choice = resolver.resolveAccessStatus(this, accessStatus);
+        if (choice == ACCESS_CHOICE.USE_READONLY) { useSandbox = true; }
+        // If a fatal error and interative, terminate.
+        if ((accessStatus.isFatal() || (accessStatus.isOkWithSandbox() && !useSandbox) )
+                && !ACMConfiguration.getInstance().isDisableUI()) {
+            stackTraceExit(accessStatus);
+        }
+
+        if (accessStatus.isAlwaysOk() || accessStatus.isOkWithSandbox() && useSandbox) {
             openStatus = open(useSandbox);
-            openStatus.isOpen();
+            resolver.resolveOpenStatus(this, openStatus);
         }
     }
 
@@ -271,7 +216,8 @@ public class AccessControl {
      *
      * @return An enum giving the status.
      */
-    public AccessStatus init() {
+    public AccessStatus determineAccessStatus() {
+        AccessStatus status;
         try {
             AcmLocker.lockDb(dbConfiguration);
         } catch (AcmLocker.MultipleInstanceException e) {
@@ -298,13 +244,13 @@ public class AccessControl {
             if (ACMConfiguration.getInstance().isForceSandbox()) {
                 return AccessStatus.previouslyCheckedOutError;
             }
-            accessStatus = AccessStatus.checkedOut;
+            status = AccessStatus.checkedOut;
         } else {
             deleteLocalDB();
-            accessStatus = determineRWStatus();
+            status = determineRWStatus();
         }
 
-        return accessStatus;
+        return status;
     }
 
     /**
@@ -314,7 +260,7 @@ public class AccessControl {
      * @return The OpenStatus.
      */
     OpenStatus open(boolean useSandbox) {
-        OpenStatus openStatus;
+        OpenStatus status;
         if (!AcmLocker.isLocked() || dbInfo == null) {
             throw new IllegalStateException("Call to open() without call to init()");
         }
@@ -359,33 +305,33 @@ public class AccessControl {
         }
 
         if (dbInfo.isCheckedOut()) {
-            openStatus = OpenStatus.reopened;
+            status = OpenStatus.reopened;
         } else if (useSandbox) {
-            openStatus = OpenStatus.openedSandboxed;
+            status = OpenStatus.openedSandboxed;
         } else if (accessStatus == AccessStatus.newDatabase) {
-            openStatus = OpenStatus.newDatabase;
+            status = OpenStatus.newDatabase;
         } else {
             // Try to check out on server.
             boolean dbAvailable;
             try {
-                dbAvailable = checkOutDB(dbConfiguration.getAcmDbDirName(), "checkout");
-                openStatus = dbAvailable ? OpenStatus.opened : OpenStatus.notAvailableError;
+                dbAvailable = checkOutDB(dbConfiguration.getProgramHomeDirName());
+                status = dbAvailable ? OpenStatus.opened : OpenStatus.notAvailableError;
             } catch (IOException e) {
-                openStatus = OpenStatus.serverError;
+                status = OpenStatus.serverError;
             }
         }
         setSandboxed(useSandbox);
 
         // If we're able to open the database, create mirror if necessary, set up the repository.
-        if (openStatus.isOpen()) {
+        if (status.isOpen()) {
             // If newly checked out, create the db mirror.
-            if (openStatus != OpenStatus.reopened) {
+            if (status != OpenStatus.reopened) {
                 // If we successfully called checkOutDB, the zip file name has been set. If we didn't
                 // make the call (reopened, openedSandboxed, newDatabase), or if the call failed
                 // (notAvailableError, serverError), then the name has not been set. Only if the
                 // status is (opened) will the name have been set. So, if needed, set it now from
                 // the latest timestamp.
-                if (openStatus != OpenStatus.opened) {
+                if (status != OpenStatus.opened) {
                     assert getCurrentZipFilename() == null : "Expected no zip file name.";
                     setNewestModifiedZipFileAsCurrent();
                 }
@@ -397,7 +343,7 @@ public class AccessControl {
                 }
             }
         }
-        return openStatus;
+        return status;
     }
 
     /**
@@ -421,7 +367,7 @@ public class AccessControl {
         }
 
         try {
-            boolean dbAvailable = checkOutDB(dbConfiguration.getAcmDbDirName(), "statusCheck");
+            boolean dbAvailable = isDbAvailableToCheckout(dbConfiguration.getProgramHomeDirName());
             if (!dbAvailable) {
                 return AccessStatus.notAvailable;
             }
@@ -451,67 +397,90 @@ public class AccessControl {
         return AccessStatus.available;
     }
 
-    public boolean updateDb() {
-        throw new IllegalStateException("Only valid in sub-classes");
-    }
-
-    UpdateDbStatus commitDbChanges() {
-        return commitOrDiscard(CloseDisposition.save);
-    }
-
-    CloseDisposition discardDisposition = CloseDisposition.discard;
-    UpdateDbStatus discardDbChanges() {
-        return commitOrDiscard(discardDisposition);
-    }
-
-    /**
-     * This should be called "writeBackDb" or "commitChanges" or something like that.
-     * <p>
-     * Writes the current temporary database back to a .zip file in the global shared
-     * directory, ie, Dropbox.
-     *
-     * @param disposition 'save' or 'discard'
-     * @return UpdateDbStatus.ok if the checkin was performed (or discard was successful),
-     * .denied if there was a key mismatch on the server,
-     * .networkError if we could not reach the server,
-     * .zipError if there was an error zipping up the database
-     */
-    private UpdateDbStatus commitOrDiscard(CloseDisposition disposition) {
-        boolean saveWork = disposition == CloseDisposition.save;
+    AccessControlResolver.UpdateDbStatus commitDbChanges() {
+        AccessControlResolver.UpdateDbStatus status = AccessControlResolver.UpdateDbStatus.ok;
+        String dbName = dbConfiguration.getProgramHomeDirName();
         String filename = null;
 
-        if (saveWork) {
-            filename = saveDbFromMirror();
-            if (filename == null) {
-                return UpdateDbStatus.zipError;
+        filename = saveDbFromMirror();
+        if (filename == null) {
+            // If we couldn't save the file, ask the user whether to keep (and try later) or discard changes.
+            status = AccessControlResolver.UpdateDbStatus.zipError;
+            AccessControlResolver.UPDATE_CHOICE choice = resolver.resolveUpdateStatus(this, status);
+            if (choice == AccessControlResolver.UPDATE_CHOICE.DELETE) {
+                return discardDbChanges();
             }
-        } else if (dbInfo.isNewCheckoutRecord()) {
-            filename = getCurrentZipFilename();
         }
+        if (status == AccessControlResolver.UpdateDbStatus.ok) {
+            try {
+                if (!checkInDB(dbName, filename))
+                    status = AccessControlResolver.UpdateDbStatus.denied;
+            } catch (IOException ex) {
+                status = AccessControlResolver.UpdateDbStatus.networkError;
+            }
+
+            AccessControlResolver.UPDATE_CHOICE choice = resolver.resolveUpdateStatus(this, status);
+
+            if (status == AccessControlResolver.UpdateDbStatus.ok) {
+                // We saved the .zip OK, and updated server status OK. Safe to clean up.
+                deleteOldZipFiles(NUM_ZIP_FILES_TO_KEEP);
+                dbInfo.deleteCheckoutFile();
+                deleteLocalDB();
+                accessStatus = AccessStatus.none;
+                openStatus = OpenStatus.none;
+            }
+        }
+        return status;
+    }
+
+    AccessControlResolver.UpdateDbStatus discardDbChanges() {
+        AccessControlResolver.UpdateDbStatus status = AccessControlResolver.UpdateDbStatus.ok;
+        String dbName = dbConfiguration.getProgramHomeDirName();
 
         boolean checkedInOk;
         try {
-            checkedInOk = checkInDB(dbConfiguration.getAcmDbDirName(), filename);
+            if (!discardCheckout(dbName))
+                status = AccessControlResolver.UpdateDbStatus.denied;
         } catch (IOException ex) {
-            return UpdateDbStatus.networkError;
+            status = AccessControlResolver.UpdateDbStatus.networkError;
         }
 
-        if (!checkedInOk) {
-            return UpdateDbStatus.denied;
-        }
+        AccessControlResolver.UPDATE_CHOICE choice = resolver.resolveUpdateStatus(this, status);
 
-        if (saveWork) {
-            // We saved the .zip OK, and updated server status OK. Safe to clean up.
-            deleteOldZipFiles(NUM_ZIP_FILES_TO_KEEP);
+        if (status == AccessControlResolver.UpdateDbStatus.ok) {
+            dbInfo.deleteCheckoutFile();
+            deleteLocalDB();
+            accessStatus = AccessStatus.none;
+            openStatus = OpenStatus.none;
         }
-
-        dbInfo.deleteCheckoutFile();
-        accessStatus = AccessStatus.none;
-        return UpdateDbStatus.ok;
+        return status;
     }
 
-    @SuppressWarnings("unchecked")
-    boolean checkOutDB(String db, String action) throws IOException {
+    /**
+     * Checks the server to see if the given db is available to check out.
+     * @param db the name of the database, "ACM-LBG-COVID-19" or "UNICEF-GH_CHPS". Has an ACM- prefix if the
+     *           program directory has an ACM- prefix. (Or, has an ACM- prefix if the database is in Dropbox,
+     *           and not if the database is in S3.)
+     * @return True if the database is available, false otherwise.
+     * @throws IOException if there is a network error.
+     */
+    boolean isDbAvailableToCheckout(String db) throws IOException {
+        return checkOutDbHelper(db, "statusCheck");
+    }
+
+    /**
+     * Attempts to check out the given database.
+     * @param db the name of the database, "ACM-LBG-COVID-19" or "UNICEF-GH_CHPS". Has an ACM- prefix if the
+     *           program directory has an ACM- prefix. (Or, has an ACM- prefix if the database is in Dropbox,
+     *           and not if the database is in S3.)
+     * @return True if the database was successfully checked out, false otherwise.
+     * @throws IOException if there is a network error.
+     */
+    boolean checkOutDB(String db) throws IOException {
+        return checkOutDbHelper(db, "checkout");
+    }
+
+    private boolean checkOutDbHelper(String db, String action) throws IOException {
         Authenticator authenticator = Authenticator.getInstance();
         Authenticator.AwsInterface awsInterface = authenticator.getAwsInterface();
         String computerName;
@@ -641,6 +610,18 @@ public class AccessControl {
     }
 
     /**
+     * Discards a checkout. The checkout record is released on the server.
+     * @param acmName the name of the database, "ACM-LBG-COVID-19" or "UNICEF-GH_CHPS". Has an ACM- prefix if the
+     *           program directory has an ACM- prefix. (Or, has an ACM- prefix if the database is in Dropbox,
+     *           and not if the database is in S3.)
+     * @return True if the checkin was released OK, false otherwise.
+     * @throws IOException if the server can't be reached.
+     */
+    private boolean discardCheckout(String acmName) throws IOException {
+        return checkInDB(acmName, null);
+    }
+
+    /**
      * Attempts to check in the database filename, on server. The server will match the
      * provided key against the server's saved version of the key for the ACM. A null filename
      * means that the checkout is simply being discarded.
@@ -650,7 +631,6 @@ public class AccessControl {
      * @return true if
      * @throws IOException if server is inaccessible
      */
-    @SuppressWarnings("unchecked")
     private boolean checkInDB(String acmName, String filename) throws IOException {
         Authenticator authenticator = Authenticator.getInstance();
         Authenticator.AwsInterface awsInterface = authenticator.getAwsInterface();
@@ -717,13 +697,14 @@ public class AccessControl {
         }
         try {
             File outDirectory = dbConfiguration.getLocalTempDbDir();
-            File inZipFile = new File(dbConfiguration.getProgramHomeDir(), zipFileName);
+            Path inZipPath = new File(dbConfiguration.getProgramHomeDir(), zipFileName).toPath();
+            File inSbFile = dbConfiguration.getSandbox().inputFile(inZipPath);
             Calendar cal = Calendar.getInstance();
             LOG.info(String.format("Started DB Mirror: %2d:%02d.%03d\n",
                     cal.get(Calendar.MINUTE),
                     cal.get(Calendar.SECOND),
                     cal.get(Calendar.MILLISECOND)));
-            ZipUnzip.unzip(inZipFile, outDirectory);
+            ZipUnzip.unzip(inSbFile, outDirectory);
             cal = Calendar.getInstance();
             LOG.info(String.format("Completed DB Mirror: %2d:%02d.%03d\n",
                 cal.get(Calendar.MINUTE),
@@ -747,13 +728,35 @@ public class AccessControl {
         try {
             // The name previously decided for the next zip file name.
             filename = getNextZipFilename();
-            File outZipFile = new File(dbConfiguration.getProgramHomeDir(), filename);
+            Path outZipPath = new File(dbConfiguration.getProgramHomeDir(), filename).toPath();
+            File outSbFile = dbConfiguration.getSandbox().outputFile(outZipPath);
             File inDirectory = dbConfiguration.getLocalTempDbDir();
-            ZipUnzip.zip(inDirectory, outZipFile);
+            ZipUnzip.zip(inDirectory, outSbFile);
         } catch (IOException ex) {
             return null;
         }
         return filename;
+    }
+
+    private List<File> findZipFiles() {
+        Collection<Path> homeDirPaths = dbConfiguration.getSandbox().listPaths(dbConfiguration.getProgramHomeDir().toPath());
+        List<File> homeDirFiles = homeDirPaths.stream()
+            .map(Path::toFile)
+            .collect(Collectors.toList());
+        List<File> zipFiles = homeDirFiles.stream()
+            .filter(f -> DB_ZIP_MATCHER.matcher(f.getName().toLowerCase()).matches())
+            .collect(Collectors.toList());
+        if (zipFiles.size() == 0) {
+            for (File file : homeDirFiles) {
+                if (DB_ZIP_MATCHER.matcher(file.getName().toLowerCase()).matches()) {
+                    zipFiles.add(file);
+                }
+            }
+            if (zipFiles.size() != 0) {
+                System.err.println("Getting list of zip files via filter failed; fall back to ordinary loop.");
+            }
+        }
+        return zipFiles;
     }
 
     /**
@@ -763,18 +766,22 @@ public class AccessControl {
      */
     @SuppressWarnings("SameParameterValue")
     private void deleteOldZipFiles(int numFilesToKeep) {
-        List<File> files = Lists.newArrayList(
-                dbConfiguration.getProgramHomeDir().listFiles((dir, name) -> {
-                    String lowercase = name.toLowerCase();
-                    return lowercase.endsWith(".zip");
-                }));
+        List<File> zipFiles = findZipFiles();
 
         // sort files from old to new
-        files.sort((o1, o2) -> Long.compare(o1.lastModified(), o2.lastModified()));
+        zipFiles.sort(Comparator.comparingInt(file -> {
+                Matcher m = DB_ZIP_MATCHER.matcher(file.getName());
+                if (m.matches()) {
+                    String dbNumber = m.group(1);
+                    return Integer.parseInt(dbNumber);
+                }
+                return -1;
+            }
+        ));
 
-        int numToDelete = files.size() - numFilesToKeep;
+        int numToDelete = zipFiles.size() - numFilesToKeep;
         for (int i = 0; i < numToDelete; i++) {
-            files.get(i).delete();
+            dbConfiguration.getSandbox().delete(zipFiles.get(i));
         }
     }
 
@@ -785,22 +792,8 @@ public class AccessControl {
      * @return The File with the newest lastModified() property.
      */
     private File findNewestModifiedZipFile() {
-        File[] files;
-        File latestModifiedFile = null;
-        files = dbConfiguration.getProgramHomeDir().listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                String lowercase = name.toLowerCase();
-                return lowercase.endsWith(".zip");
-            }
-        });
-        for (File file : files) {
-            if (latestModifiedFile == null
-                    || file.lastModified() > latestModifiedFile.lastModified()) {
-                latestModifiedFile = file;
-            }
-        }
-        return latestModifiedFile;
+        List<File> zipFiles = findZipFiles();
+        return zipFiles.stream().max(Comparator.comparingLong(File::lastModified)).orElse(null);
     }
 
     /**
@@ -834,7 +827,17 @@ public class AccessControl {
             return true; // if the ACM is new, you have the latest there is (nothing)
 
         File fileShouldHave = new File(dbConfiguration.getProgramHomeDir(), filenameShouldHave);
-        return fileShouldHave.exists();
+        return dbConfiguration.getSandbox().exists(fileShouldHave.toPath());
     }
 
+    /**
+     * Helper to print a stack trace and exit.
+     *
+     * @param rc the return code.
+     */
+    private void stackTraceExit(AccessStatus rc) {
+        System.err.printf("AccessStatus: %s\n", rc.toString());
+        new Throwable().printStackTrace();
+        System.exit(1);
+    }
 }

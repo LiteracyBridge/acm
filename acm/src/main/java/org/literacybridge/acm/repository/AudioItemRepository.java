@@ -20,11 +20,18 @@ public interface AudioItemRepository {
 
     void deleteAudioItem(AudioItem audioItem);
 
-    boolean hasAudioFileWithFormat(AudioItem audioItem, AudioFormat format);
+    /**
+     * Finds the audio file with the given format.
+     * @param audioItem for which the file is desired.
+     * @param format audio format for which the file is desired.
+     * @return the File or null if no file.
+     */
+    File findAudioFileWithFormat(AudioItem audioItem, AudioFormat format);
 
-    File findFileWithFormat(AudioItem audioItem, AudioFormat format);
-
-    File getAudioFile(AudioItem audioItem, AudioFormat format) throws IOException, BaseAudioConverter.ConversionException;
+    File getAudioFile(AudioItem audioItem, AudioFormat format) throws
+                                                               IOException,
+                                                               BaseAudioConverter.ConversionException,
+                                                               UnsupportedFormatException;
 
     String getAudioFilename(AudioItem audioItem, AudioFormat audioFormat);
 
@@ -38,7 +45,10 @@ public interface AudioItemRepository {
      * @throws IOException If a file can't be read or written.
      * @throws BaseAudioConverter.ConversionException If an existing file can't be converted to the desired format.
      */
-    File exportAudioFileWithFormat(AudioItem audioItem, File targetFile, AudioFormat targetFormat) throws IOException, BaseAudioConverter.ConversionException;
+    File exportAudioFileWithFormat(AudioItem audioItem, File targetFile, AudioFormat targetFormat) throws
+                                                                                                   IOException,
+                                                                                                   BaseAudioConverter.ConversionException,
+                                                                                                   UnsupportedFormatException;
 
     /**
      * Exports the system prompt for the given language, in the given format. Creates the format if necessary. The
@@ -64,7 +74,10 @@ public interface AudioItemRepository {
      * @throws IOException If a file can't be read or written.
      * @throws BaseAudioConverter.ConversionException If an existing file can't be converted to the desired format.
      */
-    void exportCategoryPromptPairWithFormat(String packageName, String prompt, File targetFile, String language, AudioFormat targetFormat) throws IOException, BaseAudioConverter.ConversionException;
+    void exportCategoryPromptPairWithFormat(String packageName, String prompt, File targetFile, String language, AudioFormat targetFormat) throws
+                                                                                                                                           IOException,
+                                                                                                                                           BaseAudioConverter.ConversionException,
+                                                                                                                                           UnsupportedFormatException;
 
     /**
      * Exports the greeting for the given recipient.

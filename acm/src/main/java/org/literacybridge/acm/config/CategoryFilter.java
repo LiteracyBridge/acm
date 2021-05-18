@@ -1,5 +1,6 @@
 package org.literacybridge.acm.config;
 
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.store.Category;
 import org.literacybridge.acm.store.Taxonomy;
 import org.literacybridge.acm.utils.Includelister;
@@ -17,75 +18,49 @@ import java.util.logging.Logger;
 public class CategoryFilter extends Includelister {
     private static final Logger LOG = Logger.getLogger(CategoryFilter.class.getName());
 
-    public static final String INCLUDELIST_FILENAME = "category.includelist";
-
-    private static File categoryIncludelistFile(File projectDir) {
+    private static File categoryIncludelistFile(File includelistFile) {
         // If allCategories is set, we just ignore the includelist anyway.
         if (ACMConfiguration.getInstance().isAllCategories()) {
             return null;
         }
-        return new File(projectDir, INCLUDELIST_FILENAME);
+        return includelistFile;
     }
 
     /**
      * Construct the CategoryFilter with the project directory. The includelist file, if it exists,
      * will be in that directory.
      *
-     * @param projectDir The project directory.
+     * @param includelistFile The project directory.
      */
-    public CategoryFilter(File projectDir) {
-        super(categoryIncludelistFile(projectDir), OPTIONS.emptyImpliesAll);
+    public CategoryFilter(File includelistFile) {
+        super(categoryIncludelistFile(includelistFile), OPTIONS.emptyImpliesAll);
     }
 
     /**
      * Writes a new category.includelist from the visibilities of the given taxonomy.
      *
-     * @param projectDir Directory into which to write the file.
+     * @param newFile    File into which to write the new list.
      * @param taxonomy   The taxonomy from which to get the visibilities.
-     * @return True if the includelist file was successfully written; false otherwise. (Check log
-     * for reason.)
      */
-    static boolean writeCategoryFilter(File projectDir, Taxonomy taxonomy) {
-        File curFile = new File(projectDir, INCLUDELIST_FILENAME);
-        File newFile = new File(projectDir, INCLUDELIST_FILENAME + ".new");
-        File bakFile = new File(projectDir, INCLUDELIST_FILENAME + ".bak");
+    static void writeCategoryFilter(File newFile, Taxonomy taxonomy) {
 
-        boolean ok = true;
-        // It's fine if there's no existing backup.
-        if (bakFile.exists()) {
-            ok = bakFile.delete();
-            if (!ok) LOG.warning("Unable to delete old category.includelist backup file");
-        }
-        if (ok) {
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(newFile));
-                InputStream is = CategoryFilter.class.getClassLoader()
-                    .getResourceAsStream(INCLUDELIST_FILENAME + ".txt");
-                BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    bw.write(line);
-                    bw.write("\n");
-                }
-                List<String> newData = buildIncludelistData(taxonomy);
-                for (String d : newData) {
-                    bw.write(d);
-                    bw.write("\n");
-                }
-            } catch (Exception e) {
-                ok = false;
-                LOG.warning("Unable to create new category.includelist file");
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(newFile));
+             InputStream is = CategoryFilter.class.getClassLoader()
+                .getResourceAsStream(Constants.CATEGORY_INCLUDELIST_FILENAME + ".txt");
+             BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                bw.write(line);
+                bw.write("\n");
             }
+            List<String> newData = buildIncludelistData(taxonomy);
+            for (String d : newData) {
+                bw.write(d);
+                bw.write("\n");
+            }
+        } catch (Exception e) {
+            LOG.warning("Unable to create new category.includelist file");
         }
-        if (ok) {
-            // It's fine if there is no existing file.
-            if (curFile.exists()) ok = curFile.renameTo(bakFile);
-            if (!ok) LOG.warning("Unable to rename old category.includelist file");
-        }
-        if (ok) {
-            ok = newFile.renameTo(curFile);
-            if (!ok) LOG.warning("Unable to rename new category.includelist file");
-        }
-        return ok;
     }
 
     /**

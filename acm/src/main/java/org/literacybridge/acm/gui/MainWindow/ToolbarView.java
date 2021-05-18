@@ -14,6 +14,7 @@ import org.literacybridge.acm.gui.playerAPI.PlayerStateDetails;
 import org.literacybridge.acm.gui.playerAPI.SimpleSoundPlayer;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.settings.AcmSettingsDialog;
+import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataSpecification;
@@ -346,7 +347,7 @@ public class ToolbarView extends JToolBar {
             titleInfoLbl.setPreferredSize(d);
             titleInfoLbl.setText(item.getMetadata()
                     .getMetadataValue(MetadataSpecification.DC_TITLE).getValue());
-        } catch (IOException | ConversionException e) {
+        } catch (IOException | ConversionException | AudioItemRepository.UnsupportedFormatException e) {
             // There really isn't anything to do with this exception.
 //      throw new RuntimeException(e);
         } finally {

@@ -105,7 +105,7 @@ public class ACMConfiguration {
     public static boolean isTestAcm() {
         if (instance == null || instance.getCurrentDB() == null) return false;
         if (instance.isNoDbCheckout()) return true;
-        return testAcms.contains(instance.getCurrentDB().getAcmDbDirName());
+        return testAcms.contains(instance.getCurrentDB().getProgramHomeDirName());
     }
     public static boolean isSandbox() {
         if (instance == null || instance.getCurrentDB() == null) return false;
@@ -260,7 +260,7 @@ public class ACMConfiguration {
      * @return true
      * @throws Exception if the database can't be opened.
      */
-    private synchronized boolean setCurrentDB(String dbName, S3SyncState syncState, BiConsumer<Runnable,Runnable> waiter) throws Exception {
+    private synchronized boolean setCurrentDB(String dbName, S3SyncState syncState, BiConsumer<Runnable,Runnable> waiter, AccessControlResolver accessControlResolver) throws Exception {
         PathsProvider dbPathProvider = getPathProvider(dbName);
         if (dbPathProvider == null) {
             throw new IllegalArgumentException("DB '" + dbName + "' not known.");
@@ -281,7 +281,7 @@ public class ACMConfiguration {
             available.acquire();
         }
         // TODO: Do something with value of inSync
-        boolean initialized = dbConfig.init();
+        boolean initialized = dbConfig.init(accessControlResolver);
         currentDB = dbConfig;
 
         return initialized;
@@ -295,11 +295,11 @@ public class ACMConfiguration {
      * @throws Exception if the database can't be opened.
      */
     public boolean setCurrentDB(String dbName) throws Exception {
-        return setCurrentDB(dbName, S3SyncState.REQUIRED_FOR_S3);
+        return setCurrentDB(dbName, S3SyncState.REQUIRED_FOR_S3, null);
     }
-    public boolean setCurrentDB(String dbName, S3SyncState syncState) throws Exception {
+    public boolean setCurrentDB(String dbName, S3SyncState syncState, AccessControlResolver accessControlResolver) throws Exception {
         // Pass a Consumer that simply calls its passed Runnable.
-        return setCurrentDB(dbName, syncState, (a,b)->{a.run();b.run();});
+        return setCurrentDB(dbName, syncState, (a,b)->{a.run();b.run();}, accessControlResolver);
     }
 
     /**
@@ -307,28 +307,45 @@ public class ACMConfiguration {
      *
      * TODO: Prompt the user before calling this.
      */
-    public synchronized void commitCurrentDB() {
-        if (currentDB != null && !currentDB.isSandboxed()) {
-            if (isDisableUI()) {
-                // Headless version, immediately commits changes.
-                currentDB.commitDbChanges();
-            } else {
-                // Interactive version, prompts first.
-                currentDB.updateDb();
-            }
-            if (!currentDB.getPathProvider().isDropboxDb()) {
-                tryCloudSync(currentDB.getProgramName());
+//    public synchronized void commitCurrentDB() {
+//        if (currentDB != null && !currentDB.isSandboxed()) {
+//            if (isDisableUI()) {
+//                // Headless version, immediately commits changes.
+//                currentDB.commitDbChanges();
+//            } else {
+//                // Interactive version, prompts first.
+//                currentDB.updateDb();
+//            }
+//            if (!currentDB.getPathProvider().isDropboxDb()) {
+//                tryCloudSync(currentDB.getProgramName());
+//            }
+//        }
+//    }
+
+    public enum DB_CLOSE_DISPOSITION {COMMIT, DISCARD}
+
+    public synchronized void closeCurrentDb(DB_CLOSE_DISPOSITION disposition) {
+        if (currentDB != null) {
+            try {
+                if (disposition == DB_CLOSE_DISPOSITION.COMMIT) {
+                    currentDB.commitDbChanges();
+                } else {
+                    currentDB.discardDbChanges();
+                }
+            } finally {
+                AcmLocker.unlockDb();
+                currentDB = null;
             }
         }
     }
 
-    public synchronized void closeCurrentDB() {
-        if (currentDB != null) {
-            currentDB.closeDb();
-            AcmLocker.unlockDb();
-            currentDB = null;
-        }
-    }
+//    public synchronized void closeCurrentDB() {
+//        if (currentDB != null) {
+//            currentDB.closeDb();
+//            AcmLocker.unlockDb();
+//            currentDB = null;
+//        }
+//    }
 
     public synchronized DBConfiguration getCurrentDB() {
         return currentDB;
@@ -421,6 +438,16 @@ public class ACMConfiguration {
         }
     }
 
+    public synchronized DBConfiguration getDbConfiguration(String programId) {
+        DBConfiguration result = knownDbs.get(cannonicalProjectName(programId));
+        if (result == null) {
+            result = knownDbs.get(cannonicalAcmDirectoryName(programId));
+        }
+        return result;
+    }
+
+
+
     /**
      * Gets a PathProvider for the given program.
      * @param programId Also known as the "project", or the "acm name" (minus the ACM- part).
@@ -494,7 +521,7 @@ public class ACMConfiguration {
     public String getTitle() {
         if (title != null)
             return title;
-        return ACMConfiguration.getInstance().getCurrentDB().getAcmDbDirName();
+        return ACMConfiguration.getInstance().getCurrentDB().getProgramHomeDirName();
     }
 
     public boolean isDisableUI() {
@@ -567,20 +594,20 @@ public class ACMConfiguration {
         return pp.getLocalTbLoaderDir();
     }
     
-    public Properties getConfigPropertiesFor(String acmName) {
-        Properties properties = null;
-        File configFile = getPathProvider(acmName).getProgramConfigFile();
-        if (configFile != null) {
-            try (FileInputStream fis = new FileInputStream(configFile);
-                 BufferedInputStream in = new BufferedInputStream(fis)) {
-                properties = new Properties();
-                properties.load(in);
-            } catch (IOException ignored) {
-                System.err.printf("Unable to load configuration file: %s\n", configFile.getName());
-            }
-        }
-        return properties;
-    }
+//    public Properties getConfigPropertiesFor(String acmName) {
+//        Properties properties = null;
+//        File configFile = getPathProvider(acmName).getProgramConfigFile();
+//        if (configFile != null) {
+//            try (FileInputStream fis = new FileInputStream(configFile);
+//                 BufferedInputStream in = new BufferedInputStream(fis)) {
+//                properties = new Properties();
+//                properties.load(in);
+//            } catch (IOException ignored) {
+//                System.err.printf("Unable to load configuration file: %s\n", configFile.getName());
+//            }
+//        }
+//        return properties;
+//    }
 
     private void loadUserProps() {
         if (AmplioHome.getUserConfigFile().exists()) {

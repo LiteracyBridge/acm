@@ -115,7 +115,7 @@ public class AudioExporter {
                     }
                 }
             }
-        } catch (ConversionException e) {
+        } catch (ConversionException | AudioItemRepository.UnsupportedFormatException e) {
             throw new IOException(e);
         }
     }
@@ -129,8 +129,7 @@ public class AudioExporter {
      * @throws ConversionException If the file can't be converted.
      */
     public void export(AudioItem audioItem, File targetFile, AudioFormat targetFormat)
-        throws IOException, ConversionException
-    {
+        throws IOException, ConversionException, AudioItemRepository.UnsupportedFormatException {
         AudioFileExporter exporter = getExporter(audioItem, targetFile, targetFormat);
         if (exporter == null) {
             // Count as a file we can't convert.

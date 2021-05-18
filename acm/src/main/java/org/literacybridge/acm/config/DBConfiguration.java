@@ -3,8 +3,10 @@ package org.literacybridge.acm.config;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.cloud.Authenticator;
+import org.literacybridge.acm.config.AccessControlResolver.AccessStatus;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.repository.AudioItemRepositoryImpl;
+import org.literacybridge.acm.sandbox.Sandbox;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.LuceneMetadataStore;
 import org.literacybridge.acm.store.MetadataStore;
@@ -42,7 +44,6 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
-@SuppressWarnings("serial")
 public class DBConfiguration {
   private static final Logger LOG = Logger.getLogger(DBConfiguration.class.getName());
 
@@ -56,26 +57,32 @@ public class DBConfiguration {
   private AudioItemRepositoryImpl repository;
   private MetadataStore store;
 
+  private Sandbox sandbox = null;
   private boolean sandboxed;
   private boolean syncFailure;
 
   private AccessControl accessControl;
 
-  DBConfiguration(String programDirName) {
-    this.pathsProvider = ACMConfiguration.getInstance().getPathProvider(programDirName);
-    System.out.printf("Program %s uses %s for storage.\n", this.pathsProvider.getProgramName(), this.pathsProvider.isDropboxDb()?"Dropbox":"S3");
-  }
-
     public DBConfiguration(PathsProvider pathsProvider) {
         this.pathsProvider = pathsProvider;
-        System.out.printf("Program %s uses %s for storage.\n", this.pathsProvider.getProgramName(), this.pathsProvider.isDropboxDb()?"Dropbox":"S3");
+        if (!pathsProvider.isDropboxDb()) {
+            System.out.printf("Program %s uses %s for storage.\n", this.pathsProvider.getProgramName(), this.pathsProvider.isDropboxDb()?"Dropbox":"S3");
+        }
+    }
+
+    public PathsProvider getPathProvider() {
+        return pathsProvider;
     }
 
     public AudioItemRepository getRepository() {
     return repository;
   }
 
-  public void setupWavCaching(Predicate<Long> queryGc) throws IOException {
+    public MetadataStore getMetadataStore() {
+        return store;
+    }
+
+    public void setupWavCaching(Predicate<Long> queryGc) throws IOException {
       repository.setupWavCaching(queryGc);
   }
 
@@ -83,15 +90,11 @@ public class DBConfiguration {
       return repository.cleanUnreferencedFiles();
   }
 
-    public MetadataStore getMetadataStore() {
-        return store;
-    }
-
     /**
    *  Gets the name of the ACM directory, like "ACM-DEMO".
    * @return The name of this content database, including "ACM-", if the directory name has an "ACM-" prefix.
    */
-  public String getAcmDbDirName() {
+  public String getProgramHomeDirName() {
     return pathsProvider.getProgramDirName();
   }
   @Deprecated
@@ -105,10 +108,6 @@ public class DBConfiguration {
      */
   public String getProgramName() {
       return pathsProvider.getProgramName();
-  }
-
-  public PathsProvider getPathProvider() {
-      return pathsProvider;
   }
 
   /**
@@ -126,16 +125,6 @@ public class DBConfiguration {
     public void setSyncFailure(boolean syncFailure) {
       this.syncFailure = syncFailure;
     }
-
-    /**
-   * Gets the name of the local temp file directory. Each ACM has a sub-directory; those sub-dirs
-   * are cleaned up at app exit.
-   * @return ~/LiteracyBridge/ACM/temp
-   */
-  String getTempACMsDirectory() {
-    File temp = AmplioHome.getTempsDir();
-    return temp.getAbsolutePath();
-  }
 
     /**
    * Gets a File representing the temporary database directory.
@@ -172,40 +161,23 @@ public class DBConfiguration {
      * @return the file object for the local cache.
      */
     public File getLocalCacheDirectory() {
-//    if (localCacheDirectory == null) {
-//      // ~/LiteracyBridge/ACM/cache/ACM-DEMO
-//      localCacheDirectory = new File(getAppAcmPath(),
-//              Constants.CACHE_DIR_NAME + "/" + getSharedACMname());
-//    }
-//    return localCacheDirectory;
     return pathsProvider.getLocalAcmCacheDir();
   }
-
-    /**
-     * Gets a file representing a temporary, "scratch" area, the "Sandbox". Like
-     * ~/LiteracyBridge/ACM/temp/ACM-FOO/content
-     * @return The File object for the sandbox directory.
-     */
-    public File getSandboxDirectory() {
-//            fSandbox = new File(getTempACMsDirectory(),
-//                getSharedACMname() + "/" + Constants.RepositoryHomeDir);
-        return isSandboxed() ? pathsProvider.getLocalAcmSandboxDir()
-                             : null;
-    }
 
     /**
      * The global TB-Loaders directory, where content updates are published.
      * @return The global directory.
      */
   public File getProgramTbLoadersDir() {
-//    if (tbLoadersDirectory == null) {
-//      // ~/Dropbox/ACM-DEMO/TB-Loaders
-//      tbLoadersDirectory = new File(getProgramDir(),
-//              Constants.TBLoadersHomeDir);
-//    }
-//    return tbLoadersDirectory;
     return pathsProvider.getProgramTbLoadersDir();
   }
+
+    public Sandbox getSandbox() {
+        if (sandbox == null) {
+            this.sandbox = new Sandbox(pathsProvider.getProgramHomeDir(), pathsProvider.getSandboxDir());
+        }
+        return sandbox;
+    }
 
     public boolean isSandboxed() {
       return sandboxed;
@@ -226,35 +198,20 @@ public class DBConfiguration {
     public boolean userIsReadOnly() {
         return !Authenticator.getInstance().hasUpdatingRole();
     }
-    
-    /**
-   * Gets a File containing the configuration properties for this ACM database.
-   * @return The File.
-   */
-  File getProgramConfigFile() {
-    // ~/Dropbox/ACM-DEMO/config.properties
-//    return ACMConfiguration.getInstance().getSharedConfigurationFileFor(getSharedACMname());
-    return pathsProvider.getProgramConfigFile();
-  }
 
-  public boolean writeCategoryFilter(Taxonomy taxonomy) {
-      // If sandboxed, *pretend* that we wrote it OK.
-      if (isSandboxed()) return true;
-      return CategoryFilter.writeCategoryFilter(getProgramHomeDir(), taxonomy);
-  }
-
-  boolean init() throws Exception {
+  boolean init(AccessControlResolver accessControlResolver) throws Exception {
     if (!initialized) {
       InitializeAcmConfiguration();
-      // This is pretty hackey, knowing if we're GUI or not, here, deep in the guts.
-      accessControl = (ACMConfiguration.getInstance().isDisableUI()) ? new AccessControl(this) : new GuiAccessControl(this);
+      if (accessControlResolver == null) accessControlResolver = AccessControlResolver.getDefault();
+      accessControl = new AccessControl(this, accessControlResolver);
       accessControl.initDb();
 
       if (accessControl.openStatus.isOpen()) {
+          findChangeMarkerFile();
           initializeRepositories();
-
-          final Taxonomy taxonomy = Taxonomy.createTaxonomy(getProgramHomeDir());
+          final Taxonomy taxonomy = Taxonomy.createTaxonomy(loadCategoryFilter(), getProgramHomeDir());
           this.store = new LuceneMetadataStore(taxonomy, getLocalLuceneIndexDir());
+          this.store.addDataChangeListener(metadataChangeListener);
 
           parseLanguageLabels();
 
@@ -265,20 +222,82 @@ public class DBConfiguration {
     }
     return initialized;
   }
+    // Tracking whether there are changes to the metadata, ie, changes to be checked in.
+    private boolean hasMetadataChange = false;
 
-  public boolean updateDb() {
-      return accessControl.updateDb();
+    /**
+     * When a change is detected, write a marker file. This is deleted if the database is either persisted
+     * or abandoned.
+     */
+    private void writeMetadataChangeMarkerFile() {
+        try {
+            new File(pathsProvider.getLocalProgramTempDir(), "dbchangemarker.txt").createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * At startup, see if there is a change marker file. If so, we have changes from last time. We'll want to
+     * ask the user if they want to keep or abandon those changes.
+     */
+    private void findChangeMarkerFile() {
+        if (new File(pathsProvider.getLocalProgramTempDir(), "dbchangemarker.txt").exists()) {
+            if (hasMetadataChange) System.out.print("Found previous changes.\n");
+            hasMetadataChange = true;
+        }
+    }
+
+    private void deleteChangeMarkerFile() {
+        File markerFile = new File(pathsProvider.getLocalProgramTempDir(), "dbchangemarker.txt");
+        if (markerFile.exists()) {
+            markerFile.delete();
+        }
+    }
+
+    /**
+     * Listener for metadata changes. On the first change, create a marker file that will persist if we crash
+     * or the comptuter shuts down.
+     */
+    private final MetadataStore.DataChangeListener metadataChangeListener = new MetadataStore.DataChangeListener() {
+        @Override
+        public void dataChanged(List<MetadataStore.DataChangeEvent> events) {
+            if (!hasMetadataChange) {
+                hasMetadataChange = true;
+                writeMetadataChangeMarkerFile();
+            }
+        }
+    };
+
+    public boolean hasChanges() {
+        return hasMetadataChange || store.hasChanges() || getSandbox().hasChanges();
   }
 
-  public boolean commitDbChanges() {
-      return accessControl.commitDbChanges() == AccessControl.UpdateDbStatus.ok;
+  public void commitDbChanges() {
+      if (hasMetadataChange || store.hasChanges()) {
+          accessControl.commitDbChanges();
+      } else {
+          accessControl.discardDbChanges();
+      }
+      if (getSandbox().hasChanges()) {
+          getSandbox().commit();
+      } else {
+          getSandbox().discard();
+      }
+      deleteChangeMarkerFile();
   }
+
+    public void discardDbChanges() {
+        accessControl.discardDbChanges();
+        getSandbox().discard();
+        deleteChangeMarkerFile();
+    }
 
   public void closeDb() {
       if (!initialized) {
           throw new IllegalStateException("Can't close an un-opened database");
       }
-      if (accessControl.getAccessStatus() != AccessControl.AccessStatus.none) {
+      if (accessControl.getAccessStatus() != AccessStatus.none) {
           accessControl.discardDbChanges();
       }
   }
@@ -287,28 +306,51 @@ public class DBConfiguration {
     return accessControl.getCurrentDbVersion();
   }
 
-  public String getCurrentZipFilename() {
-      return accessControl.getCurrentZipFilename();
+//  public String getCurrentZipFilename() {
+//      return accessControl.getCurrentZipFilename();
+//  }
+//
+//  public boolean isDbOpen() {
+//      return accessControl != null && accessControl.getOpenStatus().isOpen();
+//  }
+
+  public AccessStatus getDbAccessStatus() {
+      return accessControl != null ? accessControl.getAccessStatus() : AccessStatus.none;
   }
 
-  public boolean isDbOpen() {
-      return accessControl != null && accessControl.getOpenStatus().isOpen();
-  }
+    //*********************************************************************************************
+    // Visible categories
 
-  public AccessControl.AccessStatus getDbAccessStatus() {
-      return accessControl != null ? accessControl.getAccessStatus() : AccessControl.AccessStatus.none;
-  }
+    public void writeCategoryFilter(Taxonomy taxonomy) {
+        File catFile = new File(getProgramHomeDir(), Constants.CATEGORY_INCLUDELIST_FILENAME);
+        File bakFile = new File(getProgramHomeDir(), Constants.CATEGORY_INCLUDELIST_FILENAME + ".bak");
+        try {
+            getSandbox().rename(catFile, bakFile);
+        } catch (Exception ignored) {}
+        File newFile = getSandbox().outputFile(catFile.toPath());
+        CategoryFilter.writeCategoryFilter(newFile, taxonomy);
+    }
 
-  public void writeProps() {
+    public CategoryFilter loadCategoryFilter() {
+        File categoryFile = getSandbox().inputFile(new File(getProgramHomeDir(),
+            Constants.CATEGORY_INCLUDELIST_FILENAME).toPath());
+        return new CategoryFilter(categoryFile);
+    }
+
+    //*********************************************************************************************
+    // Configuration Properties
+
+    public void writeProps() {
+        File propertiesFile = getSandbox().outputFile(pathsProvider.getProgramConfigFile().toPath());
         try {
             BufferedOutputStream out = new BufferedOutputStream(
-                new FileOutputStream(getProgramConfigFile()));
+                new FileOutputStream(propertiesFile));
             dbProperties.store(out, null);
             out.flush();
             out.close();
         } catch (IOException e) {
             throw new RuntimeException("Unable to write configuration file: "
-                + getProgramConfigFile(), e);
+                + propertiesFile.getName(), e);
         }
     }
 
@@ -345,16 +387,6 @@ public class DBConfiguration {
             }
         }
         return languages;
-    }
-
-
-    public String getLanguageLabel(Locale locale) {
-    return languageLabels.get(locale);
-  }
-
-    public String getLanguageLabel(String languagecode) {
-        Locale locale = new Locale(languagecode);
-        return languageLabels.get(locale);
     }
 
     public boolean isShouldPreCacheWav() {
@@ -447,6 +479,13 @@ public class DBConfiguration {
         dbProperties.setProperty(Constants.WARN_FOR_MISSING_GREETINGS, Boolean.toString(warnForMissingGreetings));
     }
 
+    public String getProperty(String propertyName) {
+        return getProperty(propertyName, null);
+    }
+    public String getProperty(String propertyName, String defaultValue) {
+        return dbProperties.getProperty(propertyName, defaultValue);
+    }
+
     /**
      * The configured value of "interested parties" for events in the ACM. This should
      * be a list of email addresses, separated by commas.
@@ -467,6 +506,19 @@ public class DBConfiguration {
 
     public void setNotifyList(Collection<String> list) {
         dbProperties.setProperty(Constants.NOTIFY_LIST, String.join(", ", list));
+    }
+
+
+    //*********************************************************************************************
+    // Configured languages
+
+    public String getLanguageLabel(Locale locale) {
+        return languageLabels.get(locale);
+    }
+
+    public String getLanguageLabel(String languagecode) {
+        Locale locale = new Locale(languagecode);
+        return languageLabels.get(locale);
     }
 
     /**
@@ -518,51 +570,51 @@ public class DBConfiguration {
     return Collections.unmodifiableList(audioLanguages);
   }
 
-  private void InitializeAcmConfiguration() {
+    private void InitializeAcmConfiguration() {
 
-    if (!getProgramHomeDir().exists()) {
-      if (GraphicsEnvironment.isHeadless()) {
-          System.err.println("ACM database " + getAcmDbDirName() + " not found. Aborting.");
-          LOG.log(Level.SEVERE, "ACM database " + getAcmDbDirName() + " not found. Aborting.");
-      } else {
-          JOptionPane.showMessageDialog(null, "ACM database " + getAcmDbDirName()
-                  + " is not found within Dropbox.\n\nBe sure that you have accepted the Dropbox invitation\nto share the folder"
-                  + " by logging into your account at\nhttp://dropbox.com and click on the 'Sharing' link.\n\nShutting down.");
-      }
-      System.exit(1);
+        if (!getProgramHomeDir().exists()) {
+            if (GraphicsEnvironment.isHeadless()) {
+                System.err.println("ACM database " + getProgramHomeDirName() + " not found. Aborting.");
+                LOG.log(Level.SEVERE, "ACM database " + getProgramHomeDirName() + " not found. Aborting.");
+            } else {
+                JOptionPane.showMessageDialog(null, "ACM database " + getProgramHomeDirName()
+                    + " is not found within Dropbox.\n\nBe sure that you have accepted the Dropbox invitation\nto share the folder"
+                    + " by logging into your account at\nhttp://dropbox.com and click on the 'Sharing' link.\n\nShutting down.");
+            }
+            System.exit(1);
+        }
+
+        // like ~/Dropbox/ACM-UWR/config.properties
+        File propertiesFile = getSandbox().inputFile(pathsProvider.getProgramConfigFile().toPath());
+        if (propertiesFile.exists()) {
+            try {
+                BufferedInputStream in = new BufferedInputStream(
+                    new FileInputStream(propertiesFile));
+                dbProperties = new Properties();
+                dbProperties.load(in);
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to load configuration file: "
+                    + propertiesFile.getName(), e);
+            }
+        }
+
     }
 
-    // Create the cache directory before it's actually needed, to trigger any security exceptions.
-    getLocalCacheDirectory().mkdirs();
-
-    // like ~/Dropbox/ACM-UWR/config.properties
-    if (getProgramConfigFile().exists()) {
-      try {
-        BufferedInputStream in = new BufferedInputStream(
-            new FileInputStream(getProgramConfigFile()));
-          dbProperties = new Properties();
-          dbProperties.load(in);
-      } catch (IOException e) {
-        throw new RuntimeException("Unable to load configuration file: "
-            + getProgramConfigFile(), e);
-      }
-    }
-
-  }
-
-    private void initializeRepositories() {
+    private void initializeRepositories() throws IOException {
         // Checked out, create the repository object.
         String user = ACMConfiguration.getInstance().getUserName();
         LOG.info(String.format(
-            "  Repository:                     %s\n" +
+                "  Home directory:                 %s\n" +
+                "  Content repository:             %s\n" +
                 "  Temp Database:                  %s\n" +
                 "  Temp Repository (sandbox mode): %s\n" +
                 "  user:                           %s\n" +
                 "  UserRWAccess:                   %s\n" +
                 "  online:                         %s\n",
+            getProgramHomeDir(),
             getProgramContentDir(),
             getLocalTempDbDir(),
-            getSandboxDirectory(),
+            pathsProvider.getSandboxDir(),
             user,
             Authenticator.getInstance().hasUpdatingRole(),
             AccessControl.isOnline()));

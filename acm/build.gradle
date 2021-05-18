@@ -89,6 +89,18 @@ task copyJars(type: Copy, dependsOn: [':core:build', build]) {
     into distDir
 }
 
+task copySync1(type: Copy) {
+    from "$projectDir/../../S3Sync/dist/S3Sync.jar"
+    into distDir
+}
+task copySync2(type: Copy) {
+    from "$projectDir/../../S3Sync/dist/lib/argparse4j-0.8.1.jar"
+    from "$projectDir/../../S3Sync/dist/lib/aws-interface-1.0.jar"
+    into "$distDir/lib"
+}
+task copySync(dependsOn: [copySync1, copySync2]) {
+}
+
 task copyUpdateScript(type: Copy, dependsOn: copyJars) {
     // The update script is in 'scripts/deployToDbx.sh'
     from "$projectDir/scripts/deployToDbx.sh"
@@ -102,7 +114,7 @@ task copyUpdateScript(type: Copy, dependsOn: copyJars) {
     rename("version.properties", "build.properties")
 }
 
-task dist(dependsOn: [copyJars, copyLibs, copyUpdateScript, updateVersion]) {
+task dist(dependsOn: [copyJars, copyLibs, copySync, copyUpdateScript, updateVersion]) {
     description = 'This is the actual build. Ignore anything with \'assemble\'.'
     group = 'build'
 }

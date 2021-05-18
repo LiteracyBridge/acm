@@ -463,7 +463,7 @@ public class LuceneMetadataStoreTest {
   }
 
   private LuceneMetadataStore newStore() throws Exception {
-    Taxonomy taxonomy = Taxonomy.createTaxonomy(null);
+    Taxonomy taxonomy = Taxonomy.createTaxonomy(null,null);
     return new LuceneMetadataStore(taxonomy, tmp.newFolder());
   }
 

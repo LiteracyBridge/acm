@@ -94,11 +94,11 @@ public abstract class MetadataStore {
     }
   }
 
-  public static enum DataChangeEventType {
+  public enum DataChangeEventType {
     ITEM_ADDED, ITEM_MODIFIED, ITEM_DELETED
   }
 
   public interface DataChangeListener {
-    public void dataChanged(List<DataChangeEvent> events);
+    void dataChanged(List<DataChangeEvent> events);
   }
 }

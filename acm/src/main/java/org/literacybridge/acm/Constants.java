@@ -22,8 +22,9 @@ public class Constants {
   public final static String CONFIG_PROPERTIES = "config.properties";
   public final static String CHECKOUT_PROPERTIES_SUFFIX = "-checkedOut.properties";
   public final static String USER_FEEDBACK_INCLUDELIST_FILENAME = "userfeedback.includelist";
+  public static final String CATEGORY_INCLUDELIST_FILENAME = "category.includelist";
 
-  public final static File USER_HOME_DIR = new File(
+    public final static File USER_HOME_DIR = new File(
       System.getProperty("user.home", "."));
   public final static long DEFAULT_CACHE_SIZE_IN_BYTES = 2L * 1024L * 1024L * 1024L; // 2GB
 

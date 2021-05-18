@@ -243,7 +243,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         Map<String, Map<String, String>> pkgs = exportPackages();
 
         try {
-            String acmName = ACMConfiguration.getInstance().getCurrentDB().getAcmDbDirName();
+            String acmName = ACMConfiguration.getInstance().getCurrentDB().getProgramHomeDirName();
             TBBuilder tbBuilder = new TBBuilder(acmName, deploymentName(), this::reportState, this::logException);
 
             // Create.
@@ -427,7 +427,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                         // first UF message recorded can be reviewed by the user.
                         createListFile(new PlaylistNode(null), Constants.CATEGORY_UNCATEGORIZED_FEEDBACK, listsDir);
                     }
-                } catch (IOException | BaseAudioConverter.ConversionException e) {
+                } catch (IOException | BaseAudioConverter.ConversionException | AudioItemRepository.UnsupportedFormatException e) {
                     errors.add(new DeploymentException(String.format("Error exporting playlist '%s'",
                         title), e));
                     e.printStackTrace();
@@ -533,8 +533,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             int promptIx,
             File promptsDir,
             String language)
-        throws IOException, BaseAudioConverter.ConversionException
-    {
+        throws IOException, BaseAudioConverter.ConversionException, AudioItemRepository.UnsupportedFormatException {
         // If there is a categoryId, that's the "prompt category".
         String promptCat;
         // If we're using a prompt from the content database, use the short prompt audio id

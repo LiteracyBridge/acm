@@ -118,6 +118,19 @@ public class AmplioHome {
             dir.mkdirs();
         return dir;
     }
+
+    protected File getSandboxesDirectory() {
+        File dir;
+        if (version == VERSION.v1) {
+            dir = new File(getAppAcmDir(), "sandbox");
+        }
+        else {
+            dir = new File(getHomeDirectory(), "sandbox");
+        }
+        if (!dir.exists()) //noinspection ResultOfMethodCallIgnored
+            dir.mkdirs();
+        return dir;
+    }
     //
     // End instance data and methods
     //
@@ -259,6 +272,9 @@ public class AmplioHome {
         return getInstance().getTempDirectory();
     }
 
+    public static File getSandboxesDir() {
+        return getInstance().getSandboxesDirectory();
+    }
     /**
      * Audio files in alternate formats. We don't want to upload them, but we also don't want to
      * have to re-create them again. So cache them here.

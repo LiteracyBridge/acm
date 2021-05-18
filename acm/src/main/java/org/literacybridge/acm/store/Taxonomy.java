@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.google.common.collect.Maps;
+import org.literacybridge.acm.config.CategoryFilter;
 import org.literacybridge.acm.gui.Application;
 
 import static org.literacybridge.acm.store.Category.*;
@@ -52,14 +53,17 @@ public class Taxonomy implements Cloneable {
      * @param acmDirectory with possibly updated taxonomy.
      * @return the latest taxonomy.
      */
-  public static Taxonomy createTaxonomy(File acmDirectory) {
+  public static Taxonomy createTaxonomy(CategoryFilter categoryFilter, File acmDirectory) {
     Category root = new CategoryBuilder(TaxonomyLoader.LB_TAXONOMY_UID)
         .withName("root")
         .withOrder(0)
         .build();
 
+    if (categoryFilter == null) {
+        categoryFilter = new CategoryFilter(null);
+    }
     Taxonomy taxonomy = new Taxonomy(root);
-    TaxonomyLoader.loadLatestTaxonomy(acmDirectory, taxonomy);
+    TaxonomyLoader.loadLatestTaxonomy(categoryFilter, acmDirectory, taxonomy);
     return taxonomy;
   }
 

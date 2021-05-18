@@ -209,7 +209,7 @@ public class AudioItemPropertiesModel extends AbstractTableModel {
       @Override
       public String getValue(AudioItem audioItem) {
         AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
-        if (repository.hasAudioFileWithFormat(audioItem, AudioFormat.A18)) {
+        if (repository.findAudioFileWithFormat(audioItem, AudioFormat.A18) != null) {
           return repository.getAudioFilename(audioItem, AudioFormat.A18);
         } else {
           return null;

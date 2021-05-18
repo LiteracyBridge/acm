@@ -119,7 +119,7 @@ class DeploymentsManager {
                     }
                     // If no description, look in the ACM database.
                     if (StringUtils.isBlank(programDescription)) {
-                        DBConfiguration dbConfig = ACMConfiguration.getInstance().getDb(programid);
+                        DBConfiguration dbConfig = ACMConfiguration.getInstance().getDbConfiguration(programid);
                         if (dbConfig != null) {
                             programDescription = dbConfig.getDescription();
                         }

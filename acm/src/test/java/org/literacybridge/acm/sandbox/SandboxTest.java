@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -28,6 +29,7 @@ public class SandboxTest {
     public TemporaryFolder folder = new TemporaryFolder();
     private File base;
     private File sandbox;
+    private File sandboxData;
     private File external;
     private int fileNo = 0;
     private Sandbox sb;
@@ -37,6 +39,7 @@ public class SandboxTest {
         fileNo = 100;
         base = folder.newFolder("persistent");
         sandbox = folder.newFolder("sandbox");
+        sandboxData = new File(sandbox, "data");
         sb = new Sandbox(base, sandbox);
     }
 
@@ -50,6 +53,23 @@ public class SandboxTest {
         initWithFile();
         makeData(new FileOutputStream(new File(base, "a")), 10);
         makeData(new FileOutputStream(new File(base, "b")), 20);
+    }
+
+    private void initWithTree() throws IOException {
+        init();
+        File dir = new File(base, "parent");
+        dir.mkdir();
+        new File(dir, "child1").createNewFile();
+        new File(dir, "child2").createNewFile();
+        File subdir = new File(dir, "subdir1");
+        subdir.mkdir();
+        new File(subdir, "sub1-child1").createNewFile();
+        new File(subdir, "sub1-child2").createNewFile();
+        File subdir2 = new File(dir, "subdir2");
+        subdir2.mkdir();
+        new File(subdir2, "sub2-child1").createNewFile();
+        new File(subdir2, "sub2-child2").createNewFile();
+
     }
 
     @Test
@@ -107,11 +127,11 @@ public class SandboxTest {
              BufferedWriter bw = new BufferedWriter(fw)) {
             bw.write("Hello, world!");
         }
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected one sb file", 1, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected no base file", 0, bFiles==null?0:bFiles.length);
+        assertEquals("Expected one sb file", 1, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected no base file", 0, bFiles == null ? 0 : bFiles.length);
     }
 
     @Test
@@ -123,11 +143,11 @@ public class SandboxTest {
              BufferedWriter bw = new BufferedWriter(fw)) {
             bw.write("Hello, world!");
         }
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected one sb file", 1, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected one base file", 1, bFiles==null?0:bFiles.length);
+        assertEquals("Expected one sb file", 1, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected one base file", 1, bFiles == null ? 0 : bFiles.length);
     }
 
     @Test
@@ -137,11 +157,11 @@ public class SandboxTest {
 
         assertTrue("Expect file to exist", exists);
 
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected NO sb file", 0, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected ONE base file", 1, bFiles==null?0:bFiles.length);
+        assertEquals("Expected NO sb file", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected ONE base file", 1, bFiles == null ? 0 : bFiles.length);
     }
 
     @Test
@@ -158,11 +178,11 @@ public class SandboxTest {
         }
         assertTrue("Expect file to still exist", exists);
 
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected one sb file", 1, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected one base file", 1, bFiles==null?0:bFiles.length);
+        assertEquals("Expected one sb file", 1, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected one base file", 1, bFiles == null ? 0 : bFiles.length);
     }
 
     @Test
@@ -177,11 +197,11 @@ public class SandboxTest {
         exists = sb.exists(testFile);
         assertFalse("Expect file NOT to exist", exists);
 
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected NO sb file", 0, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected ONE base file", 1, bFiles==null?0:bFiles.length);
+        assertEquals("Expected NO sb file", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected ONE base file", 1, bFiles == null ? 0 : bFiles.length);
     }
 
     @Test
@@ -196,11 +216,11 @@ public class SandboxTest {
         exists = sb.exists(testFile);
         assertFalse("Expect file NOT to exist", exists);
 
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected NO sb file", 0, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected ONE base file", 1, bFiles==null?0:bFiles.length);
+        assertEquals("Expected NO sb file", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected ONE base file", 1, bFiles == null ? 0 : bFiles.length);
         try (OutputStream os = sb.fileOutputStream(new File(base, filename));
              OutputStreamWriter fw = new OutputStreamWriter(os);
              BufferedWriter bw = new BufferedWriter(fw)) {
@@ -210,11 +230,11 @@ public class SandboxTest {
         exists = sb.exists(testFile);
         assertTrue("Expect file to again exist", exists);
 
-        sbFiles = sandbox.listFiles();
+        sbFiles = sandboxData.listFiles();
         bFiles = base.listFiles();
 
-        assertEquals("Expected one sb file", 1, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected one base file", 1, bFiles==null?0:bFiles.length);
+        assertEquals("Expected one sb file", 1, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected one base file", 1, bFiles == null ? 0 : bFiles.length);
     }
 
     @Test
@@ -229,11 +249,11 @@ public class SandboxTest {
         exists = sb.exists(testFile);
         assertFalse("Expect file NOT to exist", exists);
 
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected NO sb file", 0, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected ONE base file", 1, bFiles==null?0:bFiles.length);
+        assertEquals("Expected NO sb file", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected ONE base file", 1, bFiles == null ? 0 : bFiles.length);
         try (OutputStream os = sb.fileOutputStream(new File(base, filename));
              OutputStreamWriter fw = new OutputStreamWriter(os);
              BufferedWriter bw = new BufferedWriter(fw)) {
@@ -243,21 +263,21 @@ public class SandboxTest {
         exists = sb.exists(testFile);
         assertTrue("Expect file to again exist", exists);
 
-        sbFiles = sandbox.listFiles();
+        sbFiles = sandboxData.listFiles();
         bFiles = base.listFiles();
 
-        assertEquals("Expected one sb file", 1, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected one base file", 1, bFiles==null?0:bFiles.length);
+        assertEquals("Expected one sb file", 1, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected one base file", 1, bFiles == null ? 0 : bFiles.length);
 
         sb.delete(testFile);
         exists = sb.exists(testFile);
         assertFalse("Expect file NOT to exist", exists);
 
-        sbFiles = sandbox.listFiles();
+        sbFiles = sandboxData.listFiles();
         bFiles = base.listFiles();
 
-        assertEquals("Expected no sb file", 0, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected one base file", 1, bFiles==null?0:bFiles.length);
+        assertEquals("Expected no sb file", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected one base file", 1, bFiles == null ? 0 : bFiles.length);
     }
 
     @Test
@@ -275,11 +295,11 @@ public class SandboxTest {
         sb.rename(c, a);    // Renames the sandboxed c as a
         listOperationQueue("Add c, move a->b, move c->a");
 
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected 1 sb file", 1, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected 3 base files", 3, bFiles==null?0:bFiles.length);
+        assertEquals("Expected 1 sb file", 1, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected 3 base files", 3, bFiles == null ? 0 : bFiles.length);
 
     }
 
@@ -300,19 +320,19 @@ public class SandboxTest {
         sb.rename(c, a);
         listOperationQueue("Add a, add c, add d, move a->b, move c->a");
 
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected 3 sb files", 3, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected 3 base files", 3, bFiles==null?0:bFiles.length);
+        assertEquals("Expected 3 sb files", 3, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected 3 base files", 3, bFiles == null ? 0 : bFiles.length);
 
         sb.commit();
 
-        sbFiles = sandbox.listFiles();
+        sbFiles = sandboxData.listFiles();
         bFiles = base.listFiles();
 
-        assertEquals("Expected no sb files", 0, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected 4 base files", 4, bFiles==null?0:bFiles.length);
+        assertEquals("Expected no sb files", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected 4 base files", 4, bFiles == null ? 0 : bFiles.length);
 
     }
 
@@ -322,7 +342,7 @@ public class SandboxTest {
         System.out.println("\n testStructure3");
 
         File myFile = new File(base, filename);
-        File myOther = new File(base, filename+"2");
+        File myOther = new File(base, filename + "2");
         File a = new File(base, "a");
         File b = new File(base, "b");
         File c = new File(base, "c");
@@ -342,22 +362,23 @@ public class SandboxTest {
         sb.rename(c, a);
         listOperationQueue("Add a, add c, add d, move a->b, move c->a, add c, move a->b, move c->a");
 
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected 3 sb files", 3, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected 3 base files", 3, bFiles==null?0:bFiles.length);
+        assertEquals("Expected 3 sb files", 3, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected 3 base files", 3, bFiles == null ? 0 : bFiles.length);
 
         sb.rename(myFile, myOther);
-        listOperationQueue("Add a, add c, add d, move a->b, move c->a, add c, move a->b, move c->a, move myFile->myFile2");
+        listOperationQueue(
+            "Add a, add c, add d, move a->b, move c->a, add c, move a->b, move c->a, move myFile->myFile2");
 
-        sb.commit(x->System.out.printf("Wrote to %s\n", x), x->System.out.printf("Removed %s\n", x));
+        sb.commit(x -> System.out.printf("Wrote to %s\n", x), x -> System.out.printf("Removed %s\n", x));
 
-        sbFiles = sandbox.listFiles();
+        sbFiles = sandboxData.listFiles();
         bFiles = base.listFiles();
 
-        assertEquals("Expected no sb files", 0, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected 4 base files", 4, bFiles==null?0:bFiles.length);
+        assertEquals("Expected no sb files", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected 4 base files", 4, bFiles == null ? 0 : bFiles.length);
 
     }
 
@@ -378,22 +399,22 @@ public class SandboxTest {
 
         listOperationQueue("Add a, move a->b");
 
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected 1 sb file", 1, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected 3 base files", 3, bFiles==null?0:bFiles.length);
+        assertEquals("Expected 1 sb file", 1, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected 3 base files", 3, bFiles == null ? 0 : bFiles.length);
 
-        sb.commit(x->System.out.printf("Wrote to %s\n", x), x->System.out.printf("Removed %s\n", x));
+        sb.commit(x -> System.out.printf("Wrote to %s\n", x), x -> System.out.printf("Removed %s\n", x));
 
-        sbFiles = sandbox.listFiles();
+        sbFiles = sandboxData.listFiles();
         bFiles = base.listFiles();
 
-        assertEquals("Expected no sb file", 0, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected 2 base files", 2, bFiles==null?0:bFiles.length);
+        assertEquals("Expected no sb file", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected 2 base files", 2, bFiles == null ? 0 : bFiles.length);
 
         assertFalse("Expected a to not exist ", a.exists());
-        assertEquals("Expected b to be length "+newASize, newASize, b.length());
+        assertEquals("Expected b to be length " + newASize, newASize, b.length());
     }
 
     @Test
@@ -413,24 +434,24 @@ public class SandboxTest {
 
         listOperationQueue("Move a->b, add a");
 
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected 1 sb file", 1, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected 3 base files", 3, bFiles==null?0:bFiles.length);
+        assertEquals("Expected 1 sb file", 1, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected 3 base files", 3, bFiles == null ? 0 : bFiles.length);
 
-        sb.commit(x->System.out.printf("Wrote to %s\n", x), x->System.out.printf("Removed %s\n", x));
+        sb.commit(x -> System.out.printf("Wrote to %s\n", x), x -> System.out.printf("Removed %s\n", x));
 
-        sbFiles = sandbox.listFiles();
+        sbFiles = sandboxData.listFiles();
         bFiles = base.listFiles();
 
-        assertEquals("Expected no sb file", 0, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected 3 base files", 3, bFiles==null?0:bFiles.length);
+        assertEquals("Expected no sb file", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected 3 base files", 3, bFiles == null ? 0 : bFiles.length);
 
         assertTrue("Expected a to exist ", a.exists());
         assertTrue("Expected b to exist ", b.exists());
-        assertEquals("Expected a to be length "+newASize, newASize, a.length());
-        assertEquals("Expected b to be length "+aSize, aSize, b.length());
+        assertEquals("Expected a to be length " + newASize, newASize, a.length());
+        assertEquals("Expected b to be length " + aSize, aSize, b.length());
     }
 
     @Test
@@ -448,27 +469,156 @@ public class SandboxTest {
 
         listOperationQueue("Move a->b");
 
-        File[] sbFiles = sandbox.listFiles();
+        File[] sbFiles = sandboxData.listFiles();
         File[] bFiles = base.listFiles();
 
-        assertEquals("Expected 0 sb file", 0, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected 3 base files", 3, bFiles==null?0:bFiles.length);
+        assertEquals("Expected 0 sb file", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected 3 base files", 3, bFiles == null ? 0 : bFiles.length);
 
-        sb.commit(x->System.out.printf("Wrote to %s\n", x), x->System.out.printf("Removed %s\n", x));
+        sb.commit(x -> System.out.printf("Wrote to %s\n", x), x -> System.out.printf("Removed %s\n", x));
 
-        sbFiles = sandbox.listFiles();
+        sbFiles = sandboxData.listFiles();
         bFiles = base.listFiles();
 
-        assertEquals("Expected no sb file", 0, sbFiles==null?0:sbFiles.length);
-        assertEquals("Expected 2 base files", 2, bFiles==null?0:bFiles.length);
+        assertEquals("Expected no sb file", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected 2 base files", 2, bFiles == null ? 0 : bFiles.length);
 
         assertFalse("Expected a to NOT exist ", a.exists());
         assertTrue("Expected b to exist ", b.exists());
-        assertEquals("Expected b to be length "+aSize, aSize, b.length());
+        assertEquals("Expected b to be length " + aSize, aSize, b.length());
+    }
+
+    @Test
+    public void testTreeOperation1() throws IOException {
+        initWithTree();
+        File dir = new File(base, "parent");
+
+        Collection<Path> paths = sb.listPaths(dir.toPath());
+        assertEquals("Expected 4 children", 4, paths.size());
+    }
+
+    @Test
+    public void testTreeOperation2() throws IOException {
+        initWithTree();
+        File dir = new File(base, "parent");
+        File subdir1 = new File(dir, "subdir1");
+
+        Collection<Path> paths = sb.listPaths(subdir1.toPath());
+        assertEquals("Expected 2 children", 2, paths.size());
+
+        sb.removeRecursive(subdir1.toPath());
+
+        paths = sb.listPaths(subdir1.toPath());
+        assertEquals("Expected No children", 0, paths.size());
+    }
+
+    @Test
+    public void testTreeOperation3() throws IOException {
+        initWithTree();
+        File dir = new File(base, "parent");
+        File subdir1 = new File(dir, "subdir1");
+        File subdirX = new File(dir, "subdirX");
+
+        Collection<Path> paths = sb.listPaths(subdir1.toPath());
+        assertEquals("Expected 2 children", 2, paths.size());
+
+        sb.rename(subdir1, subdirX);
+        listOperationQueue("Rename subdir1->subdirX");
+
+        paths = sb.listPaths(subdir1.toPath());
+        assertEquals("Expected No children in subdir1", 0, paths.size());
+        paths = sb.listPaths(subdirX.toPath());
+        assertEquals("Expected 2 children in subdirX", 2, paths.size());
+
+        File[] s1Files = subdir1.listFiles();
+        File[] sxFiles = subdirX.listFiles();
+        assertEquals("Expected 2 subdir1 files", 2, s1Files == null ? 0 : s1Files.length);
+        assertEquals("Expected 0 subdirX files", 0, sxFiles == null ? 0 : sxFiles.length);
+
+        sb.commit();
+
+        s1Files = subdir1.listFiles();
+        sxFiles = subdirX.listFiles();
+        assertEquals("Expected 0 subdir1 files", 0, s1Files == null ? 0 : s1Files.length);
+        assertEquals("Expected 2 subdirX files", 2, sxFiles == null ? 0 : sxFiles.length);
+
+    }
+
+    @Test
+    public void testTreeOperation4() throws IOException {
+        initWithTree();
+        File dir = new File(base, "parent");
+        File subdir1 = new File(dir, "subdir1");
+        File subdirX = new File(dir, "subdirX");
+
+        File x1 = new File(subdirX, "subX-file1");
+        addFile(x1, ++fileNo);
+        File x2 = new File(subdirX, "subX-file2");
+        addFile(x2, ++fileNo);
+
+        Collection<Path> paths = sb.listPaths(subdir1.toPath());
+        assertEquals("Expected 2 children in subdir1", 2, paths.size());
+        paths = sb.listPaths(subdirX.toPath());
+        assertEquals("Expected 2 children in subdirX", 2, paths.size());
+
+        File sbDir = new File(sandboxData, "parent");
+        File[] s1Files = new File(sbDir, "subdir1").listFiles();
+        File[] sxFiles = new File(sbDir, "subdirX").listFiles();
+        assertEquals("Expected 0 subdir1 files in sandbox", 0, s1Files == null ? 0 : s1Files.length);
+        assertEquals("Expected 2 subdirX files in sandbox", 2, sxFiles == null ? 0 : sxFiles.length);
+
+        sb.removeRecursive(subdir1.toPath());
+        listOperationQueue("Create subdirX, remove subdir1");
+
+        sb.rename(subdirX, subdir1);
+        listOperationQueue("Create subdirX, remove subdir1, ename subdirX->subdir1");
+
+        paths = sb.listPaths(subdir1.toPath());
+        assertEquals("Expected 2 children in subdir1", 2, paths.size());
+        paths = sb.listPaths(subdirX.toPath());
+        assertEquals("Expected 0 children in subdirX", 0, paths.size());
+
+        s1Files = subdir1.listFiles();
+        sxFiles = subdirX.listFiles();
+        assertEquals("Expected 2 subdir1 files in base", 2, s1Files == null ? 0 : s1Files.length);
+        assertEquals("Expected 0 subdirX files in base", 0, sxFiles == null ? 0 : sxFiles.length);
+        s1Files = new File(sbDir, "subdir1").listFiles();
+        sxFiles = new File(sbDir, "subdirX").listFiles();
+        assertEquals("Expected 2 subdir1 files in sandbox", 2, s1Files == null ? 0 : s1Files.length);
+        assertEquals("Expected 0 subdirX files in sandbox", 0, sxFiles == null ? 0 : sxFiles.length);
+
+        sb.commit();
+
+        s1Files = subdir1.listFiles();
+        sxFiles = subdirX.listFiles();
+        assertEquals("Expected 2 subdir1 files", 2, s1Files == null ? 0 : s1Files.length);
+        assertEquals("Expected 0 subdirX files", 0, sxFiles == null ? 0 : sxFiles.length);
+
+    }
+
+    @Test
+    public void testPersistance() throws IOException {
+        init();
+
+        File a = new File(base, "a");
+        File b = new File(base, "b");
+        File c = new File(base, "c");
+
+        addFile(a, ++fileNo);
+        addFile(b, ++fileNo);
+        addFile(c, ++fileNo);
+        Map<Path,FileOp> q1 = sb.getWorkQueue();
+
+        Sandbox sb2 = new Sandbox(base, sandbox);
+        Map<Path,FileOp> q2 = sb2.getWorkQueue();
+
+        assertEquals("Expect work queues to be same size.", q1.size(), q2.size());
+
     }
 
     /**
      * Prints the operation queue.
+     *
      * @param heading before the listing.
      */
     private void listOperationQueue(String heading) {
@@ -480,7 +630,7 @@ public class SandboxTest {
             } else if (e.getValue() instanceof AddOp) {
                 System.out.printf("   add: %s\n", e.getKey());
             } else if (e.getValue() instanceof MoveOp) {
-                System.out.printf("  move: %s from %s\n", e.getKey(), ((MoveOp)e.getValue()).fromPath);
+                System.out.printf("  move: %s from %s\n", e.getKey(), ((MoveOp) e.getValue()).fromPath);
             }
         }
     }
@@ -494,6 +644,7 @@ public class SandboxTest {
         String fn = String.format("f%d", ++fileNo);
         return makeData(fn, fileNo, isExternal);
     }
+
     private File makeData(String fn, int size, boolean isExternal) throws IOException {
         File newFile;
         FileOutputStream fos;
@@ -509,9 +660,10 @@ public class SandboxTest {
         makeData(fos, size);
         return newFile;
     }
+
     private void makeData(FileOutputStream fos, long size) throws IOException {
         byte[] data = new byte[1];
-        for (int i=0; i<size; i++) fos.write(data);
+        for (int i = 0; i < size; i++) fos.write(data);
     }
 
 

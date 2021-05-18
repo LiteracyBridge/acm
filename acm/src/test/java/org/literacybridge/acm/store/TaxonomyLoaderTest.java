@@ -3,6 +3,7 @@ package org.literacybridge.acm.store;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.CategoryFilter;
 
 import java.io.File;
@@ -25,7 +26,8 @@ public class TaxonomyLoaderTest {
     @Test
     public void testLoadingDefault() throws IOException {
         File tempDir = tmp.newFolder();
-        Taxonomy builtin = Taxonomy.createTaxonomy(tempDir);
+        CategoryFilter categoryFilter = new CategoryFilter(new File(tempDir, Constants.CATEGORY_INCLUDELIST_FILENAME));
+        Taxonomy builtin = Taxonomy.createTaxonomy(categoryFilter, tempDir);
         assertNotNull("Expected to load default Taxonomy", builtin);
         assertEquals("Expected to find Taxonomy Root",
             TaxonomyLoader.LB_TAXONOMY_UID,
@@ -37,7 +39,8 @@ public class TaxonomyLoaderTest {
     @Test
     public void saveFriendlyVersion() throws IOException {
         File tempDir = tmp.newFolder();
-        Taxonomy builtin = Taxonomy.createTaxonomy(tempDir);
+        CategoryFilter categoryFilter = new CategoryFilter(new File(tempDir, Constants.CATEGORY_INCLUDELIST_FILENAME));
+        Taxonomy builtin = Taxonomy.createTaxonomy(categoryFilter, tempDir);
         printTaxonomy(builtin);
     }
 
@@ -45,7 +48,8 @@ public class TaxonomyLoaderTest {
     public void testLoadingOverride() throws IOException {
         File tempDir = tmp.newFolder();
         writePrivateYaml(tempDir);
-        Taxonomy override = Taxonomy.createTaxonomy(tempDir);
+        CategoryFilter categoryFilter = new CategoryFilter(new File(tempDir, Constants.CATEGORY_INCLUDELIST_FILENAME));
+        Taxonomy override = Taxonomy.createTaxonomy(categoryFilter, tempDir);
         assertNotNull("Expected to load override Taxonomy", override);
         assertEquals("Expected to find Taxonomy Root",
             TaxonomyLoader.LB_TAXONOMY_UID,
@@ -70,7 +74,8 @@ public class TaxonomyLoaderTest {
     public void testNonassignable() throws IOException {
         File tempDir = tmp.newFolder();
         writePrivateYaml(tempDir);
-        Taxonomy override = Taxonomy.createTaxonomy(tempDir);
+        CategoryFilter categoryFilter = new CategoryFilter(new File(tempDir, Constants.CATEGORY_INCLUDELIST_FILENAME));
+        Taxonomy override = Taxonomy.createTaxonomy(categoryFilter, tempDir);
         assertNotNull("Expected to load override Taxonomy", override);
         assertEquals("Expected to find Taxonomy Root",
             TaxonomyLoader.LB_TAXONOMY_UID,
@@ -104,7 +109,8 @@ public class TaxonomyLoaderTest {
         File tempDir = tmp.newFolder();
         writePrivateYaml(tempDir);
         writeIncludelist(tempDir);
-        Taxonomy override = Taxonomy.createTaxonomy(tempDir);
+        CategoryFilter categoryFilter = new CategoryFilter(new File(tempDir, Constants.CATEGORY_INCLUDELIST_FILENAME));
+        Taxonomy override = Taxonomy.createTaxonomy(categoryFilter, tempDir);
         assertNotNull("Expected to load override Taxonomy", override);
         assertEquals("Expected to find Taxonomy Root",
             TaxonomyLoader.LB_TAXONOMY_UID,
@@ -142,7 +148,8 @@ public class TaxonomyLoaderTest {
         File tempDir = tmp.newFolder();
         writePrivateYaml(tempDir);
         writeExcludelist(tempDir);
-        Taxonomy override = Taxonomy.createTaxonomy(tempDir);
+        CategoryFilter categoryFilter = new CategoryFilter(new File(tempDir, Constants.CATEGORY_INCLUDELIST_FILENAME));
+        Taxonomy override = Taxonomy.createTaxonomy(categoryFilter, tempDir);
         assertNotNull("Expected to load override Taxonomy", override);
         assertEquals("Expected to find Taxonomy Root",
             TaxonomyLoader.LB_TAXONOMY_UID,
@@ -180,7 +187,8 @@ public class TaxonomyLoaderTest {
         File tempDir = tmp.newFolder();
         writePrivateYaml(tempDir);
         writeMixedlist(tempDir);
-        Taxonomy override = Taxonomy.createTaxonomy(tempDir);
+        CategoryFilter categoryFilter = new CategoryFilter(new File(tempDir, Constants.CATEGORY_INCLUDELIST_FILENAME));
+        Taxonomy override = Taxonomy.createTaxonomy(categoryFilter, tempDir);
         assertNotNull("Expected to load override Taxonomy", override);
         assertEquals("Expected to find Taxonomy Root",
             TaxonomyLoader.LB_TAXONOMY_UID,
@@ -221,7 +229,8 @@ public class TaxonomyLoaderTest {
         File tempDir = tmp.newFolder();
         writePrivateYaml(tempDir);
         writeMixedlist(tempDir);
-        Taxonomy override = Taxonomy.createTaxonomy(tempDir);
+        CategoryFilter categoryFilter = new CategoryFilter(new File(tempDir, Constants.CATEGORY_INCLUDELIST_FILENAME));
+        Taxonomy override = Taxonomy.createTaxonomy(categoryFilter, tempDir);
         assertNotNull("Expected to load override Taxonomy", override);
         assertEquals("Expected to find Taxonomy Root",
             TaxonomyLoader.LB_TAXONOMY_UID,
@@ -323,19 +332,19 @@ public class TaxonomyLoaderTest {
     }
 
     private void writeIncludelist(File tempDir) throws IOException {
-        File taxonomyFile = new File(tempDir, CategoryFilter.INCLUDELIST_FILENAME);
+        File taxonomyFile = new File(tempDir, Constants.CATEGORY_INCLUDELIST_FILENAME);
         try (PrintWriter out = new PrintWriter(taxonomyFile)) {
             out.println("0-2");
         }
     }
     private void writeExcludelist(File tempDir) throws IOException {
-        File taxonomyFile = new File(tempDir, CategoryFilter.INCLUDELIST_FILENAME);
+        File taxonomyFile = new File(tempDir, Constants.CATEGORY_INCLUDELIST_FILENAME);
         try (PrintWriter out = new PrintWriter(taxonomyFile)) {
             out.println("~ 0-1-1");
         }
     }
     private void writeMixedlist(File tempDir) throws IOException {
-        File taxonomyFile = new File(tempDir, CategoryFilter.INCLUDELIST_FILENAME);
+        File taxonomyFile = new File(tempDir, Constants.CATEGORY_INCLUDELIST_FILENAME);
         try (PrintWriter out = new PrintWriter(taxonomyFile)) {
             out.println("0-1");
             out.println("~ 0-1-1");

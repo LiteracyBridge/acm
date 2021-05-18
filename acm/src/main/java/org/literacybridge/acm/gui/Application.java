@@ -7,7 +7,9 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.AccessControlResolver;
 import org.literacybridge.acm.config.AmplioHome;
+import org.literacybridge.acm.config.GuiAccessControlResolver;
 import org.literacybridge.acm.config.PathsProvider;
 import org.literacybridge.acm.device.FileSystemMonitor;
 import org.literacybridge.acm.device.LiteracyBridgeTalkingBookRecognizer;
@@ -28,6 +30,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
@@ -105,20 +108,7 @@ public class Application extends JXFrame {
     this.backgroundColor = getBackground();
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    addWindowListener(new WindowAdapter() {
-      @Override
-      public void windowClosing(WindowEvent e) {
-        try {
-          if (!ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) {
-              // Will ask user if they want to save.
-              ACMConfiguration.getInstance().commitCurrentDB();
-          }
-          ACMConfiguration.getInstance().closeCurrentDB();
-        } catch (Exception e1) {
-          e1.printStackTrace();
-        }
-      }
-    });
+    addWindowListener(shutdownListener);
 
     if (ACMConfiguration.getInstance().isDevo()) {
       JMenuBar menuBar = new JMenuBar();
@@ -175,6 +165,39 @@ public class Application extends JXFrame {
         .addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());
     fileSystemMonitor.start();
   }
+
+  private WindowListener shutdownListener = new WindowAdapter() {
+      @Override
+      public void windowClosing(WindowEvent e) {
+          super.windowClosing(e);
+          try {
+              ACMConfiguration.DB_CLOSE_DISPOSITION disposition = ACMConfiguration.DB_CLOSE_DISPOSITION.COMMIT;
+
+              if (ACMConfiguration.getInstance().getCurrentDB().hasChanges()) {
+                  Object[] optionsSaveWork = {"Save Work", "Throw Away Your Latest Changes"};
+                  String msg = "If you made a mistake you can throw away all your changes now.";
+                  String title = "Save Work?";
+                  int buttonIx = JOptionPane.showOptionDialog(application, msg, title, JOptionPane.YES_NO_CANCEL_OPTION,
+                      JOptionPane.QUESTION_MESSAGE, null, optionsSaveWork,
+                      optionsSaveWork[0]);
+                  if (buttonIx == 1) {
+                      msg = "Are you sure you want to throw away all your work since opening the ACM?";
+                      title = "Are You Sure?";
+                      buttonIx = JOptionPane.showOptionDialog(application, msg, title, JOptionPane.OK_CANCEL_OPTION,
+                          JOptionPane.WARNING_MESSAGE, null, null,
+                          JOptionPane.CANCEL_OPTION);
+                      if (buttonIx == JOptionPane.OK_OPTION) {
+                          disposition = ACMConfiguration.DB_CLOSE_DISPOSITION.DISCARD;
+                      }
+                  }
+              }
+
+              ACMConfiguration.getInstance().closeCurrentDb(disposition);
+          } catch (Exception e1) {
+              e1.printStackTrace();
+          }
+      }
+  };
 
   @Override
   public void setBackground(Color bgColor) {
@@ -320,11 +343,12 @@ public class Application extends JXFrame {
 
       // init database
       try {
+          AccessControlResolver accessControlResolver = new GuiAccessControlResolver();
           String text = "Syncing database for " + sharedACM;
           ACMConfiguration.S3SyncState syncState = syncOk
                                                    ? ACMConfiguration.S3SyncState.NOT_REQUIRED
                                                    : ACMConfiguration.S3SyncState.FAILED;
-          ACMConfiguration.getInstance().setCurrentDB(sharedACM, syncState);
+          ACMConfiguration.getInstance().setCurrentDB(sharedACM, syncState, accessControlResolver);
       } catch (Exception e) {
           e.printStackTrace();
           JOptionPane.showMessageDialog(null,

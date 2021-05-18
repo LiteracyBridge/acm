@@ -11,10 +11,7 @@ import org.literacybridge.acm.utils.IOUtils;
 public class A18Utils {
   public static void updateDuration(AudioItem audioItem) throws IOException {
       AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
-      File f = null;
-      if (repository.hasAudioFileWithFormat(audioItem, AudioFormat.A18)) {
-          f = repository.findFileWithFormat(audioItem, AudioFormat.A18);
-      }
+      File f = repository.findAudioFileWithFormat(audioItem, AudioFormat.A18);
 
     if (f != null) {
       DataInputStream in = new DataInputStream(

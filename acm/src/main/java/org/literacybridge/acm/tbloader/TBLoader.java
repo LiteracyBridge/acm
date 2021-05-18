@@ -7,6 +7,7 @@ import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.cloud.TbSrnHelper;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.dialogs.PopUp;
 import org.literacybridge.acm.utils.LogHelper;
@@ -420,7 +421,7 @@ public class TBLoader extends JFrame {
 
     // Configuration settings.
     void loadConfiguration() {
-        Properties config = ACMConfiguration.getInstance().getConfigPropertiesFor(newProject);
+        DBConfiguration config = ACMConfiguration.getInstance().getDbConfiguration(newProject);
         if (config != null) {
             String valStr = config.getProperty("PACKAGE_CHOICE", "FALSE");
             this.allowPackageChoice |= Boolean.parseBoolean(valStr);

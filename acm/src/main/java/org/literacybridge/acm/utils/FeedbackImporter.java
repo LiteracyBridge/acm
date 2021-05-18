@@ -7,7 +7,6 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.AccessControl;
 import org.literacybridge.acm.gui.CommandLineParams;
 import org.literacybridge.acm.importexport.AudioImporter;
 import org.literacybridge.acm.store.AudioItem;
@@ -35,6 +34,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.literacybridge.acm.Constants.CATEGORY_UNCATEGORIZED_FEEDBACK;
+import static org.literacybridge.acm.config.AccessControlResolver.*;
 
 public class FeedbackImporter {
   private static final Logger logger = LoggerFactory.getLogger(FeedbackImporter.class);
@@ -250,8 +250,7 @@ public class FeedbackImporter {
     }
 
     results = importFiles(filesToImport);
-    ACMConfiguration.getInstance().commitCurrentDB();
-    ACMConfiguration.getInstance().closeCurrentDB();
+    ACMConfiguration.getInstance().closeCurrentDb(ACMConfiguration.DB_CLOSE_DISPOSITION.COMMIT);
     if (results.isSuccess()) {
       results.updateImportedNoErrors(projectDir.getName(), updateDir.getName(),
               results.filesImported.size());
@@ -278,7 +277,7 @@ public class FeedbackImporter {
           throws Exception {
     if (params.importACM != null) {
       if (!ACMConfiguration.getInstance().setCurrentDB(params.importACM)) {
-        AccessControl.AccessStatus status = ACMConfiguration.getInstance().getCurrentDB().getDbAccessStatus();
+        AccessStatus status = ACMConfiguration.getInstance().getCurrentDB().getDbAccessStatus();
         throw new Exception(String.format("Couldn't open or create DB '%s': %s", params.importACM, status));
       }
       return;
@@ -303,8 +302,8 @@ public class FeedbackImporter {
 
       // Throws an exception to indicate "not found".
       if (!ACMConfiguration.getInstance().setCurrentDB(feedbackProject)) {
-        AccessControl.AccessStatus status = ACMConfiguration.getInstance().getCurrentDB().getDbAccessStatus();
-        if (status == AccessControl.AccessStatus.noDbError) {
+        AccessStatus status = ACMConfiguration.getInstance().getCurrentDB().getDbAccessStatus();
+        if (status == AccessStatus.noDbError) {
           // This error is worthwhile to retry -- the db doesn't exist, so create it!
           ACMConfiguration.getInstance().createNewDb(mainProject, feedbackProject);
         } else {

@@ -2,6 +2,7 @@ package org.literacybridge.acm.repository;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,16 +12,10 @@ import org.literacybridge.acm.store.AudioItem;
 
 class FileSystemRepository implements FileRepositoryInterface {
 
-    private final File baseDir;
-    private final FileSystemGarbageCollector garbageCollector;
+    final File baseDir;
 
     FileSystemRepository(File baseDir) {
-        this(baseDir, null);
-    }
-
-    FileSystemRepository(File baseDir, FileSystemGarbageCollector garbageCollector) {
         this.baseDir = baseDir;
-        this.garbageCollector = garbageCollector;
     }
 
     /**
@@ -70,7 +65,7 @@ class FileSystemRepository implements FileRepositoryInterface {
         return dir;
     }
 
-    public List<String> getAudioItemIds(Repository repo) {
+    public List<String> getAudioItemIds() {
         List<String> result = new ArrayList<>();
         File contentDir = new File(baseDir, "org" + File.separator + "literacybridge");
         if (contentDir.exists() && contentDir.isDirectory()) {
@@ -103,17 +98,9 @@ class FileSystemRepository implements FileRepositoryInterface {
         return total;
     }
 
-    public FileSystemGarbageCollector.GCInfo getGcInfo() throws IOException {
-        if (garbageCollector == null) {
-            return new FileSystemGarbageCollector.GCInfo(false, 0, 0);
-        }
-
-        return garbageCollector.getGcInfo(baseDir);
+    @Override
+    public Path basePath() {
+        return this.baseDir.toPath();
     }
 
-    public void gc() throws IOException {
-        if (garbageCollector != null) {
-            garbageCollector.gc(baseDir);
-        }
-    }
 }

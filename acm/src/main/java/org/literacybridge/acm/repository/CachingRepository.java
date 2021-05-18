@@ -1,62 +1,68 @@
 package org.literacybridge.acm.repository;
 
+import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.repository.AudioItemRepository.AudioFormat;
 import org.literacybridge.acm.store.AudioItem;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * A repository implementation that stores .a18 files in a shared repository,
  * and all other files in a local cache.
  */
 class CachingRepository implements FileRepositoryInterface {
-    private final FileRepositoryInterface localCacheRepository;
-    private final FileRepositoryInterface globalSharedRepository;
-    private final FileRepositoryInterface sandboxRepository;
+    private final GarbageCollectedFileSystemRepository localCacheRepository;
+    private final SandboxingRepository sandboxingRepository;
     private final Set<AudioFormat> nativeFormats;
+    final private File contentDir;
 
-    public CachingRepository(FileRepositoryInterface localCacheRepository,
-                             FileRepositoryInterface globalSharedRepository,
-                             FileRepositoryInterface sandboxRepository,
-                             Collection<AudioFormat> nativeFormats)
-    {
-        this.localCacheRepository = localCacheRepository;
-        this.globalSharedRepository = globalSharedRepository;
-        this.sandboxRepository = sandboxRepository;
-        this.nativeFormats = new HashSet<>();
+    public CachingRepository(DBConfiguration dbConfiguration) throws IOException {
+        long cacheSizeInBytes = dbConfiguration.getCacheSizeInBytes();
+        // The localCacheRepository lives in ~/LiteracyBridge/ACM/cache/ACM-FOO. It is used for all
+        // non-A18 files. When .wav files (but not, say, mp3s) exceed max cache size, they'll be gc-ed.
+        // The localCacheRepository lives in ~/LiteracyBridge/ACM/cache/ACM-FOO. It is used for all
+        // non-A18 files. When .wav files (but not, say, mp3s) exceed max cache size, they'll be gc-ed.
+        // Create the cache directory before it's actually needed, to trigger any security exceptions.
+        File cacheDir = dbConfiguration.getLocalCacheDirectory();
+        if ((!cacheDir.exists() && !cacheDir.mkdirs())) {
+            throw new IOException("Can't create cache directory.");
+        }
+        localCacheRepository = new GarbageCollectedFileSystemRepository(cacheDir, cacheSizeInBytes);
 
-        this.nativeFormats.addAll(nativeFormats);
+        // The SandboxingRepository is backed by a Sandbox, so that changes can be accumulated
+        // and committed when the user desides to "Save Changes".
+        contentDir = dbConfiguration.getProgramContentDir();
+        sandboxingRepository = new SandboxingRepository(dbConfiguration.getSandbox(), contentDir);
+
+        // The caching repository directs resolve requests to one of the three above file based
+        // repositories.
+        nativeFormats = dbConfiguration.getNativeAudioFormats()
+            .stream()
+            .map(AudioItemRepositoryImpl::audioFormatForExtension)
+            .collect(Collectors.toSet());
+    }
+
+    public synchronized void setupWavCaching(Predicate<Long> gcQuery) throws IOException {
+        localCacheRepository.setupWavCaching(gcQuery);
     }
 
     private boolean isNativeFormat(AudioFormat format) {
         return nativeFormats.contains(format);
     }
 
+    public boolean isSandboxedFile(File file) {
+        return sandboxingRepository.isSandboxedFile(file);
+    }
+
     @Override
     public File resolveFile(AudioItem audioItem, AudioFormat format, boolean writeAccess) {
         if (isNativeFormat(format)) {
-            File f;
-            if (sandboxRepository == null) {
-                // If no sandbox, file must be in the global shared repository, or doesn't exist.
-                f = globalSharedRepository.resolveFile(audioItem, format, writeAccess);
-                if (writeAccess) {
-                    System.out.printf("From global: %s is %s\n", audioItem.getTitle(), f);
-                }
-            } else if (writeAccess) {
-                // Have a sandbox, and want to write, so put into sandbox.
-                f = sandboxRepository.resolveFile(audioItem, format, writeAccess);
-                System.out.printf("From sandbox: %s is %s\n", audioItem.getTitle(), f);
-            } else {
-                // read-access: check sandbox first; if missing, check shared repo
-                f = sandboxRepository.resolveFile(audioItem, format, writeAccess);
-                if (!f.exists() || (f.isDirectory() && f.listFiles().length == 0)) {
-                    // empty directory
-                    f = globalSharedRepository.resolveFile(audioItem, format, writeAccess);
-                }
-            }
-            return f;
+            return sandboxingRepository.resolveFile(audioItem, format, writeAccess);
         } else {
             // Not a format we persist, so it must be in local cache, or doesn't exist.
             return localCacheRepository.resolveFile(audioItem, format, writeAccess);
@@ -64,50 +70,30 @@ class CachingRepository implements FileRepositoryInterface {
     }
 
     @Override
-    public FileSystemGarbageCollector.GCInfo getGcInfo() throws IOException {
-        return localCacheRepository.getGcInfo();
-    }
-
-    @Override
-    public void gc() throws IOException {
-        // only perform garbage collection on local cache, not on shared repo
-        localCacheRepository.gc();
-    }
-
-    @Override
-    public List<String> getAudioItemIds(Repository repo) {
-        switch (repo) {
-        case global:
-            return globalSharedRepository.getAudioItemIds(repo);
-        case cache:
-            return localCacheRepository.getAudioItemIds(repo);
-        case sandbox:
-            return (sandboxRepository != null) ? sandboxRepository.getAudioItemIds(repo) : new ArrayList<>();
-        }
-        return null;
+    public List<String> getAudioItemIds() {
+        List<String> result = new ArrayList<>();
+        result.addAll(localCacheRepository.getAudioItemIds());
+        result.addAll(sandboxingRepository.getAudioItemIds());
+        return result;
     }
 
     @Override
     public void delete(String id) {
-        // This is a bit odd. Delete from the cache no matter what. If there is a sandbox,
-        // delete from it. If no sandbox, delete from global. Thus, to delete from both global
-        // and sandbox, this must be done with and without a sandbox.
         localCacheRepository.delete(id);
-        if (sandboxRepository != null) {
-            sandboxRepository.delete(id);
-        } else {
-            globalSharedRepository.delete(id);
-        }
+        sandboxingRepository.delete(id);
     }
 
     @Override
     public long size(String id) {
         long size = localCacheRepository.size(id);
-        if (sandboxRepository != null) {
-            size += sandboxRepository.size(id);
-        } else {
-            size += globalSharedRepository.size(id);
-        }
+        size += sandboxingRepository.size(id);
         return size;
     }
+
+    @Override
+    public Path basePath() {
+        return this.contentDir.toPath();
+    }
+
+
 }

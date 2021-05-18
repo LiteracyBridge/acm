@@ -124,10 +124,10 @@ public class DBInfo extends Properties {
         load(in);
         in.close();
         isCheckedOut = true; // using the setter would cause an immediate rewrite of the same file
-          System.out.printf("Checkout marker file exists, db is checked out.\n");
+          System.out.print("Checkout marker file exists, db is checked out.\n");
       } catch (IOException e) {
         isCheckedOut = false;
-          System.out.printf("Can't read checkout marker file, but it exists; db is NOT checked out.\n");
+          System.out.print("Can't read checkout marker file, but it exists; db is NOT checked out.\n");
       }
     }
   }

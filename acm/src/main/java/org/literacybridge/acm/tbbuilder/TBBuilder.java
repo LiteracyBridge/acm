@@ -197,7 +197,7 @@ public class TBBuilder {
             params.sharedACM = sharedACM;
             ACMConfiguration.initialize(params);
             ACMConfiguration.getInstance().setCurrentDB(params.sharedACM);
-        } else if (!ACMConfiguration.getInstance().getCurrentDB().getAcmDbDirName().equals(sharedACM)) {
+        } else if (!ACMConfiguration.getInstance().getCurrentDB().getProgramHomeDirName().equals(sharedACM)) {
             throw new IllegalArgumentException("Passed ACM Name must equal already-opened ACM name.");
         }
 
