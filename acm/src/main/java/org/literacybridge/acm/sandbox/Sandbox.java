@@ -128,6 +128,9 @@ public class Sandbox {
                 // The file was added or updated in the sandbox; make the same change in the base.
                 File moveTo = baseDir.toPath().resolve(e.getKey()).toFile();
                 File moveFrom = shadowData.toPath().resolve(e.getKey()).toFile();
+                File toParent = moveTo.getParentFile();
+                if (!toParent.exists()) toParent.mkdirs();
+                if (moveTo.exists()) moveTo.delete();
                 boolean ok = moveFrom.renameTo(moveTo);
                 writtenFileHandler.accept(moveTo);
                 System.out.printf("   add: %s + from: %s [%s]\n", moveTo.getAbsolutePath(), moveFrom.getAbsolutePath(), ok?"ok":"error");
@@ -138,6 +141,9 @@ public class Sandbox {
                 File moveTo = baseDir.toPath().resolve(e.getKey()).toFile();
                 Path moveFromPath = ((MoveOp) e.getValue()).fromPath;
                 File moveFrom = baseDir.toPath().resolve(moveFromPath).toFile();
+                File toParent = moveTo.getParentFile();
+                if (!toParent.exists()) toParent.mkdirs();
+                if (moveTo.exists()) moveTo.delete();
                 boolean ok = moveFrom.renameTo(moveTo);
                 writtenFileHandler.accept(moveTo);
                 System.out.printf("  move: %s + from %s [%s]\n", moveTo.getAbsolutePath(), moveFrom.getAbsolutePath(), ok?"ok":"error");
@@ -438,6 +444,7 @@ public class Sandbox {
                 // Move the existing shadowed file.
                 File toParent = shadowedToFile.getParentFile();
                 if (!toParent.exists()) toParent.mkdirs();
+                if (shadowedToFile.exists()) shadowedToFile.delete();
                 if (shadowedFromFile.renameTo(shadowedToFile)) {
                     result = true;
                     workQueue.remove(relativeToPath);
@@ -470,6 +477,9 @@ public class Sandbox {
             if (fromFile.isDirectory()) {
                 throw new IllegalArgumentException("Argument to moveFile must not be a directory: "+fromFile.getAbsolutePath());
             }
+            File toParent = shadowedToFile.getParentFile();
+            if (!toParent.exists()) toParent.mkdirs();
+            if (shadowedToFile.exists()) shadowedToFile.delete();
             if (fromFile.renameTo(shadowedToFile)) {
                 result = true;
                 workQueue.remove(relativeToPath);

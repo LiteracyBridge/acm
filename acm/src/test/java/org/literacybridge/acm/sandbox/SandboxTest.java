@@ -51,8 +51,12 @@ public class SandboxTest {
 
     private void initWithBaseFiles() throws IOException {
         initWithFile();
-        makeData(new FileOutputStream(new File(base, "a")), 10);
-        makeData(new FileOutputStream(new File(base, "b")), 20);
+        try (FileOutputStream fos = new FileOutputStream(new File(base, "a"))) {
+            makeData(fos, 10);
+        }
+        try (FileOutputStream fos = new FileOutputStream(new File(base, "b"))) {
+            makeData(fos, 20);
+        }
     }
 
     private void initWithTree() throws IOException {
