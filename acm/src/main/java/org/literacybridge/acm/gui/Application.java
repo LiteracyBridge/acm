@@ -166,14 +166,17 @@ public class Application extends JXFrame {
     fileSystemMonitor.start();
   }
 
-  private WindowListener shutdownListener = new WindowAdapter() {
+  private final WindowListener shutdownListener = new WindowAdapter() {
       @Override
       public void windowClosing(WindowEvent e) {
           super.windowClosing(e);
           try {
               ACMConfiguration.DB_CLOSE_DISPOSITION disposition = ACMConfiguration.DB_CLOSE_DISPOSITION.COMMIT;
 
-              if (ACMConfiguration.getInstance().getCurrentDB().hasChanges()) {
+              if (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) {
+                  disposition = ACMConfiguration.DB_CLOSE_DISPOSITION.DISCARD;
+
+              } else if (ACMConfiguration.getInstance().getCurrentDB().hasChanges()) {
                   Object[] optionsSaveWork = {"Save Work", "Throw Away Your Latest Changes"};
                   String msg = "If you made a mistake you can throw away all your changes now.";
                   String title = "Save Work?";

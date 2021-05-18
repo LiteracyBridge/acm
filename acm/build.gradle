@@ -164,7 +164,7 @@ dependencies {
     // This site has become inaccessible; they don't have a valid certificate. Copied
     // jar file to 3rdparty directory.
     // compile 'it.cnr.imaa.essi:lablib-checkboxtree:3.1.1'
-    compile 'org.netbeans.external:swing-layout-1.0.4:RELEASE68'
+//    compile 'org.netbeans.external:swing-layout-1.0.4:RELEASE68'
     // https://mvnrepository.com/artifact/org.swinglabs.swingx/swingx-all
     compile group: 'org.swinglabs.swingx', name: 'swingx-all', version: '1.6.5-1'
 //    compile 'org.swinglabs:swingx:1.6.1'

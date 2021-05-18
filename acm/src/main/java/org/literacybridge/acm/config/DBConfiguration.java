@@ -1,5 +1,6 @@
 package org.literacybridge.acm.config;
 
+import org.amplio.CloudSync;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.cloud.Authenticator;
@@ -282,6 +283,14 @@ public class DBConfiguration {
           getSandbox().discard();
       }
       deleteChangeMarkerFile();
+      if (!pathsProvider.isDropboxDb()) {
+          try {
+              CloudSync.requestSync(getProgramName() + "_DB");
+          } catch (IOException e) {
+              e.printStackTrace();
+          }
+      }
+
   }
 
     public void discardDbChanges() {
