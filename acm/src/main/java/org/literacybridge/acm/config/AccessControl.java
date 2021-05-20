@@ -400,7 +400,7 @@ public class AccessControl {
     AccessControlResolver.UpdateDbStatus commitDbChanges() {
         AccessControlResolver.UpdateDbStatus status = AccessControlResolver.UpdateDbStatus.ok;
         String dbName = dbConfiguration.getProgramHomeDirName();
-        String filename = null;
+        String filename;
 
         filename = saveDbFromMirror();
         if (filename == null) {
@@ -516,7 +516,7 @@ public class AccessControl {
         if (jsonResponse == null) {
             throw new IOException("Can't reach network");
         }
-        LOG.info(String.format("%s: %s\n          %s\n", action, requestUrl.toString(), jsonResponse.toString()));
+        LOG.info(String.format("%s: %s\n          %s\n", action, requestUrl, jsonResponse));
 
         // parse response
         Map<String,String> posessor = new HashMap<>();
@@ -675,7 +675,7 @@ public class AccessControl {
         if (jsonResponse == null) {
             throw new IOException("Can't reach server");
         }
-        LOG.info(String.format("%s: %s\n          %s\n", action, requestUrl.toString(), jsonResponse.toString()));
+        LOG.info(String.format("%s: %s\n          %s\n", action, requestUrl, jsonResponse));
 
         Object o = jsonResponse.get("status");
         if (o instanceof String) {
@@ -724,7 +724,7 @@ public class AccessControl {
      * @return The name of the new .zip file, if it was created OK, null if any error.
      */
     private String saveDbFromMirror() {
-        String filename = null;
+        String filename;
         try {
             // The name previously decided for the next zip file name.
             filename = getNextZipFilename();
