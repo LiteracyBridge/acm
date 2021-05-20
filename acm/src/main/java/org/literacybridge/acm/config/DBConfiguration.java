@@ -71,6 +71,26 @@ public class DBConfiguration {
         }
     }
 
+    public boolean isSandboxed() {
+        return sandboxed;
+    }
+    void setSandboxed(boolean sandboxed) {
+        this.sandboxed = sandboxed;
+    }
+
+    /**
+     * This is slightly different than sandboxed. If the database isn't open, it won't be
+     * sandboxed, but it won't be writable, either.
+     * @return true if database is writable.
+     */
+    public boolean isWritable() {
+        return accessControl != null && accessControl.getOpenStatus().isOpen() && !sandboxed;
+    }
+
+    public boolean userIsReadOnly() {
+        return !Authenticator.getInstance().hasUpdatingRole();
+    }
+
     public PathsProvider getPathProvider() {
         return pathsProvider;
     }
@@ -178,26 +198,6 @@ public class DBConfiguration {
             this.sandbox = new Sandbox(pathsProvider.getProgramHomeDir(), pathsProvider.getSandboxDir());
         }
         return sandbox;
-    }
-
-    public boolean isSandboxed() {
-      return sandboxed;
-  }
-  void setSandboxed(boolean sandboxed) {
-      this.sandboxed = sandboxed;
-  }
-
-    /**
-     * This is slightly different than sandboxed. If the database isn't open, it won't be
-     * sandboxed, but it won't be writable, either.
-     * @return true if database is writable.
-     */
-    public boolean isWritable() {
-        return accessControl != null && accessControl.getOpenStatus().isOpen() && !sandboxed;
-    }
-
-    public boolean userIsReadOnly() {
-        return !Authenticator.getInstance().hasUpdatingRole();
     }
 
   boolean init(AccessControlResolver accessControlResolver) throws Exception {
@@ -351,7 +351,7 @@ public class DBConfiguration {
         try {
             BufferedOutputStream out = new BufferedOutputStream(
                 new FileOutputStream(propertiesFile));
-            dbProperties.store(out, null);
+            getDbProperties().store(out, null);
             out.flush();
             out.close();
         } catch (IOException e) {
@@ -362,7 +362,7 @@ public class DBConfiguration {
 
     public long getCacheSizeInBytes() {
         long size = Constants.DEFAULT_CACHE_SIZE_IN_BYTES;
-        String value = dbProperties.getProperty(Constants.CACHE_SIZE_PROP_NAME);
+        String value = getDbProperties().getProperty(Constants.CACHE_SIZE_PROP_NAME);
         if (value != null) {
             try {
                 size = Long.parseLong(value);
@@ -375,7 +375,7 @@ public class DBConfiguration {
 
     public String getDescription() {
         String description = getProjectName();
-        String value = dbProperties.getProperty(Constants.DESCRIPTION_PROP_NAME);
+        String value = getDbProperties().getProperty(Constants.DESCRIPTION_PROP_NAME);
         if (StringUtils.isNotBlank(value)) {
             description = value;
         }
@@ -384,7 +384,7 @@ public class DBConfiguration {
 
     public String getConfigLanguages() {
         String languages = "en(\"English\")";
-        String value = dbProperties.getProperty(Constants.AUDIO_LANGUAGES);
+        String value = getDbProperties().getProperty(Constants.AUDIO_LANGUAGES);
         if (StringUtils.isNotBlank(value)) {
             try {
                 languages = value;
@@ -397,7 +397,7 @@ public class DBConfiguration {
 
     public boolean isShouldPreCacheWav() {
         boolean preCacheWav = false;
-        String value = dbProperties.getProperty(Constants.PRE_CACHE_WAV);
+        String value = getDbProperties().getProperty(Constants.PRE_CACHE_WAV);
         if (value != null) {
             try {
                 preCacheWav = Boolean.parseBoolean(value);
@@ -409,12 +409,12 @@ public class DBConfiguration {
   }
 
    public boolean isStrictDeploymentNaming() {
-        String strictNaming = dbProperties.getProperty(Constants.STRICT_DEPLOYMENT_NAMING);
+        String strictNaming = getDbProperties().getProperty(Constants.STRICT_DEPLOYMENT_NAMING);
         return strictNaming == null || !strictNaming.equalsIgnoreCase("false");
     }
 
     public boolean isUserFeedbackHidden() {
-        String userFeedbackHidden = dbProperties.getProperty(Constants.USER_FEEDBACK_HIDDEN);
+        String userFeedbackHidden = getDbProperties().getProperty(Constants.USER_FEEDBACK_HIDDEN);
         return userFeedbackHidden != null && userFeedbackHidden.equalsIgnoreCase("true");
     }
 
@@ -427,7 +427,7 @@ public class DBConfiguration {
      * @return true if audio files should be de-duplicated.
      */
     public boolean isDeDuplicateAudio() {
-        String deDuplicateAudio = dbProperties.getProperty(Constants.DE_DUPLICATE_AUDIO);
+        String deDuplicateAudio = getDbProperties().getProperty(Constants.DE_DUPLICATE_AUDIO);
         return deDuplicateAudio != null && deDuplicateAudio.equalsIgnoreCase("true");
     }
 
@@ -436,7 +436,7 @@ public class DBConfiguration {
      * @return true if we should add a toolbar button for configuration.
      */
     public boolean configurationDialog() {
-        String configurable = dbProperties.getProperty(Constants.CONFIGURATION_DIALOG);
+        String configurable = getDbProperties().getProperty(Constants.CONFIGURATION_DIALOG);
         return ACMConfiguration.getInstance().isShowConfiguration() ||
             (configurable != null && configurable.equalsIgnoreCase("true"));
     }
@@ -446,7 +446,7 @@ public class DBConfiguration {
      * @return a collection of strings.
      */
     public List<String> getNativeAudioFormats() {
-        String formats = dbProperties.getProperty(Constants.NATIVE_AUDIO_FORMATS, AudioItemRepository.AudioFormat.A18.getFileExtension());
+        String formats = getDbProperties().getProperty(Constants.NATIVE_AUDIO_FORMATS, AudioItemRepository.AudioFormat.A18.getFileExtension());
         return Arrays.stream(formats.split("[;, ]"))
                 .filter(StringUtils::isNotBlank)
                 .map(String::trim)
@@ -461,7 +461,7 @@ public class DBConfiguration {
      */
     public Integer getFuzzyThreshold() {
         Integer result = Constants.FUZZY_THRESHOLD_DEFAULT;
-        String value = dbProperties.getProperty(Constants.FUZZY_THRESHOLD);
+        String value = getDbProperties().getProperty(Constants.FUZZY_THRESHOLD);
         try {
             result = new Integer(value);
         } catch (Exception ignored) {
@@ -473,23 +473,23 @@ public class DBConfiguration {
     public void setFuzzyThreshold(int threshold) {
         threshold = Math.min(threshold, Constants.FUZZY_THRESHOLD_MAXIMUM);
         threshold = Math.max(threshold, Constants.FUZZY_THRESHOLD_MINIMUM);
-        dbProperties.setProperty(Constants.FUZZY_THRESHOLD, Integer.toString(threshold));
+        getDbProperties().setProperty(Constants.FUZZY_THRESHOLD, Integer.toString(threshold));
     }
 
     public boolean getWarnForMissingGreetings() {
-        String value = dbProperties.getProperty(Constants.WARN_FOR_MISSING_GREETINGS);
+        String value = getDbProperties().getProperty(Constants.WARN_FOR_MISSING_GREETINGS);
         return Boolean.parseBoolean(value);
     }
 
     public void setWarnForMissingGreetings(boolean warnForMissingGreetings) {
-        dbProperties.setProperty(Constants.WARN_FOR_MISSING_GREETINGS, Boolean.toString(warnForMissingGreetings));
+        getDbProperties().setProperty(Constants.WARN_FOR_MISSING_GREETINGS, Boolean.toString(warnForMissingGreetings));
     }
 
     public String getProperty(String propertyName) {
         return getProperty(propertyName, null);
     }
     public String getProperty(String propertyName, String defaultValue) {
-        return dbProperties.getProperty(propertyName, defaultValue);
+        return getDbProperties().getProperty(propertyName, defaultValue);
     }
 
     /**
@@ -499,7 +499,7 @@ public class DBConfiguration {
      */
     public Collection<String> getNotifyList() {
         Set<String> result;
-        String list = dbProperties.getProperty(Constants.NOTIFY_LIST);
+        String list = getDbProperties().getProperty(Constants.NOTIFY_LIST);
         if (list != null) {
             result = Arrays.stream(list.split("[, ]+"))
                 .map(String::trim)
@@ -511,7 +511,7 @@ public class DBConfiguration {
     }
 
     public void setNotifyList(Collection<String> list) {
-        dbProperties.setProperty(Constants.NOTIFY_LIST, String.join(", ", list));
+        getDbProperties().setProperty(Constants.NOTIFY_LIST, String.join(", ", list));
     }
 
 
@@ -572,7 +572,7 @@ public class DBConfiguration {
         }
     }
 
-  public List<Locale> getAudioLanguages() {
+    public List<Locale> getAudioLanguages() {
     return Collections.unmodifiableList(audioLanguages);
   }
 
@@ -590,18 +590,8 @@ public class DBConfiguration {
             System.exit(1);
         }
 
-        // like ~/Dropbox/ACM-UWR/config.properties
-        File propertiesFile = getSandbox().inputFile(pathsProvider.getProgramConfigFile().toPath());
-        if (propertiesFile.exists()) {
-            try {
-                BufferedInputStream in = new BufferedInputStream(
-                    new FileInputStream(propertiesFile));
-                dbProperties = new Properties();
-                dbProperties.load(in);
-            } catch (IOException e) {
-                throw new RuntimeException("Unable to load configuration file: "
-                    + propertiesFile.getName(), e);
-            }
+        if (ACMConfiguration.getInstance().isForceSandbox()) {
+            setSandboxed(true);
         }
 
     }
@@ -728,4 +718,22 @@ public class DBConfiguration {
         }
     }
 
+    private Properties getDbProperties() {
+        if (dbProperties == null) {
+            // like ~/Dropbox/ACM-UWR/config.properties
+            File propertiesFile = getSandbox().inputFile(pathsProvider.getProgramConfigFile().toPath());
+            if (propertiesFile.exists()) {
+                try {
+                    BufferedInputStream in = new BufferedInputStream(
+                        new FileInputStream(propertiesFile));
+                    dbProperties = new Properties();
+                    getDbProperties().load(in);
+                } catch (IOException e) {
+                    throw new RuntimeException("Unable to load configuration file: "
+                        + propertiesFile.getName(), e);
+                }
+            }
+        }
+        return dbProperties;
+    }
 }

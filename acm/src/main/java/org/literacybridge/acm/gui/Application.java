@@ -166,6 +166,7 @@ public class Application extends JXFrame {
     fileSystemMonitor.start();
   }
 
+  @SuppressWarnings("FieldCanBeLocal")
   private final WindowListener shutdownListener = new WindowAdapter() {
       @Override
       public void windowClosing(WindowEvent e) {
@@ -382,7 +383,7 @@ public class Application extends JXFrame {
    */
   private static void authenticateAndChooseProgram(CommandLineParams params) {
       Authenticator authInstance = Authenticator.getInstance();
-      authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalDbs(),
+      authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalProgramDbs(),
               ACMConfiguration.getInstance().getLocalDbxDbs());
       Authenticator.LoginResult result = authInstance.getUserIdentity(null,
               LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),

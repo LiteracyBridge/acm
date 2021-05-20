@@ -58,7 +58,7 @@ public class ProgramCard extends CardContent {
     private final JCheckBox forceSandbox;
     private final JScrollPane choicesListScrollPane;
     private List<String> allowedToBeUpdated = new ArrayList<>();
-    private List<String> mustBeDownloaded;
+    private Set<String> mustBeDownloaded = new HashSet<>();
 
     private final Map<String, String> descriptionToProgramid = new HashMap<>();
     private Set<String> shownProgramids;
@@ -255,7 +255,7 @@ public class ProgramCard extends CardContent {
                     // then it must be downloaded
                     return !localProgramids.contains(name) ||
                         (Authenticator.getInstance().isLocallyDropbox(name) && Authenticator.getInstance().isProgramS3(name));
-                }).collect(Collectors.toList());
+                }).collect(Collectors.toSet());
 
         } else {
             shownProgramids = welcomeDialog.cognitoInterface.getLocallyAvailablePrograms().keySet();
@@ -385,7 +385,7 @@ public class ProgramCard extends CardContent {
                     // then it must be downloaded
                     return !localProgramIds.contains(name) ||
                             (Authenticator.getInstance().isLocallyDropbox(name) && Authenticator.getInstance().isProgramS3(name));
-                }).collect(Collectors.toList());
+                }).collect(Collectors.toSet());
         return usersPrograms;
     }
 
