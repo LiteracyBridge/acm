@@ -35,6 +35,8 @@ public class VisibleCategoriesPanel extends AbstractSettingsBase {
         preserveState();
         setLayout(new BorderLayout());
 
+        add(new JLabel(LabelProvider.getLabel("Visible categories, applies to the entire program.")), BorderLayout.NORTH);
+
         JPanel dialogPanel = new JPanel();
         dialogPanel.setLayout(new BoxLayout(dialogPanel, BoxLayout.Y_AXIS));
         dialogPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));

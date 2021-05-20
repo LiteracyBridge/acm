@@ -5,6 +5,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -52,6 +53,8 @@ public class DesktopShortcutsPanel extends AbstractSettingsBase {
         // Set an empty border on the panel, to give some blank space around the content.
         setLayout(new BorderLayout());
         setBorder(new EmptyBorder(5, 10, 10, 10));
+
+        add(new JLabel(LabelProvider.getLabel("Desktop shortcuts, applies to this computer only.")), BorderLayout.NORTH);
 
         // An intermediate panel, with a nice border.
         JPanel borderPanel = new JPanel(new BorderLayout());

@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui.settings;
 
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 
 import javax.swing.*;
 import java.awt.Point;
@@ -65,4 +66,8 @@ public final class AcmSettingsDialog extends AbstractSettingsDialog {
         dialog.setVisible(true);
     }
 
+    @Override
+    public String getSandboxMessage() {
+        return LabelProvider.getLabel("The ACM is running in 'Sandbox' mode; program settings will not be saved.");
+    }
 }

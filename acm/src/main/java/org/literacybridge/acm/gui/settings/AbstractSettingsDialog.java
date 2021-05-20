@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.settings;
 
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 
@@ -78,6 +79,11 @@ public abstract class AbstractSettingsDialog extends JDialog {
         dialogPanel.setLayout(new BorderLayout());
         dialogPanel.setBorder(new EmptyBorder(5,5,5,5));
         add(dialogPanel, BorderLayout.CENTER);
+
+        if (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) {
+            JLabel noSave = new JLabel(getSandboxMessage());
+            add(noSave, BorderLayout.NORTH);
+        }
 
         JPanel innerPanel = new JPanel();
         innerPanel.setLayout(new BorderLayout());
@@ -211,6 +217,10 @@ public abstract class AbstractSettingsDialog extends JDialog {
         currentTag = actionCommand;
         setTitle(settingsPanels.get(currentTag).getTitle());
         okButton.setEnabled(settingsPanels.get(currentTag).settingsValid());
+    }
+
+    public String getSandboxMessage() {
+        return LabelProvider.getLabel("Running in 'Sandobox' mode; settings will not be saved.");
     }
 
 }

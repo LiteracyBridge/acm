@@ -367,9 +367,6 @@ public class ToolbarView extends JToolBar {
     }
 
     private void initComponents() {
-        boolean showConfigButton = !ACMConfiguration.getInstance().getCurrentDB().isSandboxed() ||
-                ACMConfiguration.getInstance().getCurrentDB().configurationDialog();
-
         setPreferredSize(new Dimension(300, TOOLBAR_HEIGHT));
         // I (bill) think the toolbar looks better without this:
         // setBorder(javax.swing.BorderFactory.createEtchedBorder());
@@ -485,9 +482,7 @@ public class ToolbarView extends JToolBar {
         add(playBox);
         add(positionBox);
         add(searchBox);
-        if (showConfigButton) {
-            add(configureButton);
-        }
+        add(configureButton);
 
         // Set the minimum size to the preferred size, or it will wind up *larger* than the
         // preferrred size, and the control will grow as the toolbar gets very narrow.

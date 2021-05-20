@@ -7,6 +7,7 @@ import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.PlaceholderTextArea;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -53,6 +54,8 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         // Set an empty border on the panel, to give some blank space around the content.
         setLayout(new BorderLayout());
         setBorder(new EmptyBorder(5, 10, 10, 10));
+
+        add(new JLabel(LabelProvider.getLabel("General settings, apply to the entire program.")), BorderLayout.NORTH);
 
         // An intermediate panel, with a nice border.
         JPanel borderPanel = new JPanel(new BorderLayout());
