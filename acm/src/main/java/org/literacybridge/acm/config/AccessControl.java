@@ -135,11 +135,11 @@ public class AccessControl {
         return dbInfo.getNextFilename();
     }
 
-    private boolean isSandboxed() {
+    public boolean isSandboxed() {
         return dbConfiguration.isSandboxed();
     }
 
-    private void setSandboxed(boolean isSandboxed) {
+    public void setSandboxed(boolean isSandboxed) {
         dbConfiguration.setSandboxed(isSandboxed);
     }
 

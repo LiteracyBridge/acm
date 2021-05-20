@@ -63,24 +63,36 @@ public class GuiAccessControlResolver implements AccessControlResolver {
             // ************************************************************************************
             // The caller can opt to continue in sandbox mode.
             case noServer: {
+                if (accessControl.isSandboxed()) {
+                    return ACCESS_CHOICE.USE_READONLY;
+                }
                 String title = "Cannot Connect to Server";
                 message = "Cannot reach Amplio server.  You may shutdown and wait or use Demo Mode.";
                 choice = chooseOpenMode(title, message);
                 break;
             }
             case syncFailure: {
+                if (accessControl.isSandboxed()) {
+                    return ACCESS_CHOICE.USE_READONLY;
+                }
                 String title = "Cannot Connect to Server";
                 message = "Cannot synchronize with Amplio content server.\nYou may shutdown and wait or begin demonstration mode with the available content.";
                 choice = chooseOpenMode(title, message);
                 break;
             }
             case outdatedDb: {
+                if (accessControl.isSandboxed()) {
+                    return ACCESS_CHOICE.USE_READONLY;
+                }
                 String title = "Cannot Get Write Access";
                 message = "The latest version of the ACM database has not yet downloaded to this computer.\nYou may shutdown and wait or begin demonstration mode with the previous version.";
                 choice = chooseOpenMode(title, message);
                 break;
             }
             case notAvailable: {
+                if (accessControl.isSandboxed()) {
+                    return ACCESS_CHOICE.USE_READONLY;
+                }
                 String title = "Cannot Get Write Access";
                 String openby = accessControl.getPosessor().getOrDefault("openby", "unknown user");
                 String opendate = accessControl.getPosessor().getOrDefault("opendate", "unknown");
@@ -91,13 +103,18 @@ public class GuiAccessControlResolver implements AccessControlResolver {
                 break;
             }
             case userReadOnly: {
+                if (accessControl.isSandboxed()) {
+                    return ACCESS_CHOICE.USE_READONLY;
+                }
                 String title = "Readonly Access";
                 message = "You only have read-only access to the database. You may shutdown or proceed in demo mode.";
                 choice = chooseOpenMode(title, message);
                 break;
             }
             case available: {
-                if (ACMConfiguration.getInstance().isDoUpdate()) {
+                if (accessControl.isSandboxed()) {
+                        return ACCESS_CHOICE.USE_READONLY;
+                } else if (ACMConfiguration.getInstance().isDoUpdate()) {
                     // --update means "Don't ask, just update, if it's OK."
                     return ACCESS_CHOICE.AS_REQUESTED;
                 }
