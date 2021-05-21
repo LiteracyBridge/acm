@@ -36,8 +36,6 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_SYSTEM_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.USERNAME_PROPERTY;
-import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
-import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
 public final class TBDeviceInfo {
     private static final Logger LOG = Logger.getLogger(TBDeviceInfo.class.getName());
@@ -178,12 +176,11 @@ public final class TBDeviceInfo {
         getSerialNumber();
         // See if we need to allocate a new serial number. If we do, just mark it, don't actually
         // allocate one until we're sure we'll use it.
-        if (!TBLoaderUtils.isSerialNumberFormatGood(tbPrefix, serialNumber) ||
-                !TBLoaderUtils.isSerialNumberFormatGood2(serialNumber)) {
-            needNewSerialNumber = true;
+        if (!TBLoaderUtils.isSerialNumberFormatGood2(serialNumber)) {
             // We will allocate a new-style serial number before we update the tbDeviceInfo.
             serialNumber = NEED_SERIAL_NUMBER;
         }
+        needNewSerialNumber = TBLoaderUtils.newSerialNumberNeeded(tbPrefix, serialNumber);
     }
 
     public void setSerialNumber(String serialNumber) {
@@ -199,11 +196,11 @@ public final class TBDeviceInfo {
     }
 
     /**
-     * Looks in the TalkingBook's system directory for any files with a ".srn" extension who's name does not begin
-     * with "-erase". If any such files are found, returns the name of the first one found (ie, one selected at random),
-     * without the extension.
+     * Looks in several places for the Talking Book ID, aka Serial Number.
      *
-     * @return The file's name found (minus extension), or null if no file found.
+     * Lookes in deployment.properties, in the flash data, and for a file named *.srn.
+     *
+     * @return The the first serial number found.
      */
     public String getSerialNumber() {
         if (serialNumber == null) {
@@ -213,29 +210,23 @@ public final class TBDeviceInfo {
             // If we didn't have it in properties, look for the flash data or marker file(s).
             if (serialNumber.equalsIgnoreCase(UNKNOWN)) {
                 if (getFlashData() != null
-                    && isSerialNumberFormatGood(tbPrefix, getFlashData().getSerialNumber())
-                    && isSerialNumberFormatGood2(getFlashData().getSerialNumber())) {
+                    && TBLoaderUtils.isSerialNumberFormatGood(tbPrefix, getFlashData().getSerialNumber())) {
                     serialNumber = getFlashData().getSerialNumber();
                     src = "flash";
                 } else {
                     serialNumber = getSerialNumberFromFileSystem(tbRoot);
                     src = "marker";
                 }
-            }
-            if (serialNumber.equalsIgnoreCase(UNKNOWN) && StringUtils.isNotEmpty(getLabel())) {
-                try {
-                    Pattern pattern = Pattern.compile("(?i)^([ab]-[0-9a-f]{8}).*");
-                    Matcher matcher = pattern.matcher(getLabel());
-                    if (matcher.matches()) {
-                        String labelSn = matcher.group(1);
-                        if (isSerialNumberFormatGood(tbPrefix, labelSn)
-                            && isSerialNumberFormatGood2(labelSn)) {
-                            serialNumber = labelSn;
-                            src = "label";
-                        }
+            } else {
+                if (getFlashData() != null
+                    && TBLoaderUtils.isSerialNumberFormatGood(tbPrefix, getFlashData().getSerialNumber())) {
+                    String flashSerialNumber = getFlashData().getSerialNumber();
+                    if (TBLoaderUtils.isSerialNumberFormatGood2(serialNumber) &&
+                        TBLoaderUtils.isSerialNumberFormatGood2(flashSerialNumber) &&
+                        !serialNumber.equalsIgnoreCase(flashSerialNumber)) {
+                        // Flash and properties mismatch. Do not trust either.
+                        serialNumber = NEED_SERIAL_NUMBER;
                     }
-                } catch (Exception ignored) {
-                    // Continue with 'UNKNOWN'.
                 }
             }
             serialNumber = serialNumber.toUpperCase();
@@ -482,7 +473,7 @@ public final class TBDeviceInfo {
                         });
                         if (files == null) {
                             LOG.log(Level.INFO,
-                                "TBL!: This does not look like a TB: " + tbRoot.toString());
+                                "TBL!: This does not look like a TB: " + tbRoot);
 
                         } else if (files.length == 1) {
                             String locFileName = files[0];

@@ -57,8 +57,6 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_NUMB
 import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getImageForCommunity;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getPackagesInDeployment;
-import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
-import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
 @SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions" })
 public class TBLoader extends JFrame {
@@ -70,9 +68,6 @@ public class TBLoader extends JFrame {
     public static TBLoader getApplication() {
         return tbLoader;
     }
-
-    static final String OLD_TBS_PREFIX = "A-";
-    private static final String NEW_TBS_PREFIX = "B-";
 
     private final JFrame applicationWindow;
 
@@ -178,9 +173,13 @@ public class TBLoader extends JFrame {
 
         applicationWindow = this;
 
-        if (tbArgs.srnPrefix != null) srnPrefix = tbArgs.srnPrefix.toUpperCase();
-        else if (tbArgs.oldTbs) srnPrefix = OLD_TBS_PREFIX;
-        else srnPrefix = NEW_TBS_PREFIX; // for latest Talking Book hardware
+        if (tbArgs.srnPrefix != null && TBLoaderConstants.VALID_SRN_PREFIXES.contains(tbArgs.srnPrefix.toUpperCase())) {
+            srnPrefix = tbArgs.srnPrefix.toUpperCase();
+        } else if (tbArgs.oldTbs) {
+            srnPrefix = TBLoaderConstants.OLD_TB_SRN_PREFIX;
+        } else {
+            srnPrefix = TBLoaderConstants.NEW_TB_SRN_PREFIX; // for latest Talking Book hardware
+        }
 
         this.allowPackageChoice = tbArgs.choices;
     }
@@ -194,7 +193,7 @@ public class TBLoader extends JFrame {
         this.backgroundColor = getBackground();
         SwingUtils.setLookAndFeel("seaglass");
 
-        boolean oldTbs = srnPrefix.equalsIgnoreCase(OLD_TBS_PREFIX);
+        boolean oldTbs = srnPrefix.equalsIgnoreCase(TBLoaderConstants.OLD_TB_SRN_PREFIX);
         String iconName = oldTbs ? "/tb_loader-OLD-TBs.png" : "/tb_loader.png";
         URL iconURL = Application.class.getResource(iconName);
         Image iconImage = new ImageIcon(iconURL).getImage();
@@ -367,7 +366,7 @@ public class TBLoader extends JFrame {
         tbLoaderPanel.setSettingsListener(TblSettingsDialog::showDialog);
 
         // Make Old-Talking-Book-Mode really obvious.
-        if (srnPrefix.equalsIgnoreCase(TBLoader.OLD_TBS_PREFIX)) {
+        if (srnPrefix.equalsIgnoreCase(TBLoaderConstants.OLD_TB_SRN_PREFIX)) {
             tbLoaderPanel.setBackground(Color.CYAN);
         }
 
@@ -661,15 +660,15 @@ public class TBLoader extends JFrame {
     private boolean isOldVsNewOk() {
         String sn = currentTbDevice.getSerialNumber();
 
-        if (!isSerialNumberFormatGood(srnPrefix, sn)) {
+        if (!TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, sn)) {
             if (sn != null && sn.length() > 2 && sn.startsWith("-", 1)) {
-                if (sn.compareToIgnoreCase(OLD_TBS_PREFIX) == 0) {
+                if (sn.compareToIgnoreCase(TBLoaderConstants.OLD_TB_SRN_PREFIX) == 0) {
                     JOptionPane.showMessageDialog(applicationWindow,
                         "This appears to be an OLD TB.  If so, please close this program and open the TB Loader for old TBs.",
                         "OLD TB!",
                         JOptionPane.WARNING_MESSAGE);
                     return false;
-                } else if (sn.compareToIgnoreCase(NEW_TBS_PREFIX) == 0) {
+                } else if (sn.compareToIgnoreCase(TBLoaderConstants.NEW_TB_SRN_PREFIX) == 0) {
                     JOptionPane.showMessageDialog(applicationWindow,
                         "This appears to be a NEW TB.  If so, please close this program and open the TB Loader for new TBs.",
                         "NEW TB!",
@@ -689,7 +688,7 @@ public class TBLoader extends JFrame {
 
         String driveLabel = currentTbDevice.getLabelWithoutDriveLetter();
         if (!driveLabel.equals(TBLoaderConstants.NO_DRIVE)
-                && !isSerialNumberFormatGood(srnPrefix, driveLabel)) {
+                && !TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, driveLabel)) {
             String message = "The TB's statistics cannot be found. Please follow these steps:\n 1. Unplug the TB\n 2. Hold down the * while turning on the TB\n "
                 + "3. Observe the solid red light.\n 4. Now plug the TB into the laptop.\n 5. If you see this message again, please continue with the loading -- you tried your best.";
             String title = "Cannot find the statistics!";
@@ -707,11 +706,10 @@ public class TBLoader extends JFrame {
             setCurrentTbFirmware(oldDeploymentInfo.getFirmwareRevision());
 
             currentTbSrn = oldDeploymentInfo.getSerialNumber();
-            boolean needSrn = (currentTbSrn.equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER)
-                || !isSerialNumberFormatGood(srnPrefix, currentTbSrn) || !isSerialNumberFormatGood2(
-                currentTbSrn));
-            if (needSrn) currentTbSrn = TBLoaderConstants.NEED_SERIAL_NUMBER;
-            newTbSrn = currentTbSrn;
+            if (!TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, currentTbSrn)) {
+                currentTbSrn = TBLoaderConstants.NEED_SERIAL_NUMBER;
+            }
+            newTbSrn = TBLoaderUtils.newSerialNumberNeeded(srnPrefix, currentTbSrn) ? TBLoaderConstants.NEED_SERIAL_NUMBER : currentTbSrn;
             selectRecipientFromCurrentDrive();
         } else {
             setCurrentTbFirmware("");
@@ -742,7 +740,7 @@ public class TBLoader extends JFrame {
         currentTbDevice = selectedDevice;
         if (currentTbDevice != null && currentTbDevice.getRootFile() != null) {
             LOG.log(Level.INFO,
-                "Drive changed: " + currentTbDevice.getRootFile().toString()
+                "Drive changed: " + currentTbDevice.getRootFile()
                     + currentTbDevice.getLabel());
             populatePreviousValuesFromCurrentDrive();
         } else {
@@ -804,9 +802,8 @@ public class TBLoader extends JFrame {
                 assert(tbLoaderPanel.getNewSrn().equals(newTbSrn));
                 isNewSerialNumber = false;
                 if (tbLoaderPanel.isForceSrn()
-                    || newTbSrn.equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER)
-                    || !isSerialNumberFormatGood(srnPrefix, newTbSrn)
-                    || !isSerialNumberFormatGood2(newTbSrn)) {
+                    || !TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, newTbSrn)
+                    || TBLoaderUtils.newSerialNumberNeeded(srnPrefix, newTbSrn)) {
                     int intSrn = allocateNextSerialNumberFromTbLoader();
                     isNewSerialNumber = true;
                     String lowerSrn = String.format("%04x", intSrn);

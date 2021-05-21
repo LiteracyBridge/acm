@@ -87,7 +87,7 @@ public class TbLoaderFragment extends Fragment {
 
     private String mLocation;
     private String mCoordinates;
-    private String mSrnPrefix = "b-";
+    private String mSrnPrefix = TBLoaderConstants.NEW_TB_SRN_PREFIX;
 
     private boolean mTestingDeployment;
 
@@ -346,7 +346,10 @@ public class TbLoaderFragment extends Fragment {
 
             String deviceSerialNumber = tbDeviceInfo.getSerialNumber();
             if (!mStatsOnly && tbDeviceInfo.needNewSerialNumber()) {
-                TBLoaderAppContext.getInstance().getConfig().allocateDeviceSerialNumber((srn)-> doPerformUpdate(tbDeviceInfo, srn),
+                TBLoaderAppContext.getInstance().getConfig().allocateDeviceSerialNumber((srn)-> {
+                        mTalkingBookIdTextView.setText(srn);
+                        doPerformUpdate(tbDeviceInfo, srn);
+                    },
                     (ex)->{
                         mTalkingBookWarningsTextView.setText(getString(R.string.CANT_ALLOCATE_SRN));
                         mSpinner.setVisibility(View.INVISIBLE);
@@ -509,7 +512,7 @@ public class TbLoaderFragment extends Fragment {
             // Yep, nothing to do.
             return;
         }
-        String srn = "";
+        String displaySrn = "";
         // Is there now a (new) device connected?
         if (connectedDevice != null) {
             mProgressListener.clear();
@@ -517,15 +520,19 @@ public class TbLoaderFragment extends Fragment {
         mConnectedDevice = connectedDevice;
         mConnectedDeviceInfo = null;
         if (connectedDevice != null) {
-            srn = connectedDevice.getSerialNumber();
+            displaySrn = connectedDevice.getSerialNumber();
             mConnectedDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
                     mConnectedDevice.getDeviceLabel(),
                     mSrnPrefix);
             Log.d(TAG, String.format("Now connected to %s", mConnectedDeviceInfo.getDescription()));
+            if (mConnectedDeviceInfo.needNewSerialNumber() && TBLoaderUtils.isSerialNumberFormatGood2(displaySrn)) {
+                // If we had a well formed serial number, but will allocate a new one, let user know.
+                displaySrn = String.format("%s (was %s)", TBLoaderConstants.NEED_SERIAL_NUMBER, displaySrn);
+            }
         } else {
             Log.d(TAG, "Now disconnected from device");
         }
-        mTalkingBookIdTextView.setText(srn);
+        mTalkingBookIdTextView.setText(displaySrn);
 
         if (mStatsOnly) {
             String deviceRecipientid = mConnectedDeviceInfo.getRecipientid();

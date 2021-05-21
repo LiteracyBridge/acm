@@ -609,15 +609,18 @@ public class TbLoaderPanel extends JPanel {
         statusCurrent = new JTextArea(1, 80);
         statusCurrent.setEditable(false);
         statusCurrent.setLineWrap(true);
+        statusCurrent.setBorder(new LineBorder(Color.LIGHT_GRAY));
 
         statusFilename = new JTextArea(1, 80);
         statusFilename.setEditable(false);
         statusFilename.setLineWrap(false);
         statusFilename.setFont(new Font("Sans-Serif", Font.PLAIN, 10));
+        statusFilename.setBorder(new LineBorder(Color.LIGHT_GRAY));
 
         statusLog = new JTextArea(2, 80);
         statusLog.setEditable(false);
         statusLog.setLineWrap(true);
+        statusLog.setBorder(new LineBorder(Color.LIGHT_GRAY));
 
         JScrollPane statusScroller = new JScrollPane(statusLog);
         statusScroller.setBorder(null); // eliminate black border around status log

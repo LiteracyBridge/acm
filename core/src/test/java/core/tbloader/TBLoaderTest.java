@@ -64,10 +64,10 @@ public class TBLoaderTest {
 
     @Test
     public void testSerialIs10Chars() {
-        String prefix = "b-";
-        String goodBSerialNo = "b-12345678";
-        String badSerialNoShort = "b-1234567";
-        String badSerialNoLong = "b-123456789";
+        String prefix = TBLoaderConstants.NEW_TB_SRN_PREFIX;
+        String goodBSerialNo = prefix + "12345678";
+        String badSerialNoShort = prefix + "1234567";
+        String badSerialNoLong = prefix + "123456789";
 
         boolean isGoodSerialNo = TBLoaderUtils.isSerialNumberFormatGood(prefix, goodBSerialNo);
         assertTrue("Expect 'format good' when length is 10", isGoodSerialNo);
@@ -81,7 +81,7 @@ public class TBLoaderTest {
 
     @Test
     public void testASerialIsNotOkByDefault() {
-        String prefix = "b-";
+        String prefix = TBLoaderConstants.NEW_TB_SRN_PREFIX;
         String goodBSerialNo = "a-01230124";
 
         boolean isGoodSerialNo = TBLoaderUtils.isSerialNumberFormatGood(prefix, goodBSerialNo);
@@ -90,8 +90,8 @@ public class TBLoaderTest {
 
     @Test
     public void testBSerialIsOkByDefault() {
-        String prefix = "b-";
-        String goodBSerialNo = "b-01230124";
+        String prefix = TBLoaderConstants.NEW_TB_SRN_PREFIX;
+        String goodBSerialNo = prefix + "01230124";
 
         boolean isGoodSerialNo = TBLoaderUtils.isSerialNumberFormatGood(prefix, goodBSerialNo);
         assertTrue(isGoodSerialNo);
@@ -99,14 +99,29 @@ public class TBLoaderTest {
 
     @Test
     public void testOldStyleSerialIsNotOk2() {
-        String prefix = "b-";
-        String oldBSerialNo = "b-00ff0000";
+        String prefix = TBLoaderConstants.OLD_TB_SRN_PREFIX;
+        String oldBSerialNo = prefix + "00ff0000";
 
         boolean isGoodSerialNo = TBLoaderUtils.isSerialNumberFormatGood(prefix, oldBSerialNo);
         assertTrue("Expect b-00010124 is OK in isGoodSerialNo", isGoodSerialNo);
 
         boolean isGood2SerialNo = TBLoaderUtils.isSerialNumberFormatGood2(oldBSerialNo);
-        assertFalse("Expect b-00010124 is NOT OK in isGoodSerialNo2", isGood2SerialNo);
+        assertTrue("Expect b-00010124 is OK in isGoodSerialNo2", isGood2SerialNo);
+    }
+
+    @Test
+    public void testUpdateBtoCseries() {
+        String prefix = "B-";
+        String goodBSerialNo = prefix + "01230124";
+
+        boolean isGoodSerialNo = TBLoaderUtils.isSerialNumberFormatGood(prefix, goodBSerialNo);
+        assertTrue("Expect "+goodBSerialNo+" to be OK in isGoodSerialNo.", isGoodSerialNo);
+
+        boolean isGoodSerialNo2 = TBLoaderUtils.isSerialNumberFormatGood2(goodBSerialNo);
+        assertTrue("Expect "+goodBSerialNo+" to be OK in isGoodSerialNo2.", isGoodSerialNo2);
+
+        boolean isNeedNewSrn = TBLoaderUtils.newSerialNumberNeeded(prefix, goodBSerialNo);
+        assertTrue("Expect "+goodBSerialNo+" to be newSerialNumberNeeded.", isNeedNewSrn);
     }
 
 }

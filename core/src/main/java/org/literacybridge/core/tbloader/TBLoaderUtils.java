@@ -2,33 +2,33 @@ package org.literacybridge.core.tbloader;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEFAULT_GROUP_LABEL;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.GROUP_FILE_EXTENSION;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENTID_PROPERTY;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.STARTING_SERIALNUMBER;
 
 public class TBLoaderUtils {
     private static final Logger LOG = Logger.getLogger(TBLoaderUtils.class.getName());
+    public static final Pattern GOOD_SRN_PATTERN = Pattern.compile("(?i)^([abc]-([0-9a-f]{4})([0-9a-f]{4}))$");
+    // After several duplicate B- serial numbers were assigned, we updated all B- to C- with new numbers.
+    public static final Pattern UPDATED_SRN_PATTERN = Pattern.compile("(?i)^([ac]-([0-9a-f]{4})([0-9a-f]{4}))$");
 
     public static String getDateTime() {
         return getDateTime(new Date());
     }
     public static String getDateTime(Date date) {
+        //noinspection SuspiciousDateFormat
         SimpleDateFormat sdfDate = new SimpleDateFormat(
                 "yyyy'y'MM'm'dd'd'HH'h'mm'm'ss's'", Locale.US);
         return sdfDate.format(date);
@@ -37,19 +37,14 @@ public class TBLoaderUtils {
     /**
      * Tests whether a string is a valid "serial number" for this TB-Loader (sensitive to whether the TB-Loader
      * is being run in "old TB mode" or "new TB mode").
-     *
+     * @param prefix The serial number "series" of interest, like "A-", "B-", or "C-"
      * @param srn - the string to check
      * @return TRUE if the string could be a serial number, FALSE if not.
      */
     public static boolean isSerialNumberFormatGood(String prefix, String srn) {
-        boolean isGood;
-        if (srn == null)
-            isGood = false;
-        else if (srn.toLowerCase().startsWith(prefix.toLowerCase())
-                && srn.length() == 10)
-            isGood = true;
-        else {
-            isGood = false;
+        // matcher looks for A-, B- or C-0123ABCD
+        boolean isGood = (srn != null && GOOD_SRN_PATTERN.matcher(srn).matches() && srn.toLowerCase().startsWith(prefix.toLowerCase()));
+        if (!isGood) {
             LOG.log(Level.FINE, "TBL!: ***Incorrect Serial Number Format:" + srn + "***");
         }
         return isGood;
@@ -62,37 +57,19 @@ public class TBLoaderUtils {
      * @return TRUE if the string is a well-formed serial number, FALSE if not.
      */
     public static boolean isSerialNumberFormatGood2(String srn) {
-        final int maxTbId = 0x4f;
-        boolean isGood = false;
-        try {
-            if (srn != null && srn.length() == 10 && srn.substring(1, 2).equals("-")
-                    && (srn.substring(0, 1).equalsIgnoreCase("A") || srn.substring(0, 1)
-                    .equalsIgnoreCase("B"))) {
-                int highBytes = Integer.parseInt(srn.substring(2, 6), 0x10);
-                // TODO: What was this trying to do? It appears to try to guess that if the "tbDeviceInfo number" part of a srn is
-                // in the range 0-N, then the SRN must be > X, where N was "0x10" and X was "0x200" (it was the case that if
-                // a number was assigned, the tbDeviceInfo number would have been smaller than 0x10 for most devices, and the
-                // serial numbers were arbitrarily started at 0x200 for each tbDeviceInfo). I (Bill) *think* that this just
-                // missed getting updated as the tbDeviceInfo number(s) increased; an ordinary bug. Does show the value of
-                // burned-in serial numbers.
-                //
-                // The number below needs to be greater than the highest assigned "tbDeviceInfo" (TB Laptop). As of 6-March-19,
-                // that highest assigned tbDeviceInfo number is 0x21. Opening up the range eases maintenance, but lets more
-                // corrupted srns get through. 0x4f is somewhere in the middle.
-                if ((highBytes < maxTbId) || (highBytes > 0x8000 && highBytes < (0x8000 | maxTbId))) {
-                    int lowBytes = Integer.parseInt(srn.substring(6), 0x10);
-                    // A batch of TBs was shipped from the factory with "B-000C036A". Re-allocate those.
-                    if (highBytes == 12 && lowBytes == 874) {
-                        isGood = false;
-                    } else if (lowBytes >= STARTING_SERIALNUMBER) {
-                        isGood = true;
-                    }
-                }
-            }
-        } catch (NumberFormatException e) {
-            isGood = false;
-        }
-        return isGood;
+        // matcher looks for A-, B-, or C-0123ABCD
+        return (srn != null && GOOD_SRN_PATTERN.matcher(srn).matches());
+    }
+
+    /**
+     * Tests whether a given string is a valid serial number in the given series. This will test whether
+     * the given string is a well-formed serial nubmer, and also whether it is part of the deprecated "B-" series.
+     * @param series The serial number series of interest, "A-", "B-", or "C-".
+     * @param srn The string to test.
+     * @return True if a serial number is needed to repalce the given string.
+     */
+    public static boolean newSerialNumberNeeded(String series, String srn) {
+        return srn == null || !UPDATED_SRN_PATTERN.matcher(srn).matches() || !srn.toLowerCase().startsWith(series.toLowerCase());
     }
 
     /**
@@ -129,12 +106,7 @@ public class TBLoaderUtils {
 
         // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/images
         File imagesDir = new File(deploymentDirectory, IMAGES_SUBDIR.asString());
-        images = imagesDir.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.isDirectory();
-            }
-        });
+        images = imagesDir.listFiles(File::isDirectory);
         if (images != null && images.length == 1) {
             // Take the only image package
             imageName = images[0].getName();
@@ -145,12 +117,9 @@ public class TBLoaderUtils {
 
             if (communityDir.exists() && communityDir.isDirectory()) {
                 // get groups in community; ie get list of '*.grp' marker files
-                String[] groups = communityDir.list(new FilenameFilter() {
-                    @Override
-                    public boolean accept(File dir, String name) {
-                        String lowercase = name.toLowerCase();
-                        return lowercase.endsWith(GROUP_FILE_EXTENSION);
-                    }
+                String[] groups = communityDir.list((dir, name) -> {
+                    String lowercase = name.toLowerCase();
+                    return lowercase.endsWith(GROUP_FILE_EXTENSION);
                 });
                 // For each .grp file in the community...
                 groupsLoop:
@@ -161,12 +130,9 @@ public class TBLoaderUtils {
                         // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/images/{image}/system
                         File systemDir = new File(image, "system");
                         // ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/images/{image}/system/*.grp
-                        String[] imageGroups = systemDir.list(new FilenameFilter() {
-                            @Override
-                            public boolean accept(File dir, String name) {
-                                String lowercase = name.toLowerCase();
-                                return lowercase.endsWith(GROUP_FILE_EXTENSION);
-                            }
+                        String[] imageGroups = systemDir.list((dir, name) -> {
+                            String lowercase = name.toLowerCase();
+                            return lowercase.endsWith(GROUP_FILE_EXTENSION);
                         });
                         if (imageGroups == null) {
                             continue;
@@ -209,15 +175,13 @@ public class TBLoaderUtils {
         try {
             // get Package
             String[] files = new File(deploymentDirectory, TBLoaderConstants.CONTENT_BASIC_SUBDIR)
-                .list(new FilenameFilter() {
-                    public boolean accept(File dir, String name) {
-                        String lowercase = name.toLowerCase();
-                        return lowercase.endsWith(".img");
-                    }
+                .list((dir, name) -> {
+                    String lowercase = name.toLowerCase();
+                    return lowercase.endsWith(".img");
                 });
-            if (files.length > 1) {
+            if (files != null && files.length > 1) {
                 version = "(Multiple Firmwares!)";
-            } else if (files.length == 1) {
+            } else if (files != null && files.length == 1) {
                 version = files[0].substring(0, files[0].length() - 4);
             }
         } catch (Exception ex) {
@@ -288,8 +252,7 @@ public class TBLoaderUtils {
         byte[] bytes = new byte[namespaceBytes.length + nameBytes.length];
         System.arraycopy(namespaceBytes, 0, bytes, 0, namespaceBytes.length);
         System.arraycopy(nameBytes, 0, bytes, namespaceBytes.length, nameBytes.length);
-        UUID result = UUID.nameUUIDFromBytes(bytes);
-        return result;
+        return UUID.nameUUIDFromBytes(bytes);
     }
     public static UUID uuidFromName(UUID namespace, String name) {
         return uuidFromName(namespace, name.getBytes());
@@ -305,8 +268,8 @@ public class TBLoaderUtils {
 
     private static UUID getUUIDFromBytes(byte[] bytes) {
         ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
-        Long high = byteBuffer.getLong();
-        Long low = byteBuffer.getLong();
+        long high = byteBuffer.getLong();
+        long low = byteBuffer.getLong();
 
         return new UUID(high, low);
     }

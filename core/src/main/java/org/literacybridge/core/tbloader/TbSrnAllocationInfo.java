@@ -149,11 +149,11 @@ public class TbSrnAllocationInfo {
     /**
      * Given a serial number as an integer, format it as a serial number string.
      * @param srn The serial number to format.
-     * @return The formatted serial number, like "b-000C0123"
+     * @return The formatted serial number, like "C-000C0123"
      */
     public String formatSrn(int srn) {
         assert(tbloaderidHex != null);
-        return String.format("b-%s%04x", tbloaderidHex, srn);
+        return String.format("%s%s%04x", TBLoaderConstants.NEW_TB_SRN_PREFIX, tbloaderidHex, srn);
     }
 
     /**

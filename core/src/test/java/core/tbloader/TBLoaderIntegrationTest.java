@@ -13,6 +13,7 @@ import org.literacybridge.core.tbloader.TBDeviceInfo;
 import org.literacybridge.core.tbloader.TBLoaderConfig;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.literacybridge.core.tbloader.TBLoaderCore;
+import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -31,10 +32,9 @@ import java.util.Set;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
-import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
 /**
  * Created by bill on 5/11/16.
@@ -45,7 +45,7 @@ public class TBLoaderIntegrationTest {
     private static final String location = "Other";
     private static final String testUser = "tester";
     private static final String tbcdId = "1234";
-    private static final String newSrn = "B-12341234";
+    private static final String newSrn = TBLoaderConstants.NEW_TB_SRN_PREFIX + "12341234";
     private static final String newProject = "PROJ2";
     private static final String newDepl = "PROJ2-18-2";
     private static final String newPkg = "DEMO-2016-2-EN";
@@ -53,7 +53,7 @@ public class TBLoaderIntegrationTest {
     private static final String newFirmware = "r1999";
     private static final String newCommunity = "demo-Seattle";
     private static final String recipientid = "123456789abc";
-    private static final String srnPrefix = "B-";
+    private static final String srnPrefix = TBLoaderConstants.NEW_TB_SRN_PREFIX;//"B-";
 
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder();
@@ -61,7 +61,7 @@ public class TBLoaderIntegrationTest {
     @Test
     public void tempDirIsDirectory() throws IOException {
         File tempDir = tmp.newFolder();
-        assertEquals("tempDir should be a directory.", true, tempDir.isDirectory());
+        TestCase.assertTrue("tempDir should be a directory.", tempDir.isDirectory());
     }
 
     @Test
@@ -88,7 +88,7 @@ public class TBLoaderIntegrationTest {
         assertEquals(tbLoaderConfig.getTbLoaderId(), tbcdId);
         assertEquals(tbLoaderConfig.getTempDirectory(), tempDir);
         assertEquals(tbLoaderConfig.getCollectedDataDirectory(), collectedDataDir);
-        assertEquals(tbLoaderConfig.getWindowsUtilsDirectory(), null);
+        assertNull(tbLoaderConfig.getWindowsUtilsDirectory());
     }
 
     @Test
@@ -134,8 +134,8 @@ public class TBLoaderIntegrationTest {
         TBDeviceInfo oldTbDevice = new TBDeviceInfo(new FsFile(tbRoot), null, srnPrefix);
         String srn = oldTbDevice.getSerialNumber();
         if (srn.equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER) ||
-            !isSerialNumberFormatGood(srnPrefix, srn) ||
-            !isSerialNumberFormatGood2(srn)) {
+            !TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, srn) ||
+            TBLoaderUtils.newSerialNumberNeeded(srnPrefix, srn)) {
             oldTbDevice.setSerialNumber(newSrn);
             srn = newSrn;
         }
@@ -198,6 +198,8 @@ public class TBLoaderIntegrationTest {
         }
     }
 
+    // To make files small and easy to compare, the data values have been replaced with small-ish integers.
+    // This reads the files and tracks the integers, then compares before & after.
     private void compareDirectories(File tbRoot, File tbRootImage) {
         Map<String, Integer> actualMap = readFiles(tbRoot, Paths.get(tbRoot.getAbsolutePath()));
         Map<String, Integer> expectedMap = readFiles(tbRootImage,
@@ -207,7 +209,7 @@ public class TBLoaderIntegrationTest {
             String key = e.getKey();
             Integer value = e.getValue();
             if (!actualMap.containsKey(key)) {
-                TestCase.assertTrue("Expected to find file " + key, false);
+                TestCase.fail("Expected to find file " + key);
             } else if (!actualMap.get(key).equals(value)) {
                 assertEquals("Expected values equal in file " + key, value, actualMap.get(key));
             }
@@ -215,13 +217,14 @@ public class TBLoaderIntegrationTest {
         for (Map.Entry<String, Integer> e : actualMap.entrySet()) {
             String key = e.getKey();
             if (!expectedMap.containsKey(key)) {
-                TestCase.assertTrue("Unexpected file found: " + key, false);
+                TestCase.fail("Unexpected file found: " + key);
             }
         }
 
     }
 
-    private String[] excludedFilesList = {
+    // Files in this list will change from before to after, so don't save their contents.
+    private final String[] excludedFilesList = {
         "system"+FS+"last_updated.txt",          // 2018y03m01d15h15m33s-1234
         "system"+FS+"deployment.properties",     // java properties file regarding deployment
         "system"+FS+"DEMO-SEATTLE.loc",          // DEMO-SEATTLE
@@ -229,7 +232,7 @@ public class TBLoaderIntegrationTest {
         "0h1m0s.rtc",
         // I have a suspicion this is supposed to be somethign else
         "system"+FS+"PROJ2-18-2.dep",            // presence
-        "system"+FS+"B-000C035A.srn",            // presence
+        "system"+FS+"C-000C035A.srn",            // presence
         "system"+FS+"notest.pcb",                // presence
         "sysdata.txt",
         // harder to parse, less complete version of deployment.properties

@@ -4,6 +4,8 @@ import org.literacybridge.core.fs.RelativePath;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
@@ -20,7 +22,12 @@ public class TBLoaderConstants {
                                   Pattern.compile(UNPUBLISHED_REV + "_([0-9.Z]*)_(.*?)(\\.rev)?$");
   public final static String UNPUBLISHED_REVISION_FORMAT = UNPUBLISHED_REV + "_%s_%s.rev";
 
-  public static final String COLLECTED_DATA_SUBDIR_NAME = "collected-data";
+  public final static String OLD_TB_SRN_PREFIX = "A-";
+  public final static String NEW_TB_SRN_PREFIX = "C-";
+  public final static List<String> VALID_SRN_PREFIXES = Arrays.asList(OLD_TB_SRN_PREFIX, NEW_TB_SRN_PREFIX);
+
+
+    public static final String COLLECTED_DATA_SUBDIR_NAME = "collected-data";
   public static final String COLLECTED_DATA_DROPBOXDIR_PREFIX = "tbcd";
   //public static final String COLLECTION_SUBDIR = "/"
   //    + COLLECTED_DATA_SUBDIR_NAME;
