@@ -55,4 +55,9 @@ public final class TblSettingsDialog extends AbstractSettingsDialog {
         dialog.setVisible(true);
     }
 
+    @Override
+    public boolean inSandbox() {
+        // The TB-Loader is always in the sandbox.
+        return true;
+    }
 }

@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.settings;
 
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
@@ -64,6 +65,11 @@ public final class AcmSettingsDialog extends AbstractSettingsDialog {
                                                                  .getAudioItemView());
         dialog.setLocation(pAudio);
         dialog.setVisible(true);
+    }
+
+    @Override
+    public boolean inSandbox() {
+        return ACMConfiguration.getInstance().getCurrentDB().isSandboxed();
     }
 
     @Override

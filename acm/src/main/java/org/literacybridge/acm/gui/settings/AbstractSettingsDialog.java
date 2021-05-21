@@ -80,7 +80,7 @@ public abstract class AbstractSettingsDialog extends JDialog {
         dialogPanel.setBorder(new EmptyBorder(5,5,5,5));
         add(dialogPanel, BorderLayout.CENTER);
 
-        if (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) {
+        if (inSandbox()) {
             JLabel noSave = new JLabel(getSandboxMessage());
             add(noSave, BorderLayout.NORTH);
         }
@@ -218,6 +218,8 @@ public abstract class AbstractSettingsDialog extends JDialog {
         setTitle(settingsPanels.get(currentTag).getTitle());
         okButton.setEnabled(settingsPanels.get(currentTag).settingsValid());
     }
+
+    public abstract boolean inSandbox();
 
     public String getSandboxMessage() {
         return LabelProvider.getLabel("Running in 'Sandobox' mode; settings will not be saved.");
