@@ -383,7 +383,7 @@ public class TBLoader extends JFrame {
     private void initializeGui() {
         setTitle(String.format("TB-Loader %s", newProject));
 
-        String[] packagesInDeployment = null;
+        String[] packagesInDeployment;
         Properties deploymentProperties = getProgramSpec().getDeploymentProperties();
         allowPackageChoice = allowPackageChoice || deploymentProperties.size()==0;
         packagesInDeployment = getPackagesInDeployment(deploymentDir);
@@ -905,7 +905,7 @@ public class TBLoader extends JFrame {
                 // avoid wasting allocations.
                 assert(tbLoaderPanel.getNewSrn().equals(newTbSrn));
                 isNewSerialNumber = false;
-                if (tbLoaderPanel.isForceSrn()
+                if (tbLoaderPanel.getForceTbId()
                     || !TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, newTbSrn)
                     || TBLoaderUtils.newSerialNumberNeeded(srnPrefix, newTbSrn)) {
                     int intSrn = allocateNextSerialNumberFromTbLoader();
