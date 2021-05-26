@@ -12,8 +12,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,6 +26,7 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class ProjectsHelper {
     static final String DEPLOYMENTS_BUCKET_NAME = "acm-content-updates";
+    static final String CONTENT_BUCKET_NAME = "amplio-program-content";
 
     IdentityPersistence identityPersistence;
 
@@ -31,6 +35,9 @@ public class ProjectsHelper {
     }
 
     public static class DeploymentInfo {
+        String bucket;          // Where this deployment content can be found.
+        String key;             // Key within the bucket.
+
         String project;         // Like UNICEF-CHPS
         String deploymentName;  // Like UNICEF-CHPS-19-3
         String versionMarker;   // Like UNICEF-CHPS-19-3-a
@@ -43,6 +50,14 @@ public class ProjectsHelper {
 
         DeploymentInfo(String project) {
             this.project = project;
+        }
+
+        public String getBucket() {
+            return bucket;
+        }
+
+        public String getKey() {
+            return key;
         }
 
         public String getProject() {
@@ -82,12 +97,14 @@ public class ProjectsHelper {
         }
     }
 
-    private Authenticator authInstance = Authenticator.getInstance();
+    private final Authenticator authInstance = Authenticator.getInstance();
 
-    private Collection<String> projects = null;
+    private final Collection<String> projects = null;
 
     // Matches deploymentName-suffix.current or .rev. Like TEST-19-2-ab.rev
-    private Pattern markerPattern = Pattern.compile("((\\w+(?:-\\w+)*)-(\\w+))\\.current");
+    private final Pattern deploymentPattern = Pattern.compile("((\\w+(?:-\\w+)*)-(\\w+))");
+    private final Pattern markerPattern = Pattern.compile("((\\w+(?:-\\w+)*)-(\\w+))\\.(current|rev)");
+    private final Pattern zipPattern = Pattern.compile("((\\w+(?:-\\w+)*)-(\\w+))\\.zip");
 
     /**
      * Get the latest deployment info for the project.
@@ -98,6 +115,8 @@ public class ProjectsHelper {
      */
     public Map<String, DeploymentInfo> getDeploymentInfo(String project) {
         Map<String, DeploymentInfo> deplInfo = new HashMap<>();
+
+        Map<String, DeploymentInfo> s3Info = getS3DeploymentInfo(project);
 
         AmazonS3 s3Client = authInstance.getAwsInterface().getS3Client();
         ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request().withBucketName(
@@ -131,6 +150,8 @@ public class ProjectsHelper {
             if (parts.length == 3) {
                 Matcher matcher = targetZipPattern.matcher(parts[2]);
                 if (matcher.matches()) {
+                    deploymentInfo.bucket = summary.getBucketName();
+                    deploymentInfo.key = summary.getKey();
                     deploymentInfo.size = summary.getSize();    // 20mB or whatever
                     deploymentInfo.eTag = summary.getETag();    // hash of content
                     deploymentInfo.fileDate = summary.getLastModified(); // Date object stored
@@ -142,13 +163,99 @@ public class ProjectsHelper {
         return deplInfo;
     }
 
+    /**
+     * Gets published deployment info for an S3 hosted program.
+     * @param programid The programid for which the deployments are wanted.
+     * @return a map {deployment-name: deployment-info} of deployment data.
+     */
+    public Map<String, DeploymentInfo> getS3DeploymentInfo(String programid) {
+        Map<String, DeploymentInfo> deplInfo = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+        AmazonS3 s3Client = authInstance.getAwsInterface().getS3Client();
+        String continuationToken = null;
+        boolean more = true;
+
+        while (more) {
+            ListObjectsV2Request s3PublishedDir = new ListObjectsV2Request()
+                .withBucketName(ProjectsHelper.CONTENT_BUCKET_NAME)
+                .withPrefix(programid + "/TB-Loaders/published/");
+            if (continuationToken != null) {
+                s3PublishedDir.setContinuationToken(continuationToken);
+            }
+            ListObjectsV2Result result = s3Client.listObjectsV2(s3PublishedDir);
+            more = result.isTruncated();
+            continuationToken = result.getNextContinuationToken();
+
+            for (S3ObjectSummary s3publishedObject : result.getObjectSummaries()) {
+                // Care about TEST/TB-Loaders/published/TEST-21-3-a.rev or TEST/TB-Loaders/published/TEST-21-3-a/TEST-21-3-a.zip
+                String[] parts = s3publishedObject.getKey().split("/");
+                if (parts.length == 4) {
+                    Matcher markerMatcher = markerPattern.matcher(parts[3]);
+                    if (markerMatcher.matches()) {
+                        String key = markerMatcher.group(1);
+                        DeploymentInfo di = deplInfo.computeIfAbsent(key, unused-> {
+                            DeploymentInfo newDi = new DeploymentInfo(programid);
+                            newDi.versionMarker = markerMatcher.group(1);    // like TEST-19-1-ap
+                            newDi.deploymentName = markerMatcher.group(2);   // like TEST-19-1
+                            newDi.revId = markerMatcher.group(3);            // like ap
+                            return newDi;
+                        });
+                        di.isCurrent = true;
+                    }
+                } else if (parts.length == 5) {
+                    Matcher zipMatcher = zipPattern.matcher(parts[4]);
+                    if (zipMatcher.matches()) {
+                        Matcher deploymentMatcher = deploymentPattern.matcher(parts[3]);
+                        if (deploymentMatcher.matches()) {
+                            String key = deploymentMatcher.group(1);
+                            DeploymentInfo di = deplInfo.computeIfAbsent(key, unused -> {
+                                DeploymentInfo newDi = new DeploymentInfo(programid);
+                                newDi.versionMarker = deploymentMatcher.group(1);    // like TEST-19-1-ap
+                                newDi.deploymentName = deploymentMatcher.group(2);   // like TEST-19-1
+                                newDi.revId = deploymentMatcher.group(3);            // like ap
+                                return newDi;
+                            });
+                            di.bucket = s3publishedObject.getBucketName();
+                            di.key = s3publishedObject.getKey();
+                            di.size = s3publishedObject.getSize();    // 20mB or whatever
+                            di.eTag = s3publishedObject.getETag();    // hash of content
+                            di.fileDate = s3publishedObject.getLastModified(); // Date object stored
+                            di.fileName = zipMatcher.group();  // like content-UNICEF-CHPS-19-3-a.zip
+                        }
+                    }
+                }
+            }
+        }
+
+        // Find the latest rev of each deployment.
+        Map<String,String> latestRevs = new HashMap<>();
+        deplInfo.values().forEach(v->{
+            String deployment = v.getDeploymentName();
+            String rev = v.getRevId();
+            String latestRev = latestRevs.computeIfAbsent(deployment, (unused)-> rev);
+            if (rev.length() > latestRev.length() || rev.compareToIgnoreCase(latestRev)>0) {
+                latestRevs.put(deployment, rev);
+            }
+        });
+
+        // Filter by latest rev; only ones with a .zip file.
+        return deplInfo.entrySet().stream()
+            .filter(e->{
+                String thisRev = e.getValue().getRevId();
+                String latestRev = latestRevs.get(e.getValue().getDeploymentName());
+                return thisRev.equalsIgnoreCase(latestRev);
+            })
+            .filter(e->e.getValue().getKey() != null)
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
     public boolean downloadDeployment(DeploymentInfo deploymentInfo,
         File outputFile,
         BiConsumer<Long, Long> progressHandler)
     {
         if (authInstance.isAuthenticated() && authInstance.isOnline()) {
-            return authInstance.getAwsInterface().downloadS3Object(DEPLOYMENTS_BUCKET_NAME,
-                "projects/" + deploymentInfo.project + "/" + deploymentInfo.getFileName(),
+            return authInstance.getAwsInterface().downloadS3Object(deploymentInfo.getBucket(),
+                deploymentInfo.getKey(),
                 outputFile,
                 progressHandler);
         }

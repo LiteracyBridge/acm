@@ -407,7 +407,10 @@ class DeploymentsManager {
         void findDeployments() {
             Authenticator authInstance = Authenticator.getInstance();
             ProjectsHelper projectsHelper = authInstance.getProjectsHelper();
-            deploymentsInfo = projectsHelper.getDeploymentInfo(project);
+            deploymentsInfo = projectsHelper.getS3DeploymentInfo(project);
+            if (deploymentsInfo.size() == 0) {
+                deploymentsInfo = projectsHelper.getDeploymentInfo(project);
+            }
             currentDeploymentInfo = deploymentsInfo.values().stream().filter(DeploymentInfo::isCurrent).findAny().orElse(null);
         }
 
