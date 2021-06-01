@@ -40,7 +40,7 @@ class Publish {
     }
 
     /**
-     * Zips up a Deployment, and places it in a Dropbox/{ACM-NAME}/TB-Loaders/published/{Deployment}-{counter}
+     * Zips up a Deployment, and places it in a {Home}/{ACM-NAME}/TB-Loaders/published/{Deployment}-{counter}
      * directory. Creates a marker file named {Deployment}-{counter}.rev
      *
      * @param deploymentList List of deployments. Effectively, always exactly one.

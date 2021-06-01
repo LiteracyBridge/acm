@@ -449,7 +449,6 @@ public class AccessControl {
 
         if (status == AccessControlResolver.UpdateDbStatus.ok) {
             dbInfo.deleteCheckoutFile();
-            deleteLocalDB();
             accessStatus = AccessStatus.none;
             openStatus = OpenStatus.none;
         }

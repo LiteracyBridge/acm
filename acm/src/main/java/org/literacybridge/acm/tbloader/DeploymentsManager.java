@@ -411,6 +411,11 @@ class DeploymentsManager {
             if (deploymentsInfo.size() == 0) {
                 deploymentsInfo = projectsHelper.getDeploymentInfo(project);
             }
+            // Keep only the current deployment. If we want to let users choose, stop doing this.
+            deploymentsInfo = deploymentsInfo.entrySet().stream()
+                .filter(e->e.getValue().isCurrent())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
             currentDeploymentInfo = deploymentsInfo.values().stream().filter(DeploymentInfo::isCurrent).findAny().orElse(null);
         }
 

@@ -36,7 +36,6 @@ public class Sandbox {
         this.baseDir = baseDir;
         this.shadowDir = shadowDir;
         this.shadowData = new File(shadowDir, DATA_DIR);
-        System.out.printf("Sandbox created for %s, with sandbox in %s\n", baseDir, shadowDir);
         restoreWorkQueue();
     }
 
@@ -427,7 +426,7 @@ public class Sandbox {
         return moveFile(from.toPath(), to.toPath());
     }
 
-    public boolean moveFile(Path from, Path to) throws FileNotFoundException {
+    public boolean moveFile(Path from, Path to) {
         boolean result = false;
         ensureValidPath(to);
         Path relativeToPath = to.isAbsolute() ? baseDir.toPath().relativize(to) : to;

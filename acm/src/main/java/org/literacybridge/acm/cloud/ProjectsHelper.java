@@ -238,7 +238,7 @@ public class ProjectsHelper {
             }
         });
 
-        // Filter by latest rev; only ones with a .zip file.
+        // Filter by latest rev; only ones with a .zip file. Drop the revision from the key.
         return deplInfo.entrySet().stream()
             .filter(e->{
                 String thisRev = e.getValue().getRevId();
@@ -246,7 +246,7 @@ public class ProjectsHelper {
                 return thisRev.equalsIgnoreCase(latestRev);
             })
             .filter(e->e.getValue().getKey() != null)
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            .collect(Collectors.toMap(e->e.getValue().getDeploymentName(), Map.Entry::getValue));
     }
 
     public boolean downloadDeployment(DeploymentInfo deploymentInfo,
