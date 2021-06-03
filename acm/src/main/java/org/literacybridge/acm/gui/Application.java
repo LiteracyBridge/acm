@@ -53,6 +53,21 @@ public class Application extends JXFrame {
   private static final Logger LOG = Logger
       .getLogger(Application.class.getName());
 
+  static {
+      System.out.printf("Java version: %s, data model: %s\n",
+          System.getProperty("java.version"),
+          System.getProperty("sun.arch.data.model"));
+      System.out.printf("Java runtime: %s %s, vm: %s, class: %s\n",
+          System.getProperty("java.runtime.name"),
+          System.getProperty("java.runtime.version"),
+          System.getProperty("java.vm.version"),
+          System.getProperty("java.class.version"));
+      System.out.printf("OS: %s %s (%s)\n",
+          System.getProperty("os.name"),
+          System.getProperty("os.version"),
+          System.getProperty("os.arch"));
+  }
+
   private static final long serialVersionUID = -7011153239978361786L;
 
   public static double JAVA_VERSION = getJavaVersion();
