@@ -1,0 +1,16 @@
+# HOME -> ~ (user home directory)
+# AMPLIO -> ${HOME}/Amplio
+# PROGRAMS-DIR -> ${AMPLIO}/acm-dbs
+# UPDATES -> ${AMPLIO}/updates
+# CONTENT -> "amplio-program-content" (bucket name)
+# STATS -> "acm-stats" (bucket name)
+# TEMP -> ${HOME}/temp
+#
+# bucket : s3 bucket name
+# prefix : prefix of content in s3 bucket
+# path : local directory path to sync with prefix
+# policy : MIRROR_CLOUD, UPLOAD_AND_DELETE, SYNCHRONIZE
+# status_file : name of status file (minus ".status" extension)
+#               in the ${AMPLIO}/status directory
+
+sync_interval:10 MINUTES
