@@ -40,8 +40,6 @@ public class Config {
 
     private static final String TBCDID_PROP = "tbcd";
 
-    private static final String IS_FALLBACK_LOGIN_PROP = "is_backup";
-
     private final SharedPreferences mUserPrefs;
     private final TBLoaderAppContext mAppContext;
 
@@ -80,16 +78,6 @@ public class Config {
     public Config(TBLoaderAppContext appContext) {
         mAppContext = appContext;
         mUserPrefs = PreferenceManager.getDefaultSharedPreferences(mAppContext);
-    }
-
-    public boolean isFallbackLogin() {
-        String value = mUserPrefs.getString(IS_FALLBACK_LOGIN_PROP, "false");
-        return Boolean.parseBoolean(value);
-    }
-    public void setIsFallbackLogin(Boolean newValue) {
-        SharedPreferences.Editor prefsEditor = mUserPrefs.edit();
-        prefsEditor.putString(IS_FALLBACK_LOGIN_PROP, newValue.toString());
-        prefsEditor.apply();
     }
 
     /**

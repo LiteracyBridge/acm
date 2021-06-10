@@ -29,13 +29,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
@@ -60,15 +58,8 @@ public class Authenticator {
     public final static Set<String> ALL_USER_ROLES = new HashSet<>(Arrays.asList(ADMIN_ROLE_STRING,
             PROGRAM_MANAGER_ROLE_STRING, CONTENT_OFFICER_ROLE_STRING, FIELD_OFFICER_ROLE_STRING));
 
-    private final boolean FALLBACK_ENABLED = false;
-
-    private static final String ACCESS_CONTROL_API_OLDAUTH = "https://cqmltfugtl.execute-api.us-west-2.amazonaws.com/prod";
-    private static final String ACCESS_CONTROL_API_EMAILAUTH = "https://oxn3lknwre.execute-api.us-west-2.amazonaws.com/prod";
-    public static String ACCESS_CONTROL_API = ACCESS_CONTROL_API_EMAILAUTH;
-
-    private static final String TBL_HELPER_API_OLDAUTH = "https://lj82ei7mce.execute-api.us-west-2.amazonaws.com/Prod";
-    private static final String TBL_HELPER_API_EMAILAUTH= "https://1rhce42l9a.execute-api.us-west-2.amazonaws.com/prod";
-    public static String TBL_HELPER_API = TBL_HELPER_API_EMAILAUTH;
+    public static final String ACCESS_CONTROL_API = "https://oxn3lknwre.execute-api.us-west-2.amazonaws.com/prod";
+    public static final String TBL_HELPER_API= "https://1rhce42l9a.execute-api.us-west-2.amazonaws.com/prod";
 
     private static Authenticator instance;
     private LoginResult loginResult = LoginResult.NONE;
@@ -93,7 +84,7 @@ public class Authenticator {
     public AwsInterface getAwsInterface() { return awsInterface; }
 
     private AuthenticationHelper.AuthenticationResult authenticationResult;
-    private CognitoHelper cognitoHelper;
+    private final CognitoHelper cognitoHelper;
     // A map of {String:String} with the info provided by the auth process.
     private Map<String, String> authenticationInfo;
     // We need these to make authenticated calls to, eg, S3, or Lambda.
@@ -134,11 +125,6 @@ public class Authenticator {
     public void setLocallyAvailablePrograms(Map<String, String> locallyAvailablePrograms,
         List<String> locallyAvailableDbxPrograms) {
         this.locallyAvailablePrograms = locallyAvailablePrograms;
-        this.locallyAvailableDbxPrograms = new HashSet<>(locallyAvailableDbxPrograms);
-    }
-    public void setLocallyAvailablePrograms(List<String> locallyAvailablePrograms,
-        List<String> locallyAvailableDbxPrograms) {
-        this.locallyAvailablePrograms = locallyAvailablePrograms.stream().collect(Collectors.toMap(e->e, e->e));
         this.locallyAvailableDbxPrograms = new HashSet<>(locallyAvailableDbxPrograms);
     }
 
@@ -666,29 +652,6 @@ public class Authenticator {
         public void authenticate(String usernameOrEmail, String password) {
             AuthenticationHelper.AuthenticationResult validationResult = cognitoHelper.ValidateUser(usernameOrEmail, password);
 
-            // On failure, try again with "_FALLBACK" values. "PasswordReseqRequired" and "NewPasswordRequired" aren't
-            // failures for this purpose (the caller must be prepared to handle these results).
-            if (!validationResult.isSuccess() && FALLBACK_ENABLED
-                    && !validationResult.isPasswordResetRequired() && !validationResult.isNewPasswordRequired()) {
-                Map<String, String> fallback = new HashMap<>();
-                try (InputStream input = getClass().getClassLoader().getResourceAsStream("config.properties")) {
-                    Properties props = new Properties();
-                    props.load(input);
-                    for (String propName : new String[]{"POOL_ID", "CLIENTAPP_ID", "FED_POOL_ID", "CUSTOMDOMAIN", "REGION"}) {
-                        fallback.put(propName, props.getProperty(propName+"_FALLBACK", props.getProperty(propName)));
-                    }
-                    CognitoHelper fallbackHelper = new CognitoHelper(fallback);
-                    AuthenticationHelper.AuthenticationResult fallbackResult = fallbackHelper.ValidateUser(usernameOrEmail, password);
-                    if (fallbackResult.isSuccess()) {
-                        ACCESS_CONTROL_API = ACCESS_CONTROL_API_OLDAUTH;
-                        TBL_HELPER_API = TBL_HELPER_API_OLDAUTH;
-                        cognitoHelper = fallbackHelper;
-                        validationResult = fallbackResult;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
             parseAuthenticationResult(validationResult);
         }
 

@@ -564,7 +564,6 @@ public class SigninActivity extends AppCompatActivity {
     };
 
     //
-    boolean tryFallbackAllowed = false;
     boolean inFallback = false;
     UserHelper fallbackHelperInstance = null;
     AuthenticationHandler authenticationHandler = new AuthenticationHandler() {
@@ -572,13 +571,6 @@ public class SigninActivity extends AppCompatActivity {
         public void onSuccess(CognitoUserSession cognitoUserSession, final CognitoDevice device) {
             Log.e(TAG, "Auth Success");
             ((TBLoaderAppContext)getApplicationContext()).getConfig().setIsFallbackLogin(inFallback);
-            if (inFallback) {
-                Log.e(TAG, "Fallback signin was successful");
-                fallbackHelperInstance.setUserId(UserHelper.getInstance().getUserId());
-                UserHelper.setFallbackInstance(fallbackHelperInstance);
-                inFallback = false;
-                fallbackHelperInstance = null;
-            }
 
             UserHelper.getInstance().setCurrSession(getApplicationContext(), cognitoUserSession, new Runnable() {
                 @Override
@@ -612,16 +604,6 @@ public class SigninActivity extends AppCompatActivity {
 
         @Override
         public void onFailure(Exception e) {
-            if (tryFallbackAllowed && !inFallback) {
-                Log.e(TAG, "Attempting fallback");
-                inFallback = true;
-                fallbackHelperInstance = UserHelper.createInstance(getApplicationContext(), Constants.cognitoFallbackConfig);
-                fallbackHelperInstance.setUserId(UserHelper.getInstance().getUserId());
-                CognitoUser cognitoUser = fallbackHelperInstance.getPool().getUser(username);
-                cognitoUser.getSessionInBackground(authenticationHandler);
-                return;
-            }
-
             closeWaitDialog();
             TextView label = (TextView) findViewById(R.id.textViewUserIdMessage);
             label.setText("Login failed");
