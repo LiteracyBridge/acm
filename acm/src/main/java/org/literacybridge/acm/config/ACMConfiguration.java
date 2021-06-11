@@ -454,9 +454,16 @@ public class ACMConfiguration {
      * @return a PathProvider for the given project.
      */
     public PathsProvider getPathProvider(String programId) {
-        PathsProvider result = knownDbs.get(cannonicalProjectName(programId)).getPathProvider();
+        PathsProvider result = null;
+        DBConfiguration knownDb = knownDbs.get(cannonicalProjectName(programId));
+        if (knownDb != null) {
+            result = knownDb.getPathProvider();
+        }
         if (result == null) {
-            result = knownDbs.get(cannonicalAcmDirectoryName(programId)).getPathProvider();
+            knownDb = knownDbs.get(cannonicalAcmDirectoryName(programId));
+            if (knownDb != null) {
+                result = knownDb.getPathProvider();
+            }
         }
         return result;
     }
@@ -469,6 +476,7 @@ public class ACMConfiguration {
      */
     private void discoverDBs() {
         knownDbs.putAll(findContainedAcmDbs(AmplioHome.getDropboxDir(), true));
+
         knownDbs.putAll(findContainedAcmDbs(AmplioHome.getHomeDbsRootDir(), false));
     }
 
@@ -480,7 +488,7 @@ public class ACMConfiguration {
         program = cannonicalProjectName(program);
         assert program != null;
         File programDir = new File(AmplioHome.getHomeDbsRootDir(), program);
-        if (programDir.isDirectory() && knownDbs.containsKey(program) && knownDbs.get(program).getPathProvider().isDropboxDb()) {
+        if (programDir.isDirectory()) {
             knownDbs.put(program, new DBConfiguration(new PathsProvider(program, false)));
         }
     }
