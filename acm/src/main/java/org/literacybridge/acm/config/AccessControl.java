@@ -435,18 +435,18 @@ public class AccessControl {
 
     AccessControlResolver.UpdateDbStatus discardDbChanges() {
         AccessControlResolver.UpdateDbStatus status = AccessControlResolver.UpdateDbStatus.ok;
-        String dbName = dbConfiguration.getProgramHomeDirName();
 
-        boolean checkedInOk;
-        try {
-            if (!discardCheckout(dbName))
-                status = AccessControlResolver.UpdateDbStatus.denied;
-        } catch (IOException ex) {
-            status = AccessControlResolver.UpdateDbStatus.networkError;
+        if (!isSandboxed()) {
+            String dbName = dbConfiguration.getProgramHomeDirName();
+            try {
+                if (!discardCheckout(dbName))
+                    status = AccessControlResolver.UpdateDbStatus.denied;
+            } catch (IOException ex) {
+                status = AccessControlResolver.UpdateDbStatus.networkError;
+            }
+
+            AccessControlResolver.UPDATE_CHOICE choice = resolver.resolveUpdateStatus(this, status);
         }
-
-        AccessControlResolver.UPDATE_CHOICE choice = resolver.resolveUpdateStatus(this, status);
-
         if (status == AccessControlResolver.UpdateDbStatus.ok) {
             dbInfo.deleteCheckoutFile();
             accessStatus = AccessStatus.none;
