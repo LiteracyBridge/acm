@@ -58,7 +58,8 @@ public class ProgramCard extends CardContent {
     private final JCheckBox forceSandbox;
     private final JScrollPane choicesListScrollPane;
     private List<String> allowedToBeUpdated = new ArrayList<>();
-    private Set<String> mustBeDownloaded = new HashSet<>();
+    private Set<String> mustBeDownloadedIds = new HashSet<>();
+    private Set<String> mustBeDownloadedChoices;
 
     private final Map<String, String> descriptionToProgramid = new HashMap<>();
     private Set<String> shownProgramids;
@@ -142,7 +143,7 @@ public class ProgramCard extends CardContent {
     @Override
     void onShown(ActionEvent actionEvent) {
         super.onShown(actionEvent);
-        findProgramidsToShow();
+        getProgramIdsToShow();
         fillChoicesList();
 
         // If there are no choices to be made, either program or sandbox, we're done.
@@ -200,69 +201,6 @@ public class ProgramCard extends CardContent {
     }
 
     /**
-     * Find the programids to be shown to the user, from which they can make a selection. The list is built
-     * depending on the calling application and whether the user is authenticated or not. (We use authentication
-     * as a proxy for "online".) When not authenticated (when offline), all local programs are offered. We never
-     * want to prevent someone doing their job because of network issues; really matters for the TB-Loader.
-     *
-     * Presumably, if a program is downloaded to the local machine, the user has the right to use it.
-     */
-    private void findProgramidsToShow() {
-        String ALL_ROLES = String.join(",", ALL_USER_ROLES);
-        // Build the list of ACM names from which to choose. The list depends on whether we're
-        // authenticated (not being authenticated is roughly equivalent to not having network
-        // access, so we give access to all local programs). The list also depends on the option
-        // LOCAL_DATA_ONLY, because the ACM can only work with local data.
-        //
-        if (welcomeDialog.cognitoInterface.isAuthenticated()) {
-            Map<String, String> programs = welcomeDialog.cognitoInterface.getProgramRoles();
-            shownProgramids = programs.keySet();
-            // If data must already be local, filter the list to those ACMs that are local.
-            Map<String, String> localPrograms = welcomeDialog.cognitoInterface.getLocallyAvailablePrograms();
-            Set<String> localProgramids = localPrograms.keySet();
-            if (welcomeDialog.options.contains(Authenticator.LoginOptions.LOCAL_DATA_ONLY)) {
-                final Set<String> usersPrograms = shownProgramids;
-                shownProgramids = localProgramids.stream()
-                    .filter(name -> {
-                        if (usersPrograms.contains(name)) return true;
-                        if (welcomeDialog.options.contains(Authenticator.LoginOptions.INCLUDE_FB_ACMS) &&
-                            name.contains("-FB-")) {
-                            int fb = name.indexOf("-FB-");
-                            // Is the part before the "-FB-" one of the user's programs?
-                            return usersPrograms.contains(name.substring(0, fb));
-                        }
-                        return false;
-                    })
-                    .collect(Collectors.toSet());
-            }
-            // If updating (not sandboxing) is an option, determine which ACMs will be sandbox
-            // only, and which allow a choice.
-            if (welcomeDialog.options.contains(Authenticator.LoginOptions.OFFER_DEMO_MODE)) {
-                allowedToBeUpdated = shownProgramids
-                    .stream()
-                    .filter(name -> {
-                        Set<String> roles = Arrays.stream(programs.getOrDefault(name, ALL_ROLES).split(","))
-                            .collect(Collectors.toSet());
-                        roles.retainAll(UPDATING_ROLES);
-                        return roles.size() > 0;
-                    })
-                    .collect(Collectors.toList());
-            }
-
-            mustBeDownloaded = shownProgramids.stream()
-                .filter(name -> {
-                    // If the program is not available locally, or it is locally dropbox but is really an s3 program,
-                    // then it must be downloaded
-                    return !localProgramids.contains(name) ||
-                        (Authenticator.getInstance().isLocallyDropbox(name) && Authenticator.getInstance().isProgramS3(name));
-                }).collect(Collectors.toSet());
-
-        } else {
-            shownProgramids = welcomeDialog.cognitoInterface.getLocallyAvailablePrograms().keySet();
-        }
-    }
-
-    /**
      * Fill the choices list from "shownProgramids". If using "choose by description", we will need to
      * show the description for each programid.
      */
@@ -273,12 +211,12 @@ public class ProgramCard extends CardContent {
 
         if (chooseByDescription) {
             Map<String, String> programDescriptions;
-            if (welcomeDialog.cognitoInterface.isAuthenticated()) {
-                programDescriptions = welcomeDialog.cognitoInterface.getProgramDescriptions();
-            } else {
-                programDescriptions = welcomeDialog.cognitoInterface.getLocallyAvailablePrograms();
-            }
+            programDescriptions = welcomeDialog.cognitoInterface.getProgramDescriptions();
             descriptionToProgramid.putAll(reverseDescriptionsMap(programDescriptions));
+            mustBeDownloadedChoices = mustBeDownloadedIds.stream()
+                .map(programDescriptions::get)
+                .collect(Collectors.toSet());
+
             choices = descriptionToProgramid.entrySet().stream()
                 .filter(e -> shownProgramids.contains(e.getValue()))
                 .map(Map.Entry::getKey)
@@ -299,6 +237,7 @@ public class ProgramCard extends CardContent {
                 resizeForWidth(widest);
             }
         } else {
+            mustBeDownloadedChoices = mustBeDownloadedIds;
             choices = shownProgramids.stream()
                 .sorted(String::compareToIgnoreCase)
                 .toArray(String[]::new);
@@ -356,37 +295,64 @@ public class ProgramCard extends CardContent {
         ok();
     }
 
-    private List<String> getProgramIdsToShow() {
+    /**
+     * Find the programids to be shown to the user, from which they can make a selection. The list is built
+     * depending on the calling application and whether the user is authenticated or not. (We use authentication
+     * as a proxy for "online".) When not authenticated (when offline), all local programs are offered. We never
+     * want to prevent someone doing their job because of network issues; really matters for the TB-Loader.
+     *
+     * Presumably, if a program is downloaded to the local machine, the user has the right to use it.
+     */
+
+    private void getProgramIdsToShow() {
         List<String> localProgramIds = Authenticator.getInstance().getLocallyAvailablePrograms();
-        boolean localOnly = welcomeDialog.options.contains(Authenticator.LoginOptions.LOCAL_DATA_ONLY);
-        boolean localOrS3 = welcomeDialog.options.contains(Authenticator.LoginOptions.LOCAL_OR_S3);
-        boolean includeUF = welcomeDialog.options.contains(Authenticator.LoginOptions.INCLUDE_FB_ACMS);
 
-        // If data must already be local, filter the list to those ACMs that are local.
-        // If "LOCAL_OR_S3" means local or S3 cloud, from whence we can download it.
-        Predicate<String> filter = name -> {
-            int fb = name.indexOf("-FB-");
-            if (fb > 0) {
-                // Use the part before the "-FB-" to determine if one of the user's programs?
-                if (includeUF) { name = name.substring(0, fb); } else { return false; }
-            }
-            if (localProgramIds.contains(name)) return true;
-            if (localOnly) return false;
-            return !localOrS3 || Authenticator.getInstance().isProgramS3(name);
-        };
+        if (!welcomeDialog.cognitoInterface.isAuthenticated()) {
+            // "Not authenticated" is a proxy for "offline". In that case, show all local programs, but don't
+            // allow updating any.
+            shownProgramids = new HashSet<>(localProgramIds);
+        } else {
+            boolean localOnly = welcomeDialog.options.contains(Authenticator.LoginOptions.LOCAL_DATA_ONLY);
+            boolean localOrS3 = welcomeDialog.options.contains(Authenticator.LoginOptions.LOCAL_OR_S3);
+            boolean includeUF = welcomeDialog.options.contains(Authenticator.LoginOptions.INCLUDE_FB_ACMS);
 
-        List<String> usersPrograms = welcomeDialog.cognitoInterface.getProgramRoles().keySet().stream()
+            // If data must already be local, filter the list to those ACMs that are local.
+            // If "LOCAL_OR_S3" means local or S3 cloud, from whence we can download it.
+            Predicate<String> filter = name -> {
+                int fb = name.indexOf("-FB-");
+                if (fb > 0) {
+                    // Use the part before the "-FB-" to determine if one of the user's programs?
+                    if (includeUF) { name = name.substring(0, fb); } else { return false; }
+                }
+                if (localProgramIds.contains(name)) return true;
+                if (localOnly) return false;
+                return !localOrS3 || Authenticator.getInstance().isProgramS3(name);
+            };
+
+            shownProgramids = welcomeDialog.cognitoInterface.getProgramRoles().keySet().stream()
                 .filter(filter)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
 
-        mustBeDownloaded = usersPrograms.stream()
-                .filter(name -> {
-                    // If the program is not available locally, or it is locally dropbox but is really an s3 program,
-                    // then it must be downloaded
-                    return !localProgramIds.contains(name) ||
-                            (Authenticator.getInstance().isLocallyDropbox(name) && Authenticator.getInstance().isProgramS3(name));
-                }).collect(Collectors.toSet());
-        return usersPrograms;
+            mustBeDownloadedIds = shownProgramids.stream()
+                .filter(name -> !localProgramIds.contains(name)).collect(Collectors.toSet());
+
+            // If updating (not sandboxing) is an option, determine which ACMs will be sandbox
+            // only, and which allow a choice.
+            if (welcomeDialog.options.contains(Authenticator.LoginOptions.OFFER_DEMO_MODE)) {
+                Map<String, String> programs = welcomeDialog.cognitoInterface.getProgramRoles();
+                String ALL_ROLES = String.join(",", ALL_USER_ROLES);
+                allowedToBeUpdated = shownProgramids
+                    .stream()
+                    .filter(name -> {
+                        Set<String> roles = Arrays.stream(programs.getOrDefault(name, ALL_ROLES).split(","))
+                            .collect(Collectors.toSet());
+                        roles.retainAll(UPDATING_ROLES);
+                        return roles.size() > 0;
+                    })
+                    .collect(Collectors.toList());
+            }
+
+        }
     }
 
     /**
@@ -410,7 +376,7 @@ public class ProgramCard extends CardContent {
                 boolean cellHasFocus) {
             Component result = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             String name = list.getModel().getElementAt(index).toString();
-            decorateDownloads((JLabel) result, mustBeDownloaded.contains(name));
+            decorateDownloads((JLabel) result, mustBeDownloadedChoices.contains(name));
             return result;
         }
     };

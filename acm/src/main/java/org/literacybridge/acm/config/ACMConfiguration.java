@@ -179,10 +179,9 @@ public class ACMConfiguration {
      * @return a map {programid:description} }of the known ACMs (those found on this machine).
      */
     public Map<String, String> getLocalProgramDbs() {
-        Map<String, String> programDbs = knownDbs.entrySet()
+        return knownDbs.entrySet()
             .stream()
             .collect(Collectors.toMap(e->ACMConfiguration.cannonicalProjectName(e.getKey()), e->e.getValue().getDescription()));
-        return programDbs;
     }
 
     /**
@@ -193,7 +192,7 @@ public class ACMConfiguration {
         return knownDbs.entrySet()
                 .stream()
                 .filter(e->e.getValue().getPathProvider().isDropboxDb())
-                .map(Map.Entry<String,DBConfiguration>::getKey)
+                .map(Map.Entry::getKey)
                 .map(ACMConfiguration::cannonicalProjectName)
                 .filter(Objects::nonNull)
                 .sorted(String::compareToIgnoreCase)
@@ -261,12 +260,12 @@ public class ACMConfiguration {
      * @throws Exception if the database can't be opened.
      */
     private synchronized boolean setCurrentDB(String dbName, S3SyncState syncState, BiConsumer<Runnable,Runnable> waiter, AccessControlResolver accessControlResolver) throws Exception {
-        PathsProvider dbPathProvider = getPathProvider(dbName);
-        if (dbPathProvider == null) {
+        DBConfiguration dbConfig = getDbConfiguration(dbName);
+        if (dbConfig == null) {
             throw new IllegalArgumentException("DB '" + dbName + "' not known.");
         }
-        DBConfiguration dbConfig = new DBConfiguration(dbPathProvider);
         dbConfig.setSyncFailure(syncState==S3SyncState.FAILED);
+        PathsProvider dbPathProvider = dbConfig.getPathProvider();
 
         if (currentDB != null) {
             AcmLocker.unlockDb();
@@ -447,7 +446,6 @@ public class ACMConfiguration {
     }
 
 
-
     /**
      * Gets a PathProvider for the given program.
      * @param programId Also known as the "project", or the "acm name" (minus the ACM- part).
@@ -455,15 +453,9 @@ public class ACMConfiguration {
      */
     public PathsProvider getPathProvider(String programId) {
         PathsProvider result = null;
-        DBConfiguration knownDb = knownDbs.get(cannonicalProjectName(programId));
+        DBConfiguration knownDb = getDbConfiguration(programId);
         if (knownDb != null) {
             result = knownDb.getPathProvider();
-        }
-        if (result == null) {
-            knownDb = knownDbs.get(cannonicalAcmDirectoryName(programId));
-            if (knownDb != null) {
-                result = knownDb.getPathProvider();
-            }
         }
         return result;
     }
@@ -488,7 +480,7 @@ public class ACMConfiguration {
         program = cannonicalProjectName(program);
         assert program != null;
         File programDir = new File(AmplioHome.getHomeDbsRootDir(), program);
-        if (programDir.isDirectory()) {
+        if (programDir.isDirectory() && (!knownDbs.containsKey(program) || knownDbs.get(program).getPathProvider().isDropboxDb()) ) {
             knownDbs.put(program, new DBConfiguration(new PathsProvider(program, false)));
         }
     }

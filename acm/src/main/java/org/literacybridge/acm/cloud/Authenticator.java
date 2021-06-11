@@ -116,7 +116,10 @@ public class Authenticator {
     }
 
     public List<String> getLocallyAvailablePrograms() {
-        return new ArrayList<>(locallyAvailablePrograms.keySet());
+        return locallyAvailablePrograms.keySet().stream()
+            .filter(id -> !(isLocallyDropbox(id) && isProgramS3(id)))
+            .collect(Collectors.toList());
+
     }
     public boolean isLocallyDropbox(String program) {
         return locallyAvailableDbxPrograms.contains(program);
@@ -422,7 +425,7 @@ public class Authenticator {
     private void parseDescriptions(String json) {
         this.programDescriptions = null;
         try {
-            if (StringUtils.isNotEmpty(json)) {
+            if (StringUtils.isNotBlank(json)) {
                 // Get the map of programid to friendly name.
                 JSONObject descriptionsObject = (JSONObject) JSONValue.parse(json);
                 Map<String, String> descriptions = new HashMap<>();
@@ -751,11 +754,11 @@ public class Authenticator {
         }
 
         public Map<String, String> getProgramDescriptions() {
+            if (programDescriptions == null) {
+                String descriptionsString = identityPersistence.getExtraProperties().get("descriptions");
+                parseDescriptions(descriptionsString);
+            }
             return programDescriptions;
-        }
-
-        public Map<String, String> getLocallyAvailablePrograms() {
-            return locallyAvailablePrograms;
         }
 
         /**

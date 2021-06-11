@@ -198,15 +198,16 @@ public class S3SyncDialog extends JDialog {
             closeButton.setEnabled(true);
             if (autoClose.isSelected()) {
                 setVisible(false);
+                // If we're closing, no need to refresh.
+                return;
             }
-        } else {
-            try {
-                CloudSync.RemoteResponse response = CloudSync.status(program+"_DB");
-                Map<String, Object> status = response.responseData;
-                refresh(status);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        }
+        try {
+            CloudSync.RemoteResponse response = CloudSync.status(program+"_DB");
+            Map<String, Object> status = response.responseData;
+            refresh(status);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
