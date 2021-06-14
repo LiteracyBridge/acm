@@ -4,17 +4,20 @@ Make a Windows Installer using [Inno Setup](https://jrsoftware.org/isinfo.php)
 
 ## Steps
 * Install _Inno Setup_ from the link above.
-* Download _Java 8 jre_. We use zulu jdk 8, from [Azul Java 8 JDK](https://www.azul.com/downloads/?version=java-8-lts&os=windows&architecture=x86-64-bit&package=jdk)
+* Download _Java 8 jre_. We use zulu jdk 8, from Azul Java 8 JDK [64-bit](https://www.azul.com/downloads/?version=java-8-lts&os=windows&architecture=x86-64-bit&package=jdk) or [32-bit](https://cdn.azul.com/zulu/bin/zulu8.54.0.21-ca-jdk8.0.292-win_i686.zip)
+  * I believe the 32-bit version will work correctly. If so, we can run on ancient Windows computers.
+    * That's not necessarily doing our users any favors. An ancient Windows computer will be slow, and may not have sufficient memory to load, for example, a large program specification.
+    * An alternative would be to produce both a 32-bit and a 64-bit installer. Since the online updater doesn't update the JRE, and since there is only one set of Java .jar files, the only downside is making users pick which one to install.
   * Download the zip file, and unzip it. Inside the unzipped content, find the `jre` directory.
   * Copy that `jre` tree as the `./jre` directory.
-  * Follow the instructions below in _Fix Java 8 so it isn't microscopic and totally illegible on HighDPI devices_
+  * Test on a HighDPI device. If the text is tiny and illegible, follow the instructions below in _Fix Java 8 so it isn't microscopic and totally illegible on HighDPI devices_
 * Install the signing certificate, `code_signing.pfx`
- * See _Setting up the signing tool_, below.
-* Configure _Inno Setup_ to use the code signing certificate.
+  * See _Setting up the signing tool_, below.
+  * Configure _Inno Setup_ to use the code signing certificate.
 * Build `S3Sync` in the S3Sync project.
 * Build `ACM` in the ACM project.
 * Run the `build_dist.sh` script to copy files into the ACM directory. This is the source directory for the setup compiler.
- * Make sure 'converters' contains the AudioBatchConverter.exe and FFmpeg tools.
+ * Make sure `converters` contains the AudioBatchConverter.exe and FFmpeg tools.
  * The bat files for running the ACM and TB-Loader are in `./bats`.
  * The runtime icons are in `./images`.
  * The directory `./sync.config` contains common synchronizer configuration files, for uploading stats and user feedback, and for downloading software updates.
@@ -24,7 +27,7 @@ Make a Windows Installer using [Inno Setup](https://jrsoftware.org/isinfo.php)
 
 
 # Setting up the signing tool:
-First download the SignTool.exe, from one of the Windows developer kits (it may change from time to time; search for "signtool".)
+First download the SignTool.exe, from one of the Windows developer kits (it may change from time to time; search for "signtool").
 I got it from here: [Windows 10 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk/)
 
 The _Inno Setup_ application must be configured to run the signing tool.
