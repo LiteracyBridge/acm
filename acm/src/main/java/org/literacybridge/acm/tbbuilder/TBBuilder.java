@@ -174,7 +174,7 @@ public class TBBuilder {
                 printUsage();
             }
         } catch (Exception e) {
-            System.err.print(e.toString());
+            System.err.print(e);
         }
     }
 
@@ -210,7 +210,7 @@ public class TBBuilder {
 
         builderContext.statusWriter = statusWriter;
         builderContext.exceptionLogger = exceptionLogger;
-        builderContext.project = ACMConfiguration.getInstance().getCurrentDB().getProgramName();
+        builderContext.project = ACMConfiguration.getInstance().getCurrentDB().getProgramId();
         builderContext.deploymentName = deploymentName;
 
         PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(sharedACM);

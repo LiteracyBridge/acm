@@ -417,7 +417,7 @@ public class Application extends JXFrame {
           System.exit(13);
       }
 
-      params.sharedACM = authInstance.getUserProgram();
+      params.sharedACM = authInstance.getSelectedProgramid();
       boolean sandbox = authInstance.isSandboxSelected();
       // Even if the user didn't ask for sandbox, if they have no role in the db they picked, force sandbox.
       if (!sandbox) {

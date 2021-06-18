@@ -5,9 +5,7 @@ import org.json.simple.JSONObject;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.HttpUtility;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -52,7 +50,7 @@ public class EmailHelper {
         String requestURL = Authenticator.ACCESS_CONTROL_API + "/report";
         JSONObject requestBody = new JSONObject();
 
-        String db = ACMConfiguration.getInstance().getCurrentDB().getProgramName();
+        String db = ACMConfiguration.getInstance().getCurrentDB().getProgramId();
         requestBody.put("db", db);
         requestBody.put("action", "report");
         requestBody.put("name", ACMConfiguration.getInstance().getUserName());
@@ -77,7 +75,7 @@ public class EmailHelper {
             if (o instanceof Long) {
                 status_aws = ((Long) o) == EMAIL_SENT_RESPONSE;
             }
-            LOG.info(String.format("email: %s\n          %s\n", requestBody.toString(), jsonResponse.toString()));
+            LOG.info(String.format("email: %s\n          %s\n", requestBody, jsonResponse));
         }
         // parse response
         System.out.println(jsonResponse);
@@ -85,7 +83,7 @@ public class EmailHelper {
         return status_aws;
     }
 
-    private static BiFunction<TR, Integer, String> blueZebra = (tr, integer) ->
+    private static final BiFunction<TR, Integer, String> blueZebra = (tr, integer) ->
         "background-color:" + ((integer % 2 == 0) ? "#fff" : "#ebf5fc");
 
     public static BiFunction<TR, Integer, String> pinkZebra = (tr, integer) ->
@@ -107,10 +105,10 @@ public class EmailHelper {
         }
     }
 
-    public static abstract class HtmlElement<T extends HtmlElement> {
+    public static abstract class HtmlElement<T extends HtmlElement<?>> {
         String data;
         Map<String,String> attrs;
-        Function<HtmlElement,String> styler;
+        Function<HtmlElement<?>,String> styler;
         String style;
         public HtmlElement() {
             this.data = "";
@@ -162,6 +160,7 @@ public class EmailHelper {
         public TH(Object data) {
             super(data);
         }
+        @SuppressWarnings("unused")
         public TH() {
             super();
         }

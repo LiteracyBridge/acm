@@ -25,7 +25,7 @@ public class AcmLocker {
     public synchronized static void lockDb(DBConfiguration config) {
         AcmLocker acmLocker = new AcmLocker();
         acmLocker.lock(config);
-        locks.put(config.getProgramName(), acmLocker);
+        locks.put(config.getProgramId(), acmLocker);
     }
 
     public synchronized static void unlockDb() {

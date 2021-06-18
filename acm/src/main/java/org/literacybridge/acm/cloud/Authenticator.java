@@ -25,6 +25,8 @@ import java.awt.Window;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -36,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -60,6 +61,10 @@ public class Authenticator {
 
     public static final String ACCESS_CONTROL_API = "https://oxn3lknwre.execute-api.us-west-2.amazonaws.com/prod";
     public static final String TBL_HELPER_API= "https://1rhce42l9a.execute-api.us-west-2.amazonaws.com/prod";
+    public static final String PROGRAMS_INFO_API = "https://uomgzti07c.execute-api.us-west-2.amazonaws.com/prod/getprograms";
+
+    public static final String PROGRAMS_INFO_FILE = "programs.info";
+
 
     private static Authenticator instance;
     private LoginResult loginResult = LoginResult.NONE;
@@ -91,11 +96,11 @@ public class Authenticator {
     private Credentials credentials;
 
     private String userEmail;
-    // { program : description }
-    private Map<String, String> programDescriptions;
+    // { program : friendly-name }
+    private Map<String, String> programNames;
     // { program : roles-string }
     private Map<String, String> userProgramsAndRoles = new HashMap<>();
-    private String userProgram;
+    private String selectedProgramid;
     private boolean sandboxSelected = false;
 
     // Cached helpers. Ones not used internally are lazy allocated.
@@ -103,7 +108,7 @@ public class Authenticator {
     private TbSrnHelper tbSrnHelper = null;
     private ProjectsHelper projectsHelper = null;
 
-    // Programs available in local storage. A Map of {programid: description}
+    // Programs available in local storage. A Map of {programid: name}
     private Map<String, String> locallyAvailablePrograms = new HashMap<>();
     // Programs available in local dropbox.
     private HashSet<String> locallyAvailableDbxPrograms;
@@ -115,6 +120,12 @@ public class Authenticator {
         cognitoHelper = new CognitoHelper();
     }
 
+    /**
+     * Gets a list of the programs that can be opened locally, ie, with no internet connection.
+     * NOTE: Filters out programs that happen to be locally in Dropbox, but have been converted to S3
+     * in the cloud.
+     * @return a list of programs that can be opened locally.
+     */
     public List<String> getLocallyAvailablePrograms() {
         return locallyAvailablePrograms.keySet().stream()
             .filter(id -> !(isLocallyDropbox(id) && isProgramS3(id)))
@@ -125,6 +136,12 @@ public class Authenticator {
         return locallyAvailableDbxPrograms.contains(program);
     }
 
+    /**
+     * Informs the authenticator about locally available programs (ie, those on the local drive) and about
+     * which of those are Dropbox hosted (vs S3 hosted).
+     * @param locallyAvailablePrograms A map of locally available program ids and their friendly names.
+     * @param locallyAvailableDbxPrograms A list of local Dropbox hosted program ids.
+     */
     public void setLocallyAvailablePrograms(Map<String, String> locallyAvailablePrograms,
         List<String> locallyAvailableDbxPrograms) {
         this.locallyAvailablePrograms = locallyAvailablePrograms;
@@ -190,8 +207,8 @@ public class Authenticator {
         return userEmail;
     }
 
-    public String getUserProgram() {
-        return userProgram;
+    public String getSelectedProgramid() {
+        return selectedProgramid;
     }
 
     /**
@@ -201,7 +218,7 @@ public class Authenticator {
      */
     public Set<String> getUserRoles() {
         Set<String> result = new HashSet<>();
-        String roleStr = userProgramsAndRoles.get(userProgram);
+        String roleStr = userProgramsAndRoles.get(selectedProgramid);
         if (roleStr != null) {
             String[] roles = roleStr.split(",");
             result.addAll(Arrays.asList(roles));
@@ -348,7 +365,7 @@ public class Authenticator {
                 Map<String, String> props = new HashMap<>();
                 authenticationInfo.forEach(props::put);
                 identityPersistence.saveLoginDetails(userEmail, password, props);
-                userProgram = dialog.getProgram();
+                selectedProgramid = dialog.getProgram();
                 sandboxSelected = dialog.isSandboxSelected();
                 loginResult = LoginResult.SUCCESS;
             } else {
@@ -357,24 +374,20 @@ public class Authenticator {
                 if (StringUtils.isEmpty(email)) {
                     // And if we don't even have an email, declare failure.
                     loginResult = LoginResult.FAILURE;
-                } else if (savedLoginDetails != null && savedLoginDetails.email.equalsIgnoreCase(
+                } else if (savedLoginDetails != null && savedLoginDetails.email.equalsIgnoreCase(email)) {
                     // If the email is the same as the recently saved email, use those saved details.
-                    email)) {
                     userEmail = savedLoginDetails.email;
                     authenticationInfo = identityPersistence.getExtraProperties();
                     loginResult = LoginResult.CACHED_OFFLINE;
-                    if (authenticationInfo.containsKey("programs")) {
-                        userProgramsAndRoles = parseProgramList(authenticationInfo.get("programs"));
-                    }
-                    parseDescriptions(authenticationInfo.get("descriptions"));
-
-                    userProgram = dialog.getProgram();
+                    selectedProgramid = dialog.getProgram();
+                    readProgramsInfo();
                     sandboxSelected = dialog.isSandboxSelected();
                     loginResult = LoginResult.SUCCESS;
                 } else {
                     // If some new email with no saved details, use what we have.
                     userEmail = email;
-                    userProgram = dialog.getProgram();
+                    selectedProgramid = dialog.getProgram();
+                    readProgramsInfo();
                     sandboxSelected = dialog.isSandboxSelected();
                     loginResult = LoginResult.OFFLINE;
                 }
@@ -387,6 +400,7 @@ public class Authenticator {
         return loginResult;
     }
 
+    @SuppressWarnings("unchecked")
     private void onAuthenticated(String jwtToken) {
         JSONObject payload = CognitoJWTParser.getPayload(jwtToken);
         @SuppressWarnings("unchecked")
@@ -397,68 +411,74 @@ public class Authenticator {
         credentials = cognitoHelper.GetCredentials(provider, jwtToken);
 
         userEmail = authenticationInfo.get("email");
-        if (authenticationInfo.containsKey("programs")) {
-            userProgramsAndRoles = parseProgramList(authenticationInfo.get("programs"));
-        }
-        parseDescriptions(authenticationInfo.get("descriptions"));
-        if (authenticationInfo.containsKey("repositories")) {
-            s3RepositoryList = new ArrayList<>();
-            String repository_list = authenticationInfo.get("repositories");
-            String[] repository_groups = repository_list.split(";");
-            for (String repoString : repository_groups) {
-                String[] parts = repoString.split(":");
-                if (parts.length == 2 && parts[0].equalsIgnoreCase("s3")) {
-                    s3RepositoryList.addAll(Arrays.asList(parts[1].split(",")));
-                }
-            }
-        }
-    }
 
-    private Map<String, String> parseProgramList(String list) {
-        Map<String, String> result;
-        String[] programs = list.split(";");
-        result = stream(programs).map(s -> s.split(":"))
-            .collect(Collectors.toMap(e -> e[0], e -> e[1]));
-        return result;
-    }
-
-    private void parseDescriptions(String json) {
-        this.programDescriptions = null;
+        JSONObject jsonResponse = awsInterface.authenticatedGetCall(PROGRAMS_INFO_API);
         try {
-            if (StringUtils.isNotBlank(json)) {
-                // Get the map of programid to friendly name.
-                JSONObject descriptionsObject = (JSONObject) JSONValue.parse(json);
-                Map<String, String> descriptions = new HashMap<>();
-                for (Object k : descriptionsObject.keySet()) {
-                    descriptions.put(k.toString(), descriptionsObject.get(k).toString());
-                }
-                // See if the same description is used for multiple programs...
-                Map<String, String> reverseMap = new HashMap<>();
-                Set<String> needsQualification = new HashSet<>();
-                for (Map.Entry<String, String> item : descriptions.entrySet()) {
-                    if (reverseMap.containsKey(item.getValue())) {
-                        needsQualification.add(item.getKey());
-                        needsQualification.add(reverseMap.get(item.getValue()));
-                    } else {
-                        reverseMap.put(item.getValue(), item.getKey());
-                    }
-                }
-                // If so, decorate with the program id.
-                for (String programid : needsQualification) {
-                    // Decorate description with "... (programid)"
-                    String newDescription = String.format("%s (%s)", descriptions.get(programid), programid);
-                    descriptions.put(programid, newDescription);
-                }
-                this.programDescriptions = descriptions;
-            }
+            JSONObject programsInfo = (JSONObject) jsonResponse.get("result");
+            parseProgramsInfoJSON(programsInfo);
+            writeProgramsInfoJSON(programsInfo);
         } catch (Exception ex) {
-            LOG.log(Level.WARNING, "Exception parsing descriptions JSON string.", ex);
+            ex.printStackTrace();
         }
-        if (this.programDescriptions == null) {
-            // Make a pseudo descriptions out of the program ids.
-            this.programDescriptions = this.userProgramsAndRoles.keySet().stream()
-                .collect(Collectors.toMap(e -> e, e -> e));
+    }
+
+    /**
+     * Writes a JSONObject to the ~/Amplio/programs.info file or ~/LiteracyBridge/programs.info.
+     * @param programsInfo to be written.
+     */
+    private void writeProgramsInfoJSON(JSONObject programsInfo) {
+        String resultString = programsInfo.toJSONString();
+        JSONObject parsedString = (JSONObject)JSONValue.parse(resultString);
+        assert(parsedString.equals(programsInfo));
+
+        File programsInfoFile = new File(AmplioHome.getDirectory(), PROGRAMS_INFO_FILE);
+        try (FileWriter fw = new FileWriter(programsInfoFile)) {
+            fw.write(resultString);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+    }
+
+    /**
+     * Reads a JSONObject from the ~/Amplio/programs.info file or ~/LiteracyBridge/programs.info. Parses
+     * the read JSONObject.
+     */
+    private void readProgramsInfo() {
+        File programsInfoFile = new File(AmplioHome.getDirectory(), PROGRAMS_INFO_FILE);
+        try (FileReader fr = new FileReader(programsInfoFile)) {
+            JSONObject programsInfo = (JSONObject) JSONValue.parse(fr);
+            parseProgramsInfoJSON(programsInfo);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Parses a JSONObject of programs info. Populates 'userProgramsAndRoles', 's3RepositoryList', and 'programNames'
+     * @param programsInfo to be parsed.
+     */
+    @SuppressWarnings("unchecked")
+    private void parseProgramsInfoJSON(JSONObject programsInfo) {
+        Map<String,Map<String,String>> programs_info = new HashMap<>();
+        String implicit_repository = programsInfo.getOrDefault("implicit_repository", "dbx").toString();
+        ((JSONObject) programsInfo.get("programs")).forEach((key, value) -> {
+            Set<Map.Entry<Object,Object>> valueEntries = ((JSONObject)value).entrySet();
+            Map<String,String> program_info = valueEntries.stream()
+                .collect(Collectors.toMap(e->e.getKey().toString(), e->e.getValue().toString()));
+            programs_info.put(key.toString(), program_info);
+        });
+
+        // Build map of {programid: "role,role"}
+        userProgramsAndRoles = programs_info.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e->e.getValue().get("roles")));
+        // Build a list of [programid] of those programs with s3 as repository.
+        s3RepositoryList = programs_info.entrySet().stream()
+            .filter(e->e.getValue().getOrDefault("repository", implicit_repository).equalsIgnoreCase("s3"))
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toList());
+        // Extract the friendly names as {programid: "name"}
+        programNames = programs_info.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e->e.getValue().getOrDefault("name", e.getKey())));
     }
 
     /**
@@ -753,12 +773,11 @@ public class Authenticator {
             return userProgramsAndRoles;
         }
 
-        public Map<String, String> getProgramDescriptions() {
-            if (programDescriptions == null) {
-                String descriptionsString = identityPersistence.getExtraProperties().get("descriptions");
-                parseDescriptions(descriptionsString);
+        public Map<String, String> getProgramNames() {
+            if (programNames == null) {
+                readProgramsInfo();
             }
-            return programDescriptions;
+            return programNames;
         }
 
         /**

@@ -145,7 +145,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             protected Integer doInBackground() {
                 summaryMessage = new StringBuilder("<html>");
                 summaryMessage.append(String.format("<h1>Deployment %d for Program %s</h1>",
-                    context.deploymentNo, dbConfig.getProjectName()));
+                    context.deploymentNo, dbConfig.getFriendlyName()));
                 summaryMessage.append(String.format("<h3>Created on %s</h3>", localDateFormatter.format(LocalDateTime.now())));
 
                 createDeployment();
@@ -211,8 +211,8 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                 "Project %s (%s), User %s (%s), Computer %s%nCreate Deployment at %s%n" +
                 "Deployment %d%n"+
                 "ACM Version %s, built %s%n",
-            dbConfig.getDescription(),
-            dbConfig.getProjectName(),
+            dbConfig.getFriendlyName(),
+            dbConfig.getFriendlyName(),
             ACMConfiguration.getInstance().getUserName(),
             ACMConfiguration.getInstance().getUserContact(),
             computerName,
@@ -288,8 +288,9 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     private void saveDeploymentInfoToProgramSpec(TBBuilder tbb,
         Map<String, Map<String, String>> pkgs) {
         Properties deploymentProperties = new Properties();
-        deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_DESCRIPTION_PROPERTY, dbConfig.getDescription());
-        deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_ID_PROPERTY, dbConfig.getDescription());
+        deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_FRIENDLY_NAME_PROPERTY, dbConfig.getFriendlyName());
+        deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_DESCRIPTION_PROPERTY, dbConfig.getFriendlyName());
+        deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_ID_PROPERTY, dbConfig.getProgramId());
         deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_NUMBER, Integer.toString(context.deploymentNo));
         Date now = new Date();
         List<String> acceptableFirmwareVersions = tbb.getAcceptableFirmwareVersions(!context.includeUfCategory);
@@ -585,7 +586,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     }
 
     private String packageName(String languagecode, String variant) {
-        String projectStr = ACMConfiguration.getInstance().getCurrentDB().getProgramName();
+        String projectStr = ACMConfiguration.getInstance().getCurrentDB().getProgramId();
         String deploymentStr = Integer.toString(context.deploymentNo);
         String variantStr = StringUtils.isNotBlank(variant) ? '-'+variant.toLowerCase() : "";
         String packageName = projectStr + '-' + deploymentStr + '-' + languagecode + variantStr;
@@ -610,7 +611,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                 // This means either a very long variant or a very long language. Should never happen.
                 // Use the hashcode of the string, and hope?
                 // Put the vowels back
-                projectStr = ACMConfiguration.getInstance().getCurrentDB().getProgramName();
+                projectStr = ACMConfiguration.getInstance().getCurrentDB().getProgramId();
                 packageName = projectStr + deploymentStr + languagecode + variantStr;
                 packageName = Integer.toHexString(packageName.hashCode());
             }
@@ -619,7 +620,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     }
 
     private String deploymentName() {
-        String project = ACMConfiguration.getInstance().getCurrentDB().getProgramName();
+        String project = ACMConfiguration.getInstance().getCurrentDB().getProgramId();
         Deployment depl = context.programSpec.getDeployment(context.deploymentNo);
         Calendar start = Calendar.getInstance();
         start.setTime(depl.startdate);

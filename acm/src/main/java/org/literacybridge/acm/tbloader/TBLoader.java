@@ -315,7 +315,7 @@ public class TBLoader extends JFrame {
 
         TbSrnHelper srnHelper = authInstance.getTbSrnHelper();
         srnHelper.prepareForAllocation();
-        newProject = authInstance.getUserProgram();
+        newProject = authInstance.getSelectedProgramid();
     }
 
     /**

@@ -181,7 +181,7 @@ public class ACMConfiguration {
     public Map<String, String> getLocalProgramDbs() {
         return knownDbs.entrySet()
             .stream()
-            .collect(Collectors.toMap(e->ACMConfiguration.cannonicalProjectName(e.getKey()), e->e.getValue().getDescription()));
+            .collect(Collectors.toMap(e->ACMConfiguration.cannonicalProjectName(e.getKey()), e->e.getValue().getFriendlyName()));
     }
 
     /**
@@ -276,7 +276,7 @@ public class ACMConfiguration {
         if (!dbPathProvider.isDropboxDb() && syncState==S3SyncState.REQUIRED_FOR_S3) {
             // No permits, so acquire will wait until the release.
             Semaphore available = new Semaphore(0);
-            waiter.accept(()-> inSync[0] = cloudStartAndSync(dbPathProvider.getProgramName()), available::release);
+            waiter.accept(()-> inSync[0] = cloudStartAndSync(dbPathProvider.getProgramId()), available::release);
             available.acquire();
         }
         // TODO: Do something with value of inSync

@@ -40,13 +40,14 @@ public class PathsProvider {
     // ~/LiteracyBridge/ACM-${programid} or ~/Amplio/acm-dbs/${programid}
     private final File programHomeDir;
 
-    private final String programName;
+    private final String programId;
     private final String acmDbDirName;
     private final boolean usesDropbox;
 
     PathsProvider(String acmDbDirName, boolean usesDropbox) {
-        programName = ACMConfiguration.cannonicalProjectName(acmDbDirName);
+        programId = ACMConfiguration.cannonicalProjectName(acmDbDirName);
         acmDbDirName = usesDropbox ? ACMConfiguration.cannonicalAcmDirectoryName(acmDbDirName) : acmDbDirName;
+        assert(acmDbDirName != null);
         this.acmDbDirName = acmDbDirName;
         this.usesDropbox = usesDropbox;
 
@@ -136,11 +137,11 @@ public class PathsProvider {
     /**
      * @return the program id.
      */
-    public String getProgramName() {
-        return programName;
+    public String getProgramId() {
+        return programId;
     }
 
-    /**************************************************************************
+    /* ************************************************************************
      * Local directories and files of the ACM and TB-Loader applications.
      * These files are local to the local computer only. If they're lost they
      * can be recreated.
@@ -152,7 +153,7 @@ public class PathsProvider {
      * @return ~/Amplio/TB-Loaders/${programId}
      */
     File getLocalTbLoaderDir() {
-        return new File(AmplioHome.getLocalTbLoadersDir(), programName);
+        return new File(AmplioHome.getLocalTbLoadersDir(), programId);
     }
 
     /**
@@ -190,7 +191,7 @@ public class PathsProvider {
 //    }
 
     File getSandboxDir() {
-        return new File(AmplioHome.getSandboxesDir(), programName);
+        return new File(AmplioHome.getSandboxesDir(), programId);
     }
 
     /**

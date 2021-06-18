@@ -217,7 +217,7 @@ public class AmplioHome {
         // Either ~/LiteracyBridge or ~/Amplio
         instance.homeDirectory = homeDir;
         instance.version = version;
-        System.out.printf("Found %s Amplio home directory in %s\n", version.toString(), homeDir.getName());
+        System.out.printf("Found %s Amplio home directory in %s\n", version, homeDir.getName());
     }
 
 
@@ -288,7 +288,6 @@ public class AmplioHome {
             return new File(getDirectory(), Constants.CACHE_DIR_NAME);
         }
     }
-
 
     /**
      * The ~/Amplio/acm_config.properties or ~/LiteracyBridge/acm_config.properties file.

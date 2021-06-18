@@ -61,9 +61,9 @@ public class ProgramCard extends CardContent {
     private Set<String> mustBeDownloadedIds = new HashSet<>();
     private Set<String> mustBeDownloadedChoices;
 
-    private final Map<String, String> descriptionToProgramid = new HashMap<>();
+    private final Map<String, String> nameToProgramid = new HashMap<>();
     private Set<String> shownProgramids;
-    private boolean chooseByDescription = true;
+    private boolean chooseByFriendlyName = true;
     public static boolean giveChooserChoice = true; // an easy way to essentially #ifdef.
 
     public ProgramCard(WelcomeDialog welcomeDialog,
@@ -85,7 +85,7 @@ public class ProgramCard extends CardContent {
             promptBox.add(promptLabel);
             promptBox.add(Box.createHorizontalGlue());
 
-            JCheckBox useProgramid = new JCheckBox("Choose by Description.", chooseByDescription);
+            JCheckBox useProgramid = new JCheckBox("Choose by Name.", chooseByFriendlyName);
             useProgramid.addActionListener(this::chooseByDescriptionClicked);
             promptBox.add(useProgramid);
 
@@ -130,7 +130,7 @@ public class ProgramCard extends CardContent {
 
     private void chooseByDescriptionClicked(ActionEvent actionEvent) {
         String selectedProgramid = getSelectedProgramid();
-        chooseByDescription = ((JCheckBox)actionEvent.getSource()).isSelected();
+        chooseByFriendlyName = ((JCheckBox)actionEvent.getSource()).isSelected();
         onShown(null);
         selectProgramid(selectedProgramid);
     }
@@ -185,15 +185,15 @@ public class ProgramCard extends CardContent {
      * @param programidToSelect to be selected in the choices list.
      */
     private void selectProgramid(String programidToSelect) {
-        if (chooseByDescription) {
+        if (chooseByFriendlyName) {
             // Use descriptionToProgramid because the descriptions in the choice list may have been decorated, and
             // we need to account for that.
-            String descriptionToSelect = descriptionToProgramid.entrySet().stream()
+            String nameToSelect = nameToProgramid.entrySet().stream()
                 .filter(e -> e.getValue().equals(programidToSelect))
                 .map(Map.Entry::getKey)
                 .findFirst()
                 .orElse("");
-            choicesList.setSelectedValue(descriptionToSelect, true);
+            choicesList.setSelectedValue(nameToSelect, true);
         } else {
             choicesList.setSelectedValue(programidToSelect, true);
         }
@@ -207,17 +207,17 @@ public class ProgramCard extends CardContent {
     int widest = -1;
     private void fillChoicesList() {
         String[] choices;
-        descriptionToProgramid.clear();
+        nameToProgramid.clear();
 
-        if (chooseByDescription) {
-            Map<String, String> programDescriptions;
-            programDescriptions = welcomeDialog.cognitoInterface.getProgramDescriptions();
-            descriptionToProgramid.putAll(reverseDescriptionsMap(programDescriptions));
+        if (chooseByFriendlyName) {
+            Map<String, String> programNames;
+            programNames = welcomeDialog.cognitoInterface.getProgramNames();
+            nameToProgramid.putAll(reverseNamesMap(programNames));
             mustBeDownloadedChoices = mustBeDownloadedIds.stream()
-                .map(programDescriptions::get)
+                .map(programNames::get)
                 .collect(Collectors.toSet());
 
-            choices = descriptionToProgramid.entrySet().stream()
+            choices = nameToProgramid.entrySet().stream()
                 .filter(e -> shownProgramids.contains(e.getValue()))
                 .map(Map.Entry::getKey)
                 .sorted(String::compareToIgnoreCase)
@@ -253,7 +253,7 @@ public class ProgramCard extends CardContent {
      * @param descriptions to be reverse-mapped.
      * @return the reverse map.
      */
-    private Map<String,String> reverseDescriptionsMap(Map<String,String> descriptions) {
+    private Map<String,String> reverseNamesMap(Map<String,String> descriptions) {
         // Find any description used for multiple programs...
         Map<String, String> reverseMap = new HashMap<>();
         Set<String> needsQualification = new HashSet<>();
@@ -455,7 +455,7 @@ public class ProgramCard extends CardContent {
      */
     public String getSelectedProgramid() {
         String selectedValue =  choicesList.getSelectedValue();
-        return chooseByDescription ? descriptionToProgramid.get(selectedValue) : selectedValue;
+        return chooseByFriendlyName ? nameToProgramid.get(selectedValue) : selectedValue;
     }
 
 }

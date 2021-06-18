@@ -67,7 +67,7 @@ public class DBConfiguration {
     public DBConfiguration(PathsProvider pathsProvider) {
         this.pathsProvider = pathsProvider;
         if (!pathsProvider.isDropboxDb()) {
-            System.out.printf("Program %s uses %s for storage.\n", this.pathsProvider.getProgramName(), this.pathsProvider.isDropboxDb()?"Dropbox":"S3");
+            System.out.printf("Program %s uses %s for storage.\n", this.pathsProvider.getProgramId(), this.pathsProvider.isDropboxDb() ? "Dropbox" : "S3");
         }
     }
 
@@ -120,15 +120,15 @@ public class DBConfiguration {
   }
   @Deprecated
   public String getProjectName() {
-      return pathsProvider.getProgramName();
+      return pathsProvider.getProgramId();
   }
 
     /**
      * Gets the program id of the program in the ACM database.
      * @return the program id.
      */
-  public String getProgramName() {
-      return pathsProvider.getProgramName();
+  public String getProgramId() {
+      return pathsProvider.getProgramId();
   }
 
   /**
@@ -285,7 +285,7 @@ public class DBConfiguration {
       deleteChangeMarkerFile();
       if (!pathsProvider.isDropboxDb()) {
           try {
-              CloudSync.requestSync(getProgramName() + "_DB");
+              CloudSync.requestSync(getProgramId() + "_DB");
           } catch (IOException e) {
               e.printStackTrace();
           }
@@ -373,11 +373,16 @@ public class DBConfiguration {
         return size;
     }
 
-    public String getDescription() {
+    public String getFriendlyName() {
         String description = getProjectName();
-        String value = getDbProperties().getProperty(Constants.DESCRIPTION_PROP_NAME);
+        String value = getDbProperties().getProperty(Constants.FRIENDLY_NAME_PROP_NAME);
         if (StringUtils.isNotBlank(value)) {
             description = value;
+        } else {
+            value = getDbProperties().getProperty(Constants.DESCRIPTION_PROP_NAME);
+            if (StringUtils.isNotBlank(value)) {
+                description = value;
+            }
         }
         return description;
     }
@@ -676,8 +681,7 @@ public class DBConfiguration {
         String from = "ssl1";
         String to = "sil";
         RFC3066LanguageCode abstractLanguageCode = new RFC3066LanguageCode(to);
-        //noinspection unchecked
-        MetadataValue<RFC3066LanguageCode> abstractMetadataLanguageCode = new MetadataValue(
+        MetadataValue<RFC3066LanguageCode> abstractMetadataLanguageCode = new MetadataValue<>(
             abstractLanguageCode);
 
         Transaction transaction = this.store.newTransaction();

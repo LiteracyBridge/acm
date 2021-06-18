@@ -82,7 +82,7 @@ public class AcmCheckoutTest extends JDialog {
         dialogPanel.add(makeFunctionChooser(), gbc_controls);
 
         dialogPanel.add(new JLabel("Program:"), gbc_labels);
-        programField = new JTextField(ACMConfiguration.getInstance().getCurrentDB().getProgramName());
+        programField = new JTextField(ACMConfiguration.getInstance().getCurrentDB().getProgramId());
         dialogPanel.add(programField, gbc_controls);
 
         dialogPanel.add(new JLabel("Email:"), gbc_labels);
