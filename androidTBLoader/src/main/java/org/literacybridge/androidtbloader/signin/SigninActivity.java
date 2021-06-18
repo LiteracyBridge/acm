@@ -121,11 +121,7 @@ public class SigninActivity extends AppCompatActivity {
         // Initialize application
         initApp();
         UserHelper.initInstance(getApplicationContext(), Constants.cognitoConfig);
-        // If we last authenticated with the fallback user pool, don't try to use any cached credentials.
-        if (!((TBLoaderAppContext)getApplicationContext()).getConfig().isFallbackLogin()) {
-            findCurrent();
-        }
-
+        findCurrent();
     }
 
     @Override
@@ -564,13 +560,10 @@ public class SigninActivity extends AppCompatActivity {
     };
 
     //
-    boolean inFallback = false;
-    UserHelper fallbackHelperInstance = null;
     AuthenticationHandler authenticationHandler = new AuthenticationHandler() {
         @Override
         public void onSuccess(CognitoUserSession cognitoUserSession, final CognitoDevice device) {
             Log.e(TAG, "Auth Success");
-            ((TBLoaderAppContext)getApplicationContext()).getConfig().setIsFallbackLogin(inFallback);
 
             UserHelper.getInstance().setCurrSession(getApplicationContext(), cognitoUserSession, new Runnable() {
                 @Override
