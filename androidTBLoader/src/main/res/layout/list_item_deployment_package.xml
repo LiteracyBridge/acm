@@ -1,88 +1,118 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:layout_width="match_parent"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <LinearLayout
+            android:id="@+id/list_item_deployment_group"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+        <LinearLayout
+                android:layout_height="wrap_content"
+                android:layout_width="240dp"
+                android:orientation="vertical">
+
+            <!-- project name -->
+            <TextView
+                    android:id="@+id/list_item_deployment_project"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="4dp"
+                    android:ellipsize="marquee"
+                    android:fadingEdge="horizontal"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    android:scrollHorizontally="true"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:maxLines="1"
+                    android:paddingStart="4dp"
+                    android:textAppearance="@android:style/TextAppearance.Material.Menu"
+                    tools:text="Demonstration ACM for Amplio Marketing Team - Reset Nightly"
+                    tools:ellipsize="marquee" />
+
+            <!-- version textview -->
+            <TextView
+                    android:id="@+id/list_item_deployment_package_version"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:paddingStart="4dp"
+                    tools:text="Version: 2016-13-e"
+                    android:textSize="12sp" />
+
+            <!-- Expiration textview -->
+            <TextView
+                    android:id="@+id/list_item_deployment_expiration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:paddingStart="4dp"
+                    tools:text="Expires: 09/25/2016" />
+
+        </LinearLayout>
+
+
+        <RelativeLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content">
 
-    <!-- project name -->
-    <TextView
-        android:id="@+id/list_item_deployment_project"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:elegantTextHeight="false"
-        android:linksClickable="false"
-        android:paddingTop="4dp"
-        android:paddingLeft="4dp"
-        android:textAppearance="@android:style/TextAppearance.Material.Menu"
-        tools:text="ACM UWR"
-        />
+            <!-- Download button -->
+            <Button
+                    android:id="@+id/list_item_deployment_download_button"
+                    style="@android:style/Widget.Material.Button.Borderless.Colored"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentTop="true"
+                    android:enabled="false"
+                    android:text="@string/deployment_package_download"
+                    android:textColor="@color/TB_RED"
+                    android:visibility="invisible"
+                    android:minLines="1" />
 
-    <!-- version textview -->
-    <TextView
-        android:id="@+id/list_item_deployment_package_version"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/list_item_deployment_project"
-        android:paddingLeft="4dp"
-        tools:text="Version: 2016-13-e"/>
+            <TextView
+                    android:id="@+id/list_item_deployment_status_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentTop="true"
+                    android:maxLines="1"
+                    android:paddingEnd="4dp"
+                    android:text="@string/deployment_ready_to_use"
+                    android:textColor="@color/success"
+                    android:textSize="18sp"
+                    android:textStyle="normal|italic"
+                    android:visibility="visible" />
 
-    <!-- Expiration textview -->
-    <TextView
-        android:id="@+id/list_item_deployment_expiration"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/list_item_deployment_package_version"
-        android:paddingLeft="4dp"
-        tools:text="Expires: 09/25/2016"/>
 
-    <!-- Download button -->
-    <Button
-        android:id="@+id/list_item_deployment_download_button"
-        style="@android:style/Widget.Material.Button.Borderless.Colored"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true"
-        android:enabled="false"
-        android:text="@string/deployment_package_download"
-        android:textColor="@color/TB_RED"
-        android:visibility="invisible" />
+            <!-- Download progress bar -->
+            <ProgressBar
+                    android:id="@+id/list_item_deployment_progress_bar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/list_item_deployment_status_label"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginEnd="20dp"
+                    android:layout_marginTop="6dp"
+                    android:indeterminate="false"
+                    android:max="100"
+                    android:progress="0"
+                    android:visibility="invisible" />
 
-    <TextView
-        android:id="@+id/list_item_deployment_status_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginEnd="10dp"
-        android:layout_marginTop="6dp"
-        android:text="@string/deployment_ready_to_use"
-        android:textColor="@color/success"
-        android:textSize="18sp"
-        android:textStyle="normal|italic"
-        android:visibility="visible"/>
-    />
+        </RelativeLayout>
 
-    <!-- Download progress bar -->
-    <ProgressBar
-        android:id="@+id/list_item_deployment_progress_bar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/list_item_deployment_status_label"
-        android:layout_alignParentEnd="true"
-        android:layout_marginRight="20dp"
-        android:layout_marginTop="6dp"
-        android:indeterminate="false"
-        android:max="100"
-        android:progress="0"
-        android:visibility="invisible"/>
+    </LinearLayout>
 
     <!-- line between items -->
     <TextView
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_below="@id/list_item_deployment_expiration"
-        android:background="?android:attr/listDivider"/>
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_below="@id/list_item_deployment_group"
+            android:background="?android:attr/listDivider" />
 
 </RelativeLayout>

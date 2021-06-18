@@ -213,7 +213,7 @@ public class KnownLocations {
 
                     String project = keyFileName.substring(0, keyFileName.lastIndexOf('.'));
                     // Only concerned with this user's projects.
-                    if (!TBLoaderAppContext.getInstance().getConfig().isUsersProject(project)) { continue; }
+                    if (!TBLoaderAppContext.getInstance().getConfig().isProgramIdForUser(project)) { continue; }
 
                     // Version of any saved location info.
                     String etag = locationPrefs.getString(project, "");

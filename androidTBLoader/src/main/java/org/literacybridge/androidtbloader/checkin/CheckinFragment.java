@@ -152,10 +152,12 @@ public class CheckinFragment extends Fragment {
     }
 
     private void getPreselectedRecipients() {
-        Intent intent = new Intent(getActivity(), RecipientChooserActivity.class);
-        intent.putExtra("preselect", true);
-        intent.putStringArrayListExtra(Constants.PRESELECTED_RECIPIENTS, (ArrayList<String>) mPreselectedRecipients);
-        startActivityForResult(intent, REQUEST_CODE_PRESELECT_RECIPIENTS);
+        if (this.mChosenProject != null) {
+            Intent intent = new Intent(getActivity(), RecipientChooserActivity.class);
+            intent.putExtra("preselect", true);
+            intent.putStringArrayListExtra(Constants.PRESELECTED_RECIPIENTS, (ArrayList<String>) mPreselectedRecipients);
+            startActivityForResult(intent, REQUEST_CODE_PRESELECT_RECIPIENTS);
+        }
     }
 
     private RecipientList getRecipientList() {

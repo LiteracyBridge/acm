@@ -7,14 +7,9 @@ import org.literacybridge.androidtbloader.checkin.KnownLocations;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.core.fs.OperationLog;
-import org.literacybridge.core.tbloader.TBLoaderConstants;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,8 +29,10 @@ public class ContentInfo {
 
         NONE,
     }
+    private String mFriendlyName;
+
     // Like "UWR"
-    private String mProjectName;
+    private String mProgramId;
 
     // Like "TEST-19-1"
     private String mDeployment;
@@ -68,9 +65,10 @@ public class ContentInfo {
     // Community list built from the communities in the actual Deployment
     private Map<String, CommunityInfo> mCommunitiesCache = null;
 
-    ContentInfo(String projectName) {
+    ContentInfo(String programId) {
         this.mDownloadStatus = DownloadStatus.NONE;
-        this.mProjectName = projectName;
+        this.mFriendlyName = null;
+        this.mProgramId = programId;
         this.mDeployment = "";
         this.mRevision = "";
 //        this.mVersion = "";
@@ -80,6 +78,11 @@ public class ContentInfo {
 //        this.mVersion = version;
 //        return this;
 //    }
+
+    ContentInfo withFriendlyName(String friendlyName) {
+        this.mFriendlyName = friendlyName;
+        return this;
+    }
 
     ContentInfo withDeployment(String deployment) {
         this.mDeployment = deployment;
@@ -115,12 +118,20 @@ public class ContentInfo {
 
     @Override
     public String toString() {
-        return String.format("%s: %s (%d)", mProjectName, mFilename, mSize);
+        return String.format("%s: %s (%d)", mProgramId, mFilename, mSize);
     }
 
-    String getProjectName() {
-        return mProjectName;
+    String getProgramId() {
+        return mProgramId;
     }
+
+    String getFriendlyName() {
+        if (mFriendlyName == null) {
+            mFriendlyName = TBLoaderAppContext.getInstance().getConfig().getFriendlyName(mProgramId);
+        }
+        return mFriendlyName;
+    }
+
 
 //    public String getVersion() {
 //        return mVersion;
@@ -147,6 +158,10 @@ public class ContentInfo {
 
     public long getSize() {
         return mSize;
+    }
+
+    public boolean isDownloaded() {
+        return mDownloadStatus == DownloadStatus.DOWNLOADED;
     }
 
     DownloadStatus getDownloadStatus() {
@@ -214,7 +229,7 @@ public class ContentInfo {
         if (mContentDownloader != null) return false;
         mListener = listener;
         mOpLog = OperationLog.startOperation("DownloadContent")
-            .put("projectname", getProjectName())
+            .put("projectname", getProgramId())
             .put("version", getVersionedDeployment())
             .put("filename", getFilename())
             .put("bytesToDownload", getSize());
@@ -280,10 +295,10 @@ public class ContentInfo {
      * @return A Set of CommunityInfo.
      */
     public Map<String, CommunityInfo> getCommunities() {
-        KnownLocations.loadLocationsForProjects(Arrays.asList(getProjectName().toUpperCase()));
+        KnownLocations.loadLocationsForProjects(Arrays.asList(getProgramId().toUpperCase()));
         if (mCommunitiesCache == null) {
             Map<String, CommunityInfo> result = new HashMap<>();
-            File projectDir = PathsProvider.getLocalContentProjectDirectory(mProjectName);
+            File projectDir = PathsProvider.getLocalContentProjectDirectory(mProgramId);
             File contentDir = new File(projectDir, "content");
             File[] deploymentsDirs = contentDir.listFiles();
             if (deploymentsDirs != null && deploymentsDirs.length == 1) {
@@ -293,9 +308,9 @@ public class ContentInfo {
                     for (File community : communities) {
                         String communityName = community.getName().toUpperCase();
                         CommunityInfo ci = KnownLocations.findCommunity(communityName,
-                                getProjectName().toUpperCase());
+                                getProgramId().toUpperCase());
                         if (ci == null) {
-                            ci = new CommunityInfo(communityName, getProjectName());
+                            ci = new CommunityInfo(communityName, getProgramId());
                         }
                         result.put(community.getName(), ci);
                     }

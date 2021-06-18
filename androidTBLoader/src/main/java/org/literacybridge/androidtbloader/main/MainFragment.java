@@ -38,6 +38,8 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttribu
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDeliveryDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.UpdateAttributesHandler;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.literacybridge.androidtbloader.BuildConfig;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.SettingsActivity;
@@ -57,6 +59,7 @@ import org.literacybridge.androidtbloader.uploader.UploadStatusActivity;
 import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.Errors;
+import org.literacybridge.androidtbloader.util.HttpHelper;
 import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.tbloader.TBDeviceInfo;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
@@ -101,6 +104,7 @@ public class MainFragment extends Fragment {
     private ViewGroup mUpdateGroup;
     private ViewGroup mGetStatsGroup;
 
+    private boolean haveProgramInfo = false;
     private boolean mHaveConfig = false;
     private String mUserid;
 
@@ -212,11 +216,10 @@ public class MainFragment extends Fragment {
         setButtonState();
         showWaitDialog("Loading...");
         getUserDetails();
+        getProgramsInfo();
 
         fillUploadValues();
         showGreeting();
-
-        mContentManager.fetchContentList();
 
         KnownLocations.refreshCommunityLocations(new Config.Listener() {
             @Override
@@ -258,6 +261,7 @@ public class MainFragment extends Fragment {
         LocalBroadcastManager.getInstance(mApplicationContext).registerReceiver(
                 mMessageReceiver, filter);
         updateTBStatus();
+        setButtonState();
     }
 
     @Override
@@ -302,7 +306,7 @@ public class MainFragment extends Fragment {
     }
 
     private void checkStartupInformationComplete() {
-        if (!mHaveConfig || awaitingLocationPermission) {
+        if (!mHaveConfig || awaitingLocationPermission || !haveProgramInfo) {
             return;
         }
         closeWaitDialog();
@@ -424,6 +428,36 @@ public class MainFragment extends Fragment {
         });
     }
 
+    /**
+     * Gets the programs information. We (mostly) care about the friendly names.
+     */
+    private void getProgramsInfo() {
+        Runnable doStart = () -> {
+            haveProgramInfo = true;
+            mContentManager.fetchContentList();
+            checkStartupInformationComplete();
+        };
+        final String PROGRAMS_INFO_API = "https://uomgzti07c.execute-api.us-west-2.amazonaws.com/prod/getprograms";
+
+        HttpHelper.authenticatedRestCall(PROGRAMS_INFO_API,
+            response -> {
+                JSONObject result;
+                try {
+                    result = response.getJSONObject("result");
+                    mConfig.parseProgramsInfoJSON(result);
+                    mConfig.saveProgramsInfoJSON(result);
+                    doStart.run();
+                } catch (JSONException e) {
+                    mConfig.loadProgramsInfo();
+                    doStart.run();
+                }
+            },
+            x->{
+                mConfig.loadProgramsInfo();
+                doStart.run();
+        });
+    }
+
     private OnClickListener manageListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -538,7 +572,7 @@ public class MainFragment extends Fragment {
 
     private void setButtonState() {
         boolean canManage = mHaveConfig;
-        boolean canCheckin = mHaveConfig && mContentManager.haveContentInfo();
+        boolean canCheckin = canManage && mContentManager.haveContentInfoForUser();
         boolean canUpdate = canCheckin && StringUtils.isNotEmpty(mApplicationContext.getProject());
 
         mManageGroup.setAlpha(canManage ? 1.0f : 0.33f);

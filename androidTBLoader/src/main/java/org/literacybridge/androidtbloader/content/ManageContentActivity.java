@@ -148,7 +148,7 @@ public class ManageContentActivity extends AppCompatActivity {
     public void maybeRemoveContent(final ContentInfo mContentInfo) {
         String title = "Really remove content?";
         String body = String.format("Deployment:  %1$s\nProject:  %2$s",
-            mContentInfo.getVersionedDeployment(), mContentInfo.getProjectName());
+            mContentInfo.getVersionedDeployment(), mContentInfo.getProgramId());
         closeUserDialog();
         final AlertDialog.Builder builder = new AlertDialog.Builder(ManageContentActivity.this);
         builder.setTitle(title)
@@ -182,7 +182,7 @@ public class ManageContentActivity extends AppCompatActivity {
             if (currentDownload != null) {
                 String title = "Really stop download?";
                 String body = String.format("Deployment:  %1$s\nProject:  %2$s",
-                    currentDownload.getVersionedDeployment(), currentDownload.getProjectName());
+                    currentDownload.getVersionedDeployment(), currentDownload.getProgramId());
                 closeUserDialog();
                 final AlertDialog.Builder builder = new AlertDialog.Builder(ManageContentActivity.this);
                 builder.setTitle(title)

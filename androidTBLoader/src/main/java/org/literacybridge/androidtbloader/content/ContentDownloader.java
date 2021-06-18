@@ -81,7 +81,7 @@ class ContentDownloader {
     }
 
     private void start2() {
-        mProjectDir = PathsProvider.getLocalContentProjectDirectory(mContentInfo.getProjectName());
+        mProjectDir = PathsProvider.getLocalContentProjectDirectory(mContentInfo.getProgramId());
         Log.d(TAG, "Starting download of content");
 
         TransferListener listener = new TransferListener() {
@@ -120,7 +120,7 @@ class ContentDownloader {
         File file = fileForDownload("content");
         file.getParentFile().mkdirs();
         // key in S3 bucket of the zip file object
-        String key = "projects/" + mContentInfo.getProjectName() + "/" + mContentInfo.getFilename();
+        String key = "projects/" + mContentInfo.getProgramId() + "/" + mContentInfo.getFilename();
 
         // Initiate the download
         mObserver = S3Helper.getTransferUtility().download(Constants.DEPLOYMENTS_BUCKET_NAME, key, file);

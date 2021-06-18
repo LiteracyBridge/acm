@@ -1,8 +1,6 @@
 package org.literacybridge.androidtbloader.content;
 
 import android.annotation.SuppressLint;
-import android.content.DialogInterface;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
@@ -55,20 +53,17 @@ class ContentInfoHolder extends RecyclerView.ViewHolder {
             R.id.list_item_deployment_expiration);
 
         mDownloadButton = (Button) itemView.findViewById(R.id.list_item_deployment_download_button);
-        mDownloadButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(TAG, String.format("Download clicked: item %d, %s", getLayoutPosition(),
-                    mContentInfo.toString()));
-                if (mManageContentActivity.isDownloadInProgress()) {
-                    Log.e(TAG, "Can't start download with download already in progress");
-                    return;
-                }
-                mDownloadButton.setVisibility(View.VISIBLE);
-                mManageContentActivity.enableCancel(ContentInfoHolder.this);
-                mManageContentActivity.mContentManager.startDownload(mContentInfo,
-                    mTransferListener);
+        mDownloadButton.setOnClickListener(v -> {
+            Log.d(TAG, String.format("Download clicked: item %d, %s", getLayoutPosition(),
+                mContentInfo.toString()));
+            if (mManageContentActivity.isDownloadInProgress()) {
+                Log.e(TAG, "Can't start download with download already in progress");
+                return;
             }
+            mDownloadButton.setVisibility(View.VISIBLE);
+            mManageContentActivity.enableCancel(ContentInfoHolder.this);
+            mManageContentActivity.mContentManager.startDownload(mContentInfo,
+                mTransferListener);
         });
 
         mStatusLabel = (TextView) itemView.findViewById(R.id.list_item_deployment_status_label);
@@ -76,16 +71,13 @@ class ContentInfoHolder extends RecyclerView.ViewHolder {
 
         // Long press to delete local content.
         itemView.setLongClickable(true);
-        itemView.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                // Dev can always remove; but probably not a good idea if a download
-                // is in progress, so disable that for normal use.
-                if (!mManageContentActivity.isDownloadInProgress() || TBLoaderAppContext.getInstance().getConfig().isAdvanced()) {
-                    mManageContentActivity.maybeRemoveContent(mContentInfo);
-                }
-                return true;
+        itemView.setOnLongClickListener(v -> {
+            // Dev can always remove; but probably not a good idea if a download
+            // is in progress, so disable that for normal use.
+            if (!mManageContentActivity.isDownloadInProgress() || TBLoaderAppContext.getInstance().getConfig().isAdvanced()) {
+                mManageContentActivity.maybeRemoveContent(mContentInfo);
             }
+            return true;
         });
     }
 
@@ -250,7 +242,7 @@ class ContentInfoHolder extends RecyclerView.ViewHolder {
         mContentInfo.setTransferListener(mTransferListener);
 
         // Update the parts of the view that never change.
-        mProjectTextView.setText(contentInfo.getProjectName());
+        mProjectTextView.setText(contentInfo.getFriendlyName());
         mVersionTextView.setText(
             getString(R.string.deployment_version, mContentInfo.getVersionedDeployment()));
 //        final String expiration;

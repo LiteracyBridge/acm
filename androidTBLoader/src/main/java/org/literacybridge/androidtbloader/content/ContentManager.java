@@ -16,6 +16,7 @@ import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
 import org.literacybridge.androidtbloader.signin.UnattendedAuthenticator;
 import org.literacybridge.androidtbloader.signin.UserHelper;
+import org.literacybridge.androidtbloader.util.Config;
 import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.androidtbloader.util.S3Helper;
@@ -130,7 +131,7 @@ public class ContentManager {
 
         Set<String> result = new HashSet<>();
         for (Map.Entry<String, ContentInfo> entry : mProjects.entrySet()) {
-            if (includeForAllUsers || TBLoaderAppContext.getInstance().getConfig().isUsersProject(entry.getKey())) {
+            if (includeForAllUsers || TBLoaderAppContext.getInstance().getConfig().isProgramIdForUser(entry.getKey())) {
                 if (entry.getValue().getDownloadStatus() == ContentInfo.DownloadStatus.DOWNLOADED) {
                     if (includeLocal) {
                         result.add(entry.getKey());
@@ -153,6 +154,14 @@ public class ContentManager {
         return mContentList.size() > 0;
     }
 
+    public boolean haveContentInfoForUser() {
+        final Config config = TBLoaderAppContext.getInstance().getConfig();
+        return mContentList.stream()
+            .anyMatch(ci-> {
+                return ci.isDownloaded() && config.isProgramIdForUser(ci.getProgramId());
+            });
+    }
+
     List<ContentInfo> getContentList() {
         return mContentList;
 // Add (Flags... flags) argument, and the following allows getting projects for this user,
@@ -170,7 +179,7 @@ public class ContentManager {
             Map<String, Map<String, CommunityInfo>> projectCommunities = new HashMap<>();
             for (ContentInfo info : mContentList) {
                 if (info.getDownloadStatus() == ContentInfo.DownloadStatus.DOWNLOADED) {
-                    projectCommunities.put(info.getProjectName(), info.getCommunities());
+                    projectCommunities.put(info.getProgramId(), info.getCommunities());
                 }
             }
             mProjectCommunitiesCache = projectCommunities;
@@ -193,7 +202,7 @@ public class ContentManager {
 
     public ContentInfo getContentInfo(String project) {
         for (ContentInfo info : mContentList) {
-            if (info.getProjectName().equalsIgnoreCase(project))
+            if (info.getProgramId().equalsIgnoreCase(project))
                 return info;
         }
         return null;
@@ -202,7 +211,7 @@ public class ContentManager {
     void removeLocalContent(final ContentInfo info) {
         List<String> toClear = new ArrayList<>();
         List<String> toRemove = new ArrayList<>();
-        toRemove.add(info.getProjectName());
+        toRemove.add(info.getProgramId());
         removeContent(toClear, toRemove, new Runnable() {
             @Override
             public void run() {
@@ -216,7 +225,7 @@ public class ContentManager {
 
 
     private void onContentListChanged() {
-        mContentList.sort(Comparator.comparing(ContentInfo::getProjectName));
+        mContentList.sort(Comparator.comparing(ContentInfo::getFriendlyName, String.CASE_INSENSITIVE_ORDER));
         mContentListTime = System.currentTimeMillis();
         Intent intent = new Intent(CONTENT_LIST_CHANGED_EVENT);
         LocalBroadcastManager.getInstance(TBLoaderAppContext.getInstance()).sendBroadcast(intent);
@@ -320,7 +329,7 @@ public class ContentManager {
                 mContentList.clear();
                 for (ContentInfo info : localVersions.values()) {
                     if (info.getDownloadStatus() == ContentInfo.DownloadStatus.DOWNLOADED) {
-                        mProjects.put(info.getProjectName(), info);
+                        mProjects.put(info.getProgramId(), info);
                         mContentList.add(info);
                     }
                 }
@@ -338,7 +347,7 @@ public class ContentManager {
         final List<String> projectsToClear = new ArrayList<>();
         Map<String, ContentInfo> cloudVersions = new HashMap<>();
         for (ContentInfo info : cloudInfo) {
-            cloudVersions.put(info.getProjectName(), info);
+            cloudVersions.put(info.getProgramId(), info);
         }
         mContentList.clear();
         mProjectCommunitiesCache = null;
@@ -363,18 +372,18 @@ public class ContentManager {
                     throw new AssertionError("download status is not NEVER_DOWNLOADED");
                 }
                 mContentList.add(cloudItem);
-                mProjects.put(cloudItem.getProjectName(), cloudItem);
+                mProjects.put(cloudItem.getProgramId(), cloudItem);
             } else if (!cloudItem.getVersionedDeployment().equalsIgnoreCase(localVersion)) {
                 // Stale local version, or unknown local version. Remove it; a cloud item.
                 projectsToClear.add(project);
                 cloudItem.setDownloadStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED);
                 mContentList.add(cloudItem);
-                mProjects.put(cloudItem.getProjectName(), cloudItem);
+                mProjects.put(cloudItem.getProgramId(), cloudItem);
             } else {
                 // have a local, up-to-date version
                 cloudItem.setDownloadStatus(ContentInfo.DownloadStatus.DOWNLOADED);
                 mContentList.add(cloudItem);
-                mProjects.put(cloudItem.getProjectName(), cloudItem);
+                mProjects.put(cloudItem.getProgramId(), cloudItem);
             }
         }
         // Entries from cloudInfo were copied into cloudVersions, edited from there, updating the entries in cloudInfo.
@@ -517,20 +526,20 @@ public class ContentManager {
                         Matcher matcher = markerPattern.matcher(parts[2]);
                         if (matcher.matches()) {
                             // The key is like projects/TEST/TEST-19-2-ab.rev
-                            String project = parts[1];
+                            String programId = parts[1];
                             String deployment = matcher.group(2);
                             String revision = matcher.group(3);
-                            if (applicationContext.getConfig().isUsersProject(project)) {
+                            if (applicationContext.getConfig().isProgramIdForUser(programId)) {
                                 String current = parts[2].substring(0, parts[2].indexOf("."));
-                                ContentInfo info = new ContentInfo(project).withDeployment(
+                                ContentInfo info = new ContentInfo(programId).withDeployment(
                                     deployment)
                                     .withRevision(revision)
                                     .withStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED);
-                                ContentInfo previous = projects.get(project);
+                                ContentInfo previous = projects.get(programId);
                                 // If we've already found a marker file. See if this one is
                                 // newer, and if so, replace the previous one.
                                 if (previous == null || info.isNewerRevisionThan(previous)) {
-                                    projects.put(project, info);
+                                    projects.put(programId, info);
                                 }
                             }
                         }
@@ -589,7 +598,7 @@ public class ContentManager {
             // Iterate over the projects, and find local versions...
             for (File project : projects) {
                 if (project.isDirectory()) {
-                    String projectName = project.getName();
+                    String programId = project.getName();
                     // Look for a file named *.current. The '*' part will be the version.
                     File[] versionFile = project.listFiles(new FilenameFilter() {
                         @Override
@@ -604,21 +613,21 @@ public class ContentManager {
                         matcher.matches();
                         String deployment = matcher.group(2);
                         String revision = matcher.group(3);
-                        ContentInfo info = new ContentInfo(projectName)
+                        ContentInfo info = new ContentInfo(programId)
                             .withDeployment(deployment)
                             .withRevision(revision)
                             .withStatus(ContentInfo.DownloadStatus.DOWNLOADED)
                             .withFilename(fileName);
-                        localVersions.put(projectName, info);
+                        localVersions.put(programId, info);
                         Log.i(TAG, String.format("Found version data for %s: %s", project, info.getVersionedDeployment()));
                         // We'll keep this one even if we can't connect to the network.
-                        mProjects.put(projectName, info);
+                        mProjects.put(programId, info);
                     } else if (versionFile.length == 0) {
-                        localVersions.put(projectName, new ContentInfo(projectName).withDeployment(NO_LOCAL_VERSION).withStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED));
+                        localVersions.put(programId, new ContentInfo(programId).withDeployment(NO_LOCAL_VERSION).withStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED));
                         Log.i(TAG, String.format("No content, but empty directory for %s", project));
                     } else {
                         // Too many: can't determine version.
-                        localVersions.put(projectName, new ContentInfo(projectName).withDeployment(UNKNOWN_LOCAL_VERSION).withStatus(ContentInfo.DownloadStatus.DOWNLOAD_FAILED));
+                        localVersions.put(programId, new ContentInfo(programId).withDeployment(UNKNOWN_LOCAL_VERSION).withStatus(ContentInfo.DownloadStatus.DOWNLOAD_FAILED));
                         Log.d(TAG, String.format("Found content, but no version data for %s", project));
                     }
                 }

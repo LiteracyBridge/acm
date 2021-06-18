@@ -6,14 +6,21 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.core.fs.OperationLog;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Configuration for the current user.
@@ -34,14 +41,25 @@ public class Config {
     // email # user's email. We use this for unique identity.
     // ]
 
+    private static final Set<String> TBLOADER_ROLES = new HashSet<>(Arrays.asList("*", "AD", "PM","CO", "FO"));
+
     private static final String USERNAME_PROP = "cognito:username";
     private static final String EMAIL_PROP = "email";
     private static final String NAME_PROP = "name"; // "custom:greeting";
+
+    // Programs info from "getprograms" API call is stored under this key.
+    private static final String PROGRAMS_INFO_PROP = "programs_info";
 
     private static final String TBCDID_PROP = "tbcd";
 
     private final SharedPreferences mUserPrefs;
     private final TBLoaderAppContext mAppContext;
+
+    // Program info is stored in these three fields.
+    // {"programid" : "role,role"}
+    private Map<String, String> mUserProgramsAndRoles;
+    private List<String> mS3RepositoryList;
+    private Map<String, String> mProgramNames;
 
     public interface Listener {
         void onSuccess();
@@ -127,31 +145,32 @@ public class Config {
     }
 
     /**
-     * Determines whether the current user is assigned to a given project. Returns true if the
-     * project filter has not yet been initialized.
+     * Determines whether the current user is assigned to a given project.
      *
-     * @param projectName The project of interest.
+     * @param programid The project of interest.
      * @return true if the current user should see the project, false otherwise.
      */
-    public boolean isUsersProject(String projectName) {
-        if (mUserPrograms == null) {
-            mUserPrograms = new HashSet<>();
-            // As of this writing, 2020-05-04, if the user has any role, they can use tb-loader. At
-            // this time, checking for roles is redundant.
-//            Pattern loaderPattern = Pattern.compile("\\*|AD|PM|CO|FO");
-            String programsString = mUserPrefs.getString("programs", "DEMO:FO");
-            Arrays.asList(programsString.split(";"))
-                .forEach( programRoles -> {
-                    // Split program:roles
-                    String[] parts = programRoles.split(":");
-                    // Check if the user has a TB-Loader role in the program.
-                    mUserPrograms.add(parts[0]);
-                });
-        }
-        if (mUserPrograms.contains(projectName)) {
-            return true;
+    public boolean isProgramIdForUser(String programid) {
+        if (mUserProgramsAndRoles != null) {
+            String rolesStr = mUserProgramsAndRoles.get(programid);
+            if (StringUtils.isNotBlank(rolesStr)) {
+                Set<String> roles = new HashSet<>(Arrays.asList(rolesStr.split(",")));
+                roles.retainAll(TBLOADER_ROLES);
+                return roles.size() > 0;
+            }
         }
         return false;
+    }
+
+    /**
+     * Gets the friendly name for the given programid. If the friendly name can't be determined,
+     * simply returns the programid.
+     * @param programid for which friendly name is desired.
+     * @return the friendly name, or the programid if the friendly name isn't available.
+     */
+    public String getFriendlyName(String programid) {
+        if (mProgramNames == null) return programid;
+        return mProgramNames.getOrDefault(programid, programid);
     }
 
     /**
@@ -191,6 +210,65 @@ public class Config {
                 listener.onError();
             }
         });
+    }
+
+    public void saveProgramsInfoJSON(JSONObject programsInfo) {
+        String resultString = programsInfo.toString();
+        if (!mUserPrefs.getString(PROGRAMS_INFO_PROP, "").equals(resultString)) {
+            SharedPreferences.Editor prefsEditor = mUserPrefs.edit();
+            prefsEditor.putString(PROGRAMS_INFO_PROP, resultString);
+            prefsEditor.apply();
+        }
+    }
+    public void loadProgramsInfo() {
+        String jsonString = mUserPrefs.getString(PROGRAMS_INFO_PROP, null);
+        if (StringUtils.isNotBlank(jsonString)) {
+            try {
+                JSONObject jsonObject = new JSONObject(jsonString);
+                parseProgramsInfoJSON(jsonObject);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    public void parseProgramsInfoJSON(JSONObject programsInfo) {
+        Map<String,Map<String,String>> programs_info = new HashMap<>();
+        String implicit_repository = programsInfo.optString("implicit_repository", "dbx");
+
+        try {
+            // Covert the lame-ass android json object to something usable.
+            JSONObject programs = (JSONObject) programsInfo.get("programs");
+            for (Iterator<String> it = programs.keys(); it.hasNext(); ) {
+                String programId = it.next();
+                try {
+                    JSONObject programInfoJson = programs.getJSONObject(programId);
+                    // Convert inner object to something usable.
+                    Map<String,String> programInfo = new HashMap<>();
+                    for (Iterator<String> it2 = programInfoJson.keys(); it2.hasNext();) {
+                        String programInfoPropertyName = it2.next();
+                        String programInfoProperty = programInfoJson.getString(programInfoPropertyName);
+                        programInfo.put(programInfoPropertyName, programInfoProperty);
+                    }
+                    programs_info.put(programId, programInfo);
+                } catch (JSONException e) {
+                    // Ignore the key. Should not happen IRL.
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        // Build map of {programid: "role,role"}
+        mUserProgramsAndRoles = programs_info.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e->e.getValue().get("roles")));
+        // Build a list of [programid] of those programs with s3 as repository.
+        mS3RepositoryList = programs_info.entrySet().stream()
+            .filter(e->e.getValue().getOrDefault("repository", implicit_repository).equalsIgnoreCase("s3"))
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toList());
+        // Extract the friendly names as {programid: "name"}
+        mProgramNames = programs_info.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e->e.getValue().getOrDefault("name", e.getKey())));
     }
 
 }

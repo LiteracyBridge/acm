@@ -101,6 +101,7 @@ public class TBLoaderConstants {
     public static final String DEPLOYMENT_CREATION_USER = "DEPLOYMENT_CREATION_USER";
     public static final String DEPLOYMENT_NUMBER = "DEPLOYMENT_NUMBER";
     public static final String PROGRAM_DESCRIPTION_PROPERTY = "DESCRIPTION";
+    public static final String PROGRAM_FRIENDLY_NAME_PROPERTY = "NAME";
     public static final String PROGRAM_ID_PROPERTY = "PROGRAMID";
 
     static {
