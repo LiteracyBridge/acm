@@ -662,7 +662,7 @@ public class TBLoader extends JFrame {
         }
         // Selection by recipient hierarchy.
         Map<String,String> recipientMap = getProgramSpec().getRecipientsMap();
-        return recipientMap.get(recipientid);
+        return recipientMap.getOrDefault(recipientid, recipientid);
 
     }
 
@@ -741,7 +741,7 @@ public class TBLoader extends JFrame {
                     TBLoaderConstants.CONTENT_SUBDIR + File.separator + deploymentChooser.getNewDeployment());
             Map<String, String> recipientMap = getProgramSpec().getRecipientsMap();
             if (recipientMap != null) {
-                String recipientDirName = recipientMap.get(recipient.recipientid);
+                String recipientDirName = recipientMap.getOrDefault(recipient.recipientid, recipient.recipientid);
                 if (StringUtils.isNotEmpty(recipientDirName)) {
                     imageName = getImageForCommunity(deploymentDir, recipientDirName);
                 }

@@ -540,7 +540,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
         }
 
         for (Recipient recipient : recipients) {
-            String dirName = recipientsMap.get(recipient.recipientid);
+            String dirName = recipientsMap.getOrDefault(recipient.recipientid, recipient.recipientid);
             File recipientDir = (dirName == null) ?
                                 null :
                                 IOUtils.FileIgnoreCase(communitiesDir, dirName);

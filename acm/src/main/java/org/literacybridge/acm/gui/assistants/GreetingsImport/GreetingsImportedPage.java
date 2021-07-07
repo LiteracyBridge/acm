@@ -211,7 +211,7 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
                     // Make sure the directories exist. Create the .grp file if it doesn't exist.
                     Recipient recipient = item.getLeft().getRecipient();
                     UIUtils.setLabelText(currentMessage, item.getLeft().toString());
-                    File recipientDir = new File(communitiesDir, recipientsMap.get(recipient.recipientid));
+                    File recipientDir = new File(communitiesDir, recipientsMap.getOrDefault(recipient.recipientid, recipient.recipientid));
                     File languagesDir = new File(recipientDir, "languages");
                     File languageDir = new File(languagesDir, recipient.languagecode);
                     File greeting = new File(languageDir, "10.a18");

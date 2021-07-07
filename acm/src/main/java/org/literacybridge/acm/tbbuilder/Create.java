@@ -371,7 +371,7 @@ class Create {
             AudioItemRepository.AudioFormat audioFormat) throws
                                                          IOException,
                                                          BaseAudioConverter.ConversionException {
-        String communityDirName = builderContext.programSpec.getRecipientsMap().get(recipient.recipientid);
+        String communityDirName = builderContext.programSpec.getRecipientsMap().getOrDefault(recipient.recipientid, recipient.recipientid);
         File sourceCommunityDir = new File(sourceCommunitiesDir, communityDirName);
         File targetCommunityDir = new File(stagedCommunitiesDir, communityDirName);
         File sourceLanguageDir = new File(sourceCommunityDir, "languages" + File.separator + recipient.languagecode);

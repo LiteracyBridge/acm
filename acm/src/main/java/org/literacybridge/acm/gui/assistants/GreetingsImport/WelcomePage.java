@@ -112,7 +112,7 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
         File communitiesDir = new File(tbLoadersDir, "communities");
 
         for (Recipient recipient : context.programSpec.getRecipients()) {
-            File recipientDir = new File(communitiesDir, recipientsMap.get(recipient.recipientid));
+            File recipientDir = new File(communitiesDir, recipientsMap.getOrDefault(recipient.recipientid, recipient.recipientid));
             File languagesDir = new File(recipientDir, "languages");
             File languageDir = new File(languagesDir, recipient.languagecode);
             File greeting = new File(languageDir, "10.a18");
