@@ -145,7 +145,7 @@ public class ContentMatchPage extends
 
         // List of titles (left side list)
         List<AudioTarget> titles = new ArrayList<>();
-        List<ContentSpec.PlaylistSpec> contentPlaylistSpecs = context.programSpec.getContentSpec()
+        List<ContentSpec.PlaylistSpec> contentPlaylistSpecs = context.getProgramSpec().getContentSpec()
                                                                                  .getDeployment(deploymentNo)
                                                                                  .getPlaylistSpecsForLanguage(context.languagecode);
 

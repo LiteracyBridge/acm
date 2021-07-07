@@ -36,6 +36,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     private final boolean warnForMissingGreetings;
     private final JLabel fuzzyThresholdError;
     private final JCheckBox greetingWarnings;
+    private JCheckBox clearProgspec;
 
     @Override
     public String getTitle() {
@@ -133,6 +134,17 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
                 "When creating a Deployment, should you be warned if any Recipients are missing custom greetings?");
         gridPanel.add(greetingWarnings, gbcRight);
 
+        if (helper.isAdvanced() || ACMConfiguration.getInstance().isDevo()) {
+            // Setting: reload program spec when opening an assistant.
+            gbcLeft.anchor = GridBagConstraints.BASELINE_TRAILING;
+            gridPanel.add(new JLabel("Reload progspec:"), gbcLeft);
+            gbcRight.anchor = GridBagConstraints.BASELINE_LEADING;
+            clearProgspec = new JCheckBox("Assistants reload the Program Specification.", ACMConfiguration.getInstance().isClearProgspec());
+            clearProgspec.setToolTipText(
+                "When opening an Assistant, should the Program Specification be refreshed?");
+            gridPanel.add(clearProgspec, gbcRight);
+        }
+
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //
         // EXPERIMENTAL!! The assistants don't play well with themes.
@@ -208,6 +220,11 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         if (greetingWarnings.isSelected() != warnForMissingGreetings) {
             ACMConfiguration.getInstance().getCurrentDB().setWarnForMissingGreetings(greetingWarnings.isSelected());
             haveChanges = true;
+        }
+
+        // If clear program spec is configured, remember the value.
+        if (clearProgspec != null) {
+            ACMConfiguration.getInstance().setClearProgspec(clearProgspec.isSelected());
         }
 
         if (haveChanges) {

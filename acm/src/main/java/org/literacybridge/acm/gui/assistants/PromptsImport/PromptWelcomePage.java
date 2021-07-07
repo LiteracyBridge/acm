@@ -156,13 +156,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
     }
 
     private void getProgramInformation() {
-        File programSpecDir = ACMConfiguration.getInstance()
-                .getCurrentDB()
-                .getPathProvider()
-                .getProgramSpecDir();
-
-        context.programSpec = new ProgramSpec(programSpecDir);
-        context.specLanguagecodes = context.programSpec.getLanguageCodes();
+        context.specLanguagecodes = context.getProgramSpec().getLanguageCodes();
         // Use a linked hash set to preserve the order of languages, as specified in the config file.
         context.configLanguagecodes = dbConfig.getAudioLanguages()
             .stream()

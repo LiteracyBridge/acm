@@ -341,13 +341,13 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         Map<String, Map<String, String>> result = new LinkedHashMap<>();
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
         File packagesDir = new File(tbLoadersDir, "packages");
-        DeploymentSpec deploymentSpec = context.programSpec.getContentSpec().getDeployment(context.deploymentNo);
+        DeploymentSpec deploymentSpec = context.getProgramSpec().getContentSpec().getDeployment(context.deploymentNo);
 
         for (LanguageNode languageNode : context.playlistRootNode.getLanguageNodes()) {
             String language = languageNode.getLanguageCode();
             Map<String, String> languageResult = new LinkedHashMap<>();
             List<PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(language);
-            Collection<String> variants = context.programSpec.getVariantsForDeploymentAndLanguage(context.deploymentNo, language);
+            Collection<String> variants = context.getProgramSpec().getVariantsForDeploymentAndLanguage(context.deploymentNo, language);
 
             for (String variant : variants) {
                 // one entry in the language : package-name map.
@@ -454,7 +454,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             errors.add(new MakeDirectoryException("packages", packagesDir));
             return false;
         }
-        Collection<String> variants = context.programSpec.getVariantsForDeployment(context.deploymentNo);
+        Collection<String> variants = context.getProgramSpec().getVariantsForDeployment(context.deploymentNo);
 
         for (LanguageNode languageNode : context.playlistRootNode.getLanguageNodes()) {
             String language = languageNode.getLanguageCode();
@@ -621,7 +621,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
     private String deploymentName() {
         String project = ACMConfiguration.getInstance().getCurrentDB().getProgramId();
-        Deployment depl = context.programSpec.getDeployment(context.deploymentNo);
+        Deployment depl = context.getProgramSpec().getDeployment(context.deploymentNo);
         Calendar start = Calendar.getInstance();
         start.setTime(depl.startdate);
         int year = start.get(YEAR) % 100;
@@ -648,7 +648,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             summaryTable.append(new TR(new TH("PL #").with("align","left"), new TH("PL / MSG #").with("align","left"), new TH("Message").with("align","left"), new TH("Notes").with("align","left")));
 
             // Get the ProgSpec playlists, limited to those with messages in this language.
-            DeploymentSpec deploymentSpec = context.programSpec.getContentSpec().getDeployment(context.deploymentNo);
+            DeploymentSpec deploymentSpec = context.getProgramSpec().getContentSpec().getDeployment(context.deploymentNo);
             List<PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(language);
             // Get the titles of the playlists.
             List<String> specifiedPlaylists = playlistSpecs.stream()

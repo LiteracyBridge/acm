@@ -528,8 +528,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             return;
         }
 
-        RecipientList recipients = context.programSpec.getRecipientsForDeployment(deploymentNo);
-        Map<String, String> recipientsMap = context.programSpec.getRecipientsMap();
+        RecipientList recipients = context.getProgramSpec().getRecipientsForDeployment(deploymentNo);
+        Map<String, String> recipientsMap = context.getProgramSpec().getRecipientsMap();
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
         File communitiesDir = IOUtils.FileIgnoreCase(tbLoadersDir, "communities");
         if (!communitiesDir.exists() || !communitiesDir.isDirectory()) {

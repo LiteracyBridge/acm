@@ -70,7 +70,7 @@ import static java.awt.event.KeyEvent.VK_UP;
  *    and rename them all together.
  */
 public class AudioItemRenameDialog extends JDialog {
-    private Color dialogBackground = new Color(236,236,236);
+    private final Color dialogBackground = new Color(236,236,236);
 
     private JLabel renamePrompt;
     private JCheckBox manyToOneOk;
@@ -84,12 +84,11 @@ public class AudioItemRenameDialog extends JDialog {
     private List<AudioItem> renameList;
 
     private boolean haveProgramSpec = false;
-    private List<String> specTitles = new ArrayList<>();
-    private Map<String, List<ContentSpec.MessageSpec>> messageSpecs = new LinkedHashMap<>();
+    private final List<String> specTitles = new ArrayList<>();
+    private final Map<String, List<ContentSpec.MessageSpec>> messageSpecs = new LinkedHashMap<>();
 
     // Popup
     private Window popupWindow;
-    private JScrollPane popupScroller;
     private JList<String> suggestedTitles;
 
     private Map<String, BiFunction<String, String, Integer>> matchers;
@@ -141,7 +140,7 @@ public class AudioItemRenameDialog extends JDialog {
         Color popupBackground = new Color(234, 242, 253);
         suggestedTitles.setBackground(popupBackground);
 
-        popupScroller = new JScrollPane(suggestedTitles);
+        JScrollPane popupScroller = new JScrollPane(suggestedTitles);
         Color popupBorderColor = new Color(186, 186, 186);
         Border popupBorder = new LineBorder(popupBorderColor, 1);
         popupScroller.setBorder(popupBorder);
@@ -487,7 +486,7 @@ public class AudioItemRenameDialog extends JDialog {
      */
     private class suggestedTitlesModel extends AbstractListModel<String> {
         private List<String> filteredList = null;
-        private Map<String, List<String>> filterHistory = new HashMap<>();
+        private final Map<String, List<String>> filterHistory = new HashMap<>();
         private String prevFilter = null;
 
         @Override
@@ -568,7 +567,7 @@ public class AudioItemRenameDialog extends JDialog {
         }
     }
 
-    private suggestedTitlesModel suggestedTitlesModel = new suggestedTitlesModel();
+    private final suggestedTitlesModel suggestedTitlesModel = new suggestedTitlesModel();
 
     /**
      * If the popup isn't showing, but should be, show it. Refresh the contents of
@@ -578,14 +577,10 @@ public class AudioItemRenameDialog extends JDialog {
         // If no program spec, no possible titles with which to prompt.
         if (!haveProgramSpec) return;
 
-        boolean show = true;
-
         // If there is nothing to suggest, or the only thing to suggest is what is already in
         // the titleEdit box, don't show the popup.
-        if (suggestedTitlesModel.getSize() == 0 || (suggestedTitlesModel.getSize() == 1 &&
-                    suggestedTitlesModel.getElementAt(0).equals(titleEdit.getText()))) {
-            show = false;
-        }
+        boolean show = suggestedTitlesModel.getSize() != 0 && (suggestedTitlesModel.getSize() != 1 ||
+            !suggestedTitlesModel.getElementAt(0).equals(titleEdit.getText()));
 
         // If the title textEdit doesn't have focus, don't show the popup.
         if (!titleEdit.hasFocus()) {
@@ -624,7 +619,7 @@ public class AudioItemRenameDialog extends JDialog {
     /**
      * Listen for changes to the titleEdit, and update the filter accordingly.
      */
-    private DocumentListener titleDocumentListener = new DocumentListener() {
+    private final DocumentListener titleDocumentListener = new DocumentListener() {
         private void setText() {
             suggestedTitlesModel.setFilterText(titleEdit.getText());
             findMatchingPlaylists();
@@ -650,7 +645,7 @@ public class AudioItemRenameDialog extends JDialog {
      * Listen for show/hide/move events, and show/hide/refresh the popup as
      * appropriate.
      */
-    private ComponentListener titleComponentListener = new ComponentListener() {
+    private final ComponentListener titleComponentListener = new ComponentListener() {
         @Override
         public void componentResized(ComponentEvent e) {
             refreshPopup();
@@ -693,7 +688,7 @@ public class AudioItemRenameDialog extends JDialog {
     /**
      * Listen for keystrokes on the titleEdit, and handle enter, escape, up, and down.
      */
-    private KeyListener titleKeyListener = new KeyAdapter() {
+    private final KeyListener titleKeyListener = new KeyAdapter() {
 
         @Override
         public void keyTyped(KeyEvent e) {
@@ -769,7 +764,7 @@ public class AudioItemRenameDialog extends JDialog {
      * accept it.
      */
     @SuppressWarnings("FieldCanBeLocal")
-    private ListSelectionListener titleSelectionListener = new ListSelectionListener() {
+    private final ListSelectionListener titleSelectionListener = new ListSelectionListener() {
         @Override
         public void valueChanged(ListSelectionEvent e) {    
             if (adjustingSelection) {
@@ -865,11 +860,7 @@ public class AudioItemRenameDialog extends JDialog {
     private void loadProgramSpec() {
         specTitles.clear();
         this.messageSpecs.clear();
-        File programSpecDir = ACMConfiguration.getInstance()
-                .getCurrentDB()
-                .getPathProvider()
-                .getProgramSpecDir();
-        ProgramSpec programSpec = new ProgramSpec(programSpecDir);
+        ProgramSpec programSpec = ACMConfiguration.getInstance().getCurrentDB().getProgramSpec();
 
         ContentSpec content = programSpec.getContentSpec();
         if (content != null) {

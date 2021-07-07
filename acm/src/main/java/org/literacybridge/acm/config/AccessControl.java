@@ -39,7 +39,7 @@ public class AccessControl {
     private final static String DB_ZIP_FILENAME_PREFIX = Constants.DBHomeDir;
     private final static String DB_ZIP_FILENAME_INITIAL = DB_ZIP_FILENAME_PREFIX + "1.zip";
     private final static String DB_ZIP_FILENAME_FORMAT = DB_ZIP_FILENAME_PREFIX + "%d.zip";
-    private final static Pattern DB_ZIP_MATCHER = Pattern.compile("(?i)^db([0-9]+)\\.zip$");
+    final static Pattern DB_ZIP_MATCHER = Pattern.compile("(?i)^db([0-9]+)\\.zip$");
     // The php checkout app returns the string "NULL" if no checkin file was found
     private final static String DB_DOES_NOT_EXIST = "NULL";
     private final static String DB_KEY_OVERRIDE = "force";
@@ -423,7 +423,7 @@ public class AccessControl {
 
             if (status == AccessControlResolver.UpdateDbStatus.ok) {
                 // We saved the .zip OK, and updated server status OK. Safe to clean up.
-                deleteOldZipFiles(NUM_ZIP_FILES_TO_KEEP);
+                deleteOldZipFiles();
                 dbInfo.deleteCheckoutFile();
                 deleteLocalDB();
                 accessStatus = AccessStatus.none;
@@ -761,10 +761,8 @@ public class AccessControl {
     /**
      * Helper to delete old .zip files from the ACM- directory.
      *
-     * @param numFilesToKeep Number of files to leave in ACM- directory.
      */
-    @SuppressWarnings("SameParameterValue")
-    private void deleteOldZipFiles(int numFilesToKeep) {
+    private void deleteOldZipFiles() {
         List<File> zipFiles = findZipFiles();
 
         // sort files from old to new
@@ -778,7 +776,7 @@ public class AccessControl {
             }
         ));
 
-        int numToDelete = zipFiles.size() - numFilesToKeep;
+        int numToDelete = zipFiles.size() - AccessControl.NUM_ZIP_FILES_TO_KEEP;
         for (int i = 0; i < numToDelete; i++) {
             dbConfiguration.getSandbox().delete(zipFiles.get(i));
         }

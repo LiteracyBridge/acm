@@ -1,20 +1,19 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.gui.assistants.common.AssistantContext;
 import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.store.Playlist;
 import org.literacybridge.core.spec.ContentSpec;
-import org.literacybridge.core.spec.ProgramSpec;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-class DeploymentContext {
+class DeploymentContext implements AssistantContext {
 
     int deploymentNo = -1;
-    ProgramSpec programSpec;
     Set<String> languageCodes;
 
     // Map of {languagecode : [playlistspec, ...], ...}

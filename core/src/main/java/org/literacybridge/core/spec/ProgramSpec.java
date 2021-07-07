@@ -25,8 +25,7 @@ public class ProgramSpec {
     @Deprecated
     public static final String DEPLOYMENT_INFO_PROPERTIES_NAME_OLD = "deployment.properties";
 
-    private final File programSpecDir;
-    private final String resourceDirectory;
+    private final StreamProvider streamProvider;
 
     private List<String> components = null;
     private List<Deployment> deployments = null;
@@ -36,8 +35,7 @@ public class ProgramSpec {
     private Properties deploymentProperties = null;
 
     public ProgramSpec(File programSpecDir) {
-        this.resourceDirectory = null;
-        this.programSpecDir = programSpecDir;
+        this(new FileStreamProvider(programSpecDir));
     }
 
     /**
@@ -46,21 +44,28 @@ public class ProgramSpec {
      * @param resourceDirectory containing the program specification resources.
      */
     public ProgramSpec(String resourceDirectory) {
-        if (!resourceDirectory.startsWith("/")) {
-            resourceDirectory = "/" + resourceDirectory;
-        }
-        this.resourceDirectory = resourceDirectory;
-        this.programSpecDir = null;
+        this(new ResourceStreamProvider(resourceDirectory));
     }
 
     /**
-     * Opens the named program specification file or resource.
-     * @param filenames one or more name of the program specification file, like "content.csv"
-     * @return the first found file or resource, as a stream.
+     * Create a ProgramSpec that will get its content from a caller-supplied streamProvider.
+     * @param streamProvider that will provide the data for the program spec.
      */
-    private InputStream getSpecStream(String... filenames) {
-        for (String filename : filenames) {
-            if (programSpecDir != null) {
+    public ProgramSpec(StreamProvider streamProvider) {
+        this.streamProvider = streamProvider;
+    }
+
+    /**
+     * A StreamProvider class that loads progspec data from files in a directory.
+     */
+    private static class FileStreamProvider implements StreamProvider {
+        private final File programSpecDir;
+        public FileStreamProvider(File programSpecDir) {
+            this.programSpecDir = programSpecDir;
+        }
+        @Override
+        public InputStream getSpecStream(String... filenames) {
+            for (String filename : filenames) {
                 File csvFile = new File(programSpecDir, filename);
                 if (csvFile.exists()) {
                     try {
@@ -69,14 +74,38 @@ public class ProgramSpec {
                         // Ignore
                     }
                 }
-            } else {
+            }
+            return null;
+        }
+    }
+
+    /**
+     *  A StreamProvider class that loads progspec data from resource streams.
+     */
+    private static class ResourceStreamProvider implements StreamProvider {
+        private final String resourceDirectory;
+        public ResourceStreamProvider(String resourceDirectory) {
+            this.resourceDirectory = resourceDirectory;
+        }
+        @Override
+        public InputStream getSpecStream(String... filenames) {
+            for (String filename : filenames) {
                 InputStream is = getClass().getResourceAsStream(resourceDirectory + '/' + filename);
                 if (is != null) {
                     return is;
                 }
             }
+            return null;
         }
-        return null;
+    }
+
+    /**
+     * Opens an input stream on the named program specification part.
+     * @param filenames one or more name of the program specification file, like "content.csv"
+     * @return the first found file or resource, as a stream.
+     */
+    private InputStream getSpecStream(String... filenames) {
+        return streamProvider.getSpecStream(filenames);
     }
 
     /**
@@ -308,4 +337,12 @@ public class ProgramSpec {
         }
         return deploymentProperties;
     }
+
+    /**
+     * An interface to provide data for a ProgramSpec.
+     */
+    public interface StreamProvider {
+        InputStream getSpecStream(String... filenames);
+    }
+
 }

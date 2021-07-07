@@ -191,7 +191,7 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
 
     private void performImports(List<GreetingMatchable> matches) {
         DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
-        Map<String, String> recipientsMap = context.programSpec.getRecipientsMap();
+        Map<String, String> recipientsMap = context.getProgramSpec().getRecipientsMap();
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
         File communitiesDir = new File(tbLoadersDir, "communities");
 

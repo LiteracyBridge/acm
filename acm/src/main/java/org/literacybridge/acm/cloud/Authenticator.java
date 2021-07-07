@@ -555,13 +555,17 @@ public class Authenticator {
             File of,
             BiConsumer<Long, Long> progressHandler)
         {
+            return downloadS3Object(new GetObjectRequest(bucket, key), of, progressHandler);
+        }
+
+        public boolean downloadS3Object(GetObjectRequest request, File of, BiConsumer<Long, Long> progressHandler) {
             if (!isAuthenticated()) return false;
             AmazonS3 s3Client = getS3Client();
             long bytesExpected, bytesDownloaded = 0;
 
-            try (S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, key));
-                FileOutputStream fos = new FileOutputStream(of);
-                BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+            try (S3Object s3Object = s3Client.getObject(request);
+                 FileOutputStream fos = new FileOutputStream(of);
+                 BufferedOutputStream bos = new BufferedOutputStream(fos)) {
                 InputStream is = s3Object.getObjectContent();
                 bytesExpected = s3Object.getObjectMetadata().getContentLength();
 

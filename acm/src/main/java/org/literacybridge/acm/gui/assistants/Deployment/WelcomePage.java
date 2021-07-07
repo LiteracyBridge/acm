@@ -75,7 +75,7 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
 
         deploymentChooser.removeAllItems();
         deploymentChooser.addItem("Choose...");
-        List<String> deployments = context.programSpec.getDeployments()
+        List<String> deployments = context.getProgramSpec().getDeployments()
             .stream()
             .map(d -> Integer.toString(d.deploymentnumber))
             .collect(Collectors.toList());
@@ -116,11 +116,6 @@ public class WelcomePage extends AssistantPage<DeploymentContext> {
     }
 
     private void getProgramInformation() {
-        File programSpecDir = ACMConfiguration.getInstance()
-                .getCurrentDB()
-                .getPathProvider()
-                .getProgramSpecDir();
-        context.programSpec = new ProgramSpec(programSpecDir);
     }
 
 }

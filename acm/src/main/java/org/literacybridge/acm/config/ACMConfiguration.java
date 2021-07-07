@@ -494,8 +494,6 @@ public class ACMConfiguration {
      */
     private Map<String, DBConfiguration> findContainedAcmDbs(File containingDir, boolean isDropbox) {
         Map<String, DBConfiguration> result = new HashMap<>();
-        // Regex to match & extract the number from strings like db123.zip
-        String dbRegex = "^db(\\d+).zip$";
 
         if (containingDir != null && containingDir.exists() && containingDir.isDirectory()) {
             File[] dirs = containingDir.listFiles(File::isDirectory);
@@ -504,7 +502,7 @@ public class ACMConfiguration {
                     if (d.exists() && d.isDirectory()) {
                         File dbConfigFile = new File(d, Constants.CONFIG_PROPERTIES);
                         File contentDir = new File(d, Constants.RepositoryHomeDir);
-                        String[] dbFiles = d.list((dir, name) -> name.matches(dbRegex));
+                        String[] dbFiles = d.list((dir, name) -> AccessControl.DB_ZIP_MATCHER.matcher(name).matches());
                         if (dbConfigFile.exists() && dbConfigFile.isFile() &&
                                 contentDir.exists() && contentDir.isDirectory() &&
                                 dbFiles != null && dbFiles.length>0) {
@@ -551,6 +549,14 @@ public class ACMConfiguration {
 
     public boolean isDevo() {
         return devo;
+    }
+
+    private boolean clearProgspec = false;
+    public boolean isClearProgspec() {
+        return clearProgspec;
+    }
+    public void setClearProgspec(boolean newValue) {
+        clearProgspec = newValue;
     }
 
     /**

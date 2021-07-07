@@ -76,7 +76,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         hbox.add(new JLabel("and the language: "));
         languageChooser = new LanguageChooser();
         languageChooser.addActionListener(this::onSelection);
-        Set<String> languageStrings = context.programSpec.getLanguageCodes()
+        Set<String> languageStrings = context.getProgramSpec().getLanguageCodes()
             .stream()
             .map(AcmAssistantPage::getLanguageAndName)
             .collect(Collectors.toSet());
@@ -140,7 +140,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
             if (deploymentNo < 0) {
                 languageChooser.removeAllItems();
             } else {
-                fillLanguageChooser(languageChooser, deploymentNo, context.programSpec, context.languagecode);
+                fillLanguageChooser(languageChooser, deploymentNo, context.getProgramSpec(), context.languagecode);
             }
         }
         deploymentChooser.setBorder(getSelectedDeployment()<=0 ? redBorder : blankBorder);
@@ -154,12 +154,12 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
 
     @Override
     protected void onPageEntered(boolean progressing) {
-        fillDeploymentChooser(deploymentChooser, context.programSpec, context.deploymentNo);
+        fillDeploymentChooser(deploymentChooser, context.getProgramSpec(), context.deploymentNo);
 
         // Empty the list until we have a deployment.
         languageChooser.removeAllItems();
         if (getSelectedDeployment() > 0) {
-            fillLanguageChooser(languageChooser, getSelectedDeployment(), context.programSpec, context.languagecode);
+            fillLanguageChooser(languageChooser, getSelectedDeployment(), context.getProgramSpec(), context.languagecode);
         }
         onSelection(null);
     }
@@ -248,12 +248,6 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
      * Reads the Program Specification to get information about the project and its Deployments.
      */
     private void getProjectInfo() {
-        File programSpecDir = ACMConfiguration.getInstance()
-                .getCurrentDB()
-                .getPathProvider()
-                .getProgramSpecDir();
-
-        context.programSpec = new ProgramSpec(programSpecDir);
     }
 
     private int getSelectedDeployment() {
@@ -305,7 +299,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
             // Find the playlist recordings so that we can paint the speaker to indicate existing prompts.
             findPlaylistRecordings(deploymentNo);
             PSContent.fillTreeForDeployment(progSpecRootNode,
-                context.programSpec,
+                context.getProgramSpec(),
                 deploymentNo,
                 languagecode,
                 playlistFilter);
@@ -332,7 +326,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         String languagecode = getSelectedLanguage();
         context.playlistPromptsMap.clear();
 
-        ContentSpec contentSpec = context.programSpec.getContentSpec();
+        ContentSpec contentSpec = context.getProgramSpec().getContentSpec();
         ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
         if (deploymentSpec == null) return;
         List<ContentSpec.PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(languagecode);
@@ -432,7 +426,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
             .stream()
             .collect(Collectors.toMap(Playlist::getName, pl -> pl));
 
-        List<ContentSpec.PlaylistSpec> contentPlaylistSpecs = context.programSpec.getContentSpec()
+        List<ContentSpec.PlaylistSpec> contentPlaylistSpecs = context.getProgramSpec().getContentSpec()
                                                                                  .getDeployment(deploymentNo)
                                                                                  .getPlaylistSpecsForLanguage(languagecode);
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {

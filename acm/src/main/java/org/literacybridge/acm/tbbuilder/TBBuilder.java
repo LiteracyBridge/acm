@@ -174,7 +174,7 @@ public class TBBuilder {
                 printUsage();
             }
         } catch (Exception e) {
-            System.err.print(e);
+            e.printStackTrace();
         }
     }
 
@@ -218,6 +218,7 @@ public class TBBuilder {
         builderContext.sourceTbLoadersDir = pathsProvider.getProgramTbLoadersDir();
         builderContext.sourceTbOptionsDir = new File(builderContext.sourceTbLoadersDir, "TB_Options");
         builderContext.sourceProgramspecDir = pathsProvider.getProgramSpecDir();
+        // Open the program specification from when the deployment was created.
         builderContext.programSpec = new ProgramSpec(builderContext.sourceProgramspecDir);
         // ~/LiteracyBridge/TB-Loaders
         File localTbLoadersDir = new File(

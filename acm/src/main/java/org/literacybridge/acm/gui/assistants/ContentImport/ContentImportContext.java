@@ -6,6 +6,7 @@ import org.literacybridge.acm.gui.assistants.Deployment.PlaylistPrompts;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.common.AbstractFilesPage;
 import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
+import org.literacybridge.acm.gui.assistants.common.AssistantContext;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import java.io.File;
@@ -19,7 +20,7 @@ import java.util.Set;
  * This is the context for a content import. By the time the Assistant has finished, this will
  * contain all of the data for importing the audio tracks for one language in one deployment.
  */
-class ContentImportContext implements AbstractFilesPage.FileImportContext, AbstractMatchPage.MatchContext<AudioTarget, ImportableFile, AudioMatchable> {
+class ContentImportContext implements AssistantContext, AbstractFilesPage.FileImportContext, AbstractMatchPage.MatchContext<AudioTarget, ImportableFile, AudioMatchable> {
     // Configured items
 
     /**
@@ -31,11 +32,6 @@ class ContentImportContext implements AbstractFilesPage.FileImportContext, Abstr
      * email addresses to be notified about the import.
      */
     Collection<String> notifyList;
-
-    /**
-     * Program Spec for the project.
-     */
-    ProgramSpec programSpec;
 
     // From the Welcome page
 

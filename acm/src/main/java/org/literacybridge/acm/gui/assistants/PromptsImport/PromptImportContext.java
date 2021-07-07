@@ -3,7 +3,7 @@ package org.literacybridge.acm.gui.assistants.PromptsImport;
 import org.literacybridge.acm.gui.assistants.Matcher.ImportableFile;
 import org.literacybridge.acm.gui.assistants.common.AbstractFilesPage;
 import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
-import org.literacybridge.core.spec.ProgramSpec;
+import org.literacybridge.acm.gui.assistants.common.AssistantContext;
 
 import java.io.File;
 import java.util.LinkedHashMap;
@@ -11,8 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class PromptImportContext implements AbstractFilesPage.FileImportContext, AbstractMatchPage.MatchContext<PromptTarget, ImportableFile, PromptMatchable> {
-    public ProgramSpec programSpec;
+public class PromptImportContext implements AssistantContext, AbstractFilesPage.FileImportContext, AbstractMatchPage.MatchContext<PromptTarget, ImportableFile, PromptMatchable> {
     public Set<String> specLanguagecodes;
     public Set<String> configLanguagecodes;
 

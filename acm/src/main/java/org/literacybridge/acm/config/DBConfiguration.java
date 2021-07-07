@@ -1,5 +1,6 @@
 package org.literacybridge.acm.config;
 
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.amplio.CloudSync;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
@@ -15,6 +16,7 @@ import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.store.Taxonomy;
 import org.literacybridge.acm.store.Transaction;
+import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.JOptionPane;
 import java.awt.GraphicsEnvironment;
@@ -22,8 +24,10 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,6 +47,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.literacybridge.acm.cloud.ProjectsHelper.PROGSPEC_ETAGS_FILE_NAME;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
 public class DBConfiguration {
@@ -232,6 +237,7 @@ public class DBConfiguration {
      */
     private void writeMetadataChangeMarkerFile() {
         try {
+            //noinspection ResultOfMethodCallIgnored
             new File(pathsProvider.getLocalProgramTempDir(), "dbchangemarker.txt").createNewFile();
         } catch (IOException e) {
             e.printStackTrace();
@@ -252,6 +258,7 @@ public class DBConfiguration {
     private void deleteChangeMarkerFile() {
         File markerFile = new File(pathsProvider.getLocalProgramTempDir(), "dbchangemarker.txt");
         if (markerFile.exists()) {
+            //noinspection ResultOfMethodCallIgnored
             markerFile.delete();
         }
     }
@@ -722,6 +729,10 @@ public class DBConfiguration {
         }
     }
 
+    /**
+     * Reads the config.properties file for the program. Caches for next time.
+     * @return the Properties object from the config.properties file.
+     */
     private Properties getDbProperties() {
         if (dbProperties == null) {
             // like ~/Dropbox/ACM-UWR/config.properties
@@ -730,8 +741,9 @@ public class DBConfiguration {
                 try {
                     BufferedInputStream in = new BufferedInputStream(
                         new FileInputStream(propertiesFile));
-                    dbProperties = new Properties();
-                    getDbProperties().load(in);
+                    Properties props = new Properties();
+                    props.load(in);
+                    dbProperties = props;
                 } catch (IOException e) {
                     throw new RuntimeException("Unable to load configuration file: "
                         + propertiesFile.getName(), e);
@@ -739,5 +751,113 @@ public class DBConfiguration {
             }
         }
         return dbProperties;
+    }
+
+    private ProgramSpec programSpec;
+
+    /**
+     * Discards the cached progspec. The next read of the progspec will refresh from S3 if necessary (and we're online).
+     */
+    public void clearProgramSpecCache() {
+        programSpec = null;
+    }
+
+    /**
+     * Gets the current program spec. If there is a cached spec, return it. If not, load the spec. If online
+     * check that the local copy is up-to-date.
+     * @return the ProgramSpec.
+     */
+    public ProgramSpec getProgramSpec() {
+        if (programSpec == null)  {
+            File programSpecDir = pathsProvider.getProgramSpecDir();
+            if (Authenticator.getInstance().isAuthenticated()) {
+                List<S3ObjectSummary> needDownload = findObsoleteProgspecFiles();
+                if (needDownload.size() > 0) {
+                    downloadProgSpecFiles(needDownload);
+                }
+            }
+
+            programSpec = new ProgramSpec(filenames -> {
+                for (String filename : filenames) {
+                    File csvFile = new File(programSpecDir, filename);
+                    if (sandbox.exists(csvFile)) {
+                        try {
+                            return sandbox.fileInputStream(csvFile);
+                        } catch (FileNotFoundException ignored) {
+                            // ignore -- this shouldn't happen; we just checked for existance.
+                        }
+                    }
+                }
+                return null;
+            });
+        }
+        return programSpec;
+    }
+
+    /**
+     * Downloads the out-of-date progspec files parts, as determined by findObsoleteProgspecFiles()
+     * @param toDownload: a list of S3ObjectSummaries of the objects to be downloaded.
+     */
+    private void downloadProgSpecFiles(List<S3ObjectSummary> toDownload) {
+        boolean anyDownloaded = false;
+        int prefixLen = getProgramId().length() + 1; // Program id + trailing "/"
+        Properties localProgspec = getProgSpecETags();
+        for (S3ObjectSummary os : toDownload) {
+            File progSpecFile = new File(pathsProvider.getProgramSpecDir(), os.getKey().substring(prefixLen));
+            boolean downloaded = Authenticator.getInstance()
+                .getProjectsHelper()
+                .downloadProgSpecFile(os.getKey(), os.getETag(), getSandbox().outputFile(progSpecFile.toPath()));
+            if (downloaded) {
+                localProgspec.setProperty(os.getKey(), os.getETag());
+                anyDownloaded = true;
+            }
+        }
+        if (anyDownloaded) {
+            Path eTagsPath = new File(pathsProvider.getProgramSpecDir(), PROGSPEC_ETAGS_FILE_NAME).toPath();
+
+            try (BufferedOutputStream out = new BufferedOutputStream(getSandbox().fileOutputStream(eTagsPath))) {
+                localProgspec.store(out, null);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Determine if any progspec files need to be refreshed, based on their S3 etags.
+     * @return a list of the S3ObjectSummary objects for out-of-date files.
+     */
+    private List<S3ObjectSummary> findObsoleteProgspecFiles() {
+        // Get the current local program specification state.
+        Properties localProgspec = getProgSpecETags();
+
+        // Compare the actual state to the state cached lcoally.
+        Map<String, S3ObjectSummary> currentProgspec = Authenticator.getInstance().getProjectsHelper().getProgSpecInfo(getProgramId());
+        List<S3ObjectSummary> result = new ArrayList<>();
+        for (Map.Entry<String, S3ObjectSummary> e : currentProgspec.entrySet()) {
+            // If we don't have the file locally, or if the eTag doesn't match, add to the result list.
+            String localTag = localProgspec.containsKey(e.getKey()) ? localProgspec.get(e.getKey()).toString() : "";
+            if (!e.getValue().getETag().equalsIgnoreCase(localTag))
+                result.add(e.getValue());
+        }
+        return result;
+    }
+
+    /**
+     * Loads the current progrspec etags.
+     * @return The etags, in a properties object. {filename : etag}
+     */
+    private Properties getProgSpecETags() {
+        // Get the current local program specification state.
+        Properties localProgspec = new Properties();
+        File eTagsFile = new File(pathsProvider.getProgramSpecDir(), PROGSPEC_ETAGS_FILE_NAME);
+        if (getSandbox().exists(eTagsFile.toPath())) {
+            try (BufferedInputStream is = new BufferedInputStream(getSandbox().fileInputStream(eTagsFile))) {
+                localProgspec.load(is);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return localProgspec;
     }
 }

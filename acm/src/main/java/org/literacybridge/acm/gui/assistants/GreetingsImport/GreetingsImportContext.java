@@ -3,7 +3,7 @@ package org.literacybridge.acm.gui.assistants.GreetingsImport;
 import org.literacybridge.acm.gui.assistants.Matcher.ColumnProvider;
 import org.literacybridge.acm.gui.assistants.common.AbstractFilesPage;
 import org.literacybridge.acm.gui.assistants.common.AbstractMatchPage;
-import org.literacybridge.core.spec.ProgramSpec;
+import org.literacybridge.acm.gui.assistants.common.AssistantContext;
 import org.literacybridge.core.spec.RecipientList;
 import org.literacybridge.core.spec.RecipientList.RecipientAdapter;
 
@@ -18,10 +18,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class GreetingsImportContext
-    implements AbstractFilesPage.FileImportContext, AbstractMatchPage.MatchContext<GreetingTarget, GreetingFile, GreetingMatchable> {
+    implements AssistantContext, AbstractFilesPage.FileImportContext, AbstractMatchPage.MatchContext<GreetingTarget, GreetingFile, GreetingMatchable> {
     private final static List<String> RecipientColumnsOfInterest = Arrays.asList("Community","Group","Agent");
 
-    public ProgramSpec programSpec;
     public RecipientColumnProvider recipientColumnProvider;
 
     // Which recipients have custom greetings?
@@ -56,7 +55,7 @@ public class GreetingsImportContext
         List<String> columnNames;
 
         RecipientColumnProviderBase() {
-            RecipientList recipientList = programSpec.getRecipients();
+            RecipientList recipientList = getProgramSpec().getRecipients();
             columnNames = IntStream.rangeClosed(0, recipientList.getMaxLevel())
                 .mapToObj(recipientList::getNameOfLevel)
                 .filter(RecipientColumnsOfInterest::contains)

@@ -175,7 +175,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
      * @param deploymentNo that we are creating.
      */
     private void collectDeploymentInformation(int deploymentNo) {
-        RecipientList recipients = context.programSpec.getRecipientsForDeployment(deploymentNo);
+        RecipientList recipients = context.getProgramSpec().getRecipientsForDeployment(deploymentNo);
         context.languageCodes = recipients.stream().map(r -> r.languagecode).collect(Collectors.toSet());
 
         context.allProgramSpecPlaylists = getProgramSpecPlaylists(deploymentNo, context.languageCodes);
@@ -434,7 +434,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     private Map<String, List<ContentSpec.PlaylistSpec>> getProgramSpecPlaylists(int deploymentNo,
         Set<String> languageCodes)
     {
-        ContentSpec contentSpec = context.programSpec.getContentSpec();
+        ContentSpec contentSpec = context.getProgramSpec().getContentSpec();
         ContentSpec.DeploymentSpec deploymentSpec = contentSpec.getDeployment(deploymentNo);
         Map<String, List<ContentSpec.PlaylistSpec>> programSpecPlaylists = new HashMap<>();
         for (String languageCode : languageCodes) {

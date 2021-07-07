@@ -2,6 +2,7 @@ package org.literacybridge.acm.gui;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jdesktop.swingx.JXFrame;
+import org.json.simple.JSONObject;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.literacybridge.acm.Constants;
@@ -344,8 +345,8 @@ public class Application extends JXFrame {
   private static void openAcmDb(String sharedACM) {
       boolean syncOk = true;
       // Migration from Dropbox to S3 required?
+      PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(sharedACM);
       if (Authenticator.getInstance().isProgramS3(sharedACM)) {
-          PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(sharedACM);
           if (pathsProvider == null) {
               // The database doesn't exist locally, but it does exist in S3. ".DOWNLOAD" will set up
               // synchronization with Dropbox.

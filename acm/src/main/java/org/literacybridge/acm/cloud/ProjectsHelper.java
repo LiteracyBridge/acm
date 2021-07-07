@@ -1,14 +1,13 @@
 package org.literacybridge.acm.cloud;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import org.json.simple.JSONObject;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -22,11 +21,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static java.util.regex.Pattern.CASE_INSENSITIVE;
-
 public class ProjectsHelper {
     static final String DEPLOYMENTS_BUCKET_NAME = "acm-content-updates";
     static final String CONTENT_BUCKET_NAME = "amplio-program-content";
+    static final String PROGSPEC_BUCKET_NAME = "amplio-progspecs";
+    public static final String PROGSPEC_ETAGS_FILE_NAME = "etags.properties";
+
+    private static final Set<String> PROGSPEC_OBJECT_NAMES = new HashSet<>(Arrays.asList("recipients.csv",
+        "recipients_map.csv",
+        "deployment_spec.csv",
+        "content.csv"));
 
     IdentityPersistence identityPersistence;
 
@@ -248,6 +252,63 @@ public class ProjectsHelper {
             .filter(e->e.getValue().getKey() != null)
             .collect(Collectors.toMap(e->e.getValue().getDeploymentName(), Map.Entry::getValue));
     }
+
+    /**
+     * Gets current program spec etags from S3.
+     * @param programid for which program spec etags are needed.
+     * @return a map of {name : S3ObjectSummary} of the program spec components for the program.
+     */
+    public Map<String, S3ObjectSummary> getProgSpecInfo(String programid) {
+        Map<String, S3ObjectSummary> results = new HashMap<>();
+        String prefix = programid + "/";
+
+        AmazonS3 s3Client = authInstance.getAwsInterface().getS3Client();
+        String continuationToken = null;
+        boolean more = true;
+
+        while (more) {
+            // Request program spec files.
+            ListObjectsV2Request s3ProgSpecs = new ListObjectsV2Request()
+                .withBucketName(ProjectsHelper.PROGSPEC_BUCKET_NAME)
+                .withPrefix(prefix);
+            // There should really never be a continuation, but, architecturally in S3, there could be, so handle it.
+            if (continuationToken != null) {
+                s3ProgSpecs.setContinuationToken(continuationToken);
+            }
+            ListObjectsV2Result result = s3Client.listObjectsV2(s3ProgSpecs);
+            more = result.isTruncated();
+            continuationToken = result.getNextContinuationToken();
+
+            for (S3ObjectSummary s3progspecObject : result.getObjectSummaries()) {
+                String objectName = s3progspecObject.getKey().substring(prefix.length());
+                if (PROGSPEC_OBJECT_NAMES.contains(objectName)) {
+                    results.put(objectName, s3progspecObject);
+                }
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Download a given program spec part. We use the etag to be sure we get the desired version. There is still
+     * a race because the parts of the program spec are updated non-transactionally.
+     * @param key of the part, like "recipients.csv"
+     * @param etag of the object
+     * @param outputFile to which the bits should be written
+     * @return true if an object was downloaded, false otherwise.
+     */
+    public boolean downloadProgSpecFile(String key, String etag, File outputFile) {
+        if (authInstance.isAuthenticated() && authInstance.isOnline()) {
+            GetObjectRequest request = new GetObjectRequest(PROGSPEC_BUCKET_NAME, key)
+                .withMatchingETagConstraint(etag);
+            return authInstance.getAwsInterface().downloadS3Object(request,
+                outputFile,
+                null);
+        }
+        return false;
+    }
+
 
     public boolean downloadDeployment(DeploymentInfo deploymentInfo,
         File outputFile,

@@ -115,7 +115,7 @@ public class GreetingsMatchPage extends AbstractMatchPage<GreetingsImportContext
             List<GreetingFile> files = context.importableFiles.stream()
                 .map(GreetingFile::new)
                 .collect(Collectors.toList());
-            List<GreetingTarget> recipients = context.programSpec.getRecipients().stream()
+            List<GreetingTarget> recipients = context.getProgramSpec().getRecipients().stream()
                 .map(recipientAdapter -> {
                     GreetingTarget target = new GreetingTarget(recipientAdapter);
                     target.setHasGreeting(context.recipientHasRecording.get(recipientAdapter.recipientid));

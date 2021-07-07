@@ -3,11 +3,15 @@ package org.literacybridge.acm.gui.assistants.GreetingsImport;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
-import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList.RecipientAdapter;
 
-import javax.swing.*;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import java.awt.Color;
@@ -33,7 +37,7 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
 
         JLabel welcome = new JLabel("<html>"
             + "<span style='font-size:2.5em'>Welcome to the Custom Greetings Assistant.</span>"
-            + "<br/><br/><p>This Assistant will guide you through importing custom greetings for recipients. Yere are the steps:</p>"
+            + "<br/><br/><p>This Assistant will guide you through importing custom greetings for recipients. Here are the steps:</p>"
             + "<ol>"
             + "<li> Review the Recipients that need custom greetings, in the list below.</li>"
             + "<li> Choose the files and folders containing the custom greetings.</li>"
@@ -97,21 +101,15 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
     }
 
     private void getProgramInformation() {
-        File programSpecDir = ACMConfiguration.getInstance()
-                .getCurrentDB()
-                .getPathProvider()
-                .getProgramSpecDir();
-
-        context.programSpec = new ProgramSpec(programSpecDir);
         context.recipientColumnProvider = context.new RecipientColumnProvider();
     }
 
     private void findRecipientsWithRecordings() {
-        Map<String, String> recipientsMap = context.programSpec.getRecipientsMap();
+        Map<String, String> recipientsMap = context.getProgramSpec().getRecipientsMap();
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
         File communitiesDir = new File(tbLoadersDir, "communities");
 
-        for (Recipient recipient : context.programSpec.getRecipients()) {
+        for (Recipient recipient : context.getProgramSpec().getRecipients()) {
             File recipientDir = new File(communitiesDir, recipientsMap.getOrDefault(recipient.recipientid, recipient.recipientid));
             File languagesDir = new File(recipientDir, "languages");
             File languageDir = new File(languagesDir, recipient.languagecode);
@@ -145,7 +143,7 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
                 column);
             if (column == 0) {
                 int modelRow = recipientTable.convertRowIndexToModel(row);
-                RecipientAdapter recipient = context.programSpec.getRecipients().get(modelRow);
+                RecipientAdapter recipient = context.getProgramSpec().getRecipients().get(modelRow);
                 String recipientid = recipient.recipientid;
                 setIcon(context.recipientHasRecording.getOrDefault(recipientid, true) ? soundImage : noSoundImage);
             } else {
@@ -166,7 +164,7 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
         public boolean include(Entry<? extends RecipientModel, ? extends Integer> entry) {
             if (predicate == null) return true;
             int rowIx = entry.getIdentifier();
-            RecipientAdapter recipient = context.programSpec.getRecipients().get(rowIx);
+            RecipientAdapter recipient = context.getProgramSpec().getRecipients().get(rowIx);
             return predicate.test(recipient);
         }
     }
@@ -178,12 +176,12 @@ public class WelcomePage extends AcmAssistantPage<GreetingsImportContext> {
 
         @Override
         public int getRowCount() {
-            return context.programSpec.getRecipients().size();
+            return context.getProgramSpec().getRecipients().size();
         }
 
         @Override
         RecipientAdapter getRecipientAt(int rowIndex) {
-            return context.programSpec.getRecipients().get(rowIndex);
+            return context.getProgramSpec().getRecipients().get(rowIndex);
         }
     }
 
