@@ -51,7 +51,7 @@
                     android:layout_height="wrap_content"
                     android:maxLines="1"
                     android:paddingStart="4dp"
-                    tools:text="Expires: 09/25/2016" />
+                    tools:text="Size: 2.91 MiB" />
 
         </LinearLayout>
 

@@ -51,7 +51,7 @@ class ContentInfoAdapter extends RecyclerView.Adapter<ContentInfoHolder> {
     @Override
     public ContentInfoHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater layoutInflater = LayoutInflater.from(mManageContentActivity);
-        View view = layoutInflater.inflate(R.layout.list_item_deployment_package, parent, false);
+        View view = layoutInflater.inflate(R.layout.list_item_deployment_package_2, parent, false);
         return new ContentInfoHolder(mManageContentActivity, view);
     }
 

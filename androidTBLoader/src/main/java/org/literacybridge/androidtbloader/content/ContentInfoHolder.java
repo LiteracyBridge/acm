@@ -199,7 +199,7 @@ class ContentInfoHolder extends RecyclerView.ViewHolder {
                 mStatusLabel.setVisibility(View.VISIBLE);
                 mDownloadButton.setEnabled(false);
                 mDownloadButton.setVisibility(View.INVISIBLE);
-                mExpirationTextView.setVisibility(View.GONE);
+                mExpirationTextView.setVisibility(View.VISIBLE);
             }
             mProgressBar.setVisibility(View.INVISIBLE);
             break;
