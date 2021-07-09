@@ -346,16 +346,22 @@ public class Application extends JXFrame {
       boolean syncOk = true;
       // Migration from Dropbox to S3 required?
       PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(sharedACM);
+      // Uncomment lines to debug opening from S3.
+//      System.out.printf("Opening database '%s' in %s\n", sharedACM,
+//          (Authenticator.getInstance().isProgramS3(sharedACM))?"s3":"dropbox");
       if (Authenticator.getInstance().isProgramS3(sharedACM)) {
           if (pathsProvider == null) {
+//              System.out.println("pathsProvider is null");
               // The database doesn't exist locally, but it does exist in S3. ".DOWNLOAD" will set up
               // synchronization with Dropbox.
               syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.DOWNLOAD, false);
           } else if (pathsProvider.isDropboxDb()) {
+//              System.out.println("pathsProvider thinks this is a Dropbox db");
               // The database is configured to sync with S3, but locally it is still syncing with Dropbox
               // TOOD: Move from Dropbox to S3, to save the download. (Download works, but wastes time).
               syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.DOWNLOAD, true);
           } else {
+//              System.out.println("Syncing...");
               // Mere sync required.
               syncOk = syncFromS3(sharedACM, S3SyncDialog.SYNC_STYLE.SYNC, false);
           }
