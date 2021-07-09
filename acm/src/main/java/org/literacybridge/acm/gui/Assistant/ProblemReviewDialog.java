@@ -14,7 +14,6 @@ import javax.swing.tree.TreePath;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Frame;
-import java.io.IOException;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -39,15 +38,18 @@ public class ProblemReviewDialog extends JDialog {
     private String reportHeading;
     private final JButton sendButton;
     private final JButton closeButton;
+    private final String emailSubject;
 
     /**
      * Constructor for the Exceptions display.
      *
      * @param owner window, for positioning this window.
      * @param title for the dialog.
+     * @param emailSubject The subject line if user chooses to send email to Amplio.
      */
-    public ProblemReviewDialog(Frame owner, String title) {
+    public ProblemReviewDialog(Frame owner, String title, String emailSubject) {
         super(owner, title, ModalityType.APPLICATION_MODAL);
+        this.emailSubject = emailSubject;
 
         JPanel panel = new JPanel(new BorderLayout(5, 5));
         panel.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -166,10 +168,9 @@ public class ProblemReviewDialog extends JDialog {
 
         String from = "techsupport@amplio.org";
         String to = "techsupport@amplio.org";
-        String subject = "Error report from content import";
 
         SwingUtilities.invokeLater(() -> {
-            sendEmail(from, to, subject, body.toString(), false);
+            sendEmail(from, to, emailSubject, body.toString(), false);
             closeButton.setEnabled(true);
             getRootPane().setDefaultButton(closeButton);
         });

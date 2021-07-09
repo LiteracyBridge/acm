@@ -220,7 +220,9 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             context.deploymentNo,
             Constants.ACM_VERSION, Version.buildTimestamp);
 
-        ProblemReviewDialog dialog = new ProblemReviewDialog(Application.getApplication(), "Errors While Importing");
+        ProblemReviewDialog dialog = new ProblemReviewDialog(Application.getApplication(),
+            "Errors While Deploying",
+            "Error report from Deployment Assistant");
         DefaultMutableTreeNode issues = new DefaultMutableTreeNode();
         context.issues.fillNodeFromList(issues);
         dialog.showProblems(message, reportHeading, issues, errors);

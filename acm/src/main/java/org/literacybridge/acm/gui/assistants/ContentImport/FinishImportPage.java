@@ -227,7 +227,9 @@ public class FinishImportPage extends ContentImportBase<ContentImportContext> {
             dbConfig.getLanguageLabel(new Locale(context.languagecode)),
             Constants.ACM_VERSION, Version.buildTimestamp);
 
-        ProblemReviewDialog dialog = new ProblemReviewDialog(Application.getApplication(), "Errors While Importing");
+        ProblemReviewDialog dialog = new ProblemReviewDialog(Application.getApplication(),
+            "Errors While Importing",
+            "Error report from Import Assistant");
         dialog.showProblems(message, reportHeading, null, errors);
     }
 

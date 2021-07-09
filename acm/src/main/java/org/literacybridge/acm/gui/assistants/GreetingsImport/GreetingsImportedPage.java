@@ -183,7 +183,9 @@ public class GreetingsImportedPage extends AcmAssistantPage<GreetingsImportConte
             localDateTimeFormatter.format(LocalDateTime.now()),
             Constants.ACM_VERSION, Version.buildTimestamp);
 
-        ProblemReviewDialog dialog = new ProblemReviewDialog(Application.getApplication(), "Errors While Importing");
+        ProblemReviewDialog dialog = new ProblemReviewDialog(Application.getApplication(),
+            "Errors While Importing",
+            "Error report from Greetings Assistant");
         dialog.showProblems(message, reportHeading, null, errors);
     }
 

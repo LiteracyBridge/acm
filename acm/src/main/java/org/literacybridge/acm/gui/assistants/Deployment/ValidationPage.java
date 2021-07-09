@@ -280,8 +280,8 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     context.issues.add(Issues.Severity.WARNING,
                         Issues.Area.PLAYLISTS,
                         "Playlist '%s' is missing for language '%s' in the ACM.",
-                        getLanguageAndName(language),
-                        qualifiedPlaylistName);
+                        qualifiedPlaylistName,
+                        getLanguageAndName(language));
                 } else {
                     // ...otherwise, we have the playlist, so add to the list of ACM playlists, and check the contents.
                     foundPlaylists.add(playlistNode);
