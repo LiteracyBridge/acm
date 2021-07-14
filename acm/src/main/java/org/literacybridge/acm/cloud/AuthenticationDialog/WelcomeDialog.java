@@ -30,7 +30,7 @@ import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Ca
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.EmailCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ForgotPasswordCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ModCard;
-import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ProgramCard;
+import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.SelectProgramCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.ResetCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.NewPasswordRequiredCard;
 import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Cards.LoginCard;
@@ -38,6 +38,10 @@ import static org.literacybridge.acm.cloud.AuthenticationDialog.WelcomeDialog.Ca
 import static org.literacybridge.acm.gui.util.UIUtils.UiOptions.TOP_THIRD;
 
 public class WelcomeDialog extends JDialog {
+    // Empirically, 496 doesn't require a horizontal resize when adding programs. Could change with new programs
+    // that have longer names.
+    private static final int INITIAL_DIALOG_WIDTH = 496;
+
     private String email;
     private String password;
     private boolean isSavedPassword;
@@ -99,7 +103,7 @@ public class WelcomeDialog extends JDialog {
         NewPasswordRequiredCard(org.literacybridge.acm.cloud.AuthenticationDialog.NewPasswordRequiredCard.CARD_HEIGHT, NewPasswordRequiredCard::new),
         ConfirmCard(org.literacybridge.acm.cloud.AuthenticationDialog.ConfirmCard.CARD_HEIGHT, ConfirmCard::new),
         EmailCard(org.literacybridge.acm.cloud.AuthenticationDialog.EmailCard.CARD_HEIGHT, EmailCard::new),
-        ProgramCard(org.literacybridge.acm.cloud.AuthenticationDialog.ProgramCard.CARD_HEIGHT, ProgramCard::new),
+        SelectProgramCard(org.literacybridge.acm.cloud.AuthenticationDialog.SelectProgramCard.CARD_HEIGHT, SelectProgramCard::new),
         ModCard(org.literacybridge.acm.cloud.AuthenticationDialog.ModCard.CARD_HEIGHT, ModCard::new);
 
         int minimumHeight;
@@ -199,7 +203,7 @@ public class WelcomeDialog extends JDialog {
         });
 
         // Center horizontally and in the top 2/3 of screen.
-        setMinimumSize(new Dimension(450, currentCard.panel.minimumHeight + CardContent.logoHeight));
+        setMinimumSize(new Dimension(INITIAL_DIALOG_WIDTH, currentCard.panel.minimumHeight + CardContent.logoHeight));
         UIUtils.centerWindow(this, TOP_THIRD);
         setAlwaysOnTop(true);
 
@@ -338,7 +342,7 @@ public class WelcomeDialog extends JDialog {
      */
     void gotoProgramSelection() {
         if (options.contains(Authenticator.LoginOptions.CHOOSE_PROGRAM)) {
-            activateCard(ProgramCard, null);
+            activateCard(SelectProgramCard, null);
         } else {
             success = true;
             setVisible(false);
@@ -366,7 +370,7 @@ public class WelcomeDialog extends JDialog {
             activateCard(LoginCard, null);
             break;
 
-        case ProgramCard:
+        case SelectProgramCard:
             // If there's a Message-of-the-Day, show it.
             if (StringUtils.isNotBlank(cognitoInterface.getAuthenticationAttribute("mod"))) {
                 activateCard(ModCard, null);
@@ -390,7 +394,7 @@ public class WelcomeDialog extends JDialog {
         case LoginCard:
 
         case EmailCard:
-        case ProgramCard:
+        case SelectProgramCard:
             setVisible(false);
             break;
 
@@ -416,7 +420,7 @@ public class WelcomeDialog extends JDialog {
             if (options.contains(Authenticator.LoginOptions.OFFLINE_EMAIL_CHOICE)) {
                 activateCard(EmailCard, null);
             } else if (StringUtils.isNotBlank(email)) {
-                activateCard(ProgramCard, null);
+                activateCard(SelectProgramCard, null);
             } else {
                 // Ends the dialog, with failure.
                 setVisible(false);

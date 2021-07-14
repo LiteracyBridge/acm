@@ -138,7 +138,7 @@ public class LoginCard extends CardContent {
      */
     private void onLogin(ActionEvent actionEvent) {
         welcomeDialog.clearMessage();
-        String text = LabelProvider.getLabel("Attempting Login");
+        String text = LabelProvider.getLabel("Logging In");
         UIUtils.runWithWaitSpinner(text, welcomeDialog,
             () -> welcomeDialog.cognitoInterface.authenticate(emailField.getText(), passwordField.getText()),
             this::onLoginReturned,

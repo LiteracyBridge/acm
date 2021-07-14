@@ -49,7 +49,7 @@ import static org.literacybridge.acm.cloud.Authenticator.UPDATING_ROLES;
 import static org.literacybridge.acm.cloud.Authenticator.ALL_USER_ROLES;
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
-public class ProgramCard extends CardContent {
+public class SelectProgramCard extends CardContent {
     private static final String DIALOG_TITLE = "Select Program";
     protected static final int CARD_HEIGHT = 315;
 
@@ -66,7 +66,7 @@ public class ProgramCard extends CardContent {
     private boolean chooseByFriendlyName = true;
     public static boolean giveChooserChoice = true; // an easy way to essentially #ifdef.
 
-    public ProgramCard(WelcomeDialog welcomeDialog,
+    public SelectProgramCard(WelcomeDialog welcomeDialog,
             WelcomeDialog.Cards panel) {
         super(welcomeDialog, DIALOG_TITLE, panel);
         JPanel dialogPanel = this;
