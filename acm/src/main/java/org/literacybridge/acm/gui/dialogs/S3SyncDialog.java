@@ -203,7 +203,7 @@ public class S3SyncDialog extends JDialog {
             }
         }
         try {
-            CloudSync.RemoteResponse response = CloudSync.status(program+"_DB");
+            CloudSync.RemoteResponse response = CloudSync.status(program);
             Map<String, Object> status = response.responseData;
             refresh(status);
         } catch (IOException e) {
@@ -287,34 +287,21 @@ public class S3SyncDialog extends JDialog {
         @Override
         protected Void doInBackground() throws Exception {
             if (syncStyle == SYNC_STYLE.DOWNLOAD) {
-                String programConfig = String.format("[%1$s_DB]\nbucket:${CONTENT_BUCKET}\n" +
+                String programConfig = String.format("[%1$s]\nbucket:${CONTENT_BUCKET}\n" +
                         "prefix:%1$s\n" +
                         "path:${PROGRAMS_DIR}/%1$s\n" +
-                        "status_file:%1$s_DB\n" +
+                        "status_file:%1$s\n" +
                         "delay_start: 15 seconds\n" +
-                        "sync_interval:55 seconds\n" +
-                        "\n" +
-                        "[%1$s_PROGSPEC]\nbucket:${PROGSPECS_BUCKET}\n" +
-                        "prefix:%1$s\n" +
-                        "path:${PROGSPECS_DIR}/%1$s\n" +
-                        "status_file:%1$s_PROGSPEC\n" +
-                        "policy:MIRROR_CLOUD\n" +
-                        "delay_start:5 seconds\n" +
-                        "sync_interval:2 minutes\n", program);
+                        "sync_interval:55 seconds\n", program);
                 System.out.printf("Adding config for program '%s':\n%s", program, programConfig);
                 CloudSync.addConfig(program, programConfig);
             }
             System.out.printf("Starting sync for program '%s'\n", program);
             try {
                 CloudSync.RemoteResponse response;
-                response = CloudSync.sync(program + "_PROGSPEC");
+                response = CloudSync.sync(program);
                 if (response.responseHasError) {
-                    setSyncError(new Exception("Exception synchronizing "+program+"_PROGSPEC"));
-                    return null;
-                }
-                response = CloudSync.sync(program + "_DB");
-                if (response.responseHasError) {
-                    setSyncError(new Exception("Exception synchronizing "+program+"_DB"));
+                    setSyncError(new Exception("Exception synchronizing "+program));
                     return null;
                 }
             } catch (Throwable whatever) {

@@ -14,6 +14,7 @@ public class Recipient {
     final static String FILENAME = "recipients.csv";
     final static Pattern DEPLOYMENTS_LIST = Pattern.compile("^\\[?([0-9, ]*)]?$");
 
+    // We don't care about most of the recipient columns in the ACM or TB-Loader.
     enum columns {
         recipientid, /*project, partner,*/
         communityname,

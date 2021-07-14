@@ -152,15 +152,7 @@ public class TBLoader extends JFrame {
     private StatisticsUploader statisticsUploader;
 
     ProgramSpec getProgramSpec() {
-        if (programSpec == null) {
-            try {
-                File programspecDir = new File(localTbLoaderDir,
-                    TBLoaderConstants.CONTENT_SUBDIR + File.separator + deploymentChooser.getNewDeployment() + File.separator + Constants.ProgramSpecDir);
-                programSpec = new ProgramSpec(programspecDir);
-            } catch (Exception ignored) {
-                // leave null
-            }
-        }
+        assert(programSpec != null);
         return programSpec;
     }
 
