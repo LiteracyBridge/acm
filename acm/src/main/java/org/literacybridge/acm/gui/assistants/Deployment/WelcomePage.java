@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 public class WelcomePage extends AssistantPage<DeploymentContext> {
 
-    private final JComboBox<Object> deploymentChooser;
+    private final JComboBox<String> deploymentChooser;
 
     private DeploymentContext context;
 

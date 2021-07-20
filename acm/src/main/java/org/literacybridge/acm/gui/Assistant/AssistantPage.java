@@ -13,7 +13,9 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.time.ZoneId;
@@ -55,28 +57,34 @@ public abstract class AssistantPage<Context> extends JPanel {
      * In each page, for each combo box, measure the size of the longest string, and set the
      * combo preferred size (and, optionally, min or max size) to the string + baseComboWidth
      */
-    private static final int baseComboWidth = new JComboBox().getPreferredSize().width + 6;
+    private static final int baseComboWidth = new JComboBox<String>().getPreferredSize().width + 6;
 
-    public static void setComboWidth(JComboBox cb, String... strings) {
+    public static void setComboWidth(JComboBox<String> cb, String... strings) {
         List<String> stringsList = Arrays.asList(strings);
         setComboWidth(cb, stringsList);
     }
-    protected static void setComboWidth(JComboBox cb, Collection<String> strings, String string) {
+    protected static void setComboWidth(JComboBox<String> cb, Collection<String> strings, String string) {
         Collection<String> allStrings = new HashSet<>(strings);
         allStrings.add(string);
         setComboWidth(cb, allStrings);
     }
-    protected static void setComboWidth(JComboBox cb, String string) {
+    protected static void setComboWidth(JComboBox<String> cb, String string) {
         setComboWidth(cb, Collections.singleton(string));
     }
-    private static void setComboWidth(JComboBox cb, Collection<String> strings) {
-        int textWidth = 0;
-        for (String string : strings) {
-            textWidth = Math.max(textWidth, new JLabel("").getFontMetrics(cb.getFont()).stringWidth(string));
-        }
+    private static void setComboWidth(JComboBox<String> cb, Collection<String> strings) {
+        int textWidth = getMaxWidthForWidget(cb, strings);
         Dimension size = cb.getPreferredSize();
         size.width = baseComboWidth + textWidth;
         cb.setPreferredSize(size);
+    }
+
+    public static int getMaxWidthForWidget(Container c, Collection<String> strings) {
+        FontMetrics m = new JLabel("").getFontMetrics(c.getFont());
+        int textWidth = 0;
+        for (String string : strings) {
+            textWidth = Math.max(textWidth, m.stringWidth(string));
+        }
+        return textWidth;
     }
 
     private static final Border greenBorder = new LineBorder(Color.green); //new LineBorder(new Color(0xf0f0f0));
@@ -167,7 +175,7 @@ public abstract class AssistantPage<Context> extends JPanel {
                 0).getPreferredSize().width;
 
             // Determine which table cell renderer is expected.
-            Class columnClass = model.getColumnClass(modelColumnNo);
+            Class<?> columnClass = model.getColumnClass(modelColumnNo);
             TableCellRenderer columnClassRenderer = table.getDefaultRenderer(columnClass);
             TableCellRenderer columnRenderer = tableColumn.getCellRenderer();
             TableCellRenderer columnActualRenderer = columnRenderer != null ? columnRenderer : columnClassRenderer;

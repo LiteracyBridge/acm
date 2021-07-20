@@ -26,7 +26,12 @@ import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.literacybridge.core.tbloader.TBLoaderCore;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
 
-import javax.swing.*;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -55,7 +60,7 @@ import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.CHOOSE_PRO
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.OFFLINE_EMAIL_CHOICE;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_NUMBER;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
-import static org.literacybridge.core.tbloader.TBLoaderUtils.getImageForCommunity;
+import static org.literacybridge.core.tbloader.TBLoaderUtils.getPackageForCommunity;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getPackagesInDeployment;
 
 @SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions" })
@@ -375,14 +380,31 @@ public class TBLoader extends JFrame {
     private void initializeGui() {
         setTitle(String.format("TB-Loader %s", newProject));
 
+        DBConfiguration dbConfig = ACMConfiguration.getInstance().getDbConfiguration(newProject);
         String[] packagesInDeployment;
         Properties deploymentProperties = getProgramSpec().getDeploymentProperties();
         allowPackageChoice = allowPackageChoice || deploymentProperties.size()==0;
         packagesInDeployment = getPackagesInDeployment(deploymentDir);
+        List<String> packagesList = Arrays.asList(packagesInDeployment);
+        Map<String,String> packageNameMap = deploymentProperties.stringPropertyNames().stream()
+            .filter(k->packagesList.contains(deploymentProperties.get(k).toString()))
+            .collect(Collectors.toMap(k->deploymentProperties.get(k).toString(), k->{
+                String[] parts = k.split(",");
+                String label = dbConfig.getLanguageLabel(parts[0]);
+                String languageName = label==null ? parts[0] : (label + " (" + parts[0] + ')');
+                if (parts.length > 1) {
+                    languageName += ", Variant: " + parts[1];
+                }
+                return languageName;
+            }));
+        packagesList.stream()
+            .filter(p -> !packageNameMap.containsKey(p))
+            .forEach(p -> packageNameMap.put(p, p));
 
         TbLoaderPanel.Builder builder = new TbLoaderPanel.Builder()
             .withProgramSpec(programSpec)
             .withPackagesInDeployment(packagesInDeployment)
+            .withPackageNameMap(packageNameMap)
             .withSettingsClickedListener(TblSettingsDialog::showDialog)
             .withGoListener(this::onTbLoaderGo)
             .withRecipientListener(this::onRecipientSelected)
@@ -658,10 +680,6 @@ public class TBLoader extends JFrame {
 
     }
 
-    private String getNewPackage() {
-        return tbLoaderPanel.getNewPackage();
-    }
-
     /**
      * Allocates and persists the next serial number for this device (pc running TB-Loader).
      *
@@ -722,12 +740,12 @@ public class TBLoader extends JFrame {
         if (StringUtils.isNotEmpty(recipient.variant)) {
             key = key + ',' + recipient.variant;
         }
-        String imageName = deploymentProperties.getProperty(key);
-        if (imageName == null) {
-            imageName = deploymentProperties.getProperty(recipient.languagecode);
+        String contentPackage = deploymentProperties.getProperty(key);
+        if (contentPackage == null) {
+            contentPackage = deploymentProperties.getProperty(recipient.languagecode);
         }
-        boolean ok = imageName != null;
-        if (StringUtils.isEmpty(imageName)) {
+        boolean ok = contentPackage != null;
+        if (StringUtils.isEmpty(contentPackage)) {
             // Like ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/basic
             File deploymentDir = new File(localTbLoaderDir,
                     TBLoaderConstants.CONTENT_SUBDIR + File.separator + deploymentChooser.getNewDeployment());
@@ -735,14 +753,16 @@ public class TBLoader extends JFrame {
             if (recipientMap != null) {
                 String recipientDirName = recipientMap.getOrDefault(recipient.recipientid, recipient.recipientid);
                 if (StringUtils.isNotEmpty(recipientDirName)) {
-                    imageName = getImageForCommunity(deploymentDir, recipientDirName);
+                    contentPackage = getPackageForCommunity(deploymentDir, recipientDirName);
                 }
             }
-            if (StringUtils.isEmpty(imageName)) {
-                imageName = "";
+            if (StringUtils.isEmpty(contentPackage)) {
+                contentPackage = "";
             }
         }
-        tbLoaderPanel.setNewPackage(imageName);
+        // If ever we can configure the program specification with multiple default content packages, change this to
+        // setDefaultPackages(listOfPackages);
+        tbLoaderPanel.setDefaultPackage(contentPackage);
     }
 
     /**
@@ -781,8 +801,11 @@ public class TBLoader extends JFrame {
         if (!isOldVsNewOk()) return;
 
         String driveLabel = currentTbDevice.getLabelWithoutDriveLetter();
-        if (!driveLabel.equals(TBLoaderConstants.NO_DRIVE)
-                && !TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, driveLabel)) {
+        if (driveLabel.equals(TBLoaderConstants.NO_DRIVE)) {
+            // If no drive, don't change anything.
+            return;
+        }
+        if (!TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, driveLabel)) {
             String message = "The TB's statistics cannot be found. Please follow these steps:\n 1. Unplug the TB\n 2. Hold down the * while turning on the TB\n "
                 + "3. Observe the solid red light.\n 4. Now plug the TB into the laptop.\n 5. If you see this message again, please continue with the loading -- you tried your best.";
             String title = "Cannot find the statistics!";
@@ -855,7 +878,7 @@ public class TBLoader extends JFrame {
         if (recipient != null) {
             fillPackageFromRecipient(recipient);
         } else {
-            tbLoaderPanel.setNewPackage("");
+            tbLoaderPanel.setDefaultPackage("");
         }
 //        setEnabledStates();
     }
@@ -881,10 +904,16 @@ public class TBLoader extends JFrame {
 
 
             if (operation == Operation.Update) {
-                if (getNewPackage().equalsIgnoreCase(TBLoaderConstants.MISSING_PACKAGE)) {
-                    String text = "Can not update a Talking Book for this Community,\n"
-                        + "because there is no Content Package.";
-                    String heading = "Missing Package";
+                if (!tbLoaderPanel.hasSelectedPackage()) {
+                    String text;
+                    if (allowPackageChoice) {
+                        text = "Please choose a Content Package to\n" +
+                            "update this Talking Book.";
+                    } else {
+                        text = "Can not update a Talking Book for this Community,\n" +
+                            "because there is no Content Package.";
+                    }
+                    String heading = "No Content Package";
                     JOptionPane.showMessageDialog(applicationWindow,
                         text,
                         heading,
@@ -998,7 +1027,7 @@ public class TBLoader extends JFrame {
             opLog.put("serialno", oldDeploymentInfo.getSerialNumber())
                 .put("project", oldDeploymentInfo.getProjectName())
                 .put("deployment", oldDeploymentInfo.getDeploymentName())
-                .put("package", oldDeploymentInfo.getPackageName())
+                .put("package", String.join(",", oldDeploymentInfo.getPackageNames()))
                 .put("community", oldDeploymentInfo.getCommunity());
 
             TBLoaderCore.Result result = null;
@@ -1036,6 +1065,7 @@ public class TBLoader extends JFrame {
         private void update() {
             String recipientid = tbLoaderPanel.getSelectedRecipient().recipientid;
             String directory = getMappedDirectoryForRecipient(recipientid);
+            List<String> selectedPackages = tbLoaderPanel.getSelectedPackages();
             assert(tbLoaderPanel.getNewSrn().equals(newTbSrn));
             assert(recipientid.equals(getRecipientIdForCommunity(directory)));
             DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
@@ -1043,7 +1073,7 @@ public class TBLoader extends JFrame {
                 .withNewSerialNumber(isNewSerialNumber)
                 .withProjectName(newProject)
                 .withDeploymentName(deploymentChooser.getNewDeployment())
-                .withPackageName(getNewPackage())
+                .withPackageNames(selectedPackages)
                 .withUpdateDirectory(null)
                 .withUpdateTimestamp(tbLoaderPanel.getDateRotation())
                 .withFirmwareRevision(newTbFirmware)
@@ -1066,7 +1096,7 @@ public class TBLoader extends JFrame {
             opLog.put("serialno", newDeploymentInfo.getSerialNumber())
                 .put("project", newDeploymentInfo.getProjectName())
                 .put("deployment", newDeploymentInfo.getDeploymentName())
-                .put("package", newDeploymentInfo.getPackageName())
+                .put("package", String.join(",", newDeploymentInfo.getPackageNames()))
                 .put("community", newDeploymentInfo.getCommunity());
             if (!newDeploymentInfo.getProjectName().equals(oldDeploymentInfo.getProjectName())) {
                 opLog.put("oldProject", oldDeploymentInfo.getProjectName());
@@ -1082,7 +1112,7 @@ public class TBLoader extends JFrame {
                 TBLoaderConstants.CONTENT_SUBDIR + File.separator
                     + newDeploymentInfo.getDeploymentName());
 
-            TbFile sourceImage = new FsFile(newDeploymentContentDir);
+            TbFile deploymentContents = new FsFile(newDeploymentContentDir);
 
             TBLoaderCore.Result result = null;
             try {
@@ -1092,7 +1122,7 @@ public class TBLoader extends JFrame {
 
                 TBLoaderCore tbLoader = new TBLoaderCore.Builder().withTbLoaderConfig(tbLoaderConfig)
                     .withTbDeviceInfo(currentTbDevice)
-                    .withDeploymentDirectory(sourceImage)
+                    .withDeploymentDirectory(deploymentContents)
                     .withOldDeploymentInfo(oldDeploymentInfo)
                     .withNewDeploymentInfo(newDeploymentInfo)
                     .withAcceptableFirmware(acceptableFirmwareVersions)

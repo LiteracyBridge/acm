@@ -239,7 +239,7 @@ class Create {
         File sourceControlFile = new File(builderContext.sourceTbOptionsDir, sourceControlFilename);
         FileUtils.copyFile(sourceControlFile, new File(stagedLanguageDir, "control.txt"));
 
-        // create profile.txt
+        // create profiles.txt
         String profileString = pi.name.toUpperCase() + "," + pi.language + ","
                 + TBBuilder.firstMessageListName + ",menu\n";
         File profileFile = new File(stagedSystemDir, "profiles.txt");

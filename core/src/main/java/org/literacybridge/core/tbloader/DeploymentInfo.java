@@ -1,5 +1,10 @@
 package org.literacybridge.core.tbloader;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
 
 /**
@@ -17,8 +22,8 @@ public class DeploymentInfo {
     // The name of the deployment previously deployed to the Talking Book.
     private final String deploymentName;
     private final int deploymentNumber;
-    // The name of the content package previously deployed to the Talking Book.
-    private final String packageName;
+    // The name(s) of the content package previously deployed to the Talking Book.
+    private final List<String> packageNames;
 
     // A string with the directory where the statistics were written last time. It is really only useful because,
     // as a side effect of how that name was generated, it is possible to get the date and time of the last update.
@@ -43,7 +48,7 @@ public class DeploymentInfo {
         private String projectName = UNKNOWN;
         private String deploymentName = UNKNOWN;
         private int deploymentNumber = -1;
-        private String packageName = UNKNOWN;
+        private List<String> packageNames = new ArrayList<>();
         private String updateDirectory = null;
         private String updateTimestamp = null;
         private String firmwareRevision = UNKNOWN;
@@ -77,9 +82,14 @@ public class DeploymentInfo {
         }
 
         public DeploymentInfoBuilder withPackageName(String packageName) {
-            this.packageName = packageName;
+            this.packageNames.add(packageName);
             return this;
         }
+        public DeploymentInfoBuilder withPackageNames(Collection<String> packageNames) {
+            this.packageNames.addAll(packageNames);
+            return this;
+        }
+
 
         public DeploymentInfoBuilder withUpdateDirectory(String updateDirectory) {
             this.updateDirectory = updateDirectory;
@@ -117,7 +127,8 @@ public class DeploymentInfo {
             newSerialNumber = di.newSerialNumber;
             projectName = di.projectName;
             deploymentName = di.deploymentName;
-            packageName = di.packageName;
+            packageNames.clear();
+            packageNames.addAll(di.packageNames);
             updateDirectory = di.updateDirectory;
             updateTimestamp = di.updateTimestamp;
             firmwareRevision = di.firmwareRevision;
@@ -145,7 +156,7 @@ public class DeploymentInfo {
         this.projectName = builder.projectName;
         this.deploymentName = builder.deploymentName;
         this.deploymentNumber = builder.deploymentNumber;
-        this.packageName = builder.packageName;
+        this.packageNames = builder.packageNames;
         this.updateDirectory = builder.updateDirectory;
         this.updateTimestamp = builder.updateTimestamp;
         this.firmwareRevision = builder.firmwareRevision;
@@ -174,8 +185,8 @@ public class DeploymentInfo {
         return deploymentNumber;
     }
 
-    public String getPackageName() {
-        return packageName;
+    public List<String> getPackageNames() {
+        return packageNames;
     }
 
     public String getUpdateDirectory() {
@@ -206,7 +217,7 @@ public class DeploymentInfo {
                 + (newSerialNumber ? " (new)" : "")
                 + "\nProject name: " + projectName
                 + "\nDeployment name: " + deploymentName
-                + "\nPackage name: " + packageName
+                + "\nPackage name: " + String.join(",", packageNames)
                 + "\nupdated timestamp: " + updateTimestamp
                 + "\nFirmware revision: " + firmwareRevision
                 + "\nCommunity: " + community

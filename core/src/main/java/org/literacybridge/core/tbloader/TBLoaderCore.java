@@ -8,12 +8,14 @@ import org.literacybridge.core.fs.RelativePath;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.fs.ZipUnzip;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -227,7 +229,7 @@ public class TBLoaderCore {
                 if (mDeploymentDirectory == null) missing.add("deploymentDirectory");
             }
             if (!missing.isEmpty()) {
-                throw new IllegalStateException("TBLoaderCore.Builder not initialized with " + missing.toString());
+                throw new IllegalStateException("TBLoaderCore.Builder not initialized with " + missing);
             }
             return new TBLoaderCore(this);
         }
@@ -494,13 +496,13 @@ public class TBLoaderCore {
             bw.write(durationSeconds + ",");
             bw.write(mTbDeviceInfo.getSerialNumber().toUpperCase() + ",");
             bw.write(mStatsOnly?",":mNewDeploymentInfo.getDeploymentName().toUpperCase() + ",");
-            bw.write(mStatsOnly?",":mNewDeploymentInfo.getPackageName().toUpperCase() + ",");
+            bw.write(mStatsOnly?",":String.join(",", mNewDeploymentInfo.getPackageNames()).toUpperCase() + ",");
             bw.write(mStatsOnly?",":mNewDeploymentInfo.getFirmwareRevision() + ",");
             bw.write(mStatsOnly?",":mNewDeploymentInfo.getCommunity().toUpperCase() + ",");
             bw.write(mStatsOnly?",":mNewDeploymentInfo.getUpdateTimestamp() + ",");
             bw.write(mOldDeploymentInfo.getSerialNumber().toUpperCase() + ",");
             bw.write(mOldDeploymentInfo.getDeploymentName().toUpperCase() + ",");
-            bw.write(mOldDeploymentInfo.getPackageName().toUpperCase() + ",");
+            bw.write(String.join(",", String.join(",", mOldDeploymentInfo.getPackageNames())).toUpperCase() + ",");
             bw.write(mOldDeploymentInfo.getFirmwareRevision() + ",");
             bw.write(mOldDeploymentInfo.getCommunity().toUpperCase() + ",");
             bw.write(mOldDeploymentInfo.getUpdateTimestamp() + ",");
@@ -534,7 +536,7 @@ public class TBLoaderCore {
                 opLog
                     .put("out_sn", mTbDeviceInfo.getSerialNumber().toUpperCase())
                     .put("out_deployment", mNewDeploymentInfo.getDeploymentName().toUpperCase())
-                    .put("out_package", mNewDeploymentInfo.getPackageName().toUpperCase())
+                    .put("out_package", String.join(",", mNewDeploymentInfo.getPackageNames()).toUpperCase())
                     .put("out_firmware", mNewDeploymentInfo.getFirmwareRevision())
                     .put("out_community", mNewDeploymentInfo.getCommunity().toUpperCase())
                     .put("out_rotation", mNewDeploymentInfo.getUpdateTimestamp())
@@ -551,7 +553,7 @@ public class TBLoaderCore {
                     .put("newsn", mNewDeploymentInfo.isNewSerialNumber())
                     .put("project", mNewDeploymentInfo.getProjectName().toUpperCase())
                     .put("deployment", mNewDeploymentInfo.getDeploymentName().toUpperCase())
-                    .put("package", mNewDeploymentInfo.getPackageName().toUpperCase())
+                    .put("package", String.join(",", mNewDeploymentInfo.getPackageNames()).toUpperCase())
                     .put("community", mNewDeploymentInfo.getCommunity().toUpperCase())
                     .put("firmware", mNewDeploymentInfo.getFirmwareRevision())
                     .put("location", mLocation.toUpperCase())
@@ -574,7 +576,7 @@ public class TBLoaderCore {
             statsInfo
                 .put("in_sn", mOldDeploymentInfo.getSerialNumber().toUpperCase())
                 .put("in_deployment", mOldDeploymentInfo.getDeploymentName().toUpperCase())
-                .put("in_package", mOldDeploymentInfo.getPackageName().toUpperCase())
+                .put("in_package", String.join(",", mOldDeploymentInfo.getPackageNames()).toUpperCase())
                 .put("in_firmware", mOldDeploymentInfo.getFirmwareRevision())
                 .put("in_community", mOldDeploymentInfo.getCommunity().toUpperCase())
                 .put("in_project", mOldDeploymentInfo.getProjectName())
@@ -1515,7 +1517,7 @@ public class TBLoaderCore {
         String communityName = mNewDeploymentInfo.getCommunity().toUpperCase();
         String srn = mNewDeploymentInfo.getSerialNumber().toUpperCase();
         String deploymentName = mNewDeploymentInfo.getDeploymentName().toUpperCase();
-        String packageName = mNewDeploymentInfo.getPackageName().toUpperCase(); // aka 'image'
+        String packageName = String.join(",", mNewDeploymentInfo.getPackageNames()).toUpperCase(); // aka 'image'
         String sysDataTxt = String.format("SRN:%s%s", srn, MSDOS_LINE_ENDING) +
                 String.format("IMAGE:%s%s", packageName, MSDOS_LINE_ENDING) +
                 String.format("UPDATE:%s%s", deploymentName, MSDOS_LINE_ENDING) +
@@ -1549,7 +1551,7 @@ public class TBLoaderCore {
             .append(TBLoaderConstants.TALKING_BOOK_ID_PROPERTY, mNewDeploymentInfo.getSerialNumber())
             .append(TBLoaderConstants.PROJECT_PROPERTY, mNewDeploymentInfo.getProjectName())
             .append(TBLoaderConstants.DEPLOYMENT_PROPERTY, mNewDeploymentInfo.getDeploymentName())
-            .append(TBLoaderConstants.PACKAGE_PROPERTY, mNewDeploymentInfo.getPackageName())
+            .append(TBLoaderConstants.PACKAGE_PROPERTY, String.join(",", mNewDeploymentInfo.getPackageNames()))
             .append(TBLoaderConstants.COMMUNITY_PROPERTY, mNewDeploymentInfo.getCommunity())
             .append(TBLoaderConstants.TIMESTAMP_PROPERTY, mUpdateTimestampISO)
             .append(
@@ -1593,7 +1595,7 @@ public class TBLoaderCore {
         public PropsWriter append(String name, Object value) {
             try {
                 properties.setProperty(name, value.toString());
-                props.append(name).append('=').append(value.toString()).append(MSDOS_LINE_ENDING);
+                props.append(name).append('=').append(value).append(MSDOS_LINE_ENDING);
             } catch (Exception ex) {
                 mProgressListener.log("Exception adding property "+name);
             }
@@ -1611,24 +1613,122 @@ public class TBLoaderCore {
     private void updateContent() throws IOException {
         startStep(updateContent);
 
-        // Where files are copied from.
-        TbFile imagePath = mDeploymentDirectory.open(IMAGES_SUBDIR).open(mNewDeploymentInfo.getPackageName());
+        // Remember the zero-byte marker files here. Fix them up later.
+        Map<String, TbFile> shadowedFiles = new HashMap<>();
 
-        // To perform relative path operations. Damn Google for breaking "File" access to removable media.
-        int imagePathLength = imagePath.getAbsolutePath().length();
         // The real files to replace zero-byte marker files.
         TbFile shadowFilesDir = mDeploymentDirectory.open("shadowFiles");
-        // Directories in which to look for zero-byte marker files.
-        TbFile audioShadowedDir = imagePath.open("messages").open("audio");
-        TbFile languagesShadowedDir = imagePath.open("languages");
-        List<String> shadowedDirs = new ArrayList<>();
-        shadowedDirs.add(audioShadowedDir.getAbsolutePath());
-        shadowedDirs.add(languagesShadowedDir.getAbsolutePath());
-        // Remember the zero-byte marker files here. Fix them up later.
-        List<TbFile> shadowedFiles = new ArrayList<>();
 
-        // Filter to intercept zero-byte marker files, and track them for copying from their cache.
-        TbFile.CopyFilter markerInterceptor = file -> {
+        // Iterate over the images to be copied.
+        for (String imageName : mNewDeploymentInfo.getPackageNames()) {
+            // Where files are copied from.
+            TbFile imagePath = mDeploymentDirectory.open(IMAGES_SUBDIR).open(imageName);
+
+            // Directories in which to look for zero-byte marker files.
+            TbFile audioShadowedDir = imagePath.open("messages").open("audio");
+            TbFile languagesShadowedDir = imagePath.open("languages");
+            List<String> shadowedDirs = new ArrayList<>();
+            shadowedDirs.add(audioShadowedDir.getAbsolutePath());
+            shadowedDirs.add(languagesShadowedDir.getAbsolutePath());
+
+            // Filter to intercept zero-byte marker files, and track them for copying from their cache.
+            TbFile.CopyFilter markerInterceptor = new ContentCopyFilter(imagePath, shadowedDirs, shadowFilesDir, shadowedFiles);
+
+            if (imagePath.exists()) {
+                // Copies most of the content, records 0-byte files that are shadows of real files, and skips
+                // the profiles and profiles.txt, which will be merged later.
+                mStepBytesCount += TbFile.copyDir(imagePath, mTalkingBookRoot, markerInterceptor, mCopyListener);
+            }
+        }
+
+        // If we found zero-byte files that need to be replaced with real content, do that now.
+        if (shadowedFiles.size()>0) {
+            for (Map.Entry<String,TbFile> e : shadowedFiles.entrySet()) {
+                TbFile targetFile = mTalkingBookRoot.open(RelativePath.parse(e.getKey()));
+                TbFile sourceFile = e.getValue();
+                // The single-file copy won't create directories, and it may not have been created in the
+                // copy, so ensure it exists.
+                TbFile targetDir = targetFile.getParent();
+                if (!targetDir.exists()) {
+                    targetDir.mkdirs();
+                }
+                TbFile.copy(sourceFile, targetFile);
+            }
+        }
+
+        // Copy the "lists" directories, renaming appropriately. Merge the profiles.txt files into one.
+        copyListsAndProfiles();
+
+        finishStep();
+    }
+
+    /**
+     * Copies the "lists" files (the _activelist.txt and the txt files referred to in that file) to the target.
+     * The sources are all named "lists/1", and the targets will be named "lists/1", "lists/2", etc.
+     *
+     * Merges the profiles.txt files into a single file.
+     * @throws IOException if any file can't be read or written.
+     */
+    private void copyListsAndProfiles() throws IOException {
+        int currentListIndex = 1;
+        StringBuilder profilesTxtStr = new StringBuilder();
+        for (String imageName : mNewDeploymentInfo.getPackageNames()) {
+            String profileName = Integer.toString(currentListIndex);
+            // Where files are copied from.
+            TbFile imagePath = mDeploymentDirectory.open(IMAGES_SUBDIR).open(imageName);
+
+            TbFile listsSource = imagePath.open("messages").open("lists").open("1");
+            TbFile listsTarget = mTalkingBookRoot.open("messages").open("lists").open(profileName);
+            mStepBytesCount += TbFile.copyDir(listsSource, listsTarget, null, mCopyListener);
+
+            try (
+                InputStream is = imagePath.open("system").open("profiles.txt").openFileInputStream();
+                InputStreamReader isr = new InputStreamReader(is);
+                BufferedReader br = new BufferedReader(isr)) {
+                String line = br.readLine();
+                String[] parts = line.split(",");
+                if (parts.length >= 3) {
+                    // A test only puts in a single value, not a comma separated list. We can pass it through unchanged.
+                    parts[2] = profileName;
+                }
+                profilesTxtStr.append(String.join(",", parts)).append('\n');
+            }
+            currentListIndex += 1;
+        }
+        eraseAndOverwriteFile(mTalkingBookRoot.open("system").open("profiles.txt"), profilesTxtStr.toString());
+    }
+
+    /**
+     * A helper class to filter content. Tracks "shadowed" files for later copying with the real thing,
+     * and ignores "lists" and profiles.txt, which must be merged later.
+     */
+    private static class ContentCopyFilter implements TbFile.CopyFilter {
+        // The directories that may contain shadowed files.
+        private final List<String> shadowedDirs;
+        // The location of real files (to replace the shadows).
+        private final TbFile shadowFilesDir;
+        // Accumulate the pending copies here.
+        private final Map<String, TbFile> shadowedFiles;
+        // For converting to paths relative to the image.
+        private final int imagePathLength;
+        // Paths that we need to intercept to support multiple images per device.
+        private final String profilesTxtPath;
+        private final String listDirPath;
+
+        ContentCopyFilter(TbFile imagePath,
+            List<String> shadowedDirs,
+            TbFile shadowFilesDir,
+            Map<String, TbFile> shadowedFiles) {
+            this.shadowedDirs = shadowedDirs;
+            this.shadowFilesDir = shadowFilesDir;
+            this.shadowedFiles = shadowedFiles;
+            this.imagePathLength = imagePath.getAbsolutePath().length();
+            profilesTxtPath = imagePath.open("system").open("profiles.txt").getAbsolutePath();
+            listDirPath = imagePath.open("messages").open("lists").open("1").getAbsolutePath();
+        }
+
+        @Override
+        public boolean accept(TbFile file) {
             // If this is a zero-byte file...
             if (file.exists() && file.length() == 0) {
                 // See if there is a corresponding shadow file.
@@ -1637,40 +1737,28 @@ public class TBLoaderCore {
                     if (parentDirName.startsWith(shadowedDirName)) {
                         // We found a matching shadow directory, see if the shadow contains this file.
                         String relativeParent = parentDirName.substring(imagePathLength);
-                        TbFile shadowFile = shadowFilesDir.open(relativeParent).open(file.getName());
-                        if (shadowFile.exists()) {
-                            shadowedFiles.add(file);
+                        TbFile shadowSrcFile = shadowFilesDir.open(relativeParent).open(file.getName());
+                        if (shadowSrcFile.exists()) {
+                            // There is a real file for this shadow. Remember it to copy later.
+                            String relativeTarget = String.join(File.separator, relativeParent) + File.separator + file.getName();
+                            // Only remember the file once.
+                            if (!shadowedFiles.containsKey(relativeTarget)) {
+                                shadowedFiles.put(relativeTarget, file);
+                            }
                             return false;
                         }
                         // There wasn't a cached file; legitimately a 0-byte file.
                         return true;
                     }
                 }
+            } else if (file.isDirectory() && file.getAbsolutePath().equals(listDirPath)) {
+                return false;
+            } else //noinspection RedundantIfStatement
+                if (file.exists() && file.getAbsolutePath().equals(profilesTxtPath)) {
+                return false;
             }
             return true;
-        };
-        
-        if (imagePath.exists()) {
-            mStepBytesCount += TbFile.copyDir(imagePath, mTalkingBookRoot, markerInterceptor, mCopyListener);
         }
-        // If we found zero-byte files that need to be replaced with real content, do that now.
-        if (shadowedFiles.size()>0) {
-            for (TbFile file : shadowedFiles) {
-                String parentDirName = file.getParent().getAbsolutePath();
-                String relativeParent = parentDirName.substring(imagePathLength);
-                TbFile targetFile = mTalkingBookRoot.open(RelativePath.parse(relativeParent)).open(file.getName());
-                // The single-file copy won't create directories, and it may not have been created in the
-                // copy, so ensure it exists.
-                TbFile targetDir = targetFile.getParent();
-                if (!targetDir.exists()) {
-                    targetDir.mkdirs();
-                }
-                TbFile shadowFile = shadowFilesDir.open(relativeParent).open(file.getName());
-                TbFile.copy(shadowFile, targetFile);
-            }
-        }
-
-        finishStep();
     }
 
     /**
@@ -1828,7 +1916,7 @@ public class TBLoaderCore {
 
         builder.append(": ");
         if (mCurrentStep.hasFiles) {
-            mStepsLog.put(mCurrentStep.toString() + ".files", mStepFileCount);
+            mStepsLog.put(mCurrentStep + ".files", mStepFileCount);
             builder.append(String.format(Locale.US, "%d file(s), ", mStepFileCount));
             if (mStepBytesCount>0) {
                 builder.append(String.format(Locale.US, "%s, ", getBytesString(mStepBytesCount)));

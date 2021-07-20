@@ -1,11 +1,13 @@
 package org.literacybridge.acm.tbloader;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jdesktop.swingx.JXDatePicker;
 import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
 import org.literacybridge.acm.gui.UIConstants;
+import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
@@ -20,14 +22,20 @@ import javax.swing.border.LineBorder;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static java.awt.GridBagConstraints.BOTH;
@@ -37,6 +45,7 @@ import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.LINE_START;
 import static java.awt.GridBagConstraints.NONE;
 import static java.lang.Math.max;
+import static org.literacybridge.acm.utils.SwingUtils.getApplicationRelativeLocation;
 
 @SuppressWarnings("unused")
 public class TbLoaderPanel extends JPanel {
@@ -46,6 +55,7 @@ public class TbLoaderPanel extends JPanel {
     public static class Builder {
         private ProgramSpec programSpec;
         private String[] packagesInDeployment;
+        private Map<String, String> packageNameMap;
         private Consumer<ActionEvent> settingsIconClickedListener;
         private Consumer<TBLoader.Operation> goListener;
         private Consumer<Recipient> recipientListener;
@@ -57,6 +67,7 @@ public class TbLoaderPanel extends JPanel {
 
         public Builder withProgramSpec(ProgramSpec programSpec) {this.programSpec = programSpec; return this;}
         public Builder withPackagesInDeployment(String[] packagesInDeployment) {this.packagesInDeployment = packagesInDeployment; return this;}
+        public Builder withPackageNameMap(Map<String, String> packageNameMap) {this.packageNameMap = packageNameMap; return this;}
         public Builder withSettingsClickedListener(Consumer<ActionEvent> settingsIconClickedListener) {this.settingsIconClickedListener = settingsIconClickedListener; return this;}
         public Builder withGoListener(Consumer<TBLoader.Operation> goListener) {this.goListener = goListener; return this;}
         public Builder withRecipientListener(Consumer<Recipient> recipientListener) {this.recipientListener = recipientListener; return this;}
@@ -74,6 +85,7 @@ public class TbLoaderPanel extends JPanel {
 
     private final ProgramSpec programSpec;
     private final String[] packagesInDeployment;
+    private Map<String, String> packageNameMap;
 
     private JComboBox<String> currentLocationChooser;
     private final String[] currentLocationList = new String[] { "Select location...", "Community",
@@ -108,8 +120,11 @@ public class TbLoaderPanel extends JPanel {
     // New package display and/or choice (depending on "allowPackageChoice" setting)
     private CardLayout newPackageLayout;            // To switch between the two different new package components.
     private JPanel newPackageContainer;             // Container for the "newPackage" component. One at a time is "active".
-    private JComboBox<String> newPackageChooser;    // A combo box to choose the package.
+    private JTextField newPackageChosen;           // Displays the currently chosen package(s).
     private JTextField newPackageText;              // A text field that displays the package.
+    // One or more currently selected packages.
+    private List<String> selectedPackages = new ArrayList<>();
+    private List<String> defaultPackages = new ArrayList<>();
 
     JTextArea statusCurrent;
     JTextArea statusFilename;
@@ -118,6 +133,7 @@ public class TbLoaderPanel extends JPanel {
     private JComboBox<String> actionChooser;
 
     private TBLoader.TB_ID_STRATEGY tbIdStrategy;
+    private boolean isRememberPackageSelection = false;
     private boolean allowPackageChoice;
 
     private static final String UPDATE_TB = "Update TB";
@@ -130,6 +146,7 @@ public class TbLoaderPanel extends JPanel {
     public TbLoaderPanel(Builder builder) {
         this.programSpec = builder.programSpec;
         this.packagesInDeployment = builder.packagesInDeployment;
+        this.packageNameMap = builder.packageNameMap;
         this.settingsIconClickedListener = builder.settingsIconClickedListener;
         this.goListener = builder.goListener;
         this.recipientListener = builder.recipientListener;
@@ -165,19 +182,6 @@ public class TbLoaderPanel extends JPanel {
     public boolean isForceFirmware() {
         return forceFirmware.isSelected();
     }
-
-    void enablePackageChoice(boolean allowPackageChoice) {
-        if (allowPackageChoice != this.allowPackageChoice) {
-            String newPackageSelected = getNewPackage();
-            this.allowPackageChoice = allowPackageChoice;
-            setNewPackage(newPackageSelected);
-            showNewPackage();
-        }
-    }
-    private void showNewPackage() {
-        newPackageLayout.show(newPackageContainer, allowPackageChoice ? "CHOICE" : "NOCHOICE");
-    }
-
 
     // Talking Book ID
     public String getNewSrn() {
@@ -219,17 +223,49 @@ public class TbLoaderPanel extends JPanel {
         return recipientChooser.getSelectedRecipient();
     }
 
-    public void setNewPackage(String newPackage) {
-        // Set both; user may switch between views.
-        newPackageChooser.setSelectedItem(newPackage);
-        newPackageText.setText(newPackage);
-    }
-    public String getNewPackage() {
-        if (allowPackageChoice) {
-            return newPackageChooser.getSelectedItem().toString();
-        } else {
-            return newPackageText.getText();
+    void enablePackageChoice(boolean allowPackageChoice) {
+        if (allowPackageChoice != this.allowPackageChoice) {
+            if (allowPackageChoice) {
+                newPackageChosen.setText(String.join(",", selectedPackages));
+            } else {
+                selectedPackages.clear();
+                selectedPackages.addAll(defaultPackages);
+                newPackageText.setText(String.join(",", defaultPackages));
+            }
+            this.allowPackageChoice = allowPackageChoice;
+            showNewPackage();
         }
+    }
+    private void showNewPackage() {
+        newPackageLayout.show(newPackageContainer, allowPackageChoice ? "CHOICE" : "NOCHOICE");
+    }
+
+    public void setDefaultPackage(String defaultPackage) {
+        List<String> pkg = StringUtils.isNotBlank(defaultPackage) ? Collections.singletonList(defaultPackage) : new ArrayList<>();
+        setDefaultPackages(pkg);
+    }
+    public void setDefaultPackages(List<String> newPackages) {
+        defaultPackages.clear();
+        defaultPackages.addAll(newPackages);
+        if (allowPackageChoice) {
+            if (!isRememberPackageSelection) {
+                selectedPackages.clear();
+                selectedPackages.addAll(newPackages);
+                newPackageChosen.setText(String.join(",", selectedPackages));
+            }
+        } else {
+            newPackageText.setText(String.join(",", defaultPackages));
+        }
+    }
+    public List<String> getSelectedPackages() {
+        if (allowPackageChoice) {
+            return new ArrayList<>(selectedPackages);
+        } else {
+            return new ArrayList<>(defaultPackages);
+        }
+    }
+    public boolean hasSelectedPackage() {
+        return getSelectedPackages().size() > 0;
     }
 
     public void fillDriveList(List<TBDeviceInfo> roots, int selection) {
@@ -251,7 +287,7 @@ public class TbLoaderPanel extends JPanel {
     public void fillPrevDeploymentInfo(DeploymentInfo oldDeploymentInfo) {
         if (oldDeploymentInfo != null) {
             oldSrnText.setText(oldDeploymentInfo.getSerialNumber());
-            oldPackageText.setText(oldDeploymentInfo.getPackageName());
+            oldPackageText.setText(String.join(",", oldDeploymentInfo.getPackageNames()));
             oldDeploymentText.setText(oldDeploymentInfo.getDeploymentName());
             lastUpdatedText.setText(oldDeploymentInfo.getUpdateTimestamp());
 
@@ -346,6 +382,7 @@ public class TbLoaderPanel extends JPanel {
         layoutFirmware(y++);
         layoutSerialNumber(y++);
         layoutGoButton(y++);
+        //noinspection UnusedAssignment
         layoutStatus(y++);
 
         resizeGridColumnWidths();
@@ -546,14 +583,22 @@ public class TbLoaderPanel extends JPanel {
         // Package (aka 'Content', aka 'image')
         JLabel contentPackageLabel = new JLabel("Content Package:");
         // For when 'allowPackageChoice' is true
-        newPackageChooser = new JComboBox<>(packagesInDeployment);
+        Box chooserBox = Box.createHorizontalBox();
+        newPackageChosen = new JTextField();
+        newPackageChosen.setEditable(false);
+        JButton openChooser = new JButton("Choose");
+        openChooser.addActionListener(this::choosePackage);
+        chooserBox.add(newPackageChosen);
+        chooserBox.add(Box.createHorizontalStrut(5));
+        chooserBox.add(openChooser);
+
         // For when it is false
         newPackageText = new JTextField();
         newPackageText.setEditable(false);
 
         newPackageLayout = new CardLayout();
         newPackageContainer = new JPanel(newPackageLayout);
-        newPackageContainer.add(newPackageChooser, "CHOICE");
+        newPackageContainer.add(chooserBox, "CHOICE");
         newPackageContainer.add(newPackageText, "NOCHOICE");
         showNewPackage();
 
@@ -563,6 +608,28 @@ public class TbLoaderPanel extends JPanel {
         contentPanel.add(contentPackageLabel, gbc.withGridx(0));
         contentPanel.add(newPackageContainer, gbc);
         contentPanel.add(oldPackageText, gbc);
+    }
+
+    /**
+     * Handles the "Choose" package button.
+     * @param actionEvent triggering event. We get the button, from which we get the location, from this.
+     */
+    private void choosePackage(ActionEvent actionEvent) {
+        Component c = actionEvent.getSource() instanceof Component ? (Component)actionEvent.getSource() : null;
+        Point p = c != null ? getApplicationRelativeLocation(c) : new Point(20,20);
+        SelectPackagesDialog dialog = new SelectPackagesDialog(null,
+            Arrays.asList(packagesInDeployment),
+            packageNameMap,
+            defaultPackages,
+            selectedPackages,
+            isRememberPackageSelection);
+        UIUtils.showDialog(dialog, p.x, p.y);
+
+        if (dialog.isOk()) {
+            selectedPackages = dialog.getSelectedPackages();
+            isRememberPackageSelection = dialog.isRememberSelection();
+            newPackageChosen.setText(String.join(",", selectedPackages));
+        }
     }
 
     private void layoutDate(int y) {
@@ -736,6 +803,7 @@ public class TbLoaderPanel extends JPanel {
 
     private void onGoButton(ActionEvent actionEvent) {
         TBLoader.Operation operation;
+        //noinspection ConstantConditions
         boolean isUpdate = actionChooser.getSelectedItem()
             .toString()
             .equalsIgnoreCase(UPDATE_TB);
@@ -760,7 +828,8 @@ public class TbLoaderPanel extends JPanel {
         TbFile drive;
 
         if (driveList.getItemCount() > 0) {
-            drive = ((TBDeviceInfo) driveList.getSelectedItem()).getRootFile();
+            TBDeviceInfo tbDeviceInfo = (TBDeviceInfo) driveList.getSelectedItem();
+            drive = tbDeviceInfo==null?null:((TBDeviceInfo) driveList.getSelectedItem()).getRootFile();
             if (drive != null) connected = true;
         }
         return connected;

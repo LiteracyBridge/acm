@@ -531,12 +531,15 @@ public class DBConfiguration {
     // Configured languages
 
     public String getLanguageLabel(Locale locale) {
+        if (audioLanguages == null) {
+            parseLanguageLabels();
+        }
         return languageLabels.get(locale);
     }
 
     public String getLanguageLabel(String languagecode) {
         Locale locale = new Locale(languagecode);
-        return languageLabels.get(locale);
+        return getLanguageLabel(locale);
     }
 
     /**

@@ -95,7 +95,11 @@ public class TBLoaderUtils {
      * @param community           The community name for which the image name is desired. Like "vingving - jirapa"
      * @return The name of the image that matches, like "demo-2017-3-dga".
      */
+    @Deprecated
     public static String getImageForCommunity(final File deploymentDirectory, String community) {
+        return getPackageForCommunity(deploymentDirectory, community);
+    }
+    public static String getPackageForCommunity(final File deploymentDirectory, String community) {
         if (community == null) {
             return null;
         }

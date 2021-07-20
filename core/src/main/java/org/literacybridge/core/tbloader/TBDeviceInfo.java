@@ -9,6 +9,9 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +37,6 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LANGUAGES_PA
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_SYSTEM_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.USERNAME_PROPERTY;
 
 public final class TBDeviceInfo {
@@ -56,7 +58,7 @@ public final class TBDeviceInfo {
     private Boolean testDeployment = null;
     private String projectName = null;
     private String deploymentName = null;
-    private String packageName = null;
+    private List<String> packageNames = new ArrayList<>();
     private String communityName = null;
 
 
@@ -208,7 +210,7 @@ public final class TBDeviceInfo {
             String src = "properties";
 
             // If we didn't have it in properties, look for the flash data or marker file(s).
-            if (serialNumber.equalsIgnoreCase(UNKNOWN)) {
+            if (serialNumber.equalsIgnoreCase(TBLoaderConstants.UNKNOWN)) {
                 if (getFlashData() != null
                     && TBLoaderUtils.isSerialNumberFormatGood(tbPrefix, getFlashData().getSerialNumber())) {
                     serialNumber = getFlashData().getSerialNumber();
@@ -247,16 +249,16 @@ public final class TBDeviceInfo {
      * @return The file's name found (minus extension), or UNKNOWN
      */
     public static String getSerialNumberFromFileSystem(TbFile tbRoot) {
-        String sn = UNKNOWN;
+        String sn = TBLoaderConstants.UNKNOWN;
         if (tbRoot == null) {
             return sn;
         }
         TbFile tbSystem = tbRoot.open(TB_SYSTEM_PATH);
         Properties props = loadDeploymentProperties(tbSystem);
 
-        sn = props.getProperty(TALKING_BOOK_ID_PROPERTY, UNKNOWN);
+        sn = props.getProperty(TALKING_BOOK_ID_PROPERTY, TBLoaderConstants.UNKNOWN);
 
-        if (sn.equalsIgnoreCase(UNKNOWN)) {
+        if (sn.equalsIgnoreCase(TBLoaderConstants.UNKNOWN)) {
             String[] files;
 
             if (tbSystem.exists()) {
@@ -269,9 +271,9 @@ public final class TBDeviceInfo {
                     sn = tsnFileName.substring(0, tsnFileName.length() - 4);
                 }
                 if (sn.equals("")) { // Can only happen if file is named ".srn"
-                    sn = UNKNOWN;
+                    sn = TBLoaderConstants.UNKNOWN;
                 }
-                if (!sn.equals(UNKNOWN)) {
+                if (!sn.equals(TBLoaderConstants.UNKNOWN)) {
                     LOG.log(Level.FINE, "TBL!: No stats SRN. Found *.srn file:" + sn);
                 } else {
                     LOG.log(Level.INFO, "TBL!: No stats SRN and no good *.srn file found.");
@@ -295,7 +297,7 @@ public final class TBDeviceInfo {
             String src = "properties";
 
             // If we didn't have it in properties, look for marker file(s).
-            if (projectName.equalsIgnoreCase(UNKNOWN)) {
+            if (projectName.equalsIgnoreCase(TBLoaderConstants.UNKNOWN)) {
 
                 String[] prjFiles;
                 if (tbSystem.exists()) {
@@ -325,7 +327,7 @@ public final class TBDeviceInfo {
      * only of the extension (eg, a file named ".img" will return UNKNOWN).
      */
     private String getFirmwareVersion() {
-        String rev = UNKNOWN;
+        String rev = TBLoaderConstants.UNKNOWN;
 
         if (tbSystem.exists()) {
             String[] revNames = tbSystem.list((dir, name) -> name.length() > 4 && (name.toLowerCase().endsWith(".rev")));
@@ -343,24 +345,31 @@ public final class TBDeviceInfo {
     }
 
     /**
-     * Checks in tbstats structure for image name. If not found, will then
+     * Tries to determine the names of the content package(s) (images) on this Talking Book.
+     *
+     * Looks first in the deployment.properties file. If that is not found,
+     * checks in tbstats structure for image name. If not found, will then
      * look in the TalkingBook's system directory for a file with a ".pkg" extension. If there is exactly
      * one such file, returns the file's name, sans extension.
      *
-     * @return The file's name found (minus extension), or UNKNOWN if no file found.
+     * @return The a list of one or more package names, or "UNKNOWN" if it can not be determined.
      */
-    private String getPackageName() {
-        if (packageName == null) {
-            packageName = getProperty(PACKAGE_PROPERTY);
+    private List<String> getPackageNames() {
+        if (packageNames.size()==0) {
+            String packageNameProperty = getProperty(PACKAGE_PROPERTY);
             String src = "properties";
 
-            // If we didn't have it in properties, look for the flash data or marker file(s).
-            if (packageName.equalsIgnoreCase(UNKNOWN)) {
+            // Get the package(s) from the properties, if we can.
+            if (!packageNameProperty.equalsIgnoreCase(TBLoaderConstants.UNKNOWN)) {
+                String[] packages = packageNameProperty.split(",");
+                packageNames.addAll(Arrays.asList(packages));
+            } else {
+                // If we didn't have it in properties, look for the flash data or marker file(s).
                 String[] files;
 
                 if (getFlashData() != null && getFlashData().getImageName() != null
                     && !getFlashData().getImageName().equals("")) {
-                    packageName = getFlashData().getImageName();
+                    packageNames.add(getFlashData().getImageName());
                     src = "flash";
                 } else if (tbSystem.exists()) {
                     files = tbSystem.list((parent, name) -> {
@@ -369,14 +378,17 @@ public final class TBDeviceInfo {
                     });
 
                     if (files.length == 1) {
-                        packageName = files[0].substring(0, files[0].length() - 4);
+                        packageNames.add(files[0].substring(0, files[0].length() - 4));
                         src = "marker";
                     }
+                } else {
+                    packageNames.add(TBLoaderConstants.UNKNOWN);
+                    src = "none";
                 }
             }
-            LOG.log(Level.FINE, String.format("TBL!: Got package name (%s) from %s.", packageName, src));
+            LOG.log(Level.FINE, String.format("TBL!: Got package name (%s) from %s.", String.join(",", packageNames), src));
         }
-        return packageName;
+        return packageNames;
     }
 
     /**
@@ -392,7 +404,7 @@ public final class TBDeviceInfo {
             String src = "properties";
 
             // If we didn't have it in properties, look for the flash data or marker file(s).
-            if (deploymentName.equalsIgnoreCase(UNKNOWN)) {
+            if (deploymentName.equalsIgnoreCase(TBLoaderConstants.UNKNOWN)) {
                 String[] files;
 
                 if (getFlashData() != null && getFlashData().getDeploymentNumber() != null
@@ -456,7 +468,7 @@ public final class TBDeviceInfo {
             String src = "properties";
 
             // If we didn't have it in properties, look for the flash data or marker file(s).
-            if (communityName.equalsIgnoreCase(UNKNOWN)) {
+            if (communityName.equalsIgnoreCase(TBLoaderConstants.UNKNOWN)) {
                 if (getFlashData() != null && getFlashData().getCommunity() != null
                     && !getFlashData().getCommunity().equals(
                     "")) {
@@ -655,7 +667,7 @@ public final class TBDeviceInfo {
 
             // Previous image or package. Displays as "Content"
             // TODO: package vs image - consistency in nomenclature.
-            String pkg = getPackageName();
+            List<String> pkgs = getPackageNames();
 
             // Previous deployment name. Displays as "Update"
             String depl = getDeploymentName();
@@ -671,7 +683,7 @@ public final class TBDeviceInfo {
                     .withSerialNumber(serialNumber)
                     .withProjectName(oldProject)
                     .withDeploymentName(depl)
-                    .withPackageName(pkg)
+                    .withPackageNames(pkgs)
                     .withUpdateDirectory(lastSynchDir)
                     .withUpdateTimestamp(lastUpdate)
                     .withFirmwareRevision(firmwareVersion)
@@ -694,7 +706,7 @@ public final class TBDeviceInfo {
      * @return The last sync date, or UNKNOWN if not available.
      */
     private String getLastUpdateDate(String synchDir) {
-        String lastUpdate = UNKNOWN;
+        String lastUpdate = TBLoaderConstants.UNKNOWN;
 
         if (tbFlashData != null && tbFlashData.getUpdateDate() != -1)
             lastUpdate = tbFlashData.getUpdateYear() + "/" + tbFlashData.getUpdateMonth() + "/"
