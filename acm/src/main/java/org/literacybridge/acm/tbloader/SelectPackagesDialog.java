@@ -118,6 +118,7 @@ class SelectPackagesDialog extends JDialog {
         rememberSelection.addActionListener(e -> this.isRememberSelection = rememberSelection.isSelected());
 
         JButton restoreDefaults = new JButton("Restore Defaults");
+        restoreDefaults.setToolTipText("Sets Selected Packages to the default for the selected recipient.\nIf no recipient has been selected yet, clears Selected Packages.");
         restoreDefaults.addActionListener(this::restoreDefaults);
 
         Box optionsBox = Box.createHorizontalBox();
@@ -183,22 +184,22 @@ class SelectPackagesDialog extends JDialog {
 
         SelectedPackagesModel selectedPackagesModel = new SelectedPackagesModel();
         selectedPackagesList = new JList<>(selectedPackagesModel);
-        Component selectedPackagesBox = makeListPanel(selectedPackagesList, true);
+        Component selectedPackagesBox = makeListPanel(selectedPackagesList, true, "Selected Packages");
 
         // Buttons to add to and remove from the "selected" list.
         JPanel selectionButtonsPanel = new JPanel(new GridBagLayout());
         GBC buttonsGBC = new GBC()
-            .setInsets(new Insets(0, 10, 0, 10))
+            .setInsets(new Insets(10, 10, 0, 10))
             .setAnchor(GridBagConstraints.CENTER)
             .setFill(GridBagConstraints.HORIZONTAL)
             .setGridx(0);
         selectionButtonsPanel.add(new JLabel(" "), buttonsGBC);
 
-        addButton = new JButton("<<< Add");
+        addButton = new JButton(">>> Add");
         addButton.addActionListener(this::onAdd);
         selectionButtonsPanel.add(addButton, buttonsGBC);
 
-        removeButton = new JButton(">>> Remove");
+        removeButton = new JButton("<<< Remove");
         removeButton.addActionListener(this::onRemove);
         selectionButtonsPanel.add(removeButton, buttonsGBC);
         int moveButtonsWidth = getMaxWidthForWidget(removeButton,
@@ -207,12 +208,12 @@ class SelectPackagesDialog extends JDialog {
         selectionButtonsPanel.add(new JLabel(""), buttonsGBC.withWeighty(1.0));
 
         availablePackagesList = new JList<>(new Vector<>(availablePackages));
-        Component availablePackagesBox = makeListPanel(availablePackagesList, false);
+        Component availablePackagesBox = makeListPanel(availablePackagesList, false, "Available Packages");
 
         // Put them together
-        chooserPanel.add(selectedPackagesBox, gbc);
-        chooserPanel.add(selectionButtonsPanel, gbc);
         chooserPanel.add(availablePackagesBox, gbc);
+        chooserPanel.add(selectionButtonsPanel, gbc);
+        chooserPanel.add(selectedPackagesBox, gbc);
 
         return chooserPanel;
     }
@@ -223,8 +224,13 @@ class SelectPackagesDialog extends JDialog {
      * @param moveButtons If true, add the Move Up / Move Down buttons to the bottom.
      * @return a Component containing the list.
      */
-    Component makeListPanel(JList<String> list, boolean moveButtons) {
+    Component makeListPanel(JList<String> list, boolean moveButtons, String heading) {
         Box selectedPackagesBox = Box.createVerticalBox();
+        Box headingBox = Box.createHorizontalBox();
+        headingBox.add(new JLabel(heading));
+        headingBox.add(Box.createVerticalGlue());
+        selectedPackagesBox.add(headingBox);
+        selectedPackagesBox.add(Box.createVerticalStrut(5));
 
         list.setCellRenderer(new PackageCellRenderer());
         list.addListSelectionListener(e -> enableButtons());
