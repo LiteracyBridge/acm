@@ -497,6 +497,15 @@ public class DBConfiguration {
         getDbProperties().setProperty(Constants.WARN_FOR_MISSING_GREETINGS, Boolean.toString(warnForMissingGreetings));
     }
 
+    public boolean isForceWavConversion() {
+        String value = getDbProperties().getProperty(Constants.FORCE_WAV_CONVERSION);
+        return Boolean.parseBoolean(value);
+    }
+
+    public void setForceWavConversion(boolean isForceWavConversion) {
+        getDbProperties().setProperty(Constants.FORCE_WAV_CONVERSION, Boolean.toString(isForceWavConversion));
+    }
+
     public String getProperty(String propertyName) {
         return getProperty(propertyName, null);
     }

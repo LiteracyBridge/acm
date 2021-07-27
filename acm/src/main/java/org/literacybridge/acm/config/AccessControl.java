@@ -157,9 +157,7 @@ public class AccessControl {
             // Like ~/LiteracyBridge/ACM/temp/ACM-CARE
             FileUtils.deleteDirectory(dbConfiguration.getPathProvider().getLocalProgramTempDir());
         } catch (Exception e) {
-            System.err.print("Caught exception deleting local db.\n");
-            e.printStackTrace();
-            // TODO: Notify the user so they have some slim chance of getting around the problem.
+            System.err.printf("Caught exception deleting local db: %s\n", e.getMessage());
         }
     }
     

@@ -36,6 +36,8 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     private final boolean warnForMissingGreetings;
     private final JLabel fuzzyThresholdError;
     private final JCheckBox greetingWarnings;
+    private final JCheckBox forceWavConversion;
+    private final boolean isForceWavConversion;
     private JCheckBox clearProgspec;
 
     @Override
@@ -51,6 +53,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         emailAddresses = String.join(", ",
                 ACMConfiguration.getInstance().getCurrentDB().getNotifyList());
         warnForMissingGreetings = ACMConfiguration.getInstance().getCurrentDB().getWarnForMissingGreetings();
+        isForceWavConversion = ACMConfiguration.getInstance().getCurrentDB().isForceWavConversion();
 
         // Set an empty border on the panel, to give some blank space around the content.
         setLayout(new BorderLayout());
@@ -133,6 +136,14 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         greetingWarnings.setToolTipText(
                 "When creating a Deployment, should you be warned if any Recipients are missing custom greetings?");
         gridPanel.add(greetingWarnings, gbcRight);
+
+        // Setting: Always conert wav->wav for better compatibility, smaller file size.
+        gridPanel.add(new JLabel("Preprocess WAV files:"), gbcLeft);
+        gbcRight.anchor = GridBagConstraints.BASELINE_LEADING;
+        forceWavConversion = new JCheckBox("Preprocess .WAV files for better compatibility.", isForceWavConversion);
+        forceWavConversion.setToolTipText(
+                "When importing a .WAV file, pre-process to improve compatibility and reduce file size");
+        gridPanel.add(forceWavConversion, gbcRight);
 
         if (helper.isAdvanced() || ACMConfiguration.getInstance().isDevo()) {
             // Setting: reload program spec when opening an assistant.
@@ -219,6 +230,11 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
         if (greetingWarnings.isSelected() != warnForMissingGreetings) {
             ACMConfiguration.getInstance().getCurrentDB().setWarnForMissingGreetings(greetingWarnings.isSelected());
+            haveChanges = true;
+        }
+
+        if (forceWavConversion.isSelected() != isForceWavConversion) {
+            ACMConfiguration.getInstance().getCurrentDB().setForceWavConversion(forceWavConversion.isSelected());
             haveChanges = true;
         }
 

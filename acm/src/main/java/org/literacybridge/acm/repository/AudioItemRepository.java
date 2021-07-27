@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public interface AudioItemRepository {
     void addAudioItem(AudioItem audioItem, File externalFile)
-            throws UnsupportedFormatException, IOException, DuplicateItemException;
+            throws UnsupportedFormatException, IOException, DuplicateItemException, BaseAudioConverter.ConversionException;
 
     void updateAudioItem(AudioItem audioItem, File externalFile)
                     throws BaseAudioConverter.ConversionException, IOException, UnsupportedFormatException;

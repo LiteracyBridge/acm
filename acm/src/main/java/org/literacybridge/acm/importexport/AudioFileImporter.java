@@ -2,6 +2,7 @@ package org.literacybridge.acm.importexport;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
@@ -49,15 +50,15 @@ abstract class AudioFileImporter {
     protected abstract Set<Category> getCategories();
 
     AudioItem importSingleFile(AudioImporter.AudioItemProcessor itemProcessor)
-            throws IOException, AudioItemRepository.UnsupportedFormatException, AudioItemRepository.DuplicateItemException {
+            throws IOException, AudioItemRepository.UnsupportedFormatException, AudioItemRepository.DuplicateItemException, BaseAudioConverter.ConversionException {
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
 
         AudioItem audioItem = createAudioItem();
 
         if (store.getAudioItem(audioItem.getId()) != null) {
             // just skip if we have an item with the same id already
-            System.out.println(String.format("File '%s' is already in database; skipping",
-                audioFile.getName()));
+            System.out.printf("File '%s' is already in database; skipping%n",
+                audioFile.getName());
             return audioItem;
         }
 
@@ -82,8 +83,7 @@ abstract class AudioFileImporter {
     }
 
 
-    public AudioItem createAudioItem()
-            throws IOException {
+    public AudioItem createAudioItem() {
         MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         Metadata loadedMetadata = getMetadata();
         Set<Category> loadedCategories = getCategories();

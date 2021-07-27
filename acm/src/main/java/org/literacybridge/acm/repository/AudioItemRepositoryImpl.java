@@ -6,7 +6,9 @@ import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.audioconverter.api.ExternalConverter;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionException;
+import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionResult;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.ConversionSourceMissingException;
+import org.literacybridge.acm.audioconverter.converters.FFMpegConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.importexport.AudioExporter;
@@ -17,10 +19,7 @@ import org.literacybridge.acm.utils.IOUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -80,7 +79,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      */
     @Override
     public synchronized void addAudioItem(AudioItem audioItem, File externalFile)
-            throws UnsupportedFormatException, IOException, DuplicateItemException {
+            throws UnsupportedFormatException, IOException, DuplicateItemException, ConversionException {
         if (hasAudioItem(audioItem)) {
             throw new DuplicateItemException(String.format("Audio item %s already exists for language %s", audioItem.getTitle(), audioItem.getLanguageCode()));
         }
@@ -125,8 +124,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      * not already exist.
      */
     private synchronized void storeAudioFile(AudioItem audioItem, File externalFile)
-        throws UnsupportedFormatException, IOException
-    {
+            throws UnsupportedFormatException, IOException, ConversionException {
         AudioFormat format = ensureKnownFormat(externalFile);
 
         File toFile = resolveFile(audioItem, format, true);
@@ -138,7 +136,14 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
             // therefore strip metadata section herea
             A18Utils.copyA18WithoutMetadata(externalFile, toFile);
         } else {
-            IOUtils.copy(externalFile, toFile);
+            boolean isForceWavConversion = ACMConfiguration.getInstance().getCurrentDB().isForceWavConversion();
+            if (isForceWavConversion && format == AudioFormat.WAV) {
+                FFMpegConverter wavToWav = new FFMpegConverter();
+                ConversionResult wavToWavResult = wavToWav.doConvertFile(externalFile,
+                        toFile.getParentFile(), toFile, TMP_DIR, new HashMap<>());
+            } else {
+                IOUtils.copy(externalFile, toFile);
+            }
             try {
                 // convert file to A18 format right away
                 convertAudioItem(audioItem, AudioFormat.A18);

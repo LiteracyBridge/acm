@@ -189,7 +189,7 @@ public abstract class BaseAudioConverter {
 
   }
 
-  static class ConversionResult {
+  public static class ConversionResult {
     public String response;
     public File outputFile;
   }
