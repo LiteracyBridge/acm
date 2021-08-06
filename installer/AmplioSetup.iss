@@ -74,6 +74,8 @@ Name: "{autoprograms}\{#TBL}"; Filename: "{app}\ACM\run_tbloader.bat"; WorkingDi
 Name: "{autodesktop}\{#TBL}"; Filename: "{app}\ACM\run_tbloader.bat"; WorkingDir: "{app}\ACM\"; IconFilename: "{app}\ACM\images\tb_loader.ico"; Tasks: desktopicon; Flags: runminimized;
 Name: "{userstartup}\AmplioSync"; Filename: "{app}\ACM\run_sync.bat"; WorkingDir: "{app}\ACM\"; Flags: runminimized;
 
+[Run]
+Filename: "{app}\ACM\start_sync.bat"; WorkingDir: "{app}\ACM\"; Description: "Starts the synchronizer"; Flags: runminimized postinstall shellexec
 
 [UninstallRun]
 Filename: "{app}\ACM\stop_sync.bat"; WorkingDir: "{app}\ACM\"; RunOnceId: "StopCtrl1"; Flags: runminimized;
