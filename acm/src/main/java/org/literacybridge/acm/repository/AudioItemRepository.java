@@ -99,6 +99,7 @@ public interface AudioItemRepository {
         MP3("mp3", new MP3Format(128, 16000, 1)),
         OGG("ogg", new OggFormat(128, 16000, 1)),
         WMA("wma", new AudioConversionFormat(128, 16000, 1) {}),
+        AAC("aac", new AudioConversionFormat(128, 1600, 1) {}),
         M4A("m4a", new AudioConversionFormat(128, 1600, 1) {});
 
         private static final AudioFormat[] EXPORTABLES = {A18, WAV, MP3, OGG};
