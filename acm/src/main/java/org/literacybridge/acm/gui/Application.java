@@ -2,7 +2,6 @@ package org.literacybridge.acm.gui;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jdesktop.swingx.JXFrame;
-import org.json.simple.JSONObject;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.literacybridge.acm.Constants;
@@ -53,8 +52,10 @@ import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.SUGGEST_DE
 public class Application extends JXFrame {
   private static final Logger LOG = Logger
       .getLogger(Application.class.getName());
+    private static SplashScreen splashScreen;
+    private static Image iconImage;
 
-  static {
+    static {
       System.out.printf("Java version: %s, data model: %s\n",
           System.getProperty("java.version"),
           System.getProperty("sun.arch.data.model"));
@@ -79,7 +80,7 @@ public class Application extends JXFrame {
     return mainView;
   }
 
-  static double getJavaVersion() {
+    static double getJavaVersion() {
     String version = System.getProperty("java.version");
     int pos = version.indexOf('.');
     pos = version.indexOf('.', pos+1);
@@ -116,77 +117,83 @@ public class Application extends JXFrame {
   public static Application getApplication() {
     return application;
   }
+  public static Image getImageIcon() { return iconImage; }
 
   private final SimpleSoundPlayer player = new SimpleSoundPlayer();
 
-  private Application(SplashScreen splashScreen) {
-    super();
-    this.backgroundColor = getBackground();
-    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    private Application() {
+        super();
+        splashScreen.setProgressLabel("Initializing UI...");
+        this.backgroundColor = getBackground();
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    addWindowListener(shutdownListener);
+        addWindowListener(shutdownListener);
 
-    if (ACMConfiguration.getInstance().isDevo()) {
-      JMenuBar menuBar = new JMenuBar();
-      JMenu menu = new JMenu("Developer");
-      menuBar.add(menu);
-      JMenuItem menuItem = new JMenuItem("Access Control...");
-      menu.add(menuItem);
-      menuItem.addActionListener(e -> new AcmCheckoutTest(this).setVisible(true));
-      menuItem = new JMenuItem("UI Defaults...");
-      menu.add(menuItem);
-      menuItem.addActionListener(e -> new LafTester(this).setVisible(true));
-      setJMenuBar(menuBar);
-    }
+        if (ACMConfiguration.getInstance().isDevo()) {
+            JMenuBar menuBar = new JMenuBar();
+            JMenu menu = new JMenu("Developer");
+            menuBar.add(menu);
+            JMenuItem menuItem = new JMenuItem("Access Control...");
+            menu.add(menuItem);
+            menuItem.addActionListener(e -> new AcmCheckoutTest(this).setVisible(true));
+            menuItem = new JMenuItem("UI Defaults...");
+            menu.add(menuItem);
+            menuItem.addActionListener(e -> new LafTester(this).setVisible(true));
+            setJMenuBar(menuBar);
+        }
 
-    Authenticator authInstance = Authenticator.getInstance();
-    String greeting = authInstance.getUserSelfName();
-    if (StringUtils.isEmpty(greeting)) {
-      greeting = String.format("Hello, %s", authInstance.getUserEmail());
-    }
-    String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
-        "  --  CHANGES WILL *NOT* BE SAVED!":"";
-    String cloudIndicator = ACMConfiguration.getInstance().getCurrentDB().getPathProvider().isDropboxDb()
-                            ? (OsUtils.WINDOWS ? "dbx" : "∅")
-                            : (OsUtils.WINDOWS ? "s3" : "✓");
-    String layoutIndicator = AmplioHome.isOldStyleHomeDirectory()
-                             ? (OsUtils.WINDOWS ? "v1" : "∅")
-                             : (OsUtils.WINDOWS ? "v2" : "✓");
+        Authenticator authInstance = Authenticator.getInstance();
+        String greeting = authInstance.getUserSelfName();
+        if (StringUtils.isEmpty(greeting)) {
+            greeting = String.format("Hello, %s", authInstance.getUserEmail());
+        }
+        String sandboxWarning = (ACMConfiguration.getInstance().getCurrentDB().isSandboxed()) ?
+                                "  --  CHANGES WILL *NOT* BE SAVED!" : "";
+        String cloudIndicator = ACMConfiguration.getInstance().getCurrentDB().getPathProvider().isDropboxDb()
+                                ? (OsUtils.WINDOWS ? "dbx" : "∅")
+                                : (OsUtils.WINDOWS ? "s3" : "✓");
+        String layoutIndicator = AmplioHome.isOldStyleHomeDirectory()
+                                 ? (OsUtils.WINDOWS ? "v1" : "∅")
+                                 : (OsUtils.WINDOWS ? "v2" : "✓");
 
-      String dbVersion = "v" +
-          ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion() +
-          cloudIndicator;
-      String title = String.format("%s  --  %s (%s%s)  --  %s (%s)%s",
+        String dbVersion = "v" +
+            ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion() +
+            cloudIndicator;
+        String title = String.format("%s  --  %s (%s%s)  --  %s (%s)%s",
             greeting,
             LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
             Constants.ACM_VERSION,
             layoutIndicator,
             ACMConfiguration.getInstance().getTitle(),
-          dbVersion,
+            dbVersion,
             sandboxWarning);
 
-    setTitle(title);
-    // toolbar view on top
-    mainView = new MainView();
-    ToolbarView toolbarView = new ToolbarView(mainView.audioItemView);
-    add(toolbarView, BorderLayout.PAGE_START);
-    add(mainView, BorderLayout.CENTER);
+        setTitle(title);
+        // toolbar view on top
+        mainView = new MainView();
+        ToolbarView toolbarView = new ToolbarView(mainView.audioItemView);
+        add(toolbarView, BorderLayout.PAGE_START);
+        add(mainView, BorderLayout.CENTER);
 
-    statusBar = new ACMStatusBar();
-    setStatusBar(statusBar);
-    taskManager = new BackgroundTaskManager(statusBar);
+        statusBar = new ACMStatusBar();
+        setStatusBar(statusBar);
+        taskManager = new BackgroundTaskManager(statusBar);
 
-    // starts file system monitor after UI has been initialized
-    fileSystemMonitor
-        .addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());
-    fileSystemMonitor.start();
-  }
+        // starts file system monitor after UI has been initialized
+        fileSystemMonitor
+            .addDeviceRecognizer(new LiteracyBridgeTalkingBookRecognizer());
+        fileSystemMonitor.start();
+    }
 
   @SuppressWarnings("FieldCanBeLocal")
   private final WindowListener shutdownListener = new WindowAdapter() {
       @Override
       public void windowClosing(WindowEvent e) {
           super.windowClosing(e);
+          // This text has already been set; this call actually has no effect.
+          splashScreen.setProgressLabel("Shutting down...");
+          splashScreen.makeNonTransparent();
+          application.setVisible(false);
           try {
               ACMConfiguration.DB_CLOSE_DISPOSITION disposition = ACMConfiguration.DB_CLOSE_DISPOSITION.COMMIT;
 
@@ -216,6 +223,16 @@ public class Application extends JXFrame {
           } catch (Exception e1) {
               e1.printStackTrace();
           }
+      }
+
+      @Override
+      public void windowActivated(WindowEvent e) {
+          super.windowActivated(e);
+          // The next thing that will be seen is this. And Swing's repainting is so awful that unless we set it
+          // here, it will, in fact, not ever be seen. (Swing aggressively prevents applications from being able
+          // to "wait for the UI to settle".)
+          splashScreen.setProgressLabel("Shutting down...");
+          splashScreen.makeTransparent();
       }
   };
 
@@ -286,56 +303,58 @@ public class Application extends JXFrame {
     }
   }
 
-  private static void startUp(CommandLineParams params) throws Exception {
-    preRunChecks();
+    private static void startUp(CommandLineParams params) throws Exception {
+        preRunChecks();
+        URL iconURL = Application.class.getResource("/tb.png");
+        assert iconURL != null;
+        iconImage = new ImageIcon(iconURL).getImage();
 
-    SplashScreen splash = null;
-    URL iconURL = Application.class.getResource("/tb.png");
-    assert iconURL != null;
-    Image iconImage = new ImageIcon(iconURL).getImage();
-    if (OsUtils.MAC_OS) {
-      OsUtils.setOSXApplicationIcon(iconImage);
-    }
-    OsUtils.enableOSXQuitStrategy();
+        splashScreen = new SplashScreen();
+        splashScreen.showSplashScreen();
+        splashScreen.setIconImage(iconImage);
+        if (OsUtils.MAC_OS) {
+            OsUtils.setOSXApplicationIcon(iconImage);
+        }
+        OsUtils.enableOSXQuitStrategy();
 
-      // set look & feel; we use Sea Glass by default.
-      SwingUtils.setLookAndFeel(params.nimbus?"nimbus":"");
+        // set look & feel; we use FlatLaf by default.
+        SwingUtils.setLookAndFeel(params.nimbus ? "nimbus" : "");
 
-    params.update = true; // may be overridden later.
-    ACMConfiguration.initialize(params);
+        params.update = true; // may be overridden later.
+        ACMConfiguration.initialize(params);
 
-    authenticateAndChooseProgram(params);
+        authenticateAndChooseProgram(params);
 
-    if (isEmpty(params.sharedACM)) {
-      JOptionPane.showMessageDialog(null,
-          "No ACM chosen Can not continue.");
-      System.exit(1);
-    }
+        if (isEmpty(params.sharedACM)) {
+            JOptionPane.showMessageDialog(null,
+                "No ACM chosen Can not continue.");
+            System.exit(1);
+        }
 
-    openAcmDb(params.sharedACM);
+        openAcmDb(params.sharedACM);
 
-    application = new Application(null);
-      OsUtils.enableOSXFullscreen(application);
-      if (!OsUtils.MAC_OS) {
-        application.setIconImage(iconImage);
-      }
-      application.setSize(1000, 725);
-      application.setLocation(20, 20);
+        application = new Application();
+        OsUtils.enableOSXFullscreen(application);
+        if (!OsUtils.MAC_OS) {
+            application.setIconImage(iconImage);
+        }
+        application.setSize(1000, 725);
+        application.setLocation(20, 20);
 
-      application.setVisible(true);
-      application.toFront();
+        application.setVisible(true);
+        application.toFront();
 
-      LOG.log(Level.INFO, "ACM successfully started.");
-      ACMConfiguration.getInstance().getCurrentDB().setupWavCaching(sizeMB->{
-        int answer = JOptionPane.showOptionDialog(null,
+        LOG.log(Level.INFO, "ACM successfully started.");
+        ACMConfiguration.getInstance().getCurrentDB().setupWavCaching(sizeMB -> {
+            int answer = JOptionPane.showOptionDialog(null,
                 "The WAV cache is currently using " + sizeMB
-                        + " MB disk space and a cleanup is recommended. Perform cleanup?",
+                    + " MB disk space and a cleanup is recommended. Perform cleanup?",
                 "WAV Cache", JOptionPane.YES_NO_OPTION,
                 JOptionPane.QUESTION_MESSAGE, null, null, JOptionPane.YES_OPTION);
-        return (answer == JOptionPane.YES_OPTION);
-      });
-      application.mainView.audioItemView.requestFocusInWindow();
-  }
+            return (answer == JOptionPane.YES_OPTION);
+        });
+        application.mainView.audioItemView.requestFocusInWindow();
+    }
 
   /**
    * Opens the ACM database. If the ACM is in S3, performs a sync. If the ACM has never been downloaded, that
@@ -350,6 +369,7 @@ public class Application extends JXFrame {
 //      System.out.printf("Opening database '%s' in %s\n", sharedACM,
 //          (Authenticator.getInstance().isProgramS3(sharedACM))?"s3":"dropbox");
       if (Authenticator.getInstance().isProgramS3(sharedACM)) {
+          splashScreen.setProgressLabel("Synchronizing content database...");
           if (pathsProvider == null) {
 //              System.out.println("pathsProvider is null");
               // The database doesn't exist locally, but it does exist in S3. ".DOWNLOAD" will set up
@@ -367,6 +387,7 @@ public class Application extends JXFrame {
           }
       }
 
+      splashScreen.setProgressLabel("Opening content database...");
       // init database
       try {
           AccessControlResolver accessControlResolver = new GuiAccessControlResolver();
@@ -394,6 +415,7 @@ public class Application extends JXFrame {
           S3SyncDialog.SYNC_STYLE syncStyle,
           boolean haveDropboxCopy) {
       S3SyncDialog dialog = new S3SyncDialog(null, program, syncStyle);
+      dialog.setIconImage(iconImage);
       dialog.go();
       ACMConfiguration.getInstance().discoverDB(program);
       return !dialog.hasSyncError();
@@ -404,6 +426,7 @@ public class Application extends JXFrame {
    * @param params from the command line.
    */
   private static void authenticateAndChooseProgram(CommandLineParams params) {
+      splashScreen.setProgressLabel("Logging in...");
       Authenticator authInstance = Authenticator.getInstance();
       authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalProgramDbs(),
               ACMConfiguration.getInstance().getLocalDbxDbs());

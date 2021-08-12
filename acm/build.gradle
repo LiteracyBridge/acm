@@ -1,7 +1,7 @@
-project.ext {
-    codeStyleDir = "${rootProject.projectDir}/../codeStyle" as Object
-    javaLanguageLevel = "1.8" as Object
-}
+//project.ext {
+//    String codeStyleDir = "${rootProject.projectDir}/../codeStyle" as Object
+//    String javaLanguageLevel = "1.8" as Object
+//}
 
 apply plugin: 'java'
 
@@ -131,6 +131,12 @@ clean.doLast {
 // Begin code to allow dynamically including the most up-to-date AWS libs.
 buildscript {
     repositories {
+        maven {
+            url "http://netbeans.apidesign.org/maven2"
+        }
+        maven {
+            url "https://repo1.maven.org/maven2/"
+        }
         mavenCentral()
     }
     dependencies {
@@ -161,7 +167,7 @@ dependencies {
     compile 'jakarta-regexp:jakarta-regexp:1.4'
     compile 'com.googlecode.json-simple:json-simple:1.1.1'
     compile 'com.google.collections:google-collections:1.0-rc5'
-    compile 'org.yaml:snakeyaml:1.6'
+    compile 'org.yaml:snakeyaml:1.26'
     // This site has become inaccessible; they don't have a valid certificate. Copied
     // jar file to 3rdparty directory.
     // compile 'it.cnr.imaa.essi:lablib-checkboxtree:3.1.1'
@@ -182,17 +188,17 @@ dependencies {
     compile 'com.amazonaws:aws-java-sdk-cognitoidentity:1.11.228'
     compile 'com.amazonaws:aws-java-sdk-s3:1.11.228'
 
-    compile 'com.formdev:flatlaf:1.0'
+    compile 'com.formdev:flatlaf:1.5'
 
     // TODO: Merge projects.
     compile files('../../S3Sync/CloudSync/build/libs/CloudSync-1.0.jar')
 
     compile files(fileTree('3rdparty').include('*.jar'))
 
-    testCompile 'org.powermock:powermock-api-mockito:1.6.4'
-    testCompile 'org.powermock:powermock-module-junit4-common:1.6.4'
-    testCompile 'org.powermock:powermock-module-junit4:1.6.4'
-    testCompile 'junit:junit:4.12'
+    testCompile 'org.powermock:powermock-api-mockito2:2.0.9'
+    testCompile 'org.powermock:powermock-module-junit4-common:2.0.9'
+    testCompile 'org.powermock:powermock-module-junit4:2.0.9'
+    testCompile 'junit:junit:4.13.2'
 }
 
 // IntelliJ configuration
@@ -202,39 +208,39 @@ idea {
         downloadJavadoc = true
     }
 
-    project {
-        languageLevel = javaLanguageLevel
-
-        ipr {
-            withXml { xmlProvider ->
-                // Get root node.
-                def project = xmlProvider.asNode()
-                customizeIdeaCodeSyle project
-            }
-        }
-    }
+//    project {
+//        languageLevel = javaLanguageLevel
+//
+//        ipr {
+//            withXml { xmlProvider ->
+//                // Get root node.
+//                def project = xmlProvider.asNode()
+//                customizeIdeaCodeSyle project
+//            }
+//        }
+//    }
 }
 
 
 // =========== IntelliJ settings ===========
-def customizeIdeaCodeSyle(project) {
-    //codeStyleDir="$projectDir/../codeStyle"
-    println "codeStyleDir: $codeStyleDir"
-    println "customizeIdeaCodeStyle($project)"
-    
-    project.appendNode('component', [name: 'ProjectCodeStyleSettingsManager'])
-    def codeStyleNode = findComponent(project, 'ProjectCodeStyleSettingsManager')
-
-    codeStyleNode.appendNode('option', [name: 'USE_PER_PROJECT_SETTINGS', value: 'true'])
-    def projectSettingsNode = codeStyleNode.appendNode('option', [name: 'PER_PROJECT_SETTINGS']).appendNode('value')
-
-    def codeStyleUrl = rootProject.file("$codeStyleDir/idea_code_style_prefs.xml").toURL()
-
-    def codeStyleXml = new XmlParser().parseText(codeStyleUrl.text)
-    codeStyleXml.children().each { option ->
-        codeStyleNode.append(option)
-    }
-}
+//def customizeIdeaCodeSyle(project) {
+//    //codeStyleDir="$projectDir/../codeStyle"
+//    println "codeStyleDir: $codeStyleDir"
+//    println "customizeIdeaCodeStyle($project)"
+//
+//    project.appendNode('component', [name: 'ProjectCodeStyleSettingsManager'])
+//    def codeStyleNode = findComponent(project, 'ProjectCodeStyleSettingsManager')
+//
+//    codeStyleNode.appendNode('option', [name: 'USE_PER_PROJECT_SETTINGS', value: 'true'])
+//    def projectSettingsNode = codeStyleNode.appendNode('option', [name: 'PER_PROJECT_SETTINGS']).appendNode('value')
+//
+//    def codeStyleUrl = rootProject.file("$codeStyleDir/idea_code_style_prefs.xml").toURI().toURL()
+//
+//    def codeStyleXml = new XmlParser().parseText(codeStyleUrl.text)
+//    codeStyleXml.children().each { option ->
+//        codeStyleNode.append(option)
+//    }
+//}
 
 // Search component with given name
 static def findComponent(project, name) {

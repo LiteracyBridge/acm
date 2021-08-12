@@ -20,6 +20,7 @@ import org.literacybridge.acm.cloud.cognito.CognitoJWTParser;
 import org.literacybridge.acm.config.AccessControl;
 import org.literacybridge.acm.config.AmplioHome;
 import org.literacybridge.acm.config.HttpUtility;
+import org.literacybridge.acm.gui.Application;
 
 import java.awt.Window;
 import java.io.BufferedOutputStream;
@@ -341,6 +342,7 @@ public class Authenticator {
         loginResult = LoginResult.NONE;
 
         WelcomeDialog dialog = new WelcomeDialog(parent, applicationName, defaultProgram, options, cognitoInterface);
+        dialog.setIconImage(Application.getImageIcon());
         if (savedLoginDetails != null) {
             dialog.setSavedCredentials(savedLoginDetails.email,
                 savedLoginDetails.secret);
@@ -362,8 +364,7 @@ public class Authenticator {
                 // phone_number # user's phone number, if they provided one.
                 // email # user's email. We use this for unique identity.
                 // ]
-                Map<String, String> props = new HashMap<>();
-                authenticationInfo.forEach(props::put);
+                Map<String, String> props = new HashMap<>(authenticationInfo);
                 identityPersistence.saveLoginDetails(userEmail, password, props);
                 selectedProgramid = dialog.getProgram();
                 sandboxSelected = dialog.isSandboxSelected();
