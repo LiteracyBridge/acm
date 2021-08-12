@@ -69,7 +69,7 @@ public abstract class AcmAssistantPage<Context> extends AssistantPage<Context> {
         // Languages from the program's "properties.config"
         Set<String> configLanguageCodes = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages()
                 .stream()
-                .map(Locale::getISO3Language)
+                .map(Locale::toString)
                 .collect(Collectors.toSet());
         languageCodes.addAll(configLanguageCodes);
         fillLanguageChooser(languageChooser, languageCodes, defaultLanguageCode);
