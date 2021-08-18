@@ -2,6 +2,7 @@ package org.literacybridge.acm.config;
 
 import org.literacybridge.acm.gui.Application;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import java.awt.Component;
 import java.util.logging.Logger;
@@ -17,7 +18,12 @@ import static javax.swing.JOptionPane.YES_OPTION;
 
 public class GuiAccessControlResolver implements AccessControlResolver {
     private static final Logger LOG = Logger.getLogger(GuiAccessControlResolver.class.getName());
-    private final Component parent = Application.getApplication();
+//    private final Component parent = Application.getApplication();
+    JFrame parent=new JFrame();
+
+    public GuiAccessControlResolver() {
+        parent.setAlwaysOnTop(true);
+    }
 
     @Override
     public ACCESS_CHOICE resolveAccessStatus(AccessControl accessControl,

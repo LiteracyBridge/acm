@@ -123,7 +123,7 @@ public class Application extends JXFrame {
 
     private Application() {
         super();
-        splashScreen.setProgressLabel("Initializing UI...");
+        splashScreen.setProgressLabel("Initializing UI...", SplashScreen.SPLASH_OPTIONS.NOT_ON_TOP);
         this.backgroundColor = getBackground();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -387,7 +387,7 @@ public class Application extends JXFrame {
           }
       }
 
-      splashScreen.setProgressLabel("Opening content database...");
+      splashScreen.setProgressLabel("Opening content database...", SplashScreen.SPLASH_OPTIONS.NOT_ON_TOP);
       // init database
       try {
           AccessControlResolver accessControlResolver = new GuiAccessControlResolver();
