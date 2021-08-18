@@ -191,7 +191,7 @@ public class Application extends JXFrame {
       public void windowClosing(WindowEvent e) {
           super.windowClosing(e);
           // This text has already been set; this call actually has no effect.
-          splashScreen.setProgressLabel("Shutting down...");
+          splashScreen.setProgressLabel("Shutting down...", SplashScreen.SPLASH_OPTIONS.NOT_ON_TOP);
           splashScreen.makeNonTransparent();
           application.setVisible(false);
           try {
