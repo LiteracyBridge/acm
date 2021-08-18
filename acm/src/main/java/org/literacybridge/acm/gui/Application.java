@@ -231,7 +231,7 @@ public class Application extends JXFrame {
           // The next thing that will be seen is this. And Swing's repainting is so awful that unless we set it
           // here, it will, in fact, not ever be seen. (Swing aggressively prevents applications from being able
           // to "wait for the UI to settle".)
-          splashScreen.setProgressLabel("Shutting down...");
+          splashScreen.setProgressLabel("Shutting down...", SplashScreen.SPLASH_OPTIONS.ALWAYS_ON_TOP);
           splashScreen.makeTransparent();
       }
   };
@@ -369,7 +369,7 @@ public class Application extends JXFrame {
 //      System.out.printf("Opening database '%s' in %s\n", sharedACM,
 //          (Authenticator.getInstance().isProgramS3(sharedACM))?"s3":"dropbox");
       if (Authenticator.getInstance().isProgramS3(sharedACM)) {
-          splashScreen.setProgressLabel("Synchronizing content database...");
+          splashScreen.setProgressLabel("Synchronizing content database...", SplashScreen.SPLASH_OPTIONS.NOT_ON_TOP);
           if (pathsProvider == null) {
 //              System.out.println("pathsProvider is null");
               // The database doesn't exist locally, but it does exist in S3. ".DOWNLOAD" will set up

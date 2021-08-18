@@ -12,13 +12,26 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.literacybridge.acm.gui.SplashScreen.SPLASH_OPTIONS.ALWAYS_ON_TOP;
+import static org.literacybridge.acm.gui.SplashScreen.SPLASH_OPTIONS.NOT_ON_TOP;
 
 public class SplashScreen extends JFrame {
+    public enum SPLASH_OPTIONS {
+        ALWAYS_ON_TOP,
+        NOT_ON_TOP
+    }
+
     private final JLabel progressLabel = new JLabel("Starting...");
 
     public SplashScreen() {
         setLayout(new BorderLayout());
         setSize(500, 525);
+        setAlwaysOnTop(true);
         setResizable(false);
         setUndecorated(true);
 
@@ -63,7 +76,13 @@ public class SplashScreen extends JFrame {
         setOpacity(0.0f);
     }
 
-    public void setProgressLabel(String text) {
+    public void setProgressLabel(String text, SPLASH_OPTIONS... options) {
+        Set<SPLASH_OPTIONS> splashOptions = new HashSet<>(Arrays.asList(options));
+        if (splashOptions.contains(NOT_ON_TOP))
+            this.setAlwaysOnTop(false);
+        else if (splashOptions.contains(ALWAYS_ON_TOP))
+            this.setAlwaysOnTop(true);
+
         this.progressLabel.setText(text);
         waitForUi();
     }
