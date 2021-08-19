@@ -123,7 +123,7 @@ public class Application extends JXFrame {
 
     private Application() {
         super();
-        splashScreen.setProgressLabel("Initializing UI...", SplashScreen.SPLASH_OPTIONS.NOT_ON_TOP);
+        splashScreen.setProgressLabel("Initializing UI...");
         this.backgroundColor = getBackground();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -191,7 +191,7 @@ public class Application extends JXFrame {
       public void windowClosing(WindowEvent e) {
           super.windowClosing(e);
           // This text has already been set; this call actually has no effect.
-          splashScreen.setProgressLabel("Shutting down...", SplashScreen.SPLASH_OPTIONS.NOT_ON_TOP);
+          splashScreen.setProgressLabel("Shutting down...");
           splashScreen.makeNonTransparent();
           application.setVisible(false);
           try {
@@ -369,7 +369,7 @@ public class Application extends JXFrame {
 //      System.out.printf("Opening database '%s' in %s\n", sharedACM,
 //          (Authenticator.getInstance().isProgramS3(sharedACM))?"s3":"dropbox");
       if (Authenticator.getInstance().isProgramS3(sharedACM)) {
-          splashScreen.setProgressLabel("Synchronizing content database...", SplashScreen.SPLASH_OPTIONS.NOT_ON_TOP);
+          splashScreen.setProgressLabel("Synchronizing content database...");
           if (pathsProvider == null) {
 //              System.out.println("pathsProvider is null");
               // The database doesn't exist locally, but it does exist in S3. ".DOWNLOAD" will set up
@@ -387,7 +387,7 @@ public class Application extends JXFrame {
           }
       }
 
-      splashScreen.setProgressLabel("Opening content database...", SplashScreen.SPLASH_OPTIONS.NOT_ON_TOP);
+      splashScreen.setProgressLabel("Opening content database...");
       // init database
       try {
           AccessControlResolver accessControlResolver = new GuiAccessControlResolver();

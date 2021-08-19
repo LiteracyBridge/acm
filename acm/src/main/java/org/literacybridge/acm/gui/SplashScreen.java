@@ -18,12 +18,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.literacybridge.acm.gui.SplashScreen.SPLASH_OPTIONS.ALWAYS_ON_TOP;
-import static org.literacybridge.acm.gui.SplashScreen.SPLASH_OPTIONS.NOT_ON_TOP;
 
 public class SplashScreen extends JFrame {
     public enum SPLASH_OPTIONS {
-        ALWAYS_ON_TOP,
-        NOT_ON_TOP
+        ALWAYS_ON_TOP
     }
 
     private final JLabel progressLabel = new JLabel("Starting...");
@@ -78,10 +76,7 @@ public class SplashScreen extends JFrame {
 
     public void setProgressLabel(String text, SPLASH_OPTIONS... options) {
         Set<SPLASH_OPTIONS> splashOptions = new HashSet<>(Arrays.asList(options));
-        if (splashOptions.contains(NOT_ON_TOP))
-            this.setAlwaysOnTop(false);
-        else if (splashOptions.contains(ALWAYS_ON_TOP))
-            this.setAlwaysOnTop(true);
+        this.setAlwaysOnTop(splashOptions.contains(ALWAYS_ON_TOP));
 
         this.progressLabel.setText(text);
         waitForUi();
