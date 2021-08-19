@@ -8,4 +8,5 @@ jre\bin\java -cp ..\updates\ACM\ctrl-all.jar ctrl status >nul 2>nul
 
 robocopy ..\updates\ACM .  *.jar
 robocopy ..\updates\ACM\lib lib /MIR
+robocopy ..\updates\ACM\images images /MIR
 robocopy ..\updates\ACM .

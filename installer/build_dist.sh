@@ -9,9 +9,6 @@ cp -av ../acm/dist/splash-acm.jpg ./ACM/
 cp -av ../acm/dist/lib ./ACM/
 cp -av ./bats/*.bat ./ACM/
 
-# Acm splash screen
-cp -av ./images/splash.jpg ./ACM/
-
 # S3Sync
 cp -av ../acm/dist/S3Sync.jar ./ACM/
 cp -av ../acm/dist/ctrl-all.jar ./ACM/
@@ -22,9 +19,9 @@ cp -av ../acm/dist/ctrl-all.jar ./ACM/
 # Audio converters
 cp -av ./converters ./ACM/
 
-# Desktop icons
+# Desktop icons and splash screen
 mkdir ./ACM/images
-cp -av ./images/*.ico ./ACM/images/
+cp -av ./images/* ./ACM/images/
 
 # JRE
 # cp -av ./jre ./ACM/

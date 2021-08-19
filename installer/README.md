@@ -10,7 +10,6 @@ Make a Windows Installer using [Inno Setup](https://jrsoftware.org/isinfo.php)
     * An alternative would be to produce both a 32-bit and a 64-bit installer. Since the online updater doesn't update the JRE, and since there is only one set of Java .jar files, the only downside is making users pick which one to install.
   * Download the zip file, and unzip it. Inside the unzipped content, find the `jre` directory.
   * Copy that `jre` tree as the `./jre` directory.
-  * Test on a HighDPI device. If the text is tiny and illegible, follow the instructions below in _Fix Java 8 so it isn't microscopic and totally illegible on HighDPI devices_
 * Install the signing certificate, `code_signing.pfx`
   * See _Setting up the signing tool_, below.
   * Configure _Inno Setup_ to use the code signing certificate.
@@ -25,6 +24,7 @@ Make a Windows Installer using [Inno Setup](https://jrsoftware.org/isinfo.php)
 * Run `build_s3.sh` script to copy files to S3.
 * Alternatively, use **`build_and_deploy.sh`** to run all three scripts. 
 
+<br>
 
 # Setting up the signing tool:
 First download the SignTool.exe, from one of the Windows developer kits (it may change from time to time; search for "signtool").
@@ -41,7 +41,22 @@ click next. Then you'll get "Command of the Sign Tool:". Enter
     `sign /a /f c:\users\bill\cert\code_signing.pfx /p HighlySecurePassword2`
 adjusting for the path to the certificate and the password.
 
+<br>
+
 # Fix Java 8 so it is legible on HighDPI devices 
+
+The procedure below actually sets a registry key, so the value doesn't follow the program. It is _NOT_ a property of the program, Windows' misleading dialog to the contrary.
+
+The procedure below sets this registry key:
+* Key: `HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers`
+* Name: `{app}\ACM\jre\bin\java.exe`    _<-- full path to executable_
+* Value: (STRING_SZ) `"~ DPIUNAWARE"`
+
+Here's the inno setup incantation:
+* `[Registry]
+Root: HKCU; Subkey: "SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\ACM\jre\bin\java.exe"; ValueData: "~ DPIUNAWARE"; Flags: uninsdeletevalue`
+ 
+
 
 From https://superuser.com/questions/988379/how-do-i-run-java-apps-upscaled-on-a-high-dpi-display
 
