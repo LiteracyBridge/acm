@@ -69,6 +69,7 @@ public class Authenticator {
 
     private static Authenticator instance;
     private LoginResult loginResult = LoginResult.NONE;
+    private String defaultProgram;
 
     public static synchronized Authenticator getInstance() {
         if (instance == null) {
@@ -100,7 +101,7 @@ public class Authenticator {
     // { program : friendly-name }
     private Map<String, String> programNames;
     // { program : roles-string }
-    private Map<String, String> userProgramsAndRoles = new HashMap<>();
+    private Map<String, String> programsAndRolesForUser = new HashMap<>();
     private String selectedProgramid;
     private boolean sandboxSelected = false;
 
@@ -217,9 +218,9 @@ public class Authenticator {
      * This will be empty if offline.
      * @return the set of roles.
      */
-    public Set<String> getUserRoles() {
+    public Set<String> getUserRolesInSelectedProgram() {
         Set<String> result = new HashSet<>();
-        String roleStr = userProgramsAndRoles.get(selectedProgramid);
+        String roleStr = programsAndRolesForUser.get(selectedProgramid);
         if (roleStr != null) {
             String[] roles = roleStr.split(",");
             result.addAll(Arrays.asList(roles));
@@ -230,7 +231,7 @@ public class Authenticator {
     public boolean hasUpdatingRole() {
         // We can't do updates when offline.
         if (!isAuthenticated()) return false;
-        Set<String> userRoles = getUserRoles();
+        Set<String> userRoles = getUserRolesInSelectedProgram();
         userRoles.retainAll(UPDATING_ROLES);
         return userRoles.size() > 0;
     }
@@ -339,6 +340,7 @@ public class Authenticator {
             options.add(LoginOptions.OFFER_DEMO_MODE);
         }
         IdentityPersistence.LoginDetails savedLoginDetails = identityPersistence.retrieveLoginDetails();
+        this.defaultProgram = defaultProgram;
         loginResult = LoginResult.NONE;
 
         WelcomeDialog dialog = new WelcomeDialog(parent, applicationName, defaultProgram, options, cognitoInterface);
@@ -470,7 +472,7 @@ public class Authenticator {
         });
 
         // Build map of {programid: "role,role"}
-        userProgramsAndRoles = programs_info.entrySet().stream()
+        programsAndRolesForUser = programs_info.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, e->e.getValue().get("roles")));
         // Build a list of [programid] of those programs with s3 as repository.
         s3RepositoryList = programs_info.entrySet().stream()
@@ -480,6 +482,18 @@ public class Authenticator {
         // Extract the friendly names as {programid: "name"}
         programNames = programs_info.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, e->e.getValue().getOrDefault("name", e.getKey())));
+
+        // If the "defaultProgram" is not an S3 program, then it is either Dropbox-hosted, or strictly local to the
+        // user's computer. If the defaultProgram is not configured (on the server) for this user, simulate a FO
+        // role in that program, so that it is possible to open (but not update) it.
+        if (StringUtils.isNotBlank(defaultProgram) && !programsAndRolesForUser.containsKey(defaultProgram)
+                && !s3RepositoryList.contains(defaultProgram)) {
+            programsAndRolesForUser.put(defaultProgram, FIELD_OFFICER_ROLE_STRING);
+            // We could look in the program's properties.config for the friendly name. But, since the user
+            // had to pass the programid on the command line, it is probably slightly more user-friendly to
+            // simply show the programid, and it is certainly cheaper.
+            programNames.put(defaultProgram, defaultProgram);
+        }
     }
 
     /**
@@ -774,8 +788,8 @@ public class Authenticator {
         }
 
 
-        public Map<String, String> getProgramRoles() {
-            return userProgramsAndRoles;
+        public Map<String, String> getProgramsAndRolesForUser() {
+            return programsAndRolesForUser;
         }
 
         public Map<String, String> getProgramNames() {

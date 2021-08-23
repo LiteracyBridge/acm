@@ -452,7 +452,7 @@ public class Application extends JXFrame {
       // Even if the user didn't ask for sandbox, if they have no role in the db they picked, force sandbox.
       if (!sandbox) {
           List<String> ACM_ROLES = Arrays.asList("*", "AD", "PM", "CO");
-          Set<String> roles = authInstance.getUserRoles();
+          Set<String> roles = authInstance.getUserRolesInSelectedProgram();
           sandbox = Collections.disjoint(roles, ACM_ROLES);
       }
       ACMConfiguration.getInstance().setForceSandbox(sandbox);

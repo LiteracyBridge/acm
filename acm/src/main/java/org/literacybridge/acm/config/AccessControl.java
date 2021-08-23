@@ -738,7 +738,7 @@ public class AccessControl {
     private List<File> findZipFiles() {
         Collection<Path> homeDirPaths = dbConfiguration.getSandbox().listPaths(dbConfiguration.getProgramHomeDir().toPath());
         List<File> homeDirFiles = homeDirPaths.stream()
-            .map(Path::toFile)
+            .map(path->dbConfiguration.getSandbox().inputFile(path))
             .collect(Collectors.toList());
         List<File> zipFiles = homeDirFiles.stream()
             .filter(f -> DB_ZIP_MATCHER.matcher(f.getName().toLowerCase()).matches())

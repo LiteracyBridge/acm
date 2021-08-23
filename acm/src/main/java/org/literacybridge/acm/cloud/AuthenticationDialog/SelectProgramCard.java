@@ -329,7 +329,7 @@ public class SelectProgramCard extends CardContent {
                 return !localOrS3 || Authenticator.getInstance().isProgramS3(name);
             };
 
-            shownProgramids = welcomeDialog.cognitoInterface.getProgramRoles().keySet().stream()
+            shownProgramids = welcomeDialog.cognitoInterface.getProgramsAndRolesForUser().keySet().stream()
                 .filter(filter)
                 .collect(Collectors.toSet());
 
@@ -339,7 +339,7 @@ public class SelectProgramCard extends CardContent {
             // If updating (not sandboxing) is an option, determine which ACMs will be sandbox
             // only, and which allow a choice.
             if (welcomeDialog.options.contains(Authenticator.LoginOptions.OFFER_DEMO_MODE)) {
-                Map<String, String> programs = welcomeDialog.cognitoInterface.getProgramRoles();
+                Map<String, String> programs = welcomeDialog.cognitoInterface.getProgramsAndRolesForUser();
                 String ALL_ROLES = String.join(",", ALL_USER_ROLES);
                 allowedToBeUpdated = shownProgramids
                     .stream()
