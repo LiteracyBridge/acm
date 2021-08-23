@@ -419,7 +419,13 @@ public class AccessControl {
 
             AccessControlResolver.UPDATE_CHOICE choice = resolver.resolveUpdateStatus(this, status);
 
-            if (status == AccessControlResolver.UpdateDbStatus.ok) {
+            // If the status is "denied", the DB really is no longer checked
+            // out on the server. Delete the local checkout info so we don't
+            // think we have it checked out, but don't delete the changes. We
+            // *might* be able to get those back. (Should still be in sandbox).
+            if (status == AccessControlResolver.UpdateDbStatus.denied) {
+                dbInfo.deleteCheckoutFile();
+            } else if (status == AccessControlResolver.UpdateDbStatus.ok) {
                 // We saved the .zip OK, and updated server status OK. Safe to clean up.
                 deleteOldZipFiles();
                 dbInfo.deleteCheckoutFile();

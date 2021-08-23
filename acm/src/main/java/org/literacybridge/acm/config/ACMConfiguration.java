@@ -45,6 +45,8 @@ public class ACMConfiguration {
     private final boolean showConfiguration;
     // If true, don't lock (or unlock) the database. For testing purposes.
     private boolean noDbCheckout;
+    // Set this option when debugging to get the splash screen out of the way.
+    public final boolean noSplash;
     private boolean devo;
 
     private final Properties UsersConfigurationProperties = new Properties();
@@ -152,6 +154,7 @@ public class ACMConfiguration {
         allCategories = params.allCategories;
         showConfiguration = params.config;
         testData = params.testData;
+        noSplash = params.noSplash;
         devo = params.devo;
 
         setupACMGlobalPaths();
@@ -608,7 +611,9 @@ public class ACMConfiguration {
      */
     public File getLocalTbLoaderDirFor(String project) {
         PathsProvider pp = getPathProvider(project);
-        return pp.getLocalTbLoaderDir();
+        if (pp != null)
+            return pp.getLocalTbLoaderDir();
+        return new File(AmplioHome.getLocalTbLoadersDir(), project);
     }
     
 //    public Properties getConfigPropertiesFor(String acmName) {

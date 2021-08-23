@@ -184,7 +184,9 @@ public class GuiAccessControlResolver implements AccessControlResolver {
                 break;
             case denied:
                 String title = "Release Forced by Admin";
-                String msg = "Someone has forced control of this ACM, so you cannot check-in your changes.\nIf you are worried about losing a lot of work, contact support@amplio.org for assistance.";
+                String msg = "Someone has forced control of this ACM, so you cannot check-in your changes.\n" +
+                        "If you are worried about losing a lot of work, contact support@amplio.org for assistance.\n\n" +
+                        "IMPORTANT: Do NOT run the ACM again, because that will delete your changes.";
                 JOptionPane.showMessageDialog(parent, msg, title, JOptionPane.ERROR_MESSAGE);
                 break;
             case networkError:

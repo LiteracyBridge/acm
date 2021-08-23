@@ -279,10 +279,14 @@ public class DBConfiguration {
   }
 
   public void commitDbChanges() {
+      AccessControlResolver.UpdateDbStatus closeResult;
       if (hasMetadataChange || store.hasChanges()) {
-          accessControl.commitDbChanges();
+          closeResult = accessControl.commitDbChanges();
       } else {
-          accessControl.discardDbChanges();
+          closeResult = accessControl.discardDbChanges();
+      }
+      if (closeResult != AccessControlResolver.UpdateDbStatus.ok) {
+          return;
       }
       if (getSandbox().hasChanges()) {
           getSandbox().commit();
@@ -292,7 +296,7 @@ public class DBConfiguration {
       deleteChangeMarkerFile();
       if (!pathsProvider.isDropboxDb()) {
           try {
-              CloudSync.requestSync(getProgramId() + "_DB");
+              CloudSync.requestSync(getProgramId());
           } catch (IOException e) {
               e.printStackTrace();
           }

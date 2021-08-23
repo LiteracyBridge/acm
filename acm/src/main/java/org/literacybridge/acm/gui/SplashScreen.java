@@ -1,5 +1,7 @@
 package org.literacybridge.acm.gui;
 
+import org.literacybridge.acm.config.ACMConfiguration;
+
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -76,7 +78,8 @@ public class SplashScreen extends JFrame {
 
     public void setProgressLabel(String text, SPLASH_OPTIONS... options) {
         Set<SPLASH_OPTIONS> splashOptions = new HashSet<>(Arrays.asList(options));
-        this.setAlwaysOnTop(splashOptions.contains(ALWAYS_ON_TOP));
+        boolean onTop = splashOptions.contains(ALWAYS_ON_TOP) && !ACMConfiguration.getInstance().noSplash;
+        this.setAlwaysOnTop(onTop);
 
         this.progressLabel.setText(text);
         waitForUi();

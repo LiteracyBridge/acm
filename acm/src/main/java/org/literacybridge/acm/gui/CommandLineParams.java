@@ -25,7 +25,7 @@ public class CommandLineParams {
   @Option(name="--config", usage="Add toolbar icon to launch configuration dialog.")
   public boolean config;
 
-  @Option(name="--nosplash", aliases={"--ns", "-n"}, usage="Don't use the internal splash screen." )
+  @Option(name="--nosplash", aliases={"--ns", "-n"}, usage="Internal splash screen is never 'on top'." )
   public boolean noSplash;
 
   @Option(name="--testdata", usage="Synthesize test data, for more convenient test iteration.")

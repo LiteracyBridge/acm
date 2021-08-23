@@ -51,19 +51,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.Constants.TBLoadersLogDir;
-import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.CHOOSE_PROGRAM;
-import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.OFFLINE_EMAIL_CHOICE;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.*;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_NUMBER;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getPackageForCommunity;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getPackagesInDeployment;
 
-@SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions" })
+@SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions", "CommentedOutCode"})
 public class TBLoader extends JFrame {
     private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
 
@@ -73,9 +73,6 @@ public class TBLoader extends JFrame {
     public static TBLoader getApplication() {
         return tbLoader;
     }
-
-    static final String OLD_TBS_PREFIX = "A-";
-    private static final String NEW_TBS_PREFIX = "B-";
 
     public enum TB_ID_STRATEGY {
         AUTOMATIC("A new Talking Book ID is allocated ony when needed."),
@@ -90,6 +87,13 @@ public class TBLoader extends JFrame {
         boolean allowsManual() {
             return this==MANUAL || this==MANUAL_ON_PROGRAM_CHANGE;
         }
+
+        /**
+         * Returns true if the Talking Book should be assigned a new ID when it is deployed with
+         * content for a different program than previously deployed on that TB.
+         * @return true if the TB should receive a new ID when the program changes.
+         */
+        @SuppressWarnings("unused")
         boolean onProgramChange() {
             return this==AUTOMATIC_ON_PROGRAM_CHANGE || this==MANUAL_ON_PROGRAM_CHANGE;
         }
@@ -206,7 +210,6 @@ public class TBLoader extends JFrame {
     }
 
     private TBLoader(TbLoaderArgs tbArgs) {
-        // String project, String srnPrefix) {
         this.newProject = ACMConfiguration.cannonicalProjectName(tbArgs.project);
 
         applicationWindow = this;
@@ -301,7 +304,7 @@ public class TBLoader extends JFrame {
         Authenticator authInstance = Authenticator.getInstance();
         authInstance.setLocallyAvailablePrograms(DeploymentsManager.getLocalPrograms(),
                 ACMConfiguration.getInstance().getLocalDbxDbs());
-        Authenticator.LoginResult result = authInstance.getUserIdentity(this, "TB-Loader", newProject, OFFLINE_EMAIL_CHOICE, CHOOSE_PROGRAM);
+        Authenticator.LoginResult result = authInstance.getUserIdentity(this, "TB-Loader", newProject, LOCAL_OR_S3, OFFLINE_EMAIL_CHOICE, CHOOSE_PROGRAM);
         if (result == Authenticator.LoginResult.FAILURE) {
             JOptionPane.showMessageDialog(this,
                 "Authentication is required to use the TB-Loader.",
@@ -379,8 +382,11 @@ public class TBLoader extends JFrame {
 
     private void initializeGui() {
         setTitle(String.format("TB-Loader %s", newProject));
-
+        // If we were able to open the ACM database, we can use it to get friendlier names for languages.
+        // Otherwise, we'll have to use the languae code.
         DBConfiguration dbConfig = ACMConfiguration.getInstance().getDbConfiguration(newProject);
+        Function<String,String> labeler = dbConfig != null ? dbConfig::getLanguageLabel : x->null;
+
         String[] packagesInDeployment;
         Properties deploymentProperties = getProgramSpec().getDeploymentProperties();
         allowPackageChoice = allowPackageChoice || deploymentProperties.size()==0;
@@ -390,7 +396,7 @@ public class TBLoader extends JFrame {
             .filter(k->packagesList.contains(deploymentProperties.get(k).toString()))
             .collect(Collectors.toMap(k->deploymentProperties.get(k).toString(), k->{
                 String[] parts = k.split(",");
-                String label = dbConfig.getLanguageLabel(parts[0]);
+                String label = labeler.apply(parts[0]);
                 String languageName = label==null ? parts[0] : (label + " (" + parts[0] + ')');
                 if (parts.length > 1) {
                     languageName += ", Variant: " + parts[1];
@@ -744,7 +750,6 @@ public class TBLoader extends JFrame {
         if (contentPackage == null) {
             contentPackage = deploymentProperties.getProperty(recipient.languagecode);
         }
-        boolean ok = contentPackage != null;
         if (StringUtils.isEmpty(contentPackage)) {
             // Like ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/basic
             File deploymentDir = new File(localTbLoaderDir,

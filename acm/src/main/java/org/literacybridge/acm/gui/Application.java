@@ -191,7 +191,7 @@ public class Application extends JXFrame {
       public void windowClosing(WindowEvent e) {
           super.windowClosing(e);
           // This text has already been set; this call actually has no effect.
-          splashScreen.setProgressLabel("Shutting down...");
+          splashScreen.setProgressLabel("Shutting down...", SplashScreen.SPLASH_OPTIONS.ALWAYS_ON_TOP);
           splashScreen.makeNonTransparent();
           application.setVisible(false);
           try {
@@ -204,13 +204,13 @@ public class Application extends JXFrame {
                   Object[] optionsSaveWork = {"Save Work", "Throw Away Your Latest Changes"};
                   String msg = "If you made a mistake you can throw away all your changes now.";
                   String title = "Save Work?";
-                  int buttonIx = JOptionPane.showOptionDialog(application, msg, title, JOptionPane.YES_NO_CANCEL_OPTION,
+                  int buttonIx = JOptionPane.showOptionDialog(splashScreen, msg, title, JOptionPane.YES_NO_CANCEL_OPTION,
                       JOptionPane.QUESTION_MESSAGE, null, optionsSaveWork,
                       optionsSaveWork[0]);
                   if (buttonIx == 1) {
                       msg = "Are you sure you want to throw away all your work since opening the ACM?";
                       title = "Are You Sure?";
-                      buttonIx = JOptionPane.showOptionDialog(application, msg, title, JOptionPane.OK_CANCEL_OPTION,
+                      buttonIx = JOptionPane.showOptionDialog(splashScreen, msg, title, JOptionPane.OK_CANCEL_OPTION,
                           JOptionPane.WARNING_MESSAGE, null, null,
                           JOptionPane.CANCEL_OPTION);
                       if (buttonIx == JOptionPane.OK_OPTION) {
