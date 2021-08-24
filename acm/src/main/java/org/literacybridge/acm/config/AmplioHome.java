@@ -96,7 +96,9 @@ public class AmplioHome {
     //
     // Where we keep app specific data. This is config files, cached data, logs and stats queued for
     // upload, content data, etc.
+    // Which home directory is it? Old-style "LiteracyBridge" or new style "Amplio"?
     private VERSION version;
+    // The file matching the home directory, ~/LiteracyBridge or ~/Amplio
     private File homeDirectory;
     AmplioHome() {
         this.homeDirectory = new File("Does not exist");
@@ -159,6 +161,10 @@ public class AmplioHome {
         return instance;
     }
 
+    /**
+     * The application home directory, ~/LiteracyBridge or ~/Amplio.
+     * @return the home directory.
+     */
     public synchronized static File getDirectory() {
         return getInstance().getHomeDirectory();
     }
@@ -210,6 +216,7 @@ public class AmplioHome {
                 File legacyDir = new File(USER_HOME_DIR, VERSION.v1.directoryName);
                 if (legacyDir.exists() && legacyDir.isDirectory()) {
                     homeDir = legacyDir;
+                    //noinspection ConstantConditions
                     version = VERSION.v1;
                 }
             }

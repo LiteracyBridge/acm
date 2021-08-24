@@ -304,7 +304,12 @@ public class TBLoader extends JFrame {
         Authenticator authInstance = Authenticator.getInstance();
         authInstance.setLocallyAvailablePrograms(DeploymentsManager.getLocalPrograms(),
                 ACMConfiguration.getInstance().getLocalDbxDbs());
-        Authenticator.LoginResult result = authInstance.getUserIdentity(this, "TB-Loader", newProject, LOCAL_OR_S3, OFFLINE_EMAIL_CHOICE, CHOOSE_PROGRAM);
+        Authenticator.LoginResult result = authInstance.getUserIdentity(this,
+            "TB-Loader",
+            newProject,
+            /*LOCAL_OR_S3,*/
+            OFFLINE_EMAIL_CHOICE,
+            CHOOSE_PROGRAM);
         if (result == Authenticator.LoginResult.FAILURE) {
             JOptionPane.showMessageDialog(this,
                 "Authentication is required to use the TB-Loader.",

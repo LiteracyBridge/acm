@@ -7,6 +7,7 @@ import org.literacybridge.acm.cloud.ProjectsHelper;
 import org.literacybridge.acm.cloud.ProjectsHelper.DeploymentInfo;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
+import org.literacybridge.acm.config.PathsProvider;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.fs.ZipUnzip;
 import org.literacybridge.core.spec.ProgramSpec;
@@ -352,6 +353,54 @@ class DeploymentsManager {
     }
 
     /**
+     * Finds any published deployments that are local the user's computer. May be in !/Dropbox
+     * or in ~/Amplio/acm-dbs.
+     * @param programid for which local deployments are desired.
+     * @return a map {string, file} of the local published deployments to the directory with the latest
+     *      revision of that deployment.
+     */
+    static public Map<String, File> getLocalPublishedDeployments(String programid) {
+        Map<String, File> result = new HashMap<>();
+        // Is there a "published" directory in which to look?
+        PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(programid);
+        if (pathsProvider == null) return result;
+        File tbLoadersDir = pathsProvider.getProgramTbLoadersDir();
+        if (!tbLoadersDir.isDirectory()) return result;
+        File publishedDir = new File(tbLoadersDir, "published");
+        if (!publishedDir.isDirectory()) return result;
+
+        // Get the directories that are deployments; they contain a same-named .zip file.
+        File[] publishedDeployments = publishedDir.listFiles(file -> file.isDirectory() &&
+             new File(file, "content-" + file.getName() + ".zip").exists() ||
+                new File(file, file.getName() + ".zip").exists());
+
+        // Find the highest revision of every deployment found.
+        Map<String,String> highestRevisions = new HashMap<>();
+        assert publishedDeployments != null;
+        for (File file : publishedDeployments) {
+            String fileName = file.getName();
+            // Extract the deployment name and revision string.
+            Matcher deplMatcher = DEPLOYMENT_REVISION_PATTERN.matcher(fileName);
+            if (deplMatcher.matches()) {
+                String deploymentName = deplMatcher.group(1);
+                String fileRevision = deplMatcher.group(2).toLowerCase();
+                String previousRevision = highestRevisions.get(deploymentName);
+                // If this is a new deployment or a higher revision, save it.
+                // A longer name is always greater. When the lengths are the same, then we need
+                // to compare the strings.
+                if (previousRevision == null
+                        || fileRevision.length() > previousRevision.length()
+                        || (fileRevision.length()==previousRevision.length() && fileRevision.compareTo(previousRevision) > 0) ) {
+                    highestRevisions.put(deploymentName, fileRevision);
+                    result.put(deploymentName, file);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
      * There aren't any available Deployments when we're offline. Of course.
      */
     static class NoAvailableOfflineDeployments implements AvailableDeployments {
@@ -448,15 +497,28 @@ class DeploymentsManager {
             throws IOException
         {
             DeploymentInfo di = deploymentsInfo.get(desiredDeployment);
-            File tempDir = Files.createTempDirectory("tbloader-tmp").toFile();
-            File tempFile = new File(tempDir, di.getFileName());
 
-            Authenticator authInstance = Authenticator.getInstance();
-            ProjectsHelper projectsHelper = authInstance.getProjectsHelper();
-            projectsHelper.downloadDeployment(di, tempFile, progressHandler/*(p,t)->{System.out.printf("%d/%d\n",p,t);}*/);
+            // If the deployment is already downloaded, with the other program data, use that.
+            File zipFile = null;
+            Map<String,File> localPublishedDeployments = getLocalPublishedDeployments(project);
+            if (localPublishedDeployments.containsKey(desiredDeployment)) {
+                File publishedDir = localPublishedDeployments.get(desiredDeployment);
+                zipFile = new File(publishedDir, "content-"+publishedDir.getName()+".zip");
+                if (!zipFile.exists()) zipFile = new File(publishedDir, publishedDir.getName()+".zip");
+            }
+            if (zipFile == null || !zipFile.exists()) {
+                File tempDir = Files.createTempDirectory("tbloader-tmp").toFile();
+                File tempFile = new File(tempDir, di.getFileName());
+                Authenticator authInstance = Authenticator.getInstance();
+                ProjectsHelper projectsHelper = authInstance.getProjectsHelper();
+                projectsHelper.downloadDeployment(di,
+                    tempFile,
+                    progressHandler/*(p,t)->{System.out.printf("%d/%d\n",p,t);}*/);
+                zipFile = tempFile;
+            }
 
             //    7z x -y -o"%userprofile%\LiteracyBridge\TB-Loaders\%project%" "..\ACM-%project%\TB-Loaders\published\%latestUpdate%\content-%latestUpdate%.zip"
-            ZipUnzip.unzip(tempFile, localProjectDir);
+            ZipUnzip.unzip(zipFile, localProjectDir);
 
             // Leave a marker to indicate what is here.
             String revFileName = di.getVersionMarker() + ".rev";
@@ -466,7 +528,7 @@ class DeploymentsManager {
             }
 
         }
-
+        
         @Override
         public Map<String, String> getDeploymentDescriptions() {
             Map<String,String> result = new LinkedHashMap<>();
