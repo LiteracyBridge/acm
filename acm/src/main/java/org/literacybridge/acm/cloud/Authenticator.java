@@ -70,6 +70,7 @@ public class Authenticator {
     private static Authenticator instance;
     private LoginResult loginResult = LoginResult.NONE;
     private String defaultProgram;
+    private Set<LoginOptions> loginOptions;
 
     public static synchronized Authenticator getInstance() {
         if (instance == null) {
@@ -281,6 +282,7 @@ public class Authenticator {
         OFFER_DEMO_MODE,
         SUGGEST_DEMO_MODE,
         INCLUDE_FB_ACMS,
+        INCLUDE_FOUND_DBX_ACMS,
         NO_WAIT,
         NOP; // to alternate with another option: isFoo ? XYZ : NOP
 
@@ -335,15 +337,15 @@ public class Authenticator {
         if (!LoginOptions.allCompatible(loginFlags)) {
             throw new IllegalArgumentException("Incompatible options specified: " + LoginOptions.getIncompatibles(loginFlags));
         }
-        Set<LoginOptions> options = new HashSet<>(Arrays.asList(loginFlags));
-        if (options.contains(LoginOptions.SUGGEST_DEMO_MODE)) {
-            options.add(LoginOptions.OFFER_DEMO_MODE);
+        loginOptions = new HashSet<>(Arrays.asList(loginFlags));
+        if (loginOptions.contains(LoginOptions.SUGGEST_DEMO_MODE)) {
+            loginOptions.add(LoginOptions.OFFER_DEMO_MODE);
         }
         IdentityPersistence.LoginDetails savedLoginDetails = identityPersistence.retrieveLoginDetails();
         this.defaultProgram = defaultProgram;
         loginResult = LoginResult.NONE;
 
-        WelcomeDialog dialog = new WelcomeDialog(parent, applicationName, defaultProgram, options, cognitoInterface);
+        WelcomeDialog dialog = new WelcomeDialog(parent, applicationName, defaultProgram, loginOptions, cognitoInterface);
         dialog.setIconImage(Application.getImageIcon());
         if (savedLoginDetails != null) {
             dialog.setSavedCredentials(savedLoginDetails.email,
@@ -493,6 +495,17 @@ public class Authenticator {
             // had to pass the programid on the command line, it is probably slightly more user-friendly to
             // simply show the programid, and it is certainly cheaper.
             programNames.put(defaultProgram, defaultProgram);
+        }
+
+        if (loginOptions.contains(LoginOptions.INCLUDE_FOUND_DBX_ACMS)) {
+            // Add any locally available programs that werern't in the user's list, but
+            // add them as read-only.
+            locallyAvailablePrograms.keySet().stream()
+                .filter(p -> !programsAndRolesForUser.containsKey(p))
+                .forEach(p -> {
+                    programsAndRolesForUser.put(p, FIELD_OFFICER_ROLE_STRING);
+                    programNames.put(p, p);
+                });
         }
     }
 

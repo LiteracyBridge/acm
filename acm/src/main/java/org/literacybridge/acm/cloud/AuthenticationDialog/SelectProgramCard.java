@@ -319,11 +319,17 @@ public class SelectProgramCard extends CardContent {
             // If data must already be local, filter the list to those ACMs that are local.
             // If "LOCAL_OR_S3" means local or S3 cloud, from whence we can download it.
             Predicate<String> filter = name -> {
-                int fb = name.indexOf("-FB-");
-                if (fb > 0) {
-                    // Use the part before the "-FB-" to determine if one of the user's programs?
-                    if (includeUF) { name = name.substring(0, fb); } else { return false; }
-                }
+                //TODO: I think this is backwards. We should examine local ACM dbs to see if they are UF, and, if so,
+                // is the associated programid in the list of programs for the user. What this code does is examine
+                // the server-known ACM dbs to see if they're in the list of local databases (that part makes sense,
+                // because there may be dbs that could be available, if we downloaded them; what doesn't make sense
+                // is that a -FB- database won't be in the list of databases, on the server).
+                // Fortunately, the new UF system means we won't need any new UF databases.
+//                int fb = name.indexOf("-FB-");
+//                if (fb > 0) {
+//                    // Use the part before the "-FB-" to determine if one of the user's programs?
+//                    if (includeUF) { name = name.substring(0, fb); } else { return false; }
+//                }
                 if (localProgramIds.contains(name)) return true;
                 if (localOnly) return false;
                 return !localOrS3 || Authenticator.getInstance().isProgramS3(name);
