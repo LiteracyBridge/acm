@@ -5,30 +5,15 @@ traditionalIFS="$IFS"
 IFS="`printf '\n\t'`"
 
 function setDefaults() {
-    # The sins of the fathers are visited upon the children. Or in this case, the sins
-    # of Microsoft are visited upon the world. "Drive letter"?? Seriously? In 2021?
-    # Exceeded in its evil only by their intentional misspelling of "/" as "\", the
-    # universal escape character (or should that be "\\"?). This little hack lets
-    # the Java dropbox finder work on windows systems.
-    if [ "${OSTYPE}" == "msys" ]; then
-        dbxCp="acm.jar;lib/*"
-    else
-        dbxCp="acm.jar:lib/*"
-    fi
     # Find dropbox.
     if [ -z ${dropbox-} ]; then
-        dropbox=$(java -cp ${dbxCp} org.literacybridge.acm.utils.DropboxFinder)
-        if [ $? -ne 0 ]; then
-            if [ -e ~/Dropbox\ \(Amplio\) ]; then
-                dropbox=~/Dropbox\ \(Amplio\)
-            elif [ -e ~/Dropbox\ \(Literacy\ Bridge\) ]; then
-                dropbox=~/Dropbox\ \(Literacy\ Bridge\)
-            elif [ -e ~/Dropbox ]; then
-                dropbox=~/Dropbox
-            else
-                echo "Can't find Dropbox."
-                exit 100
-            fi
+        if [ -e ~/Dropbox\ \(Amplio\) ]; then
+            dropbox=~/Dropbox\ \(Amplio\)
+        elif [ -e ~/Dropbox ]; then
+            dropbox=~/Dropbox
+        else
+            echo "Can't find Dropbox."
+            exit 100
         fi
         export dropbox=$dropbox
     fi
