@@ -1,5 +1,7 @@
 package org.literacybridge.core.spec;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,6 +27,8 @@ public class ProgramSpec {
     @Deprecated
     public static final String DEPLOYMENT_INFO_PROPERTIES_NAME_OLD = "deployment.properties";
 
+    private Boolean haveLanguageLabelProvider = null;
+    private LanguageLabelProvider languageLabelProvider;
     private final StreamProvider streamProvider;
 
     private List<String> components = null;
@@ -55,6 +59,17 @@ public class ProgramSpec {
         this.streamProvider = streamProvider;
     }
 
+    private synchronized LanguageLabelProvider getLanguageLabelProvider() {
+        if (haveLanguageLabelProvider == null) {
+            getDeploymentProperties();
+            String languagesProperty = deploymentProperties.getProperty("AUDIO_LANGUAGES");
+            if (StringUtils.isNotBlank(languagesProperty)) {
+                languageLabelProvider = new LanguageLabelProvider(languagesProperty);
+            }
+            haveLanguageLabelProvider = languageLabelProvider != null;
+        }
+        return languageLabelProvider;
+    }
     /**
      * A StreamProvider class that loads progspec data from files in a directory.
      */
@@ -116,7 +131,7 @@ public class ProgramSpec {
         if (recipients == null) {
             try (InputStream is = getSpecStream(Recipient.FILENAME)) {
                 if (is != null) {
-                    final RecipientList result = new RecipientList();
+                    final RecipientList result = new RecipientList(getLanguageLabelProvider());
                     Set<String> columnsInRecips = CsvReader.read(is, Recipient.columnNames, result::add);
                     result.setFoundColumns(columnsInRecips);
                     recipients = result;
@@ -134,7 +149,7 @@ public class ProgramSpec {
      * @return the Recipients in that deployment.
      */
     public RecipientList getRecipientsForDeployment(int deploymentNumber) {
-        RecipientList filteredRecipients = new RecipientList();
+        RecipientList filteredRecipients = new RecipientList(getLanguageLabelProvider());
         RecipientList recipients = getRecipients();
         if (recipients.hasDeploymentsColumn()) {
             recipients.stream()
@@ -158,7 +173,7 @@ public class ProgramSpec {
      * @return the Recipients in that deployment, with that language.
      */
     public RecipientList getRecipientsForDeploymentAndLanguage(int deploymentNumber, String languagecode) {
-        RecipientList filteredRecipients = new RecipientList();
+        RecipientList filteredRecipients = new RecipientList(getLanguageLabelProvider());
         getRecipientsForDeployment(deploymentNumber).stream()
                 .filter(r -> r.languagecode.equals(languagecode))
                 .forEach(filteredRecipients::add);

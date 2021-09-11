@@ -1,65 +1,22 @@
 package org.literacybridge.acm.store;
 
+import org.literacybridge.acm.utils.IOUtils;
+import org.literacybridge.core.spec.LanguageLabelProvider;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Locale;
-import java.util.StringTokenizer;
 
-import org.literacybridge.acm.utils.IOUtils;
+public class RFC3066LanguageCode extends LanguageLabelProvider.RFC3066LanguageCode {
 
-public class RFC3066LanguageCode {
-  private String[] codes;
-
-  public RFC3066LanguageCode(String code) {
-    // parse the string
-    StringTokenizer tokenizer = new StringTokenizer(code, "-_");
-    int numTokens = tokenizer.countTokens();
-    codes = new String[numTokens];
-
-    int i = 0;
-    while (tokenizer.hasMoreTokens()) {
-      codes[i++] = tokenizer.nextToken();
-    }
-  }
-
-  public static boolean validate(RFC3066LanguageCode code) {
-    if (code.codes == null || code.codes.length == 0) {
-      return false;
+    public RFC3066LanguageCode(String code) {
+        super(code);
     }
 
-    // TODO: validate language and country codes
-    return true;
-  }
-
-  public Locale getLocale() {
-    switch (codes.length) {
-    case 0:
-      return null;
-    case 1:
-      return new Locale(codes[0]);
-    case 2:
-      return new Locale(codes[0], codes[1]);
-    default:
-      return new Locale(codes[0], codes[1], codes[2]);
-    }
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder b = new StringBuilder();
-    b.append(codes[0]);
-    for (int i = 1; i < codes.length; i++) {
-      b.append("_");
-      b.append(codes[i]);
-    }
-    return b.toString();
-  }
-
-  public static MetadataValue<RFC3066LanguageCode> deserialize(DataInput in)
+    public static MetadataValue<RFC3066LanguageCode> deserialize(DataInput in)
       throws IOException {
     String value = IOUtils.readUTF8(in);
-    return new MetadataValue<RFC3066LanguageCode>(
+    return new MetadataValue<>(
         new RFC3066LanguageCode(value));
   }
 
@@ -68,23 +25,4 @@ public class RFC3066LanguageCode {
     IOUtils.writeAsUTF8(out, value.toString());
   }
 
-  @Override
-  public boolean equals(Object obj) {
-    if (obj == this) {
-      return true;
-    }
-    if (!(obj instanceof RFC3066LanguageCode)) {
-      return false;
-    }
-    RFC3066LanguageCode other = (RFC3066LanguageCode) obj;
-    if (codes.length != other.codes.length) {
-      return false;
-    }
-    for (int ix = 0; ix < codes.length; ix++) {
-      if (!codes[ix].equals(other.codes[ix]))
-        return false;
-    }
-
-    return true;
-  }
 }

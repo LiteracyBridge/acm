@@ -288,6 +288,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     private void saveDeploymentInfoToProgramSpec(TBBuilder tbb,
         Map<String, Map<String, String>> pkgs) {
         Properties deploymentProperties = new Properties();
+        deploymentProperties.setProperty(Constants.AUDIO_LANGUAGES, dbConfig.getConfigLanguages());
         deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_FRIENDLY_NAME_PROPERTY, dbConfig.getFriendlyName());
         deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_DESCRIPTION_PROPERTY, dbConfig.getFriendlyName());
         deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_ID_PROPERTY, dbConfig.getProgramId());

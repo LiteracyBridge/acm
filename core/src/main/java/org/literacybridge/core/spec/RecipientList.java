@@ -15,8 +15,8 @@ import java.util.stream.Collectors;
 
 public class RecipientList extends DelayeredHierarchicalList<RecipientList.RecipientAdapter> {
     // Note that the view presented by the parent class may omit some of these. use getNameOfLevel(ix)
-    private final static String[] NAMES = {"Country", "Region", "District", "Community", "Group", "Agent"};
-    private final static String[] PLURALS = {"Countries", "Regions", "Districts", "Communities", "Groups", "Agents"};
+    private final static String[] NAMES = {"Country", "Region", "District", "Community", "Group", "Agent", "Language"};
+    private final static String[] PLURALS = {"Countries", "Regions", "Districts", "Communities", "Groups", "Agents", "Languages"};
     private final static String[] REQUIRED_ALWAYS = {"Community"};
     
     private final Map<String, Integer> numTbsCache = new HashMap<>();
@@ -29,8 +29,11 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
         return this.hasDeploymentsColumn;
     }
 
-    RecipientList() {
+    private final LanguageLabelProvider languageLabelProvider;
+
+    RecipientList(LanguageLabelProvider languageLabelProvider) {
         super(new HierarchyInfo<>(NAMES, PLURALS, REQUIRED_ALWAYS));
+        this.languageLabelProvider = languageLabelProvider;
     }
 
     public String getSingular(int level) {
@@ -111,6 +114,13 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
             case 3: return communityname;
             case 4: return groupname;
             case 5: return agent;
+            case 6:
+                 if (languageLabelProvider == null)
+                     return languagecode;
+                 String label = languageLabelProvider.getLanguageLabel(languagecode);
+                 if (StringUtils.isBlank(label))
+                     return languagecode;
+                 return String.format("%s (%s)", label, languagecode);
             }
             return null;
         }

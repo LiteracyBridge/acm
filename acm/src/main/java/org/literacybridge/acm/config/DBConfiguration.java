@@ -16,6 +16,7 @@ import org.literacybridge.acm.store.MetadataValue;
 import org.literacybridge.acm.store.RFC3066LanguageCode;
 import org.literacybridge.acm.store.Taxonomy;
 import org.literacybridge.acm.store.Transaction;
+import org.literacybridge.core.spec.LanguageLabelProvider;
 import org.literacybridge.core.spec.ProgramSpec;
 
 import javax.swing.JOptionPane;
@@ -31,8 +32,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -42,11 +41,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.literacybridge.acm.cloud.ProjectsHelper.PROGSPEC_ETAGS_FILE_NAME;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
@@ -57,8 +53,7 @@ public class DBConfiguration {
   private final PathsProvider pathsProvider;
 
   private boolean initialized = false;
-  private List<Locale> audioLanguages = null;
-  private final Map<Locale, String> languageLabels = new HashMap<>();
+  private LanguageLabelProvider languageLabelProvider = null;
 
   private AudioItemRepositoryImpl repository;
   private MetadataStore store;
@@ -219,7 +214,7 @@ public class DBConfiguration {
           this.store = new LuceneMetadataStore(taxonomy, getLocalLuceneIndexDir());
           this.store.addDataChangeListener(metadataChangeListener);
 
-          parseLanguageLabels();
+          getLanguageLabelProvider();
 
           fixupLanguageCodes();
           
@@ -544,65 +539,24 @@ public class DBConfiguration {
     // Configured languages
 
     public String getLanguageLabel(Locale locale) {
-        if (audioLanguages == null) {
-            parseLanguageLabels();
-        }
-        return languageLabels.get(locale);
+        return getLanguageLabelProvider().getLanguageLabel(locale);
     }
 
     public String getLanguageLabel(String languagecode) {
-        Locale locale = new Locale(languagecode);
-        return getLanguageLabel(locale);
+        return getLanguageLabelProvider().getLanguageLabel(languagecode);
     }
 
-    /**
-   * Parses the language labels from the 'AUDIO_LANGUAGES' String property
-   * contained in the config.properties file. The appropriate line in the file
-   * has the following format:
-   * AUDIO_LANGUAGES=en,dga("Dagaare"),twi("Twi"),sfw("Sehwi")
-   */
-    private final static Pattern LANGUAGE_LABEL_PATTERN = Pattern
-        .compile("^([a-zA-Z]{2,3})(?:\\(\"(.+)\"\\))?$");
-
-    private void parseLanguageLabels() {
-        if (audioLanguages == null) {
-            audioLanguages = new ArrayList<>();
+    private synchronized LanguageLabelProvider getLanguageLabelProvider() {
+        if (languageLabelProvider == null) {
             String languagesProperty = getConfigLanguages();
-            if (languagesProperty != null) {
-                String[] languages = languagesProperty.split(",");
-                for (String language : languages) {
-                    language = language.trim();
-                    if (isEmpty(language)) continue;
-                    Matcher labelMatcher = LANGUAGE_LABEL_PATTERN.matcher(language);
-                    if (labelMatcher.matches()) {
-                        String iso = labelMatcher.group(1);
-                        String label = (labelMatcher.groupCount() > 1) ?
-                                       labelMatcher.group(2) :
-                                       null;
-                        RFC3066LanguageCode rfc3066 = new RFC3066LanguageCode(iso);
-                        Locale locale = rfc3066.getLocale();
-                        if (locale != null) {
-                            if (isEmpty(label) && !locale.getDisplayName().equalsIgnoreCase(iso)) {
-                                label = locale.getDisplayName();
-                            }
-                            if (!isEmpty(label)) {
-                                languageLabels.put(locale, label);
-                            }
-                            audioLanguages.add(locale);
-                        }
-                    }
-                }
-                if (audioLanguages.isEmpty()) {
-                    languageLabels.put(Locale.ENGLISH, Locale.ENGLISH.getDisplayName());
-                    audioLanguages.add(Locale.ENGLISH);
-                }
-            }
+            languageLabelProvider = new LanguageLabelProvider(languagesProperty);
         }
+        return languageLabelProvider;
     }
 
     public List<Locale> getAudioLanguages() {
-    return Collections.unmodifiableList(audioLanguages);
-  }
+        return getLanguageLabelProvider().getAudioLanguages();
+    }
 
     private void InitializeAcmConfiguration() {
 
@@ -824,7 +778,7 @@ public class DBConfiguration {
                 .getProjectsHelper()
                 .downloadProgSpecFile(os.getKey(), os.getETag(), getSandbox().outputFile(progSpecFile.toPath()));
             if (downloaded) {
-                localProgspec.setProperty(os.getKey(), os.getETag());
+                localProgspec.setProperty(os.getKey().substring(prefixLen), os.getETag());
                 anyDownloaded = true;
             }
         }
