@@ -10,3 +10,5 @@ robocopy ..\updates\ACM .  *.jar
 robocopy ..\updates\ACM\lib lib /MIR
 robocopy ..\updates\ACM\images images /MIR
 robocopy ..\updates\ACM .
+
+call start_sync.bat

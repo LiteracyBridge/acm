@@ -34,9 +34,7 @@ WizardStyle=modern
 WizardSmallImageFile=setup.bmp
 SetupIconFile=setup.ico
 UsePreviousAppDir=no
-UninstallFilesDir={app}\updater
-
-SignTool=signtool $f
+UninstallFilesDir={app}\uninstall
 
 BackColor=$409B6A
 
@@ -47,16 +45,34 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; 
 
 [Dirs]
-Name: "{app}\acm-dbs"; Flags: uninsneveruninstall
-Name: "{app}\collectiondir"; Flags: uninsneveruninstall
-Name: "{app}\uploadqueue"; Flags: uninsneveruninstall
+; The flag means "remove the directory if it is empty". These could contain user data that we need to recover.
+Name: "{app}\acm-dbs"; Flags: uninsalwaysuninstall
+Name: "{app}\collectiondir"; Flags: uninsalwaysuninstall
+Name: "{app}\uploadqueue"; Flags: uninsalwaysuninstall
+; These won't contain user data. That's why they appear in UninstallDelete.
 Name: "{app}\ACM"; Flags: uninsalwaysuninstall
+Name: "{app}\cache"; Flags: uninsalwaysuninstall
+Name: "{app}\logs"; Flags: uninsalwaysuninstall
+Name: "{app}\sandbox"; Flags: uninsalwaysuninstall
 Name: "{app}\sync.config"; Flags: uninsalwaysuninstall
 Name: "{app}\sync.status"; Flags: uninsalwaysuninstall
+Name: "{app}\temp"; Flags: uninsalwaysuninstall
+Name: "{app}\updates"; Flags: uninsalwaysuninstall
+
+[UninstallDelete]
+Type: filesandordirs; Name: "{app}\acm-dbs\*"
+Type: filesandordirs; Name: "{app}\cache\*"
+Type: filesandordirs; Name: "{app}\logs\*"
+Type: filesandordirs; Name: "{app}\sandbox\*"
+Type: filesandordirs; Name: "{app}\sync.config\*"
+Type: filesandordirs; Name: "{app}\sync.status\*"
+Type: filesandordirs; Name: "{app}\temp\*"
+Type: filesandordirs; Name: "{app}\updates\*"
+
 
 [Files]
-; Copy this setup file itself.
-Source: "{srcexe}"; DestDir: "{app}\updater"; Flags: external
+; Copy this setup file itself. TODO: we don't seem to actually use the file. Remove this?
+; Source: "{srcexe}"; DestDir: "{app}\updater"; Flags: external
 
 ; Install Java
 Source: ".\jre\*"; DestDir: "{app}\ACM\jre\"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -73,7 +89,8 @@ Name: "{autodesktop}\{#ACM}"; Filename: "{app}\ACM\run_acm.bat"; WorkingDir: "{a
 Name: "{autoprograms}\{#TBL}"; Filename: "{app}\ACM\run_tbloader.bat"; WorkingDir: "{app}\ACM\"; IconFilename: "{app}\ACM\images\tb_loader.ico"; Flags: runminimized;
 Name: "{autodesktop}\{#TBL}"; Filename: "{app}\ACM\run_tbloader.bat"; WorkingDir: "{app}\ACM\"; IconFilename: "{app}\ACM\images\tb_loader.ico"; Tasks: desktopicon; Flags: runminimized;
 Name: "{userstartup}\AmplioSync"; Filename: "{app}\ACM\run_sync.bat"; WorkingDir: "{app}\ACM\"; Flags: runminimized;
-
+;
+; Fix java on high-dpi displays (lets Windows manage scaling; java 8 claims to manage its own scaling, then doesn't, leading to microscopic text)
 [Registry]
 Root: HKCU; Subkey: "SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\ACM\jre\bin\java.exe"; ValueData: "~ DPIUNAWARE"; Flags: uninsdeletevalue
 
