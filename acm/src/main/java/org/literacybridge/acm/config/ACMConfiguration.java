@@ -471,8 +471,9 @@ public class ACMConfiguration {
      */
     private void discoverDBs() {
         knownDbs.putAll(findContainedAcmDbs(AmplioHome.getDropboxDir(), true));
-
-        knownDbs.putAll(findContainedAcmDbs(AmplioHome.getHomeDbsRootDir(), false));
+        if (!AmplioHome.isOldStyleHomeDirectory()) {
+            knownDbs.putAll(findContainedAcmDbs(AmplioHome.getHomeDbsRootDir(), false));
+        }
     }
 
     /**

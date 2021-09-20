@@ -43,6 +43,7 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.CHOOSE_PROGRAM;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.INCLUDE_FB_ACMS;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.INCLUDE_FOUND_DBX_ACMS;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.LOCAL_DATA_ONLY;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.LOCAL_OR_S3;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.NOP;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.NO_WAIT;
@@ -431,12 +432,13 @@ public class Application extends JXFrame {
       Authenticator authInstance = Authenticator.getInstance();
       authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalProgramDbs(),
               ACMConfiguration.getInstance().getLocalDbxDbs());
+      Authenticator.LoginOptions okRepoOption = AmplioHome.isOldStyleHomeDirectory()?LOCAL_DATA_ONLY:LOCAL_OR_S3;
       Authenticator.LoginResult result = authInstance.getUserIdentity(null,
               LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
               ACMConfiguration.cannonicalProjectName(params.sharedACM),
               OFFLINE_EMAIL_CHOICE,
               CHOOSE_PROGRAM,
-              LOCAL_OR_S3, //LOCAL_DATA_ONLY,
+              okRepoOption,
               INCLUDE_FOUND_DBX_ACMS,
               params.sandbox ? SUGGEST_DEMO_MODE : OFFER_DEMO_MODE, // vs no demo mode at all
               INCLUDE_FB_ACMS,
