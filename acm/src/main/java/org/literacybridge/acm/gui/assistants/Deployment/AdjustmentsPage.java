@@ -394,12 +394,14 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
 
     /**
      * Fills the tree for a single language.
-     * @param stringListEntry a { language : [playlist] }.
+     * @param playlistsForLanguage a { language : [playlist] }.
      */
-    private void fillPlaylistsForLanguage(Map.Entry<String, List<Playlist>> stringListEntry) {
-        LanguageNode node = new LanguageNode(stringListEntry.getKey());
-        context.playlistRootNode.add(node);
-        stringListEntry.getValue().forEach(pl->fillPlaylist(node, pl));
+    private void fillPlaylistsForLanguage(Map.Entry<String, List<Playlist>> playlistsForLanguage) {
+        if (playlistsForLanguage.getValue().size() > 0) {
+            LanguageNode node = new LanguageNode(playlistsForLanguage.getKey());
+            context.playlistRootNode.add(node);
+            playlistsForLanguage.getValue().forEach(pl -> fillPlaylist(node, pl));
+        }
     }
 
     /**

@@ -248,6 +248,9 @@ public class ProgramSpec {
                         record -> result.put(record.get(RecipientMap.columns.recipientid.name()),
                             record.get(RecipientMap.columns.directory.name())));
                     recipientsMap = result;
+                } else {
+                    // No recipients map
+                    recipientsMap = new HashMap<>();
                 }
             } catch (IOException ignored) {
             }

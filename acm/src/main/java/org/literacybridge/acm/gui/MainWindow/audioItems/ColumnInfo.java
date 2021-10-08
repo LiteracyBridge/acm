@@ -50,6 +50,9 @@ public final class ColumnInfo<T> {
     return columnIndex;
   }
 
+  public String getColumnName() {
+      return columnLabelProperty == null ? "" : LabelProvider.getLabel(columnLabelProperty);
+  }
   public String getColumnName(Locale locale) {
     return columnLabelProperty == null ? ""
         : LabelProvider.getLabel(columnLabelProperty, locale);
@@ -90,7 +93,7 @@ public final class ColumnInfo<T> {
           protected AudioItemNode<T> getValue(AudioItem audioItem) {
             MetadataValue<T> value = audioItem.getMetadata()
                 .getMetadataValue(metadataField);
-            return new AudioItemNode<T>(audioItem,
+            return new AudioItemNode<>(audioItem,
                 value != null ? value.getValue() : null);
           }
         });

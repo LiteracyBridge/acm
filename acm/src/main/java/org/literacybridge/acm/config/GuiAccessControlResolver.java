@@ -1,14 +1,12 @@
 package org.literacybridge.acm.config;
 
-import org.literacybridge.acm.gui.Application;
+import org.literacybridge.acm.gui.dialogs.PopUp;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import java.awt.Component;
 import java.util.logging.Logger;
 
 import static javax.swing.JOptionPane.NO_OPTION;
-import static javax.swing.JOptionPane.YES_OPTION;
 
 /**
  * This is a class to handle prompting the user when opening or closing the database.
@@ -164,7 +162,13 @@ public class GuiAccessControlResolver implements AccessControlResolver {
                 break;
             case openedSandboxed:
                 message = "The ACM is running in demonstration mode.\nPlease remember that your changes will not be saved.";
-                JOptionPane.showMessageDialog(parent, message);
+                new PopUp.Builder()
+                    .withParent(parent)
+                    .withTitle("Demonstration Mode")
+                    .withContents(message)
+                    .withMessageType(JOptionPane.INFORMATION_MESSAGE)
+                    .withTimeout(ACMConfiguration.getInstance().isAutoGo()?3000:0)
+                    .go();
                 break;
             default:
                 throw new IllegalStateException("Unknown case in notifyStatus(OpenStatus): Should not happen.");

@@ -32,6 +32,7 @@ public class ACMConfiguration {
     private static final Logger LOG = Logger.getLogger(ACMConfiguration.class.getName());
 
     private final Map<String, DBConfiguration> knownDbs = new HashMap<>();
+    private final boolean autoGo;
     private DBConfiguration currentDB = null;
 
     private String title;
@@ -148,6 +149,7 @@ public class ACMConfiguration {
             title = params.titleACM;
         }
 
+        autoGo = params.go;
         disableUI = params.disableUI;
         forceSandbox = params.sandbox;
         doUpdate = params.update;
@@ -535,6 +537,10 @@ public class ACMConfiguration {
         if (title != null)
             return title;
         return ACMConfiguration.getInstance().getCurrentDB().getProgramHomeDirName();
+    }
+
+    public boolean isAutoGo() {
+        return autoGo;
     }
 
     public boolean isDisableUI() {

@@ -11,6 +11,7 @@ import java.awt.event.MouseMotionListener;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -26,6 +27,7 @@ import javax.swing.table.TableModel;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import org.jdesktop.swingx.sort.TableSortController;
+import org.jdesktop.swingx.table.TableColumnExt;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.messages.AudioItemTableSortOrderMessage;
@@ -89,16 +91,29 @@ public class AudioItemView extends Container {
         columnSelector.setColumnVisible(ix, false);
     }
 
-    // Set the comparator (only the Playlist Order has such a thing).
-    TableSortController<?> tableRowSorter = (TableSortController<?>) audioItemTable
-        .getRowSorter();
-    for (ColumnInfo<?> columnInfo : tableModel.getColumnInfos()) {
-      Comparator<?> comparator = columnInfo.getComparator();
-      if (comparator != null) {
-        tableRowSorter.setComparator(columnInfo.getColumnIndex(), comparator);
-      }
-    }
+    setComparators();
 
+  }
+
+  void setComparators() {
+      // Set the comparator (only the Playlist Order has such a thing).
+      TableColumnModel columnModel = audioItemTable.getColumnModel();
+      TableSortController<?> tableRowSorter = (TableSortController<?>) audioItemTable
+          .getRowSorter();
+      for (ColumnInfo<?> columnInfo : tableModel.getColumnInfos()) {
+          Comparator<?> comparator = columnInfo.getComparator();
+          if (comparator != null) {
+              Enumeration<TableColumn> et = columnModel.getColumns();
+              while (et.hasMoreElements()) {
+                  TableColumn tc = et.nextElement();
+                  if (columnInfo.getColumnName().equals(tc.getHeaderValue()) && tc instanceof TableColumnExt) {
+                      TableColumnExt tce = (TableColumnExt)tc;
+                      tce.setComparator(comparator);
+                  }
+              }
+              tableRowSorter.setComparator(columnInfo.getColumnIndex(), comparator);
+          }
+      }
   }
 
   private void addToMessageService() {

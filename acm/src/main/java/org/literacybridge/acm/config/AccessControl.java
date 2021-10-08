@@ -512,7 +512,7 @@ public class AccessControl {
         requestUrl.append('/').append(db);
         requestUrl.append("?version=").append(Constants.ACM_VERSION);
         requestUrl.append("&name=").append(authenticator.getUserEmail());
-        requestUrl.append("&contact=").append(authenticator.getUserProperty("phone_number", ""));
+        requestUrl.append("&contact=").append(authenticator.getUserContact());
         requestUrl.append("&computername=").append(computerName);
 
         JSONObject jsonResponse = awsInterface.authenticatedGetCall(requestUrl.toString());

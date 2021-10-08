@@ -1,9 +1,14 @@
 package org.literacybridge.acm.gui.dialogs;
 
 import org.jdesktop.swingx.VerticalLayout;
+import org.literacybridge.acm.gui.util.UIUtils;
 
 import javax.swing.*;
 import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,6 +26,7 @@ public class PopUp {
         private Icon icon = null;
         private Object[] options = null;
         private Object initialValue = null;
+        private int timeout = -1;
 
         private boolean optOut = false;
 
@@ -61,7 +67,7 @@ public class PopUp {
 
         /**
          * The JOptionPane "message type".
-         * @param messageType, like PLAIN_MESSAGE, ERROR_MESSAGE, ...
+         * @param messageType, like PLAIN_MESSAGE, INFORMATION_MESSAGE, ERROR_MESSAGE, ...
          * @return this, for chaining.
          */
         public Builder withMessageType(int messageType) {
@@ -114,6 +120,16 @@ public class PopUp {
         }
 
         /**
+         * Adds an optional automatic timeout.
+         * @param timeoutMs Number of miliseconds after which to accept the default.
+         * @return this, for chaining.
+         */
+        public Builder withTimeout(int timeoutMs) {
+            this.timeout = timeoutMs;
+            return this;
+        }
+
+        /**
          * Creates and displays a dialog with the options that have been set.
          * @return the return from the dialog.
          */
@@ -132,42 +148,97 @@ public class PopUp {
         this.builder = builder;
     }
 
+
+    private JDialog dialog;
+    final JLabel countdown = new JLabel();
+    private int timeRemaining;
+
     private int go() {
         if (optedOut.containsKey(builder.title)) return optedOut.get(builder.title);
         boolean[] optedOut = {false};
+        timeRemaining = builder.timeout;
         Object message;
         JPanel panel = new JPanel();
+        final JLabel countdown = new JLabel();
         panel.setLayout(new VerticalLayout());
 
-        if (builder.optOut) {
+        if (builder.optOut || builder.timeout > 0) {
             if (builder.contents instanceof String) {
                 String msg = "<html>" + ((String) builder.contents).replace("\n", "<br>");
                 panel.add(new JLabel(msg));
             } else {
                 panel.add((Component) builder.contents);
             }
-            panel.add(new JLabel(" "));
-            JCheckBox optOut = new JCheckBox("Don't show this again.");
-            optOut.addActionListener(e -> {
-                if (e.getSource() instanceof JCheckBox) optedOut[0] = ((JCheckBox)e.getSource()).isSelected();
-            });
-            panel.add(optOut);
+            if (builder.optOut) {
+                panel.add(new JLabel(" "));
+                JCheckBox optOut = new JCheckBox("Don't show this again.");
+                optOut.addActionListener(e -> {
+                    if (e.getSource() instanceof JCheckBox) optedOut[0] = ((JCheckBox) e.getSource()).isSelected();
+                });
+                panel.add(optOut);
+            }
+            if (builder.timeout > 0) {
+                panel.add(new JLabel(" "));
+                panel.add(countdown);
+                setTimeoutMessage();
+            }
             message = panel;
         } else {
             message = builder.contents;
         }
-        int result = JOptionPane.showOptionDialog(builder.parent,
-            message,
-            builder.title,
-            builder.optionType,
-            builder.messageType,
-            builder.icon,
-            builder.options,
-            builder.initialValue);
+
+        JOptionPane op = new JOptionPane(message, builder.messageType, builder.optionType, builder.icon, builder.options);
+        dialog = op.createDialog(builder.parent, builder.title);
+        op.setInitialSelectionValue(JOptionPane.OK_OPTION);
+        dialog.setAlwaysOnTop(true);
+        dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        if (builder.timeout > 0) {
+            dialog.addComponentListener(autoCloseListener);
+        }
+
+        dialog.setVisible(true);
+        Object selectedValue = op.getValue();
+
+        int result = JOptionPane.CLOSED_OPTION;
+        //**************************************************************
+        // Copied from JOptionPane.java
+        if (selectedValue == null) {
+            // result = JOptionPane.CLOSED_OPTION;
+        } else if (builder.options == null) {
+            if (selectedValue instanceof Integer) {
+                result = (Integer) selectedValue;
+            }
+        } else {
+            for (int counter = 0, maxCounter = builder.options.length;
+                 counter < maxCounter; counter++) {
+                if (builder.options[counter].equals(selectedValue)) {result = counter;}
+            }
+        }
+        //**************************************************************
+
         if (optedOut[0]) {
             PopUp.optedOut.put(builder.title, result);
         }
         return result;
     }
 
+    private void setTimeoutMessage() {
+        UIUtils.setLabelText(countdown,
+            String.format("Closing in %d seconds...", (timeRemaining + 500) / 1000));    }
+
+    ComponentAdapter autoCloseListener = new ComponentAdapter() {
+        @Override
+        public void componentShown(ComponentEvent e) {
+            super.componentShown(e);
+            final Timer t = new Timer(1000, e1 -> {
+                timeRemaining -= 1000;
+                if (timeRemaining <= 0) {
+                    dialog.setVisible(false);
+                } else {
+                    setTimeoutMessage();
+                }
+            });
+            t.start();
+        }
+    };
 }
