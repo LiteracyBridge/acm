@@ -35,11 +35,13 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     private final int threshold;
     private final boolean warnForMissingGreetings;
     private final JLabel fuzzyThresholdError;
-    private final JCheckBox greetingWarnings;
-    private final JCheckBox forceWavConversion;
+    private final JCheckBox greetingWarningsCB;
+    private final JCheckBox forceWavConversionCB;
     private final boolean isForceWavConversion;
     private final JCheckBox packageChoiceCB;
     private final boolean isPackageChoice;
+    private final JCheckBox hasTbV2DevicesCB;
+    private final boolean hasTbV2Devices;
     private JCheckBox clearProgspec;
 
     @Override
@@ -57,6 +59,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         warnForMissingGreetings = ACMConfiguration.getInstance().getCurrentDB().getWarnForMissingGreetings();
         isForceWavConversion = ACMConfiguration.getInstance().getCurrentDB().isForceWavConversion();
         isPackageChoice = ACMConfiguration.getInstance().getCurrentDB().isPackageChoice();
+        hasTbV2Devices = ACMConfiguration.getInstance().getCurrentDB().hasTbV2Devices();
 
         // Set an empty border on the panel, to give some blank space around the content.
         setLayout(new BorderLayout());
@@ -135,18 +138,26 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
         gbcLeft.anchor = GridBagConstraints.BASELINE_TRAILING;
         gridPanel.add(new JLabel("Greetings warnings:"), gbcLeft);
         gbcRight.anchor = GridBagConstraints.BASELINE_LEADING;
-        greetingWarnings = new JCheckBox("Warn if greetings are missing for deployment", warnForMissingGreetings);
-        greetingWarnings.setToolTipText(
+        greetingWarningsCB = new JCheckBox("Warn if greetings are missing for deployment", warnForMissingGreetings);
+        greetingWarningsCB.setToolTipText(
                 "When creating a Deployment, should you be warned if any Recipients are missing custom greetings?");
-        gridPanel.add(greetingWarnings, gbcRight);
+        gridPanel.add(greetingWarningsCB, gbcRight);
 
         // Setting: Always conert wav->wav for better compatibility, smaller file size.
         gridPanel.add(new JLabel("Preprocess WAV files:"), gbcLeft);
         gbcRight.anchor = GridBagConstraints.BASELINE_LEADING;
-        forceWavConversion = new JCheckBox("Preprocess .WAV files for better compatibility.", isForceWavConversion);
-        forceWavConversion.setToolTipText(
+        forceWavConversionCB = new JCheckBox("Preprocess .WAV files for better compatibility.", isForceWavConversion);
+        forceWavConversionCB.setToolTipText(
                 "When importing a .WAV file, pre-process to improve compatibility and reduce file size");
-        gridPanel.add(forceWavConversion, gbcRight);
+        gridPanel.add(forceWavConversionCB, gbcRight);
+
+        // Setting: Has TBv2 devices
+        gridPanel.add(new JLabel("Version-2 Talking Books:"), gbcLeft);
+        gbcRight.anchor = GridBagConstraints.BASELINE_LEADING;
+        hasTbV2DevicesCB = new JCheckBox("There are Version-2 Talking Books in the program.", hasTbV2Devices);
+        hasTbV2DevicesCB.setToolTipText(
+                "Some of the Talking Books in the program are the Version-2 devices.");
+        gridPanel.add(hasTbV2DevicesCB, gbcRight);
 
         gridPanel.add(new JLabel("Allow package override"), gbcLeft);
         gbcRight.anchor = GridBagConstraints.BASELINE_LEADING;
@@ -238,13 +249,18 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
             haveChanges = true;
         }
 
-        if (greetingWarnings.isSelected() != warnForMissingGreetings) {
-            ACMConfiguration.getInstance().getCurrentDB().setWarnForMissingGreetings(greetingWarnings.isSelected());
+        if (greetingWarningsCB.isSelected() != warnForMissingGreetings) {
+            ACMConfiguration.getInstance().getCurrentDB().setWarnForMissingGreetings(greetingWarningsCB.isSelected());
             haveChanges = true;
         }
 
-        if (forceWavConversion.isSelected() != isForceWavConversion) {
-            ACMConfiguration.getInstance().getCurrentDB().setForceWavConversion(forceWavConversion.isSelected());
+        if (forceWavConversionCB.isSelected() != isForceWavConversion) {
+            ACMConfiguration.getInstance().getCurrentDB().setForceWavConversion(forceWavConversionCB.isSelected());
+            haveChanges = true;
+        }
+
+        if (hasTbV2DevicesCB.isSelected() != hasTbV2Devices) {
+            ACMConfiguration.getInstance().getCurrentDB().setHasTbV2Devices(hasTbV2DevicesCB.isSelected());
             haveChanges = true;
         }
 
@@ -284,6 +300,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     /**
      * Listen to changes to the fuzzy match threshold, and validate whenever it changes.
      */
+    @SuppressWarnings("FieldCanBeLocal")
     private final DocumentListener thresholdDocumentListener = new DocumentListener() {
         @Override
         public void insertUpdate(DocumentEvent e) {

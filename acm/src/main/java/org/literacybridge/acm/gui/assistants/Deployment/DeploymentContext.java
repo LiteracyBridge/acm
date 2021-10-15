@@ -4,6 +4,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.assistants.common.AssistantContext;
 import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.deployment.DeploymentInfo;
 import org.literacybridge.core.spec.ContentSpec;
 
 import java.util.HashMap;
@@ -43,6 +44,8 @@ class DeploymentContext implements AssistantContext {
         return ACMConfiguration.isTestData() || ACMConfiguration.isSandbox();
     }
 
+    // Information about packages, playlists, and other deployment information is gathered here.
+    DeploymentInfo deploymentInfo;
 
     // { language : { playlisttitle : prompts } }
     Map<String, Map<String, PlaylistPrompts>> prompts = new HashMap<>();

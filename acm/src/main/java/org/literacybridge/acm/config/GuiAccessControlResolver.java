@@ -35,7 +35,13 @@ public class GuiAccessControlResolver implements AccessControlResolver {
             // Notifications. The database will open.
             case checkedOut:
                 message = "You have already checked out this ACM.\nYou can now continue making changes to it.";
-                JOptionPane.showMessageDialog(parent, message);
+                new PopUp.Builder()
+                    .withParent(parent)
+                    .withTitle("Already Checked Out")
+                    .withContents(message)
+                    .withMessageType(JOptionPane.INFORMATION_MESSAGE)
+                    .withTimeout(ACMConfiguration.getInstance().isAutoGo()?3000:0)
+                    .go();
                 break;
             case newDatabase:
                 // Nothing to do here.

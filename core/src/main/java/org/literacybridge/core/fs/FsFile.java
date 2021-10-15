@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.List;
  */
 
 public class FsFile extends TbFile {
-    private File file;
+    private final File file;
 
     public FsFile(File file) {
         this.file = file;
@@ -77,6 +78,12 @@ public class FsFile extends TbFile {
         try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file, append))) {
             copy(content, out);
         }
+    }
+
+    @Override
+    public OutputStream createNew(Flags... flags) throws IOException {
+        boolean append = Arrays.asList(flags).contains(Flags.append);
+        return new BufferedOutputStream(new FileOutputStream(file, append));
     }
 
     @Override

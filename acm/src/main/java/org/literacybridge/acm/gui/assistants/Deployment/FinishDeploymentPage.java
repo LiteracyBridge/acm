@@ -14,6 +14,8 @@ import org.literacybridge.acm.gui.assistants.util.AcmContent.LanguageNode;
 import org.literacybridge.acm.gui.assistants.util.AcmContent.PlaylistNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.deployment.DeploymentInfo;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.EmailHelper.TD;
@@ -28,7 +30,10 @@ import org.literacybridge.core.spec.Deployment;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 
-import javax.swing.*;
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.SwingWorker;
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -52,6 +57,7 @@ import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -73,9 +79,9 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     private final JButton viewErrorsButton;
     private final JLabel currentState;
 
-    private DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
-    private List<Exception> errors = new ArrayList<>();
-    private DateTimeFormatter localDateFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL)
+    private final DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
+    private final List<Exception> errors = new ArrayList<>();
+    private final DateTimeFormatter localDateFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL)
         .withZone(ZoneId.systemDefault());
     private StringBuilder summaryMessage;
     private final JLabel revisionText;
@@ -139,6 +145,14 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
     @Override
     protected void onPageEntered(boolean progressing) {
+        String programId = ACMConfiguration.getInstance().getCurrentDB().getProgramId();
+        Calendar startdate = Calendar.getInstance();
+        Deployment depl = context.getProgramSpec().getDeployment(context.deploymentNo);
+        startdate.setTime(depl.startdate);
+        context.deploymentInfo = new DeploymentInfo(programId, context.deploymentNo, startdate);
+        context.deploymentInfo.setUfHidden(!context.includeUfCategory);
+        context.deploymentInfo.setTutorial(context.includeTbTutorial);
+
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
             @Override
@@ -148,7 +162,11 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                     context.deploymentNo, dbConfig.getFriendlyName()));
                 summaryMessage.append(String.format("<h3>Created on %s</h3>", localDateFormatter.format(LocalDateTime.now())));
 
-                createDeployment();
+                try {
+                    createDeployment();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
                 return 0;
             }
 
@@ -242,9 +260,15 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         // Create the files in TB-Loaders/packages to match exporting playlists.
         Map<String, Map<String, String>> pkgs = exportPackages();
 
+        // New style, to support creating multiple package flavors.
+        gatherDeploymentInfo();
+        Map<String, Map<String, String>> newPkgs = exportV1Packages();
+        assert(newPkgs.equals(pkgs));
+
         try {
+            // May or may not have "ACM-" prefix, depending on Dropbox vs S3 hosted ACM database.
             String acmName = ACMConfiguration.getInstance().getCurrentDB().getProgramHomeDirName();
-            TBBuilder tbBuilder = new TBBuilder(acmName, deploymentName(), this::reportState, this::logException);
+            TBBuilder tbBuilder = new TBBuilder(ACMConfiguration.getInstance().getCurrentDB(), context.deploymentNo, deploymentName(), this::reportState, this::logException);
 
             // Create.
             final List<String> args = new ArrayList<>();
@@ -256,8 +280,12 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                 args.add(language);   // language
                 args.add(variant);   // group
             }));
+            // Old style deployment creation, driven by files in "TB-Loaders/packages"
             tbBuilder.createDeployment(args);
             saveDeploymentInfoToProgramSpec(tbBuilder, pkgs);
+
+            // New style, driven by deploymentInfo
+            tbBuilder.createDeployment(context.deploymentInfo);
 
             // Publish.
             if (context.isPublish()) {
@@ -337,6 +365,25 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
      * Builds the lists of content, and the list of lists. Returns a map
      * of language to package name. Will extract any content prompts to a
      * packages/${package}/prompts directory.
+     *
+     * Every recipient may (or may not) be tagged with a single variant.
+     * Every message may (or may not) be tagged with one or more variants.
+     *
+     * Recipients receive all un-tagged (non-variant) messages, plus any messages tagged with that recipient's variant.
+     *
+     * For every language,
+     *   find the variants that need to be built, based on the recipients for that langauge.
+     *   For every language-variant combination
+     *     create packageDir = ${acmDir}/TB-Loaders/packages/${deployment}-${deploymentNumber}-${languagecode}-${variant}
+     *     create listsDir = ${packageDir}/messages/lists/1
+     *     create promptsDir = ${packageDir}/prompts/${languagecode}/cat
+     *     create an _activeLists.txt file
+     *     For every playlists in that language-variant
+     *       find the content
+     *       create a ${category}.txt file listing the content files
+     *       possibly create a ${promptsDir}/${category}.ids file with the message ids of the short and long prompts.
+     *
+     *
      * @return {language : {variant: pkgName}}
      */
     private Map<String, Map<String, String>> exportPackages() {
@@ -408,7 +455,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
                         // If any audio items remain after filtering, create the {playlist}.txt file.
                         if (filteredNode.getAudioItemNodes().size() > 0) {
-                            String promptCat = getPromptCategoryAndFiles(prompts, promptIx, promptsDir, language);
+                            String promptCat = getPromptCategoryAndFiles(prompts, promptsDir, language);
                             // The intro message is handled specially, in the control file.
                             // User feedback category is added later. The best way to have feedback from
                             // users is a category named "Selected Feedback from Users" or some such.
@@ -421,10 +468,12 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                         }
                     }
 
-                    if (context.includeUfCategory)
+                    if (context.includeUfCategory) {
                         activeListsWriter.println(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
-                    if (context.includeTbTutorial)
+                    }
+                    if (context.includeTbTutorial) {
                         activeListsWriter.println('!' + Constants.CATEGORY_TUTORIAL);
+                    }
                     if (!haveUserFeedbackListFile) {
                         // Create an empty "9-0.txt" file if there isn't already such a file. Needed so that the
                         // first UF message recorded can be reviewed by the user.
@@ -439,6 +488,169 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
             if (languageResult.size() > 0) {
                 result.put(language, languageResult);
+            }
+        }
+        return result;
+    }
+
+    private void gatherDeploymentInfo() {
+        DeploymentSpec deploymentSpec = context.getProgramSpec().getContentSpec().getDeployment(context.deploymentNo);
+
+        for (LanguageNode languageNode : context.playlistRootNode.getLanguageNodes()) {
+            String languagecode = languageNode.getLanguageCode();
+            List<PlaylistSpec> playlistSpecs = deploymentSpec.getPlaylistSpecsForLanguage(languagecode);
+            Collection<String> variants = context.getProgramSpec().getVariantsForDeploymentAndLanguage(context.deploymentNo, languagecode);
+
+            for (String variant : variants) {
+                DeploymentInfo.PackageInfo packageInfo =  context.deploymentInfo.addPackage(languagecode, variant);
+
+                String title = null;
+                try {
+                    Map<String, PlaylistPrompts> playlistsPrompts = context.prompts.get(languagecode);
+                    for (PlaylistNode playlistNode : languageNode.getPlaylistNodes()) {
+                        title = playlistNode.getTitle();
+                        PlaylistPrompts prompts = playlistsPrompts.get(title);
+
+                        // Filter the playlist by the variants specified in the program specification.
+                        // We're not filtering by language, because this ACM playlist is already
+                        // filtered by language.
+                        // Fall back is the playlist node as found in the ACM.
+                        PlaylistNode filteredNode = playlistNode;
+                        String plTitle = title;
+                        // Try to find a playlist in the spec that matches the playlist from the ACM.
+                        PlaylistSpec playlistSpec = playlistSpecs.stream()
+                            .filter(pls->pls.getPlaylistTitle().equals(plTitle))
+                            .findFirst()
+                            .orElse(null);
+                        // If we found a playlist in the spec...
+                        if (playlistSpec != null) {
+                            // Create a new node to receive all the messages that are not
+                            // filtered out by the variant.
+                            PlaylistNode newNode = new PlaylistNode(playlistNode.getPlaylist());
+                            // Examine the audio items in the playlist
+                            for (AudioItemNode audioItemNode : playlistNode.getAudioItemNodes()) {
+                                String msgTitle = audioItemNode.getAudioItem().getTitle();
+                                // Try to find a message in the spec that matches the message in
+                                // the ACM.
+                                MessageSpec messageSpec = playlistSpec.getMessageSpecs().stream()
+                                    .filter(mss->mss.getTitle().equals(msgTitle))
+                                    .findFirst()
+                                    .orElse(null);
+                                // If the message isn't in the spec, it was added manually, so keep
+                                // it. If it is in the spec, check the variant for inclusion.
+                                if (messageSpec == null || messageSpec.includesVariant(variant)) {
+                                    newNode.add(new AudioItemNode(audioItemNode));
+                                }
+                            }
+                            filteredNode = newNode;
+                        }
+
+                        // If any audio items remain after filtering, create the {playlist}.txt file.
+                        if (filteredNode.getAudioItemNodes().size() > 0) {
+                            String promptCat = getPromptCategory(prompts, languagecode);
+                            // If this is an intro message, simply note that on the packageInfo. It doesn't get
+                            // an entry in the _activeLists, nor a categoryid.txt file.
+                            if (promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE)) {
+                                packageInfo.setIntroItem(filteredNode.getAudioItemNodes().get(0).getAudioItem());
+                            } else {
+                                // Is this a pre-populated 9-0, Uncategorized User Feeedback, playlist?
+                                // That's weird, but legal.
+                                boolean isUserFeedback = promptCat.equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
+
+                                DeploymentInfo.PackageInfo.PlaylistBuilder plPlaylistBuilder = packageInfo.new PlaylistBuilder()
+                                    .withTitle(plTitle)
+                                    .withPrompts(prompts)
+                                    .isLocked(!isUserFeedback)
+                                    .isUserFeedback(isUserFeedback);
+                                DeploymentInfo.PackageInfo.PlaylistInfo playlistInfo = packageInfo.addPlaylist(
+                                    plPlaylistBuilder);
+                                for (AudioItemNode audioItemNode : filteredNode.getAudioItemNodes()) {
+                                    AudioItem audioItem = audioItemNode.getAudioItem();
+                                    playlistInfo.addContent(audioItem);
+                                }
+                            }
+                        }
+                    }
+                } catch (IllegalStateException e) {
+                    errors.add(new DeploymentException(String.format("Error exporting playlist '%s'",
+                        title), e));
+                    e.printStackTrace();
+                }
+            }
+
+        }
+        context.deploymentInfo.prune();
+        System.out.println(context.deploymentInfo);
+    }
+
+    private Map<String, Map<String, String>> exportV1Packages() {
+        Map<String, Map<String, String>> result = new LinkedHashMap<>();
+        File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
+        File packagesDir = new File(tbLoadersDir, "v1packages");
+
+        for (DeploymentInfo.PackageInfo packageInfo : context.deploymentInfo.getPackages()) {
+            String languageCode = packageInfo.getLanguageCode();
+            String variant = packageInfo.getVariant();
+
+            Map<String, String> languageResult = result.computeIfAbsent(languageCode, k-> new LinkedHashMap<>());
+
+            // one entry in the language : package-name map.
+            String packageName = packageInfo.getShortName();
+            languageResult.put(variant, packageName);
+            File packageDir = new File(packagesDir, packageName);
+            File listsDir = new File(packageDir,
+                "messages" + File.separator + "lists" + File.separator + "1");
+            if (!listsDir.exists()) {
+                if (!listsDir.mkdirs()) errors.add(new MakeDirectoryException("prompts", listsDir));
+            }
+            File promptsDir = new File(packageDir,
+                "prompts" + File.separator + languageCode + File.separator + "cat");
+
+            // Create the list files, and copy the non-predefined prompts.
+            boolean haveUserFeedbackListFile = false;
+            File activeLists = new File(listsDir, "_activeLists.txt");
+            String title = null;
+            try (PrintWriter activeListsWriter = new PrintWriter(activeLists)) {
+                for (DeploymentInfo.PackageInfo.PlaylistInfo playlistInfo : packageInfo.getPlaylists()) {
+                    title = playlistInfo.getTitle();
+                    PlaylistPrompts prompts = playlistInfo.getPlaylistPrompts();
+
+                    String promptCat = getPromptCategoryAndFiles(prompts, promptsDir, languageCode);
+                    // The intro message is handled specially, in the control file.
+                    // User feedback category is added later. The best way to have feedback from
+                    // users is a category named "Selected Feedback from Users" or some such.
+                    if (!(promptCat.equals(Constants.CATEGORY_INTRO_MESSAGE)
+                        || promptCat.equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK))) {
+                        activeListsWriter.println("!" + promptCat);
+                    }
+                    createListFile(playlistInfo.getAudioItemIds(), promptCat, listsDir);
+                    haveUserFeedbackListFile |= promptCat.equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
+
+                }
+                // If the package has an intro, create a dummy 5-0.txt file.
+                if (packageInfo.hasIntro()) {
+                    createListFile(new ArrayList<>(Collections.singleton(packageInfo.getIntro().getId())), Constants.CATEGORY_INTRO_MESSAGE, listsDir);
+                }
+
+                if (packageInfo.hasUserFeedbackPlaylist()) {
+                    activeListsWriter.println(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK);
+                }
+                if (packageInfo.hasTutorial()) {
+                    activeListsWriter.println('!' + Constants.CATEGORY_TUTORIAL);
+                }
+                if (!haveUserFeedbackListFile) {
+                    // Create an empty "9-0.txt" file if there isn't already such a file. Needed so that the
+                    // first UF message recorded can be reviewed by the user.
+                    createListFile(new PlaylistNode(null), Constants.CATEGORY_UNCATEGORIZED_FEEDBACK, listsDir);
+                }
+            } catch (IllegalStateException | IOException | BaseAudioConverter.ConversionException | AudioItemRepository.UnsupportedFormatException e) {
+                errors.add(new DeploymentException(String.format("Error exporting playlist '%s'",
+                    title), e));
+                e.printStackTrace();
+            }
+
+            if (languageResult.size() > 0) {
+                result.put(languageCode, languageResult);
             }
         }
         return result;
@@ -510,11 +722,18 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
     private void createListFile(PlaylistNode playlistNode, String promptCat, File listsDir)
         throws FileNotFoundException
     {
+        List<String> audioItemIds = playlistNode.getAudioItemNodes()
+            .stream()
+            .map(n -> n.getAudioItem().getId())
+            .collect(Collectors.toList());
+        createListFile(audioItemIds, promptCat, listsDir);
+    }
+
+    private void createListFile(Iterable<? extends String> audioItemIds, String promptCat, File listsDir)
+            throws FileNotFoundException {
         File listFile = new File(listsDir, promptCat + ".txt");
         try (PrintWriter listWriter = new PrintWriter(listFile)) {
-            for (AudioItemNode audioItemNode : playlistNode.getAudioItemNodes()) {
-                String audioItemId = audioItemNode.getAudioItem().getId();
-
+            for (String audioItemId : audioItemIds) {
                 listWriter.println(audioItemId);
             }
         }
@@ -529,8 +748,6 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
      * program manager.
      * 
      * @param prompts The prompts that were found earlier, if any.
-     * @param promptIx The index of the playlist in the Deployment. Used to synthesize the
-     *                 category name when there isn't one already existing.
      * @param promptsDir The language-specific directory to which any content prompts should be extracted.
      * @param language The languagecode of the given prompts. Used only to give better error messages.
      * @return the category, as a String.
@@ -539,24 +756,10 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
      *          to .a18 format.
      */
     private String getPromptCategoryAndFiles(PlaylistPrompts prompts,
-            int promptIx,
-            File promptsDir,
-            String language)
+        File promptsDir,
+        String language)
         throws IOException, BaseAudioConverter.ConversionException, AudioItemRepository.UnsupportedFormatException {
-        // If there is a categoryId, that's the "prompt category".
-        String promptCat;
-        // If we're using a prompt from the content database, use the short prompt audio id
-        // as the category id.
-        if (prompts.getShortItem() != null) {
-            promptCat = prompts.getShortItem().getId();
-        } else {
-            // If not using a prompt from the ACM, we need to have found a prompt in the languages/.../cat directory.
-            // If wd did not find such file(s), categoryId will still be null.
-            if (prompts.categoryId == null) {
-                throw new IllegalStateException(String.format("Missing prompt id for category '%s' in language '%s'.", prompts.getTitle(), language));
-            }
-            promptCat = prompts.categoryId;
-        }
+        String promptCat = getPromptCategory(prompts, language);
 
         AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
         // If there is not a pre-defined set of prompt files, we'll need to extract the content audio to the
@@ -593,6 +796,30 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         return promptCat;
     }
 
+    /**
+     * Gets the "category code" for a playlist prompt. May be a taxonomy code (eg, 2-0) or may be a semi-
+     * random string (eg, LB-2_uzzqzpjzck_27d)
+     * @param prompts for which the code is desired.
+     * @param language in which the prompts should be recorded (for error reporting only)
+     * @return the category code to use when listing the prompts.
+     */
+    private String getPromptCategory(PlaylistPrompts prompts, String language) {
+        String promptCat;
+        // If we're using a prompt from the content database, use the short prompt audio id
+        // as the category id.
+        if (prompts.getShortItem() != null) {
+            promptCat = prompts.getShortItem().getId();
+        } else {
+            // If not using a prompt from the ACM, we need to have found a prompt in the languages/.../cat directory.
+            // If wd did not find such file(s), categoryId will still be null.
+            if (prompts.categoryId == null) {
+                throw new IllegalStateException(String.format("Missing prompt id for category '%s' in language '%s'.", prompts.getTitle(), language));
+            }
+            promptCat = prompts.categoryId;
+        }
+        return promptCat;
+    }
+
     private String packageName(String languagecode, String variant) {
         String projectStr = ACMConfiguration.getInstance().getCurrentDB().getProgramId();
         String deploymentStr = Integer.toString(context.deploymentNo);
@@ -609,9 +836,16 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
             projectStr = projectStr.replaceAll("[aeiouAEIOU]", "");
             packageName = projectStr + deploymentStr + languagecode + variantStr;
         }
+        // If thats still too long, eliminate underscores and hyphens in project name.
+        if (packageName.length() > Constants.MAX_PACKAGE_NAME_LENGTH) {
+            assert projectStr != null;
+            projectStr = projectStr.replaceAll("[_-]", "");
+            packageName = projectStr + deploymentStr + languagecode + variantStr;
+        }
         // If still too long, truncate project name.
         if (packageName.length() > Constants.MAX_PACKAGE_NAME_LENGTH) {
-            int keep = projectStr.length() - (Constants.MAX_PACKAGE_NAME_LENGTH - packageName.length());
+            int neededTrim = packageName.length() - Constants.MAX_PACKAGE_NAME_LENGTH;
+            int keep = projectStr.length() - neededTrim;
             if (keep > 0) {
                 projectStr = projectStr.substring(0, keep);
                 packageName = projectStr + deploymentStr + languagecode + variantStr;
@@ -620,6 +854,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                 // Use the hashcode of the string, and hope?
                 // Put the vowels back
                 projectStr = ACMConfiguration.getInstance().getCurrentDB().getProgramId();
+                variantStr = StringUtils.isNotBlank(variant) ? '-'+variant.toLowerCase() : "";
                 packageName = projectStr + deploymentStr + languagecode + variantStr;
                 packageName = Integer.toHexString(packageName.hashCode());
             }

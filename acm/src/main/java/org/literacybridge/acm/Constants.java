@@ -54,6 +54,7 @@ public class Constants {
   public final static String FUZZY_THRESHOLD = "FUZZY_THRESHOLD";
   public final static String WARN_FOR_MISSING_GREETINGS = "WARN_FOR_MISSING_GREETINGS";
   public final static String FORCE_WAV_CONVERSION = "FORCE_WAV_CONVERSION";
+  public final static String HAS_TBV2_DEVICES = "HAS_TBV2_DEVICES";
   public final static String NOTIFY_LIST = "NOTIFY_LIST";
 
   // Gather obsolete property names here. We could write code to remove these from the properties file.

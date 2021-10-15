@@ -1,41 +1,15 @@
 package core.tbloader;
 
-import junit.framework.TestCase;
-import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.literacybridge.core.fs.FsFile;
-import org.literacybridge.core.fs.TbFile;
-import org.literacybridge.core.tbloader.DeploymentInfo;
-import org.literacybridge.core.tbloader.ProgressListener;
-import org.literacybridge.core.tbloader.TBDeviceInfo;
-import org.literacybridge.core.tbloader.TBLoaderConfig;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
-import org.literacybridge.core.tbloader.TBLoaderCore;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood;
-import static org.literacybridge.core.tbloader.TBLoaderUtils.isSerialNumberFormatGood2;
 
 /**
  * Created by bill on 5/11/16.

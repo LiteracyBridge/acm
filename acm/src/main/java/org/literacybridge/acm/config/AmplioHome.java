@@ -87,7 +87,7 @@ public class AmplioHome {
         VERSION(String directoryName) {
             this.directoryName = directoryName;
         }
-        String directoryName;
+        final String directoryName;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -122,14 +122,14 @@ public class AmplioHome {
     }
 
     private File sandboxesDir = null;
-    private boolean sandboxesOverride = false;
+
     protected synchronized File getSandboxesDirectory() {
         if (sandboxesDir == null) {
             File dir;
             String override = System.getenv("sandboxes");
             if (override != null && override.length() > 0) {
                 dir = new File(override);
-                sandboxesOverride = true;
+                boolean sandboxesOverride = true;
             } else if (version == VERSION.v1) {
                 dir = new File(getAppAcmDir(), "sandbox");
             } else {
@@ -273,6 +273,20 @@ public class AmplioHome {
         } else {
             return getAppAcmDir();
         }
+    }
+
+    /**
+     * @return The location of the a18 conversion utilities. Windows only.
+     */
+    public static File getA18UtilsDir() {
+        return new File(getAppSoftwareDir(), "converters" + File.separatorChar + "a18");
+    }
+
+    /**
+     * @return The location of the STM32 "cube" utilities. Windows only.
+     */
+    public static File getStmUtilsDir() {
+        return new File(getAppSoftwareDir(), "cube");
     }
 
     public static File getLogsDir() {

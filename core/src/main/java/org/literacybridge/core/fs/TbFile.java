@@ -41,7 +41,7 @@ public abstract class TbFile {
 
     public void copy(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = copyBuffers.get();
-        int bytesRead = 0;
+        int bytesRead;
         while((bytesRead = in.read(buffer)) != -1) {
             out.write(buffer, 0, bytesRead);
         }
@@ -53,7 +53,7 @@ public abstract class TbFile {
      * We'd like 'new TbFile(parent, child)', but this'll have to do.
      * @param parent The parent file.
      * @param child Name of the child file.
-     * @return
+     * @return the new TbFile
      */
     public static TbFile open(TbFile parent, String child) {
         return parent.open(child);
@@ -93,6 +93,8 @@ public abstract class TbFile {
 
     public abstract void createNew(InputStream content, Flags... flags) throws IOException;
 
+    public abstract OutputStream createNew(Flags... flags) throws IOException;
+
     public abstract boolean delete();
 
     public abstract long length();
@@ -103,7 +105,7 @@ public abstract class TbFile {
 
     public abstract String[] list(FilenameFilter filter);
 
-    public TbFile[] listFiles() { return listFiles(null); };
+    public TbFile[] listFiles() { return listFiles(null); }
 
     public abstract TbFile[] listFiles(final FilenameFilter filter);
 

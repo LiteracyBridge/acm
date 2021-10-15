@@ -1,6 +1,9 @@
 package org.literacybridge.androidtbloader.talkingbook;
 
+import static org.literacybridge.core.fs.TbFile.Flags.append;
+
 import android.content.ContentResolver;
+
 import androidx.documentfile.provider.DocumentFile;
 
 import org.literacybridge.core.fs.TbFile;
@@ -11,8 +14,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static org.literacybridge.core.fs.TbFile.Flags.append;
 
 /**
  * This is an implementation of TbFile that wraps the Android DocumentFile. The DocumentFile is
@@ -159,6 +160,17 @@ public class AndroidDocFile extends TbFile {
         try (OutputStream out = resolver.openOutputStream(file.getUri(), streamFlags) ) {
             copy(content, out);
         }
+    }
+
+    @Override
+    public OutputStream createNew(Flags... flags) throws IOException {
+        boolean appendToExisting = Arrays.asList(flags).contains(append);
+        String streamFlags = appendToExisting ? "wa" : "w";
+        resolve();
+        if (file == null) {
+            file = parent.file.createFile("application/octet-stream", filename);
+        }
+        return resolver.openOutputStream(file.getUri(), streamFlags);
     }
 
     @Override

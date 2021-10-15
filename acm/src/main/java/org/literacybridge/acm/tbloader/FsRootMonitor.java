@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
  */
 class FsRootMonitor extends Thread {
     private static final Logger LOG = Logger.getLogger(FsRootMonitor.class.getName());
+    public static final int MILLIS_BETWEEN_SCANS = 1000;
 
     private final FileSystemView fsView = FileSystemView.getFileSystemView();
     private boolean enabled = true;
@@ -110,7 +111,7 @@ class FsRootMonitor extends Thread {
                 try {
                     rootsHandler.accept(roots);
                 } catch (Exception ex) {
-                    //ex.printStackTrace();
+                    ex.printStackTrace();
                 }
             });
             oldList.clear();
@@ -127,11 +128,11 @@ class FsRootMonitor extends Thread {
                 updateRoots(firstPass);
                 firstPass = false;
             }
-            //noinspection BusyWait
             try {
-                sleep(2000);
+                //noinspection BusyWait
+                sleep(MILLIS_BETWEEN_SCANS);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+//                e.printStackTrace();
             }
         }
     }

@@ -10,6 +10,14 @@ import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter.Conve
 
 public class ExternalConverter {
 
+    /**
+     * Gets a File named like the source but with the correct extension for the audio format, and in the target
+     * directory.
+     * @param sourceFile A file that provides the base name.
+     * @param targetDir The desired directory for the file.
+     * @param targetFormat The format for which the file will be named (.mp3, .a18, etc.)
+     * @return The file.
+     */
     public static File targetFile(File sourceFile, File targetDir, AudioConversionFormat targetFormat) {
         return BaseAudioConverter.targetFile(sourceFile, targetDir, targetFormat.getFileExtension());
     }

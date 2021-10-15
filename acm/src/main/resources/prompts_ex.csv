@@ -4,6 +4,7 @@
 4,batteries,The batteries are nearly finished. Please replace them soon.,"When the battery voltage drops below a certain level, this message is played to warn the user that the batteries will soon need to be replaced."
 5,empty subject,"There are no messages on this subject.  To create your own message, press the star.","This should seldom happen. It means that there is an empty playlist in the Deployment, so there is nothing to play."
 6,removed,Removed,"Gives confirmation that a message has been deleted. When a user records some feedback but then deletes that feedback, they'll hear this message."
+7,silence,"","0.1 seconds of silence. Used when a message is required, but there is no message."
 9,next message,"To listen to another message like this one, press the tree. To try another subject, press the right hand.","Prompts the user that the previous message has completed, and they can choose another message on the same playlist by pressing the tree or on another playlist by pressing the right hand."
 10,welcome,Welcome to the Talking Book.,This is the greeting when the Talking Book is turned on. This is the version of the greeting that is played for users who don't have a custom greeting.
 11,choose subject,Press the right hand to choose a subject.,"This prompt plays after the greeting or the optional ""Intro"" message, if there is one."

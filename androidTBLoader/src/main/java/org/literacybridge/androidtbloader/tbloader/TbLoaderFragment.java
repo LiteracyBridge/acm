@@ -1,5 +1,12 @@
 package org.literacybridge.androidtbloader.tbloader;
 
+import static android.app.Activity.RESULT_OK;
+import static android.text.TextUtils.TruncateAt.MARQUEE;
+import static org.literacybridge.androidtbloader.util.Constants.ISO8601;
+import static org.literacybridge.androidtbloader.util.Constants.UTC;
+import static org.literacybridge.androidtbloader.util.PathsProvider.getLocalDeploymentDirectory;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME;
+
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
@@ -7,9 +14,6 @@ import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,6 +25,11 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
@@ -36,9 +45,9 @@ import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.fs.ZipUnzip;
 import org.literacybridge.core.spec.Recipient;
+import org.literacybridge.core.tbdevice.TbDeviceInfo;
 import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbloader.ProgressListener;
-import org.literacybridge.core.tbloader.TBDeviceInfo;
 import org.literacybridge.core.tbloader.TBLoaderConfig;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.literacybridge.core.tbloader.TBLoaderCore;
@@ -59,13 +68,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 
-import static android.app.Activity.RESULT_OK;
-import static android.text.TextUtils.TruncateAt.MARQUEE;
-import static org.literacybridge.androidtbloader.util.Constants.ISO8601;
-import static org.literacybridge.androidtbloader.util.Constants.UTC;
-import static org.literacybridge.androidtbloader.util.PathsProvider.getLocalDeploymentDirectory;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME;
-
 /**
  * This implements the UI of the Loader portion of the application.
  */
@@ -78,7 +80,7 @@ public class TbLoaderFragment extends Fragment {
 
     private TalkingBookConnectionManager mTalkingBookConnectionManager;
     private TalkingBookConnectionManager.TalkingBook mConnectedDevice;
-    private TBDeviceInfo mConnectedDeviceInfo;
+    private TbDeviceInfo mConnectedDeviceInfo;
     private String mProject;
     private boolean mStatsOnly;
     private ArrayList<String> mPreselectedRecipients;
@@ -340,7 +342,7 @@ public class TbLoaderFragment extends Fragment {
             mCollapseCommunityName = true;
             setButtonState();
 
-            TBDeviceInfo tbDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
+            TbDeviceInfo tbDeviceInfo = TbDeviceInfo.getDeviceInfoFor(mConnectedDevice.getTalkingBookRoot(),
                 mConnectedDevice.getDeviceLabel(),
                 mSrnPrefix);
 
@@ -361,7 +363,7 @@ public class TbLoaderFragment extends Fragment {
             }
         }
 
-        private void doPerformUpdate(TBDeviceInfo tbDeviceInfo, String deviceSerialNumber) {
+        private void doPerformUpdate(TbDeviceInfo tbDeviceInfo, String deviceSerialNumber) {
             Executors.newSingleThreadExecutor().submit(() -> {
                 try {
                     performOperation(tbDeviceInfo, deviceSerialNumber);
@@ -377,7 +379,7 @@ public class TbLoaderFragment extends Fragment {
                     mProgressListener.log(getStackTrace(e));
                     mProgressListener.log("Unexpected exception:");
                 } finally {
-                    mConnectedDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
+                    mConnectedDeviceInfo = TbDeviceInfo.getDeviceInfoFor(mConnectedDevice.getTalkingBookRoot(),
                             mConnectedDevice.getDeviceLabel(),
                             mSrnPrefix);
                     final String srn = mConnectedDeviceInfo.getSerialNumber();
@@ -521,7 +523,7 @@ public class TbLoaderFragment extends Fragment {
         mConnectedDeviceInfo = null;
         if (connectedDevice != null) {
             displaySrn = connectedDevice.getSerialNumber();
-            mConnectedDeviceInfo = new TBDeviceInfo(mConnectedDevice.getTalkingBookRoot(),
+            mConnectedDeviceInfo = TbDeviceInfo.getDeviceInfoFor(mConnectedDevice.getTalkingBookRoot(),
                     mConnectedDevice.getDeviceLabel(),
                     mSrnPrefix);
             Log.d(TAG, String.format("Now connected to %s", mConnectedDeviceInfo.getDescription()));
@@ -643,7 +645,7 @@ public class TbLoaderFragment extends Fragment {
     /**
      * Updates the Talking Book
      */
-    private void performOperation(TBDeviceInfo tbDeviceInfo, String deviceSerialNumber) {
+    private void performOperation(TbDeviceInfo tbDeviceInfo, String deviceSerialNumber) {
         OperationLog.Operation opLog = OperationLog.startOperation(
             mStatsOnly ? "CollectStatistics" : "UpdateTalkingBook");
         Config config = TBLoaderAppContext.getInstance().getConfig();
@@ -741,7 +743,7 @@ public class TbLoaderFragment extends Fragment {
     }
 
     private DeploymentInfo getUpdateDeploymentInfo(OperationLog.Operation opLog,
-                                                   TBDeviceInfo tbDeviceInfo,
+                                                   TbDeviceInfo tbDeviceInfo,
                                                    String deviceSerialNumber,
                                                    String collectionTimestamp, String todaysDate,
                                                    File collectedDataDirectory,

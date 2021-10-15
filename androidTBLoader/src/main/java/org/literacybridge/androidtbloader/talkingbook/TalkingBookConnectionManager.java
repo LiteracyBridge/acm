@@ -12,15 +12,16 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.net.Uri;
 import android.os.storage.StorageManager;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
+
+import androidx.documentfile.provider.DocumentFile;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.db.TalkingBookDbHelper;
 import org.literacybridge.androidtbloader.db.TalkingBookDbSchema.KnownTalkingBooksTable;
 import org.literacybridge.core.fs.TbFile;
-import org.literacybridge.core.tbloader.TBDeviceInfo;
+import org.literacybridge.core.tbdevice.TbDeviceInfo;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -163,7 +164,7 @@ public class TalkingBookConnectionManager {
                         if (mConnectedTalkingBook == null) {
                             TbFile fs = new AndroidDocFile(root, mAppContext.getContentResolver());
                             mConnectedTalkingBook = new TalkingBook(fs,
-                                    TBDeviceInfo.getSerialNumberFromFileSystem(fs),
+                                    TbDeviceInfo.getSerialNumberFromFileSystem(fs),
                                     device.getValue().mLabel, device.getValue().mPath);
                             if (mTalkingBookConnectionEventListener != null) {
                                 Log.d(TAG, "Sending Talking Book connection event");

@@ -1,5 +1,7 @@
 package org.literacybridge.core.tbloader;
 
+import org.literacybridge.core.fs.TbFile;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -178,7 +180,10 @@ public class TBLoaderUtils {
 
         try {
             // get Package
-            String[] files = new File(deploymentDirectory, TBLoaderConstants.CONTENT_BASIC_SUBDIR)
+            File firmwareDir = new File(deploymentDirectory, TBLoaderConstants.CONTENT_BASIC_SUBDIR);
+            if (!firmwareDir.isDirectory()) new File(deploymentDirectory, "firmware.v1");
+            if (!firmwareDir.isDirectory()) new File(deploymentDirectory, "firmware");
+            String[] files = firmwareDir
                 .list((dir, name) -> {
                     String lowercase = name.toLowerCase();
                     return lowercase.endsWith(".img");

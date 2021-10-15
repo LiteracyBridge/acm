@@ -21,6 +21,7 @@ import static java.awt.GridBagConstraints.LINE_START;
 public class TblGeneralSettingsPanel extends AbstractSettingsBase {
     private final GBC protoGbc;
     private final JPanel settingsPanel;
+    public JCheckBox isStrictTbV2FirmwareCB;
     // Note min is GB, max is GiB. Because drive manufacturers will "round up" their sizes.
     private JCheckBox min2GB;
     private JCheckBox max16GiB;
@@ -28,6 +29,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
     private JCheckBox allowPackageChoice;
     private JComboBox<String> srnStrategyCombo;
     private JComboBox<String> testStrategyCombo;
+    private JCheckBox hasTbV2DevicesCB;
 
     @Override
     public String getTitle() {
@@ -59,8 +61,10 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         addMinimumUsbCapacitySetting(y++);
         addMaximumUsbCapacitySetting(y++);
         addRequiredLabelSetting(y++);
-        addSrnStrategy(y++);
         addAllowPackageChoiceSetting(y++);
+        addHasTbV2DevicesSetting(y++);
+        addStrictTbV2Firmware(y++);
+        addSrnStrategy(y++);
         addTestStrategy(y++);
 
         // Consume any blank space.
@@ -128,6 +132,25 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         settingsPanel.add(testStrategyCombo, gbc);
     }
 
+    private void addHasTbV2DevicesSetting(int y) {
+        GBC gbc = protoGbc.withGridy(y);
+        settingsPanel.add(new JLabel("Version-2 Talking Books"), gbc.withGridx(0));
+        hasTbV2DevicesCB = new JCheckBox("There are Version-2 Talking Books in the program.");
+        settingsPanel.add(hasTbV2DevicesCB, gbc);
+        hasTbV2DevicesCB.setSelected(TBLoader.getApplication().getHasTbV2Devices());
+    }
+
+
+    private void addStrictTbV2Firmware(int y) {
+        GBC gbc = protoGbc.withGridy(y);
+        settingsPanel.add(new JLabel("Strict TBv2 Firmware"), gbc.withGridx(0));
+        isStrictTbV2FirmwareCB = new JCheckBox("Require TBv2 Firmware updates before content.");
+        isStrictTbV2FirmwareCB.setToolTipText("When a TBv2 device needs a firmware update, require the update before loading content.");
+        settingsPanel.add(isStrictTbV2FirmwareCB, gbc);
+        isStrictTbV2FirmwareCB.setSelected(TBLoader.getApplication().isStrictTbV2Firmware());
+    }
+
+
     @Override
     public void onCancel() {
         // Nothing to do.
@@ -149,6 +172,8 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         tbLoaderApp.setTbIdStrategy(srnStrategyCombo.getSelectedIndex());
         tbLoaderApp.setAllowPackageChoice(allowPackageChoice.isSelected());
         tbLoaderApp.setTestStrategy(testStrategyCombo.getSelectedIndex());
+        tbLoaderApp.setHasTbV2Devices(hasTbV2DevicesCB.isSelected());
+        tbLoaderApp.setStrictTbV2Firmware(isStrictTbV2FirmwareCB.isSelected());
     }
 
     /**

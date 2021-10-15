@@ -24,6 +24,15 @@ public abstract class BaseAudioConverter {
   public File targetFile(File inputFile, File targetDir) {
     return targetFile(inputFile, targetDir, targetFormatExtension);
   }
+
+    /**
+     * Given a file with the desired base name, and a directory, and a desired extension, return a File of
+     * the given base name, with the desired extension, in the desired directory.
+     * @param inputFile File with the base name of the desire dresult.
+     * @param targetDir Directory in which the file is desired.
+     * @param alternateExtension Desired extension of the file.
+     * @return A File with the desired extension in the desired directory.
+     */
   static public File targetFile(File inputFile, File targetDir, String alternateExtension) {
     if (alternateExtension.charAt(0)!='.') alternateExtension = "." + alternateExtension;
     return new File(targetDir, FilenameUtils.removeExtension(inputFile.getName()) + alternateExtension);

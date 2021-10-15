@@ -15,8 +15,8 @@ public class TBLoaderConfig {
     // A "TBFileSystem" object representing the root of a temporary gathering point.
     private final TbFile tempDirectory;
 
-    // A directory that can contain dos utilities. (In particular, RemoveDrive.exe.)
-    private final TbFile windowsUtilsDirectory;
+    // A class implementing various dos utilities. (In particular, RemoveDrive.exe.)
+    private final FileSystemUtilities fileSystemUtilities;
 
     // The user email, if known.
     private final String userEmail;
@@ -28,7 +28,7 @@ public class TBLoaderConfig {
         this.tbLoaderId = builder.tbLoaderId;
         this.collectedDataDirectory = builder.collectedDataDirectory;
         this.tempDirectory = builder.tempDirectory;
-        this.windowsUtilsDirectory = builder.windowsUtilsDirectory;
+        this.fileSystemUtilities = builder.fileSystemUtilities;
         this.userEmail = builder.userEmail;
         this.userName = builder.userName;
     }
@@ -45,8 +45,8 @@ public class TBLoaderConfig {
         return collectedDataDirectory;
     }
 
-    public TbFile getWindowsUtilsDirectory() {
-        return windowsUtilsDirectory;
+    public FileSystemUtilities getCommandLineUtils() {
+        return fileSystemUtilities;
     }
 
     String getUserEmail() {
@@ -61,7 +61,7 @@ public class TBLoaderConfig {
         private String tbLoaderId;
         private TbFile collectedDataDirectory;
         private TbFile tempDirectory;
-        private TbFile windowsUtilsDirectory = null;
+        private FileSystemUtilities fileSystemUtilities;
         private String userEmail = null;
         private String userName = null;
 
@@ -78,6 +78,8 @@ public class TBLoaderConfig {
                 throw new IllegalStateException(
                     "TBLoaderConfig not initialized with " + missing.toString());
             }
+            if (fileSystemUtilities == null)
+                fileSystemUtilities = new FileSystemUtilities();
             return new TBLoaderConfig(this);
         }
 
@@ -96,8 +98,8 @@ public class TBLoaderConfig {
             return this;
         }
 
-        public Builder withWindowsUtilsDirectory(TbFile windowsUtilsDirectory) {
-            this.windowsUtilsDirectory = windowsUtilsDirectory;
+        public Builder withFileSystemUtilities(FileSystemUtilities fileSystemUtilities) {
+            this.fileSystemUtilities = fileSystemUtilities;
             return this;
         }
 

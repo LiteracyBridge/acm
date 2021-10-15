@@ -1,15 +1,21 @@
 package core.tbloader;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import junit.framework.TestCase;
+
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.literacybridge.core.fs.FsFile;
 import org.literacybridge.core.fs.TbFile;
+import org.literacybridge.core.tbdevice.TbDeviceInfo;
 import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbloader.ProgressListener;
-import org.literacybridge.core.tbloader.TBDeviceInfo;
 import org.literacybridge.core.tbloader.TBLoaderConfig;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.literacybridge.core.tbloader.TBLoaderCore;
@@ -29,12 +35,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by bill on 5/11/16.
@@ -81,14 +81,12 @@ public class TBLoaderIntegrationTest {
             .withTbLoaderId(tbcdId)
             .withCollectedDataDirectory(collectedDataDir)
             .withTempDirectory(tempDir)
-            .withWindowsUtilsDirectory(null)
             .withUserEmail(testUser)
             .build();
 
         assertEquals(tbLoaderConfig.getTbLoaderId(), tbcdId);
         assertEquals(tbLoaderConfig.getTempDirectory(), tempDir);
         assertEquals(tbLoaderConfig.getCollectedDataDirectory(), collectedDataDir);
-        assertNull(tbLoaderConfig.getWindowsUtilsDirectory());
     }
 
     @Test
@@ -131,7 +129,7 @@ public class TBLoaderIntegrationTest {
 
         FileUtils.copyDirectory(tbRootImage, tbRoot);
 
-        TBDeviceInfo oldTbDevice = new TBDeviceInfo(new FsFile(tbRoot), null, srnPrefix);
+        TbDeviceInfo oldTbDevice = TbDeviceInfo.getDeviceInfoFor(new FsFile(tbRoot), null, srnPrefix);
         String srn = oldTbDevice.getSerialNumber();
         if (srn.equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER) ||
             !TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, srn) ||
@@ -150,7 +148,6 @@ public class TBLoaderIntegrationTest {
             .withTbLoaderId(tbcdId)
             .withCollectedDataDirectory(collectedDataDir)
             .withTempDirectory(tempDir)
-            .withWindowsUtilsDirectory(null)
             .withUserEmail(testUser)
             .build();
 
@@ -287,7 +284,7 @@ public class TBLoaderIntegrationTest {
         return builder.build();
     }
 
-    class StatusDisplay extends ProgressListener {
+    static class StatusDisplay extends ProgressListener {
         @Override
         public void step(Steps step) {
 

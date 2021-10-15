@@ -331,7 +331,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
 
     /**
      *
-     * @param prompt The system prompt file name, like "0" or "21".
+     * @param promptId The system prompt file name, like "0" or "21".
      * @param targetFile The file to which to export. NOTE: Regardless of any extension of this file, the native
      *                   extension of the format is actually used.
      * @param language The language for which the prompt is to be exported.
@@ -340,7 +340,8 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      * @throws BaseAudioConverter.ConversionException If an existing file can't be converted to the desired format.
      */
     @Override
-    public void exportSystemPromptFileWithFormat(String prompt, File targetFile, String language, AudioFormat targetFormat) throws IOException, ConversionException {
+    public void exportSystemPromptFileWithFormat(String promptId, File targetFile, String language, AudioFormat targetFormat) throws IOException, ConversionException {
+
         String defaultExtension = targetFormat.getFileExtension();
         String givenExtension = FilenameUtils.getExtension(targetFile.getName());
         if (!defaultExtension.equalsIgnoreCase(givenExtension)) {
@@ -349,19 +350,50 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
 //                    FilenameUtils.removeExtension(targetFile.getName()) + '.' + defaultExtension);
         }
         File TbOptionsDir = new File(ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir(), "TB_Options");
-        File promptsDir = new File(TbOptionsDir, "languages" + File.separator + language);
+        String subdir = "languages" + File.separator + language;
+        File promptsDir = new File(TbOptionsDir, subdir);
         // Does the file already exist in the right format?
-        File sourceFile = new File(promptsDir, targetFile.getName());
-        if (!sourceFile.exists()) {
+        File sourceFileWithFormat = new File(promptsDir, targetFile.getName());
+        if (sourceFileWithFormat.exists()) {
+            IOUtils.copy(sourceFileWithFormat, targetFile);
+        } else {
             // Doesn't exist, so convert it.
             String basename = FilenameUtils.removeExtension(targetFile.getName());
-            sourceFile = convertFile(prompt, (name, format) -> {
+            File convertedFile = convertFile(promptId, (name, format) -> {
                 File testFile = new File(promptsDir, basename + '.' + format.getFileExtension());
                 return testFile.exists() ? testFile : null;
             }, targetFormat, targetFile.getParentFile());
         }
-        IOUtils.copy(sourceFile, targetFile);
     }
+
+    @Override
+    public void exportFileWithFormat(File sourceFile, File targetFile, AudioFormat targetFormat) throws
+                                                                                                 ConversionException,
+                                                                                                 IOException {
+        // Normalize output filename for the audio format.
+        String defaultExtension = targetFormat.getFileExtension();
+        String givenExtension = FilenameUtils.getExtension(targetFile.getName());
+        if (!defaultExtension.equalsIgnoreCase(givenExtension)) {
+            throw new ConversionException(String.format("'%s' is an illegal filename for '%s' audio format.",
+                    targetFile.getName(), targetFormat.name()));
+        }
+        // Source file with the needed format.
+        File sourceWithFormat = new File(sourceFile.getParent(),
+                FilenameUtils.removeExtension(sourceFile.getName())+'.'+targetFormat.getFileExtension());
+
+        if (sourceWithFormat.exists()) {
+            IOUtils.copy(sourceWithFormat, targetFile);
+        } else {
+            File sourceDir = sourceFile.getParentFile();
+            // Doesn't exist, so convert it.
+            String basename = FilenameUtils.removeExtension(targetFile.getName());
+            File convertedFile = convertFile(basename, (name, format) -> {
+                File testFile = new File(sourceDir, basename + '.' + format.getFileExtension());
+                return testFile.exists() ? testFile : null;
+            }, targetFormat, targetFile.getParentFile());
+        }
+    }
+
 
     /**
      *
@@ -425,12 +457,11 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         if (!sourceFile.exists()) {
             // Doesn't exist, so convert it.
             String basename = FilenameUtils.removeExtension(targetFile.getName());
-            sourceFile = convertFile(prompt, (name, format) -> {
+            File convertedFile = convertFile(prompt, (name, format) -> {
                 File testFile = new File(promptsDir, basename + '.' + format.getFileExtension());
                 return testFile.exists() ? testFile : null;
             }, targetFormat, targetFile.getParentFile());
         }
-        IOUtils.copy(sourceFile, targetFile);
 
         // Process the invitation.
         targetFile = new File(targetFile.getParentFile(), 'i'+targetFile.getName());
@@ -441,7 +472,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
             sourceFile = convertFile(prompt, (name, format) -> {
                 File testFile = new File(promptsDir, basename + '.' + format.getFileExtension());
                 return testFile.exists() ? testFile : null;
-            }, targetFormat, targetFile.getParentFile());
+            }, targetFormat, sourceFile.getParentFile());
         }
         IOUtils.copy(sourceFile, targetFile);
     }
@@ -470,17 +501,18 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
 //                    FilenameUtils.removeExtension(targetFile.getName()) + '.' + defaultExtension);
         }
 
-        File sourceFile = new File(sourceDir, FilenameUtils.removeExtension(CUSTOM_GREETING) + "." + defaultExtension);
+        File sourceFileWithFormat = new File(sourceDir, FilenameUtils.removeExtension(CUSTOM_GREETING) + "." + defaultExtension);
 
-        if (!sourceFile.exists()) {
+        if (sourceFileWithFormat.exists()) {
+            IOUtils.copy(sourceFileWithFormat, targetFile);
+        } else {
             // Doesn't exist, so convert it.
             String basename = FilenameUtils.removeExtension(targetFile.getName());
-            sourceFile = convertFile(null, (name, format) -> {
+            File convertedFile = convertFile(null, (name, format) -> {
                 File testFile = new File(sourceDir, basename + '.' + format.getFileExtension());
                 return testFile.exists() ? testFile : null;
             }, targetFormat, targetFile.getParentFile());
         }
-        IOUtils.copy(sourceFile, targetFile);
     }
 
     /**

@@ -163,6 +163,11 @@ public class ACMConfiguration {
         testData = params.testData;
         noSplash = params.noSplash;
         devo = params.devo;
+        String devEnv = System.getenv("devenv");
+        if (devEnv != null) {
+            devo = Boolean.parseBoolean(devEnv);
+        }
+
 
         setupACMGlobalPaths();
 

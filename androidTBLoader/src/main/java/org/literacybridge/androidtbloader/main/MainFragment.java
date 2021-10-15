@@ -1,5 +1,7 @@
 package org.literacybridge.androidtbloader.main;
 
+import static android.app.Activity.RESULT_OK;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Fragment;
@@ -14,15 +16,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.android.material.navigation.NavigationView;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -34,9 +27,21 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttributes;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDeliveryDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.UpdateAttributesHandler;
+import com.google.android.material.navigation.NavigationView;
+
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -61,14 +66,12 @@ import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.Errors;
 import org.literacybridge.androidtbloader.util.HttpHelper;
 import org.literacybridge.core.fs.OperationLog;
-import org.literacybridge.core.tbloader.TBDeviceInfo;
+import org.literacybridge.core.tbdevice.TbDeviceInfo;
 import org.literacybridge.core.tbloader.TBLoaderUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import static android.app.Activity.RESULT_OK;
 
 /**
  * Implements the main screen. From here, the signed-in user can choose what they want to do.
@@ -596,7 +599,7 @@ public class MainFragment extends Fragment {
             mTbContent.setVisibility(View.GONE);
             mTbGroup.setBackgroundColor(getResources().getColor(R.color.white));
         } else {
-            TBDeviceInfo deviceInfo = new TBDeviceInfo(talkingBook.getTalkingBookRoot(),
+            TbDeviceInfo deviceInfo = TbDeviceInfo.getDeviceInfoFor(talkingBook.getTalkingBookRoot(),
                 talkingBook.getDeviceLabel(),
                 "b-");
             String recipientidStr = "";

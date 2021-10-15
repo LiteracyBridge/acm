@@ -17,6 +17,9 @@ import java.util.Map;
  * A class to simplify creating pop-ups, with some shared utility.
  */
 public class PopUp {
+
+    private JOptionPane optionPane;
+
     @SuppressWarnings("unused")
     public static class Builder {
         private Component parent = null;
@@ -157,7 +160,7 @@ public class PopUp {
 
 
     private JDialog dialog;
-    final JLabel countdown = new JLabel();
+    final JLabel countdown = new JLabel("Closing...");
     private int timeRemaining;
 
     private int go() {
@@ -166,7 +169,6 @@ public class PopUp {
         timeRemaining = builder.timeout;
         Object message;
         JPanel panel = new JPanel();
-        final JLabel countdown = new JLabel();
         panel.setLayout(new VerticalLayout());
 
         if (builder.optOut || builder.timeout > 0) {
@@ -194,17 +196,19 @@ public class PopUp {
             message = builder.contents;
         }
 
-        JOptionPane op = new JOptionPane(message, builder.messageType, builder.optionType, builder.icon, builder.options);
-        dialog = op.createDialog(builder.parent, builder.title);
-        op.setInitialSelectionValue(JOptionPane.OK_OPTION);
+        optionPane = new JOptionPane(message, builder.messageType, builder.optionType, builder.icon, builder.options);
+        dialog = optionPane.createDialog(builder.parent, builder.title);
+        optionPane.setInitialSelectionValue(JOptionPane.OK_OPTION);
         dialog.setAlwaysOnTop(true);
         dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
         if (builder.timeout > 0) {
             dialog.addComponentListener(autoCloseListener);
         }
         if (builder.size != null) dialog.setSize(builder.size);
+
+        // Next call waits until dialog closes.
         dialog.setVisible(true);
-        Object selectedValue = op.getValue();
+        Object selectedValue = optionPane.getValue();
 
         int result = JOptionPane.CLOSED_OPTION;
         //**************************************************************
@@ -231,8 +235,12 @@ public class PopUp {
     }
 
     private void setTimeoutMessage() {
-        UIUtils.setLabelText(countdown,
-            String.format("Closing in %d seconds...", (timeRemaining + 500) / 1000));    }
+        String msg = String.format("Close in %d seconds...", (timeRemaining + 500) / 1000);
+        try {
+            UIUtils.setLabelText(countdown, msg);
+//            countdown.setText(msg);
+        } catch (Exception ignored) {}
+    }
 
     ComponentAdapter autoCloseListener = new ComponentAdapter() {
         @Override

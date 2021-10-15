@@ -20,6 +20,13 @@ cp -av ../acm/dist/ctrl-all.jar ./ACM/
 # Audio converters
 cp -av ./converters ./ACM/
 
+# STM32 utilities
+cp -av ./cube ./ACM/cube
+# Qt5Core.dll
+# Qt5SerialPort.dll
+# Qt5Xml.dll
+# cube.exe
+
 # Desktop icons and splash screen
 mkdir ./ACM/images
 cp -av ./images/* ./ACM/images/

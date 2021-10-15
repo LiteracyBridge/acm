@@ -37,7 +37,7 @@ import static org.literacybridge.acm.gui.Assistant.AssistantPage.getMaxWidthForW
  * A Dialog to let the user choose which Content Image(s) to deploy to a Talking Book.
  */
 class SelectPackagesDialog extends JDialog {
-    public int MAX_SELECTIONS = 2;
+    public int MAX_SELECTIONS;
 
     // All of the Content Packages available in the Deployment.
     private final List<String> availablePackages;
@@ -52,14 +52,13 @@ class SelectPackagesDialog extends JDialog {
 
     private JList<String> selectedPackagesList;
     private JList<String> availablePackagesList;
-    private Map<String, String> packageNameMap;
+    private final Map<String, String> packageNameMap;
     private JButton moveDownButton;
     private JButton moveUpButton;
     private JButton addButton;
     private JButton removeButton;
     private final JCheckBox rememberSelection;
     private final JButton okButton;
-    private final JButton cancelButton;
 
     // Public API.
     public boolean isOk() {
@@ -88,10 +87,12 @@ class SelectPackagesDialog extends JDialog {
         Map<String, String> packageNameMap,
         List<String> defaultPackages,
         List<String> currentPackages,
-        boolean isRememberSelection) {
+        boolean isRememberSelection,
+        int MAX_SELECTIONS) {
         super(owner);
         setTitle("Choose Package for Recipient");
 
+        this.MAX_SELECTIONS = MAX_SELECTIONS;
         this.availablePackages = availablePackages;
         this.packageNameMap = packageNameMap;
         this.defaultPackages = defaultPackages;
@@ -140,7 +141,7 @@ class SelectPackagesDialog extends JDialog {
             this.setVisible(false);
         });
 
-        cancelButton = new JButton(LabelProvider.getLabel("CANCEL"));
+        JButton cancelButton = new JButton(LabelProvider.getLabel("CANCEL"));
         cancelButton.addActionListener(e -> this.setVisible(false));
 
         // Layout the buttons
@@ -303,6 +304,7 @@ class SelectPackagesDialog extends JDialog {
         removeButton.setEnabled(ix >= 0);
         ix = availablePackagesList.getSelectedIndex();
         String availableItem = availablePackagesList.getSelectedValue();
+        // Respect the limit on max packages. And only allow adding packages not already added.
         addButton.setEnabled(selectedPackages.size() < MAX_SELECTIONS && ix >= 0 && !selectedPackages.contains(
             availableItem));
         okButton.setEnabled(selectedPackages.size() > 0);

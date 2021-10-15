@@ -21,7 +21,7 @@ import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.tbloader.DeploymentInfo;
-import org.literacybridge.core.tbloader.TBDeviceInfo;
+import org.literacybridge.core.tbdevice.TbDeviceInfo;
 import org.literacybridge.core.tbloader.TBLoaderConfig;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.literacybridge.core.tbloader.TBLoaderCore;
@@ -40,8 +40,12 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -69,7 +73,17 @@ import static org.literacybridge.core.tbloader.TBLoaderUtils.getPackagesInDeploy
 public class TBLoader extends JFrame {
     private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
 
+    public static class TbLoaderConfig {
+        public boolean strictTbV2Firmware = true;
+        private boolean hasTbV2Devices;
+
+        public boolean hasTbV2Devices() { return hasTbV2Devices; }
+        public boolean isStrictTbV2FIrmware() { return strictTbV2Firmware; }
+    }
+    private final TbLoaderConfig tbLoaderConfig = new TbLoaderConfig();
+
     private static TBLoader tbLoader;
+    public final TbLoaderArgs tbArgs;
     private File deploymentDir;
 
     public static TBLoader getApplication() {
@@ -132,14 +146,15 @@ public class TBLoader extends JFrame {
     private String newTbSrn;
     private boolean isNewSerialNumber;
 
-    private TBDeviceInfo currentTbDevice;
+    private TbDeviceInfo currentTbDevice;
     private final String srnPrefix;
     private String newProject;
 
     // Deployment info read from Talking Book.
     private DeploymentInfo oldDeploymentInfo;
 
-    private TbFile softwareDir;
+    private File softwareDir;
+    public CommandLineUtils commandLineUtils;
     private String deviceIdHex;
     private String userEmail;
     private String userName;
@@ -212,6 +227,7 @@ public class TBLoader extends JFrame {
     }
 
     private TBLoader(TbLoaderArgs tbArgs) {
+        this.tbArgs = tbArgs;
         this.newProject = ACMConfiguration.cannonicalProjectName(tbArgs.project);
 
         applicationWindow = this;
@@ -311,7 +327,9 @@ public class TBLoader extends JFrame {
             newProject,
             /*LOCAL_OR_S3,*/
             OFFLINE_EMAIL_CHOICE,
-            CHOOSE_PROGRAM);
+            CHOOSE_PROGRAM,
+            tbArgs.autoGo?NO_WAIT:NOP
+            );
         if (result == Authenticator.LoginResult.FAILURE) {
             JOptionPane.showMessageDialog(this,
                 "Authentication is required to use the TB-Loader.",
@@ -340,7 +358,7 @@ public class TBLoader extends JFrame {
 
             localTbLoaderDir = ACMConfiguration.getInstance().getLocalTbLoaderDirFor(newProject);
             localTbLoaderDir.mkdirs();
-            softwareDir = new FsFile(ACMConfiguration.getInstance().getSoftwareDir());
+            softwareDir = ACMConfiguration.getInstance().getSoftwareDir();
 
             File appHome = ACMConfiguration.getInstance().getApplicationHomeDirectory();
             collectionWorkDir = new File(appHome, Constants.TbCollectionWorkDir);
@@ -421,14 +439,16 @@ public class TBLoader extends JFrame {
             .withProgramSpec(programSpec)
             .withPackagesInDeployment(packagesInDeployment)
             .withPackageNameMap(packageNameMap)
-            .withSettingsClickedListener(TblSettingsDialog::showDialog)
+            .withSettingsClickedListener(e -> {TblSettingsDialog.showDialog(e);tbLoaderPanel.refresh();})
             .withGoListener(this::onTbLoaderGo)
             .withRecipientListener(this::onRecipientSelected)
             .withDeviceListener(this::onDeviceSelected)
             .withForceFirmwareListener(this::onForceFirmwareChanged)
             .withForceSrnListener(this::onForceSrnChanged)
             .withTbIdStrategy(tbIdStrategy)
-            .withAllowPackageChoice(allowPackageChoice);
+            .withUpdateTb2FirmwareListener(this::onUpdateTb2Firmware)
+            .withAllowPackageChoice(allowPackageChoice)
+            .withTbLoaderConfig(tbLoaderConfig);
 
         tbLoaderPanel = builder.build();
         tbLoaderPanel.setEnabled(false);
@@ -449,14 +469,43 @@ public class TBLoader extends JFrame {
         setVisible(true);
     }
 
-    // Configuration settings.
+    /**
+     * The user clicked the button to update the TBv2 firmware. Open the dialog to walk the
+     * user through using DFU mode to update the firmware.
+     * @return true if we were able to update the firmware, false otherwise.
+     */
+    private Boolean onUpdateTb2Firmware() {
+        // Like ~/Amplio/TB-Loaders/{programid}/content/{deployment}
+        File deploymentPath = new File(localTbLoaderDir,TBLoaderConstants.CONTENT_SUBDIR + File.separator +
+            deploymentChooser.getNewDeployment());
+        // Firmware versions for TBv2
+        File firmwarePath = new File(deploymentPath, "firmware.v2");
+        File firmware = new File(firmwarePath, "TBookRev2b.hex");
+        Tb2FirmwareUpdater updater =  new Tb2FirmwareUpdater(this, firmware);
+        tbLoaderPanel.setEnabled(false);
+        boolean result;
+        try {
+            updater.setVisible(true);
+            result = updater.isOk();
+        } finally {
+            tbLoaderPanel.setEnabled(true);
+        }
+        return result;
+    }
+
+    /**
+     * Load per-program configuration items (from the program's config.properties file).
+     */
     void loadConfiguration() {
         DBConfiguration config = ACMConfiguration.getInstance().getDbConfiguration(newProject);
         if (config != null) {
             // If the config file allows package choice, turn on the option. We also check the deployment later.
             this.allowPackageChoice |= config.isPackageChoice();
 
-            String valStr = config.getProperty("ALLOW_FORCE_SRN", "FALSE");
+            String valStr = config.getProperty(Constants.HAS_TBV2_DEVICES, "FALSE");
+            this.tbLoaderConfig.hasTbV2Devices = Boolean.parseBoolean(valStr);
+
+            valStr = config.getProperty("ALLOW_FORCE_SRN", "FALSE");
             if (Boolean.parseBoolean(valStr)) {
                 this.tbIdStrategy = TB_ID_STRATEGY.MANUAL;
             }
@@ -477,12 +526,22 @@ public class TBLoader extends JFrame {
         }
     }
 
+    /**
+     * If the user changes the value of "allow package choice" (in the settings page), persist the
+     * setting here.
+     * @param allowPackageChoice If true, allow the TB-Loader user to choose which package(s) to put
+     *                           onto a given Talking Book.
+     */
     void setAllowPackageChoice(boolean allowPackageChoice) {
         if (this.allowPackageChoice != allowPackageChoice) {
             tbLoaderPanel.enablePackageChoice(allowPackageChoice);
         }
         this.allowPackageChoice = allowPackageChoice;
     }
+
+    /**
+     * Get and set the value of TB ID strategy. See TB_ID_STRATEGY for more.
+     */
     TB_ID_STRATEGY getTbIdStrategy() {
         return this.tbIdStrategy;
     }
@@ -495,6 +554,11 @@ public class TBLoader extends JFrame {
         }
         this.tbIdStrategy = srnStrategy;
     }
+
+    /**
+     * Gets and sets the value of the "Testing" strategy ("Deploying today for testing only"). See
+     * TEST_DEPLOYMENT_STRATEGY for more.
+     */
     TEST_DEPLOYMENT_STRATEGY getTestStrategy() {
         return this.testStrategy;
     }
@@ -511,7 +575,21 @@ public class TBLoader extends JFrame {
         }
         this.testStrategy = testStrategy;
     }
-    
+
+    public boolean isStrictTbV2Firmware() {
+        return this.tbLoaderConfig.strictTbV2Firmware;
+    }
+    public void setStrictTbV2Firmware(boolean strict) {
+        this.tbLoaderConfig.strictTbV2Firmware = strict;
+    }
+
+    public void setHasTbV2Devices(boolean hasTbV2Devices) {
+        this.tbLoaderConfig.hasTbV2Devices = hasTbV2Devices;
+    }
+    public boolean getHasTbV2Devices() {
+        return this.tbLoaderConfig.hasTbV2Devices;
+    }
+
 
     /**
      * Looks in the ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/basic directory
@@ -523,29 +601,55 @@ public class TBLoader extends JFrame {
      */
     private void fillFirmwareVersion() {
         newTbFirmware = "(No firmware)";
+        acceptableFirmwareVersions.clear();
 
-        // Like ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/basic
-        File basicContentPath = new File(localTbLoaderDir,
-            TBLoaderConstants.CONTENT_SUBDIR + File.separator + deploymentChooser.getNewDeployment() + File.separator
-                + TBLoaderConstants.CONTENT_BASIC_SUBDIR);
-        LOG.log(Level.INFO, "DEPLOYMENT:" + deploymentChooser.getNewDeployment());
-        try {
-            File[] files;
-            if (basicContentPath.exists()) {
-                // get firmware for deployment
-                files = basicContentPath.listFiles((dir, name) -> {
-                    String lowercase = name.toLowerCase();
-                    return lowercase.endsWith(".img");
-                });
-                if (files.length > 1) newTbFirmware = "(Multiple Firmwares!)";
-                else if (files.length == 1) {
-                    newTbFirmware = FilenameUtils.removeExtension(files[0].getName());
+        // Like ~/Amplio/TB-Loaders/{programid}/content/{deployment}
+        File deploymentPath = new File(localTbLoaderDir,TBLoaderConstants.CONTENT_SUBDIR + File.separator +
+            deploymentChooser.getNewDeployment());
+        if (tbLoaderPanel.getDeviceVersion() == TbDeviceInfo.DEVICE_VERSION.TBv2) {
+            // Firmware versions for TBv2
+            File firmwarePath = new File(deploymentPath, "firmware.v2");
+            File firmwareVersionTxt = new File(firmwarePath, "firmware_built.txt");
+            if (firmwareVersionTxt.exists()) {
+                try (InputStream fis = new FileInputStream(firmwareVersionTxt);
+                     InputStreamReader isr = new InputStreamReader(fis);
+                     BufferedReader br = new BufferedReader(isr)) {
+                    newTbFirmware = br.readLine().trim();
                     acceptableFirmwareVersions.add(newTbFirmware);
+                    tbLoaderPanel.setNewFirmwareVersion(newTbFirmware);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                tbLoaderPanel.setNewFirmwareVersion(newTbFirmware);
+
             }
-        } catch (Exception ex) {
-            LOG.log(Level.WARNING, "exception - ignore and keep going with default string", ex);
+        } else if (tbLoaderPanel.getDeviceVersion() == TbDeviceInfo.DEVICE_VERSION.TBv1) {
+            // Firmware versions for TBv1
+            // Like ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/basic
+            File firmwareDir = new File(deploymentPath, TBLoaderConstants.CONTENT_BASIC_SUBDIR);
+            if (!firmwareDir.isDirectory()) new File(deploymentPath, "firmware.v1");
+            if (!firmwareDir.isDirectory()) new File(deploymentPath, "firmware");
+
+            LOG.log(Level.INFO, "DEPLOYMENT:" + deploymentChooser.getNewDeployment());
+            try {
+                File[] files;
+                if (firmwareDir.isDirectory()) {
+                    // get firmware for deployment
+                    files = firmwareDir.listFiles((dir, name) -> {
+                        String lowercase = name.toLowerCase();
+                        return lowercase.endsWith(".img");
+                    });
+                    if (files.length > 1) newTbFirmware = "(Multiple Firmwares!)";
+                    else if (files.length == 1) {
+                        newTbFirmware = FilenameUtils.removeExtension(files[0].getName());
+                        acceptableFirmwareVersions.add(newTbFirmware);
+                    }
+                    tbLoaderPanel.setNewFirmwareVersion(newTbFirmware);
+                }
+            } catch (Exception ex) {
+                LOG.log(Level.WARNING, "exception - ignore and keep going with default string", ex);
+            }
+        } else {
+            tbLoaderPanel.setNewFirmwareVersion("");
         }
 
     }
@@ -560,6 +664,7 @@ public class TBLoader extends JFrame {
      * @return the new TBLoaderConfig.
      */
     private TBLoaderConfig getTbLoaderConfig() {
+        commandLineUtils = new CommandLineUtils(softwareDir);
         String collectionTimestamp = ISO8601.format(new Date());
         File collectedDataDirectory = new File(collectionWorkDir, collectionTimestamp);
         TbFile collectedDataTbFile = new FsFile(collectedDataDirectory);
@@ -567,7 +672,7 @@ public class TBLoader extends JFrame {
         return new TBLoaderConfig.Builder().withTbLoaderId(deviceIdHex)
             .withCollectedDataDirectory(collectedDataTbFile)
             .withTempDirectory(temporaryDir)
-            .withWindowsUtilsDirectory(softwareDir)
+            .withFileSystemUtilities(commandLineUtils)
             .withUserEmail(userEmail)
             .withUserName(userName)
             .build();
@@ -712,11 +817,11 @@ public class TBLoader extends JFrame {
 
     FileSystemView fsView = FileSystemView.getFileSystemView();
     private void rootsHandler(List<File> files) {
-        List<TBDeviceInfo> newList = new ArrayList<>();
+        List<TbDeviceInfo> newList = new ArrayList<>();
         int index = -1;
         for (File root : files) {
             String label = fsView.getSystemDisplayName(root);
-            newList.add(new TBDeviceInfo(new FsFile(root), label, srnPrefix));
+            newList.add(TbDeviceInfo.getDeviceInfoFor(new FsFile(root), label, srnPrefix));
             if (prevSelected != null && root.getAbsolutePath().equals(prevSelected.getAbsolutePath())) {
                 index = newList.size()-1;
             }
@@ -726,7 +831,7 @@ public class TBLoader extends JFrame {
         }
         if (newList.size() == 0) {
             LOG.log(Level.INFO, "No drives");
-            newList.add(TBDeviceInfo.getNullDeviceInfo());
+            newList.add(TbDeviceInfo.getNullDeviceInfo());
             index = 0;
             tbLoaderPanel.getProgressDisplayManager().clearLog();
         }
@@ -735,9 +840,9 @@ public class TBLoader extends JFrame {
         }
 
         refreshingDriveInfo = true;
-        setEnabledStates();
 
         tbLoaderPanel.fillDriveList(newList, index);
+        setEnabledStates();
         if (index != -1) {
             currentTbDevice = tbLoaderPanel.getSelectedDevice();
         }
@@ -788,21 +893,22 @@ public class TBLoader extends JFrame {
      */
     private boolean isOldVsNewOk() {
         String sn = currentTbDevice.getSerialNumber();
-
-        if (!TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, sn)) {
-            if (sn != null && sn.length() > 2 && sn.startsWith("-", 1)) {
-                if (sn.compareToIgnoreCase(TBLoaderConstants.OLD_TB_SRN_PREFIX) == 0) {
-                    JOptionPane.showMessageDialog(applicationWindow,
-                        "This appears to be an OLD TB.  If so, please close this program and open the TB Loader for old TBs.",
-                        "OLD TB!",
-                        JOptionPane.WARNING_MESSAGE);
-                    return false;
-                } else if (sn.compareToIgnoreCase(TBLoaderConstants.NEW_TB_SRN_PREFIX) == 0) {
-                    JOptionPane.showMessageDialog(applicationWindow,
-                        "This appears to be a NEW TB.  If so, please close this program and open the TB Loader for new TBs.",
-                        "NEW TB!",
-                        JOptionPane.WARNING_MESSAGE);
-                    return false;
+        if (currentTbDevice.getDeviceVersion() == TbDeviceInfo.DEVICE_VERSION.TBv1) {
+            if (!TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, sn)) {
+                if (sn != null && sn.length() > 2 && sn.startsWith("-", 1)) {
+                    if (sn.compareToIgnoreCase(TBLoaderConstants.OLD_TB_SRN_PREFIX) == 0) {
+                        JOptionPane.showMessageDialog(applicationWindow,
+                            "This appears to be an OLD TB.  If so, please close this program and open the TB Loader for old TBs.",
+                            "OLD TB!",
+                            JOptionPane.WARNING_MESSAGE);
+                        return false;
+                    } else if (sn.compareToIgnoreCase(TBLoaderConstants.NEW_TB_SRN_PREFIX) == 0) {
+                        JOptionPane.showMessageDialog(applicationWindow,
+                            "This appears to be a NEW TB.  If so, please close this program and open the TB Loader for new TBs.",
+                            "NEW TB!",
+                            JOptionPane.WARNING_MESSAGE);
+                        return false;
+                    }
                 }
             }
         }
@@ -814,6 +920,8 @@ public class TBLoader extends JFrame {
      */
     private void populatePreviousValuesFromCurrentDrive() {
         if (!isOldVsNewOk()) return;
+
+        fillFirmwareVersion();
 
         String driveLabel = currentTbDevice.getLabelWithoutDriveLetter();
         if (driveLabel.equals(TBLoaderConstants.NO_DRIVE)) {
@@ -838,10 +946,10 @@ public class TBLoader extends JFrame {
             setCurrentTbFirmware(oldDeploymentInfo.getFirmwareRevision());
 
             currentTbSrn = oldDeploymentInfo.getSerialNumber();
-            if (!TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, currentTbSrn)) {
+            if (!currentTbDevice.isSerialNumberFormatGood(currentTbSrn)) {
                 currentTbSrn = TBLoaderConstants.NEED_SERIAL_NUMBER;
             }
-            newTbSrn = TBLoaderUtils.newSerialNumberNeeded(srnPrefix, currentTbSrn) ? TBLoaderConstants.NEED_SERIAL_NUMBER : currentTbSrn;
+            newTbSrn = currentTbDevice.newSerialNumberNeeded() ? TBLoaderConstants.NEED_SERIAL_NUMBER : currentTbSrn;
             selectRecipientFromCurrentDrive();
         } else {
             setCurrentTbFirmware("");
@@ -866,7 +974,7 @@ public class TBLoader extends JFrame {
      *
      * @param selectedDevice The selected device.
      */
-    private void onDeviceSelected(TBDeviceInfo selectedDevice) {
+    private void onDeviceSelected(TbDeviceInfo selectedDevice) {
         // Is this a new value?
         if (refreshingDriveInfo || !startUpDone || updatingTB) return;
 
@@ -941,9 +1049,10 @@ public class TBLoader extends JFrame {
                 // avoid wasting allocations.
                 assert(tbLoaderPanel.getNewSrn().equals(newTbSrn));
                 isNewSerialNumber = false;
-                if (tbLoaderPanel.getForceTbId()
+                if ((tbLoaderPanel.getForceTbId()
                     || !TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, newTbSrn)
-                    || TBLoaderUtils.newSerialNumberNeeded(srnPrefix, newTbSrn)) {
+                    || TBLoaderUtils.newSerialNumberNeeded(srnPrefix, newTbSrn))
+                    && currentTbDevice.getDeviceVersion()==TbDeviceInfo.DEVICE_VERSION.TBv1) {
                     int intSrn = allocateNextSerialNumberFromTbLoader();
                     isNewSerialNumber = true;
                     String lowerSrn = String.format("%04x", intSrn);
@@ -990,7 +1099,7 @@ public class TBLoader extends JFrame {
         tbLoaderPanel.setGridColumnWidths();
         setEnabledStates();
 
-        TBDeviceInfo selectedDevice = tbLoaderPanel.getSelectedDevice();
+        TbDeviceInfo selectedDevice = tbLoaderPanel.getSelectedDevice();
         connected = selectedDevice != null && selectedDevice.getRootFile() != null;
         if (connected && !updatingTB) {
             tbLoaderPanel.getProgressDisplayManager().setStatus("STATUS: Ready");
@@ -1137,6 +1246,7 @@ public class TBLoader extends JFrame {
 
                 TBLoaderCore tbLoader = new TBLoaderCore.Builder().withTbLoaderConfig(tbLoaderConfig)
                     .withTbDeviceInfo(currentTbDevice)
+                    .withTbDeviceVersion(tbLoaderPanel.getDeviceVersion())
                     .withDeploymentDirectory(deploymentContents)
                     .withOldDeploymentInfo(oldDeploymentInfo)
                     .withNewDeploymentInfo(newDeploymentInfo)

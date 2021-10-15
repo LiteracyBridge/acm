@@ -12,7 +12,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 
 import static java.awt.GridBagConstraints.HORIZONTAL;
@@ -26,6 +25,7 @@ import static java.awt.GridBagConstraints.LINE_START;
  */
 public class JRecipientChooser extends JPanel {
 
+    private boolean highlightWhenSelectionNeeded = true;
     private boolean haveChoice = false;
 
     // For the case with a recipients list.
@@ -81,6 +81,14 @@ public class JRecipientChooser extends JPanel {
         }
 
         setDone(didSelect);
+    }
+
+    void setHighlightWhenNoSelection(boolean highlightWhenSelectionNeeded) {
+        boolean changed = this.highlightWhenSelectionNeeded != highlightWhenSelectionNeeded;
+        this.highlightWhenSelectionNeeded = highlightWhenSelectionNeeded;
+        if (changed) {
+            setDone(this.haveChoice);
+        }
     }
 
     private void clear() {
@@ -153,7 +161,7 @@ public class JRecipientChooser extends JPanel {
     private void setDone(boolean done) {
         boolean changed = this.haveChoice != done;
         this.haveChoice = done;
-        if (done) {
+        if (done || !highlightWhenSelectionNeeded) {
             //Color doneBorderColor = new Color(0, 0, 0, 0);
             Color doneBorderColor = Color.gray;
             setBorder(new LineBorder(doneBorderColor));
@@ -185,7 +193,7 @@ public class JRecipientChooser extends JPanel {
             // Select it.
             chooser.setSelectedIndex(valueIx);
             // Enable selection if there is more than one to choose from.
-            chooser.setEnabled(values.size() > 1);
+            chooser.setEnabled(values.size() > 1 && this.isEnabled());
         }
         if (success) {
             setDone(true);
@@ -222,7 +230,7 @@ public class JRecipientChooser extends JPanel {
             }
         } else {
             // Need to make a choice here before we can see anything below. Clear lower levels.
-            chooser.setEnabled(true);
+            chooser.setEnabled(this.isEnabled());
             chooser.setSelectedIndex(-1);
             setDone(false);
             clearChoosers(levelToFill+1);
@@ -279,7 +287,7 @@ public class JRecipientChooser extends JPanel {
      */
     private class MyComboBoxRenderer extends DefaultListCellRenderer // JLabel implements ListCellRenderer
     {
-        private int level = -1;
+        private final int level;
         private final String prompt;
         private final String empty;
         private final Component component;
@@ -339,7 +347,7 @@ public class JRecipientChooser extends JPanel {
         {
             super.getListCellRendererComponent(list, value, index, isSelected, hasFocus);
             wantItalic = false;
-            if (index == -1 && value == null && component.isEnabled()) {
+            if (index == -1 && value == null && component.isEnabled() && JRecipientChooser.this.isEnabled()) {
                 wantItalic = true;
                 setText(prompt);
             } else if (value != null) {

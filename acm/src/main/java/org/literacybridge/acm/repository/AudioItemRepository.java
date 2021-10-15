@@ -50,10 +50,13 @@ public interface AudioItemRepository {
                                                                                                    BaseAudioConverter.ConversionException,
                                                                                                    UnsupportedFormatException;
 
+    public void exportFileWithFormat(File sourceFile, File targetFile, AudioFormat targetFormat) throws
+                                                                                                 BaseAudioConverter.ConversionException,
+                                                                                                 IOException;
     /**
      * Exports the system prompt for the given language, in the given format. Creates the format if necessary. The
      * file may or may not contain metadata.
-     * @param prompt The system prompt file name, like "0" or "21".
+     * @param promptId The system prompt file name, like "0" or "21".
      * @param targetFile The file to which to export. NOTE: Regardless of any extension of this file, the native
      *                   extension of the format is actually used.
      * @param language The language for which the prompt is to be exported.
@@ -61,7 +64,7 @@ public interface AudioItemRepository {
      * @throws IOException If a file can't be read or written.
      * @throws BaseAudioConverter.ConversionException If an existing file can't be converted to the desired format.
      */
-    void exportSystemPromptFileWithFormat(String prompt, File targetFile, String language, AudioFormat targetFormat) throws IOException, BaseAudioConverter.ConversionException;
+    void exportSystemPromptFileWithFormat(String promptId, File targetFile, String language, AudioFormat targetFormat) throws IOException, BaseAudioConverter.ConversionException;
 
     /**
      * Exports the pair of prompts for the given playlist category or name.

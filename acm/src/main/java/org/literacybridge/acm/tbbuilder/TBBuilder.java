@@ -1,28 +1,24 @@
 package org.literacybridge.acm.tbbuilder;
 
-import com.opencsv.ICSVWriter;
 import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.config.AmplioHome;
+import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.config.PathsProvider;
-import org.literacybridge.acm.gui.CommandLineParams;
+import org.literacybridge.acm.deployment.DeploymentInfo;
 import org.literacybridge.acm.repository.AudioItemRepository;
-import org.literacybridge.acm.utils.LogHelper;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 
 import java.io.File;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Locale;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TBBuilder {
@@ -38,13 +34,16 @@ public class TBBuilder {
     static final String PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME = "packagesindeployment.csv";
 
     public final static List<String> REQUIRED_SYSTEM_MESSAGES = Arrays.asList(
-        "0", "1", "2", "3", "4", "5", "6", "9", "10", "11",
+        "0", "1", "2", "3", "4", "5", "6", "7", "9", "10", "11",
         "16", "17", "19", "20", "21", "22", "23", "24", "25", "26", "28", "29",
         "33", "37", "38", "41", "53", "54", "61", "62", "63", "65", "80"
     );
     public final static List<String> TUTORIAL_SYSTEM_MESSAGES = Arrays.asList(
         "16", "17", "19", "20", "21", "22", "23", "24", "25", "26", "28", "54"
     );
+
+    public static final int MAX_PACKAGES_TBV1 = 2;  // limitation of the firmware.
+    public static final int MAX_PACKAGES_TBV2 = 9;  // arbitrarily chosen.
 
     public final static String MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE = "r1220.img";
 
@@ -63,43 +62,79 @@ public class TBBuilder {
     // Begin instance data
 
     static class BuilderContext {
-        boolean isAssistantLaunched = true; // Unless command line tool.
-        String project;         // like "TEST"
-        String deploymentName;  // like "TEST-20-2"
-        String revision;        // like "a", or "b", ...
+        static DateFormat ISO8601time = new SimpleDateFormat("HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
+        static { ISO8601time.setTimeZone(TBLoaderConstants.UTC); }
 
-        public int deploymentNo;
-        File sourceProgramspecDir;
-        ProgramSpec programSpec;
+        final String project;         // like "TEST"
+        final String deploymentName;  // like "TEST-20-2"
+        String revision;              // like "a", or "b", ...
+        final String buildTimestamp;  // for unpublished revisions.
 
-        File sourceTbLoadersDir;
-        File sourceTbOptionsDir;
+        final public int deploymentNo;
+        final File sourceProgramspecDir;
+        final ProgramSpec programSpec;
 
-        File stagingDir;            // ~/LiteracyBridge/TB-Loaders/TEST
-        File stagedDeploymentDir;   // {stagingDir}/content/TEST-20-2
-        File stagedProgramspecDir;  // {stagedDeploymentDir}/programspec
+        final File sourceHomeDir;
+        final File sourceTbLoadersDir;
+        final File sourceTbOptionsDir;
 
-        boolean deDuplicateAudio = false;
+        final File stagingDir;            // ~/LiteracyBridge/TB-Loaders/TEST
+        final File stagedDeploymentDir;   // {stagingDir}/content/TEST-20-2
+        final File stagedShadowDir;       // {stagedDeploymentDir}/shadowFiles
+        final File stagedProgramspecDir;  // {stagedDeploymentDir}/programspec
 
-        List<String> fatalMessages = new ArrayList<>();
-        List<String> errorMessages = new ArrayList<>();
-        List<String> warningMessages = new ArrayList<>();
-        Set<String> errorCommunities = new HashSet<>();
-        Set<String> errorLanguages = new HashSet<>();
+        final boolean deDuplicateAudio;
 
-        ICSVWriter contentInPackageCSVWriter;
-        ICSVWriter categoriesInPackageCSVWriter;
-        ICSVWriter packagesInDeploymentCSVWriter;
-
-        public Consumer<Exception> exceptionLogger;
+        final public Consumer<Exception> exceptionLogger;
         void logException(Exception ex) { exceptionLogger.accept(ex); }
-        Consumer<String> statusWriter;
+        final Consumer<String> statusWriter;
         void reportStatus(String format, Object... args) {
             statusWriter.accept(String.format(format, args));
         }
+
+        BuilderContext(DBConfiguration dbConfig, int deploymentNo, String deploymentName, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) {
+            this("", ISO8601time.format(new Date()), dbConfig, deploymentNo, deploymentName, statusWriter, exceptionLogger);
+        }
+        BuilderContext(String prefix, BuilderContext other) {
+            this(prefix, other.buildTimestamp, ACMConfiguration.getInstance().getDbConfiguration(other.project), other.deploymentNo, other.deploymentName, other.statusWriter, other.exceptionLogger);
+        }
+        private BuilderContext(String prefix, String timeString, DBConfiguration dbConfig, int deploymentNo, String deploymentName, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) {
+            this.buildTimestamp = timeString;
+
+            this.deploymentNo = deploymentNo;
+            this.deploymentName = deploymentName;
+
+            this.statusWriter = statusWriter;
+            this.exceptionLogger = exceptionLogger;
+            this.project = dbConfig.getProgramId();
+            this.deDuplicateAudio = dbConfig.isDeDuplicateAudio();
+
+            PathsProvider pathsProvider = dbConfig.getPathProvider();
+            this.sourceHomeDir = pathsProvider.getProgramHomeDir();
+            // Like ~/Dropbox/ACM-UWR/TB-Loaders or ~/Amplio/acm-dbs/UWR/TB-Loaders
+            this.sourceTbLoadersDir = pathsProvider.getProgramTbLoadersDir();
+            this.sourceTbOptionsDir = new File(this.sourceTbLoadersDir, "TB_Options");
+
+            // ~/Amplio/TB-Loaders
+            File localTbLoadersDir = new File(ACMConfiguration.getInstance().getApplicationHomeDirectory(), Constants.TBLoadersHomeDir);
+            // Like ~/Amplio/TB-Loaders/TEST
+            this.stagingDir = new File(localTbLoadersDir, prefix + this.project);
+            // Like ~/Amplio/TB-Loaders/TEST/content/TEST-20-2
+            this.stagedDeploymentDir = new File(this.stagingDir, "content" + File.separator + this.deploymentName);
+            this.stagedShadowDir = new File(this.stagedDeploymentDir, "shadowFiles");
+
+            // Like ~/Amplio/TB-Loaders/TEST/content/TEST-20-2/programspec
+            this.stagedProgramspecDir = new File(this.stagedDeploymentDir, Constants.ProgramSpecDir);
+            // Open the program specification from when the deployment was created.
+            this.sourceProgramspecDir = pathsProvider.getProgramSpecDir();
+            this.programSpec = new ProgramSpec(this.sourceProgramspecDir);
+
+
+        }
+        
     }
 
-    private final BuilderContext builderContext = new BuilderContext();
+    private final BuilderContext builderContext;
     final Utils utils;
 
     /**
@@ -148,102 +183,21 @@ public class TBBuilder {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        File lbDir = AmplioHome.getDirectory();
-        File logDir = new File(lbDir, "logs");
-        new LogHelper().inDirectory(logDir).withName("TBBuilder.log").absolute().initialize();
-
-        System.out.printf("TB-Builder version %s%n", Constants.ACM_VERSION);
-        System.out.println("\n================================================================================\n\n"+
-                "The command line TB-Builder is deprecated and may not work correctly.\n\n"+
-                "All users are strongly encouraged to use the Deployment Assistant in the ACM.\n\n"+
-                "Contact Amplio (support@amplio.org) with questions or for assistance.\n\n"+
-                "================================================================================\n\n");
-        if (args.length < 3) {
-            printUsage();
-        }
-        String command = args[0].toUpperCase();
-        String project = args[1];
-        String deploymentName = args[2].toUpperCase();
-
-        TBBuilder tbb = new TBBuilder(project, deploymentName, System.out::print, Exception::printStackTrace);
-        tbb.builderContext.isAssistantLaunched = false;
-
-        try {
-            if (command.equals("CREATE")) {
-                // arguments NOT including the deployment name.
-                List<String> argsList = Arrays.asList(args).subList(3, args.length);
-                tbb.validateAndCreate(argsList);
-            } else if (command.equals("PUBLISH")) {
-                // arguments INCLUDING the deployment name.
-                int deploymentCount = Math.min(args.length - 2, MAX_DEPLOYMENTS);
-                List<String> deploymentList = Arrays.asList(args).subList(2, deploymentCount+2);
-                tbb.publishDeployment(deploymentList);
-            } else {
-                System.out.printf("Unknown operation '%s'. Operations are CREATE and PUBLISH\n",
-                    args[0]);
-                printUsage();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public void publishDeployment(List<String> deploymentList) throws Exception {
         new Publish(this, builderContext).publishDeployment(deploymentList);
     }
 
     /**
-     * Construct the TBBuilder. Opens the ACM that's being operated upon.
-     *
-     * @param sharedACM the ACM name.
-     * @throws Exception if the database can't be initialized.
+     * Construct the TB Builder.
+     * @param dbConfig for the database for which the deployment will be created.
+     * @param deploymentNo The deployment number.
+     * @param deploymentName The deployment name. Currently fixed based on programid, deployment #, and deployment year.
+     * @param statusWriter write progress messages here.
+     * @param exceptionLogger write exceptions here.
+     * @throws Exception if an exception happens tha twe can't recover from.
      */
-    public TBBuilder(String sharedACM, String deploymentName, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) throws Exception {
-//        sharedACM = ACMConfiguration.cannonicalAcmDirectoryName(sharedACM);
-        if (!ACMConfiguration.isInitialized()) {
-            CommandLineParams params = new CommandLineParams();
-            params.disableUI = true;
-            params.sandbox = true;
-            params.sharedACM = sharedACM;
-            ACMConfiguration.initialize(params);
-            ACMConfiguration.getInstance().setCurrentDB(params.sharedACM);
-        } else if (!ACMConfiguration.getInstance().getCurrentDB().getProgramHomeDirName().equals(sharedACM)) {
-            throw new IllegalArgumentException("Passed ACM Name must equal already-opened ACM name.");
-        }
-
-        // Parse the deployment number from the name.
-        Pattern deploymentNumberPattern = Pattern.compile("^.*-(\\d+)$");
-        Matcher matcher = deploymentNumberPattern.matcher(deploymentName);
-        if (matcher.matches()) {
-            builderContext.deploymentNo = Integer.parseInt(matcher.group(1));
-        }
-
-        builderContext.statusWriter = statusWriter;
-        builderContext.exceptionLogger = exceptionLogger;
-        builderContext.project = ACMConfiguration.getInstance().getCurrentDB().getProgramId();
-        builderContext.deploymentName = deploymentName;
-
-        PathsProvider pathsProvider = ACMConfiguration.getInstance().getPathProvider(sharedACM);
-        // Like ~/Dropbox/ACM-UWR/TB-Loaders
-        builderContext.sourceTbLoadersDir = pathsProvider.getProgramTbLoadersDir();
-        builderContext.sourceTbOptionsDir = new File(builderContext.sourceTbLoadersDir, "TB_Options");
-        builderContext.sourceProgramspecDir = pathsProvider.getProgramSpecDir();
-        // Open the program specification from when the deployment was created.
-        builderContext.programSpec = new ProgramSpec(builderContext.sourceProgramspecDir);
-        // ~/LiteracyBridge/TB-Loaders
-        File localTbLoadersDir = new File(
-            ACMConfiguration.getInstance().getApplicationHomeDirectory(),
-            Constants.TBLoadersHomeDir);
-        // Like ~/LiteracyBridge/TB-Loaders/UWR
-        builderContext.stagingDir = new File(localTbLoadersDir, builderContext.project);
-        // Like ~/LiteracyBridge/TB-Loaders/TEST/content/TEST-20-2
-        builderContext.stagedDeploymentDir = new File(builderContext.stagingDir, "content" + File.separator + builderContext.deploymentName);
-        // Like ~/LiteracyBridge/TB-Loaders/TEST/content/TEST-20-2/programspec
-        builderContext.stagedProgramspecDir = new File(builderContext.stagedDeploymentDir, Constants.ProgramSpecDir);
-
-        builderContext.deDuplicateAudio = ACMConfiguration.getInstance().getCurrentDB().isDeDuplicateAudio();
-
+    public TBBuilder(DBConfiguration dbConfig, int deploymentNo, String deploymentName, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) throws Exception {
+        builderContext = new BuilderContext(dbConfig, deploymentNo, deploymentName, statusWriter, exceptionLogger);
         utils = new Utils(this, builderContext);
     }
 
@@ -255,8 +209,7 @@ public class TBBuilder {
      */
     private List<PackageInfo> getPackageInfoForCreate(List<String> args) {
         if (args.size() < 2 || (args.size() > 2 && ((args.size() % 3) != 0))) {
-            System.out.print("Unexpected number of arguments for CREATE.\n");
-            printUsage();
+            throw new IllegalArgumentException("Unexpected number of arguments for CREATE.");
         }
         
         List<PackageInfo> packages = new ArrayList<>();
@@ -296,7 +249,7 @@ public class TBBuilder {
      */
     private void validateAndCreate(List<String> args) throws Exception {
         List<PackageInfo> packages = getPackageInfoForCreate(args);
-        new Validator(this, builderContext).validateDeployment(packages);
+//        new Validator(this, builderContext).validateDeployment(packages);
         new Create(this, builderContext).createDeploymentWithPackages(packages);
     }
 
@@ -315,40 +268,28 @@ public class TBBuilder {
         new Create(this, builderContext).createDeploymentWithPackages(packages);
     }
 
-    private static void printUsage() {
-        String NL = System.lineSeparator();
-        SimpleDateFormat sdfDate = new SimpleDateFormat("yy-MM");
-        String Y_M = sdfDate.format(new Date());
+    public void createDeployment(DeploymentInfo deploymentInfo) throws Exception {
+        // Was "v1-"
+        BuilderContext bc1 = new BuilderContext("", builderContext);
+        CreateForV1 cfv1 = new CreateForV1(this,  bc1,  deploymentInfo);
+        cfv1.go();
 
-        String helpStr =
-            // @formatter:off
-            // This may be printing on a Windows system, in a default console. Limit the width
-            // to 80 columns. Ugly on a wider screen, but much better for narrow ones.
-            // ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8
-            "TB-Builder.bat runs " + NL +
-                "    java -cp acm.jar:lib/* org.literacybridge.acm.tbbuilder.TBBuilder" + NL + NL +
-                "Prepares a new Deployment (Content Update) to be loaded onto Talking Books by" + NL +
-                "the TB-Loader. There are two steps, the CREATE step and the PUBLISH step." + NL + NL +
-                "    TB-Builder.bat CREATE ACM-NAME deployment-name package1 language1 group1 " + NL +
-                "                                                package2 language2 group2 ..." + NL + NL +
-                "    TB-Builder.bat PUBLISH ACM-NAME deployment-name" + NL + NL +
-                "Usually, the \"language\" and \"group\" are the same. If you need to use groups " + NL +
-                "or manage multiple deployments at the same time, please contact Amplio Seattle" + NL +
-                "for detailed instructions." + NL + NL +
-                "For example, assume your ACM is named ACM-DEMO, and that you have two Packages," + NL +
-                "DEMO-" + Y_M + "-EPO in the Esperanto language, and DEMO-" + Y_M + "-TLH in the Klingon" + NL +
-                "language, and that you wish to create a Deployment named DEMO-" + Y_M + "." + NL +
-                "The steps to follow would be like this:" + NL + NL +
-                "1) Use a CREATE step to put the two Packages together into a Deployment." + NL +
-                "     TB-Builder.bat CREATE ACM-DEMO DEMO-" + Y_M + " DEMO-" + Y_M + "-EPO EPO EPO " + NL +
-                "        DEMO-" + Y_M + "-TLH TLH TLH" + NL +
-                "   (You can now, optionally, but only on the same machine, use TB-Loader to put" + NL +
-                "   this deployment onto a Talking Book, for testing purposes.)" + NL + NL +
-                "2) Use a PUBLISH step to make the Deployment available to everyone." + NL +
-                "     TB-Builder.bat PUBLISH ACM-DEMO DEMO-" + Y_M + NL + NL;
-            // @formatter:on
-        System.out.print(helpStr);
-        System.exit(1);
+        // Was "v2-"
+        DBConfiguration dbConfig = ACMConfiguration.getInstance().getDbConfiguration(builderContext.project);
+        if (dbConfig.hasTbV2Devices()) {
+            BuilderContext bc2 = new BuilderContext("", builderContext);
+            CreateForV2 cfv2 = new CreateForV2(this, bc2, deploymentInfo);
+            cfv2.go();
+        }
     }
 
+    public static void main(String[] args) throws Exception {
+        System.out.printf("TB-Builder version %s%n", Constants.ACM_VERSION);
+        System.out.println("\n================================================================================\n\n"+
+            "The command line TB-Builder has been retired.\n\n"+
+            "To create a Deployment, use the Deployment Assistant in the ACM.\n\n"+
+            "Contact Amplio (support@amplio.org) with questions or for assistance.\n\n"+
+            "================================================================================\n\n");
+        System.exit(1);
+    }
 }

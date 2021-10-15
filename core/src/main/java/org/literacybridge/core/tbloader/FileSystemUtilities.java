@@ -11,15 +11,15 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class CommandLineUtils {
-  private static final Logger LOG = Logger.getLogger(CommandLineUtils.class.getName());
+public class FileSystemUtilities {
+  private  final Logger LOG = Logger.getLogger(FileSystemUtilities.class.getName());
 
-  private static File windowsUtilsDirectory = new File(".");
+  private  File windowsUtilsDirectory = new File(".");
 
-  private static final Pattern PCT_COMPLETE = Pattern.compile("^(\\d{1,2}) percent completed\\.+$");
+  private  final Pattern PCT_COMPLETE = Pattern.compile("^(\\d{1,2}) percent completed\\.+$");
 
-  static void setUtilsDirectory(File windowsUtilsDirectory) {
-    CommandLineUtils.windowsUtilsDirectory = windowsUtilsDirectory;
+   void setUtilsDirectory(File windowsUtilsDirectory) {
+    windowsUtilsDirectory = windowsUtilsDirectory;
   }
 
   /**
@@ -28,7 +28,7 @@ public class CommandLineUtils {
    * @return An ad-hoc reinterpretation of the command output.
    * @throws IOException
    */
-  public static String execute(String cmd) throws IOException {
+  protected String execute(String cmd) throws IOException {
     String line;
     String errorLine = null;
     LOG.log(Level.INFO, "TBL!: Executing:" + cmd);
@@ -59,7 +59,7 @@ public class CommandLineUtils {
    * @return The errorLine at the end of processing this outout
    * @throws IOException if the output file can't be read
    */
-  private static String processCommandOutput(String errorLine, BufferedReader br) throws IOException {
+  private String processCommandOutput(String errorLine, BufferedReader br) throws IOException {
     StringBuilder outBuf = new StringBuilder();
     String line;
     do {
@@ -79,7 +79,7 @@ public class CommandLineUtils {
     return errorLine;
   }
 
-  private static String dosErrorCheck(String line) {
+  private String dosErrorCheck(String line) {
     String errorMsg = null;
 
     if (line.contains("New")) {
@@ -107,25 +107,25 @@ public class CommandLineUtils {
     return errorMsg;
   }
 
-  public static boolean formatDisk(String drive, String newLabel) throws IOException {
+  public boolean formatDisk(String drive, String newLabel) throws IOException {
     if (!OSChecker.WINDOWS) {
       throw new IllegalStateException("formatDisk operation is only supported on Windows");
     }
     if (drive.length() > 2) drive = drive.substring(0,2);
-    String errorLine = CommandLineUtils.execute(String.format("format %s /FS:FAT32 /v:%s /Y /Q", drive, newLabel));
+    String errorLine = execute(String.format("format %s /FS:FAT32 /v:%s /Y /Q", drive, newLabel));
     return errorLine == null;
   }
 
-  public static boolean checkDisk(String drive) throws IOException {
+  public  boolean checkDisk(String drive) throws IOException {
     if (!OSChecker.WINDOWS) {
       throw new IllegalStateException("checkDisk operation is only supported on Windows");
     }
     if (drive.length() > 2) drive = drive.substring(0,2);
-    String errorLine = CommandLineUtils.execute(String.format("echo n|chkdsk %s", drive));
+    String errorLine = execute(String.format("echo n|chkdsk %s", drive));
     return errorLine == null;
   }
 
-  public static boolean checkDiskAndFix(String drive, String saveOutputFile) throws IOException {
+  public  boolean checkDiskAndFix(String drive, String saveOutputFile) throws IOException {
     if (!OSChecker.WINDOWS) {
       throw new IllegalStateException("checkDisk operation is only supported on Windows");
     }
@@ -134,22 +134,22 @@ public class CommandLineUtils {
     if (!output.getParentFile().exists()) {
       output.getParentFile().mkdirs();
     }
-    String errorLine = CommandLineUtils.execute(String.format("echo n|chkdsk /f %s > %s", drive, output.getAbsolutePath()));
+    String errorLine = execute(String.format("echo n|chkdsk /f %s > %s", drive, output.getAbsolutePath()));
     return errorLine == null;
   }
 
-  public static boolean relabel(String drive, String newLabel) throws IOException {
+  public  boolean relabel(String drive, String newLabel) throws IOException {
     if (!OSChecker.WINDOWS) {
       throw new IllegalStateException("relabel operation is only supported on Windows");
     }
     if (drive.length() > 2) drive = drive.substring(0,2);
-    String errorLine = CommandLineUtils.execute(String.format("label %s %s", drive, newLabel));
+    String errorLine = execute(String.format("label %s %s", drive, newLabel));
     return errorLine == null;
   }
 
-  public static boolean disconnectDrive(String drive) throws IOException {
+  public  boolean disconnectDrive(String drive) throws IOException {
     String cmd = String.format("%s %s",new File(windowsUtilsDirectory, "RemoveDrive.exe") ,drive);
-    String errorLine = CommandLineUtils.execute(cmd);
+    String errorLine = execute(cmd);
     return errorLine == null;
   }
 }

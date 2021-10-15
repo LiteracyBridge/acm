@@ -3,6 +3,7 @@ package org.literacybridge.acm.tbloader;
 import org.apache.commons.lang3.StringUtils;
 import org.jdesktop.swingx.JXDatePicker;
 import org.literacybridge.acm.cloud.Authenticator;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
@@ -12,7 +13,7 @@ import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.tbloader.DeploymentInfo;
-import org.literacybridge.core.tbloader.TBDeviceInfo;
+import org.literacybridge.core.tbdevice.TbDeviceInfo;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -37,6 +38,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.awt.GridBagConstraints.BOTH;
 import static java.awt.GridBagConstraints.CENTER;
@@ -45,12 +47,17 @@ import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.LINE_START;
 import static java.awt.GridBagConstraints.NONE;
 import static java.lang.Math.max;
+import static org.literacybridge.acm.tbbuilder.TBBuilder.MAX_PACKAGES_TBV1;
+import static org.literacybridge.acm.tbbuilder.TBBuilder.MAX_PACKAGES_TBV2;
 import static org.literacybridge.acm.utils.SwingUtils.getApplicationRelativeLocation;
 
 @SuppressWarnings("unused")
 public class TbLoaderPanel extends JPanel {
 
     private JPanel contentPanel;
+    private Box updateTb2FirmwareBox;
+    private JButton updateTb2FirmwareButton;
+    private JComboBox<String> deviceVersionBox;
 
     public static class Builder {
         private ProgramSpec programSpec;
@@ -59,11 +66,13 @@ public class TbLoaderPanel extends JPanel {
         private Consumer<ActionEvent> settingsIconClickedListener;
         private Consumer<TBLoader.Operation> goListener;
         private Consumer<Recipient> recipientListener;
-        private Consumer<TBDeviceInfo> deviceListener;
+        private Consumer<TbDeviceInfo> deviceListener;
         private Consumer<Boolean> forceFirmwareListener;
         private Consumer<Boolean> forceSrnListener;
+        private Supplier<Boolean> updateTb2FirmwareListener;
         private TBLoader.TB_ID_STRATEGY tbIdStrategy;
         private boolean allowPackageChoice;
+        private TBLoader.TbLoaderConfig tbLoaderConfig;
 
         public Builder withProgramSpec(ProgramSpec programSpec) {this.programSpec = programSpec; return this;}
         public Builder withPackagesInDeployment(String[] packagesInDeployment) {this.packagesInDeployment = packagesInDeployment; return this;}
@@ -71,27 +80,31 @@ public class TbLoaderPanel extends JPanel {
         public Builder withSettingsClickedListener(Consumer<ActionEvent> settingsIconClickedListener) {this.settingsIconClickedListener = settingsIconClickedListener; return this;}
         public Builder withGoListener(Consumer<TBLoader.Operation> goListener) {this.goListener = goListener; return this;}
         public Builder withRecipientListener(Consumer<Recipient> recipientListener) {this.recipientListener = recipientListener; return this;}
-        public Builder withDeviceListener(Consumer<TBDeviceInfo> deviceListener) {this.deviceListener = deviceListener; return this;}
+        public Builder withDeviceListener(Consumer<TbDeviceInfo> deviceListener) {this.deviceListener = deviceListener; return this;}
         public Builder withForceFirmwareListener(Consumer<Boolean> forceFirmwareListener) {this.forceFirmwareListener = forceFirmwareListener; return this;}
         public Builder withForceSrnListener(Consumer<Boolean> forceSrnListener) {this.forceSrnListener = forceSrnListener; return this;}
+        public Builder withUpdateTb2FirmwareListener(Supplier<Boolean> updateTb2FirmwareListener) {this.updateTb2FirmwareListener = updateTb2FirmwareListener; return this;}
 
         public Builder withTbIdStrategy(TBLoader.TB_ID_STRATEGY tbIdStrategy) {this.tbIdStrategy = tbIdStrategy; return this;}
         public Builder withAllowPackageChoice(boolean allowPackageChoice) {this.allowPackageChoice = allowPackageChoice; return this;}
-        
+        public Builder withTbLoaderConfig(TBLoader.TbLoaderConfig tbLoaderConfig) {this.tbLoaderConfig=tbLoaderConfig; return this;}
+
         public TbLoaderPanel build() {
             return new TbLoaderPanel(this);
         }
     }
 
+    private final Builder builder;
+
     private final ProgramSpec programSpec;
     private final String[] packagesInDeployment;
-    private Map<String, String> packageNameMap;
+    private final Map<String, String> packageNameMap;
 
     private JComboBox<String> currentLocationChooser;
     private final String[] currentLocationList = new String[] { "Select location...", "Community",
         "Jirapa office", "Wa office", "Other" };
 
-    private JComboBox<TBDeviceInfo> driveList;
+    private JComboBox<TbDeviceInfo> driveList;
 
     private JLabel uploadStatus;
     private JCheckBox forceFirmware;
@@ -103,7 +116,7 @@ public class TbLoaderPanel extends JPanel {
     private JLabel newDeploymentText;
     private JTextField oldDeploymentText;
     private JRecipientChooser recipientChooser;
-    private JTextField oldCommunityText;
+    private JRecipientChooser oldRecipient;
     private JTextField oldPackageText;
     private JXDatePicker datePicker;
     private JTextField lastUpdatedText;
@@ -124,7 +137,7 @@ public class TbLoaderPanel extends JPanel {
     private JTextField newPackageText;              // A text field that displays the package.
     // One or more currently selected packages.
     private List<String> selectedPackages = new ArrayList<>();
-    private List<String> defaultPackages = new ArrayList<>();
+    private final List<String> defaultPackages = new ArrayList<>();
 
     JTextArea statusCurrent;
     JTextArea statusFilename;
@@ -135,15 +148,18 @@ public class TbLoaderPanel extends JPanel {
     private TBLoader.TB_ID_STRATEGY tbIdStrategy;
     private boolean isRememberPackageSelection = false;
     private boolean allowPackageChoice;
+    private final TBLoader.TbLoaderConfig tbLoaderConfig;
 
     private static final String UPDATE_TB = "Update TB";
     private final String[] actionList = new String[] { UPDATE_TB, "Collect Stats" };
 
     private Color defaultButtonBackgroundColor;
+    private Color defaultButtonForegroundColor;
 
     private final ProgressDisplayManager progressDisplayManager = new ProgressDisplayManager(this);
 
     public TbLoaderPanel(Builder builder) {
+        this.builder = builder;
         this.programSpec = builder.programSpec;
         this.packagesInDeployment = builder.packagesInDeployment;
         this.packageNameMap = builder.packageNameMap;
@@ -155,6 +171,7 @@ public class TbLoaderPanel extends JPanel {
         this.forceSrnListener = builder.forceSrnListener;
         this.tbIdStrategy = builder.tbIdStrategy;
         this.allowPackageChoice = builder.allowPackageChoice;
+        this.tbLoaderConfig = builder.tbLoaderConfig;
 
         layoutComponents();
     }
@@ -172,9 +189,11 @@ public class TbLoaderPanel extends JPanel {
 
     public void setNewFirmwareVersion(String version) {
         newFirmwareVersionText.setText(version);
+        checkV2FirmwareUpdateRequired();
     }
     public void setOldFirmwareVersion(String version) {
         oldFirmwareVersionText.setText(version);
+        checkV2FirmwareUpdateRequired();
     }
     public void setFirmwareVersionLabel(String label) {
         firmwareVersionLabel.setText(label);
@@ -223,6 +242,10 @@ public class TbLoaderPanel extends JPanel {
         return recipientChooser.getSelectedRecipient();
     }
 
+    public void refresh() {
+        setEnabledStates();
+    }
+
     void enablePackageChoice(boolean allowPackageChoice) {
         if (allowPackageChoice != this.allowPackageChoice) {
             if (allowPackageChoice) {
@@ -268,16 +291,15 @@ public class TbLoaderPanel extends JPanel {
         return getSelectedPackages().size() > 0;
     }
 
-    public void fillDriveList(List<TBDeviceInfo> roots, int selection) {
+    public void fillDriveList(List<TbDeviceInfo> roots, int selection) {
         driveList.removeAllItems();
         roots.forEach(r -> driveList.addItem(r));
         if (selection >= 0) {
             driveList.setSelectedIndex(selection);
         }
-        setEnabledStates();
     }
-    public TBDeviceInfo getSelectedDevice() {
-        return (TBDeviceInfo)driveList.getSelectedItem();
+    public TbDeviceInfo getSelectedDevice() {
+        return (TbDeviceInfo)driveList.getSelectedItem();
     }
 
     public ProgressDisplayManager getProgressDisplayManager() {
@@ -294,7 +316,7 @@ public class TbLoaderPanel extends JPanel {
             forceTbId.setVisible(tbIdStrategy.allowsManual());
             forceTbId.setSelected(false);
 
-            oldCommunityText.setText(oldDeploymentInfo.getCommunity());
+            oldRecipient.setSelectedRecipient(oldDeploymentInfo.getRecipientid());
             testDeployment.setSelected(false);
 
         } else {
@@ -305,7 +327,7 @@ public class TbLoaderPanel extends JPanel {
             oldPackageText.setText("");
             oldDeploymentText.setText("");
             forceFirmware.setSelected(false);
-            oldCommunityText.setText("");
+            oldRecipient.setSelectedRecipient(null);
             lastUpdatedText.setText("");
         }
     }
@@ -327,8 +349,8 @@ public class TbLoaderPanel extends JPanel {
         this.recipientListener = recipientListener;
     }
 
-    private Consumer<TBDeviceInfo> deviceListener;
-    public void setDeviceListener(Consumer<TBDeviceInfo> deviceListener) {
+    private Consumer<TbDeviceInfo> deviceListener;
+    public void setDeviceListener(Consumer<TbDeviceInfo> deviceListener) {
         this.deviceListener = deviceListener;
     }
 
@@ -352,6 +374,26 @@ public class TbLoaderPanel extends JPanel {
     public void setSettingsIconClickedListener(Consumer<ActionEvent> settingsIconClickedListener) {
         this.settingsIconClickedListener = settingsIconClickedListener;
     }
+
+//    /**
+//     * Mechanism by which the caller can control the ready state.
+//     */
+//    @Override
+//    public void setEnabled(boolean enabled) {
+//        super.setEnabled(enabled);
+//        setHostEnabled(enabled);
+//    }
+//    private boolean hostEnabled = true;
+//    private synchronized void setHostEnabled(boolean enabled) {
+//        if (enabled != hostEnabled) {
+//            hostEnabled = enabled;
+//            setEnabledStates();
+//        }
+//    }
+//    private synchronized boolean isEnabled() {
+//        return hostEnabled;
+//    }
+
     /**
      * Our preferred default GridBagConstraint.
      */
@@ -405,7 +447,7 @@ public class TbLoaderPanel extends JPanel {
                 // This list need not contain prevLabel or nextLabel; we assume that those two
                 // are "small-ish", and won't actually provide the maximimum minimum width.
                 driveList, currentLocationChooser, newDeploymentText, oldDeploymentText,
-                recipientChooser, oldCommunityText, newPackageContainer, oldPackageText, datePicker,
+                recipientChooser, oldRecipient, newPackageContainer, oldPackageText, datePicker,
                 lastUpdatedText, newFirmwareVersionText, oldFirmwareVersionText, newSrnBox,
                 oldSrnText, newFirmwareBox};
         }
@@ -438,6 +480,13 @@ public class TbLoaderPanel extends JPanel {
         JLabel greeting = new JLabel(greetingString);
         greetingBox.add(greeting);
         greetingBox.add(Box.createHorizontalStrut(10));
+
+        if (ACMConfiguration.getInstance().isDevo()) {
+            JButton xpr = new JButton("Experimental");
+            xpr.addActionListener(Experimental::go);
+            greetingBox.add(xpr);
+            greetingBox.add(Box.createHorizontalStrut(10));
+        }
 
         // Select "Community", "LBG Office", "Other"
         JLabel currentLocationLabel = new JLabel("Updating from:");
@@ -508,6 +557,16 @@ public class TbLoaderPanel extends JPanel {
         deviceBox.add(Box.createHorizontalStrut(10));
         driveList.addItemListener(this::onTbDeviceSelected);
 
+        // Add the control to manually select device version, visible if the program has v2 devices.
+        // (Always add it, in case user turns on option for TBv2 devices.)
+        deviceVersionBox = new JComboBox<>(new String[]{"Auto", "TBv1", "TBv2"});
+        deviceVersionBox.addItemListener(this::onDeviceVersionSelected);
+        deviceVersionBox.setRenderer(new ComboBoxRenderer());
+        deviceVersionBox.setVisible(tbLoaderConfig.hasTbV2Devices());
+        deviceBox.add(deviceVersionBox);
+        deviceBox.add(Box.createHorizontalStrut(10));
+
+
         testDeployment = new JCheckBox();
         testDeployment.setText("Deploying today for testing only.");
         testDeployment.setSelected(false);
@@ -522,6 +581,15 @@ public class TbLoaderPanel extends JPanel {
 
         contentPanel.add(deviceBox, gbc);
 
+    }
+
+    private void onDeviceVersionSelected(ItemEvent itemEvent) {
+        // Is this a new value?
+        if (itemEvent.getStateChange() != ItemEvent.SELECTED) return;
+        if (deviceListener != null) {
+            deviceListener.accept((TbDeviceInfo)driveList.getSelectedItem());
+        }
+        setEnabledStates();
     }
 
     private void layoutColumnHeadings(int y) {
@@ -545,14 +613,18 @@ public class TbLoaderPanel extends JPanel {
         JLabel communityLabel = new JLabel("Community:");
         recipientChooser = new JRecipientChooser();
         recipientChooser.populate(programSpec);
-        recipientChooser.addActionListener(this::onCommunitySelected);
-        oldCommunityText = new JTextField();
-        oldCommunityText.setEditable(false);
+        recipientChooser.addActionListener(this::onRecipientSelected);
+
+        oldRecipient = new JRecipientChooser();
+        oldRecipient.populate(programSpec);
+        oldRecipient.setEnabled(false);
+        oldRecipient.setHighlightWhenNoSelection(false);
+
 
         // Recipient Chooser.
         contentPanel.add(communityLabel, gbc.withGridx(0));
         contentPanel.add(recipientChooser, gbc);
-        contentPanel.add(oldCommunityText, gbc);
+        contentPanel.add(oldRecipient, gbc);
     }
 
     private void layoutDeployment(int y) {
@@ -622,7 +694,8 @@ public class TbLoaderPanel extends JPanel {
             packageNameMap,
             defaultPackages,
             selectedPackages,
-            isRememberPackageSelection);
+            isRememberPackageSelection,
+            isTbV2()?MAX_PACKAGES_TBV2:MAX_PACKAGES_TBV1);
         UIUtils.showDialog(dialog, p.x, p.y);
 
         if (dialog.isOk()) {
@@ -724,15 +797,27 @@ public class TbLoaderPanel extends JPanel {
             .setAnchor(CENTER)
             .setGridwidth(3);
 
+        updateTb2FirmwareBox = Box.createHorizontalBox();
+        if (builder.updateTb2FirmwareListener != null) {
+            updateTb2FirmwareButton = new JButton("Update TB Firmware");
+            updateTb2FirmwareButton.addActionListener(e->builder.updateTb2FirmwareListener.get());
+            updateTb2FirmwareBox.setVisible(tbLoaderConfig.hasTbV2Devices());
+            updateTb2FirmwareBox.add(updateTb2FirmwareButton);
+            updateTb2FirmwareBox.add(Box.createHorizontalStrut(10));
+        }
+
         actionChooser = new JComboBox<>(actionList);
+        actionChooser.addActionListener(e->setEnabledStates());
         goButton = new JButton("Go!");
         defaultButtonBackgroundColor = goButton.getBackground();
+        defaultButtonForegroundColor = goButton.getForeground();
         goButton.setEnabled(false);
         goButton.setForeground(Color.GRAY);
         goButton.setOpaque(true);
         goButton.addActionListener(this::onGoButton);
         Box actionBox = Box.createHorizontalBox();
         actionBox.add(Box.createHorizontalGlue());
+        actionBox.add(updateTb2FirmwareBox);
         actionBox.add(actionChooser);
         actionBox.add(goButton);
         actionBox.add(Box.createHorizontalGlue());
@@ -775,12 +860,13 @@ public class TbLoaderPanel extends JPanel {
         // Is this a new value?
         if (e.getStateChange() != ItemEvent.SELECTED) return;
         if (deviceListener != null) {
-            deviceListener.accept((TBDeviceInfo)driveList.getSelectedItem());
+            deviceListener.accept((TbDeviceInfo)driveList.getSelectedItem());
         }
+        deviceVersionBox.setSelectedIndex(0);
         setEnabledStates();
     }
 
-    private void onCommunitySelected(ActionEvent actionEvent) {
+    private void onRecipientSelected(ActionEvent actionEvent) {
         Recipient recipient = recipientChooser.getSelectedRecipient();
         if (recipientListener != null) {
             recipientListener.accept(recipient);
@@ -800,8 +886,15 @@ public class TbLoaderPanel extends JPanel {
         }
     }
 
-
-    private void onGoButton(ActionEvent actionEvent) {
+    /**
+     * The "Go" button was clicked. Perform the update, collect stats, whatever.
+     * @param actionEvent is ignored.
+     */
+    private synchronized void onGoButton(ActionEvent actionEvent) {
+        if (!isEnabled()) {
+            setEnabledStates();
+            return;
+        }
         TBLoader.Operation operation;
         //noinspection ConstantConditions
         boolean isUpdate = actionChooser.getSelectedItem()
@@ -811,16 +904,70 @@ public class TbLoaderPanel extends JPanel {
         goListener.accept(operation);
     }
 
+    private boolean isTbV2() {
+        if (!tbLoaderConfig.hasTbV2Devices()) return false;
+        return getDeviceVersion() == TbDeviceInfo.DEVICE_VERSION.TBv2;
+    }
+    private boolean isTbV1() {
+        return getDeviceVersion() == TbDeviceInfo.DEVICE_VERSION.TBv1;
+    }
+
+    /**
+     * Determines whether a TBv2 fimrware update is required, by comparing the device-reported firmware version
+     * with the deployment-required version.
+     * @return true if a firmware update is required.
+     */
+    private boolean isV2FirmwareUpdateRequired() {
+        if (isTbV2()) {
+            String oldVersion = oldFirmwareVersionText.getText();
+            String newVersion = newFirmwareVersionText.getText();
+            return !oldVersion.equals(newVersion);
+        }
+        return false;
+    }
+
+    /**
+     * Checkes whether a TBv2 firmware update is required, and sets the "update firmware" button text
+     * and colors appropriately.
+     */
+    private void checkV2FirmwareUpdateRequired() {
+        if (isTbV2()) {
+            boolean updateRequired = isV2FirmwareUpdateRequired();
+            updateTb2FirmwareButton.setBackground(updateRequired ? Color.GREEN : defaultButtonBackgroundColor);
+            updateTb2FirmwareButton.setForeground(updateRequired ? Color.BLACK : defaultButtonForegroundColor);
+            if (updateRequired) {
+                updateTb2FirmwareButton.setText("Perform Required Firmware Update");
+                updateTb2FirmwareButton.setToolTipText("The TBv2 firmware must be updated to continue.");
+            } else {
+                updateTb2FirmwareButton.setText("Update TB Firmware");
+                updateTb2FirmwareButton.setToolTipText("A TBv2 firmware update is not required at this time.");
+            }
+        }
+    }
+
     private void setEnabledStates() {
+        boolean isUpdate = actionChooser.getSelectedItem() != null && actionChooser.getSelectedItem()
+            .toString()
+            .equalsIgnoreCase(UPDATE_TB);
         // Must have device. Update must not be in progress.
-        boolean enabled = isDriveConnected();
-        // Must have set location.
+        boolean enabled = isDriveConnected() && isEnabled();
+        // Must have set location. TODO: why?
         enabled = enabled && (currentLocationChooser.getSelectedIndex() != 0);
-        // Must have community.
-        enabled = enabled && (getSelectedRecipient() != null);
+        // To update...
+        if (isUpdate) {
+            // Must have community.
+            enabled = enabled && (getSelectedRecipient() != null);
+            // Must not require updating (TBv2) firmware.
+            enabled = enabled && !(isV2FirmwareUpdateRequired() && tbLoaderConfig.isStrictTbV2FIrmware());
+        }
         goButton.setEnabled(enabled);
         goButton.setBackground(enabled ? Color.GREEN : defaultButtonBackgroundColor);
-        goButton.setForeground(enabled ? new Color(0, 192, 0) : Color.GRAY);
+        goButton.setForeground(enabled ? Color.BLACK : Color.GRAY);
+
+        recipientChooser.setHighlightWhenNoSelection(isUpdate);
+        deviceVersionBox.setVisible(tbLoaderConfig.hasTbV2Devices());
+        updateTb2FirmwareBox.setVisible(isUpdate && isTbV2() && isEnabled());
+        forceFirmware.setVisible(isUpdate && isTbV1());
     }
 
     private synchronized boolean isDriveConnected() {
@@ -828,11 +975,101 @@ public class TbLoaderPanel extends JPanel {
         TbFile drive;
 
         if (driveList.getItemCount() > 0) {
-            TBDeviceInfo tbDeviceInfo = (TBDeviceInfo) driveList.getSelectedItem();
-            drive = tbDeviceInfo==null?null:((TBDeviceInfo) driveList.getSelectedItem()).getRootFile();
+            TbDeviceInfo tbDeviceInfo = (TbDeviceInfo) driveList.getSelectedItem();
+            drive = tbDeviceInfo==null?null:((TbDeviceInfo) driveList.getSelectedItem()).getRootFile();
             if (drive != null) connected = true;
         }
         return connected;
+    }
+
+    /**
+     * Gets the device version as chosen by the user. Usually this will be automatically determined from the physical
+     * device, but in the event the user needs to, they can over-ride that with a manual selection.
+     * @return the device version to use, TBv1, TBv2, or NONE if not automatically detectable and not overridden.
+     */
+    public TbDeviceInfo.DEVICE_VERSION getDeviceVersion() {
+        TbDeviceInfo deviceInfo = (TbDeviceInfo)driveList.getSelectedItem();
+        if (deviceInfo == null)
+            return TbDeviceInfo.DEVICE_VERSION.NONE;
+        if (deviceVersionBox.getSelectedItem()!=null && deviceVersionBox.getSelectedItem().toString().equals("TBv1")) {
+            return TbDeviceInfo.DEVICE_VERSION.TBv1;
+        } else if (deviceVersionBox.getSelectedItem()!=null && deviceVersionBox.getSelectedItem().toString().equals("TBv2")) {
+            return TbDeviceInfo.DEVICE_VERSION.TBv2;
+        } else {
+            return getPhysicalDeviceVersion();
+        }
+    }
+
+    /**
+     * Gets what sort of device we think it is, based on examining the contents of the file system.
+     * @return The device version.
+     */
+    private TbDeviceInfo.DEVICE_VERSION getPhysicalDeviceVersion() {
+        TbDeviceInfo deviceInfo = (TbDeviceInfo)driveList.getSelectedItem();
+        if (deviceInfo == null) {
+            return TbDeviceInfo.DEVICE_VERSION.NONE;
+        } else if (tbLoaderConfig.hasTbV2Devices()) {
+            return deviceInfo.getDeviceVersion();
+        } else {
+            return TbDeviceInfo.DEVICE_VERSION.TBv1;
+        }
+    }
+
+
+    /**
+     * Class to render the labels in the device version combo box. There are three entries in the dropdown: auto,
+     * TBv1, and TBv2. Choosing TBv1 or TBv2 treats any attached device as indicated. Choosing auto picks a device
+     * version based on files found on the device.
+     *
+     * The class will display the labels correctly in the dropdown, and will decorate the "Auto" with "v1" or "v2"
+     * based on the device found, in the display.
+     */
+    class ComboBoxRenderer extends JLabel implements ListCellRenderer<String> {
+        public ComboBoxRenderer() {
+            setOpaque(true);
+            setHorizontalAlignment(LEFT);
+            setVerticalAlignment(CENTER);
+        }
+
+        public Component getListCellRendererComponent(
+            JList<? extends String> list,
+            String value,
+            int index,
+            boolean isSelected,
+            boolean cellHasFocus) {
+
+            int selectedIndex = deviceVersionBox.getSelectedIndex();
+
+            if (isSelected) {
+                setBackground(list.getSelectionBackground());
+                setForeground(list.getSelectionForeground());
+            } else {
+                setBackground(list.getBackground());
+                setForeground(list.getForeground());
+            }
+            
+            switch (index) {
+                // Display the proper labels in the dropdown.
+                case 0: setText("Auto"); break;
+                case 1: setText("TBv1"); break;
+                case 2: setText("TBv2"); break;
+                default:
+                    // And display the net setting in the main control.
+                    switch (selectedIndex) {
+                        case 1: setText("TBv1"); break;
+                        case 2: setText("TBv2"); break;
+                        default:
+                        if (isTbV1()) {
+                            setText("V1 (auto)");
+                        } else if (isTbV2()) {
+                            setText("V2 (auto)");
+                        } else {
+                            setText("Auto");
+                        }
+                    }
+            }
+            return this;
+        }
     }
 
 }

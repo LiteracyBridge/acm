@@ -1,6 +1,7 @@
 package org.literacybridge.acm.tbbuilder;
 
 import com.opencsv.CSVWriterBuilder;
+import com.opencsv.ICSVWriter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -47,6 +48,11 @@ class Create {
     private final TBBuilder.BuilderContext builderContext;
     private final AudioItemRepository repository = ACMConfiguration.getInstance().getCurrentDB().getRepository();
 
+    ICSVWriter contentInPackageCSVWriter;
+    ICSVWriter categoriesInPackageCSVWriter;
+    ICSVWriter packagesInDeploymentCSVWriter;
+
+
     Create(TBBuilder tbBuilder, TBBuilder.BuilderContext builderContext) {
         this.tbBuilder = tbBuilder;
         this.builderContext = builderContext;
@@ -60,9 +66,9 @@ class Create {
             addImage(pi);
         }
 
-        builderContext.contentInPackageCSVWriter.close();
-        builderContext.categoriesInPackageCSVWriter.close();
-        builderContext.packagesInDeploymentCSVWriter.close();
+        contentInPackageCSVWriter.close();
+        categoriesInPackageCSVWriter.close();
+        packagesInDeploymentCSVWriter.close();
 
     }
 
@@ -73,10 +79,7 @@ class Create {
      */
     private void createDeployment() throws Exception {
         File stagedMetadataDir = new File(builderContext.stagingDir, "metadata" + File.separator + builderContext.deploymentName);
-        DateFormat ISO8601time = new SimpleDateFormat("HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
-        ISO8601time.setTimeZone(TBLoaderConstants.UTC);
-        String timeStr = ISO8601time.format(new Date());
-        String revFileName = String.format(TBLoaderConstants.UNPUBLISHED_REVISION_FORMAT, timeStr, builderContext.deploymentName);
+        String revFileName = String.format(TBLoaderConstants.UNPUBLISHED_REVISION_FORMAT, builderContext.buildTimestamp, builderContext.deploymentName);
         // use LB Home Dir to create folder, then zip to Dropbox and delete the
         // folder
         IOUtils.deleteRecursive(builderContext.stagedDeploymentDir);
@@ -86,22 +89,24 @@ class Create {
         IOUtils.deleteRecursive(builderContext.stagedProgramspecDir);
         builderContext.stagedProgramspecDir.mkdirs();
 
-        builderContext.contentInPackageCSVWriter = new CSVWriterBuilder(
+        contentInPackageCSVWriter = new CSVWriterBuilder(
                 new FileWriter(new File(stagedMetadataDir, CONTENT_IN_PACKAGES_CSV_FILE_NAME))).build();
-        builderContext.categoriesInPackageCSVWriter = new CSVWriterBuilder(
+        categoriesInPackageCSVWriter = new CSVWriterBuilder(
                 new FileWriter(new File(stagedMetadataDir, CATEGORIES_IN_PACKAGES_CSV_FILE_NAME))).build();
-        builderContext.packagesInDeploymentCSVWriter = new CSVWriterBuilder(
+        packagesInDeploymentCSVWriter = new CSVWriterBuilder(
                 new FileWriter(new File(stagedMetadataDir, PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME))).build();
 
         // write column headers
-        builderContext.contentInPackageCSVWriter.writeNext(CSV_COLUMNS_CONTENT_IN_PACKAGE);
-        builderContext.categoriesInPackageCSVWriter.writeNext(CSV_COLUMNS_CATEGORIES_IN_PACKAGE);
-        builderContext.packagesInDeploymentCSVWriter.writeNext(CSV_COLUMNS_PACKAGES_IN_DEPLOYMENT);
+        contentInPackageCSVWriter.writeNext(CSV_COLUMNS_CONTENT_IN_PACKAGE);
+        categoriesInPackageCSVWriter.writeNext(CSV_COLUMNS_CATEGORIES_IN_PACKAGE);
+        packagesInDeploymentCSVWriter.writeNext(CSV_COLUMNS_PACKAGES_IN_DEPLOYMENT);
 
         // Find the lexically greatest filename of firmware. Works because we'll never exceed 4 digits.
         File sourceFirmware = tbBuilder.utils.latestFirmwareImage();
-        File stagedBasicDir = new File(builderContext.stagedDeploymentDir, "basic");
-        FileUtils.copyFileToDirectory(sourceFirmware, stagedBasicDir);
+        File stagedFirmwareDir = new File(builderContext.stagedDeploymentDir, "basic");
+        FileUtils.copyFileToDirectory(sourceFirmware, stagedFirmwareDir);
+        stagedFirmwareDir = new File(builderContext.stagedDeploymentDir, "firmware.v1");
+        FileUtils.copyFileToDirectory(sourceFirmware, stagedFirmwareDir);
 
         if (builderContext.sourceProgramspecDir != null) {
             FileUtils.copyDirectory(builderContext.sourceProgramspecDir, builderContext.stagedProgramspecDir);
@@ -159,9 +164,8 @@ class Create {
                 "lists/" + TBBuilder.firstMessageListName);
         File stagedLanguagesDir = new File(stagedImageDir, "languages");
         File stagedLanguageDir = new File(stagedLanguagesDir, pi.language);
-        File shadowFilesDir = new File(builderContext.stagedDeploymentDir, "shadowFiles");
-        File shadowAudioFilesDir = new File(shadowFilesDir, "messages" + File.separator + "audio");
-        File shadowLanguageDir = new File(shadowFilesDir, "languages"+File.separator + pi.language);
+        File shadowAudioFilesDir = new File(builderContext.stagedShadowDir, "messages" + File.separator + "audio");
+        File shadowLanguageDir = new File(builderContext.stagedShadowDir, "languages"+File.separator + pi.language);
 
         for (File f : new File[]{stagedAudioDir, stagedLanguageDir, stagedLanguageDir, sourceCommunitiesDir, stagedCommunitiesDir}) {
             if (!f.exists() && !f.mkdirs()) {
@@ -199,12 +203,13 @@ class Create {
         }
 
         // Empty directory structure
-        File sourceBasic = new File(builderContext.sourceTbOptionsDir, "basic");
-        FileUtils.copyDirectory(sourceBasic, stagedImageDir);
+//        File sourceBasic = new File(builderContext.sourceTbOptionsDir, "basic");
+//        FileUtils.copyDirectory(sourceBasic, stagedImageDir);
 
         // The config.txt file. It could have just as easily been in basic/system/config.txt.
         File sourceConfigFile = new File(builderContext.sourceTbOptionsDir, "config_files"+File.separator+"config.txt");
         File stagedSystemDir = new File(stagedImageDir, "system");
+        stagedSystemDir.mkdirs();
         FileUtils.copyFileToDirectory(sourceConfigFile, stagedSystemDir);
 
         // Custom greetings
@@ -289,7 +294,7 @@ class Create {
         // NOTE that we don't ever include the distribution name in the metadata.
         // It's grabbed by the shell scripts from the folder name,
         // and then a SQL UPDATE adds it in after uploading the CSV.
-        builderContext.packagesInDeploymentCSVWriter.writeNext(csvColumns);
+        packagesInDeploymentCSVWriter.writeNext(csvColumns);
     }
 
     /**
@@ -322,7 +327,7 @@ class Create {
                 }
                 csvColumns[2] = categoryID;
                 csvColumns[3] = Integer.toString(order);
-                builderContext.categoriesInPackageCSVWriter.writeNext(csvColumns);
+                categoriesInPackageCSVWriter.writeNext(csvColumns);
                 order++;
             }
         }
@@ -536,7 +541,7 @@ class Create {
 
                 csvColumns[2] = audioItemId;
                 csvColumns[4] = Integer.toString(order);
-                builderContext.contentInPackageCSVWriter.writeNext(csvColumns);
+                contentInPackageCSVWriter.writeNext(csvColumns);
 
                 order++;
             }
