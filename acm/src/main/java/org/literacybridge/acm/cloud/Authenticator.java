@@ -111,7 +111,10 @@ public class Authenticator {
     private TbSrnHelper tbSrnHelper = null;
     private ProjectsHelper projectsHelper = null;
 
-    // Programs available in local storage. A Map of {programid: name}
+    // Programs available locally. This is initially programs *found* locally. May be edited by removing
+    // programs that have been converted from dropbox to s3 (programs found locally in dropbox, but configured
+    // on server as s3; if found locally in s3, that will take precedence over dropbox).
+    // Programs available in local storage. A Map of {programid: name} May be backed by dropbox or s3.
     private Map<String, String> locallyAvailablePrograms = new HashMap<>();
     // Programs available in local dropbox.
     private HashSet<String> locallyAvailableDbxPrograms;
@@ -143,12 +146,12 @@ public class Authenticator {
      * Informs the authenticator about locally available programs (ie, those on the local drive) and about
      * which of those are Dropbox hosted (vs S3 hosted).
      * @param locallyAvailablePrograms A map of locally available program ids and their friendly names.
-     * @param locallyAvailableDbxPrograms A list of local Dropbox hosted program ids.
+     * @param programsFoundInLocalDropbox A list of local Dropbox hosted program ids.
      */
     public void setLocallyAvailablePrograms(Map<String, String> locallyAvailablePrograms,
-        List<String> locallyAvailableDbxPrograms) {
+        List<String> programsFoundInLocalDropbox) {
         this.locallyAvailablePrograms = locallyAvailablePrograms;
-        this.locallyAvailableDbxPrograms = new HashSet<>(locallyAvailableDbxPrograms);
+        this.locallyAvailableDbxPrograms = new HashSet<>(programsFoundInLocalDropbox);
     }
 
     /**
@@ -481,6 +484,14 @@ public class Authenticator {
             .filter(e->e.getValue().getOrDefault("repository", implicit_repository).equalsIgnoreCase("s3"))
             .map(Map.Entry::getKey)
             .collect(Collectors.toList());
+        // For any programs that were found in Dropbox, but are actually s3 programs, remove them from
+        // locallyAvailableDbxPrograms and from locallyAvailablePrograms.
+        s3RepositoryList.forEach(o -> {
+            if (locallyAvailableDbxPrograms.contains(o)) {
+                locallyAvailableDbxPrograms.remove(o);
+                locallyAvailablePrograms.remove(o);
+            }
+        });
         // Extract the friendly names as {programid: "name"}
         programNames = programs_info.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, e->e.getValue().getOrDefault("name", e.getKey())));
