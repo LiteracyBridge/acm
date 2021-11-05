@@ -402,6 +402,31 @@ public class ACMConfiguration {
         return Constants.TB_SRN_ALLOCATION_SIZE_DEFAULT;
     }
 
+    public long getLatestUpdateSetupPromptDate() {
+        String value = getUserConfigurationItem(Constants.LATEST_UPDATE_SETUP_WARNING, null);
+        try {
+            return Long.parseLong(value);
+        } catch (Exception ignored)  {
+            return 0;
+        }
+    }
+    public void setLatestUpdateSetupPromptDate() {
+        UsersConfigurationProperties.setProperty(Constants.LATEST_UPDATE_SETUP_WARNING,
+            Long.toString(System.currentTimeMillis()));
+        writeUserProps();
+    }
+
+    public boolean alwaysPromptForUpdate() {
+        String value = getUserConfigurationItem(Constants.ALWAYS_WARN_SETUP, "false");
+        try {
+            return Boolean.parseBoolean(value);
+        } catch (Exception ignored) {
+            // ignore
+        }
+        return false;
+    }
+
+
     public String getUserConfigurationItem(String name, String defaultValue) {
         String value = UsersConfigurationProperties.getProperty(name);
         return (value == null) ? defaultValue : value;
@@ -540,7 +565,7 @@ public class ACMConfiguration {
             try {
                 System.out.printf("Not a directory: %s\n", containingDir);
             } catch (Exception ex) {
-                System.out.printf("Exception trying to examine directory\n");
+                System.out.print("Exception trying to examine directory\n");
             }
         }
         return result;

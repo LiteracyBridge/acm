@@ -5,6 +5,7 @@ import org.literacybridge.acm.gui.util.UIUtils;
 
 import javax.swing.*;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -25,6 +26,7 @@ public class PopUp {
         private int messageType = JOptionPane.PLAIN_MESSAGE;
         private Icon icon = null;
         private Object[] options = null;
+        private Dimension size = null;
         private Object initialValue = null;
         private int timeout = -1;
 
@@ -96,6 +98,11 @@ public class PopUp {
             return this;
         }
 
+        public Builder withSize(Dimension size) {
+            this.size = size;
+            return this;
+        }
+
         /**
          * The default value. Only valid if options are also specified.
          * @param initialValue The object representing the initial value, the default.
@@ -154,7 +161,7 @@ public class PopUp {
     private int timeRemaining;
 
     private int go() {
-        if (optedOut.containsKey(builder.title)) return optedOut.get(builder.title);
+        if (builder.optOut && optedOut.containsKey(builder.title)) return optedOut.get(builder.title);
         boolean[] optedOut = {false};
         timeRemaining = builder.timeout;
         Object message;
@@ -195,13 +202,14 @@ public class PopUp {
         if (builder.timeout > 0) {
             dialog.addComponentListener(autoCloseListener);
         }
-
+        if (builder.size != null) dialog.setSize(builder.size);
         dialog.setVisible(true);
         Object selectedValue = op.getValue();
 
         int result = JOptionPane.CLOSED_OPTION;
         //**************************************************************
         // Copied from JOptionPane.java
+        //noinspection StatementWithEmptyBody
         if (selectedValue == null) {
             // result = JOptionPane.CLOSED_OPTION;
         } else if (builder.options == null) {

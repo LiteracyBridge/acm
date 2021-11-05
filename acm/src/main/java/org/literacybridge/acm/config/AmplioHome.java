@@ -180,6 +180,7 @@ public class AmplioHome {
     public static boolean isOldStyleHomeDirectory() {
         return getInstance().version == VERSION.v1;
     }
+    public static boolean isOldStyleSetup() { return isOldStyleHomeDirectory(); }
 
     private static void findHomeDirectory(AmplioHome instance) {
         File homeDir = null;

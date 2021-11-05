@@ -340,6 +340,9 @@ public class Authenticator {
         if (!LoginOptions.allCompatible(loginFlags)) {
             throw new IllegalArgumentException("Incompatible options specified: " + LoginOptions.getIncompatibles(loginFlags));
         }
+
+        UpdatePrompter.go();
+
         loginOptions = new HashSet<>(Arrays.asList(loginFlags));
         if (loginOptions.contains(LoginOptions.SUGGEST_DEMO_MODE)) {
             loginOptions.add(LoginOptions.OFFER_DEMO_MODE);
