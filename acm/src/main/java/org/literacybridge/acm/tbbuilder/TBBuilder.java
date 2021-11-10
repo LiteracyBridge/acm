@@ -37,17 +37,28 @@ public class TBBuilder {
     static final String CATEGORIES_IN_PACKAGES_CSV_FILE_NAME = "categoriesinpackages.csv";
     static final String PACKAGES_IN_DEPLOYMENT_CSV_FILE_NAME = "packagesindeployment.csv";
 
-    public final static String [] REQUIRED_SYSTEM_MESSAGES = {
+    public final static List<String> REQUIRED_SYSTEM_MESSAGES = Arrays.asList(
         "0", "1", "2", "3", "4", "5", "6", "9", "10", "11",
         "16", "17", "19", "20", "21", "22", "23", "24", "25", "26", "28", "29",
         "33", "37", "38", "41", "53", "54", "61", "62", "63", "65", "80"
-    };
+    );
+    public final static List<String> TUTORIAL_SYSTEM_MESSAGES = Arrays.asList(
+        "16", "17", "19", "20", "21", "22", "23", "24", "25", "26", "28", "54"
+    );
+
     public final static String MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE = "r1220.img";
 
     public static String firstMessageListName = "1";
     static final String IntroMessageListFilename = Constants.CATEGORY_INTRO_MESSAGE + ".txt";
     public static final String ACM_PREFIX = "ACM-";
     private final static int MAX_DEPLOYMENTS = 5;
+
+    public static List<String> getRequiredSystemMessages(boolean includeTbTutorial) {
+        if (includeTbTutorial) return REQUIRED_SYSTEM_MESSAGES;
+        return REQUIRED_SYSTEM_MESSAGES.stream()
+            .filter(m -> !TUTORIAL_SYSTEM_MESSAGES.contains(m))
+            .collect(Collectors.toList());
+    }
 
     // Begin instance data
 

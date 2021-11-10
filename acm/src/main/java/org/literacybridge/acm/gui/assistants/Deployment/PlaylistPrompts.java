@@ -11,6 +11,7 @@ import org.literacybridge.acm.store.SearchResult;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -45,6 +46,10 @@ public class PlaylistPrompts {
 
     private final String title;
     private final String languagecode;
+
+    private static final Map<String, AudioItem> itemCache = new HashMap<>();
+    private static long itemCacheStoreChangeCount = -1;
+    private static Locale itemCacheLocale = null;
 
     private MetadataStore store = ACMConfiguration.getInstance()
         .getCurrentDB()
@@ -242,5 +247,60 @@ public class PlaylistPrompts {
                 }
             }
         }
+
+        if (longPromptItem == null || shortPromptItem == null) {
+            searchIgnoringUnderscores(categoryList, localeList);
+        }
+    }
+
+    /**
+     * When playlists are created, spaces from the program spec are turned to underscores. When those
+     * ACM playlists are then listed and used to try to find prompts, underscores are turned back to spaces.
+     * But if the playlist title really contains underscores, munging them back to spaces makes the search fail.
+     *
+     * If the playlist prompts were not found, it might be due to that underscore munging. (If the prompts
+     * are in the database with underscores, and we're searching for spaces, Lucene won't fond them.) There
+     * might be a way to tell Lucene to do a regular expression search, but our version is very old and
+     * online docs are slim.
+     *
+     * So, get all of the messages for the language, and try to match accepting either space or underscore
+     * whereever there is a space.
+     *
+     * Caches a list of all messages (for the current language), and only updates if the database has changed.
+     * @param categoryList categories for which we want audio items (category prompt category)
+     * @param localeList language for which we want audio prompts.
+     */
+    private void searchIgnoringUnderscores(List<Category> categoryList, List<Locale> localeList) {
+        assert(localeList.size() == 1);
+        if (itemCacheStoreChangeCount != store.getChangeCount() || !localeList.get(0).equals(itemCacheLocale)) {
+            itemCacheStoreChangeCount = store.getChangeCount();
+            itemCacheLocale = localeList.get(0);
+            itemCache.clear();
+            SearchResult searchResult = store.search(null, categoryList, localeList);
+            Map<String, AudioItem> items = searchResult.getAudioItems()
+                .stream()
+                .map(store::getAudioItem)
+                .collect(Collectors.toMap(AudioItem::getTitle, c -> c));
+            itemCache.putAll(items);
+        }
+        
+        String regex = "(?i)^(" + title.replace(" ", "[ _]") + ")([: ]+(description|invite|invitation|prompt|long|action))?$";
+        Pattern pattern = Pattern.compile(regex);
+        for (Map.Entry<String, AudioItem> e : itemCache.entrySet()) {
+            Matcher matcher = pattern.matcher(e.getKey());
+            if (matcher.matches() && matcher.groupCount()==3) {
+                if (matcher.group(2) != null) {
+                    if (longPromptItem == null) {
+                        longPromptItem = e.getValue();
+                    }
+                } else {
+                    if (shortPromptItem == null) {
+                        shortPromptItem = e.getValue();
+                    }
+                }
+            }
+        }
+
+
     }
 }

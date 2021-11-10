@@ -20,16 +20,13 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -215,7 +212,7 @@ class Create {
 
         // System and category prompts
         File sourceLanguageDir = new File(builderContext.sourceTbOptionsDir, "languages"+File.separator + pi.language);
-        exportSystemPrompts(shadowLanguageDir, stagedLanguageDir, pi.language, pi.audioFormat);
+        exportSystemPrompts(shadowLanguageDir, stagedLanguageDir, pi.language, pi.audioFormat, exportedCategories.contains(Constants.CATEGORY_TUTORIAL));
         // The prompt "9-0" is always needed to announce where user feedback is recorded. "i9-0" is only needed
         // if user feedback is public.
         Set<String> neededPrompts = new HashSet<>(exportedCategories);
@@ -414,9 +411,9 @@ class Create {
     private void exportSystemPrompts(File shadowLanguageDir,
             File stagedLanguageDir,
             String language,
-            AudioItemRepository.AudioFormat audioFormat) throws
+            AudioItemRepository.AudioFormat audioFormat, boolean hasTutorial) throws
                                                          IOException {
-        for (String prompt : TBBuilder.REQUIRED_SYSTEM_MESSAGES) {
+        for (String prompt : TBBuilder.getRequiredSystemMessages(hasTutorial)) {
             String promptFilename = prompt + '.' + audioFormat.getFileExtension();
 
             File exportFile;

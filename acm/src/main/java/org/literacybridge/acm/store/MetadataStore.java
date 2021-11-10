@@ -12,6 +12,7 @@ public abstract class MetadataStore {
 
   private final List<DataChangeListener> dataChangeListeners;
   private boolean haveChanges = false;
+  private long changeCount = 0L;
 
   public abstract Transaction newTransaction();
 
@@ -37,8 +38,13 @@ public abstract class MetadataStore {
     return haveChanges;
   }
 
+  public long getChangeCount() {
+      return changeCount;
+  }
+
   public MetadataStore(Taxonomy taxonomy) {
     this.taxonomy = taxonomy;
+    this.changeCount++;
     dataChangeListeners = Lists.newLinkedList();
   }
 

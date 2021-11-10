@@ -335,7 +335,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
      * @param languages to be checked.
      */
     private void validateSystemPrompts(Collection<String> languages) {
-        String[] required_messages = TBBuilder.REQUIRED_SYSTEM_MESSAGES;
+        List<String> required_messages = TBBuilder.getRequiredSystemMessages(context.includeTbTutorial);
 
         File tbLoadersDir = ACMConfiguration.getInstance().getCurrentDB().getProgramTbLoadersDir();
         String languagesPath = "TB_Options" + File.separator + "languages";

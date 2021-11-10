@@ -229,6 +229,7 @@ class Validator {
             try (BufferedReader br = new BufferedReader(new FileReader(activeList))) {
                 String line;
                 boolean foundUserFeedback = false;
+                boolean foundTutorial = false;
                 while ((line = br.readLine()) != null) {
                     // '!' means subject is locked.
                     if (line.charAt(0) == '!') { line = line.substring(1); }
@@ -237,6 +238,9 @@ class Validator {
 
                     if (line.equals(Constants.CATEGORY_UNCATEGORIZED_FEEDBACK)) {
                         foundUserFeedback = true;
+                    }
+                    if (line.equals(Constants.CATEGORY_TUTORIAL)) {
+                        foundTutorial = true;
                     }
 
                     // We have the category, ensure the system prompt exists.
@@ -269,8 +273,7 @@ class Validator {
                         }
                     }
                 }
-                String[] required_messages = TBBuilder.REQUIRED_SYSTEM_MESSAGES;
-                for (String prompt : required_messages) {
+                for (String prompt : TBBuilder.getRequiredSystemMessages(foundTutorial)) {
                     File p1 = new File(languageDir, prompt + ".a18");
                     if (!p1.exists()) {
                         builderContext.errorMessages.add(
