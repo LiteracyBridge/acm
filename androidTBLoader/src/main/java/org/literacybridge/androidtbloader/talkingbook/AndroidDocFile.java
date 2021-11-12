@@ -1,9 +1,8 @@
 package org.literacybridge.androidtbloader.talkingbook;
 
 import android.content.ContentResolver;
-import android.support.v4.provider.DocumentFile;
+import androidx.documentfile.provider.DocumentFile;
 
-import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 
 import java.io.IOException;
@@ -11,9 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.literacybridge.core.fs.TbFile.Flags.append;
 

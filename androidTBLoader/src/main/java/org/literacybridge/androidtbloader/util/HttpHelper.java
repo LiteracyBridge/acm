@@ -1,6 +1,6 @@
 package org.literacybridge.androidtbloader.util;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.android.volley.AuthFailureError;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;

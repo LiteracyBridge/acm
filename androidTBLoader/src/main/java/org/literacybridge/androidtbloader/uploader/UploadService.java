@@ -12,8 +12,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.core.app.NotificationCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession;
@@ -43,7 +43,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.regex.Pattern;
 
-import static android.support.v4.app.NotificationCompat.PRIORITY_HIGH;
+import static androidx.core.app.NotificationCompat.PRIORITY_HIGH;
 import static org.literacybridge.androidtbloader.util.Constants.COLLECTED_DATA_BUCKET_NAME;
 
 /**

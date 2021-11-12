@@ -12,8 +12,8 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.net.Uri;
 import android.os.storage.StorageManager;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.provider.DocumentFile;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 
 import org.literacybridge.androidtbloader.TBLoaderAppContext;

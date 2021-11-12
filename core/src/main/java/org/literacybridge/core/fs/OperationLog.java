@@ -10,6 +10,8 @@ import java.util.regex.Pattern;
 
 import static org.literacybridge.core.tbloader.TBLoaderConstants.UTC;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Log operations of the applications. Uploaded to server, to extract app metrics, usage, and updates.
  */
@@ -37,7 +39,7 @@ public class OperationLog {
     public static class Info {
         private Map<String, String> info = new LinkedHashMap<>();
         public <T> Info put(String key, T value) {
-            info.put(key, value.toString());
+            info.put(key, value!=null?value.toString():"");
             return this;
         }
     }
@@ -158,7 +160,7 @@ public class OperationLog {
 
         @Override
         public <T> Operation put(String key, T value) {
-            info.put(key, value.toString());
+            info.put(key, value!=null?value.toString():"");
             return this;
         }
 
@@ -234,6 +236,7 @@ public class OperationLog {
          * @return String with those characters removed.
          */
         private String enquote(String rawString) {
+            if (StringUtils.isBlank(rawString)) return "";
             rawString = NEWLINE.matcher(rawString).replaceAll("↵");
             rawString = COMMA.matcher(rawString).replaceAll(";");
             return rawString;

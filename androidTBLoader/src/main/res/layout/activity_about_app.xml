@@ -16,7 +16,7 @@
   ~ limitations under the License.
   -->
 
-<android.support.design.widget.CoordinatorLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -25,12 +25,12 @@
     android:fitsSystemWindows="true"
     tools:context="org.literacybridge.androidtbloader.signin.AboutApp">
 
-    <android.support.design.widget.AppBarLayout
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/AppTheme.AppBarOverlay">
 
-        <android.support.v7.widget.Toolbar
+        <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar_AboutApp"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
@@ -47,9 +47,9 @@
                 android:textAlignment="center"
                 android:textColor="@color/toolbar_items"
                 android:textSize="@dimen/action_bar_text"/>
-        </android.support.v7.widget.Toolbar>
+        </androidx.appcompat.widget.Toolbar>
 
-    </android.support.design.widget.AppBarLayout>
+    </com.google.android.material.appbar.AppBarLayout>
 
     <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
                 android:id="@+id/ScrollView01"
@@ -61,4 +61,4 @@
         <include layout="@layout/content_about_app"/>
     </ScrollView>
 
-</android.support.design.widget.CoordinatorLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

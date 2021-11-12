@@ -7,9 +7,9 @@ import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -318,7 +318,7 @@ public class TbLoaderFragment extends Fragment {
         mRecipient = recipient;
         Map<String,String> recipientsMap = mAppContext.getProgramSpec().getRecipientsMap();
         if (recipientsMap != null) {
-            mCommunityDirectory = recipientsMap.get(recipient.recipientid);
+            mCommunityDirectory = recipientsMap.getOrDefault(recipient.recipientid, recipient.recipientid);
         }
         mCollapseCommunityName = false;
         mCommunityNameTextView.setText(mRecipient.getName());
