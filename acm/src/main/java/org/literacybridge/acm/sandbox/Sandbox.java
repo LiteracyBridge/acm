@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 public class Sandbox {
@@ -39,6 +40,10 @@ public class Sandbox {
         restoreWorkQueue();
     }
 
+    /**
+     * Write the work queue to disk so that we can resume later. This is to handle cases where the application
+     * crashes, etc.
+     */
     private void persistWorkQueue() {
         File qFile = new File(shadowDir, WORK_QUEUE_DATA);
         if (!qFile.getParentFile().exists()) {
@@ -60,6 +65,9 @@ public class Sandbox {
         }
     }
 
+    /**
+     * When relaunched after a crash, this is used to recover the previous state.
+     */
     private void restoreWorkQueue() {
         File qFile = new File(shadowDir, WORK_QUEUE_DATA);
         if (qFile.exists()) {
@@ -235,9 +243,13 @@ public class Sandbox {
     public Collection<Path> listPaths(Path path) {
         Set<Path> result = new HashSet<>();
         ensureValidPath(path);
+        // The path for which caller wants the children, relative to the base path being sandboxed.
         Path relativePath = path.isAbsolute() ? baseDir.toPath().relativize(path) : path;
+        // The directory in the sandbox that corresponds to the real directory.
         File shadowFile = shadowData.toPath().resolve(relativePath).toFile();
+        // The real directory for which the caller wants the children.
         File baseFile = baseDir.toPath().resolve(relativePath).toFile();
+        // The queued operation, if any, for the relative path.
         FileOp op = workQueue.get(relativePath);
         File[] files = null;
         // Is the base itself scheduled for deletion or renaming?
@@ -259,11 +271,17 @@ public class Sandbox {
                 }
             }
         }
-        // Is anything being moved in? (Adds will have physical files, so no need to look for them.)
+        // Is anything being moved in? (Adds will have physical files in the sandbox, so no need to look for them.)
+        // Note that files in the root won't have a parent (because they're relative), so the "is this one of the
+        // ones we want" has to be different for root vs sub-directories.
+        Predicate<Path> isAtPath = relativePath.toString().equals("")
+                                   ? path1 -> path1.getParent() == null
+                                   : path2 -> path2.getParent().toString().equals(relativePath.toString());
+
         workQueue.entrySet().stream()
             .filter(e->e.getValue() instanceof MoveOp)
             .map(Map.Entry::getKey)
-            .filter(k->k.getParent().toString().equals(relativePath.toString()))
+            .filter(isAtPath)
             .forEach(result::add);
         // Add things in the shadow directory.
         files = shadowFile.listFiles();
@@ -420,9 +438,8 @@ public class Sandbox {
      *
      * @param from File or Path to be renamed/moved from.
      * @param to   File or Path to be renamed/moved to.
-     * @throws FileNotFoundException if the from file can't be found.
      */
-    public boolean moveFile(File from, File to) throws FileNotFoundException {
+    public boolean moveFile(File from, File to) {
         return moveFile(from.toPath(), to.toPath());
     }
 

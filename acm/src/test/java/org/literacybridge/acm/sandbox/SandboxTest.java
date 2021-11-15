@@ -601,6 +601,39 @@ public class SandboxTest {
     }
 
     @Test
+    public void testMoveFile1() throws IOException {
+        init();
+
+        // Create the file that will be moved.
+        File f1 = new File(base, filename);
+        try (OutputStream os = new FileOutputStream(new File(base, filename));
+             OutputStreamWriter fw = new OutputStreamWriter(os);
+             BufferedWriter bw = new BufferedWriter(fw)) {
+            bw.write("Hello, world!");
+        }
+        File[] sbFiles = sandboxData.listFiles();
+        File[] bFiles = base.listFiles();
+        assertEquals("Expected no sb file", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected one base file", 1, bFiles == null ? 0 : bFiles.length);
+
+        sb.moveFile(f1, new File(f1.getName()+".moved"));
+        sbFiles = sandboxData.listFiles();
+        bFiles = base.listFiles();
+        assertEquals("Expected no sb file", 0, sbFiles == null ? 0 : sbFiles.length);
+        assertEquals("Expected one base file", 1, bFiles == null ? 0 : bFiles.length);
+
+        Collection<Path> resultingPaths = sb.listPaths(base.toPath());
+        assertEquals("Expected to find one net file.", 1, resultingPaths.size());
+
+        // If the test is passing, there's exactly one. here isn't a Collection.get(0), so use the forEach.
+        resultingPaths.forEach(p->{
+            assertEquals("Expected resulting file to be '" + filename + ".moved'.",
+                filename + ".moved",
+                p.toFile().getName());
+        });
+    }
+
+    @Test
     public void testPersistance() throws IOException {
         init();
 

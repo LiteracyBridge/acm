@@ -70,7 +70,7 @@ public class PathsProvider {
      * ************************************************************************/
 
     /**
-     *
+     * Gets the home (or root) directory for the given program.
      * @return ~/Dropbox/ACM-${programId} or ~/Amplio/acm-dbs/${programId}
      */
     public File getProgramHomeDir() {

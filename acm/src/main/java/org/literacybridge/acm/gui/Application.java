@@ -432,14 +432,14 @@ public class Application extends JXFrame {
       Authenticator authInstance = Authenticator.getInstance();
       authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalProgramDbs(),
               ACMConfiguration.getInstance().getLocalDbxDbs());
-      Authenticator.LoginOptions okRepoOption = AmplioHome.isOldStyleHomeDirectory()?LOCAL_DATA_ONLY:LOCAL_OR_S3;
+      Authenticator.LoginOptions okRepoOption = AmplioHome.isOldStyleHomeDirectory()||params.noS3Dbs?LOCAL_DATA_ONLY:LOCAL_OR_S3;
       Authenticator.LoginResult result = authInstance.getUserIdentity(null,
               LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
               ACMConfiguration.cannonicalProjectName(params.sharedACM),
               OFFLINE_EMAIL_CHOICE,
               CHOOSE_PROGRAM,
               okRepoOption,
-              INCLUDE_FOUND_DBX_ACMS,
+              params.noFoundDbs ? NOP : INCLUDE_FOUND_DBX_ACMS,
               params.sandbox ? SUGGEST_DEMO_MODE : OFFER_DEMO_MODE, // vs no demo mode at all
               INCLUDE_FB_ACMS,
               params.go ? NO_WAIT : NOP);

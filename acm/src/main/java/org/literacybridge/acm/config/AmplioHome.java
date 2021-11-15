@@ -121,17 +121,25 @@ public class AmplioHome {
         return dir;
     }
 
-    protected File getSandboxesDirectory() {
-        File dir;
-        if (version == VERSION.v1) {
-            dir = new File(getAppAcmDir(), "sandbox");
+    private File sandboxesDir = null;
+    private boolean sandboxesOverride = false;
+    protected synchronized File getSandboxesDirectory() {
+        if (sandboxesDir == null) {
+            File dir;
+            String override = System.getenv("sandboxes");
+            if (override != null && override.length() > 0) {
+                dir = new File(override);
+                sandboxesOverride = true;
+            } else if (version == VERSION.v1) {
+                dir = new File(getAppAcmDir(), "sandbox");
+            } else {
+                dir = new File(getHomeDirectory(), "sandbox");
+            }
+            if (!dir.exists()) //noinspection ResultOfMethodCallIgnored
+                dir.mkdirs();
+            sandboxesDir = dir;
         }
-        else {
-            dir = new File(getHomeDirectory(), "sandbox");
-        }
-        if (!dir.exists()) //noinspection ResultOfMethodCallIgnored
-            dir.mkdirs();
-        return dir;
+        return sandboxesDir;
     }
     //
     // End instance data and methods

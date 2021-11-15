@@ -40,6 +40,15 @@ public class CommandLineParams {
   @Option(name="--go", usage="Do not wait for user to override default values.")
   public boolean go;
 
-  @Argument(required=false)
+  @Option(name="--no-found-dbs", usage="Do not include found programs not in server's list of programs")
+  public boolean noFoundDbs;
+
+  @Option(name="--no-s3-dbs", usage="Do not look in S3 for programs to open")
+  public boolean noS3Dbs;
+
+  @Option(name="--no-dbx-dbs", usage="Do not look in Dropbox for programs to open")
+  public boolean noDbxDbs;
+
+  @Argument()
   public String sharedACM;
 }

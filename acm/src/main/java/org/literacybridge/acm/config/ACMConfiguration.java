@@ -49,6 +49,7 @@ public class ACMConfiguration {
     // Set this option when debugging to get the splash screen out of the way.
     public final boolean noSplash;
     private boolean devo;
+    CommandLineParams params;
 
     private final Properties UsersConfigurationProperties = new Properties();
 
@@ -133,6 +134,10 @@ public class ACMConfiguration {
     }
 
     private ACMConfiguration(CommandLineParams params) {
+        this.params = params;
+        if (params.noS3Dbs && params.noDbxDbs) {
+            throw new IllegalArgumentException("Must not specify both --no-s3-dbs and --no-dbx-dbs");
+        }
         AmplioHome.getDropboxDir();
         
         loadUserProps();
@@ -472,8 +477,10 @@ public class ACMConfiguration {
      * Populates the knownDbs map {programid : PathsProvider} structure.
      */
     private void discoverDBs() {
-        knownDbs.putAll(findContainedAcmDbs(AmplioHome.getDropboxDir(), true));
-        if (!AmplioHome.isOldStyleHomeDirectory()) {
+        if (!params.noDbxDbs) {
+            knownDbs.putAll(findContainedAcmDbs(AmplioHome.getDropboxDir(), true));
+        }
+        if (!AmplioHome.isOldStyleHomeDirectory() && !params.noS3Dbs) {
             knownDbs.putAll(findContainedAcmDbs(AmplioHome.getHomeDbsRootDir(), false));
         }
     }
