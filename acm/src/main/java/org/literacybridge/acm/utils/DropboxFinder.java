@@ -1,6 +1,7 @@
 package org.literacybridge.acm.utils;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
@@ -97,7 +98,14 @@ public class DropboxFinder {
     File dbxDir = new File(path);
     if (dbxDir.exists() && dbxDir.isDirectory()) {
       File jarFile = new File(dbxDir, acmJarPath);
-      return jarFile.exists() && jarFile.isFile();
+      if (jarFile.exists() && jarFile.isFile()) {
+        return true;
+      }
+      File[] files = dbxDir.listFiles(file -> file.isDirectory() && file.getName().startsWith("ACM-"));
+      if (files != null && files.length > 0) {
+        System.out.printf("Found an apparent Dropbox directory: %s\n", path);
+        return true;
+      }
     }
     return false;
   }

@@ -353,11 +353,17 @@ public class AmplioHome {
                     BufferedInputStream in = new BufferedInputStream(fis);
                     userConfig.load(in);
                 } catch (IOException ignored) {
+                    System.out.printf("Exception reading configuration file %s\n", userConfigFile.getAbsolutePath());
                 }
+            } else {
+                System.out.printf("No configuration file %s\n", userConfigFile.getAbsolutePath());
             }
             String dropboxPath = userConfig.getProperty(Constants.GLOBAL_SHARE_PATH);
             if (dropboxPath != null) {
                 dropboxDir = new File(dropboxPath);
+                if (dropboxDir.isDirectory()) {
+                    System.out.printf("Found Dropbox through config: %s\n", dropboxPath);
+                }
             }
             // If we didn't find the global directory, try to get it from Dropbox
             // directly.
@@ -367,12 +373,20 @@ public class AmplioHome {
                 dirUpdated = true;
                 LOG.info(String.format("Using Dropbox configuration for shared global directory: %s",
                         dropboxPath));
+                System.out.printf("Using Dropbox configuration for shared global directory: %s", dropboxPath);
             }
+        }
+        // Still didn't find Dropbox. Try "Dropbox" in user's home directory.
+        if (dropboxDir == null || !dropboxDir.isDirectory()) {
+            dropboxDir = new File(USER_HOME_DIR, "Dropbox");
+            dirUpdated = true;
+            System.out.printf("Trying to find Dropbox in user's home directory: %s\n", dropboxDir.getAbsolutePath());
         }
         // We sill didn't find the global directory, so we must not use it on this machine.
         if (dropboxDir == null || !dropboxDir.exists() || !dropboxDir.isDirectory()) {
             dropboxDir = null;
             dirUpdated = false; // Don't try to write null.
+            System.out.println("Can't find Dropbox directory on this computer.");
         }
         if (dirUpdated) {
             userConfig.setProperty(Constants.GLOBAL_SHARE_PATH, dropboxDir.getAbsolutePath());
