@@ -429,7 +429,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                         // first UF message recorded can be reviewed by the user.
                         createListFile(new PlaylistNode(null), Constants.CATEGORY_UNCATEGORIZED_FEEDBACK, listsDir);
                     }
-                } catch (IOException | BaseAudioConverter.ConversionException | AudioItemRepository.UnsupportedFormatException e) {
+                } catch (Exception e) {
                     errors.add(new DeploymentException(String.format("Error exporting playlist '%s'",
                         title), e));
                     e.printStackTrace();
