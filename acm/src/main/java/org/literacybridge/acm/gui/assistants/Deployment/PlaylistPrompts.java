@@ -232,10 +232,10 @@ public class PlaylistPrompts {
         Map<String, AudioItem> items = searchResult.getAudioItems()
             .stream()
             .map(store::getAudioItem)
-            .collect(Collectors.toMap(AudioItem::getTitle, c -> c));
+            .collect(Collectors.toMap(audioItem -> audioItem.getTitle().trim(), c -> c));
 
         // Case insensitive, match pattern and optional " : description"
-        String regex = "(?i)^(" + Pattern.quote(title) + ")([: ]+(description|invite|invitation|prompt|long|action))?$";
+        String regex = "(?i)^(" + Pattern.quote(title.trim()) + ")([: ]+(description|invite|invitation|prompt|long|action))?$";
         Pattern pattern = Pattern.compile(regex);
         for (Map.Entry<String, AudioItem> e : items.entrySet()) {
             Matcher matcher = pattern.matcher(e.getKey());
