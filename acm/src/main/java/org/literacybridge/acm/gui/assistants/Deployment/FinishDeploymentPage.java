@@ -467,9 +467,15 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                 // Clean any old data.
                 IOUtils.deleteRecursive(packageDir);
                 if (packageDir.exists()) {
-                    // Couldn't clean up.
-                    errors.add(new RemoveDirectoryException(packageDir));
-                    return false;
+                    System.out.printf("Couldn't delete %s, trying again%n", packageDir.getAbsolutePath());
+                    // Windows sometimes fails to delete the top level directory. Wait a bit and try again.
+                    try { Thread.sleep(500);} catch (InterruptedException ignored) { }
+                    IOUtils.deleteRecursive(packageDir);
+                    if (packageDir.exists()) {
+                        // Couldn't clean up.
+                        errors.add(new RemoveDirectoryException(packageDir));
+                        return false;
+                    }
                 }
                 if (!packageDir.mkdirs()) {
                     // Can't make package directory
