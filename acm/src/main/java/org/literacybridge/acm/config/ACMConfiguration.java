@@ -531,15 +531,19 @@ public class ACMConfiguration {
      * @return A map of {programid : PathsProvider}
      */
     private Map<String, DBConfiguration> findContainedAcmDbs(File containingDir, boolean isDropbox) {
+        boolean debugFindDbs = isDevo();
         Map<String, DBConfiguration> result = new HashMap<>();
 
         if (containingDir != null && containingDir.exists() && containingDir.isDirectory()) {
-            // Uncomment lines to debug finding program databases.
-            System.out.printf("Looking for program databases in %s\n", containingDir.getAbsolutePath());
+            if (debugFindDbs) {
+                System.out.printf("Looking for program databases in %s\n", containingDir.getAbsolutePath());
+            }
             File[] dirs = containingDir.listFiles(File::isDirectory);
             if (dirs != null) {
                 for (File d : dirs) {
-                    System.out.printf("  Checking %s...", d.getName());
+                    if (debugFindDbs) {
+                        System.out.printf("  Checking %s...", d.getName());
+                    }
                     if (d.exists() && d.isDirectory()) {
                         File dbConfigFile = new File(d, Constants.CONFIG_PROPERTIES);
                         File contentDir = new File(d, Constants.RepositoryHomeDir);
@@ -547,17 +551,23 @@ public class ACMConfiguration {
                         if (dbConfigFile.exists() && dbConfigFile.isFile() &&
                                 contentDir.exists() && contentDir.isDirectory() &&
                                 dbFiles != null && dbFiles.length>0) {
-                            System.out.printf("is a program database in %s.\n", isDropbox?"dropbox":"s3");
+                            if (debugFindDbs) {
+                                System.out.printf("is a program database in %s.\n", isDropbox?"dropbox":"s3");
+                            }
                             PathsProvider pathsProvider = new PathsProvider(d.getName(), isDropbox);
                             result.put(cannonicalProjectName(d.getName()), new DBConfiguration(pathsProvider));
                         } else {
                             boolean config = dbConfigFile.exists() && dbConfigFile.isFile();
                             boolean content = contentDir.exists() && contentDir.isDirectory();
                             boolean db = dbFiles != null && dbFiles.length>0;
-                            System.out.printf("not a program database (%s config, %s content, %s db).\n", config?"have":"no", content?"have":"no", db?"have":"no");
+                            if (debugFindDbs) {
+                                System.out.printf("not a program database (%s config, %s content, %s db).\n", config?"have":"no", content?"have":"no", db?"have":"no");
+                            }
                         }
                     } else {
-                        System.out.println("not a directory.");
+                        if (debugFindDbs) {
+                            System.out.println("not a directory.");
+                        }
                     }
                 }
             }
