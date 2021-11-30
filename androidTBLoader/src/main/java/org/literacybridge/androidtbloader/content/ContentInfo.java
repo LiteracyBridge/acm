@@ -31,6 +31,18 @@ public class ContentInfo {
     }
     private String mFriendlyName;
 
+    // Which S3 bucket (and path)?
+    //  deplid=${programid}-${year}-${depl#}-${rev}
+    //  "acm-content-updates"
+    //     with /projects/${programid}/content-${deplid}.zip
+    //                          . . . /${deplid}.current
+    // - or -
+    //  "amplio-program-content"
+    //     with /${programid}/TB-Loaders/published/${deplid}/content-${deplid}.zip
+    //                                      . . . /${deplid}.rev
+    private String mBucket;
+    private String mKey;
+
     // Like "UWR"
     private String mProgramId;
 
@@ -84,6 +96,11 @@ public class ContentInfo {
         return this;
     }
 
+    ContentInfo withBucketName(String bucketName) {
+        this.mBucket = bucketName;
+        return this;
+    }
+
     ContentInfo withDeployment(String deployment) {
         this.mDeployment = deployment;
         return this;
@@ -103,6 +120,10 @@ public class ContentInfo {
         return this;
     }
 
+    void setKey(String key) {
+        this.mKey = key;
+    }
+
     void setFilename(String filename) {
         this.mFilename = filename;
     }
@@ -119,6 +140,14 @@ public class ContentInfo {
     @Override
     public String toString() {
         return String.format("%s: %s (%d)", mProgramId, mFilename, mSize);
+    }
+
+    String getBucketName() {
+        return mBucket;
+    }
+
+    String getKey() {
+        return mKey;
     }
 
     String getProgramId() {

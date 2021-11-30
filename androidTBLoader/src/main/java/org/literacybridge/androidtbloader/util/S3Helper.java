@@ -1,13 +1,14 @@
 package org.literacybridge.androidtbloader.util;
 
 import android.os.AsyncTask;
-import android.util.Log;
+
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
+
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.signin.UserHelper;
 
@@ -75,10 +76,8 @@ public class S3Helper {
             protected ListObjectsV2Result doInBackground(ListObjectsV2Request... inputs) {
                 ListObjectsV2Result result = null;
                 try {
-                    Log.d(TAG, "about to call listObjectsV2");
                     // Queries files in the bucket from S3. Only returns 1000 entries.
                     result = getS3Client().listObjectsV2(request);
-                    Log.d(TAG, "back from call to listObjectsV2");
                 } catch (Exception e) {
                     thrownException = e;
                 }

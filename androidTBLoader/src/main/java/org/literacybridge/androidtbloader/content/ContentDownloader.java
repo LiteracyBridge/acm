@@ -9,7 +9,6 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 
 import org.literacybridge.androidtbloader.signin.UnattendedAuthenticator;
-import org.literacybridge.androidtbloader.util.Constants;
 import org.literacybridge.androidtbloader.util.PathsProvider;
 import org.literacybridge.androidtbloader.util.S3Helper;
 import org.literacybridge.core.fs.ZipUnzip;
@@ -119,11 +118,9 @@ class ContentDownloader {
         // Where the file will be downloaded
         File file = fileForDownload("content");
         file.getParentFile().mkdirs();
-        // key in S3 bucket of the zip file object
-        String key = "projects/" + mContentInfo.getProgramId() + "/" + mContentInfo.getFilename();
-
         // Initiate the download
-        mObserver = S3Helper.getTransferUtility().download(Constants.DEPLOYMENTS_BUCKET_NAME, key, file);
+        Log.d(TAG, String.format("Starting download of content, b: %s, k: %s", mContentInfo.getBucketName(), mContentInfo.getKey()));
+        mObserver = S3Helper.getTransferUtility().download(mContentInfo.getBucketName(), mContentInfo.getKey(), file);
         mObserver.setTransferListener(listener);
     }
 

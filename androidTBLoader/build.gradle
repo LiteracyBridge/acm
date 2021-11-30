@@ -24,10 +24,10 @@ allprojects {
         google()
         jcenter()
         maven {
-            url "http://bits.netbeans.org/maven2"
+            url "https://bits.netbeans.org/maven2"
         }
         maven {
-            url "http://essi-lab.eu/nexus/content/groups/open.repos"
+            url "https://essi-lab.eu/nexus/content/groups/open.repos"
         }
     }
 }

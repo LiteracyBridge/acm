@@ -163,6 +163,21 @@ public class Config {
     }
 
     /**
+     * Gets the list of program ids for this user.
+     * @return a list of program ids.
+     */
+    public List<String> getProgramIdsForUser() {
+        List<String> result = new ArrayList<>();
+        if (mUserProgramsAndRoles != null) {
+            for (String programid : mUserProgramsAndRoles.keySet()) {
+                if (isProgramIdForUser(programid))
+                    result.add(programid);
+            }
+        }
+        return result;
+    }
+
+    /**
      * Gets the friendly name for the given programid. If the friendly name can't be determined,
      * simply returns the programid.
      * @param programid for which friendly name is desired.

@@ -1,25 +1,27 @@
 package org.literacybridge.androidtbloader.content;
 
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-
 import android.os.Handler;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 
@@ -86,7 +88,8 @@ public class ManageContentActivity extends AppCompatActivity {
                 if (isDownloadInProgress()) {
                     mSwipeRefreshLayout.setRefreshing(false);
                 } else {
-                    mSwipeRefreshLayout.setRefreshing(true);
+                    showWaitDialog("Refreshing content list.");
+//                    mSwipeRefreshLayout.setRefreshing(true);
                     mContentManager.refreshContentList();
                 }
             }
@@ -113,6 +116,7 @@ public class ManageContentActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(TBLoaderAppContext.getInstance()).registerReceiver(
             mMessageReceiver, filter);
         if (!isDownloadInProgress()) {
+            showWaitDialog("Refreshing content list.");
             mContentManager.fetchContentList();
         }
     }
@@ -124,6 +128,7 @@ public class ManageContentActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        closeWaitDialog();
                         setMessageVisibility();
                         mAdapter.notifyDataSetChanged();
                         mSwipeRefreshLayout.setRefreshing(false);
@@ -138,6 +143,29 @@ public class ManageContentActivity extends AppCompatActivity {
         mNoContentText.setVisibility(haveContent ? View.GONE : View.VISIBLE);
         mSwipeRefreshLayout.setVisibility(haveContent ? View.VISIBLE : View.GONE);
     }
+
+    ProgressDialog waitDialog = null;
+    private void closeWaitDialog() {
+        try {
+            if (waitDialog != null)
+                waitDialog.dismiss();
+        }
+        catch (Exception e) {
+            //
+        }
+        waitDialog = null;
+    }
+    private void showWaitDialog(String message) {
+        closeWaitDialog();
+        try {
+            waitDialog = new ProgressDialog(ManageContentActivity.this);
+            waitDialog.setTitle(message);
+            waitDialog.show();
+        } catch (Exception e) {
+            Log.d(TAG, "Exception showing wait dialog", e);
+        }
+    }
+
 
     private void closeUserDialog() {
         if (mUserDialog != null) {

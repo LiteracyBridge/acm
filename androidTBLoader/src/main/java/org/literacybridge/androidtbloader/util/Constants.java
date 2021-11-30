@@ -38,6 +38,8 @@ public class Constants {
 
     // Deployments come from here.
     public static final String DEPLOYMENTS_BUCKET_NAME = "acm-content-updates";
+    // Smart Sync programs are hosted here, and their deployments come from here as well.
+    public static final String CONTENT_BUCKET_NAME = "amplio-program-content";
     // Statistics, logs get uploaded to here.
     public static final String COLLECTED_DATA_BUCKET_NAME = "acm-stats";
 

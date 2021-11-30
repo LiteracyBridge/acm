@@ -2,15 +2,18 @@ package org.literacybridge.androidtbloader.content;
 
 import android.content.Intent;
 import android.os.AsyncTask;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GenericHandler;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+
 import org.literacybridge.androidtbloader.BuildConfig;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
 import org.literacybridge.androidtbloader.community.CommunityInfo;
@@ -292,6 +295,7 @@ public class ContentManager {
 
         // If the data is already "fresh", we may avoid some work.
         if (!forceUpdate && System.currentTimeMillis() <= mContentListTime+CONTENT_UPDATE_FRESH) {
+            onContentListChanged();
             return;
         }
 
@@ -434,13 +438,11 @@ public class ContentManager {
                 opLog.put("exception", e);
                 Log.d(TAG, "Exception removing files", e);
             }
-            Log.i(TAG, "Done removing files");
             return null;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            Log.d(TAG, "Back from deleting files");
             opLog.finish();
             onFinished.run();
         }
@@ -517,62 +519,9 @@ public class ContentManager {
                 List<S3ObjectSummary> s3ObjectSummaries = result.getObjectSummaries();
 
                 // Examine all the objects, and figure out the projects, their sizes, and current update.
-
-                // First, look for all of the ".current" (or ".rev") files. This will let us know what versions
-                // we are current in s3.
-                for (S3ObjectSummary summary : s3ObjectSummaries) {
-                    String [] parts = summary.getKey().split("/");
-                    if (parts.length == 3) {
-                        Matcher matcher = markerPattern.matcher(parts[2]);
-                        if (matcher.matches()) {
-                            // The key is like projects/TEST/TEST-19-2-ab.rev
-                            String programId = parts[1];
-                            String deployment = matcher.group(2);
-                            String revision = matcher.group(3);
-                            if (applicationContext.getConfig().isProgramIdForUser(programId)) {
-                                String current = parts[2].substring(0, parts[2].indexOf("."));
-                                ContentInfo info = new ContentInfo(programId).withDeployment(
-                                    deployment)
-                                    .withRevision(revision)
-                                    .withStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED);
-                                ContentInfo previous = projects.get(programId);
-                                // If we've already found a marker file. See if this one is
-                                // newer, and if so, replace the previous one.
-                                if (previous == null || info.isNewerRevisionThan(previous)) {
-                                    projects.put(programId, info);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Knowing the current Deployments (in s3), gather their sizes.
-                for (S3ObjectSummary summary : s3ObjectSummaries) {
-                    Log.i(TAG, String.format("project item (%d) %s", summary.getSize(), summary.getKey()));
-
-                    // The S3 key is like projects/TEST/content-TEST-19-2-ab.zip or projects/TEST/TEST-19-2-ab.zip
-                    String [] parts = summary.getKey().split("/");
-                    if (parts.length == 3) {
-                        Matcher matcher = zipfilePattern.matcher(parts[2]);
-                        if (matcher.matches()) {
-                            String filename = parts[2];
-                            String project = parts[1];
-                            String deployment = matcher.group(2);
-                            String revision = matcher.group(3);
-                            ContentInfo info = projects.get(project);
-                            // If this zip file matches the revision marker, get the size and key.
-                            if (info != null && info.getDeployment()
-                                    .equalsIgnoreCase(deployment) && info.getRevision()
-                                    .equalsIgnoreCase(revision)) {
-                                info.setSize(summary.getSize());
-                                info.setFilename(filename);
-                            }
-                        }
-                    }
-                }
-                // Give the results to the caller
-                List<ContentInfo> projectList = new ArrayList<>(projects.values());
-                projectsListener.onSuccess(projectList);
+                findDeploymentsAndSizes(s3ObjectSummaries, projects, PUBLISH_FORMAT.DEPLOYMENT);
+                // Examine the S3 hosted (Smart Sync) programs for the user.
+                findCloudContent2(projectsListener, projects);
             }
 
             @Override
@@ -580,6 +529,163 @@ public class ContentManager {
                 projectsListener.onFailure(ex);
             }
         });
+    }
+
+    private enum PUBLISH_FORMAT {
+        DEPLOYMENT,     // Only the deployment information is in the bucket. (from dropobx)
+        PROGRAM         // The entire program database is in the bucket. (from smartsync)
+    };
+
+    /**
+     * Given a list of s3ObjectSummaries and a map of program id to revision, find the latest
+     * deployments from that list, and add or update the list of revisions.
+     * @param s3ObjectSummaries The list of S3 objects.
+     * @param projects The map of programs to revisions.
+     * @param publishFormat The style of bucket being examined.
+     */
+    private void findDeploymentsAndSizes(List<S3ObjectSummary> s3ObjectSummaries,
+                                         Map<String, ContentInfo> projects,
+                                         PUBLISH_FORMAT publishFormat) {
+        int revKeyLength = publishFormat==PUBLISH_FORMAT.DEPLOYMENT ? 3 : 4;
+        int zipKeyLength = publishFormat==PUBLISH_FORMAT.DEPLOYMENT ? 3 : 5;
+        int programidIx = publishFormat==PUBLISH_FORMAT.DEPLOYMENT ? 1 : 0;
+        // First, look for all of the ".current" (or ".rev") files. This will let us know what versions
+        // we are current in s3.
+        for (S3ObjectSummary summary : s3ObjectSummaries) {
+            String [] parts = summary.getKey().split("/");
+            if (parts.length == revKeyLength) {
+                Matcher matcher = markerPattern.matcher(parts[revKeyLength-1]);
+                if (matcher.matches()) {
+                    // The key is like projects/${programid}/TEST-19-2-ab.rev
+                    // or ${programid}/TB-Loaders/published/${deplid}.rev
+                    String programId = parts[programidIx];
+                    String deployment = matcher.group(2);
+                    String revision = matcher.group(3);
+                    Log.i(TAG, String.format("Found deployment revision %s %s %s", programId, deployment, revision));
+                    if (applicationContext.getConfig().isProgramIdForUser(programId)) {
+                        ContentInfo info = new ContentInfo(programId)
+                            .withBucketName(summary.getBucketName())
+                            .withDeployment(deployment)
+                            .withRevision(revision)
+                            .withStatus(ContentInfo.DownloadStatus.NEVER_DOWNLOADED);
+                        ContentInfo previous = projects.get(programId);
+                        // If we've already found a marker file. See if this one is
+                        // newer, and if so, replace the previous one.
+                        if (previous == null || info.isNewerRevisionThan(previous)) {
+                            projects.put(programId, info);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Knowing the current Deployments (in s3), gather their sizes.
+        for (S3ObjectSummary summary : s3ObjectSummaries) {
+
+            // The S3 key of the .zip is like projects/${programid}/content-TEST-19-2-ab.zip or projects/TEST/TEST-19-2-ab.zip
+            // or like ${programid}/TB-Loaders/published/${deplid}/content-${deplid}.zip
+            String [] parts = summary.getKey().split("/");
+            if (parts.length == zipKeyLength) {
+                Matcher matcher = zipfilePattern.matcher(parts[zipKeyLength-1]);
+                if (matcher.matches()) {
+                    Log.i(TAG, String.format("project zip item (%d) %s", summary.getSize(), summary.getKey()));
+                    String filename = parts[zipKeyLength-1];
+                    String project = parts[programidIx];
+                    String deployment = matcher.group(2);
+                    String revision = matcher.group(3);
+                    ContentInfo info = projects.get(project);
+                    // If this zip file matches the revision marker, get the size and key.
+                    if (info != null && info.getDeployment()
+                        .equalsIgnoreCase(deployment) && info.getRevision()
+                        .equalsIgnoreCase(revision)) {
+                        info.setSize(summary.getSize());
+                        info.setFilename(filename);
+                        info.setKey(summary.getKey());
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * A ListObjectsListener class that can chain through several S3 queries. When all have
+     * been completed, the success callback is called. Any error triggers the failure callback.
+     *
+     * This exists to look for deployed content in Smart Sync programs. Generally a user will have
+     * at most one or two programs, so the performance is OK. For HQ folks, who have many programs
+     * there can be a significant delay examining all of the programs.
+     */
+    private class ChainingListener implements S3Helper.ListObjectsListener {
+        private final ListContentListener projectsListener;
+        private final List<String> programids;
+        private final Map<String, ContentInfo> projects;
+        final ListObjectsV2Request[] request = new ListObjectsV2Request[1];
+        private String continuationToken = null;
+        private boolean requestWasTruncated = false;
+        private String programid;
+
+        private ChainingListener(ListContentListener projectsListener, List<String> programids, Map<String, ContentInfo> programs) {
+            this.projectsListener = projectsListener;
+            this.programids = programids;
+            this.projects = programs;
+        }
+
+        @Override
+        public void onSuccess(ListObjectsV2Result result) {
+            requestWasTruncated = result.isTruncated();
+            continuationToken = result.getNextContinuationToken();
+            List<S3ObjectSummary> s3ObjectSummaries = result.getObjectSummaries();
+            findDeploymentsAndSizes(s3ObjectSummaries, projects, PUBLISH_FORMAT.PROGRAM);
+            next();
+        }
+
+        @Override
+        public void onFailure(Exception ex) {
+            projectsListener.onFailure(ex);
+        }
+
+        /**
+         * Called to initiate or continue searching for deployments.
+         */
+        public void next() {
+            if (!requestWasTruncated) {
+                // The last ListObjects request (if any) has completed. If there are no
+                // more program ids in the list, we're done.
+                if (programids.size() == 0) {
+                    Log.i(TAG, "Done searching S3 programs");
+
+                    // Give the results to the caller
+                    List<ContentInfo> projectList = new ArrayList<>(projects.values());
+                    projectsListener.onSuccess(projectList);
+                    return;
+                }
+                // next (or first) program id to examiune.
+                programid = programids.remove(0);
+            }
+            Log.i(TAG, String.format("Searching S3 program %s", programid));
+
+            request[0] = new ListObjectsV2Request()
+                .withBucketName(Constants.CONTENT_BUCKET_NAME)
+                .withPrefix(programid + "/TB-Loaders/published/");
+            if (continuationToken != null) {
+                request[0].setContinuationToken(continuationToken);
+            }
+
+            S3Helper.listObjects(request[0], this);
+        }
+
+    }
+
+    /**
+     * Examines the deployments of Smart Sync projects, looking for new deployments.
+     * @param projectsListener to be called when the process completes or fails.
+     * @param partialResult what was found from Dropbox hosted programs.
+     */
+    private void findCloudContent2(final ListContentListener projectsListener, Map<String, ContentInfo> partialResult) {
+        List<String> programids = applicationContext.getConfig().getProgramIdsForUser();
+
+        ChainingListener listener = new ChainingListener(projectsListener, programids, partialResult);
+        listener.next();
     }
 
     /**

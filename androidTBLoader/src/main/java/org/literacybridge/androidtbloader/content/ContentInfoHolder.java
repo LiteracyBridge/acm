@@ -1,13 +1,16 @@
 package org.literacybridge.androidtbloader.content;
 
 import android.annotation.SuppressLint;
-import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
+
 import org.literacybridge.androidtbloader.BuildConfig;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
@@ -127,11 +130,12 @@ class ContentInfoHolder extends RecyclerView.ViewHolder {
             if (BuildConfig.DEBUG) {
                 total = Math.max(total, 1);
                 long progress = 100 * current / total;
-                if (progress != prevProgress)
+                if (Math.abs(progress - prevProgress) > 10) {
                     Log.d(TAG,
                         String.format("Unzipping content, progress: %d/%d (%d%%)", current, total,
                             progress));
-                prevProgress = progress;
+                    prevProgress = progress;
+                }
             }
             update(false);
         }
