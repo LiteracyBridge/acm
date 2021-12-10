@@ -111,8 +111,14 @@ public class ContentInfo {
         return this;
     }
 
-    public boolean isNewerRevisionThan(ContentInfo previous) {
-        return mRevision.compareToIgnoreCase(previous.getRevision()) > 0;
+    public boolean isNewerRevisionThan(ContentInfo other) {
+        // A longer name is always greater. When the lengths are the same, then we need
+        // to compare the strings.
+        if (mRevision.length() == other.mRevision.length()) {
+            return (mRevision.compareToIgnoreCase(other.mRevision) > 0);
+        } else {
+            return (mRevision.length() > other.mRevision.length());
+        }
     }
 
     ContentInfo withFilename(String filename) {
