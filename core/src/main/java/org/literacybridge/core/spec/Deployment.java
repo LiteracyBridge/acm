@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.Map;
 
 public class Deployment {
-    final static String[] FILENAMES = new String[]{"ste_deployments.csv", "deployment_spec.csv"};
+    final static String[] FILENAMES = new String[]{"pub_deployments.csv", "deployment_spec.csv"};
 
     public enum columns {
         /*project,*/

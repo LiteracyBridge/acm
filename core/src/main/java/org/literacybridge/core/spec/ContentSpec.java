@@ -309,6 +309,6 @@ public class ContentSpec {
             columnNames[ix] = columns.values()[ix].externalName;
         }
     }
-    static String[] FILENAMES = new String[]{"ste_content.csv", "content.csv"};
+    static String[] FILENAMES = new String[]{"pub_content.csv", "content.csv"};
 
 }
