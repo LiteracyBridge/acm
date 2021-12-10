@@ -295,7 +295,7 @@ public class ContentSpec {
         sdg_targets("sdg_targets"),
         default_category;
 
-        String externalName;
+        final String externalName;
 
         columns() { externalName = this.name(); }
 
@@ -309,5 +309,6 @@ public class ContentSpec {
             columnNames[ix] = columns.values()[ix].externalName;
         }
     }
+    static String[] FILENAMES = new String[]{"ste_content.csv", "content.csv"};
 
 }

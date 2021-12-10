@@ -30,7 +30,8 @@ public class ProjectsHelper {
     private static final Set<String> PROGSPEC_OBJECT_NAMES = new HashSet<>(Arrays.asList("recipients.csv",
         "recipients_map.csv",
         "deployment_spec.csv",
-        "content.csv"));
+        "content.csv",
+        "ste_content.csv", "ste_recipients.csv", "ste_deployments.csv", "ste_general.csv"));
 
     IdentityPersistence identityPersistence;
 

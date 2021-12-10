@@ -6,13 +6,15 @@ import java.util.Date;
 import java.util.Map;
 
 public class Deployment {
-    final static String FILENAME = "deployment_spec.csv";
+    final static String[] FILENAMES = new String[]{"ste_deployments.csv", "deployment_spec.csv"};
 
     public enum columns {
         /*project,*/
         /*deployment, deploymentname,*/
+        deploymentnumber,
         deployment_num, startdate, enddate, component/*distribution,comment*/
-    };
+    }
+
     static String[] columnNames;
     static {
         columnNames = new String[columns.values().length];
@@ -21,8 +23,8 @@ public class Deployment {
         }
     }
 
-    private String pattern = "yyyy-MM-dd";
-    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+    private final String pattern = "yyyy-MM-dd";
+    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
 
     Date date = simpleDateFormat.parse("2018-09-09");
 
@@ -41,11 +43,11 @@ public class Deployment {
     }
 
     public Deployment(Map<String, String> properties) throws ParseException {
-        this.deploymentnumber = Integer.parseInt(properties.get(columns.deployment_num.name()));
+        String deployment_num_str = properties.get(columns.deployment_num.name());
+        this.deploymentnumber = Integer.parseInt(properties.getOrDefault(columns.deploymentnumber.name(), deployment_num_str));
         this.startdate = simpleDateFormat.parse(properties.get(columns.startdate.name()));
         this.enddate = simpleDateFormat.parse(properties.get(columns.enddate.name()));
         this.componentFilter = new StringFilter(properties.get(columns.component.name()));
-
     }
 
 }

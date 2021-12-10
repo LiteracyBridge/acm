@@ -129,7 +129,7 @@ public class ProgramSpec {
      */
     public synchronized RecipientList getRecipients() {
         if (recipients == null) {
-            try (InputStream is = getSpecStream(Recipient.FILENAME)) {
+            try (InputStream is = getSpecStream(Recipient.FILENAMES)) {
                 if (is != null) {
                     final RecipientList result = new RecipientList(getLanguageLabelProvider());
                     Set<String> columnsInRecips = CsvReader.read(is, Recipient.columnNames, result::add);
@@ -288,7 +288,7 @@ public class ProgramSpec {
      */
     public synchronized List<Deployment> getDeployments() {
         if (deployments == null) {
-            try (InputStream is = getSpecStream(Deployment.FILENAME)) {
+            try (InputStream is = getSpecStream(Deployment.FILENAMES)) {
                 if (is != null) {
                     final List<Deployment> result = new ArrayList<>();
                     CsvReader.read(is, Deployment.columnNames, record -> {
@@ -319,7 +319,7 @@ public class ProgramSpec {
     public synchronized ContentSpec getContentSpec() {
         if (contentSpec == null) {
             ContentSpec newContentSpec = new ContentSpec();
-            try (InputStream fis = getSpecStream("content.csv")) {
+            try (InputStream fis = getSpecStream(ContentSpec.FILENAMES)) {
                 if (fis != null) {
                     CsvReader.read(fis,
                         ContentSpec.columnNames,

@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Recipient {
-    final static String FILENAME = "recipients.csv";
+    final static String[] FILENAMES = new String[]{"ste_recipients.csv", "recipients.csv"};
     final static Pattern DEPLOYMENTS_LIST = Pattern.compile("^\\[?([0-9, ]*)]?$");
 
     // We don't care about most of the recipient columns in the ACM or TB-Loader.
