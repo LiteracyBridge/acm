@@ -20,7 +20,7 @@ public class LanguageLabelProvider {
      * AUDIO_LANGUAGES=en,dga("Dagaare"),twi("Twi"),sfw("Sehwi")
      */
     private final static Pattern LANGUAGE_LABEL_PATTERN = Pattern
-        .compile("^([a-zA-Z]{2,3})(?:\\(\"(.+)\"\\))?$");
+        .compile("^([a-zA-Z]{2,})(?:\\(\"(.+)\"\\))?$");
 
     private final List<Locale> audioLanguages = new ArrayList<>();
     private final Map<Locale, String> languageLabels = new HashMap<>();
