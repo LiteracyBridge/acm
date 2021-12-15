@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 public class Constants {
-  public final static String ACM_VERSION = "r2112132"; // yy mm dd n
+  public final static String ACM_VERSION = "r2112151"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String AmplioHomeDirName = "Amplio";
   public final static String ACM_DIR_NAME = "ACM";
@@ -81,7 +81,7 @@ public class Constants {
   public static final int FUZZY_THRESHOLD_MINIMUM = 60;
 
   // Maximum length of a package name. This is a TB firmware restriction.
-  public static final int MAX_PACKAGE_NAME_LENGTH = 20;
+  public static final int MAX_PACKAGE_NAME_LENGTH = 17;
 
   public static final int AMPLIO_GREEN_R = 40;  // 0x28;
   public static final int AMPLIO_GREEN_G = 154; // 0x9a;
