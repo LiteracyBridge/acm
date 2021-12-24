@@ -1,3 +1,4 @@
+#!/bin/bash
 
 # Clean directory
 rm -rf ACM

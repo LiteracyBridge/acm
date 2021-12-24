@@ -1,3 +1,4 @@
+#!/bin/bash
 
 aws s3 sync --delete ./ACM/ s3://amplio-software-update/desktop/ACM/
 

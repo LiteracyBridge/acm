@@ -1,3 +1,4 @@
+#!/bin/bash
 
 ./build_dist.sh
 
