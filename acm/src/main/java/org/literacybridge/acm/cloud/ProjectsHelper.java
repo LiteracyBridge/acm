@@ -31,7 +31,7 @@ public class ProjectsHelper {
         "recipients_map.csv",
         "deployment_spec.csv",
         "content.csv",
-        "pub_content.csv", "pub_recipients.csv", "pub_deployments.csv", "pub_general.csv"));
+        "pub_content.csv", "pub_recipients.csv", "pub_deployments.csv", "pub_general.csv", "pub_progspec.xlsx"));
 
     IdentityPersistence identityPersistence;
 
