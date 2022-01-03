@@ -43,6 +43,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static org.literacybridge.acm.Constants.ALLOW_PACKAGE_CHOICE;
 import static org.literacybridge.acm.cloud.ProjectsHelper.PROGSPEC_ETAGS_FILE_NAME;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 
@@ -485,6 +486,15 @@ public class DBConfiguration {
         threshold = Math.min(threshold, Constants.FUZZY_THRESHOLD_MAXIMUM);
         threshold = Math.max(threshold, Constants.FUZZY_THRESHOLD_MINIMUM);
         getDbProperties().setProperty(Constants.FUZZY_THRESHOLD, Integer.toString(threshold));
+    }
+
+    public boolean isPackageChoice() {
+        String valStr = getDbProperties().getProperty(ALLOW_PACKAGE_CHOICE, "FALSE");
+        return Boolean.parseBoolean(valStr);
+    }
+
+    public void setIsPackageChoice(boolean isPackageChoice) {
+        getDbProperties().setProperty(Constants.ALLOW_PACKAGE_CHOICE, Boolean.toString(isPackageChoice));
     }
 
     public boolean getWarnForMissingGreetings() {

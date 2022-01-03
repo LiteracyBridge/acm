@@ -81,7 +81,7 @@ public class TBLoader extends JFrame {
         AUTOMATIC_ON_PROGRAM_CHANGE("The Talking Book is assigned a new ID when moving between programs."),
         MANUAL_ON_PROGRAM_CHANGE("New Talking Book ID when needed, on request, or for new programs.");
 
-        String description;
+        final String description;
         TB_ID_STRATEGY(String description) {
             this.description = description;
         }
@@ -106,7 +106,7 @@ public class TBLoader extends JFrame {
         RETAIN("The value from the Talking Book is retained."),
         DEFAULT_ON("'Test' is on unless explicitly turned off.");
 
-        String description;
+        final String description;
         TEST_DEPLOYMENT_STRATEGY(String description) {
             this.description = description;
         }
@@ -452,11 +452,10 @@ public class TBLoader extends JFrame {
     void loadConfiguration() {
         DBConfiguration config = ACMConfiguration.getInstance().getDbConfiguration(newProject);
         if (config != null) {
-            // If the config file allows package choice, turn on the option. Also check the deployment.
-            String valStr = config.getProperty(ALLOW_PACKAGE_CHOICE, "FALSE");
-            this.allowPackageChoice |= Boolean.parseBoolean(valStr);
+            // If the config file allows package choice, turn on the option. We also check the deployment later.
+            this.allowPackageChoice |= config.isPackageChoice();
 
-            valStr = config.getProperty("ALLOW_FORCE_SRN", "FALSE");
+            String valStr = config.getProperty("ALLOW_FORCE_SRN", "FALSE");
             if (Boolean.parseBoolean(valStr)) {
                 this.tbIdStrategy = TB_ID_STRATEGY.MANUAL;
             }

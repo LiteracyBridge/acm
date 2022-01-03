@@ -38,6 +38,8 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
     private final JCheckBox greetingWarnings;
     private final JCheckBox forceWavConversion;
     private final boolean isForceWavConversion;
+    private final JCheckBox packageChoiceCB;
+    private final boolean isPackageChoice;
     private JCheckBox clearProgspec;
 
     @Override
@@ -54,6 +56,7 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
                 ACMConfiguration.getInstance().getCurrentDB().getNotifyList());
         warnForMissingGreetings = ACMConfiguration.getInstance().getCurrentDB().getWarnForMissingGreetings();
         isForceWavConversion = ACMConfiguration.getInstance().getCurrentDB().isForceWavConversion();
+        isPackageChoice = ACMConfiguration.getInstance().getCurrentDB().isPackageChoice();
 
         // Set an empty border on the panel, to give some blank space around the content.
         setLayout(new BorderLayout());
@@ -145,6 +148,13 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
                 "When importing a .WAV file, pre-process to improve compatibility and reduce file size");
         gridPanel.add(forceWavConversion, gbcRight);
 
+        gridPanel.add(new JLabel("Allow package override"), gbcLeft);
+        gbcRight.anchor = GridBagConstraints.BASELINE_LEADING;
+        packageChoiceCB = new JCheckBox("Choose alternative package for recipients.", isPackageChoice);
+        packageChoiceCB.setToolTipText(
+            "Let the TB-Loader user select a different, or an additional, package for a recipient.");
+        gridPanel.add(packageChoiceCB, gbcRight);
+
         if (helper.isAdvanced() || ACMConfiguration.getInstance().isDevo()) {
             // Setting: reload program spec when opening an assistant.
             gbcLeft.anchor = GridBagConstraints.BASELINE_TRAILING;
@@ -235,6 +245,11 @@ public class AcmGeneralSettingsPanel extends AbstractSettingsBase {
 
         if (forceWavConversion.isSelected() != isForceWavConversion) {
             ACMConfiguration.getInstance().getCurrentDB().setForceWavConversion(forceWavConversion.isSelected());
+            haveChanges = true;
+        }
+
+        if (packageChoiceCB.isSelected() != isPackageChoice) {
+            ACMConfiguration.getInstance().getCurrentDB().setIsPackageChoice(packageChoiceCB.isSelected());
             haveChanges = true;
         }
 
