@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 public class Constants {
-  public final static String ACM_VERSION = "r2112291"; // yy mm dd n
+  public final static String ACM_VERSION = "r2201021"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String AmplioHomeDirName = "Amplio";
   public final static String ACM_DIR_NAME = "ACM";
@@ -43,6 +43,7 @@ public class Constants {
   public final static String DE_DUPLICATE_AUDIO = "DE_DUPLICATE_AUDIO";
   public final static String CONFIGURATION_DIALOG = "CONFIGURATION_DIALOG";
   public final static String NATIVE_AUDIO_FORMATS = "NATIVE_AUDIO_FORMATS";
+  public final static String ALLOW_PACKAGE_CHOICE = "PACKAGE_CHOICE";
   // So that test machines can be configured to do frequent allocations.
   public final static String TB_SRN_ALLOCATION_SIZE = "TB_SRN_ALLOCATION_SIZE";
   public final static Integer TB_SRN_ALLOCATION_SIZE_DEFAULT = 512;

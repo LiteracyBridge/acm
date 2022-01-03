@@ -56,6 +56,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static org.literacybridge.acm.Constants.ALLOW_PACKAGE_CHOICE;
 import static org.literacybridge.acm.Constants.TBLoadersLogDir;
 import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.*;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_NUMBER;
@@ -383,6 +384,9 @@ public class TBLoader extends JFrame {
                                                     .filter(StringUtils::isNotBlank)
                                                     .collect(Collectors.toList()));
         }
+        // If the deployment.properties in the program spec allows package choice, turn it on.
+        String value = programSpec.getDeploymentProperties().getProperty(ALLOW_PACKAGE_CHOICE, "FALSE");
+        allowPackageChoice |= Boolean.parseBoolean(value);
     }
 
     private void initializeGui() {
@@ -448,7 +452,8 @@ public class TBLoader extends JFrame {
     void loadConfiguration() {
         DBConfiguration config = ACMConfiguration.getInstance().getDbConfiguration(newProject);
         if (config != null) {
-            String valStr = config.getProperty("PACKAGE_CHOICE", "FALSE");
+            // If the config file allows package choice, turn on the option. Also check the deployment.
+            String valStr = config.getProperty(ALLOW_PACKAGE_CHOICE, "FALSE");
             this.allowPackageChoice |= Boolean.parseBoolean(valStr);
 
             valStr = config.getProperty("ALLOW_FORCE_SRN", "FALSE");
