@@ -35,15 +35,21 @@ public abstract class TbDeviceInfo {
 
     public enum DEVICE_VERSION {
         NONE,
+        UNKNOWN,
         TBv1,
         TBv2
     }
 
-    public static TbDeviceInfo getDeviceInfoFor(TbFile tbRoot, String label, String prefix) {
+    public static TbDeviceInfo getDeviceInfoFor(TbFile tbRoot,
+        String label,
+        String prefix) {
         TbDeviceInfo deviceInfo = null;
         switch (getDeviceVersion(tbRoot)) {
             case NONE:
                 deviceInfo = new TbDeviceInfoNull();
+                break;
+            case UNKNOWN:
+                deviceInfo = new TbDeviceInfoUnknown();
                 break;
             case TBv1:
                 deviceInfo = new TbDeviceInfoV1(tbRoot, label, prefix);
@@ -595,7 +601,7 @@ public abstract class TbDeviceInfo {
             }
             if (found) return DEVICE_VERSION.TBv2;
         }
-        return DEVICE_VERSION.NONE;
+        return DEVICE_VERSION.UNKNOWN;
     }
 
     /**

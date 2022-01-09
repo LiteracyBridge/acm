@@ -5,8 +5,6 @@ import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.fs.RelativePath;
 import org.literacybridge.core.fs.TbFile;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -35,6 +33,75 @@ class TBLoaderCoreV2 extends TBLoaderCore {
         super(builder);
     }
 
+    TbFile tempTbDataDir;
+    TbFile tempTbDataZip;
+    TbFile collectedOpDataDir;
+    TbFile collectedTbDataDir;
+    TbFile collectedTbDataZip;
+    TbFile collectedUfDataDir;
+
+    @Override
+    protected synchronized TbFile getTempTbDataDir() {
+        if (tempTbDataDir == null) {
+            mTempDirectory = mTbLoaderConfig.getTempDirectory();
+            tempTbDataDir = mTempDirectory.open(TBLoaderConstants.TALKING_BOOK_DATA);
+            tempTbDataDir.mkdirs();
+        }
+        return tempTbDataDir;
+    }
+
+    @Override
+    protected synchronized TbFile getTempTbDataZip() {
+        if (tempTbDataZip == null) {
+            tempTbDataZip = mTempDirectory.open(TBLoaderConstants.TALKING_BOOK_DATA+".zip");
+            if (!tempTbDataZip.getParent().exists()) {
+                tempTbDataZip.getParent().mkdirs();
+            }
+        }
+        return tempTbDataZip;
+    }
+
+    @Override
+    protected synchronized TbFile getCollectedOpDataDir() {
+        if (collectedOpDataDir == null) {
+            collectedOpDataDir = mCollectedDataDirectory.open("OperationalData");
+            if (!collectedOpDataDir.exists()) {
+                collectedOpDataDir.mkdirs();
+            }
+        }
+        return collectedOpDataDir;
+    }
+
+    @Override
+    protected synchronized TbFile getCollectedTbDataDir() {
+        if (collectedTbDataDir == null) {
+            collectedTbDataDir = mCollectedDataDirectory.open(TBLoaderConstants.TALKING_BOOK_DATA);
+            if (!collectedTbDataDir.exists()) {
+                collectedTbDataDir.mkdirs();
+            }
+        }
+        return collectedTbDataDir;
+    }
+
+    @Override
+    protected synchronized TbFile getCollectedTbDataZip() {
+        if (collectedTbDataZip == null) {
+            collectedTbDataZip = mCollectedDataDirectory.open(TBLoaderConstants.TALKING_BOOK_DATA+".zip");
+            if (!collectedTbDataZip.getParent().exists()) {
+                collectedTbDataZip.getParent().mkdirs();
+            }
+        }
+        return collectedTbDataZip;
+    }
+
+    @Override
+    protected synchronized TbFile getCollectedUfDataDir() {
+        if (collectedUfDataDir == null) {
+            collectedUfDataDir = mCollectedDataDirectory.open("userrecordings");
+        }
+        return collectedUfDataDir;
+    }
+
     @Override
     protected void gatherDeviceFiles() throws IOException {
         startStep(gatherDeviceFiles);
@@ -60,13 +127,12 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     }
 
     @Override
-    protected void gatherUserRecordings(TbFile projectCollectedData) throws IOException {
+    protected void gatherUserRecordings() throws IOException {
         startStep(gatherUserRecordings);
         // Build the user recordings source path.
         TbFile recordingsSrc = mTalkingBookRoot.open("recordings");
         // Build the user recordings destination path.
-        TbFile recordingsDst = projectCollectedData           // like .../"tbcd1234/collected-data/UWR"
-            .open(TBLoaderConstants.USER_RECORDINGS);
+        TbFile recordingsDst = getCollectedUfDataDir();
 
         // If there is a deployment.properties file on the device, we'll copy it as UF_FILENAME.properties for
         // every UF file.
@@ -180,9 +246,10 @@ class TBLoaderCoreV2 extends TBLoaderCore {
                 mStepFileCount += mTalkingBookRoot.open(name).delete(TbFile.Flags.recursive);
             }
         }
-        // Delete all files except QC_PASS.txt from /system
+        // Delete all files except QC_PASS.txt and the ID fiels from /system
         TbFile system = mTalkingBookRoot.open("system");
-        names = system.list((parent, name) -> !name.equalsIgnoreCase("QC_PASS.TXT"));
+        Set<String> keepers = new HashSet<>(Arrays.asList("QC_PASS.TXT", "DEVICE_ID.TXT", "FIRMWARE_ID.TXT"));
+        names = system.list((parent, name) -> !keepers.contains(name.toUpperCase()));
         if (names != null) {
             for (String name : names) {
                 mProgressListener.detail(name);

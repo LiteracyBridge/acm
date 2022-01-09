@@ -6,24 +6,22 @@ import org.literacybridge.core.fs.RelativePath;
 import org.literacybridge.core.fs.TbFile;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import static org.literacybridge.core.fs.TbFile.Flags.contentRecursive;
-import static org.literacybridge.core.tbloader.ProgressListener.Steps.checkDisk;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.clearFeedbackCategories;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.clearStats;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.clearSystem;
@@ -36,6 +34,7 @@ import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateComm
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateContent;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateSystem;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.IMAGES_SUBDIR;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.OPERATIONAL_DATA;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.SYS_DATA_TXT;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LANGUAGES_PATH;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
@@ -45,6 +44,150 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
 class TBLoaderCoreV1 extends TBLoaderCore {
     TBLoaderCoreV1(Builder builder) {
         super(builder);
+
+        // This is the path name for the "TalkingBookData" from this TB. In particular, this is the path
+        // name for the directory that will contain the collected data, and then the .zip file of that data.
+        // like TalkingBookData/{Deployment name}/{tbloader id}/{community name}/{tb serial no}
+        RelativePath talkingBookDataParentPath = new RelativePath(
+            TBLoaderConstants.TALKING_BOOK_DATA,           // "TalkingBookData"
+            mOldDeploymentInfo.getDeploymentName(),   // like "DEMO-2016-1"
+            builder.mTbLoaderConfig.getTbLoaderId(),   // like "000c"
+            mOldDeploymentInfo.getCommunity(),        // like "demo-seattle"
+            mBuilder.mTbDeviceInfo.getSerialNumber());  // like "B-000C1234"
+
+
+        // Like 2016y12m25d01h23m45s-000c. Also known as the "synch" directory.
+        String mCollectionTempName = mLegacyFormatUpdateTimestamp + "-" + builder.mTbLoaderConfig.getTbLoaderId();
+
+        // like TalkingBookData/{Deployment name}/{tbloader id}/{community name}/{tb serial no}/{timestamp}-{tbloader id}
+        // like "2016y12m25d01h23m45s-000c"
+        mTalkingBookDataDirectoryPath = new RelativePath(
+            talkingBookDataParentPath, mCollectionTempName);
+        // like "2016y12m25d01h23m45s-000c"
+        mTalkingBookDataZipPath = new RelativePath(
+            talkingBookDataParentPath,
+            mCollectionTempName + ".zip");
+
+    }
+
+    protected final RelativePath mTalkingBookDataDirectoryPath;
+    protected final RelativePath mTalkingBookDataZipPath;
+
+    private TbFile projectCollectedData;
+    private synchronized TbFile getProjectCollectedData() {
+        if (projectCollectedData == null) {
+            projectCollectedData = mCollectedDataDirectory.open(mOldDeploymentInfo.getProjectName());
+            projectCollectedData.mkdirs();
+        }
+        return projectCollectedData;
+    }
+
+    TbFile tempTbDataDir;
+    TbFile tempTbDataZip;
+    TbFile collectedOpDataDir;
+    TbFile collectedTbDataDir;
+    TbFile collectedTbDataZip;
+    TbFile collectedUfDataDir;
+    
+    @Override
+    protected synchronized TbFile getTempTbDataDir() {
+        if (tempTbDataDir == null) {
+            mTempDirectory = mTbLoaderConfig.getTempDirectory();
+            tempTbDataDir = mTempDirectory.open(mTalkingBookDataDirectoryPath);
+            if (!tempTbDataDir.exists()) {
+                tempTbDataDir.mkdirs();
+            }
+        }
+        return tempTbDataDir;
+    }
+
+    @Override
+    protected synchronized TbFile getTempTbDataZip() {
+        if (tempTbDataZip == null) {
+            // Same name and location as the tempDirectory, but a file with a .zip extension.
+            tempTbDataZip = mTempDirectory.open(mTalkingBookDataZipPath);
+            if (!tempTbDataZip.getParent().exists()) {
+                tempTbDataZip.getParent().mkdirs();
+            }
+        }
+        return tempTbDataZip;
+    }
+
+    @Override
+    protected synchronized TbFile getCollectedOpDataDir() {
+        if (collectedOpDataDir == null) {
+            collectedOpDataDir = mCollectedDataDirectory         // like /Users/alice/Dropbox/tbcd000c
+                .open(mOldDeploymentInfo.getProjectName())  // {tbloaderConfig.project}
+                .open(OPERATIONAL_DATA)                     // "OperationalData"
+                .open(mTbLoaderConfig.getTbLoaderId())      // {tbloaderConfig.tbLoaderId}
+                .open("tbData");
+            if (!collectedOpDataDir.exists()) {
+                collectedOpDataDir.mkdirs();
+            }
+        }
+        return collectedOpDataDir;
+    }
+
+    @Override
+    protected synchronized TbFile getCollectedTbDataDir() {
+        if (collectedTbDataDir == null) {
+            collectedTbDataDir = mCollectedDataDirectory.open(mOldDeploymentInfo.getProjectName());
+            if (!collectedTbDataDir.exists()) {
+                collectedTbDataDir.mkdirs();
+            }
+        }
+        return collectedTbDataDir;
+    }
+
+    @Override
+    protected synchronized TbFile getCollectedTbDataZip() {
+        if (collectedTbDataZip == null) {
+            collectedTbDataZip = getProjectCollectedData().open(mTalkingBookDataZipPath);
+            if (!collectedTbDataZip.getParent().exists()) {
+                collectedTbDataZip.getParent().mkdirs();
+            }
+        }
+        return collectedTbDataZip;
+    }
+
+    @Override
+    protected synchronized TbFile getCollectedUfDataDir() {
+        if (collectedUfDataDir == null) {
+            // Build the user recordings destination path.
+            collectedUfDataDir = getProjectCollectedData()           // like .../"tbcd1234/collected-data/UWR"
+                .open(TBLoaderConstants.USER_RECORDINGS) // "UserRecordings"
+                .open(mOldDeploymentInfo.getDeploymentName())  // like "UNICEF-2016-14"
+                .open(mTbLoaderConfig.getTbLoaderId())         // like "000C"
+                .open(mOldDeploymentInfo.getCommunity());      // like "VING VING"
+        }
+        return collectedUfDataDir;
+    }
+
+    String opLogSuffix;
+    String opCsvSuffix;
+    @Override
+    protected synchronized String getOpLogSuffix() {
+        if (opLogSuffix == null) {
+            // This is a format for a date format used a lot in TB statistics.
+            SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy'y'MM'm'dd'd'", Locale.US);
+            String strDate = sdfDate.format(new Date());
+            opCsvSuffix = String.format("tbData-%s-%s-%s.csv",
+                TbLoaderLogger.VERSION_TBDATA,
+                strDate,
+                mTbLoaderConfig.getTbLoaderId());
+            opLogSuffix = String.format("-%s-%s.log",
+                strDate,
+                mTbLoaderConfig.getTbLoaderId());
+        }
+        return opLogSuffix;
+    }
+
+    @Override
+    protected String getOpCsvSuffix() {
+        if (opCsvSuffix == null) {
+            getOpLogSuffix();
+        }
+        return opCsvSuffix;
     }
 
     /**
@@ -94,11 +237,9 @@ class TBLoaderCoreV1 extends TBLoaderCore {
     /**
      * Copy user recordings from the Talking Book to the collected data directory.
      *
-     * @param projectCollectedData The recordings will be copied to a subdirectory "UserRecordings"
-     *                             of this directory.
      * @throws IOException if a recording can't be copied.
      */
-    protected void gatherUserRecordings(TbFile projectCollectedData) throws IOException {
+    protected void gatherUserRecordings() throws IOException {
         startStep(gatherUserRecordings);
         // rem Collecting User Recordings
         // mkdir "${recording_path}"
@@ -108,16 +249,14 @@ class TBLoaderCoreV1 extends TBLoaderCore {
         // Build the user recordings source path.
         TbFile recordingsSrc = mTalkingBookRoot.open(TBLoaderConstants.TB_AUDIO_PATH);  // "messages/audio"
         // Build the user recordings destination path.
-        TbFile recordingsDst = projectCollectedData           // like .../"tbcd1234/collected-data/UWR"
-            .open(TBLoaderConstants.USER_RECORDINGS) // "UserRecordings"
-            .open(mOldDeploymentInfo.getDeploymentName())  // like "UNICEF-2016-14"
-            .open(mTbLoaderConfig.getTbLoaderId())         // like "000C"
-            .open(mOldDeploymentInfo.getCommunity());      // like "VING VING"
+        TbFile recordingsDst = getCollectedUfDataDir();
 
         // If there is a deployment.properties file on the device, we'll copy it as UF_FILENAME.properties for
         // every UF file.
         String deploymentPropertiesString = getDeploymentPropertiesForUserFeedback();
 
+        // As user feedback files are copied, create a {recording-name}.properties file with the deployment
+        // properties from when the recording was made.
         TbFile.CopyProgress localListener = (fromFile, toFile) -> {
             mCopyListener.copying(fromFile, toFile);
             if (deploymentPropertiesString != null) {
@@ -417,6 +556,12 @@ class TBLoaderCoreV1 extends TBLoaderCore {
         eraseAndOverwriteFile(system.open(srn + ".srn"), ".");
         eraseAndOverwriteFile(system.open(deploymentName + ".dep"), ".");
         eraseAndOverwriteFile(system.open(communityName + ".loc"), communityName);
+        //---------------------------------------------------------------------------------------------
+        // TODO: remove these lines
+        String mUpdateTimestamp = TBLoaderUtils.getDateTime(new Date());  // 2017Y09M28D22H31M52S
+        // Like 2016y12m25d01h23m45s-000c. Also known as the "synch" directory.
+        String mCollectionTempName = mUpdateTimestamp + "-" + mBuilder.mTbLoaderConfig.getTbLoaderId();
+        //---------------------------------------------------------------------------------------------
         eraseAndOverwriteFile(system.open("last_updated.txt"), mCollectionTempName);
         eraseAndOverwriteFile(system.open(projectName + ".prj"), projectName);
         eraseAndOverwriteFile(system.open("notest.pcb"), ".");

@@ -66,7 +66,8 @@ public class TbLoaderPanel extends JPanel {
         private Consumer<ActionEvent> settingsIconClickedListener;
         private Consumer<TBLoader.Operation> goListener;
         private Consumer<Recipient> recipientListener;
-        private Consumer<TbDeviceInfo> deviceListener;
+        private Consumer<TbDeviceInfo> deviceSelectedListener;
+        private Consumer<TbDeviceInfo.DEVICE_VERSION> deviceVersionSelectedListener;
         private Consumer<Boolean> forceFirmwareListener;
         private Consumer<Boolean> forceSrnListener;
         private Supplier<Boolean> updateTb2FirmwareListener;
@@ -80,7 +81,8 @@ public class TbLoaderPanel extends JPanel {
         public Builder withSettingsClickedListener(Consumer<ActionEvent> settingsIconClickedListener) {this.settingsIconClickedListener = settingsIconClickedListener; return this;}
         public Builder withGoListener(Consumer<TBLoader.Operation> goListener) {this.goListener = goListener; return this;}
         public Builder withRecipientListener(Consumer<Recipient> recipientListener) {this.recipientListener = recipientListener; return this;}
-        public Builder withDeviceListener(Consumer<TbDeviceInfo> deviceListener) {this.deviceListener = deviceListener; return this;}
+        public Builder withDeviceSelectedListener(Consumer<TbDeviceInfo> deviceSelectedListener) {this.deviceSelectedListener = deviceSelectedListener; return this;}
+        public Builder withDeviceVersionSelectedListener(Consumer<TbDeviceInfo.DEVICE_VERSION> deviceVersionSelectedListener) {this.deviceVersionSelectedListener = deviceVersionSelectedListener; return this;}
         public Builder withForceFirmwareListener(Consumer<Boolean> forceFirmwareListener) {this.forceFirmwareListener = forceFirmwareListener; return this;}
         public Builder withForceSrnListener(Consumer<Boolean> forceSrnListener) {this.forceSrnListener = forceSrnListener; return this;}
         public Builder withUpdateTb2FirmwareListener(Supplier<Boolean> updateTb2FirmwareListener) {this.updateTb2FirmwareListener = updateTb2FirmwareListener; return this;}
@@ -166,7 +168,8 @@ public class TbLoaderPanel extends JPanel {
         this.settingsIconClickedListener = builder.settingsIconClickedListener;
         this.goListener = builder.goListener;
         this.recipientListener = builder.recipientListener;
-        this.deviceListener = builder.deviceListener;
+        this.deviceSelectedListener = builder.deviceSelectedListener;
+        this.deviceVersionSelectedListener = builder.deviceVersionSelectedListener;
         this.forceFirmwareListener = builder.forceFirmwareListener;
         this.forceSrnListener = builder.forceSrnListener;
         this.tbIdStrategy = builder.tbIdStrategy;
@@ -174,6 +177,12 @@ public class TbLoaderPanel extends JPanel {
         this.tbLoaderConfig = builder.tbLoaderConfig;
 
         layoutComponents();
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        setEnabledStates();
     }
 
     public void setGridColumnWidths() {
@@ -349,9 +358,14 @@ public class TbLoaderPanel extends JPanel {
         this.recipientListener = recipientListener;
     }
 
-    private Consumer<TbDeviceInfo> deviceListener;
-    public void setDeviceListener(Consumer<TbDeviceInfo> deviceListener) {
-        this.deviceListener = deviceListener;
+    private Consumer<TbDeviceInfo> deviceSelectedListener;
+    public void setDeviceSelectedListener(Consumer<TbDeviceInfo> deviceSelectedListener) {
+        this.deviceSelectedListener = deviceSelectedListener;
+    }
+
+    private Consumer<TbDeviceInfo.DEVICE_VERSION> deviceVersionSelectedListener;
+    public void setDeviceVersionSelectedListener(Consumer<TbDeviceInfo.DEVICE_VERSION> deviceVersionSelectedListener) {
+        this.deviceVersionSelectedListener = deviceVersionSelectedListener;
     }
 
     private Consumer<Boolean> forceFirmwareListener;
@@ -393,6 +407,15 @@ public class TbLoaderPanel extends JPanel {
 //    private synchronized boolean isEnabled() {
 //        return hostEnabled;
 //    }
+
+    TbDeviceInfo.DEVICE_VERSION getSelectedDeviceVersion() {
+        TbDeviceInfo.DEVICE_VERSION version = TbDeviceInfo.DEVICE_VERSION.NONE;
+        if (deviceVersionBox.getSelectedIndex() == 1)
+            version = TbDeviceInfo.DEVICE_VERSION.TBv1;
+        else if (deviceVersionBox.getSelectedIndex() == 2)
+            version = TbDeviceInfo.DEVICE_VERSION.TBv2;
+        return version;
+    }
 
     /**
      * Our preferred default GridBagConstraint.
@@ -586,8 +609,11 @@ public class TbLoaderPanel extends JPanel {
     private void onDeviceVersionSelected(ItemEvent itemEvent) {
         // Is this a new value?
         if (itemEvent.getStateChange() != ItemEvent.SELECTED) return;
-        if (deviceListener != null) {
-            deviceListener.accept((TbDeviceInfo)driveList.getSelectedItem());
+        if (deviceSelectedListener != null) {
+            deviceSelectedListener.accept((TbDeviceInfo)driveList.getSelectedItem());
+        }
+        if (deviceVersionSelectedListener != null) {
+            deviceVersionSelectedListener.accept(getSelectedDeviceVersion());
         }
         setEnabledStates();
     }
@@ -859,8 +885,8 @@ public class TbLoaderPanel extends JPanel {
     private void onTbDeviceSelected(ItemEvent e) {
         // Is this a new value?
         if (e.getStateChange() != ItemEvent.SELECTED) return;
-        if (deviceListener != null) {
-            deviceListener.accept((TbDeviceInfo)driveList.getSelectedItem());
+        if (deviceSelectedListener != null) {
+            deviceSelectedListener.accept((TbDeviceInfo)driveList.getSelectedItem());
         }
         deviceVersionBox.setSelectedIndex(0);
         setEnabledStates();

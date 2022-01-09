@@ -71,6 +71,7 @@ import java.util.concurrent.Executors;
 /**
  * This implements the UI of the Loader portion of the application.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class TbLoaderFragment extends Fragment {
     private static final String TAG = "TBL!:" + TbLoaderFragment.class.getSimpleName();
 
@@ -347,7 +348,7 @@ public class TbLoaderFragment extends Fragment {
                 mSrnPrefix);
 
             String deviceSerialNumber = tbDeviceInfo.getSerialNumber();
-            if (!mStatsOnly && tbDeviceInfo.needNewSerialNumber()) {
+            if (!mStatsOnly && tbDeviceInfo.newSerialNumberNeeded()) {
                 TBLoaderAppContext.getInstance().getConfig().allocateDeviceSerialNumber((srn)-> {
                         mTalkingBookIdTextView.setText(srn);
                         doPerformUpdate(tbDeviceInfo, srn);
@@ -527,7 +528,7 @@ public class TbLoaderFragment extends Fragment {
                     mConnectedDevice.getDeviceLabel(),
                     mSrnPrefix);
             Log.d(TAG, String.format("Now connected to %s", mConnectedDeviceInfo.getDescription()));
-            if (mConnectedDeviceInfo.needNewSerialNumber() && TBLoaderUtils.isSerialNumberFormatGood2(displaySrn)) {
+            if (mConnectedDeviceInfo.newSerialNumberNeeded() && TBLoaderUtils.isSerialNumberFormatGood2(displaySrn)) {
                 // If we had a well formed serial number, but will allocate a new one, let user know.
                 displaySrn = String.format("%s (was %s)", TBLoaderConstants.NEED_SERIAL_NUMBER, displaySrn);
             }
@@ -763,7 +764,7 @@ public class TbLoaderFragment extends Fragment {
 
         DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
                 .withSerialNumber(deviceSerialNumber)
-                .withNewSerialNumber(tbDeviceInfo.needNewSerialNumber())
+                .withNewSerialNumber(tbDeviceInfo.newSerialNumberNeeded())
                 .withProjectName(mProject)
                 .withDeploymentName(deploymentDirectory.getName())
                 .withPackageName(imageName)

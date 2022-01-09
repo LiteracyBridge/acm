@@ -2,6 +2,7 @@ package org.literacybridge.acm.tbloader;
 
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.cloud.Authenticator;
+import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.core.fs.ZipUnzip;
 
 import javax.swing.*;
@@ -20,6 +21,8 @@ public class StatisticsUploader {
     private final File uploadQueueDir;
     private final File uploadQueueCDDir;
     private final File uploadQueueDeviceDir;
+
+    private final boolean suppressUpload = ACMConfiguration.getInstance().isSuppressStatisticsUpload();
 
     StatisticsUploader(TBLoader tbLoader,
         File collectionWorkDir,
@@ -86,15 +89,18 @@ public class StatisticsUploader {
                     // such that it does, this code will at least work.
                     Thread.sleep(60000);
                 } else if (queue.size() > 0) {
-                    File next = queue.remove(0);
-                    Path keyPath = Paths.get(next.getAbsolutePath());
+                    File nextFile = queue.remove(0);
+                    Path keyPath = Paths.get(nextFile.getAbsolutePath());
                     Path relativePath = uploadQueuePath.relativize(keyPath);
                     String key = relativePath.toString();
                     System.out.printf("%s => ", key);
                     key = key.replaceAll("\\\\", "/");
                     System.out.printf("%s\n", key);
-                    if (authInstance.getAwsInterface().uploadS3Object(bucket, key, next)) {
-                        next.delete();
+                    if (suppressUpload) {
+                        System.out.println("** upload suppressed by config; deleting **");
+                        nextFile.delete();
+                    } else if (authInstance.getAwsInterface().uploadS3Object(bucket, key, nextFile)) {
+                        nextFile.delete();
                     }
                     Thread.sleep(2000);
                 } else {

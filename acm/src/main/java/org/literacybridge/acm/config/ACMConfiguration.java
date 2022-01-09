@@ -407,6 +407,10 @@ public class ACMConfiguration {
         return Constants.TB_SRN_ALLOCATION_SIZE_DEFAULT;
     }
 
+    public boolean isSuppressStatisticsUpload() {
+        return Boolean.parseBoolean(UsersConfigurationProperties.getProperty("SUPPRESS_STATISTICS_UPLOAD", "FALSE"));
+    }
+
     public long getLatestUpdateSetupPromptDate() {
         String value = getUserConfigurationItem(Constants.LATEST_UPDATE_SETUP_WARNING, null);
         try {

@@ -35,8 +35,8 @@ public class TbDeviceInfoV2 extends TbDeviceInfo {
                  InputStreamReader isr = new InputStreamReader(fis);
                  BufferedReader br = new BufferedReader(isr)) {
                 serialNumber = br.readLine().trim();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                serialNumber = "";
             }
         }
         return serialNumber;

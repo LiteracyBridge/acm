@@ -442,7 +442,7 @@ public class TBLoader extends JFrame {
             .withSettingsClickedListener(e -> {TblSettingsDialog.showDialog(e);tbLoaderPanel.refresh();})
             .withGoListener(this::onTbLoaderGo)
             .withRecipientListener(this::onRecipientSelected)
-            .withDeviceListener(this::onDeviceSelected)
+            .withDeviceSelectedListener(this::onDeviceSelected)
             .withForceFirmwareListener(this::onForceFirmwareChanged)
             .withForceSrnListener(this::onForceSrnChanged)
             .withTbIdStrategy(tbIdStrategy)
@@ -841,17 +841,19 @@ public class TBLoader extends JFrame {
 
         refreshingDriveInfo = true;
 
-        tbLoaderPanel.fillDriveList(newList, index);
-        setEnabledStates();
-        if (index != -1) {
-            currentTbDevice = tbLoaderPanel.getSelectedDevice();
+        try {
+            tbLoaderPanel.fillDriveList(newList, index);
+            setEnabledStates();
+            if (index != -1) {
+                currentTbDevice = tbLoaderPanel.getSelectedDevice();
+            }
+
+            populatePreviousValuesFromCurrentDrive();
+            refreshUI();
+        } finally {
+            refreshingDriveInfo = false;
+            setEnabledStates();
         }
-
-        populatePreviousValuesFromCurrentDrive();
-        refreshUI();
-
-        refreshingDriveInfo = false;
-        setEnabledStates();
     }
 
 
@@ -1222,14 +1224,16 @@ public class TBLoader extends JFrame {
                 .put("deployment", newDeploymentInfo.getDeploymentName())
                 .put("package", String.join(",", newDeploymentInfo.getPackageNames()))
                 .put("community", newDeploymentInfo.getCommunity());
-            if (!newDeploymentInfo.getProjectName().equals(oldDeploymentInfo.getProjectName())) {
-                opLog.put("oldProject", oldDeploymentInfo.getProjectName());
-            }
-            if (!newDeploymentInfo.getCommunity().equals(oldDeploymentInfo.getCommunity())) {
-                opLog.put("oldCommunity", oldDeploymentInfo.getCommunity());
-            }
-            if (!newDeploymentInfo.getSerialNumber().equals(oldDeploymentInfo.getSerialNumber())) {
-                opLog.put("oldSerialno", oldDeploymentInfo.getSerialNumber());
+            if (oldDeploymentInfo != null) {
+                if (!newDeploymentInfo.getProjectName().equals(oldDeploymentInfo.getProjectName())) {
+                    opLog.put("oldProject", oldDeploymentInfo.getProjectName());
+                }
+                if (!newDeploymentInfo.getCommunity().equals(oldDeploymentInfo.getCommunity())) {
+                    opLog.put("oldCommunity", oldDeploymentInfo.getCommunity());
+                }
+                if (!newDeploymentInfo.getSerialNumber().equals(oldDeploymentInfo.getSerialNumber())) {
+                    opLog.put("oldSerialno", oldDeploymentInfo.getSerialNumber());
+                }
             }
 
             File newDeploymentContentDir = new File(localTbLoaderDir,
@@ -1248,7 +1252,7 @@ public class TBLoader extends JFrame {
                     .withTbDeviceInfo(currentTbDevice)
                     .withTbDeviceVersion(tbLoaderPanel.getDeviceVersion())
                     .withDeploymentDirectory(deploymentContents)
-                    .withOldDeploymentInfo(oldDeploymentInfo)
+                    .withOldDeploymentInfo(oldDeploymentInfo!=null?oldDeploymentInfo:newDeploymentInfo)
                     .withNewDeploymentInfo(newDeploymentInfo)
                     .withAcceptableFirmware(acceptableFirmwareVersions)
 //                    .withLocation(currentLocationChooser.getSelectedItem().toString())
