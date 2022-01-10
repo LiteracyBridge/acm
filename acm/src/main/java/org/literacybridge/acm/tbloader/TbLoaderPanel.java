@@ -9,6 +9,7 @@ import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
 import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.util.UIUtils;
+import org.literacybridge.acm.tbloader.TBLoader.TbDeviceInfoHolder;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
@@ -106,7 +107,7 @@ public class TbLoaderPanel extends JPanel {
     private final String[] currentLocationList = new String[] { "Select location...", "Community",
         "Jirapa office", "Wa office", "Other" };
 
-    private JComboBox<TbDeviceInfo> driveList;
+    private JComboBox<TbDeviceInfoHolder> driveList;
 
     private JLabel uploadStatus;
     private JCheckBox forceFirmware;
@@ -181,8 +182,11 @@ public class TbLoaderPanel extends JPanel {
 
     @Override
     public void setEnabled(boolean enabled) {
+        boolean isEnabled = isEnabled();
         super.setEnabled(enabled);
-        setEnabledStates();
+        if (enabled != isEnabled) {
+            setEnabledStates();
+        }
     }
 
     public void setGridColumnWidths() {
@@ -300,7 +304,7 @@ public class TbLoaderPanel extends JPanel {
         return getSelectedPackages().size() > 0;
     }
 
-    public void fillDriveList(List<TbDeviceInfo> roots, int selection) {
+    public void fillDriveList(List<TbDeviceInfoHolder> roots, int selection) {
         driveList.removeAllItems();
         roots.forEach(r -> driveList.addItem(r));
         if (selection >= 0) {
@@ -308,7 +312,9 @@ public class TbLoaderPanel extends JPanel {
         }
     }
     public TbDeviceInfo getSelectedDevice() {
-        return (TbDeviceInfo)driveList.getSelectedItem();
+        TbDeviceInfoHolder deviceInfoHolder = (TbDeviceInfoHolder) driveList.getSelectedItem();
+        if (deviceInfoHolder == null) return null;
+        return deviceInfoHolder.getDeviceInfo();
     }
 
     public ProgressDisplayManager getProgressDisplayManager() {
@@ -389,24 +395,17 @@ public class TbLoaderPanel extends JPanel {
         this.settingsIconClickedListener = settingsIconClickedListener;
     }
 
-//    /**
-//     * Mechanism by which the caller can control the ready state.
-//     */
-//    @Override
-//    public void setEnabled(boolean enabled) {
-//        super.setEnabled(enabled);
-//        setHostEnabled(enabled);
-//    }
-//    private boolean hostEnabled = true;
-//    private synchronized void setHostEnabled(boolean enabled) {
-//        if (enabled != hostEnabled) {
-//            hostEnabled = enabled;
-//            setEnabledStates();
-//        }
-//    }
-//    private synchronized boolean isEnabled() {
-//        return hostEnabled;
-//    }
+    /**
+     * Reset the manual device version selection, ie, set it back to "auto".
+     */
+    void resetDeviceVersion() {
+        if (deviceVersionChanging) {
+            System.out.println("Reset device version while device version changing.");
+            SwingUtilities.invokeLater(()-> deviceVersionBox.setSelectedIndex(0));
+        } else {
+            deviceVersionBox.setSelectedIndex(0);
+        }
+    }
 
     TbDeviceInfo.DEVICE_VERSION getSelectedDeviceVersion() {
         TbDeviceInfo.DEVICE_VERSION version = TbDeviceInfo.DEVICE_VERSION.NONE;
@@ -604,18 +603,6 @@ public class TbLoaderPanel extends JPanel {
 
         contentPanel.add(deviceBox, gbc);
 
-    }
-
-    private void onDeviceVersionSelected(ItemEvent itemEvent) {
-        // Is this a new value?
-        if (itemEvent.getStateChange() != ItemEvent.SELECTED) return;
-        if (deviceSelectedListener != null) {
-            deviceSelectedListener.accept((TbDeviceInfo)driveList.getSelectedItem());
-        }
-        if (deviceVersionSelectedListener != null) {
-            deviceVersionSelectedListener.accept(getSelectedDeviceVersion());
-        }
-        setEnabledStates();
     }
 
     private void layoutColumnHeadings(int y) {
@@ -882,14 +869,41 @@ public class TbLoaderPanel extends JPanel {
         contentPanel.add(statusScroller, gbc.withWeighty(1).setFill(BOTH));
     }
 
-    private void onTbDeviceSelected(ItemEvent e) {
-        // Is this a new value?
-        if (e.getStateChange() != ItemEvent.SELECTED) return;
-        if (deviceSelectedListener != null) {
-            deviceSelectedListener.accept((TbDeviceInfo)driveList.getSelectedItem());
+    boolean deviceVersionChanging = false;
+    private void onDeviceVersionSelected(ItemEvent itemEvent) {
+        // Is this a new value? Are we already working on a change?
+        if (itemEvent.getStateChange() != ItemEvent.SELECTED || deviceVersionChanging || deviceSelectionChanging) return;
+        deviceVersionChanging = true;
+        try {
+            if (deviceSelectedListener != null) {
+                deviceSelectedListener.accept(getSelectedDevice());
+            }
+            setEnabledStates();
+        } finally {
+            deviceVersionChanging = false;
         }
-        deviceVersionBox.setSelectedIndex(0);
-        setEnabledStates();
+    }
+
+    private boolean deviceSelectionChanging = false;
+    private void onTbDeviceSelected(ItemEvent e) {
+        // If not a new value, or if in the middle of changing devices, do nothing.
+        if (e.getStateChange() != ItemEvent.SELECTED || deviceSelectionChanging) return;
+        try {
+            deviceSelectionChanging = true;
+            // Reset the device version to "auto".
+            if (deviceVersionBox.getSelectedIndex() != 0) {
+                deviceVersionBox.setSelectedIndex(0);
+            }
+            if (deviceSelectedListener != null) {
+                deviceSelectedListener.accept(getSelectedDevice());
+            }
+            // May need to update the device version display, but no user activity or selection has happened to cause
+            // it to update. So, repaint it manually.
+            deviceVersionBox.repaint();
+            setEnabledStates();
+        } finally {
+            deviceSelectionChanging = false;
+        }
     }
 
     private void onRecipientSelected(ActionEvent actionEvent) {
@@ -986,6 +1000,7 @@ public class TbLoaderPanel extends JPanel {
             // Must not require updating (TBv2) firmware.
             enabled = enabled && !(isV2FirmwareUpdateRequired() && tbLoaderConfig.isStrictTbV2FIrmware());
         }
+        enabled = enabled && getDeviceVersion() != TbDeviceInfo.DEVICE_VERSION.NONE;
         goButton.setEnabled(enabled);
         goButton.setBackground(enabled ? Color.GREEN : defaultButtonBackgroundColor);
         goButton.setForeground(enabled ? Color.BLACK : Color.GRAY);
@@ -996,13 +1011,17 @@ public class TbLoaderPanel extends JPanel {
         forceFirmware.setVisible(isUpdate && isTbV1());
     }
 
+    /**
+     * Is there a device connected, and is it believed to be a Talking Book?
+     * @return true if the device is (or is to be treated as) a Talking Book.
+     */
     private synchronized boolean isDriveConnected() {
         boolean connected = false;
         TbFile drive;
 
         if (driveList.getItemCount() > 0) {
-            TbDeviceInfo tbDeviceInfo = (TbDeviceInfo) driveList.getSelectedItem();
-            drive = tbDeviceInfo==null?null:((TbDeviceInfo) driveList.getSelectedItem()).getRootFile();
+            TbDeviceInfo tbDeviceInfo = getSelectedDevice();
+            drive = tbDeviceInfo==null?null:tbDeviceInfo.getRootFile();
             if (drive != null) connected = true;
         }
         return connected;
@@ -1014,7 +1033,7 @@ public class TbLoaderPanel extends JPanel {
      * @return the device version to use, TBv1, TBv2, or NONE if not automatically detectable and not overridden.
      */
     public TbDeviceInfo.DEVICE_VERSION getDeviceVersion() {
-        TbDeviceInfo deviceInfo = (TbDeviceInfo)driveList.getSelectedItem();
+        TbDeviceInfo deviceInfo = getSelectedDevice();
         if (deviceInfo == null)
             return TbDeviceInfo.DEVICE_VERSION.NONE;
         if (deviceVersionBox.getSelectedItem()!=null && deviceVersionBox.getSelectedItem().toString().equals("TBv1")) {
@@ -1022,6 +1041,7 @@ public class TbLoaderPanel extends JPanel {
         } else if (deviceVersionBox.getSelectedItem()!=null && deviceVersionBox.getSelectedItem().toString().equals("TBv2")) {
             return TbDeviceInfo.DEVICE_VERSION.TBv2;
         } else {
+            // Auto-detect device version
             return getPhysicalDeviceVersion();
         }
     }
@@ -1031,7 +1051,7 @@ public class TbLoaderPanel extends JPanel {
      * @return The device version.
      */
     private TbDeviceInfo.DEVICE_VERSION getPhysicalDeviceVersion() {
-        TbDeviceInfo deviceInfo = (TbDeviceInfo)driveList.getSelectedItem();
+        TbDeviceInfo deviceInfo = getSelectedDevice();
         if (deviceInfo == null) {
             return TbDeviceInfo.DEVICE_VERSION.NONE;
         } else if (tbLoaderConfig.hasTbV2Devices()) {

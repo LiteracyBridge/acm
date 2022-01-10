@@ -10,10 +10,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -21,7 +23,7 @@ import java.util.stream.Collectors;
  */
 class FsRootMonitor extends Thread {
     private static final Logger LOG = Logger.getLogger(FsRootMonitor.class.getName());
-    public static final int MILLIS_BETWEEN_SCANS = 1000;
+    public static final int MILLIS_BETWEEN_SCANS = 500;
 
     private final FileSystemView fsView = FileSystemView.getFileSystemView();
     private boolean enabled = true;
@@ -29,6 +31,8 @@ class FsRootMonitor extends Thread {
 
     private final Predicate<File> filter;
     private final Consumer<List<File>> rootsHandler;
+
+    AtomicBoolean refreshRequested = new AtomicBoolean(true);
 
     public FsRootMonitor(Consumer<List<File>> rootsHandler) {
         this.filterParams = new FilterParams().minimum(2).maximum(16).forbidding("Network Drive");
@@ -53,9 +57,8 @@ class FsRootMonitor extends Thread {
         this.enabled = enabled;
     }
 
-    public synchronized void refresh() {
-        oldList.clear();
-        updateRoots(true);
+    public void refresh() {
+        refreshRequested.set(true);
     }
 
     /**
@@ -89,13 +92,15 @@ class FsRootMonitor extends Thread {
     /**
      * Does the work of geting the list of roots, looking for changes, and notifying the owner
      * of any changes.
-     *
-     * @param force If true, always notifies. If false, notifies only if changes.
      */
-    private synchronized void updateRoots(boolean force) {
+    private synchronized void updateRoots() {
         List<File> roots = getRoots();
+        boolean needRefresh = refreshRequested.getAndSet(false);
+        if (needRefresh) {
+            oldList.clear();
+        }
 
-        boolean needRefresh = force || oldList.size() != roots.size();
+        needRefresh = needRefresh || oldList.size() != roots.size();
         if (!needRefresh) {
             for (File root : roots) {
                 if (!oldList.contains(root.getAbsolutePath())) {
@@ -121,12 +126,10 @@ class FsRootMonitor extends Thread {
 
     @Override
     public void run() {
-        boolean firstPass = true;
         //noinspection InfiniteLoopStatement
         while (true) {
             if (enabled) {
-                updateRoots(firstPass);
-                firstPass = false;
+                updateRoots();
             }
             try {
                 //noinspection BusyWait
@@ -137,6 +140,7 @@ class FsRootMonitor extends Thread {
         }
     }
 
+    private final Pattern parallelsWinDrive = Pattern.compile("(?i)\\[[A-Z]] Windows.*");
     private FilterParams filterParams;
 
     private boolean rootsFilter(File root) {
@@ -145,7 +149,7 @@ class FsRootMonitor extends Thread {
             String type = fsView.getSystemTypeDescription(root);
             String description = type != null ? type : label;
             if (label.trim().equals("CD Drive") || label.startsWith("DVD") || label.contains(
-                "Macintosh")) {
+                "Macintosh") || parallelsWinDrive.matcher(label).matches()) {
                 return false;
             }
             // Ignore network drives. Includes host drives shared by Parallels.

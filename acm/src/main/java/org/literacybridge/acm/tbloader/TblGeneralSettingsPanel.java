@@ -168,7 +168,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         if (max16GiB.isSelected()) filterParams.maximum(16);
         if (asUsbDrive.isSelected()) filterParams.allowing("USB Drive");
 
-        tbLoaderApp.getFsRootMonitor().setFilterParams(filterParams);
+        tbLoaderApp.setFsFilterParams(filterParams);
         tbLoaderApp.setTbIdStrategy(srnStrategyCombo.getSelectedIndex());
         tbLoaderApp.setAllowPackageChoice(allowPackageChoice.isSelected());
         tbLoaderApp.setTestStrategy(testStrategyCombo.getSelectedIndex());

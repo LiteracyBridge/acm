@@ -26,7 +26,7 @@ import static java.awt.GridBagConstraints.LINE_START;
 public class JRecipientChooser extends JPanel {
 
     private boolean highlightWhenSelectionNeeded = true;
-    private boolean haveChoice = false;
+    private boolean haveSelection = false;
 
     // For the case with a recipients list.
     private ProgramSpec programSpec;
@@ -64,7 +64,7 @@ public class JRecipientChooser extends JPanel {
 
     void setSelectedRecipient(String recipientid) {
         if (programSpec == null) return;
-        boolean didSelect = false;
+        boolean gotSelection = false;
 
         if (recipients.size() == 1) {
             // Only one recipient; auto-select them, by grabbing the one-and-only recipientid.
@@ -74,20 +74,19 @@ public class JRecipientChooser extends JPanel {
         List<String> path = recipients.getPath(recipientid);
         // If we have a full path...
         if (path.size() == maxHierarchy + 1) {
-            didSelect = setSelectionWithPath(path);
+            gotSelection = setSelectionWithPath(path);
         } else {
             // Otherwise, just reset to the base level.
             fillChoosers(0);
         }
-
-        setDone(didSelect);
+        gotSelection(gotSelection);
     }
 
     void setHighlightWhenNoSelection(boolean highlightWhenSelectionNeeded) {
         boolean changed = this.highlightWhenSelectionNeeded != highlightWhenSelectionNeeded;
         this.highlightWhenSelectionNeeded = highlightWhenSelectionNeeded;
         if (changed) {
-            setDone(this.haveChoice);
+            setBorderHighlight();
         }
     }
 
@@ -106,7 +105,7 @@ public class JRecipientChooser extends JPanel {
         this.maxHierarchy = recipients.getMaxLevel();
         GridBagConstraints c;
 
-        setDone(false);
+        gotSelection(false);
 
         int y = 0;
 
@@ -156,26 +155,41 @@ public class JRecipientChooser extends JPanel {
    /**
      * Sets whether a selection is complete. When the selection is NOT complete, the component
      * is drawn with a red border. When it IS complete, the border turns black.
-     * @param done Is the selection done?
+     * @param gotSelection Is the selection done?
      */
-    private void setDone(boolean done) {
-        boolean changed = this.haveChoice != done;
-        this.haveChoice = done;
-        if (done || !highlightWhenSelectionNeeded) {
+    private void gotSelection(boolean gotSelection) {
+        boolean selectionStateChanged = this.haveSelection != gotSelection;
+        this.haveSelection = gotSelection;
+        setBorderHighlight();
+        // Don't keep sending updates when nothing's selected.
+        if (/*this.haveSelection ||*/ selectionStateChanged) {
+            fireActionEvent();
+        }
+    }
+
+    /**
+     * Draws a red border around the box if there is no selection and the option to "highlightWhenSelectionNeeded"
+     * is set.
+     */
+    private void setBorderHighlight() {
+        if (haveSelection || !highlightWhenSelectionNeeded) {
             //Color doneBorderColor = new Color(0, 0, 0, 0);
             Color doneBorderColor = Color.gray;
             setBorder(new LineBorder(doneBorderColor));
         } else {
             setBorder(new LineBorder(Color.RED));
         }
-        // Don't keep sending updates when nothing's selected.
-        if (this.haveChoice || changed) {
-            fireActionEvent();
-        }
     }
 
+    /**
+     * Given a list of geo-political and social components from a recipient (eg, [district, communityname,
+     * groupname], select those values at their respective levels. The result may or may not be a fully
+     * specified recipient; the user may still be required to make more selections.
+     * @param path list of identifiying components from a recipient.
+     * @return True if a recipient was fully specified from the list, false if not.
+     */
     private boolean setSelectionWithPath(List<String> path) {
-        boolean success = true;
+        boolean haveSelection = true;
         for (int level=0; level<=maxHierarchy; level++) {
             // Get the values at this level.
             Vector<String> values = getFilteredValues(level);
@@ -183,7 +197,7 @@ public class JRecipientChooser extends JPanel {
             // values, stop looking.
             int valueIx = values.indexOf(path.get(level));
             if (valueIx < 0) {
-                success = false;
+                haveSelection = false;
                 break;
             }
             // Put the values into the combo box for this level.
@@ -195,12 +209,10 @@ public class JRecipientChooser extends JPanel {
             // Enable selection if there is more than one to choose from.
             chooser.setEnabled(values.size() > 1 && this.isEnabled());
         }
-        if (success) {
-            setDone(true);
-        } else {
+        if (!haveSelection) {
             fillChoosers(0);
         }
-        return success;
+        return haveSelection;
     }
 
     /**
@@ -208,8 +220,10 @@ public class JRecipientChooser extends JPanel {
      * select it, and fill the next level. If there are multiple things from which to choose,
      * clear the levels below this, so there's no stale values.
      * @param levelToFill The level we wish to fill.
+     * @return True if there is now a completed selection, false if there is not.
      */
-    private void fillChoosers(int levelToFill) {
+    private boolean fillChoosers(int levelToFill) {
+        boolean haveSelection = false;
         // Get the values for the level.
         Vector<String> values = getFilteredValues(levelToFill);
         DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(values);
@@ -223,18 +237,18 @@ public class JRecipientChooser extends JPanel {
             selections.set(levelToFill, values.get(0));
             // If there is a next level, repeat the process there...
             if (levelToFill < maxHierarchy) {
-                fillChoosers(levelToFill+1);
+                haveSelection = fillChoosers(levelToFill+1);
             } else {
                 // No more levels; we have our selection.
-                setDone(true);
+                haveSelection = true;
             }
         } else {
             // Need to make a choice here before we can see anything below. Clear lower levels.
             chooser.setEnabled(this.isEnabled());
             chooser.setSelectedIndex(-1);
-            setDone(false);
             clearChoosers(levelToFill+1);
         }
+        return haveSelection;
     }
 
     /**
@@ -263,6 +277,7 @@ public class JRecipientChooser extends JPanel {
         }
         @Override
         public void actionPerformed(ActionEvent e) {
+            boolean gotSelection;
             JComboBox<String> c = choosers.get(n);
             Object selected = c.getSelectedItem();
             if (selected == null) return;
@@ -273,11 +288,12 @@ public class JRecipientChooser extends JPanel {
 
             // If there are further levels, fill them appropriately.
             if (n < maxHierarchy) {
-                fillChoosers(n+1);
+                gotSelection = fillChoosers(n+1);
             } else {
                 // Otherwise we have our choice.
-                setDone(true);
+                gotSelection = true;
             }
+            gotSelection(gotSelection);
         }
     }
 

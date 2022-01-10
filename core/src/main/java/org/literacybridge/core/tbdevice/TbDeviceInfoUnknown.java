@@ -1,10 +1,11 @@
 package org.literacybridge.core.tbdevice;
 
-import org.literacybridge.core.tbloader.TBLoaderConstants;
+import org.apache.commons.lang3.StringUtils;
+import org.literacybridge.core.fs.TbFile;
 
 public class TbDeviceInfoUnknown extends TbDeviceInfo {
-    protected TbDeviceInfoUnknown() {
-        super(null, "Can't determine device");
+    protected TbDeviceInfoUnknown(TbFile tbRoot, String label) {
+        super(tbRoot, StringUtils.defaultIfBlank(label, "Can't determine device"));
     }
 
     @Override

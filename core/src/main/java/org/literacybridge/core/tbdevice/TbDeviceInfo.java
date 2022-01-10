@@ -42,14 +42,15 @@ public abstract class TbDeviceInfo {
 
     public static TbDeviceInfo getDeviceInfoFor(TbFile tbRoot,
         String label,
-        String prefix) {
+        String prefix, DEVICE_VERSION deviceVersionOverride) {
+        DEVICE_VERSION deviceVersion = deviceVersionOverride==DEVICE_VERSION.NONE ? getDeviceVersion(tbRoot) : deviceVersionOverride;
         TbDeviceInfo deviceInfo = null;
-        switch (getDeviceVersion(tbRoot)) {
+        switch (deviceVersion) {
             case NONE:
                 deviceInfo = new TbDeviceInfoNull();
                 break;
             case UNKNOWN:
-                deviceInfo = new TbDeviceInfoUnknown();
+                deviceInfo = new TbDeviceInfoUnknown(tbRoot, label);
                 break;
             case TBv1:
                 deviceInfo = new TbDeviceInfoV1(tbRoot, label, prefix);
@@ -586,6 +587,7 @@ public abstract class TbDeviceInfo {
      * @return TBv2 if looks like a V2, TBv1 if looks like a V1, NONE otherwise.
      */
     public static DEVICE_VERSION getDeviceVersion(TbFile tbRoot) {
+        if (tbRoot == null || !tbRoot.exists()) return DEVICE_VERSION.NONE;
         TbFile tbSystem = tbRoot.open(TB_SYSTEM_PATH);
         for (String[] fnGroup : v1Files) {
             boolean found = true;

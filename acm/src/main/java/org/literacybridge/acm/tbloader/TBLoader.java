@@ -82,6 +82,29 @@ public class TBLoader extends JFrame {
     }
     private final TbLoaderConfig tbLoaderConfig = new TbLoaderConfig();
 
+    /**
+     * A class to hold the data needed to create a TbDeviceInfo. Allows us to obtain whatever flavor of
+     * TbDeviceInfo is needed (basically auto vs user-selected).
+     */
+    class TbDeviceInfoHolder {
+        final File root;
+        final String label;
+
+        public TbDeviceInfoHolder(File root, String label) {
+            this.root = root;
+            this.label = label;
+        }
+
+        TbDeviceInfo getDeviceInfo() {
+            return TbDeviceInfo.getDeviceInfoFor(new FsFile(root), label, srnPrefix, tbLoaderPanel.getSelectedDeviceVersion());
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+
     private static TBLoader tbLoader;
     public final TbLoaderArgs tbArgs;
     private File deploymentDir;
@@ -435,14 +458,16 @@ public class TBLoader extends JFrame {
             .filter(p -> !packageNameMap.containsKey(p))
             .forEach(p -> packageNameMap.put(p, p));
 
+        /*tbLoaderPanel.refresh();*/
         TbLoaderPanel.Builder builder = new TbLoaderPanel.Builder()
             .withProgramSpec(programSpec)
             .withPackagesInDeployment(packagesInDeployment)
             .withPackageNameMap(packageNameMap)
-            .withSettingsClickedListener(e -> {TblSettingsDialog.showDialog(e);tbLoaderPanel.refresh();})
+            .withSettingsClickedListener(TblSettingsDialog::showDialog)
             .withGoListener(this::onTbLoaderGo)
             .withRecipientListener(this::onRecipientSelected)
             .withDeviceSelectedListener(this::onDeviceSelected)
+            .withDeviceVersionSelectedListener(this::onDeviceVersionSelected)
             .withForceFirmwareListener(this::onForceFirmwareChanged)
             .withForceSrnListener(this::onForceSrnChanged)
             .withTbIdStrategy(tbIdStrategy)
@@ -654,6 +679,11 @@ public class TBLoader extends JFrame {
 
     }
 
+    void setFsFilterParams(FsRootMonitor.FilterParams filterParams) {
+        fsRootMonitor.setFilterParams(filterParams);
+        tbLoaderPanel.resetDeviceVersion();
+    }
+
     private void setEnabledStates() {
         tbLoaderPanel.setEnabled(startUpDone && !refreshingDriveInfo && !updatingTB);
         fsRootMonitor.setEnabled(!updatingTB);
@@ -817,21 +847,30 @@ public class TBLoader extends JFrame {
 
     FileSystemView fsView = FileSystemView.getFileSystemView();
     private void rootsHandler(List<File> files) {
-        List<TbDeviceInfo> newList = new ArrayList<>();
+        int lastMatchIndex = -1;
+        String currentPath = (currentTbDevice == null || currentTbDevice.getRootFile() == null) ? "::" : currentTbDevice.getRootFile().getAbsolutePath();
+        List<TbDeviceInfoHolder> newList = new ArrayList<>();
         int index = -1;
         for (File root : files) {
             String label = fsView.getSystemDisplayName(root);
-            newList.add(TbDeviceInfo.getDeviceInfoFor(new FsFile(root), label, srnPrefix));
+            newList.add(new TbDeviceInfoHolder(root, label));
+                //TbDeviceInfo.getDeviceInfoFor(new FsFile(root), label, srnPrefix, tbLoaderPanel.getSelectedDeviceVersion()));
             if (prevSelected != null && root.getAbsolutePath().equals(prevSelected.getAbsolutePath())) {
                 index = newList.size()-1;
             }
-            if (index==-1 && label.startsWith(srnPrefix)) {
+            if (index==-1 && root.getAbsolutePath().equals(currentPath)) {
                 index = newList.size()-1;
             }
+            if (index==-1 && label.startsWith(srnPrefix)) {
+                lastMatchIndex = newList.size()-1;
+            }
+        }
+        if (index==-1 && lastMatchIndex!=-1) {
+            index=lastMatchIndex;
         }
         if (newList.size() == 0) {
             LOG.log(Level.INFO, "No drives");
-            newList.add(TbDeviceInfo.getNullDeviceInfo());
+            newList.add(new TbDeviceInfoHolder(null, null));
             index = 0;
             tbLoaderPanel.getProgressDisplayManager().clearLog();
         }
@@ -990,6 +1029,10 @@ public class TBLoader extends JFrame {
         } else {
             tbLoaderPanel.fillPrevDeploymentInfo(null);
         }
+    }
+
+    private void onDeviceVersionSelected(TbDeviceInfo.DEVICE_VERSION device_version) {
+//        fsRootMonitor.refresh();
     }
 
     /**

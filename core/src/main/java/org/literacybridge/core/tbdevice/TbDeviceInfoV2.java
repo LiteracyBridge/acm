@@ -61,7 +61,7 @@ public class TbDeviceInfoV2 extends TbDeviceInfo {
              BufferedReader br = new BufferedReader(isr)) {
             firmwareVersion = br.readLine().trim();
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return firmwareVersion;
     }

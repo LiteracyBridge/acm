@@ -129,8 +129,8 @@ public class TBLoaderIntegrationTest {
 
         FileUtils.copyDirectory(tbRootImage, tbRoot);
 
-        TbDeviceInfo oldTbDevice = TbDeviceInfo.getDeviceInfoFor(new FsFile(tbRoot), null, srnPrefix
-        );
+        TbDeviceInfo oldTbDevice = TbDeviceInfo.getDeviceInfoFor(new FsFile(tbRoot), null, srnPrefix,
+            TbDeviceInfo.DEVICE_VERSION.NONE);
         String srn = oldTbDevice.getSerialNumber();
         if (srn.equalsIgnoreCase(TBLoaderConstants.NEED_SERIAL_NUMBER) ||
             !TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, srn) ||
