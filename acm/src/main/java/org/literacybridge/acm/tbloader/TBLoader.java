@@ -20,6 +20,8 @@ import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
+import org.literacybridge.core.tbdevice.TbDeviceInfoNull;
+import org.literacybridge.core.tbdevice.TbDeviceInfoUnknown;
 import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbdevice.TbDeviceInfo;
 import org.literacybridge.core.tbloader.TBLoaderConfig;
@@ -96,6 +98,7 @@ public class TBLoader extends JFrame {
         }
 
         TbDeviceInfo getDeviceInfo() {
+            if (root==null) return TbDeviceInfo.getNullDeviceInfo();
             return TbDeviceInfo.getDeviceInfoFor(new FsFile(root), label, srnPrefix, tbLoaderPanel.getSelectedDeviceVersion());
         }
 
@@ -182,9 +185,7 @@ public class TBLoader extends JFrame {
     private String userEmail;
     private String userName;
     private File collectionWorkDir;
-    private File uploadQueueDeviceDir;
     private File uploadQueueDir;
-    private File uploadQueueCDDir;
     private TbFile temporaryDir;
 
     // All content is relative to this.
@@ -326,12 +327,8 @@ public class TBLoader extends JFrame {
         startupTimer += System.currentTimeMillis();
         System.out.printf("Startup in %d ms.\n", startupTimer);
 
-        statisticsUploader = new StatisticsUploader(this,
-            collectionWorkDir,
-            uploadQueueDir,
-            uploadQueueCDDir,
-            uploadQueueDeviceDir);
-        statisticsUploader.zipAndUpload();
+        statisticsUploader = new StatisticsUploader(this, uploadQueueDir);
+        statisticsUploader.zipAndEnqueue(collectionWorkDir, "abandoned-data/tbcd"+deviceIdHex);
     }
 
     public FsRootMonitor getFsRootMonitor() {
@@ -386,8 +383,6 @@ public class TBLoader extends JFrame {
             File appHome = ACMConfiguration.getInstance().getApplicationHomeDirectory();
             collectionWorkDir = new File(appHome, Constants.TbCollectionWorkDir);
             uploadQueueDir = new File(appHome, Constants.uploadQueue);
-            uploadQueueCDDir = new File(uploadQueueDir, "collected-data");
-            uploadQueueDeviceDir = new File(uploadQueueCDDir,"tbcd" + deviceIdHex);
 
             logsDir = new File(ACMConfiguration.getInstance().getApplicationHomeDirectory(),
                 Constants.TBLoadersHomeDir + File.separator + TBLoadersLogDir);
@@ -400,6 +395,19 @@ public class TBLoader extends JFrame {
         }
     }
 
+    /**
+     * Gets the key to which to upload collected statistics and user feedback for the
+     * current device. We use different keys for v1 vs v2 devices, because the statistics
+     * are formatted differently, and must be pre-processed differently.
+     * @param tbDevice The device for which to get the key.
+     * @return the key.
+     */
+    private String getUploadKeyPrefix(TbDeviceInfo tbDevice) {
+        String key = tbDevice.getDeviceVersion()==TbDeviceInfo.DEVICE_VERSION.TBv2
+                ? "collected-data.v2"
+                : "collected-data";
+        return key + "/tbcd" + deviceIdHex;
+    }
 
     private void initializeLogging(File logsDir) throws IOException {
         // Set up the program log. For debugging the execution of the TBLoader application.
@@ -1227,7 +1235,7 @@ public class TBLoader extends JFrame {
                     endTitle = "Failure";
                 }
                 onCopyFinished(endMsg, endTitle);
-                statisticsUploader.zipAndUpload();
+                statisticsUploader.zipAndEnqueue(collectionWorkDir, getUploadKeyPrefix(currentTbDevice));
             }
         }
 
@@ -1371,7 +1379,7 @@ public class TBLoader extends JFrame {
                     }
                 }
                 onCopyFinished(endMsg, endTitle, endMessageType);
-                statisticsUploader.zipAndUpload();
+                statisticsUploader.zipAndEnqueue(collectionWorkDir, getUploadKeyPrefix(currentTbDevice));
             }
 
         }

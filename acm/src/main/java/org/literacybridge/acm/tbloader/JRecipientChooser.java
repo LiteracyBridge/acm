@@ -299,7 +299,9 @@ public class JRecipientChooser extends JPanel {
 
     /**
      * Renderer for various levels. When nothing is selected, prompts user to "Select a Whatever".
-     * When displaying an empty thing, displays it as "-- No Things --".
+     * When displaying an empty thing, displays it as "-- No Things --".  Entries are decorated
+     * with "(N TBs)", giving a count of the number of Talking Books belonging to this entity and
+     * its child entities (per the program spec).
      */
     private class MyComboBoxRenderer extends DefaultListCellRenderer // JLabel implements ListCellRenderer
     {
