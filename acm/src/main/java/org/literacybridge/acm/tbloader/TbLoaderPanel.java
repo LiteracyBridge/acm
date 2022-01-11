@@ -48,6 +48,7 @@ import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.LINE_START;
 import static java.awt.GridBagConstraints.NONE;
 import static java.lang.Math.max;
+import static org.literacybridge.acm.Constants.ACM_VERSION;
 import static org.literacybridge.acm.tbbuilder.TBBuilder.MAX_PACKAGES_TBV1;
 import static org.literacybridge.acm.tbbuilder.TBBuilder.MAX_PACKAGES_TBV2;
 import static org.literacybridge.acm.utils.SwingUtils.getApplicationRelativeLocation;
@@ -496,9 +497,9 @@ public class TbLoaderPanel extends JPanel {
         Box greetingBox = Box.createHorizontalBox();
         boolean isBorrowed = authInstance.getTbSrnHelper().isBorrowedId();
         String deviceIdHex = authInstance.getTbSrnHelper().getTbSrnAllocationInfo().getTbloaderidHex();
-        String greetingString = String.format("<html><nobr>Hello <b>%s</b>! <i><span style='font-size:0.85em;color:gray'>(%sTB-Loader ID: %s)</span></i></nobr></html>",
+        String greetingString = String.format("<html><nobr>Hello <b>%s</b>! <i><span style='font-size:0.85em;color:gray'>(%sTB-Loader ID: %s, version: %s)</span></i></nobr></html>",
                 authInstance.getUserSelfName(),
-            isBorrowed?"Using ":"", deviceIdHex);
+            isBorrowed?"Using ":"", deviceIdHex, ACM_VERSION);
         JLabel greeting = new JLabel(greetingString);
         greetingBox.add(greeting);
         greetingBox.add(Box.createHorizontalStrut(10));
