@@ -515,7 +515,7 @@ public class DBConfiguration {
         getDbProperties().setProperty(Constants.FORCE_WAV_CONVERSION, Boolean.toString(isForceWavConversion));
     }
 
-    public boolean hasTbV2Devices() {
+    public Boolean hasTbV2Devices() {
         String value = getDbProperties().getProperty(Constants.HAS_TBV2_DEVICES);
         return Boolean.parseBoolean(value);
     }

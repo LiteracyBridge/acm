@@ -106,6 +106,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         settingsPanel.add(new JLabel("Allow package override"), gbc.withGridx(0));
         allowPackageChoice = new JCheckBox("Choose alternative package for recipients.");
         settingsPanel.add(allowPackageChoice, gbc);
+        allowPackageChoice.setSelected(TBLoader.getApplication().allowsPackageChoice());
     }
 
     private void addSrnStrategy(int y) {

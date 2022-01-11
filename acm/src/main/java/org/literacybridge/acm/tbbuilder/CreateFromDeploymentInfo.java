@@ -117,6 +117,7 @@ public abstract class CreateFromDeploymentInfo {
             DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
             Properties deploymentProperties = new Properties();
             deploymentProperties.setProperty(Constants.AUDIO_LANGUAGES, dbConfig.getConfigLanguages());
+            deploymentProperties.setProperty(Constants.HAS_TBV2_DEVICES, dbConfig.hasTbV2Devices().toString());
             deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_FRIENDLY_NAME_PROPERTY, dbConfig.getFriendlyName());
             deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_DESCRIPTION_PROPERTY, dbConfig.getFriendlyName());
             deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_ID_PROPERTY, dbConfig.getProgramId());

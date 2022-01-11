@@ -78,9 +78,11 @@ public class TBLoader extends JFrame {
     public static class TbLoaderConfig {
         public boolean strictTbV2Firmware = true;
         private boolean hasTbV2Devices;
+        private boolean allowPackageChoice = false;
 
         public boolean hasTbV2Devices() { return hasTbV2Devices; }
         public boolean isStrictTbV2FIrmware() { return strictTbV2Firmware; }
+        public boolean allowPackageChoice() { return allowPackageChoice; }
     }
     private final TbLoaderConfig tbLoaderConfig = new TbLoaderConfig();
 
@@ -214,10 +216,6 @@ public class TBLoader extends JFrame {
         return localTbLoaderDir;
     }
 
-    // Options.
-    @SuppressWarnings("unused")
-    private boolean allowPackageChoice;
-
     static class WindowEventHandler extends WindowAdapter {
         @Override
         public void windowClosing(WindowEvent evt) {
@@ -264,7 +262,7 @@ public class TBLoader extends JFrame {
             srnPrefix = TBLoaderConstants.NEW_TB_SRN_PREFIX; // for latest Talking Book hardware
         }
 
-        this.allowPackageChoice = tbArgs.choices;
+        this.tbLoaderConfig.allowPackageChoice = tbArgs.choices;
     }
 
     private void runApplication() throws Exception {
@@ -436,7 +434,10 @@ public class TBLoader extends JFrame {
         }
         // If the deployment.properties in the program spec allows package choice, turn it on.
         String value = programSpec.getDeploymentProperties().getProperty(ALLOW_PACKAGE_CHOICE, "FALSE");
-        allowPackageChoice |= Boolean.parseBoolean(value);
+        tbLoaderConfig.allowPackageChoice |= Boolean.parseBoolean(value);
+        value = programSpec.getDeploymentProperties().getProperty(Constants.HAS_TBV2_DEVICES, "FALSE");
+        this.tbLoaderConfig.hasTbV2Devices |= Boolean.parseBoolean(value);
+
     }
 
     private void initializeGui() {
@@ -448,7 +449,9 @@ public class TBLoader extends JFrame {
 
         String[] packagesInDeployment;
         Properties deploymentProperties = getProgramSpec().getDeploymentProperties();
-        allowPackageChoice = allowPackageChoice || deploymentProperties.size()==0;
+        // If the deployment properties doesn't have a map of language-variant to package, always allow the user
+        // to select the package, since we can't reliably do it automatically.
+        tbLoaderConfig.allowPackageChoice |= deploymentProperties.size()==0;
         packagesInDeployment = getPackagesInDeployment(deploymentDir);
         List<String> packagesList = Arrays.asList(packagesInDeployment);
         Map<String,String> packageNameMap = deploymentProperties.stringPropertyNames().stream()
@@ -480,7 +483,7 @@ public class TBLoader extends JFrame {
             .withForceSrnListener(this::onForceSrnChanged)
             .withTbIdStrategy(tbIdStrategy)
             .withUpdateTb2FirmwareListener(this::onUpdateTb2Firmware)
-            .withAllowPackageChoice(allowPackageChoice)
+            .withAllowPackageChoice(tbLoaderConfig.allowPackageChoice())
             .withTbLoaderConfig(tbLoaderConfig);
 
         tbLoaderPanel = builder.build();
@@ -530,26 +533,24 @@ public class TBLoader extends JFrame {
      * Load per-program configuration items (from the program's config.properties file).
      */
     void loadConfiguration() {
-        DBConfiguration config = ACMConfiguration.getInstance().getDbConfiguration(newProject);
-        if (config != null) {
-            // If the config file allows package choice, turn on the option. We also check the deployment later.
-            this.allowPackageChoice |= config.isPackageChoice();
+        DBConfiguration dbConfig = ACMConfiguration.getInstance().getDbConfiguration(newProject);
+        if (dbConfig != null) {
+            // If the config file allows package choice, turn on the option. We also check the deployment properties later.
+            this.tbLoaderConfig.allowPackageChoice |= dbConfig.isPackageChoice();
+            this.tbLoaderConfig.hasTbV2Devices = dbConfig.hasTbV2Devices();
 
-            String valStr = config.getProperty(Constants.HAS_TBV2_DEVICES, "FALSE");
-            this.tbLoaderConfig.hasTbV2Devices = Boolean.parseBoolean(valStr);
-
-            valStr = config.getProperty("ALLOW_FORCE_SRN", "FALSE");
+            String valStr = dbConfig.getProperty("ALLOW_FORCE_SRN", "FALSE");
             if (Boolean.parseBoolean(valStr)) {
                 this.tbIdStrategy = TB_ID_STRATEGY.MANUAL;
             }
-            valStr = config.getProperty("TB_ID_STRATEGY");
+            valStr = dbConfig.getProperty("TB_ID_STRATEGY");
             if (valStr != null) {
                 try {
                     this.tbIdStrategy = TB_ID_STRATEGY.valueOf(valStr);
                 } catch(Exception ignored) { }
             }
 
-            valStr = config.getProperty("TEST_DEPLOYMENT_STRATEGY");
+            valStr = dbConfig.getProperty("TEST_DEPLOYMENT_STRATEGY");
             if (valStr != null) {
                 try {
                     this.testStrategy = TEST_DEPLOYMENT_STRATEGY.valueOf(valStr);
@@ -566,10 +567,14 @@ public class TBLoader extends JFrame {
      *                           onto a given Talking Book.
      */
     void setAllowPackageChoice(boolean allowPackageChoice) {
-        if (this.allowPackageChoice != allowPackageChoice) {
+        boolean changed = this.tbLoaderConfig.allowPackageChoice != allowPackageChoice;
+        this.tbLoaderConfig.allowPackageChoice = allowPackageChoice;
+        if (changed) {
             tbLoaderPanel.enablePackageChoice(allowPackageChoice);
         }
-        this.allowPackageChoice = allowPackageChoice;
+    }
+    boolean allowsPackageChoice() {
+        return this.tbLoaderConfig.allowPackageChoice();
     }
 
     /**
@@ -1082,7 +1087,7 @@ public class TBLoader extends JFrame {
             if (operation == Operation.Update) {
                 if (!tbLoaderPanel.hasSelectedPackage()) {
                     String text;
-                    if (allowPackageChoice) {
+                    if (tbLoaderConfig.allowPackageChoice()) {
                         text = "Please choose a Content Package to\n" +
                             "update this Talking Book.";
                     } else {

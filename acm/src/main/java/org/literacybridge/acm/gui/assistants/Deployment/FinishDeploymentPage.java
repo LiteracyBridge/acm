@@ -1,5 +1,6 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
@@ -317,7 +318,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
         Map<String, Map<String, String>> pkgs) {
         Properties deploymentProperties = new Properties();
         deploymentProperties.setProperty(Constants.AUDIO_LANGUAGES, dbConfig.getConfigLanguages());
-        deploymentProperties.setProperty(Constants.AUDIO_LANGUAGES, dbConfig.getConfigLanguages());
+        deploymentProperties.setProperty(Constants.HAS_TBV2_DEVICES, dbConfig.hasTbV2Devices().toString());
         deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_FRIENDLY_NAME_PROPERTY, dbConfig.getFriendlyName());
         deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_DESCRIPTION_PROPERTY, dbConfig.getFriendlyName());
         deploymentProperties.setProperty(TBLoaderConstants.PROGRAM_ID_PROPERTY, dbConfig.getProgramId());
