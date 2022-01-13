@@ -49,6 +49,10 @@ public class Tb2FirmwareUpdater extends JDialog {
     private static final Pattern DOWNLOAD_DURATION = Pattern.compile(
         "(?i)^Time elapsed during download operation: (?:(\\d{2}):){3}\\.(\\d{3})$");
 
+    public boolean debug = true;
+    public boolean useTextArea = false;
+    public boolean useTextField = false;
+
     private final Timer timer;
     private static boolean dfuVersionLogged = false; // Once per TB-Loader session.
 
@@ -61,11 +65,17 @@ public class Tb2FirmwareUpdater extends JDialog {
     private long timeToClose = Long.MAX_VALUE;
     private boolean updateOk = false;
 
+    private int waitCount = 0;
+
     private enum State {
-        WAITING,      // plain panel, no instructions.
-        WAITING_POT("Press and hold the POT."),
-        WAITING_TPT("While holding the POT, press both the TREE and the TABLE."),
-        WAITING_POT2("Keep holding the POT, and release the TREE and the TABLE."),
+        WAITING
+                ("<html><b>Press and hold the POT.</b><br/>While holding the POT, press both the TREE and the TABLE.<br/>Keep holding the POT, and release the TREE and the TABLE.<br/>Release the POT."),
+        WAITING_POT
+                ("<html>Press and hold the POT.<br/><b>While holding the POT, press both the TREE and the TABLE.</b><br/>Keep holding the POT, and release the TREE and the TABLE.<br/>Release the POT."),
+        WAITING_TPT
+                ("<html>Press and hold the POT.<br/>While holding the POT, press both the TREE and the TABLE.<br/><b>Keep holding the POT, and release the TREE and the TABLE.</b><br/>Release the POT."),
+        WAITING_POT2
+                ("<html>Press and hold the POT.<br/>While holding the POT, press both the TREE and the TABLE.<br/>Keep holding the POT, and release the TREE and the TABLE.<br/><b>Release the POT.</b>"),      // plain panel, no instructions.
 
         READY("Resetting Talking Book memory."),
         ERASED("Updating Talking Book firmware."),
@@ -92,7 +102,7 @@ public class Tb2FirmwareUpdater extends JDialog {
         boolean isWaiting() {return ordinal() <= WAITING_POT2.ordinal();}
     }
 
-    private State state = State.WAITING_POT;
+    private State state = State.WAITING;
 
 
     /**
@@ -159,11 +169,15 @@ public class Tb2FirmwareUpdater extends JDialog {
 
         panel.add(new JLabel("Instructions:"), gbc);
 
-//        if (useTextArea) {
-        prompt = new JTextArea(state.text);
-//        } else {
-//            prompt = new JTextField(state.text, 90);
-//        }
+        if (useTextArea) {
+            prompt = new JTextArea(state.text);
+        } else if (useTextField){
+            prompt = new JTextField(state.text, 90);
+        } else {
+            prompt = new JTextPane();
+            ((JTextPane)prompt).setContentType("text/html");
+            prompt.setText(state.text);
+        }
         panel.add(prompt, gbc.withFill(GridBagConstraints.BOTH).withWeighty(1.0));
 
         progressBar = new JProgressBar(0, 100);
@@ -299,7 +313,10 @@ public class Tb2FirmwareUpdater extends JDialog {
             File cubeDir = AmplioHome.getStmUtilsDir();
             List<String> cmdList = new ArrayList<>(Collections.singletonList(cubeDir.getAbsolutePath() + File.separatorChar + "cube.exe"));
             cmdList.addAll(Arrays.asList(cmdarray));
-            LOG.log(Level.INFO, "Executing: " + String.join(" ", cmdarray));
+            LOG.log(Level.INFO, "Executing: " + String.join(" ", cmdList));
+            if (debug) {
+                System.out.printf("Executing: %s in %s\n", String.join(" ", cmdList), cubeDir.getAbsolutePath());
+            }
             Process proc = new ProcessBuilder(cmdList)
                 .directory(cubeDir)
                 .redirectErrorStream(true) // merge stderr into stdout
@@ -326,6 +343,9 @@ public class Tb2FirmwareUpdater extends JDialog {
     private boolean waitForDfu(BufferedReader stream) {
         String line;
         try {
+            if (debug) {
+                System.out.printf("Waiting for DFU # %d...", ++waitCount);
+            }
             while ((line = stream.readLine()) != null) {
                 System.out.println(line);
                 Matcher matcher;
@@ -334,15 +354,28 @@ public class Tb2FirmwareUpdater extends JDialog {
                     if (matcher.matches()) {
                         String cubeVersion = matcher.group(1);
                         LOG.log(Level.INFO, "STM Cube Programmer version: " + cubeVersion);
+                        if (debug) {
+                            System.out.printf("STM Cube Programmer version: %s\n", cubeVersion);
+                        }
                         dfuVersionLogged = true;
                     }
                 }
                 matcher = DFU_MATCHER.matcher(line);
                 if (matcher.matches()) {
+                    if (debug) {
+                        System.out.println("Found DFU");
+                    }
                     return true;
                 }
             }
         } catch (IOException ignored) {
+            if (debug) {
+                System.out.println("Exception awaiting DFU:");
+                ignored.printStackTrace();
+            }
+        }
+        if (debug) {
+            System.out.println("No DFU yet");
         }
         return false;
     }
@@ -380,6 +413,9 @@ public class Tb2FirmwareUpdater extends JDialog {
     private boolean waitForDownloadStart(BufferedReader stream) {
         String line;
         try {
+            if (debug) {
+                System.out.println("Waiting for DFU download to start");
+            }
             while ((line = stream.readLine()) != null) {
                 System.out.println(line);
                 Matcher matcher = DOWNLOAD_STARTED.matcher(line);

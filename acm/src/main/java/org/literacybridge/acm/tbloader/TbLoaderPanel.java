@@ -410,7 +410,9 @@ public class TbLoaderPanel extends JPanel {
 
     TbDeviceInfo.DEVICE_VERSION getSelectedDeviceVersion() {
         TbDeviceInfo.DEVICE_VERSION version = TbDeviceInfo.DEVICE_VERSION.NONE;
-        if (deviceVersionBox.getSelectedIndex() == 1)
+        if (!tbLoaderConfig.hasTbV2Devices())
+            version = TbDeviceInfo.DEVICE_VERSION.TBv1;
+        else if (deviceVersionBox.getSelectedIndex() == 1)
             version = TbDeviceInfo.DEVICE_VERSION.TBv1;
         else if (deviceVersionBox.getSelectedIndex() == 2)
             version = TbDeviceInfo.DEVICE_VERSION.TBv2;
