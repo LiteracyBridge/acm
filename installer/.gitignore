@@ -5,3 +5,5 @@ Output/
 jre.32/
 jre.64/
 auto_sign.txt
+DFU_Driver/
+cube/

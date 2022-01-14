@@ -76,15 +76,17 @@ public class TBLoader extends JFrame {
     private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
 
     public static class TbLoaderConfig {
-        public boolean strictTbV2Firmware = true;
+        private boolean strictTbV2Firmware = true;
+        private boolean hasDfuSupport;
         private boolean hasTbV2Devices;
         private boolean allowPackageChoice = false;
 
         public boolean hasTbV2Devices() { return hasTbV2Devices; }
+        public boolean hasDfuSupport() { return hasDfuSupport; }
         public boolean isStrictTbV2FIrmware() { return strictTbV2Firmware; }
         public boolean allowPackageChoice() { return allowPackageChoice; }
     }
-    private final TbLoaderConfig tbLoaderConfig = new TbLoaderConfig();
+    final TbLoaderConfig tbLoaderConfig = new TbLoaderConfig();
 
     /**
      * A class to hold the data needed to create a TbDeviceInfo. Allows us to obtain whatever flavor of
@@ -181,7 +183,7 @@ public class TBLoader extends JFrame {
     // Deployment info read from Talking Book.
     private DeploymentInfo oldDeploymentInfo;
 
-    private File softwareDir;
+    File softwareDir;
     public CommandLineUtils commandLineUtils;
     private String deviceIdHex;
     private String userEmail;
@@ -308,6 +310,8 @@ public class TBLoader extends JFrame {
         deploymentChooser.select();
 
         initializeProgramSpec();
+
+        tbLoaderConfig.hasDfuSupport = DfuCheck.go();
 
         initializeGui();
 

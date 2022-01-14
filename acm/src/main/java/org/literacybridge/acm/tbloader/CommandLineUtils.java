@@ -62,6 +62,41 @@ public class CommandLineUtils extends FileSystemUtilities {
         return errorLine == null;
     }
 
+    public boolean hasDfuDriver() {
+        if (!OSChecker.WINDOWS) return false;
+        return DFU_DriverDetector.hasDFU_Driver();
+    }
+
+    /**
+     * Class to determine if the STMicro DFU_Driver is installed on this computer.
+     */
+    private static class DFU_DriverDetector implements BiFunction<Writer, LineReader, Boolean> {
+        private static final Pattern STM32BOOTLOADER = Pattern.compile("(?i).*stm32bootloader.inf.*");
+
+        private static boolean hasDFU_Driver() {
+            DFU_DriverDetector detector = new DFU_DriverDetector();
+            String[] command = new String[]{"pnputil", "/enum-drivers"};
+            return Boolean.TRUE.equals(runExternalCommand(command, detector));
+        }
+
+        @Override
+        public Boolean apply(Writer writer, LineReader stream) {
+            String line;
+            boolean foundDfu = false;
+            try {
+                while ((line = stream.readLine()) != null) {
+                    Matcher matcher = STM32BOOTLOADER.matcher(line);
+                    if (matcher.matches()) {
+                        System.out.println(line);
+                        foundDfu = true;
+                    }
+                }
+//                System.out.println("readLine returned null");
+            } catch (IOException ignored) {
+            }
+            return foundDfu;
+        }
+    }
 
     private static class DiskFormatter implements BiFunction<Writer, LineReader, Boolean> {
         private static final Pattern INSERT_NEW_DISK = Pattern.compile("(?i)Insert new disk for drive.*");
@@ -269,6 +304,9 @@ public class CommandLineUtils extends FileSystemUtilities {
             OutputStreamWriter writer = new OutputStreamWriter(proc.getOutputStream());
             // And let the handler have the output from the command.
             R result = handler.apply(writer, reader);
+            // Drain the process output.
+            //noinspection StatementWithEmptyBody
+            while (reader.readLine() != null);
             // Wait for the process to terminate.
             proc.waitFor();
             return result;

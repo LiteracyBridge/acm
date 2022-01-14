@@ -985,6 +985,7 @@ public class TbLoaderPanel extends JPanel {
                 updateTb2FirmwareButton.setText("Update TB Firmware");
                 updateTb2FirmwareButton.setToolTipText("A TBv2 firmware update is not required at this time.");
             }
+            updateTb2FirmwareButton.setEnabled(tbLoaderConfig.hasDfuSupport());
         }
     }
 
@@ -1003,7 +1004,7 @@ public class TbLoaderPanel extends JPanel {
             // Must not require updating (TBv2) firmware.
             enabled = enabled && !(isV2FirmwareUpdateRequired() && tbLoaderConfig.isStrictTbV2FIrmware());
         }
-        enabled = enabled && getDeviceVersion() != TbDeviceInfo.DEVICE_VERSION.NONE;
+        enabled = enabled && (getDeviceVersion() == TbDeviceInfo.DEVICE_VERSION.TBv1 || getDeviceVersion() == TbDeviceInfo.DEVICE_VERSION.TBv2);
         goButton.setEnabled(enabled);
         goButton.setBackground(enabled ? Color.GREEN : defaultButtonBackgroundColor);
         goButton.setForeground(enabled ? Color.BLACK : Color.GRAY);

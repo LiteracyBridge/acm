@@ -33,8 +33,8 @@ pushd Output
 # Fortunately windows recognizes '/' as the path separator in some places, and launching an application is one of
 # those places. Replace first '/c' with 'c:' in the command line and we're ok to go. Enclose the command in quotes
 # because "Program Files".
-@echo We will now attempt to sign the AmplioSetup.exe program. NOTE: If you are not prompted for a password,
-@echo the signing may appear to work, and may report that it has worked, but it WILL NOT HAVE WORKED! Yay Microsoft!
+echo We will now attempt to sign the AmplioSetup.exe program. NOTE: If you are not prompted for a password,
+echo the signing may appear to work, and may report that it has worked, but it WILL NOT HAVE WORKED! Yay Microsoft!
 wintool=${signtool/#\/c/c:}
 echo \""${wintool}"\" sign /tr http://timestamp.sectigo.com /td sha256 /fd sha256 /a AmplioSetup.exe>signit.bat
 ${dbg}./signit.bat

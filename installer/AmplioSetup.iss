@@ -60,12 +60,15 @@ Name: "{app}\temp"; Flags: uninsalwaysuninstall
 Name: "{app}\updates"; Flags: uninsalwaysuninstall
 
 [UninstallDelete]
+Type: filesandordirs; Name: "{app}\ACM"
 Type: filesandordirs; Name: "{app}\acm-dbs\*"
 Type: filesandordirs; Name: "{app}\cache\*"
+Type: filesandordirs; Name: "{app}\DFU_Driver\*"
 Type: filesandordirs; Name: "{app}\logs\*"
 Type: filesandordirs; Name: "{app}\sandbox\*"
 Type: filesandordirs; Name: "{app}\sync.config\*"
 Type: filesandordirs; Name: "{app}\sync.status\*"
+Type: filesandordirs; Name: "{app}\TB-Loaders\*"
 Type: filesandordirs; Name: "{app}\temp\*"
 Type: filesandordirs; Name: "{app}\updates\*"
 
@@ -83,6 +86,9 @@ Source: ".\ACM\*"; DestDir: "{app}\ACM\"; Flags: ignoreversion recursesubdirs cr
 ; Initial configuration for the synchronizer
 Source: ".\sync.config\*"; DestDir: "{app}\sync.config\"; Flags: ignoreversion recursesubdirs
 
+; Copy the driver files for the STM32 DFU (Device Firmware Updater)
+Source: ".\DFU_Driver\*"; DestDir: "{app}\DFU_Driver\"; Flags: ignoreversion recursesubdirs
+
 [Icons]
 Name: "{autoprograms}\{#ACM}"; Filename: "{app}\ACM\run_acm.bat"; WorkingDir: "{app}\ACM\"; IconFilename: "{app}\ACM\images\tb.ico"; Flags: runminimized;
 Name: "{autodesktop}\{#ACM}"; Filename: "{app}\ACM\run_acm.bat"; WorkingDir: "{app}\ACM\"; IconFilename: "{app}\ACM\images\tb.ico"; Tasks: desktopicon; Flags: runminimized;
@@ -96,13 +102,11 @@ Root: HKCU; Subkey: "SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags
 
 
 [Run]
+Filename: "{app}\DFU_Driver\STM32Bootloader.bat"; WorkingDir: "{app}\DFU_Driver\"; Description: "Installs the STM32 DFU driver"; Flags: runminimized
 Filename: "{app}\ACM\start_sync.bat"; WorkingDir: "{app}\ACM\"; Description: "Starts the synchronizer"; Flags: runminimized postinstall shellexec
 
 [UninstallRun]
 Filename: "{app}\ACM\stop_sync.bat"; WorkingDir: "{app}\ACM\"; RunOnceId: "StopCtrl1"; Flags: runminimized;
-
-[UninstallDelete]
-Type: filesandordirs; Name: "{app}\ACM"
 
 
 [CustomMessages]
