@@ -104,7 +104,7 @@ public class SelectProgramCard extends CardContent {
         choicesListScrollPane = new JScrollPane(choicesList);
         dialogPanel.add(choicesListScrollPane, gbc.withWeighty(1.0).withFill(BOTH));
 
-        forceSandbox = new JCheckBox("Use demo mode");
+        forceSandbox = new JCheckBox("Use demo mode", welcomeDialog.options.contains(Authenticator.LoginOptions.SUGGEST_DEMO_MODE));
         forceSandbox.addActionListener(this::onSandboxClicked);
         if (welcomeDialog.options.contains(Authenticator.LoginOptions.OFFER_DEMO_MODE)) {
             dialogPanel.add(forceSandbox, gbc.withAnchor(WEST).withFill(NONE));
