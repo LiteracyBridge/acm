@@ -217,9 +217,9 @@ public class CognitoHelper {
      * @param password represents the password in the cognito user pool
      * @return returns the JWT token after the validation
      */
-    public AuthenticationHelper.AuthenticationResult ValidateUser(String username, String password) {
+    public AuthenticationHelper.AuthenticationResult ValidateUser(String username, String password, Map<String,String> userMetadata) {
         AuthenticationHelper helper = new AuthenticationHelper(POOL_ID, CLIENTAPP_ID, "");
-        return helper.PerformSRPAuthentication(username, password);
+        return helper.PerformSRPAuthentication(username, password, userMetadata);
     }
 
     public AuthenticationHelper.AuthenticationResult RefreshSession(String refreshToken) {

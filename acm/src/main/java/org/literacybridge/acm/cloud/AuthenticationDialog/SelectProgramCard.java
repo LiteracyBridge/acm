@@ -50,7 +50,7 @@ import static org.literacybridge.acm.cloud.Authenticator.ALL_USER_ROLES;
 import static org.literacybridge.acm.gui.Assistant.AssistantPage.getGBC;
 
 public class SelectProgramCard extends CardContent {
-    private static final String DIALOG_TITLE = "Select Program";
+    private static final String DIALOG_TITLE = "Select Program - %s";
     protected static final int CARD_HEIGHT = 315;
 
     private final PanelButton okButton;
@@ -68,7 +68,7 @@ public class SelectProgramCard extends CardContent {
 
     public SelectProgramCard(WelcomeDialog welcomeDialog,
             WelcomeDialog.Cards panel) {
-        super(welcomeDialog, DIALOG_TITLE, panel);
+        super(welcomeDialog, String.format(DIALOG_TITLE, welcomeDialog.applicationName), panel);
         JPanel dialogPanel = this;
 
         // The GUI

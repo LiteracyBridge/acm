@@ -41,6 +41,7 @@ public class WelcomeDialog extends JDialog {
     // Empirically, 496 doesn't require a horizontal resize when adding programs. Could change with new programs
     // that have longer names.
     private static final int INITIAL_DIALOG_WIDTH = 496;
+    private static final String DIALOG_TITLE = "Amplio Login - %s";
 
     private String email;
     private String password;
@@ -106,8 +107,8 @@ public class WelcomeDialog extends JDialog {
         SelectProgramCard(org.literacybridge.acm.cloud.AuthenticationDialog.SelectProgramCard.CARD_HEIGHT, SelectProgramCard::new),
         ModCard(org.literacybridge.acm.cloud.AuthenticationDialog.ModCard.CARD_HEIGHT, ModCard::new);
 
-        int minimumHeight;
-        BiFunction<WelcomeDialog, Cards, CardContent> ctor;
+        final int minimumHeight;
+        final BiFunction<WelcomeDialog, Cards, CardContent> ctor;
 
         Cards(int minimumHeight, BiFunction<WelcomeDialog, Cards, CardContent> ctor) {
             this.minimumHeight = minimumHeight;
@@ -152,7 +153,7 @@ public class WelcomeDialog extends JDialog {
         String defaultProgram,
         Set<Authenticator.LoginOptions> options,
         Authenticator.CognitoInterface cognitoInterface) {
-        super(owner, "Amplio Login", ModalityType.DOCUMENT_MODAL);
+        super(owner, String.format(DIALOG_TITLE, applicationName), ModalityType.DOCUMENT_MODAL);
         this.cognitoInterface = cognitoInterface;
         this.options = options;
         this.applicationName = applicationName;

@@ -30,6 +30,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,8 +43,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import static java.util.Arrays.stream;
 
 /**
  * Helper class to provide a simpler interface to cognito authentication.
@@ -71,6 +71,8 @@ public class Authenticator {
     private LoginResult loginResult = LoginResult.NONE;
     private String defaultProgram;
     private Set<LoginOptions> loginOptions;
+    private String applicationName;
+    private String computerName;
 
     public static synchronized Authenticator getInstance() {
         if (instance == null) {
@@ -122,6 +124,10 @@ public class Authenticator {
     private List<String> s3RepositoryList;
 
     protected Authenticator() {
+        try {
+            computerName = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException ignored) {
+        }
         this.identityPersistence = new IdentityPersistence(AmplioHome.getDirectory());
         cognitoHelper = new CognitoHelper();
     }
@@ -336,10 +342,11 @@ public class Authenticator {
      * @param loginFlags options for the sign-in.
      * @return a LoginResult from the process.
      */
-    public LoginResult getUserIdentity(Window parent, String applicationName, String defaultProgram, LoginOptions... loginFlags) {
+    public LoginResult authenticateAndChooseProgram(Window parent, String applicationName, String defaultProgram, LoginOptions... loginFlags) {
         if (!LoginOptions.allCompatible(loginFlags)) {
             throw new IllegalArgumentException("Incompatible options specified: " + LoginOptions.getIncompatibles(loginFlags));
         }
+        this.applicationName = applicationName;
 
         UpdatePrompter.go();
 
@@ -719,7 +726,10 @@ public class Authenticator {
          * @param password of the user id.
          */
         public void authenticate(String usernameOrEmail, String password) {
-            AuthenticationHelper.AuthenticationResult validationResult = cognitoHelper.ValidateUser(usernameOrEmail, password);
+            Map<String,String> userMetadata = new HashMap<>();
+            userMetadata.put("Application", applicationName);
+            if (StringUtils.isNotBlank(computerName)) userMetadata.put("Computer", computerName);
+            AuthenticationHelper.AuthenticationResult validationResult = cognitoHelper.ValidateUser(usernameOrEmail, password, userMetadata);
 
             parseAuthenticationResult(validationResult);
         }

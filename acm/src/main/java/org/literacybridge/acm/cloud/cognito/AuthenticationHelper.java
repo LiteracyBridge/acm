@@ -270,9 +270,16 @@ public class AuthenticationHelper {
      * @return the JWT token if the request is successful else null.
      */
     AuthenticationResult PerformSRPAuthentication(String username, String password) {
+        return PerformSRPAuthentication(username, password, null);
+    }
+    AuthenticationResult PerformSRPAuthentication(String username, String password, Map<String,String> userMetadata) {
+
         AuthenticationResult authresult = null;
 
         InitiateAuthRequest initiateAuthRequest = initiateUserSrpAuthRequest(username);
+        if (userMetadata != null && userMetadata.size() > 0) {
+            initiateAuthRequest.setClientMetadata(userMetadata);
+        }
         try {
             AnonymousAWSCredentials awsCreds = new AnonymousAWSCredentials();
             AWSCognitoIdentityProvider cognitoIdentityProvider = AWSCognitoIdentityProviderClientBuilder

@@ -161,9 +161,11 @@ public class Application extends JXFrame {
         String dbVersion = "v" +
             ACMConfiguration.getInstance().getCurrentDB().getCurrentDbVersion() +
             cloudIndicator;
+        String programTitle = String.format(LabelProvider.getLabel("APPLICATION_TITLE_FORMAT"),
+            LabelProvider.getLabel("ACM_PROGRAM_NAME"));
         String title = String.format("%s  --  %s (%s%s)  --  %s (%s)%s",
             greeting,
-            LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
+            programTitle,
             Constants.ACM_VERSION,
             layoutIndicator,
             ACMConfiguration.getInstance().getTitle(),
@@ -433,8 +435,8 @@ public class Application extends JXFrame {
       authInstance.setLocallyAvailablePrograms(ACMConfiguration.getInstance().getLocalProgramDbs(),
               ACMConfiguration.getInstance().getLocalDbxDbs());
       Authenticator.LoginOptions okRepoOption = AmplioHome.isOldStyleHomeDirectory()||params.noS3Dbs?LOCAL_DATA_ONLY:LOCAL_OR_S3;
-      Authenticator.LoginResult result = authInstance.getUserIdentity(null,
-              LabelProvider.getLabel("TITLE_LITERACYBRIDGE_ACM"),
+      Authenticator.LoginResult result = authInstance.authenticateAndChooseProgram(null,
+              LabelProvider.getLabel("ACM_PROGRAM_NAME"),
               ACMConfiguration.cannonicalProjectName(params.sharedACM),
               OFFLINE_EMAIL_CHOICE,
               CHOOSE_PROGRAM,

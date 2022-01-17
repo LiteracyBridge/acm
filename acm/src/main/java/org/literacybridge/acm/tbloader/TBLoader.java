@@ -10,6 +10,7 @@ import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.dialogs.PopUp;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.utils.LogHelper;
 import org.literacybridge.acm.utils.OsUtils;
 import org.literacybridge.acm.utils.SwingUtils;
@@ -305,8 +306,8 @@ public class TBLoader extends JFrame {
         Authenticator authInstance = Authenticator.getInstance();
         authInstance.setLocallyAvailablePrograms(DeploymentsManager.getLocalPrograms(),
                 ACMConfiguration.getInstance().getLocalDbxDbs());
-        Authenticator.LoginResult result = authInstance.getUserIdentity(this,
-            "TB-Loader",
+        Authenticator.LoginResult result = authInstance.authenticateAndChooseProgram(this,
+            LabelProvider.getLabel("TBLOADER_PROGRAM_NAME"),
             newProject,
             /*LOCAL_OR_S3,*/
             OFFLINE_EMAIL_CHOICE,
