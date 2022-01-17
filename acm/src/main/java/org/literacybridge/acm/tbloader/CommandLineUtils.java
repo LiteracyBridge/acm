@@ -91,7 +91,7 @@ public class CommandLineUtils extends FileSystemUtilities {
                         foundDfu = true;
                     }
                 }
-//                System.out.println("readLine returned null");
+//                System.out.println("Got EOF on program output.");
             } catch (IOException ignored) {
             }
             return foundDfu;
@@ -132,7 +132,7 @@ public class CommandLineUtils extends FileSystemUtilities {
                         }
                     }
                 }
-                System.out.println("readLine returned null");
+                System.out.println("Got EOF on program output.");
             } catch (IOException ignored) {
             }
             return formatComplete;
@@ -180,7 +180,9 @@ public class CommandLineUtils extends FileSystemUtilities {
         private static final Pattern CONVERT_CHAINS = Pattern.compile("(?i).*(files.*|chains.*){2}\\?");
         private static final Pattern FOUND_ERRORS = Pattern.compile("(?i).*Windows found errors on the disk, but will not fix them.*");
         private static final Pattern NO_F_PARAM = Pattern.compile("(?i).*because disk checking was run without the /F.*");
+        private static final Pattern PERCENT_COMPLETE = Pattern.compile("(?i)\\D*(\\d+) percent complete.*");
 
+        private String programOutputLine;
         private boolean windowsInsanity = false;
         private boolean noFurtherAction = false;
         private boolean hasErrors = false;
@@ -218,13 +220,12 @@ public class CommandLineUtils extends FileSystemUtilities {
             lineHandlers.add(new LineHandler<>(FOUND_ERRORS, this::foundErrors));
             lineHandlers.add(new LineHandler<>(NO_F_PARAM, this::noFParam));
             lineHandlers.add(new LineHandler<>(NO_PROBLEMS, this::noProblems));
+            lineHandlers.add(new LineHandler<>(PERCENT_COMPLETE, this::percentComplete));
 
-            String line;
             try {
-                while ((line = stream.readLine()) != null) {
-                    System.out.println(line);
+                while ((programOutputLine = stream.readLine()) != null) {
                     for (LineHandler<BiConsumer<Writer, Matcher>> lh : lineHandlers) {
-                        Matcher matcher = lh.linePattern.matcher(line);
+                        Matcher matcher = lh.linePattern.matcher(programOutputLine);
                         if (matcher.matches()) {
                             lh.lineProcessor.accept(writer, matcher);
                             break;
@@ -233,7 +234,7 @@ public class CommandLineUtils extends FileSystemUtilities {
                     if (windowsInsanity || hasErrors || hasNoProblems)
                         break;
                 }
-                System.out.println("readLine returned null");
+                System.out.println("Got EOF on program output.");
             } catch (IOException ignored) {
             }
             if (hasNoProblems) {
@@ -251,6 +252,7 @@ public class CommandLineUtils extends FileSystemUtilities {
         }
 
         private void gotConvertChains(Writer writer, Matcher matcher) {
+            System.out.println(programOutputLine);
             try {
                 writer.write("y");
             } catch (IOException e) {
@@ -259,6 +261,7 @@ public class CommandLineUtils extends FileSystemUtilities {
         }
 
         private void windowsInsanity(Writer writer, Matcher matcher) {
+            System.out.println(programOutputLine);
             windowsInsanity = true;
         }
 
@@ -272,11 +275,17 @@ public class CommandLineUtils extends FileSystemUtilities {
         }
 
         private void foundErrors(Writer writer, Matcher matcher) {
+            System.out.println(programOutputLine);
             hasErrors = true;
         }
         private void noFParam(Writer writer, Matcher matcher) {
             hasErrors = true;
         }
+
+        private void percentComplete(Writer writer, Matcher matcher) {
+            System.out.print('.');
+        }
+
     }
 
 

@@ -5,6 +5,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.AmplioHome;
 import org.literacybridge.acm.deployment.DeploymentInfo;
 import org.literacybridge.acm.deployment.DeploymentInfo.PackageInfo;
 import org.literacybridge.acm.deployment.DeploymentInfo.PackageInfo.PlaylistInfo;
@@ -25,8 +26,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
@@ -120,10 +120,28 @@ resulting package sections
  */
 
 @SuppressWarnings({"ResultOfMethodCallIgnored"})
+public
 class CreateForV2 extends CreateFromDeploymentInfo {
     private final AudioItemRepository.AudioFormat audioFormat = AudioItemRepository.AudioFormat.WAV;
     private final PackagesData allPackagesData;
     private final File imagesDir;
+
+    public static final List<String> requiredFirmwareFiles = Arrays.asList("TBookRev2b.hex", "firmware_built.txt");
+    public static final List<String> requiredCSMFiles = Arrays.asList("control_def.txt", "csm_data.txt");
+
+    public static boolean isValidFirmwareSource(File maybeFirmware) {
+        if (maybeFirmware == null || !maybeFirmware.isDirectory()) return false;
+        Set<String> foundFiles = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        foundFiles.addAll(Arrays.asList(Objects.requireNonNull(maybeFirmware.list())));
+        return foundFiles.containsAll(requiredFirmwareFiles);
+    }
+
+    public static boolean isValidCSMSource(File maybeCSM) {
+        if (maybeCSM == null || !maybeCSM.isDirectory()) return false;
+        Set<String> foundFiles = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        foundFiles.addAll(Arrays.asList(Objects.requireNonNull(maybeCSM.list())));
+        return foundFiles.containsAll(requiredCSMFiles);
+    }
 
     CreateForV2(TBBuilder tbBuilder, TBBuilder.BuilderContext builderContext, DeploymentInfo deploymentInfo) {
         super(tbBuilder, builderContext, deploymentInfo);
@@ -171,7 +189,12 @@ class CreateForV2 extends CreateFromDeploymentInfo {
      */
     @Override
     protected void exportFirmware() throws IOException {
+        // Look for an override in the program's TB_Options directory.
         File sourceFirmwareDir = new File(builderContext.sourceTbOptionsDir, "firmware.v2");
+        if (!isValidFirmwareSource(sourceFirmwareDir)) {
+            // Fall back to the system default.
+            sourceFirmwareDir = new File(AmplioHome.getAppSoftwareDir(), "firmware.v2");
+        }
         File stagedFirmwareDir = new File(builderContext.stagedDeploymentDir, "firmware.v2");
         IOUtils.deleteRecursive(stagedFirmwareDir);
         stagedFirmwareDir.mkdirs();
@@ -491,7 +514,13 @@ class CreateForV2 extends CreateFromDeploymentInfo {
         }
 
         private void addSystemDirFilesToImage() throws IOException {
+            // Look for an override in the program's TB_Options directory.
             File sourceSystemDir = new File(builderContext.sourceTbOptionsDir, "system.v2");
+            if (!isValidCSMSource(sourceSystemDir)) {
+                // Fall back to the system default.
+                sourceSystemDir = new File(AmplioHome.getAppSoftwareDir(), "system.v2");
+            }
+
             File targetSystemDir = new File(imageDir, "system");
 
             // The csm_data.txt file. Control file for the TB.

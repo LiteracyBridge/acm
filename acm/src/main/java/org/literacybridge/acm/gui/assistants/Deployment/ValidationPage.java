@@ -3,12 +3,14 @@ package org.literacybridge.acm.gui.assistants.Deployment;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import org.literacybridge.acm.gui.Assistant.AssistantPage;
 import org.literacybridge.acm.gui.assistants.PromptsImport.PromptsInfo;
 import org.literacybridge.acm.gui.assistants.util.AcmContent;
 import org.literacybridge.acm.gui.assistants.util.AudioUtils;
 import org.literacybridge.acm.store.Category;
+import org.literacybridge.acm.tbbuilder.CreateForV2;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.spec.ContentSpec;
@@ -24,14 +26,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.gui.assistants.common.AcmAssistantPage.getLanguageAndName;
@@ -57,7 +53,7 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     private final JCheckBox deployWithErrors;
     private final CardLayout issuesLayout;
 
-    private DeploymentContext context;
+    private final DeploymentContext context;
 
     private final JTree issuesTree;
     private final DefaultMutableTreeNode issuesTreeRoot;
@@ -374,7 +370,6 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
                     } else {
                         if (msg.length() > 0) msg.append(',');
                         msg.append(n);
-                        combining = false;
                     }
                     prevN = n;
                 }
@@ -586,6 +581,12 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
     }
 
     private void validateFirmware() {
+        validateV1Firmware();
+        if (ACMConfiguration.getInstance().getCurrentDB().hasTbV2Devices()) {
+            validateV2Firmware();
+        }
+    }
+    private void validateV1Firmware() {
         // BE SURE that the "no firmware" message compares less than MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE
         String noFirmware = "no firmware image";
         assert (noFirmware.compareTo(MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE) < 0);
@@ -609,13 +610,45 @@ public class ValidationPage extends AssistantPage<DeploymentContext> {
             }
 
             String image =
-                latestFirmware != null ? latestFirmware.getName().toLowerCase() : noFirmware;
+                    latestFirmware != null ? latestFirmware.getName().toLowerCase() : noFirmware;
             if (image.compareTo(MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE) < 0) {
                 context.issues.add(Issues.Severity.FATAL,
-                    Issues.Area.FIRMWARE,
-                    "Minimum firmware image for hidden user feedback is %s, but found %s.",
-                    MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE,
-                    image);
+                        Issues.Area.FIRMWARE,
+                        "Minimum firmware image for hidden user feedback is %s, but found %s.",
+                        MINIMUM_USER_FEEDBACK_HIDDEN_IMAGE,
+                        image);
+            }
+        }
+    }
+
+    /**
+     * Validates that if there are override directories for the firmware or control state machine files,
+     * those directories contain the required firmware and control state machine files. If not, a warning
+     * will be generated, and the files will come from the system defaults.
+     */
+    private void validateV2Firmware() {
+        DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
+        File tbOptions = new File(dbConfig.getPathProvider().getProgramTbLoadersDir(), "TB_Options");
+        File firmwareOverride = new File(tbOptions, "firmware.v2");
+        validateLocalOverrideDirectory(firmwareOverride, CreateForV2::isValidFirmwareSource, "V2 firmware");
+        File csmOverride = new File(tbOptions, "system.v2");
+        validateLocalOverrideDirectory(csmOverride, CreateForV2::isValidCSMSource, "CSM files");
+    }
+
+    private void validateLocalOverrideDirectory(File directory, Predicate<File> isValid, String label) {
+        if (directory.exists()) {
+            if (!directory.isDirectory()) {
+                context.issues.add(Issues.Severity.INFO,
+                        Issues.Area.FIRMWARE,
+                        "'%s' exists, but is not a directory. The default %s will be used.",
+                        directory.getName(), label);
+            } else {
+                if (!isValid.test(directory)) {
+                    context.issues.add(Issues.Severity.INFO,
+                            Issues.Area.FIRMWARE,
+                            "'%s' not contain %s files. The default %2$s will be used",
+                            directory.getName(), label);
+                }
             }
         }
     }

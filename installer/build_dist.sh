@@ -10,6 +10,10 @@ cp -av ../acm/dist/splash-acm.jpg ./ACM/
 cp -av ../acm/dist/lib ./ACM/
 cp -av ./bats/*.bat ./ACM/
 
+# Default v2 firmware, CSM
+cp -av ./firmware.v2 ./ACM/
+cp -av ./system.v2 ./ACM/
+
 # S3Sync
 cp -av ../acm/dist/S3Sync.jar ./ACM/
 cp -av ../acm/dist/ctrl-all.jar ./ACM/
