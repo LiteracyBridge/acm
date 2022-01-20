@@ -4,9 +4,7 @@ import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.tbloader.FileSystemUtilities;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -14,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class CommandLineUtils extends FileSystemUtilities {
     private static final Logger LOG = Logger.getLogger(CommandLineUtils.class.getName());
@@ -28,7 +27,10 @@ public class CommandLineUtils extends FileSystemUtilities {
         if (!OSChecker.WINDOWS) {
             throw new IllegalStateException("format operation is only supported on Windows");
         }
-        return DiskFormatter.format(drive, newLabel);
+        System.out.printf("Formatting %s with label %s\n", drive, newLabel);
+        boolean result = DiskFormatter.format(drive, newLabel);
+        System.out.printf("Format completted: %s\n", result?"success":"failure");
+        return result;
     }
 
     @Override
@@ -36,7 +38,10 @@ public class CommandLineUtils extends FileSystemUtilities {
         if (!OSChecker.WINDOWS) {
             throw new IllegalStateException("chkdsk operation is only supported on Windows");
         }
-        return FileSystemCheck.checkDisk(drive);
+        System.out.printf("Checking drive %s\n", drive);
+        boolean result = FileSystemCheck.checkDisk(drive);
+        System.out.printf("Chkdsk completted: %s\n", result?"OK":"errors");
+        return result;
     }
 
     @Override
@@ -44,7 +49,10 @@ public class CommandLineUtils extends FileSystemUtilities {
         if (!OSChecker.WINDOWS) {
             throw new IllegalStateException("chkdsk operation is only supported on Windows");
         }
-        return FileSystemCheck.checkDiskAndFix(drive, logfilename);
+        System.out.printf("Checking drive %s (with /f).\n", drive);
+        boolean result = FileSystemCheck.checkDiskAndFix(drive, logfilename);
+        System.out.printf("Chkdsk completted: %s\n", result?"OK":"errors");
+        return result;
     }
 
     @Override
@@ -85,13 +93,14 @@ public class CommandLineUtils extends FileSystemUtilities {
             boolean foundDfu = false;
             try {
                 while ((line = stream.readLine()) != null) {
+                    System.out.println(line);
                     Matcher matcher = STM32BOOTLOADER.matcher(line);
                     if (matcher.matches()) {
                         System.out.println(line);
                         foundDfu = true;
                     }
                 }
-//                System.out.println("Got EOF on program output.");
+                System.out.println("Got EOF on program output.");
             } catch (IOException ignored) {
             }
             return foundDfu;
@@ -172,18 +181,33 @@ public class CommandLineUtils extends FileSystemUtilities {
     }
 
     private static class FileSystemCheck implements BiFunction<Writer, LineReader, Boolean> {
-
         private static final Pattern VOLUME_CREATED = Pattern.compile("(?i)Volume ([\\p{Alnum}-]+) created (.*)$");
         private static final Pattern NO_PROBLEMS = Pattern.compile("(?i).*Windows has scanned the file system and found no problem.*");
-        private static final Pattern NO_FURTHER_ACTION = Pattern.compile("(?i)No further action is required.*");
+        private static final Pattern NO_FURTHER_ACTION = Pattern.compile("(?i).*No further action is required.*");
         private static final Pattern WINDOWS_INSANITY = Pattern.compile("(?i).*ALL OPENED HANDLES TO THIS VOLUME WOULD THEN BE INVALID.*");
         private static final Pattern CONVERT_CHAINS = Pattern.compile("(?i).*(files.*|chains.*){2}\\?");
         private static final Pattern FOUND_ERRORS = Pattern.compile("(?i).*Windows found errors on the disk, but will not fix them.*");
         private static final Pattern NO_F_PARAM = Pattern.compile("(?i).*because disk checking was run without the /F.*");
         private static final Pattern PERCENT_COMPLETE = Pattern.compile("(?i)\\D*(\\d+) percent complete.*");
+        private static final Pattern FORCE_DISMOUNT = Pattern.compile("(?i).*Would you like to force a dismount on this volume\\? \\(Y/N\\) ");
+
+        private final List<LineHandler<BiConsumer<Writer, Matcher>>> handlers = Arrays.asList(
+            new LineHandler<BiConsumer<Writer, Matcher>>(VOLUME_CREATED, this::gotVolume),
+            new LineHandler<BiConsumer<Writer, Matcher>>(NO_FURTHER_ACTION, this::gotNoFurtherAction),
+            new LineHandler<BiConsumer<Writer, Matcher>>(WINDOWS_INSANITY, this::windowsInsanity),
+            new LineHandler<BiConsumer<Writer, Matcher>>(CONVERT_CHAINS, this::gotConvertChains),
+            new LineHandler<BiConsumer<Writer, Matcher>>(FORCE_DISMOUNT, this::gotForceDismount),
+            new LineHandler<BiConsumer<Writer, Matcher>>(FOUND_ERRORS, this::foundErrors),
+            new LineHandler<BiConsumer<Writer, Matcher>>(NO_F_PARAM, this::noFParam),
+            new LineHandler<BiConsumer<Writer, Matcher>>(NO_PROBLEMS, this::noProblems),
+            new LineHandler<BiConsumer<Writer, Matcher>>(PERCENT_COMPLETE, this::percentComplete)
+        );
+        // Patterns of output from chkdsk that require a response.
+        private final List<Pattern> patterns = Arrays.asList(FORCE_DISMOUNT, CONVERT_CHAINS);
+
+        public LineReader lineReader;
 
         private String programOutputLine;
-        private boolean windowsInsanity = false;
         private boolean noFurtherAction = false;
         private boolean hasErrors = false;
         private boolean hasNoProblems = false;
@@ -212,29 +236,20 @@ public class CommandLineUtils extends FileSystemUtilities {
          */
         @Override
         public Boolean apply(Writer writer, LineReader stream) {
-            List<LineHandler<BiConsumer<Writer, Matcher>>> lineHandlers = new ArrayList<>();
-            lineHandlers.add(new LineHandler<>(VOLUME_CREATED, this::gotVolume));
-            lineHandlers.add(new LineHandler<>(NO_FURTHER_ACTION, this::gotNoFurtherAction));
-            lineHandlers.add(new LineHandler<>(WINDOWS_INSANITY, this::windowsInsanity));
-            lineHandlers.add(new LineHandler<>(CONVERT_CHAINS, this::gotConvertChains));
-            lineHandlers.add(new LineHandler<>(FOUND_ERRORS, this::foundErrors));
-            lineHandlers.add(new LineHandler<>(NO_F_PARAM, this::noFParam));
-            lineHandlers.add(new LineHandler<>(NO_PROBLEMS, this::noProblems));
-            lineHandlers.add(new LineHandler<>(PERCENT_COMPLETE, this::percentComplete));
-
+            lineReader = stream;
             try {
-                while ((programOutputLine = stream.readLine()) != null) {
-                    for (LineHandler<BiConsumer<Writer, Matcher>> lh : lineHandlers) {
+                while ((programOutputLine = stream.readLine(patterns)) != null) {
+                    for (LineHandler<BiConsumer<Writer, Matcher>> lh : handlers) {
                         Matcher matcher = lh.linePattern.matcher(programOutputLine);
                         if (matcher.matches()) {
                             lh.lineProcessor.accept(writer, matcher);
                             break;
                         }
                     }
-                    if (windowsInsanity || hasErrors || hasNoProblems)
+                    if (hasErrors || hasNoProblems)
                         break;
                 }
-                System.out.println("Got EOF on program output.");
+                System.out.println("Got EOF on chkdsk output.");
             } catch (IOException ignored) {
             }
             if (hasNoProblems) {
@@ -248,13 +263,24 @@ public class CommandLineUtils extends FileSystemUtilities {
         }
 
         private void noProblems(Writer writer, Matcher matcher) {
+            System.out.println(programOutputLine);
             hasNoProblems = true;
         }
 
         private void gotConvertChains(Writer writer, Matcher matcher) {
             System.out.println(programOutputLine);
+            reply("n\r\n", writer, matcher);
+        }
+
+        private void gotForceDismount(Writer writer, Matcher matcher) {
+            System.out.println(programOutputLine);
+            reply("y\r\n", writer, matcher);
+        }
+
+        private void reply(String reply, Writer writer, Matcher matcher) {
             try {
-                writer.write("y");
+                writer.write(reply);
+                writer.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -262,15 +288,17 @@ public class CommandLineUtils extends FileSystemUtilities {
 
         private void windowsInsanity(Writer writer, Matcher matcher) {
             System.out.println(programOutputLine);
-            windowsInsanity = true;
+            boolean windowsInsanity = true;
         }
 
         private void gotVolume(Writer writer, Matcher matcher) {
+            System.out.println(programOutputLine);
             String volumeLabel = matcher.group(1);
 //        createDate = matcher.group(2);
         }
 
         private void gotNoFurtherAction(Writer writer, Matcher matcher) {
+            System.out.println(programOutputLine);
             noFurtherAction = true;
         }
 
@@ -279,13 +307,13 @@ public class CommandLineUtils extends FileSystemUtilities {
             hasErrors = true;
         }
         private void noFParam(Writer writer, Matcher matcher) {
+            System.out.println(programOutputLine);
             hasErrors = true;
         }
 
         private void percentComplete(Writer writer, Matcher matcher) {
             System.out.print('.');
         }
-
     }
 
 
@@ -306,6 +334,7 @@ public class CommandLineUtils extends FileSystemUtilities {
             LOG.log(Level.INFO, "Executing: " + String.join(" ", cmdarray));
             Process proc = new ProcessBuilder(cmdList)
                     .redirectErrorStream(true) // merge stderr into stdout
+                    .directory(new File("c:\\WINDOWS\\System32"))
                     .start();
 
             // Stdout is called the "InputStream". Connect a reader to that.
@@ -320,6 +349,7 @@ public class CommandLineUtils extends FileSystemUtilities {
             proc.waitFor();
             return result;
         } catch (InterruptedException | IOException e) {
+            System.out.printf("Exception starting command: %s\n", e);
             return null;
         }
     }
@@ -342,15 +372,18 @@ public class CommandLineUtils extends FileSystemUtilities {
             this.in = in;
         }
 
-        public String readLine() throws IOException {
-            return readLine(null);
-        }
-
         public String readLine(Pattern pattern) throws IOException {
+            return readLine(Collections.singletonList(pattern));
+        }
+        public String readLine() throws IOException {
+            return readLine((List<Pattern>)null);
+        }
+        public String readLine(List<Pattern> patterns) throws IOException {
             StringBuilder s=null;
             boolean eol = false;
             for (;;) {
                 int ch = read();
+//                System.out.print((char)ch);
                 if (ch < 0) {
                     return s==null ? null : s.toString();
                 }
@@ -364,8 +397,10 @@ public class CommandLineUtils extends FileSystemUtilities {
                     eol = true;
                 } else {
                     s.append((char)ch);
-                    if (pattern != null)
-                        eol = pattern.matcher(s.toString()).matches();
+                    if (patterns != null && patterns.size()>0) {
+                        String partial = s.toString();
+                        eol = patterns.stream().anyMatch(p->p.matcher(partial).matches());
+                    }
                 }
                 if (eol) {
                     return s.toString();

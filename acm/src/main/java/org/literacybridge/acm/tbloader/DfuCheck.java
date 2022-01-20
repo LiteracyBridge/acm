@@ -1,10 +1,12 @@
 package org.literacybridge.acm.tbloader;
 
+import org.literacybridge.acm.config.AmplioHome;
 import org.literacybridge.acm.gui.dialogs.PopUp;
 import org.literacybridge.core.OSChecker;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -48,10 +50,11 @@ public class DfuCheck {
      * @return true if the DFU_Driver needs to be installed, false if no need or can't
      */
     private boolean needUpdate() {
+        File dfuDir = new File(AmplioHome.getDirectory(), "DFU_Driver");
         //noinspection UnnecessaryLocalVariable
         boolean needUpdate = TBLoader.getApplication().tbLoaderConfig.hasTbV2Devices() &&
                 OSChecker.WINDOWS &&
-                !new CommandLineUtils(TBLoader.getApplication().softwareDir).hasDfuDriver();
+                !dfuDir.isDirectory();
         return needUpdate;
     }
 
