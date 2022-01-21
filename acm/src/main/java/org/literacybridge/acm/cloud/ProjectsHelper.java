@@ -20,6 +20,7 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ProjectsHelper {
     static final String DEPLOYMENTS_BUCKET_NAME = "acm-content-updates";
@@ -27,11 +28,25 @@ public class ProjectsHelper {
     static final String PROGSPEC_BUCKET_NAME = "amplio-progspecs";
     public static final String PROGSPEC_ETAGS_FILE_NAME = "etags.properties";
 
-    private static final Set<String> PROGSPEC_OBJECT_NAMES = new HashSet<>(Arrays.asList("recipients.csv",
-        "recipients_map.csv",
-        "deployment_spec.csv",
-        "content.csv",
-        "pub_content.csv", "pub_recipients.csv", "pub_deployments.csv", "pub_general.csv", "pub_progspec.xlsx"));
+    /**
+     * The files that make up past and present program specs, as a list-of-lists.
+     * Each of the sub-lists is the same thing, preferred name first.
+     */
+    public static final String[][] PROGSPEC_PREFERED_NAMES = new String[][] {
+        // New, old files
+        new String[] {"pub_recipients.csv", "recipients.csv"},
+        new String[] {"pub_deployments.csv", "deployment_spec.csv"},
+        new String[] {"pub_content.csv", "content.csv"},
+        // Added files
+        new String[] {"pub_general.csv"},
+        new String[] {"pub_progspec.xlsx"},
+        // Obsolete file
+        new String[] {"recipients_map.csv"},
+    };
+    // Easy lookup to see if a given file is a program spec file.
+    private static final Set<String> PROGSPEC_OBJECT_NAMES = Arrays.stream(PROGSPEC_PREFERED_NAMES)
+        .flatMap(Arrays::stream)
+        .collect(Collectors.toSet());
 
     IdentityPersistence identityPersistence;
 

@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.cloud.Authenticator;
+import org.literacybridge.acm.cloud.ProjectsHelper;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.deployment.DeploymentInfo;
@@ -67,7 +68,8 @@ public abstract class CreateFromDeploymentInfo {
     }
 
     abstract protected void addImageForPackage(DeploymentInfo.PackageInfo packageInfo) throws Exception;
-    protected void finalizeDeployment() throws Exception {};
+    protected void finalizeDeployment() throws Exception {}
+
     abstract protected void exportFirmware() throws Exception;
     abstract protected List<String> getAcceptableFirmwareVersions();
 
@@ -107,11 +109,23 @@ public abstract class CreateFromDeploymentInfo {
      */
     protected void exportProgramSpec() throws IOException {
         if (builderContext.sourceProgramspecDir != null) {
-            // Copy the complete program spec directory, including any cruft that's there. The resulting deployment
-            // will contain an exact copy of the program spec.
+            // Copy the program spec data.
             IOUtils.deleteRecursive(builderContext.stagedProgramspecDir);
             builderContext.stagedProgramspecDir.mkdirs();
-            FileUtils.copyDirectory(builderContext.sourceProgramspecDir, builderContext.stagedProgramspecDir);
+            // For each of the different kinds of program spec data (content, recipients, etc.)...
+            for (String[] names : ProjectsHelper.PROGSPEC_PREFERED_NAMES) {
+                // From the list of possible file names, copy the first one we find, if any.
+                for (String name : names) {
+                    // un-sandboxed file
+                    File specFile = new File(builderContext.sourceProgramspecDir, name);
+                    // file with possible sandboxing, if the file's just been updated
+                    File sourceFile = builderContext.dbConfig.getSandbox().inputFile(specFile.toPath());
+                    if (sourceFile.exists()) {
+                        FileUtils.copyFileToDirectory(sourceFile, builderContext.stagedProgramspecDir);
+                        break;
+                    }
+                }
+            }
 
             // Copy some values from the program's config.properties.
             DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();

@@ -7,8 +7,10 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
+import org.literacybridge.acm.cloud.ProjectsHelper;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.repository.AudioItemRepository;
+import org.literacybridge.acm.sandbox.Sandbox;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.spec.Recipient;
@@ -109,7 +111,20 @@ class Create {
         FileUtils.copyFileToDirectory(sourceFirmware, stagedFirmwareDir);
 
         if (builderContext.sourceProgramspecDir != null) {
-            FileUtils.copyDirectory(builderContext.sourceProgramspecDir, builderContext.stagedProgramspecDir);
+            // For each of the different kinds of program spec data (content, recipients, etc.)...
+            for (String[] names : ProjectsHelper.PROGSPEC_PREFERED_NAMES) {
+                // From the list of possible file names, copy the first one we find, if any.
+                for (String name : names) {
+                    // un-sandboxed file
+                    File specFile = new File(builderContext.sourceProgramspecDir, name);
+                    // file with possible sandboxing, if the file's just been updated
+                    File sourceFile = builderContext.dbConfig.getSandbox().inputFile(specFile.toPath());
+                    if (sourceFile.exists()) {
+                        FileUtils.copyFileToDirectory(sourceFile, builderContext.stagedProgramspecDir);
+                        break;
+                    }
+                }
+            }
         }
 
         Utils.deleteRevFiles(builderContext.stagingDir);

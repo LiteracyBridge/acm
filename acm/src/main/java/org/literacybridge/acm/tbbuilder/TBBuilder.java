@@ -65,6 +65,8 @@ public class TBBuilder {
         static DateFormat ISO8601time = new SimpleDateFormat("HHmmss.SSS'Z'", Locale.US); // Quoted "Z" to indicate UTC, no timezone offset
         static { ISO8601time.setTimeZone(TBLoaderConstants.UTC); }
 
+        final DBConfiguration dbConfig;
+
         final String project;         // like "TEST"
         final String deploymentName;  // like "TEST-20-2"
         String revision;              // like "a", or "b", ...
@@ -99,6 +101,7 @@ public class TBBuilder {
             this(prefix, other.buildTimestamp, ACMConfiguration.getInstance().getDbConfiguration(other.project), other.deploymentNo, other.deploymentName, other.statusWriter, other.exceptionLogger);
         }
         private BuilderContext(String prefix, String timeString, DBConfiguration dbConfig, int deploymentNo, String deploymentName, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) {
+            this.dbConfig = dbConfig;
             this.buildTimestamp = timeString;
 
             this.deploymentNo = deploymentNo;
@@ -128,8 +131,6 @@ public class TBBuilder {
             // Open the program specification from when the deployment was created.
             this.sourceProgramspecDir = pathsProvider.getProgramSpecDir();
             this.programSpec = new ProgramSpec(this.sourceProgramspecDir);
-
-
         }
         
     }
