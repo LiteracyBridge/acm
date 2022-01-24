@@ -368,10 +368,10 @@ public class Tb2FirmwareUpdater extends JDialog {
                     return true;
                 }
             }
-        } catch (IOException ignored) {
+        } catch (IOException ex) {
             if (debug) {
                 System.out.println("Exception awaiting DFU:");
-                ignored.printStackTrace();
+                ex.printStackTrace();
             }
         }
         if (debug) {
@@ -453,9 +453,16 @@ public class Tb2FirmwareUpdater extends JDialog {
                 } else if (ch == '%') {
                     int progress = Integer.parseInt(numberBuilder.toString());
                     numberBuilder.delete(0, numberBuilder.length());
-                    System.out.printf("%d \n", progress);
+                    if (progress % 10 == 0) {
+                        System.out.printf("%d", progress);
+                    } else {
+                        System.out.print('.');
+                    }
                     onProgress.accept(progress);
-                    if (progress == 100) return true;
+                    if (progress == 100) {
+                        System.out.println();
+                        return true;
+                    }
                 }
             }
         } catch (IOException ignored) {

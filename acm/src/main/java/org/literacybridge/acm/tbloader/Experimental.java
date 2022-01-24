@@ -109,7 +109,7 @@ public class Experimental extends JDialog {
 
     private boolean chkdsk(ActionEvent e) {
         try {
-            return new CommandLineUtils(null).checkDisk("f:");
+            return new CommandLineUtils(null).checkDisk("f:").isSuccess();
         } catch (Exception ignored) {
         } finally {
             setVisible(false);
@@ -119,7 +119,7 @@ public class Experimental extends JDialog {
 
     private boolean chkdskF(ActionEvent e) {
         try {
-            return new CommandLineUtils(null).checkDiskAndFix("f:", null);
+            return new CommandLineUtils(null).checkDiskAndFix("f:", null).isSuccess();
         } catch (Exception ignored) {
         } finally {
             setVisible(false);

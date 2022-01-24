@@ -5,6 +5,7 @@ import org.literacybridge.acm.utils.OsUtils;
 
 import javax.swing.filechooser.FileSystemView;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -93,7 +94,7 @@ class FsRootMonitor extends Thread {
      * Does the work of geting the list of roots, looking for changes, and notifying the owner
      * of any changes.
      */
-    private synchronized void updateRoots() {
+    private synchronized void updateRoots() throws InterruptedException, InvocationTargetException {
         List<File> roots = getRoots();
         boolean needRefresh = refreshRequested.getAndSet(false);
         if (needRefresh) {
@@ -116,7 +117,12 @@ class FsRootMonitor extends Thread {
                 try {
                     rootsHandler.accept(roots);
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    if (!(ex.getCause() instanceof InterruptedException)) {
+                        System.out.println(ex);
+                        ex.printStackTrace();
+                    } else {
+                        System.out.println("FS Monitor thread terminated");
+                    }
                 }
             });
             oldList.clear();
@@ -128,13 +134,13 @@ class FsRootMonitor extends Thread {
     public void run() {
         //noinspection InfiniteLoopStatement
         while (true) {
-            if (enabled) {
-                updateRoots();
-            }
             try {
+                if (enabled) {
+                    updateRoots();
+                }
                 //noinspection BusyWait
                 sleep(MILLIS_BETWEEN_SCANS);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException | InvocationTargetException e) {
 //                e.printStackTrace();
             }
         }

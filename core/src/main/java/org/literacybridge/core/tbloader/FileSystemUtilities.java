@@ -14,19 +14,38 @@ import java.util.regex.Pattern;
 public class FileSystemUtilities {
   private  final Logger LOG = Logger.getLogger(FileSystemUtilities.class.getName());
 
-  private  File windowsUtilsDirectory = new File(".");
+  public enum RESULT { SUCCESS, FAILURE, TIMEOUT;
+
+    public boolean isSuccess() {
+      return this == SUCCESS;
+    }
+    public boolean isFailure() {
+      return !isSuccess();
+    }
+    public boolean isTimeout() {
+      return this == TIMEOUT;
+    }
+    public static RESULT result(Boolean result) {
+      if (result == null) {
+        return TIMEOUT;
+      }
+      return result ? SUCCESS : FAILURE;
+    }
+  }
+
+  private File windowsUtilsDirectory = new File(".");
 
   private  final Pattern PCT_COMPLETE = Pattern.compile("^(\\d{1,2}) percent completed\\.+$");
 
    void setUtilsDirectory(File windowsUtilsDirectory) {
-    windowsUtilsDirectory = windowsUtilsDirectory;
+     this.windowsUtilsDirectory = windowsUtilsDirectory;
   }
 
   /**
    * Runs the given command in a DOS command shell.
    * @param cmd The command, in a string.
    * @return An ad-hoc reinterpretation of the command output.
-   * @throws IOException
+   * @throws IOException if there's an InterruptedException (wait, what??)
    */
   protected String execute(String cmd) throws IOException {
     String line;
@@ -116,16 +135,16 @@ public class FileSystemUtilities {
     return errorLine == null;
   }
 
-  public  boolean checkDisk(String drive) throws IOException {
+  public  RESULT checkDisk(String drive) throws IOException {
     if (!OSChecker.WINDOWS) {
       throw new IllegalStateException("checkDisk operation is only supported on Windows");
     }
     if (drive.length() > 2) drive = drive.substring(0,2);
     String errorLine = execute(String.format("echo n|chkdsk %s", drive));
-    return errorLine == null;
+    return RESULT.result(errorLine == null);
   }
 
-  public  boolean checkDiskAndFix(String drive, String saveOutputFile) throws IOException {
+  public  RESULT checkDiskAndFix(String drive, String saveOutputFile) throws IOException {
     if (!OSChecker.WINDOWS) {
       throw new IllegalStateException("checkDisk operation is only supported on Windows");
     }
@@ -135,7 +154,7 @@ public class FileSystemUtilities {
       output.getParentFile().mkdirs();
     }
     String errorLine = execute(String.format("echo n|chkdsk /f %s > %s", drive, output.getAbsolutePath()));
-    return errorLine == null;
+    return RESULT.result(errorLine == null);
   }
 
   public  boolean relabel(String drive, String newLabel) throws IOException {

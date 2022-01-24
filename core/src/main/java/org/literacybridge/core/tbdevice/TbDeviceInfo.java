@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.literacybridge.core.tbloader.TBLoaderConstants.COMMUNITY_PROPERTY;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_PROPERTIES_NAME;
@@ -69,6 +71,7 @@ public abstract class TbDeviceInfo {
     protected final TbFile tbSystem;
     protected Properties tbDeploymentProperties;
     protected boolean corrupted = false;
+    protected boolean fsCheckTimeout = false;
 
     // Properties that are read from the Talking Book and provided to clients of the class.
     protected String serialNumber = null;
@@ -112,12 +115,28 @@ public abstract class TbDeviceInfo {
         return labelNoDriveLetter;
     }
 
+    public String getDriveLetter() {
+        Pattern driveLetter = Pattern.compile("(?i).*\\(([d-z]:)\\).*");
+        Matcher driveMatcher = driveLetter.matcher(this.label);
+        if (driveMatcher.matches()) {
+            return driveMatcher.group(1);
+        }
+        return "";
+    }
+
     public void setCorrupted() {
         this.corrupted = true;
     }
 
     public boolean isCorrupted() {
         return corrupted;
+    }
+
+    public void setFsCheckTimeout() {
+        this.fsCheckTimeout = true;
+    }
+    public boolean isFsCheckTimeout() {
+        return fsCheckTimeout;
     }
 
     public abstract boolean isSerialNumberFormatGood(String srn);

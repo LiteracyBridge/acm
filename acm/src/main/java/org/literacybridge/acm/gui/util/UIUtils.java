@@ -157,16 +157,16 @@ public class UIUtils {
     textComponent.setText(oldText);
   }
 
-  public static void invokeAndWait(final Runnable runnable) {
-    try {
+  public static void invokeAndWait(final Runnable runnable) throws InterruptedException, InvocationTargetException {
+//    try {
       if (SwingUtilities.isEventDispatchThread()) {
         runnable.run();
       } else {
         SwingUtilities.invokeAndWait(runnable);
       }
-    } catch (InvocationTargetException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
+//    } catch (InvocationTargetException | InterruptedException e) {
+//      throw new RuntimeException(e);
+//    }
   }
 
   public static String getCategoryNamesAsString(AudioItem audioItem) {

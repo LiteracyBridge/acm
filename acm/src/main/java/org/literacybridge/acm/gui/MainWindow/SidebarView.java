@@ -42,6 +42,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -949,6 +950,7 @@ public class SidebarView extends ACMContainer implements Observer {
             try {
                 Application.getFilterState().setSelectedPlaylist(null);
                 UIUtils.invokeAndWait(() -> playlistList.clearSelection());
+            } catch (InterruptedException | InvocationTargetException ignored) {
             } finally {
                 clearingSelections = false;
             }
@@ -964,6 +966,7 @@ public class SidebarView extends ACMContainer implements Observer {
                     categoryTree.clearChecking();
                     languageTree.clearChecking();
                 });
+            } catch (InterruptedException | InvocationTargetException ignored) {
             } finally {
                 clearingSelections = false;
             }

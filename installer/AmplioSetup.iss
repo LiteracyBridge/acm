@@ -25,8 +25,6 @@ DefaultDirName={%USERPROFILE}\Amplio
 DisableDirPage=yes
 DirExistsWarning=no
 DisableProgramGroupPage=no
-; Remove the following line to run in administrative install mode (install for all users.)
-PrivilegesRequired=lowest
 OutputBaseFilename=AmplioSetup
 Compression=lzma
 SolidCompression=yes

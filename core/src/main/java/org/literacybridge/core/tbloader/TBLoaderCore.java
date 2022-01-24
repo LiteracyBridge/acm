@@ -692,18 +692,25 @@ public abstract class TBLoaderCore {
         }
         if (OSChecker.WINDOWS) {
             startStep(checkDisk);
-            boolean hasDiskError = !mTbLoaderConfig.getCommandLineUtils().checkDisk(mTbDeviceInfo.getRootFile()
+            FileSystemUtilities.RESULT chkdskResult = mTbLoaderConfig.getCommandLineUtils().checkDisk(mTbDeviceInfo.getRootFile()
                 .getAbsolutePath());
-            if (hasDiskError) {
-                mProgressListener.log("Storage corrupted, attempting repair.");
-                String tbPath = mTbDeviceInfo.getRootFile().getAbsolutePath();
-                String logFileName = getCollectedOpDataDir().open("chkdsk-reformat.txt").getAbsolutePath();
-                boolean fixed = mTbLoaderConfig.getCommandLineUtils().checkDiskAndFix(tbPath, logFileName);
+            if (chkdskResult.isFailure()) {
+                boolean fixed = false;
+                if (chkdskResult.isTimeout()) {
+                    mTbDeviceInfo.setFsCheckTimeout();
+                } else {
+                    mProgressListener.log("Storage corrupted, attempting repair.");
+                    String tbPath = mTbDeviceInfo.getRootFile().getAbsolutePath();
+                    String logFileName = getCollectedOpDataDir().open("chkdsk-reformat.txt").getAbsolutePath();
+                    FileSystemUtilities.RESULT chkdskFixResult = mTbLoaderConfig.getCommandLineUtils().checkDiskAndFix(tbPath, logFileName);
+                    fixed = chkdskFixResult.isSuccess();
+                }
                 if (!fixed) {
                     mTbDeviceInfo.setCorrupted();
                     mTbHasDiskCorruption = true;
                 }
                 finishStep("Attempted repair of Talking Book storage: ", fixed?"succeded":"failed");
+                return fixed;
             } else {
                 finishStep("storage good");
             }

@@ -1236,7 +1236,12 @@ public class TBLoader extends JFrame {
             } finally {
                 opLog.finish();
                 String endMsg, endTitle;
-                if (result != null && result.gotStatistics) {
+                if (currentTbDevice.isFsCheckTimeout()) {
+                    String letter = currentTbDevice.getDriveLetter();
+                    endMsg = String.format("TB-Loader was unable to check the storage on the Talking Book device.\nPlease run 'chkdsk /f %s' and try again",
+                            letter);
+                    endTitle = "Device Check Error";
+                } else if (result != null && result.gotStatistics) {
                     endMsg = "Got Stats!";
                     endTitle = "Success";
                 } else {
@@ -1327,7 +1332,12 @@ public class TBLoader extends JFrame {
                         result.reformatOp == TBLoaderCore.Result.FORMAT_OP.failed)
                     .put("verified", result.verified);
 
-                if (result.corrupted
+                if (currentTbDevice.isFsCheckTimeout()) {
+                    String letter = currentTbDevice.getDriveLetter();
+                    endMsg = String.format("TB-Loader was unable to check the storage on the Talking Book device.\nPlease run 'chkdsk /f %s' and try again",
+                            letter);
+                    endTitle = "Device Check Error";
+                } else if (result.corrupted
                     && result.reformatOp != TBLoaderCore.Result.FORMAT_OP.succeeded) {
                     endMsg =
                         "There is an error in the Talking Book SD card, and it needs to be re-formatted."
