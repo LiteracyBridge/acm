@@ -21,8 +21,8 @@ public class UpdatePrompter {
     private static final String LATER = "Update Later";
     private static final String UPDATE_URL = "https://downloads.amplio.org/software/index.html";
 
-    private static final Calendar PROMPT_EVERY_DAY_AFTER = new Calendar.Builder().setDate(2021, 12, 15).build();
-    private static final Calendar PROMPT_EVERY_TIME_AFTER = new Calendar.Builder().setDate(2022,1,1).build();
+    private static final Calendar PROMPT_EVERY_DAY_AFTER = new Calendar.Builder().setDate(2021, 11, 15).build();
+    private static final Calendar PROMPT_EVERY_TIME_AFTER = new Calendar.Builder().setDate(2022,0,1).build();
     private static final long ONE_DAY_MILLIS = 24 * 60 * 60 * 1000;
     private static final long THREE_DAYS_MILLIS = 3 * 24 * 60 * 60 * 1000;
 
@@ -43,7 +43,7 @@ public class UpdatePrompter {
                 .withTitle("Update Required")
                 .withContents(edPane)
                 .withSize(new Dimension(475, 250))
-                .withOptions(new Object[]{NOW, LATER})
+                .withOptions(new Object[]{NOW})
                 .go();
             if (selected == 0 && openUpdateLink()) {
                 System.exit(0);
@@ -79,7 +79,7 @@ public class UpdatePrompter {
      */
     private JComponent buildUpdateText() {
         return new JLabel("<html>Updates are required to continue running Amplio's software. " +
-            "All users will be required to install these updates by December 31, 2021. <br/><br/>" +
+            "Everyone must install these updates. <br/><br/>" +
             "Click \"Update Now\" to be taken to a web page where you can perform the update.");
     }
 
