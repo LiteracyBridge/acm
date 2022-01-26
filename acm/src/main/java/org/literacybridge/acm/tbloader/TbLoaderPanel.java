@@ -986,6 +986,9 @@ public class TbLoaderPanel extends JPanel {
                 updateTb2FirmwareButton.setToolTipText("A TBv2 firmware update is not required at this time.");
             }
             updateTb2FirmwareButton.setEnabled(tbLoaderConfig.hasDfuSupport());
+            if (!tbLoaderConfig.hasDfuSupport()) {
+                updateTb2FirmwareButton.setToolTipText("<html>TBv2 support has not been installed.<br/> See https://downloads.amplio.org/software/index.html.");
+            }
         }
     }
 

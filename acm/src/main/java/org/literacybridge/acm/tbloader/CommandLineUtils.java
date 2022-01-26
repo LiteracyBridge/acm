@@ -79,34 +79,51 @@ public class CommandLineUtils extends FileSystemUtilities {
     }
 
     /**
-     * Class to determine if the STMicro DFU_Driver is installed on this computer.
+     * Class to determine if the STMicro DFU_Driver is installed on this computer. It actually looks for a registry
+     * value set by our DFU support installer, because non-privileged users can't run 'pnputil' (the best and most
+     * portable way to determine if the driver is actually installed). So, this may return incorrect results.
+     *
+     * If it returns an incorrect answer, running setup again should fix the problem.
      */
     private static class DFU_DriverDetector implements BiFunction<Writer, LineReader, Boolean> {
-        private static final Pattern STM32BOOTLOADER = Pattern.compile("(?i).*stm32bootloader.inf.*");
+        private static final Pattern INSTALLED = Pattern.compile("(?i).*DFU_installed.*REG_DWORD\\s*(0x\\d*).*");
 
         private static boolean hasDFU_Driver() {
             DFU_DriverDetector detector = new DFU_DriverDetector();
-            String[] command = new String[]{"pnputil", "/enum-drivers"};
+            String[] command = new String[]{"reg", "query", "HKLM\\Software\\Amplio-Network", "/reg:64"};
             return Boolean.TRUE.equals(runExternalCommand(command, detector));
         }
 
+        boolean foundDfu = false;
         @Override
         public Boolean apply(Writer writer, LineReader stream) {
             String line;
-            boolean foundDfu = false;
             try {
                 while ((line = stream.readLine()) != null) {
                     System.out.println(line);
-                    Matcher matcher = STM32BOOTLOADER.matcher(line);
+                    Matcher matcher = INSTALLED.matcher(line);
                     if (matcher.matches()) {
-                        System.out.println(line);
-                        foundDfu = true;
+                        gotEntry(matcher);
                     }
                 }
-                System.out.println("Got EOF on program output.");
+                System.out.println("Got EOF on DFU detector.");
             } catch (IOException ignored) {
             }
             return foundDfu;
+        }
+
+        private void gotEntry(Matcher matcher) {
+            String valueString = matcher.group(1);
+            int radix = 10;
+            int value = 0;
+            if (valueString.startsWith("0x")) {
+                valueString = valueString.substring(2);
+                radix = 16;
+            }
+            try {
+                value = Integer.parseInt(valueString, radix);
+            } catch (Exception ignored) {}
+            foundDfu |= value != 0;
         }
     }
 

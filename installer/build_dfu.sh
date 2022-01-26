@@ -6,7 +6,7 @@ dbg=""
 # This assumes that software is installed into random subdirectories of "/c/Program\ Files" and "/c/Program\ Files\ \(x86\)"
 
 inno="$(find /c/Program\ Files\ \(x86\)/Inno\ Setup\ 6/ -iname iscc.exe)"
-${dbg} "${inno}" AmplioSetup.iss 
+${dbg} "${inno}" AmplioDfuSetup.iss 
 if [ "$?" -ne "0" ]; then
     exit 1
 fi
@@ -30,7 +30,7 @@ fi
 # name=$(acquire name)
 # "${signtool}" sign /tr http://timestamp.sectigo.com /td sha256 /fd sha256 /f CodeSigning.cer /csp "eToken Base Cryptographic Provider" /k "[{{${pwd}}}]=${name} /a AmplioSetup.exe
 
-pushd Output
+pushd OutputDfu
 # ${signtool} sign ...
 # For some reason the sign tool is difficult to run correctly from bash, so create a MSDOS bat file and run that.
 # Fortunately windows recognizes '/' as the path separator in some places, and launching an application is one of
@@ -39,6 +39,10 @@ pushd Output
 echo We will now attempt to sign the AmplioSetup.exe program. NOTE: If you are not prompted for a password,
 echo the signing may appear to work, and may report that it has worked, but it WILL NOT HAVE WORKED! Yay Microsoft!
 wintool=${signtool/#\/c/c:}
-echo \""${wintool}"\" sign /tr http://timestamp.sectigo.com /td sha256 /fd sha256 /a AmplioSetup.exe>signit.bat
-${dbg}./signit.bat
+echo \""${wintool}"\" sign /tr http://timestamp.sectigo.com /td sha256 /fd sha256 /a AmplioDfuSetup.exe>signdfu.bat
+${dbg}./signdfu.bat
 popd
+
+# Put a copy in downloads.amplio.org/software, for convenience
+aws s3 sync --exclude '*' --include AmplioDfuSetup.exe ./OutputDfu/ s3://downloads.amplio.org/software/
+

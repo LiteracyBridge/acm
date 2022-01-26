@@ -54,7 +54,7 @@ public class DfuCheck {
         //noinspection UnnecessaryLocalVariable
         boolean needUpdate = TBLoader.getApplication().tbLoaderConfig.hasTbV2Devices() &&
                 OSChecker.WINDOWS &&
-                !dfuDir.isDirectory();
+                !new CommandLineUtils(null).hasDfuDriver();
         return needUpdate;
     }
 
@@ -67,7 +67,8 @@ public class DfuCheck {
         return new JLabel("<html>Additional software is needed to support Talking Book V2 devices. " +
             "You can wait until later to install the software but might not be able to load content " +
             "onto some Talking Books.<br/><br/>" +
-            "Click \"Install Now\" to be taken to a web page where you can perform the installation.");
+            "Click \"Install Now\" to be taken to a web page where you can perform the installation. Choose " +
+            "\"Install TBv2 Support\" on this page.");
     }
 
     /**
