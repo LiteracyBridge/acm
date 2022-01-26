@@ -4,6 +4,16 @@ set -eu
 traditionalIFS="$IFS"
 IFS="`printf '\n\t'`"
 
+echo "The Dropbox hosted ACM and TB-Loader no longer run."
+echo "There is no need to update them."
+read -r -p "Are you sure you want to perform the update? [y/N] " response
+if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    echo "."; # go on
+else
+    exit 99 
+fi
+
+
 function setDefaults() {
     # Find dropbox.
     if [ -z ${dropbox-} ]; then
