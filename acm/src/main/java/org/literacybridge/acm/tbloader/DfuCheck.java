@@ -1,6 +1,9 @@
 package org.literacybridge.acm.tbloader;
 
+import org.jdesktop.swingx.VerticalLayout;
 import org.literacybridge.acm.config.AmplioHome;
+import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
+import org.literacybridge.acm.gui.UIConstants;
 import org.literacybridge.acm.gui.dialogs.PopUp;
 import org.literacybridge.core.OSChecker;
 
@@ -32,7 +35,7 @@ public class DfuCheck {
                     .withMessageType(JOptionPane.WARNING_MESSAGE)
                     .withTitle("Additional Software Needed")
                     .withContents(edPane)
-                    .withSize(new Dimension(475, 250))
+                    .withSize(new Dimension(600, 300))
                     .withOptions(new Object[]{NOW, LATER})
                     .go();
             if (selected == 0 && openUpdateLink()) {
@@ -64,11 +67,31 @@ public class DfuCheck {
      * @return A JComponent containing the text.
      */
     private JComponent buildUpdateText() {
-        return new JLabel("<html>Additional software is needed to support Talking Book V2 devices. " +
+        JPanel panel = new JPanel();
+        panel.setLayout(new VerticalLayout());
+
+        panel.add(new JLabel("<html>Additional software is needed to support Talking Book V2 devices. " +
             "You can wait until later to install the software but might not be able to load content " +
             "onto some Talking Books.<br/><br/>" +
-            "Click \"Install Now\" to be taken to a web page where you can perform the installation. Choose " +
-            "\"Install TBv2 Support\" on this page.");
+            "Click \"Install Now\" to be taken to a web page where you can perform the installation. <br/>" + "" +
+                "On that page, choose \"Install TBv2 Support\".<br/><br/>"));
+
+        Color darkForestGreen = new Color(0x22, 0x8b, 0x22);
+        Dimension size = new Dimension(300, 60);
+        ImageIcon buttonIcon = new ImageIcon(UIConstants.getResource("tbv2Support.png"));
+        JLabel buttonLabel = new JLabel(buttonIcon);
+        buttonLabel.setForeground(darkForestGreen);
+        buttonLabel.setPreferredSize(size);
+        buttonLabel.setMaximumSize(size);
+        buttonLabel.setText("<html><b>&lt;=</b> Choose this to install TBv2 support.");
+        buttonLabel.setBorder(new RoundedLineBorder(darkForestGreen, 2, 8));
+        buttonLabel.setBackground(new Color(255, 255, 240));
+        buttonLabel.setOpaque(true);
+        panel.add(buttonLabel);
+
+        panel.add(new JLabel("  "));
+
+        return panel;
     }
 
     /**
