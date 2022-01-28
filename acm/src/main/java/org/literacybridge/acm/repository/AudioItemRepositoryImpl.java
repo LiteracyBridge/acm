@@ -457,11 +457,12 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         if (!sourceFile.exists()) {
             // Doesn't exist, so convert it.
             String basename = FilenameUtils.removeExtension(targetFile.getName());
-            File convertedFile = convertFile(prompt, (name, format) -> {
+            sourceFile = convertFile(prompt, (name, format) -> {
                 File testFile = new File(promptsDir, basename + '.' + format.getFileExtension());
                 return testFile.exists() ? testFile : null;
-            }, targetFormat, targetFile.getParentFile());
+            }, targetFormat, sourceFile.getParentFile());
         }
+        IOUtils.copy(sourceFile, targetFile);
 
         // Process the invitation.
         targetFile = new File(targetFile.getParentFile(), 'i'+targetFile.getName());
