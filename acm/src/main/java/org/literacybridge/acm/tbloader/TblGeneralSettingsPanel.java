@@ -7,13 +7,17 @@ import org.literacybridge.acm.gui.settings.AbstractSettingsBase;
 import org.literacybridge.acm.gui.settings.AbstractSettingsDialog;
 import org.literacybridge.core.OSChecker;
 
-import javax.swing.*;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.Arrays;
+import java.util.Collection;
 
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.LINE_START;
@@ -94,10 +98,24 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         settingsPanel.add(max16GiB, gbc);
     }
 
+    static String joiner(Collection<String> elements) {
+        StringBuilder joined = new StringBuilder();
+        int n = 0;
+        for (CharSequence cs: elements) {
+            if (++n > 1) {
+                joined.append(n==elements.size() ? ", or " : ", ");
+            }
+            joined.append('\'').append(cs).append('\'');
+        }
+        return joined.toString();
+    }
+
     private void addRequiredLabelSetting(int y) {
+        FsRootMonitor.FilterParams filterParams = TBLoader.getApplication().getFsFilterParams();
+        String labels = joiner(filterParams.allowedLabels);
         GBC gbc = protoGbc.withGridy(y);
         settingsPanel.add(new JLabel("TBs are labelled as"), gbc.withGridx(0));
-        asUsbDrive = new JCheckBox("USB Drive", OSChecker.WINDOWS);
+        asUsbDrive = new JCheckBox(labels, OSChecker.WINDOWS);
         settingsPanel.add(asUsbDrive, gbc);
     }
 

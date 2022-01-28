@@ -38,7 +38,7 @@ class FsRootMonitor extends Thread {
     public FsRootMonitor(Consumer<List<File>> rootsHandler) {
         this.filterParams = new FilterParams().minimum(2).maximum(16).forbidding("Network Drive");
         if (OsUtils.WINDOWS) {
-            filterParams.allowing("USB Drive");
+            filterParams.allowing("USB Drive", "Lecteur USB");
         }
         this.filter = this::rootsFilter;
         this.rootsHandler = rootsHandler;
@@ -46,7 +46,7 @@ class FsRootMonitor extends Thread {
     }
 
     public FilterParams getFilterParams() {
-        return filterParams;
+        return new FilterParams(filterParams);
     }
 
     public void setFilterParams(FilterParams filterParams) {
@@ -187,6 +187,15 @@ class FsRootMonitor extends Thread {
         long maxSize = Long.MAX_VALUE;
         List<String> allowedLabels = new ArrayList<>();
         List<String> forbiddenLabels = new ArrayList<>();
+
+        FilterParams() { }
+
+        FilterParams(FilterParams other) {
+            this.minSize = other.minSize;
+            this.maxSize = other.maxSize;
+            this.allowedLabels.addAll(other.allowedLabels);
+            this.forbiddenLabels.addAll(other.forbiddenLabels);
+        }
 
         FilterParams minimum(long minSize) {
             if (minSize > 1000) {

@@ -696,6 +696,9 @@ public class TBLoader extends JFrame {
 
     }
 
+    FsRootMonitor.FilterParams getFsFilterParams() {
+        return fsRootMonitor.getFilterParams();
+    }
     void setFsFilterParams(FsRootMonitor.FilterParams filterParams) {
         fsRootMonitor.setFilterParams(filterParams);
         tbLoaderPanel.resetDeviceVersion();
