@@ -17,7 +17,7 @@ public class CommandLineUtils extends FileSystemUtilities {
     private static final Logger LOG = Logger.getLogger(CommandLineUtils.class.getName());
     private final File windowsUtilsDirectory;
 
-    private static final long CHKDSK_TIMEOUT = 20 * 1000;
+    private static final long CHKDSK_TIMEOUT = 50 * 1000;
 
     public CommandLineUtils(File softwareDir) {
         this.windowsUtilsDirectory = softwareDir;
