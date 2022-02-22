@@ -376,7 +376,7 @@ class TBLoaderCoreV1 extends TBLoaderCore {
         boolean goodCard;
         if (mTbHasDiskCorruption) {
             mProgressListener.step(reformatting);
-            if (!OSChecker.WINDOWS) {
+            if (!mTbLoaderConfig.hasCommandLineUtils()) {
                 // distinction without a difference... has corruption, reformat didn't fail because
                 // no reformat was attempted.
                 result = new Result(0, false, true, Result.FORMAT_OP.noFormat, false);
@@ -394,7 +394,7 @@ class TBLoaderCoreV1 extends TBLoaderCore {
             }
         } else {
             if (!mNewDeploymentInfo.getSerialNumber().equalsIgnoreCase(mTbDeviceInfo.getLabelWithoutDriveLetter())) {
-                if (!OSChecker.WINDOWS) {
+                if (!mTbLoaderConfig.hasCommandLineUtils()) {
                     mProgressListener.log("Skipping relabeling; not supported on this OS.");
                 } else {
                     mProgressListener.step(relabelling);
@@ -412,6 +412,7 @@ class TBLoaderCoreV1 extends TBLoaderCore {
      * Derived from the "update.txt" file.
      *
      */
+    @Override
     protected void clearSystemFiles() {
         startStep(clearSystem);
 

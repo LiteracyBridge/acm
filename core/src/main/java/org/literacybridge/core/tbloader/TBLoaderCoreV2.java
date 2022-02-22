@@ -1,6 +1,7 @@
 package org.literacybridge.core.tbloader;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.fs.RelativePath;
 import org.literacybridge.core.fs.TbFile;
@@ -118,8 +119,8 @@ class TBLoaderCoreV2 extends TBLoaderCore {
                 String name = file.getName().toLowerCase();
                 if (excludedNames.contains(name)) return false;
                 if (name.charAt(0) == '.') return false;
-                // Image or backup file? Skip them.
-                return !name.endsWith(".wav") && !name.endsWith(".mp3");
+                // Audio file? Skip them.
+                return !name.endsWith(".wav") && !name.endsWith(".mp3") && !name.endsWith(".a18");
             }
         };
         mStepBytesCount += TbFile.copyDir(mTalkingBookRoot, mTalkingBookDataRoot, copyFilesFilter, mCopyListener);
@@ -190,7 +191,7 @@ class TBLoaderCoreV2 extends TBLoaderCore {
         boolean goodCard;
         if (mTbHasDiskCorruption) {
             mProgressListener.step(reformatting);
-            if (!OSChecker.WINDOWS) {
+            if (!mTbLoaderConfig.hasCommandLineUtils()) {
                 // distinction without a difference... has corruption, reformat didn't fail because
                 // no reformat was attempted.
                 result = new Result(0, false, true, Result.FORMAT_OP.noFormat, false);
@@ -207,8 +208,9 @@ class TBLoaderCoreV2 extends TBLoaderCore {
                 }
             }
         } else {
-            if (!diskLabel.equalsIgnoreCase(mTbDeviceInfo.getLabelWithoutDriveLetter())) {
-                if (!OSChecker.WINDOWS) {
+            if (StringUtils.isNotBlank(diskLabel) &&
+                    !diskLabel.equalsIgnoreCase(mTbDeviceInfo.getLabelWithoutDriveLetter())) {
+                if (!mTbLoaderConfig.hasCommandLineUtils()) {
                     mProgressListener.log("Skipping relabeling; not supported on this OS.");
                 } else {
                     mProgressListener.step(relabelling);
@@ -221,7 +223,7 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     }
 
     @Override
-    protected void clearSystemFiles() {
+    protected void clearSystemFiles() throws IOException {
         startStep(clearSystem);
         mStepFileCount += mTalkingBookRoot.open("LOST.DIR").delete(TbFile.Flags.recursive);
         mStepFileCount += mTalkingBookRoot.open("$RECYCLE.BIN").delete(TbFile.Flags.recursive);
@@ -246,7 +248,7 @@ class TBLoaderCoreV2 extends TBLoaderCore {
                 mStepFileCount += mTalkingBookRoot.open(name).delete(TbFile.Flags.recursive);
             }
         }
-        // Delete all files except QC_PASS.txt and the ID fiels from /system
+        // Delete all files except QC_PASS.txt and the ID files from /system
         TbFile system = mTalkingBookRoot.open("system");
         Set<String> keepers = new HashSet<>(Arrays.asList("QC_PASS.TXT", "DEVICE_ID.TXT", "FIRMWARE_ID.TXT"));
         names = system.list((parent, name) -> !keepers.contains(name.toUpperCase()));
@@ -257,6 +259,10 @@ class TBLoaderCoreV2 extends TBLoaderCore {
                 mStepFileCount++;
             }
         }
+        TbFile qcFile = system.open("QC_PASS.TXT");
+        if (!qcFile.exists()) {
+            eraseAndOverwriteFile(qcFile, "");
+        }
 
         finishStep();
     }
@@ -264,8 +270,6 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     @Override
     protected void updateSystemFiles() throws IOException {
         startStep(updateSystem);
-        // Sets the RTC clock.
-        eraseAndOverwriteFile(mTalkingBookRoot.open(Arrays.asList("system", "SetRTC.txt")), "");
         mTalkingBookRoot.open("log").mkdir();
         mTalkingBookRoot.open("recordings").mkdir();
         mTalkingBookRoot.open("stats").mkdir();
@@ -274,6 +278,12 @@ class TBLoaderCoreV2 extends TBLoaderCore {
         createDeploymentPropertiesFile();
 
         finishStep();
+    }
+
+    @Override
+    protected void updateSystemTime() throws IOException {
+        // Sets the RTC clock.
+        eraseAndOverwriteFile(mTalkingBookRoot.open(Arrays.asList("system", "SetRTC.txt")), "");
     }
 
     @Override

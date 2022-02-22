@@ -45,6 +45,9 @@ public class TBLoaderConfig {
         return collectedDataDirectory;
     }
 
+    public boolean hasCommandLineUtils() {
+        return fileSystemUtilities != null;
+    }
     public FileSystemUtilities getCommandLineUtils() {
         return fileSystemUtilities;
     }
@@ -78,8 +81,8 @@ public class TBLoaderConfig {
                 throw new IllegalStateException(
                     "TBLoaderConfig not initialized with " + missing.toString());
             }
-            if (fileSystemUtilities == null)
-                fileSystemUtilities = new FileSystemUtilities();
+//            if (fileSystemUtilities == null)
+//                fileSystemUtilities = new FileSystemUtilities();
             return new TBLoaderConfig(this);
         }
 

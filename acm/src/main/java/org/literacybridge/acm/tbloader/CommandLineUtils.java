@@ -17,7 +17,7 @@ public class CommandLineUtils extends FileSystemUtilities {
     private static final Logger LOG = Logger.getLogger(CommandLineUtils.class.getName());
     private final File windowsUtilsDirectory;
 
-    private static final long CHKDSK_TIMEOUT = 50 * 1000;
+    private static final long CHKDSK_TIMEOUT = 60 * 1000;
 
     public CommandLineUtils(File softwareDir) {
         this.windowsUtilsDirectory = softwareDir;
@@ -201,12 +201,12 @@ public class CommandLineUtils extends FileSystemUtilities {
     }
 
     private static class FileSystemCheck implements BiFunction<Writer, LineReader, Boolean> {
-        private static final Pattern NO_PROBLEMS = Pattern.compile("(?i).*(?:Windows has scanned the file system and found no problem|Windows a analysé le système de fichiers sans trouver de problème).*");
+        private static final Pattern NO_PROBLEMS = Pattern.compile("(?i).*(?:Windows has scanned the file system and found no problem|Windows a analys.* le syst.*me de fichiers sans trouver de probl.*).*");
         private static final Pattern CONVERT_CHAINS = Pattern.compile("(?i).*(?:(?:files.*|chains.*){2}|Convertir les liens perdus en fichiers).*\\?");
-        private static final Pattern FOUND_ERRORS = Pattern.compile("(?i).*(?:Windows found errors on the disk, but will not fix them|Windows a trouvé des erreurs sur le disque, mais ne les corrigera pas).*");
-        private static final Pattern NO_F_PARAM = Pattern.compile("(?i).*(?:because disk checking was run without the /F|effectuée sans le paramètre /F \\(correction\\)).*");
-        private static final Pattern PERCENT_COMPLETE = Pattern.compile("(?i)\\D*(\\d+) (?:percent complete|pour cent effectués).*");
-        private static final Pattern FORCE_DISMOUNT = Pattern.compile("(?i).*(?:Would you like to force a dismount on this volume|Voulez-vous forcer le démontage de ce volume) *\\? \\((Y/N|O/N)\\) ");
+        private static final Pattern FOUND_ERRORS = Pattern.compile("(?i).*(?:Windows found errors on the disk, but will not fix them|Windows a trouv.* des erreurs sur le disque, mais ne les corrigera pas).*");
+        private static final Pattern NO_F_PARAM = Pattern.compile("(?i).*(?:because disk checking was run without the /F|effectu.* sans le param.* /F \\(correction\\)).*");
+        private static final Pattern PERCENT_COMPLETE = Pattern.compile("(?i)\\D*(\\d+) (?:percent complete|pour cent effectu.*).*");
+        private static final Pattern FORCE_DISMOUNT = Pattern.compile("(?i).*(?:Would you like to force a dismount on this volume|Voulez-vous forcer le d.*montage de ce volume) *\\? \\((Y/N|O/N)\\) ");
         private static final Pattern INSUFFICIENT_PRIVILEGES = Pattern.compile("(?i).*Access Denied as you do not have sufficient privileges.*");
 
 
@@ -286,6 +286,7 @@ public class CommandLineUtils extends FileSystemUtilities {
         }
 
         private void noProblems(Writer writer, Matcher matcher) {
+            System.out.printf("Found 'no problems'.");
             hasNoProblems = true;
             result = true;
         }
@@ -365,10 +366,12 @@ public class CommandLineUtils extends FileSystemUtilities {
 
             Timer killTimer = null;
             if (timeout > 0) {
+                System.out.printf("Setting timeout for %d ms\n", timeout);
                 killTimer = new Timer();
                 killTimer.schedule(new TimerTask(){
                     @Override
                     public void run() {
+                        System.out.println("Timer expired.");
                         proc.destroy();
                     }
                 }, timeout);

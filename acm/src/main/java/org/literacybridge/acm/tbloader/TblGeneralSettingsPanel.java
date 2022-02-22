@@ -34,6 +34,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
     private JComboBox<String> srnStrategyCombo;
     private JComboBox<String> testStrategyCombo;
     private JCheckBox hasTbV2DevicesCB;
+    private JCheckBox isSuppressDosToolsCB;
 
     @Override
     public String getTitle() {
@@ -68,6 +69,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         addAllowPackageChoiceSetting(y++);
         addHasTbV2DevicesSetting(y++);
         addStrictTbV2Firmware(y++);
+        addSuppressDosTools(y++);
         addSrnStrategy(y++);
         addTestStrategy(y++);
 
@@ -169,6 +171,15 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         isStrictTbV2FirmwareCB.setSelected(TBLoader.getApplication().isStrictTbV2Firmware());
     }
 
+    private void addSuppressDosTools(int y) {
+        GBC gbc = protoGbc.withGridy(y);
+        settingsPanel.add(new JLabel("No MSDOS tools."), gbc.withGridx(0));
+        isSuppressDosToolsCB = new JCheckBox("Don't run external MSDOS commands, like 'chkdsk'.");
+        isSuppressDosToolsCB.setToolTipText("Running external commands can be problematic on non-English systems.");
+        settingsPanel.add(isSuppressDosToolsCB, gbc);
+        isSuppressDosToolsCB.setSelected(TBLoader.getApplication().isSuppressDosTools());
+    }
+
 
     @Override
     public void onCancel() {
@@ -193,6 +204,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         tbLoaderApp.setTestStrategy(testStrategyCombo.getSelectedIndex());
         tbLoaderApp.setHasTbV2Devices(hasTbV2DevicesCB.isSelected());
         tbLoaderApp.setStrictTbV2Firmware(isStrictTbV2FirmwareCB.isSelected());
+        tbLoaderApp.setSuppressDosTools(isSuppressDosToolsCB.isSelected());
     }
 
     /**

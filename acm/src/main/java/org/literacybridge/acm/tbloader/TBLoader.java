@@ -80,11 +80,13 @@ public class TBLoader extends JFrame {
         private boolean hasDfuSupport;
         private boolean hasTbV2Devices;
         private boolean allowPackageChoice = false;
+        private boolean suppressDosTools = false;
 
         public boolean hasTbV2Devices() { return hasTbV2Devices; }
         public boolean hasDfuSupport() { return hasDfuSupport; }
         public boolean isStrictTbV2FIrmware() { return strictTbV2Firmware; }
         public boolean allowPackageChoice() { return allowPackageChoice; }
+        public boolean isSuppressDosTools() { return suppressDosTools; }
     }
     final TbLoaderConfig tbLoaderConfig = new TbLoaderConfig();
 
@@ -632,6 +634,8 @@ public class TBLoader extends JFrame {
         return this.tbLoaderConfig.hasTbV2Devices;
     }
 
+    public boolean isSuppressDosTools() { return this.tbLoaderConfig.suppressDosTools; }
+    public void setSuppressDosTools(boolean suppress) { this.tbLoaderConfig.suppressDosTools = suppress; }
 
     /**
      * Looks in the ~/LiteracyBridge/TB-Loaders/{project}/content/{deployment}/basic directory
@@ -719,13 +723,15 @@ public class TBLoader extends JFrame {
         File collectedDataDirectory = new File(collectionWorkDir, collectionTimestamp);
         TbFile collectedDataTbFile = new FsFile(collectedDataDirectory);
 
-        return new TBLoaderConfig.Builder().withTbLoaderId(deviceIdHex)
+        TBLoaderConfig.Builder builder = new TBLoaderConfig.Builder().withTbLoaderId(deviceIdHex)
             .withCollectedDataDirectory(collectedDataTbFile)
             .withTempDirectory(temporaryDir)
-            .withFileSystemUtilities(commandLineUtils)
             .withUserEmail(userEmail)
-            .withUserName(userName)
-            .build();
+            .withUserName(userName);
+        if (!tbLoaderConfig.suppressDosTools) {
+            builder.withFileSystemUtilities(commandLineUtils);
+        }
+        return builder.build();
     }
 
     /**

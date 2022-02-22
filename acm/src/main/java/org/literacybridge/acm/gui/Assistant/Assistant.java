@@ -98,7 +98,7 @@ public class Assistant<Context> extends JDialog {
         navigate(0);
 
         setMinimumSize(factory.size==null ? new Dimension(800,600) : factory.size);
-        setLocation(factory.owner.getX()+20, factory.owner.getY()+20);
+        setLocation(factory.owner.getX()+20, factory.owner.getY()+30);
 
         addEscapeListener(this);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);

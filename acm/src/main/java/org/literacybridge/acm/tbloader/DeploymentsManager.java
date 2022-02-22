@@ -56,14 +56,16 @@ class DeploymentsManager {
             AvailableDeployments ad = getAvailableDeployments();
             LocalDeployment ld = getLocalDeployment();
 
-            if (ad.isMissingLatest()) {
+            if (ld.isUnpublished) {
+                state = State.OK_Unpublished;
+            } else if (ad.isMissingLatest()) {
                 state = State.Missing_Latest;
             } else if (ld.errorMessage != null) {
                 state = State.Bad_Local;
             } else if (ld.localRevision == null) {
                 state = State.No_Deployment;
-            } else if (ld.isUnpublished) {
-                state = State.OK_Unpublished;
+//            } else if (ld.isUnpublished) {
+//                state = State.OK_Unpublished;
             } else if (ad.isOffline()) {
                 state = State.OK_Cached;
             } else if (ld.localRevision.equalsIgnoreCase(ad.getCurrentRevId())) {

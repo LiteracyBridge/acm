@@ -52,6 +52,7 @@ public class FileSystemUtilities {
     String errorLine = null;
     LOG.log(Level.INFO, "TBL!: Executing:" + cmd);
     if (!cmd.startsWith("cmd /C ")) cmd = "cmd /C " + cmd;
+    System.out.printf("Running command: %s\n", cmd);
     Process proc = Runtime.getRuntime().exec(cmd);
 
     // Stdout is called the "InputStream". Hopefully, someone at Sun was fired for that...
@@ -84,6 +85,7 @@ public class FileSystemUtilities {
     do {
       line = br.readLine();
       if (line != null) {
+        System.out.println(line);
         line = line.trim();
         Matcher matcher = PCT_COMPLETE.matcher(line);
         if (!matcher.matches()) {

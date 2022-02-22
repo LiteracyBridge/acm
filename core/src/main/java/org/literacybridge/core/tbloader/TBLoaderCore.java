@@ -547,9 +547,11 @@ public abstract class TBLoaderCore {
 
                 mProgressListener.step(finishing);
 
-                verified = verifyTalkingBook();
-
                 forceFirmwareRefresh();
+
+                updateSystemTime();
+
+                verified = verifyTalkingBook();
 
                 listDeviceFilesPostUpdate();
 
@@ -605,12 +607,13 @@ public abstract class TBLoaderCore {
     protected abstract void clearUserRecordings();
     protected abstract void clearFeedbackCategories();
     protected abstract Result reformatRelabel() throws IOException;
-    protected abstract void clearSystemFiles();
+    protected abstract void clearSystemFiles() throws IOException;
     protected abstract void updateSystemFiles() throws IOException;
     protected abstract void updateContent() throws IOException;
     protected abstract void updateCommunity() throws IOException;
     protected abstract boolean verifyTalkingBook();
     protected abstract void forceFirmwareRefresh();
+    protected void updateSystemTime() throws IOException {}
 
     /**
      * A helper class to filter content. Tracks "shadowed" files for later copying with the real thing,
@@ -690,7 +693,7 @@ public abstract class TBLoaderCore {
         if (!goodCard) {
             return false;
         }
-        if (OSChecker.WINDOWS) {
+        if (mTbLoaderConfig.hasCommandLineUtils()) {
             startStep(checkDisk);
             FileSystemUtilities.RESULT chkdskResult = mTbLoaderConfig.getCommandLineUtils().checkDisk(mTbDeviceInfo.getRootFile()
                 .getAbsolutePath());
@@ -739,8 +742,10 @@ public abstract class TBLoaderCore {
     protected void createDeploymentPropertiesFile() throws IOException {
         TbFile system = mTalkingBookRoot.open("system");
         String currentFirmware = mOldDeploymentInfo.getFirmwareRevision();
-        boolean needFirmware = !(mBuilder.mAcceptableFirmware.contains(currentFirmware)) ||
-                currentFirmware.equals(UNKNOWN) || mBuilder.mRefreshFirmware;
+        boolean needFirmware = currentFirmware==null ||
+                !mBuilder.mAcceptableFirmware.contains(currentFirmware) ||
+                currentFirmware.equals(UNKNOWN) ||
+                mBuilder.mRefreshFirmware;
         // 'properties' format file, with useful information for statistics gathering (next time around).
         PropsWriter props = new PropsWriter();
         props
@@ -1069,7 +1074,7 @@ public abstract class TBLoaderCore {
      * it may be completely impossible to disconnect the drive, and no exception is thrown.
      */
     private void disconnectDevice() throws IOException {
-        if (OSChecker.WINDOWS) {
+        if (OSChecker.WINDOWS && mTbLoaderConfig.hasCommandLineUtils()) {
             mProgressListener.log("Disconnecting TB");
             mTbLoaderConfig.getCommandLineUtils().disconnectDrive(mTbDeviceInfo.getRootFile().getAbsolutePath());
         }

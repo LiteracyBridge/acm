@@ -1007,7 +1007,8 @@ public class TbLoaderPanel extends JPanel {
             // Must not require updating (TBv2) firmware.
             enabled = enabled && !(isV2FirmwareUpdateRequired() && tbLoaderConfig.isStrictTbV2FIrmware());
         }
-        enabled = enabled && (getDeviceVersion() == TbDeviceInfo.DEVICE_VERSION.TBv1 || getDeviceVersion() == TbDeviceInfo.DEVICE_VERSION.TBv2);
+        enabled = enabled && (getDeviceVersion() == TbDeviceInfo.DEVICE_VERSION.TBv1 ||
+                getDeviceVersion() == TbDeviceInfo.DEVICE_VERSION.TBv2);
         goButton.setEnabled(enabled);
         goButton.setBackground(enabled ? Color.GREEN : defaultButtonBackgroundColor);
         goButton.setForeground(enabled ? Color.BLACK : Color.GRAY);
