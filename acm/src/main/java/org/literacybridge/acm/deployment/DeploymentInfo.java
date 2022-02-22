@@ -127,6 +127,11 @@ public class DeploymentInfo {
             return hasTutorial;
         }
 
+        /**
+         * "Prune" the package info by removing playlists that don't have content. It could be that there are
+         * no messages in the package's language.
+         * @return the package info, with empty playlists removed. Note that the packageinfo is mutated.
+         */
         public PackageInfo prune() {
             List<PlaylistInfo> pruned = playlists.stream()
                 .map(PlaylistInfo::prune)

@@ -30,7 +30,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
     private final PromptModel promptModel;
     private final JComboBox<String> languageChooser;
 
-    private DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
+    private final DBConfiguration dbConfig = ACMConfiguration.getInstance().getCurrentDB();
     private final JScrollPane previewScrollPane;
     private final JCheckBox previewMessage;
 
@@ -158,10 +158,7 @@ public class PromptWelcomePage extends AcmAssistantPage<PromptImportContext> {
     private void getProgramInformation() {
         context.specLanguagecodes = context.getProgramSpec().getLanguageCodes();
         // Use a linked hash set to preserve the order of languages, as specified in the config file.
-        context.configLanguagecodes = dbConfig.getAudioLanguages()
-            .stream()
-            .map(Locale::getLanguage)
-            .collect(Collectors.toCollection(LinkedHashSet::new));
+        context.configLanguagecodes = new LinkedHashSet<>(dbConfig.getAudioLanguageCodes());
     }
 
     private void fillPromptList() {

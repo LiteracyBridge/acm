@@ -13,6 +13,7 @@ import javax.swing.*;
 import java.awt.Color;
 import java.awt.Component;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -67,10 +68,7 @@ public abstract class AcmAssistantPage<Context> extends AssistantPage<Context> {
         // Languages from the program spec.
         Set<String> languageCodes = programSpec.getLanguagesForDeployment(deploymentNo);
         // Languages from the program's "properties.config"
-        Set<String> configLanguageCodes = ACMConfiguration.getInstance().getCurrentDB().getAudioLanguages()
-                .stream()
-                .map(Locale::toString)
-                .collect(Collectors.toSet());
+        Set<String> configLanguageCodes = new HashSet<>(ACMConfiguration.getInstance().getCurrentDB().getAudioLanguageCodes());
         languageCodes.addAll(configLanguageCodes);
         fillLanguageChooser(languageChooser, languageCodes, defaultLanguageCode);
     }

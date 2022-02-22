@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -575,6 +576,23 @@ public class DBConfiguration {
 
     public List<Locale> getAudioLanguages() {
         return getLanguageLabelProvider().getAudioLanguages();
+    }
+
+    /**
+     * Gets the list of language codes defined in the config file, as language codes, not as locales.
+     * @return The language codes from config.properties.
+     */
+    public List<String> getAudioLanguageCodes() {
+        return getAudioLanguages()
+            .stream()
+            .map(locale -> {
+                String l = locale.getLanguage();
+                if (StringUtils.isNotBlank(locale.getCountry())) {
+                    l += '-' + locale.getCountry().toLowerCase();
+                }
+                return l;
+            })
+            .collect(Collectors.toList());
     }
 
     private void InitializeAcmConfiguration() {

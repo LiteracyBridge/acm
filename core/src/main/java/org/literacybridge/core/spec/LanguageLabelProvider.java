@@ -17,10 +17,10 @@ public class LanguageLabelProvider {
      * Parses the language labels from the 'AUDIO_LANGUAGES' String property
      * contained in the config.properties file. The appropriate line in the file
      * has the following format:
-     * AUDIO_LANGUAGES=en,dga("Dagaare"),twi("Twi"),sfw("Sehwi")
+     * AUDIO_LANGUAGES=en,dga("Dagaare"),twi("Twi"),sfw("Sehwi"),tlh-en("Klingon with EN")
      */
     private final static Pattern LANGUAGE_LABEL_PATTERN = Pattern
-        .compile("^([a-zA-Z]{2,})(?:\\(\"(.+)\"\\))?$");
+        .compile("^([a-zA-Z]{2,}(?:-[a-zA-Z]+)?)(?:\\(\"(.+)\"\\))?$");
 
     private final List<Locale> audioLanguages = new ArrayList<>();
     private final Map<Locale, String> languageLabels = new HashMap<>();
