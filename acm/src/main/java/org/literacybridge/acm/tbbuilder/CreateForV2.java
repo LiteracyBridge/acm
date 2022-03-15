@@ -157,7 +157,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
 
     @Override
     public String getPackageName(PackageInfo packageInfo) {
-        return packageInfo.getName();
+        return packageInfo.getShortName();
     }
 
     /**

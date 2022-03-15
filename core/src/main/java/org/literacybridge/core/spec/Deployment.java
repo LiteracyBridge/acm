@@ -10,7 +10,7 @@ public class Deployment {
 
     public enum columns {
         /*project,*/
-        /*deployment, deploymentname,*/
+        deployment, deploymentname,
         deploymentnumber,
         deployment_num, startdate, enddate, component/*distribution,comment*/
     }
@@ -32,14 +32,22 @@ public class Deployment {
     public final Date startdate;
     public final Date enddate;
     public final StringFilter componentFilter;
+    public final String deployment;
+    public final String deploymentname;
 
-    public Deployment(String deploymentnumber, String startdate, String enddate, String component)
-        throws ParseException
+    public Deployment(String deploymentnumber,
+                      String startdate,
+                      String enddate,
+                      String component,
+                      String deployment, String deploymentname)
+            throws ParseException
     {
         this.deploymentnumber = Integer.parseInt(deploymentnumber);
         this.startdate = simpleDateFormat.parse(startdate);
         this.enddate = simpleDateFormat.parse(enddate);
         this.componentFilter = new StringFilter(component);
+        this.deployment = deployment;
+        this.deploymentname = deploymentname;
     }
 
     public Deployment(Map<String, String> properties) throws ParseException {
@@ -48,6 +56,8 @@ public class Deployment {
         this.startdate = simpleDateFormat.parse(properties.get(columns.startdate.name()));
         this.enddate = simpleDateFormat.parse(properties.get(columns.enddate.name()));
         this.componentFilter = new StringFilter(properties.get(columns.component.name()));
+        this.deployment = properties.get(columns.deployment.name());
+        this.deploymentname = properties.get(columns.deploymentname.name());
     }
 
 }

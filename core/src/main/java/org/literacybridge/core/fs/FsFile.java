@@ -1,5 +1,7 @@
 package org.literacybridge.core.fs;
 
+import org.apache.commons.io.FileUtils;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,7 +46,15 @@ public class FsFile extends TbFile {
 
     @Override
     public void renameTo(String newName) {
-        file.renameTo(new File(newName));
+        try {
+            if (file.isDirectory()) {
+                FileUtils.moveDirectory(file, new File(newName));
+            } else {
+                FileUtils.moveFile(file, new File(newName));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -109,12 +119,7 @@ public class FsFile extends TbFile {
     @Override
     public String[] list(final FilenameFilter filter) {
         final FsFile self = this;
-        return file.list(new java.io.FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return filter.accept(self, name);
-            }
-        });
+        return file.list((dir, name) -> filter.accept(self, name));
     }
 
     @Override

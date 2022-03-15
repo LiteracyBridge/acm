@@ -9,6 +9,7 @@ public abstract class ProgressListener {
         ready("Ready"),
         starting("Starting"),
         checkDisk("Checking SD card"),
+        fixupDirectories("Fixing device directory names"),
         listDeviceFiles("Listing device files"),
         gatherDeviceFiles("Gathering device files", true),
         gatherUserRecordings("Gathering user recordings", true),
@@ -47,32 +48,32 @@ public abstract class ProgressListener {
 
     /**
      * Called when the TB-Loader begins a new step.
-     * @param step
+     * @param step The step being started.
      */
     public abstract void step(Steps step);
 
     /**
      * Called with some detailed value, such as a file name.
-     * @param value
+     * @param value being reported.
      */
     public abstract void detail(String value);
 
     /**
      * Called to add a value to the log.
-     * @param value
+     * @param value to be logged.
      */
     public abstract void log(String value);
 
     /**
      * Called to add a value to the log, possibly appending to the most recent line.
-     * @param append
-     * @param value
+     * @param append If true, append to most recent log line; otherwise log to a new line.
+     * @param value to be added to the log.
      */
     public abstract void log(boolean append, String value);
 
     /**
      * Call to log an error value. Implementors can override to provide error UI.
-     * @param value
+     * @param value in error.
      */
     public void error(String value) {log(value);}
 }

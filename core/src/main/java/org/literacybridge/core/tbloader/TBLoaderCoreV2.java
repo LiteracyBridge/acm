@@ -6,6 +6,7 @@ import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.fs.RelativePath;
 import org.literacybridge.core.fs.TbFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -18,18 +19,19 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.literacybridge.core.fs.TbFile.Flags.contentRecursive;
-import static org.literacybridge.core.tbloader.ProgressListener.Steps.clearStats;
-import static org.literacybridge.core.tbloader.ProgressListener.Steps.clearSystem;
-import static org.literacybridge.core.tbloader.ProgressListener.Steps.clearUserRecordings;
-import static org.literacybridge.core.tbloader.ProgressListener.Steps.gatherDeviceFiles;
-import static org.literacybridge.core.tbloader.ProgressListener.Steps.gatherUserRecordings;
-import static org.literacybridge.core.tbloader.ProgressListener.Steps.reformatting;
-import static org.literacybridge.core.tbloader.ProgressListener.Steps.relabelling;
-import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateContent;
-import static org.literacybridge.core.tbloader.ProgressListener.Steps.updateSystem;
+import static org.literacybridge.core.tbloader.ProgressListener.Steps.*;
 
 @SuppressWarnings("RedundantThrows")
 class TBLoaderCoreV2 extends TBLoaderCore {
+
+    public static final String BOOTCOUNT_TXT = "bootcount.txt";
+    public static final String LOGS_DIR = "log";
+    public static final String STATS_DIR = "stats";
+    public static final String SYSTEM_DIR = "system";
+    public static final String RECORDINGS_DIR = "recordings";
+    public static final String SET_RTC_TXT = "SetRTC.txt";
+    public static final String DONT_SET_RTC_TXT = "dontSetRTC.txt";
+
     TBLoaderCoreV2(Builder builder) {
         super(builder);
     }
@@ -104,12 +106,32 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     }
 
     @Override
+    protected void fixupDirectories() throws IOException {
+        startStep(fixupDirectories);
+        final Set<String> namesToFix = new HashSet<>(Arrays.asList("LOG",
+                "STATS",
+                "SYSTEM"));
+        String[] names = mTalkingBookRoot.list((parent, name) -> namesToFix.contains(name));
+        for (String name : names) {
+            TbFile toFix = mTalkingBookRoot.open(name);
+            String newName = mTalkingBookRoot.getAbsolutePath() + File.separatorChar + name + "_tl";
+            toFix.renameTo(newName);
+            toFix = mTalkingBookRoot.open(name+"_tl");
+            newName = mTalkingBookRoot.getAbsolutePath() + File.separatorChar + name.toLowerCase();
+            toFix.renameTo(newName);
+        }
+
+        finishStep();
+    }
+
+
+    @Override
     protected void gatherDeviceFiles() throws IOException {
         startStep(gatherDeviceFiles);
         // Filter to exclude certain named files or directories, anything starting with ".", or ending with ".img" or ".old".
         TbFile.CopyFilter copyFilesFilter = new TbFile.CopyFilter() {
             final Set<String> excludedNames = new HashSet<>(Arrays.asList("$recycle.bin",
-                "recordings",
+                    RECORDINGS_DIR,
                 "android",
                 "config.bin",
                 "lost.dir",
@@ -131,7 +153,7 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     protected void gatherUserRecordings() throws IOException {
         startStep(gatherUserRecordings);
         // Build the user recordings source path.
-        TbFile recordingsSrc = mTalkingBookRoot.open("recordings");
+        TbFile recordingsSrc = mTalkingBookRoot.open(RECORDINGS_DIR);
         // Build the user recordings destination path.
         TbFile recordingsDst = getCollectedUfDataDir();
 
@@ -161,15 +183,18 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     @Override
     protected void clearStatistics() throws IOException {
         startStep(clearStats);
-        mTalkingBookRoot.open("log").delete(contentRecursive);
-        mTalkingBookRoot.open("stats").delete(contentRecursive);
+        mTalkingBookRoot.open(LOGS_DIR).delete(contentRecursive);
+        mTalkingBookRoot.open(STATS_DIR).delete(contentRecursive);
+        // Delete system/bootcount.txt so that the logs will start with a new number.
+        TbFile system = mTalkingBookRoot.open(SYSTEM_DIR);
+        system.open(BOOTCOUNT_TXT).delete();
         finishStep();
     }
 
     @Override
     protected void clearUserRecordings() {
         startStep(clearUserRecordings);
-        mTalkingBookRoot.open("recordings").delete(contentRecursive);
+        mTalkingBookRoot.open(RECORDINGS_DIR).delete(contentRecursive);
         finishStep();
     }
 
@@ -178,10 +203,28 @@ class TBLoaderCoreV2 extends TBLoaderCore {
         // TBD
     }
 
+    private String encode(int i) {
+        String chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
+        StringBuilder result = new StringBuilder();
+        i = Math.abs(i);
+        while (i > 0) {
+            char ch = chars.charAt(i%chars.length());
+            result.insert(0, ch);
+            i = i / chars.length();
+        }
+        return result.toString();
+    }
+
     private String labelFromArmSn(String armSn) {
-        int lastDotIx = armSn.lastIndexOf('.');
-        if (lastDotIx >= 0 && lastDotIx<armSn.length()-1) armSn = armSn.substring(lastDotIx+1);
-        return armSn;
+        String[] parts = armSn.split("\\.");
+        int x = Integer.parseInt(parts[0], 16);
+        int y = Integer.parseInt(parts[1], 16);
+        int w = Integer.parseInt(parts[2], 16);
+        String r = encode(x) + encode(y) +
+                encode(w) +
+                parts[3];
+        if (r.length() > 11) r = r.substring(0, 11);
+        return r;
     }
 
     @Override
@@ -249,7 +292,7 @@ class TBLoaderCoreV2 extends TBLoaderCore {
             }
         }
         // Delete all files except QC_PASS.txt and the ID files from /system
-        TbFile system = mTalkingBookRoot.open("system");
+        TbFile system = mTalkingBookRoot.open(SYSTEM_DIR);
         Set<String> keepers = new HashSet<>(Arrays.asList("QC_PASS.TXT", "DEVICE_ID.TXT", "FIRMWARE_ID.TXT"));
         names = system.list((parent, name) -> !keepers.contains(name.toUpperCase()));
         if (names != null) {
@@ -270,9 +313,9 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     @Override
     protected void updateSystemFiles() throws IOException {
         startStep(updateSystem);
-        mTalkingBookRoot.open("log").mkdir();
-        mTalkingBookRoot.open("recordings").mkdir();
-        mTalkingBookRoot.open("stats").mkdir();
+        mTalkingBookRoot.open(LOGS_DIR).mkdir();
+        mTalkingBookRoot.open(RECORDINGS_DIR).mkdir();
+        mTalkingBookRoot.open(STATS_DIR).mkdir();
 
         // 'properties' format file, with useful information for statistics gathering (next time around).
         createDeploymentPropertiesFile();
@@ -283,7 +326,10 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     @Override
     protected void updateSystemTime() throws IOException {
         // Sets the RTC clock.
-        eraseAndOverwriteFile(mTalkingBookRoot.open(Arrays.asList("system", "SetRTC.txt")), "");
+        // Delete system/bootcount.txt so that the logs will start with a new number.
+        TbFile system = mTalkingBookRoot.open(SYSTEM_DIR);
+        eraseAndOverwriteFile(system.open(SET_RTC_TXT), "");
+        system.open(DONT_SET_RTC_TXT).delete();
     }
 
     @Override
@@ -364,8 +410,8 @@ class TBLoaderCoreV2 extends TBLoaderCore {
     protected boolean verifyTalkingBook() {
         boolean verified;
         // A file, more or less at random.
-        TbFile system = mTalkingBookRoot.open("system");
-        verified = system.open("SetRTC.txt").exists();
+        TbFile system = mTalkingBookRoot.open(SYSTEM_DIR);
+        verified = system.open(TBLoaderConstants.DEPLOYMENT_PROPERTIES_NAME).exists();
         return verified;
     }
 

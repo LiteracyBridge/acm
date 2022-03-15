@@ -511,6 +511,8 @@ public abstract class TBLoaderCore {
                 return new Result();
             }
 
+            fixupDirectories();
+
             listDeviceFiles();
 
             gatherDeviceFiles();
@@ -549,14 +551,17 @@ public abstract class TBLoaderCore {
 
                 forceFirmwareRefresh();
 
-                updateSystemTime();
-
                 verified = verifyTalkingBook();
-
-                listDeviceFilesPostUpdate();
-
-                delayForAndroid();
             }
+
+            updateSystemTime();
+
+            // Next two serve no function other than to take up time. The Android implementation of USB mass storage
+            // does not provide a means to flush file operations, so this busy work gives the file system time to
+            // settle. (And, yes, Android's USB mass storage support is very poor.)
+            listDeviceFilesPostUpdate();
+            delayForAndroid();
+
 
         } catch (Throwable e) {
             LOG.log(Level.WARNING, "TBL!: Unable to update Talking Book:", e);
@@ -601,6 +606,7 @@ public abstract class TBLoaderCore {
         return result;
     }
 
+    protected void fixupDirectories() throws IOException {}
     protected abstract void gatherDeviceFiles() throws IOException;
     protected abstract void gatherUserRecordings() throws IOException;
     protected abstract void clearStatistics() throws IOException;

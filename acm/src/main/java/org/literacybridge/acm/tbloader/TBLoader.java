@@ -1266,6 +1266,27 @@ public class TBLoader extends JFrame {
             String recipientid = tbLoaderPanel.getSelectedRecipient().recipientid;
             String directory = getMappedDirectoryForRecipient(recipientid);
             List<String> selectedPackages = tbLoaderPanel.getSelectedPackages();
+
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // HACK to work around problem with encoded package names.
+            if (newProject.equals("UNICEF-GH-CHPS") && currentTbDevice.getDeviceVersion()== TbDeviceInfo.DEVICE_VERSION.TBv1) {
+                selectedPackages = selectedPackages.stream()
+                        .map(pkg -> {
+                            switch (pkg) {
+                                case "UNICEF-GH-CHPS-5-dga":
+                                    return "NCF-GH-CHPS5dga";
+                                case "UNICEF-GH-CHPS-5-en":
+                                    return "UNICEF-GH-CHPS5en";
+                                case "UNICEF-GH-CHPS-5-ssl":
+                                    return "NCF-GH-CHPS5ssl";
+                            }
+                            return pkg;})
+                        .collect(Collectors.toList());
+            }
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
             assert(tbLoaderPanel.getNewSrn().equals(newTbSrn));
             assert(recipientid.equals(getRecipientIdForCommunity(directory)));
             DeploymentInfo.DeploymentInfoBuilder builder = new DeploymentInfo.DeploymentInfoBuilder()
@@ -1400,7 +1421,11 @@ public class TBLoader extends JFrame {
                     endTitle = "Success";
                 } else {
                     if (endMsg == null) {
-                        endMsg = "Update failed verification.  Try again or replace memory card.";
+                        if (tbLoaderPanel.getDeviceVersion() == TbDeviceInfo.DEVICE_VERSION.TBv2) {
+                            endMsg = "Update failed verification.  Please try again.";
+                        } else {
+                            endMsg = "Update failed verification.  Try again or replace memory card.";
+                        }
                     }
                     if (endTitle == null) {
                         endTitle = "Failure";

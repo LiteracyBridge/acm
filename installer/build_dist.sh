@@ -38,3 +38,6 @@ cp -av ./images/* ./ACM/images/
 
 # JRE
 # cp -av ./jre ./ACM/
+
+# Utilities
+cp -av ./utils/* ./ACM/
