@@ -88,11 +88,11 @@ public class S3SyncDialog extends JDialog {
 
     // How to have a synchronized boolean.
     private boolean syncDone;
-    private Throwable syncError;
+    private Object syncError;
     private synchronized void setSyncDone() {
         syncDone = true;
     }
-    private synchronized void setSyncError(Throwable syncError) {
+    private synchronized void setSyncError(Object syncError) {
         this.syncError = syncError;
     }
     private synchronized boolean isSyncDone() {
@@ -301,7 +301,7 @@ public class S3SyncDialog extends JDialog {
                 CloudSync.RemoteResponse response;
                 response = CloudSync.sync(program);
                 if (response.responseHasError) {
-                    setSyncError(new Exception("Exception synchronizing "+program));
+                    setSyncError("An error occurred while synchronizing " + program + ":\n" + response.responseData.toString());
                     return null;
                 }
             } catch (Throwable whatever) {
