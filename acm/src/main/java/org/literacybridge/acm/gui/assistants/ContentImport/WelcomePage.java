@@ -11,6 +11,7 @@ import org.literacybridge.acm.gui.assistants.util.PSContent;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataStore;
 import org.literacybridge.acm.store.Playlist;
+import org.literacybridge.acm.store.Transaction;
 import org.literacybridge.core.spec.ContentSpec;
 import org.literacybridge.core.spec.ProgramSpec;
 
@@ -46,7 +47,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
     private final Box titlePreviewBox;
     private final JScrollPane titlePreviewScroller;
     private final JComponent noContentWarningBox;
-    private ContentImportBase.ImportReminderLine noContentWarningLine;
+    private final ContentImportBase.ImportReminderLine noContentWarningLine;
 
     private final DefaultMutableTreeNode progSpecRootNode;
     private final DefaultTreeModel progSpecTreeModel;
@@ -391,7 +392,6 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
                 PlaylistPrompts prompts = context.playlistPromptsMap.get(title);
                 if (context.introMessageCategoryName.equalsIgnoreCase(title)) {
                     tooltip = "Special 'Playlist' for Intro Message, which has no prompts.";
-                    icon = null;
                 } else {
                     boolean hasPrompt = promptNode.isLongPrompt() ?
                                         prompts.hasLongPrompt() :
@@ -411,6 +411,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
             return comp;
         }
     };
+
     /**
      * Create the given playlist, if it doesn't already exist. The playlist will be
      * named like "1-Malaria_Prevention-dga", with deployment #, playlist name, and
@@ -429,19 +430,33 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         List<ContentSpec.PlaylistSpec> contentPlaylistSpecs = context.getProgramSpec().getContentSpec()
                                                                                  .getDeployment(deploymentNo)
                                                                                  .getPlaylistSpecsForLanguage(languagecode);
+        Transaction transaction = this.store.newTransaction();
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
             String plName = AudioUtils.decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
             if (!acmPlaylists.containsKey(plName)) {
                 Playlist playlist = store.newPlaylist(plName);
-                try {
-                    context.createdPlaylists.add(plName);
-                    store.commit(playlist);
-                    anyAdded = true;
-                } catch (IOException e) {
-                    LOG.log(Level.WARNING, "Unable to create playlist with name " + plName, e);
+                context.createdPlaylists.add(plName);
+                transaction.add(playlist);
+                anyAdded = true;
+                for (ContentSpec.MessageSpec contentMessageSpec : contentPlaylistSpec.getMessageSpecs()) {
+                    AudioItem item = findAudioItemForTitle(contentMessageSpec.title, languagecode);
+                    if (item != null) {
+                        playlist.addAudioItem(item);
+                        transaction.add(playlist);
+                    }
                 }
             }
         }
+        try {
+            if (transaction.size() > 0) {
+                transaction.commit();
+            } else {
+                transaction.rollback();
+            }
+        } catch (IOException e) {
+            LOG.log(Level.WARNING, "Unable to create playlist(s)", e);
+        }
+
         if (anyAdded) {
             Application.getMessageService().pumpMessage(new SidebarView.PlaylistsChanged());
         }
