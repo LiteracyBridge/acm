@@ -129,6 +129,12 @@ class CreateForV2 extends CreateFromDeploymentInfo {
     public static final List<String> requiredFirmwareFiles = Arrays.asList("TBookRev2b.hex", "firmware_built.txt");
     public static final List<String> requiredCSMFiles = Arrays.asList("control_def.txt", "csm_data.txt");
 
+    public final static List<String> TUTORIAL_V2_MESSAGES = Arrays.asList(
+            // 22 and 23 are speed control, not implemented in v2
+            "16", "17", "19", "20", "21", /*"22", "23",*/ "24", "25", "26", "28", "54"
+    );
+
+
     public static boolean isValidFirmwareSource(File maybeFirmware) {
         if (maybeFirmware == null || !maybeFirmware.isDirectory()) return false;
         Set<String> foundFiles = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
@@ -192,7 +198,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
         // Look for an override in the program's TB_Options directory.
         File sourceFirmwareDir = new File(builderContext.sourceTbOptionsDir, "firmware.v2");
         if (!isValidFirmwareSource(sourceFirmwareDir)) {
-            // Fall back to the system default.
+            // Fall back to the system default, ~/Amplio/ACM/firmware.v2
             sourceFirmwareDir = new File(AmplioHome.getAppSoftwareDir(), "firmware.v2");
         }
         File stagedFirmwareDir = new File(builderContext.stagedDeploymentDir, "firmware.v2");
@@ -517,7 +523,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
             // Look for an override in the program's TB_Options directory.
             File sourceSystemDir = new File(builderContext.sourceTbOptionsDir, "system.v2");
             if (!isValidCSMSource(sourceSystemDir)) {
-                // Fall back to the system default.
+                // Fall back to the system default, ~/Amplio/ACM/system.v2
                 sourceSystemDir = new File(AmplioHome.getAppSoftwareDir(), "system.v2");
             }
 
@@ -558,27 +564,24 @@ class CreateForV2 extends CreateFromDeploymentInfo {
             // Playlist for the tutorial.
             PlaylistData playlistData = packageData.addPlaylist("tutorial");
 
-            try (BufferedReader reader = new BufferedReader(new FileReader(sourceTutorialTxt))) {
-                while (reader.ready()) {
-                    String tutorialMessageId = reader.readLine().trim();
-                    String tutorialFilename = tutorialMessageId + '.' + getAudioFormat().getFileExtension();
+            for (String tutorialMessageId : TUTORIAL_V2_MESSAGES) {
+                String tutorialFilename = tutorialMessageId + '.' + getAudioFormat().getFileExtension();
 
-                    String promptFilename = tutorialMessageId + '.' + getAudioFormat().getFileExtension();
-                    File sourcePromptFile = new File(sourceLanguageDir, tutorialFilename);
-                    File exportFile = determineShadowFile(promptsDir, promptFilename, shadowPromptsDir);
-                    if (!exportFile.getParentFile().exists()) exportFile.getParentFile().mkdirs();
-                    if (!exportFile.exists()) {
-                        try {
-                            repository.exportFileWithFormat(sourcePromptFile, exportFile, getAudioFormat());
-                        } catch (Exception ex) {
-                            // Keep going after failing to export a prompt.
-                            builderContext.logException(ex);
-                        }
+                String promptFilename = tutorialMessageId + '.' + getAudioFormat().getFileExtension();
+                File sourcePromptFile = new File(sourceLanguageDir, tutorialFilename);
+                File exportFile = determineShadowFile(promptsDir, promptFilename, shadowPromptsDir);
+                if (!exportFile.getParentFile().exists()) exportFile.getParentFile().mkdirs();
+                if (!exportFile.exists()) {
+                    try {
+                        repository.exportFileWithFormat(sourcePromptFile, exportFile, getAudioFormat());
+                    } catch (Exception ex) {
+                        // Keep going after failing to export a prompt.
+                        builderContext.logException(ex);
                     }
-                    // Add audio item to the package_data.txt.
-                    Path exportPath = makePath(new File(promptsDir, promptFilename));
-                    playlistData.addMessage(tutorialMessageId, exportPath);
                 }
+                // Add audio item to the package_data.txt.
+                Path exportPath = makePath(new File(promptsDir, promptFilename));
+                playlistData.addMessage(tutorialMessageId, exportPath);
             }
             // Prompts for the tutorial.
             exportPrompt(shortPromptInfo, Constants.CATEGORY_TUTORIAL, "tutorial", playlistData::withShortPrompt);
