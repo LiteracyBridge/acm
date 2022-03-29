@@ -8,58 +8,64 @@ import java.util.Map;
 import java.util.Set;
 
 public class A18ToAnyConverter extends BaseAudioConverter {
-  private FFMpegConverter ffmpegConverter = new FFMpegConverter();
-  private A18ToWavConverter a18ToWavConverter = new A18ToWavConverter();
+    private final FFMpegConverter ffmpegConverter = new FFMpegConverter();
+    private final A18ToWavConverter a18ToWavConverter = new A18ToWavConverter();
 
-  public A18ToAnyConverter(String extension) {
-    super(extension);
-  }
-
-  @Override
-  public ConversionResult doConvertFile(File inputFile, File targetDir,
-      File targetFile, File tmpDir, Map<String, String> parameters)
-      throws ConversionException {
-
-    if (!OsUtils.WINDOWS) {
-      throw new ConversionException("A18 conversion is only supported on Windows.");
+    public A18ToAnyConverter(String extension) {
+        super(extension);
     }
 
-    File tmp = null;
-    try {
-      ConversionResult r1 = a18ToWavConverter.doConvertFile(inputFile, tmpDir,
-          targetFile, tmpDir, parameters);
-      tmp = r1.outputFile;
-      ConversionResult r2 = ffmpegConverter.doConvertFile(r1.outputFile,
-          targetDir, targetFile, tmpDir, parameters);
+    @Override
+    public ConversionResult doConvertFile(File inputFile, File targetDir,
+                                          File targetFile, File tmpDir, Map<String, String> parameters)
+            throws ConversionException {
 
-      r2.response = r1.response + "\n" + r2.response;
-      return r2;
-    } finally {
-      if (tmp != null) {
-        tmp.delete();
-      }
+        if (!OsUtils.WINDOWS) {
+            throw new ConversionException("A18 conversion is only supported on Windows.");
+        }
+
+        File tmp = null;
+        try {
+            ConversionResult r1 = a18ToWavConverter.doConvertFile(inputFile, tmpDir,
+                    targetFile, tmpDir, parameters);
+            tmp = r1.outputFile;
+            if (!targetDir.exists()) {
+                if (!targetDir.mkdirs())
+                    throw new ConversionException("Could not create output directory: "+targetDir.getAbsolutePath());
+            }
+            ConversionResult r2 = ffmpegConverter.doConvertFile(r1.outputFile,
+                    targetDir, targetFile, tmpDir, parameters);
+
+            r2.response = r1.response + "\n" + r2.response;
+            return r2;
+        } finally {
+            if (tmp != null) {
+                //noinspection ResultOfMethodCallIgnored
+                tmp.delete();
+            }
+        }
     }
-  }
 
-  @Override
-  public String getShortDescription() {
-    return "Convert *.a18 audio file to .mp3";
-  }
+    @Override
+    public String getShortDescription() {
+        return "Convert *.a18 audio file to .mp3";
+    }
 
-  private static final Set<String> EXTENSIONS = new HashSet<String>();
-  static {
-    EXTENSIONS.add("a18");
-  }
+    private static final Set<String> EXTENSIONS = new HashSet<>();
 
-  @Override
-  public Set<String> getSourceFileExtensions() {
-    return EXTENSIONS;
-  }
+    static {
+        EXTENSIONS.add("a18");
+    }
 
-  @Override
-  public void validateConverter() throws AudioConverterInitializationException {
-    ffmpegConverter.validateConverter();
-    a18ToWavConverter.validateConverter();
-  }
+    @Override
+    public Set<String> getSourceFileExtensions() {
+        return EXTENSIONS;
+    }
+
+    @Override
+    public void validateConverter() throws AudioConverterInitializationException {
+        ffmpegConverter.validateConverter();
+        a18ToWavConverter.validateConverter();
+    }
 
 }
