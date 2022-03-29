@@ -1015,7 +1015,8 @@ public class TbLoaderPanel extends JPanel {
 
         recipientChooser.setHighlightWhenNoSelection(isUpdate);
         deviceVersionBox.setVisible(tbLoaderConfig.hasTbV2Devices());
-        updateTb2FirmwareBox.setVisible(isUpdate && isTbV2() && isEnabled());
+        boolean offerFirmware = (isUpdate || tbLoaderConfig.offerTbV2FirmwareWithStats()) && isTbV2() && isEnabled();
+        updateTb2FirmwareBox.setVisible(offerFirmware);
         forceFirmware.setVisible(isUpdate && isTbV1());
     }
 

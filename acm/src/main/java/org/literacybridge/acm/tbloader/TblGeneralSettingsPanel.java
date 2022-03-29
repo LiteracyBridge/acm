@@ -34,6 +34,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
     private JComboBox<String> srnStrategyCombo;
     private JComboBox<String> testStrategyCombo;
     private JCheckBox hasTbV2DevicesCB;
+    private JCheckBox offerTbV2FirmwareWithStats;
     private JCheckBox isSuppressDosToolsCB;
 
     @Override
@@ -69,6 +70,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         addAllowPackageChoiceSetting(y++);
         addHasTbV2DevicesSetting(y++);
         addStrictTbV2Firmware(y++);
+        addOfferTbV2FirmwareWithStats(y++);
         addSuppressDosTools(y++);
         addSrnStrategy(y++);
         addTestStrategy(y++);
@@ -171,6 +173,15 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         isStrictTbV2FirmwareCB.setSelected(TBLoader.getApplication().isStrictTbV2Firmware());
     }
 
+    private void addOfferTbV2FirmwareWithStats(int y) {
+        GBC gbc = protoGbc.withGridy(y);
+        settingsPanel.add(new JLabel("Update TBv2 Firmware with Stats"), gbc.withGridx(0));
+        offerTbV2FirmwareWithStats = new JCheckBox("Offer TBv2 Firmware updates when collecting stats.");
+        offerTbV2FirmwareWithStats.setToolTipText("When a TBv2 device needs a firmware update, offer the update when collecting stats.");
+        settingsPanel.add(offerTbV2FirmwareWithStats, gbc);
+        offerTbV2FirmwareWithStats.setSelected(TBLoader.getApplication().offerTbV2FirmwareWithStats());
+    }
+
     private void addSuppressDosTools(int y) {
         GBC gbc = protoGbc.withGridy(y);
         settingsPanel.add(new JLabel("No MSDOS tools."), gbc.withGridx(0));
@@ -204,6 +215,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         tbLoaderApp.setTestStrategy(testStrategyCombo.getSelectedIndex());
         tbLoaderApp.setHasTbV2Devices(hasTbV2DevicesCB.isSelected());
         tbLoaderApp.setStrictTbV2Firmware(isStrictTbV2FirmwareCB.isSelected());
+        tbLoaderApp.offerTbV2FirmwareWithStats(offerTbV2FirmwareWithStats.isSelected());
         tbLoaderApp.setSuppressDosTools(isSuppressDosToolsCB.isSelected());
     }
 

@@ -81,12 +81,14 @@ public class TBLoader extends JFrame {
         private boolean hasTbV2Devices;
         private boolean allowPackageChoice = false;
         private boolean suppressDosTools = false;
+        private boolean offerTbV2FirmwareWithStats = false;
 
         public boolean hasTbV2Devices() { return hasTbV2Devices; }
         public boolean hasDfuSupport() { return hasDfuSupport; }
         public boolean isStrictTbV2FIrmware() { return strictTbV2Firmware; }
         public boolean allowPackageChoice() { return allowPackageChoice; }
         public boolean isSuppressDosTools() { return suppressDosTools; }
+        public boolean offerTbV2FirmwareWithStats() { return offerTbV2FirmwareWithStats; }
     }
     final TbLoaderConfig tbLoaderConfig = new TbLoaderConfig();
 
@@ -625,6 +627,13 @@ public class TBLoader extends JFrame {
     }
     public void setStrictTbV2Firmware(boolean strict) {
         this.tbLoaderConfig.strictTbV2Firmware = strict;
+    }
+
+    public boolean offerTbV2FirmwareWithStats() {
+        return this.tbLoaderConfig.offerTbV2FirmwareWithStats;
+    }
+    public void offerTbV2FirmwareWithStats(boolean offer) {
+        this.tbLoaderConfig.offerTbV2FirmwareWithStats = offer;
     }
 
     public void setHasTbV2Devices(boolean hasTbV2Devices) {
