@@ -131,7 +131,8 @@ class CreateForV2 extends CreateFromDeploymentInfo {
 
     public final static List<String> TUTORIAL_V2_MESSAGES = Arrays.asList(
             // 22 and 23 are speed control, not implemented in v2
-            "16", "17", "19", "20", "21", /*"22", "23",*/ "24", "25", "26", "28", "54"
+            // Note not in numeric order.
+            "17", "16", "28", "26", "20", "21", /*"22", "23",*/ "19", "25", "54"
     );
 
 
