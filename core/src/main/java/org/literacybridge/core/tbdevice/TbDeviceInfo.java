@@ -5,6 +5,7 @@ import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.literacybridge.core.tbloader.TbFlashData;
 
+import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -598,6 +599,23 @@ public abstract class TbDeviceInfo {
         {"device_ID.txt", "firmware_ID.txt"},
         {"QC_Pass.txt", "bootcount.txt"}
     };
+    // A brand new TBv1 may not have any files but the ones that the firmware writes, something like this:
+    // e:
+    //├── log
+    //│   └── log.txt
+    //├── log-archive
+    //│   └── log_UNKNOWN_0077_0000.txt
+    //├── statistics
+    //│   ├── UNKNOWN.csv
+    //│   ├── UNKNOWN_000.vol
+    //│   └── flashData.bin
+    //└── system
+    //    ├── UNKNOWN.loc
+    //    ├── UNKNOWN.pkg
+    //    ├── UNKNOWN.srn
+    //    └── r1213.rev
+    // This helps us look for files with any extension.
+    private static final Pattern[] v1WildCards = new Pattern[]{Pattern.compile("(?i).*\\.rev"), Pattern.compile("(?i).*\\.loc")};
 
     /**
      * Determine if the device looks like a TBv1 or a TBv2.
@@ -621,6 +639,21 @@ public abstract class TbDeviceInfo {
                 found &= tbSystem.open(fn).exists();
             }
             if (found) return DEVICE_VERSION.TBv2;
+        }
+        String[] systemFiles = tbSystem.list();
+        if (systemFiles != null) {
+            boolean found = true;
+            for (Pattern wc : v1WildCards) {
+                boolean wcFound = false;
+                for (String fn : systemFiles) {
+                    if (wc.matcher(fn).matches()) {
+                        wcFound = true;
+                        break;
+                    }
+                }
+                found &= wcFound;
+            }
+            if (found) return DEVICE_VERSION.TBv1;
         }
         return DEVICE_VERSION.UNKNOWN;
     }

@@ -27,7 +27,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
     private final JPanel settingsPanel;
     public JCheckBox isStrictTbV2FirmwareCB;
     // Note min is GB, max is GiB. Because drive manufacturers will "round up" their sizes.
-    private JCheckBox min2GB;
+    private JCheckBox min1GB;
     private JCheckBox max16GiB;
     private JCheckBox asUsbDrive;
     private JCheckBox allowPackageChoice;
@@ -81,7 +81,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         FsRootMonitor.FilterParams filterParams = TBLoader.getApplication()
                                                           .getFsRootMonitor()
                                                           .getFilterParams();
-        min2GB.setSelected(Math.abs(filterParams.minSize-2L*1000*1000*1000) < 10L*1000*1000);
+        min1GB.setSelected(Math.abs(filterParams.minSize-1L*1000*1000*1000) < 10L*1000*1000);
         max16GiB.setSelected(Math.abs(filterParams.maxSize-16L*1024*1024*1024) < 10L*1024*1024);
         asUsbDrive.setSelected(filterParams.allowedLabels.contains("USB Drive"));
 
@@ -91,8 +91,8 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
     private void addMinimumUsbCapacitySetting(int y) {
         GBC gbc = protoGbc.withGridy(y);
         settingsPanel.add(new JLabel("TBs are not smaller than"), gbc.withGridx(0));
-        min2GB = new JCheckBox("2 GB", true);
-        settingsPanel.add(min2GB, gbc.withWeightx(1));
+        min1GB = new JCheckBox("1 GB", true);
+        settingsPanel.add(min1GB, gbc.withWeightx(1));
     }
 
     private void addMaximumUsbCapacitySetting(int y) {
@@ -205,7 +205,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         TBLoader tbLoaderApp = TBLoader.getApplication();
         FsRootMonitor.FilterParams filterParams = new FsRootMonitor.FilterParams();
 
-        if (min2GB.isSelected()) filterParams.minimum(2);
+        if (min1GB.isSelected()) filterParams.minimum(1);
         if (max16GiB.isSelected()) filterParams.maximum(16);
         if (asUsbDrive.isSelected()) filterParams.allowing("USB Drive");
 

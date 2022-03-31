@@ -36,7 +36,7 @@ class FsRootMonitor extends Thread {
     AtomicBoolean refreshRequested = new AtomicBoolean(true);
 
     public FsRootMonitor(Consumer<List<File>> rootsHandler) {
-        this.filterParams = new FilterParams().minimum(2).maximum(16).forbidding("Network Drive");
+        this.filterParams = new FilterParams().minimum(1).maximum(16).forbidding("Network Drive");
         if (OsUtils.WINDOWS) {
             filterParams.allowing("USB Drive", "Lecteur USB");
         }
