@@ -99,6 +99,8 @@ public class TBLoaderConstants {
     public static final String DEPLOYMENT_CREATION_DATE = "DEPLOYMENT_CREATION_DATE";
     public static final String DEPLOYMENT_CREATION_TIME = "DEPLOYMENT_CREATION_TIME";
     public static final String DEPLOYMENT_CREATION_USER = "DEPLOYMENT_CREATION_USER";
+    public static final String DEPLOYMENT_REVISON = "DEPLOYMENT_REVISION";
+    public static final String DEPLOYMENT_NAME = "DEPLOYMENT_NAME";
     public static final String DEPLOYMENT_NUMBER = "DEPLOYMENT_NUMBER";
     public static final String PROGRAM_DESCRIPTION_PROPERTY = "DESCRIPTION";
     public static final String PROGRAM_FRIENDLY_NAME_PROPERTY = "NAME";

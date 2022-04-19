@@ -5,17 +5,16 @@ import com.opencsv.CSVWriterBuilder;
 import com.opencsv.ICSVWriter;
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
+import org.literacybridge.acm.tbloader.TBLoader;
 import org.literacybridge.acm.tools.DBExporter;
 import org.literacybridge.core.fs.ZipUnzip;
+import org.literacybridge.core.spec.ProgramSpec;
+import org.literacybridge.core.tbloader.TBLoaderConstants;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.io.*;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -29,6 +28,7 @@ import static org.literacybridge.acm.tbbuilder.TBBuilder.PACKAGES_IN_DEPLOYMENT_
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_REVISION_PATTERN;
 
 class Publish {
+    private static final Logger LOG = Logger.getLogger(Publish.class.getName());
 
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final TBBuilder tbBuilder;
@@ -62,6 +62,9 @@ class Publish {
         final String publishDistributionName = builderContext.deploymentName + "-" + builderContext.revision; // e.g.
         // Remove any .rev file that we had left to mark the deployment as unpublished.
         Utils.deleteRevFiles(builderContext.stagedDeploymentDir);
+
+        // Add a revision marker to the deployment_info.properties file.
+        addRevisionMarkerToDeploymentInfo();
 
         // e.g. 'ACM-UWR/TB-Loaders/published/2015-6-c'
         final File publishDistributionDir = new File(publishBaseDir, publishDistributionName);
@@ -129,6 +132,33 @@ class Publish {
                 builderContext.deploymentName + "-" + builderContext.revision + ".rev");
         //noinspection ResultOfMethodCallIgnored
         newRev.createNewFile();
+    }
+
+    void addRevisionMarkerToDeploymentInfo() {
+        Properties deploymentProperties = null;
+        File propsFile = new File(builderContext.stagedProgramspecDir, ProgramSpec.DEPLOYMENT_INFO_PROPERTIES_NAME);
+        boolean saved = false;
+
+        try (InputStream fis = new BufferedInputStream(new FileInputStream(propsFile))) {
+            try (BufferedInputStream bis = new BufferedInputStream(fis)) {
+                deploymentProperties = new Properties();
+                deploymentProperties.load(bis);
+
+                // We have the deployment, add the revision marker.
+                deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_REVISON, builderContext.revision);
+                deploymentProperties.setProperty(TBLoaderConstants.DEPLOYMENT_NAME, builderContext.deploymentName);
+
+                try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(propsFile))) {
+                    deploymentProperties.store(out, null);
+                    saved = true;
+                }
+            }
+        } catch (IOException e) {
+            // Ignore and continue with empty deployment properties.
+        }
+        if (!saved) {
+            LOG.log(Level.SEVERE, "Unable to save deployment revision to " + propsFile.getAbsolutePath());
+        }
     }
 
     /**

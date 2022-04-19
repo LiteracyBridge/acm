@@ -253,7 +253,7 @@ public class ProjectsHelper {
             String deployment = v.getDeploymentName();
             String rev = v.getRevId();
             String latestRev = latestRevs.computeIfAbsent(deployment, (unused)-> rev);
-            if (rev.length() > latestRev.length() || rev.compareToIgnoreCase(latestRev)>0) {
+            if (rev.length() > latestRev.length() || (rev.length()) == latestRev.length() && rev.compareToIgnoreCase(latestRev)>0) {
                 latestRevs.put(deployment, rev);
             }
         });
