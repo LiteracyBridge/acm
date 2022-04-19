@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Clean directory
-rm -rf ACM
+rm -rf ACM  
 mkdir ACM
 
 # ACM & TB-Loader
@@ -24,6 +24,7 @@ cp -av ../acm/dist/ctrl-all.jar ./ACM/
 # Include TBv2 artifacts
  shasum system.v2/csm_data.txt >>./ACM/build.properties
  cat firmware.v2/firmware_built.txt >>./ACM/build.properties
+ echo "$(shasum bats/*|shasum) bats" >>./ACM/build.properties
 
 # Audio converters
 cp -av ./converters ./ACM/

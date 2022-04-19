@@ -11,5 +11,7 @@ robocopy ..\updates\ACM\lib lib /MIR
 robocopy ..\updates\ACM\images images /MIR
 robocopy ..\updates\ACM\cube cube /MIR
 robocopy ..\updates\ACM .
+robocopy ..\updates\ACM\system.v2 system.v2 /MIR
+robocopy ..\updates\ACM\firmware.v2 firmware.v2 /MIR
 
 call start_sync.bat
