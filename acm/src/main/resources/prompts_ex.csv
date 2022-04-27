@@ -1,12 +1,12 @@
-﻿1,begin speaking,Begin speaking now and press the star when you are finished.,"This prompt is played just before recording User Feedback. As soon as this message finishes, the Talking Book starts recording. Users must press the star to stop recording, or the bowl to temporarily pause recording."
+1,begin speaking,Begin speaking now and press the star when you are finished.,"This prompt is played just before recording User Feedback. As soon as this message finishes, the Talking Book starts recording. Users must press the star to stop recording, or the bowl to temporarily pause recording."
 2,paused,Recording paused. Press the bowl to continue recording or press any other button to finish.,"This means that recording has temporarily paused, because the user pressed the bowl. Press the bowl again to resume recording, or any other key to stop recording and save."
 3,recording complete,Recording complete.  Your message has been recorded in ____.,"This means that the Talking Book was recording, and has stopped recording, and has saved the recorded message. The system will automatically add ""user feedback"" after the message, so the speaker should leave the phrase audibly hanging."
 4,batteries,The batteries are nearly finished. Please replace them soon.,"When the battery voltage drops below a certain level, this message is played to warn the user that the batteries will soon need to be replaced."
 5,empty subject,"There are no messages on this subject.  To create your own message, press the star.","This should seldom happen. It means that there is an empty playlist in the Deployment, so there is nothing to play."
 6,removed,Removed,"Gives confirmation that a message has been deleted. When a user records some feedback but then deletes that feedback, they'll hear this message."
-7,silence,"","0.1 seconds of silence. Used when a message is required, but there is no message."
+7,silence,,"0.1 seconds of silence. Used when a message is required, but there is no message."
 9,next message,"To listen to another message like this one, press the tree. To try another subject, press the right hand.","Prompts the user that the previous message has completed, and they can choose another message on the same playlist by pressing the tree or on another playlist by pressing the right hand."
-10,welcome,Welcome to the Talking Book.,This is the greeting when the Talking Book is turned on. This is the version of the greeting that is played for users who don't have a custom greeting.
+10,welcome,Welcome to the Amplio Talking Book.,This is the greeting when the Talking Book is turned on. This is the version of the greeting that is played for users who don't have a custom greeting.
 11,choose subject,Press the right hand to choose a subject.,"This prompt plays after the greeting or the optional ""Intro"" message, if there is one."
 29,actions prompt,"To listen to some things you can do with this message, press the right hand.","After listening to a message the TB will play the ""next message"" prompt, #9. If, instead of the tree or the right hand, the user presses the circle, they're given this prompt. They may then press the right hand to hear some more options: record feedback on the message, or take a survey about the message. The user can press the right hand again and again to cycle through these options."
 33,confirm remove,"If you are sure you want to remove this message, press the black circle.","This is an offer to remove the message that was just played. This option is presented after listening to a message, hearing #9, pressing the circle, hearing #29, and pressing the right hand a few times. If a playlist is locked, #80 will let the user know that the message cannot be removed."
@@ -19,7 +19,7 @@
 63,survey,"To answer a survey question about this message, press the black circle.","This is an offer to let the user take a survey on the usefulness of the previous message. This option is presented after listening to a message, hearing #9, pressing the circle, hearing #29, and pressing the right hand a few times."
 65,record feedback,"To record your ideas about this message, press the black circle.","This is an offer to let the user record spoken feedback, presumably inspired by the previous message. This option is presented after listening to a message, hearing #9, pressing the black circle, hearing #29, and pressing the right hand a few times."
 80,locked,"Sorry, but this subject is locked.","Most playlists are ""locked"", so that messages can't be removed. If the user tries to remove a locked message, they will hear this error."
-16,turn on,"To turn this device on, press the bowl.",Instructions. How to turn on the Talking Book. You can also use the House.
+16,turn on,"To turn this device on, press the house.",Instructions. How to turn on the Talking Book. You can also use the House.
 17,play pause,"To start or stop a message, press the bowl","Instructions. Press the bowl to pause playback, press the bowl again to resume."
 19,record pause,"When you record your voice, you can press the bowl to pause if you are not yet finished. Press it again to continue recording.",Instructions. How to pause recording to collect your thoughts. Then how to resume recording.
 20,for quieter,"To make a message speak quieter, press the minus sign.",Instruction. How to turn the volume down.
@@ -29,9 +29,9 @@
 24,battery warning,"When a message is loud and when you listen for a long period of time, you will use up your batteries more quickly.",Information. Listening at loud volume uses up the batteries more quickly.
 25,back up,"While listening to a message, hold down the left hand to repeat what was just said.",Instruction. How to back up a message by a few seconds.
 26,actions,"There are several things you can do with each message. You can give your opinion about it, or take a survey.  To do these things, play a message and then press the black circle.",Instruction. How to access the user feedback or survey feature.
-28,turn off,"You can turn this device off by holding down the bowl, but it will turn off on its own when you stop using it.",Instruction. How to turn the device off.
+28,turn off,"You can turn this device off by holding down the house, but it will turn off on its own when you stop using it.",Instruction. How to turn the device off.
 54,skip ahead,"If you want to skip beyond part of a message, hold down the right hand.",Instruction. How to skip forward in a message. 
 $0-1,talking book,Talking Book,This is the short prompt for the Talking Book instruction series.
 i$0-1,talking book - invitation,"To learn about this device, press the tree.",This is the invitation to listen to the Talking Book instruction series.
-9-0,user feedback,"User Feedback",This is the short prompt for the User Feedback playlist.
+9-0,user feedback,User Feedback,This is the short prompt for the User Feedback playlist.
 i9-0,user feedback - invitation,"To listen to feedback from users, press the tree.",This is the invitation to listen to the User Feedback playlist.
