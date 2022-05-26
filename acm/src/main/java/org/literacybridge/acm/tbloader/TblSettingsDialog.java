@@ -20,6 +20,7 @@ public final class TblSettingsDialog extends AbstractSettingsDialog {
 
     private static final String GENERAL = "General";
     private static final String DESKTOP_SHORTCUTS = "Desktop Shortcuts";
+    private static final String TEST_SETTINGS = "Testing";
 
     private TblSettingsDialog(Window owner) {
         super(owner, "Settings");
@@ -36,6 +37,14 @@ public final class TblSettingsDialog extends AbstractSettingsDialog {
         iconBar.add(makeSettingsPanel(UIConstants.SHORTCUTS_64_PNG,
             DESKTOP_SHORTCUTS,
             DesktopShortcutsPanel::new));
+
+        // If running TB-Loader for testing, enable some more options.
+        if (TBLoader.getApplication().tbLoaderConfig.isTestMode()) {
+            iconBar.add(Box.createVerticalStrut(15));
+            iconBar.add(makeSettingsPanel(UIConstants.TEST_64_PNG,
+                TEST_SETTINGS,
+                TblTestSettingsPanel::new));
+        }
 
         return GENERAL;
     }

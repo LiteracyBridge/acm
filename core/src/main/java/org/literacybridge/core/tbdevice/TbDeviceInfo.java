@@ -72,6 +72,7 @@ public abstract class TbDeviceInfo {
     protected final TbFile tbSystem;
     protected Properties tbDeploymentProperties;
     protected boolean corrupted = false;
+    // did the fsck (chkdsk) timeout?
     protected boolean fsCheckTimeout = false;
 
     // Properties that are read from the Talking Book and provided to clients of the class.

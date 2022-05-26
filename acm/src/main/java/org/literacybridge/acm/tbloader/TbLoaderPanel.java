@@ -996,8 +996,8 @@ public class TbLoaderPanel extends JPanel {
         boolean isUpdate = actionChooser.getSelectedItem() != null && actionChooser.getSelectedItem()
             .toString()
             .equalsIgnoreCase(UPDATE_TB);
-        // Must have device. Update must not be in progress.
-        boolean enabled = isDriveConnected() && isEnabled();
+        // Must have device (may be a pseuo device). Update must not be in progress.
+        boolean enabled = (isDriveConnected() || tbLoaderConfig.isPseudoTb()) && isEnabled();
         // Must have set location. TODO: why?
         enabled = enabled && (currentLocationChooser.getSelectedIndex() != 0);
         // To update...

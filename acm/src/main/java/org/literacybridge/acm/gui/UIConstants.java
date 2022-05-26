@@ -27,6 +27,7 @@ public abstract class UIConstants {
   public static final String GEARS_64_PNG = "gears_64.png";
   public static final String TREE_64_PNG = "tree_64.png";
   public static final String SHORTCUTS_64_PNG = "shortcuts_64.png";
+  public static final String TEST_64_PNG = "test_64.png";
 
   public static URL getResource(String resourceName) {
     return UIConstants.class.getResource("/" + resourceName);

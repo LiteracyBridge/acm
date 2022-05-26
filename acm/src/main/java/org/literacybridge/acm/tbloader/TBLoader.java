@@ -22,6 +22,7 @@ import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.tbdevice.TbDeviceInfoNull;
 import org.literacybridge.core.tbdevice.TbDeviceInfoUnknown;
+import org.literacybridge.core.tbdevice.TbDeviceInfoV1;
 import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbdevice.TbDeviceInfo;
 import org.literacybridge.core.tbloader.TBLoaderConfig;
@@ -82,6 +83,8 @@ public class TBLoader extends JFrame {
         private boolean allowPackageChoice = false;
         private boolean suppressDosTools = false;
         private boolean offerTbV2FirmwareWithStats = false;
+        private boolean isTestMode = false;
+        private String  pseudoTbDir = null;
 
         public boolean hasTbV2Devices() { return hasTbV2Devices; }
         public boolean hasDfuSupport() { return hasDfuSupport; }
@@ -89,6 +92,9 @@ public class TBLoader extends JFrame {
         public boolean allowPackageChoice() { return allowPackageChoice; }
         public boolean isSuppressDosTools() { return suppressDosTools; }
         public boolean offerTbV2FirmwareWithStats() { return offerTbV2FirmwareWithStats; }
+        public boolean isTestMode() { return isTestMode; }
+        public boolean isPseudoTb() { return StringUtils.isNotBlank(pseudoTbDir); }
+        public File pseudoTbDir() { return StringUtils.isBlank(pseudoTbDir) ? null : new File(pseudoTbDir); }
     }
     final TbLoaderConfig tbLoaderConfig = new TbLoaderConfig();
 
@@ -269,6 +275,7 @@ public class TBLoader extends JFrame {
         }
 
         this.tbLoaderConfig.allowPackageChoice = tbArgs.choices;
+        this.tbLoaderConfig.isTestMode = tbArgs.testMode;
     }
 
     private void runApplication() throws Exception {
@@ -585,6 +592,10 @@ public class TBLoader extends JFrame {
         return this.tbLoaderConfig.allowPackageChoice();
     }
 
+    void setPseudoTb(String pseudoTbDir) {
+        this.tbLoaderConfig.pseudoTbDir = pseudoTbDir;
+    }
+
     /**
      * Get and set the value of TB ID strategy. See TB_ID_STRATEGY for more.
      */
@@ -729,7 +740,15 @@ public class TBLoader extends JFrame {
     private TBLoaderConfig getTbLoaderConfig() {
         commandLineUtils = new CommandLineUtils(softwareDir);
         String collectionTimestamp = ISO8601.format(new Date());
-        File collectedDataDirectory = new File(collectionWorkDir, collectionTimestamp);
+        File collectionRoot = collectionWorkDir;
+
+        // If we're deploying to a pseudo-device, don't collect statistics to where
+        // the'll upload. Collect to a pseudo-location instead.
+        if (tbLoaderConfig.isPseudoTb()) {
+            collectionRoot = new File(tbLoaderConfig.pseudoTbDir + "_stats");
+        }
+
+        File collectedDataDirectory = new File(collectionRoot, collectionTimestamp);
         TbFile collectedDataTbFile = new FsFile(collectedDataDirectory);
 
         TBLoaderConfig.Builder builder = new TBLoaderConfig.Builder().withTbLoaderId(deviceIdHex)
@@ -1055,6 +1074,23 @@ public class TBLoader extends JFrame {
         if (refreshingDriveInfo || !startUpDone || updatingTB) return;
 
         currentTbSrn = "";
+
+        // If we're deploying to a pseudo device, create a dummy TbDeviceInfo for it.
+        if (tbLoaderConfig.isPseudoTb()) {
+            List<String> packages = tbLoaderPanel.getSelectedPackages();
+            String packageDirName = String.join("_", packages);
+            File packageDir = new File(tbLoaderConfig.pseudoTbDir(), packageDirName);
+            if (!packageDir.exists()) {
+                packageDir.mkdirs();
+            }
+            currentTbDevice = TbDeviceInfo.getDeviceInfoFor(new FsFile(packageDir),
+                "pseudo",
+                srnPrefix,
+                tbLoaderPanel.getSelectedDeviceVersion());
+            populatePreviousValuesFromCurrentDrive();
+            return;
+        }
+
         currentTbDevice = selectedDevice;
         if (currentTbDevice != null && currentTbDevice.getRootFile() != null) {
             LOG.log(Level.INFO,

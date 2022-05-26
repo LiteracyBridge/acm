@@ -16,6 +16,9 @@ class TbLoaderArgs {
     @Option(name = "--go", aliases = "-g", usage = "Proceed without waiting where possible.")
     boolean autoGo = false;
 
+    @Option(name = "--test", aliases = "-t", usage = "Run TB-Loader in testing mode.")
+    boolean testMode = false;
+
     @Argument(usage = "Project or ACM name to export.", index = 0, metaVar = "ACM")
     String project;
 
