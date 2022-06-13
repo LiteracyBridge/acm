@@ -242,7 +242,7 @@ public class Tb2FirmwareUpdater extends JDialog {
      */
     public boolean go() {
         final boolean[] result = new boolean[1]; // final, but contents are mutable.
-        String[] command = new String[]{"-c", "port=" + connectedDeviceName, "-e", "[0 5]", "-w", firmare.getAbsolutePath(), "-s"};
+        String[] command = new String[]{"-c", "port=" + connectedDeviceName, "-e", "all", "-w", firmare.getAbsolutePath(), "-s"};
 
         // Run this on a separate thread so that the UI can be responsive to progress updates.
         // We want a boolean result, but the cube command returns an object, which might be null, or might

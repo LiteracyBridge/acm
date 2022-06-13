@@ -1,0 +1,1 @@
+cube\cube.exe  -c port=USB1 -e all -w firmware.v2\TBookRev2b.hex
