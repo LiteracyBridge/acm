@@ -416,8 +416,7 @@ public abstract class TBLoaderCore {
     // V1 decorates OperationalData files with a date stamp. V2 doesn't bother because they contain timestamps
     // as data in the file.
     protected String getOpLogSuffix() { return ".log"; }
-    protected String getOpCsvSuffix() { return ".csv"; }
-
+    protected String getOpCsvFilename() { return "tbdata.csv"; }
 
     /**
      * For reporting a result back to callers, with explicit fields for various things that can

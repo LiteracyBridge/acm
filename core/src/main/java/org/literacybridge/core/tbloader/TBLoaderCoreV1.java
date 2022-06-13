@@ -164,14 +164,14 @@ class TBLoaderCoreV1 extends TBLoaderCore {
     }
 
     String opLogSuffix;
-    String opCsvSuffix;
+    String opCsvFilename;
     @Override
     protected synchronized String getOpLogSuffix() {
         if (opLogSuffix == null) {
             // This is a format for a date format used a lot in TB statistics.
             SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy'y'MM'm'dd'd'", Locale.US);
             String strDate = sdfDate.format(new Date());
-            opCsvSuffix = String.format("tbData-%s-%s-%s.csv",
+            opCsvFilename = String.format("tbData-%s-%s-%s.csv",
                 TbLoaderLogger.VERSION_TBDATA,
                 strDate,
                 mTbLoaderConfig.getTbLoaderId());
@@ -183,11 +183,11 @@ class TBLoaderCoreV1 extends TBLoaderCore {
     }
 
     @Override
-    protected String getOpCsvSuffix() {
-        if (opCsvSuffix == null) {
+    protected String getOpCsvFilename() {
+        if (opCsvFilename == null) {
             getOpLogSuffix();
         }
-        return opCsvSuffix;
+        return opCsvFilename;
     }
 
     /**
