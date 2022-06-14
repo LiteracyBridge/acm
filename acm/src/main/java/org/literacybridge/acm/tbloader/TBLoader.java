@@ -756,7 +756,7 @@ public class TBLoader extends JFrame {
             .withTempDirectory(temporaryDir)
             .withUserEmail(userEmail)
             .withUserName(userName);
-        if (!tbLoaderConfig.suppressDosTools) {
+        if (!tbLoaderConfig.suppressDosTools && OSChecker.WINDOWS) {
             builder.withFileSystemUtilities(commandLineUtils);
         }
         return builder.build();
@@ -1036,7 +1036,7 @@ public class TBLoader extends JFrame {
         }
 
         oldDeploymentInfo = currentTbDevice.createDeploymentInfo(newProject);
-        tbLoaderPanel.fillPrevDeploymentInfo(oldDeploymentInfo);
+        tbLoaderPanel.fillPrevDeploymentInfo(oldDeploymentInfo, currentTbDevice);
         if (oldDeploymentInfo != null) {
             setCurrentTbFirmware(oldDeploymentInfo.getFirmwareRevision());
 
@@ -1098,7 +1098,7 @@ public class TBLoader extends JFrame {
                     + currentTbDevice.getLabel());
             populatePreviousValuesFromCurrentDrive();
         } else {
-            tbLoaderPanel.fillPrevDeploymentInfo(null);
+            tbLoaderPanel.fillPrevDeploymentInfo(null, null);
         }
     }
 
@@ -1222,7 +1222,7 @@ public class TBLoader extends JFrame {
             LOG.log(Level.INFO, "STATUS: Ready");
         } else {
             if (!connected) {
-                tbLoaderPanel.fillPrevDeploymentInfo(null);
+                tbLoaderPanel.fillPrevDeploymentInfo(null, null);
                 setCurrentTbFirmware("");
                 LOG.log(Level.INFO, "STATUS: " + TBLoaderConstants.NO_DRIVE);
                 tbLoaderPanel.getProgressDisplayManager().setStatus("STATUS: " + TBLoaderConstants.NO_DRIVE);
@@ -1398,6 +1398,7 @@ public class TBLoader extends JFrame {
 //                    .withLocation(currentLocationChooser.getSelectedItem().toString())
                     .withRefreshFirmware(tbLoaderPanel.isForceFirmware())
                     .withProgressListener(tbLoaderPanel.getProgressDisplayManager())
+                    .withProgramSpec(programSpec)
                     .build();
                 result = tbLoader.update();
 

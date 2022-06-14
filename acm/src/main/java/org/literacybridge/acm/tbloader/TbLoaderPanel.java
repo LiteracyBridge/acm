@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jdesktop.swingx.JXDatePicker;
 import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.config.ACMConfiguration;
+import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.gui.Assistant.GBC;
 import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
@@ -15,6 +16,7 @@ import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbdevice.TbDeviceInfo;
+import org.literacybridge.core.tbloader.TBLoaderConstants;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -38,6 +40,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -119,8 +122,15 @@ public class TbLoaderPanel extends JPanel {
     private JTextField oldFirmwareVersionText;
     private JLabel newDeploymentText;
     private JTextField oldDeploymentText;
+
     private JRecipientChooser recipientChooser;
-    private JRecipientChooser oldRecipient;
+    // Old recipient display uses "chooser" if within the program (so we have program sepc), or
+    // text area with data from the deployment.properties if not within the program.
+    private JRecipientChooser oldRecipientChooser;
+    private JTextArea oldRecipientText;
+    private CardLayout oldRecipientLayout;
+    private JPanel oldRecipientContainer;
+
     private JTextField oldPackageText;
     private JXDatePicker datePicker;
     private JTextField lastUpdatedText;
@@ -274,6 +284,7 @@ public class TbLoaderPanel extends JPanel {
         }
     }
     private void showNewPackage() {
+        // Shows wither a package chooser or a package name.
         newPackageLayout.show(newPackageContainer, allowPackageChoice ? "CHOICE" : "NOCHOICE");
     }
 
@@ -322,7 +333,7 @@ public class TbLoaderPanel extends JPanel {
         return progressDisplayManager;
     }
 
-    public void fillPrevDeploymentInfo(DeploymentInfo oldDeploymentInfo) {
+    public void fillPrevDeploymentInfo(DeploymentInfo oldDeploymentInfo, TbDeviceInfo oldDeviceInfo) {
         if (oldDeploymentInfo != null) {
             oldSrnText.setText(oldDeploymentInfo.getSerialNumber());
             oldPackageText.setText(String.join(",", oldDeploymentInfo.getPackageNames()));
@@ -332,7 +343,17 @@ public class TbLoaderPanel extends JPanel {
             forceTbId.setVisible(tbIdStrategy.allowsManual());
             forceTbId.setSelected(false);
 
-            oldRecipient.setSelectedRecipient(oldDeploymentInfo.getRecipientid());
+            Recipient recipient = programSpec.getRecipients().getRecipient(oldDeploymentInfo.getRecipientid());
+            if (recipient != null) {
+                oldRecipientChooser.setSelectedRecipient(oldDeploymentInfo.getRecipientid());
+                oldRecipientLayout.show(oldRecipientContainer, "internal");
+            } else {
+                String recipientInfo = "This Talking Book was in a different program:\n" +
+                        oldDeviceInfo.getDeploymentPropertiesString();
+                oldRecipientText.setText(recipientInfo);
+                oldRecipientLayout.show(oldRecipientContainer, "external");
+            }
+
             testDeployment.setSelected(false);
 
         } else {
@@ -343,7 +364,9 @@ public class TbLoaderPanel extends JPanel {
             oldPackageText.setText("");
             oldDeploymentText.setText("");
             forceFirmware.setSelected(false);
-            oldRecipient.setSelectedRecipient(null);
+            oldRecipientChooser.setSelectedRecipient(null);
+            oldRecipientText.setText("");
+            oldRecipientLayout.show(oldRecipientContainer, "internal");
             lastUpdatedText.setText("");
         }
     }
@@ -472,7 +495,7 @@ public class TbLoaderPanel extends JPanel {
                 // This list need not contain prevLabel or nextLabel; we assume that those two
                 // are "small-ish", and won't actually provide the maximimum minimum width.
                 driveList, currentLocationChooser, newDeploymentText, oldDeploymentText,
-                recipientChooser, oldRecipient, newPackageContainer, oldPackageText, datePicker,
+                recipientChooser, oldRecipientContainer, newPackageContainer, oldPackageText, datePicker,
                 lastUpdatedText, newFirmwareVersionText, oldFirmwareVersionText, newSrnBox,
                 oldSrnText, newFirmwareBox};
         }
@@ -631,16 +654,27 @@ public class TbLoaderPanel extends JPanel {
         recipientChooser.populate(programSpec);
         recipientChooser.addActionListener(this::onRecipientSelected);
 
-        oldRecipient = new JRecipientChooser();
-        oldRecipient.populate(programSpec);
-        oldRecipient.setEnabled(false);
-        oldRecipient.setHighlightWhenNoSelection(false);
+        oldRecipientChooser = new JRecipientChooser();
+        oldRecipientChooser.populate(programSpec);
+        oldRecipientChooser.setEnabled(false);
+        oldRecipientChooser.setHighlightWhenNoSelection(false);
 
+        oldRecipientText = new JTextArea();
+        oldRecipientText.setEditable(false);
+        oldRecipientText.setLineWrap(true);
+        oldRecipientText.setWrapStyleWord(true);
+        oldRecipientText.setBorder(new LineBorder(Color.DARK_GRAY, 1));
+
+        oldRecipientLayout = new CardLayout();
+        oldRecipientContainer = new JPanel(oldRecipientLayout);
+        oldRecipientContainer.add(oldRecipientChooser, "internal");
+        oldRecipientContainer.add(oldRecipientText, "external");
+        oldRecipientLayout.show(oldRecipientContainer, "internal");
 
         // Recipient Chooser.
         contentPanel.add(communityLabel, gbc.withGridx(0));
         contentPanel.add(recipientChooser, gbc);
-        contentPanel.add(oldRecipient, gbc);
+        contentPanel.add(oldRecipientContainer, gbc);
     }
 
     private void layoutDeployment(int y) {

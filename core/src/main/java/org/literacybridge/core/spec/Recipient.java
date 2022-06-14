@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 public class Recipient {
     final static String[] FILENAMES = new String[]{"pub_recipients.csv", "recipients.csv"};
+    // Optional '[', numbers-spaces-commas, optional ']'
     final static Pattern DEPLOYMENTS_LIST = Pattern.compile("^\\[?([0-9, ]*)]?$");
 
     // We don't care about most of the recipient columns in the ACM or TB-Loader.

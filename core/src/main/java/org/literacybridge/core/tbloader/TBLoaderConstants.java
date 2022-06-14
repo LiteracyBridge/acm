@@ -83,6 +83,12 @@ public class TBLoaderConstants {
     public static final String PACKAGE_PROPERTY = "PACKAGE";
     public static final String COMMUNITY_PROPERTY = "COMMUNITY";
     public static final String RECIPIENTID_PROPERTY = "RECIPIENTID";
+    public static final String RECIPIENT_REGION = "REGION";
+    public static final String RECIPIENT_DISTRICT = "DISTRICT";
+    public static final String RECIPIENT_COMMUNITY = "COMMUNITYNAME";
+    public static final String RECIPIENT_GROUP = "GROUPNAME";
+    public static final String RECIPIENT_AGENT = "AGENTNAME";
+    public static final String RECIPIENT_LANGUAGE = "LANGUAGECODE";
     public static final String TALKING_BOOK_ID_PROPERTY = "TALKINGBOOKID";
     public static final String TIMESTAMP_PROPERTY = "TIMESTAMP";
     public static final String TEST_DEPLOYMENT_PROPERTY = "TESTDEPLOYMENT";

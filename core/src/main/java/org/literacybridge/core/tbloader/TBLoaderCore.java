@@ -5,6 +5,9 @@ import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.fs.ZipUnzip;
+import org.literacybridge.core.spec.ProgramSpec;
+import org.literacybridge.core.spec.Recipient;
+import org.literacybridge.core.spec.RecipientList;
 import org.literacybridge.core.tbdevice.TbDeviceInfo;
 
 import java.io.ByteArrayInputStream;
@@ -187,6 +190,7 @@ public abstract class TBLoaderCore {
         protected boolean mRefreshFirmware = false;
         protected int mPostUpdateDelayMillis = 0;
         protected final Set<String> mAcceptableFirmware = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        private ProgramSpec programSpec = null;
 
         public Builder() {}
 
@@ -293,6 +297,11 @@ public abstract class TBLoaderCore {
                     .filter(StringUtils::isNotBlank)
                     .collect(Collectors.toList()));
             }
+            return this;
+        }
+
+        public Builder withProgramSpec(ProgramSpec programSpec) {
+            this.programSpec = programSpec;
             return this;
         }
 
@@ -782,6 +791,30 @@ public abstract class TBLoaderCore {
         }
         if (mNewDeploymentInfo.getRecipientid() != null) {
             props.append(TBLoaderConstants.RECIPIENTID_PROPERTY, mNewDeploymentInfo.getRecipientid());
+            if (mBuilder.programSpec != null) {
+                RecipientList recipients = mBuilder.programSpec.getRecipients();
+                if (recipients != null) {
+                    RecipientList.RecipientAdapter recipient = recipients.getRecipient(mNewDeploymentInfo.getRecipientid());
+                    if (recipient != null) {
+                        props.append(TBLoaderConstants.RECIPIENT_COMMUNITY, recipient.communityname);
+                        if (StringUtils.isNotBlank(recipient.region)) {
+                            props.append(TBLoaderConstants.RECIPIENT_REGION, recipient.region);
+                        }
+                        if (StringUtils.isNotBlank(recipient.district)) {
+                            props.append(TBLoaderConstants.RECIPIENT_DISTRICT, recipient.district);
+                        }
+                        if (StringUtils.isNotBlank(recipient.groupname)) {
+                            props.append(TBLoaderConstants.RECIPIENT_GROUP, recipient.groupname);
+                        }
+                        if (StringUtils.isNotBlank(recipient.agent)) {
+                            props.append(TBLoaderConstants.RECIPIENT_AGENT, recipient.agent);
+                        }
+                        if (StringUtils.isNotBlank(recipient.languagecode)) {
+                            props.append(TBLoaderConstants.RECIPIENT_LANGUAGE, recipient.languagecode);
+                        }
+                    }
+                }
+            }
         }
         eraseAndOverwriteFile(system.open(TBLoaderConstants.DEPLOYMENT_PROPERTIES_NAME), props.toString());
     }

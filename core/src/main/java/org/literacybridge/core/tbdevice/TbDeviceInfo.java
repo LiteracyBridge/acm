@@ -1,5 +1,6 @@
 package org.literacybridge.core.tbdevice;
 
+import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
@@ -7,31 +8,15 @@ import org.literacybridge.core.tbloader.TbFlashData;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.literacybridge.core.tbloader.TBLoaderConstants.COMMUNITY_PROPERTY;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_PROPERTIES_NAME;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_PROPERTY;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_UUID_PROPERTY;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.PACKAGE_PROPERTY;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.PROJECT_FILE_EXTENSION;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.PROJECT_PROPERTY;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENTID_PROPERTY;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.TALKING_BOOK_ID_PROPERTY;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.TBCDID_PROPERTY;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_AUDIO_PATH;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LANGUAGES_PATH;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_SYSTEM_PATH;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.USERNAME_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.*;
 
 public abstract class TbDeviceInfo {
     private static final Logger LOG = Logger.getLogger(TbDeviceInfo.class.getName());
@@ -447,6 +432,43 @@ public abstract class TbDeviceInfo {
         }
 
         return props;
+    }
+
+    /**
+     * Returns the device's latest deployment properties as a friendly string.
+     * @return
+     */
+    public String getDeploymentPropertiesString() {
+        Properties props = loadDeploymentProperties();
+        if (props == null) return "No information about deployment is available.";
+        // Get the best available community name.
+        String community = props.getProperty(RECIPIENT_COMMUNITY);
+        if (StringUtils.isBlank(community)) community = props.getProperty(COMMUNITY_PROPERTY);
+        // Deployment timestamp as a friendlier string
+        String deployed = props.getProperty(TIMESTAMP_PROPERTY);
+        if (StringUtils.isNotBlank(deployed)) {
+            try {
+                Date deployedDate = ISO8601.parse(deployed);
+                deployed = new SimpleDateFormat("d MMMM yyyy @ HH:mm").format(deployedDate);
+            } catch (Exception ignored) {}
+        }
+        String user = props.getProperty(USERNAME_PROPERTY);
+        if (StringUtils.isBlank(user)) user = props.getProperty(USEREMAIL_PROPERTY);
+
+        String[][] infos = {
+                {props.getProperty(PROJECT_PROPERTY), "Program: "}, {props.getProperty(DEPLOYMENT_PROPERTY), "Deployment: "},
+                {deployed, "Deployed: "}, {user, "By: "},
+                {props.getProperty(RECIPIENT_REGION), "Region: "}, {props.getProperty(RECIPIENT_DISTRICT), "District: "},
+                {community, "Community: "}, {props.getProperty(RECIPIENT_GROUP), "Group: "},
+                {props.getProperty(RECIPIENT_AGENT), "Agent: "}, {props.getProperty(RECIPIENT_LANGUAGE), "Language: "},
+        };
+        StringBuilder builder = new StringBuilder();
+
+        Arrays.stream(infos)
+                .filter(p->StringUtils.isNotBlank(p[0]))
+                .forEach(p->{builder.append(p[1]).append(p[0]).append("\n");});
+
+        return builder.toString();
     }
 
     /**
