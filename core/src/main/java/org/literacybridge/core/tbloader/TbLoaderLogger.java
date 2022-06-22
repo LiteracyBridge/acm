@@ -100,7 +100,7 @@ class TbLoaderLogger {
                      : tbLoaderCore.mNewDeploymentInfo.getDeploymentName().toUpperCase() + ",");
             bw.write(tbLoaderCore.mStatsOnly
                      ? ","
-                     : String.join(",", tbLoaderCore.mNewDeploymentInfo.getPackageNames()).toUpperCase() + ",");
+                     : "\"" + String.join(",", tbLoaderCore.mNewDeploymentInfo.getPackageNames()).toUpperCase() + "\",");
             bw.write(tbLoaderCore.mStatsOnly ? "," : tbLoaderCore.mNewDeploymentInfo.getFirmwareRevision() + ",");
             bw.write(tbLoaderCore.mStatsOnly
                      ? ","
@@ -108,8 +108,8 @@ class TbLoaderLogger {
             bw.write(tbLoaderCore.mStatsOnly ? "," : tbLoaderCore.mNewDeploymentInfo.getUpdateTimestamp() + ",");
             bw.write(tbLoaderCore.mOldDeploymentInfo.getSerialNumber().toUpperCase() + ",");
             bw.write(tbLoaderCore.mOldDeploymentInfo.getDeploymentName().toUpperCase() + ",");
-            bw.write(String.join(",", String.join(",", tbLoaderCore.mOldDeploymentInfo.getPackageNames()))
-                .toUpperCase() + ",");
+            bw.write(String.join(",\"", String.join(",", tbLoaderCore.mOldDeploymentInfo.getPackageNames()))
+                .toUpperCase() + "\",");
             bw.write(tbLoaderCore.mOldDeploymentInfo.getFirmwareRevision() + ",");
             bw.write(tbLoaderCore.mOldDeploymentInfo.getCommunity().toUpperCase() + ",");
             bw.write(tbLoaderCore.mOldDeploymentInfo.getUpdateTimestamp() + ",");
