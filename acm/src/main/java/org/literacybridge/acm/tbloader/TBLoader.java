@@ -1224,6 +1224,7 @@ public class TBLoader extends JFrame {
             if (!connected) {
                 tbLoaderPanel.fillPrevDeploymentInfo(null, null);
                 setCurrentTbFirmware("");
+                tbLoaderPanel.setNewSrn("");
                 LOG.log(Level.INFO, "STATUS: " + TBLoaderConstants.NO_DRIVE);
                 tbLoaderPanel.getProgressDisplayManager().setStatus("STATUS: " + TBLoaderConstants.NO_DRIVE);
             }
