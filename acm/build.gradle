@@ -197,6 +197,9 @@ dependencies {
 
     compile files(fileTree('3rdparty').include('*.jar'))
 
+    // https://mavenlibs.com/maven/dependency/org.javatuples/javatuples
+    compile 'org.javatuples:javatuples:1.2'
+
     testCompile 'org.powermock:powermock-api-mockito2:2.0.9'
     testCompile 'org.powermock:powermock-module-junit4-common:2.0.9'
     testCompile 'org.powermock:powermock-module-junit4:2.0.9'

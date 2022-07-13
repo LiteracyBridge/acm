@@ -6,11 +6,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.javatuples.Pair;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -94,6 +97,23 @@ public class LuceneMetadataStoreTest {
     assertNumSearchResults(store, "lorem", 1);
     assertNull(store.getAudioItem("3"));
     assertNumItems(store.getAudioItems(), 2);
+  }
+
+  @Test
+  public void testParsePlaylistString() throws Exception {
+      String playlistsString = "45:3-Mitundu-nya,46:3-TB_Program-nya,25:3-Lesson_6-nya,47:4-lesson_10-nya,48:4-lesson_11-nya,49:4-lesson_12-nya,93:4-Lesson_9-nya,50:4-lesson_13-nya,72:4-Message_2-nya,51:4-lesson_14-nya,52:4-lesson_15-nya,31:3-Lesson_5-nya,53:4-Children's_Additional_content-nya,10:2-Lesson_5-nya,11:2-Lesson_6-nya,12:3-Message_1-nya,13:3-Message_2-nya,57:4-Message_4-nya,14:3-Message_3-nya,36:3-Lesson_4-nya,15:3-Message_4-nya,16:3-Lesson_7-nya,17:3-Lesson_8-nya,18:3-Lesson_9-nya,0:1-TB_Program-nya,1:1-Introduction-nya,2:1-Mitundu-nya,3:1-Zachilengedwe-nya,4:1-Zakudya-nya,5:2-TB_Program-nya,6:2-Mitundu-nya,7:2-Zachilengedwe-nya,8:2-Zakudya-nya,9:2-Lesson_4-nya,60:4-Message_3-nya,83:4-Message_1-nya,40:3-Zakudya-nya,43:3-Zachilengedwe-nya,102:4-Lesson_8-nya";
+      String uidString = "103";
+      Map<String,String> commitData = new HashMap<>();
+      commitData.put(AudioItemIndex.PLAYLIST_NAMES_COMMIT_DATA, playlistsString);
+      commitData.put(AudioItemIndex.MAX_PLAYLIST_UID_COMMIT_DATA, uidString);
+
+      Pair<Map<String, Playlist.Builder>, Integer> playlistsParsed = AudioItemIndex.parsePlaylistNamesFromCommitData(commitData);
+      for (String playlistString : playlistsString.split(",")) {
+          String[] parts = playlistString.split(":");
+          Playlist.Builder builder = playlistsParsed.getValue0().get(parts[0]);
+          String name = builder.build().getName();
+          assertEquals("Unexpected name parsed", name, parts[1]);
+      }
   }
 
   @Test

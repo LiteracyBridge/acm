@@ -95,7 +95,16 @@ public class Playlist extends Committable {
     t.getIndex().refresh(this);
   }
 
-  public static Builder builder() {
+    @Override
+    public String toString() {
+        return "Playlist{" +
+            "id='" + id + '\'' +
+            ", name='" + name + '\'' +
+            ", audioItems=" + audioItems +
+            '}';
+    }
+
+    public static Builder builder() {
     return new Builder();
   }
 

@@ -47,12 +47,14 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
+import org.javatuples.Pair;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -101,7 +103,11 @@ public class AudioItemIndex {
 
     queryAnalyzer = new QueryAnalyzer();
     searcherManager = new SearcherManager(dir, new SearcherFactory());
-    readPlaylistNames();
+      // Here in the AudioItemIndex constructor, there should be (can be?) no pending transaction, so even
+      // though readPlaylistNames() can't see into pending transactions, what it reads will be complete.
+      //
+      // This call is only for the side effect of loading the playlist id counter.
+      readPlaylistNames();
   }
 
   private final String generateNewPlaylistUuid() {
@@ -207,27 +213,71 @@ public class AudioItemIndex {
     }
   }
 
+    /**
+     * Parse the strings from the store that contain playlist id:name mapping, and max playlist id.
+     * @param commitData {string:string} of committed/committable data with playlist names and max id.
+     * @return Pair<playlists,maxid>
+     */
+  static Pair<Map<String, Playlist.Builder>, Integer> parsePlaylistNamesFromCommitData(Map<String, String> commitData) {
+      Map<String, Playlist.Builder> playlists = Maps.newHashMap();
+      String playlistNamesString = commitData.get(PLAYLIST_NAMES_COMMIT_DATA);
+      String uidString = commitData.get(MAX_PLAYLIST_UID_COMMIT_DATA);
+      Integer uid = Integer.parseInt(uidString);
+      StringTokenizer tokenizer = new StringTokenizer(playlistNamesString, ",");
+      while (tokenizer.hasMoreTokens()) {
+          String[] pair = tokenizer.nextToken().split(":");
+          String uuid = pair[0];
+          String name = pair[1];
+          playlists.put(uuid, Playlist.builder().withId(uuid).withName(name));
+      }
+      return new Pair<>(playlists, uid);
+  }
+
   private Map<String, Playlist.Builder> readPlaylistNames() throws IOException {
     Map<String, Playlist.Builder> playlists = Maps.newHashMap();
     SegmentInfos infos = SegmentInfos.readLatestCommit(dir);
     Map<String, String> commitData = infos.getUserData();
     if (!commitData.isEmpty()) {
-      String playlistNames = commitData.get(PLAYLIST_NAMES_COMMIT_DATA);
-      this.currentMaxPlaylistUuid = Math.max(currentMaxPlaylistUuid,
-          Integer.parseInt(commitData.get(MAX_PLAYLIST_UID_COMMIT_DATA)));
-      StringTokenizer tokenizer = new StringTokenizer(playlistNames, ",");
-      while (tokenizer.hasMoreTokens()) {
-        String[] pair = tokenizer.nextToken().split(":");
-        String uuid = pair[0];
-        String name = pair[1];
-        playlists.put(uuid, Playlist.builder().withId(uuid).withName(name));
-      }
+      Pair<Map<String, Playlist.Builder>, Integer> playlistNames = parsePlaylistNamesFromCommitData(commitData);
+      playlists.putAll(playlistNames.getValue0());
+      this.currentMaxPlaylistUuid = Math.max(this.currentMaxPlaylistUuid, playlistNames.getValue1());
     }
     return playlists;
   }
 
+    /**
+     * Reads the latest playlists names, which may be from the store, or may be from the transaction.
+     * Empirically, there is always data in the writer; it is initialized from the store.
+     *
+     * As a side effect, currentMaxPlaylistUuid may be updated. That is an integer counter of the number
+     *   of playlists that have ever been created in this database, used as the id for new playlists.
+     *    UUID: "I don't think that word means what you think it means."
+     *
+     * @param t The current transaction.
+     * @return the playlists as modified in the transaction, or from the store, if no modification.
+     * @throws IOException if an IO exception occurs. Duh.
+     */
+  private Map<String, Playlist.Builder> readPlaylistNames(Transaction t) throws IOException {
+      Map<String, Playlist.Builder> playlists = null;
+      Map<String,String> commitData = t.getWriter().getCommitData();
+      if (commitData != null && commitData.containsKey(PLAYLIST_NAMES_COMMIT_DATA)) {
+          Pair<Map<String, Playlist.Builder>, Integer> playlistNames = parsePlaylistNamesFromCommitData(commitData);
+          playlists = new HashMap<>(playlistNames.getValue0());
+          this.currentMaxPlaylistUuid = Math.max(this.currentMaxPlaylistUuid, playlistNames.getValue1());
+      } else {
+          playlists = readPlaylistNames();
+      }
+      return playlists;
+  }
+
+    /**
+     * This is broken in the general case. It replaces the "commitData" with a new set of data that
+     * describes the playlists' names. If there were ever any other data, it would be lost.
+     * @param playlists The list of playlists whose names will be stored.
+     * @param writer The writer for the current transaction.
+     */
   private void storePlaylistNames(Iterable<Playlist> playlists,
-      IndexWriter writer) throws IOException {
+      IndexWriter writer) {
     StringBuilder builder = new StringBuilder();
     for (Playlist playlist : playlists) {
       builder.append(playlist.getId());
@@ -247,7 +297,7 @@ public class AudioItemIndex {
   }
 
   public void deletePlaylist(String uuid, Transaction t) throws IOException {
-    Map<String, Playlist.Builder> playlists = readPlaylistNames();
+    Map<String, Playlist.Builder> playlists = readPlaylistNames(t);
     playlists.remove(uuid);
     storePlaylistNames(Iterables.transform(playlists.values(),
         new Function<Playlist.Builder, Playlist>() {
@@ -266,7 +316,7 @@ public class AudioItemIndex {
 
   public boolean updatePlaylistName(Playlist playlist, Transaction t)
       throws IOException {
-    Map<String, Playlist.Builder> playlists = readPlaylistNames();
+    Map<String, Playlist.Builder> playlists = readPlaylistNames(t);
     Playlist.Builder removed = playlists.remove(playlist.getId());
     List<Playlist> updatedPlaylists = Lists.newLinkedList();
     for (Playlist.Builder p : playlists.values()) {
@@ -278,6 +328,9 @@ public class AudioItemIndex {
   }
 
   public Iterable<Playlist> getPlaylists() throws IOException {
+      // This function is (seems to be) only called from the LuceneMetadataStore constructor. In that
+      // case, there can be no pending transactions, so even though readPlaylistNames() can't see into
+      // pending transactions, what it returns will be complete.
     final Map<String, Playlist.Builder> playlists = readPlaylistNames();
     final IndexSearcher searcher = searcherManager.acquire();
     try {

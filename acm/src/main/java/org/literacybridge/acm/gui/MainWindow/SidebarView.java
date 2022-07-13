@@ -935,6 +935,7 @@ public class SidebarView extends ACMContainer implements Observer {
 
         if (arg instanceof PlaylistsChanged) {
             updatePlaylistTable();
+            Application.getFilterState().updateResult(true);
         }
 
         if (arg instanceof Taxonomy.CategoryVisibilitiesUpdated) {

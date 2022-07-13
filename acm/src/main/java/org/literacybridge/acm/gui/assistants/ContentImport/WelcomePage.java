@@ -422,7 +422,6 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
      */
     private void ensurePlaylists(int deploymentNo, String languagecode) {
         boolean anyAdded = false;
-        MetadataStore store = ACMConfiguration.getInstance().getCurrentDB().getMetadataStore();
         Map<String, Playlist> acmPlaylists = store.getPlaylists()
             .stream()
             .collect(Collectors.toMap(Playlist::getName, pl -> pl));
@@ -430,20 +429,22 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         List<ContentSpec.PlaylistSpec> contentPlaylistSpecs = context.getProgramSpec().getContentSpec()
                                                                                  .getDeployment(deploymentNo)
                                                                                  .getPlaylistSpecsForLanguage(languagecode);
-        Transaction transaction = this.store.newTransaction();
+        Transaction transaction = store.newTransaction();
         for (ContentSpec.PlaylistSpec contentPlaylistSpec : contentPlaylistSpecs) {
             String plName = AudioUtils.decoratedPlaylistName(contentPlaylistSpec.getPlaylistTitle(), deploymentNo, languagecode);
-            if (!acmPlaylists.containsKey(plName)) {
-                Playlist playlist = store.newPlaylist(plName);
+            Playlist playlist = acmPlaylists.get(plName);
+            if (playlist == null) {
+                playlist = store.newPlaylist(plName);
                 context.createdPlaylists.add(plName);
                 transaction.add(playlist);
                 anyAdded = true;
-                for (ContentSpec.MessageSpec contentMessageSpec : contentPlaylistSpec.getMessageSpecs()) {
-                    AudioItem item = findAudioItemForTitle(contentMessageSpec.title, languagecode);
-                    if (item != null) {
-                        playlist.addAudioItem(item);
-                        transaction.add(playlist);
-                    }
+            }
+            for (ContentSpec.MessageSpec contentMessageSpec : contentPlaylistSpec.getMessageSpecs()) {
+                AudioItem item = findAudioItemForTitle(contentMessageSpec.title, languagecode);
+                if (item != null && playlist.getAudioItemPosition(item.getId())<0) {
+                    playlist.addAudioItem(item);
+                    transaction.add(playlist);  // transactions is a set; won't cause duplicates
+                    anyAdded = true;
                 }
             }
         }
@@ -458,6 +459,7 @@ public class WelcomePage extends ContentImportBase<ContentImportContext> {
         }
 
         if (anyAdded) {
+            // For some reason this doesn't update the counts of the added playlists.
             Application.getMessageService().pumpMessage(new SidebarView.PlaylistsChanged());
         }
     }
