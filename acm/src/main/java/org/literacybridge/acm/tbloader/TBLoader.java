@@ -919,6 +919,14 @@ public class TBLoader extends JFrame {
                 lastMatchIndex = newList.size()-1;
             }
         }
+
+        if (tbLoaderConfig.isPseudoTb()) {
+            newList.add(new TbDeviceInfoHolder(tbLoaderConfig.pseudoTbDir(), "pseudo"));
+            if (prevSelected != null && tbLoaderConfig.pseudoTbDir().getAbsolutePath().equals(prevSelected.getAbsolutePath())) {
+                index = newList.size()-1;
+            }
+        }
+
         if (index==-1 && lastMatchIndex!=-1) {
             index=lastMatchIndex;
         }
