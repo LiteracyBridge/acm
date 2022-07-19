@@ -108,8 +108,7 @@ class TbLoaderLogger {
             bw.write(tbLoaderCore.mStatsOnly ? "," : tbLoaderCore.mNewDeploymentInfo.getUpdateTimestamp() + ",");
             bw.write(tbLoaderCore.mOldDeploymentInfo.getSerialNumber().toUpperCase() + ",");
             bw.write(tbLoaderCore.mOldDeploymentInfo.getDeploymentName().toUpperCase() + ",");
-            bw.write(String.join(",\"", String.join(",", tbLoaderCore.mOldDeploymentInfo.getPackageNames()))
-                .toUpperCase() + "\",");
+            bw.write("\"" + String.join(",", tbLoaderCore.mOldDeploymentInfo.getPackageNames()).toUpperCase() + "\",");
             bw.write(tbLoaderCore.mOldDeploymentInfo.getFirmwareRevision() + ",");
             bw.write(tbLoaderCore.mOldDeploymentInfo.getCommunity().toUpperCase() + ",");
             bw.write(tbLoaderCore.mOldDeploymentInfo.getUpdateTimestamp() + ",");
