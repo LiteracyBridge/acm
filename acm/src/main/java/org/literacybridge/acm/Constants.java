@@ -1,7 +1,6 @@
 package org.literacybridge.acm;
 
 import java.io.File;
-import java.util.regex.Pattern;
 
 public class Constants {
   public final static String ACM_VERSION = "r2207191"; // yy mm dd n
@@ -23,10 +22,9 @@ public class Constants {
   public final static String CHECKOUT_PROPERTIES_SUFFIX = "-checkedOut.properties";
   public final static String USER_FEEDBACK_INCLUDELIST_FILENAME = "userfeedback.includelist";
   public static final String CATEGORY_INCLUDELIST_FILENAME = "category.includelist";
-
-    public final static File USER_HOME_DIR = new File(
-      System.getProperty("user.home", "."));
-  public final static long DEFAULT_CACHE_SIZE_IN_BYTES = 2L * 1024L * 1024L * 1024L; // 2GB
+  public final static File   USER_HOME_DIR = new File(System.getProperty("user.home", "."));
+  public final static File   JAVA_TMP_DIR = new File(System.getProperty("java.io.tmpdir"));
+  public final static long   DEFAULT_CACHE_SIZE_IN_BYTES = 2L * 1024L * 1024L * 1024L; // 2GB
 
   public final static String USER_NAME = "USER_NAME";
   public final static String USER_CONTACT_INFO = "USER_CONTACT_INFO";

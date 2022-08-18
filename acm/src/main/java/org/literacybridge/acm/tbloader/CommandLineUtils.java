@@ -1,5 +1,6 @@
 package org.literacybridge.acm.tbloader;
 
+import org.literacybridge.acm.utils.ExternalCommandRunner;
 import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.tbloader.FileSystemUtilities;
 
@@ -7,8 +8,6 @@ import java.io.*;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,18 +84,18 @@ public class CommandLineUtils extends FileSystemUtilities {
      *
      * If it returns an incorrect answer, running setup again should fix the problem.
      */
-    private static class DFU_DriverDetector implements BiFunction<Writer, LineReader, Boolean> {
+    private static class DFU_DriverDetector implements BiFunction<Writer, ExternalCommandRunner.LineReader, Boolean> {
         private static final Pattern INSTALLED = Pattern.compile("(?i).*DFU_installed.*REG_DWORD\\s*(0x\\d*).*");
 
         private static boolean hasDFU_Driver() {
             DFU_DriverDetector detector = new DFU_DriverDetector();
             String[] command = new String[]{"reg", "query", "HKLM\\Software\\Amplio-Network", "/reg:64"};
-            return Boolean.TRUE.equals(runExternalCommand(command, detector));
+            return Boolean.TRUE.equals(ExternalCommandRunner.run(command, detector));
         }
 
         boolean foundDfu = false;
         @Override
-        public Boolean apply(Writer writer, LineReader stream) {
+        public Boolean apply(Writer writer, ExternalCommandRunner.LineReader stream) {
             String line;
             try {
                 while ((line = stream.readLine()) != null) {
@@ -127,7 +126,7 @@ public class CommandLineUtils extends FileSystemUtilities {
         }
     }
 
-    private static class DiskFormatter implements BiFunction<Writer, LineReader, Boolean> {
+    private static class DiskFormatter implements BiFunction<Writer, ExternalCommandRunner.LineReader, Boolean> {
         private static final Pattern INSERT_NEW_DISK = Pattern.compile("(?i)Insert new disk for drive.*");
         private static final Pattern ENTER_WHEN_READY = Pattern.compile("(?i).*ENTER when ready\\.{3}.*$");
         private static final Pattern FORMAT_COMPLETE = Pattern.compile("(?i)Format complete.*");
@@ -136,28 +135,28 @@ public class CommandLineUtils extends FileSystemUtilities {
         private static boolean format(String volume, String label) {
             DiskFormatter foh = new DiskFormatter();
             String[] command = new String[]{"cmd", "/c", "format", volume, "/Q", "/V:"+label};
-            return Boolean.TRUE.equals(runExternalCommand(command, foh));
+            return Boolean.TRUE.equals(ExternalCommandRunner.run(command, foh));
         }
 
         boolean formatComplete = false;
 
         @Override
-        public Boolean apply(Writer writer, LineReader stream) {
-            List<LineHandler<BiConsumer<Writer, Matcher>>> lineHandlers = new ArrayList<>();
+        public Boolean apply(java.io.Writer writer, ExternalCommandRunner.LineReader stream) {
+            List<LineHandler<BiConsumer<java.io.Writer, java.util.regex.Matcher>>> lineHandlers = new ArrayList<>();
             lineHandlers.add(new LineHandler<>(FORMAT_COMPLETE, this::gotFormatComplete));
             lineHandlers.add(new LineHandler<>(VOLUME_SERIAL, this::gotVolumeSerial));
 
             String line;
             try {
-                if (waitForInsert(stream) &&
-                    waitForReady(writer, stream))
-                while ((line = stream.readLine()) != null) {
-                    System.out.println(line);
-                    for (LineHandler<BiConsumer<Writer, Matcher>> lh : lineHandlers) {
-                        Matcher matcher = lh.linePattern.matcher(line);
-                        if (matcher.matches()) {
-                            lh.lineProcessor.accept(writer, matcher);
-                            break;
+                if (waitForInsert(stream) && waitForReady(writer, stream)) {
+                    while ((line = stream.readLine()) != null) {
+                        System.out.println(line);
+                        for (LineHandler<BiConsumer<Writer, Matcher>> lh : lineHandlers) {
+                            Matcher matcher = lh.linePattern.matcher(line);
+                            if (matcher.matches()) {
+                                lh.lineProcessor.accept(writer, matcher);
+                                break;
+                            }
                         }
                     }
                 }
@@ -175,7 +174,7 @@ public class CommandLineUtils extends FileSystemUtilities {
             formatComplete = true;
         }
 
-        private boolean waitForInsert(LineReader stream) throws IOException {
+        private boolean waitForInsert(ExternalCommandRunner.LineReader stream) throws IOException {
             String line;
             while ((line = stream.readLine()) != null) {
                 System.out.println(line);
@@ -185,7 +184,7 @@ public class CommandLineUtils extends FileSystemUtilities {
             return false;
         }
 
-        private boolean waitForReady(Writer writer, LineReader stream) throws IOException {
+        private boolean waitForReady(Writer writer, ExternalCommandRunner.LineReader stream) throws IOException {
             String line;
             while ((line = stream.readLine(ENTER_WHEN_READY)) != null) {
                 System.out.println(line);
@@ -200,7 +199,7 @@ public class CommandLineUtils extends FileSystemUtilities {
         }
     }
 
-    private static class FileSystemCheck implements BiFunction<Writer, LineReader, Boolean> {
+    private static class FileSystemCheck implements BiFunction<Writer, ExternalCommandRunner.LineReader, Boolean> {
         private static final Pattern NO_PROBLEMS = Pattern.compile("(?i).*(?:Windows has scanned the file system and found no problem|Windows a analys.* le syst.*me de fichiers sans trouver de probl.*).*");
         private static final Pattern CONVERT_CHAINS = Pattern.compile("(?i).*(?:(?:files.*|chains.*){2}|Convertir les liens perdus en fichiers).*\\?");
         private static final Pattern FOUND_ERRORS = Pattern.compile("(?i).*(?:Windows found errors on the disk, but will not fix them|Windows a trouv.* des erreurs sur le disque, mais ne les corrigera pas).*");
@@ -221,7 +220,7 @@ public class CommandLineUtils extends FileSystemUtilities {
         // Patterns of output from chkdsk that require a response.
         private final List<Pattern> patterns = Arrays.asList(FORCE_DISMOUNT, CONVERT_CHAINS);
 
-        public LineReader lineReader;
+        public ExternalCommandRunner.LineReader lineReader;
 
         private boolean hasErrors = false;
         private boolean hasNoProblems = false;
@@ -230,14 +229,14 @@ public class CommandLineUtils extends FileSystemUtilities {
         private static RESULT checkDisk(String volume) throws FileNotFoundException {
             FileSystemCheck fsck = new FileSystemCheck(null);
             String[] command = new String[]{"chkdsk", volume};
-            Boolean result = runExternalCommand(command, fsck, CHKDSK_TIMEOUT);
+            Boolean result = ExternalCommandRunner.run(command, fsck, CHKDSK_TIMEOUT);
             return RESULT.result(result);
         }
 
         private static RESULT checkDiskAndFix(String volume, String logfileName) throws FileNotFoundException {
             FileSystemCheck fsck = new FileSystemCheck(logfileName);
             String[] command = new String[]{"chkdsk", "/f", volume};
-            Boolean result = runExternalCommand(command, fsck, CHKDSK_TIMEOUT);
+            Boolean result = ExternalCommandRunner.run(command, fsck, CHKDSK_TIMEOUT);
             return RESULT.result(result);
         }
 
@@ -252,7 +251,7 @@ public class CommandLineUtils extends FileSystemUtilities {
          * @return true if the chkdsk completes; false if it fails to complete.
          */
         @Override
-        public Boolean apply(Writer writer, LineReader stream) {
+        public Boolean apply(Writer writer, ExternalCommandRunner.LineReader stream) {
             lineReader = stream;
             try {
                 String programOutputLine;
@@ -341,144 +340,13 @@ public class CommandLineUtils extends FileSystemUtilities {
     }
 
 
-    /**
-     * Runs an external command.
-     *
-     * @param cmdarray An array with the commands to run. Does not contain the cube executable itself.
-     * @param handler  a callback to be invoked with a BufferedReader of the command output.
-     * @param <R>      The generic type returned by the handler, also returned by this method.
-     * @return Whatever the handler returned.
-     */
-    private static <R> R runExternalCommand(String[] cmdarray, Function<LineReader, R> handler) {
-        return runExternalCommand(cmdarray, (w,r)->handler.apply(r));
-    }
-    private static <R> R runExternalCommand(String[] cmdarray, BiFunction<Writer, LineReader, R> handler) {
-        return runExternalCommand(cmdarray, handler, -1);
-    }
-    private static <R> R runExternalCommand(String[] cmdarray, BiFunction<Writer, LineReader, R> handler, long timeout) {
-        try {
-            java.util.List<String> cmdList = Arrays.asList(cmdarray);
-            LOG.log(Level.INFO, "Executing: " + String.join(" ", cmdarray));
-            Process proc = new ProcessBuilder(cmdList)
-                    .redirectErrorStream(true) // merge stderr into stdout
-                    .directory(new File("c:\\WINDOWS\\System32"))
-                    .start();
-
-            Timer killTimer = null;
-            if (timeout > 0) {
-                System.out.printf("Setting timeout for %d ms\n", timeout);
-                killTimer = new Timer();
-                killTimer.schedule(new TimerTask(){
-                    @Override
-                    public void run() {
-                        System.out.println("Timer expired.");
-                        proc.destroy();
-                    }
-                }, timeout);
-            }
-
-            // Stdout is called the "InputStream". Connect a reader to that.
-            LineReader reader = new LineReader(new InputStreamReader(proc.getInputStream()));
-            OutputStreamWriter writer = new OutputStreamWriter(proc.getOutputStream());
-            // And let the handler have the output from the command.
-            R result = handler.apply(writer, reader);
-            // Drain the process output.
-            reader.close();
-            System.out.println("Closed process reader.");
-            // Wait for the process to terminate.
-            proc.waitFor();
-            System.out.println("Process ended.");
-            if (killTimer != null) {
-                killTimer.cancel();
-            }
-            return result;
-        } catch (InterruptedException | IOException e) {
-            System.out.printf("Exception starting command: %s\n", e);
-            return null;
-        }
-    }
-
-    public static class LineHandler<CONSUMER> {
-        final Pattern linePattern;
-        final CONSUMER lineProcessor;
+    protected static class LineHandler<CONSUMER> {
+        public final Pattern linePattern;
+        public final CONSUMER lineProcessor;
 
         public LineHandler(Pattern linePattern, CONSUMER lineProcessor) {
             this.linePattern = linePattern;
             this.lineProcessor = lineProcessor;
         }
     }
-
-    private static class LineReader extends Reader {
-        Reader in;
-        boolean skipLf = false;
-        boolean eof = false;
-        public LineReader(Reader in) {
-            super(in);
-            this.in = in;
-        }
-
-        public String readLine(Pattern pattern) throws IOException {
-            return readLine(Collections.singletonList(pattern));
-        }
-        public String readLine() throws IOException {
-            return readLine((List<Pattern>)null);
-        }
-        public String readLine(List<Pattern> patterns) throws IOException {
-            if (eof) return null;
-            StringBuilder s=null;
-            boolean eol = false;
-            for (;;) {
-                int ch = read();
-//                System.out.print((char)ch);
-                if (ch < 0) {
-                    eof = true;
-                    return s==null ? null : s.toString();
-                }
-                if (skipLf && ch == '\n') {
-                    skipLf = false;
-                    continue;
-                }
-                if (s == null) s = new StringBuilder();
-                if (ch == '\n' || ch == '\r') {
-                    skipLf = ch == '\r';
-                    eol = true;
-                } else {
-                    s.append((char)ch);
-                    if (patterns != null && patterns.size()>0) {
-                        String partial = s.toString();
-                        eol = patterns.stream().anyMatch(p->p.matcher(partial).matches());
-                    }
-                }
-                if (eol) {
-                    return s.toString();
-                }
-            }
-        }
-
-        /**
-         * Reads up to 'len' characters from the input stream.
-         * @param cbuf Buffer to receive characters.
-         * @param off Offset to start receiving characters.
-         * @param len Desired number of characters.
-         * @return Actual number of characters read. Returns -1 if the stream returns EOF before characters are read.
-         * @throws IOException if the stream throws an exception.
-         */
-        @Override
-        public int read(char[] cbuf, int off, int len) throws IOException {
-            int n = 0;
-            while (n < len) {
-                int nr = in.read(cbuf, off + n, len - n);
-                if (nr < 0) return n>0 ? n : nr;
-                n += nr;
-            }
-            return n;
-        }
-
-        @Override
-        public void close() throws IOException {
-            in.close();
-        }
-    }
-
-
 }

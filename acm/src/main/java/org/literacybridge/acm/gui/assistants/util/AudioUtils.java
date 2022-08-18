@@ -28,9 +28,10 @@ import static org.literacybridge.acm.store.MetadataSpecification.DC_IDENTIFIER;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_LANGUAGE;
 import static org.literacybridge.acm.store.MetadataSpecification.DC_TITLE;
 
+@SuppressWarnings("JavadocBlankLines")
 public class AudioUtils {
 
-    private static Pattern playlistPattern = Pattern.compile("(\\d+)-(.*)-(\\w+)");
+    private static final Pattern playlistPattern = Pattern.compile("(\\d+)-(.*)-(\\w+)");
 
     /**
      * Copies the given fromFile as the toFile, converting to A18 format if the file is not already an A18.
@@ -41,8 +42,8 @@ public class AudioUtils {
      * @param languagecode The language code to add as metadat. (Why?)
      * @param fromFile File to copy from. May be any format.
      * @param toFile File to copy to.
-     * @throws BaseAudioConverter.ConversionException
-     * @throws IOException
+     * @throws BaseAudioConverter.ConversionException if audio conversion fails.
+     * @throws IOException if an io error occurs.
      */
     public static void copyOrConvert(String title, String languagecode, File fromFile, File toFile)
         throws BaseAudioConverter.ConversionException, IOException
@@ -65,7 +66,9 @@ public class AudioUtils {
             A18Utils.copyA18WithoutMetadata(fromFile, toFile);
         } else {
             AudioConversionFormat audioConversionFormat = AudioItemRepository.AudioFormat.A18.getAudioConversionFormat();
-            new ExternalConverter().convert(fromFile, toFile, audioConversionFormat, true);
+            new ExternalConverter(fromFile, audioConversionFormat)
+                .toFile(toFile)
+                .go();
         }
 
         A18Utils.appendMetadataToA18(metadata, categories, toFile);

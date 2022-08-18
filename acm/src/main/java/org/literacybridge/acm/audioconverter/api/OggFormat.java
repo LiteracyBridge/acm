@@ -2,12 +2,8 @@ package org.literacybridge.acm.audioconverter.api;
 
 public class OggFormat extends AudioConversionFormat {
 
-  public OggFormat(int BitDepth, float SampleRate, int Channels) {
-
-    super(BitDepth, SampleRate, Channels);
-
-    this.setFileEnding("OGG");
-
-  }
+    public OggFormat(float sampleRate, int sampleSizeInBits, int channels) {
+        super("ogg", sampleRate, sampleSizeInBits, channels);
+    }
 
 }

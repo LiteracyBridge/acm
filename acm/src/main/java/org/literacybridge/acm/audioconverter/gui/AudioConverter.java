@@ -612,7 +612,6 @@ public class AudioConverter extends JFrame
                 try {
                   File targetFile = currentConverter.targetFile(currFile, targetDirPath);
                   currentConverter.convertFile(currFile, targetFile,
-                      targetDirPath,
                       overwriteCheckBox.isSelected(),
                       getOptionsDialog().getParameterList());
                   if (detailsVisible) {

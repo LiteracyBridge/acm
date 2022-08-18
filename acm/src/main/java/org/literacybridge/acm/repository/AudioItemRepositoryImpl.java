@@ -33,7 +33,6 @@ import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
  * repository.
  */
 public class AudioItemRepositoryImpl implements AudioItemRepository {
-    private final static File TMP_DIR = new File(System.getProperty("java.io.tmpdir"));
     private final static Pattern categoryPattern = Pattern.compile("^\\$?\\d+(-\\d+)+$");
 
     public static AudioItemRepositoryImpl buildAudioItemRepository(DBConfiguration dbConfiguration) throws IOException {
@@ -53,8 +52,6 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
             EXTENSION_TO_FORMAT.put(format.getFileExtension().trim().toLowerCase(), format);
         }
     }
-
-    private final ExternalConverter externalConverter = new ExternalConverter();
 
     /**
      * Returns true, if this audio item is stored in any supported format in this
@@ -140,7 +137,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
             if (isForceWavConversion && format == AudioFormat.WAV) {
                 FFMpegConverter wavToWav = new FFMpegConverter();
                 ConversionResult wavToWavResult = wavToWav.doConvertFile(externalFile,
-                        toFile.getParentFile(), toFile, TMP_DIR, new HashMap<>());
+                        toFile.getParentFile(), toFile, new HashMap<>());
             } else {
                 IOUtils.copy(externalFile, toFile);
             }
@@ -235,7 +232,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         }
         if (!(sourceFile.exists() && sourceFile.isFile())) {
             throw new ConversionSourceMissingException(String.format("Can't find file to convert for: %s",
-                audioItem.toString()), audioItem.toString());
+                audioItem.toString()));
         }
         convertFile(sourceFile, targetFile);
     }
@@ -251,10 +248,16 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         if (audioFileRepository.isSandboxedFile(targetFile)) {
             throw new ConversionException("Target file should have been sandboxed.");
         }
+        if (!targetFile.getParentFile().exists()) {
+            if (!targetFile.getParentFile().mkdirs()) {
+                throw new ConversionException("Could not create output directory: "+targetFile.getParentFile().getAbsolutePath());
+            }
+        }
         AudioFormat targetFormat = ensureKnownFormat(targetFile);
-        externalConverter.convert(sourceFile, targetFile,
-            TMP_DIR,
-            targetFormat.getAudioConversionFormat(), false);
+        new ExternalConverter(sourceFile, targetFormat.getAudioConversionFormat())
+            .toFile(targetFile)
+            .noOverwrite()
+            .go();
     }
 
     private synchronized File convertFile(Object source, BiFunction<Object, AudioFormat, File> sourceFileFinder, AudioFormat targetFormat, File targetDirectory) throws ConversionException {
@@ -270,7 +273,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         }
 
         if (sourceFile == null) {
-            throw new ConversionSourceMissingException(String.format("Can't find file to convert for: %s", source.toString()), source.toString());
+            throw new ConversionSourceMissingException(String.format("Can't find file to convert for: %s", source.toString()));
         }
         // Target file has same name, and is in same directory as source, but with proper extension.
         File targetFile = ExternalConverter.targetFile(sourceFile, targetDirectory, targetFormat.getAudioConversionFormat());
@@ -278,9 +281,10 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
             throw new ConversionException("Target file should have been sandboxed.");
         }
         IOUtils.ensureDirectoryExists(targetFile);
-        externalConverter.convert(sourceFile, targetFile,
-                TMP_DIR,
-                targetFormat.getAudioConversionFormat(), false);
+        new ExternalConverter(sourceFile, targetFormat.getAudioConversionFormat())
+            .toFile(targetFile)
+            .noOverwrite()
+            .go();
 
         return targetFile;
     }

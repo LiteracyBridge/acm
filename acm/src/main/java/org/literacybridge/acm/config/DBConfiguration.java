@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -135,7 +134,7 @@ public class DBConfiguration {
 
   /**
    * Gets a File representing global (ie, Dropbox) ACM directory.
-   * Like ~/Dropbox/ACM-TEST
+   * Like ~/Dropbox/ACM-${programId} or ~/Amplio/acm-dbs/${programId}
    * @return The global File for this content database.
    */
   public File getProgramHomeDir() {

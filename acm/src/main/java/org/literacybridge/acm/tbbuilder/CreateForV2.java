@@ -10,23 +10,25 @@ import org.literacybridge.acm.deployment.DeploymentInfo;
 import org.literacybridge.acm.deployment.DeploymentInfo.PackageInfo;
 import org.literacybridge.acm.deployment.DeploymentInfo.PackageInfo.PlaylistInfo;
 import org.literacybridge.acm.deployment.DeploymentInfo.PromptInfo;
-import org.literacybridge.core.tbloader.PackagesData;
-import org.literacybridge.core.tbloader.PackagesData.PackageData;
-import org.literacybridge.core.tbloader.PackagesData.PackageData.PlaylistData;
 import org.literacybridge.acm.gui.assistants.Deployment.PlaylistPrompts;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
+import org.literacybridge.core.tbloader.PackagesData;
+import org.literacybridge.core.tbloader.PackagesData.PackageData;
+import org.literacybridge.core.tbloader.PackagesData.PackageData.PlaylistData;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BiConsumer;
 
 import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
@@ -122,7 +124,7 @@ resulting package sections
 @SuppressWarnings({"ResultOfMethodCallIgnored"})
 public
 class CreateForV2 extends CreateFromDeploymentInfo {
-    private final AudioItemRepository.AudioFormat audioFormat = AudioItemRepository.AudioFormat.WAV;
+    private final AudioItemRepository.AudioFormat audioFormat;
     private final PackagesData allPackagesData;
     private final File imagesDir;
 
@@ -154,6 +156,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
         super(tbBuilder, builderContext, deploymentInfo);
         allPackagesData = new PackagesData(builderContext.deploymentName);
         imagesDir = new File(builderContext.stagedDeploymentDir, "images.v2");
+        audioFormat = builderContext.deployTb2AsMp3 ? AudioItemRepository.AudioFormat.MP3 : AudioItemRepository.AudioFormat.WAV;
     }
 
 
@@ -553,7 +556,6 @@ class CreateForV2 extends CreateFromDeploymentInfo {
                                                                  AudioItemRepository.UnsupportedFormatException {
             File sourceLanguageDir = new File(builderContext.sourceTbOptionsDir,
                 "languages" + File.separator + packageInfo.getLanguageCode());
-            File sourceTutorialTxt = new File(sourceLanguageDir, Constants.CATEGORY_TUTORIAL + ".txt");
             File sourceTutorialPromptsDir = new File(sourceLanguageDir, "cat");
             File promptFile = new File(sourceTutorialPromptsDir,
                 Constants.CATEGORY_TUTORIAL + "." + getAudioFormat().getFileExtension());

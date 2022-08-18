@@ -1,73 +1,35 @@
 package org.literacybridge.acm.audioconverter.api;
 
+import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
+
 import javax.sound.sampled.AudioFormat;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public abstract class AudioConversionFormat extends AudioFormat {
+    private final String fileExtension;
 
-  private float mBitRate;
-
-  private String mFileEnding;
-
-  public AudioConversionFormat(int BitDepth, float SampleRate, int Channels) {
-
-    super(SampleRate, BitDepth, Channels, false, false);
-
-    // super.frameRate = 0;
-    // super.frameSize = 0;
-
-  }
-
-  public String getFileExtension() {
-    return String.format(".%s", mFileEnding).toLowerCase();
-  }
-
-  public String getFileEnding() {
-    return mFileEnding;
-  }
-
-  public void setFileEnding(String passFileEnding) {
-    if (passFileEnding.charAt(0) == '.') {
-      throw new IllegalArgumentException("File 'ending' is like extension, but without the leading period.");
+    public AudioConversionFormat(String fileExtension, float sampleRate, int sampleSizeInBits, int channels) {
+        super(sampleRate, sampleSizeInBits, channels, false, false);
+        if (fileExtension.charAt(0) == '.') {
+            throw new IllegalArgumentException("Extensions should not include leading dot.");
+        }
+        this.fileExtension = fileExtension;
     }
-    mFileEnding = passFileEnding;
-  }
 
-  public float getBitRate() {
+    public String getFileExtension() {
+        return fileExtension;
+    }
 
-    // Calculate BitRate
-    CalcBitRate();
+    public String getSampleRateString() {
+        return Integer.toString((int) sampleRate);
+    }
 
-    return mBitRate;
-  }
+    public Map<String, String> getParameters() {
+        Map<String, String> parameters = new LinkedHashMap<>();
 
-  public String getBitRateString() {
-
-    // Calculate BitRate
-    CalcBitRate();
-
-    return RemoveDecimals(mBitRate);
-
-  }
-
-  public float getBitDepth() {
-    return super.sampleSizeInBits;
-  }
-
-  private void CalcBitRate() {
-    mBitRate = sampleSizeInBits * channels * sampleRate;
-  }
-
-  private String RemoveDecimals(float Number) {
-
-    // Convert to String format without decimals
-    String returnString = String.valueOf(Number);
-    returnString = returnString.substring(0, returnString.indexOf("."));
-
-    return returnString;
-  }
-
-  public String getSampleRateString() {
-    return RemoveDecimals(sampleRate);
-  }
+        parameters.put(BaseAudioConverter.SAMPLE_RATE, getSampleRateString());
+        return parameters;
+    }
 
 }

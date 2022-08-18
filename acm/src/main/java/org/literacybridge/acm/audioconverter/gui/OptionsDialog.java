@@ -103,7 +103,6 @@ public class OptionsDialog {
 
   public Map<String, String> getParameterList() {
     Map<String, String> parameters = new LinkedHashMap<String, String>();
-    parameters.put(BaseAudioConverter.BIT_RATE, getBitRateValue());
     parameters.put(BaseAudioConverter.SAMPLE_RATE, getSampleRateValue());
     parameters.put(AnyToA18Converter.USE_HEADER, getHeaderValue());
     parameters.put(AnyToA18Converter.ALGORITHM, getAlgorithmValue());

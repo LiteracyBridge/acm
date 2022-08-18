@@ -2,9 +2,7 @@ package org.literacybridge.acm.audioconverter.converters;
 
 import org.literacybridge.acm.utils.IOUtils;
 
-import java.io.EOFException;
 import java.io.File;
-import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -44,37 +42,32 @@ public class A18ToWavConverter extends A18BaseConverter {
                     if (filesRate != intendedRate) {
                         raf.seek(SAMPLE_RATE_OFFSET);
                         IOUtils.writeLittleEndian32(raf, intendedRate);
-                        System.out.println(
-                                String.format("Corrected sample rate from %d to %d", filesRate,
-                                              intendedRate));
+                        System.out.printf("Corrected sample rate from %d to %d%n", filesRate,
+                                      intendedRate);
                     }
                 }
             }
         } catch (Exception e) {
             // Nothing we can really do.
-            System.out.println(String.format(
-                    "Exception validating sample rate: %s\n  Intended rate %d, file's rate %d",
-                    e.getMessage(), intendedRate, filesRate));
+            System.out.printf(
+                "Exception validating sample rate: %s\n  Intended rate %d, file's rate %d%n",
+                    e.getMessage(), intendedRate, filesRate);
         }
     }
 
     @Override
     protected String getCommand(File audioFile, File targetFile, Map<String, String> parameters) {
-        StringBuffer command = new StringBuffer();
+        StringBuilder command = new StringBuilder();
         command.append(getConverterEXEPath());
         command.append(" -d ");
 
         for (String key : parameters.keySet()) {
-            if (key.equals(BaseAudioConverter.BIT_RATE)) {
-                // The -b option is only used on encoding wav->a18, not the decode
-                // option of a18->wav
-                // command.append(" -b " + parameters.get(key));
-            } else if (key.equals(BaseAudioConverter.SAMPLE_RATE)) {
-                command.append(" -s " + parameters.get(key));
+            if (key.equals(BaseAudioConverter.SAMPLE_RATE)) {
+                command.append(" -s ").append(parameters.get(key));
             }
         }
-        command.append(" -o \"" + targetFile.getAbsolutePath() + "\"");
-        command.append(" \"" + audioFile.getAbsolutePath() + "\"");
+        command.append(" -o \"").append(targetFile.getAbsolutePath()).append("\"");
+        command.append(" \"").append(audioFile.getAbsolutePath()).append("\"");
 
         return command.toString();
     }

@@ -2,11 +2,7 @@ package org.literacybridge.acm.audioconverter.api;
 
 public class WAVFormat extends AudioConversionFormat {
 
-  public WAVFormat(int BitDepth, float SampleRate, int Channels) {
-
-    super(BitDepth, SampleRate, Channels);
-
-    this.setFileEnding("WAV");
-
-  }
+    public WAVFormat(float sampleRate, int sampleSizeInBits, int channels) {
+        super("wav", sampleRate, sampleSizeInBits, channels);
+    }
 }

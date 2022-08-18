@@ -27,6 +27,8 @@ class DeploymentContext implements AssistantContext {
     boolean includeUfCategory = !ACMConfiguration.getInstance().getCurrentDB().isUserFeedbackHidden();
     // "Talking Book. To learn about this device, press the tree."
     boolean includeTbTutorial;
+    // For TB-2, deploy as MP3 files?
+    boolean deployTb2AsMp3 = false;
 
     // Don't publish, only create.
     private boolean noPublish;

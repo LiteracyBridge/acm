@@ -42,11 +42,12 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     private final JLabel deployment;
     private final JCheckBox includeUfCategory;
     private final JCheckBox includeTbTutorial;
+    private final JCheckBox deployTb2AsMp3;
     private final JCheckBox noPublish;
     private final JTree playlistTree;
     private final JButton remove;
 
-    private DeploymentContext context;
+    private final DeploymentContext context;
 
     private final JButton moveUp;
     private final JButton moveDown;
@@ -94,11 +95,17 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
             add(includeUfCategory, gbc);
             includeUfCategory.addActionListener(this::onSelection);
         }
-        
+
+
         includeTbTutorial = new JCheckBox("Include Talking Book tutorial ('Talking Book. To learn about this device, press the tree ...')");
         includeTbTutorial.setSelected(true);
         add(includeTbTutorial, gbc);
         includeTbTutorial.addActionListener(this::onSelection);
+        deployTb2AsMp3 = new JCheckBox("Create TB-2 deployment with .MP3 audio files.");
+        deployTb2AsMp3.setSelected(false);
+        if (ACMConfiguration.getInstance().getCurrentDB().hasTbV2Devices()) {
+            add(deployTb2AsMp3, gbc);
+        }
         noPublish = new JCheckBox("Do not publish the deployment. Create only.");
         // Default to no-publish if running sandboxed.
         noPublish.setSelected(ACMConfiguration.isSandbox());
@@ -161,6 +168,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
     protected void onPageLeaving(boolean progressing) {
         context.includeUfCategory = includeUfCategory.isSelected();
         context.includeTbTutorial = includeTbTutorial.isSelected();
+        context.deployTb2AsMp3 = deployTb2AsMp3.isSelected();
         // Don't publish if user chose "no publish" option. Also don't publish if running in sandbox.
         context.setNoPublish(noPublish.isSelected());
     }

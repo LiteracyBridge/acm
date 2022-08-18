@@ -1,12 +1,12 @@
 package org.literacybridge.acm.gui.assistants.Deployment;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.Constants;
 import org.literacybridge.acm.audioconverter.converters.BaseAudioConverter;
 import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.config.DBConfiguration;
+import org.literacybridge.acm.deployment.DeploymentInfo;
 import org.literacybridge.acm.gui.Application;
 import org.literacybridge.acm.gui.Assistant.ProblemReviewDialog;
 import org.literacybridge.acm.gui.assistants.common.AcmAssistantPage;
@@ -16,7 +16,6 @@ import org.literacybridge.acm.gui.assistants.util.AcmContent.PlaylistNode;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
-import org.literacybridge.acm.deployment.DeploymentInfo;
 import org.literacybridge.acm.tbbuilder.TBBuilder;
 import org.literacybridge.acm.utils.EmailHelper;
 import org.literacybridge.acm.utils.EmailHelper.TD;
@@ -73,6 +72,7 @@ import static java.util.Calendar.YEAR;
 import static org.literacybridge.acm.gui.Assistant.Assistant.PageHelper;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
+@SuppressWarnings("JavadocBlankLines")
 public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
     private final JLabel publishNotification;
@@ -268,8 +268,7 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
 
         try {
             // May or may not have "ACM-" prefix, depending on Dropbox vs S3 hosted ACM database.
-            String acmName = ACMConfiguration.getInstance().getCurrentDB().getProgramHomeDirName();
-            TBBuilder tbBuilder = new TBBuilder(ACMConfiguration.getInstance().getCurrentDB(), context.deploymentNo, deploymentName(), this::reportState, this::logException);
+            TBBuilder tbBuilder = new TBBuilder(ACMConfiguration.getInstance().getCurrentDB(), context.deployTb2AsMp3, context.deploymentNo, deploymentName(), this::reportState, this::logException);
 
             // Create.
             final List<String> args = new ArrayList<>();
@@ -418,7 +417,6 @@ public class FinishDeploymentPage extends AcmAssistantPage<DeploymentContext> {
                     for (PlaylistNode playlistNode : languageNode.getPlaylistNodes()) {
                         title = playlistNode.getTitle();
                         PlaylistPrompts prompts = playlistsPrompts.get(title);
-                        int promptIx = new ArrayList<>(playlistsPrompts.keySet()).indexOf(title);
 
                         // Filter the playlist by the variants specified in the program specification.
                         // We're not filtering by language, because this ACM playlist is already

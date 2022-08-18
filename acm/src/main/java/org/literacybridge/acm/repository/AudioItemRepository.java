@@ -97,26 +97,24 @@ public interface AudioItemRepository {
      * An enum of all supported audio formats.
      */
     enum AudioFormat {
-        A18("a18", new A18Format(128, 16000, 1, A18Format.AlgorithmList.A1800, A18Format.useHeaderChoice.No)),
-        WAV("wav", new WAVFormat(128, 16000, 1)),
-        MP3("mp3", new MP3Format(128, 16000, 1)),
-        OGG("ogg", new OggFormat(128, 16000, 1)),
-        WMA("wma", new AudioConversionFormat(128, 16000, 1) {}),
-        AAC("aac", new AudioConversionFormat(128, 1600, 1) {}),
-        M4A("m4a", new AudioConversionFormat(128, 1600, 1) {});
+        A18(new A18Format(16000, 128, 1)),
+        WAV(new WAVFormat(16000, 128, 1)),
+        MP3(new MP3Format(16000, 128, 1)),
+        OGG(new OggFormat(16000, 128, 1)),
+        WMA(new AudioConversionFormat("wma", 16000, 128, 1) {}),
+        AAC(new AudioConversionFormat("aac", 1600, 128, 1) {}),
+        M4A(new AudioConversionFormat("m4a", 1600, 128, 1) {});
 
         private static final AudioFormat[] EXPORTABLES = {A18, WAV, MP3, OGG};
 
-        private final String fileExtension;
         private final AudioConversionFormat audioConversionFormat;
 
-        AudioFormat(String fileExtension, AudioConversionFormat audioConversionFormat) {
-            this.fileExtension = fileExtension;
+        AudioFormat(AudioConversionFormat audioConversionFormat) {
             this.audioConversionFormat = audioConversionFormat;
         }
 
         public String getFileExtension() {
-            return fileExtension;
+            return audioConversionFormat.getFileExtension();
         }
 
         public AudioConversionFormat getAudioConversionFormat() {

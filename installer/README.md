@@ -26,6 +26,33 @@ Make a Windows Installer using [Inno Setup](https://jrsoftware.org/isinfo.php)
 
 <br>
 
+# Signing with the Extended Validation certificate
+Greetings from Sectigo Support!
+
+Please make sure that you have installed the Safenet Authentication Client s/w 10.8R2 (SAC_10_8_R2_Windows 5/26/2021) and Windows SDK on the computer, so that you can directly plug in the device for signing the applications.
+
+* SafeNet Download for Sectigo EV Codesigning: https://sectigo.com/knowledge-base/detail/SafeNet-Download-for-Certificates-using-an-eToken-Smartcard/kA03l000000o6kL
+* Windows 10 SDK :
+https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk/
+
+* You must have finished the SafeNet setup process.
+* You must be using a Windows computer.
+* You must have installed Windows Development Kit.
+
+If you've 'checked' all three of them, you're good to go. Here are the steps involved in the Code Signing process:
+
+1. First, plug in your token in your computer
+1. Open SafeNet Client
+1. Now open the Command Prompt of your computer.
+1. Copy and Paste the following command:
+```
+signtool sign /tr http://timestamp.sectigo.com /td sha256 /fd sha256 /a "Insert_path_to_the_file_you_wish_to_sign "
+```
+5. Once the command is entered, SafeNet will ask for your password, enter it.
+1. Once you enter your password, your application should get signed.
+
+<br>
+
 # Setting up the signing tool:
 First download the SignTool.exe, from one of the Windows developer kits (it may change from time to time; search for "signtool").
 I got it from here: [Windows 10 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk/)
