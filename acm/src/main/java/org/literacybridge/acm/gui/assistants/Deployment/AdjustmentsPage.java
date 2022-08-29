@@ -102,7 +102,7 @@ public class AdjustmentsPage extends AssistantPage<DeploymentContext> {
         add(includeTbTutorial, gbc);
         includeTbTutorial.addActionListener(this::onSelection);
         deployTb2AsMp3 = new JCheckBox("Create TB-2 deployment with .MP3 audio files.");
-        deployTb2AsMp3.setSelected(false);
+        deployTb2AsMp3.setSelected(true);
         if (ACMConfiguration.getInstance().getCurrentDB().hasTbV2Devices()) {
             add(deployTb2AsMp3, gbc);
         }
