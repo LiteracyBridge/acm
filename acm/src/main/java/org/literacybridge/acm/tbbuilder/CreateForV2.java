@@ -13,6 +13,7 @@ import org.literacybridge.acm.deployment.DeploymentInfo.PromptInfo;
 import org.literacybridge.acm.gui.assistants.Deployment.PlaylistPrompts;
 import org.literacybridge.acm.repository.AudioItemRepository;
 import org.literacybridge.acm.store.AudioItem;
+import org.literacybridge.acm.utils.ExternalCommandRunner;
 import org.literacybridge.acm.utils.IOUtils;
 import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
@@ -24,12 +25,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
 
@@ -108,7 +106,7 @@ ${package_name_1} # name of the first package
     ${path_ordinal} ${message_1} # path ordinal and file name of first message
     ${path_ordianl} ${message_2} # path ordinal and file name of second message
     . . .
-  ${playlist_name_2} # name of secon playlist
+  ${playlist_name_2} # name of second playlist
   . . .
 #- - - - - - - - - - - - end of previous package, start of next package
 * ${package_name_2} # name of the second package
@@ -189,6 +187,42 @@ class CreateForV2 extends CreateFromDeploymentInfo {
         File of = new File(imagesDir, PackagesData.PACKAGES_DATA_TXT);
         try (FileOutputStream fos = new FileOutputStream(of)) {
             allPackagesData.exportPackageDataFile(fos);
+        }
+
+        createMp3FrameOffsetsFiles();
+    }
+
+    private void createMp3FrameOffsetsFiles() throws IOException {
+        if (getAudioFormat() != AudioItemRepository.AudioFormat.MP3) {
+            return;
+        }
+        Deque<File> directoriesToSearch = new LinkedList<>();
+        directoriesToSearch.add(builderContext.stagedDeploymentDir);
+        while (directoriesToSearch.size() > 0) {
+            File dir = directoriesToSearch.remove();
+            File[] ofInterest = dir.listFiles(contained -> contained.isDirectory() || contained.getName().toLowerCase().endsWith(".mp3"));
+            if (ofInterest != null) {
+                // Add the sub-directories to the list to be searched.
+                Arrays.stream(ofInterest).filter(File::isDirectory).forEach(directoriesToSearch::add);
+                // Create .m3t files for any audio files.
+                createMp3FrameOffsetsForDirectory(dir, Arrays.stream(ofInterest).filter(File::isFile).collect(Collectors.toList()));
+            }
+        }
+    }
+
+    private void createMp3FrameOffsetsForDirectory(File directory, List<File> files) throws IOException {
+        List<File> toConvert = new ArrayList<>();
+        for (File file : files) {
+            if (file.length() == 0) {
+                // Zero-byte marker file. The real file will be created elsewhere.
+                File markerFile = new File(directory, FilenameUtils.removeExtension(file.getName())+".m3t");
+                markerFile.createNewFile();
+            } else {
+                toConvert.add(file);
+            }
+        }
+        if (toConvert.size() > 0) {
+            new Mp3FrameWrapper(directory, toConvert).go();
         }
     }
 
@@ -621,6 +655,37 @@ class CreateForV2 extends CreateFromDeploymentInfo {
             return exportFile;
         }
 
+    }
+
+    public static String getMp3FramesEXEPath() {
+        return ACMConfiguration.getInstance().getSoftwareDir().getPath() + "/converters/lame/mp3frames.exe";
+    }
+
+    private static class Mp3FrameWrapper extends ExternalCommandRunner.CommandWrapper {
+        private final File directory;
+        private final List<File> targetFiles;
+
+        Mp3FrameWrapper(File directory, List<File> targetFiles) {
+            this.directory = directory;
+            this.targetFiles = targetFiles;
+        }
+
+        @Override
+        protected File getRunDirectory() {
+            return directory;
+        }
+
+        protected String[] getCommand() {
+            List<String> command = new ArrayList<>();
+            command.add(getMp3FramesEXEPath());
+            command.addAll(targetFiles.stream().map(File::getName).collect(Collectors.toList()));
+            return command.toArray(new String[0]);
+        }
+
+        @Override
+        protected List<ExternalCommandRunner.LineHandler> getLineHandlers() {
+            return new ArrayList<>();
+        }
     }
 
 }

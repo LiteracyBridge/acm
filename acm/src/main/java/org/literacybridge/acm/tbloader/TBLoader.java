@@ -20,45 +20,19 @@ import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
-import org.literacybridge.core.tbdevice.TbDeviceInfoNull;
-import org.literacybridge.core.tbdevice.TbDeviceInfoUnknown;
-import org.literacybridge.core.tbdevice.TbDeviceInfoV1;
-import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbdevice.TbDeviceInfo;
-import org.literacybridge.core.tbloader.TBLoaderConfig;
-import org.literacybridge.core.tbloader.TBLoaderConstants;
-import org.literacybridge.core.tbloader.TBLoaderCore;
-import org.literacybridge.core.tbloader.TBLoaderUtils;
+import org.literacybridge.core.tbloader.*;
 
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.WindowConstants;
+import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Image;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,7 +46,7 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getPackageForCommunity;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getPackagesInDeployment;
 
-@SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions", "CommentedOutCode"})
+@SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions", "CommentedOutCode", "IOStreamConstructor", "JavadocBlankLines"})
 public class TBLoader extends JFrame {
     private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
 
@@ -90,6 +64,7 @@ public class TBLoader extends JFrame {
         public boolean hasDfuSupport() { return hasDfuSupport; }
         public boolean isStrictTbV2FIrmware() { return strictTbV2Firmware; }
         public boolean allowPackageChoice() { return allowPackageChoice; }
+        @SuppressWarnings("unused")
         public boolean isSuppressDosTools() { return suppressDosTools; }
         public boolean offerTbV2FirmwareWithStats() { return offerTbV2FirmwareWithStats; }
         public boolean isTestMode() { return isTestMode; }
@@ -1031,7 +1006,7 @@ public class TBLoader extends JFrame {
             // If no drive, don't change anything.
             return;
         }
-        if (!TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, driveLabel)) {
+        if (!TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, driveLabel) && tbLoaderPanel.getDeviceVersion()== TbDeviceInfo.DEVICE_VERSION.TBv1) {
             String message = "The TB's statistics cannot be found. Please follow these steps:\n 1. Unplug the TB\n 2. Hold down the * while turning on the TB\n "
                 + "3. Observe the solid red light.\n 4. Now plug the TB into the laptop.\n 5. If you see this message again, please continue with the loading -- you tried your best.";
             String title = "Cannot find the statistics!";

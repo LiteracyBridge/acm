@@ -2,7 +2,6 @@ package org.literacybridge.core.tbloader;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.fs.RelativePath;
 import org.literacybridge.core.fs.TbFile;
 
@@ -10,13 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.literacybridge.core.fs.TbFile.Flags.contentRecursive;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.*;
@@ -136,13 +129,15 @@ class TBLoaderCoreV2 extends TBLoaderCore {
                 "config.bin",
                 "lost.dir",
                 "system volume information"));
+            final Set<String> audioExtensions = new HashSet<>(Arrays.asList("wav", "mp3", "a18", "m3t", "ogg"));
             @Override
             public boolean accept(TbFile file) {
                 String name = file.getName().toLowerCase();
                 if (excludedNames.contains(name)) return false;
                 if (name.charAt(0) == '.') return false;
                 // Audio file? Skip them.
-                return !name.endsWith(".wav") && !name.endsWith(".mp3") && !name.endsWith(".a18");
+                String extension = FilenameUtils.getExtension(name);
+                return !audioExtensions.contains(extension);
             }
         };
         mStepBytesCount += TbFile.copyDir(mTalkingBookRoot, mTalkingBookDataRoot, copyFilesFilter, mCopyListener);
