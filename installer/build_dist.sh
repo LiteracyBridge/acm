@@ -28,6 +28,8 @@ cp -av ../acm/dist/ctrl-all.jar ./ACM/
 
 # Audio converters
 cp -av ./converters ./ACM/
+# When converters change, notice the change
+echo "$(shasum ./ACM/converters/*/* 2>/dev/null|shasum) converters" >>./ACM/build.properties
 
 # STM32 utilities
 cp -av ./cube ./ACM/cube
