@@ -154,7 +154,7 @@ class CreateForV2 extends CreateFromDeploymentInfo {
         super(tbBuilder, builderContext, deploymentInfo);
         allPackagesData = new PackagesData(builderContext.deploymentName);
         imagesDir = new File(builderContext.stagedDeploymentDir, "images.v2");
-        audioFormat = builderContext.deployTb2AsMp3 ? AudioItemRepository.AudioFormat.MP3 : AudioItemRepository.AudioFormat.WAV;
+        audioFormat = AudioItemRepository.AudioFormat.MP3;
     }
 
 

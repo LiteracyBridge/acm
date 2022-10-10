@@ -85,7 +85,6 @@ public class TBBuilder {
         final File stagedProgramspecDir;  // {stagedDeploymentDir}/programspec
 
         final boolean deDuplicateAudio;
-        final boolean deployTb2AsMp3;
 
         final public Consumer<Exception> exceptionLogger;
         void logException(Exception ex) { exceptionLogger.accept(ex); }
@@ -94,16 +93,15 @@ public class TBBuilder {
             statusWriter.accept(String.format(format, args));
         }
 
-        BuilderContext(DBConfiguration dbConfig, boolean deployTb2AsMp3, int deploymentNo, String deploymentName, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) {
-            this("", ISO8601time.format(new Date()), dbConfig, deployTb2AsMp3, deploymentNo, deploymentName, statusWriter, exceptionLogger);
+        BuilderContext(DBConfiguration dbConfig, int deploymentNo, String deploymentName, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) {
+            this("", ISO8601time.format(new Date()), dbConfig, deploymentNo, deploymentName, statusWriter, exceptionLogger);
         }
         BuilderContext(String prefix, BuilderContext other) {
-            this(prefix, other.buildTimestamp, ACMConfiguration.getInstance().getDbConfiguration(other.project), other.deployTb2AsMp3, other.deploymentNo, other.deploymentName, other.statusWriter, other.exceptionLogger);
+            this(prefix, other.buildTimestamp, ACMConfiguration.getInstance().getDbConfiguration(other.project), other.deploymentNo, other.deploymentName, other.statusWriter, other.exceptionLogger);
         }
-        private BuilderContext(String prefix, String timeString, DBConfiguration dbConfig, boolean deployTb2AsMp3, int deploymentNo, String deploymentName, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) {
+        private BuilderContext(String prefix, String timeString, DBConfiguration dbConfig, int deploymentNo, String deploymentName, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) {
             this.dbConfig = dbConfig;
             this.buildTimestamp = timeString;
-            this.deployTb2AsMp3 = deployTb2AsMp3;
 
             this.deploymentNo = deploymentNo;
             this.deploymentName = deploymentName;
@@ -198,8 +196,8 @@ public class TBBuilder {
      * @param exceptionLogger write exceptions here.
      * @throws Exception if an exception happens tha twe can't recover from.
      */
-    public TBBuilder(DBConfiguration dbConfig, boolean deployTb2AsMp3, int deploymentNo, String deploymentName, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) throws Exception {
-        builderContext = new BuilderContext(dbConfig, deployTb2AsMp3, deploymentNo, deploymentName, statusWriter, exceptionLogger);
+    public TBBuilder(DBConfiguration dbConfig, int deploymentNo, String deploymentName, Consumer<String> statusWriter, Consumer<Exception> exceptionLogger) throws Exception {
+        builderContext = new BuilderContext(dbConfig, deploymentNo, deploymentName, statusWriter, exceptionLogger);
         utils = new Utils(this, builderContext);
     }
 
