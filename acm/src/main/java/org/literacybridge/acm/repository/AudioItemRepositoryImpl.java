@@ -191,18 +191,9 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      * @return the converted file.
      */
     private synchronized File convertAudioItem(AudioItem audioItem, AudioFormat targetFormat)
-        throws ConversionException, IOException, UnsupportedFormatException {
+        throws ConversionException, UnsupportedFormatException {
 
         File targetFile = resolveFile(audioItem, targetFormat, true);
-        if (!targetFile.exists() && targetFormat == AudioFormat.A18) {
-            // Before creating a new a18 in the temp folder from a cached wave file,
-            // just copy over the a18 file in dropbox over there if it exists.
-            File audioFileShared = resolveFile(audioItem, targetFormat, false);
-            if (audioFileShared.exists()) {
-                IOUtils.ensureDirectoryExists(targetFile);
-                IOUtils.copy(audioFileShared, targetFile, true);
-            }
-        }
         if (targetFile.exists()) {
             return targetFile;
         }
