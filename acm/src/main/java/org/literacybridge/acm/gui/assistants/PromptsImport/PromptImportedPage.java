@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
 import static org.literacybridge.acm.Constants.BELL_SOUND;
+import static org.literacybridge.acm.Constants.SILENCE;
 import static org.literacybridge.acm.Constants.TUTORIAL_LIST;
 import static org.literacybridge.acm.utils.EmailHelper.pinkZebra;
 
@@ -265,6 +266,7 @@ public class PromptImportedPage extends AcmAssistantPage<PromptImportContext> {
 
         importBoilerplateFiles(TUTORIAL_LIST);
         importBoilerplateFiles(BELL_SOUND);
+        importBoilerplateFiles(SILENCE);
     }
 
     /**
