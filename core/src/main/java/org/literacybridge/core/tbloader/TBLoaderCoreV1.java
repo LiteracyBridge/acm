@@ -1,7 +1,6 @@
 package org.literacybridge.core.tbloader;
 
 import org.apache.commons.io.FilenameUtils;
-import org.literacybridge.core.OSChecker;
 import org.literacybridge.core.fs.RelativePath;
 import org.literacybridge.core.fs.TbFile;
 
@@ -20,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static org.literacybridge.core.fs.TbFile.Flags.contentRecursive;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.clearFeedbackCategories;
@@ -42,6 +42,9 @@ import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_MESSAGES_PAT
 import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
 
 class TBLoaderCoreV1 extends TBLoaderCore {
+    // V1 user recording file format. Match like C-00120ABC*, or *_9_*.a18 or *_9-0_*.a18
+    private static final Pattern UF_PATTERN = Pattern.compile("(?i)^(([abc]-\\p{XDigit}{8})|.*(_9_|_9-0_)).*\\.a18$");
+
     TBLoaderCoreV1(Builder builder) {
         super(builder);
 
@@ -273,8 +276,7 @@ class TBLoaderCoreV1 extends TBLoaderCore {
 
         TbFile.CopyFilter copyRecordingsFilter = file -> {
             String name = file.getName();
-            // match *_9_*.a18 or *_9-0_*.a18
-            return name.matches("(?i).*(?:_9_|_9-0_).*\\.a18");
+            return UF_PATTERN.matcher(name).matches();
         };
         if (recordingsSrc.exists()) {
             mStepBytesCount += TbFile.copyDir(recordingsSrc, recordingsDst, copyRecordingsFilter, localListener);
@@ -323,10 +325,7 @@ class TBLoaderCoreV1 extends TBLoaderCore {
         // del ${device_drive}\messages\audio\*_9_*.a18 /Q
         // del ${device_drive}\messages\audio\*_9-0_*.a18 /Q
         TbFile audioDirectory = mTalkingBookRoot.open(TBLoaderConstants.TB_AUDIO_PATH);
-        String[] names = audioDirectory.list((parent, name) -> {
-            // match *_9_*.a18 or *_9-0_*.a18
-            return name.matches("(?i).*(?:_9_|_9-0_).*\\.a18");
-        });
+        String[] names = audioDirectory.list((parent, name) -> UF_PATTERN.matcher(name).matches());
         if (names != null) {
             for (String name : names) {
                 audioDirectory.open(name).delete();

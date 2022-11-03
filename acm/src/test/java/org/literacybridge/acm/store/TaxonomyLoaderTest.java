@@ -16,6 +16,7 @@ import java.util.List;
 import static junit.framework.TestCase.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.literacybridge.acm.Constants.CATEGORY_UNCATEGORIZED_FEEDBACK;
 
 public class TaxonomyLoaderTest {
     public static final int TEST_REVISION = 999999;
@@ -32,7 +33,7 @@ public class TaxonomyLoaderTest {
         assertEquals("Expected to find Taxonomy Root",
             TaxonomyLoader.LB_TAXONOMY_UID,
             builtin.getRootCategory().getId());
-        assertNotNull("Expected to find '9-0'", builtin.getCategory("9-0"));
+        assertNotNull("Expected to find '"+CATEGORY_UNCATEGORIZED_FEEDBACK+"'", builtin.getCategory(CATEGORY_UNCATEGORIZED_FEEDBACK));
     }
 
 // Enable this "test" to print out a more human-readable version of the taxonomy.
@@ -56,7 +57,7 @@ public class TaxonomyLoaderTest {
             override.getRootCategory().getId());
         assertEquals("Expected to find TEST_REVISION", TEST_REVISION, (int) override.getRevision());
 
-        assertNull("Expected to not find '9-0'", override.getCategory("9-0"));
+        assertNull("Expected to not find '"+CATEGORY_UNCATEGORIZED_FEEDBACK+"'", override.getCategory(CATEGORY_UNCATEGORIZED_FEEDBACK));
         Category cat = override.getCategory("12345-99");
         assertNotNull("Expected to find '12345-99'", cat);
         assertEquals("Expected '12345-99' to be at order 9", 9, cat.getOrder());
