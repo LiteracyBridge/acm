@@ -6,17 +6,43 @@ import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 import org.literacybridge.core.tbloader.TbFlashData;
 
-import java.io.File;
 import java.io.InputStream;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.literacybridge.core.tbloader.TBLoaderConstants.*;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.COMMUNITY_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_PROPERTIES_NAME;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_UUID_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.PACKAGE_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.PROJECT_FILE_EXTENSION;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.PROJECT_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENTID_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENT_AGENT;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENT_COMMUNITY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENT_DISTRICT;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENT_GROUP;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENT_LANGUAGE;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.RECIPIENT_REGION;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TALKING_BOOK_ID_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TBCDID_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_AUDIO_PATH;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LANGUAGES_PATH;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_LISTS_PATH;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TB_SYSTEM_PATH;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TEST_DEPLOYMENT_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.TIMESTAMP_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.USEREMAIL_PROPERTY;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.USERNAME_PROPERTY;
 
 public abstract class TbDeviceInfo {
     private static final Logger LOG = Logger.getLogger(TbDeviceInfo.class.getName());
@@ -26,6 +52,10 @@ public abstract class TbDeviceInfo {
         UNKNOWN,
         TBv1,
         TBv2
+    }
+
+    public static TbDeviceInfo getDeviceInfoFor(TbFile tbRoot, String label, String prefix) {
+        return getDeviceInfoFor(tbRoot, label, prefix, DEVICE_VERSION.TBv1);
     }
 
     public static TbDeviceInfo getDeviceInfoFor(TbFile tbRoot,

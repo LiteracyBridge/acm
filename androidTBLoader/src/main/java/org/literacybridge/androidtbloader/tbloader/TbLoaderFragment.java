@@ -1,12 +1,5 @@
 package org.literacybridge.androidtbloader.tbloader;
 
-import static android.app.Activity.RESULT_OK;
-import static android.text.TextUtils.TruncateAt.MARQUEE;
-import static org.literacybridge.androidtbloader.util.Constants.ISO8601;
-import static org.literacybridge.androidtbloader.util.Constants.UTC;
-import static org.literacybridge.androidtbloader.util.PathsProvider.getLocalDeploymentDirectory;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME;
-
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
@@ -25,11 +18,9 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-
 import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.androidtbloader.R;
 import org.literacybridge.androidtbloader.TBLoaderAppContext;
@@ -45,6 +36,7 @@ import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.fs.ZipUnzip;
 import org.literacybridge.core.spec.Recipient;
+import org.literacybridge.core.spec.RecipientList;
 import org.literacybridge.core.tbdevice.TbDeviceInfo;
 import org.literacybridge.core.tbloader.DeploymentInfo;
 import org.literacybridge.core.tbloader.ProgressListener;
@@ -67,6 +59,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executors;
+
+import static android.app.Activity.RESULT_OK;
+import static android.text.TextUtils.TruncateAt.MARQUEE;
+import static org.literacybridge.androidtbloader.util.Constants.ISO8601;
+import static org.literacybridge.androidtbloader.util.Constants.UTC;
+import static org.literacybridge.androidtbloader.util.PathsProvider.getLocalDeploymentDirectory;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.COLLECTED_DATA_SUBDIR_NAME;
 
 /**
  * This implements the UI of the Loader portion of the application.
@@ -539,10 +538,15 @@ public class TbLoaderFragment extends Fragment {
 
         if (mStatsOnly) {
             String deviceRecipientid = mConnectedDeviceInfo.getRecipientid();
-            String deviceCommunity;
+            String deviceCommunity = null;
             if (StringUtils.isNotEmpty(deviceRecipientid)) {
-                deviceCommunity = mAppContext.getProgramSpec().getRecipients().getRecipient(deviceRecipientid).getName();
-            } else {
+                RecipientList.RecipientAdapter recipient = mAppContext.getProgramSpec().getRecipients().getRecipient(deviceRecipientid);
+                if (recipient != null) {
+                    // TB's recipient is known in this program.
+                    deviceCommunity = recipient.getName();
+                }
+            }
+            if (StringUtils.isBlank(deviceCommunity)){
                 deviceCommunity = mConnectedDeviceInfo.getCommunityName();
             }
             String deviceProject = mConnectedDeviceInfo.getProjectName();

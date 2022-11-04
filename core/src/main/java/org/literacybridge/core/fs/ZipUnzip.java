@@ -27,50 +27,53 @@ public class ZipUnzip {
          * @param total Size of the zip file.
          * @return false if the operation should cancel; true to continue.
          */
-      public boolean progress(long current, long total);
+        boolean progress(long current, long total);
   }
 
   private ZipUnzip(File baseDirectory) {
     baseInDir = baseDirectory;
   }
 
-  private void addDirectory(ZipOutputStream zout, File fileSource,
-      boolean includeBaseDir, boolean includeChildren) throws IOException {
-    if (includeBaseDir || fileSource != baseInDir) {
-      String relativeDirName = baseInDir.toURI().relativize(fileSource.toURI())
-          .getPath();
-      zout.putNextEntry(new ZipEntry(relativeDirName));
-    }
-    if (!includeChildren)
-      return;
-    File[] files = fileSource.listFiles();
-    for (File file : files) {
-      if (file.isDirectory()) {
-        addDirectory(zout, file, false, true);
-        continue;
-      }
-      try {
-        String relativeFileName = baseInDir.toURI().relativize(file.toURI()).getPath();
-        byte[] buffer = new byte[1024];
-        FileInputStream fin = new FileInputStream(file);
-        zout.putNextEntry(new ZipEntry(relativeFileName));
-        int length;
-        while ((length = fin.read(buffer)) > 0) {
-          zout.write(buffer, 0, length);
+    private void addDirectory(ZipOutputStream zout, File fileSource,
+        boolean includeBaseDir, boolean includeChildren) throws IOException {
+        if (includeBaseDir || fileSource != baseInDir) {
+            String relativeDirName = baseInDir.toURI().relativize(fileSource.toURI())
+                .getPath();
+            zout.putNextEntry(new ZipEntry(relativeDirName));
         }
-        zout.closeEntry();
-        fin.close();
-      } catch (IOException ioe) {
-        try {
-            System.out.println("IOException adding file in ZipUnzip: " + file.getAbsolutePath());
-        } catch (Exception ex) {
-            // Ignore any exception printing exception message.
-            System.out.println("IOException in ZipUnzip.addDirectory: "+ioe.getMessage());
+        if (!includeChildren) {return;}
+        File[] files = fileSource.listFiles();
+        if (files == null) {
+            // Nothing to do.
+            return;
         }
-        throw ioe;
-      }
+        for (File file : files) {
+            if (file.isDirectory()) {
+                addDirectory(zout, file, false, true);
+                continue;
+            }
+            try {
+                String relativeFileName = baseInDir.toURI().relativize(file.toURI()).getPath();
+                byte[] buffer = new byte[1024];
+                FileInputStream fin = new FileInputStream(file);
+                zout.putNextEntry(new ZipEntry(relativeFileName));
+                int length;
+                while ((length = fin.read(buffer)) > 0) {
+                    zout.write(buffer, 0, length);
+                }
+                zout.closeEntry();
+                fin.close();
+            } catch (IOException ioe) {
+                try {
+                    System.out.println("IOException adding file in ZipUnzip: " + file.getAbsolutePath());
+                } catch (Exception ex) {
+                    // Ignore any exception printing exception message.
+                    System.out.println("IOException in ZipUnzip.addDirectory: " + ioe.getMessage());
+                }
+                throw ioe;
+            }
+        }
     }
-  }
 
   public static void zip(File inDir, File outFile) throws IOException {
     zip(inDir, outFile, false);
@@ -126,45 +129,47 @@ public class ZipUnzip {
      * @param listener Optional callback for status.
      * @throws IOException if can't write to a file.
      */
-  public static void unzip(File inFile, File outDir, UnzipListener listener) throws IOException {
-    File parentDir;
-    long current=0;
-    long total=inFile.length();
-    boolean cancelled = false;
+    public static void unzip(File inFile, File outDir, UnzipListener listener) throws IOException {
+        File parentDir;
+        long current = 0;
+        long total = inFile.length();
+        boolean cancelled = false;
 
-    parentDir = outDir;
-    ZipFile zfile = new ZipFile(inFile);
-    Enumeration<? extends ZipEntry> entries = zfile.entries();
-    if (listener != null) {
-        listener.progress(current, total);
-    }
-    while (entries.hasMoreElements() && !cancelled) {
-      ZipEntry entry = entries.nextElement();
-      File file = new File(parentDir, entry.getName());
-      if (entry.isDirectory()) {
-        file.mkdirs();
-      } else {
-        file.getParentFile().mkdirs();
-        InputStream in = zfile.getInputStream(entry);
-        try {
-          OutputStream out = new FileOutputStream(file);
-          byte[] buffer = new byte[1024];
-          while (true) {
-            int readCount = in.read(buffer);
-            if (readCount < 0) {
-              break;
+        parentDir = outDir;
+        try (ZipFile zfile = new ZipFile(inFile)) {
+            Enumeration<? extends ZipEntry> entries = zfile.entries();
+            if (listener != null) {
+                listener.progress(current, total);
             }
-            out.write(buffer, 0, readCount);
-          }
-        } finally {
-          in.close();
+            byte[] buffer = new byte[1024];
+            String expectedFilePrefix = outDir.getCanonicalPath();
+            while (entries.hasMoreElements() && !cancelled) {
+                ZipEntry entry = entries.nextElement();
+                File file = new File(parentDir, entry.getName());
+                String canonicalPath = file.getCanonicalPath();
+                if (!canonicalPath.startsWith(expectedFilePrefix)) {
+                    throw new IOException("Unexpected path contained in zip file");
+                }
+                if (entry.isDirectory()) {
+                    file.mkdirs();
+                } else {
+                    file.getParentFile().mkdirs();
+                    try (InputStream in = zfile.getInputStream(entry); OutputStream out = new FileOutputStream(file)) {
+                        while (true) {
+                            int readCount = in.read(buffer);
+                            if (readCount < 0) {
+                                break;
+                            }
+                            out.write(buffer, 0, readCount);
+                        }
+                    }
+                }
+                if (listener != null) {
+                    current += entry.getCompressedSize();
+                    cancelled = !listener.progress(current, total);
+                }
+            }
         }
-      }
-      if (listener != null) {
-          current += entry.getCompressedSize();
-          cancelled = !listener.progress(current, total);
-      }
     }
-  }
 
 }
