@@ -59,6 +59,13 @@ public class OperationLog {
         public abstract <T> Operation put(String key, T value);
 
         /**
+         * Let user read back values.
+         * @param key to desired value.
+         * @return The 'toString()' of the value.
+         */
+        public abstract String get(String key);
+
+        /**
          * Put key:value pairs.
          * @param info object with key:value pairs.
          * @return this, for chaining.
@@ -162,6 +169,11 @@ public class OperationLog {
         public <T> Operation put(String key, T value) {
             info.put(key, value!=null?value.toString():"");
             return this;
+        }
+
+        @Override
+        public String get(String key) {
+            return info.get(key);
         }
 
         public Operation put(Info info) {

@@ -9,15 +9,52 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import static org.apache.commons.text.StringEscapeUtils.escapeCsv;
 import static org.literacybridge.core.fs.TbFile.Flags.append;
 import static org.literacybridge.core.fs.TbFile.Flags.nil;
 
 class TbLoaderLogger {
     public static final String VERSION_TBDATA = "v03";
+
+    private static final Map<String, String> deploymentLog2tbsdeployed = new LinkedHashMap<String, String>() {{
+        put("sn", "talkingbookid");
+        put("recipientid", "recipientid");
+        put("timestamp", "deployedtimestamp");
+        put("project", "project");
+        put("deployment", "deployment");
+        put("package", "contentpackage");
+        put("firmware", "firmware");
+        put("location", "location");
+        put("coordinates", "coordinates");
+        put("username", "username");
+        put("tbcdid", "tbcdid");
+        put("action", "action");
+        put("newsn", "newsn");
+        put("testing", "testing");
+        put("deployment_uuid", "deployment_uuid");
+    }};
+    private static final Map<String, String> tbData2tbscollected = new LinkedHashMap<String, String>() {{
+        put("in_sn", "talkingbookid");
+        put("in_recipientid", "recipientid");
+        put("timestamp", "collectedtimestamp");
+        put("in_project", "project");
+        put("in_deployment", "deployment");
+        put("in_package", "contentpackage");
+        put("in_firmware", "firmware");
+        put("location", "location");
+        put("coordinates", "coordinates");
+        put("username", "username");
+        put("tbcdid", "tbcdid");
+        put("action", "action");
+        put("in_testing", "testing");
+        put("in_deployment_uuid", "deployment_uuid");
+        put("stats_uuid", "collection_uuid");
+    }};
+    
     private final TBLoaderCore tbLoaderCore;
 
     public TbLoaderLogger(TBLoaderCore tbLoaderCore) {
@@ -319,6 +356,12 @@ class TbLoaderLogger {
                 writeLogDataToFile(deploymentLog, tbLoaderCore.getCollectedOpDataDir().open("deployments" + logSuffix));
             }
 
+            // Create the tbscollected.csv and (if appropriate) the tbsdeployed.csv files.
+            writeTbsCollected(opLog);
+            if (!tbLoaderCore.mStatsOnly) {
+                writeTbsDeployed(deploymentLog);
+            }
+
         } catch (Exception e) {
             opLog.put("exception", e);
             e.printStackTrace();
@@ -331,4 +374,62 @@ class TbLoaderLogger {
             }
         }
     }
+
+    private void writeTbsCollected(OperationLog.Operation opLog) {
+        try {
+            // Make a map of {tbscollected_key : tbData_value}. Null values translated to empty string.
+            // We assume no collisions and so provide a trivial "merge" function. Create a LinkedHashMap, to preserve order.
+            Map<String, String> tbsCollectedData = tbData2tbscollected.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getValue, e -> {
+                    String v = opLog.get(e.getKey());
+                    return v == null ? "" : escapeCsv(v);
+                }, (a, b) -> a, LinkedHashMap::new));
+            // This timestamp isn't in opLog, so provide it independently.
+            tbsCollectedData.put("collectedtimestamp", tbLoaderCore.mUpdateTimestampISO);
+
+            writeTbOperationCsv(tbsCollectedData, "tbscollected.csv");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void writeTbsDeployed(OperationLog.Operation deploymentLog) {
+        try {
+            // Make a map of {tbsdeployeded_key : deployments_value}. Null values translated to empty string.
+            // We assume no collisions and so provide a trivial "merge" function. Create a LinkedHashMap, to preserve order.
+            Map<String, String> tbsDeployedData = deploymentLog2tbsdeployed.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getValue, e -> {
+                    String v = deploymentLog.get(e.getKey());
+                    return v == null ? "" : escapeCsv(v);
+                }, (a, b) -> a, LinkedHashMap::new));
+
+            writeTbOperationCsv(tbsDeployedData, "tbsdeployed.csv");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void writeTbOperationCsv(Map<String,String> data, String filename) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(baos));
+
+            String heading = String.join(",", data.keySet()) + '\n';
+            bw.write(heading);
+
+            String values = String.join(",", data.values()) + '\n';
+            bw.write(values);
+            bw.flush();
+            bw.close();
+
+            InputStream content = new ByteArrayInputStream(baos.toByteArray());
+            TbFile csvFile = tbLoaderCore.getCollectedOpDataDir().open(filename);
+            csvFile.createNew(content);
+            content.close();
+            baos.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
 }
