@@ -63,6 +63,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 public class AudioItemIndex {
   private static final Logger LOG = Logger
@@ -81,6 +82,11 @@ public class AudioItemIndex {
 
   public static final String PLAYLIST_NAMES_COMMIT_DATA = "playlist_names";
   public static final String MAX_PLAYLIST_UID_COMMIT_DATA = "max_playlist_uuid";
+
+  public static final String PLAYLIST_TO_PLAYLIST_CONCAT_CHAR = "\u22a1";
+  public static final String PLAYLIST_ID_TO_NAME_CONCAT_CHAR = "\u2299";
+  public static final Pattern NEW_PLAYLIST_RECOGNIZER = Pattern.compile(".*[\u22a1\u2299]+.*");
+  public static final Pattern NEW_PLAYLIST_SEPARATOR_CHARS = Pattern.compile("[\u22a1\u2299]");
 
   private AudioItemDocumentFactory factory = new AudioItemDocumentFactory();
   private final Directory dir;
@@ -223,12 +229,24 @@ public class AudioItemIndex {
       String playlistNamesString = commitData.get(PLAYLIST_NAMES_COMMIT_DATA);
       String uidString = commitData.get(MAX_PLAYLIST_UID_COMMIT_DATA);
       Integer uid = Integer.parseInt(uidString);
-      StringTokenizer tokenizer = new StringTokenizer(playlistNamesString, ",");
-      while (tokenizer.hasMoreTokens()) {
-          String[] pair = tokenizer.nextToken().split(":");
-          String uuid = pair[0];
-          String name = pair[1];
-          playlists.put(uuid, Playlist.builder().withId(uuid).withName(name));
+      if (NEW_PLAYLIST_RECOGNIZER.matcher(playlistNamesString).matches()) {
+          // This playlist was encoded with new-style (safer) delimiters.
+          String[] playlistNamesAndIds = playlistNamesString.split(PLAYLIST_TO_PLAYLIST_CONCAT_CHAR);
+          for (String playlistNameAndId : playlistNamesAndIds) {
+              String[] idAndName = playlistNameAndId.split(PLAYLIST_ID_TO_NAME_CONCAT_CHAR);
+              String id = idAndName[0];
+              String name = idAndName[1];
+              playlists.put(id, Playlist.builder().withId(id).withName(name));
+          }
+      } else {
+          // This playlist was encoded with old-style, profoundly unsafe delimiters, "," and ":".
+          StringTokenizer tokenizer = new StringTokenizer(playlistNamesString, ",");
+          while (tokenizer.hasMoreTokens()) {
+              String[] pair = tokenizer.nextToken().split(":");
+              String uuid = pair[0];
+              String name = pair[1];
+              playlists.put(uuid, Playlist.builder().withId(uuid).withName(name));
+          }
       }
       return new Pair<>(playlists, uid);
   }
@@ -281,9 +299,10 @@ public class AudioItemIndex {
     StringBuilder builder = new StringBuilder();
     for (Playlist playlist : playlists) {
       builder.append(playlist.getId());
-      builder.append(':');
+      builder.append(PLAYLIST_ID_TO_NAME_CONCAT_CHAR);
       builder.append(playlist.getName());
-      builder.append(',');
+      builder.append(PLAYLIST_TO_PLAYLIST_CONCAT_CHAR
+      );
     }
     if (builder.length() > 0) {
       // remove trailing ','

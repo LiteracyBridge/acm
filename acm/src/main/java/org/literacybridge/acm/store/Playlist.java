@@ -27,7 +27,9 @@ public class Playlist extends Committable {
   }
 
   public void setName(String name) {
-    this.name = name;
+      // If the user somehow entered one of the separator chars in their playlist names, replace it with a space.
+      name = AudioItemIndex.NEW_PLAYLIST_SEPARATOR_CHARS.matcher(name).replaceAll(" ");
+      this.name = name;
   }
 
   public void addAudioItem(AudioItem item) {
