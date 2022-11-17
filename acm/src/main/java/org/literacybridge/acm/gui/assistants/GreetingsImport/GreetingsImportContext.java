@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
 
 public class GreetingsImportContext
     implements AssistantContext, AbstractFilesPage.FileImportContext, AbstractMatchPage.MatchContext<GreetingTarget, GreetingFile, GreetingMatchable> {
-    private final static List<String> RecipientColumnsOfInterest = Arrays.asList("Community","Group","Agent");
+    private final static List<String> RecipientColumnsOfInterest = Arrays.asList("District", "Community","Group","Agent","Language");
 
     public RecipientColumnProvider recipientColumnProvider;
 

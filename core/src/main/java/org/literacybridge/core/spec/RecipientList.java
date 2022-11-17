@@ -18,7 +18,8 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
     private final static String[] NAMES = {"Country", "Region", "District", "Community", "Group", "Agent", "Language"};
     private final static String[] PLURALS = {"Countries", "Regions", "Districts", "Communities", "Groups", "Agents", "Languages"};
     private final static String[] REQUIRED_ALWAYS = {"Community"};
-    
+    public final static String NON_FILE_CHARS = "[\\\\/~;:*?'\"]";
+
     private final Map<String, Integer> numTbsCache = new HashMap<>();
 
     // The 'deployments' column was added, and provides a different way than 'component' to determine if a recipient
@@ -150,6 +151,11 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
                 }
             }
             return result.toString();
+        }
+
+        public String getNameForFile() {
+            String fname = String.join("-", getPath());
+            return fname.replaceAll(NON_FILE_CHARS, " ");
         }
     }
 

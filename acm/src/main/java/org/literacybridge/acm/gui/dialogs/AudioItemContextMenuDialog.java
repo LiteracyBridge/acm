@@ -64,8 +64,8 @@ public class AudioItemContextMenuDialog extends JDialog {
     FlatButton renameButton = makeRenameButton(selectedAudioItems, labelPostfix);
     FlatButton editButton = makeEditButton(selectedAudioItems);
     FlatButton removeButton = makeRemoveButton(selectedAudioItems, labelPostfix);
-    FlatButton exportAudioButton = makeExportButton(selectedAudioItems, labelPostfix, ExportDialog.TYPE.Audio);
-    FlatButton exportMetadataButton = makeExportButton(selectedAudioItems, labelPostfix, ExportDialog.TYPE.Metadata);
+    FlatButton exportAudioButton = makeExportButton(selectedAudioItems, labelPostfix, ExportDialog.EXPORT_DATA_TYPE.Audio);
+    FlatButton exportMetadataButton = makeExportButton(selectedAudioItems, labelPostfix, ExportDialog.EXPORT_DATA_TYPE.Metadata);
     FlatButton deleteButton = makeDeleteButton(selectedAudioItems, labelPostfix);
     FlatButton languageButton = makeLanguageButton(selectedAudioItems, labelPostfix);
 
@@ -335,18 +335,18 @@ public class AudioItemContextMenuDialog extends JDialog {
    * Creates the button to handle exporting audio items
    * @param selectedAudioItems The audio item(s) to be exported
    * @param labelPostfix String to label the item(s)
-   * @param type Whether Audio or Metadata
+   * @param exportDataType Whether Audio or Metadata or CustomGreeting
    * @return The button control
    */
   private FlatButton makeExportButton(final AudioItem[] selectedAudioItems,
       final String labelPostfix,
-      ExportDialog.TYPE type) {
+      ExportDialog.EXPORT_DATA_TYPE exportDataType) {
     Color backgroundColor = Application.getApplication().getBackground();
     Color highlightedColor = SystemColor.textHighlight;
-    ImageIcon exportImageIcon = new ImageIcon(UIConstants.getResource((type == ExportDialog.TYPE.Audio)
+    ImageIcon exportImageIcon = new ImageIcon(UIConstants.getResource((exportDataType == ExportDialog.EXPORT_DATA_TYPE.Audio)
                                 ? UIConstants.ICON_EXPORT_16_PX
                                 : UIConstants.ICON_GRID_16_PX));
-    String title = LabelProvider.getLabel((type == ExportDialog.TYPE.Audio)
+    String title = LabelProvider.getLabel((exportDataType == ExportDialog.EXPORT_DATA_TYPE.Audio)
                   ? "AUDIO_ITEM_CONTEXT_MENU_DIALOG__EXPORT_AUDIO_TITLE"
                   : "AUDIO_ITEM_CONTEXT_MENU_DIALOG__EXPORT_METADATA_TITLE");
     String buttonLabel = String.format(title, labelPostfix);
@@ -355,7 +355,7 @@ public class AudioItemContextMenuDialog extends JDialog {
       @Override
       public void click() {
         AudioItemContextMenuDialog.this.setVisible(false);
-        ExportDialog dialog = new ExportDialog(selectedAudioItems, type);
+        ExportDialog dialog = new ExportDialog(selectedAudioItems, exportDataType);
         // Place the new dialog within the application frame.
         dialog.setLocation(Application.getApplication().getX()+20, Application.getApplication().getY()+20);
         dialog.setVisible(true);

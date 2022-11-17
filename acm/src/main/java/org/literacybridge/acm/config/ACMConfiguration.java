@@ -55,8 +55,6 @@ public class ACMConfiguration {
 
     private static final String ACM_PREFIX = Constants.ACM_DIR_NAME + "-";
 
-    private final static String NON_FILE_CHARS = "[\\\\/~;:*?'\"]";
-
     /**
      * Given a name, either ACM-{project} or {project, return the cannonical, uppercased acm
      * directory name.
@@ -65,7 +63,7 @@ public class ACMConfiguration {
      */
     public static String cannonicalAcmDirectoryName(String acmName) {
         if (isEmpty(acmName)) return null;
-        acmName = acmName.toUpperCase().replaceAll(NON_FILE_CHARS, "");
+        acmName = acmName.toUpperCase().replaceAll(Constants.NON_FILE_CHARS, "");
         if (!acmName.startsWith(ACM_PREFIX)) {
             acmName = ACM_PREFIX + acmName;
         }
@@ -80,7 +78,7 @@ public class ACMConfiguration {
      */
     public static String cannonicalProjectName(String projectName) {
         if (isEmpty(projectName)) return null;
-        projectName = projectName.toUpperCase().replaceAll(NON_FILE_CHARS, "");
+        projectName = projectName.toUpperCase().replaceAll(Constants.NON_FILE_CHARS, "");
         if (projectName.startsWith(ACM_PREFIX)) {
             projectName = projectName.substring(ACM_PREFIX.length());
         }

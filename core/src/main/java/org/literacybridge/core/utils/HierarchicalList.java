@@ -177,7 +177,7 @@ public class HierarchicalList<T extends IHierarchicalRecord> extends ArrayList<T
     @Override
     public List<String> getPathForItem(T item) {
         List<String> path = new ArrayList<>();
-        for (int level=0; level<6; level++) {
+        for (int level=0; level<=info.MAX_LEVEL; level++) {
             path.add(item.getValue(level));
         }
         return path;

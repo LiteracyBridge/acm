@@ -3,7 +3,7 @@ package org.literacybridge.acm;
 import java.io.File;
 
 public class Constants {
-  public final static String ACM_VERSION = "r2211151"; // yy mm dd n
+  public final static String ACM_VERSION = "r2211161"; // yy mm dd n
   public final static String LiteracybridgeHomeDirName = "LiteracyBridge";
   public final static String AmplioHomeDirName = "Amplio";
   public final static String ACM_DIR_NAME = "ACM";
@@ -87,4 +87,5 @@ public class Constants {
   public static final int AMPLIO_GREEN_R = 40;  // 0x28;
   public static final int AMPLIO_GREEN_G = 154; // 0x9a;
   public static final int AMPLIO_GREEN_B = 106; // 0x6a;
+    public final static String NON_FILE_CHARS = "[\\\\/~;:*?'\"]";
 }
