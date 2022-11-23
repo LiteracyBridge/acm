@@ -5,14 +5,25 @@ import com.opencsv.CSVWriterBuilder;
 import com.opencsv.ICSVWriter;
 import org.apache.commons.io.FileUtils;
 import org.literacybridge.acm.Constants;
-import org.literacybridge.acm.tbloader.TBLoader;
 import org.literacybridge.acm.tools.DBExporter;
 import org.literacybridge.core.fs.ZipUnzip;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.tbloader.TBLoaderConstants;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -135,7 +146,7 @@ class Publish {
     }
 
     void addRevisionMarkerToDeploymentInfo() {
-        Properties deploymentProperties = null;
+        Properties deploymentProperties;
         File propsFile = new File(builderContext.stagedProgramspecDir, ProgramSpec.DEPLOYMENT_INFO_PROPERTIES_NAME);
         boolean saved = false;
 
@@ -239,7 +250,7 @@ class Publish {
 
     private static void mergeCSVFiles(
             Iterable<File> inputFiles, File output,
-            String[] header) throws IOException {
+            String[] header) {
 
         try (ICSVWriter writer = new CSVWriterBuilder(new FileWriter(output)).build()) {
              writer.writeNext(header);
@@ -251,6 +262,8 @@ class Publish {
                 writer.writeAll(reader.readAll());
                 reader.close();
             }
+        } catch (Exception ex) {
+            // ignore
         }
     }
 

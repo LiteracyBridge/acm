@@ -1,0 +1,18 @@
+﻿deployment_num,playlist_title,message_title,key_points,language,default_category
+1,Playlist-1-1,Message-1-1-1,"Depl 1, Pl 1, Msg 1",,Health
+1,Playlist-1-1,Message-1-1-2,"Depl 1, Pl 1, Msg 2",en,Health
+1,Playlist-1-1,Message-1-1-3,"Depl 1, Pl 1, Msg 3",~ en ,Health
+1,Playlist-1-2,Message-1-2-1,"Depl 1, Pl 2, Msg 1",,Agriculture
+1,Playlist-1-2,Message-1-2-2,"Depl 1, Pl 2, Msg 2","dga, dag",Agriculture
+1,Playlist-1-3,Message-1-3-1,"Depl 1, Pl 3, Msg 1","~dga",Livestock
+2,Playlist-2-1,Message-2-1-1,"Depl 2, Pl 1, Msg 1",,Health
+2,Playlist-2-1,Message-2-1-2,"Depl 2, Pl 1, Msg 2",,Health
+2,Playlist-2-1,Message-2-1-3,"Depl 2, Pl 1, Msg 3",,Health
+2,Playlist-2-2,Message-2-2-1,"Depl 2, Pl 2, Msg 1",,Agriculture
+2,Playlist-2-2,Message-2-2-2,"Depl 2, Pl 2, Msg 2",,Agriculture
+2,Playlist-2-3,Message-2-3-1,"Depl 2, Pl 3, Msg 1"," dag ",Livestock
+2,Sound Check,Pink noise,Random sound that seems to be as loud at every frequency.,,Music
+2,Sound Check,a220Hz,A low A.,,Music
+2,Sound Check,a440Hz,A middle A.,,Music
+2,Sound Check,1kHz,one thousand hertz.,,Music
+2,Sound Check,Silence,"And in the naked light I saw Ten thousand people, maybe more",,Music

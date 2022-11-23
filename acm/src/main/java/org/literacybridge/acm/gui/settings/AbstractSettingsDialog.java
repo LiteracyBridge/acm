@@ -1,10 +1,16 @@
 package org.literacybridge.acm.gui.settings;
 
-import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 
-import javax.swing.*;
+import javax.swing.Box;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.BorderLayout;
@@ -14,6 +20,8 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.LinkedHashMap;
@@ -55,7 +63,7 @@ public abstract class AbstractSettingsDialog extends JDialog {
     // Width of the settings topics buttons, on the left side.
     private static final int BUTTONS_WIDTH = 100;
     // Width of the settings panels, on the right side.
-    private static final int PANEL_WIDTH = 550;
+    private static final int PANEL_WIDTH = 570;
     private static final int DIALOG_HEIGHT = 700;
 
     private final CardLayout settingsLayout;
@@ -140,12 +148,12 @@ public abstract class AbstractSettingsDialog extends JDialog {
         addEscapeListener(this);
         setSize(BUTTONS_WIDTH + PANEL_WIDTH, DIALOG_HEIGHT);
         // For debugging sizing issues.
-//        addComponentListener(new ComponentAdapter() {
-//            @Override
-//            public void componentResized(ComponentEvent e) {
-//                System.out.println(String.format("Size %dx%d", SettingsDialog.this.getWidth(), SettingsDialog.this.getHeight()));
-//            }
-//        });
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                System.out.printf("Size %dx%d%n", AbstractSettingsDialog.this.getWidth(), AbstractSettingsDialog.this.getHeight());
+            }
+        });
 
     }
 

@@ -4,7 +4,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.literacybridge.acm.config.ACMConfiguration;
 import org.literacybridge.acm.store.MetadataStore;
 
-import javax.swing.*;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTable;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -30,8 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -150,15 +151,17 @@ public abstract class AssistantPage<Context> extends JPanel {
      * @param table to be sized.
      * @param columns a list of model column numbers to be sized.
      */
-    public static void sizeColumns(JTable table, Integer... columns) {
+    public static Dimension sizeColumns(JTable table, Integer... columns) {
         List<SizingParams> params = Arrays.stream(columns).map(SizingParams::new).collect(
             Collectors.toList());
-        sizeColumns(table, params);
+        return sizeColumns(table, params);
     }
 
-    public static void sizeColumns(JTable table, List<SizingParams> params) {
+    public static Dimension sizeColumns(JTable table, List<SizingParams> params) {
         TableModel model = table.getModel();
         TableCellRenderer headerRenderer = table.getTableHeader().getDefaultRenderer();
+        int totalPreferredWidth = 0;
+        int[] cellHeight = new int[]{0};
 
         for (SizingParams param : params) {
             // To get the column class from the model we need to use the model column index. But to
@@ -185,16 +188,21 @@ public abstract class AssistantPage<Context> extends JPanel {
                 .mapToObj(rowNo ->
                     columnActualRenderer
                         .getTableCellRendererComponent(table, table.getValueAt(rowNo, viewColumnNo), false, false, rowNo, viewColumnNo)
-                        .getPreferredSize()
-                        .width)
+                        .getPreferredSize())
+                .map(d->{cellHeight[0]=Math.max(d.height, cellHeight[0]);return d.width;})
                 .max(Integer::compareTo)
                 .orElse(0);
 
             int w = Math.max(headerWidth, cellWidth) + 2;
+            totalPreferredWidth += w;
             if (param.minPadding != SizingParams.IGNORE) tableColumn.setMinWidth(w + param.minPadding);
             if (param.maxPadding != SizingParams.IGNORE) tableColumn.setMaxWidth(w + param.maxPadding);
-            if (param.preferredPadding != SizingParams.IGNORE) tableColumn.setPreferredWidth(w + param.preferredPadding);
+            if (param.preferredPadding != SizingParams.IGNORE) {
+                tableColumn.setPreferredWidth(w + param.preferredPadding);
+                totalPreferredWidth += param.preferredPadding;
+            }
         }
+        return new Dimension(totalPreferredWidth, cellHeight[0]);
     }
 
     /**

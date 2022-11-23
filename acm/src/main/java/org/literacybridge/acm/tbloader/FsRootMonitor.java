@@ -154,8 +154,8 @@ class FsRootMonitor extends Thread {
             String label = fsView.getSystemDisplayName(root);
             String type = fsView.getSystemTypeDescription(root);
             String description = type != null ? type : label;
-            if (label.trim().equals("CD Drive") || label.startsWith("DVD") || label.contains(
-                "Macintosh") || parallelsWinDrive.matcher(label).matches()) {
+            if (label != null && (label.trim().equals("CD Drive") || label.startsWith("DVD") || label.contains(
+                "Macintosh") || parallelsWinDrive.matcher(label).matches())) {
                 return false;
             }
             // Ignore network drives. Includes host drives shared by Parallels.
@@ -172,7 +172,7 @@ class FsRootMonitor extends Thread {
                     return false;
                 }
             }
-            return filterParams.forbiddenLabels.stream().noneMatch(description::startsWith);
+            return description == null || filterParams.forbiddenLabels.stream().noneMatch(description::startsWith);
         } catch (Exception ex) {
             return false;
         }

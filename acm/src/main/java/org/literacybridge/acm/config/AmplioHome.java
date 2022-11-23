@@ -338,7 +338,9 @@ public class AmplioHome {
         return new File(getDirectory(), Constants.TBLoadersHomeDir);
     }
 
-
+    public static File getTbLoaderHistoriesDir() {
+        return new File(getDirectory(), Constants.TBLoadersHistoryDir);
+    }
 
 
     /**

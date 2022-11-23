@@ -1,5 +1,6 @@
 package org.literacybridge.acm.tbloader;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.args4j.CmdLineParser;
@@ -21,18 +22,44 @@ import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.tbdevice.TbDeviceInfo;
-import org.literacybridge.core.tbloader.*;
+import org.literacybridge.core.tbloader.DeploymentInfo;
+import org.literacybridge.core.tbloader.TBLoaderConfig;
+import org.literacybridge.core.tbloader.TBLoaderConstants;
+import org.literacybridge.core.tbloader.TBLoaderCore;
+import org.literacybridge.core.tbloader.TBLoaderUtils;
+import org.literacybridge.core.tbloader.TbsCollected;
+import org.literacybridge.core.tbloader.TbsDeployed;
 
-import javax.swing.*;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileSystemView;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,7 +67,10 @@ import java.util.stream.Collectors;
 
 import static org.literacybridge.acm.Constants.ALLOW_PACKAGE_CHOICE;
 import static org.literacybridge.acm.Constants.TBLoadersLogDir;
-import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.*;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.CHOOSE_PROGRAM;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.NOP;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.NO_WAIT;
+import static org.literacybridge.acm.cloud.Authenticator.LoginOptions.OFFLINE_EMAIL_CHOICE;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.DEPLOYMENT_NUMBER;
 import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getPackageForCommunity;
@@ -48,7 +78,10 @@ import static org.literacybridge.core.tbloader.TBLoaderUtils.getPackagesInDeploy
 
 @SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions", "CommentedOutCode", "IOStreamConstructor", "JavadocBlankLines"})
 public class TBLoader extends JFrame {
+    public static final String CANNOT_FIND_THE_STATISTICS = "Cannot find the statistics!";
     private static final Logger LOG = Logger.getLogger(TBLoader.class.getName());
+    private TbsCollected tbsCollected;
+    private TbsDeployed tbsDeployed;
 
     public static class TbLoaderConfig {
         private boolean strictTbV2Firmware = true;
@@ -59,6 +92,8 @@ public class TBLoader extends JFrame {
         private boolean offerTbV2FirmwareWithStats = false;
         private boolean isTestMode = false;
         private String  pseudoTbDir = null;
+        private boolean doNotUpload = false;
+        private TB_LOADER_HISTORY_MODE tbLoaderHistoryMode = TB_LOADER_HISTORY_MODE.DEFAULT;
 
         public boolean hasTbV2Devices() { return hasTbV2Devices; }
         public boolean hasDfuSupport() { return hasDfuSupport; }
@@ -70,6 +105,9 @@ public class TBLoader extends JFrame {
         public boolean isTestMode() { return isTestMode; }
         public boolean isPseudoTb() { return StringUtils.isNotBlank(pseudoTbDir); }
         public File pseudoTbDir() { return StringUtils.isBlank(pseudoTbDir) ? null : new File(pseudoTbDir); }
+        public boolean isDoNotUpload() { return doNotUpload; }
+        public TB_LOADER_HISTORY_MODE getTbLoaderHistoryMode() {return tbLoaderHistoryMode;}
+        public void setTbLoaderHistoryMode(TB_LOADER_HISTORY_MODE tbLoaderHistoryMode) {this.tbLoaderHistoryMode = tbLoaderHistoryMode;}
     }
     final TbLoaderConfig tbLoaderConfig = new TbLoaderConfig();
 
@@ -97,12 +135,12 @@ public class TBLoader extends JFrame {
         }
     }
 
-    private static TBLoader tbLoader;
+    private static TBLoader tbLoaderTpplication;
     public final TbLoaderArgs tbArgs;
     private File deploymentDir;
 
     public static TBLoader getApplication() {
-        return tbLoader;
+        return tbLoaderTpplication;
     }
 
     public enum TB_ID_STRATEGY {
@@ -151,11 +189,23 @@ public class TBLoader extends JFrame {
     }
     TEST_DEPLOYMENT_STRATEGY testStrategy = TEST_DEPLOYMENT_STRATEGY.DEFAULT_OFF;
 
+    public enum TB_LOADER_HISTORY_MODE {
+        OFF("Don't display the # TBs to update or collect."),
+        AUTO("Display # TBs to update or collect based on current recipient selection and operation"),
+        CUSTOM("Manually choose the recipient granularity for update & collection counters"),
+        ;
+
+        public final static TB_LOADER_HISTORY_MODE DEFAULT = AUTO;
+        final String description;
+        TB_LOADER_HISTORY_MODE(String description) {
+            this.description = description;
+        }
+    }
+
     private final JFrame applicationWindow;
 
     private String currentTbFirmware;
     private String newTbFirmware;
-
 
     private String currentTbSrn;
     private String newTbSrn;
@@ -190,19 +240,19 @@ public class TBLoader extends JFrame {
     private FsRootMonitor fsRootMonitor;
     private StatisticsUploader statisticsUploader;
 
+    String getProgram() {
+        return newProject;
+    }
     ProgramSpec getProgramSpec() {
         assert(programSpec != null);
         return programSpec;
     }
-
-    String getProgram() {
-        return newProject;
+    String getNewDeployment() {
+        return deploymentChooser.getNewDeployment();
     }
-    
     File getLocalTbLoaderDir() {
         return localTbLoaderDir;
     }
-
     static class WindowEventHandler extends WindowAdapter {
         @Override
         public void windowClosing(WindowEvent evt) {
@@ -231,8 +281,8 @@ public class TBLoader extends JFrame {
             System.exit(100);
         }
 
-        tbLoader = new TBLoader(tbArgs);
-        tbLoader.runApplication();
+        tbLoaderTpplication = new TBLoader(tbArgs);
+        tbLoaderTpplication.runApplication();
     }
 
     private TBLoader(TbLoaderArgs tbArgs) {
@@ -261,6 +311,9 @@ public class TBLoader extends JFrame {
         this.addWindowListener(new WindowEventHandler());
         this.backgroundColor = getBackground();
         SwingUtils.setLookAndFeel("seaglass");
+        UIDefaults defaults = UIManager.getLookAndFeelDefaults();
+        if (defaults.get("Table.alternateRowColor") == null)
+            defaults.put("Table.alternateRowColor", new Color(240, 240, 240));
 
         boolean oldTbs = srnPrefix.equalsIgnoreCase(TBLoaderConstants.OLD_TB_SRN_PREFIX);
         String iconName = oldTbs ? "/tb_loader-OLD-TBs.png" : "/tb_loader.png";
@@ -311,6 +364,9 @@ public class TBLoader extends JFrame {
 
         startUpDone = true;
         setEnabledStates();
+
+        TbHistory.getInstance().initializeHistory();
+        refreshTbHistory();
 
         startupTimer += System.currentTimeMillis();
         System.out.printf("Startup in %d ms.\n", startupTimer);
@@ -474,7 +530,8 @@ public class TBLoader extends JFrame {
             .withTbIdStrategy(tbIdStrategy)
             .withUpdateTb2FirmwareListener(this::onUpdateTb2Firmware)
             .withAllowPackageChoice(tbLoaderConfig.allowPackageChoice())
-            .withTbLoaderConfig(tbLoaderConfig);
+            .withTbLoaderConfig(tbLoaderConfig)
+            ;
 
         tbLoaderPanel = builder.build();
         tbLoaderPanel.setEnabled(false);
@@ -493,6 +550,12 @@ public class TBLoader extends JFrame {
         fillFirmwareVersion();
 
         setVisible(true);
+    }
+
+    private void refreshTbHistory() {
+        tbLoaderPanel.setTbLoaderHistoryMode(tbLoaderConfig.getTbLoaderHistoryMode());
+        TbHistory tbHistory = TbHistory.getInstance();
+        tbHistory.setRelevantRecipients(tbLoaderPanel.getRecipientsForPartialSelection());
     }
 
     /**
@@ -547,6 +610,13 @@ public class TBLoader extends JFrame {
                 } catch(Exception ignored) { }
             }
 
+            valStr = dbConfig.getProperty("TB_LOADER_HISTORY_MODE");
+            if (valStr != null) {
+                try {
+                    this.tbLoaderConfig.setTbLoaderHistoryMode(TB_LOADER_HISTORY_MODE.valueOf(valStr));
+                } catch(Exception ignored) { }
+            }
+
         }
     }
 
@@ -569,6 +639,14 @@ public class TBLoader extends JFrame {
 
     void setPseudoTb(String pseudoTbDir) {
         this.tbLoaderConfig.pseudoTbDir = pseudoTbDir;
+    }
+
+    void setTestMode(boolean testMode) {
+        this.tbLoaderConfig.isTestMode = testMode;
+    }
+
+    void setDoNotUpload(boolean doNotUpload) {
+        this.tbLoaderConfig.doNotUpload = doNotUpload;
     }
 
     /**
@@ -606,6 +684,17 @@ public class TBLoader extends JFrame {
             }
         }
         this.testStrategy = testStrategy;
+    }
+
+    TB_LOADER_HISTORY_MODE getTbLoaderHistoryMode() { return tbLoaderConfig.getTbLoaderHistoryMode();}
+    void setTbLoaderHistoryMode(int tbLoaderHistoryOrdianl) {
+        setTbLoaderHistoryMode(TB_LOADER_HISTORY_MODE.values()[tbLoaderHistoryOrdianl]);
+    }
+    void setTbLoaderHistoryMode(TB_LOADER_HISTORY_MODE tbLoaderHistoryMode) {
+        if (tbLoaderConfig.getTbLoaderHistoryMode() != tbLoaderHistoryMode) {
+            tbLoaderConfig.setTbLoaderHistoryMode(tbLoaderHistoryMode);
+            refreshTbHistory();
+        }
     }
 
     public boolean isStrictTbV2Firmware() {
@@ -1009,10 +1098,9 @@ public class TBLoader extends JFrame {
         if (!TBLoaderUtils.isSerialNumberFormatGood(srnPrefix, driveLabel) && tbLoaderPanel.getDeviceVersion()== TbDeviceInfo.DEVICE_VERSION.TBv1) {
             String message = "The TB's statistics cannot be found. Please follow these steps:\n 1. Unplug the TB\n 2. Hold down the * while turning on the TB\n "
                 + "3. Observe the solid red light.\n 4. Now plug the TB into the laptop.\n 5. If you see this message again, please continue with the loading -- you tried your best.";
-            String title = "Cannot find the statistics!";
 
             new PopUp.Builder()
-                .withTitle(title)
+                .withTitle(CANNOT_FIND_THE_STATISTICS)
                 .withContents(message)
                 .withOptOut()
                 .go();
@@ -1246,7 +1334,7 @@ public class TBLoader extends JFrame {
             this.operation = operation;
         }
 
-        private void grabStatsOnly() {
+        private void collectStatsOnly() {
             OperationLog.Operation opLog = OperationLog.startOperation("TbLoaderGrabStats");
             opLog.put("serialno", oldDeploymentInfo.getSerialNumber())
                 .put("project", oldDeploymentInfo.getProjectName())
@@ -1268,6 +1356,9 @@ public class TBLoader extends JFrame {
                     .build();
                 result = tbLoader.collectStatistics();
 
+                tbsCollected = tbLoader.getTbsCollected();
+                TbHistory.getInstance().addTbCollected(tbsCollected);
+
                 opLog.put("success", result.gotStatistics);
             } catch (Exception e) {
                 opLog.put("success", false);
@@ -1287,11 +1378,24 @@ public class TBLoader extends JFrame {
                     endTitle = "Failure";
                 }
                 onCopyFinished(endMsg, endTitle);
-                statisticsUploader.zipAndEnqueue(collectionWorkDir, getUploadKeyPrefix(currentTbDevice));
+                if (tbLoaderConfig.isDoNotUpload()) {
+                    try {
+                        FileUtils.cleanDirectory(collectionWorkDir);
+                    } catch (IOException e) {
+                        new PopUp.Builder()
+                            .withTitle("Can not clean collection directory")
+                            .withContents("Couldn't remove files from "+collectionWorkDir.getName()+". Please manually clean the directory" +
+                                " to prevent polluting the production data.")
+                            .go();
+                        System.exit(1);
+                    }
+                } else {
+                    statisticsUploader.zipAndEnqueue(collectionWorkDir, getUploadKeyPrefix(currentTbDevice));
+                }
             }
         }
 
-        private void update() {
+        private void collectStatsAndDeployNewContent() {
             String recipientid = tbLoaderPanel.getSelectedRecipient().recipientid;
             String directory = getMappedDirectoryForRecipient(recipientid);
             List<String> selectedPackages = tbLoaderPanel.getSelectedPackages();
@@ -1386,6 +1490,12 @@ public class TBLoader extends JFrame {
                     .build();
                 result = tbLoader.update();
 
+
+                tbsCollected = tbLoader.getTbsCollected();
+                tbsDeployed = tbLoader.getTbsDeployed();
+                TbHistory.getInstance().addTbCollected(tbsCollected);
+                TbHistory.getInstance().addTbDeployed(tbsDeployed);
+
                 opLog.put("gotstatistics", result.gotStatistics)
                     .put("corrupted", result.corrupted)
                     .put("reformatfailed",
@@ -1462,17 +1572,33 @@ public class TBLoader extends JFrame {
                     }
                 }
                 onCopyFinished(endMsg, endTitle, endMessageType);
-                statisticsUploader.zipAndEnqueue(collectionWorkDir, getUploadKeyPrefix(currentTbDevice));
+                if (tbLoaderConfig.isDoNotUpload()) {
+                    try {
+                        FileUtils.cleanDirectory(collectionWorkDir);
+                    } catch (IOException e) {
+                        new PopUp.Builder()
+                            .withTitle("Can not clean collection directory")
+                            .withContents("Couldn't remove files from "+collectionWorkDir.getName()+". Please manually clean the directory" +
+                                " to prevent polluting the production data.")
+                            .go();
+                        System.exit(1);
+                    }
+                } else {
+                    statisticsUploader.zipAndEnqueue(collectionWorkDir, getUploadKeyPrefix(currentTbDevice));
+                }
             }
 
         }
 
         @Override
         public void run() {
+            tbsCollected = null;
+            tbsDeployed = null;
+
             if (this.operation == Operation.Update) {
-                update();
+                collectStatsAndDeployNewContent();
             } else if (this.operation == Operation.CollectStats) {
-                grabStatsOnly();
+                collectStatsOnly();
             }
         }
     }

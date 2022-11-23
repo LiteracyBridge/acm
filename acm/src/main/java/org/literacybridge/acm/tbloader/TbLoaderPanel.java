@@ -4,21 +4,36 @@ import org.apache.commons.lang3.StringUtils;
 import org.jdesktop.swingx.JXDatePicker;
 import org.literacybridge.acm.cloud.Authenticator;
 import org.literacybridge.acm.config.ACMConfiguration;
-import org.literacybridge.acm.device.DeviceInfo;
 import org.literacybridge.acm.gui.Assistant.GBC;
-import org.literacybridge.acm.gui.Assistant.LabelButton;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
 import org.literacybridge.acm.gui.UIConstants;
+import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
 import org.literacybridge.acm.gui.util.UIUtils;
 import org.literacybridge.acm.tbloader.TBLoader.TbDeviceInfoHolder;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.spec.ProgramSpec;
 import org.literacybridge.core.spec.Recipient;
-import org.literacybridge.core.tbloader.DeploymentInfo;
+import org.literacybridge.core.spec.RecipientList;
 import org.literacybridge.core.tbdevice.TbDeviceInfo;
-import org.literacybridge.core.tbloader.TBLoaderConstants;
+import org.literacybridge.core.tbloader.DeploymentInfo;
 
-import javax.swing.*;
+import javax.swing.Box;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.JToolBar;
+import javax.swing.ListCellRenderer;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -40,7 +55,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -107,13 +121,15 @@ public class TbLoaderPanel extends JPanel {
     private final String[] packagesInDeployment;
     private final Map<String, String> packageNameMap;
 
+    private JTextPane greetingAndUploadPane;
+    private TbHistoryPanel historyPanel;
+
     private JComboBox<String> currentLocationChooser;
     private final String[] currentLocationList = new String[] { "Select location...", "Community",
         "Jirapa office", "Wa office", "Other" };
 
     private JComboBox<TbDeviceInfoHolder> driveList;
 
-    private JLabel uploadStatus;
     private JCheckBox forceFirmware;
     private String dateRotation;
 
@@ -177,17 +193,13 @@ public class TbLoaderPanel extends JPanel {
         this.programSpec = builder.programSpec;
         this.packagesInDeployment = builder.packagesInDeployment;
         this.packageNameMap = builder.packageNameMap;
-        this.settingsIconClickedListener = builder.settingsIconClickedListener;
         this.goListener = builder.goListener;
-        this.recipientListener = builder.recipientListener;
-        this.deviceSelectedListener = builder.deviceSelectedListener;
         this.deviceVersionSelectedListener = builder.deviceVersionSelectedListener;
         this.forceFirmwareListener = builder.forceFirmwareListener;
         this.forceSrnListener = builder.forceSrnListener;
         this.tbIdStrategy = builder.tbIdStrategy;
         this.allowPackageChoice = builder.allowPackageChoice;
         this.tbLoaderConfig = builder.tbLoaderConfig;
-
         layoutComponents();
     }
 
@@ -205,10 +217,13 @@ public class TbLoaderPanel extends JPanel {
     }
 
     public void setUploadStatus(String status) {
-        uploadStatus.setVisible(status!=null);
-        if (status != null) {
-            uploadStatus.setText(status);
+        if (!StringUtils.equals(leftUploadStatus, status)) {
+            leftUploadStatus = status;
+            setLeftText();
         }
+    }
+    public TbHistoryPanel getHistoryPanel() {
+        return historyPanel;
     }
 
     public void setNewFirmwareVersion(String version) {
@@ -251,6 +266,23 @@ public class TbLoaderPanel extends JPanel {
         testDeployment.setSelected(isTestDeployment);
     }
 
+    public void setTbLoaderHistoryMode(TBLoader.TB_LOADER_HISTORY_MODE tbLoaderHistoryMode) {
+        switch (tbLoaderHistoryMode) {
+            case AUTO:
+                historyPanel.setVisible(true);
+                historyPanel.enableCustomizeButton(false);
+                break;
+            // Not implemented yet
+            case CUSTOM:
+                historyPanel.setVisible(true);
+                historyPanel.enableCustomizeButton(true);
+                break;
+            case OFF:
+                historyPanel.setVisible(false);
+                break;
+        }
+    }
+
     public void setNewDeployment(String description) {
         newDeploymentText.setText(description);
     }
@@ -265,7 +297,12 @@ public class TbLoaderPanel extends JPanel {
     public Recipient getSelectedRecipient() {
         return recipientChooser.getSelectedRecipient();
     }
-
+    public List<RecipientList.RecipientAdapter> getRecipientsForPartialSelection() {
+        return recipientChooser.getRecipientsForPartialSelection();
+    }
+    public List<String> getSelectionPath() {
+        return recipientChooser.getSelectionPath();
+    }
     public void refresh() {
         setEnabledStates();
     }
@@ -383,16 +420,6 @@ public class TbLoaderPanel extends JPanel {
         this.goListener = goListener;
     }
 
-    private Consumer<Recipient> recipientListener;
-    public void setRecipientListener(Consumer<Recipient> recipientListener) {
-        this.recipientListener = recipientListener;
-    }
-
-    private Consumer<TbDeviceInfo> deviceSelectedListener;
-    public void setDeviceSelectedListener(Consumer<TbDeviceInfo> deviceSelectedListener) {
-        this.deviceSelectedListener = deviceSelectedListener;
-    }
-
     private Consumer<TbDeviceInfo.DEVICE_VERSION> deviceVersionSelectedListener;
     public void setDeviceVersionSelectedListener(Consumer<TbDeviceInfo.DEVICE_VERSION> deviceVersionSelectedListener) {
         this.deviceVersionSelectedListener = deviceVersionSelectedListener;
@@ -408,15 +435,8 @@ public class TbLoaderPanel extends JPanel {
         this.forceSrnListener = forceSrnListener;
     }
 
-    // A listener for clicks on the settings icon.
-    private Consumer<ActionEvent> settingsIconClickedListener;
-
-    /**
-     * Allows our caller to receive notifications that the settings icon was clicked.
-     * @param settingsIconClickedListener A consumer to be called when the settings icon is clicked.
-     */
-    public void setSettingsIconClickedListener(Consumer<ActionEvent> settingsIconClickedListener) {
-        this.settingsIconClickedListener = settingsIconClickedListener;
+    public boolean isStatsOnly() {
+        return !isUpdate();
     }
 
     /**
@@ -461,8 +481,7 @@ public class TbLoaderPanel extends JPanel {
         protoGbc = new GBC().setInsets(new Insets(0,3,1,2)).setAnchor(LINE_START).setFill(HORIZONTAL);
 
         int y = 0;
-        layoutGreeting(y++);
-        layoutUploadStatus(y++);
+        layoutToolbar(y++);
         layoutDeviceStatus(y++);
         layoutColumnHeadings(y++);
         layoutRecipient(y++);
@@ -509,33 +528,50 @@ public class TbLoaderPanel extends JPanel {
         prevLabel.setMinimumSize(d);
     }
 
-    private void layoutGreeting(int y) {
+    private void layoutToolbar(int y) {
         GBC gbc = new GBC(protoGbc)
             .setGridy(y)
             .setInsets(new Insets(0, 0, 0, 0))
             .setGridwidth(3);
 
-        JPanel outerGreetingBox = new JPanel();
-        outerGreetingBox.setLayout(new BorderLayout());
+        JToolBar tb = new JToolBar();
+        tb.setFloatable(false);
+        tb.setRollover(true);
 
-        Authenticator authInstance = Authenticator.getInstance();
-        Box greetingBox = Box.createHorizontalBox();
-        boolean isBorrowed = authInstance.getTbSrnHelper().isBorrowedId();
-        String deviceIdHex = authInstance.getTbSrnHelper().getTbSrnAllocationInfo().getTbloaderidHex();
-        String greetingString = String.format("<html><nobr>Hello <b>%s</b>! <i><span style='font-size:0.85em;color:gray'>(%sTB-Loader ID: %s, version: %s)</span></i></nobr></html>",
-                authInstance.getUserSelfName(),
-            isBorrowed?"Using ":"", deviceIdHex, ACM_VERSION);
-        JLabel greeting = new JLabel(greetingString);
-        greetingBox.add(greeting);
-        greetingBox.add(Box.createHorizontalStrut(10));
+        greetingAndUploadPane = new JTextPane();
+        greetingAndUploadPane.setContentType("text/html");
+        greetingAndUploadPane.setEditable(false);
+        greetingAndUploadPane.setBorder(new LineBorder(Color.lightGray, 1));
+        setLeftText();
+        tb.add(greetingAndUploadPane);
 
+        tb.addSeparator();
+
+        historyPanel = new TbHistoryPanel(this);
+        historyPanel.setVisible(false);
+        tb.add(historyPanel);
+
+//        tb.addSeparator();
+
+            // Create components
         if (ACMConfiguration.getInstance().isDevo()) {
+            // TODO: bubbling flask icon
             JButton xpr = new JButton("Experimental");
             xpr.addActionListener(Experimental::go);
-            greetingBox.add(xpr);
-            greetingBox.add(Box.createHorizontalStrut(10));
+            tb.add(xpr);
         }
 
+        JButton settingsButton = new JButton();
+        ImageIcon settingsImageIcon = new ImageIcon(
+            UIConstants.getResource(UIConstants.ICON_GEAR_32_PX));
+        settingsButton.setIcon(settingsImageIcon);
+        settingsButton.setToolTipText(LabelProvider.getLabel("Settings"));
+        settingsButton.addActionListener(e->{if (builder.settingsIconClickedListener !=null) builder.settingsIconClickedListener.accept(e);});
+        tb.add(settingsButton);
+
+        //**************************************************************************************************
+        //**************************************************************************************************
+        // TODO: Put this somewhere! If we might ever care!
         // Select "Community", "LBG Office", "Other"
         JLabel currentLocationLabel = new JLabel("Updating from:");
         currentLocationChooser = new JComboBox<>(currentLocationList);
@@ -546,6 +582,7 @@ public class TbLoaderPanel extends JPanel {
         boolean useLocationChooser = false;
         //noinspection ConstantConditions
         if (useLocationChooser) {
+            Box greetingBox = Box.createHorizontalBox();
             currentLocationChooser.addActionListener(e -> {
                 Border border;
                 if (currentLocationChooser.getSelectedIndex() == 0) {
@@ -560,32 +597,61 @@ public class TbLoaderPanel extends JPanel {
             greetingBox.add(Box.createHorizontalStrut(10));
             greetingBox.add(currentLocationChooser);
         }
+        //**************************************************************************************************
+        //**************************************************************************************************
 
-        outerGreetingBox.add(greetingBox, BorderLayout.WEST);
-
-        ImageIcon gearImageIcon = new ImageIcon(
-            UIConstants.getResource(UIConstants.ICON_GEAR_32_PX));
-        LabelButton configureButton = new LabelButton(gearImageIcon);
-        configureButton.setIcon(gearImageIcon);
-        configureButton.setToolTipText("Settings");
-        configureButton.setMaximumSize(new Dimension(20,16));
-        configureButton.addActionListener(e->{if (settingsIconClickedListener !=null) settingsIconClickedListener.accept(e);});
-        outerGreetingBox.add(configureButton, BorderLayout.EAST);
-
-        contentPanel.add(outerGreetingBox, gbc);
+        contentPanel.add(tb, gbc);
     }
 
-    private void layoutUploadStatus(int y) {
-        // Upload status.
-        GBC gbc = new GBC(protoGbc)
-            .setGridy(y)
-            .setGridwidth(3)
-            .setGridx(0);
+//    private void historyActionListener(ActionEvent actionEvent) {
+//        System.out.printf("History event, id: %d, command: %s\n", actionEvent.getID(), actionEvent.getActionCommand());
+//        List<RecipientList.RecipientAdapter> recipients = getRecipientsForPartialSelection();
+//        TbHistory history = TbHistory.getInstance();
+//        switch (actionEvent.getID()) {
+//            case TbHistoryPanel.NUM_TBS_ID:
+//            case TbHistoryPanel.COLLECTION_DEPLOYED_ID:
+//            case TbHistoryPanel.COLLECTION_COLLECTED_ID:
+//            case TbHistoryPanel.COLLECTION_TO_COLLECT_ID:
+//            case TbHistoryPanel.DEPLOYMENT_DEPLOYED_ID:
+//            case TbHistoryPanel.DEPLOYMENT_TO_DEPLOY_ID:
+//                TbHistoryDetails details = new TbHistoryDetails(recipients, actionEvent.getID());
+//                details.setVisible(true);
+//                break;
+//            case TbHistoryPanel.FILTER_ACTION:
+////                System.out.println("Adjust filter");
+////                TbHistoryFilterDialog filterDialog = new TbHistoryFilterDialog();
+////                filterDialog.setVisible(true);
+////                if (filterDialog.isOk()) {
+////                    historyPanel.onTbLoaderCollectModeChanged(filterDialog.getCollectionSelected());
+////                    TbHistory.getInstance().setRelevantRecipients(filterDialog.getSelectedRecipients());
+////                }
+//                break;
+//            default:
+//                // hmm. didn't expect this
+//                break;
+//        }
+//    }
 
-        uploadStatus = new JLabel();
-        uploadStatus.setVisible(false);
-
-        contentPanel.add(uploadStatus, gbc);
+    private String leftNameString = null;
+    private String leftUploadStatus = null;
+    private void setLeftText() {
+        if (leftNameString == null) {
+            Authenticator authInstance = Authenticator.getInstance();
+            boolean isBorrowed = authInstance.getTbSrnHelper().isBorrowedId();
+            String deviceIdHex = authInstance.getTbSrnHelper().getTbSrnAllocationInfo().getTbloaderidHex();
+            leftNameString = String.format(
+                "<nobr>Hello <b>%s</b>! <i><span style='font-size:0.85em;color:gray'>(%sTB-Loader ID: %s, version: %s)</span></i></nobr>",
+                authInstance.getUserSelfName(),
+                isBorrowed ? "Using " : "",
+                deviceIdHex,
+                ACM_VERSION);
+        }
+        String leftUploadString = leftUploadStatus != null
+                                  ? "<span style='font-size:0.85em;color:black'>" + leftUploadStatus + "</span>"
+                                  : "<span style='font-size:0.85em;color:gray'>All statistics and UF files have been uploaded.</span>";
+        String text = "<html>" + leftNameString + "<br/>" + leftUploadString + "</html>";
+        greetingAndUploadPane.setText(text);
+        greetingAndUploadPane.setBorder(new LineBorder((StringUtils.isNotBlank(leftUploadStatus) ? Color.RED : greetingAndUploadPane.getBackground())));
     }
 
     private void layoutDeviceStatus(int y) {
@@ -650,12 +716,10 @@ public class TbLoaderPanel extends JPanel {
             .setAnchor(FIRST_LINE_START);
 
         JLabel communityLabel = new JLabel("Community:");
-        recipientChooser = new JRecipientChooser();
-        recipientChooser.populate(programSpec);
+        recipientChooser = new JRecipientChooser(programSpec);
         recipientChooser.addActionListener(this::onRecipientSelected);
 
-        oldRecipientChooser = new JRecipientChooser();
-        oldRecipientChooser.populate(programSpec);
+        oldRecipientChooser = new JRecipientChooser(programSpec);
         oldRecipientChooser.setEnabled(false);
         oldRecipientChooser.setHighlightWhenNoSelection(false);
 
@@ -857,7 +921,10 @@ public class TbLoaderPanel extends JPanel {
         }
 
         actionChooser = new JComboBox<>(actionList);
-        actionChooser.addActionListener(e->setEnabledStates());
+        actionChooser.addActionListener(e -> {
+            historyPanel.onTbLoaderCollectModeChanged(isStatsOnly());
+            setEnabledStates();
+        });
         goButton = new JButton("Go!");
         defaultButtonBackgroundColor = goButton.getBackground();
         defaultButtonForegroundColor = goButton.getForeground();
@@ -912,8 +979,8 @@ public class TbLoaderPanel extends JPanel {
         if (itemEvent.getStateChange() != ItemEvent.SELECTED || deviceVersionChanging || deviceSelectionChanging) return;
         deviceVersionChanging = true;
         try {
-            if (deviceSelectedListener != null) {
-                deviceSelectedListener.accept(getSelectedDevice());
+            if (builder.deviceSelectedListener != null) {
+                builder.deviceSelectedListener.accept(getSelectedDevice());
             }
             setEnabledStates();
         } finally {
@@ -931,8 +998,8 @@ public class TbLoaderPanel extends JPanel {
             if (deviceVersionBox.getSelectedIndex() != 0) {
                 deviceVersionBox.setSelectedIndex(0);
             }
-            if (deviceSelectedListener != null) {
-                deviceSelectedListener.accept(getSelectedDevice());
+            if (builder.deviceSelectedListener != null) {
+                builder.deviceSelectedListener.accept(getSelectedDevice());
             }
             // May need to update the device version display, but no user activity or selection has happened to cause
             // it to update. So, repaint it manually.
@@ -944,11 +1011,15 @@ public class TbLoaderPanel extends JPanel {
     }
 
     private void onRecipientSelected(ActionEvent actionEvent) {
-        Recipient recipient = recipientChooser.getSelectedRecipient();
-        if (recipientListener != null) {
-            recipientListener.accept(recipient);
+        if (actionEvent.getID() == JRecipientChooser.RECIPIENT_SELECTED) {
+            Recipient recipient = recipientChooser.getSelectedRecipient();
+            if (builder.recipientListener != null) {
+                builder.recipientListener.accept(recipient);
+            }
+            setEnabledStates();
+        } else if (actionEvent.getID() == JRecipientChooser.PARTIAL_SELECTION) {
+            historyPanel.setRelevantRecipients(recipientChooser.getRecipientsForPartialSelection(), recipientChooser.getSelectionPath());
         }
-        setEnabledStates();
     }
 
     /**
@@ -973,12 +1044,16 @@ public class TbLoaderPanel extends JPanel {
             return;
         }
         TBLoader.Operation operation;
-        //noinspection ConstantConditions
-        boolean isUpdate = actionChooser.getSelectedItem()
-            .toString()
-            .equalsIgnoreCase(UPDATE_TB);
+        boolean isUpdate = isUpdate();
         operation = isUpdate ? TBLoader.Operation.Update : TBLoader.Operation.CollectStats;
         goListener.accept(operation);
+    }
+
+    public boolean isUpdate() {
+        //noinspection ConstantConditions
+        return actionChooser.getSelectedItem()
+            .toString()
+            .equalsIgnoreCase(UPDATE_TB);
     }
 
     private boolean isTbV2() {

@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.text.StringEscapeUtils.escapeCsv;
@@ -20,6 +21,9 @@ import static org.literacybridge.core.fs.TbFile.Flags.nil;
 class TbLoaderLogger {
     public static final String VERSION_TBDATA = "v03";
 
+    /*
+     * Map from columns of deployment.log to tbsdeployed.csv
+     */
     private static final Map<String, String> deploymentLog2tbsdeployed = new LinkedHashMap<String, String>() {{
         put("sn", "talkingbookid");
         put("recipientid", "recipientid");
@@ -29,7 +33,8 @@ class TbLoaderLogger {
         put("package", "contentpackage");
         put("firmware", "firmware");
         put("location", "location");
-        put("coordinates", "coordinates");
+        put("latitude", "latitude");
+        put("longitude", "longitude");
         put("username", "username");
         put("tbcdid", "tbcdid");
         put("action", "action");
@@ -37,6 +42,9 @@ class TbLoaderLogger {
         put("testing", "testing");
         put("deployment_uuid", "deployment_uuid");
     }};
+    /*
+     * Map from columns of tbData.log to tbscollected.csv
+     */
     private static final Map<String, String> tbData2tbscollected = new LinkedHashMap<String, String>() {{
         put("in_sn", "talkingbookid");
         put("in_recipientid", "recipientid");
@@ -46,7 +54,8 @@ class TbLoaderLogger {
         put("in_package", "contentpackage");
         put("in_firmware", "firmware");
         put("location", "location");
-        put("coordinates", "coordinates");
+        put("latitude", "latitude");
+        put("longitude", "longitude");
         put("username", "username");
         put("tbcdid", "tbcdid");
         put("action", "action");
@@ -56,6 +65,8 @@ class TbLoaderLogger {
     }};
     
     private final TBLoaderCore tbLoaderCore;
+    Map<String, String> mTbsCollectedData;
+    Map<String, String> mTbsDeployedData;
 
     public TbLoaderLogger(TBLoaderCore tbLoaderCore) {
         this.tbLoaderCore = tbLoaderCore;
@@ -379,15 +390,19 @@ class TbLoaderLogger {
         try {
             // Make a map of {tbscollected_key : tbData_value}. Null values translated to empty string.
             // We assume no collisions and so provide a trivial "merge" function. Create a LinkedHashMap, to preserve order.
-            Map<String, String> tbsCollectedData = tbData2tbscollected.entrySet().stream()
+            mTbsCollectedData = tbData2tbscollected.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getValue, e -> {
                     String v = opLog.get(e.getKey());
                     return v == null ? "" : escapeCsv(v);
                 }, (a, b) -> a, LinkedHashMap::new));
-            // This timestamp isn't in opLog, so provide it independently.
-            tbsCollectedData.put("collectedtimestamp", tbLoaderCore.mUpdateTimestampISO);
 
-            writeTbOperationCsv(tbsCollectedData, "tbscollected.csv");
+            // This timestamp isn't in opLog, so provide it independently.
+            mTbsCollectedData.put("collectedtimestamp", tbLoaderCore.mUpdateTimestampISO);
+
+            // If we have "coordinates" instead of "latitude & longitude", convert that.
+            extractLatLonFromCoordinates(opLog, mTbsCollectedData);
+
+            writeTbOperationCsv(mTbsCollectedData, "tbscollected.csv");
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -397,15 +412,28 @@ class TbLoaderLogger {
         try {
             // Make a map of {tbsdeployeded_key : deployments_value}. Null values translated to empty string.
             // We assume no collisions and so provide a trivial "merge" function. Create a LinkedHashMap, to preserve order.
-            Map<String, String> tbsDeployedData = deploymentLog2tbsdeployed.entrySet().stream()
+            mTbsDeployedData = deploymentLog2tbsdeployed.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getValue, e -> {
                     String v = deploymentLog.get(e.getKey());
                     return v == null ? "" : escapeCsv(v);
                 }, (a, b) -> a, LinkedHashMap::new));
 
-            writeTbOperationCsv(tbsDeployedData, "tbsdeployed.csv");
+            // If we have "coordinates" instead of "latitude & longitude", convert that.
+            extractLatLonFromCoordinates(deploymentLog, mTbsDeployedData);
+
+            writeTbOperationCsv(mTbsDeployedData, "tbsdeployed.csv");
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+
+    private void extractLatLonFromCoordinates(OperationLog.Operation from, Map<String,String> to) {
+        if ((from.get("latitude") == null || from.get("longitude") == null) && from.get("coordinates") != null) {
+            Matcher m = TBLoaderConstants.COORDINATES_RE.matcher(from.get("coordinates"));
+            if (m.matches()) {
+                to.put("latitude", m.group("lat"));
+                to.put("longitude", m.group("lon"));
+            }
         }
     }
 

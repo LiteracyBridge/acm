@@ -3,22 +3,25 @@ package org.literacybridge.acm.gui.dialogs;
 import org.jdesktop.swingx.VerticalLayout;
 import org.literacybridge.acm.gui.util.UIUtils;
 
-import javax.swing.*;
+import javax.swing.Icon;
+import javax.swing.JCheckBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.Timer;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A class to simplify creating pop-ups, with some shared utility.
  */
 public class PopUp {
-
-    private JOptionPane optionPane;
 
     @SuppressWarnings("unused")
     public static class Builder {
@@ -30,7 +33,6 @@ public class PopUp {
         private Icon icon = null;
         private Object[] options = null;
         private Dimension size = null;
-        private Object initialValue = null;
         private int timeout = -1;
 
         private boolean optOut = false;
@@ -112,7 +114,6 @@ public class PopUp {
          * @return this, for chaining.
          */
         public Builder withInitialValue(Object initialValue) {
-            this.initialValue = initialValue;
             return this;
         }
 
@@ -151,6 +152,15 @@ public class PopUp {
     }
 
     private static final Map<String, Integer> optedOut = new HashMap<>();
+    public static void setOptOutValue(String dialogTitle, int value) {
+        optedOut.put(dialogTitle, value);
+    }
+    public Map<String,Integer> getOptOutValues() {
+        return optedOut.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+    public void putOptOutValues(Map<String, Integer> values) {
+        optedOut.putAll(values);
+    }
 
     private final Builder builder;
 
@@ -196,7 +206,11 @@ public class PopUp {
             message = builder.contents;
         }
 
-        optionPane = new JOptionPane(message, builder.messageType, builder.optionType, builder.icon, builder.options);
+        JOptionPane optionPane = new JOptionPane(message,
+            builder.messageType,
+            builder.optionType,
+            builder.icon,
+            builder.options);
         dialog = optionPane.createDialog(builder.parent, builder.title);
         optionPane.setInitialSelectionValue(JOptionPane.OK_OPTION);
         dialog.setAlwaysOnTop(true);

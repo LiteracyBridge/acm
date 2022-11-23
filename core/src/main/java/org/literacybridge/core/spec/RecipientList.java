@@ -48,6 +48,10 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
         return getItemAtPath(path);
     }
 
+    public List<RecipientAdapter> getRecipientsAtPath(List<String> path) {
+        return new ArrayList<>(getItemsAtPath(path));
+    }
+
     /**
      * How many TBs are in all the Recipients under a given path?
      * @param path for which to count TBs.
@@ -91,7 +95,6 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
 
     public List<Integer> getAdapterIndicesForValues(List<String> names) {
         List<String> namesList = Arrays.asList(NAMES);
-        int[] result = new int[names.size()];
         return names.stream().map(namesList::indexOf).collect(Collectors.toList());
     }
 
@@ -156,6 +159,21 @@ public class RecipientList extends DelayeredHierarchicalList<RecipientList.Recip
         public String getNameForFile() {
             String fname = String.join("-", getPath());
             return fname.replaceAll(NON_FILE_CHARS, " ");
+        }
+
+        /**
+         * This provides a list of the geo-political properties that are
+         * sufficient to distinguish any recipient in this program.
+         * @return A list of the important names.
+         */
+        public List<String> getDistinguishingNames() {
+            List<String> result = new ArrayList<>();
+            for (int i=0; i<NAMES.length; ++i) {
+                if (!isOmitted(i)) {
+                    result.add(NAMES[i]);
+                }
+            }
+            return result;
         }
     }
 

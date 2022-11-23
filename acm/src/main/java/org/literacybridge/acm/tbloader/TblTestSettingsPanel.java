@@ -1,15 +1,12 @@
 package org.literacybridge.acm.tbloader;
 
 import org.literacybridge.acm.gui.Assistant.GBC;
-import org.literacybridge.acm.gui.Assistant.PlaceholderTextArea;
 import org.literacybridge.acm.gui.Assistant.RoundedLineBorder;
-import org.literacybridge.acm.gui.resourcebundle.LabelProvider;
+import org.literacybridge.acm.gui.dialogs.PopUp;
 import org.literacybridge.acm.gui.settings.AbstractSettingsBase;
 import org.literacybridge.acm.gui.settings.AbstractSettingsDialog;
-import org.literacybridge.core.OSChecker;
 
 import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -20,8 +17,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.Arrays;
-import java.util.Collection;
 
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.LINE_START;
@@ -32,6 +27,7 @@ public class TblTestSettingsPanel extends AbstractSettingsBase {
 
     private JTextField pseudoTbDir;
     private JCheckBox isPseudoTalkingBookCB;
+    private JCheckBox doNotUploadStatsCB;
     
     @Override
     public String getTitle() {
@@ -62,6 +58,7 @@ public class TblTestSettingsPanel extends AbstractSettingsBase {
 
         addPseudoTbDir(y++);
         addPseudoTB(y++);
+        addDoNotUpload(y++);
 
         // Consume any blank space.
         settingsPanel.add(new JLabel(), protoGbc.withGridy(y).setWeighty(1));
@@ -106,6 +103,15 @@ public class TblTestSettingsPanel extends AbstractSettingsBase {
         isPseudoTalkingBookCB.setSelected(true);
     }
 
+    private void addDoNotUpload(int y) {
+        GBC gbc = protoGbc.withGridy(y);
+        settingsPanel.add(new JLabel("Do Not Upload:"), gbc.withGridx(0));
+        doNotUploadStatsCB = new JCheckBox("Don't upload stats.");
+        doNotUploadStatsCB.setToolTipText("Delete stats files, to avoid disturbing production data.");
+        settingsPanel.add(doNotUploadStatsCB, gbc);
+        doNotUploadStatsCB.setSelected(TBLoader.getApplication().tbLoaderConfig.isDoNotUpload());
+    }
+
 
     @Override
     public void onCancel() {
@@ -119,7 +125,12 @@ public class TblTestSettingsPanel extends AbstractSettingsBase {
     public void onOk() {
         TBLoader tbLoaderApp = TBLoader.getApplication();
         tbLoaderApp.setPseudoTb( isPseudoTalkingBookCB.isSelected() ? pseudoTbDir.getText() : null );
-        //tbLoaderApp.setPseudoTB(isPseudoTalkingBookCB.isSelected());
+        if (isPseudoTalkingBookCB.isSelected()) {
+            TBLoader.getApplication().setTestMode(true);
+            // Suppress the "cannot find the statistics"dialog for the pseudo device.
+            PopUp.setOptOutValue(TBLoader.CANNOT_FIND_THE_STATISTICS, 0);
+        }
+        TBLoader.getApplication().setDoNotUpload(doNotUploadStatsCB.isSelected());
     }
 
     /**

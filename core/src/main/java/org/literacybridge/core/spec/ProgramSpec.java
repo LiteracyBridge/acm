@@ -312,6 +312,13 @@ public class ProgramSpec {
             .orElse(null);
     }
 
+    public Deployment getDeployment(String deployment) {
+        return getDeployments().stream()
+            .filter(d -> d.deployment.equalsIgnoreCase(deployment) || d.deploymentname.equalsIgnoreCase(deployment))
+            .findFirst()
+            .orElse(null);
+    }
+
     /**
      * Gets the contentSpec defined in the Program Specification.
      * @return an object describing the content for every Deployment, including Playlist membership.

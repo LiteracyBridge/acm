@@ -16,13 +16,13 @@ public abstract class UIConstants {
   public static final String ICON_PAUSE = "pause.png";
   public static final String ICON_PLAY = "play.png";
   public static final String ICON_FORWARD = "forward.png";
-  public static final String ICON_CAT_TREE_32_PX = "cat-tree-32s.png";
-  public static final String ICON_GEAR_32_PX = "gears-32.png";
+    public static final String ICON_GEAR_32_PX = "gears-32.png";
+    public static final String ICON_FILTER = "filter-96.png";
+    public static final String ICON_UNPINNED = "unpinned-96.png";
+    public static final String ICON_PINNED = "pinned-96.png";
   public static final String ICON_ASSISTANT_32_PX = "assistant-32b.png";
-  public static final String ICON_SEARCH_24_PX = "search-glass-24px.png";
   public static final String ICON_SEARCH_32_PX = "search-glass-32px.png";
 
-//  public static final String SPLASH_SCREEN_IMAGE = "splash-screen.jpg";
   public static final String SPLASH_SCREEN_IMAGE = "splash-acm.jpg";
   public static final String GEARS_64_PNG = "gears_64.png";
   public static final String TREE_64_PNG = "tree_64.png";

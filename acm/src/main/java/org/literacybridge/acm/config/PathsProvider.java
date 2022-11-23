@@ -152,8 +152,16 @@ public class PathsProvider {
      *
      * @return ~/Amplio/TB-Loaders/${programId}
      */
-    File getLocalTbLoaderDir() {
+    public File getLocalTbLoaderDir() {
         return new File(AmplioHome.getLocalTbLoadersDir(), programId);
+    }
+
+    /**
+     * The local directory for keeping track of Talking Books deployed and collected.
+     * @return ~/Amplio/TB-History/${programId}
+     */
+    public File getLocalTbLoaderHistoryDir() {
+        return new File(AmplioHome.getTbLoaderHistoriesDir(), programId);
     }
 
     /**

@@ -36,6 +36,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
     private JCheckBox hasTbV2DevicesCB;
     private JCheckBox offerTbV2FirmwareWithStats;
     private JCheckBox isSuppressDosToolsCB;
+    private JComboBox<String> tbLoaderHistoryModeCombo;
 
     @Override
     public String getTitle() {
@@ -74,6 +75,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         addSuppressDosTools(y++);
         addSrnStrategy(y++);
         addTestStrategy(y++);
+        addTbLoaderHistoryMode(y++);
 
         // Consume any blank space.
         settingsPanel.add(new JLabel(), protoGbc.withGridy(y).setWeighty(1));
@@ -81,7 +83,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         FsRootMonitor.FilterParams filterParams = TBLoader.getApplication()
                                                           .getFsRootMonitor()
                                                           .getFilterParams();
-        min1GB.setSelected(Math.abs(filterParams.minSize-1L*1000*1000*1000) < 10L*1000*1000);
+        min1GB.setSelected(Math.abs(filterParams.minSize- (long) 1000 * 1000 * 1000) < 10L*1000*1000);
         max16GiB.setSelected(Math.abs(filterParams.maxSize-16L*1024*1024*1024) < 10L*1024*1024);
         asUsbDrive.setSelected(filterParams.allowedLabels.contains("USB Drive"));
 
@@ -145,7 +147,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
 
     private void addTestStrategy(int y) {
         GBC gbc = protoGbc.withGridy(y);
-        settingsPanel.add(new JLabel("'Test deployment' strategy"), gbc.withGridx(0));
+        settingsPanel.add(new JLabel("'Test deployments'"), gbc.withGridx(0));
         String[] srnStrategies = Arrays.stream(TBLoader.TEST_DEPLOYMENT_STRATEGY.values())
                 .map(v->v.description)
                 .map(LabelProvider::getLabel)
@@ -153,6 +155,18 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         testStrategyCombo = new JComboBox<>(srnStrategies);
         testStrategyCombo.setSelectedIndex(TBLoader.getApplication().getTestStrategy().ordinal());
         settingsPanel.add(testStrategyCombo, gbc);
+    }
+
+    private void addTbLoaderHistoryMode(int y) {
+        GBC gbc = protoGbc.withGridy(y);
+        settingsPanel.add(new JLabel("Collection History"), gbc.withGridx(0));
+        String[] srnStrategies = Arrays.stream(TBLoader.TB_LOADER_HISTORY_MODE.values())
+            .map(v->v.description)
+            .map(LabelProvider::getLabel)
+            .toArray(String[]::new);
+        tbLoaderHistoryModeCombo = new JComboBox<>(srnStrategies);
+        tbLoaderHistoryModeCombo.setSelectedIndex(TBLoader.getApplication().getTbLoaderHistoryMode().ordinal());
+        settingsPanel.add(tbLoaderHistoryModeCombo, gbc);
     }
 
     private void addHasTbV2DevicesSetting(int y) {
@@ -175,7 +189,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
 
     private void addOfferTbV2FirmwareWithStats(int y) {
         GBC gbc = protoGbc.withGridy(y);
-        settingsPanel.add(new JLabel("Update TBv2 Firmware with Stats"), gbc.withGridx(0));
+        settingsPanel.add(new JLabel("Offer TBv2 Firmware"), gbc.withGridx(0));
         offerTbV2FirmwareWithStats = new JCheckBox("Offer TBv2 Firmware updates when collecting stats.");
         offerTbV2FirmwareWithStats.setToolTipText("When a TBv2 device needs a firmware update, offer the update when collecting stats.");
         settingsPanel.add(offerTbV2FirmwareWithStats, gbc);
@@ -213,6 +227,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         tbLoaderApp.setTbIdStrategy(srnStrategyCombo.getSelectedIndex());
         tbLoaderApp.setAllowPackageChoice(allowPackageChoice.isSelected());
         tbLoaderApp.setTestStrategy(testStrategyCombo.getSelectedIndex());
+        tbLoaderApp.setTbLoaderHistoryMode(tbLoaderHistoryModeCombo.getSelectedIndex());
         tbLoaderApp.setHasTbV2Devices(hasTbV2DevicesCB.isSelected());
         tbLoaderApp.setStrictTbV2Firmware(isStrictTbV2FirmwareCB.isSelected());
         tbLoaderApp.offerTbV2FirmwareWithStats(offerTbV2FirmwareWithStats.isSelected());

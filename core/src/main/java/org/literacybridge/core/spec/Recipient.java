@@ -5,11 +5,11 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("unused")
 public class Recipient {
     final static String[] FILENAMES = new String[]{"pub_recipients.csv", "recipients.csv"};
     // Optional '[', numbers-spaces-commas, optional ']'
@@ -85,6 +85,54 @@ public class Recipient {
                 this.deployments = depls;
             }
         }
+    }
+
+    public String getRecipientid() {
+        return recipientid;
+    }
+
+    public String getCommunityname() {
+        return communityname;
+    }
+
+    public String getGroupname() {
+        return groupname;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public String getDistrict() {
+        return district;
+    }
+
+    public int getNumtbs() {
+        return numtbs;
+    }
+
+    public String getSupportentity() {
+        return supportentity;
+    }
+
+    public String getLanguagecode() {
+        return languagecode;
+    }
+
+    public String getAgent() {
+        return agent;
+    }
+
+    public String getVariant() {
+        return variant;
+    }
+
+    public List<Integer> getDeployments() {
+        return deployments;
     }
 
     public String getName() {

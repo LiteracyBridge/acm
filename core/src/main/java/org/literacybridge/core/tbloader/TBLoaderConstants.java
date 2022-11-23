@@ -111,6 +111,7 @@ public class TBLoaderConstants {
     public static final String PROGRAM_DESCRIPTION_PROPERTY = "DESCRIPTION";
     public static final String PROGRAM_FRIENDLY_NAME_PROPERTY = "NAME";
     public static final String PROGRAM_ID_PROPERTY = "PROGRAMID";
+    static Pattern COORDINATES_RE = Pattern.compile("\"?\\((?<lat>[0-9.]+),(?<lon>[0-9.]+)\\)\"?");
 
     static {
         ISO8601.setTimeZone(UTC);

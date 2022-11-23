@@ -6,7 +6,6 @@ import org.literacybridge.core.fs.OperationLog;
 import org.literacybridge.core.fs.TbFile;
 import org.literacybridge.core.fs.ZipUnzip;
 import org.literacybridge.core.spec.ProgramSpec;
-import org.literacybridge.core.spec.Recipient;
 import org.literacybridge.core.spec.RecipientList;
 import org.literacybridge.core.tbdevice.TbDeviceInfo;
 
@@ -43,7 +42,9 @@ import static org.literacybridge.core.tbloader.ProgressListener.Steps.finishing;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.listDeviceFiles;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.listDeviceFiles2;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.starting;
-import static org.literacybridge.core.tbloader.TBLoaderConstants.*;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.ISO8601;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.STATS_COLLECTED_PROPERTIES_NAME;
+import static org.literacybridge.core.tbloader.TBLoaderConstants.UNKNOWN;
 import static org.literacybridge.core.tbloader.TBLoaderUtils.getBytesString;
 
 //@formatter:off
@@ -164,6 +165,16 @@ public abstract class TBLoaderCore {
     private static final Logger LOG = Logger.getLogger(TBLoaderCore.class.getName());
     final String mLegacyFormatUpdateTimestamp;
     protected Result.FORMAT_OP mFormatOp;
+    private TbsCollected mTbsCollected;
+    private TbsDeployed mTbsDeployed;
+
+    public TbsCollected getTbsCollected() {
+        return mTbsCollected;
+    }
+
+    public TbsDeployed getTbsDeployed() {
+        return mTbsDeployed;
+    }
 
     @SuppressWarnings("unused")
     public enum Action {
@@ -485,6 +496,7 @@ public abstract class TBLoaderCore {
         return performOperation();
     }
 
+    
 
     /**
      * The setup and evaluation and statistics gathering are all in common between stats-only
@@ -1102,7 +1114,12 @@ public abstract class TBLoaderCore {
      */
     private void writeTbLog(String action) throws IOException {
         mProgressListener.log("Logging TB data");
-        new TbLoaderLogger(this).logTBData(action, getDurationInSeconds(mUpdateStartTime));
+        TbLoaderLogger tbLoaderLogger = new TbLoaderLogger(this);
+        tbLoaderLogger.logTBData(action, getDurationInSeconds(mUpdateStartTime));
+        mTbsCollected = new TbsCollected(tbLoaderLogger.mTbsCollectedData);
+        if (!mBuilder.mStatsOnly) {
+            mTbsDeployed = new TbsDeployed(tbLoaderLogger.mTbsDeployedData);
+        }
     }
 
     /**

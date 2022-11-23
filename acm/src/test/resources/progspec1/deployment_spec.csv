@@ -1,0 +1,4 @@
+﻿project,deployment_num,startdate,enddate,component
+TEST,1,2019-03-01,2019-05-30,~space
+TEST,2,2019-06-01,2019-12-31,
+TEST,3,2012-01-01,2020-12-31,
