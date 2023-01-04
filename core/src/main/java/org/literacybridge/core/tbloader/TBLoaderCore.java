@@ -757,6 +757,11 @@ public abstract class TBLoaderCore {
         // Add the collection time properties. Prepend with "collection." to prevent collisions.
         collectionProperties(null).getProperties()
             .forEach((key, value) -> feedbackProperties.put("collection."+key.toString(), value.toString()));
+        // Allocate a UUID for the UF message. By allocating it now, the same UUID will be used even if the
+        // message is re-imported. (V1 computes a UUID based on properties that should be unique per message,
+        // but V2 does not; thus this accommodates V2.)
+        String uuid = UUID.randomUUID().toString();
+        feedbackProperties.setProperty("metadata.MESSAGE_UUID", uuid);
         ByteArrayOutputStream bos = null;
         if (feedbackProperties.size() > 0) {
             bos = new ByteArrayOutputStream();
