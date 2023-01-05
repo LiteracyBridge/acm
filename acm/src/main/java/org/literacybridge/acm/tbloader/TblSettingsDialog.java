@@ -22,8 +22,9 @@ public final class TblSettingsDialog extends AbstractSettingsDialog {
     private static final String DESKTOP_SHORTCUTS = "Desktop Shortcuts";
     private static final String TEST_SETTINGS = "Testing";
 
-    private TblSettingsDialog(Window owner) {
-        super(owner, "Settings");
+
+    private TblSettingsDialog(Window owner, boolean advanced) {
+        super(owner, "Settings", advanced);
     }
 
     @Override
@@ -39,7 +40,7 @@ public final class TblSettingsDialog extends AbstractSettingsDialog {
             DesktopShortcutsPanel::new));
 
         // If running TB-Loader for testing, enable some more options.
-        if (TBLoader.getApplication().tbLoaderConfig.isTestMode()) {
+        if (advanced || TBLoader.getApplication().tbLoaderConfig.isTestMode()) {
             iconBar.add(Box.createVerticalStrut(15));
             iconBar.add(makeSettingsPanel(UIConstants.TEST_64_PNG,
                 TEST_SETTINGS,
@@ -55,7 +56,10 @@ public final class TblSettingsDialog extends AbstractSettingsDialog {
      * @param e is ignored.
      */
     public static void showDialog(@SuppressWarnings("unused") ActionEvent e) {
-        TblSettingsDialog dialog = new TblSettingsDialog(Application.getApplication());
+        int shiftMask = ActionEvent.ALT_MASK | ActionEvent.CTRL_MASK;
+        boolean ctrlShift = (e.getModifiers() &  shiftMask) == shiftMask;
+
+        TblSettingsDialog dialog = new TblSettingsDialog(Application.getApplication(), ctrlShift);
         // Place the new dialog within the application frame. This is hacky, but if it fails, the dialog
         // simply winds up in a funny place. Unfortunately, Swing only lets us get the location of a
         // component relative to its parent.

@@ -37,6 +37,7 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
     private JCheckBox offerTbV2FirmwareWithStats;
     private JCheckBox isSuppressDosToolsCB;
     private JComboBox<String> tbLoaderHistoryModeCombo;
+    private JCheckBox historyDetailLineNumbersCB;
 
     @Override
     public String getTitle() {
@@ -76,6 +77,9 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         addSrnStrategy(y++);
         addTestStrategy(y++);
         addTbLoaderHistoryMode(y++);
+        if (helper.isAdvanced()) {
+            addTbLoaderHistoryCheckbox(y++);
+        }
 
         // Consume any blank space.
         settingsPanel.add(new JLabel(), protoGbc.withGridy(y).setWeighty(1));
@@ -169,6 +173,13 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         settingsPanel.add(tbLoaderHistoryModeCombo, gbc);
     }
 
+    private void addTbLoaderHistoryCheckbox(int y) {
+        GBC gbc = protoGbc.withGridy(y);
+        settingsPanel.add(new JLabel("Detail Line Nos"), gbc.withGridx(0));
+        historyDetailLineNumbersCB = new JCheckBox("Add line numbers to history detail display.");
+        settingsPanel.add(historyDetailLineNumbersCB, gbc);
+        historyDetailLineNumbersCB.setSelected(TBLoader.getApplication().getHistoryDetailLineNumbers());
+    }
     private void addHasTbV2DevicesSetting(int y) {
         GBC gbc = protoGbc.withGridy(y);
         settingsPanel.add(new JLabel("Version-2 Talking Books"), gbc.withGridx(0));
@@ -228,6 +239,9 @@ public class TblGeneralSettingsPanel extends AbstractSettingsBase {
         tbLoaderApp.setAllowPackageChoice(allowPackageChoice.isSelected());
         tbLoaderApp.setTestStrategy(testStrategyCombo.getSelectedIndex());
         tbLoaderApp.setTbLoaderHistoryMode(tbLoaderHistoryModeCombo.getSelectedIndex());
+        if (historyDetailLineNumbersCB != null) {
+            tbLoaderApp.setHistoryDetailLineNumbers(historyDetailLineNumbersCB.isSelected());
+        }
         tbLoaderApp.setHasTbV2Devices(hasTbV2DevicesCB.isSelected());
         tbLoaderApp.setStrictTbV2Firmware(isStrictTbV2FirmwareCB.isSelected());
         tbLoaderApp.offerTbV2FirmwareWithStats(offerTbV2FirmwareWithStats.isSelected());

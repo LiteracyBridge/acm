@@ -73,11 +73,8 @@ public abstract class AbstractSettingsDialog extends JDialog {
     private final Map<String, AbstractSettingsBase> settingsPanels = new LinkedHashMap<>();
     private String currentTag = null;
 
-    private final boolean advanced;
+    protected final boolean advanced;
 
-    protected AbstractSettingsDialog(Window owner, String title) {
-        this(owner, title, false);
-    }
     protected AbstractSettingsDialog(Window owner, String title, boolean advanced) {
         super(owner, title, ModalityType.APPLICATION_MODAL);
 

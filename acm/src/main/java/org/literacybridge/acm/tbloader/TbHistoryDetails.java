@@ -21,17 +21,16 @@ import javax.swing.SortOrder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Rectangle;
-import java.awt.event.ComponentEvent;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -132,7 +131,7 @@ public class TbHistoryDetails extends JDialog {
         dataModel.historyUpdated();
     };
 
-    private JComponent makeTable(TableModel tableModel) {
+    private JComponent makeTable(HistoryDetailsModel tableModel) {
         // Make a table based on the model. Make grid visible. Make it scrollable.
         dataTable = new JTable(tableModel);
         dataTable.setGridColor(Color.lightGray);
@@ -191,8 +190,10 @@ public class TbHistoryDetails extends JDialog {
             super();
             List<String> columnNames = relevantRecipients.get(0).getDistinguishingNames();
             // uncomment to add a sequence number
-//            int addedIx = 0;
-//            columnNames.add(addedIx++, "#");
+            int addedIx = -1;
+            if (TBLoader.getApplication().getHistoryDetailLineNumbers()) {
+                columnNames.add(++addedIx, "#");
+            }
             columnNames.addAll(Arrays.asList(additionalNames));
             this.columnNames = columnNames.toArray(new String[0]);
         }
@@ -213,12 +214,18 @@ public class TbHistoryDetails extends JDialog {
         }
 
         @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            if (columnNames[columnIndex].equals("#")) return Integer.class;
+            return super.getColumnClass(columnIndex);
+        }
+
+        @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             String recipientId = recipientList.get(rowIndex);
             Recipient recipient = recipientMap.get(recipientId);
             switch (columnNames[columnIndex]) {
                 case "#":
-                    return (rowIndex+1);
+                    return dataTable.convertRowIndexToView(rowIndex)+1;
                 case "Name":
                     return recipient.getName();
                 case "Country":
@@ -344,11 +351,13 @@ public class TbHistoryDetails extends JDialog {
         TbAndOperationModel(String... additionalNames) {
             super();
             List<String> columnNames = relevantRecipients.get(0).getDistinguishingNames();
-            int addedIx = 0;
+            int addedIx = -1;
             // Uncomment to add a sequence number
-//            columnNames.add(addedIx++, "#");
-            columnNames.add(addedIx++, "User");
-            columnNames.add(addedIx++, "When");
+            if (TBLoader.getApplication().getHistoryDetailLineNumbers()) {
+                columnNames.add(++addedIx, "#");
+            }
+            columnNames.add(++addedIx, "When");
+            columnNames.add(++addedIx, "User");
             columnNames.addAll(Arrays.asList(additionalNames));
             this.columnNames = columnNames.toArray(new String[0]);
         }
@@ -369,13 +378,20 @@ public class TbHistoryDetails extends JDialog {
         }
 
         @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            if (columnNames[columnIndex].equals("#")) return Integer.class;
+            return super.getColumnClass(columnIndex);
+        }
+
+        @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             T operation = operationList.get(rowIndex);
             String recipientId = operation.getRecipientid();
             Recipient recipient = recipientMap.get(recipientId);
             switch (columnNames[columnIndex]) {
                 case "#":
-                    return (rowIndex+1);
+                    // Convert table row number to row in the on-screen view.
+                    return dataTable.convertRowIndexToView(rowIndex)+1;
                 case "User":
                     return operation.getUsername();
                 case "Date":
@@ -418,6 +434,7 @@ public class TbHistoryDetails extends JDialog {
         @Override
         void fetchData() {
             operationList = new ArrayList<>(summarizer.getTbsDeployedLatest().values());
+            operationList.sort(Comparator.comparing(TbsDeployed::getOperationTimestamp));
         }
 
         @Override
@@ -435,6 +452,7 @@ public class TbHistoryDetails extends JDialog {
         @Override
         void fetchData() {
             operationList = new ArrayList<>(summarizer.getTbsCollected().values());
+            operationList.sort(Comparator.comparing(TbOperation::getOperationTimestamp));
         }
 
         @Override
@@ -452,6 +470,7 @@ public class TbHistoryDetails extends JDialog {
         @Override
         void fetchData() {
             operationList = new ArrayList<>(summarizer.getTbsDeployedAll().values());
+            operationList.sort(Comparator.comparing(TbsDeployed::getOperationTimestamp));
         }
 
         @Override

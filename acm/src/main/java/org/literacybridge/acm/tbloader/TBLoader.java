@@ -94,6 +94,7 @@ public class TBLoader extends JFrame {
         private String  pseudoTbDir = null;
         private boolean doNotUpload = false;
         private TB_LOADER_HISTORY_MODE tbLoaderHistoryMode = TB_LOADER_HISTORY_MODE.DEFAULT;
+        private boolean showHistoryDetailLineNumbers;
 
         public boolean hasTbV2Devices() { return hasTbV2Devices; }
         public boolean hasDfuSupport() { return hasDfuSupport; }
@@ -108,6 +109,8 @@ public class TBLoader extends JFrame {
         public boolean isDoNotUpload() { return doNotUpload; }
         public TB_LOADER_HISTORY_MODE getTbLoaderHistoryMode() {return tbLoaderHistoryMode;}
         public void setTbLoaderHistoryMode(TB_LOADER_HISTORY_MODE tbLoaderHistoryMode) {this.tbLoaderHistoryMode = tbLoaderHistoryMode;}
+        public boolean getHistoryDetailLineNumbers() { return showHistoryDetailLineNumbers;}
+        public void setHistoryDetailLineNumbers(boolean newValue) { showHistoryDetailLineNumbers = newValue; }
     }
     final TbLoaderConfig tbLoaderConfig = new TbLoaderConfig();
 
@@ -693,6 +696,15 @@ public class TBLoader extends JFrame {
     void setTbLoaderHistoryMode(TB_LOADER_HISTORY_MODE tbLoaderHistoryMode) {
         if (tbLoaderConfig.getTbLoaderHistoryMode() != tbLoaderHistoryMode) {
             tbLoaderConfig.setTbLoaderHistoryMode(tbLoaderHistoryMode);
+            refreshTbHistory();
+        }
+    }
+    boolean getHistoryDetailLineNumbers() {
+        return tbLoaderConfig.getHistoryDetailLineNumbers();
+    }
+    void setHistoryDetailLineNumbers(boolean newValue) {
+        if (tbLoaderConfig.getHistoryDetailLineNumbers() != newValue) {
+            tbLoaderConfig.setHistoryDetailLineNumbers(newValue);
             refreshTbHistory();
         }
     }
