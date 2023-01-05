@@ -10,12 +10,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.literacybridge.core.fs.TbFile.Flags.contentRecursive;
 import static org.literacybridge.core.tbloader.ProgressListener.Steps.*;
 
 @SuppressWarnings("RedundantThrows")
 class TBLoaderCoreV2 extends TBLoaderCore {
+    private static final Logger LOG = Logger.getLogger(TBLoaderCoreV2.class.getName());
 
     public static final String BOOTCOUNT_TXT = "bootcount.txt";
     public static final String LOGS_DIR = "log";
@@ -144,6 +147,26 @@ class TBLoaderCoreV2 extends TBLoaderCore {
         finishStep();
     }
 
+    private Properties readPropsFile(TbFile propsFile) {
+        Properties props = new Properties();
+        if (propsFile.exists()) {
+            try (InputStream istream = propsFile.openFileInputStream()) {
+                props.load(istream);
+            } catch (Exception e) { //Catch and ignore exception if any
+                LOG.log(Level.WARNING, "Ignoring error: ", e.getMessage());
+            }
+        }
+        return props;
+    }
+
+    private void writePropsFile(Properties props, TbFile propsFile) {
+        try (OutputStream ostream = propsFile.createNew()) {
+            props.store(ostream, "TB-Loader");
+        } catch (IOException e) {
+            LOG.log(Level.WARNING, "Ignoring error: ", e.getMessage());
+        }
+    }
+
     @Override
     protected void gatherUserRecordings() throws IOException {
         startStep(gatherUserRecordings);
@@ -152,26 +175,38 @@ class TBLoaderCoreV2 extends TBLoaderCore {
         // Build the user recordings destination path.
         TbFile recordingsDst = getCollectedUfDataDir();
 
-        // If there is a deployment.properties file on the device, we'll copy it as UF_FILENAME.properties for
-        // every UF file.
-        String deploymentPropertiesString = getDeploymentPropertiesForUserFeedback();
-
         // Watch the file progress, and for every file, create a *.properties
-        TbFile.CopyProgress localListener = (fromFile, toFile) -> {
-            mCopyListener.copying(fromFile, toFile);
-            if (deploymentPropertiesString != null) {
-                try {
-                    String infoName = FilenameUtils.getBaseName(toFile.getName()) + ".properties";
-                    TbFile infoFile = toFile.getParent().open(infoName);
-                    eraseAndOverwriteFile(infoFile, deploymentPropertiesString);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
+        TbFile.CopyProgress localListener = (fromFile, toFile) -> mCopyListener.copying(fromFile, toFile);
         if (recordingsSrc.exists()) {
             mStepBytesCount += TbFile.copyDir(recordingsSrc, recordingsDst, null, localListener);
         }
+
+        // If there is a deployment.properties file on the device, look for a .properties file for
+        // all of the UF recordings. If the recording already has a .properties file, add the
+        // deployment properties to it. If not, create one.
+        TbFile.FilenameFilter audioFilesFilter = new TbFile.FilenameFilter() {
+            final Set<String> includedExts = new HashSet<>(Arrays.asList("wav",
+                    "mp3",
+                    "ogg"));
+            @Override
+            public boolean accept(TbFile parent, String name) {
+                return includedExts.contains(FilenameUtils.getExtension(name).toLowerCase());
+            }
+        };
+
+        if (getDeploymentPropertiesStringForUserFeedback() != null) {
+            for (TbFile audioFile : recordingsDst.listFiles(audioFilesFilter)) {
+                String propsName = FilenameUtils.removeExtension(audioFile.getName()) + ".properties";
+                TbFile propsFile = audioFile.getParent().open(propsName);
+                Properties ufProps = readPropsFile(propsFile);
+                Properties deploymentProperties = getDeploymentPropertiesForUserFeedback();
+                for (Map.Entry<Object,Object> e : deploymentProperties.entrySet()) {
+                    ufProps.setProperty(e.getKey().toString(), e.getValue().toString());
+                }
+                writePropsFile(ufProps, propsFile);
+            }
+        }
+
         finishStep();
     }
 

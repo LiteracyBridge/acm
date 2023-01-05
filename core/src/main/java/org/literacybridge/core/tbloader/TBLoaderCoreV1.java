@@ -256,16 +256,17 @@ class TBLoaderCoreV1 extends TBLoaderCore {
 
         // If there is a deployment.properties file on the device, we'll copy it as UF_FILENAME.properties for
         // every UF file.
-        String deploymentPropertiesString = getDeploymentPropertiesForUserFeedback();
+        boolean haveDeploymentProperties = getDeploymentPropertiesStringForUserFeedback() != null;
 
         // As user feedback files are copied, create a {recording-name}.properties file with the deployment
         // properties from when the recording was made.
         TbFile.CopyProgress localListener = (fromFile, toFile) -> {
             mCopyListener.copying(fromFile, toFile);
-            if (deploymentPropertiesString != null) {
+            if (haveDeploymentProperties) {
                 try {
                     String infoName = FilenameUtils.getBaseName(toFile.getName()) + ".properties";
                     TbFile infoFile = toFile.getParent().open(infoName);
+                    String deploymentPropertiesString = getDeploymentPropertiesStringForUserFeedback();
                     eraseAndOverwriteFile(infoFile, deploymentPropertiesString);
                 } catch (IOException e) {
                     e.printStackTrace();

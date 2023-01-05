@@ -749,19 +749,26 @@ public abstract class TBLoaderCore {
         return true;
     }
 
-    protected String getDeploymentPropertiesForUserFeedback() throws IOException {
+    protected Properties getDeploymentPropertiesForUserFeedback() {
         // If there is a deployment.properties file on the device, we'll copy it as UF_FILENAME.properties for
         // every UF file.
         Properties feedbackProperties = new Properties();
         feedbackProperties.putAll(mTbDeviceInfo.loadDeploymentProperties());
         // Add the collection time properties. Prepend with "collection." to prevent collisions.
         collectionProperties(null).getProperties()
-            .forEach((key, value) -> feedbackProperties.put("collection."+key.toString(), value.toString()));
+                .forEach((key, value) -> feedbackProperties.put("collection."+key.toString(), value.toString()));
         // Allocate a UUID for the UF message. By allocating it now, the same UUID will be used even if the
         // message is re-imported. (V1 computes a UUID based on properties that should be unique per message,
         // but V2 does not; thus this accommodates V2.)
         String uuid = UUID.randomUUID().toString();
         feedbackProperties.setProperty("metadata.MESSAGE_UUID", uuid);
+        return feedbackProperties;
+    }
+
+    protected String getDeploymentPropertiesStringForUserFeedback() throws IOException {
+        // If there is a deployment.properties file on the device, we'll copy it as UF_FILENAME.properties for
+        // every UF file.
+        Properties feedbackProperties = getDeploymentPropertiesForUserFeedback();
         ByteArrayOutputStream bos = null;
         if (feedbackProperties.size() > 0) {
             bos = new ByteArrayOutputStream();
