@@ -171,7 +171,7 @@ public abstract class AssistantPage<Context> extends JPanel {
             TableColumn tableColumn = table.getColumnModel().getColumn(viewColumnNo);
 
             int headerWidth = headerRenderer.getTableCellRendererComponent(null,
-                tableColumn.getHeaderValue(),
+                tableColumn.getHeaderValue() + "_W", // sort indicators
                 false,
                 false,
                 0,
