@@ -499,6 +499,9 @@ public class ACMConfiguration {
         if (knownDb != null) {
             result = knownDb.getPathProvider();
         }
+        if (result == null) {
+            result = new PathsProvider(programId, Authenticator.getInstance().isProgramS3(programId));
+        }
         return result;
     }
 
