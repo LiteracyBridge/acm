@@ -4,3 +4,4 @@ dist
 acm.log
 .DS_Store
 ACM.log.*
+.idea/

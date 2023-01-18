@@ -14,6 +14,7 @@ import org.literacybridge.acm.config.DBConfiguration;
 import org.literacybridge.acm.importexport.AudioExporter;
 import org.literacybridge.acm.store.AudioItem;
 import org.literacybridge.acm.store.MetadataStore;
+import org.literacybridge.acm.utils.AudioFileProperties;
 import org.literacybridge.acm.utils.IOUtils;
 
 import java.io.File;
@@ -32,6 +33,7 @@ import static org.literacybridge.acm.Constants.CUSTOM_GREETING;
  * the ACM stores. Metadata of the audio items is stored separately, not in this
  * repository.
  */
+@SuppressWarnings("unused")
 public class AudioItemRepositoryImpl implements AudioItemRepository {
     private final static Pattern categoryPattern = Pattern.compile("^\\$?\\d+(-\\d+)+$");
 
@@ -117,6 +119,23 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
     }
 
     /**
+     * Determines if a file should be "force converted" to get a lower bit rate, smaller file size, etc.
+     * @param audioFile The file in question.
+     * @param format The format of the file.
+     * @return true if the file should be down-converte, false if it is fine as-is.
+     */
+    private boolean forceConversion(File audioFile, AudioFormat format) {
+        if (format == AudioFormat.MP3) {
+            AudioFileProperties.Props props = AudioFileProperties.readFromFile(audioFile.getAbsolutePath());
+            boolean fc = props.getChannels() != 1 || props.getKbps() > 16;
+            System.out.printf("%s %s: %d ch, %d kbps, %s\n", fc?"Convert":"   Keep", audioFile.getName(),
+                    props.getChannels(), props.getKbps(), audioFile.getAbsolutePath());
+            return fc;
+        }
+        return false;
+    }
+
+    /**
      * Store a new File as an audioItem in the repository. The AudioItem may or may
      * not already exist.
      */
@@ -138,11 +157,14 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
                 FFMpegConverter wavToWav = new FFMpegConverter();
                 ConversionResult wavToWavResult = wavToWav.doConvertFile(externalFile,
                         toFile.getParentFile(), toFile, new HashMap<>());
+            } else if (forceConversion(externalFile, format)) {
+                convertFile(externalFile, toFile);
             } else {
                 IOUtils.copy(externalFile, toFile);
             }
+
+            // We've imported an external, non-a18 file; convert file to A18 format right away
             try {
-                // convert file to A18 format right away
                 convertAudioItem(audioItem, AudioFormat.A18);
             } catch (ConversionException e) {
                 throw new IOException(e);
@@ -170,16 +192,14 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      * @param audioItem The desired audio item.
      * @param format The desired audio format.
      * @return A File containing the audio.
-     * @throws IOException If a file can't be read or written.
      * @throws ConversionException If an error occurs while converting.
      */
     @Override
     public synchronized File getAudioFile(AudioItem audioItem, AudioFormat format) throws
-                                                                                   IOException,
                                                                                    ConversionException,
                                                                                    UnsupportedFormatException {
         File file = resolveFile(audioItem, format, false);
-        if (file == null || !file.exists()) {
+        if (file == null || !file.exists() || forceConversion(file, format)) {
             file = convertAudioItem(audioItem, format);
         }
         return file;
@@ -191,26 +211,15 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
      * @return the converted file.
      */
     private synchronized File convertAudioItem(AudioItem audioItem, AudioFormat targetFormat)
-        throws ConversionException, UnsupportedFormatException {
+            throws ConversionException, UnsupportedFormatException {
 
-        File targetFile = resolveFile(audioItem, targetFormat, true);
-        if (targetFile.exists()) {
+        // See if there is already a readable version of the file.
+        File targetFile = resolveFile(audioItem, targetFormat, false);
+        if (targetFile.exists() && !forceConversion(targetFile, targetFormat)) {
             return targetFile;
         }
 
-        convertAudioItem(audioItem, targetFile);
-        return targetFile;
-    }
-
-    /**
-     * Converts the audio item into the specified target file. The format is implicit in the filename.
-     * @param audioItem to be exported.
-     * @param targetFile to be exported to.
-     * @throws ConversionSourceMissingException if no appropriate source file can be found in the repository.
-     */
-    private synchronized void convertAudioItem(AudioItem audioItem, File targetFile) throws
-                                                                                     ConversionException,
-                                                                                     UnsupportedFormatException {
+        // Nothing already; look for a good file to convert from.
         File sourceFile = resolveFile(audioItem, AudioFormat.WAV, false);
         if (!(sourceFile.exists() && sourceFile.isFile())) {
             // no WAV, try any other format
@@ -223,9 +232,13 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         }
         if (!(sourceFile.exists() && sourceFile.isFile())) {
             throw new ConversionSourceMissingException(String.format("Can't find file to convert for: %s",
-                audioItem.toString()));
+                    audioItem.toString()));
         }
+        // Get a file appropriate to write to.
+        targetFile = resolveFile(audioItem, targetFormat, true);
         convertFile(sourceFile, targetFile);
+
+        return targetFile;
     }
 
     /**
@@ -245,9 +258,10 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
             }
         }
         AudioFormat targetFormat = ensureKnownFormat(targetFile);
+        boolean overWrite = targetFile.exists() && forceConversion(targetFile, targetFormat);
         new ExternalConverter(sourceFile, targetFormat.getAudioConversionFormat())
             .toFile(targetFile)
-            .noOverwrite()
+            .overwritingExisting(overWrite)
             .go();
     }
 
@@ -271,10 +285,11 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         if (audioFileRepository.isSandboxedFile(targetFile)) {
             throw new ConversionException("Target file should have been sandboxed.");
         }
+        boolean overWrite = targetFile.exists() && forceConversion(targetFile, targetFormat);
         IOUtils.ensureDirectoryExists(targetFile);
         new ExternalConverter(sourceFile, targetFormat.getAudioConversionFormat())
             .toFile(targetFile)
-            .noOverwrite()
+            .overwritingExisting(overWrite)
             .go();
 
         return targetFile;
@@ -349,7 +364,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         File promptsDir = new File(TbOptionsDir, subdir);
         // Does the file already exist in the right format?
         File sourceFileWithFormat = new File(promptsDir, targetFile.getName());
-        if (sourceFileWithFormat.exists()) {
+        if (sourceFileWithFormat.exists() && !forceConversion(sourceFileWithFormat, targetFormat)) {
             IOUtils.copy(sourceFileWithFormat, targetFile);
         } else {
             // Doesn't exist, so convert it.
@@ -376,7 +391,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         File sourceWithFormat = new File(sourceFile.getParent(),
                 FilenameUtils.removeExtension(sourceFile.getName())+'.'+targetFormat.getFileExtension());
 
-        if (sourceWithFormat.exists()) {
+        if (sourceWithFormat.exists() && !forceConversion(sourceWithFormat, targetFormat)) {
             IOUtils.copy(sourceWithFormat, targetFile);
         } else {
             File sourceDir = sourceFile.getParentFile();
@@ -449,7 +464,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         // Process the category announcement.
         // Does the file already exist in the right format?
         File sourceFile = new File(promptsDir, targetFile.getName());
-        if (!sourceFile.exists()) {
+        if (!sourceFile.exists() || forceConversion(sourceFile, targetFormat)) {
             // Doesn't exist, so convert it.
             String basename = FilenameUtils.removeExtension(targetFile.getName());
             sourceFile = convertFile(prompt, (name, format) -> {
@@ -462,7 +477,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
         // Process the invitation.
         targetFile = new File(targetFile.getParentFile(), 'i'+targetFile.getName());
         sourceFile = new File(promptsDir, targetFile.getName());
-        if (!sourceFile.exists()) {
+        if (!sourceFile.exists() || forceConversion(sourceFile, targetFormat)) {
             // Doesn't exist, so convert it.
             String basename = FilenameUtils.removeExtension(targetFile.getName());
             sourceFile = convertFile(prompt, (name, format) -> {
@@ -499,7 +514,7 @@ public class AudioItemRepositoryImpl implements AudioItemRepository {
 
         File sourceFileWithFormat = new File(sourceDir, FilenameUtils.removeExtension(CUSTOM_GREETING) + "." + defaultExtension);
 
-        if (sourceFileWithFormat.exists()) {
+        if (sourceFileWithFormat.exists() && !forceConversion(sourceFileWithFormat, targetFormat)) {
             IOUtils.copy(sourceFileWithFormat, targetFile);
         } else {
             // Doesn't exist, so convert it.

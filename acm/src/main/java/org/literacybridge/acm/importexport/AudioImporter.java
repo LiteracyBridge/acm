@@ -96,7 +96,7 @@ public class AudioImporter {
         }
 
         if (file.isDirectory()) {
-            throw new IllegalArgumentException(file.toString() + " is a directory.");
+            throw new IllegalArgumentException(file + " is a directory.");
         }
 
         // Determine if this is a new or existing audio item.
@@ -117,8 +117,8 @@ public class AudioImporter {
         if (item != null) {
             if (options.contains(Option.addNewOnly)) {
                 // just skip if we have an item with the same id already
-                System.out.println(String.format("File '%s' is already in database; skipping",
-                    file.getName()));
+                System.out.printf("File '%s' is already in database; skipping%n",
+                    file.getName());
             } else {
                 ACMConfiguration.getInstance()
                     .getCurrentDB()

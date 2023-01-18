@@ -257,7 +257,7 @@ public class Sandbox {
             Path otherPath = ((MoveOp) op).fromPath;
             File otherFile = baseDir.toPath().resolve(otherPath).toFile();
             files = otherFile.listFiles();
-        } else if (!(op instanceof DeleteOp || op instanceof MovedOutOp)) {
+        } else if (!(op instanceof MovedOutOp)) {
             files = baseFile.listFiles();
         }
         // Files in the base that aren't scheduled for deletion.
@@ -317,6 +317,8 @@ public class Sandbox {
         if (op instanceof MoveOp) {
             MoveOp mop = (MoveOp) op;
             return baseDir.toPath().resolve(mop.fromPath).toFile();
+        } else if (op instanceof DeleteOp || op instanceof MovedOutOp) {
+            return file; // the file is going away, so return the non-existant file in the sandbox area.
         }
 
         // Not overwritten, so defer to base file.

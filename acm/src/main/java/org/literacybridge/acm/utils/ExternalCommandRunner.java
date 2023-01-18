@@ -68,6 +68,8 @@ public class ExternalCommandRunner {
             return Boolean.TRUE.equals(run(getRunDirectory(), getCommand(), this));
         }
 
+        protected boolean verbose = false;
+
         abstract protected List<LineHandler> getLineHandlers();
         abstract protected String[] getCommand();
         protected File getRunDirectory() { return system32Directory; }
@@ -84,7 +86,7 @@ public class ExternalCommandRunner {
             try {
                 outerloop:
                 while ((line = stream.readLine(partialLinePatterns)) != null) {
-                    System.out.println(line);
+                    if (verbose) System.out.println(line);
                     innerloop:
                     for (LineHandler lh : lineHandlers) {
                         Matcher matcher = lh.pattern.matcher(line);
@@ -101,7 +103,7 @@ public class ExternalCommandRunner {
                         }
                     }
                 }
-                System.out.println("Got EOF on program output.");
+                if (verbose) System.out.println("Got EOF on program output.");
             } catch (IOException ignored) {
             }
             return true;
@@ -164,10 +166,10 @@ public class ExternalCommandRunner {
             R result = handler.apply(writer, reader);
             // Drain the process output.
             reader.close();
-            System.out.println("Closed process reader.");
+//            System.out.println("Closed process reader.");
             // Wait for the process to terminate.
             proc.waitFor();
-            System.out.println("Process ended.");
+//            System.out.println("Process ended.");
             if (killTimer != null) {
                 killTimer.cancel();
             }
